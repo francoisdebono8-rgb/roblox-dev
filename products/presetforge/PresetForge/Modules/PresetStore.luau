@@ -103,14 +103,13 @@ function PresetStore:create(name, captured)
 		return false, "A preset with this name already exists"
 	end
 
-	local validOptions, optionsError = PresetValidator.captureOptions(captured.capture)
-	if not validOptions then
-		return false, optionsError
-	end
-
 	local candidate = clone(self._presets)
 	local preset = clone(captured)
 	preset.name = normalizedName
+	local validPreset, validationError = PresetValidator.recipe(preset)
+	if not validPreset then
+		return false, validationError
+	end
 	candidate[#candidate + 1] = preset
 
 	local saved, saveError = self:_persist(candidate)
@@ -118,6 +117,28 @@ function PresetStore:create(name, captured)
 		return false, saveError
 	end
 	return true, clone(preset)
+end
+
+function PresetStore:update(currentName, captured)
+	local index = self:_findIndex(currentName)
+	if not index then
+		return false, "Recipe not found"
+	end
+
+	local candidate = clone(self._presets)
+	local recipe = clone(captured)
+	recipe.name = candidate[index].name
+	local validRecipe, validationError = PresetValidator.recipe(recipe)
+	if not validRecipe then
+		return false, validationError
+	end
+	candidate[index] = recipe
+
+	local saved, saveError = self:_persist(candidate)
+	if not saved then
+		return false, saveError
+	end
+	return true, clone(recipe)
 end
 
 function PresetStore:rename(currentName, requestedName)

@@ -1,0 +1,12 @@
+{
+  "name": "PresetForge",
+  "tree": {
+    "$className": "Model",
+    "Main": {
+      "$path": "PresetForge/Main.plugin.luau"
+    },
+    "Modules": {
+      "$path": "PresetForge/Modules"
+    }
+  }
+}

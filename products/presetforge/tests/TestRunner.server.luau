@@ -1,7 +1,10 @@
 local specs = {
-	script.Parent["PresetStore.spec"],
+	script.Parent["Schema.spec"],
 	script.Parent["CapturePreview.spec"],
+	script.Parent["ScopePreview.spec"],
 	script.Parent["ApplyService.spec"],
+	script.Parent["PresetStore.spec"],
+	script.Parent["ProjectStore.spec"],
 }
 
 local passed = 0

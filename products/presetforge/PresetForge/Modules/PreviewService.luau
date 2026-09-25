@@ -1,5 +1,7 @@
 local AttributeCodec = require(script.Parent.AttributeCodec)
-local Constants = require(script.Parent.Constants)
+local PresetValidator = require(script.Parent.PresetValidator)
+local Schema = require(script.Parent.Schema)
+local ValueCodec = require(script.Parent.ValueCodec)
 
 local PreviewService = {}
 PreviewService.__index = PreviewService
@@ -8,192 +10,199 @@ local function increment(map, key)
 	map[key] = (map[key] or 0) + 1
 end
 
-function PreviewService.new(collectionService)
+local function sortedKeys(values)
+	local keys = {}
+	for key in pairs(values) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys)
+	return keys
+end
+
+function PreviewService.new(collectionService, targetResolver)
 	return setmetatable({
 		_collectionService = collectionService,
+		_targetResolver = targetResolver,
 	}, PreviewService)
 end
 
-function PreviewService:build(preset, selection)
+function PreviewService:build(recipe, selection, options)
+	local validRecipe, recipeError = PresetValidator.recipe(recipe)
+	if not validRecipe then
+		return nil, recipeError
+	end
+	local resolved, resolveError = self._targetResolver:resolve(recipe.schemaId, selection, options)
+	if not resolved then
+		return nil, resolveError
+	end
+
 	local preview = {
-		selectionCount = #selection,
-		compatibleCount = 0,
-		ignoredCount = 0,
+		options = resolved.options,
+		selectionCount = resolved.selectionCount,
+		scannedCount = resolved.scannedCount,
+		compatibleCount = #resolved.compatible,
+		affectedCount = 0,
+		matchingCount = 0,
+		ignoredCount = #resolved.ignored,
 		targets = {},
-		targetStates = {},
+		affected = {},
+		matching = {},
+		ignored = {},
+		results = {},
 		propertyChanges = {},
 		tagChanges = {},
 		attributeChanges = {},
-		warnings = {},
 		totalChanges = 0,
+		warnings = {},
 	}
 
-	for _, instance in ipairs(selection) do
-		if instance:IsA("BasePart") then
-			preview.compatibleCount += 1
-			preview.targets[#preview.targets + 1] = instance
-			local targetState = {
-				properties = {},
-				tags = {},
-				attributes = {},
-			}
-			preview.targetStates[#preview.targetStates + 1] = targetState
+	for _, ignored in ipairs(resolved.ignored) do
+		local result = {
+			instance = ignored.instance,
+			path = ignored.path,
+			status = "ignored",
+			reason = ignored.reason,
+			changes = {},
+		}
+		preview.ignored[#preview.ignored + 1] = ignored.instance
+		preview.results[#preview.results + 1] = result
+	end
 
-			if preset.capture.properties then
-				for _, propertyName in ipairs(Constants.PROPERTIES) do
-					local ok, currentValue = pcall(function()
-						return instance[propertyName]
-					end)
-					if not ok then
-						preview.warnings[#preview.warnings + 1] = instance:GetFullName() .. ": " .. propertyName .. " is unreadable"
-					else
-						targetState.properties[propertyName] = currentValue
-						if currentValue ~= preset.properties[propertyName] then
-							increment(preview.propertyChanges, propertyName)
-							preview.totalChanges += 1
-						end
-					end
-				end
+	for _, instance in ipairs(resolved.compatible) do
+		local changes = {}
+		for _, propertyName in ipairs(sortedKeys(recipe.properties)) do
+			local definition = Schema.property(recipe.schemaId, propertyName)
+			local ok, currentValue = pcall(function()
+				return instance[propertyName]
+			end)
+			if not ok then
+				return nil, instance:GetFullName() .. ": could not read " .. propertyName
 			end
-
-			if preset.capture.tags then
-				for _, tag in ipairs(preset.tags) do
-					local hasTag = self._collectionService:HasTag(instance, tag)
-					targetState.tags[tag] = hasTag
-					if not hasTag then
-						increment(preview.tagChanges, tag)
-						preview.totalChanges += 1
-					end
-				end
+			local desiredValue = recipe.properties[propertyName]
+			if not ValueCodec.equal(definition, currentValue, desiredValue) then
+				changes[#changes + 1] = {
+					kind = "property",
+					name = propertyName,
+					before = currentValue,
+					after = desiredValue,
+				}
+				increment(preview.propertyChanges, propertyName)
+				preview.totalChanges += 1
 			end
+		end
 
-			if preset.capture.attributes then
-				local currentAttributes = instance:GetAttributes()
-				for attributeName, desiredValue in pairs(preset.attributes) do
-					local currentValue = currentAttributes[attributeName]
-					targetState.attributes[attributeName] = {
-						exists = currentValue ~= nil,
-						value = currentValue,
+		if recipe.capture.tags then
+			for _, tag in ipairs(recipe.tags) do
+				if not self._collectionService:HasTag(instance, tag) then
+					changes[#changes + 1] = {
+						kind = "tag",
+						name = tag,
+						before = false,
+						after = true,
 					}
-					if currentValue == nil then
-						local changes = preview.attributeChanges[attributeName] or { added = 0, updated = 0 }
-						changes.added += 1
-						preview.attributeChanges[attributeName] = changes
-						preview.totalChanges += 1
-					elseif not AttributeCodec.equal(currentValue, desiredValue) then
-						local changes = preview.attributeChanges[attributeName] or { added = 0, updated = 0 }
-						changes.updated += 1
-						preview.attributeChanges[attributeName] = changes
-						preview.totalChanges += 1
-					end
+					increment(preview.tagChanges, tag)
+					preview.totalChanges += 1
 				end
 			end
+		end
+
+		if recipe.capture.attributes then
+			local currentAttributes = instance:GetAttributes()
+			for _, attributeName in ipairs(sortedKeys(recipe.attributes)) do
+				local currentValue = currentAttributes[attributeName]
+				local desiredValue = recipe.attributes[attributeName]
+				if currentValue == nil or not AttributeCodec.equal(currentValue, desiredValue) then
+					changes[#changes + 1] = {
+						kind = "attribute",
+						name = attributeName,
+						beforeExists = currentValue ~= nil,
+						before = currentValue,
+						after = desiredValue,
+					}
+					local counts = preview.attributeChanges[attributeName] or { added = 0, updated = 0 }
+					if currentValue == nil then
+						counts.added += 1
+					else
+						counts.updated += 1
+					end
+					preview.attributeChanges[attributeName] = counts
+					preview.totalChanges += 1
+				end
+			end
+		end
+
+		local status = #changes > 0 and "affected" or "matching"
+		local result = {
+			instance = instance,
+			path = instance:GetFullName(),
+			status = status,
+			changes = changes,
+		}
+		preview.results[#preview.results + 1] = result
+		if status == "affected" then
+			preview.affectedCount += 1
+			preview.affected[#preview.affected + 1] = instance
+			preview.targets[#preview.targets + 1] = instance
 		else
-			preview.ignoredCount += 1
+			preview.matchingCount += 1
+			preview.matching[#preview.matching + 1] = instance
 		end
 	end
 
-	if preview.ignoredCount > 0 then
-		preview.warnings[#preview.warnings + 1] = string.format(
-			"%d non-BasePart selection%s will be ignored",
-			preview.ignoredCount,
-			preview.ignoredCount == 1 and "" or "s"
-		)
-	end
 	if preview.compatibleCount == 0 then
-		preview.warnings[#preview.warnings + 1] = "Select at least one BasePart target"
-	elseif preview.totalChanges == 0 then
-		preview.warnings[#preview.warnings + 1] = "Selected BaseParts already match this preset"
+		preview.warnings[#preview.warnings + 1] = "No compatible targets match this scope and filter"
+	elseif preview.affectedCount == 0 then
+		preview.warnings[#preview.warnings + 1] = "All compatible targets already match this recipe"
 	end
-
 	return preview
 end
 
-local function sameScalarMap(left, right)
-	for key, value in pairs(left) do
-		if right[key] ~= value then
-			return false
-		end
-	end
-	for key in pairs(right) do
-		if left[key] == nil then
-			return false
-		end
-	end
-	return true
+local function sameOptions(left, right)
+	return left.scope == right.scope
+		and left.className == right.className
+		and left.nameContains == right.nameContains
+		and left.tag == right.tag
 end
 
-local function sameTargetStates(left, right)
-	if #left ~= #right then
-		return false
-	end
-
-	for index, leftState in ipairs(left) do
-		local rightState = right[index]
-		if not rightState
-			or not sameScalarMap(leftState.properties, rightState.properties)
-			or not sameScalarMap(leftState.tags, rightState.tags) then
-			return false
-		end
-
-		for attributeName, leftAttribute in pairs(leftState.attributes) do
-			local rightAttribute = rightState.attributes[attributeName]
-			if not rightAttribute
-				or leftAttribute.exists ~= rightAttribute.exists
-				or (leftAttribute.exists and not AttributeCodec.equal(leftAttribute.value, rightAttribute.value)) then
-				return false
-			end
-		end
-		for attributeName in pairs(rightState.attributes) do
-			if leftState.attributes[attributeName] == nil then
-				return false
-			end
-		end
-	end
-
-	return true
-end
-
-local function sameMap(left, right)
-	for key, value in pairs(left) do
-		local other = right[key]
-		if type(value) == "table" then
-			if type(other) ~= "table" or value.added ~= other.added or value.updated ~= other.updated then
-				return false
-			end
-		elseif value ~= other then
-			return false
-		end
-	end
-	for key in pairs(right) do
-		if left[key] == nil then
-			return false
-		end
-	end
-	return true
+local function sameChange(left, right)
+	return left.kind == right.kind
+		and left.name == right.name
+		and left.beforeExists == right.beforeExists
+		and ValueCodec.equalAny(left.before, right.before)
+		and ValueCodec.equalAny(left.after, right.after)
 end
 
 function PreviewService.same(left, right)
-	if left == nil or right == nil then
-		return false
-	elseif left.selectionCount ~= right.selectionCount
+	if left == nil or right == nil
+		or not sameOptions(left.options, right.options)
+		or left.selectionCount ~= right.selectionCount
+		or left.scannedCount ~= right.scannedCount
 		or left.compatibleCount ~= right.compatibleCount
+		or left.affectedCount ~= right.affectedCount
+		or left.matchingCount ~= right.matchingCount
 		or left.ignoredCount ~= right.ignoredCount
 		or left.totalChanges ~= right.totalChanges
-		or #left.targets ~= #right.targets then
+		or #left.results ~= #right.results then
 		return false
 	end
 
-	for index, target in ipairs(left.targets) do
-		if target ~= right.targets[index] then
+	for index, leftResult in ipairs(left.results) do
+		local rightResult = right.results[index]
+		if not rightResult
+			or leftResult.instance ~= rightResult.instance
+			or leftResult.path ~= rightResult.path
+			or leftResult.status ~= rightResult.status
+			or leftResult.reason ~= rightResult.reason
+			or #leftResult.changes ~= #rightResult.changes then
 			return false
 		end
+		for changeIndex, leftChange in ipairs(leftResult.changes) do
+			if not sameChange(leftChange, rightResult.changes[changeIndex]) then
+				return false
+			end
+		end
 	end
-
-	return sameMap(left.propertyChanges, right.propertyChanges)
-		and sameMap(left.tagChanges, right.tagChanges)
-		and sameMap(left.attributeChanges, right.attributeChanges)
-		and sameTargetStates(left.targetStates, right.targetStates)
+	return true
 end
 
 return PreviewService

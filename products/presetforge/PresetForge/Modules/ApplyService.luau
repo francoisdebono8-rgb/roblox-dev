@@ -1,8 +1,19 @@
 local AttributeCodec = require(script.Parent.AttributeCodec)
-local Constants = require(script.Parent.Constants)
+local PresetValidator = require(script.Parent.PresetValidator)
+local Schema = require(script.Parent.Schema)
+local ValueCodec = require(script.Parent.ValueCodec)
 
 local ApplyService = {}
 ApplyService.__index = ApplyService
+
+local function sortedKeys(values)
+	local keys = {}
+	for key in pairs(values) do
+		keys[#keys + 1] = key
+	end
+	table.sort(keys)
+	return keys
+end
 
 function ApplyService.new(collectionService, changeHistoryService)
 	return setmetatable({
@@ -11,24 +22,23 @@ function ApplyService.new(collectionService, changeHistoryService)
 	}, ApplyService)
 end
 
-function ApplyService:_backup(preset, targets)
+function ApplyService:_backup(recipe, targets)
 	local backups = {}
 	local ok, backupError = pcall(function()
 		for _, target in ipairs(targets) do
+			assert(Schema.isCompatible(recipe.schemaId, target), "incompatible target")
 			local backup = {
 				target = target,
 				properties = {},
 				addedTags = {},
 				attributes = {},
 			}
-			if preset.capture.properties then
-				for _, propertyName in ipairs(Constants.PROPERTIES) do
-					backup.properties[propertyName] = target[propertyName]
-				end
+			for propertyName in pairs(recipe.properties) do
+				backup.properties[propertyName] = target[propertyName]
 			end
-			if preset.capture.attributes then
+			if recipe.capture.attributes then
 				local attributes = target:GetAttributes()
-				for attributeName in pairs(preset.attributes) do
+				for attributeName in pairs(recipe.attributes) do
 					backup.attributes[attributeName] = {
 						exists = attributes[attributeName] ~= nil,
 						value = attributes[attributeName],
@@ -38,7 +48,6 @@ function ApplyService:_backup(preset, targets)
 			backups[#backups + 1] = backup
 		end
 	end)
-
 	if not ok then
 		return nil, "Could not prepare a safe apply: " .. tostring(backupError)
 	end
@@ -57,11 +66,7 @@ function ApplyService:_rollback(backups)
 				self._collectionService:RemoveTag(backup.target, tag)
 			end
 			for attributeName, previous in pairs(backup.attributes) do
-				if previous.exists then
-					backup.target:SetAttribute(attributeName, previous.value)
-				else
-					backup.target:SetAttribute(attributeName, nil)
-				end
+				backup.target:SetAttribute(attributeName, previous.exists and previous.value or nil)
 			end
 		end)
 		if not ok then
@@ -71,12 +76,15 @@ function ApplyService:_rollback(backups)
 	return errors
 end
 
-function ApplyService:apply(preset, targets)
-	if #targets == 0 then
-		return false, "No compatible BasePart targets"
+function ApplyService:apply(recipe, targets)
+	local validRecipe, recipeError = PresetValidator.recipe(recipe)
+	if not validRecipe then
+		return false, "Recipe rejected: " .. recipeError
+	elseif #targets == 0 then
+		return false, "No affected compatible targets"
 	end
 
-	local backups, backupError = self:_backup(preset, targets)
+	local backups, backupError = self:_backup(recipe, targets)
 	if not backups then
 		return false, backupError
 	end
@@ -85,28 +93,28 @@ function ApplyService:apply(preset, targets)
 		self._changeHistoryService.TryBeginRecording,
 		self._changeHistoryService,
 		"PresetForgeApply",
-		"Apply PresetForge preset"
+		"Apply PresetForge recipe"
 	)
 	if not recordingOk or recording == nil then
 		return false, "Could not start an undo recording"
 	end
 
-	local counts = { properties = 0, tags = 0, attributes = 0 }
+	local counts = { targets = #targets, properties = 0, tags = 0, attributes = 0 }
+	local propertyNames = sortedKeys(recipe.properties)
 	local appliedOk, applyError = pcall(function()
 		for targetIndex, target in ipairs(targets) do
 			local backup = backups[targetIndex]
-			if preset.capture.properties then
-				for _, propertyName in ipairs(Constants.PROPERTIES) do
-					local desiredValue = preset.properties[propertyName]
-					if target[propertyName] ~= desiredValue then
-						target[propertyName] = desiredValue
-						counts.properties += 1
-					end
+			for _, propertyName in ipairs(propertyNames) do
+				local definition = Schema.property(recipe.schemaId, propertyName)
+				local desiredValue = recipe.properties[propertyName]
+				if not ValueCodec.equal(definition, target[propertyName], desiredValue) then
+					target[propertyName] = desiredValue
+					counts.properties += 1
 				end
 			end
 
-			if preset.capture.tags then
-				for _, tag in ipairs(preset.tags) do
+			if recipe.capture.tags then
+				for _, tag in ipairs(recipe.tags) do
 					if not self._collectionService:HasTag(target, tag) then
 						self._collectionService:AddTag(target, tag)
 						backup.addedTags[#backup.addedTags + 1] = tag
@@ -115,9 +123,9 @@ function ApplyService:apply(preset, targets)
 				end
 			end
 
-			if preset.capture.attributes then
+			if recipe.capture.attributes then
 				local currentAttributes = target:GetAttributes()
-				for attributeName, desiredValue in pairs(preset.attributes) do
+				for attributeName, desiredValue in pairs(recipe.attributes) do
 					local currentValue = currentAttributes[attributeName]
 					if currentValue == nil or not AttributeCodec.equal(currentValue, desiredValue) then
 						target:SetAttribute(attributeName, desiredValue)
@@ -163,7 +171,6 @@ function ApplyService:apply(preset, targets)
 		end
 		return false, message
 	end
-
 	return true, counts
 end
 

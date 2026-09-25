@@ -1,106 +1,89 @@
 local CollectionService = game:GetService("CollectionService")
 
 local modules = script.Parent.Parent.PresetForge.Modules
+local ApplyService = require(modules.ApplyService)
 local CaptureService = require(modules.CaptureService)
 local PreviewService = require(modules.PreviewService)
-
-local captureService = CaptureService.new(CollectionService)
-local previewService = PreviewService.new(CollectionService)
+local TargetResolver = require(modules.TargetResolver)
 
 local source = Instance.new("Part")
-source.Name = "PresetSource"
+source.Name = "Source"
 source.Anchored = true
 source.CanCollide = false
-source.CanTouch = false
-source.CanQuery = false
-source.Transparency = 0.4
-source.CastShadow = false
-source.Massless = true
-source.Color = Color3.fromRGB(240, 20, 20)
-source.Material = Enum.Material.Neon
-source:SetAttribute("Health", 100)
-source:SetAttribute("Label", "Captured")
-CollectionService:AddTag(source, "PresetTag")
+source.Transparency = 0.75
+source:SetAttribute("Damage", 25)
+CollectionService:AddTag(source, "PresetForgeCaptureTest")
 
-local options = { properties = true, tags = true, attributes = true }
-local captured = assert(captureService:capture({ source }, options))
-assert(captured.properties.Anchored == true)
-assert(captured.properties.CanCollide == false)
-assert(captured.properties.CanTouch == false)
-assert(captured.properties.CanQuery == false)
-assert(math.abs(captured.properties.Transparency - 0.4) < 1e-6)
-assert(captured.properties.CastShadow == false)
-assert(captured.properties.Massless == true)
-assert(captured.properties.Color == nil and captured.properties.Material == nil, "capture must honor the exact whitelist")
+local captureService = CaptureService.new(CollectionService)
+local captured, captureError = captureService:capture({ source }, {
+	properties = { "Anchored" },
+	tags = true,
+	attributes = true,
+})
+assert(captured, captureError)
+captured.name = "Selective part"
+assert(captured.properties.Anchored == true and captured.properties.CanCollide == nil)
 
-local extraSource = Instance.new("Part")
-local invalidMultiple, multipleError = captureService:capture({ source, extraSource }, options)
-assert(invalidMultiple == nil and multipleError:find("exactly one") ~= nil)
-extraSource:Destroy()
-local model = Instance.new("Model")
-local invalidType, typeError = captureService:capture({ model }, options)
-assert(invalidType == nil and typeError:find("BasePart") ~= nil)
+local target = Instance.new("Part")
+target.Name = "Target"
+target.Anchored = false
+target.CanCollide = true
+target.Transparency = 0.1
+target.Color = Color3.fromRGB(12, 34, 56)
+target:SetAttribute("Damage", 2)
+target:SetAttribute("OutsideRecipe", "keep")
+CollectionService:AddTag(target, "KeepTag")
 
-local targetOne = Instance.new("Part")
-targetOne.Name = "TargetOne"
-targetOne.Anchored = false
-targetOne.CanCollide = true
-targetOne.CanTouch = true
-targetOne.CanQuery = true
-targetOne.Transparency = 0
-targetOne.CastShadow = true
-targetOne.Massless = false
-targetOne.Color = Color3.fromRGB(10, 30, 220)
-targetOne.Material = Enum.Material.Wood
-targetOne:SetAttribute("Health", 25)
-targetOne:SetAttribute("OutsidePreset", "keep")
-CollectionService:AddTag(targetOne, "KeepTag")
+local beforeColor = target.Color
+local previewService = PreviewService.new(CollectionService, TargetResolver.new(CollectionService))
+local preview, previewError = previewService:build(captured, { target }, { scope = "Selection" })
+assert(preview, previewError)
+assert(preview.affectedCount == 1 and preview.matchingCount == 0 and preview.ignoredCount == 0)
+assert(preview.propertyChanges.Anchored == 1 and preview.propertyChanges.CanCollide == nil)
+assert(preview.tagChanges.PresetForgeCaptureTest == 1)
+assert(preview.attributeChanges.Damage.updated == 1)
+assert(target.Anchored == false and target:GetAttribute("Damage") == 2, "Preview must be read-only")
 
-local targetTwo = targetOne:Clone()
-targetTwo.Name = "TargetTwo"
-targetTwo:SetAttribute("Health", 100)
-CollectionService:AddTag(targetTwo, "KeepTag")
-CollectionService:AddTag(targetTwo, "PresetTag")
+local history = { beginCount = 0, finishCount = 0 }
+function history:TryBeginRecording(name, displayName)
+	assert(name == "PresetForgeApply" and displayName == "Apply PresetForge recipe")
+	self.beginCount += 1
+	return "capture-recording"
+end
+function history:FinishRecording(_, operation)
+	self.finishCount += 1
+	assert(operation == Enum.FinishRecordingOperation.Commit)
+end
+local applied, counts = ApplyService.new(CollectionService, history):apply(captured, preview.targets)
+assert(applied, tostring(counts))
+assert(counts.targets == 1 and counts.properties == 1 and counts.tags == 1 and counts.attributes == 1)
+assert(history.beginCount == 1 and history.finishCount == 1)
+assert(target.Anchored == true and target.CanCollide == true and math.abs(target.Transparency - 0.1) < 1e-6)
+assert(target.Color == beforeColor, "properties outside the recipe must be preserved")
+assert(target:GetAttribute("Damage") == 25 and target:GetAttribute("OutsideRecipe") == "keep")
+assert(CollectionService:HasTag(target, "PresetForgeCaptureTest") and CollectionService:HasTag(target, "KeepTag"))
 
-local before = {
-	anchored = targetOne.Anchored,
-	color = targetOne.Color,
-	material = targetOne.Material,
-	health = targetOne:GetAttribute("Health"),
-	outside = targetOne:GetAttribute("OutsidePreset"),
-	hasKeepTag = CollectionService:HasTag(targetOne, "KeepTag"),
-	hasPresetTag = CollectionService:HasTag(targetOne, "PresetTag"),
+local tampered = {
+	name = "Tampered",
+	schemaId = "BasePart",
+	capture = { tags = false, attributes = false },
+	properties = { Color = Color3.new(1, 0, 0) },
+	tags = {},
+	attributes = {},
 }
-local preview = previewService:build(captured, { targetOne, model, targetTwo })
-assert(preview.selectionCount == 3 and preview.compatibleCount == 2 and preview.ignoredCount == 1)
-assert(preview.propertyChanges.Anchored == 2)
-assert(preview.propertyChanges.CanCollide == 2)
-assert(preview.propertyChanges.CanTouch == 2)
-assert(preview.propertyChanges.CanQuery == 2)
-assert(preview.propertyChanges.Transparency == 2)
-assert(preview.propertyChanges.CastShadow == 2)
-assert(preview.propertyChanges.Massless == 2)
-assert(preview.tagChanges.PresetTag == 1)
-assert(preview.attributeChanges.Health.updated == 1)
-assert(preview.attributeChanges.Label.added == 2)
+local rejected, rejection = ApplyService.new(CollectionService, history):apply(tampered, { target })
+assert(rejected == false and rejection:find("Unsupported property") ~= nil)
+assert(history.beginCount == 1, "an invalid recipe must be rejected before Undo recording")
 
-assert(targetOne.Anchored == before.anchored, "Preview must not change properties")
-assert(targetOne.Color == before.color and targetOne.Material == before.material)
-assert(targetOne:GetAttribute("Health") == before.health)
-assert(targetOne:GetAttribute("OutsidePreset") == before.outside)
-assert(CollectionService:HasTag(targetOne, "KeepTag") == before.hasKeepTag)
-assert(CollectionService:HasTag(targetOne, "PresetTag") == before.hasPresetTag)
-
-local repeatedPreview = previewService:build(captured, { targetOne, model, targetTwo })
-assert(PreviewService.same(preview, repeatedPreview), "an unchanged selection must keep the Preview valid")
-targetOne.Transparency = 0.2
-local changedPreview = previewService:build(captured, { targetOne, model, targetTwo })
-assert(changedPreview.propertyChanges.Transparency == 2, "the changed value should keep the same visible count")
-assert(not PreviewService.same(preview, changedPreview), "a target value change must invalidate the reviewed Preview")
+local model = Instance.new("Model")
+local invalid, invalidError = captureService:capture({ model }, {
+	properties = {},
+	tags = true,
+	attributes = false,
+})
+assert(invalid == nil and invalidError:find("not supported") ~= nil)
 
 source:Destroy()
-targetOne:Destroy()
-targetTwo:Destroy()
+target:Destroy()
 model:Destroy()
-
 return true

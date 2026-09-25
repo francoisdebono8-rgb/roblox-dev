@@ -3,77 +3,52 @@ local CollectionService = game:GetService("CollectionService")
 local modules = script.Parent.Parent.PresetForge.Modules
 local ApplyService = require(modules.ApplyService)
 
-local history = {
-	beginCount = 0,
-	finishCount = 0,
-	operation = nil,
-}
+local history = { beginCount = 0, finishCount = 0, operation = nil }
 function history:TryBeginRecording(name, displayName)
-	assert(name == "PresetForgeApply")
-	assert(displayName == "Apply PresetForge preset")
+	assert(name == "PresetForgeApply" and displayName == "Apply PresetForge recipe")
 	self.beginCount += 1
-	return "test-recording"
+	return "apply-recording"
 end
 function history:FinishRecording(recording, operation)
-	assert(recording == "test-recording")
+	assert(recording == "apply-recording")
 	self.finishCount += 1
 	self.operation = operation
 end
 
-local preset = {
-	name = "Gameplay",
-	capture = { properties = true, tags = true, attributes = true },
-	properties = {
-		Anchored = true,
-		CanCollide = false,
-		CanTouch = false,
-		CanQuery = false,
-		Transparency = 0.25,
-		CastShadow = false,
-		Massless = true,
-	},
-	tags = { "PresetTag" },
-	attributes = {
-		Health = 100,
-		Enabled = false,
-	},
+local recipe = {
+	name = "Safe apply",
+	schemaId = "BasePart",
+	capture = { tags = true, attributes = true },
+	properties = { Anchored = true },
+	tags = { "PresetForgeApplyTest" },
+	attributes = { Level = 4 },
 }
-
 local targetOne = Instance.new("Part")
+targetOne.Anchored = false
+targetOne.CanCollide = false
 targetOne.Color = Color3.fromRGB(12, 34, 56)
-targetOne.Material = Enum.Material.Wood
-targetOne:SetAttribute("Health", 10)
-targetOne:SetAttribute("OutsidePreset", "keep")
+targetOne:SetAttribute("Level", 1)
+targetOne:SetAttribute("OutsideRecipe", "keep")
 CollectionService:AddTag(targetOne, "KeepTag")
 local targetTwo = targetOne:Clone()
+targetTwo:SetAttribute("Level", nil)
 
-local service = ApplyService.new(CollectionService, history)
-local applied, counts = service:apply(preset, { targetOne, targetTwo })
-assert(applied == true, tostring(counts))
+local applied, counts = ApplyService.new(CollectionService, history):apply(recipe, { targetOne, targetTwo })
+assert(applied, tostring(counts))
+assert(counts.targets == 2 and counts.properties == 2 and counts.tags == 2 and counts.attributes == 2)
 assert(history.beginCount == 1 and history.finishCount == 1)
-assert(history.operation == Enum.FinishRecordingOperation.Commit, "the complete apply must be one committed recording")
-assert(counts.properties == 14 and counts.tags == 2 and counts.attributes == 4)
-
+assert(history.operation == Enum.FinishRecordingOperation.Commit)
 for _, target in ipairs({ targetOne, targetTwo }) do
-	assert(target.Anchored == true)
-	assert(target.CanCollide == false)
-	assert(target.CanTouch == false)
-	assert(target.CanQuery == false)
-	assert(target.Transparency == 0.25)
-	assert(target.CastShadow == false)
-	assert(target.Massless == true)
-	assert(target.Color == Color3.fromRGB(12, 34, 56), "non-whitelisted Color must remain unchanged")
-	assert(target.Material == Enum.Material.Wood, "non-whitelisted Material must remain unchanged")
-	assert(CollectionService:HasTag(target, "PresetTag"))
-	assert(CollectionService:HasTag(target, "KeepTag"), "existing tags must be preserved")
-	assert(target:GetAttribute("Health") == 100)
-	assert(target:GetAttribute("Enabled") == false)
-	assert(target:GetAttribute("OutsidePreset") == "keep", "attributes outside the preset must be preserved")
+	assert(target.Anchored == true and target.CanCollide == false)
+	assert(target.Color == Color3.fromRGB(12, 34, 56))
+	assert(target:GetAttribute("Level") == 4 and target:GetAttribute("OutsideRecipe") == "keep")
+	assert(CollectionService:HasTag(target, "PresetForgeApplyTest"))
+	assert(CollectionService:HasTag(target, "KeepTag"))
 end
 
-local emptyApplied, emptyError = service:apply(preset, {})
-assert(emptyApplied == false and emptyError:find("No compatible") ~= nil)
-assert(history.beginCount == 1, "no-target apply must not begin a recording")
+local emptyApplied, emptyError = ApplyService.new(CollectionService, history):apply(recipe, {})
+assert(emptyApplied == false and emptyError:find("No affected") ~= nil)
+assert(history.beginCount == 1)
 
 local unavailableHistory = {}
 function unavailableHistory:TryBeginRecording()
@@ -81,62 +56,30 @@ function unavailableHistory:TryBeginRecording()
 end
 local untouched = Instance.new("Part")
 untouched.Anchored = false
-local refused, refusalError = ApplyService.new(CollectionService, unavailableHistory):apply(preset, { untouched })
-assert(refused == false and refusalError:find("undo recording") ~= nil)
-assert(untouched.Anchored == false, "apply must not start when Undo recording is unavailable")
+local refused, refusalError = ApplyService.new(CollectionService, unavailableHistory):apply(recipe, { untouched })
+assert(refused == false and refusalError:find("undo recording") ~= nil and untouched.Anchored == false)
 
-local failedState = {
-	Anchored = false,
-	CanCollide = true,
-	CanTouch = true,
-	CanQuery = true,
-	Transparency = 0,
-	CastShadow = true,
-	Massless = false,
-}
-local failingTarget = setmetatable({}, {
-	__index = function(_, key)
-		if failedState[key] ~= nil then
-			return failedState[key]
-		elseif key == "GetAttributes" then
-			return function()
-				return {}
-			end
-		elseif key == "GetFullName" then
-			return function()
-				return "FailingTarget"
-			end
-		end
-		return nil
-	end,
-	__newindex = function(_, key, value)
-		if key == "CanCollide" and value == false then
-			error("injected write failure")
-		end
-		failedState[key] = value
-	end,
-})
-local failureHistory = { operation = nil }
-function failureHistory:TryBeginRecording()
-	return "failure-recording"
+local failingHistory = { calls = 0 }
+function failingHistory:TryBeginRecording()
+	return "failing-recording"
 end
-function failureHistory:FinishRecording(_, operation)
-	self.operation = operation
+function failingHistory:FinishRecording(_, operation)
+	self.calls += 1
+	if operation == Enum.FinishRecordingOperation.Commit then
+		error("injected commit failure")
+	end
 end
-local propertiesOnly = {
-	name = "Failure test",
-	capture = { properties = true, tags = false, attributes = false },
-	properties = preset.properties,
-	tags = {},
-	attributes = {},
-}
-local failed, failureMessage = ApplyService.new(CollectionService, failureHistory):apply(propertiesOnly, { failingTarget })
+local rollbackTarget = Instance.new("Part")
+rollbackTarget.Anchored = false
+local failed, failureMessage = ApplyService.new(CollectionService, failingHistory):apply(recipe, { rollbackTarget })
 assert(failed == false and failureMessage:find("rolled back") ~= nil)
-assert(failedState.Anchored == false and failedState.CanCollide == true, "a failed apply must restore earlier writes")
-assert(failureHistory.operation == Enum.FinishRecordingOperation.Cancel)
+assert(rollbackTarget.Anchored == false)
+assert(not CollectionService:HasTag(rollbackTarget, "PresetForgeApplyTest"))
+assert(rollbackTarget:GetAttribute("Level") == nil)
+assert(failingHistory.calls == 2, "failed commit must be cancelled after rollback")
 
 targetOne:Destroy()
 targetTwo:Destroy()
 untouched:Destroy()
-
+rollbackTarget:Destroy()
 return true

@@ -1,7 +1,9 @@
 local AttributeCodec = require(script.Parent.AttributeCodec)
 local Constants = require(script.Parent.Constants)
 local PresetValidator = require(script.Parent.PresetValidator)
+local Schema = require(script.Parent.Schema)
 local StringCodec = require(script.Parent.StringCodec)
+local ValueCodec = require(script.Parent.ValueCodec)
 
 local PresetSerializer = {}
 
@@ -37,20 +39,12 @@ local function sortedKeys(values)
 	return keys
 end
 
-local function validProperty(propertyName, value)
-	if propertyName == "Transparency" then
-		return type(value) == "number" and value >= 0 and value <= 1
-	end
-	return type(value) == "boolean"
-end
-
 local function deepEqual(left, right)
 	if type(left) ~= type(right) then
 		return false
 	elseif type(left) ~= "table" then
 		return left == right
 	end
-
 	for key, value in pairs(left) do
 		if not deepEqual(value, right[key]) then
 			return false
@@ -64,82 +58,181 @@ local function deepEqual(left, right)
 	return true
 end
 
-function PresetSerializer.encodePreset(preset)
-	local name, nameError = PresetValidator.normalizeName(preset.name)
-	if not name then
-		return nil, nameError
+local function encodeTags(tags)
+	local encoded = {}
+	for _, tag in ipairs(tags) do
+		encoded[#encoded + 1] = StringCodec.encode(tag)
 	end
+	return indexed(encoded)
+end
 
-	local validOptions, optionsError = PresetValidator.captureOptions(preset.capture)
-	if not validOptions then
-		return nil, optionsError
+local function decodeTags(encoded)
+	if not validCount(encoded) then
+		return nil, "Invalid tags record"
+	end
+	local tags = {}
+	local seen = {}
+	for index = 1, encoded.count do
+		local tag, tagError = StringCodec.decode(readIndexed(encoded, index))
+		if not tag then
+			return nil, tagError
+		elseif seen[tag] then
+			return nil, "Duplicate persisted tag: " .. tag
+		end
+		seen[tag] = true
+		tags[index] = tag
+	end
+	return tags
+end
+
+local function encodeAttributes(attributes)
+	local encoded = {}
+	for _, attributeName in ipairs(sortedKeys(attributes)) do
+		local value, valueError = AttributeCodec.encode(attributes[attributeName])
+		if not value then
+			return nil, string.format("Attribute %s: %s", attributeName, valueError)
+		end
+		encoded[#encoded + 1] = {
+			name = StringCodec.encode(attributeName),
+			value = value,
+		}
+	end
+	return indexed(encoded)
+end
+
+local function decodeAttributes(encoded)
+	if not validCount(encoded) then
+		return nil, "Invalid attributes record"
+	end
+	local attributes = {}
+	for index = 1, encoded.count do
+		local record = readIndexed(encoded, index)
+		if type(record) ~= "table" then
+			return nil, "Invalid attribute record"
+		end
+		local name, nameError = StringCodec.decode(record.name)
+		if not name then
+			return nil, nameError
+		elseif attributes[name] ~= nil then
+			return nil, "Duplicate persisted attribute: " .. name
+		end
+		local value, valueError = AttributeCodec.decode(record.value)
+		if value == nil then
+			return nil, valueError
+		end
+		attributes[name] = value
+	end
+	return attributes
+end
+
+function PresetSerializer.encodePreset(preset)
+	local valid, validationError = PresetValidator.recipe(preset)
+	if not valid then
+		return nil, validationError
 	end
 
 	local properties = {}
-	if preset.capture.properties then
-		if type(preset.properties) ~= "table" then
-			return nil, "Missing captured properties"
+	for _, propertyName in ipairs(sortedKeys(preset.properties)) do
+		local definition = Schema.property(preset.schemaId, propertyName)
+		local encodedValue, valueError = ValueCodec.encode(definition, preset.properties[propertyName])
+		if not encodedValue then
+			return nil, string.format("Property %s: %s", propertyName, valueError)
 		end
-		for _, propertyName in ipairs(Constants.PROPERTIES) do
-			local value = preset.properties[propertyName]
-			if not validProperty(propertyName, value) then
-				return nil, "Invalid captured property: " .. propertyName
-			end
-			properties[propertyName] = value
-		end
+		properties[#properties + 1] = {
+			name = propertyName,
+			value = encodedValue,
+		}
 	end
 
-	local tags = {}
-	if preset.capture.tags then
-		if type(preset.tags) ~= "table" then
-			return nil, "Missing captured tags"
-		end
-		for _, tag in ipairs(preset.tags) do
-			if type(tag) ~= "string" then
-				return nil, "Invalid captured tag"
-			end
-			tags[#tags + 1] = StringCodec.encode(tag)
-		end
-	end
-
-	local attributes = {}
-	if preset.capture.attributes then
-		if type(preset.attributes) ~= "table" then
-			return nil, "Missing captured attributes"
-		end
-		for _, attributeName in ipairs(sortedKeys(preset.attributes)) do
-			if type(attributeName) ~= "string" then
-				return nil, "Invalid captured attribute name"
-			end
-			local encodedValue, encodeError = AttributeCodec.encode(preset.attributes[attributeName])
-			if not encodedValue then
-				return nil, string.format("Attribute %s: %s", attributeName, encodeError)
-			end
-			attributes[#attributes + 1] = {
-				name = StringCodec.encode(attributeName),
-				value = encodedValue,
-			}
-		end
+	local attributes, attributeError = encodeAttributes(preset.attributes)
+	if not attributes then
+		return nil, attributeError
 	end
 
 	return {
-		name = StringCodec.encode(name),
+		name = StringCodec.encode(preset.name),
+		schemaId = preset.schemaId,
 		capture = {
-			properties = preset.capture.properties == true,
-			tags = preset.capture.tags == true,
-			attributes = preset.capture.attributes == true,
+			tags = preset.capture.tags,
+			attributes = preset.capture.attributes,
 		},
-		properties = properties,
-		tags = indexed(tags),
-		attributes = indexed(attributes),
+		properties = indexed(properties),
+		tags = encodeTags(preset.tags),
+		attributes = attributes,
 	}
 end
 
 function PresetSerializer.decodePreset(encoded)
-	if type(encoded) ~= "table" or type(encoded.capture) ~= "table" then
-		return nil, "Invalid preset record"
+	if type(encoded) ~= "table" or type(encoded.capture) ~= "table" or not validCount(encoded.properties) then
+		return nil, "Invalid recipe record"
+	end
+	local name, nameError = StringCodec.decode(encoded.name)
+	if not name then
+		return nil, nameError
+	end
+	local normalizedName, normalizeError = PresetValidator.normalizeName(name)
+	if not normalizedName then
+		return nil, normalizeError
+	elseif not Schema.get(encoded.schemaId) then
+		return nil, "Unsupported persisted recipe class"
 	end
 
+	local recipe = {
+		name = normalizedName,
+		schemaId = encoded.schemaId,
+		capture = {
+			tags = encoded.capture.tags == true,
+			attributes = encoded.capture.attributes == true,
+		},
+		properties = {},
+		tags = {},
+		attributes = {},
+	}
+
+	for index = 1, encoded.properties.count do
+		local record = readIndexed(encoded.properties, index)
+		if type(record) ~= "table" or type(record.name) ~= "string" then
+			return nil, "Invalid persisted property record"
+		elseif recipe.properties[record.name] ~= nil then
+			return nil, "Duplicate persisted property: " .. record.name
+		end
+		local definition = Schema.property(recipe.schemaId, record.name)
+		if not definition then
+			return nil, "Unsupported persisted property: " .. record.name
+		end
+		local value, valueError = ValueCodec.decode(definition, record.value)
+		if value == nil then
+			return nil, string.format("Property %s: %s", record.name, valueError)
+		end
+		local validValue, validationError = Schema.validateValue(recipe.schemaId, record.name, value)
+		if not validValue then
+			return nil, validationError
+		end
+		recipe.properties[record.name] = value
+	end
+
+	local tags, tagError = decodeTags(encoded.tags)
+	if not tags then
+		return nil, tagError
+	end
+	recipe.tags = tags
+	local attributes, attributeError = decodeAttributes(encoded.attributes)
+	if not attributes then
+		return nil, attributeError
+	end
+	recipe.attributes = attributes
+
+	local valid, validationError = PresetValidator.recipe(recipe)
+	if not valid then
+		return nil, validationError
+	end
+	return recipe
+end
+
+local function decodeLegacyPreset(encoded)
+	if type(encoded) ~= "table" or type(encoded.capture) ~= "table" then
+		return nil, "Invalid V1 preset record"
+	end
 	local name, nameError = StringCodec.decode(encoded.name)
 	if not name then
 		return nil, nameError
@@ -149,74 +242,50 @@ function PresetSerializer.decodePreset(encoded)
 		return nil, normalizeError
 	end
 
-	local capture = {
-		properties = encoded.capture.properties == true,
-		tags = encoded.capture.tags == true,
-		attributes = encoded.capture.attributes == true,
-	}
-	local validOptions, optionsError = PresetValidator.captureOptions(capture)
-	if not validOptions then
-		return nil, optionsError
-	end
-
-	local preset = {
+	local recipe = {
 		name = normalizedName,
-		capture = capture,
+		schemaId = "BasePart",
+		capture = {
+			tags = encoded.capture.tags == true,
+			attributes = encoded.capture.attributes == true,
+		},
 		properties = {},
 		tags = {},
 		attributes = {},
 	}
-
-	if capture.properties then
+	if encoded.capture.properties == true then
 		if type(encoded.properties) ~= "table" then
-			return nil, "Invalid properties record"
+			return nil, "Invalid V1 properties record"
 		end
-		for _, propertyName in ipairs(Constants.PROPERTIES) do
+		for _, propertyName in ipairs(Constants.LEGACY_PROPERTIES) do
 			local value = encoded.properties[propertyName]
-			if not validProperty(propertyName, value) then
-				return nil, "Invalid persisted property: " .. propertyName
+			local valid, validationError = Schema.validateValue("BasePart", propertyName, value)
+			if not valid then
+				return nil, validationError
 			end
-			preset.properties[propertyName] = value
+			recipe.properties[propertyName] = value
 		end
 	end
-
-	if capture.tags then
-		if not validCount(encoded.tags) then
-			return nil, "Invalid tags record"
+	if recipe.capture.tags then
+		local tags, tagError = decodeTags(encoded.tags)
+		if not tags then
+			return nil, tagError
 		end
-		for index = 1, encoded.tags.count do
-			local tag, tagError = StringCodec.decode(readIndexed(encoded.tags, index))
-			if not tag then
-				return nil, tagError
-			end
-			preset.tags[index] = tag
+		recipe.tags = tags
+	end
+	if recipe.capture.attributes then
+		local attributes, attributeError = decodeAttributes(encoded.attributes)
+		if not attributes then
+			return nil, attributeError
 		end
+		recipe.attributes = attributes
 	end
 
-	if capture.attributes then
-		if not validCount(encoded.attributes) then
-			return nil, "Invalid attributes record"
-		end
-		for index = 1, encoded.attributes.count do
-			local record = readIndexed(encoded.attributes, index)
-			if type(record) ~= "table" then
-				return nil, "Invalid attribute record"
-			end
-			local attributeName, attributeNameError = StringCodec.decode(record.name)
-			if not attributeName then
-				return nil, attributeNameError
-			elseif preset.attributes[attributeName] ~= nil then
-				return nil, "Duplicate persisted attribute: " .. attributeName
-			end
-			local attributeValue, attributeValueError = AttributeCodec.decode(record.value)
-			if attributeValue == nil then
-				return nil, attributeValueError
-			end
-			preset.attributes[attributeName] = attributeValue
-		end
+	local valid, validationError = PresetValidator.recipe(recipe)
+	if not valid then
+		return nil, validationError
 	end
-
-	return preset
+	return recipe
 end
 
 function PresetSerializer.encodeAll(presets)
@@ -224,11 +293,10 @@ function PresetSerializer.encodeAll(presets)
 	for index, preset in ipairs(presets) do
 		local encoded, encodeError = PresetSerializer.encodePreset(preset)
 		if not encoded then
-			return nil, string.format("Preset %d: %s", index, encodeError)
+			return nil, string.format("Recipe %d: %s", index, encodeError)
 		end
 		records[index] = encoded
 	end
-
 	local container = indexed(records)
 	container.version = Constants.STORE_VERSION
 	return container
@@ -237,22 +305,29 @@ end
 function PresetSerializer.decodeAll(encoded)
 	if encoded == nil then
 		return {}
-	elseif not validCount(encoded) or encoded.version ~= Constants.STORE_VERSION then
+	elseif not validCount(encoded)
+		or (encoded.version ~= Constants.STORE_VERSION and encoded.version ~= Constants.LEGACY_STORE_VERSION) then
 		return nil, "Unsupported or invalid PresetForge storage"
 	end
 
 	local presets = {}
 	local names = {}
 	for index = 1, encoded.count do
-		local preset, decodeError = PresetSerializer.decodePreset(readIndexed(encoded, index))
+		local record = readIndexed(encoded, index)
+		local preset, decodeError
+		if encoded.version == Constants.LEGACY_STORE_VERSION then
+			preset, decodeError = decodeLegacyPreset(record)
+		else
+			preset, decodeError = PresetSerializer.decodePreset(record)
+		end
 		if not preset then
-			return nil, string.format("Preset %d: %s", index, decodeError)
+			return nil, string.format("Recipe %d: %s", index, decodeError)
 		end
-		local nameKey = PresetValidator.nameKey(preset.name)
-		if names[nameKey] then
-			return nil, "Duplicate persisted preset name: " .. preset.name
+		local key = PresetValidator.nameKey(preset.name)
+		if names[key] then
+			return nil, "Duplicate persisted recipe name: " .. preset.name
 		end
-		names[nameKey] = true
+		names[key] = true
 		presets[index] = preset
 	end
 	return presets

@@ -2,64 +2,58 @@
 
 ## Product name
 
-PresetForge - Safe Bulk Part Presets
+PresetForge - Safe Bulk Editor
 
 ## Tagline
 
-**Save once. Preview changes. Apply safely.**
+**Exact fields. Exact targets. Preview every change.**
 
 ## Short description
 
-Save a trusted BasePart setup, preview bulk changes, and apply properties, tags, and attributes with one-step Studio Undo.
+Build reusable property recipes, filter targets, inspect a per-object diff, and apply safely with one-step Studio Undo.
 
 ## Full description
 
-PresetForge turns a configured `BasePart` into a reusable local preset so repeated Studio setup stays fast, visible, and controlled.
+PresetForge turns one trusted Studio object into a focused bulk-edit recipe. Choose exactly which fields matter, target a selection or filtered descendants, inspect every pending before/after change, then Apply in one Undo-compatible operation.
 
-Choose exactly what the preset captures: seven focused behavior properties, tags, attributes, or any combination. Select your targets and run Preview to see compatible parts, ignored instances, and every pending write before the place changes. Apply only after the result looks right.
+The controlled schema covers BaseParts, Studio lights, Sound, ParticleEmitter, Decal, Texture, common GuiObjects, ProximityPrompt, plus Configuration tags and attributes. Persisted data is validated before use; unselected and unrelated data stays untouched.
 
-Save and Preview are read-only. Apply changes only the selected compatible `BasePart` instances and records the complete operation for one-step Studio Undo. Existing unrelated tags and attributes remain intact.
+Keep personal recipes Local or explicitly save transparent Project recipes under ServerStorage for team and version-control workflows. Edit a recipe's field set, recapture values from a compatible source, and read existing PresetForge V1 presets without rebuilding them.
 
-### V1 features
+### PresetForge 2.0
 
-- Local persistent preset library
-- Explicit Properties, Tags, and Attributes capture
-- Read-only change Preview before Apply
-- Bulk Apply across selected BaseParts
-- Mixed selections with non-BaseParts reported as ignored
-- Existing unrelated tags and attributes preserved
-- One-step Undo for each complete Apply
-- Rename and confirmed deletion
-- No network, analytics, telemetry, or external dependencies
+- Property-by-property recipes with source values visible
+- Selection or descendants scope
+- Required class filter plus optional name and tag filters
+- Scanned, compatible, affected, matching, and ignored counts
+- Per-object property, tag, and attribute before/after diff
+- Select affected, matching, ignored, or one result in Studio
+- Edit, recapture, rename, and confirmed delete
+- Local and transparent project libraries with conflict protection
+- V1 local preset read compatibility
+- One Change History recording per Apply
+- No network, analytics, telemetry, backend, AI, or runtime dependencies
 
-### Properties supported in V1
+### Deliberate boundaries
 
-`Anchored`, `CanCollide`, `CanTouch`, `CanQuery`, `Transparency`, `CastShadow`, and `Massless`.
-
-### V1 limitations
-
-- Presets target `BasePart` instances only. Models and other instance types are ignored; descendants are not processed.
-- Names, parents, transforms, position, size, material, and color are not captured.
-- Preset tags are added but do not remove other tags.
-- Preset attributes are added or updated but do not remove unrelated attributes.
-- Presets are local to the current Roblox Studio installation. V1 has no sharing, cloud sync, import, or export.
+PresetForge is not a universal property editor. It does not run arbitrary code, remove unrelated tags or attributes, clean descendants, compose preset stacks, or provide cloud sync. Descendants mode always requires an allowed class filter.
 
 ## Creator Store metadata
 
 - Category: Studio Plugins / Productivity
-- Version: 1.0.0
-- Support note: Uses Roblox Studio local plugin settings and Change History APIs.
+- Version: 2.0.0
+- Support note: Uses Studio plugin settings, ServerStorage for explicitly selected Project recipes, Selection, CollectionService, and Change History.
 - Privacy note: PresetForge makes no network requests and collects no data.
-- Search terms: BasePart presets, bulk properties, batch edit, tags, attributes, part setup, Studio productivity, Roblox Studio plugin
+- Search terms: Roblox bulk editor, property presets, batch edit, descendants filter, Studio diff, tags, attributes, team recipes, safe Undo
 
 ## Three screenshots
 
-Use a neutral gray Studio theme, the PresetForge teal accent, a readable 100% UI scale, and a 16:9 crop. Hide unrelated plugins, account details, private project names, and personal data.
+Use a neutral Studio place, readable 100% UI scale, and a 16:9 crop. Hide account details, private project names, unrelated plugins, and personal data.
 
-1. **Save setup once:** Show one clearly configured Part selected in a neutral blank place. Keep Explorer and Properties visible, and open the Save Preset dialog with a short name plus Properties, Tags, and Attributes selected. Caption: `Save the setup you trust.`
-2. **Preview bulk changes:** Show two target Parts and one Model selected. The widget must visibly report `3 selected`, `2 compatible`, `1 ignored`, plus property, tag, and attribute changes. Caption: `Review every bulk change first.`
-3. **Apply safely + Undo:** Show the updated Parts and the green success feedback with write counts and the one-Undo statement. Keep one unrelated tag or attribute visible in Properties to demonstrate preservation. Caption: `Apply safely. Undo in one step.`
+1. **Choose exact fields:** Select a configured ParticleEmitter or light. Show the Save Recipe editor with a few checked fields, unchecked fields, current values, and Local/Project choice. Caption: `Save only the fields that matter.`
+2. **Filter descendants and inspect:** Select a model, use Descendants with class, name, and tag filters, and show scanned/compatible/affected/matching/ignored counts plus several object paths and before/after rows. Caption: `Know exactly what will change.`
+3. **Apply, Undo, reuse:** Show successful multi-object Apply feedback mentioning one Undo, a Project recipe in the library, and the affected selection highlighted in Studio. Caption: `Apply safely. Reuse with your team.`
 
 ## Thumbnail concept
 
-Use a tight 1:1 crop with the name `PresetForge` in large high-contrast type, a single teal accent, and three simple Part silhouettes moving from one configured source to a small group. Add the short line `Safe bulk presets` only if it remains readable at thumbnail size. Do not show ratings, download counts, price claims, badges, or other invented marketing figures.
+Use `PresetForge` as the primary signal, a compact Studio-style diff row, and the line `Safe Bulk Editor`. Keep the charcoal, teal, amber, and green product palette. Do not show ratings, price claims, download counts, or invented badges.

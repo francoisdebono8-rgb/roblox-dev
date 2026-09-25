@@ -1,0 +1,36 @@
+{
+  "name": "PresetForgeStudioTests",
+  "tree": {
+    "$className": "Model",
+    "PresetForge": {
+      "$className": "Folder",
+      "Modules": {
+        "$path": "../PresetForge/Modules"
+      }
+    },
+    "Tests": {
+      "$className": "Folder",
+      "TestRunner": {
+        "$path": "PluginTestRunner.plugin.luau"
+      },
+      "Schema.spec": {
+        "$path": "Schema.spec.luau"
+      },
+      "CapturePreview.spec": {
+        "$path": "CapturePreview.spec.luau"
+      },
+      "ScopePreview.spec": {
+        "$path": "ScopePreview.spec.luau"
+      },
+      "ApplyService.spec": {
+        "$path": "ApplyService.spec.luau"
+      },
+      "PresetStore.spec": {
+        "$path": "PresetStore.spec.luau"
+      },
+      "ProjectStore.spec": {
+        "$path": "ProjectStore.spec.luau"
+      }
+    }
+  }
+}
