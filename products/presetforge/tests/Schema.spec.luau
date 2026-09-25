@@ -37,6 +37,58 @@ local cases = {
 	{ "ProximityPrompt", "ProximityPrompt", "HoldDuration", 2, 0.1 },
 }
 
+local representatives = {
+	BasePart = "Part",
+	PointLight = "PointLight",
+	SpotLight = "SpotLight",
+	SurfaceLight = "SurfaceLight",
+	Sound = "Sound",
+	ParticleEmitter = "ParticleEmitter",
+	Decal = "Decal",
+	Texture = "Texture",
+	GuiObject = "Frame",
+	ProximityPrompt = "ProximityPrompt",
+	Configuration = "Configuration",
+}
+
+for schemaId, className in pairs(representatives) do
+	local instance = Instance.new(className)
+	local family = assert(Schema.get(schemaId), "missing schema " .. schemaId)
+	assert(Schema.forInstance(instance).id == schemaId, className .. " resolved to the wrong schema")
+	for _, definition in ipairs(family.properties) do
+		local readOk, value = pcall(function()
+			return instance[definition.name]
+		end)
+		assert(readOk, string.format("%s.%s must be readable", className, definition.name))
+		assert(typeof(value) == definition.kind, string.format(
+			"%s.%s expected %s, got %s",
+			className,
+			definition.name,
+			definition.kind,
+			typeof(value)
+		))
+		if definition.kind == "EnumItem" then
+			assert(value.EnumType == Enum[definition.enumType], className .. "." .. definition.name .. " enum mismatch")
+		end
+		local validValue, valueError = Schema.validateValue(schemaId, definition.name, value)
+		assert(validValue, valueError)
+		local writeOk, writeError = pcall(function()
+			instance[definition.name] = value
+		end)
+		assert(writeOk, string.format("%s.%s must be writable: %s", className, definition.name, tostring(writeError)))
+	end
+	for _, filterClass in ipairs(family.filterClasses) do
+		assert(Schema.isClassFilterAllowed(schemaId, filterClass))
+		local creatable, filtered = pcall(Instance.new, filterClass)
+		if creatable then
+			assert(Schema.matchesClassFilter(schemaId, filtered, filterClass))
+			assert(Schema.isCompatible(schemaId, filtered))
+			filtered:Destroy()
+		end
+	end
+	instance:Destroy()
+end
+
 for _, case in ipairs(cases) do
 	local className, schemaId, propertyName, sourceValue, targetValue = table.unpack(case)
 	local source = Instance.new(className)
@@ -95,5 +147,16 @@ valid, validationError = Schema.validateValue("BasePart", "Transparency", "unsaf
 assert(valid == false and validationError:find("finite number") ~= nil)
 valid, validationError = Schema.validateValue("GuiObject", "ZIndex", 1.5)
 assert(valid == false and validationError:find("integer") ~= nil)
+valid, validationError = Schema.validateValue("Texture", "StudsPerTileU", 0)
+assert(valid == false and validationError:find("greater than") ~= nil)
+assert(Schema.validateValue("Texture", "StudsPerTileU", 0.0000001))
+assert(Schema.validateValue("ParticleEmitter", "Rate", -1))
+assert(Schema.validateValue("ProximityPrompt", "HoldDuration", -1))
+valid = Schema.validateValue("PointLight", "Range", 121)
+assert(valid == false)
+valid = Schema.validateValue("Sound", "PlaybackSpeed", 21)
+assert(valid == false)
+valid = Schema.validateValue("GuiObject", "BorderSizePixel", 101)
+assert(valid == false)
 
 return true

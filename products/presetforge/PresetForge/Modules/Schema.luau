@@ -44,7 +44,7 @@ local families = {
 			property("Brightness", "number", { min = 0 }),
 			property("Color", "Color3"),
 			property("Shadows", "boolean"),
-			property("Range", "number", { min = 0 }),
+			property("Range", "number", { min = 0, max = 120 }),
 		},
 	},
 	SpotLight = {
@@ -57,7 +57,7 @@ local families = {
 			property("Brightness", "number", { min = 0 }),
 			property("Color", "Color3"),
 			property("Shadows", "boolean"),
-			property("Range", "number", { min = 0 }),
+			property("Range", "number", { min = 0, max = 120 }),
 			property("Angle", "number", { min = 0, max = 180 }),
 			property("Face", "EnumItem", { enumType = "NormalId" }),
 		},
@@ -72,7 +72,7 @@ local families = {
 			property("Brightness", "number", { min = 0 }),
 			property("Color", "Color3"),
 			property("Shadows", "boolean"),
-			property("Range", "number", { min = 0 }),
+			property("Range", "number", { min = 0, max = 120 }),
 			property("Angle", "number", { min = 0, max = 180 }),
 			property("Face", "EnumItem", { enumType = "NormalId" }),
 		},
@@ -83,9 +83,9 @@ local families = {
 		className = "Sound",
 		filterClasses = { "Sound" },
 		properties = {
-			property("SoundId", "string", { maxBytes = 1024 }),
+			property("SoundId", "string"),
 			property("Volume", "number", { min = 0, max = 10 }),
-			property("PlaybackSpeed", "number", { min = 0 }),
+			property("PlaybackSpeed", "number", { min = 0, max = 20 }),
 			property("Looped", "boolean"),
 			property("RollOffMinDistance", "number", { min = 0 }),
 			property("RollOffMaxDistance", "number", { min = 0 }),
@@ -99,8 +99,8 @@ local families = {
 		filterClasses = { "ParticleEmitter" },
 		properties = {
 			property("Enabled", "boolean"),
-			property("Texture", "string", { maxBytes = 1024 }),
-			property("Rate", "number", { min = 0 }),
+			property("Texture", "string"),
+			property("Rate", "number"),
 			property("Lifetime", "NumberRange"),
 			property("Speed", "NumberRange"),
 			property("Color", "ColorSequence"),
@@ -121,7 +121,7 @@ local families = {
 		exactClass = true,
 		filterClasses = { "Decal" },
 		properties = {
-			property("Texture", "string", { maxBytes = 1024 }),
+			property("ColorMap", "string"),
 			property("Color3", "Color3"),
 			property("Transparency", "number", { min = 0, max = 1 }),
 			property("Face", "EnumItem", { enumType = "NormalId" }),
@@ -133,12 +133,12 @@ local families = {
 		className = "Texture",
 		filterClasses = { "Texture" },
 		properties = {
-			property("Texture", "string", { maxBytes = 1024 }),
+			property("ColorMap", "string"),
 			property("Color3", "Color3"),
 			property("Transparency", "number", { min = 0, max = 1 }),
 			property("Face", "EnumItem", { enumType = "NormalId" }),
-			property("StudsPerTileU", "number", { min = 0.001 }),
-			property("StudsPerTileV", "number", { min = 0.001 }),
+			property("StudsPerTileU", "number", { exclusiveMin = 0 }),
+			property("StudsPerTileV", "number", { exclusiveMin = 0 }),
 			property("OffsetStudsU", "number"),
 			property("OffsetStudsV", "number"),
 		},
@@ -164,7 +164,7 @@ local families = {
 			property("BackgroundColor3", "Color3"),
 			property("BackgroundTransparency", "number", { min = 0, max = 1 }),
 			property("BorderColor3", "Color3"),
-			property("BorderSizePixel", "number", { min = 0, integer = true }),
+			property("BorderSizePixel", "number", { min = 0, max = 100, integer = true }),
 			property("Position", "UDim2"),
 			property("Size", "UDim2"),
 			property("AnchorPoint", "Vector2"),
@@ -181,10 +181,10 @@ local families = {
 		filterClasses = { "ProximityPrompt" },
 		properties = {
 			property("Enabled", "boolean"),
-			property("ActionText", "string", { maxBytes = 256 }),
-			property("ObjectText", "string", { maxBytes = 256 }),
-			property("HoldDuration", "number", { min = 0 }),
-			property("MaxActivationDistance", "number", { min = 0 }),
+			property("ActionText", "string"),
+			property("ObjectText", "string"),
+			property("HoldDuration", "number"),
+			property("MaxActivationDistance", "number"),
 			property("RequiresLineOfSight", "boolean"),
 			property("ClickablePrompt", "boolean"),
 			property("KeyboardKeyCode", "EnumItem", { enumType = "KeyCode" }),
@@ -288,14 +288,14 @@ function Schema.validateValue(schemaId, propertyName, value)
 			return false, propertyName .. " must be an integer"
 		elseif definition.min ~= nil and value < definition.min then
 			return false, propertyName .. " is below its safe minimum"
+		elseif definition.exclusiveMin ~= nil and value <= definition.exclusiveMin then
+			return false, propertyName .. " must be greater than its safe minimum"
 		elseif definition.max ~= nil and value > definition.max then
 			return false, propertyName .. " is above its safe maximum"
 		end
 	elseif definition.kind == "string" then
 		if type(value) ~= "string" then
 			return false, propertyName .. " must be a string"
-		elseif definition.maxBytes and #value > definition.maxBytes then
-			return false, propertyName .. " is too long"
 		end
 	elseif definition.kind == "boolean" then
 		if type(value) ~= "boolean" then

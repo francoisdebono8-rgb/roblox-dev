@@ -22,7 +22,7 @@ Save and Preview never modify the place.
 - **SpotLight / SurfaceLight:** the light fields above plus `Angle` and `Face`.
 - **Sound:** `SoundId`, `Volume`, `PlaybackSpeed`, `Looped`, `RollOffMinDistance`, `RollOffMaxDistance`, `RollOffMode`.
 - **ParticleEmitter:** `Enabled`, `Texture`, `Rate`, `Lifetime`, `Speed`, `Color`, `Transparency`, `Size`, `LightEmission`, `LightInfluence`, `ZOffset`, `Rotation`, `RotSpeed`, `Orientation`.
-- **Decal:** `Texture`, `Color3`, `Transparency`, `Face`.
+- **Decal:** `ColorMap`, `Color3`, `Transparency`, `Face`.
 - **Texture:** Decal fields plus `StudsPerTileU`, `StudsPerTileV`, `OffsetStudsU`, `OffsetStudsV`.
 - **GuiObject:** `Visible`, `Active`, background and border fields, `Position`, `Size`, `AnchorPoint`, `Rotation`, `ZIndex`, `LayoutOrder`, `AutomaticSize`.
 - **ProximityPrompt:** `Enabled`, text fields, hold/distance/line-of-sight fields, input keys, click behavior, and `Exclusivity`.
