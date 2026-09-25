@@ -1,26 +1,36 @@
-# PresetForge quick guide
+# PresetForge 1.0 quick guide
 
-## Save a preset
+PresetForge saves a trusted `BasePart` setup as a local preset, previews every pending change, and applies that setup safely across a Studio selection.
 
-1. Select one configured `BasePart`.
-2. Open PresetForge from the Plugins toolbar.
-3. Choose **Save Preset**.
-4. Enter a unique name and explicitly enable the categories to capture.
-5. Choose **Save**.
+## The one-minute workflow
 
-Properties are limited to Anchored, collision/query/touch behavior, Transparency, CastShadow, and Massless. Save never changes the place.
+1. **Save Preset:** Select one configured `BasePart`, choose **Save Preset**, name it, and enable Properties, Tags, Attributes, or any combination.
+2. **Preview:** Select the target instances, choose the preset, then choose **Preview**. Review the selected, compatible, ignored, and pending change counts.
+3. **Apply:** Choose **Apply** only after the Preview looks right. Non-`BasePart` selections are ignored.
+4. **Undo:** Use Studio **Undo** once to restore the complete Apply. Studio **Redo** reapplies it.
 
-## Preview and apply
+Save and Preview are read-only. Apply stays disabled until a reviewed Preview contains at least one compatible target and one pending change.
 
-1. Select the target instances.
-2. Select a preset in the PresetForge library.
-3. Choose **Preview** and review compatible, ignored, and pending change counts.
-4. Choose **Apply**.
+## Properties supported in V1
 
-Only selected BaseParts are changed. Preset tags are added; existing tags stay. Preset attributes are added or updated; all other attributes stay. Apply is unavailable until a valid Preview contains at least one change.
+- `Anchored`
+- `CanCollide`
+- `CanTouch`
+- `CanQuery`
+- `Transparency`
+- `CastShadow`
+- `Massless`
 
-Use Studio **Undo** once to restore the complete application.
+PresetForge does not capture names, parents, transforms, position, size, material, or color.
 
-## Manage presets
+## Tags and attributes
 
-Use **Rename** to give the selected preset a new unique name. Use **Delete**, then **Confirm**, to remove it. Presets are stored locally for the current Studio installation and do not require a network connection.
+- Preset tags are added when missing. Existing unrelated tags are never removed.
+- Preset attributes are added or updated. Existing unrelated attributes are never removed.
+- A selected Model or other non-`BasePart` instance is reported as ignored; its descendants are not processed.
+
+## Preset library
+
+Use **Rename** to assign a unique name. Use **Delete**, then **Confirm**, to remove a preset.
+
+Presets are stored locally by Roblox Studio on this installation. PresetForge has no cloud sync, import/export, network requests, analytics, or telemetry.

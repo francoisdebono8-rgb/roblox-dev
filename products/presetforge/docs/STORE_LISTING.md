@@ -2,52 +2,64 @@
 
 ## Product name
 
-PresetForge
+PresetForge - Safe Bulk Part Presets
 
 ## Tagline
 
-**Save once. Apply safely.**
+**Save once. Preview changes. Apply safely.**
 
 ## Short description
 
-Save a trusted BasePart setup, preview every pending change, and apply it across a Studio selection with one-step Undo.
+Save a trusted BasePart setup, preview bulk changes, and apply properties, tags, and attributes with one-step Studio Undo.
 
 ## Full description
 
-PresetForge removes repetitive BasePart setup work while keeping every change visible and controlled.
+PresetForge turns a configured `BasePart` into a reusable local preset so repeated Studio setup stays fast, visible, and controlled.
 
-Capture a configured BasePart as a reusable local preset. Choose exactly what belongs in it: a focused set of behavior properties, tags, attributes, or any combination. Select your targets, run Preview, and see how many instances are compatible, what will change, and what Studio will ignore. Apply only when the result looks right.
+Choose exactly what the preset captures: seven focused behavior properties, tags, attributes, or any combination. Select your targets and run Preview to see compatible parts, ignored instances, and every pending write before the place changes. Apply only after the result looks right.
 
-PresetForge keeps existing tags and unrelated attributes intact. Save and Preview never modify your place, and each complete Apply is grouped into one Studio Undo operation.
+Save and Preview are read-only. Apply changes only the selected compatible `BasePart` instances and records the complete operation for one-step Studio Undo. Existing unrelated tags and attributes remain intact.
 
 ### V1 features
 
 - Local persistent preset library
 - Explicit Properties, Tags, and Attributes capture
 - Read-only change Preview before Apply
-- Mixed-selection handling for BaseParts and ignored instances
-- Existing tags and unrelated attributes preserved
-- One-step Undo for a complete Apply
+- Bulk Apply across selected BaseParts
+- Mixed selections with non-BaseParts reported as ignored
+- Existing unrelated tags and attributes preserved
+- One-step Undo for each complete Apply
 - Rename and confirmed deletion
 - No network, analytics, telemetry, or external dependencies
 
-### Captured properties
+### Properties supported in V1
 
-Anchored, CanCollide, CanTouch, CanQuery, Transparency, CastShadow, and Massless.
+`Anchored`, `CanCollide`, `CanTouch`, `CanQuery`, `Transparency`, `CastShadow`, and `Massless`.
 
-PresetForge V1 does not capture transforms, size, material, color, names, or hierarchy.
+### V1 limitations
 
-## Suggested Creator Store metadata
+- Presets target `BasePart` instances only. Models and other instance types are ignored; descendants are not processed.
+- Names, parents, transforms, position, size, material, and color are not captured.
+- Preset tags are added but do not remove other tags.
+- Preset attributes are added or updated but do not remove unrelated attributes.
+- Presets are local to the current Roblox Studio installation. V1 has no sharing, cloud sync, import, or export.
+
+## Creator Store metadata
 
 - Category: Studio Plugins / Productivity
 - Version: 1.0.0
-- Support note: Built for the current Roblox Studio Change History and local plugin settings APIs.
-- Privacy note: PresetForge makes no HTTP requests and collects no data.
+- Support note: Uses Roblox Studio local plugin settings and Change History APIs.
+- Privacy note: PresetForge makes no network requests and collects no data.
+- Search terms: BasePart presets, bulk properties, batch edit, tags, attributes, part setup, Studio productivity, Roblox Studio plugin
 
-## Three-screenshot plan
+## Three screenshots
 
-1. **Save the source setup**: a clean Studio viewport with one BasePart selected and the Save Preset dialog open. Show a concise preset name and the three explicit capture choices. Caption: `Capture only what you choose.`
-2. **Preview before changing anything**: several selected BaseParts plus one ignored Model, with the DockWidget showing selected, compatible, ignored, property, tag, and attribute counts. Caption: `Know exactly what will change.`
-3. **Apply with confidence**: the resulting BaseParts in the viewport and the green success message visible, including the one-Undo statement. Keep Explorer and Properties visible enough to show preserved custom data. Caption: `Apply across a selection. Undo in one step.`
+Use a neutral gray Studio theme, the PresetForge teal accent, a readable 100% UI scale, and a 16:9 crop. Hide unrelated plugins, account details, private project names, and personal data.
 
-Use a neutral gray Studio theme, one teal accent in PresetForge, a 16:9 crop, readable 100% UI scale, and no unrelated plugins or personal project names in frame.
+1. **Save setup once:** Show one clearly configured Part selected in a neutral blank place. Keep Explorer and Properties visible, and open the Save Preset dialog with a short name plus Properties, Tags, and Attributes selected. Caption: `Save the setup you trust.`
+2. **Preview bulk changes:** Show two target Parts and one Model selected. The widget must visibly report `3 selected`, `2 compatible`, `1 ignored`, plus property, tag, and attribute changes. Caption: `Review every bulk change first.`
+3. **Apply safely + Undo:** Show the updated Parts and the green success feedback with write counts and the one-Undo statement. Keep one unrelated tag or attribute visible in Properties to demonstrate preservation. Caption: `Apply safely. Undo in one step.`
+
+## Thumbnail concept
+
+Use a tight 1:1 crop with the name `PresetForge` in large high-contrast type, a single teal accent, and three simple Part silhouettes moving from one configured source to a small group. Add the short line `Safe bulk presets` only if it remains readable at thumbnail size. Do not show ratings, download counts, price claims, badges, or other invented marketing figures.

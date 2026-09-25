@@ -21,8 +21,13 @@ local function sortedKeys(values)
 	return keys
 end
 
+local function countLabel(count, singular, plural)
+	return string.format("%d %s", count, count == 1 and singular or plural or singular .. "s")
+end
+
 local function cleanValue(value)
-	local text = tostring(value):gsub("[%c]", " ")
+	local text = if type(value) == "number" then string.format("%.6g", value) else tostring(value)
+	text = text:gsub("[%c]", " ")
 	if #text > 72 then
 		return text:sub(1, 69) .. "..."
 	end
@@ -262,12 +267,11 @@ function Controller:_apply()
 
 	self._preview = self._previewService:build(preset, self:_selection())
 	self:_setFeedback(string.format(
-		"Applied to %d BasePart%s: %d properties, %d tags, %d attributes. One Undo restores the previous state.",
-		currentPreview.compatibleCount,
-		currentPreview.compatibleCount == 1 and "" or "s",
-		result.properties,
-		result.tags,
-		result.attributes
+		"Applied to %s: %s, %s, %s. One Undo restores the previous state.",
+		countLabel(currentPreview.compatibleCount, "BasePart"),
+		countLabel(result.properties, "property", "properties"),
+		countLabel(result.tags, "tag"),
+		countLabel(result.attributes, "attribute")
 	), "success")
 	self:_renderDetail()
 end
@@ -390,7 +394,7 @@ function Controller:_previewText()
 	for _, attributeName in ipairs(sortedKeys(preview.attributeChanges)) do
 		local changes = preview.attributeChanges[attributeName]
 		lines[#lines + 1] = string.format(
-			"Attribute %s = %s: %d add, %d update",
+			"Attribute %s = %s: %d to add, %d to update",
 			attributeName,
 			cleanValue(preset.attributes[attributeName]),
 			changes.added,
@@ -435,10 +439,10 @@ function Controller:_renderDetail()
 
 	self._ui.detailName.Text = preset.name
 	self._ui.detailCounts.Text = string.format(
-		"%d properties | %d tags | %d attributes",
-		preset.capture.properties and #Constants.PROPERTIES or 0,
-		preset.capture.tags and #preset.tags or 0,
-		preset.capture.attributes and countMap(preset.attributes) or 0
+		"%s | %s | %s",
+		countLabel(preset.capture.properties and #Constants.PROPERTIES or 0, "property", "properties"),
+		countLabel(preset.capture.tags and #preset.tags or 0, "tag"),
+		countLabel(preset.capture.attributes and countMap(preset.attributes) or 0, "attribute")
 	)
 	self._ui.capturedText.Text = self:_capturedText(preset)
 	self._ui.previewText.Text = self:_previewText()
