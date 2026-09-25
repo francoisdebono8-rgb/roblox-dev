@@ -1,0 +1,539 @@
+{
+  "name": "PresetForge-Demo",
+  "tree": {
+    "$className": "DataModel",
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Ambient": [0.12, 0.14, 0.18],
+        "Brightness": 1.5,
+        "ClockTime": 18.5,
+        "OutdoorAmbient": [0.2, 0.22, 0.28]
+      }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "PresetForgeProjectRecipes": {
+        "$className": "Folder",
+        "$properties": {
+          "Attributes": {
+            "FormatVersion": { "Float64": 2 }
+          }
+        },
+        "Teal Accent Lights": {
+          "$className": "Configuration",
+          "$properties": {
+            "Attributes": {
+              "FormatVersion": { "Float64": 2 },
+              "RecipeName": { "String": "Teal Accent Lights" },
+              "SchemaId": { "String": "PointLight" },
+              "CaptureTags": { "Bool": true },
+              "CaptureAttributes": { "Bool": true }
+            }
+          },
+          "Properties": {
+            "$className": "Configuration",
+            "$properties": {
+              "Attributes": {
+                "Brightness": { "Float64": 3 },
+                "Color": { "Color3": [0.16, 0.86, 0.75] },
+                "Range": { "Float64": 18 }
+              }
+            }
+          },
+          "Tags": {
+            "$className": "Folder",
+            "Tag_001": {
+              "$className": "StringValue",
+              "$properties": {
+                "Value": "PF_DemoAccent"
+              }
+            }
+          },
+          "Attributes": {
+            "$className": "Configuration",
+            "$properties": {
+              "Attributes": {
+                "LightingProfile": { "String": "Teal Accent" }
+              }
+            }
+          }
+        },
+        "Safe Display Parts": {
+          "$className": "Configuration",
+          "$properties": {
+            "Attributes": {
+              "FormatVersion": { "Float64": 2 },
+              "RecipeName": { "String": "Safe Display Parts" },
+              "SchemaId": { "String": "BasePart" },
+              "CaptureTags": { "Bool": true },
+              "CaptureAttributes": { "Bool": true }
+            }
+          },
+          "Properties": {
+            "$className": "Configuration",
+            "$properties": {
+              "Attributes": {
+                "Anchored": { "Bool": true },
+                "CanCollide": { "Bool": false },
+                "CastShadow": { "Bool": false },
+                "Transparency": { "Float64": 0.08 }
+              }
+            }
+          },
+          "Tags": {
+            "$className": "Folder",
+            "Tag_001": {
+              "$className": "StringValue",
+              "$properties": {
+                "Value": "PF_DemoDisplay"
+              }
+            }
+          },
+          "Attributes": {
+            "$className": "Configuration",
+            "$properties": {
+              "Attributes": {
+                "DisplayProfile": { "String": "Safe Showcase" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": {
+        "Gravity": 196.2
+      },
+      "Camera": {
+        "$className": "Camera",
+        "$properties": {
+          "CFrame": [0, 30, 82, 1, 0, 0, 0, 0.96, 0.28, 0, -0.28, 0.96],
+          "FieldOfView": 55
+        }
+      },
+      "PresetForge-Demo": {
+        "$className": "Model",
+        "$properties": {
+          "Attributes": {
+            "Purpose": { "String": "Creator Store screenshots" },
+            "Version": { "String": "2.0.0" }
+          }
+        },
+        "Ground": {
+          "$className": "Part",
+          "$properties": {
+            "Anchored": true,
+            "CanCollide": true,
+            "Color": [0.055, 0.065, 0.085],
+            "Material": "SmoothPlastic",
+            "Size": [120, 1, 38],
+            "CFrame": [0, -0.5, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+          }
+        },
+        "BrandHeader": {
+          "$className": "Part",
+          "$properties": {
+            "Anchored": true,
+            "CanCollide": false,
+            "Color": [0.075, 0.09, 0.12],
+            "Material": "SmoothPlastic",
+            "Size": [72, 7, 0.6],
+            "CFrame": [0, 13, -16, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+          },
+          "Label": {
+            "$className": "SurfaceGui",
+            "$properties": {
+              "AlwaysOnTop": true,
+              "Face": "Front",
+              "LightInfluence": 0,
+              "PixelsPerStud": 45
+            },
+            "Text": {
+              "$className": "TextLabel",
+              "$properties": {
+                "BackgroundTransparency": 1,
+                "Size": { "UDim2": [[1, 0], [1, 0]] },
+                "Text": "PRESETFORGE 2.0   |   SAFE BULK EDITOR",
+                "TextColor3": [0.94, 0.97, 1],
+                "TextScaled": true,
+                "TextWrapped": true
+              }
+            }
+          }
+        },
+        "01_ChooseExactFields": {
+          "$className": "Model",
+          "$properties": {
+            "Attributes": {
+              "Screenshot": { "String": "Choose exact fields" },
+              "SelectPath": { "String": "SourceFixture/PF_Source_AccentLight" }
+            }
+          },
+          "Stage": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "Color": [0.1, 0.12, 0.16],
+              "Material": "SmoothPlastic",
+              "Size": [34, 0.8, 28],
+              "CFrame": [-40, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            }
+          },
+          "Header": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "CanCollide": false,
+              "Color": [0.16, 0.86, 0.75],
+              "Material": "Neon",
+              "Size": [28, 4, 0.5],
+              "CFrame": [-40, 8, -12, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            },
+            "Label": {
+              "$className": "SurfaceGui",
+              "$properties": {
+                "AlwaysOnTop": true,
+                "Face": "Front",
+                "LightInfluence": 0,
+                "PixelsPerStud": 50
+              },
+              "Text": {
+                "$className": "TextLabel",
+                "$properties": {
+                  "BackgroundTransparency": 1,
+                  "Size": { "UDim2": [[1, 0], [1, 0]] },
+                  "Text": "01  CHOOSE EXACT FIELDS",
+                  "TextColor3": [0.02, 0.08, 0.08],
+                  "TextScaled": true
+                }
+              }
+            }
+          },
+          "SourceFixture": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "CanCollide": true,
+              "Color": [0.13, 0.16, 0.22],
+              "Material": "Metal",
+              "Size": [5, 7, 5],
+              "CFrame": [-40, 3.9, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+              "Attributes": {
+                "FixtureId": { "String": "SOURCE-A01" },
+                "Role": { "String": "Recipe source" }
+              },
+              "Tags": ["PF_DemoSource"]
+            },
+            "PF_Source_AccentLight": {
+              "$className": "PointLight",
+              "$properties": {
+                "Brightness": 3,
+                "Color": [0.16, 0.86, 0.75],
+                "Enabled": true,
+                "Range": 18,
+                "Shadows": true,
+                "Attributes": {
+                  "LightingProfile": { "String": "Teal Accent" },
+                  "Purpose": { "String": "Screenshot source" }
+                },
+                "Tags": ["PF_DemoAccent", "PF_DemoSource"]
+              }
+            }
+          },
+          "TealSwatch": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "CanCollide": false,
+              "Color": [0.16, 0.86, 0.75],
+              "Material": "Neon",
+              "Size": [12, 0.5, 12],
+              "CFrame": [-40, 0.7, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            }
+          }
+        },
+        "02_FilterPreview": {
+          "$className": "Model",
+          "$properties": {
+            "Attributes": {
+              "Screenshot": { "String": "Filter + Preview" },
+              "ClassFilter": { "String": "PointLight" },
+              "NameFilter": { "String": "Accent" },
+              "TagFilter": { "String": "PF_DemoAccent" }
+            }
+          },
+          "Stage": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "Color": [0.1, 0.12, 0.16],
+              "Material": "SmoothPlastic",
+              "Size": [34, 0.8, 28],
+              "CFrame": [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            }
+          },
+          "Header": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "CanCollide": false,
+              "Color": [0.96, 0.69, 0.2],
+              "Material": "Neon",
+              "Size": [28, 4, 0.5],
+              "CFrame": [0, 8, -12, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            },
+            "Label": {
+              "$className": "SurfaceGui",
+              "$properties": {
+                "AlwaysOnTop": true,
+                "Face": "Front",
+                "LightInfluence": 0,
+                "PixelsPerStud": 50
+              },
+              "Text": {
+                "$className": "TextLabel",
+                "$properties": {
+                  "BackgroundTransparency": 1,
+                  "Size": { "UDim2": [[1, 0], [1, 0]] },
+                  "Text": "02  FILTER + PREVIEW",
+                  "TextColor3": [0.1, 0.06, 0.01],
+                  "TextScaled": true
+                }
+              }
+            }
+          },
+          "PreviewTargets": {
+            "$className": "Model",
+            "$properties": {
+              "Attributes": {
+                "SelectForScreenshot": { "Bool": true }
+              }
+            },
+            "Fixture_Left": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": true,
+                "Color": [0.22, 0.25, 0.32],
+                "Material": "Metal",
+                "Size": [4, 6, 4],
+                "CFrame": [-10, 3.4, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+              },
+              "Accent_Left": {
+                "$className": "PointLight",
+                "$properties": {
+                  "Brightness": 0.7,
+                  "Color": [1, 0.55, 0.24],
+                  "Range": 8,
+                  "Shadows": false,
+                  "Attributes": {
+                    "LightingProfile": { "String": "Warm Draft" },
+                    "Zone": { "String": "Preview" }
+                  },
+                  "Tags": ["PF_DemoAccent"]
+                }
+              }
+            },
+            "Fixture_Center": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": true,
+                "Color": [0.22, 0.25, 0.32],
+                "Material": "Metal",
+                "Size": [4, 8, 4],
+                "CFrame": [0, 4.4, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+              },
+              "Accent_Center": {
+                "$className": "PointLight",
+                "$properties": {
+                  "Brightness": 1.4,
+                  "Color": [0.72, 0.82, 1],
+                  "Range": 11,
+                  "Shadows": false,
+                  "Attributes": {
+                    "LightingProfile": { "String": "Cool Draft" },
+                    "Zone": { "String": "Preview" }
+                  },
+                  "Tags": ["PF_DemoAccent"]
+                }
+              }
+            },
+            "Fixture_Right": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": true,
+                "Color": [0.22, 0.25, 0.32],
+                "Material": "Metal",
+                "Size": [4, 6, 4],
+                "CFrame": [10, 3.4, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+              },
+              "Accent_Right": {
+                "$className": "PointLight",
+                "$properties": {
+                  "Brightness": 3,
+                  "Color": [0.16, 0.86, 0.75],
+                  "Range": 18,
+                  "Shadows": true,
+                  "Attributes": {
+                    "LightingProfile": { "String": "Teal Accent" },
+                    "Zone": { "String": "Preview" }
+                  },
+                  "Tags": ["PF_DemoAccent"]
+                }
+              }
+            },
+            "Fixture_Utility": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": true,
+                "Color": [0.16, 0.18, 0.22],
+                "Material": "Metal",
+                "Size": [3, 3, 3],
+                "CFrame": [0, 1.9, 9, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+              },
+              "Utility_Back": {
+                "$className": "PointLight",
+                "$properties": {
+                  "Brightness": 0.5,
+                  "Color": [1, 1, 1],
+                  "Range": 6,
+                  "Attributes": {
+                    "Zone": { "String": "Utility" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "03_ApplySafely": {
+          "$className": "Model",
+          "$properties": {
+            "Attributes": {
+              "Screenshot": { "String": "Apply safely" },
+              "ClassFilter": { "String": "Part" },
+              "NameFilter": { "String": "Display_" },
+              "TagFilter": { "String": "PF_DemoDisplay" }
+            }
+          },
+          "Stage": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "Color": [0.1, 0.12, 0.16],
+              "Material": "SmoothPlastic",
+              "Size": [34, 0.8, 28],
+              "CFrame": [40, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            }
+          },
+          "Header": {
+            "$className": "Part",
+            "$properties": {
+              "Anchored": true,
+              "CanCollide": false,
+              "Color": [0.35, 0.88, 0.48],
+              "Material": "Neon",
+              "Size": [28, 4, 0.5],
+              "CFrame": [40, 8, -12, 1, 0, 0, 0, 1, 0, 0, 0, 1]
+            },
+            "Label": {
+              "$className": "SurfaceGui",
+              "$properties": {
+                "AlwaysOnTop": true,
+                "Face": "Front",
+                "LightInfluence": 0,
+                "PixelsPerStud": 50
+              },
+              "Text": {
+                "$className": "TextLabel",
+                "$properties": {
+                  "BackgroundTransparency": 1,
+                  "Size": { "UDim2": [[1, 0], [1, 0]] },
+                  "Text": "03  APPLY SAFELY",
+                  "TextColor3": [0.02, 0.09, 0.04],
+                  "TextScaled": true
+                }
+              }
+            }
+          },
+          "ApplyTargets": {
+            "$className": "Model",
+            "$properties": {
+              "Attributes": {
+                "SelectForScreenshot": { "Bool": true }
+              }
+            },
+            "Display_A": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": false,
+                "CanCollide": true,
+                "CastShadow": true,
+                "Color": [0.2, 0.55, 0.95],
+                "Material": "Glass",
+                "Transparency": 0.28,
+                "Size": [7, 7, 7],
+                "CFrame": [30, 4, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "Attributes": {
+                  "DisplayProfile": { "String": "Draft A" },
+                  "OwnerNote": { "String": "Preserve me" }
+                },
+                "Tags": ["PF_DemoDisplay", "KeepTag"]
+              }
+            },
+            "Display_B": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": false,
+                "CanCollide": true,
+                "CastShadow": true,
+                "Color": [0.95, 0.38, 0.28],
+                "Material": "Neon",
+                "Transparency": 0.18,
+                "Size": [7, 9, 7],
+                "CFrame": [40, 5, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "Attributes": {
+                  "DisplayProfile": { "String": "Draft B" },
+                  "OwnerNote": { "String": "Preserve me" }
+                },
+                "Tags": ["PF_DemoDisplay", "KeepTag"]
+              }
+            },
+            "Display_C": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": false,
+                "CanCollide": true,
+                "CastShadow": true,
+                "Color": [0.68, 0.4, 0.95],
+                "Material": "Metal",
+                "Transparency": 0.35,
+                "Size": [7, 6, 7],
+                "CFrame": [50, 3.5, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "Attributes": {
+                  "DisplayProfile": { "String": "Draft C" },
+                  "OwnerNote": { "String": "Preserve me" }
+                },
+                "Tags": ["PF_DemoDisplay", "KeepTag"]
+              }
+            },
+            "DoNotTouch": {
+              "$className": "Part",
+              "$properties": {
+                "Anchored": true,
+                "CanCollide": true,
+                "Color": [0.32, 0.34, 0.38],
+                "Material": "Concrete",
+                "Size": [5, 3, 5],
+                "CFrame": [40, 1.9, 10, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+                "Attributes": {
+                  "OwnerNote": { "String": "Excluded by filters" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
