@@ -1,0 +1,18 @@
+2026-09-26T12:01:39.697Z,318.697815,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] all nine classes / read-only preview / world poses / native Undo Redo
+2026-09-26T12:01:39.698Z,318.698364,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests] pose delta Handle = 0
+2026-09-26T12:01:39.698Z,318.698395,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests] pose delta Body = 9.612164149075397e-07
+2026-09-26T12:01:39.698Z,318.698395,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests] pose delta Slide = 9.556671329846722e-07
+2026-09-26T12:01:39.730Z,318.730743,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] gun/tool batch static + moving with one Undo
+2026-09-26T12:01:39.763Z,318.763824,6f71f000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] door hinge existing attachments preserved
+2026-09-26T12:01:39.830Z,318.830780,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] rope and spring lengths / edit properties
+2026-09-26T12:01:39.831Z,318.831543,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] existing connections, reverse duplicates and indirect cycles blocked
+2026-09-26T12:01:39.832Z,318.832031,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] stale preview rejects movement, new joints and attachment edits
+2026-09-26T12:01:39.832Z,318.832245,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] inspection finds externally parented and broken joints
+2026-09-26T12:01:39.863Z,318.863770,6dfbf000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] C0 C1 edits / reset / native Undo
+2026-09-26T12:01:39.899Z,318.899139,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] confirmed batch removal / preserve attachments / native Undo
+2026-09-26T12:01:39.900Z,318.900238,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] invalid fields, endpoints and duplicates rejected
+2026-09-26T12:01:39.900Z,318.900604,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] recording unavailable and commit failure rollback
+2026-09-26T12:01:39.901Z,318.901031,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] UI invalidation / removal children / unary inspect / detached endpoints
+2026-09-26T12:01:39.901Z,318.901337,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] every exposed property is writable in this Studio engine
+2026-09-26T12:01:39.901Z,318.901825,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests][PASS] edit and removal roll back after injected commit failure
+2026-09-26T12:01:39.901Z,318.901917,6e9cb000,6,Info [FLog::CreatorOutput] [JointForgeTests] 14 passed / 0 failed

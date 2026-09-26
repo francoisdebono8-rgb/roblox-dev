@@ -1,0 +1,8 @@
+{
+  "name": "JointForge",
+  "tree": {
+    "$className": "Model",
+    "Main": { "$path": "JointForge/Main.plugin.luau" },
+    "Modules": { "$path": "JointForge/Modules" }
+  }
+}

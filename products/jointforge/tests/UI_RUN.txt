@@ -1,0 +1,2 @@
+2026-09-26T12:24:36.253Z,928.253174,71d93000,6,Info [FLog::CreatorOutput] [JointForgeUI] PASS actual Batch buttons created 2 WeldConstraints + 2 Motor6Ds, poses and Anchored preserved
+2026-09-26T12:25:23.735Z,975.735046,6dceb000,6,Info [FLog::CreatorOutput] [JointForgeUI] PASS one Edit Undo removed all four joints and restored poses and Anchored

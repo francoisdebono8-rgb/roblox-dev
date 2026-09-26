@@ -1,0 +1,845 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Workspace" referent="JF1">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <Ref name="CurrentCamera">JF37</Ref>
+    </Properties>
+    <Item class="Part" referent="JF3">
+      <Properties>
+        <string name="Name">StudioFloor</string>
+        <CoordinateFrame name="CFrame">
+          <X>0</X>
+          <Y>-0.5</Y>
+          <Z>0</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <Vector3 name="size">
+          <X>80</X>
+          <Y>1</Y>
+          <Z>45</Z>
+        </Vector3>
+        <Color3 name="Color">
+          <R>0.8745098039215686</R>
+          <G>0.8901960784313725</G>
+          <B>0.9019607843137255</B>
+        </Color3>
+        <bool name="Anchored">true</bool>
+        <token name="Material">256</token>
+        <token name="TopSurface">0</token>
+        <token name="BottomSurface">0</token>
+      </Properties>
+    </Item>
+    <Item class="Model" referent="JF4">
+      <Properties>
+        <string name="Name">01_BatchTool</string>
+        <Ref name="PrimaryPart">JF6</Ref>
+      </Properties>
+      <Item class="Part" referent="JF5">
+        <Properties>
+          <string name="Name">DisplayBase</string>
+          <CoordinateFrame name="CFrame">
+            <X>-18</X>
+            <Y>0.25</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>12</X>
+            <Y>0.5</Y>
+            <Z>10</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.7725490196078432</R>
+            <G>0.803921568627451</G>
+            <B>0.8274509803921568</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF6">
+        <Properties>
+          <string name="Name">Handle</string>
+          <CoordinateFrame name="CFrame">
+            <X>-18</X>
+            <Y>2.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>1.1</X>
+            <Y>3.2</Y>
+            <Z>1.5</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF7">
+        <Properties>
+          <string name="Name">Body</string>
+          <CoordinateFrame name="CFrame">
+            <X>-17</X>
+            <Y>4.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>4.6</X>
+            <Y>2</Y>
+            <Z>2.3</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.15294117647058825</R>
+            <G>0.615686274509804</G>
+            <B>0.5490196078431373</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF8">
+        <Properties>
+          <string name="Name">Battery</string>
+          <CoordinateFrame name="CFrame">
+            <X>-18</X>
+            <Y>0.9</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>2.5</X>
+            <Y>0.7</Y>
+            <Z>2.4</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF9">
+        <Properties>
+          <string name="Name">Chuck</string>
+          <CoordinateFrame name="CFrame">
+            <X>-14</X>
+            <Y>4.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>1.3</X>
+            <Y>1.35</Y>
+            <Z>1.35</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.9607843137254902</R>
+            <G>0.7568627450980392</G>
+            <B>0.27450980392156865</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF10">
+        <Properties>
+          <string name="Name">Trigger</string>
+          <CoordinateFrame name="CFrame">
+            <X>-17.1</X>
+            <Y>2.9</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>0.65</X>
+            <Y>1</Y>
+            <Z>0.8</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.8823529411764706</R>
+            <G>0.36470588235294116</G>
+            <B>0.30980392156862746</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="JF11">
+      <Properties>
+        <string name="Name">02_ExistingGraph</string>
+        <Ref name="PrimaryPart">JF13</Ref>
+      </Properties>
+      <Item class="Part" referent="JF12">
+        <Properties>
+          <string name="Name">DisplayBase</string>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>0.25</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>12</X>
+            <Y>0.5</Y>
+            <Z>10</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.7725490196078432</R>
+            <G>0.803921568627451</G>
+            <B>0.8274509803921568</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF13">
+        <Properties>
+          <string name="Name">Handle</string>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>2.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>1.1</X>
+            <Y>3.2</Y>
+            <Z>1.5</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="WeldConstraint" referent="JF18">
+          <Properties>
+            <string name="Name">Existing_Body</string>
+            <Ref name="Part0">JF13</Ref>
+            <Ref name="Part1">JF14</Ref>
+          </Properties>
+        </Item>
+        <Item class="WeldConstraint" referent="JF19">
+          <Properties>
+            <string name="Name">Existing_Battery</string>
+            <Ref name="Part0">JF13</Ref>
+            <Ref name="Part1">JF15</Ref>
+          </Properties>
+        </Item>
+        <Item class="Motor6D" referent="JF20">
+          <Properties>
+            <string name="Name">Existing_ChuckMotor</string>
+            <Ref name="Part0">JF13</Ref>
+            <Ref name="Part1">JF16</Ref>
+            <CoordinateFrame name="C0">
+              <X>4</X>
+              <Y>2</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+        <Item class="Weld" referent="JF21">
+          <Properties>
+            <string name="Name">MissingEndpoint_InspectMe</string>
+            <Ref name="Part0">JF17</Ref>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="JF14">
+        <Properties>
+          <string name="Name">Body</string>
+          <CoordinateFrame name="CFrame">
+            <X>1</X>
+            <Y>4.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>4.6</X>
+            <Y>2</Y>
+            <Z>2.3</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.15294117647058825</R>
+            <G>0.615686274509804</G>
+            <B>0.5490196078431373</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF15">
+        <Properties>
+          <string name="Name">Battery</string>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>0.9</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>2.5</X>
+            <Y>0.7</Y>
+            <Z>2.4</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF16">
+        <Properties>
+          <string name="Name">Chuck</string>
+          <CoordinateFrame name="CFrame">
+            <X>4</X>
+            <Y>4.4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>1.3</X>
+            <Y>1.35</Y>
+            <Z>1.35</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.9607843137254902</R>
+            <G>0.7568627450980392</G>
+            <B>0.27450980392156865</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="JF17">
+        <Properties>
+          <string name="Name">Trigger</string>
+          <CoordinateFrame name="CFrame">
+            <X>0.9</X>
+            <Y>2.9</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>0.65</X>
+            <Y>1</Y>
+            <Z>0.8</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.8823529411764706</R>
+            <G>0.36470588235294116</G>
+            <B>0.30980392156862746</B>
+          </Color3>
+          <bool name="Anchored">false</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="JF22">
+      <Properties>
+        <string name="Name">03_DoorHinge</string>
+      </Properties>
+      <Item class="Part" referent="JF23">
+        <Properties>
+          <string name="Name">Frame</string>
+          <CoordinateFrame name="CFrame">
+            <X>13</X>
+            <Y>4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>0.7</X>
+            <Y>8</Y>
+            <Z>1</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="Attachment" referent="JF25">
+          <Properties>
+            <string name="Name">HingePivot0</string>
+            <CoordinateFrame name="CFrame">
+              <X>0.35</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>0</R00>
+              <R01>-1</R01>
+              <R02>0</R02>
+              <R10>1</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="JF24">
+        <Properties>
+          <string name="Name">Door</string>
+          <CoordinateFrame name="CFrame">
+            <X>16</X>
+            <Y>4</Y>
+            <Z>0</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>5.3</X>
+            <Y>7.6</Y>
+            <Z>0.65</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.15294117647058825</R>
+            <G>0.615686274509804</G>
+            <B>0.5490196078431373</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="Attachment" referent="JF26">
+          <Properties>
+            <string name="Name">HingePivot1</string>
+            <CoordinateFrame name="CFrame">
+              <X>-2.65</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>0</R00>
+              <R01>-1</R01>
+              <R02>0</R02>
+              <R10>1</R10>
+              <R11>0</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Model" referent="JF27">
+      <Properties>
+        <string name="Name">04_RopeSpring</string>
+      </Properties>
+      <Item class="Part" referent="JF28">
+        <Properties>
+          <string name="Name">Beam</string>
+          <CoordinateFrame name="CFrame">
+            <X>0</X>
+            <Y>9</Y>
+            <Z>-13</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>13</X>
+            <Y>0.7</Y>
+            <Z>1</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.24313725490196078</R>
+            <G>0.2627450980392157</G>
+            <B>0.2823529411764706</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="Attachment" referent="JF30">
+          <Properties>
+            <string name="Name">RopeConstraintTop</string>
+            <CoordinateFrame name="CFrame">
+              <X>-4</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+        <Item class="RopeConstraint" referent="JF32">
+          <Properties>
+            <string name="Name">Existing_RopeConstraint</string>
+            <Ref name="Attachment0">JF30</Ref>
+            <Ref name="Attachment1">JF31</Ref>
+            <bool name="Visible">true</bool>
+            <float name="Length">6</float>
+          </Properties>
+        </Item>
+        <Item class="Attachment" referent="JF34">
+          <Properties>
+            <string name="Name">SpringConstraintTop</string>
+            <CoordinateFrame name="CFrame">
+              <X>4</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+        <Item class="SpringConstraint" referent="JF36">
+          <Properties>
+            <string name="Name">Existing_SpringConstraint</string>
+            <Ref name="Attachment0">JF34</Ref>
+            <Ref name="Attachment1">JF35</Ref>
+            <bool name="Visible">true</bool>
+            <float name="FreeLength">6</float>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="JF29">
+        <Properties>
+          <string name="Name">RopeConstraintLoad</string>
+          <CoordinateFrame name="CFrame">
+            <X>-4</X>
+            <Y>3</Y>
+            <Z>-13</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>2.5</X>
+            <Y>2.5</Y>
+            <Z>2.5</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.9607843137254902</R>
+            <G>0.7568627450980392</G>
+            <B>0.27450980392156865</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="Attachment" referent="JF31">
+          <Properties>
+            <string name="Name">RopeConstraintBottom</string>
+            <CoordinateFrame name="CFrame">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="JF33">
+        <Properties>
+          <string name="Name">SpringConstraintLoad</string>
+          <CoordinateFrame name="CFrame">
+            <X>4</X>
+            <Y>3</Y>
+            <Z>-13</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <Vector3 name="size">
+            <X>2.5</X>
+            <Y>2.5</Y>
+            <Z>2.5</Z>
+          </Vector3>
+          <Color3 name="Color">
+            <R>0.8823529411764706</R>
+            <G>0.36470588235294116</G>
+            <B>0.30980392156862746</B>
+          </Color3>
+          <bool name="Anchored">true</bool>
+          <token name="Material">256</token>
+          <token name="TopSurface">0</token>
+          <token name="BottomSurface">0</token>
+        </Properties>
+        <Item class="Attachment" referent="JF35">
+          <Properties>
+            <string name="Name">SpringConstraintBottom</string>
+            <CoordinateFrame name="CFrame">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+              <R00>1</R00>
+              <R01>0</R01>
+              <R02>0</R02>
+              <R10>0</R10>
+              <R11>1</R11>
+              <R12>0</R12>
+              <R20>0</R20>
+              <R21>0</R21>
+              <R22>1</R22>
+            </CoordinateFrame>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+    <Item class="Camera" referent="JF37">
+      <Properties>
+        <string name="Name">Camera</string>
+        <CoordinateFrame name="CFrame">
+          <X>0</X>
+          <Y>22</Y>
+          <Z>40</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>0.9063077870366499</R11>
+          <R12>0.42261826174069944</R12>
+          <R20>0</R20>
+          <R21>-0.42261826174069944</R21>
+          <R22>0.9063077870366499</R22>
+        </CoordinateFrame>
+        <CoordinateFrame name="Focus">
+          <X>0</X>
+          <Y>3</Y>
+          <Z>0</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <float name="FieldOfView">55</float>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="Lighting" referent="JF2">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <token name="Technology">3</token>
+      <float name="ClockTime">14</float>
+      <float name="Brightness">2</float>
+      <Color3 name="Ambient">
+        <R>0.5</R>
+        <G>0.5</G>
+        <B>0.5</B>
+      </Color3>
+    </Properties>
+  </Item>
+</roblox>

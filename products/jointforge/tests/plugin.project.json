@@ -1,0 +1,9 @@
+{
+  "name": "JointForgeTests",
+  "tree": {
+    "$className": "Model",
+    "Runner": { "$path": "Runner.plugin.luau" },
+    "Suite": { "$path": "Suite.luau" },
+    "Modules": { "$path": "../JointForge/Modules" }
+  }
+}

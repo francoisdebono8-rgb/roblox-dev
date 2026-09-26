@@ -1,0 +1,13 @@
+{
+  "artifact": "JointForge-v1.0.0.rbxm",
+  "sha256": "24f43cf04c7d4e8cf92310b3c725f827e36b1ea22d9806e20325a4af4d2633bd",
+  "source_sha256": {
+    "Graph": "2bbac1f11d9ce7e2b00ba14d5a9b36094acdb1cc3b852d9f259a5f802eb11f51",
+    "Main": "215b251e2758db2f6fb3e12723c3c67ef4f66fcd3d4f805ced1936cffde559c4",
+    "Planner": "3663f10a5a8d8324d4707edf73b16f0cd2c1459e762106583a096bcd15c34b14",
+    "Schema": "6e407e9538d2f43eba110ecb69dcfcfca918a498208812a3ebab548bbe3f7db6",
+    "Transaction": "1afcff0a37a321711dd754d9834742b2f0d266d644a7851c752d54f8efd935f9",
+    "View": "f8da0d2b15f6783fec744c8b29384687828bf4b63050f049d5887689c51b0ec8"
+  },
+  "version": "1.0.0"
+}
