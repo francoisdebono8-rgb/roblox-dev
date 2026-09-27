@@ -8,42 +8,76 @@ Status note: the indexed DevForum pages below did not show a "Closed" notice whe
 
 ## PresetForge
 
-### HIGH — Preset Manager for organizing and bulk-applying Properties, Attributes, Tags, and CollisionGroups
+Issue #16 research refresh: **2026-09-27**, completed 16:01 UTC. Version **2.1.0**; price **USD 4.99**; canonical [Creator Store asset 73596873703054](https://create.roblox.com/store/asset/73596873703054). **Drafts only. Native QA and three real screenshots are complete; Studio successfully submitted the canonical update. No posting requested or performed; account posting permissions were not tested.** See the [release gate](../../products/presetforge/v2/RELEASE_GATE.md). Confirm customer availability and the website listing before posting.
 
-- URL: https://devforum.roblox.com/t/preset-manager-for-organizing-and-bulk-applying-properties-attributes-tags-and-collisiongroups-to-instances/1164752
-- Category: Studio Features / Feature Request
-- Original need: presets generated from instances; bulk apply properties, attributes and tags; select matching instances; copy/paste configuration.
-- Freshness: old request, but activity includes a June 2026 bump.
-- Fit: extremely high. This overlaps directly with PresetForge's safe recipe, filtered scope, Preview/diff and Apply workflow.
-- Use: YES, once reply permissions are available.
-- Avoid claims that PresetForge implements collision groups unless/until it actually does.
+For this section, live public Discourse `/t/<id>.json` responses supersede the document's general indexed-page status note. Both primary topics returned `closed: false`, `archived: false`, `visible: true`; their complete two-post discussions were read. Open status does not establish account permission or justify an advertising bump. Recheck topic state, latest replies and usefulness immediately before any separately authorized post.
 
-Draft reply:
+### Searches and evidence method
 
-> This is very close to a workflow I ended up building a Studio plugin around. Disclosure: I'm the developer and it's a paid plugin.
+DevForum's public search was queried in factory order, followed by current native documentation and public competitor listings:
+
+- Studio Features: `category:24 presets order:latest` and `category:24 attributes copy order:latest`.
+- Building Support: `category:56 properties copy order:latest` and `category:56 "properties" "multiple" order:latest`.
+- Community Resources: `category:74 "copy properties" order:latest`.
+- Plugins tag: `category:74 tags:plugins attributes order:latest`; web search `site:devforum.roblox.com/tag/plugins "preset"` also surfaced relevant `plugin`-tagged resources.
+- Direct topic JSON checks for every numbered discussion below; live signed-out Creator Store checks for CopyProps, AttributeSheet and Quick Attribute Copier; author listing check for PresetManager. No competitor was installed or tested. Building Support produced no additional high-confidence reply target. This is a bounded search, not proof that no other tool or native feature exists.
+
+### USE after release gates - Preset Manager request (1164752)
+
+- [Thread](https://devforum.roblox.com/t/preset-manager-for-organizing-and-bulk-applying-properties-attributes-tags-and-collisiongroups-to-instances/1164752) / [live status endpoint](https://devforum.roblox.com/t/1164752.json).
+- Category/date/activity: Studio Features, opened **2021-04-13**; latest post **2026-06-17**, an independent request bump; two posts. **OPEN**, not archived, on the live check. No solution or native delivery announcement in those posts.
+- Exact need: remember and reuse combinations of properties, attributes, tags and collision groups; organize/find presets; capture configurations from existing instances and locate matches.
+- Fit: high for repeatable configuration of **supported classes/fields**, capture, scoped Preview/Apply and name search/duplicate-to-edit. Changes-first results and Locate/Frame help inspect objects requiring a change; they are not a universal whole-place preset matcher.
+- Boundaries: the existing whitelist stays. No CollisionGroup editing, arbitrary instance/property support, destructive reset-to-default mode, runtime recipe export, clipboard-to-Lua, recipe stacks or native Properties integration. The request's arbitrary Model and Lighting-service examples are not supported-class promises. Native UI styling already addresses part of its GUI-consistency example.
+- Decision: **USE conditionally**, strongest existing-thread target. After exact-artifact native QA, canonical update confirmation and fresh relevance check, one useful reply is defensible because the request was independently revived in 2026. No automatic posting or repeated bump.
+
+Tailored draft, held until customer availability and posting permission are confirmed:
+
+> For repeated configurations, separating the fields to reuse from the objects that need changing makes the batch easier to review. Studio's configurable defaults can handle newly inserted objects; existing objects are the workflow I focused on.
 >
-> PresetForge lets you capture selected properties, attributes and tags from an instance as a reusable recipe, preview the exact before/after changes, then apply it to a selection or filtered descendants with native Undo/Redo.
+> I'm the developer of PresetForge, a paid USD 4.99 plugin. It captures selected supported properties, with optional tags and attributes, as recipes for scoped Preview/Apply. The 2.1.0 update adds a responsive dock, changes-first review, Locate/Frame, recipe-name search and duplicate-to-edit. It passed native Studio acceptance and was submitted to the existing plugin asset.
 >
-> It doesn't try to replace every part of the feature request, but for the "save a configuration and safely bulk-apply it" workflow it may be useful while Studio doesn't provide this natively.
+> It keeps a controlled whitelist and does not cover collision groups, arbitrary classes or runtime preset export. [Canonical listing and supported workflow](https://create.roblox.com/store/asset/73596873703054).
+
+### SKIP now / conditional reserve - Bulk copy and paste attributes (3576978)
+
+- [Thread](https://devforum.roblox.com/t/bulk-copy-and-paste-attributes-in-property-window/3576978) / [live status endpoint](https://devforum.roblox.com/t/3576978.json).
+- Category/date/activity: Studio Features, opened **2025-03-27**; latest reply **2025-03-29**; two posts. **OPEN**, not archived, on the live check. The follow-up supports the request; it does not report a solution.
+- Exact need: select multiple attributes and paste onto one or more instances, with copying into Lua as a bonus.
+- Fit: useful partial overlap for repeatedly applying captured attributes to supported targets with before/after review. PresetForge does not provide native Properties clipboard controls, arbitrary per-attribute clipboard selection or Lua export. Do not imply per-property selection means individual attribute-name selection.
+- Decision: **SKIP now** because activity is about 18 months old and current simpler alternatives exist. Keep the tailored reserve below only for an independently renewed need that specifically benefits from saved recipes and review. Release success alone must not activate it. Do not revive this thread merely to announce 2.1.0.
+
+Reserve draft for a newly confirmed repeated-configuration need in this still-open, noncompetitor thread:
+
+> For a one-off transfer, [Quick Attribute Copier](https://create.roblox.com/store/asset/120879287668937/Quick-Attribute-Copier) advertises copy/paste and Undo and currently has a Get button; I haven't tested it. If the repeated setup also needs saved configurations and before/after review, that's the use case for PresetForge.
 >
-> [CREATOR_STORE_LINK]
+> I'm the developer; PresetForge is a paid USD 4.99 plugin. It can capture attributes from a supported source and preview applying them to supported selected or filtered targets. The 2.1.0 update improves the dock, changes-first review and recipe library; native Studio acceptance and the existing-asset Studio submission succeeded. It does not add clipboard controls to Properties or copy attributes into Lua. [Canonical listing](https://create.roblox.com/store/asset/73596873703054).
 
-### HIGH — Bulk copy and paste attributes in property window
+### SKIP - Further open requests and solved support
 
-- URL: https://devforum.roblox.com/t/bulk-copy-and-paste-attributes-in-property-window/3576978
-- Category: Studio Features / Feature Request
-- Date: March 2025
-- Need: copy multiple attributes from one instance and paste them onto one or more instances.
-- Fit: high and easy to explain.
-- Use: YES if still open; keep the response short because the requested native feature is simpler than the whole plugin.
+| Topic / live status source | Category; date and last activity | Need, fit and decision |
+|---|---|---|
+| [Support for copying attributes and tags](https://devforum.roblox.com/t/support-for-copying-attributes-and-tags/4642416) / [JSON](https://devforum.roblox.com/t/4642416.json): **OPEN**, not archived; 3 posts | Studio Features; 2026-05-18 to 2026-07-17 | Requests clipboard names or names + values in Properties. Latest reply already recommends Quick Attribute Copier. PresetForge offers a different recipe workflow and no clipboard export. **SKIP**, no useful incremental answer established; no promotional draft. |
+| [Allow to duplicate Attributes](https://devforum.roblox.com/t/allow-to-duplicate-attributes/1909565) / [JSON](https://devforum.roblox.com/t/1909565.json): **OPEN**, not archived; 2 posts | Studio Features; 2022-08-05 only | Copy attributes across objects. Existing reply recommends PresetManager and explains that native copy/paste would be simpler. **SKIP**, dormant with an existing workaround. |
+| [Highlight tagged/attributed instances in Explorer](https://devforum.roblox.com/t/highlight-instances-with-tags-or-attributes-in-the-explorer/3957685) / [JSON](https://devforum.roblox.com/t/3957685.json): **OPEN**, not archived; 5 posts | Studio Features; 2025-09-25 to 2025-09-29 | Wants persistent hierarchy markers; author explicitly distinguishes these from search/world highlights. **SKIP**, Locate/Frame does not implement that request. |
+| [Filter by Attributes in Explorer](https://devforum.roblox.com/t/filter-by-attributes-in-explorer/2828954) / [JSON](https://devforum.roblox.com/t/2828954.json): **OPEN**, not archived; 10 posts | Studio Features; 2024-02-08 to 2025-03-22 | Wants attribute-name/value queries. PresetForge's class/name/tag filters and recipe-name search are different. **SKIP**, no attribute-query claim or promotional draft. |
+| [Faster ways to add attributes](https://devforum.roblox.com/t/are-there-any-faster-ways-to-do-add-attributes/3165640) / [JSON](https://devforum.roblox.com/t/3165640.json): **CLOSED**, accepted answer; 17 posts | Platform Usage Support; 2024-09-20 discussion; system closure 2024-10-04 | Wants different attribute values for different units. Author accepted the lookup-table solution. **SKIP**, solved/closed and not a uniform-recipe use case. |
 
-Draft reply:
+### Current native and competitor counterevidence
 
-> I built something that can cover this workflow while the native feature is missing. Disclosure: it's my paid plugin.
->
-> PresetForge can capture attributes (plus selected supported properties/tags) from a source, preview exactly what will change, then apply them to multiple selected or filtered instances with one Undo.
->
-> If that's still useful for your workflow: [CREATOR_STORE_LINK]
+These are research sources, not promotion destinations. Listing claims were read, not independently reproduced. Search, duplication, filtering, Preview and Undo must not be described as inventions or unique to PresetForge.
+
+- **Native Properties and configurable defaults:** [current Roblox documentation](https://create.roblox.com/docs/studio/properties) covers property editing, tags, attributes and Save as Default for newly inserted instances, including lights. **Native Explorer:** [documentation](https://create.roblox.com/docs/studio/explorer) covers duplication/paste and name/property/class/tag/ancestry searches. These can be sufficient for simple edits and template reuse. **Native UI styling:** [documentation](https://create.roblox.com/docs/ui/styling) provides selectors, shared style tokens and themes for GUI consistency. Do not claim Studio has no presets, tag management, filtering or reusable UI styling. These docs do not establish a native equivalent of the complete scoped recipe/diff workflow; absence from a page also does not prove a missing feature.
+- **PresetManager by boatbomber:** [author listing](https://boatbomber.itch.io/presetmanager) currently shows **USD 1.00 minimum**, 4.8/5 from four ratings, and advertises name search, duplication, properties/attributes/tags/collision groups, matching-instance selection and runtime export. [Original discussion](https://devforum.roblox.com/t/preset-manager-plugin-bulk-apply-properties-attributes-tags-and-collisions/1187701) / [JSON](https://devforum.roblox.com/t/1187701.json): **Creations Feedback**, not Community Resources; opened 2021-04-25, latest 2021-07-10, 18 posts, **OPEN**, not archived. Current compatibility/maintenance is unverified; old activity does not prove abandonment. **SKIP** competitor showcase. Search and duplication are parity features.
+- **CopyProps:** [Creator Store](https://create.roblox.com/store/asset/12545467703/CopyProps-Copypaste-instance-properties), live **Get Plugin** button with no USD purchase price, updated **2023-03-27**, zero reviews and insufficient ratings. Advertises copying/pasting/filtering properties. Do not charge the value proposition solely to basic property copying; current compatibility was not tested.
+- **AttributeSheet:** [Creator Store](https://create.roblox.com/store/asset/77824934141606), live **Get Plugin**, updated **2026-09-13**, zero reviews and insufficient ratings. Advertises attribute tables, filters, locating, batch edits, pending-change review, stale-change blocking and one Studio Undo. This is a recent alternative, including for review safety; no claim that it lacks Preview/Undo. PresetForge's intended emphasis is reusable combinations of supported properties, tags and attributes, not another attribute spreadsheet.
+- **Quick Attribute Copier:** [Creator Store](https://create.roblox.com/store/asset/120879287668937/Quick-Attribute-Copier), live **Get Plugin**, updated **2026-07-17**, two reviews and insufficient ratings. Advertises multiple-source attribute copying and Undo. Already linked in request 4642416; useful counterevidence to promoting a paid recipe manager for a simple transfer. Review contents and runtime behavior were not tested.
+- **CopyPasteProperties:** [author's plugin-tagged Community Resources thread](https://devforum.roblox.com/t/i-made-a-copy-and-paste-properties-plugin/3644831) / [JSON](https://devforum.roblox.com/t/3644831.json): opened 2025-05-10, latest 2025-05-11, 9 posts, **OPEN**, not archived. Advertises chosen-property presets and shortcuts. Current price/compatibility unverified. **SKIP** competitor showcase.
+- **Attribute Cloner / DKN's editor:** [Community Resources thread](https://devforum.roblox.com/t/plugin-attribute-cloner-dkns-attributes-editor/3253747) / [JSON](https://devforum.roblox.com/t/3253747.json): opened 2024-11-10, latest 2024-12-10, 4 posts, **OPEN**, not archived. Developer's last reply announces multiselect. **Attribute Manager:** [Community Resources thread](https://devforum.roblox.com/t/attribute-manager-plugin-for-all-your-attribute-needs/1562593) / [JSON](https://devforum.roblox.com/t/1562593.json): 2021-11-23, 3 posts, **OPEN**, not archived; discussion explicitly questions value beyond native editing. **SKIP** both competitor threads; current prices/compatibility unverified.
+
+### USE after release gates - Community Resources update draft
+
+[PresetForge 2.1.0 update draft](presetforge-v2-update.md) contains the paid-developer disclosure, USD 4.99 price, canonical link, three use cases, three actual Studio screenshot paths, limitations and feedback request. Posting remains conditional on customer availability and explicit authorization. Prefer updating our own existing product topic if one exists; no own-topic URL or posting permission was verified here. No post URLs exist from this task.
 
 ---
 

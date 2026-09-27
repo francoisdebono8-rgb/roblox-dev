@@ -8,7 +8,7 @@ Constants.MAX_FILTER_BYTES = 80
 Constants.MAX_RENDERED_RESULTS = 500
 Constants.PROJECT_ROOT_NAME = "PresetForgeProjectRecipes"
 Constants.PROJECT_FORMAT_VERSION = 2
-Constants.VERSION = "2.0.0"
+Constants.VERSION = "2.1.0"
 
 Constants.LEGACY_PROPERTIES = {
 	"Anchored",

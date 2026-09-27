@@ -1,10 +1,10 @@
-# PresetForge 2.0
+# PresetForge 2.1
 
 PresetForge is a Safe Bulk Editor for Roblox Studio.
 
 **Promise:** Bulk-edit exactly what you want, exactly where you want. Preview every change. Undo safely.
 
-## What 2.0 does
+## What 2.1 does
 
 - Saves property-by-property recipes from one configured source instance.
 - Supports a controlled schema for `BasePart`, the three Studio light classes, `Sound`, `ParticleEmitter`, `Decal`, `Texture`, common `GuiObject` properties, `ProximityPrompt`, and `Configuration` tags/attributes.
@@ -15,18 +15,22 @@ PresetForge is a Safe Bulk Editor for Roblox Studio.
 - Edits a recipe's included fields and recaptures values while preserving its field set.
 - Keeps a local library and an explicitly created, Roblox-native project library.
 - Reads V1 local presets and writes them as V2 when they are next changed.
+- Reflows into one-column views in narrow docks, with persistent primary actions.
+- Reviews changed objects first, with matching and ignored details collapsed.
+- Searches recipes by name and duplicates an independent editable variant.
+- Frames affected 3D objects without changing their properties or hierarchy.
 
-Save and Preview are read-only. Apply validates every stored property against the central schema, changes only affected compatible targets, and uses one Change History recording. Existing unrelated properties, tags, and attributes remain untouched.
+Capture and Preview do not change source or target objects. Local saves write Studio settings; Project saves change the place's explicit library under ServerStorage. Apply validates every stored property against the central schema, changes only affected compatible targets, and uses one Change History recording. Existing unrelated properties, tags, and attributes remain untouched.
 
 There are no external runtime dependencies, network calls, analytics, telemetry, cloud services, AI features, or arbitrary code execution.
 
-## Install PresetForge 2.0
+## Install PresetForge 2.1
 
-The final package is [`dist/PresetForge-v2.0.0.rbxm`](dist/PresetForge-v2.0.0.rbxm).
+The package is [`dist/PresetForge-v2.1.0.rbxm`](dist/PresetForge-v2.1.0.rbxm). Release evidence is recorded in [`v2/RELEASE_GATE.md`](v2/RELEASE_GATE.md).
 
 1. Open a blank place and show **View > Explorer**.
 2. Right-click `Workspace` and choose **Insert from File...**.
-3. Select `PresetForge-v2.0.0.rbxm`.
+3. Select `PresetForge-v2.1.0.rbxm`.
 4. Right-click the inserted `PresetForge` model and choose **Save as Local Plugin**.
 5. Delete the temporary model without saving the blank place.
 6. Open PresetForge from the Studio **Plugins** toolbar. Restart Studio if the button does not appear immediately.
@@ -35,7 +39,7 @@ The package hash and exact hierarchy are recorded in [`dist/README.md`](dist/REA
 
 ## Package structure
 
-The release contains `Main` and sixteen production modules only:
+The release contains `Main` and seventeen production modules only:
 
 ```text
 PresetForge
@@ -53,6 +57,7 @@ PresetForge
    |- ProjectStore
    |- RecipeRepository
    |- Schema
+   |- SelectionNavigator
    |- StringCodec
    |- TargetResolver
    |- UIFactory
@@ -66,7 +71,7 @@ It contains no tests, fixtures, project recipes, local paths, or private data.
 With Rojo 7 installed:
 
 ```sh
-rojo build release.project.json -o dist/PresetForge-v2.0.0.rbxm
+rojo build release.project.json -o dist/PresetForge-v2.1.0.rbxm
 ```
 
 The product itself does not require Rojo at runtime. The source can also be assembled manually by reproducing the hierarchy above and using the corresponding `.luau` source for each script.
@@ -83,7 +88,7 @@ rojo build tests/default.project.json -o /tmp/PresetForgeStudioTests-v2.rbxl
 
 Expected Output: `6/6 PresetForge specs passed` with no `[FAIL]` line. A plugin-mode harness is also available in `tests/plugin.project.json` for isolated automated release runs.
 
-Complete the short human pass in [`tests/STUDIO_CHECKLIST.md`](tests/STUDIO_CHECKLIST.md). The repository does not claim those visual and native Undo/Redo checks have passed until a person performs them on the final package.
+The 2.1 artifact-based gate and GUI acceptance are separate from those six original engine specs. See [`v2/RELEASE_GATE.md`](v2/RELEASE_GATE.md) for actual execution results, limitations and reproduction commands. A test being present is not a PASS.
 
 ## Product documents
 

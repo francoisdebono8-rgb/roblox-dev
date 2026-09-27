@@ -1,0 +1,21 @@
+{
+  "name": "PresetForgeReleaseGate",
+  "tree": {
+    "$className": "Model",
+    "Runner": { "$path": "ReleaseGate.plugin.luau" },
+    "PresetForge": { "$path": "../dist/PresetForge-v2.1.0.rbxm" },
+    "Tests": {
+      "$className": "Folder",
+      "Schema.spec": { "$path": "Schema.spec.luau" },
+      "CapturePreview.spec": { "$path": "CapturePreview.spec.luau" },
+      "ScopePreview.spec": { "$path": "ScopePreview.spec.luau" },
+      "ApplyService.spec": { "$path": "ApplyService.spec.luau" },
+      "PresetStore.spec": { "$path": "PresetStore.spec.luau" },
+      "ProjectStore.spec": { "$path": "ProjectStore.spec.luau" },
+      "GateTestSupport": { "$path": "GateTestSupport.luau" },
+      "Workflow.spec": { "$path": "Workflow.spec.luau" },
+      "Layout.spec": { "$path": "Layout.spec.luau" },
+      "NativeRelease.spec": { "$path": "NativeRelease.spec.luau" }
+    }
+  }
+}

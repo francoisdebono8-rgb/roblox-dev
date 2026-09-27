@@ -28,10 +28,10 @@ local widgetInfo = DockWidgetPluginGuiInfo.new(
 	Enum.InitialDockState.Right,
 	false,
 	false,
-	780,
+	420,
 	650,
-	620,
-	520
+	240,
+	360
 )
 local widget = plugin:CreateDockWidgetPluginGuiAsync("PresetForgeV2", widgetInfo)
 widget.Title = "PresetForge " .. Constants.VERSION
@@ -55,6 +55,13 @@ if not loaded then
 	controller:showError(loadError)
 end
 
+local undoConnection = ChangeHistoryService.OnUndo:Connect(function()
+	controller:refresh()
+end)
+local redoConnection = ChangeHistoryService.OnRedo:Connect(function()
+	controller:refresh()
+end)
+
 toggleButton.Click:Connect(function()
 	widget.Enabled = not widget.Enabled
 end)
@@ -64,6 +71,8 @@ widget:GetPropertyChangedSignal("Enabled"):Connect(function()
 end)
 
 plugin.Unloading:Connect(function()
+	undoConnection:Disconnect()
+	redoConnection:Disconnect()
 	controller:destroy()
 end)
 

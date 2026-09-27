@@ -6,13 +6,29 @@
 
 | Product | Canonical asset ID | This run |
 | --- | --- | --- |
-| PresetForge | 73596873703054 | Existing, unchanged |
+| PresetForge | 73596873703054 | 2.1.0 existing asset updated from Studio, issue #16 |
 | JointForge | 103958912217728 | Existing, unchanged |
 | CurveForge | 90642263224333 | Existing, unchanged |
 | AccessForge | 127360597946823 | Existing, unchanged; 136358269001448 remains a pre-existing duplicate, not canonical |
 | SchemaForge 1.0.0 | **84085408748744** | **PASS**: 23 native groups, real GUI Apply/Undo/Redo, three licensed-scene captures, Studio success |
 
 SchemaForge: [release status](../products/schemaforge/release/RELEASE_STATUS.md), [test evidence](../products/schemaforge/tests/RESULTS.md), [media](../products/schemaforge/release/MEDIA_PLAN.md), [publication guard](../products/schemaforge/release/PUBLICATION.md). User web steps: price, icon/screenshots and distribution. Outreach drafts are prepared, not posted. No earlier product code, asset or missing historical QA evidence was changed in this run.
+
+## PresetForge issue #16
+
+2026-09-27: **2.1.0 STUDIO ACCEPTANCE PASS; canonical update submitted successfully**.
+41/41 native final-binary checks and real licensed-arena GUI acceptance passed,
+including exact Apply, Edit-menu Undo/Redo, search, duplicate/edit isolation and
+full Studio restart Local/Project persistence. Three genuine screenshots are in
+`products/presetforge/release/media/v2.1/`. See
+`products/presetforge/v2/RELEASE_GATE.md` and `native-run.txt` for precise coverage.
+
+Clean publication place: `products/presetforge/release/PresetForge-Publication.rbxl`.
+Studio's existing-asset overwrite flow returned **Successfully submitted!** and
+ID **73596873703054**. No new asset or duplicate was created. Submission stopped
+at this first success; proof: `products/presetforge/v2/studio-update-success.png`.
+Creator Hub website media/price/distribution remain user-owned. Other products
+and the historical evidence below are unchanged.
 
 ## Historical issue #12 snapshot
 

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser()
 parser.add_argument("--rojo", default="rojo")
 args = parser.parse_args()
-for title, version in (("PresetForge", "2.0.0"), ("JointForge", "1.0.0"), ("CurveForge", "1.0.0")):
+for title, version in (("PresetForge", "2.1.0"), ("JointForge", "1.0.0"), ("CurveForge", "1.0.0")):
     product = ROOT / "products" / title.lower()
     source = product / title
     expected = {"Main": source / "Main.plugin.luau"}

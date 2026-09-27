@@ -149,6 +149,16 @@ function PreviewService:build(recipe, selection, options)
 		end
 	end
 
+	-- Preserve resolver order within each group, including identical sibling names.
+	local grouped = {}
+	for _, status in ipairs({ "affected", "matching", "ignored" }) do
+		for _, result in ipairs(preview.results) do
+			if result.status == status then
+				grouped[#grouped + 1] = result
+			end
+		end
+	end
+	preview.results = grouped
 	if preview.compatibleCount == 0 then
 		preview.warnings[#preview.warnings + 1] = "No compatible targets match this scope and filter"
 	elseif preview.affectedCount == 0 then

@@ -1,0 +1,10 @@
+{
+  "name": "PresetForge-Publication",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "PresetForge": { "$path": "../dist/PresetForge-v2.1.0.rbxm" }
+    }
+  }
+}

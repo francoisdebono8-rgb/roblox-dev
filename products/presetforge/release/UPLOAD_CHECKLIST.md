@@ -1,9 +1,10 @@
 # Existing-asset update checklist
 
-- [ ] Keep existing asset **73596873703054**. Never create a second PresetForge asset.
-- [x] Verify `dist/PresetForge-v2.0.0.rbxm`: SHA-256 `31401503260a2d6a95b17d41553601ebcba0c590b490ef5fced3a08b622618ec`. Unchanged; no binary re-upload needed for issue #12.
-- [x] Native rerun: six specs plus real scoped Apply/Undo/Redo and Local/Project storage PASS. See `../../../docs/forge-catalog-native-run.txt`.
-- [ ] Complete the production UI walkthrough and three new real-project images in `MEDIA_PLAN.md`.
-- [ ] User updates the existing Creator Hub listing using `CREATOR_STORE.md`, version `2.0.0`, USD **4.99**, and reviewed images. User retains all account/payment/tax/distribution steps.
+- [x] Keep existing asset **73596873703054**. No second PresetForge asset created.
+- [x] Verify `dist/PresetForge-v2.1.0.rbxm`: SHA-256 `54746b6e7798094155bab145288723e19acc9e8bba010161d83f79e3649f1f15`.
+- [x] 41/41 native checks plus real GUI Apply/Undo/Redo and full restart Local/Project persistence. See `../v2/RELEASE_GATE.md`.
+- [x] Complete production UI walkthrough and three genuine images in `media/v2.1/`; see `MEDIA_PLAN.md`.
+- [x] Studio overwrite of **73596873703054** returned **Successfully submitted!**. See `../v2/studio-update-success.png`. Do not resubmit this release.
+- [ ] User updates existing Creator Hub listing using `CREATOR_STORE.md`, version `2.1.0`, USD **4.99**, and reviewed images. User retains all account/payment/tax/distribution steps.
 
 For a later binary update, Studio must explicitly target asset **73596873703054**. Stop if update-vs-new is ambiguous.

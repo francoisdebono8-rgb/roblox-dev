@@ -78,8 +78,17 @@ assert(not CollectionService:HasTag(rollbackTarget, "PresetForgeApplyTest"))
 assert(rollbackTarget:GetAttribute("Level") == nil)
 assert(failingHistory.calls == 2, "failed commit must be cancelled after rollback")
 
+local falseAttributeTarget = rollbackTarget:Clone()
+falseAttributeTarget:SetAttribute("Level", false)
+local falseFailed, falseMessage = ApplyService.new(CollectionService, failingHistory):apply(recipe, { falseAttributeTarget })
+assert(falseFailed == false and falseMessage:find("rolled back") ~= nil)
+assert(falseAttributeTarget:GetAttribute("Level") == false, "commit rollback must preserve an existing false attribute")
+assert(falseAttributeTarget.Anchored == false and not CollectionService:HasTag(falseAttributeTarget, "PresetForgeApplyTest"))
+assert(failingHistory.calls == 4)
+
 targetOne:Destroy()
 targetTwo:Destroy()
 untouched:Destroy()
 rollbackTarget:Destroy()
+falseAttributeTarget:Destroy()
 return true

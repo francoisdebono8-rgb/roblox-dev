@@ -41,7 +41,10 @@ PresetForge is not a universal property editor. It does not run arbitrary code, 
 ## Creator Store metadata
 
 - Category: Studio Plugins / Productivity
-- Version: 2.0.0
+- Version: 2.1.0
+
+The canonical, concise listing copy for this version is
+[`../release/CREATOR_STORE.md`](../release/CREATOR_STORE.md).
 - Support note: Uses Studio plugin settings, ServerStorage for explicitly selected Project recipes, Selection, CollectionService, and Change History.
 - Privacy note: PresetForge makes no network requests and collects no data.
 - Search terms: Roblox bulk editor, property presets, batch edit, descendants filter, Studio diff, tags, attributes, team recipes, safe Undo

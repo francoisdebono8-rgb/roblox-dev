@@ -66,7 +66,7 @@ function ApplyService:_rollback(backups)
 				self._collectionService:RemoveTag(backup.target, tag)
 			end
 			for attributeName, previous in pairs(backup.attributes) do
-				backup.target:SetAttribute(attributeName, previous.exists and previous.value or nil)
+				backup.target:SetAttribute(attributeName, if previous.exists then previous.value else nil)
 			end
 		end)
 		if not ok then

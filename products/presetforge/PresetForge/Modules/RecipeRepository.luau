@@ -50,7 +50,7 @@ function RecipeRepository:_store(library)
 	return nil
 end
 
-function RecipeRepository:getRecipes()
+function RecipeRepository:getRecipes(query)
 	local recipes = withLibrary(self.localStore:getPresets(), "Local")
 	for _, recipe in ipairs(withLibrary(self.projectStore:getPresets(), "Project")) do
 		recipes[#recipes + 1] = recipe
@@ -60,7 +60,25 @@ function RecipeRepository:getRecipes()
 		local rightName = string.lower(right.name)
 		return leftName < rightName or (leftName == rightName and left.library < right.library)
 	end)
+	if type(query) == "string" and query ~= "" then
+		local filtered = {}
+		local needle = string.lower(query)
+		for _, recipe in ipairs(recipes) do
+			if string.find(string.lower(recipe.name), needle, 1, true) then
+				filtered[#filtered + 1] = recipe
+			end
+		end
+		return filtered
+	end
 	return recipes
+end
+
+function RecipeRepository:duplicate(library, name, newLibrary, newName)
+	local original = self:find(library, name)
+	if not original then
+		return false, "Recipe not found"
+	end
+	return self:create(newLibrary, newName, original)
 end
 
 function RecipeRepository:find(library, name)

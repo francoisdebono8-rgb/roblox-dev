@@ -1,15 +1,15 @@
-# Real-project media - pending capture
+# Real-project media - PresetForge 2.1.0
 
 Environment: **DodgeballArena**, TheNexusAvenger's **Nexus-Battles**. Author/owner: TheNexusAvenger; upstream repository describes the original Roblox Battle remaster. [Pinned source](https://github.com/TheNexusAvenger/Nexus-Battles/blob/fd6505c3cb12c94272532e1a0b0a30bf8499fc52/src/ServerStorage/Maps/DodgeballArena.rbxmx). MIT reuse; full license and source hash in `scene/`. Use the included attribution with distributed scene files. No endorsement is claimed.
 
-`scene/PresetForge-Media.rbxl` contains 177 retained native instances, including 21 PointLights and 18 SpotLights. Only geometry/light data is reused. Scripts, joints, textures, remote meshes, asset references and branding/UI are excluded. The saved camera uses the map's authored loading view. Appearance still needs visual review in Studio.
+`scene/PresetForge-Media.rbxl` contains 177 retained native instances, including 21 PointLights and 18 SpotLights. Only geometry/light data is reused. Scripts, joints, textures, remote meshes, asset references and branding/UI are excluded. A disposable copy was configured and visually reviewed in Studio for issue #16.
 
 ## Capture order and captions
 
-1. `01-filter-arena-lights.png` - **Target the arena lights, not every object.** Configure one existing PointLight as source; save a recipe selecting Color and Brightness only. Tag intended arena PointLights `ArenaLighting`. Select the environment, use Descendants + PointLight + tag filter. Keep arena geometry visible and the actual filtering UI readable.
-2. `02-exact-light-diff.png` - **Review exactly which light fields will change.** Preview that recipe; show actual before/after Color and Brightness. Verify the existing environment is unchanged before Apply.
-3. `03-apply-arena-lighting.png` - **Apply one lighting recipe with native Undo.** Apply, show the real changed lighting and success state. Execute Undo then Redo and verify the same targets are restored. A nighttime view may make the change more visible, but keep geometry readable.
+1. `media/v2.1/01-target-the-arena.png` - **Target the arena lights, not every object.** Actual Descendants + PointLight + ArenaLight name + ArenaLighting tag filters; one environment selected.
+2. `media/v2.1/02-review-exact-changes.png` - **Review exact changes first.** 176 scanned, 21 compatible, 20 changed, one matching, 155 ignored; 40 exact Color/Brightness writes. Arena asserted unchanged during Preview.
+3. `media/v2.1/03-apply-safely.png` - **Apply one lighting recipe with native Undo.** Actual success after 20 PointLights changed. Unselected properties/tags/attributes verified unchanged; subsequent Edit > Undo and Edit > Redo both verified against instance state.
 
-The tagging and source configuration above are pending setup, not features already exercised through the GUI. Existing `media/` images are earlier original-demo captures; they are not the new issue #12 deliverables. Never composite UI or manufacture an Apply result.
+Captured from the real installed commercial 2.1.0 artifact on 2026-09-27. These are uncomposited macOS region screenshots at 2560 x 1272. The crop excludes title/menu bars, account avatar and Command Bar. No generated UI, retouching or fabricated results. Earlier images outside `media/v2.1/` are historical and are not the issue #16 deliverables.
 
-Exclude macOS title/menu bars, account avatar and private paths. Preserve enough viewport context to recognize a real arena. Do not replace the public plugin asset: existing ID **73596873703054**. Website media changes belong to the user.
+Excluded macOS title/menu bars, account avatar and private paths. Viewport context preserves the real arena. Keep the existing public plugin asset **73596873703054**, successfully updated from Studio for 2.1.0. Website media changes belong to the user.

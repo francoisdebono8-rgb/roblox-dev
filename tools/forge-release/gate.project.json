@@ -3,7 +3,7 @@
   "tree": {
     "$className": "Model",
     "Runner": { "$path": "CatalogGate.plugin.luau" },
-    "PresetForge": { "$path": "../../products/presetforge/dist/PresetForge-v2.0.0.rbxm" },
+    "PresetForge": { "$path": "../../products/presetforge/dist/PresetForge-v2.1.0.rbxm" },
     "JointForge": { "$path": "../../products/jointforge/dist/JointForge-v1.0.0.rbxm" },
     "CurveForge": { "$path": "../../products/curveforge/dist/CurveForge-v1.0.0.rbxm" },
     "Tests": {

@@ -14,13 +14,13 @@ Build reusable property recipes, filter targets, inspect every before/after chan
 
 ## Full description
 
-PresetForge turns one trusted Studio object into a focused bulk-edit recipe. Choose exactly which supported fields matter, target the current selection or filtered descendants, inspect every pending change, then Apply in one Undo-compatible operation.
+Bulk-edit exact fields with reusable recipes. Capture selected properties, tags and attributes from one configured object. Target your selection or filtered descendants, review changed objects first with before/after values, then Apply with native Studio Undo/Redo.
 
-Use controlled recipes for BaseParts, lights, Sound, ParticleEmitter, Decal, Texture, common GuiObjects, ProximityPrompt, plus Configuration tags and attributes. Unselected properties and unrelated tags or attributes remain untouched.
+Locate affected objects in Explorer or frame their 3D bounds. Search recipes by name and duplicate an editable variant without changing the original. The dock adapts to narrow layouts.
 
-Keep personal recipes Local or explicitly create transparent Project recipes under ServerStorage for team and version-control workflows. Edit field sets, recapture values from a compatible source, select affected or ignored objects in Studio, and read existing PresetForge V1 presets.
+Supports a controlled whitelist for BaseParts, lights, sounds, particles, decals, textures, common UI objects and ProximityPrompts; Configuration supports tags/attributes. Unselected fields and unrelated tags/attributes stay untouched.
 
-PresetForge has no network calls, cloud sync, analytics, telemetry, AI, backend, or runtime dependencies.
+Local recipes use Studio settings. Project recipes are explicitly saved under ServerStorage with your place. Reads V1 presets. No arbitrary scripts, cloud sync, network requests, analytics or telemetry.
 
 ## Search terms
 
@@ -28,7 +28,7 @@ Roblox bulk editor, batch property editor, property presets, descendants filter,
 
 ## Version
 
-2.0.0
+2.1.0
 
 ## Privacy note
 

@@ -1,0 +1,71 @@
+2026-09-27T16:25:36.110Z [PresetForgeReleaseGate] Controller handlers + mock Selection; layout geometry uses real UIFactory. No GUI interaction claim.
+2026-09-27T16:25:36.110Z [PresetForgeReleaseGate] artifact=PresetForge-v2.1.0.rbxm sha256=54746b6e7798094155bab145288723e19acc9e8bba010161d83f79e3649f1f15
+2026-09-27T16:25:36.116Z [PresetForgeReleaseGate][PASS] CapturePreview.spec
+2026-09-27T16:25:36.116Z [PresetForgeReleaseGate][PASS] Schema.spec
+2026-09-27T16:25:36.117Z [PresetForgeReleaseGate][PASS] ScopePreview.spec
+2026-09-27T16:25:36.118Z [PresetForgeReleaseGate][PASS] ApplyService.spec
+2026-09-27T16:25:36.120Z [PresetForgeReleaseGate][PASS] PresetStore.spec
+2026-09-27T16:25:36.122Z [PresetForgeReleaseGate][PASS] ProjectStore.spec
+2026-09-27T16:25:36.132Z [PresetForgeReleaseGate][PASS] Workflow.spec / duplicate/edit Local -> Local
+2026-09-27T16:25:36.133Z [PresetForgeReleaseGate][PASS] Workflow.spec / duplicate/edit Local -> Project
+2026-09-27T16:25:36.133Z [PresetForgeReleaseGate][PASS] Workflow.spec / duplicate/edit Project -> Local
+2026-09-27T16:25:36.134Z [PresetForgeReleaseGate][PASS] Workflow.spec / duplicate/edit Project -> Project
+2026-09-27T16:25:36.135Z [PresetForgeReleaseGate][PASS] Workflow.spec / duplicate failures preserve both libraries
+2026-09-27T16:25:36.136Z [PresetForgeReleaseGate][PASS] Workflow.spec / case-insensitive literal name search
+2026-09-27T16:25:36.136Z [PresetForgeReleaseGate][PASS] Workflow.spec / changes-first stable resolver order, including duplicate paths
+2026-09-27T16:25:36.136Z [PresetForgeReleaseGate][PASS] Workflow.spec / stale preview detects exact values, tags, membership and paths
+2026-09-27T16:25:36.208Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller exact before/after and captured values
+2026-09-27T16:25:36.332Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller Apply rechecks stale data even without watchers
+2026-09-27T16:25:36.507Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller watched property clears Preview and disables Apply
+2026-09-27T16:25:36.652Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller selection, scope and filter invalidate Preview
+2026-09-27T16:25:36.726Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller Select groups is read-only and preserves Preview
+2026-09-27T16:25:36.850Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller search filters the rendered library without editing recipes
+2026-09-27T16:25:36.908Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller Edit variant preserves original nested fields
+2026-09-27T16:25:36.925Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller duplicate confirmation creates and selects a separate variant
+2026-09-27T16:25:36.948Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller changes-only default and optional matching/ignored rows
+2026-09-27T16:25:36.975Z [PresetForgeReleaseGate][PASS] Workflow.spec / Frame refuses missing camera and nonspatial selection
+2026-09-27T16:25:36.975Z [PresetForgeReleaseGate][PASS] Workflow.spec / Frame uses rotated spatial bounds without changing instances
+2026-09-27T16:25:36.975Z [PresetForgeReleaseGate][PASS] Workflow.spec / controller retains capture draft but refuses a changed source
+2026-09-27T16:25:38.635Z [PresetForgeReleaseGate][PASS] Layout.spec / 240x360 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:39.886Z [PresetForgeReleaseGate][PASS] Layout.spec / 240x640 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:41.134Z [PresetForgeReleaseGate][PASS] Layout.spec / 240x900 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:42.419Z [PresetForgeReleaseGate][PASS] Layout.spec / 320x360 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:43.668Z [PresetForgeReleaseGate][PASS] Layout.spec / 320x640 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:44.918Z [PresetForgeReleaseGate][PASS] Layout.spec / 320x900 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:46.069Z [PresetForgeReleaseGate][PASS] Layout.spec / 400x360 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:47.185Z [PresetForgeReleaseGate][PASS] Layout.spec / 400x640 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:48.302Z [PresetForgeReleaseGate][PASS] Layout.spec / 400x900 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:49.418Z [PresetForgeReleaseGate][PASS] Layout.spec / 560x360 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:50.600Z [PresetForgeReleaseGate][PASS] Layout.spec / 560x640 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:51.718Z [PresetForgeReleaseGate][PASS] Layout.spec / 560x900 / four views, rename, capture fields, fixed actions
+2026-09-27T16:25:51.750Z [PresetForgeReleaseGate][PASS] NativeRelease.spec / actual ApplyService with one native Undo and Redo
+2026-09-27T16:25:51.755Z [PresetForgeReleaseGate][PASS] NativeRelease.spec / real plugin settings reopen/recapture/rename/delete with restoration
+2026-09-27T16:25:51.765Z [PresetForgeReleaseGate] 41/41 checks passed
+2026-09-27T16:25:51.765Z [PresetForgeReleaseGate] NOT TESTED: actual DockWidget interaction, camera appearance, restart persistence, licensed-scene acceptance.
+2026-09-27T16:25:51.765Z [PresetForgeReleaseGate][PASS] no asynchronous production/QA runtime errors
+2026-09-27T16:28:34.223Z [PF21Arena] Helper ready; call prepare() once, or resume() after reopening the saved scene
+2026-09-27T16:28:34.225Z [PF21Arena][PASS] Prepared licensed arena: 21 PointLights, existing tags/attributes, real source selected
+2026-09-27T16:31:37.115Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:31:51.931Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:34:45.924Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:35:20.805Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:36:00.890Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:36:00.903Z [PF21Arena][PASS] Relevant change invalidated Preview and disabled Apply
+2026-09-27T16:43:43.019Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:48:02.743Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:48:02.743Z [PF21Arena][PASS] Select affected identifies 20 actual changing instances
+2026-09-27T16:48:53.790Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:48:53.790Z [PF21Arena][PASS] Frame affected changed only the camera
+2026-09-27T16:49:26.455Z [PF21Arena][PASS] Exact Apply: 20 changed PointLights; all unselected fields/tags/attributes preserved
+2026-09-27T16:49:26.772Z [PF21Arena][PASS] Actual GUI Apply undone natively
+2026-09-27T16:49:26.772Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:51:08.934Z [PF21Arena][PASS] Real Project recipe stores exactly Color/Brightness, no tag or attribute capture
+2026-09-27T16:51:08.935Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:55:02.074Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:55:02.075Z [PF21Arena][PASS] Original GUI recipe preserved after variant edit
+2026-09-27T16:56:08.371Z [PF21Arena][PASS] Edited GUI variant contains Brightness only
+2026-09-27T16:58:51.749Z [PF21Arena][PASS] Arena unchanged: properties, transforms, tags, attributes and hierarchy
+2026-09-27T16:58:51.749Z [PF21Arena][PASS] GUI Undo verified
+2026-09-27T16:59:40.930Z [PF21Arena][PASS] Exact Apply: 20 changed PointLights; all unselected fields/tags/attributes preserved
+2026-09-27T16:59:40.930Z [PF21Arena][PASS] GUI Redo verified
+2026-09-27T17:04:51.734Z [PF21Arena][PASS] Full Studio restart: Local original/variant and Project recipe reloaded

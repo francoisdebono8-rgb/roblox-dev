@@ -1,5 +1,7 @@
 local Constants = require(script.Parent.Constants)
+local AttributeCodec = require(script.Parent.AttributeCodec)
 local Schema = require(script.Parent.Schema)
+local SelectionNavigator = require(script.Parent.SelectionNavigator)
 local UIFactory = require(script.Parent.UIFactory)
 
 local Controller = {}
@@ -41,18 +43,26 @@ local function cleanValue(value)
 	local kind = typeof(value)
 	local text
 	if kind == "number" then
-		text = string.format("%.6g", value)
+		text = string.format("%.17g", value)
 	elseif kind == "EnumItem" then
 		text = tostring(value)
 	elseif kind == "string" then
-		text = value
+		text = string.format("%q", value)
+	elseif kind == "table" then
+		local fields = {}
+		for _, key in ipairs(sortedKeys(value)) do
+			if key ~= "kind" then
+				fields[#fields + 1] = key .. "=" .. cleanValue(value[key])
+			end
+		end
+		text = (value.kind or "") .. "(" .. table.concat(fields, ", ") .. ")"
+	elseif kind ~= "boolean" then
+		local encoded = AttributeCodec.encode(value)
+		text = encoded and cleanValue(encoded) or tostring(value)
 	else
 		text = tostring(value)
 	end
-	text = text:gsub("[%c]", " ")
-	if #text > 92 then
-		return text:sub(1, 89) .. "..."
-	end
+	text = text:gsub("\n", "\\n"):gsub("\r", "\\r"):gsub("\t", "\\t")
 	return text
 end
 
@@ -83,6 +93,10 @@ function Controller.new(ui, repository, captureService, previewService, applySer
 		_connections = {},
 		_presetConnections = {},
 		_resultConnections = {},
+		_previewConnections = {},
+		_previewGeneration = 0,
+		_showMatching = false,
+		_showIgnored = false,
 	}, Controller)
 	self:_connect()
 	self:_render()
@@ -121,6 +135,7 @@ function Controller:_disarmDelete()
 end
 
 function Controller:_clearPreview(message)
+	self:_stopWatchingPreview()
 	self._preview = nil
 	self._previewSelection = nil
 	self._previewOptions = nil
@@ -129,7 +144,76 @@ function Controller:_clearPreview(message)
 	end
 end
 
+function Controller:_stopWatchingPreview()
+	self._previewGeneration += 1
+	for _, connection in ipairs(self._previewConnections) do
+		connection:Disconnect()
+	end
+	table.clear(self._previewConnections)
+end
+
+function Controller:_watchPreview()
+	self:_stopWatchingPreview()
+	local preview, recipe = self._preview, self:_recipe()
+	if not preview or not recipe then return end
+	local generation = self._previewGeneration
+	local function stale()
+		if generation ~= self._previewGeneration then return end
+		self:_clearPreview("Targets or values changed. Preview again before Apply.")
+		self:_renderDetail()
+	end
+	local function watch(signal)
+		self._previewConnections[#self._previewConnections + 1] = signal:Connect(stale)
+	end
+	local tracked = {}
+	for _, result in ipairs(preview.results) do
+		local instance = result.instance
+		tracked[instance] = true
+		watch(instance.AncestryChanged)
+		watch(instance:GetPropertyChangedSignal("Name"))
+		if result.status ~= "ignored" then
+			for propertyName in pairs(recipe.properties) do
+				watch(instance:GetPropertyChangedSignal(propertyName))
+			end
+			if recipe.capture.attributes then
+				for name in pairs(recipe.attributes) do watch(instance:GetAttributeChangedSignal(name)) end
+			end
+		end
+	end
+	if self._scope == "Descendants" then
+		for _, root in ipairs(self._previewSelection) do
+			watch(root.DescendantAdded)
+			watch(root.DescendantRemoving)
+		end
+	end
+	local tags = {}
+	if preview.options.tag ~= "" then tags[preview.options.tag] = true end
+	if recipe.capture.tags then
+		for _, tag in ipairs(recipe.tags) do tags[tag] = true end
+	end
+	local collection = game:GetService("CollectionService")
+	for tag in pairs(tags) do
+		for _, signal in ipairs({ collection:GetInstanceAddedSignal(tag), collection:GetInstanceRemovedSignal(tag) }) do
+			self._previewConnections[#self._previewConnections + 1] = signal:Connect(function(instance)
+				if tracked[instance] then stale() end
+			end)
+		end
+	end
+end
+
 function Controller:_connect()
+	self:_listen(self._ui.searchInput:GetPropertyChangedSignal("Text"), function()
+		self:_renderPresetList()
+	end)
+	self:_listen(self._ui.duplicateButton.Activated, function()
+		local recipe = self:_recipe()
+		if not recipe then return end
+		self._renameMode = "duplicate"
+		self._ui.renameInput.Text = ""
+		self._ui.renameConfirm.Text = "Duplicate"
+		self._ui.renamePanel.Visible = true
+		self._ui.renameInput:CaptureFocus()
+	end)
 	self:_listen(self._ui.saveButton.Activated, function()
 		self:_openCreate()
 	end)
@@ -154,6 +238,8 @@ function Controller:_connect()
 		local recipe = self:_recipe()
 		if recipe then
 			self:_disarmDelete()
+			self._renameMode = "rename"
+			self._ui.renameConfirm.Text = "Save"
 			self._ui.renameInput.Text = recipe.name
 			self._ui.renamePanel.Visible = true
 			self._ui.renameInput:CaptureFocus()
@@ -210,12 +296,30 @@ function Controller:_connect()
 	self:_listen(self._ui.selectIgnoredButton.Activated, function()
 		self:_selectResults("ignored")
 	end)
+	self:_listen(self._ui.frameAffectedButton.Activated, function()
+		if not self._preview then return end
+		local ok, message = SelectionNavigator.frame(self._preview.affected, workspace.CurrentCamera)
+		if not ok then self:showError(message) end
+	end)
+	self:_listen(self._ui.showMatchingButton.Activated, function()
+		self._showMatching = not self._showMatching
+		self:_renderResults()
+	end)
+	self:_listen(self._ui.showIgnoredButton.Activated, function()
+		self._showIgnored = not self._showIgnored
+		self:_renderResults()
+	end)
 
 	self:_listen(self._selectionService.SelectionChanged, function()
 		if self._internalSelection then
-			return
+			local actual = self:_selection()
+			local same = #actual == #self._internalSelection
+			for index, instance in ipairs(actual) do
+				if instance ~= self._internalSelection[index] then same = false; break end
+			end
+			self._internalSelection = false
+			if same then return end
 		end
-		self._ui.editorOverlay.Visible = false
 		self:_clearPreview("Selection changed. Run Preview before applying.")
 		self:_disarmDelete()
 		self:_renderDetail()
@@ -238,6 +342,9 @@ function Controller:_setEditorLibrary(library)
 	self._editorLibrary = library
 	UIFactory.setSegment(self._ui.localLibraryButton, library == "Local")
 	UIFactory.setSegment(self._ui.projectLibraryButton, library == "Project")
+	self._ui.editorLibraryHelp.Text = library == "Project"
+		and "Project: saved in ServerStorage with this place. Saving changes the project."
+		or "Local: saved in Studio settings on this computer, outside the place."
 end
 
 function Controller:_clearDynamic(container, connections)
@@ -288,7 +395,7 @@ function Controller:_openEditor(mode, source, schema, recipe)
 	self._ui.editorNameInput.TextEditable = mode == "create"
 	self._ui.editorNameInput.TextTransparency = mode == "create" and 0 or 0.35
 	self._ui.editorConfirm.Text = mode == "create" and "Save" or "Update"
-	self._ui.editorHint.Text = "Save and Preview are read-only. Only checked fields can be applied."
+	self._ui.editorHint.Text = "Capture does not change the source. Save stores the checked fields."
 	self._ui.editorHint.TextColor3 = self._ui.colors.muted
 
 	if mode == "create" then
@@ -306,6 +413,7 @@ function Controller:_openEditor(mode, source, schema, recipe)
 	end
 	self:_buildEditorFields(source, schema, recipe and recipe.properties or {})
 	self._ui.editorOverlay.Visible = true
+	self._ui.editorScroll.CanvasPosition = Vector2.zero
 	if mode == "create" then
 		self._ui.editorNameInput:CaptureFocus()
 	end
@@ -388,6 +496,7 @@ function Controller:_saveEditor()
 		or "Recipe fields and values updated.", "success")
 	self:_resetFilters(result)
 	self:_render()
+	self._ui.showView("Targets")
 end
 
 function Controller:_renameRecipe()
@@ -395,7 +504,13 @@ function Controller:_renameRecipe()
 	if not recipe then
 		return
 	end
-	local renamed, result = self._repository:rename(recipe.library, recipe.name, self._ui.renameInput.Text)
+	local duplicating = self._renameMode == "duplicate"
+	local renamed, result
+	if duplicating then
+		renamed, result = self._repository:duplicate(recipe.library, recipe.name, recipe.library, self._ui.renameInput.Text)
+	else
+		renamed, result = self._repository:rename(recipe.library, recipe.name, self._ui.renameInput.Text)
+	end
 	if not renamed then
 		self:_setFeedback(result, "danger")
 		return
@@ -403,7 +518,8 @@ function Controller:_renameRecipe()
 	self._selectedName = result.name
 	self._ui.renamePanel.Visible = false
 	self:_clearPreview()
-	self:_setFeedback("Recipe renamed.", "success")
+	self:_setFeedback(duplicating and (result.library .. " variant saved. Original unchanged. Select a source to Edit fields.") or "Recipe renamed.", "success")
+	self._ui.searchInput.Text = ""
 	self:_render()
 end
 
@@ -491,14 +607,20 @@ function Controller:_runPreview()
 	local selection = self:_selection()
 	local preview, previewError = self._previewService:build(recipe, selection, self:_rawScopeOptions(recipe))
 	if not preview then
+		self:_clearPreview()
 		self:_setFeedback(previewError, "danger")
+		self:_renderDetail()
 		return
 	end
 	self._preview = preview
 	self._previewSelection = copyArray(selection)
 	self._previewOptions = preview.options
+	self._showMatching = false
+	self._showIgnored = false
+	self:_watchPreview()
 	self:_setFeedback("Preview is read-only. Inspect the detailed changes before Apply.", "muted")
 	self:_renderDetail()
+	self._ui.showView("Changes")
 end
 
 function Controller:_apply()
@@ -508,21 +630,28 @@ function Controller:_apply()
 	end
 	local currentPreview, previewError = self._previewService:build(recipe, self._previewSelection, self._previewOptions)
 	if not currentPreview then
+		self:_clearPreview()
 		self:_setFeedback(previewError, "danger")
+		self:_renderDetail()
 		return
 	elseif not self._previewService.same(self._preview, currentPreview) then
 		self._preview = currentPreview
+		self:_watchPreview()
 		self:_setFeedback("Targets or values changed. Preview refreshed; review it before applying.", "warning")
 		self:_renderDetail()
 		return
 	end
 
+	self:_stopWatchingPreview()
 	local applied, result = self._applyService:apply(recipe, currentPreview.targets)
 	if not applied then
 		self:_setFeedback(result, "danger")
+		self:_clearPreview()
+		self:_renderDetail()
 		return
 	end
 	self._preview = assert(self._previewService:build(recipe, self._previewSelection, self._previewOptions))
+	self:_watchPreview()
 	self:_setFeedback(string.format(
 		"Applied to %s: %s, %s, %s. One Undo restores the previous state.",
 		countLabel(result.targets, "target"),
@@ -540,11 +669,9 @@ function Controller:_selectInstances(instances)
 			live[#live + 1] = instance
 		end
 	end
-	self._internalSelection = true
+	-- Only swallow the exact selection made by Locate, not a later user selection.
+	self._internalSelection = live
 	self._selectionService:Set(live)
-	task.defer(function()
-		self._internalSelection = false
-	end)
 end
 
 function Controller:_selectResults(status)
@@ -555,8 +682,9 @@ function Controller:_selectResults(status)
 end
 
 function Controller:_renderPresetList()
+	local scroll = self._ui.presetList.CanvasPosition
 	self:_clearDynamic(self._ui.presetList, self._presetConnections)
-	local recipes = self._repository:getRecipes()
+	local recipes = self._repository:getRecipes(self._ui.searchInput.Text)
 	if self._selectedName and not self:_recipe() then
 		self._selectedLibrary = nil
 		self._selectedName = nil
@@ -573,7 +701,8 @@ function Controller:_renderPresetList()
 		empty.Font = Enum.Font.BuilderSans
 		empty.LayoutOrder = 10
 		empty.Size = UDim2.new(1, -4, 0, 64)
-		empty.Text = "No recipes yet.\nSelect one supported source and save exact fields."
+		empty.Text = self._ui.searchInput.Text ~= "" and "No recipes match this name."
+			or "Select one supported source to capture a recipe."
 		empty.TextColor3 = self._ui.colors.muted
 		empty.TextSize = 12
 		empty.TextWrapped = true
@@ -594,8 +723,10 @@ function Controller:_renderPresetList()
 			self:_resetFilters(recipe)
 			self:_setFeedback(nil)
 			self:_render()
+			self._ui.showView("Recipe")
 		end)
 	end
+	self._ui.presetList.CanvasPosition = scroll
 end
 
 function Controller:_capturedText(recipe)
@@ -619,12 +750,12 @@ function Controller:_capturedText(recipe)
 	return #lines > 0 and table.concat(lines, "\n") or "No fields captured"
 end
 
-function Controller:_resultText(result)
+function Controller:_resultText(result, index)
 	local status = string.upper(result.status)
 	if result.status == "ignored" then
-		return string.format("%s  %s\n%s", status, result.path, result.reason)
+		return string.format("Select #%d  %s (%s)\n%s: %s", index, result.path, result.instance.ClassName, status, result.reason)
 	end
-	local lines = { status .. "  " .. result.path }
+	local lines = { string.format("Select #%d  %s (%s)", index, result.path, result.instance.ClassName) }
 	for _, change in ipairs(result.changes) do
 		local before = change.beforeExists == false and "<missing>" or cleanValue(change.before)
 		lines[#lines + 1] = string.format("%s %s: %s -> %s", change.kind, change.name, before, cleanValue(change.after))
@@ -640,22 +771,31 @@ function Controller:_renderResults()
 	if not self._preview then
 		return
 	end
-	local limit = math.min(#self._preview.results, Constants.MAX_RENDERED_RESULTS or 500)
+	self._ui.showMatchingButton.Text = (self._showMatching and "Hide" or "Show") .. " matching (" .. self._preview.matchingCount .. ")"
+	self._ui.showIgnoredButton.Text = (self._showIgnored and "Hide" or "Show") .. " ignored (" .. self._preview.ignoredCount .. ")"
+	local visible = {}
+	for index, result in ipairs(self._preview.results) do
+		if result.status == "affected" or (result.status == "matching" and self._showMatching) or (result.status == "ignored" and self._showIgnored) then
+			visible[#visible + 1] = { result = result, index = index }
+		end
+	end
+	local limit = math.min(#visible, Constants.MAX_RENDERED_RESULTS or 500)
 	for index = 1, limit do
-		local result = self._preview.results[index]
-		local resultButton = UIFactory.createResultButton(self._ui.resultList, self:_resultText(result), result.status)
+		local result = visible[index].result
+		local resultButton = UIFactory.createResultButton(self._ui.resultList, self:_resultText(result, visible[index].index), result.status)
+		resultButton.LayoutOrder = index
 		self._resultConnections[#self._resultConnections + 1] = resultButton.Activated:Connect(function()
 			self:_selectInstances({ result.instance })
 		end)
 	end
-	if #self._preview.results > limit then
+	if #visible > limit then
 		local more = Instance.new("TextLabel")
 		more.AutomaticSize = Enum.AutomaticSize.Y
 		more.BackgroundTransparency = 1
 		more.Font = Enum.Font.BuilderSans
-		more.LayoutOrder = 20
+		more.LayoutOrder = limit + 1
 		more.Size = UDim2.new(1, -4, 0, 36)
-		more.Text = string.format("Showing %d of %d results. Narrow the filters to inspect each object.", limit, #self._preview.results)
+		more.Text = string.format("Showing %d of %d expanded results. Narrow the filters to inspect each object.", limit, #visible)
 		more.TextColor3 = self._ui.colors.warning
 		more.TextSize = 12
 		more.TextWrapped = true
@@ -688,11 +828,15 @@ function Controller:_renderDetail()
 			self._ui.editButton,
 			self._ui.recaptureButton,
 			self._ui.deleteButton,
+			self._ui.duplicateButton,
 			self._ui.previewButton,
 			self._ui.applyButton,
 			self._ui.selectAffectedButton,
 			self._ui.selectMatchingButton,
 			self._ui.selectIgnoredButton,
+			self._ui.frameAffectedButton,
+			self._ui.showMatchingButton,
+			self._ui.showIgnoredButton,
 		}) do
 			UIFactory.setButtonEnabled(button, false)
 		end
@@ -701,7 +845,7 @@ function Controller:_renderDetail()
 	end
 
 	self._ui.detailName.Text = recipe.name
-	self._ui.libraryBadge.Text = string.upper(recipe.library)
+	self._ui.libraryBadge.Text = recipe.library == "Project" and "Project / saved with place" or "Local / this computer"
 	self._ui.detailCounts.Text = string.format(
 		"%s | %s | %s | %s",
 		recipe.schemaId,
@@ -714,7 +858,7 @@ function Controller:_renderDetail()
 		self._ui.previewSummary.Text = "Run Preview to inspect every pending change."
 	else
 		self._ui.previewSummary.Text = string.format(
-			"%d scanned | %d compatible | %d affected | %d matching | %d ignored | %d writes",
+			"%d scanned | %d compatible\n%d changed / %d matching / %d ignored\n%d exact field writes",
 			self._preview.scannedCount,
 			self._preview.compatibleCount,
 			self._preview.affectedCount,
@@ -724,7 +868,7 @@ function Controller:_renderDetail()
 		)
 	end
 
-	for _, button in ipairs({ self._ui.renameButton, self._ui.editButton, self._ui.recaptureButton, self._ui.deleteButton }) do
+	for _, button in ipairs({ self._ui.renameButton, self._ui.editButton, self._ui.recaptureButton, self._ui.deleteButton, self._ui.duplicateButton }) do
 		UIFactory.setButtonEnabled(button, true)
 	end
 	UIFactory.setButtonEnabled(self._ui.previewButton, true)
@@ -732,7 +876,18 @@ function Controller:_renderDetail()
 	UIFactory.setButtonEnabled(self._ui.selectAffectedButton, self._preview ~= nil and #self._preview.affected > 0)
 	UIFactory.setButtonEnabled(self._ui.selectMatchingButton, self._preview ~= nil and #self._preview.matching > 0)
 	UIFactory.setButtonEnabled(self._ui.selectIgnoredButton, self._preview ~= nil and #self._preview.ignored > 0)
+	UIFactory.setButtonEnabled(self._ui.frameAffectedButton, self._preview ~= nil and #self._preview.affected > 0)
+	UIFactory.setButtonEnabled(self._ui.showMatchingButton, self._preview ~= nil and self._preview.matchingCount > 0)
+	UIFactory.setButtonEnabled(self._ui.showIgnoredButton, self._preview ~= nil and self._preview.ignoredCount > 0)
+	self._ui.applyButton.Text = self._preview and ("Apply " .. self._preview.affectedCount) or "Apply"
 	self:_renderResults()
+end
+
+function Controller:refresh()
+	local loaded, message = self._repository:load()
+	self:_clearPreview("History changed. Preview again before Apply.")
+	self:_render()
+	if not loaded then self:showError(message) end
 end
 
 function Controller:_render()
@@ -741,12 +896,14 @@ function Controller:_render()
 end
 
 function Controller:destroy()
+	self:_stopWatchingPreview()
 	for _, connections in ipairs({ self._connections, self._presetConnections, self._resultConnections }) do
 		for _, connection in ipairs(connections) do
 			connection:Disconnect()
 		end
 		table.clear(connections)
 	end
+	if self._ui.destroy then self._ui.destroy() end
 end
 
 return Controller
