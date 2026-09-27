@@ -10,9 +10,9 @@
 | JointForge | 103958912217728 | Existing, unchanged |
 | CurveForge | 90642263224333 | Existing, unchanged |
 | AccessForge | 127360597946823 | Existing, unchanged; 136358269001448 remains a pre-existing duplicate, not canonical |
-| SchemaForge 1.0.0 | **84085408748744** | **PASS**: 23 native groups, real GUI Apply/Undo/Redo, three licensed-scene captures, Studio success |
+| SchemaForge 1.1.0 | **84085408748744** | **READY / PASS**: 91 native checks in each theme, final GUI/media, one successful existing-asset update, issue #17 |
 
-SchemaForge: [release status](../products/schemaforge/release/RELEASE_STATUS.md), [test evidence](../products/schemaforge/tests/RESULTS.md), [media](../products/schemaforge/release/MEDIA_PLAN.md), [publication guard](../products/schemaforge/release/PUBLICATION.md). User web steps: price, icon/screenshots and distribution. Outreach drafts are prepared, not posted. No earlier product code, asset or missing historical QA evidence was changed in this run.
+SchemaForge: [release status](../products/schemaforge/release/RELEASE_STATUS.md), [final gate](../products/schemaforge/v2/RELEASE_GATE.md), [media](../products/schemaforge/release/MEDIA_PLAN.md), [publication guard](../products/schemaforge/release/PUBLICATION.md). Existing asset update confirmed 2026-09-27 22:57 UTC (2026-09-28 Paris), no new asset. User web steps: listing, price, icon/screenshots and distribution. Outreach drafts are prepared, not posted. Other products and missing historical QA evidence are unchanged by issue #17.
 
 ## PresetForge issue #16
 

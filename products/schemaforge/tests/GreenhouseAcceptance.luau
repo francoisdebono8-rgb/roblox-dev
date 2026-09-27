@@ -121,6 +121,18 @@ function q.watchText(name)
 	q.textWatch=connection
 end
 function q.stopTextWatch() if q.textWatch then q.textWatch:Disconnect(); q.textWatch=nil end end
+function q.checkTheme()
+	local theme=settings().Studio.Theme
+	assert(root.BackgroundColor3==theme:GetColor(Enum.StudioStyleGuideColor.MainBackground))
+	assert(root.Header.ProductTitle.TextColor3==theme:GetColor(Enum.StudioStyleGuideColor.MainText),"Persistent title retained the previous theme")
+	assert(root.Footer.Version.TextColor3==theme:GetColor(Enum.StudioStyleGuideColor.SubText),"Persistent footer retained the previous theme")
+	for _,obj in ipairs(root.Body:GetDescendants()) do
+		if obj:IsA("TextLabel") and obj.Name:match("Label$") then
+			assert(obj.TextColor3==theme:GetColor(Enum.StudioStyleGuideColor.SubText),obj.Name..": stale theme")
+		end
+	end
+	print("[SF11Greenhouse][PASS] Native theme colors on persistent and current controls: "..theme.Name)
+end
 function q.cleanFixture()
 	q.stopTextWatch()
 	if q.fixtureEntry then q.fixtureEntry:Destroy() end

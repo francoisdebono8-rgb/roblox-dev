@@ -1,0 +1,130 @@
+Native Studio 0.740.19.7400003, Edit mode.
+2026-09-27T22:22:45.415Z [SchemaForgeFinalGate] artifact=SchemaForge-v1.1.0.rbxm sha256=4c6768ba0c484164a576287b3cb623b8fd23c5ae90054b415e640c483a1906e9
+2026-09-27T22:22:45.415Z [SchemaForgeFinalGate] Native module suites, ScreenGui geometry and disposable DockWidget focus checks; no simulated clicks or manual-flow claim.
+2026-09-27T22:22:45.420Z [SchemaForgeTests][PASS] Capture is read-only, typed and excludes unsupported types
+2026-09-27T22:22:45.421Z [SchemaForgeTests][PASS] Required types, range, choices, class and child paths
+2026-09-27T22:22:45.421Z [SchemaForgeTests][PASS] Audit and preview leave all instances unchanged
+2026-09-27T22:22:45.422Z [SchemaForgeTests][PASS] Selection roots include descendants and deduplicate overlaps
+2026-09-27T22:22:45.422Z [SchemaForgeTests][PASS] False is present; optional missing is not a finding
+2026-09-27T22:22:45.423Z [SchemaForgeTests][PASS] Missing-only apply preserves values, geometry, tags and children
+2026-09-27T22:22:45.548Z [SchemaForgeTests][PASS] Actual native Undo and Redo restore exact attributes
+2026-09-27T22:22:45.548Z [SchemaForgeTests][PASS] Already applied and stale existing values are refused
+2026-09-27T22:22:45.550Z [SchemaForgeTests][PASS] Stale tag, parent and removed scope are refused
+2026-09-27T22:22:45.550Z [SchemaForgeTests][PASS] Duplicate child names and wrong child classes are reported
+2026-09-27T22:22:45.550Z [SchemaForgeTests][PASS] Invalid schemas and unsafe defaults are refused
+2026-09-27T22:22:45.550Z [SchemaForgeTests][PASS] Number integer and min/max bounds are inclusive
+2026-09-27T22:22:45.550Z [SchemaForgeTests][PASS] Recording refusal does not mutate
+2026-09-27T22:22:45.551Z [SchemaForgeTests][PASS] Commit failure rolls back all attempted repairs
+2026-09-27T22:22:45.551Z [SchemaForgeTests][PASS] Project save/load matches typed values and descriptions
+2026-09-27T22:22:45.554Z [SchemaForgeTests][PASS] Project editing and actual native save Undo/Redo
+2026-09-27T22:22:45.554Z [SchemaForgeTests][PASS] No duplicate save or stale overwrite
+2026-09-27T22:22:45.558Z [SchemaForgeTests][PASS] Delete saved and actual native Undo/Redo
+2026-09-27T22:22:45.559Z [SchemaForgeTests][PASS] Malformed data fails without deleting it
+2026-09-27T22:22:45.559Z [SchemaForgeTests][PASS] Storage name collision is protected
+2026-09-27T22:22:45.560Z [SchemaForgeTests][PASS] Forbidden scopes and empty scope are refused
+2026-09-27T22:22:45.560Z [SchemaForgeTests][PASS] Select findings deduplicates real instances
+2026-09-27T22:22:45.566Z [SchemaForgeTests][PASS] UI mounts and disposes at narrow dock size
+2026-09-27T22:22:45.566Z [SchemaForgeTests][SUMMARY] 23 PASS / 0 FAIL
+2026-09-27T22:22:45.566Z [SchemaForgeFinalGate][SUITE PASS] Suite
+2026-09-27T22:22:45.616Z [SchemaForgeV11Engine][PASS] Structured categories, expected/actual values and notes preserve V1 reasons
+2026-09-27T22:22:45.617Z [SchemaForgeV11Engine][PASS] Repairable findings sort first with stable path/field ties and duplicate identities
+2026-09-27T22:22:45.618Z [SchemaForgeV11Engine][PASS] Category/field filters intersect with finding and object selections
+2026-09-27T22:22:45.619Z [SchemaForgeV11Engine][PASS] Literal All field is filterable and unknown filters match nothing
+2026-09-27T22:22:45.620Z [SchemaForgeV11Engine][PASS] Preview and selection use exactly the validated subset without writes
+2026-09-27T22:22:45.621Z [SchemaForgeV11Engine][PASS] Copied, cross-audit, duplicate, sparse and oversized subsets are refused
+2026-09-27T22:22:45.622Z [SchemaForgeV11Engine][PASS] Tampered finding and forged plan cannot introduce a repair
+2026-09-27T22:22:45.656Z [SchemaForgeV11Engine][PASS] Exact finding limit is retained; excess findings refuse the entire audit
+2026-09-27T22:22:45.657Z [SchemaForgeV11Engine][PASS] Stale: existing attribute on another matched object
+2026-09-27T22:22:45.659Z [SchemaForgeV11Engine][PASS] Stale: optional/unruled attribute on a tagged object
+2026-09-27T22:22:45.660Z [SchemaForgeV11Engine][PASS] Stale: additional tag on another matched object
+2026-09-27T22:22:45.661Z [SchemaForgeV11Engine][PASS] Stale: target tag removed from another matched object
+2026-09-27T22:22:45.663Z [SchemaForgeV11Engine][PASS] Stale: new tagged object enters the scope
+2026-09-27T22:22:45.664Z [SchemaForgeV11Engine][PASS] Stale: previously untagged scope object gains the target tag
+2026-09-27T22:22:45.665Z [SchemaForgeV11Engine][PASS] Stale: same-name tagged replacement
+2026-09-27T22:22:45.666Z [SchemaForgeV11Engine][PASS] Stale: required leaf removed
+2026-09-27T22:22:45.667Z [SchemaForgeV11Engine][PASS] Stale: required leaf renamed
+2026-09-27T22:22:45.668Z [SchemaForgeV11Engine][PASS] Stale: same-name required leaf replaced
+2026-09-27T22:22:45.669Z [SchemaForgeV11Engine][PASS] Stale: required intermediate becomes ambiguous
+2026-09-27T22:22:45.670Z [SchemaForgeV11Engine][PASS] Stale: missing required child becomes present
+2026-09-27T22:22:45.671Z [SchemaForgeV11Engine][PASS] Stale: tagged object renamed
+2026-09-27T22:22:45.672Z [SchemaForgeV11Engine][PASS] Stale: tagged object reparented inside scope
+2026-09-27T22:22:45.673Z [SchemaForgeV11Engine][PASS] Stale: scope ancestor renamed
+2026-09-27T22:22:45.674Z [SchemaForgeV11Engine][PASS] Stale: scope moved between supported services
+2026-09-27T22:22:45.675Z [SchemaForgeV11Engine][PASS] Stale: scope detached
+2026-09-27T22:22:45.675Z [SchemaForgeV11Engine][PASS] Stale: source schema edited
+2026-09-27T22:22:45.676Z [SchemaForgeV11Engine][PASS] Stale: source scope array edited
+2026-09-27T22:22:45.677Z [SchemaForgeV11Engine][PASS] Mutated audit schema/roots invalidate a preview already created
+2026-09-27T22:22:45.677Z [SchemaForgeV11Engine][PASS] Unrelated properties and untagged content do not stale an audit
+2026-09-27T22:22:45.678Z [SchemaForgeV11Engine][PASS] Required-child ambiguity and wrong class stay diagnostic only
+2026-09-27T22:22:45.679Z [SchemaForgeV11Engine][PASS] Scope overlaps, false defaults and optional missing preserve compatibility
+2026-09-27T22:22:45.681Z [SchemaForgeV11Engine][PASS] Missing without default stays nonrepairable and selection is bounded
+2026-09-27T22:22:45.682Z [SchemaForgeV11Engine][PASS] Freshness is rechecked when the history recording opens
+2026-09-27T22:22:45.683Z [SchemaForgeV11Engine][PASS] Recording refusal and commit failure leave missing attributes absent
+2026-09-27T22:22:45.714Z [SchemaForgeV11Engine][PASS] Native subset Apply, Undo and Redo preserve invalid values and hierarchy
+2026-09-27T22:22:45.714Z [SchemaForgeV11Engine][SUMMARY] 35 PASS / 0 FAIL
+2026-09-27T22:22:45.714Z [SchemaForgeFinalGate][SUITE PASS] V11Engine.spec
+2026-09-27T22:22:45.793Z [SchemaForgeLayout][THEME] Light; 24 ScreenGui + 8 DockWidget cases; Studio theme settings are read-only
+2026-09-27T22:22:46.509Z [SchemaForgeLayout][PASS] Light 240x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:47.050Z [SchemaForgeLayout][PASS] Light 240x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:47.533Z [SchemaForgeLayout][PASS] Light 240x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:48.085Z [SchemaForgeLayout][PASS] Light 240x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:48.567Z [SchemaForgeLayout][PASS] Light 240x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:49.117Z [SchemaForgeLayout][PASS] Light 240x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:49.600Z [SchemaForgeLayout][PASS] Light 320x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:50.149Z [SchemaForgeLayout][PASS] Light 320x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:50.634Z [SchemaForgeLayout][PASS] Light 320x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:51.184Z [SchemaForgeLayout][PASS] Light 320x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:51.667Z [SchemaForgeLayout][PASS] Light 320x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:52.217Z [SchemaForgeLayout][PASS] Light 320x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:52.700Z [SchemaForgeLayout][PASS] Light 400x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:53.250Z [SchemaForgeLayout][PASS] Light 400x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:53.733Z [SchemaForgeLayout][PASS] Light 400x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:54.283Z [SchemaForgeLayout][PASS] Light 400x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:54.767Z [SchemaForgeLayout][PASS] Light 400x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:55.317Z [SchemaForgeLayout][PASS] Light 400x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:55.800Z [SchemaForgeLayout][PASS] Light 560x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:56.350Z [SchemaForgeLayout][PASS] Light 560x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:56.833Z [SchemaForgeLayout][PASS] Light 560x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:57.383Z [SchemaForgeLayout][PASS] Light 560x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:57.867Z [SchemaForgeLayout][PASS] Light 560x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:58.417Z [SchemaForgeLayout][PASS] Light 560x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T22:22:58.500Z [SchemaForgeLayout][CHROME] measured outer-minus-client=2, 24
+2026-09-27T22:22:58.500Z [SchemaForgeLayout][PASS] Measure native DockWidget window chrome
+2026-09-27T22:22:58.634Z [SchemaForgeLayout][DOCK SIZE] requested=240x360 actualClient=240.0x360.0 content=240.0x360.0 restored=false
+2026-09-27T22:22:58.833Z [SchemaForgeLayout][FOCUS] Light DockWidget 240x360 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=378.0
+2026-09-27T22:22:58.983Z [SchemaForgeLayout][FOCUS] Light DockWidget 240x360 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=378.0
+2026-09-27T22:22:59.083Z [SchemaForgeLayout][PASS] Light DockWidget 240x360 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:22:59.199Z [SchemaForgeLayout][DOCK SIZE] requested=240x640 actualClient=240.0x640.0 content=240.0x640.0 restored=false
+2026-09-27T22:22:59.400Z [SchemaForgeLayout][FOCUS] Light DockWidget 240x640 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=238.0
+2026-09-27T22:22:59.550Z [SchemaForgeLayout][FOCUS] Light DockWidget 240x640 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=238.0
+2026-09-27T22:22:59.649Z [SchemaForgeLayout][PASS] Light DockWidget 240x640 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:22:59.750Z [SchemaForgeLayout][DOCK SIZE] requested=320x360 actualClient=320.0x360.0 content=320.0x360.0 restored=false
+2026-09-27T22:22:59.949Z [SchemaForgeLayout][FOCUS] Light DockWidget 320x360 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=378.0
+2026-09-27T22:23:00.167Z [SchemaForgeLayout][FOCUS] Light DockWidget 320x360 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=378.0
+2026-09-27T22:23:00.266Z [SchemaForgeLayout][PASS] Light DockWidget 320x360 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:00.366Z [SchemaForgeLayout][DOCK SIZE] requested=320x640 actualClient=320.0x640.0 content=320.0x640.0 restored=false
+2026-09-27T22:23:00.566Z [SchemaForgeLayout][FOCUS] Light DockWidget 320x640 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=238.0
+2026-09-27T22:23:00.717Z [SchemaForgeLayout][FOCUS] Light DockWidget 320x640 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=238.0
+2026-09-27T22:23:00.816Z [SchemaForgeLayout][PASS] Light DockWidget 320x640 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:00.916Z [SchemaForgeLayout][DOCK SIZE] requested=400x360 actualClient=400.0x360.0 content=400.0x360.0 restored=false
+2026-09-27T22:23:01.116Z [SchemaForgeLayout][FOCUS] Light DockWidget 400x360 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=378.0
+2026-09-27T22:23:01.267Z [SchemaForgeLayout][FOCUS] Light DockWidget 400x360 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=378.0
+2026-09-27T22:23:01.367Z [SchemaForgeLayout][PASS] Light DockWidget 400x360 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:01.484Z [SchemaForgeLayout][DOCK SIZE] requested=400x640 actualClient=400.0x640.0 content=400.0x640.0 restored=false
+2026-09-27T22:23:01.683Z [SchemaForgeLayout][FOCUS] Light DockWidget 400x640 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=238.0
+2026-09-27T22:23:01.834Z [SchemaForgeLayout][FOCUS] Light DockWidget 400x640 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=238.0
+2026-09-27T22:23:01.933Z [SchemaForgeLayout][PASS] Light DockWidget 400x640 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:02.050Z [SchemaForgeLayout][DOCK SIZE] requested=560x360 actualClient=560.0x360.0 content=560.0x360.0 restored=false
+2026-09-27T22:23:02.250Z [SchemaForgeLayout][FOCUS] Light DockWidget 560x360 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=378.0
+2026-09-27T22:23:02.400Z [SchemaForgeLayout][FOCUS] Light DockWidget 560x360 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=378.0
+2026-09-27T22:23:02.500Z [SchemaForgeLayout][PASS] Light DockWidget 560x360 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:02.616Z [SchemaForgeLayout][DOCK SIZE] requested=560x640 actualClient=560.0x640.0 content=560.0x640.0 restored=false
+2026-09-27T22:23:02.816Z [SchemaForgeLayout][FOCUS] Light DockWidget 560x640 / geometry, native focus, caret, selection, scroll, dispose OnUndo: IsFocused=true cursor=25 selection=7 scrollY=238.0
+2026-09-27T22:23:02.967Z [SchemaForgeLayout][FOCUS] Light DockWidget 560x640 / geometry, native focus, caret, selection, scroll, dispose OnRedo: IsFocused=true cursor=7 selection=25 scrollY=238.0
+2026-09-27T22:23:03.067Z [SchemaForgeLayout][PASS] Light DockWidget 560x640 / geometry, native focus, caret, selection, scroll, dispose
+2026-09-27T22:23:03.067Z [SchemaForgeLayout][SUMMARY] 33 PASS / 0 FAIL; theme=Light
+2026-09-27T22:23:03.067Z [SchemaForgeLayout] Other themes require a separate run after changing Studio Settings through the native UI.
+2026-09-27T22:23:03.067Z [SchemaForgeLayout] ScreenGui geometry, DockWidget CaptureFocus/caret/selection and BindableEvent history rerenders; no human typing/clicks, native history transaction or rule-switching claim.
+2026-09-27T22:23:03.067Z [SchemaForgeFinalGate][SUITE PASS] Layout.spec
+2026-09-27T22:23:04.216Z [SchemaForgeFinalGate][SUMMARY] 3/3 suites PASS; gate PASS
+2026-09-27T22:23:04.216Z [SchemaForgeFinalGate] NOT TESTED: human mouse/keyboard workflows, capture/load/filter/apply GUI flows, screenshots, restart persistence or publication.

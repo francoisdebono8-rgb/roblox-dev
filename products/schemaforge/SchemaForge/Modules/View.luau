@@ -28,10 +28,15 @@ function View.mount(widget, selection, history)
 	local inputOwners=setmetatable({}, {__mode="k"})
 	local render,refresh
 	local validation={}
-	local colors,styles={},setmetatable({}, {__mode="k"})
+	local colors,styles={},{}
 	local studio=settings().Studio
 	local function paint(obj,property,role)
-		styles[obj]=styles[obj] or {}; styles[obj][property]=role; obj[property]=colors[role]
+		if not styles[obj] then
+			styles[obj]={}
+			-- Keep native Instance wrappers alive until their controls are destroyed.
+			obj.Destroying:Connect(function() styles[obj]=nil end)
+		end
+		styles[obj][property]=role; obj[property]=colors[role]
 	end
 	local function theme()
 		local t=studio.Theme
