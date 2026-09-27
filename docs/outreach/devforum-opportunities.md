@@ -188,6 +188,36 @@ I'd appreciate feedback from factory, warehouse and utility-map builders: which 
 
 ---
 
+## SchemaForge - 2026-09-27
+
+Canonical [Creator Store asset](https://create.roblox.com/store/asset/84085408748744), suggested USD 4.99. Drafts only; no posting requested in this factory run. Check final availability and price before using them.
+
+Searches: Studio Features `attribute descriptions`, `attribute min max validation`, `query missing children`; Building Support `attributes tags`, `missing configuration`, `configure tag`; Community Resources/plugins `attribute manager`, `schema validator`; live Creator Store `schema`, `attribute`, `validator`. Building Support did not yield a strong matching case; no invented outreach target was added.
+
+### USE - Attribute documentation for designer handoff
+
+- [Custom descriptions for attributes](https://devforum.roblox.com/t/custom-descriptions-for-attributes-in-the-properties-panel/4664872), Studio Features, June 2-3, 2026, 13 posts. Live check Sep 27: Reply button present, no closed notice; posting permissions not tested (read-only signed-out browser).
+- Need: designers and solo developers lose attribute meanings and associated tags. Fit: project-saved descriptions beside explicit rules. It does not add native Properties hover descriptions or synchronize notes with scripts.
+- Draft: For handoff, a per-tag contract can keep the field meaning, expected type and allowed values together in the place. It still needs maintenance when code changes. I'm the developer of SchemaForge, a paid plugin that provides that separate panel and checks tagged objects against the saved rules. It does not add tooltips to native Properties or read your scripts. [Workflow and limitations](https://create.roblox.com/store/asset/84085408748744).
+
+### USE - Repeated models with missing children
+
+- [Query language and Explorer parity](https://devforum.roblox.com/t/parity-between-the-query-language-and-explorer-more-syntax/4893794), Studio Features, Sep 25-26, 2026, two posts. Live Sep 27: Reply button present, no closed notice.
+- Need: combine checks to find invalid repeated rail models. Fit is partial and explicit: tag/class/required-child checks and attribute constraints; NOT Size/Vector3 property comparisons. Native queries remain preferable for those.
+- Draft: A reusable required-child contract can cover the missing-hierarchy part without tagging intermediate query results each time. For the Size checks, your native query/script approach is still needed. I'm the developer of SchemaForge, a paid plugin for saved tag, attribute and child-path rules with selectable findings. It doesn't validate Vector3 properties or replace the broader query improvements requested here. [Details](https://create.roblox.com/store/asset/84085408748744).
+
+### SKIP - Old attribute UX request
+
+- [Studio-specific attribute features](https://devforum.roblox.com/t/a-number-of-studio-specific-attribute-features-to-improve-ux/1334456), Studio Features, July 2021; latest visible follow-up April 2024. Live Sep 27: Reply button present, no closed notice.
+- Numeric constraints and string choices match our audit rules, but the request also concerns native editing/enforcement. Do not revive a dormant discussion just to advertise. Retain as research, no promotional reply.
+
+### SKIP - Solved bulk editing and competitor showcases
+
+- [Faster ways to add attributes](https://devforum.roblox.com/t/are-there-any-faster-ways-to-do-add-attributes/3165640), Platform Usage, September 2024, solved/closed October 2024 in research. Bulk editing is not our differentiation; no reply.
+- [Attribute Manager](https://devforum.roblox.com/t/attribute-manager-plugin-for-all-your-attribute-needs/1562593), Community Resources, 2021; [Attribute Cloner](https://devforum.roblox.com/t/plugin-attribute-cloner-dkns-attributes-editor/3253747), Community Resources/plugins, 2024. Competitor showcases: SKIP regardless of open state. No advertising drafts for them.
+
+Community Resources announcement: [schemaforge-launch.md](schemaforge-launch.md). Include the three real images, not UI mockups. Recheck topic activity before any reply and post only with separate user authority.
+
 ## Posting workflow
 
 When the user's DevForum account gains reply permission:

@@ -1,4 +1,22 @@
-# Forge catalog release status - issue #12
+# Forge catalog release status
+
+## Catalog V1: five canonical Studio assets
+
+2026-09-27, after SchemaForge publication. Authenticated plugin creations list verified: six rows including the pre-existing AccessForge duplicate; exactly one SchemaForge. Five distinct products now have canonical Studio assets. This does not claim that SchemaForge's web distribution is enabled.
+
+| Product | Canonical asset ID | This run |
+| --- | --- | --- |
+| PresetForge | 73596873703054 | Existing, unchanged |
+| JointForge | 103958912217728 | Existing, unchanged |
+| CurveForge | 90642263224333 | Existing, unchanged |
+| AccessForge | 127360597946823 | Existing, unchanged; 136358269001448 remains a pre-existing duplicate, not canonical |
+| SchemaForge 1.0.0 | **84085408748744** | **PASS**: 23 native groups, real GUI Apply/Undo/Redo, three licensed-scene captures, Studio success |
+
+SchemaForge: [release status](../products/schemaforge/release/RELEASE_STATUS.md), [test evidence](../products/schemaforge/tests/RESULTS.md), [media](../products/schemaforge/release/MEDIA_PLAN.md), [publication guard](../products/schemaforge/release/PUBLICATION.md). User web steps: price, icon/screenshots and distribution. Outreach drafts are prepared, not posted. No earlier product code, asset or missing historical QA evidence was changed in this run.
+
+## Historical issue #12 snapshot
+
+The following is the original issue #12 evidence, retained without relabeling unexecuted tests as PASS. Later Studio publication IDs above supersede its old asset-state column.
 
 2026-09-27. **PARTIAL / BLOCKED: do not close issue #12.** No product functionality or commercial binary was changed.
 

@@ -1,0 +1,25 @@
+Studio 0.740.19.7400003, edit mode, exact final binary.
+2026-09-27T13:35:25.904Z [SchemaForgeTests][PASS] Capture is read-only, typed and excludes unsupported types
+2026-09-27T13:35:25.905Z [SchemaForgeTests][PASS] Required types, range, choices, class and child paths
+2026-09-27T13:35:25.905Z [SchemaForgeTests][PASS] Audit and preview leave all instances unchanged
+2026-09-27T13:35:25.905Z [SchemaForgeTests][PASS] Selection roots include descendants and deduplicate overlaps
+2026-09-27T13:35:25.905Z [SchemaForgeTests][PASS] False is present; optional missing is not a finding
+2026-09-27T13:35:25.905Z [SchemaForgeTests][PASS] Missing-only apply preserves values, geometry, tags and children
+2026-09-27T13:35:26.009Z [SchemaForgeTests][PASS] Actual native Undo and Redo restore exact attributes
+2026-09-27T13:35:26.009Z [SchemaForgeTests][PASS] Already applied and stale existing values are refused
+2026-09-27T13:35:26.010Z [SchemaForgeTests][PASS] Stale tag, parent and removed scope are refused
+2026-09-27T13:35:26.011Z [SchemaForgeTests][PASS] Duplicate child names and wrong child classes are reported
+2026-09-27T13:35:26.011Z [SchemaForgeTests][PASS] Invalid schemas and unsafe defaults are refused
+2026-09-27T13:35:26.011Z [SchemaForgeTests][PASS] Number integer and min/max bounds are inclusive
+2026-09-27T13:35:26.011Z [SchemaForgeTests][PASS] Recording refusal does not mutate
+2026-09-27T13:35:26.011Z [SchemaForgeTests][PASS] Commit failure rolls back all attempted repairs
+2026-09-27T13:35:26.012Z [SchemaForgeTests][PASS] Project save/load matches typed values and descriptions
+2026-09-27T13:35:26.012Z [SchemaForgeTests][PASS] Project editing and actual native save Undo/Redo
+2026-09-27T13:35:26.012Z [SchemaForgeTests][PASS] No duplicate save or stale overwrite
+2026-09-27T13:35:26.013Z [SchemaForgeTests][PASS] Delete saved and actual native Undo/Redo
+2026-09-27T13:35:26.013Z [SchemaForgeTests][PASS] Malformed data fails without deleting it
+2026-09-27T13:35:26.013Z [SchemaForgeTests][PASS] Storage name collision is protected
+2026-09-27T13:35:26.013Z [SchemaForgeTests][PASS] Forbidden scopes and empty scope are refused
+2026-09-27T13:35:26.013Z [SchemaForgeTests][PASS] Select findings deduplicates real instances
+2026-09-27T13:35:26.018Z [SchemaForgeTests][PASS] UI mounts and disposes at narrow dock size
+2026-09-27T13:35:26.018Z [SchemaForgeTests][SUMMARY] 23 PASS / 0 FAIL
