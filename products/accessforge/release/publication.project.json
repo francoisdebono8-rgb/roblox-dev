@@ -1,0 +1,1 @@
+{"name":"AccessForge-Publication","tree":{"$className":"DataModel","Workspace":{"$className":"Workspace","AccessForge":{"$path":"../dist/AccessForge-v1.0.0.rbxm"}},"Lighting":{"$className":"Lighting","$properties":{"Technology":"ShadowMap"}}}}

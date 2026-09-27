@@ -1,0 +1,12 @@
+{
+  "artifact": "AccessForge-v1.0.0.rbxm",
+  "sha256": "53655a01ca0bb2e05886cdc401fa38003430f4f10f7317854a93c646d9dff44c",
+  "source_sha256": {
+    "Engine": "91b380a1b53c566ff4cffcdd20b224d518bce9434baa0a60704ae56c0f7ffb01",
+    "Geometry": "2a6a909cfa4dc378bb5a8ea8ca4629355150699458f808664f52e1f6680edc3e",
+    "Main": "5d17d51786773cb97a60666e2093d398e0f68f2fc98a907936ee8fff968cb78c",
+    "Settings": "66607f2c50b352768b8dc2ee6509d926dd6af5959d26f4d142b10fa96e12c3b7",
+    "View": "bdd1dc1b6fce4f104d7a4e8255b7590dc269607a888e0a57c84e5712577bdc91"
+  },
+  "version": "1.0.0"
+}

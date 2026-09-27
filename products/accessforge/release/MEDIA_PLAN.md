@@ -1,0 +1,17 @@
+# AccessForge Commercial Media
+
+Captured and visually reviewed in Roblox Studio on 2026-09-27 using the exact final 1.0.0 local plugin. These are real window captures, not renders of a fake interface. Only an unchanged-pixel rectangular crop removes the Studio account chrome and Command Bar. PNG size: 2940 x 1450. No compositing, generative editing or overlays.
+
+| Order | File | Caption / visible state |
+|---|---|---|
+| 01 | `screenshots/01-factory-stair.png` | Factory Stair: 15 equalized steps connect two levels, top landing and both rails. Layout, calculation and Edit Existing/Regenerate visible. |
+| 02 | `screenshots/02-switchback-access.png` | Switchback Access: two return flights, central landing and supports. Left return, landing depth and calculated 25 steps visible. |
+| 03 | `screenshots/03-catwalk-system.png` | Catwalk System: elevated 38-stud platform, both rails and baseline supports, connected to a separate access stair. Catwalk Edit Existing/Regenerate visible. |
+
+Scene: `scene/AccessForge-Media.rbxl`. Source/license: `scene/SOURCE.md` and the adjacent MIT notice. The environment is media only and excluded from the plugin upload.
+
+## Recapture
+
+Open the media place in edit mode and enable the installed AccessForge plugin. Each child of `Workspace.AccessForgeDemo` stores `CameraCFrame`, `CameraFocus` and `FeaturedAssembly`. Set the camera from the desired scene's attributes, select `FeaturedAssembly.Value`, then click **Edit Existing**. Clear the selection outline, leave Layout visible, and capture the viewport plus panel. Keep all three modes and the bottom commands visible; exclude account details, local paths and Command Bar.
+
+The issue requires three screenshots, not a generated icon. Creator Hub icon selection/upload remains with the account owner.

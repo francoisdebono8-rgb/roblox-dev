@@ -1,0 +1,15 @@
+{
+  "name": "AccessForge-Media",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {"$className": "Workspace", "$attributes": {"AccessForgeMediaBuild": true}},
+    "Lighting": {"$className": "Lighting", "$properties": {"Technology": "ShadowMap"}},
+    "ReplicatedStorage": {"$className": "ReplicatedStorage", "HackerTycoon": {"$className":"Folder", "InteriorConfig": {"$path": "source/InteriorConfig.lua"}}},
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "AccessForgeCommercial": {"$path": "../../dist/AccessForge-v1.0.0.rbxm"},
+      "BuildRoot": {"$path": "source/BuildRoot.lua"},
+      "AccessForgeMediaSetup": {"$path": "Setup.luau"}
+    }
+  }
+}
