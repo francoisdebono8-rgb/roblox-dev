@@ -1,0 +1,40 @@
+{
+  "name": "CurveForge-Media",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "Environment": {
+        "$path": "RavenRock-geometry.rbxmx"
+      },
+      "Camera": {
+        "$className": "Camera",
+        "$properties": {
+          "CFrame": [
+            110.600594,
+            21.4014549,
+            -93.5625153,
+            -0.701351225,
+            0.102742165,
+            0.705372632,
+            -0.0,
+            0.989557981,
+            -0.144135624,
+            -0.712815881,
+            -0.101089694,
+            -0.694027662
+          ],
+          "FieldOfView": 70
+        }
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Technology": "ShadowMap",
+        "ClockTime": 14,
+        "Brightness": 2
+      }
+    }
+  }
+}

@@ -8,4 +8,4 @@
 6. Click **Preview** and review affected, matching, and ignored objects.
 7. Click **Apply**. One Studio Undo restores the complete operation.
 
-Save and Preview are read-only. Unchecked fields and unrelated tags or attributes are preserved.
+Preview is read-only. Saving a recipe does not change source objects; Project recipes are stored under ServerStorage. Unchecked fields and unrelated tags or attributes are preserved.

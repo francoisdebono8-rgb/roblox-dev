@@ -1,0 +1,21 @@
+Studio 0.740.19.7400931, edit mode; actual GUI actions with Command Bar assertions; partial coverage, see release status.
+2026-09-27T01:15:48.123Z [ForgeGUI] Cable fixture; before Preview descendants=8366
+2026-09-27T01:17:49.054Z [ForgeGUI] Cable baseline=8366
+2026-09-27T01:18:02.801Z [ForgeGUI][PASS] CurveForge GUI Preview read-only; original environment intact
+2026-09-27T01:18:50.566Z [ForgeGUI][PASS] CurveForge GUI Cable Build; environment preserved; output=CurveForge_Cable
+2026-09-27T01:19:09.879Z [ForgeGUI][PASS] CurveForge native Edit Undo removed only GUI Build
+2026-09-27T01:20:20.175Z [ForgeGUI][PASS] CurveForge GUI Build native Edit Undo/Redo round trip
+2026-09-27T01:22:14.951Z [ForgeGUI][PASS] Edit Existing loaded; moved control preview leaves existing output unchanged
+2026-09-27T01:32:56.197Z [ForgeGUI][PASS] Reordered cable Preview read-only; original environment intact
+2026-09-27T01:33:30.095Z [ForgeGUI][PASS] Cable Regenerate + native Edit Undo/Redo; order and settings updated; unrelated environment preserved
+2026-09-27T01:33:58.344Z [ForgeGUI] Pipe fixture ready
+2026-09-27T01:34:32.691Z [ForgeGUI][PASS] Pipe Preview read-only
+2026-09-27T01:34:45.825Z [ForgeGUI][PASS] Pipe GUI Build; four 3D controls; original environment intact
+2026-09-27T01:36:59.336Z [ForgeGUI] Repeat fixture: original two-part lamp source
+2026-09-27T01:37:19.266Z [ForgeGUI][PASS] Repeat Model Spacing and Count Preview read-only; source unchanged
+2026-09-27T01:37:34.133Z [ForgeGUI][PASS] Repeat Model GUI Build: 12 two-part copies; source and environment preserved
+2026-09-27T01:37:59.463Z [ForgeGUI][PASS] Repeat Edit Existing loaded; count change Preview leaves 12 existing copies untouched
+2026-09-27T01:38:53.881Z [ForgeGUI][PASS] Repeat Regenerate + native Edit Undo/Redo: 14 copies; source and environment intact
+2026-09-27T01:39:36.860Z [ForgeGUI] Media fixture aligned to measured ground; source baseline refreshed
+2026-09-27T01:39:52.677Z [ForgeGUI][PASS] Repeat regenerated on relocated controls; source and environment preserved
+2026-09-27T01:40:18.112Z [ForgeGUI][PASS] CurveForge media scene has no scripts

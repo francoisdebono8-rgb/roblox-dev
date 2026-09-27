@@ -1,0 +1,14 @@
+{
+  "name": "CurveForge-Publication",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "CurveForge": { "$path": "../dist/CurveForge-v1.0.0.rbxm" }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": { "Technology": "ShadowMap" }
+    }
+  }
+}

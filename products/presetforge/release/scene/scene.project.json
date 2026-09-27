@@ -1,0 +1,40 @@
+{
+  "name": "PresetForge-Media",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "Environment": {
+        "$path": "DodgeballArena-geometry.rbxmx"
+      },
+      "Camera": {
+        "$className": "Camera",
+        "$properties": {
+          "CFrame": [
+            -97.4620514,
+            79.2235489,
+            -94.1557693,
+            -0.739889562,
+            0.349842101,
+            -0.57460773,
+            0.0,
+            0.854145288,
+            0.520034671,
+            0.672728419,
+            0.384768218,
+            -0.631973088
+          ],
+          "FieldOfView": 70
+        }
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Technology": "ShadowMap",
+        "ClockTime": 14,
+        "Brightness": 2
+      }
+    }
+  }
+}

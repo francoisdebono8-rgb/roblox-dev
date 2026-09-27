@@ -1,0 +1,1 @@
+{"name":"ForgeCatalogGate","tree":{"$className":"DataModel","Workspace":{"$className":"Workspace","$attributes":{"ForgeCatalogGate":true}},"Lighting":{"$className":"Lighting","$properties":{"Technology":"ShadowMap","Brightness":2,"ClockTime":14}}}}

@@ -1,11 +1,11 @@
-# Actual Studio captures pending
+# Actual Studio captures
 
-No images have been fabricated. Automation could not operate Studio reliably during this run, so the three required real screenshots are not delivered yet.
+All three PNGs are genuine Studio captures from the final installed plugin, reviewed at 2560x1440. Only rectangular crops removed navigation/account/Command Bar areas. No image is fabricated.
 
-After the QA Suite and `demo/Setup.luau` execute successfully:
+Use the licensed RavenRock environment and the capture order in [MEDIA_PLAN.md](../MEDIA_PLAN.md). The original primitive-only QA demo is not the issue #12 commercial environment.
 
-1. `01-utility-cable.png`: frame the two poles and overhead cable; select its CurveForge Model and load Edit Existing, showing the preview.
-2. `02-industrial-pipe.png`: frame the yellow pipe; show diameter, material, collision and its preview.
-3. `03-repeated-fence.png`: frame the curved fence; show Repeat mode, the two-part source, Count and tangent controls.
+1. `01-village-cable.png`: cable between village structures, with Edit Existing and the real preview.
+2. `02-village-pipe.png`: a three-dimensional pipe route, with settings and built output.
+3. `03-village-repeat.png`: an original lamp model repeated along a curve, with count/tangent controls and the real completion message.
 
-Capture real Studio content only. Exclude title bars, local file paths, avatars and private projects. All scene objects are original primitives.
+Capture real Studio content only. Exclude title bars, local file paths, avatars and private projects. The environment is MIT-licensed Nexus-Battles geometry; additional demonstration fixtures must use original local primitives.

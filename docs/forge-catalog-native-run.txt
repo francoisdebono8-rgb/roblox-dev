@@ -1,0 +1,39 @@
+Studio 0.740.19.7400931, edit mode; final binary modules via isolated QA plugin.
+2026-09-27T01:01:11.057Z [ForgeCatalogGate][PASS] PresetForge Schema.spec
+2026-09-27T01:01:11.058Z [ForgeCatalogGate][PASS] PresetForge CapturePreview.spec
+2026-09-27T01:01:11.059Z [ForgeCatalogGate][PASS] PresetForge ScopePreview.spec
+2026-09-27T01:01:11.059Z [ForgeCatalogGate][PASS] PresetForge ApplyService.spec
+2026-09-27T01:01:11.061Z [ForgeCatalogGate][PASS] PresetForge PresetStore.spec
+2026-09-27T01:01:11.062Z [ForgeCatalogGate][PASS] PresetForge ProjectStore.spec
+2026-09-27T01:01:11.175Z [ForgeCatalogGate][PASS] PresetForge native workflows / Undo Redo / real plugin storage
+2026-09-27T01:01:11.651Z [JointForgeTests][PASS] all nine classes / read-only preview / world poses / native Undo Redo
+2026-09-27T01:01:11.652Z [JointForgeTests] pose delta Handle = 0
+2026-09-27T01:01:11.652Z [JointForgeTests] pose delta Body = 9.612164149075397e-07
+2026-09-27T01:01:11.652Z [JointForgeTests] pose delta Slide = 9.556671329846722e-07
+2026-09-27T01:01:11.684Z [JointForgeTests][PASS] gun/tool batch static + moving with one Undo
+2026-09-27T01:01:11.718Z [JointForgeTests][PASS] door hinge existing attachments preserved
+2026-09-27T01:01:11.784Z [JointForgeTests][PASS] rope and spring lengths / edit properties
+2026-09-27T01:01:11.785Z [JointForgeTests][PASS] existing connections, reverse duplicates and indirect cycles blocked
+2026-09-27T01:01:11.785Z [JointForgeTests][PASS] stale preview rejects movement, new joints and attachment edits
+2026-09-27T01:01:11.785Z [JointForgeTests][PASS] inspection finds externally parented and broken joints
+2026-09-27T01:01:11.817Z [JointForgeTests][PASS] C0 C1 edits / reset / native Undo
+2026-09-27T01:01:11.851Z [JointForgeTests][PASS] confirmed batch removal / preserve attachments / native Undo
+2026-09-27T01:01:11.852Z [JointForgeTests][PASS] invalid fields, endpoints and duplicates rejected
+2026-09-27T01:01:11.852Z [JointForgeTests][PASS] recording unavailable and commit failure rollback
+2026-09-27T01:01:11.852Z [JointForgeTests][PASS] UI invalidation / removal children / unary inspect / detached endpoints
+2026-09-27T01:01:11.853Z [JointForgeTests][PASS] every exposed property is writable in this Studio engine
+2026-09-27T01:01:11.853Z [JointForgeTests][PASS] edit and removal roll back after injected commit failure
+2026-09-27T01:01:11.853Z [JointForgeTests] 14 passed / 0 failed
+2026-09-27T01:01:11.853Z [ForgeCatalogGate][PASS] JointForge suite invocation
+2026-09-27T01:01:11.856Z [CurveForgeTests][PASS] 2-point straight path / endpoints / read-only preview
+2026-09-27T01:01:11.856Z [CurveForgeTests][PASS] 4-point curved path / controls interpolated
+2026-09-27T01:01:11.857Z [CurveForgeTests][PASS] vertical and 3D orientation / cable gap continuity / collision flags
+2026-09-27T01:01:11.858Z [CurveForgeTests][PASS] repeat spacing / count / endpoints / scale / tangent rotation
+2026-09-27T01:01:11.884Z [CurveForgeTests][PASS] Build native one-step Undo / Redo / unrelated objects preserved
+2026-09-27T01:01:11.917Z [CurveForgeTests][PASS] Repeat Model / reopen metadata / Regenerate / native Undo / source unchanged
+2026-09-27T01:01:11.919Z [CurveForgeTests][PASS] invalid / deleted / stale controls / settings / output limits
+2026-09-27T01:01:11.923Z [CurveForgeTests][PASS] scripted sources rejected / external references / unavailable Undo / rollback
+2026-09-27T01:01:11.954Z [CurveForgeTests][PASS] New Path markers / native Undo / widget mounts without project mutation
+2026-09-27T01:01:11.954Z [CurveForgeTests] 9 passed / 0 failed
+2026-09-27T01:01:11.954Z [ForgeCatalogGate][PASS] CurveForge suite invocation
+2026-09-27T01:01:11.954Z [ForgeCatalogGate] Finished; inspect each suite's PASS/FAIL totals.

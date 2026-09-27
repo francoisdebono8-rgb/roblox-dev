@@ -1,0 +1,11 @@
+{
+  "source": "TheNexusAvenger/Nexus-Battles",
+  "commit": "fd6505c3cb12c94272532e1a0b0a30bf8499fc52",
+  "map": "DodgeballArena",
+  "url": "https://github.com/TheNexusAvenger/Nexus-Battles/blob/fd6505c3cb12c94272532e1a0b0a30bf8499fc52/src/ServerStorage/Maps/DodgeballArena.rbxmx",
+  "source_sha256": "1e5bbfb18af0a60a7159913cb469a4b3c3eac6ce8a818b0bbd7e419c532d2344",
+  "derived_sha256": "ae3387fe734fe5f67038762a6ebe634d0c3603ab9b653eedd490dc9c67a79a9a",
+  "license": "MIT; original repository also explicitly allows republication with attribution",
+  "removed_instances": 18,
+  "retained_instances": 177
+}

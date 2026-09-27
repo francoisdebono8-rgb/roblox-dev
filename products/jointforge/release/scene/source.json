@@ -1,0 +1,11 @@
+{
+  "source": "TheNexusAvenger/Nexus-Battles",
+  "commit": "fd6505c3cb12c94272532e1a0b0a30bf8499fc52",
+  "map": "TheDepths",
+  "url": "https://github.com/TheNexusAvenger/Nexus-Battles/blob/fd6505c3cb12c94272532e1a0b0a30bf8499fc52/src/ServerStorage/Maps/TheDepths.rbxmx",
+  "source_sha256": "3ad0437e27f4853894e968e3a79fa8db5215eb7c0b2a00ff240db1b7c1f42c5a",
+  "derived_sha256": "aebeb5c25bc2cd606659fc2acde1f1180b6630170dcd6eac9eff84558021ad67",
+  "license": "MIT; original repository also explicitly allows republication with attribution",
+  "removed_instances": 263,
+  "retained_instances": 440
+}

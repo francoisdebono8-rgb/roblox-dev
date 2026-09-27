@@ -1,0 +1,11 @@
+{
+  "source": "TheNexusAvenger/Nexus-Battles",
+  "commit": "fd6505c3cb12c94272532e1a0b0a30bf8499fc52",
+  "map": "RavenRock",
+  "url": "https://github.com/TheNexusAvenger/Nexus-Battles/blob/fd6505c3cb12c94272532e1a0b0a30bf8499fc52/src/ServerStorage/Maps/RavenRock.rbxmx",
+  "source_sha256": "da1ac6918f7f3c8abf2c3152deea955145baee00d485032974b8adcdb967d9e9",
+  "derived_sha256": "f7151607b35a1916420c554656dd36aeec8ba88f4f8052126960a340991c5f87",
+  "license": "MIT; original repository also explicitly allows republication with attribution",
+  "removed_instances": 5527,
+  "retained_instances": 2830
+}

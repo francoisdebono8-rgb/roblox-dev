@@ -1,6 +1,6 @@
-# Verification - 2026-09-27
+# Verification - 2026-09-27, issue #12
 
-**NOT READY FOR CREATOR STORE: native Studio release gate remains unexecuted.**
+**NATIVE / GUI / MEDIA GATES PASS. Studio asset submission has not yet completed.**
 
 | Check | Result | Evidence |
 | --- | --- | --- |
@@ -10,23 +10,35 @@
 | Duplicate, invalid and nonfinite point rejection | PASS | Luau CLI |
 | Binary reproducibility and exact embedded source | PASS | `tools/verify_release.py`, 5 production scripts |
 | Commercial package excludes tests/demo/network code | PASS | Explicit class/source allowlist and forbidden-content checks |
-| Final plugin UI workflow in Studio | NON TESTED | Earlier build loaded according to Studio log; full interaction not executed |
-| Cable geometry, joints, collisions in Roblox engine | NON TESTED | Prepared in Studio Suite; not counted as passed |
-| Repeat Model count/spacing/rotation/scale in engine | NON TESTED | Prepared in Suite |
-| Preview causes no project mutation | NON TESTED | Engine and widget assertions prepared in Suite |
-| Build and Regenerate native one-step Undo/Redo | NON TESTED | Native ChangeHistoryService tests prepared; not executed |
-| Regeneration, source preservation and unrelated objects | NON TESTED | Prepared in Suite |
-| Deleted controls and injected transaction rollback | NON TESTED | Prepared in Suite |
-| Three finished demo scenes and actual Studio screenshots | NON TESTED | Original fixtures and Studio generator prepared; captures absent |
+| GUI New Path, selected points, explicit order and confirmation | PASS | Real clicks in RavenRock, four displayed controls |
+| GUI Cable Preview and Build | PASS | Read-only assertions, visible successful output; `docs/forge-catalog-gui-run.txt` |
+| GUI Cable Build native Edit Undo/Redo | PASS | Actual menus, removed output/count check, rebuilt and immediate Undo/Redo round trip |
+| GUI Edit Existing and moved-point Preview | PASS | Loaded actual output; moving Point02 did not mutate existing cable |
+| GUI Cable Regenerate and native Edit Undo/Redo | PASS | Changed order and moved control applied; environment and settings checked |
+| GUI Pipe Preview and Build | PASS | Four 3D controls, read-only Preview, actual yellow output |
+| GUI Repeat spacing/count Preview, Build, Edit Existing, Regenerate | PASS | 12 then 14 two-part copies; Preview, source and environment assertions |
+| GUI Repeat native Edit Undo/Redo | PASS | Immediate actual menu round trip, then 14-copy/source assertions |
+| Final installed plugin opens its actual panel | PASS | Native Plugins > CurveForge action and actual subsequent widget clicks |
+| Cable geometry, joints, collisions in Roblox engine | PASS | Actual native suite, 01:01:11 UTC |
+| Repeat Model count/spacing/rotation/scale in engine | PASS | Actual native suite |
+| Preview causes no project mutation | PASS | Engine and widget assertions executed |
+| Build and Regenerate native one-step Undo/Redo | PASS | Actual ChangeHistoryService Undo/Redo assertions |
+| Regeneration, source preservation and unrelated objects | PASS | Actual native suite |
+| Deleted controls and injected transaction rollback | PASS | Actual native suite |
+| New Path marker engine operation | PASS | Native suite, including Undo |
+| Plugin exceptions during native test window | PASS | No CurveForge exception in scoped Output log |
+| Village cable commercial screenshot | PASS | `release/screenshots/01-village-cable.png`, genuine Studio capture |
+| Pipe and Repeat Model screenshots | PASS | `02-village-pipe.png`, `03-village-repeat.png`; genuine reviewed captures |
+| Studio asset publication | NON TESTED | Gates complete; native submission still pending |
 
-Studio 0.740.19.7400931 opened the isolated QA place and logged loading the initial CurveForge package. The automation then repeatedly returned `timeoutReached` / `noWindowsAvailable`. The old JointForge publication window's Save dialog could be read but not operated reliably. No Studio Suite PASS lines were observed. No results are inferred from compilation or the mere presence of a window.
+Studio **0.740.19.7400931**, edit mode. First native run: **00:43:28 UTC**, 9 passed / 0 failed. Rerun from the final binary through the isolated catalog runner: **01:01:11 UTC**, again **9 passed / 0 failed**. See [sanitized actual log](../../../docs/forge-catalog-native-run.txt).
 
-## Resume native gate
+The runner imports the final commercial binary. Only its entry Script is disabled inside the QA copy to avoid duplicate toolbars; all module code is unchanged. The installed commercial plugin remains separate. Native suite results do not establish GUI click coverage; the subsequent actual GUI assertions are recorded separately in [forge-catalog-gui-run.txt](../../../docs/forge-catalog-gui-run.txt).
 
-1. Bring Studio to the foreground; save/close the old JointForge publication window.
-2. Open `tests/CurveForge-QA.rbxlx` in **edit mode**, not Play.
-3. Run `local q = game.ServerStorage.CurveForgeQA; require(q.Suite)(q.Modules)` in the Command Bar. Expect nine actual PASS groups and zero failures.
-4. Run `local q = game.ServerStorage.CurveForgeQA; require(q.Demo)(q.Modules)` to create all three finished demo outputs using the production engine.
-5. Exercise the installed final plugin: New Path, order confirmation, Preview, Build, Edit, Regenerate, Undo/Redo. Capture the three scenes described in `release/screenshots/README.md`.
+Artifact: `dist/CurveForge-v1.0.0.rbxm`, SHA-256 `476ee0fc81f9080130fe8b6914bac8e37a9a1021b71df93f7b87168ee164162b`.
 
-Do not mark the native rows PASS or list this as a finished commercial release until those steps execute successfully.
+## Publication handoff
+
+The final working scene is `release/scene/CurveForge-Scenes.rbxl`. It contains the cable, pipe, 14 repeated lamps, controls and original two-part source. All required CurveForge UI workflows and all three captures are complete. Only the clean commercial model in `release/CurveForge-Publication.rbxl` may be submitted, never this media scene.
+
+Native GUI automation intermittently loses window access. Temporary invalid numeric strings caused by keyboard automation were correctly rejected and recovered with valid values; Ctrl+A was not a reliable selection shortcut on this Mac. No product bug was inferred. No failed click is counted as a passed workflow. No screenshot has been fabricated.

@@ -1,0 +1,5376 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Model" referent="RBX081B341AE67145FA8E02BAC2D5009E6C">
+    <Properties>
+      <string name="Name">Nexus_DodgeballArena</string>
+    </Properties>
+    <Item class="Part" referent="RBX8FBBF761DECC43CF8F7B40C8F4D903C8">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">4</token>
+        <CoordinateFrame name="CFrame">
+          <X>0.750074983</X>
+          <Y>12.4999762</Y>
+          <Z>-84.9999771</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4280844103</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">1280</token>
+        <string name="Name">Part</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">0</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>223</X>
+          <Y>23</Y>
+          <Z>50</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+    </Item>
+    <Item class="Model" referent="RBX9246E8ACAC0744788D3D99E9D181C4B4">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBXBF248235021D4C51862E593460E857D8">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-70.7178802</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449249</Z>
+            <R00>-0.270182997</R00>
+            <R01>-0.374789953</R01>
+            <R02>0.886867404</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>-7.1541001e-07</R12>
+            <R20>-0.518621981</R20>
+            <R21>-0.719419897</R21>
+            <R22>-0.462024212</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX420F2C30D52846AFAC721F2FB64C4177">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-70.4928894</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9129944</Z>
+            <R00>-0.88686657</R00>
+            <R01>0.270183116</R01>
+            <R02>-0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>0.462025791</R20>
+            <R21>0.518621266</R21>
+            <R22>-0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXA7793642A81644768C768B70D00B2EE5">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBXF65950D30F36471FB0A926768BDD6159">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX9A4C5A9F9F704AE097694CABBC33A6D4">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.2148819</X>
+            <Y>40.4999924</Y>
+            <Z>-58.1469269</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXFE90DE66382D45CA8105D49A809CCEF2">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.2148819</X>
+            <Y>33.4999886</Y>
+            <Z>-58.1469269</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBX3F376E2F728F4F8780B2AAC8A933927D">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXA55D4741B37F4274842637636FE11F3D">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.2148743</X>
+            <Y>40.9659958</Y>
+            <Z>-56.7449493</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>-0.584779978</R20>
+            <R21>-0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX437D6F4FA21148FA9CDF145676EA94B7">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.2149048</X>
+            <Y>40.6150818</Y>
+            <Z>-56.2579727</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>0.584779978</R21>
+            <R22>-0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX3886F7C5351446DA965F859258D3AB9D">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBXC2ED59E2671B49AEA4E65FF63E7C6DFB">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX1C0CDD1963D94E44B36B289BEE3CD59D">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-77.7119446</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449478</Z>
+            <R00>0.245543912</R00>
+            <R01>0.340614021</R01>
+            <R02>0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>-0.530731797</R20>
+            <R21>-0.736216068</R21>
+            <R22>0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX20E3731DC76B46AE80700F67F242BF8A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-77.9169235</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9029999</Z>
+            <R00>-0.907575011</R00>
+            <R01>-0.245543286</R01>
+            <R02>0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>-0.419889987</R20>
+            <R21>0.530731797</R21>
+            <R22>-0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXC61FBB786177481CBB898132891DF351">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX49961D6A232D4B82B55F0D1E9C7AEFC0">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX2AC1A152CBAE447596AAE1E4A4D2F7C8">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.2148819</X>
+            <Y>26.4999866</Y>
+            <Z>-58.1469269</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX40827467658E4BCF90683C8F8A55451F">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBX2ACA3CFD2D4946CBA24B168C69F09E48">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>4.28207016</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449478</Z>
+            <R00>-0.270182997</R00>
+            <R01>-0.374789953</R01>
+            <R02>0.886867404</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>-7.1541001e-07</R12>
+            <R20>-0.518621981</R20>
+            <R21>-0.719419897</R21>
+            <R22>-0.462024212</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXA7B0A192A4B246559A82FF4B2616B87B">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>4.50706291</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9129906</Z>
+            <R00>-0.88686657</R00>
+            <R01>0.270183116</R01>
+            <R02>-0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>0.462025791</R20>
+            <R21>0.518621266</R21>
+            <R22>-0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXE4A70C5D4A3146FDA5B5C628DEE9F30E">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX727AB903BB7841BC8DC97260D6CC7F01">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXDFFC333897584A1082AF5665677FFC3A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.785089016</X>
+            <Y>40.4999924</Y>
+            <Z>-58.146965</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX962E7732DD874FDFBFE6B02C5C815FE4">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.785089016</X>
+            <Y>33.4999886</Y>
+            <Z>-58.146965</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBX9C329F62CECE4136AD3A8890E6C84F61">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX592308CD01B34350B9700EE4D8F8346A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.785085976</X>
+            <Y>40.9659958</Y>
+            <Z>-56.7449608</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>-0.584779978</R20>
+            <R21>-0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX16AFB43BBCE24AD5BFC218C4489C2A36">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.785076022</X>
+            <Y>40.6150818</Y>
+            <Z>-56.2579765</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>0.584779978</R21>
+            <R22>-0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX935C4B3A306B4718A5F0D948D2A5BE5D">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX1021D77AF74C425DAC973A04C0CF5314">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXFE0C5DEB41024BBFB4856B2C340E35FF">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-2.71194005</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449516</Z>
+            <R00>0.245543912</R00>
+            <R01>0.340614021</R01>
+            <R02>0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>-0.530731797</R20>
+            <R21>-0.736216068</R21>
+            <R22>0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXF80E59F7DC5941579B9FE22D6D6ECDAE">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-2.91693091</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9029732</Z>
+            <R00>-0.907575011</R00>
+            <R01>-0.245543286</R01>
+            <R02>0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>-0.419889987</R20>
+            <R21>0.530731797</R21>
+            <R22>-0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX6C173B6455924CABB40F14DD077383BC">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBXD3CC4D7DD4BC426A9370126D20F00808">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX1C44170FC1DB4A58BE3454B8CC74855A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.785089016</X>
+            <Y>26.4999866</Y>
+            <Z>-58.146965</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX3525BABC9DB14380A5CD1CC63F364639">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBXE022E8616D5B460988E84017EC0D49E0">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>79.2820435</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449249</Z>
+            <R00>-0.270182997</R00>
+            <R01>-0.374789953</R01>
+            <R02>0.886867404</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>-7.1541001e-07</R12>
+            <R20>-0.518621981</R20>
+            <R21>-0.719419897</R21>
+            <R22>-0.462024212</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXF7A1B6A00737471FBE86950D3E05ADB1">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>79.5070648</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9130058</Z>
+            <R00>-0.88686657</R00>
+            <R01>0.270183116</R01>
+            <R02>-0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>0.462025791</R20>
+            <R21>0.518621266</R21>
+            <R22>-0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX0A60929DA86B40F09A557DC25072EAA9">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX8889C4D89C4743598F34E4664E75DB43">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX2B999209B2884438A1BDC45BFD2CE7BF">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.7850113</X>
+            <Y>40.4999924</Y>
+            <Z>-58.1469116</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX6285CFC0395647F8804C13CDE53904AD">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.7850113</X>
+            <Y>33.4999886</Y>
+            <Z>-58.1469116</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBX23D4003FF3A94112A0300870CA74E802">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX425FAC6A08274A23B0FFD82665135643">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.7850494</X>
+            <Y>40.9659958</Y>
+            <Z>-56.7449646</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>-0.584779978</R20>
+            <R21>-0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXE98E29DD97B54FC7AB29166B033F53A0">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.7850647</X>
+            <Y>40.6150818</Y>
+            <Z>-56.2579842</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>0.584779978</R21>
+            <R22>-0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXFC401629B9724FC0B44D6905A3D1A46F">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBXE0FC21BBF954491880506BAED4D75F4C">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXDA123B576383455CA3F13EB803013664">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>72.2880402</X>
+            <Y>40.9659958</Y>
+            <Z>-57.3449287</Z>
+            <R00>0.245543912</R00>
+            <R01>0.340614021</R01>
+            <R02>0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>-0.530731797</R20>
+            <R21>-0.736216068</R21>
+            <R22>0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX1F3C35DCC07146CFBEE6F4764B7268A5">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>72.083046</X>
+            <Y>40.6150818</Y>
+            <Z>-56.9029732</Z>
+            <R00>-0.907575011</R00>
+            <R01>-0.245543286</R01>
+            <R02>0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>-0.419889987</R20>
+            <R21>0.530731797</R21>
+            <R22>-0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXE96C8D209B0F4FD4A399E15A371679CE">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX783352DBA515439D95D94746DAC58DEB">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX2BA39357427047AF953C7DC9D070BDB3">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.7850113</X>
+            <Y>26.4999866</Y>
+            <Z>-58.1469116</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBX78EDD6AACFC54C389009EB20EB769E5A">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">4</token>
+        <CoordinateFrame name="CFrame">
+          <X>-135.75</X>
+          <Y>12.4999762</Y>
+          <Z>1.50001299</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4280844103</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">1280</token>
+        <string name="Name">Part</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">0</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>50</X>
+          <Y>23</Y>
+          <Z>223</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+    </Item>
+    <Item class="Part" referent="RBX21DAEAABF7104F08A519731A7B749678">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">0</token>
+        <CoordinateFrame name="CFrame">
+          <X>0.750068009</X>
+          <Y>19.5000191</Y>
+          <Z>2.90000007e-05</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">256</token>
+        <string name="Name">PointLightHolders</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">1</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>0.200000003</X>
+          <Y>0.200000003</Y>
+          <Z>0.200000003</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+      <Item class="PointLight" referent="RBX61340A955ABB44888FC41F51AF1E0C42">
+        <Properties>
+          <float name="Brightness">1</float>
+          <Color3 name="Color">
+            <R>1</R>
+            <G>1</G>
+            <B>1</B>
+          </Color3>
+          <bool name="Enabled">true</bool>
+          <string name="Name">PointLight</string>
+          <float name="Range">60</float>
+          <bool name="Shadows">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBXB0AE71A690CC46B8B69BAD3491CDB350">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">0</token>
+        <CoordinateFrame name="CFrame">
+          <X>62.2500343</X>
+          <Y>21.4999866</Y>
+          <Z>2.90000007e-05</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">256</token>
+        <string name="Name">PointLightHolders</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">1</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>0.200000003</X>
+          <Y>0.200000003</Y>
+          <Z>0.200000003</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+      <Item class="PointLight" referent="RBXFB304B2A699F4C3DAABEE697347FC53E">
+        <Properties>
+          <float name="Brightness">1</float>
+          <Color3 name="Color">
+            <R>1</R>
+            <G>1</G>
+            <B>1</B>
+          </Color3>
+          <bool name="Enabled">true</bool>
+          <string name="Name">PointLight</string>
+          <float name="Range">60</float>
+          <bool name="Shadows">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX7DF7D5717AC34D83B49DFA17637A10F4">
+      <Properties>
+        <string name="Name">Arena</string>
+      </Properties>
+      <Item class="WedgePart" referent="RBX7A04D080583D4B10AA367692BABC91A7">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-86.7499237</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999657</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX3F5D896BB3674E53BA367606BDF30C22">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-61.7498932</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999733</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX4EE11D6F77084DAFABDB83D2DF108113">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-36.749939</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999924</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXEEAD0B1344EA4D56A13192D62C78C823">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-61.749939</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999924</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX58D1AC38514943FB9D714A0A60B3A2D5">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-86.7498932</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999809</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXCD1ACE5E0E024D34A61AC80BADED2E96">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-11.7499418</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999771</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX274069B60E394986A89BFE96C674DEB0">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750077009</X>
+            <Y>13.4999857</Y>
+            <Z>-57.9999771</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">800</token>
+          <string name="Name">Part</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>4</X>
+            <Y>25</Y>
+            <Z>223</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXEB7CF67C5CA4450782CF89EC5B4E30FD">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-107.749962</X>
+            <Y>26.4999866</Y>
+            <Z>-10.9999924</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX8D7047ECB62341339C72CC73C6B0CDD6">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-105.749901</X>
+            <Y>13.4999857</Y>
+            <Z>-10.99998</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXFEFADE1284DE4C7180CA96B9B31AC4B6">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-36.7499275</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999771</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX88A7AEE1D76848E8BF6CFAC15EE57F33">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-105.749924</X>
+            <Y>13.4999857</Y>
+            <Z>-35.9999695</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX01EFF1F400F74D9689372FDA1008A74D">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-107.749962</X>
+            <Y>26.4999866</Y>
+            <Z>-35.9999847</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXF291A452C90E4C7DBAC8685FFA5FA1D1">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-11.7499456</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999657</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX2D1A2DE8A15E47B3AB63A722CD2217B8">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>13.2500658</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999542</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXC19245B270164F6E962EC4B61B99F870">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750082016</X>
+            <Y>1.50000596</Y>
+            <Z>1.50002694</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Divide</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">4</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>115</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX23F2A82FAF414E7BBFC518851E07A5D3">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>-54.2498894</X>
+            <Y>1.50000596</Y>
+            <Z>1.50002599</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4291045404</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">RedZone</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>117</X>
+            <Y>1</Y>
+            <Z>107</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXF03BC2E108464857A8CA9824A6181B6F">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>-108.749992</X>
+            <Y>13.4999857</Y>
+            <Z>3.50001502</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">800</token>
+          <string name="Name">Part</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>119</X>
+            <Y>25</Y>
+            <Z>4</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX7890ADE38F034C46A71FF0F8AC9EC5F6">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-105.749954</X>
+            <Y>13.4999857</Y>
+            <Z>14.0000296</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXD6429831D7B842A8818CD21430694CF4">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>13.2500715</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999657</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX6844E1A3C62B4F3485C7647443D7D951">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750082016</X>
+            <Y>41.9999924</Y>
+            <Z>1.50002694</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967040</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">1536</token>
+          <string name="Name">Roof</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>119</X>
+            <Y>32</Y>
+            <Z>219</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX1D079BE178A34F0C9D5926F1023CFE4B">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>38.2500305</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999733</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX5E05242760C34DA4A08E567A0DEFA069">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-107.749954</X>
+            <Y>26.4999866</Y>
+            <Z>14.0000057</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX95F33C80D2AA4B76899B6881427CB7B6">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>38.2500381</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999657</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX87C0226F79944D03A146F103B4841A9B">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-105.749939</X>
+            <Y>13.4999857</Y>
+            <Z>39.0000229</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX7B70B339DE0444A5B8E5CC579AA2840C">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-107.749962</X>
+            <Y>26.4999866</Y>
+            <Z>39.0000534</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXE4F225BA313C49D4A89DCB66DD92F3B5">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>55.7500305</X>
+            <Y>1.50000596</Y>
+            <Z>1.500036</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279069100</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">BlueZone</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>117</X>
+            <Y>1</Y>
+            <Z>107</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX4E8ABAF498F144539F95291F86E181DB">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-86.7498856</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000343</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX10C197AB62C240F6A362496933EEDA09">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>63.2500534</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999619</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX5751BAD3AA254EBEBE90DF0F8ED52DE5">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>63.2500839</X>
+            <Y>26.4999866</Y>
+            <Z>-57</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX0EAFF81F4073460A986BD9AA271BE744">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-86.7499313</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000381</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXC79A093CC456462294171519A93B429D">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-61.7499466</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000458</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXD83FB80FBC3A4E61A195ABA5DD9A68BC">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-36.7499313</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000229</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXF226D2830F7E47BD93F65587E2613C02">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-61.749939</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000496</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXB485C6E654B9454EAD5AD4E8290F717F">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>88.2500763</X>
+            <Y>26.4999866</Y>
+            <Z>-56.9999771</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX1E459E0458534B6889EF01B732B365CE">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-36.749939</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000229</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX3F82CF7B5313496C84D3D18F7BA22AC1">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750061989</X>
+            <Y>13.4999857</Y>
+            <Z>61.0000381</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">800</token>
+          <string name="Name">Part</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>4</X>
+            <Y>25</Y>
+            <Z>215</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX73CE05920D3E49C9BB8582E5E0EC285E">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-11.7499599</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000343</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX166CDDEF19F04302811974DFA42A741F">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>88.2499924</X>
+            <Y>13.4999857</Y>
+            <Z>-54.9999466</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX850141C33D0047C58ADAA3BB5D907FD2">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-11.7499599</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000076</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX850D0EED20C842CDB65FD8CAED392185">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>13.2500496</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000343</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX626AEA188B97460F908BC85640A65324">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>38.2500305</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000153</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX50B16FC7027D49CE90B5B57BB8AC57B4">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>109.250015</X>
+            <Y>26.4999866</Y>
+            <Z>14.0000277</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXF0C5F3B111274A3C95A1E0AE41AB9C38">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>13.2500696</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000229</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXB348471722A14FE697C987007D50999E">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>109.250015</X>
+            <Y>26.4999866</Y>
+            <Z>-10.9999762</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX67A1F5BE9C774BBF8F89BB57E5889B2A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>109.250015</X>
+            <Y>26.4999866</Y>
+            <Z>-35.9999695</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX1D9FE04C740C484089A2110610A6A987">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>63.2500381</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000153</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX5C34B07789F9411F88C7FCBE27DCBC91">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>107.250008</X>
+            <Y>13.4999857</Y>
+            <Z>14.0000458</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX1F7D0C4635B240508EEA3F391DDFF90C">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>107.250015</X>
+            <Y>13.4999857</Y>
+            <Z>39.0000381</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX770C4FBBC6464251801D684BE7510ADC">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>107.250031</X>
+            <Y>13.4999857</Y>
+            <Z>-11.0000038</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX03470C57CB2949E1861C76F39716282A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>38.2500305</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000153</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX37AB7674E4CF414E93EA1350B410A209">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">4</token>
+          <CoordinateFrame name="CFrame">
+            <X>110.249992</X>
+            <Y>13.4999857</Y>
+            <Z>3.50003195</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">800</token>
+          <string name="Name">Part</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>119</X>
+            <Y>25</Y>
+            <Z>4</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX8BACAC3CDEED40EC93ABF0B408E5A2CC">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>107.250023</X>
+            <Y>13.4999857</Y>
+            <Z>-35.9999695</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>-0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX4855EDE8A61A49FE99CA36EFB89849E0">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>88.2500153</X>
+            <Y>13.4999857</Y>
+            <Z>58.0000305</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>-1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>25</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXD996D95F039E451D804FB875CE44ADEB">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>109.250023</X>
+            <Y>26.4999866</Y>
+            <Z>39.0000381</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBX1ACD6F27AB4545A3AEF538969834A8D8">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>63.2500687</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000381</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="WedgePart" referent="RBXA166932FB63A4BFC8D4FBC6B054C1393">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>88.2500458</X>
+            <Y>26.4999866</Y>
+            <Z>60.0000572</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284702562</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">816</token>
+          <string name="Name">Wedge</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <Vector3 name="size">
+            <X>10</X>
+            <Y>1</Y>
+            <Z>6</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX27F078BD36954CC59A3BBE18600CEACB">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750082016</X>
+            <Y>39.9999924</Y>
+            <Z>-109.499947</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967040</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">1536</token>
+          <string name="Name">Boundary</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>1</X>
+            <Y>32</Y>
+            <Z>323</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX63BAB2963CAF4A458E47F867EB92E029">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.750082016</X>
+            <Y>39.9999924</Y>
+            <Z>112.500053</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>1</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>-0</R12>
+            <R20>-1</R20>
+            <R21>0</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967040</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">1536</token>
+          <string name="Name">Boundary</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>1</X>
+            <Y>32</Y>
+            <Z>323</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXD19C5C44D65F457F846070B94EA029D8">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>161.750092</X>
+            <Y>39.9999924</Y>
+            <Z>1.50005305</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967040</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">1536</token>
+          <string name="Name">Boundary</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>1</X>
+            <Y>32</Y>
+            <Z>223</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX21F65E4C24824A6BBD9B24C0A6B21CC1">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-160.249908</X>
+            <Y>39.9999924</Y>
+            <Z>1.50005305</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967040</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">1536</token>
+          <string name="Name">Boundary</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>1</X>
+            <Y>32</Y>
+            <Z>223</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBX9B8C5FB376984CFB8E361861CE59F52B">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">0</token>
+        <CoordinateFrame name="CFrame">
+          <X>-61.7498932</X>
+          <Y>20.4999866</Y>
+          <Z>3.09999996e-05</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">256</token>
+        <string name="Name">PointLightHolders</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">1</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>0.200000003</X>
+          <Y>0.200000003</Y>
+          <Z>0.200000003</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+      <Item class="PointLight" referent="RBXCCB4C59C84BC496C807F935E3A97284A">
+        <Properties>
+          <float name="Brightness">1</float>
+          <Color3 name="Color">
+            <R>1</R>
+            <G>1</G>
+            <B>1</B>
+          </Color3>
+          <bool name="Enabled">true</bool>
+          <string name="Name">PointLight</string>
+          <float name="Range">60</float>
+          <bool name="Shadows">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBXF701018FB7AB4730B74D0876926F1CEF">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBX972E668FCF8549EF8F6E1C527FA5C7AC">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-77.6670837</X>
+            <Y>40.9659958</Y>
+            <Z>60.4969673</Z>
+            <R00>0.270182997</R00>
+            <R01>0.374791145</R01>
+            <R02>-0.886866868</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>7.36438039e-08</R12>
+            <R20>0.518621981</R20>
+            <R21>0.719419301</R21>
+            <R22>0.462025166</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXE59A3B241F594416A8CE18BFD4ADE078">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-77.8920822</X>
+            <Y>40.6150818</Y>
+            <Z>60.0649796</Z>
+            <R00>0.88686657</R00>
+            <R01>-0.270183116</R01>
+            <R02>0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>-0.462025791</R20>
+            <R21>-0.518621266</R21>
+            <R22>0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX7BF8DDCDC0B5453D8BA751F079666BCC">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX7B670B2B01F9435CB89A8B6137F39A64">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX7E56DEB3A4544A4BABCE2A4CE642217A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.1700897</X>
+            <Y>40.5000572</Y>
+            <Z>61.2990189</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX5F819B21E6F1465EA880594C4AA9A153">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.1700897</X>
+            <Y>33.5000496</Y>
+            <Z>61.2990189</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBX86A9A732CD614029A1E6D56A8D376FC1">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXBF9848B6FAAD4496AD0C243A6DAF9874">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.1700668</X>
+            <Y>40.9659958</Y>
+            <Z>59.8970184</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>0.584779978</R20>
+            <R21>0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX1DFCCF382A414311BED09D64A73EC0FF">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.1700668</X>
+            <Y>40.6150818</Y>
+            <Z>59.4099998</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>-0.584779978</R21>
+            <R22>0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXE6BD309D864E49FAB3205D0D6EB9AA6F">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX0AAEFC74F2F74C1C9F37EB986350CCF3">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX32E14B6A327F46DCACE53130D0680B6A">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-70.6730804</X>
+            <Y>40.9659958</Y>
+            <Z>60.4969902</Z>
+            <R00>-0.245543912</R00>
+            <R01>-0.340614021</R01>
+            <R02>-0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>0.530731797</R20>
+            <R21>0.736216068</R21>
+            <R22>-0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXB8A1EB67EF5048A29BA70211CDC3A90B">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-70.4680786</X>
+            <Y>40.6150818</Y>
+            <Z>60.0550537</Z>
+            <R00>0.907575011</R00>
+            <R01>0.245543286</R01>
+            <R02>-0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>0.419889987</R20>
+            <R21>-0.530731797</R21>
+            <R22>0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX754A551DA67D45609DDE92943B07E280">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX8CF23F6627BF490C8DE1CE042B5B4262">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXD3A5780E047D4B9E9CD39DF799CBED2C">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-74.1700897</X>
+            <Y>26.4999866</Y>
+            <Z>61.2990189</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Model" referent="RBX91720CE5B732485BA08F5750487B3353">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBXDA0701D8F95A493B99BE3AA440A41B6E">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-2.66710711</X>
+            <Y>40.9659958</Y>
+            <Z>60.4969711</Z>
+            <R00>0.270182997</R00>
+            <R01>0.374791145</R01>
+            <R02>-0.886866868</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>7.36438039e-08</R12>
+            <R20>0.518621981</R20>
+            <R21>0.719419301</R21>
+            <R22>0.462025166</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX7B4E5FAAB68748ABA911B27ADA6FE1C5">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>-2.89210391</X>
+            <Y>40.6150818</Y>
+            <Z>60.0649643</Z>
+            <R00>0.88686657</R00>
+            <R01>-0.270183116</R01>
+            <R02>0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>-0.462025791</R20>
+            <R21>-0.518621266</R21>
+            <R22>0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX72EF33244C2348848BC68B940E52AAD2">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX6F5D7AD84EFD47B4B00D3A27B5DFD547">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX7DD242CDAE45405FB399EF8F70280548">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.829883993</X>
+            <Y>40.4999924</Y>
+            <Z>61.2989807</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX4A2590AA89E847F792591992D81B5527">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.829883993</X>
+            <Y>33.4999886</Y>
+            <Z>61.2989807</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBX4C0DBA72344E48B6A2FA03B1CF90233D">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX867E7469566C491EACFA429AFDB180C3">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.829878986</X>
+            <Y>40.9659958</Y>
+            <Z>59.8970146</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>0.584779978</R20>
+            <R21>0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX2B42AF337AF04F038F3748D03CB88F73">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.829877973</X>
+            <Y>40.6150818</Y>
+            <Z>59.4100037</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>-0.584779978</R21>
+            <R22>0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBXFBD9767A407C4850B73D28E28FA6603A">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX6D64847927404683BB8C05E1B23FB082">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXD061F0815B3B480FA2E3062D8C186E07">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>4.32686186</X>
+            <Y>40.9659958</Y>
+            <Z>60.4969902</Z>
+            <R00>-0.245543912</R00>
+            <R01>-0.340614021</R01>
+            <R02>-0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>0.530731797</R20>
+            <R21>0.736216068</R21>
+            <R22>-0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXF1BCF7C5E43043B7A337C166D5AB2790">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>4.53188896</X>
+            <Y>40.6150818</Y>
+            <Z>60.0550308</Z>
+            <R00>0.907575011</R00>
+            <R01>0.245543286</R01>
+            <R02>-0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>0.419889987</R20>
+            <R21>-0.530731797</R21>
+            <R22>0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX7033D57EC7D345DD81BF383D7321C871">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX5F16FE18972E454CB60AD14F289A2199">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX328BE2E436974EDEB1D1CA220165A400">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>0.829883993</X>
+            <Y>26.4999866</Y>
+            <Z>61.2989807</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBXDDDF8905841B4055B4EA44487DFE970F">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">4</token>
+        <CoordinateFrame name="CFrame">
+          <X>0.750054002</X>
+          <Y>12.4999762</Y>
+          <Z>88.0000687</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4280844103</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">1280</token>
+        <string name="Name">Part</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">0</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>223</X>
+          <Y>23</Y>
+          <Z>50</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+    </Item>
+    <Item class="Model" referent="RBXF219E0ACFA7F43669596B7F3774583A9">
+      <Properties>
+        <string name="Name">Light</string>
+      </Properties>
+      <Item class="Part" referent="RBXC00A2B9113E845CBBE9F51225793E225">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>72.3324432</X>
+            <Y>40.9659958</Y>
+            <Z>60.4971848</Z>
+            <R00>0.270182997</R00>
+            <R01>0.374791145</R01>
+            <R02>-0.886866868</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>7.36438039e-08</R12>
+            <R20>0.518621981</R20>
+            <R21>0.719419301</R21>
+            <R22>0.462025166</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXF41028ABB5AE47579FC849A074C9CE93">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>72.1074219</X>
+            <Y>40.6150818</Y>
+            <Z>60.0651321</Z>
+            <R00>0.88686657</R00>
+            <R01>-0.270183116</R01>
+            <R02>0.374791741</R02>
+            <R10>0</R10>
+            <R11>0.811192334</R11>
+            <R12>0.584779382</R12>
+            <R20>-0.462025791</R20>
+            <R21>-0.518621266</R21>
+            <R22>0.719419301</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX268E49E90D3F47C6A8FABF0DA79BC402">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX82F64E4496D5437DB385447CC74E4B7A">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBXA94DF4AAEF224A08A50517E9B5AB5A18">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.8294373</X>
+            <Y>40.4999924</Y>
+            <Z>61.2991714</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Rack</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>6</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXA3E7CF72B9D143A0B50D3E633969ECFD">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.8294373</X>
+            <Y>33.4999886</Y>
+            <Z>61.2991714</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Post</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>13</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="CylinderMesh" referent="RBXE06C8D8718964148BE919423FB0AB146">
+          <Properties>
+            <string name="Name">Mesh</string>
+            <Vector3 name="Offset">
+              <X>0</X>
+              <Y>0</Y>
+              <Z>0</Z>
+            </Vector3>
+            <Vector3 name="Scale">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+            <Vector3 name="VertexColor">
+              <X>1</X>
+              <Y>1</Y>
+              <Z>1</Z>
+            </Vector3>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX85C3EB46724446E4BAEED0E8BF08FA0B">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.8294373</X>
+            <Y>40.9659958</Y>
+            <Z>59.8971901</Z>
+            <R00>0</R00>
+            <R01>0</R01>
+            <R02>-1</R02>
+            <R10>-0.811191976</R10>
+            <R11>0.584779978</R11>
+            <R12>0</R12>
+            <R20>0.584779978</R20>
+            <R21>0.811191976</R21>
+            <R22>0</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBX54FD7B20C21D4E7D9BACA6727B1074FF">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.8294373</X>
+            <Y>40.6150818</Y>
+            <Z>59.410183</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>0.811191976</R11>
+            <R12>0.584779978</R12>
+            <R20>0</R20>
+            <R21>-0.584779978</R21>
+            <R22>0.811191976</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX434FB0F7630E422594688920BA0C6647">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBX17E08948CA364BEBA34A4592F3D8F8DC">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX6DC628CAC0EE4A45B8465BF23DF2F8C1">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>79.3264389</X>
+            <Y>40.9659958</Y>
+            <Z>60.4971886</Z>
+            <R00>-0.245543912</R00>
+            <R01>-0.340614021</R01>
+            <R02>-0.907573879</R02>
+            <R10>-0.811191678</R10>
+            <R11>0.584780335</R11>
+            <R12>-1.31304648e-06</R12>
+            <R20>0.530731797</R20>
+            <R21>0.736216068</R21>
+            <R22>-0.41989249</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Lamp</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>1</Y>
+            <Z>3</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+      <Item class="Part" referent="RBXD6E186D0B8B84D87B1BB91B59B17F160">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>79.5314865</X>
+            <Y>40.6150818</Y>
+            <Z>60.055191</Z>
+            <R00>0.907575011</R00>
+            <R01>0.245543286</R01>
+            <R02>-0.340611398</R02>
+            <R10>0</R10>
+            <R11>0.811191857</R11>
+            <R12>0.584780157</R12>
+            <R20>0.419889987</R20>
+            <R21>-0.530731797</R21>
+            <R22>0.736217499</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4294967244</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">288</token>
+          <string name="Name">Light</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2.5999999</X>
+            <Y>2.19999981</Y>
+            <Z>0.200000003</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+        <Item class="SpotLight" referent="RBX60D2E7E0E5E14457AF809EACA76C8A14">
+          <Properties>
+            <float name="Angle">100</float>
+            <float name="Brightness">2</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <token name="Face">5</token>
+            <string name="Name">SpotLight</string>
+            <float name="Range">60</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+        <Item class="PointLight" referent="RBXFFAC1E7D84FE4F0ABA801C6D1C6726F0">
+          <Properties>
+            <float name="Brightness">4</float>
+            <Color3 name="Color">
+              <R>1</R>
+              <G>1</G>
+              <B>1</B>
+            </Color3>
+            <bool name="Enabled">true</bool>
+            <string name="Name">PointLight</string>
+            <float name="Range">8</float>
+            <bool name="Shadows">true</bool>
+          </Properties>
+        </Item>
+      </Item>
+      <Item class="Part" referent="RBX5E874B11C6E240139A887AFD30E96958">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>75.8294373</X>
+            <Y>26.4999866</Y>
+            <Z>61.2991714</Z>
+            <R00>1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4279308561</Color3uint8>
+          <token name="FrontSurface">0</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Base</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">0</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>2</X>
+            <Y>1</Y>
+            <Z>2</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBX7787DC79F3924466A6E1501307C53089">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">4</token>
+        <CoordinateFrame name="CFrame">
+          <X>137.250092</X>
+          <Y>12.4999762</Y>
+          <Z>1.50002801</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4280844103</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">1280</token>
+        <string name="Name">Part</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">0</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>50</X>
+          <Y>23</Y>
+          <Z>223</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+    </Item>
+    <Item class="Model" referent="RBXDC5F4DF591E248EEB2796288DDC7F7FD">
+      <Properties>
+        <string name="Name">SpawnPoints</string>
+      </Properties>
+      <Item class="Part" referent="RBXA432393D4DD64BE3B9173F4CCBB925FD">
+        <Properties>
+          <token name="BackSurface">0</token>
+          <token name="BottomSurface">0</token>
+          <CoordinateFrame name="CFrame">
+            <X>1.75009203</X>
+            <Y>24.100071</Y>
+            <Z>-84.4999466</Z>
+            <R00>-1</R00>
+            <R01>0</R01>
+            <R02>0</R02>
+            <R10>0</R10>
+            <R11>1</R11>
+            <R12>0</R12>
+            <R20>0</R20>
+            <R21>0</R21>
+            <R22>-1</R22>
+          </CoordinateFrame>
+          <bool name="CastShadow">true</bool>
+          <Color3uint8 name="Color3uint8">4284622289</Color3uint8>
+          <token name="FrontSurface">6</token>
+          <token name="LeftSurface">0</token>
+          <token name="Material">256</token>
+          <string name="Name">Spawn</string>
+          <float name="Reflectance">0</float>
+          <token name="RightSurface">0</token>
+          <token name="TopSurface">0</token>
+          <float name="Transparency">1</float>
+          <token name="shape">1</token>
+          <Vector3 name="size">
+            <X>213</X>
+            <Y>0.200000003</Y>
+            <Z>39</Z>
+          </Vector3>
+          <bool name="Anchored">true</bool>
+          <bool name="Locked">false</bool>
+        </Properties>
+      </Item>
+    </Item>
+    <Item class="Part" referent="RBX13B80ECA7A504C7799CC2F917013D4D1">
+      <Properties>
+        <token name="BackSurface">0</token>
+        <token name="BottomSurface">0</token>
+        <CoordinateFrame name="CFrame">
+          <X>-97.4620514</X>
+          <Y>79.2235489</Y>
+          <Z>-94.1557693</Z>
+          <R00>-0.739889562</R00>
+          <R01>0.349842101</R01>
+          <R02>-0.57460773</R02>
+          <R10>0</R10>
+          <R11>0.854145288</R11>
+          <R12>0.520034671</R12>
+          <R20>0.672728419</R20>
+          <R21>0.384768218</R21>
+          <R22>-0.631973088</R22>
+        </CoordinateFrame>
+        <bool name="CastShadow">true</bool>
+        <Color3uint8 name="Color3uint8">4288914085</Color3uint8>
+        <token name="FrontSurface">0</token>
+        <token name="LeftSurface">0</token>
+        <token name="Material">256</token>
+        <string name="Name">LoadingCameraPosition</string>
+        <float name="Reflectance">0</float>
+        <token name="RightSurface">0</token>
+        <token name="TopSurface">0</token>
+        <float name="Transparency">1</float>
+        <token name="shape">1</token>
+        <Vector3 name="size">
+          <X>2</X>
+          <Y>2</Y>
+          <Z>2</Z>
+        </Vector3>
+        <bool name="Anchored">true</bool>
+        <bool name="Locked">false</bool>
+      </Properties>
+    </Item>
+  </Item>
+</roblox>

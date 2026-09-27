@@ -1,0 +1,40 @@
+{
+  "name": "JointForge-Media",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "Environment": {
+        "$path": "TheDepths-geometry.rbxmx"
+      },
+      "Camera": {
+        "$className": "Camera",
+        "$properties": {
+          "CFrame": [
+            21.2968903,
+            822.219666,
+            -28.9462643,
+            -0.803666115,
+            0.13511318,
+            -0.579538882,
+            7.4505806e-09,
+            0.973883152,
+            0.227050245,
+            0.595080554,
+            0.182472587,
+            -0.782676756
+          ],
+          "FieldOfView": 70
+        }
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Technology": "ShadowMap",
+        "ClockTime": 14,
+        "Brightness": 2
+      }
+    }
+  }
+}

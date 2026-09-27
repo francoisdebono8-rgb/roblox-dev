@@ -1,0 +1,21 @@
+{
+  "name": "ForgeCatalogGate",
+  "tree": {
+    "$className": "Model",
+    "Runner": { "$path": "CatalogGate.plugin.luau" },
+    "PresetForge": { "$path": "../../products/presetforge/dist/PresetForge-v2.0.0.rbxm" },
+    "JointForge": { "$path": "../../products/jointforge/dist/JointForge-v1.0.0.rbxm" },
+    "CurveForge": { "$path": "../../products/curveforge/dist/CurveForge-v1.0.0.rbxm" },
+    "Tests": {
+      "$className": "Folder",
+      "Schema.spec": { "$path": "../../products/presetforge/tests/Schema.spec.luau" },
+      "CapturePreview.spec": { "$path": "../../products/presetforge/tests/CapturePreview.spec.luau" },
+      "ScopePreview.spec": { "$path": "../../products/presetforge/tests/ScopePreview.spec.luau" },
+      "ApplyService.spec": { "$path": "../../products/presetforge/tests/ApplyService.spec.luau" },
+      "PresetStore.spec": { "$path": "../../products/presetforge/tests/PresetStore.spec.luau" },
+      "ProjectStore.spec": { "$path": "../../products/presetforge/tests/ProjectStore.spec.luau" }
+    },
+    "JointSuite": { "$path": "../../products/jointforge/tests/Suite.luau" },
+    "CurveSuite": { "$path": "../../products/curveforge/tests/Suite.luau" }
+  }
+}
