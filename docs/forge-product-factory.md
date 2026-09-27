@@ -143,6 +143,11 @@ Publish the plugin asset from Roblox Studio when all gates pass:
 - choose the user's creator account;
 - record the resulting Roblox asset ID;
 - never create a duplicate when updating an existing product.
+- **New-product duplicate guard:** before submitting, check the user's current plugin creations for the exact title and any asset ID already recorded in the product release docs. If a matching asset already exists from this release attempt, update/reuse it instead of submitting again.
+- Treat the first observed `Successfully submitted!` as terminal success. Immediately persist the asset ID/status and stop all further Publish/Save retries.
+- Never interpret a delayed/hidden Studio confirmation as permission to submit a second time. Re-check creations/asset metadata first.
+- If automation uncertainty remains after a submission, stop and inspect existing creations rather than clicking Save/Submit again.
+- If a duplicate is nevertheless created, record both IDs, designate exactly one canonical asset, and flag the other for archive before any Creator Store distribution.
 
 Do not perform website-only pricing/media/distribution steps unless explicitly authorized and safely supported.
 
