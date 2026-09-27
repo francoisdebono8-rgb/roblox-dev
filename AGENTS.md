@@ -27,7 +27,6 @@ The user should normally only need to handle Creator Hub website price/media/dis
 
 Do not continue a weak product merely because an issue exists. If the competitive gate fails, record the evidence, choose another candidate and continue the factory workflow.
 
-
 ## Current catalogue phase: Forge V2
 
 The V1 catalogue is complete at five canonical products: PresetForge, JointForge, CurveForge, AccessForge and SchemaForge.
@@ -46,3 +45,26 @@ V2 priorities:
 - strengthen media/listing/outreach;
 - track before/after commercial signals;
 - prefer improving and marketing the existing catalogue over producing more products.
+
+## Hard gate: Forge Studio visual UI programme
+
+The future high-polish Forge Studio UI work is documented in `docs/forge-studio-ui/`.
+
+**Do not implement that visual refactor until the functional V2 programme is complete for all five products and the user explicitly opens the UI programme.**
+
+While any product still has unfinished functional V2 work:
+- the Forge Studio UI folder is research/design reference only;
+- do not modify product View/UI code merely to match the future art direction;
+- do not introduce a shared Forge UI framework;
+- do not delay a functional V2 release for the later visual refactor.
+
+When the user explicitly starts the later UI programme, the agent MUST use:
+- `docs/forge-studio-ui/VISUAL_DIRECTION.md`
+- `docs/forge-studio-ui/SHARED_SYSTEM.md`
+- `docs/forge-studio-ui/PRODUCT_AUDITS.md`
+- `docs/forge-studio-ui/PRODUCT_STRUCTURES.md`
+- `docs/forge-studio-ui/QUALITY_GATES.md`
+- `docs/forge-studio-ui/WORK_ORDER_TEMPLATE.md`
+- `docs/forge-studio-ui/forge-ui-spec.json`
+
+A future Forge Studio UI task is **not complete** until its applicable quality gates are recorded PASS on the exact final artifact. "Looks cleaner", successful compilation, or functional reachability alone is insufficient. Real native screenshots at the required widths/themes and the product's functional regression gate are required.
