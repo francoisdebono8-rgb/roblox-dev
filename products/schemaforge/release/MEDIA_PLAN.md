@@ -1,11 +1,28 @@
 # Three genuine Studio captures
 
-Captured 2026-09-27 with the installed final commercial binary. No generated interface, compositing or AI imagery. Native window PNGs were cropped to remove title/account/toolbars and Command Bar: 2940 x 1450 pixels, original offset (0, 242). No content inside the viewport or plugin panel was altered.
+## Actual 1.1.0 captures, final-binary recapture pending
 
-1. `media/01-explicit-project-contract.png`: **Save the contract, not just the values.** Named tag/class, required child path and designer note in a project schema.
-2. `media/02-audit-tagged-objects.png`: **Find the broken objects before playtesting.** Eight tagged pots, six findings and five affected objects selected in the real scene.
-3. `media/03-preview-missing-defaults.png`: **Review missing-only repairs.** Two absent Cost attributes previewed as 25; existing values and children remain untouched.
+Captured 2026-09-27 from the real local commercial plugin in the licensed greenhouse.
+Artifact SHA256 at capture:
+`9a3fb2322245438b74c1d634b260db6bc6b4b9b61abe2dec0fdbdcab77a3cc39`.
+The subsequent isolated focus-restoration correction changes the final artifact hash.
+These PNGs are genuine, but **not yet final-artifact release evidence**. No generated
+interface, compositing or invented selections/results. Desktop crop only: 2940 x 1450
+pixels, logical rectangle (0, 158, 1470, 725), excluding account/title/toolbars/Command Bar.
 
-Scene: `SchemaForge-Media.rbxl`, saved with the missing attributes restored via real Undo and the canonical Greenhouse pots schema. Open Project schemas > Greenhouse pots. Rules/Children reproduces image 1. Audit/Workspace > Audit tagged objects > Select affected objects reproduces image 2. Preview missing defaults reproduces image 3.
+1. `media/01-explicit-project-contract.png`: Greenhouse pots loaded; name/tag/scope,
+   required Contents/Plant child and designer note in Rules.
+2. `media/02-audit-tagged-objects.png`: 8 checked / 3 match / 6 findings; reason All,
+   field Cost, three visible findings/affected objects, Expected/Actual/note context.
+3. `media/03-preview-missing-defaults.png`: exactly two missing Cost defaults on
+   Cabbage_03 and Cabbage_06, each 25, with the Apply count visible.
+
+Reproduction: open a disposable copy of `SchemaForge-Media.rbxl`, select
+PlantGreenhouse/ProductionPots, then Library > Greenhouse pots. Rules > Children gives
+scene 1. Audit > Audit, field Cost and Select affected gives scene 2. Reset the audit
+to all findings, Preview gives scene 3. Do not repair invalid values or child structure.
+Use the installed final artifact listed in `../dist/manifest.json`; repeat actual clicks
+and captures, then replace the three files. See `../tests/GREENHOUSE_V11.md` for the
+executed walkthrough and `../v2/RELEASE_GATE.md` for remaining acceptance.
 
 Source/license: [scene/README.md](scene/README.md). Media is separate from the paid plugin.

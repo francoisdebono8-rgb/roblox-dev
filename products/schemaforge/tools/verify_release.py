@@ -13,7 +13,7 @@ parser.add_argument("--rojo", default="rojo")
 args = parser.parse_args()
 expected = {"Main": root / "SchemaForge/Main.plugin.luau"}
 expected.update({p.stem: p for p in (root / "SchemaForge/Modules").glob("*.luau")})
-release = root / "dist/SchemaForge-v1.0.0.rbxm"
+release = root / "dist/SchemaForge-v1.1.0.rbxm"
 with tempfile.TemporaryDirectory() as temp:
     binary, xml = Path(temp) / "release.rbxm", Path(temp) / "release.rbxmx"
     for target in (binary, xml):
@@ -36,6 +36,6 @@ with tempfile.TemporaryDirectory() as temp:
             assert forbidden not in source, forbidden
         found[name] = hashlib.sha256(source.encode()).hexdigest()
     assert set(found) == set(expected)
-manifest = {"version": "1.0.0", "artifact": release.name, "sha256": hashlib.sha256(release.read_bytes()).hexdigest(), "source_sha256": found}
+manifest = {"version": "1.1.0", "artifact": release.name, "sha256": hashlib.sha256(release.read_bytes()).hexdigest(), "source_sha256": found}
 (root / "dist/manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 print(f"PASS: {len(found)} exact sources, reproducible binary, no test/demo/network requests")

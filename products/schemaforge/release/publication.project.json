@@ -1,1 +1,1 @@
-{"name":"SchemaForge-Publication","tree":{"$className":"DataModel","Workspace":{"$className":"Workspace","SchemaForge":{"$path":"../dist/SchemaForge-v1.0.0.rbxm"}},"Lighting":{"$className":"Lighting","$properties":{"Technology":"ShadowMap"}}}}
+{"name":"SchemaForge-Publication","tree":{"$className":"DataModel","Workspace":{"$className":"Workspace","SchemaForge":{"$path":"../dist/SchemaForge-v1.1.0.rbxm"}},"Lighting":{"$className":"Lighting","$properties":{"Technology":"ShadowMap"}}}}

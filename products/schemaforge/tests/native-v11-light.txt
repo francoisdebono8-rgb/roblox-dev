@@ -1,0 +1,96 @@
+Native Studio 0.740.19.7400003, Edit mode.
+2026-09-27T20:26:16.044Z [SchemaForgeFinalGate] artifact=SchemaForge-v1.1.0.rbxm sha256=9a3fb2322245438b74c1d634b260db6bc6b4b9b61abe2dec0fdbdcab77a3cc39
+2026-09-27T20:26:16.045Z [SchemaForgeFinalGate] Native module suites and real ScreenGui geometry; no simulated clicks or manual-flow claim.
+2026-09-27T20:26:16.048Z [SchemaForgeTests][PASS] Capture is read-only, typed and excludes unsupported types
+2026-09-27T20:26:16.049Z [SchemaForgeTests][PASS] Required types, range, choices, class and child paths
+2026-09-27T20:26:16.049Z [SchemaForgeTests][PASS] Audit and preview leave all instances unchanged
+2026-09-27T20:26:16.050Z [SchemaForgeTests][PASS] Selection roots include descendants and deduplicate overlaps
+2026-09-27T20:26:16.050Z [SchemaForgeTests][PASS] False is present; optional missing is not a finding
+2026-09-27T20:26:16.050Z [SchemaForgeTests][PASS] Missing-only apply preserves values, geometry, tags and children
+2026-09-27T20:26:16.138Z [SchemaForgeTests][PASS] Actual native Undo and Redo restore exact attributes
+2026-09-27T20:26:16.139Z [SchemaForgeTests][PASS] Already applied and stale existing values are refused
+2026-09-27T20:26:16.139Z [SchemaForgeTests][PASS] Stale tag, parent and removed scope are refused
+2026-09-27T20:26:16.140Z [SchemaForgeTests][PASS] Duplicate child names and wrong child classes are reported
+2026-09-27T20:26:16.140Z [SchemaForgeTests][PASS] Invalid schemas and unsafe defaults are refused
+2026-09-27T20:26:16.140Z [SchemaForgeTests][PASS] Number integer and min/max bounds are inclusive
+2026-09-27T20:26:16.140Z [SchemaForgeTests][PASS] Recording refusal does not mutate
+2026-09-27T20:26:16.140Z [SchemaForgeTests][PASS] Commit failure rolls back all attempted repairs
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Project save/load matches typed values and descriptions
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Project editing and actual native save Undo/Redo
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] No duplicate save or stale overwrite
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Delete saved and actual native Undo/Redo
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Malformed data fails without deleting it
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Storage name collision is protected
+2026-09-27T20:26:16.141Z [SchemaForgeTests][PASS] Forbidden scopes and empty scope are refused
+2026-09-27T20:26:16.142Z [SchemaForgeTests][PASS] Select findings deduplicates real instances
+2026-09-27T20:26:16.146Z [SchemaForgeTests][PASS] UI mounts and disposes at narrow dock size
+2026-09-27T20:26:16.146Z [SchemaForgeTests][SUMMARY] 23 PASS / 0 FAIL
+2026-09-27T20:26:16.146Z [SchemaForgeFinalGate][SUITE PASS] Suite
+2026-09-27T20:26:16.182Z [SchemaForgeV11Engine][PASS] Structured categories, expected/actual values and notes preserve V1 reasons
+2026-09-27T20:26:16.183Z [SchemaForgeV11Engine][PASS] Repairable findings sort first with stable path/field ties and duplicate identities
+2026-09-27T20:26:16.184Z [SchemaForgeV11Engine][PASS] Category/field filters intersect with finding and object selections
+2026-09-27T20:26:16.184Z [SchemaForgeV11Engine][PASS] Literal All field is filterable and unknown filters match nothing
+2026-09-27T20:26:16.185Z [SchemaForgeV11Engine][PASS] Preview and selection use exactly the validated subset without writes
+2026-09-27T20:26:16.187Z [SchemaForgeV11Engine][PASS] Copied, cross-audit, duplicate, sparse and oversized subsets are refused
+2026-09-27T20:26:16.188Z [SchemaForgeV11Engine][PASS] Tampered finding and forged plan cannot introduce a repair
+2026-09-27T20:26:16.220Z [SchemaForgeV11Engine][PASS] Exact finding limit is retained; excess findings refuse the entire audit
+2026-09-27T20:26:16.221Z [SchemaForgeV11Engine][PASS] Stale: existing attribute on another matched object
+2026-09-27T20:26:16.222Z [SchemaForgeV11Engine][PASS] Stale: optional/unruled attribute on a tagged object
+2026-09-27T20:26:16.223Z [SchemaForgeV11Engine][PASS] Stale: additional tag on another matched object
+2026-09-27T20:26:16.224Z [SchemaForgeV11Engine][PASS] Stale: target tag removed from another matched object
+2026-09-27T20:26:16.226Z [SchemaForgeV11Engine][PASS] Stale: new tagged object enters the scope
+2026-09-27T20:26:16.227Z [SchemaForgeV11Engine][PASS] Stale: previously untagged scope object gains the target tag
+2026-09-27T20:26:16.228Z [SchemaForgeV11Engine][PASS] Stale: same-name tagged replacement
+2026-09-27T20:26:16.229Z [SchemaForgeV11Engine][PASS] Stale: required leaf removed
+2026-09-27T20:26:16.230Z [SchemaForgeV11Engine][PASS] Stale: required leaf renamed
+2026-09-27T20:26:16.231Z [SchemaForgeV11Engine][PASS] Stale: same-name required leaf replaced
+2026-09-27T20:26:16.232Z [SchemaForgeV11Engine][PASS] Stale: required intermediate becomes ambiguous
+2026-09-27T20:26:16.233Z [SchemaForgeV11Engine][PASS] Stale: missing required child becomes present
+2026-09-27T20:26:16.234Z [SchemaForgeV11Engine][PASS] Stale: tagged object renamed
+2026-09-27T20:26:16.235Z [SchemaForgeV11Engine][PASS] Stale: tagged object reparented inside scope
+2026-09-27T20:26:16.236Z [SchemaForgeV11Engine][PASS] Stale: scope ancestor renamed
+2026-09-27T20:26:16.238Z [SchemaForgeV11Engine][PASS] Stale: scope moved between supported services
+2026-09-27T20:26:16.238Z [SchemaForgeV11Engine][PASS] Stale: scope detached
+2026-09-27T20:26:16.239Z [SchemaForgeV11Engine][PASS] Stale: source schema edited
+2026-09-27T20:26:16.240Z [SchemaForgeV11Engine][PASS] Stale: source scope array edited
+2026-09-27T20:26:16.241Z [SchemaForgeV11Engine][PASS] Mutated audit schema/roots invalidate a preview already created
+2026-09-27T20:26:16.242Z [SchemaForgeV11Engine][PASS] Unrelated properties and untagged content do not stale an audit
+2026-09-27T20:26:16.242Z [SchemaForgeV11Engine][PASS] Required-child ambiguity and wrong class stay diagnostic only
+2026-09-27T20:26:16.243Z [SchemaForgeV11Engine][PASS] Scope overlaps, false defaults and optional missing preserve compatibility
+2026-09-27T20:26:16.245Z [SchemaForgeV11Engine][PASS] Missing without default stays nonrepairable and selection is bounded
+2026-09-27T20:26:16.245Z [SchemaForgeV11Engine][PASS] Freshness is rechecked when the history recording opens
+2026-09-27T20:26:16.246Z [SchemaForgeV11Engine][PASS] Recording refusal and commit failure leave missing attributes absent
+2026-09-27T20:26:16.423Z [SchemaForgeV11Engine][PASS] Native subset Apply, Undo and Redo preserve invalid values and hierarchy
+2026-09-27T20:26:16.423Z [SchemaForgeV11Engine][SUMMARY] 35 PASS / 0 FAIL
+2026-09-27T20:26:16.423Z [SchemaForgeFinalGate][SUITE PASS] V11Engine.spec
+2026-09-27T20:26:16.442Z [SchemaForgeLayout][THEME] Light; 24 cases; Studio theme settings are read-only
+2026-09-27T20:26:17.045Z [SchemaForgeLayout][PASS] Light 240x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:17.596Z [SchemaForgeLayout][PASS] Light 240x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:18.079Z [SchemaForgeLayout][PASS] Light 240x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:18.629Z [SchemaForgeLayout][PASS] Light 240x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:19.112Z [SchemaForgeLayout][PASS] Light 240x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:19.662Z [SchemaForgeLayout][PASS] Light 240x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:20.146Z [SchemaForgeLayout][PASS] Light 320x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:20.696Z [SchemaForgeLayout][PASS] Light 320x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:21.179Z [SchemaForgeLayout][PASS] Light 320x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:21.729Z [SchemaForgeLayout][PASS] Light 320x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:22.212Z [SchemaForgeLayout][PASS] Light 320x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:22.762Z [SchemaForgeLayout][PASS] Light 320x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:23.246Z [SchemaForgeLayout][PASS] Light 400x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:23.795Z [SchemaForgeLayout][PASS] Light 400x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:24.279Z [SchemaForgeLayout][PASS] Light 400x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:24.829Z [SchemaForgeLayout][PASS] Light 400x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:25.312Z [SchemaForgeLayout][PASS] Light 400x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:25.862Z [SchemaForgeLayout][PASS] Light 400x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:26.345Z [SchemaForgeLayout][PASS] Light 560x360 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:26.896Z [SchemaForgeLayout][PASS] Light 560x360 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:27.379Z [SchemaForgeLayout][PASS] Light 560x640 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:27.928Z [SchemaForgeLayout][PASS] Light 560x640 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:28.412Z [SchemaForgeLayout][PASS] Light 560x900 empty draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:28.962Z [SchemaForgeLayout][PASS] Light 560x900 32-rule draft / geometry, controls, scroll, edits, errors, dispose
+2026-09-27T20:26:28.962Z [SchemaForgeLayout][SUMMARY] 24 PASS / 0 FAIL; theme=Light
+2026-09-27T20:26:28.962Z [SchemaForgeLayout] Other themes require a separate run after changing Studio Settings through the native UI.
+2026-09-27T20:26:28.962Z [SchemaForgeLayout] Geometry and Text property updates only; no clicks, focus/caret, rule switching or manual workflow coverage.
+2026-09-27T20:26:28.962Z [SchemaForgeFinalGate][SUITE PASS] Layout.spec
+2026-09-27T20:26:30.095Z [SchemaForgeFinalGate][SUMMARY] 3/3 suites PASS; gate PASS
+2026-09-27T20:26:30.095Z [SchemaForgeFinalGate] NOT TESTED: real DockWidget clicks, keyboard focus/caret, capture/load/filter/apply GUI flows, screenshots, restart persistence or publication.

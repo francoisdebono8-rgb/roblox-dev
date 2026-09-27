@@ -1,0 +1,14 @@
+{
+  "name": "SchemaForgeFinalGate",
+  "tree": {
+    "$className": "Model",
+    "Runner": { "$path": "FinalGate.plugin.luau" },
+    "SchemaForge": { "$path": "../dist/SchemaForge-v1.1.0.rbxm" },
+    "Tests": {
+      "$className": "Folder",
+      "Suite": { "$path": "Suite.luau" },
+      "V11Engine.spec": { "$path": "V11Engine.spec.luau" },
+      "Layout.spec": { "$path": "Layout.spec.luau" }
+    }
+  }
+}

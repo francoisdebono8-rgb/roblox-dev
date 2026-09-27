@@ -1,9 +1,12 @@
 # SchemaForge 1.0.0 release gate
 
+Historical 1.0.0 evidence only. Current production sources have since changed for
+issue #17; see [the 1.1.0 gate](../v2/RELEASE_GATE.md). The manifest now describes 1.1.0.
+
 2026-09-27, macOS, Studio 0.740.19.7400003, Edit mode.
 
 Exact commercial SHA-256: `d6b29c5b9f76db7d96e4ac828e4eb2f56152c66c8e6e98c67ac598d383b99a2f`.
-Installed binary, tested modules and publication input match. Production source has not changed since this native run.
+At that historical run, installed binary, tested modules and publication input matched.
 
 | Gate | Result | Actual evidence |
 | --- | --- | --- |
@@ -27,4 +30,10 @@ Not claimed: exhaustive load/performance testing, Team Create concurrent session
 
 ## Reproduce
 
-Build `tests/runner.project.json` as a separate local plugin and `tests/place.project.json` as a fresh QA place with Rojo. Open the QA place in Edit mode, read `[SchemaForgeTests]` Output. The place imports the commercial binary; the test runner is not in it. Remove the QA plugin after testing. Never publish a QA/media place as the commercial plugin.
+For 1.1.0, run `python3 tests/build_final_gate.py --rojo /path/to/rojo` from the product directory. It packages an opt-in QA plugin containing the exact final binary and a separate empty QA place. Install the QA plugin, open the generated empty place in Edit mode, and inspect `[SchemaForgeFinalGate]` Output. Remove the QA plugin afterward. Never publish a QA/media place as the commercial plugin.
+
+`--restart-check` instead packages the read-only existing greenhouse contract check
+and copies the licensed saved media place. Open that copy in a fresh Studio process;
+inspect `[SchemaForgeRestart]`. It does not simulate a Library click or claim that a
+new GUI edit was saved/reopened. `tools/collect_v11_evidence.py` verifies the current
+artifact hash before extracting product-only evidence (also accepts `--restart-check`).

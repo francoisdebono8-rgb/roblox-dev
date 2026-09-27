@@ -1,0 +1,4 @@
+Native Studio 0.740.19.7400003, Edit mode.
+2026-09-27T21:18:50.979Z [SchemaForgeRestart] artifact=SchemaForge-v1.1.0.rbxm sha256=92c6924b897eeaefc9940f14ebf8a6e6d7dd24926778d83cb78cca0df377f653
+2026-09-27T21:18:50.984Z [SchemaForgeRestart][PASS] Fresh Studio process loaded the existing disk-saved V1 contract with final 1.1.0 modules; 8 targets, 6 findings, no writes
+2026-09-27T21:18:50.984Z [SchemaForgeRestart][INFO] No GUI Library click or newly edited contract save/reopen is claimed
