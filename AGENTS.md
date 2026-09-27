@@ -68,3 +68,21 @@ When the user explicitly starts the later UI programme, the agent MUST use:
 - `docs/forge-studio-ui/forge-ui-spec.json`
 
 A future Forge Studio UI task is **not complete** until its applicable quality gates are recorded PASS on the exact final artifact. "Looks cleaner", successful compilation, or functional reachability alone is insufficient. Real native screenshots at the required widths/themes and the product's functional regression gate are required.\n\nFor implementation interpretation, `docs/forge-studio-ui/CODEX_EXECUTION_RULES.md` is mandatory. It explicitly forbids cosmetic-only reskins, requires approved mockup-to-real-function mapping, before/after screenshot comparison, structural recomposition where documented, and continued iteration if the result still reads as an internal developer utility.
+
+
+## Functional V2 phase — technical work only
+
+For the current Forge V2 programme, **functional V2 means engine/features/robustness only**.
+
+Until the user explicitly opens the later UI/DA/marketing phase:
+- do not redesign product UI;
+- do not spend time on visual polish, screenshots, icons or media;
+- do not rewrite listing copy;
+- do not do outreach/promotion work;
+- do not publish or overwrite Creator Store assets;
+- do not change price/distribution;
+- do not use the deferred `docs/forge-studio-ui/` programme as an implementation target.
+
+Minimal UI wiring is allowed only when a new technical feature needs a control to be testable. Keep it functional and local; no layout/art-direction work.
+
+The goal is to finish the **technical V2 of all five products first**, then handle Forge UI/DA/media/promotion as a separate later programme.
