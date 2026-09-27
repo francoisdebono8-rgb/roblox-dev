@@ -1,0 +1,12 @@
+{
+  "artifact": "CurveForge-v1.0.0.rbxm",
+  "sha256": "476ee0fc81f9080130fe8b6914bac8e37a9a1021b71df93f7b87168ee164162b",
+  "source_sha256": {
+    "Curve": "2de23ed2f9c460920ab1c21996b772a5c429c512f830abb4759f0f746ecc3e48",
+    "Engine": "d4ed8c9a288c4f912b3c9f253ebe9a3afba0522c4891f43422c7a86070b65d80",
+    "Main": "42808fddca56fb90799e0f663ca10ae2b907eb5ccd40c542edce32af76bb883b",
+    "Settings": "15e1082e518ac3a42758c7ce4541d318794b264bfbdf75ec94686490e63fc0f7",
+    "View": "881847d909a038ddc76e242a9501e0077a8f297c44fbcb8d53b4c510f332730b"
+  },
+  "version": "1.0.0"
+}

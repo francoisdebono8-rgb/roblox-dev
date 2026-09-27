@@ -1,0 +1,12 @@
+2026-09-27 - Luau CLI, production Curve module
+PASS straight path / arc-length positions
+PASS curved / vertical / 3D interpolation and monotonic distance
+PASS invalid / duplicate / nonfinite controls
+
+2026-09-27 - Luau compiler, all production/test/demo sources
+Exit status: 0
+
+2026-09-27 - tools/verify_release.py --rojo Rojo-7.7.0
+PASS: 5 exact sources; reproducible binary; no tests, demo or network code
+
+Studio Suite: NOT EXECUTED. This file contains no claimed native engine PASS.
