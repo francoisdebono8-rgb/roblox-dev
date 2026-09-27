@@ -104,6 +104,12 @@ A shared visual grammar must **not** become five recolored clones.
   based on the actual checked-in product UI.
 - [PRODUCT_STRUCTURES.md](PRODUCT_STRUCTURES.md) — target information architecture
   for each product, wide and narrow.
+- [QUALITY_GATES.md](QUALITY_GATES.md) — measurable future acceptance gates; this is
+  the Definition of Done, not optional inspiration.
+- [WORK_ORDER_TEMPLATE.md](WORK_ORDER_TEMPLATE.md) — exact task template future agents
+  must use when implementing a product UI pass.
+- [forge-ui-spec.json](forge-ui-spec.json) — machine-readable breakpoints, dimensions,
+  accents, required states and product signatures.
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — future UI-pass engineering
   boundaries and acceptance gates **after all five V2s are complete**.
 
