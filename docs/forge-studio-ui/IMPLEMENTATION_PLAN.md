@@ -1,9 +1,34 @@
 # Forge Studio UI implementation plan
 
-Planning-only. This file defines the future UI refactor after the functional V2 releases
-are complete. It does not authorize product publication or immediate code changes.
+Planning-only. This file defines the future UI refactor **after the complete five-product
+functional V2 programme is finished**.
 
-## Objective
+It does not authorize product publication or immediate code changes.
+
+## Hard gate before any UI implementation
+
+Do **not** start implementing the new Forge Studio UI on any product while another
+catalogue product still has unfinished functional V2 work.
+
+The order is:
+
+1. finish PresetForge V2;
+2. finish SchemaForge V2;
+3. finish CurveForge V2;
+4. finish AccessForge V2;
+5. finish JointForge V2;
+6. only then open the separate Forge Studio UI programme.
+
+The exact V2 numbering/release state may move while work continues; the principle is what
+is fixed: **functional scope first across the entire catalogue, UI redesign second**.
+
+Why:
+- we want to design against settled real functionality;
+- we do not want to redo layouts because a later V2 changes a workflow;
+- we want one coherent catalogue-wide art direction, not incremental visual drift;
+- UI work must not consume the engineering attention needed to finish the V2s.
+
+## Objective after the gate
 
 Bring all five commercial plugins to one Forge Studio quality bar while preserving
 their distinct workflows and proven engines.
@@ -14,67 +39,36 @@ The target is not "more decoration". The target is:
 - stronger product identity;
 - clearer relationships between objects, preview and write actions;
 - premium consistency across the catalogue;
+- the same level of visual care as the approved Forge Studio covers, translated to
+  a real Studio-native tool;
 - zero regression in safety semantics.
 
-## Preconditions
+## Design preparation allowed before the gate
 
-Do not start a product UI pass until:
-1. its functional V2 scope is complete enough to avoid redesigning moving requirements;
-2. current release/QA blockers are known;
-3. the existing product engine and persistence format are treated as stable unless a
-   separately justified bug requires change;
-4. the target UI structure in this folder has been reviewed.
+Before all V2s are finished, design work may continue only as documentation/research:
+- audit the real current UI;
+- refine information architecture;
+- define visual language;
+- collect constraints from real workflows;
+- note future component candidates;
+- compare wide/narrow behavior;
+- document product-specific art direction.
 
-## Proposed sequence
+Do not:
+- modify View/UI code;
+- introduce new shared UI dependencies;
+- change engines for presentation;
+- publish visual refactors;
+- declare a product's later UI "done".
 
-### 1. SchemaForge — reference implementation
+## Future implementation sequence
 
-Why first:
-- 1.1 already exposes rich structured data;
-- the product benefits strongly from list/detail design;
-- its engine safety is now substantially stronger than its presentation;
-- it can establish shared visual primitives without requiring spatial preview work first.
+Once all five V2s are complete, SchemaForge is the proposed **reference implementation**
+because its engine already exposes rich structured diagnostic data. PresetForge should
+follow to prove which visual primitives are actually reusable. The remaining three can
+then follow based on the settled V2 state.
 
-Goal:
-produce the first complete Forge Studio-grade DockWidget and validate the visual grammar
-at 240/320/400/560 widths and light/dark themes.
-
-Do not use SchemaForge to force a generic product framework.
-
-### 2. PresetForge — prove reuse
-
-Why second:
-- 2.1 already has a componentized UIFactory and theme handling;
-- Library/list/detail/Preview concepts overlap enough with SchemaForge to prove which
-  visual primitives are genuinely reusable;
-- it has a different mental model, so it is a good guard against five cloned layouts.
-
-After this product, shared components may be extracted **only where both implementations
-actually use the same behavior**.
-
-### 3. JointForge — information architecture pass
-
-Why:
-- current UX has the highest technical-density problem;
-- Create, Batch and Inspect require deliberately different structures;
-- endpoint cards and master/detail inspection can demonstrate that the system supports
-  complex tools without becoming an admin panel.
-
-### 4. AccessForge — spatial builder pass
-
-Why:
-- needs the shared shell plus product-specific endpoint/assembly presentation;
-- requires careful contextual preview work;
-- current narrow-dock behavior needs structural rather than cosmetic correction.
-
-### 5. CurveForge — spatial path editor pass
-
-Why last:
-- the most important improvement is contextual path/output preview;
-- it benefits from lessons learned in AccessForge;
-- safe world-preview implementation may require the most product-specific Studio work.
-
-This order is a proposal, not a release dependency.
+This is a sequencing proposal for the later UI programme, not permission to begin early.
 
 ## Per-product implementation phases
 
@@ -87,17 +81,17 @@ Before touching View/UI:
 - run baseline engine/native tests;
 - capture current UI state for comparison.
 
-### Phase B — build static structure around real data
+### Phase B — compose the product, not a form
 
-Implement:
+Implement the product-specific structure defined in `PRODUCT_STRUCTURES.md`:
 - shell;
 - navigation;
-- list/detail hierarchy;
-- cards/rows/chips;
+- list/detail or spatial hierarchy;
+- cards/rows/chips where they clarify meaning;
 - stable action area;
 - responsive reflow.
 
-Do not add fake controls to make a mockup look complete.
+The goal is visual composition with real data, not a prettier pile of controls.
 
 ### Phase C — wire existing actions
 
@@ -111,26 +105,36 @@ Connect each control to existing product behavior:
 - locate/frame;
 - Undo/Redo state reaction.
 
-Where the mockup suggests a useful action that the engine does not support, either:
+Where a visual concept implies a function the engine does not support:
 - omit it; or
 - create a separately reviewed functional issue.
 
 Do not silently expand the engine during a visual task.
 
-### Phase D — interaction polish
+### Phase D — refinement pass
 
-Validate:
-- focus/caret;
-- scroll;
-- hover/selected states;
-- tooltips;
-- keyboard navigation where practical;
-- long names;
-- duplicate names;
+This phase is mandatory. "Everything works" is not the finish line.
+
+Review:
+- spacing rhythm;
+- optical alignment;
+- text hierarchy;
+- icon weight and consistency;
+- hover/press/selected/disabled states;
+- active vs inactive surface contrast;
+- field grouping;
 - empty states;
-- stale states;
-- error recovery;
-- short-height behavior.
+- microcopy;
+- long-name treatment;
+- tooltip behavior;
+- scrolling;
+- focus/caret;
+- visual stability when content changes;
+- quality at 240/320/400/560 px;
+- light and dark themes.
+
+The UI should be good enough that a **real unmodified Studio screenshot** looks like
+commercial product software.
 
 ### Phase E — native QA and commercial capture
 
@@ -198,8 +202,10 @@ Review the real plugin against these questions:
 - Are status, errors and stale state visually distinct?
 - Is the write action obvious and exact?
 - Does the interface still look intentional at 240 px?
-- Does a 560 px dock use the extra space intelligently rather than just stretching fields?
+- Does a 560 px dock use extra space intelligently rather than just stretching fields?
 - Does the product still look like itself, not a recolored sibling?
+- Are there any obviously default/raw controls breaking the composition?
+- Does every surface, divider and spacing choice look intentional?
 - Can a real screenshot be used in store media without recreating or beautifying the UI?
 
 ## Product-specific non-regression gates
@@ -272,5 +278,5 @@ Store screenshots:
 - no fake selection/result;
 - no feature that the binary does not contain.
 
-This separation lets the cover stay cinematic while the product remains a clear,
-Studio-native professional tool.
+The cover can remain cinematic while the software expresses the same refinement through
+composition, typography, material restraint and interaction quality.
