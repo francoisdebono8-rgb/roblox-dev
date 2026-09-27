@@ -118,33 +118,73 @@ Possible reply if validated:
 
 ## AccessForge
 
-Status: product is not yet published. Do not post anything until the competitive gate passes, the product exists, and its advertised workflows pass native Studio QA.
+Rechecked 2026-09-27 after issue #14 native and GUI gates passed. Studio created plugin asset **127360597946823**. Distribution and price are not enabled/verified by this task. [Actual asset link](https://create.roblox.com/store/asset/127360597946823).
 
-### Candidate — Building stairs in Roblox
+No forum post was requested by issue #14, attempted or claimed. Account posting permissions were not tested. Preparing copy does not authorize posting it. This focused search found **no high-confidence existing-thread reply target** worth reviving just to promote the plugin.
 
-- URL: https://devforum.roblox.com/t/building-stairs-in-roblox/2471185
-- Category: Building Support
-- Date: July 2023
-- Need: user finds good-looking stairs unexpectedly difficult to build and asks for practical construction guidance.
-- Fit: potentially strong for automatic stairs, but the thread is old.
-- Use: RECHECK after AccessForge is live; prefer a newer active thread if one exists.
+### Searches performed
 
-### Candidate — smooth upward stair railing
+- `site:devforum.roblox.com "Studio Features" stairs railing`
+- `site:devforum.roblox.com "Building Support" industrial stairs catwalk`
+- `site:devforum.roblox.com "Community Resources" "stairs" plugin`
+- `site:devforum.roblox.com/tag/plugins stairs catwalk`
+- `site:devforum.roblox.com "stairs" "Studio Features" generator`
 
-- URL: https://devforum.roblox.com/t/how-do-i-make-a-90-degree-smooth-curve-at-an-upward-angle/3518614
-- Category: Building Support
-- Date: March 2025
-- Need: difficult stair railing geometry.
-- Fit: only if AccessForge's final guardrail behavior genuinely addresses the requested shape.
-- Use: RECHECK after product validation; do not promise curved/90-degree rail functionality unless shipped.
+Direct title/URL lookups checked the two earlier candidates. The plugins tag and some direct topic pages returned an empty/challenge page, so indexed posts were used for content. **Current open/closed status is NOT VERIFIED for the targets below**, overriding the general status note at the top of this document. Index dates are not a live status check. Recheck latest replies and permissions before any future posting.
 
-### Search queries to rerun at launch
+### SKIP now - Building stairs in Roblox
 
-- `site:devforum.roblox.com stairs railing "Building Support" Roblox Studio`
-- `site:devforum.roblox.com catwalk stairs Roblox Studio plugin`
-- `site:devforum.roblox.com industrial stairs warehouse Roblox Studio`
-- `site:devforum.roblox.com staircase railing plugin Roblox Studio`
-- `site:devforum.roblox.com stairs difficult building Roblox Studio`
+- [Thread](https://devforum.roblox.com/t/building-stairs-in-roblox/2471185), Building Support, July 16, 2023; indexed replies from the same day, no fresh activity established.
+- Need: evenly aligning stair treads with the side structure. AccessForge's calculated straight stairs/rails partially fit, but it does not generate arbitrary solid side walls.
+- Decision: SKIP. The existing replies already give a practical construction technique; no reason to revive the old thread with an advertisement.
+
+Conditional tailored draft, only if the author independently reopens the need:
+
+> Equalizing the rise first helps keep every tread at the same offset along a sloped rail. For a one-off staircase, the construction approach already shared here may be enough. Disclosure: I'm the developer of AccessForge, a paid plugin intended for repeated industrial builds. It calculates straight or switchback stairs with rails and editable regeneration, but it doesn't reproduce arbitrary solid side walls. [Details](https://create.roblox.com/store/asset/127360597946823).
+
+### SKIP - Smooth upward 90-degree railing
+
+- [Thread](https://devforum.roblox.com/t/how-do-i-make-a-90-degree-smooth-curve-at-an-upward-angle/3518614), Building Support, March 1, 2025; the indexed reply recommends Blender. Newer activity not established.
+- Need: smooth upward curved geometry. AccessForge only builds straight/sloped rails around its supported assemblies, not continuous curved rails.
+- Decision: SKIP, product mismatch. No promotional reply drafted.
+
+### SKIP - Real measurement units
+
+- [Thread](https://devforum.roblox.com/t/allow-developers-to-change-from-studs-to-real-units-for-measurement/425154), Studio Features, January 4-6, 2020 in the indexed discussion.
+- Need: real-unit display/import scaling across Studio, with stairs as one example. AccessForge uses studs and does not implement this request.
+- Decision: SKIP, product mismatch. No promotional reply drafted.
+
+### SKIP - Competitor showcases
+
+- [Quick Stairs](https://devforum.roblox.com/t/quick-stairs-quickly-create-stairs/1276810), Community Resources, June 7, 2021; indexed activity April 2, 2023. Relevant demand evidence for faster stair creation, not a place to advertise ours.
+- [Click And Build](https://devforum.roblox.com/t/click-and-build-easily-create-walls-paths-and-more/3633000?page=4), Community Resources, building/plugin tags; indexed December 26, 2025 update adds calculated stairs. Relevant competitor, not an outreach target.
+- Decision: SKIP both, regardless of whether replies are open. No promotional replies drafted.
+
+### USE - Dedicated Community Resources announcement draft
+
+Destination: [Community Resources](https://devforum.roblox.com/c/resources/community-resources/74), appropriate plugin tag when posting permissions allow. New topic; no open/closed state applies yet. **Draft only**, not posted. Before posting, verify the asset is available, confirm the final price, upload the three actual PNGs as forum attachments and request explicit posting authority.
+
+Title: **AccessForge - Editable Industrial Stairs & Catwalks**
+
+I'm the developer of AccessForge, a paid Roblox Studio plugin for building and revising industrial access assemblies. The intended price is USD 7.99; check the listing for the final price and availability.
+
+Manually duplicating steps is manageable once. Reworking the stairs, landing and rails after a floor-height change is the workflow this tool aims to shorten.
+
+Place Start and End markers, choose dimensions, inspect the read-only Preview, then Build. Later, select the assembly and use Edit Existing to change dimensions or move its original markers, preview and Regenerate. Build and Regenerate support native Studio Undo/Redo.
+
+Three examples from a real MIT-licensed utility-facility scene:
+
+- **Factory stair:** calculated straight treads, top landing and guardrails. Attach `products/accessforge/release/screenshots/01-factory-stair.png`.
+- **Switchback access:** two return flights with a middle landing and left/right direction. Attach `products/accessforge/release/screenshots/02-switchback-access.png`.
+- **Catwalk system:** a level elevated deck, guardrails and support posts down to a chosen baseline. Attach `products/accessforge/release/screenshots/03-catwalk-system.png`.
+
+The output is Roblox-native Parts with transparent, non-executable edit metadata. The plugin uses no HTTP, telemetry or external services. Keep the control markers and metadata to regenerate later.
+
+V1 is deliberately limited: no curved/spiral stairs, terrain fitting, collision checking, automatic welding or certified building-code compliance. Limits are 1,000 generated Parts and 256 steps per assembly. Test the result with your game's character/controller; this is visual construction geometry, not a navigation guarantee.
+
+[AccessForge on Creator Store](https://create.roblox.com/store/asset/127360597946823)
+
+I'd appreciate feedback from factory, warehouse and utility-map builders: which part of revising an access assembly still costs you the most manual work?
 
 ---
 

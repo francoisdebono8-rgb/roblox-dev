@@ -22,6 +22,7 @@
 | Commercial package isolation | PASS; no tests, demo, debug paths, HTTP or external services |
 | Licensed industrial media | PASS; saved script-free MIT-derived scene and three genuine reviewed screenshots |
 | Studio asset creation | PASS; success screen and asset ID recorded above |
+| Outreach research and announcement draft | READY; `../../../docs/outreach/devforum-opportunities.md`, AccessForge section. No suitable existing-thread promotion target found; no posting requested or attempted |
 | Creator Hub distribution, price and media | NOT PERFORMED; reserved for the account owner |
 
 Detailed test evidence, including corrected test-harness failures, is in `../tests/RESULTS.md`. No claim is made that the asset is already on sale or that moderation is complete.
