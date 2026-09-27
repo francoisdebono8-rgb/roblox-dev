@@ -7,9 +7,11 @@ mt.__add = function(a, b) return V.new(a.X + b.X, a.Y + b.Y, a.Z + b.Z) end
 mt.__sub = function(a, b) return V.new(a.X - b.X, a.Y - b.Y, a.Z - b.Z) end
 mt.__unm = function(a) return V.new(-a.X, -a.Y, -a.Z) end
 mt.__mul = function(a, b) if type(a) == "number" then a, b = b, a end; return V.new(a.X * b, a.Y * b, a.Z * b) end
+mt.__div = function(a, b) return V.new(a.X / b, a.Y / b, a.Z / b) end
 mt.__index = function(a, key)
 	if key == "Magnitude" then return math.sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z) end
 	if key == "Lerp" then return function(self, b, t) return self + (b - self) * t end end
+	if key == "Dot" then return function(self, b) return self.X * b.X + self.Y * b.Y + self.Z * b.Z end end
 end
 local function near(a, b) assert((a - b).Magnitude < 1e-4) end
 local straight = Curve.sample({ V.new(0, 0, 0), V.new(20, 0, 0) })

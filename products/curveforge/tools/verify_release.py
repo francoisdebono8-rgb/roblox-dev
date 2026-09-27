@@ -10,10 +10,11 @@ import xml.etree.ElementTree as ET
 ROOT = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument("--rojo", default="rojo")
+parser.add_argument("--version", default="1.1.0")
 args = parser.parse_args()
 expected = {"Main": ROOT / "CurveForge/Main.plugin.luau"}
 expected.update({p.stem: p for p in (ROOT / "CurveForge/Modules").glob("*.luau")})
-release = ROOT / "dist/CurveForge-v1.0.0.rbxm"
+release = ROOT / f"dist/CurveForge-v{args.version}.rbxm"
 with tempfile.TemporaryDirectory() as temp:
     binary, xml = Path(temp) / "release.rbxm", Path(temp) / "release.rbxmx"
     for target in (binary, xml):
@@ -33,6 +34,6 @@ with tempfile.TemporaryDirectory() as temp:
             assert forbidden not in source, forbidden
         found[name] = hashlib.sha256(source.encode()).hexdigest()
     assert set(found) == set(expected)
-manifest = {"version": "1.0.0", "artifact": release.name, "sha256": hashlib.sha256(release.read_bytes()).hexdigest(), "source_sha256": found}
+manifest = {"version": args.version, "artifact": release.name, "sha256": hashlib.sha256(release.read_bytes()).hexdigest(), "source_sha256": found}
 (ROOT / "dist/manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
 print(f"PASS: {len(found)} exact sources; reproducible binary; no tests, demo or network code")

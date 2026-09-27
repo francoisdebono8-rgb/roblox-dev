@@ -1,4 +1,9 @@
-# Verification - 2026-09-27, issue #12
+# Historical verification - 2026-09-27, issue #12
+
+For the current **1.1.0 technical candidate**, see
+[issue #18 technical gate](../v2/TECHNICAL_GATE.md) and
+[exact-binary native results](native-v11-technical.txt). Historical GUI/media results
+below are not relabelled as candidate evidence. No #18 publication is authorized.
 
 **NATIVE / GUI / MEDIA GATES PASS. Studio asset submission has not yet completed.**
 

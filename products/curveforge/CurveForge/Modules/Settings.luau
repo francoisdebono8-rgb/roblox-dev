@@ -1,11 +1,12 @@
 local Settings = {}
-Settings.defaults = { Mode = "Cable", Diameter = 0.4, SegmentLength = 1, Color = Color3.fromRGB(52, 179, 161), Material = "SmoothPlastic", Anchored = true, CanCollide = false, CastShadow = true, Distribution = "Spacing", Spacing = 3, Count = 12, Orient = true, PreserveRotation = true, Endpoints = true }
+Settings.defaults = { Mode = "Cable", Diameter = 0.4, SegmentLength = 1, Color = Color3.fromRGB(52, 179, 161), Material = "SmoothPlastic", Anchored = true, CanCollide = false, CastShadow = true, Distribution = "Spacing", Spacing = 3, Count = 12, Orient = true, PreserveRotation = true, Endpoints = true, ControlRoll = false }
 Settings.materials = { "SmoothPlastic", "Plastic", "Metal", "DiamondPlate", "Wood", "Concrete", "Neon", "Glass" }
 local bounds = { Diameter = { 0.05, 50 }, SegmentLength = { 0.1, 100 }, Spacing = { 0.1, 1000 }, Count = { 2, 500 } }
 function Settings.validate(settings)
 	local result = {}
 	for key, default in pairs(Settings.defaults) do
 		local value = settings[key]
+		if key == "ControlRoll" and value == nil then value = false end
 		assert(typeof(value) == typeof(default), "Invalid setting: " .. key)
 		if bounds[key] then
 			assert(value == value and value >= bounds[key][1] and value <= bounds[key][2], key .. " outside supported range " .. bounds[key][1] .. " to " .. bounds[key][2])

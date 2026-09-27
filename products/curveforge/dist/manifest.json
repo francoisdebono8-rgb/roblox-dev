@@ -1,12 +1,12 @@
 {
-  "artifact": "CurveForge-v1.0.0.rbxm",
-  "sha256": "476ee0fc81f9080130fe8b6914bac8e37a9a1021b71df93f7b87168ee164162b",
+  "artifact": "CurveForge-v1.1.0.rbxm",
+  "sha256": "947d71793699215d88548931256cb022b68ff1f62167e1613cc79e17b4f7c71c",
   "source_sha256": {
-    "Curve": "2de23ed2f9c460920ab1c21996b772a5c429c512f830abb4759f0f746ecc3e48",
-    "Engine": "d4ed8c9a288c4f912b3c9f253ebe9a3afba0522c4891f43422c7a86070b65d80",
+    "Curve": "c36bf9211a6efca8be50116bcd9ccd2f117bf2111b0eb74547407d074d6e3163",
+    "Engine": "fe1f05916ec82c25d7a306e802e6dcd252611c97666d64fc168fdb42d9c006cb",
     "Main": "42808fddca56fb90799e0f663ca10ae2b907eb5ccd40c542edce32af76bb883b",
-    "Settings": "15e1082e518ac3a42758c7ce4541d318794b264bfbdf75ec94686490e63fc0f7",
-    "View": "881847d909a038ddc76e242a9501e0077a8f297c44fbcb8d53b4c510f332730b"
+    "Settings": "e5364d260b1fd879ee2efba5d1c933bb6c142de89e7c62f60b0fd53ed2d826a8",
+    "View": "e64edc610423724fb85fe50632a7992c55a2ce2fa96d91f7d2c719bc081754cd"
   },
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

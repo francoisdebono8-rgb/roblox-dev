@@ -102,7 +102,7 @@ function View.mount(widget, selection, history)
 		if disposed then return end
 		local scroll = body.CanvasPosition
 		body:ClearAllChildren(); stack(body)
-		label(body, "CurveForge  /  1.0", 22)
+		label(body, "CurveForge  /  1.1", 22)
 		if state.message ~= "" then label(body, state.message, 14, state.failed and colors.error or colors.muted) end
 		label(body, "PATH", 15, colors.accent)
 		local actions = row(body, 2)
@@ -130,6 +130,7 @@ function View.mount(widget, selection, history)
 		if #state.controls > 0 and not state.confirmed then button(body, "Confirm displayed order", act(function() state.confirmed = true; preview() end), true) end
 		label(body, "OUTPUT MODE", 15, colors.accent); choose(body, "Mode", { "Cable", "Repeat" })
 		label(body, "SETTINGS", 15, colors.accent)
+		toggle(body, "ControlRoll", "Control-point roll guides")
 		if state.settings.Mode == "Cable" then
 			input(body, "Diameter", "Diameter (studs)"); input(body, "SegmentLength", "Segment length")
 			local swatches = row(body, 6)

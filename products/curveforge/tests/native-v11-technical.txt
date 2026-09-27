@@ -1,0 +1,63 @@
+Native Roblox Studio 0.740.19.7400003, Edit mode; isolated exact-artifact QA.
+2026-09-27T23:25:09.881Z [CurveForgeTechnicalGate] artifact=CurveForge-v1.1.0.rbxm sha256=947d71793699215d88548931256cb022b68ff1f62167e1613cc79e17b4f7c71c
+2026-09-27T23:25:09.881Z [CurveForgeTechnicalGate] legacy=CurveForge-v1.0.0.rbxm sha256=476ee0fc81f9080130fe8b6914bac8e37a9a1021b71df93f7b87168ee164162b
+2026-09-27T23:25:09.887Z [CurveForgeTests][PASS] 2-point straight path / endpoints / read-only preview
+2026-09-27T23:25:09.888Z [CurveForgeTests][PASS] 4-point curved path / controls interpolated
+2026-09-27T23:25:09.893Z [CurveForgeTests][PASS] vertical and 3D orientation / cable gap continuity / collision flags
+2026-09-27T23:25:09.894Z [CurveForgeTests][PASS] repeat spacing / count / endpoints / scale / tangent rotation
+2026-09-27T23:25:10.016Z [CurveForgeTests][PASS] Build native one-step Undo / Redo / unrelated objects preserved
+2026-09-27T23:25:10.115Z [CurveForgeTests][PASS] Repeat Model / reopen metadata / Regenerate / native Undo / source unchanged
+2026-09-27T23:25:10.117Z [CurveForgeTests][PASS] invalid / deleted / stale controls / settings / output limits
+2026-09-27T23:25:10.123Z [CurveForgeTests][PASS] scripted sources rejected / external references / unavailable Undo / rollback
+2026-09-27T23:25:10.217Z [CurveForgeTests][PASS] New Path markers / native Undo / widget mounts without project mutation
+2026-09-27T23:25:10.217Z [CurveForgeTests] 9 passed / 0 failed
+2026-09-27T23:25:10.221Z [CurveForgeV11][PASS] Stable continuous frames / straight
+2026-09-27T23:25:10.226Z [CurveForgeV11][PASS] Stable continuous frames / scurve
+2026-09-27T23:25:10.229Z [CurveForgeV11][PASS] Stable continuous frames / vertical
+2026-09-27T23:25:10.233Z [CurveForgeV11][PASS] Stable continuous frames / spatial
+2026-09-27T23:25:10.236Z [CurveForgeV11][PASS] Stable continuous frames / threshold
+2026-09-27T23:25:10.239Z [CurveForgeV11][PASS] Pure vertical endpoints and no world-up threshold roll flip
+2026-09-27T23:25:10.242Z [CurveForgeV11][PASS] Roll off preserves planar V1 reference and ignores control rotation
+2026-09-27T23:25:10.244Z [CurveForgeV11][PASS] Roll on interpolates guides smoothly without moving path
+2026-09-27T23:25:10.246Z [CurveForgeV11][PASS] Parallel roll guide fallback is finite and deterministic
+2026-09-27T23:25:10.248Z [CurveForgeV11][PASS] Half-turn roll guides interpolate without a discontinuous flip
+2026-09-27T23:25:10.250Z [CurveForgeV11][MEASURE] straight samples=2 oldSamples=65 length=20.000000000 referenceLength=20.000000000 maxPositionError=0.000001907 oldError=0.000000060
+2026-09-27T23:25:10.250Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / straight
+2026-09-27T23:25:10.255Z [CurveForgeV11][MEASURE] gentle samples=203 oldSamples=193 length=5400.978935242 referenceLength=5400.979007900 maxPositionError=0.003652939 oldError=0.006041317
+2026-09-27T23:25:10.256Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / gentle
+2026-09-27T23:25:10.263Z [CurveForgeV11][MEASURE] tight samples=601 oldSamples=193 length=3.431663251 referenceLength=3.431670645 maxPositionError=0.000153606 oldError=0.000124567
+2026-09-27T23:25:10.263Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / tight
+2026-09-27T23:25:10.272Z [CurveForgeV11][MEASURE] spatial samples=774 oldSamples=321 length=75.663885562 referenceLength=75.664096608 maxPositionError=0.001046231 oldError=0.001152848
+2026-09-27T23:25:10.272Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / spatial
+2026-09-27T23:25:10.274Z [CurveForgeV11][PASS] Eight controls and translated valid paths remain bounded
+2026-09-27T23:25:10.275Z [CurveForgeV11][PASS] Cable closed shared endpoints / straight
+2026-09-27T23:25:10.279Z [CurveForgeV11][PASS] Cable closed shared endpoints / scurve
+2026-09-27T23:25:10.281Z [CurveForgeV11][PASS] Cable closed shared endpoints / vertical
+2026-09-27T23:25:10.287Z [CurveForgeV11][PASS] Cable closed shared endpoints / spatial
+2026-09-27T23:25:10.295Z [CurveForgeV11][PASS] Cable diameter extremes and short segment
+2026-09-27T23:25:10.314Z [CurveForgeV11][PASS] Repeat Count, endpoints, Orient, local offset, source and scale
+2026-09-27T23:25:10.315Z [CurveForgeV11][PASS] Repeat Spacing deterministic; explicit endpoint remainder
+2026-09-27T23:25:10.438Z [CurveForgeV11][MEASURE] actualCopies=30 spacing=2.5 maxReferenceArcStepError=0.000010135
+2026-09-27T23:25:10.438Z [CurveForgeV11][PASS] Actual 3D repeated copies have uniform reference arc spacing
+2026-09-27T23:25:10.462Z [CurveForgeV11][PASS] Repeated Edit Existing / Regenerate has no cumulative drift
+2026-09-27T23:25:10.462Z [CurveForgeV11][PASS] Stale source / internal move with unchanged pivot
+2026-09-27T23:25:10.463Z [CurveForgeV11][PASS] Stale source / resize
+2026-09-27T23:25:10.463Z [CurveForgeV11][PASS] Stale source / add descendant
+2026-09-27T23:25:10.463Z [CurveForgeV11][PASS] Stale source / remove descendant
+2026-09-27T23:25:10.464Z [CurveForgeV11][PASS] Stale source / rename descendant
+2026-09-27T23:25:10.464Z [CurveForgeV11][PASS] Stale source / reparent descendant
+2026-09-27T23:25:10.464Z [CurveForgeV11][PASS] Stale source / reparent root
+2026-09-27T23:25:10.465Z [CurveForgeV11][PASS] Stale source / delete source
+2026-09-27T23:25:10.465Z [CurveForgeV11][PASS] Stale source / source pivot
+2026-09-27T23:25:10.465Z [CurveForgeV11][PASS] Stale source / source attributes
+2026-09-27T23:25:10.466Z [CurveForgeV11][PASS] Control order/count/deletion/rotation and settings stale rules
+2026-09-27T23:25:10.936Z [CurveForgeV11][PASS] Actual V1 binary metadata loads and regenerates to V2
+2026-09-27T23:25:10.948Z [CurveForgeV11][PASS] Actual V1 curved Cable migrates with roll off and user additions intact
+2026-09-27T23:25:10.951Z [CurveForgeV11][PASS] Malformed metadata fails safely
+2026-09-27T23:25:10.962Z [CurveForgeV11][PASS] Hard limits before mutation and correct boundary estimates
+2026-09-27T23:25:11.169Z [CurveForgeV11][PASS] Build and Regenerate native history preserve exact output and user additions
+2026-09-27T23:25:11.177Z [CurveForgeV11][PASS] Recording refusal/throw, commit rollback and reentrant stale input
+2026-09-27T23:25:11.178Z [CurveForgeV11][PASS] Controls or source inside replaced output are rejected
+2026-09-27T23:25:11.178Z [CurveForgeV11][SUMMARY] 42 PASS / 0 FAIL
+2026-09-27T23:25:11.690Z [CurveForgeTechnicalGate][SUMMARY] PASS: baseline + technical suites; no runtime exception
+2026-09-27T23:25:11.690Z [CurveForgeTechnicalGate] No graphical acceptance, media, listing or publication performed by this runner.
