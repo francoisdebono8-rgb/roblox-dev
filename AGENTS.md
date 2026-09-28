@@ -70,19 +70,28 @@ When the user explicitly starts the later UI programme, the agent MUST use:
 A future Forge Studio UI task is **not complete** until its applicable quality gates are recorded PASS on the exact final artifact. "Looks cleaner", successful compilation, or functional reachability alone is insufficient. Real native screenshots at the required widths/themes and the product's functional regression gate are required.\n\nFor implementation interpretation, `docs/forge-studio-ui/CODEX_EXECUTION_RULES.md` is mandatory. It explicitly forbids cosmetic-only reskins, requires approved mockup-to-real-function mapping, before/after screenshot comparison, structural recomposition where documented, and continued iteration if the result still reads as an internal developer utility.
 
 
-## Functional V2 phase — technical work only
+## Current phase — Forge Studio UI programme ACTIVE
 
-For the current Forge V2 programme, **functional V2 means engine/features/robustness only**.
+All five functional/technical V2 candidates are complete and the user explicitly opened the Forge Studio UI programme on 2026-09-28.
 
-Until the user explicitly opens the later UI/DA/marketing phase:
-- do not redesign product UI;
-- do not spend time on visual polish, screenshots, icons or media;
-- do not rewrite listing copy;
-- do not do outreach/promotion work;
-- do not publish or overwrite Creator Store assets;
-- do not change price/distribution;
-- do not use the deferred `docs/forge-studio-ui/` programme as an implementation target.
+Current sequencing:
+1. SchemaForge reference implementation;
+2. PresetForge to prove genuinely reusable visual primitives;
+3. CurveForge;
+4. AccessForge;
+5. JointForge.
 
-Minimal UI wiring is allowed only when a new technical feature needs a control to be testable. Keep it functional and local; no layout/art-direction work.
+During this phase:
+- preserve the finished technical engines and safety semantics;
+- recompose product Views around the documented real workflows;
+- use `docs/forge-studio-ui/` as the mandatory implementation contract;
+- capture baseline and final **internal QA** screenshots required by the quality gates;
+- do not treat a recolor/card/radius pass as completion;
+- do not introduce a generic Forge workflow framework;
+- do not add new engine features silently during UI work;
+- do not publish/overwrite Creator Store assets yet;
+- do not do commercial media, listing rewrite or outreach yet.
 
-The goal is to finish the **technical V2 of all five products first**, then handle Forge UI/DA/media/promotion as a separate later programme.
+Internal QA screenshots are allowed and required for the UI quality gate. Commercial screenshots, listing work, publication and promotion are a later handoff after the five UI passes are complete.
+
+A product UI pass closes only when the applicable `QUALITY_GATES.md` checks and its full technical/native regression gate pass on the exact final artifact.
