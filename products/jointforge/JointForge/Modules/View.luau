@@ -42,12 +42,12 @@ function View.mount(widget, selection, history)
 	local root = element("Frame", widget, { Name = "JointForgeUI", BackgroundColor3 = colors.bg, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1) })
 	local header = element("Frame", root, { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 10), Size = UDim2.new(1, -24, 0, 72) })
 	stack(header)
-	label(header, "JointForge  /  1.0", 22)
+	label(header, "JointForge  /  1.1", 22)
 	local tabs = row(header, 3)
 	local body = element("ScrollingFrame", root, { Name = "Workflow", Position = UDim2.fromOffset(12, 91), Size = UDim2.new(1, -24, 1, -103), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 5, BackgroundTransparency = 1, BorderSizePixel = 0 })
 	local render
 	local function invalidate()
-		if state.plan then state.plan.invalidated = true end
+		if state.plan then Planner.invalidate(state.plan) end
 		state.plan = nil
 		state.confirm = false
 	end
@@ -121,6 +121,15 @@ function View.mount(widget, selection, history)
 				if Schema.usesAttachments(op.class) then
 					label(body, "A0: " .. (op.attachment0 and path(op.attachment0) or "NEW") .. " | A1: " .. (op.attachment1 and path(op.attachment1) or "NEW"), 14, colors.muted)
 				end
+			elseif op.kind == "reassign" then
+				label(body, "Reassign " .. path(op.joint))
+				local function replacement(index)
+					if not op.attachments then return path(index == 1 and op.a or op.b) end
+					local spec = op.attachments[index]
+					return spec.existing and path(spec.existing) or ("NEW " .. path(spec.part) .. "." .. spec.name)
+				end
+				label(body, "0: " .. path(op.old0) .. " -> " .. replacement(1) .. "\n1: " .. path(op.old1) .. " -> " .. replacement(2), 14, colors.muted)
+				label(body, op.preservePose and "Preserve world pose" or "Raw frames: assembly may move", 14, colors.muted)
 			elseif op.kind == "edit" then
 				label(body, "Edit " .. path(op.joint))
 				for field, value in pairs(op.changes) do label(body, field .. ": " .. Schema.format(op.joint[field]) .. " -> " .. Schema.format(value), 14, colors.muted) end
@@ -149,6 +158,25 @@ function View.mount(widget, selection, history)
 		end
 		button(actions, "Locate joint", act(function() selection:Set({ joint }) end))
 		if not Schema.supported(joint) then label(body, "Inspect-only class. Edit its properties in Studio.", 14, colors.muted); return end
+		state.reassign = state.reassign or {}
+		for index = 0, 1 do
+			local key = "endpoint" .. index
+			local value = state.reassign[key]
+			label(body, "New endpoint " .. index .. ": " .. (value and path(typeof(value) == "Instance" and value or value.part) or "Keep current"), 14, colors.muted)
+			button(body, "Assign selected " .. (Schema.usesAttachments(joint.ClassName) and "attachment" or "part") .. " to " .. index, act(function()
+				state.reassign[key] = one(Schema.usesAttachments(joint.ClassName) and "Attachment" or "BasePart"); invalidate()
+			end))
+			if Schema.usesAttachments(joint.ClassName) then
+				button(body, "Create attachment " .. index .. " at selected part", act(function()
+					local p = one("BasePart")
+					state.reassign[key] = { create = true, part = p, worldCFrame = p.CFrame }; invalidate()
+				end))
+			end
+		end
+		button(body, (state.rawPose and "[x]" or "[ ]") .. " Raw frames (may move parts)", act(function() state.rawPose = not state.rawPose; invalidate() end))
+		button(body, "Preview explicit endpoint reassignment", act(function()
+			preview({ kind = "reassign", joint = joint, endpoint0 = state.reassign.endpoint0, endpoint1 = state.reassign.endpoint1, poseMode = state.rawPose and "raw" or "preserve" })
+		end))
 		if joint:IsA("Weld") or joint:IsA("Motor6D") then label(body, "C0 / C1: X Y Z RX RY RZ. Rotations in degrees. Editing or resetting offsets can move parts.", 14, colors.muted) end
 		local readers = {}
 		for _, field in ipairs(Schema.fields[joint.ClassName]) do
@@ -227,7 +255,7 @@ function View.mount(widget, selection, history)
 					label(body, (info.broken and "BROKEN  " or "") .. joint.ClassName .. " / " .. path(joint), 15, if info.broken then colors.error else colors.text)
 					label(body, path(info.endpoint0) .. " -> " .. path(info.endpoint1), 14, colors.muted)
 					local actions = row(body, 2)
-					button(actions, "Inspect / edit", act(function() state.editing = joint; state.drafts = {}; invalidate() end))
+					button(actions, "Inspect / edit", act(function() state.editing = joint; state.drafts = {}; state.reassign = {}; state.rawPose = false; invalidate() end))
 					button(actions, (state.checked[joint] and "[x]" or "[ ]") .. " Remove", act(function() state.checked[joint] = not state.checked[joint]; invalidate() end))
 				end
 			end

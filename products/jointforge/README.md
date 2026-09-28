@@ -1,6 +1,11 @@
-# JointForge 1.0
+# JointForge
 
 Create, inspect and safely assemble joints in Roblox Studio. One DockWidget, three tabs: Create, Batch, Inspect.
+
+Public release: **1.0.0**. Unpublished technical candidate: **1.1.0**, issue #22.
+The public binary and canonical asset 103958912217728 remain unchanged.
+See the [technical contract](v2/TECHNICAL_1.1.0.md) and [exact-candidate matrix](tests/TECHNICAL_MATRIX_1.1.0.md)
+for graph plans, explicit endpoint repair, native field validation, limits and QA scope.
 
 ## Install
 
@@ -27,13 +32,19 @@ There are no custom draggers, animation controls, IK/FK, simulation tuning, auto
 Build-only tools: Rojo 7.7.0, Python 3 standard library; Luau 0.740 for syntax compilation. None ships in the plugin.
 
 ```sh
-rojo build products/jointforge/release.project.json -o products/jointforge/dist/JointForge-v1.0.0.rbxm
-python3 products/jointforge/tools/verify_release.py --rojo rojo
-python3 products/jointforge/tools/build_demo.py
-rojo build products/jointforge/tests/plugin.project.json -o /tmp/JointForgeTests.rbxm
-rojo build products/jointforge/tests/place.project.json -o /tmp/JointForgeTests.rbxl
+python3 products/jointforge/tools/verify_candidate.py --build --rojo rojo
+python3 products/jointforge/tests/build_technical_gate.py --rojo rojo --output-dir /tmp/JointForge22QA
 ```
 
-Install the test plugin locally and open the test place **without Play**. It runs only when Workspace has `JointForgeTestPlace=true`. Expect `[JointForgeTests] 14 passed / 0 failed`. Remove the test plugin after QA. Never include it in the commercial upload. Native Undo tests are not meaningful in a running game.
+The coordinator installs the separate technical QA plugin in an isolated Studio session
+and opens the generated empty local place **without Play**. It runs only when Workspace
+has `JointForgeTechnicalGate=true`. The gate embeds the exact candidate and public V1
+binaries with only their QA-copy Main scripts disabled. All 56 matrix rows must pass.
+Never rebuild current sources into the historical 1.0.0 binary or include QA code in the
+commercial artifact. Native Undo tests are not meaningful in a running game.
+
+The older source-based `Suite.luau` remains for reference and has been adapted to the
+immutable-plan API; this technical release claims its exact-binary `V11.spec.luau`
+gate, not a new execution of the old source-based runner.
 
 See [Quick Start](release/QUICK_START.md), [Troubleshooting](release/TROUBLESHOOTING.md), [QA results](tests/RESULTS.md), [demo instructions](demo/README.md) and [release gate](release/CHECKLIST.md).

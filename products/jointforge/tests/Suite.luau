@@ -179,13 +179,14 @@ return function(modules)
 				cancelled = true
 			end,
 		}
+		plan = Planner.preview(workspace, { kind = "create", class = "SpringConstraint", a = a, b = b })
 		rejects(function() Transaction.apply(plan, mock) end)
 		assert(cancelled and #folder:GetDescendants() == count)
 	end)
 	test("UI invalidation / removal children / unary inspect / detached endpoints", function()
 		local a, b = part("A", Vector3.new()), part("B", Vector3.new(4, 0, 0))
 		local plan = Planner.preview(workspace, { kind = "create", class = "WeldConstraint", a = a, b = b })
-		plan.invalidated = true
+		Planner.invalidate(plan)
 		rejects(function() Transaction.apply(plan, history) end)
 		local joint = apply({ kind = "create", class = "Weld", a = a, b = b })[1]
 		Instance.new("Folder", joint)
