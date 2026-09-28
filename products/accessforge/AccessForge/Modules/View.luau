@@ -119,7 +119,7 @@ function View.mount(widget, selection, history)
 		if previous then scrollPosition = previous.CanvasPosition end
 		root:ClearAllChildren()
 		local header = el("Frame", root, { Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 104), BackgroundTransparency = 1 }); stack(header, 5)
-		local title = label(header, "ACCESSFORGE   /   1.0", 26, C.accent); title.TextSize = 21; title.Font = Enum.Font.SourceSansSemibold
+		local title = label(header, "ACCESSFORGE   /   1.1", 26, C.accent); title.TextSize = 21; title.Font = Enum.Font.SourceSansSemibold
 		choices(header, "Mode", { "Straight", "Switchback", "Catwalk" })
 		local tabs = row(header, 3, 26)
 		for _, name in ipairs({ "Layout", "Rails", "Finish" }) do button(tabs, "Tab" .. name, name, function() state.section = name; scrollPosition = Vector2.zero end, state.section == name) end
@@ -143,7 +143,7 @@ function View.mount(widget, selection, history)
 			button(actions, "EditExisting", "Edit Existing", function()
 				local selected = selection:Get(); assert(#selected == 1, "Select one AccessForge assembly.")
 				local plan = Engine.load(selected[1]); state.target = selected[1]
-				state.start, state.finish, state.settings = plan.start, plan.finish, plan.settings
+				state.start, state.finish, state.settings = plan.start, plan.finish, table.clone(plan.settings)
 				state.plan, state.confirm, state.message = plan, false, "Editing " .. selected[1].Name; watch()
 			end)
 			input(body, "Width", "Width (studs)")
