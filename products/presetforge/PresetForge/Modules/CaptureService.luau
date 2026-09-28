@@ -59,13 +59,26 @@ function CaptureService:capture(selection, options)
 	end
 
 	if options.tags then
-		recipe.tags = self._collectionService:GetTags(source)
+		local available = self._collectionService:GetTags(source)
+		recipe.tags = if options.tagNames then table.clone(options.tagNames) else available
+		for _, name in ipairs(recipe.tags) do
+			if not table.find(available, name) then return nil, "Selected tag is absent: " .. name end
+		end
 		table.sort(recipe.tags)
 	end
 	if options.attributes then
-		recipe.attributes = source:GetAttributes()
+		local available = source:GetAttributes()
+		if options.attributeNames then
+			for _, name in ipairs(options.attributeNames) do
+				if available[name] == nil then return nil, "Selected attribute is absent: " .. name end
+				recipe.attributes[name] = available[name]
+			end
+		else recipe.attributes = available end
 	end
-
+	local candidate = table.clone(recipe)
+	candidate.name = "Captured recipe"
+	local valid, validationError = PresetValidator.recipe(candidate)
+	if not valid then return nil, validationError end
 	return recipe, source
 end
 
@@ -93,6 +106,13 @@ function CaptureService:recapture(recipe, selection)
 		properties = fields,
 		tags = recipe.capture.tags,
 		attributes = recipe.capture.attributes,
+		tagNames = recipe.tags,
+		attributeNames = (function()
+			local names = {}
+			for name in pairs(recipe.attributes) do names[#names + 1] = name end
+			table.sort(names)
+			return names
+		end)(),
 	})
 	if not captured then
 		return nil, captureError

@@ -14,6 +14,7 @@ function RecipeRepository.new(localStore, projectStore)
 	return setmetatable({
 		localStore = localStore,
 		projectStore = projectStore,
+		_revisions = {},
 	}, RecipeRepository)
 end
 
@@ -86,6 +87,8 @@ function RecipeRepository:find(library, name)
 	if not store then
 		return nil
 	end
+	-- Project recipes and settings can change outside this controller's mutation paths.
+	if not store:load() then return nil end
 	local recipe = store:find(name)
 	if recipe then
 		recipe.library = library
@@ -116,6 +119,7 @@ function RecipeRepository:create(library, name, captured)
 	end
 	local created, result = store:create(name, captured)
 	if created then
+		self:_changed(library, result.name)
 		result.library = library
 	end
 	return created, result
@@ -128,6 +132,7 @@ function RecipeRepository:update(library, currentName, captured)
 	end
 	local updated, result = store:update(currentName, captured)
 	if updated then
+		self:_changed(library, currentName)
 		result.library = library
 	end
 	return updated, result
@@ -143,6 +148,8 @@ function RecipeRepository:rename(library, currentName, requestedName)
 	end
 	local renamed, result = store:rename(currentName, requestedName)
 	if renamed then
+		self:_changed(library, currentName)
+		self:_changed(library, result.name)
 		result.library = library
 	end
 	return renamed, result
@@ -153,7 +160,18 @@ function RecipeRepository:delete(library, name)
 	if not store then
 		return false, "Unknown recipe library"
 	end
-	return store:delete(name)
+	local deleted, err = store:delete(name)
+	if deleted then self:_changed(library, name) end
+	return deleted, err
+end
+
+function RecipeRepository:revision(library, name)
+	return self._revisions[library .. ":" .. PresetValidator.nameKey(name)] or 0
+end
+
+function RecipeRepository:_changed(library, name)
+	local key = library .. ":" .. PresetValidator.nameKey(name)
+	self._revisions[key] = (self._revisions[key] or 0) + 1
 end
 
 return RecipeRepository

@@ -2,6 +2,8 @@ local AttributeCodec = require(script.Parent.AttributeCodec)
 local PresetValidator = require(script.Parent.PresetValidator)
 local Schema = require(script.Parent.Schema)
 local ValueCodec = require(script.Parent.ValueCodec)
+local Constants = require(script.Parent.Constants)
+local ExecutionPlan = require(script.Parent.ExecutionPlan)
 
 local PreviewService = {}
 PreviewService.__index = PreviewService
@@ -26,7 +28,7 @@ function PreviewService.new(collectionService, targetResolver)
 	}, PreviewService)
 end
 
-function PreviewService:build(recipe, selection, options)
+function PreviewService:build(recipe, selection, options, revision)
 	local validRecipe, recipeError = PresetValidator.recipe(recipe)
 	if not validRecipe then
 		return nil, recipeError
@@ -147,6 +149,8 @@ function PreviewService:build(recipe, selection, options)
 			preview.matchingCount += 1
 			preview.matching[#preview.matching + 1] = instance
 		end
+		if preview.affectedCount > Constants.MAX_AFFECTED then return nil, "Affected target limit exceeded" end
+		if preview.totalChanges > Constants.MAX_WRITES then return nil, "Planned write limit exceeded" end
 	end
 
 	-- Preserve resolver order within each group, including identical sibling names.
@@ -164,6 +168,15 @@ function PreviewService:build(recipe, selection, options)
 	elseif preview.affectedCount == 0 then
 		preview.warnings[#preview.warnings + 1] = "All compatible targets already match this recipe"
 	end
+	local issuedOk, plan, planError = pcall(ExecutionPlan.issue, preview, recipe, selection, resolved, self._targetResolver, self._collectionService, revision)
+	if not issuedOk then return nil, "Planning failed: " .. tostring(plan) end
+	if not plan then return nil, planError end
+	preview.plan = plan
+	preview.metrics = {
+		scanned = preview.scannedCount, ignored = preview.ignoredCount, compatible = preview.compatibleCount,
+		matching = preview.matchingCount, affected = preview.affectedCount,
+		propertyWrites = plan.counts.properties, tagWrites = plan.counts.tags, attributeWrites = plan.counts.attributes,
+	}
 	return preview
 end
 

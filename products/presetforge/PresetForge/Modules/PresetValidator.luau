@@ -1,6 +1,8 @@
 local Constants = require(script.Parent.Constants)
 local AttributeCodec = require(script.Parent.AttributeCodec)
 local Schema = require(script.Parent.Schema)
+local Guard = require(script.Parent.DataGuard)
+local ValueCodec = require(script.Parent.ValueCodec)
 
 local PresetValidator = {}
 
@@ -40,8 +42,18 @@ function PresetValidator.captureOptions(schemaId, options)
 		end
 	end
 
-	if type(options.properties) ~= "table" then
+	if not Guard.array(options.properties, 64) then
 		return false, "Property selection must be a list"
+	end
+	for key, limit in pairs({ tagNames = Constants.MAX_TAGS, attributeNames = Constants.MAX_ATTRIBUTES }) do
+		if options[key] ~= nil then
+			if not Guard.array(options[key], limit) then return false, "Invalid selected metadata list" end
+			local selected = {}
+			for _, name in ipairs(options[key]) do
+				if type(name) ~= "string" or selected[name] then return false, "Invalid or duplicate selected metadata name" end
+				selected[name] = true
+			end
+		end
 	end
 	local seen = {}
 	for _, propertyName in ipairs(options.properties) do
@@ -87,15 +99,18 @@ function PresetValidator.recipe(preset)
 		if not valid then
 			return false, valueError
 		end
+		local encoded = ValueCodec.encode(Schema.property(preset.schemaId, propertyName), value)
+		if not encoded or not Guard.data(encoded) then return false, "Invalid or oversized property value" end
 		propertyCount += 1
 	end
 
 	if not preset.capture.tags and #preset.tags > 0 then
 		return false, "Recipe contains tags while tag capture is disabled"
 	end
+	if not Guard.array(preset.tags, Constants.MAX_TAGS) then return false, "Invalid or oversized tag list" end
 	local seenTags = {}
 	for _, tag in ipairs(preset.tags) do
-		if type(tag) ~= "string" or tag == "" or tag:find("%c") then
+		if type(tag) ~= "string" or tag == "" or #tag > 100 or tag:find("%c") then
 			return false, "Invalid captured tag"
 		elseif seenTags[tag] then
 			return false, "Duplicate captured tag: " .. tag
@@ -106,8 +121,12 @@ function PresetValidator.recipe(preset)
 	if not preset.capture.attributes and next(preset.attributes) ~= nil then
 		return false, "Recipe contains attributes while attribute capture is disabled"
 	end
+	local attributeCount = 0
 	for attributeName, value in pairs(preset.attributes) do
-		if type(attributeName) ~= "string" or attributeName == "" or attributeName:find("%c") then
+		attributeCount += 1
+		if attributeCount > Constants.MAX_ATTRIBUTES then return false, "Attribute count limit exceeded" end
+		if type(attributeName) ~= "string" or attributeName == "" or #attributeName > 100
+			or attributeName:find("[^%w_./%-]") or attributeName:sub(1, 3) == "RBX" then
 			return false, "Invalid captured attribute name"
 		end
 		local encoded, encodeError = AttributeCodec.encode(value)

@@ -4,6 +4,7 @@ local PresetValidator = require(script.Parent.PresetValidator)
 local Schema = require(script.Parent.Schema)
 local StringCodec = require(script.Parent.StringCodec)
 local ValueCodec = require(script.Parent.ValueCodec)
+local Guard = require(script.Parent.DataGuard)
 
 local PresetSerializer = {}
 
@@ -23,11 +24,7 @@ local function readIndexed(container, index)
 end
 
 local function validCount(container)
-	return type(container) == "table"
-		and type(container.count) == "number"
-		and container.count >= 0
-		and container.count % 1 == 0
-		and container.count <= 10000
+	return Guard.indexed(container, Constants.MAX_RECIPES)
 end
 
 local function sortedKeys(values)
@@ -166,6 +163,9 @@ function PresetSerializer.decodePreset(encoded)
 	if type(encoded) ~= "table" or type(encoded.capture) ~= "table" or not validCount(encoded.properties) then
 		return nil, "Invalid recipe record"
 	end
+	if not Guard.data(encoded) or type(encoded.capture.tags) ~= "boolean" or type(encoded.capture.attributes) ~= "boolean" then
+		return nil, "Invalid recipe capture metadata"
+	end
 	local name, nameError = StringCodec.decode(encoded.name)
 	if not name then
 		return nil, nameError
@@ -233,6 +233,9 @@ local function decodeLegacyPreset(encoded)
 	if type(encoded) ~= "table" or type(encoded.capture) ~= "table" then
 		return nil, "Invalid V1 preset record"
 	end
+	for _, key in ipairs({ "properties", "tags", "attributes" }) do
+		if type(encoded.capture[key]) ~= "boolean" then return nil, "Invalid V1 capture options" end
+	end
 	local name, nameError = StringCodec.decode(encoded.name)
 	if not name then
 		return nil, nameError
@@ -289,23 +292,29 @@ local function decodeLegacyPreset(encoded)
 end
 
 function PresetSerializer.encodeAll(presets)
+	if not Guard.array(presets, Constants.MAX_RECIPES) then return nil, "Recipe count limit exceeded or invalid list" end
 	local records = {}
+	local names = {}
 	for index, preset in ipairs(presets) do
 		local encoded, encodeError = PresetSerializer.encodePreset(preset)
 		if not encoded then
 			return nil, string.format("Recipe %d: %s", index, encodeError)
 		end
+		local key = PresetValidator.nameKey(preset.name)
+		if names[key] then return nil, "Duplicate recipe name" end
+		names[key] = true
 		records[index] = encoded
 	end
 	local container = indexed(records)
 	container.version = Constants.STORE_VERSION
+	if not Guard.data(container) then return nil, "Persisted library limit exceeded" end
 	return container
 end
 
 function PresetSerializer.decodeAll(encoded)
 	if encoded == nil then
 		return {}
-	elseif not validCount(encoded)
+	elseif not Guard.data(encoded) or not validCount(encoded)
 		or (encoded.version ~= Constants.STORE_VERSION and encoded.version ~= Constants.LEGACY_STORE_VERSION) then
 		return nil, "Unsupported or invalid PresetForge storage"
 	end

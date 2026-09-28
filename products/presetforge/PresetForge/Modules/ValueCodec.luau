@@ -42,9 +42,8 @@ function ValueCodec.decode(definition, encoded)
 			or type(encoded.item) ~= "string" then
 			return nil, "Invalid encoded enum"
 		end
-		local enumType = Enum[definition.enumType]
-		local value = enumType and enumType[encoded.item] or nil
-		if not value then
+		local ok, value = pcall(function() return Enum[definition.enumType][encoded.item] end)
+		if not ok or not value then
 			return nil, "Unknown enum item"
 		end
 		return value
@@ -86,9 +85,8 @@ function ValueCodec.fromProjectAttribute(definition, value)
 	if enumTypeName ~= definition.enumType then
 		return nil, "Enum project value has the wrong type"
 	end
-	local enumType = Enum[definition.enumType]
-	local item = enumType and enumType[itemName] or nil
-	if not item then
+	local ok, item = pcall(function() return Enum[definition.enumType][itemName] end)
+	if not ok or not item then
 		return nil, "Enum project value has an unknown item"
 	end
 	return item

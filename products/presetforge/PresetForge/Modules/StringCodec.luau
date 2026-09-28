@@ -11,7 +11,7 @@ function StringCodec.encode(value)
 end
 
 function StringCodec.decode(value)
-	if type(value) ~= "string" or #value % 2 ~= 0 or value:find("[^0-9a-f]") then
+	if type(value) ~= "string" or #value > 32768 or #value % 2 ~= 0 or value:find("[^0-9a-f]") then
 		return nil, "Invalid encoded string"
 	end
 

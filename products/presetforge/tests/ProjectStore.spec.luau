@@ -65,6 +65,7 @@ local conflictRepository = RecipeRepository.new(
 local conflictLoaded, conflictError = conflictRepository:load()
 assert(conflictLoaded == false and conflictError:find("conflict between Local and Project") ~= nil)
 assert(projectStore:delete("LOCAL ONE"))
+node = assert(container:FindFirstChild(Constants.PROJECT_ROOT_NAME):FindFirstChild("Project Light"))
 local properties = node:FindFirstChild("Properties")
 properties:SetAttribute("UnsafeProperty", true)
 local accepted, tamperError = reloadedProjectStore:load()

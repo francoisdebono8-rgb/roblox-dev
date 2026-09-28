@@ -110,7 +110,7 @@ for _, case in ipairs(cases) do
 	assert(preview, previewError)
 	assert(preview.affectedCount == 1 and preview.totalChanges == 1)
 	local fakeHistory = history()
-	local applied, applyResult = ApplyService.new(CollectionService, fakeHistory):apply(recipe, preview.targets)
+	local applied, applyResult = ApplyService.new(CollectionService, fakeHistory):apply(preview.plan, { recipe = recipe, selection = { target }, options = { scope = "Selection" } })
 	assert(applied, tostring(applyResult))
 	assert(ValueCodec.equal(Schema.property(schemaId, propertyName), target[propertyName], sourceValue))
 	assert(fakeHistory.beginCount == 1 and fakeHistory.finishCount == 1)
@@ -135,7 +135,7 @@ local configurationPreview = assert(previewService:build(
 	{ scope = "Selection" }
 ))
 assert(configurationPreview.totalChanges == 2)
-assert(ApplyService.new(CollectionService, history()):apply(configurationRecipe, configurationPreview.targets))
+assert(ApplyService.new(CollectionService, history()):apply(configurationPreview.plan, { recipe = configurationRecipe, selection = { targetConfiguration }, options = { scope = "Selection" } }))
 assert(targetConfiguration:GetAttribute("Difficulty") == 4)
 assert(CollectionService:HasTag(targetConfiguration, "PresetForgeSchemaTest"))
 sourceConfiguration:Destroy()
