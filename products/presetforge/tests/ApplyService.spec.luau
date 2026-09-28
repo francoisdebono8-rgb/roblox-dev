@@ -2,6 +2,12 @@ local CollectionService = game:GetService("CollectionService")
 
 local modules = script.Parent.Parent.PresetForge.Modules
 local ApplyService = require(modules.ApplyService)
+local PreviewService = require(modules.PreviewService)
+local TargetResolver = require(modules.TargetResolver)
+local function apply(historyService, recipe, targets)
+	local preview = assert(PreviewService.new(CollectionService, TargetResolver.new(CollectionService)):build(recipe, targets, { scope = "Selection" }))
+	return ApplyService.new(CollectionService, historyService):apply(preview.plan, { recipe = recipe, selection = targets, options = { scope = "Selection" } })
+end
 
 local history = { beginCount = 0, finishCount = 0, operation = nil }
 function history:TryBeginRecording(name, displayName)
@@ -33,7 +39,7 @@ CollectionService:AddTag(targetOne, "KeepTag")
 local targetTwo = targetOne:Clone()
 targetTwo:SetAttribute("Level", nil)
 
-local applied, counts = ApplyService.new(CollectionService, history):apply(recipe, { targetOne, targetTwo })
+local applied, counts = apply(history, recipe, { targetOne, targetTwo })
 assert(applied, tostring(counts))
 assert(counts.targets == 2 and counts.properties == 2 and counts.tags == 2 and counts.attributes == 2)
 assert(history.beginCount == 1 and history.finishCount == 1)
@@ -46,7 +52,7 @@ for _, target in ipairs({ targetOne, targetTwo }) do
 	assert(CollectionService:HasTag(target, "KeepTag"))
 end
 
-local emptyApplied, emptyError = ApplyService.new(CollectionService, history):apply(recipe, {})
+local emptyApplied, emptyError = apply(history, recipe, {})
 assert(emptyApplied == false and emptyError:find("No affected") ~= nil)
 assert(history.beginCount == 1)
 
@@ -56,7 +62,7 @@ function unavailableHistory:TryBeginRecording()
 end
 local untouched = Instance.new("Part")
 untouched.Anchored = false
-local refused, refusalError = ApplyService.new(CollectionService, unavailableHistory):apply(recipe, { untouched })
+local refused, refusalError = apply(unavailableHistory, recipe, { untouched })
 assert(refused == false and refusalError:find("undo recording") ~= nil and untouched.Anchored == false)
 
 local failingHistory = { calls = 0 }
@@ -71,7 +77,7 @@ function failingHistory:FinishRecording(_, operation)
 end
 local rollbackTarget = Instance.new("Part")
 rollbackTarget.Anchored = false
-local failed, failureMessage = ApplyService.new(CollectionService, failingHistory):apply(recipe, { rollbackTarget })
+local failed, failureMessage = apply(failingHistory, recipe, { rollbackTarget })
 assert(failed == false and failureMessage:find("rolled back") ~= nil)
 assert(rollbackTarget.Anchored == false)
 assert(not CollectionService:HasTag(rollbackTarget, "PresetForgeApplyTest"))
@@ -80,7 +86,7 @@ assert(failingHistory.calls == 2, "failed commit must be cancelled after rollbac
 
 local falseAttributeTarget = rollbackTarget:Clone()
 falseAttributeTarget:SetAttribute("Level", false)
-local falseFailed, falseMessage = ApplyService.new(CollectionService, failingHistory):apply(recipe, { falseAttributeTarget })
+local falseFailed, falseMessage = apply(failingHistory, recipe, { falseAttributeTarget })
 assert(falseFailed == false and falseMessage:find("rolled back") ~= nil)
 assert(falseAttributeTarget:GetAttribute("Level") == false, "commit rollback must preserve an existing false attribute")
 assert(falseAttributeTarget.Anchored == false and not CollectionService:HasTag(falseAttributeTarget, "PresetForgeApplyTest"))

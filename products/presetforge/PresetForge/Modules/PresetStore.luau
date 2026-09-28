@@ -35,11 +35,13 @@ end
 function PresetStore:load()
 	local ok, stored = pcall(self._plugin.GetSetting, self._plugin, self._storageKey)
 	if not ok then
+		self._presets = {}
 		return false, "Could not read local presets: " .. tostring(stored)
 	end
 
 	local presets, decodeError = PresetSerializer.decodeAll(stored)
 	if not presets then
+		self._presets = {}
 		return false, "Local preset data is invalid: " .. tostring(decodeError)
 	end
 
@@ -72,6 +74,12 @@ function PresetStore:_findIndex(name)
 end
 
 function PresetStore:_persist(candidate)
+	local readBeforeOk, storedBefore = pcall(self._plugin.GetSetting, self._plugin, self._storageKey)
+	if not readBeforeOk then return false, "Could not verify current local library" end
+	local before = PresetSerializer.decodeAll(storedBefore)
+	if not before or not PresetSerializer.equal(before, self._presets) then
+		return false, "Local library changed or is invalid; reload before saving"
+	end
 	local encoded, encodeError = PresetSerializer.encodeAll(candidate)
 	if not encoded then
 		return false, encodeError
@@ -79,15 +87,18 @@ function PresetStore:_persist(candidate)
 
 	local writeOk, writeError = pcall(self._plugin.SetSetting, self._plugin, self._storageKey, encoded)
 	if not writeOk then
+		pcall(self._plugin.SetSetting, self._plugin, self._storageKey, storedBefore)
 		return false, "Could not save presets: " .. tostring(writeError)
 	end
 
 	local readOk, stored = pcall(self._plugin.GetSetting, self._plugin, self._storageKey)
 	if not readOk then
+		pcall(self._plugin.SetSetting, self._plugin, self._storageKey, storedBefore)
 		return false, "Preset save could not be verified: " .. tostring(stored)
 	end
 	local verified, verifyError = PresetSerializer.decodeAll(stored)
 	if not verified or not PresetSerializer.equal(candidate, verified) then
+		pcall(self._plugin.SetSetting, self._plugin, self._storageKey, storedBefore)
 		return false, "Preset save could not be verified: " .. tostring(verifyError or "data mismatch")
 	end
 

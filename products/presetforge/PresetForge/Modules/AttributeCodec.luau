@@ -1,4 +1,6 @@
 local StringCodec = require(script.Parent.StringCodec)
+local Guard = require(script.Parent.DataGuard)
+local Constants = require(script.Parent.Constants)
 
 local AttributeCodec = {}
 
@@ -29,10 +31,11 @@ local function decodeColor3(value)
 	return Color3.new(value.r, value.g, value.b)
 end
 
-function AttributeCodec.encode(value)
+local function encode(value)
 	local kind = typeof(value)
 
 	if kind == "string" then
+		if #value > Constants.MAX_STRING_BYTES then return nil, "String value limit exceeded" end
 		return { kind = kind, value = StringCodec.encode(value) }
 	elseif kind == "boolean" then
 		return { kind = kind, value = value }
@@ -123,10 +126,18 @@ function AttributeCodec.encode(value)
 	return nil, "Unsupported attribute type: " .. tostring(kind)
 end
 
+function AttributeCodec.encode(value)
+	local encoded, err = encode(value)
+	if not encoded then return nil, err end
+	if not Guard.data(encoded) then return nil, "Non-finite or oversized attribute value" end
+	return encoded
+end
+
 function AttributeCodec.decode(encoded)
 	if type(encoded) ~= "table" or type(encoded.kind) ~= "string" then
 		return nil, "Invalid encoded attribute"
 	end
+	if not Guard.data(encoded) then return nil, "Invalid or oversized encoded attribute" end
 
 	local kind = encoded.kind
 	local ok, value = pcall(function()
@@ -174,6 +185,7 @@ function AttributeCodec.decode(encoded)
 		elseif kind == "Rect" then
 			return Rect.new(encoded.minX, encoded.minY, encoded.maxX, encoded.maxY)
 		elseif kind == "NumberSequence" then
+			assert(Guard.indexed(encoded, 20), "Invalid sequence length")
 			local points = table.create(encoded.count)
 			for index = 1, encoded.count do
 				local point = assert(readIndexed(encoded, index))
@@ -181,6 +193,7 @@ function AttributeCodec.decode(encoded)
 			end
 			return NumberSequence.new(points)
 		elseif kind == "ColorSequence" then
+			assert(Guard.indexed(encoded, 20), "Invalid sequence length")
 			local points = table.create(encoded.count)
 			for index = 1, encoded.count do
 				local point = assert(readIndexed(encoded, index))
@@ -200,6 +213,23 @@ function AttributeCodec.decode(encoded)
 	if not ok then
 		return nil, tostring(value)
 	end
+	local canonical = AttributeCodec.encode(value)
+	if not canonical then return nil, "Invalid decoded attribute" end
+	-- Reject defaulted fields, extra fields and noncanonical lossy constructor inputs.
+	local function exact(expected, actual)
+		if type(expected) ~= type(actual) then return false end
+		if type(expected) ~= "table" then return expected == actual end
+		for key, child in pairs(expected) do
+			local other = actual[key]
+			if other == nil and type(key) == "string" and tonumber(key) then other = actual[tonumber(key)] end
+			if not exact(child, other) then return false end
+		end
+		for key in pairs(actual) do
+			if expected[key] == nil and not (type(key) == "number" and expected[tostring(key)] ~= nil) then return false end
+		end
+		return true
+	end
+	if not exact(canonical, encoded) then return nil, "Invalid or noncanonical encoded attribute" end
 	return value
 end
 

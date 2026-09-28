@@ -54,7 +54,7 @@ function history:FinishRecording(_, operation)
 	self.finishCount += 1
 	assert(operation == Enum.FinishRecordingOperation.Commit)
 end
-local applied, counts = ApplyService.new(CollectionService, history):apply(captured, preview.targets)
+local applied, counts = ApplyService.new(CollectionService, history):apply(preview.plan, { recipe = captured, selection = { target }, options = { scope = "Selection" } })
 assert(applied, tostring(counts))
 assert(counts.targets == 1 and counts.properties == 1 and counts.tags == 1 and counts.attributes == 1)
 assert(history.beginCount == 1 and history.finishCount == 1)
@@ -71,8 +71,8 @@ local tampered = {
 	tags = {},
 	attributes = {},
 }
-local rejected, rejection = ApplyService.new(CollectionService, history):apply(tampered, { target })
-assert(rejected == false and rejection:find("Unsupported property") ~= nil)
+local rejected, rejection = previewService:build(tampered, { target }, { scope = "Selection" })
+assert(rejected == nil and rejection:find("Unsupported property") ~= nil)
 assert(history.beginCount == 1, "an invalid recipe must be rejected before Undo recording")
 
 local model = Instance.new("Model")

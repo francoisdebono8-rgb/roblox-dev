@@ -252,7 +252,7 @@ function Schema.isCompatible(schemaId, instance)
 	local family = families[schemaId]
 	return family ~= nil
 		and typeof(instance) == "Instance"
-		and (family.exactClass and instance.ClassName == family.className or instance:IsA(family.className))
+		and (if family.exactClass then instance.ClassName == family.className else instance:IsA(family.className))
 end
 
 function Schema.isClassFilterAllowed(schemaId, className)

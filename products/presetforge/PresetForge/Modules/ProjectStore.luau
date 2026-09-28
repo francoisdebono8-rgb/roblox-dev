@@ -2,6 +2,8 @@ local Constants = require(script.Parent.Constants)
 local PresetValidator = require(script.Parent.PresetValidator)
 local Schema = require(script.Parent.Schema)
 local ValueCodec = require(script.Parent.ValueCodec)
+local Serializer = require(script.Parent.PresetSerializer)
+local Guard = require(script.Parent.DataGuard)
 
 local ProjectStore = {}
 ProjectStore.__index = ProjectStore
@@ -26,7 +28,13 @@ local function sortedCopy(recipes)
 end
 
 local function findChild(parent, name, className)
-	local child = parent:FindFirstChild(name)
+	local child
+	for _, candidate in ipairs(parent:GetChildren()) do
+		if candidate.Name == name then
+			if child then return nil end
+			child = candidate
+		end
+	end
 	if not child or child.ClassName ~= className then
 		return nil
 	end
@@ -150,11 +158,13 @@ local function decodeRecipe(node)
 	end
 
 	local tagChildren = tagsNode:GetChildren()
+	if #tagChildren > Constants.MAX_TAGS then return nil, "Project tag limit exceeded" end
 	table.sort(tagChildren, function(left, right)
 		return left.Name < right.Name
 	end)
-	for _, child in ipairs(tagChildren) do
-		if child.ClassName ~= "StringValue" or not child.Name:match("^Tag_%d%d%d$") then
+	for index, child in ipairs(tagChildren) do
+		if child.ClassName ~= "StringValue" or child.Name ~= string.format("Tag_%03d", index)
+			or #child:GetChildren() ~= 0 or next(child:GetAttributes()) ~= nil then
 			return nil, node.Name .. " contains an invalid tag record"
 		end
 		recipe.tags[#recipe.tags + 1] = child.Value
@@ -167,11 +177,12 @@ local function decodeRecipe(node)
 	return recipe
 end
 
-function ProjectStore.new(container)
+function ProjectStore.new(container, history)
 	assert(typeof(container) == "Instance", "ProjectStore requires an Instance container")
 	return setmetatable({
 		_container = container,
 		_recipes = {},
+		_history = history or game:GetService("ChangeHistoryService"),
 	}, ProjectStore)
 end
 
@@ -195,6 +206,11 @@ function ProjectStore:_ensureRoot()
 end
 
 function ProjectStore:load()
+	local rootCount = 0
+	for _, node in ipairs(self._container:GetChildren()) do
+		if node.Name == Constants.PROJECT_ROOT_NAME then rootCount += 1 end
+	end
+	if rootCount > 1 then self._recipes = {}; return false, "Duplicate project library roots" end
 	local root = self:_root()
 	if not root then
 		self._recipes = {}
@@ -208,6 +224,7 @@ function ProjectStore:load()
 
 	local recipes = {}
 	local names = {}
+	if #root:GetChildren() > Constants.MAX_RECIPES then self._recipes = {}; return false, "Project recipe limit exceeded" end
 	for _, child in ipairs(root:GetChildren()) do
 		local recipe, decodeError = decodeRecipe(child)
 		if not recipe then
@@ -222,6 +239,8 @@ function ProjectStore:load()
 		names[key] = true
 		recipes[#recipes + 1] = recipe
 	end
+	local encoded, encodingError = Serializer.encodeAll(recipes)
+	if not encoded then self._recipes = {}; return false, encodingError end
 	self._recipes = recipes
 	return true
 end
@@ -245,7 +264,7 @@ function ProjectStore:find(name)
 	return index and clone(self._recipes[index]) or nil
 end
 
-function ProjectStore:create(name, captured)
+function ProjectStore:_create(name, captured)
 	local normalizedName, nameError = PresetValidator.normalizeName(name)
 	if not normalizedName then
 		return false, nameError
@@ -278,7 +297,7 @@ function ProjectStore:create(name, captured)
 	return true, clone(recipe)
 end
 
-function ProjectStore:update(currentName, captured)
+function ProjectStore:_update(currentName, captured)
 	local loaded, loadError = self:load()
 	if not loaded then
 		return false, loadError
@@ -313,7 +332,7 @@ function ProjectStore:update(currentName, captured)
 	return true, clone(recipe)
 end
 
-function ProjectStore:rename(currentName, requestedName)
+function ProjectStore:_rename(currentName, requestedName)
 	local loaded, loadError = self:load()
 	if not loaded then
 		return false, loadError
@@ -355,7 +374,7 @@ function ProjectStore:rename(currentName, requestedName)
 	return true, clone(recipe)
 end
 
-function ProjectStore:delete(name)
+function ProjectStore:_delete(name)
 	local loaded, loadError = self:load()
 	if not loaded then
 		return false, loadError
@@ -379,5 +398,60 @@ function ProjectStore:delete(name)
 	node:Destroy()
 	return true
 end
+
+function ProjectStore:_edit(action, ...)
+	if game:GetService("RunService"):IsRunning() then return false, "Project saves require Studio Edit mode" end
+	local loaded, loadError = self:load()
+	if not loaded then return false, loadError end
+	local previous = self:_root()
+	local beforeRecipes = clone(self._recipes)
+	local beforeInstances = previous and previous:GetDescendants() or {}
+	local staging = Instance.new("Folder")
+	if previous then
+		local copy = previous:Clone()
+		if not copy then staging:Destroy(); return false, "Project library cannot be cloned safely" end
+		copy.Parent = staging
+	end
+	local staged = ProjectStore.new(staging, self._history)
+	if not staged:load() or not Serializer.equal(beforeRecipes, staged._recipes) then
+		staging:Destroy(); return false, "Project clone differs from source library"
+	end
+	local prepared, success, result = pcall(staged[action], staged, ...)
+	if not prepared or not success then staging:Destroy(); return false, tostring(if prepared then result else success) end
+	local replacement = staged:_root()
+	if replacement then replacement.Parent = nil end
+	staging:Destroy()
+	local history = self._history
+	local started, recording = pcall(history.TryBeginRecording, history, "PresetForgeProjectStore", "Save PresetForge project recipes")
+	if not started or not recording then
+		if replacement then replacement:Destroy() end
+		return false, "Could not start project recipe undo recording"
+	end
+	local swapped = false
+	local committed, commitError = pcall(function()
+		assert(self:_root() == previous and self:load() and Serializer.equal(beforeRecipes, self._recipes), "Project library changed during recording start")
+		assert(not previous or Guard.equal(beforeInstances, previous:GetDescendants()), "Project recipe instances changed during recording start")
+		swapped = true
+		if previous then previous.Parent = nil end
+		if replacement then replacement.Parent = self._container end
+		assert(self:load())
+		assert(Serializer.equal(self._recipes, staged._recipes), "Project readback mismatch")
+		history:FinishRecording(recording, Enum.FinishRecordingOperation.Commit)
+	end)
+	if not committed then
+		if replacement then replacement:Destroy() end
+		if swapped and previous then previous.Parent = self._container end
+		self:load()
+		pcall(history.FinishRecording, history, recording, Enum.FinishRecordingOperation.Cancel)
+		return false, "Project save rolled back: " .. tostring(commitError)
+	end
+	-- History retains the detached old graph for exact identity Undo/Redo.
+	return true, result
+end
+
+function ProjectStore:create(...) return self:_edit("_create", ...) end
+function ProjectStore:update(...) return self:_edit("_update", ...) end
+function ProjectStore:rename(...) return self:_edit("_rename", ...) end
+function ProjectStore:delete(...) return self:_edit("_delete", ...) end
 
 return ProjectStore

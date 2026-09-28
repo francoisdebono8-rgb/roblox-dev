@@ -159,6 +159,11 @@ function Controller:_watchPreview()
 	local generation = self._previewGeneration
 	local function stale()
 		if generation ~= self._previewGeneration then return end
+		local currentRecipe = self:_recipe()
+		if currentRecipe and require(script.Parent.ExecutionPlan).validate(preview.plan, {
+			recipe = currentRecipe, selection = self:_selection(), options = self:_rawScopeOptions(currentRecipe),
+			revision = self._repository:revision(currentRecipe.library, currentRecipe.name),
+		}) then return end
 		self:_clearPreview("Targets or values changed. Preview again before Apply.")
 		self:_renderDetail()
 	end
@@ -311,15 +316,7 @@ function Controller:_connect()
 	end)
 
 	self:_listen(self._selectionService.SelectionChanged, function()
-		if self._internalSelection then
-			local actual = self:_selection()
-			local same = #actual == #self._internalSelection
-			for index, instance in ipairs(actual) do
-				if instance ~= self._internalSelection[index] then same = false; break end
-			end
-			self._internalSelection = false
-			if same then return end
-		end
+		self._internalSelection = false
 		self:_clearPreview("Selection changed. Run Preview before applying.")
 		self:_disarmDelete()
 		self:_renderDetail()
@@ -605,7 +602,7 @@ function Controller:_runPreview()
 	end
 	self:_disarmDelete()
 	local selection = self:_selection()
-	local preview, previewError = self._previewService:build(recipe, selection, self:_rawScopeOptions(recipe))
+	local preview, previewError = self._previewService:build(recipe, selection, self:_rawScopeOptions(recipe), self._repository:revision(recipe.library, recipe.name))
 	if not preview then
 		self:_clearPreview()
 		self:_setFeedback(previewError, "danger")
@@ -628,29 +625,19 @@ function Controller:_apply()
 	if not recipe or not self._preview or not self._previewSelection then
 		return
 	end
-	local currentPreview, previewError = self._previewService:build(recipe, self._previewSelection, self._previewOptions)
-	if not currentPreview then
-		self:_clearPreview()
-		self:_setFeedback(previewError, "danger")
-		self:_renderDetail()
-		return
-	elseif not self._previewService.same(self._preview, currentPreview) then
-		self._preview = currentPreview
-		self:_watchPreview()
-		self:_setFeedback("Targets or values changed. Preview refreshed; review it before applying.", "warning")
-		self:_renderDetail()
-		return
-	end
-
 	self:_stopWatchingPreview()
-	local applied, result = self._applyService:apply(recipe, currentPreview.targets)
+	local applied, result = self._applyService:apply(self._preview.plan, function()
+		local currentRecipe = self:_recipe()
+		return { recipe = currentRecipe, selection = self:_selection(), options = self:_rawScopeOptions(currentRecipe),
+			revision = self._repository:revision(currentRecipe.library, currentRecipe.name) }
+	end)
 	if not applied then
 		self:_setFeedback(result, "danger")
 		self:_clearPreview()
 		self:_renderDetail()
 		return
 	end
-	self._preview = assert(self._previewService:build(recipe, self._previewSelection, self._previewOptions))
+	self._preview = assert(self._previewService:build(recipe, self._previewSelection, self._previewOptions, self._repository:revision(recipe.library, recipe.name)))
 	self:_watchPreview()
 	self:_setFeedback(string.format(
 		"Applied to %s: %s, %s, %s. One Undo restores the previous state.",
@@ -679,6 +666,8 @@ function Controller:_selectResults(status)
 		return
 	end
 	self:_selectInstances(self._preview[status])
+	self:_clearPreview("Selection changed. Run Preview before applying.")
+	self:_renderDetail()
 end
 
 function Controller:_renderPresetList()

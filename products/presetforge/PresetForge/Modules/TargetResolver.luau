@@ -1,5 +1,6 @@
 local Constants = require(script.Parent.Constants)
 local Schema = require(script.Parent.Schema)
+local Guard = require(script.Parent.DataGuard)
 
 local TargetResolver = {}
 TargetResolver.__index = TargetResolver
@@ -53,6 +54,10 @@ local function addUnique(items, seen, instance)
 end
 
 function TargetResolver:resolve(schemaId, selection, options)
+	if not Guard.array(selection, Constants.MAX_ROOTS) then return nil, "Root/selection limit exceeded or invalid list" end
+	for _, root in ipairs(selection) do
+		if typeof(root) ~= "Instance" then return nil, "Invalid selection root" end
+	end
 	local normalized, optionsError = self:validateOptions(schemaId, options)
 	if not normalized then
 		return nil, optionsError
@@ -65,10 +70,28 @@ function TargetResolver:resolve(schemaId, selection, options)
 			addUnique(scanned, seen, instance)
 		end
 	else
-		for _, container in ipairs(selection) do
-			for _, descendant in ipairs(container:GetDescendants()) do
-				addUnique(scanned, seen, descendant)
+		-- Traverse each subtree once, including when a selected root is nested in another.
+		local expanded = {}
+		local function expand(root)
+			local stack = { root }
+			while #stack > 0 do
+				local container = table.remove(stack)
+				if not expanded[container] then
+					expanded[container] = true
+					local children = container:GetChildren()
+					for _, child in ipairs(children) do
+						addUnique(scanned, seen, child)
+						if #scanned > Constants.MAX_SCANNED then return false end
+					end
+					for index = #children, 1, -1 do
+						if not expanded[children[index]] then stack[#stack + 1] = children[index] end
+					end
+				end
 			end
+			return true
+		end
+		for _, root in ipairs(selection) do
+			if not expand(root) then return nil, "Scanned descendant limit exceeded" end
 		end
 	end
 
@@ -95,6 +118,7 @@ function TargetResolver:resolve(schemaId, selection, options)
 			}
 		else
 			compatible[#compatible + 1] = instance
+			if #compatible > Constants.MAX_COMPATIBLE then return nil, "Compatible target limit exceeded" end
 		end
 	end
 
