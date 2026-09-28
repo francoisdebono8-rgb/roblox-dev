@@ -1,0 +1,18 @@
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract / 1.2.0
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI] mounted 560x640 theme=Light sha256=aaae698940ef22289de4a1d6a54465daf634492c7ebec83e46ec48cc1e3614fc
+[SchemaForgeUI] viewport=0, 0 size=560, 640
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract / 1.2.0
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=24
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=24
+[SchemaForgeUI][FIXTURE] long contract saved with 32 real attribute rules

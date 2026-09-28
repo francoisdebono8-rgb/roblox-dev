@@ -1,5 +1,10 @@
 # SchemaForge 1.2.0 technical candidate
 
+Historical functional baseline for issue #20. Its hashes and results below are
+preserved as executed. Issue #23 subsequently changed View only; the current binary
+and its fresh 53-test native regression are recorded in
+[UI release status](../ui/RELEASE_STATUS.md) and `../dist/candidate-1.2.0.json`.
+
 Issue [#20](https://github.com/francoisdebono8-rgb/roblox-dev/issues/20).
 Unpublished candidate. Public 1.1.0 binary, public manifest, release records and
 media remain historical and unchanged. Canonical asset 84085408748744 is untouched.

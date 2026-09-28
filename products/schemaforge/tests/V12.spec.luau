@@ -442,16 +442,14 @@ return function(modules, legacyModules, hostPlugin)
 			Schema.new = originalNew
 			if not ok then widget:Destroy(); error(dispose) end
 			local checked, err = pcall(function()
-				local body = widget.SchemaForgeUI.Body
-				for _, name in ipairs({"DefaultValue", "ExactValue", "requiredTags", "forbiddenTags"}) do assert(body:FindFirstChild(name), name) end
+				local body = widget.SchemaForgeUI.Body.Detail
+				for _, name in ipairs({"DefaultValue", "ExactValue"}) do assert(body:FindFirstChild(name), name) end
+				assert(widget.SchemaForgeUI.Body.Collection:FindFirstChild("ContractSettings"), "Separate contract/tag editor remains reachable")
 				assert(Schema.equalValue(Schema.parseValue(pair[1], body.DefaultValue.Text), pair[2]))
 				body.DefaultValue.Text = "invalid"; task.wait()
 				assert(body.DefaultValueError.Visible)
 				body.DefaultValue.Text = Schema.editValue(pair[2]); task.wait()
 				assert(not body.DefaultValueError.Visible)
-				body.requiredTags.Text = "RequiredA,RequiredB"; task.wait(); assert(not body.requiredTagsError.Visible)
-				body.forbiddenTags.Text = "RequiredA"; task.wait(); assert(body.forbiddenTagsError.Visible)
-				body.forbiddenTags.Text = "ForbiddenA"; task.wait(); assert(not body.forbiddenTagsError.Visible)
 				if pair[1] == "Vector2" or pair[1] == "Vector3" then
 					assert(body:FindFirstChild("axisMinX") and body:FindFirstChild("axisMaxY") and body:FindFirstChild("magnitudeMax"))
 					assert((body:FindFirstChild("axisMinZ") ~= nil) == (pair[1] == "Vector3"))
@@ -459,6 +457,26 @@ return function(modules, legacyModules, hostPlugin)
 			end)
 			dispose(); widget:Destroy(); assert(checked, err)
 		end
+	end)
+	test({7, 11, 13}, "Separate contract editor preserves native required/forbidden tag validation", function(f)
+		local s = Schema.copy(f.schema); s.fields = {}; s.children = {}
+		local widget = hostPlugin:CreateDockWidgetPluginGuiAsync("SchemaForgeContractSmoke",
+			DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 420, 640, 240, 360))
+		local originalNew = Schema.new
+		Schema.new = function() return Schema.copy(s) end
+		local ok, dispose = pcall(require(modules.View).mount, widget, game:GetService("Selection"), history)
+		Schema.new = originalNew
+		if not ok then widget:Destroy(); error(dispose) end
+		local checked, err = pcall(function()
+			local body = widget.SchemaForgeUI.Body.Detail
+			assert(body:FindFirstChild("requiredTags") and body:FindFirstChild("forbiddenTags"))
+			body.requiredTags.Text = "RequiredA,RequiredB"; task.wait(); assert(not body.requiredTagsError.Visible)
+			body.forbiddenTags.Text = "RequiredA"; task.wait(); assert(body.forbiddenTagsError.Visible)
+			assert(not widget.SchemaForgeUI.Footer.Actions.Save.Active)
+			body.forbiddenTags.Text = "ForbiddenA"; task.wait(); assert(not body.forbiddenTagsError.Visible)
+			assert(widget.SchemaForgeUI.Footer.Actions.Save.Active)
+		end)
+		dispose(); widget:Destroy(); assert(checked, err)
 	end)
 	test({30}, "Sparse benchmark: fixed 20000 descendants / 20 targets, warmup and seven medians", function(f, root)
 		f.target:Destroy(); f.schema.fields = {}; f.schema.children = {}

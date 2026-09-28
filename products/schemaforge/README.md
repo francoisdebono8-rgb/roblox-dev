@@ -6,6 +6,11 @@ Install `dist/SchemaForge-v1.1.0.rbxm` as a local Studio plugin. Canonical Creat
 
 The commercial model contains only Main and four production modules. Test and media places are separate; never upload them as the plugin.
 
-Build with Rojo 7.7: `rojo build products/schemaforge/release.project.json -o products/schemaforge/dist/SchemaForge-v1.1.0.rbxm`.
+The public 1.1.0 artifact is frozen. Current sources build the unpublished 1.2.0 candidate;
+do not overwrite the historical public binary with them.
 
-Verify: `python3 products/schemaforge/tools/verify_release.py --rojo /path/to/rojo`.
+Build/verify with Rojo 7.7:
+`python3 products/schemaforge/tools/verify_candidate.py --rojo /path/to/rojo --build`.
+
+Issue #23 UI candidate: [native quality gates and before/after evidence](ui/RELEASE_STATUS.md).
+The functional engine is unchanged. No Creator Store update is included.

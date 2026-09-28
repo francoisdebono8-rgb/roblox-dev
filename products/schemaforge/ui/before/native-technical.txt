@@ -1,0 +1,98 @@
+[SchemaForgeTechnicalGate] artifact=SchemaForge-v1.2.0.rbxm sha256=1ffab441b8ee88db2372e113776d2fb7cfdb5b890e8576cbae36ff378229fbec
+[SchemaForgeTechnicalGate] legacy=SchemaForge-v1.1.0.rbxm sha256=4c6768ba0c484164a576287b3cb623b8fd23c5ae90054b415e640c483a1906e9
+[SchemaForgeV12][PASS] V1 load is read-only; migration, reload and old engine parity
+[SchemaForgeV12][PASS] Malformed, cyclic, future, unknown-key and V1 extension payloads refuse safely
+[SchemaForgeV12][PASS] Scalar semantics and non-destructive invalid-value diagnostics
+[SchemaForgeV12][PASS] Vector2: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] Vector3: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] Color3: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] CFrame: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] UDim: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] UDim2: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] BrickColor: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] NumberRange: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+[SchemaForgeV12][PASS] Vector per-axis and magnitude bounds are inclusive, finite and dimensional
+[SchemaForgeV12][PASS] Tag contracts only add missing required tags; native Undo/Redo and wrong-class policy
+[SchemaForgeV12][PASS] Tag duplicates, contradictions, invalid names and count bounds refuse
+[SchemaForgeV12][PASS] Child rules distinguish every-segment ambiguity, missing and wrong class without writes
+[SchemaForgeV12][PASS] Optional child is absent-or-valid, with the same ambiguity and class diagnostics
+[SchemaForgeV12][PASS] Child cache shares scans and enforces depth/rule limits
+[SchemaForgeV12][PASS] Exact subset and audit/plan forgery checks include mutation of the source subset
+[SchemaForgeV12][PASS] Stale: attribute presence
+[SchemaForgeV12][PASS] Stale: attribute value
+[SchemaForgeV12][PASS] Stale: required tag
+[SchemaForgeV12][PASS] Stale: forbidden tag
+[SchemaForgeV12][PASS] Stale: target membership removed
+[SchemaForgeV12][PASS] Stale: new matching object
+[SchemaForgeV12][PASS] Stale: new tag on scope
+[SchemaForgeV12][PASS] Stale: target reparented
+[SchemaForgeV12][PASS] Stale: same-name target replaced
+[SchemaForgeV12][PASS] Stale: required child removed
+[SchemaForgeV12][PASS] Stale: required child renamed
+[SchemaForgeV12][PASS] Stale: required child replaced with wrong class
+[SchemaForgeV12][PASS] Stale: required intermediate duplicated
+[SchemaForgeV12][PASS] Stale: required child reparented
+[SchemaForgeV12][PASS] Schema version/content, roots and root ancestry are freshness dependencies
+[SchemaForgeV12][PASS] Unrelated attributes/tags/properties/names/children do not stale
+[SchemaForgeV12][PASS] Overlapping roots and duplicate names preserve stable object/finding identities
+[SchemaForgeV12][PASS] Exactly 5000 tagged objects accepted; 5001 refuses without writes
+[SchemaForgeV12][PASS] Exactly 2000 findings accepted; 2001 refuses the whole audit
+[SchemaForgeV12][PASS] Child traversal budget refuses oversized work and preserves hierarchy
+[SchemaForgeV12][PASS] Storage collisions, duplicate entries and compare-and-save concurrency refuse
+[SchemaForgeV12][PASS] Recording-opening races preserve the external writer and refuse save/delete
+[SchemaForgeV12][PASS] Plans from loaded contracts stale on independent saved edits, replacement or duplicate storage
+[SchemaForgeV12][PASS] Saved contract edit inside TryBeginRecording blocks a direct Engine Apply
+[SchemaForgeV12][PASS] Save recording refusal and create/update commit failure restore exact prior storage
+[SchemaForgeV12][PASS] Delete recording refusal, rollback and native Undo/Redo restore the same entry
+[SchemaForgeV12][PASS] Mixed repair commit failure rolls back every attribute and tag
+[SchemaForgeV12][PASS] Project change while opening recording blocks every repair
+[SchemaForgeV12][PASS] Injected mid-transaction readback failure after first attribute restores native state
+[SchemaForgeV12][PASS] Injected mid-transaction readback failure after first tag restores native state
+[SchemaForgeV12][PASS] Rollback attempts earlier native entries after an injected restoration-check error
+[SchemaForgeV12][PASS] Native DockWidget control mount and typed text edits, without graphical acceptance
+[SchemaForgeV12][BENCHMARK] descendants=20000 targets=20 warmup=2 repetitions=7 old_full_audit_median_ms=39.920375 candidate_full_audit_median_ms=0.362792 old_scope_visits=20001 candidate_visits=20 child_visits=0
+[SchemaForgeV12][PASS] Sparse benchmark: fixed 20000 descendants / 20 targets, warmup and seven medians
+[SchemaForgeV12][PASS] Production package has only five scripts, no QA/runtime/network payload
+[SchemaForgeV12][MATRIX] 01 PASS
+[SchemaForgeV12][MATRIX] 02 PASS
+[SchemaForgeV12][MATRIX] 03 PASS
+[SchemaForgeV12][MATRIX] 04 PASS
+[SchemaForgeV12][MATRIX] 05 PASS
+[SchemaForgeV12][MATRIX] 06 PASS
+[SchemaForgeV12][MATRIX] 07 PASS
+[SchemaForgeV12][MATRIX] 08 PASS
+[SchemaForgeV12][MATRIX] 09 PASS
+[SchemaForgeV12][MATRIX] 10 PASS
+[SchemaForgeV12][MATRIX] 11 PASS
+[SchemaForgeV12][MATRIX] 12 PASS
+[SchemaForgeV12][MATRIX] 13 PASS
+[SchemaForgeV12][MATRIX] 14 PASS
+[SchemaForgeV12][MATRIX] 15 PASS
+[SchemaForgeV12][MATRIX] 16 PASS
+[SchemaForgeV12][MATRIX] 17 PASS
+[SchemaForgeV12][MATRIX] 18 PASS
+[SchemaForgeV12][MATRIX] 19 PASS
+[SchemaForgeV12][MATRIX] 20 PASS
+[SchemaForgeV12][MATRIX] 21 PASS
+[SchemaForgeV12][MATRIX] 22 PASS
+[SchemaForgeV12][MATRIX] 23 PASS
+[SchemaForgeV12][MATRIX] 24 PASS
+[SchemaForgeV12][MATRIX] 25 PASS
+[SchemaForgeV12][MATRIX] 26 PASS
+[SchemaForgeV12][MATRIX] 27 PASS
+[SchemaForgeV12][MATRIX] 28 PASS
+[SchemaForgeV12][MATRIX] 29 PASS
+[SchemaForgeV12][MATRIX] 30 PASS
+[SchemaForgeV12][MATRIX] 31 PASS
+[SchemaForgeV12][MATRIX] 32 PASS
+[SchemaForgeV12][MATRIX] 33 PASS
+[SchemaForgeV12][MATRIX] 34 PASS
+[SchemaForgeV12][MATRIX] 35 PASS
+[SchemaForgeV12][MATRIX] 36 PASS
+[SchemaForgeV12][MATRIX] 37 PASS
+[SchemaForgeV12][MATRIX] 38 PASS
+[SchemaForgeV12][MATRIX] 39 PASS
+[SchemaForgeV12][MATRIX] 40 PASS
+[SchemaForgeV12][MATRIX] 41 PASS
+[SchemaForgeV12][SUMMARY] 52 PASS / 0 FAIL
+[SchemaForgeTechnicalGate][SUMMARY] PASS
