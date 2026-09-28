@@ -87,9 +87,9 @@ function View.mount(widget, selection, history)
 	local feedback=make("ScrollingFrame",footer,{Name="Feedback",Position=UDim2.fromOffset(0,36),Size=UDim2.new(1,0,0,36),BackgroundTransparency=1,
 		BorderSizePixel=0,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=3})
 	local message=label(feedback,"Status","","muted")
-	local version=label(footer,"Version","1.1.0  |  Project contracts","muted",18); version.Position=UDim2.fromOffset(0,78); version.TextSize=12
+	local version=label(footer,"Version","1.2.0  |  Project contracts","muted",18); version.Position=UDim2.fromOffset(0,78); version.TextSize=12
 	local function invalidate() state.audit=nil; state.plan=nil; state.stale=nil; state.page=1; state.picked={}; state.subsetActive=false end
-	local function changed() state.dirty=true; invalidate(); if refresh then refresh() end end
+	local function changed() state.schema.version=Schema.version; state.dirty=true; invalidate(); if refresh then refresh() end end
 	local function act(fn)
 		return function()
 			if disposed or rendering then return end
@@ -127,7 +127,7 @@ function View.mount(widget, selection, history)
 	end
 	local function input(parent,name,titleText,value,setter,validator)
 		label(parent,name.."Label",titleText,"muted")
-		local owner=(name=="SchemaName" or name=="TargetTag") and "schema"
+		local owner=(name=="SchemaName" or name=="TargetTag" or name=="requiredTags" or name=="forbiddenTags") and "schema"
 			or state.childMode and ("child:"..state.childIndex) or ("field:"..state.fieldIndex)
 		local key=owner..":"..name
 		local box=make("TextBox",parent,{Name=name,Text=state.drafts[key] or (value==nil and "" or tostring(value)),Size=UDim2.new(1,-4,0,32),
@@ -191,6 +191,14 @@ function View.mount(widget, selection, history)
 		end
 		input(body,"SchemaName","Schema name",state.schema.name,function(v) state.schema.name=v end,function() return errorFor("schema","name") end)
 		input(body,"TargetTag","Target tag (exact)",state.schema.tag,function(v) state.schema.tag=v end,function() return errorFor("schema","tag") end)
+		for _,key in ipairs({"requiredTags","forbiddenTags"}) do
+			input(body,key,key=="requiredTags" and "Required tags (comma-separated)" or "Forbidden tags (comma-separated)",table.concat(state.schema[key] or {},","),function(v)
+				state.schema[key]={}; if v~="" then for _,part in ipairs(string.split(v,",")) do table.insert(state.schema[key],part:match("^%s*(.-)%s*$")) end end
+			end,function()
+				local s=Schema.new(); s.tag=state.schema.tag; s.requiredTags=state.schema.requiredTags; s.forbiddenTags=state.schema.forbiddenTags
+				local ok,err=pcall(Schema.validate,s); return ok and "" or cleanError(err)
+			end)
+		end
 		menu(body,"ExpectedClass","Expected class",Schema.classes,state.schema.className,function(v) state.schema.className=v; changed() end)
 		local modes=row(body,2)
 		button(modes,"AttributesMode","Attributes ("..#state.schema.fields..")",function() state.childMode=false; state.menu=nil end,not state.childMode)
@@ -210,6 +218,7 @@ function View.mount(widget, selection, history)
 					return errorFor("child")
 				end)
 				menu(body,"ChildClass","Class",Schema.classes,c.className,function(v) c.className=v; changed() end)
+				toggle(body,"OptionalChild","Optional if absent",c.optional==true,function(v) c.optional=v; changed() end)
 				input(body,"ChildDescription","Designer note",c.description,function(v) c.description=v end,function() return #c.description>240 and "At most 240 characters." or "" end)
 				button(body,"RemoveChild","Remove child rule",function() table.remove(state.schema.children,state.childIndex); state.childIndex=math.max(1,state.childIndex-1); state.drafts={}; changed() end)
 			end
@@ -230,7 +239,8 @@ function View.mount(widget, selection, history)
 				end)
 				menu(body,"FieldType","Type",Schema.kinds,f.kind,function(v)
 					f.kind=v; f.min=nil; f.max=nil; f.integer=false; f.choices={}; f.hasDefault=false
-					f.default=v=="number" and 0 or v=="string" and "" or false; state.drafts={}; changed()
+					f.exact=nil; f.axisMin=nil; f.axisMax=nil; f.magnitudeMin=nil; f.magnitudeMax=nil
+					f.default=Schema.initialValue(v); state.drafts={}; changed()
 				end)
 				input(body,"FieldDescription","Designer note",f.description,function(v) f.description=v end,function() return #f.description>240 and "At most 240 characters." or "" end)
 				toggle(body,"Required","Required",f.required,function(v) f.required=v; changed() end)
@@ -247,11 +257,32 @@ function View.mount(widget, selection, history)
 					input(body,"Choices","Allowed choices (comma-separated)",table.concat(f.choices,","),function(v)
 						f.choices={}; if v~="" then for _,part in ipairs(string.split(v,",")) do table.insert(f.choices,part:match("^%s*(.-)%s*$")) end end
 					end,function() return errorFor("field") end)
+				elseif f.kind=="Vector2" or f.kind=="Vector3" then
+					for _,bound in ipairs({"axisMin","axisMax"}) do
+						for _,axis in ipairs(f.kind=="Vector2" and {"X","Y"} or {"X","Y","Z"}) do
+							input(body,bound..axis,axis..(bound=="axisMin" and " minimum (optional)" or " maximum (optional)"),f[bound] and f[bound][axis],function(v)
+								f[bound]=f[bound] or {}; f[bound][axis]=v~="" and (tonumber(v) or v) or nil
+							end,function() return errorFor("field") end)
+						end
+					end
+					for _,key in ipairs({"magnitudeMin","magnitudeMax"}) do
+						input(body,key,key=="magnitudeMin" and "Magnitude minimum (optional)" or "Magnitude maximum (optional)",f[key],function(v) f[key]=v~="" and (tonumber(v) or v) or nil end,function() return errorFor("field") end)
+					end
+				end
+				if f.kind~="number" and f.kind~="string" and f.kind~="boolean" then
+					toggle(body,"UseExact","Require exact value",f.exact~=nil,function(v) f.exact=v and (typeof(f.default)==f.kind and f.default or Schema.initialValue(f.kind)) or nil; changed() end)
+					if f.exact~=nil then
+						input(body,"ExactValue","Exact components (comma-separated)",Schema.editValue(f.exact),function(v)
+							local ok,value=pcall(Schema.parseValue,f.kind,v); f.exact=ok and value or v
+						end,function() return errorFor("field") end)
+					end
 				end
 				toggle(body,"UseDefault","Repair missing values",f.hasDefault,function(v) f.hasDefault=v; changed() end)
 				if f.hasDefault then
 					if f.kind=="boolean" then toggle(body,"DefaultBoolean","Default: true",f.default==true,function(v) f.default=v; changed() end)
-					else input(body,"DefaultValue","Default value",f.default,function(v) f.default=f.kind=="number" and (tonumber(v) or v) or v end,function()
+					else input(body,"DefaultValue",Schema.components(f.default) and "Default components (comma-separated)" or "Default value",Schema.editValue(f.default),function(v)
+						local ok,value=pcall(Schema.parseValue,f.kind,v); f.default=ok and value or v
+					end,function()
 						local ok,err=pcall(Schema.valueError,f,f.default)
 						return not ok and "Fix the rule bounds first." or err or ""
 					end) end
@@ -277,7 +308,7 @@ function View.mount(widget, selection, history)
 		local a=state.audit
 		label(body,"AuditSummary",string.format("%d checked / %d match / %d findings",a.matched,a.valid,#a.issues))
 		label(body,"AuditWarning","Contract findings, not a correctness guarantee.","muted")
-		menu(body,"ReasonFilter","Reason",{"All","Missing","Wrong type","Invalid value","Required child","Class"},state.reason,function(v) state.reason=v; state.page=1; state.plan=nil end)
+		menu(body,"ReasonFilter","Reason",{"All","Missing","Wrong type","Invalid value","Required child","Required tag","Forbidden tag","Class"},state.reason,function(v) state.reason=v; state.page=1; state.plan=nil end)
 		local values={}; for _,i in ipairs(a.issues) do if not table.find(values,i.field) then table.insert(values,i.field) end end
 		local fields={"All fields"}; for _,value in ipairs(values) do table.insert(fields,value) end
 		menu(body,"FieldFilter","Field / rule",fields,state.field=="" and "All fields" or state.field,function(_,i) state.field=i==1 and "" or values[i-1]; state.page=1; state.plan=nil end)
@@ -306,9 +337,9 @@ function View.mount(widget, selection, history)
 		if not state.plan then label(body,"RepairHint",state.stale or "Run an audit, then preview missing defaults.","muted"); return end
 		local plan=state.plan; local seen={}; for _,c in ipairs(plan.changes) do seen[c.instance]=true end
 		local n=0; for _ in pairs(seen) do n+=1 end
-		label(body,"RepairSummary",#plan.changes.." missing defaults / "..n.." objects","note")
-		label(body,"Preservation","Existing values, tags and children stay unchanged.","muted")
-		pages(plan.changes,function(c,i) label(body,"Repair"..i,c.identity.."\n"..c.path.."\n"..c.name..": (missing) "..utf8.char(0x2192).." "..tostring(c.value)) end)
+		label(body,"RepairSummary",#plan.changes.." additive repairs / "..n.." objects","note")
+		label(body,"Preservation","Existing values and children stay unchanged. Tags are only added.","muted")
+		pages(plan.changes,function(c,i) label(body,"Repair"..i,c.identity.."\n"..c.path.."\n"..c.name..": (missing) "..utf8.char(0x2192).." "..(c.action=="tag" and "add tag" or Schema.formatValue(c.value))) end)
 	end
 	local function library()
 		button(body,"Capture","Capture reference",capture,true)
@@ -378,14 +409,14 @@ function View.mount(widget, selection, history)
 					state.plan=Engine.preview(state.audit,subset()); state.tab="Repairs"; state.page=1; state.planSelection=selection:Get()
 				end,true,state.audit~=nil and not state.stale)
 			elseif state.tab=="Repairs" then
-				button(actions,"Apply","Apply "..(state.plan and #state.plan.changes or 0).." missing defaults",function()
+				button(actions,"Apply","Apply "..(state.plan and #state.plan.changes or 0).." additive repairs",function()
 					assert(not state.stale and sameSelection(state.planSelection,selection:Get()),"Selection changed. Preview again.")
 					if state.loadedName then
 						local _,token=Store.load(state.loadedName)
 						assert(token==state.token,"Saved schema changed. Reload and audit again.")
 					end
 					local count=Engine.apply(state.plan,history); state.plan=nil; state.audit=nil; state.picked={}
-					state.message=count.." defaults added. Native Undo available."
+					state.message=count.." additions applied. Native Undo available."
 				end,true,state.plan~=nil and not state.stale and #state.plan.changes>0)
 			else button(actions,"Return","Return to rules",function() state.tab="Rules" end) end
 		end
