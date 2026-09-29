@@ -211,6 +211,19 @@ Reject the implementation if:
 - the real final screenshot still looks like an internal developer tool;
 - store media would require recreating the UI to make it look commercial.
 
+
+## Visual acceptance is not self-certification
+
+The agent may prove geometry, responsiveness, interaction and native regression, but it must **not declare the visual reference accepted solely from automated gates**.
+
+For the reference product:
+- final screenshots must be reviewed against the approved mockup/reference by the user/assistant;
+- “all gates pass” is invalid if the human visual review says the result is materially below the reference;
+- when that happens, keep/reopen the issue and iterate instead of moving to the next product;
+- do not propagate the current implementation as a shared pattern until the reference product is explicitly accepted visually.
+
+A structurally different UI can still fail the programme if its visual execution remains generic. In particular, a plain sidebar + text list + default-looking fields is not enough merely because it is no longer one long form.
+
 ## Completion language
 
 Do not report:
