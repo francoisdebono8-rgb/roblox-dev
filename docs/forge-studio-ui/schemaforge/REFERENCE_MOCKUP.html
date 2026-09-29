@@ -1,0 +1,165 @@
+<div class="sf-reference">
+  <style>
+    .sf-reference{
+      --bg:#15191c;--pane:#1a1f23;--raised:#20262b;--field:#252c31;--border:#343c42;
+      --text:#f0f3f1;--muted:#9aa6a1;--mint:#63d6ae;--mint-bg:#18372e;
+      --danger:#ef6a62;--warning:#e5a84d;--info:#5ca9e6;
+      width:560px;height:640px;background:var(--bg);color:var(--text);
+      font-family:Arial,sans-serif;box-sizing:border-box;overflow:hidden;border:1px solid var(--border);
+    }
+    .sf-reference *{box-sizing:border-box}
+    .sf-header{height:68px;padding:10px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center}
+    .sf-brand{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.01em}
+    .sf-title{font-size:18px;font-weight:700;line-height:21px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sf-meta{font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sf-status{font-size:11px;padding:4px 8px;border:1px solid #2d6955;background:var(--mint-bg);color:var(--mint);border-radius:999px}
+    .sf-main{height:510px;padding:10px 12px;display:grid;grid-template-columns:124px 186px minmax(0,1fr);gap:8px}
+    .sf-pane{min-width:0;background:var(--pane);border:1px solid var(--border);border-radius:7px;overflow:hidden}
+    .sf-rail{padding:8px 6px}
+    .sf-section-label{padding:5px 7px 7px;font-size:10px;letter-spacing:.12em;color:#7f8a86;text-transform:uppercase}
+    .sf-nav{height:34px;padding:0 7px;display:flex;align-items:center;gap:7px;border-radius:5px;font-size:12px;color:#b8c0bd;margin-bottom:2px}
+    .sf-nav.active{background:#1d332c;color:var(--text)}
+    .sf-nav.active:before{content:"";width:3px;height:18px;border-radius:2px;background:var(--mint)}
+    .sf-count{margin-left:auto;font-size:10px;color:var(--muted)}
+    .sf-library{margin-top:12px;padding-top:8px;border-top:1px solid #2b3236}
+    .sf-library-row{padding:7px;border-radius:5px;font-size:11px;color:#acb6b2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sf-library-row.selected{background:#1b2b26;color:var(--mint)}
+    .sf-collection{display:flex;flex-direction:column}
+    .sf-pane-head{height:49px;padding:8px 9px;border-bottom:1px solid var(--border)}
+    .sf-pane-title{font-size:14px;font-weight:700}
+    .sf-pane-sub{font-size:10px;color:var(--muted);margin-top:2px}
+    .sf-filters{padding:7px 8px;border-bottom:1px solid #2c3438;display:flex;gap:4px;flex-wrap:wrap}
+    .sf-chip{font-size:10px;line-height:20px;padding:0 7px;border:1px solid var(--border);border-radius:999px;color:#b7c0bc;background:#1d2226}
+    .sf-chip.active{color:var(--mint);border-color:#356f5a;background:#173028}
+    .sf-search{height:28px;margin:0 8px 6px;padding:0 8px;display:flex;align-items:center;border:1px solid var(--border);border-radius:5px;background:#171c1f;font-size:10px;color:#77827e}
+    .sf-findings{padding:0 5px 7px;overflow:hidden}
+    .sf-row{position:relative;min-height:52px;padding:7px 7px 7px 10px;border-radius:5px;border:1px solid transparent;margin:3px 0;background:transparent}
+    .sf-row:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--warning)}
+    .sf-row.fixable:before{background:var(--mint)}
+    .sf-row.selected{background:#202b27;border-color:#3c6656}
+    .sf-row-title{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:40px}
+    .sf-row-meta{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sf-badge{position:absolute;right:6px;top:7px;font-size:8px;padding:2px 4px;border-radius:4px;border:1px solid #3d705d;color:var(--mint);background:#173027}
+    .sf-detail{padding:10px;overflow:hidden}
+    .sf-detail-kicker{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--mint)}
+    .sf-detail-title{font-size:17px;font-weight:700;margin-top:3px}
+    .sf-detail-meta{font-size:10px;color:var(--muted);margin-top:3px;line-height:14px}
+    .sf-compare{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}
+    .sf-value{padding:8px;border:1px solid var(--border);border-radius:6px;background:#181e21;min-height:72px}
+    .sf-value-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#84908b}
+    .sf-value-main{font-size:13px;font-weight:700;margin-top:7px}
+    .sf-value-main.bad{color:var(--danger)}
+    .sf-value-help{font-size:9px;color:var(--muted);margin-top:4px;line-height:13px}
+    .sf-note{margin-top:10px;padding-top:9px;border-top:1px solid #2d3539}
+    .sf-note-title{font-size:10px;color:#8f9a96}
+    .sf-note-copy{font-size:10px;line-height:14px;color:#bdc5c2;margin-top:4px}
+    .sf-repair{margin-top:11px;padding:9px;border:1px solid #366c58;background:#172b24;border-radius:6px}
+    .sf-repair-title{font-size:9px;text-transform:uppercase;letter-spacing:.11em;color:var(--mint)}
+    .sf-repair-op{font-size:12px;font-weight:700;margin-top:6px}
+    .sf-repair-help{font-size:9px;color:#91a59c;margin-top:4px}
+    .sf-secondary{margin-top:9px;height:28px;border:1px solid var(--border);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#c2cac7}
+    .sf-footer{height:62px;border-top:1px solid var(--border);display:grid;grid-template-columns:124px minmax(0,1fr) auto;gap:8px;padding:9px 12px;align-items:center}
+    .sf-rerun{height:34px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#b8c0bd;background:#1a1f23}
+    .sf-summary{font-size:10px;color:var(--muted)}
+    .sf-summary strong{display:block;color:var(--text);font-size:11px;margin-bottom:2px}
+    .sf-primary{height:36px;padding:0 14px;border-radius:6px;background:var(--mint);color:#10251e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+    .sf-narrow-note{display:none}
+    @media(max-width:380px){
+      .sf-reference{width:320px;height:640px}
+      .sf-header{height:62px}
+      .sf-main{height:516px;grid-template-columns:1fr;padding:8px}
+      .sf-rail,.sf-detail{display:none}
+      .sf-collection{display:flex}
+      .sf-footer{height:62px;grid-template-columns:1fr auto;padding:8px}
+      .sf-rerun{display:none}
+      .sf-summary{padding-left:2px}
+    }
+  </style>
+  <div class="sf-header">
+    <div>
+      <div class="sf-brand">SchemaForge</div>
+      <div class="sf-title">Greenhouse Contract</div>
+      <div class="sf-meta">#PlantPot · Model · Workspace</div>
+    </div>
+    <div class="sf-status">Saved</div>
+  </div>
+
+  <div class="sf-main">
+    <aside class="sf-pane sf-rail">
+      <div class="sf-section-label">Contract</div>
+      <div class="sf-nav">Rules <span class="sf-count">9</span></div>
+      <div class="sf-nav active">Audit <span class="sf-count">6</span></div>
+      <div class="sf-nav">Repairs <span class="sf-count">2</span></div>
+
+      <div class="sf-library">
+        <div class="sf-section-label">Library</div>
+        <div class="sf-library-row selected">Greenhouse</div>
+        <div class="sf-library-row">Enemy Config</div>
+        <div class="sf-library-row">Door Config</div>
+      </div>
+    </aside>
+
+    <section class="sf-pane sf-collection">
+      <div class="sf-pane-head">
+        <div class="sf-pane-title">Findings</div>
+        <div class="sf-pane-sub">8 checked · 6 findings</div>
+      </div>
+      <div class="sf-filters">
+        <span class="sf-chip active">All 6</span><span class="sf-chip">Missing 2</span><span class="sf-chip">Invalid 3</span>
+      </div>
+      <div class="sf-search">Search findings…</div>
+      <div class="sf-findings">
+        <div class="sf-row fixable selected">
+          <div class="sf-row-title">Cost</div><div class="sf-row-meta">PlantPot #4 · Missing attribute</div><span class="sf-badge">FIXABLE</span>
+        </div>
+        <div class="sf-row">
+          <div class="sf-row-title">GrowthRate</div><div class="sf-row-meta">PlantPot #6 · Invalid value</div>
+        </div>
+        <div class="sf-row">
+          <div class="sf-row-title">Soil</div><div class="sf-row-meta">PlantPot #2 · Required child</div>
+        </div>
+        <div class="sf-row fixable">
+          <div class="sf-row-title">MaxWater</div><div class="sf-row-meta">PlantPot #1 · Missing attribute</div><span class="sf-badge">FIXABLE</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sf-pane sf-detail">
+      <div class="sf-detail-kicker">Missing attribute · Fixable</div>
+      <div class="sf-detail-title">Cost</div>
+      <div class="sf-detail-meta">PlantPot #4<br>Workspace › Greenhouse › PlantPot</div>
+
+      <div class="sf-compare">
+        <div class="sf-value">
+          <div class="sf-value-label">Expected</div>
+          <div class="sf-value-main">number ≥ 0</div>
+          <div class="sf-value-help">Required</div>
+        </div>
+        <div class="sf-value">
+          <div class="sf-value-label">Actual</div>
+          <div class="sf-value-main bad">Missing</div>
+          <div class="sf-value-help">No value exists</div>
+        </div>
+      </div>
+
+      <div class="sf-note">
+        <div class="sf-note-title">Designer note</div>
+        <div class="sf-note-copy">Economy cost used by shop systems. Keep the configured default explicit.</div>
+      </div>
+
+      <div class="sf-repair">
+        <div class="sf-repair-title">Suggested repair</div>
+        <div class="sf-repair-op">Cost · Missing → 25</div>
+        <div class="sf-repair-help">Safe additive change only</div>
+      </div>
+
+      <div class="sf-secondary">Select in Studio</div>
+    </section>
+  </div>
+
+  <footer class="sf-footer">
+    <div class="sf-rerun">Re-run audit</div>
+    <div class="sf-summary"><strong>2 safe repairs selected</strong>Only missing/default or additive tag changes</div>
+    <div class="sf-primary">Preview changes</div>
+  </footer>
+</div>
