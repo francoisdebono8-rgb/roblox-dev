@@ -300,6 +300,30 @@ A prettier UI with weaker safety fails.
 - destructive removal separated from inspect/edit;
 - preview clearly identifies exact operation.
 
+
+## Gate 15 — reference fidelity and human visual acceptance
+
+Geometry, responsiveness and functional correctness are necessary but **not sufficient** for visual acceptance.
+
+For the first reference implementation (SchemaForge), and for any later product whose visual direction is under active review:
+
+- compare the final screenshots directly against the approved mockup/reference composition;
+- record concrete differences in hierarchy, density, surface treatment, navigation, visual anchor, controls and selected states;
+- do not self-certify this gate from layout measurements, automated geometry tests or the existence of before/after screenshots;
+- do not treat “cleaner than before” as equivalent to “matches the approved quality bar”;
+- the issue remains open until the user/assistant review explicitly accepts the visual result or requests no further iteration.
+
+Fail this gate when the interface still reads primarily as:
+- a raw Roblox utility;
+- plain text plus default-looking rectangles;
+- a basic sidebar/list/detail implementation without the refinement shown in the reference;
+- large uncomposed empty areas;
+- generic form controls dominating the product silhouette;
+- weak iconography/affordance/state treatment;
+- a technically structured UI that still needs a visual redesign before it could represent the product commercially.
+
+For SchemaForge specifically, the reference implementation must establish the actual Forge Studio visual bar before its patterns are reused on PresetForge or the remaining products.
+
 ## Definition of done
 
 A future Forge Studio UI issue may close only when:
