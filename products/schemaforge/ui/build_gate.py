@@ -14,6 +14,7 @@ parser.add_argument("--artifact", type=Path, default=HERE.parent / "dist/SchemaF
 parser.add_argument("--output", type=Path, default=Path("/tmp/SchemaForge23UI"))
 parser.add_argument("--width", type=int, default=560)
 parser.add_argument("--height", type=int, default=640)
+parser.add_argument("--docked", action="store_true", help="Use a native right dock instead of a floating window")
 args = parser.parse_args()
 args.output.mkdir(parents=True, exist_ok=True)
 digest = hashlib.sha256(args.artifact.read_bytes()).hexdigest()
@@ -58,7 +59,7 @@ with tempfile.TemporaryDirectory(prefix="schemaforge-ui-") as temp:
     enabled = [n for n in final.iter("Item") if n.get("class") == "Script" and n.findtext("Properties/bool[@name='Disabled']") != "true"]
     assert len(enabled) == 1 and enabled[0].findtext("Properties/string[@name='Name']") == "Runner"
     project.write_text(json.dumps({"name": "SchemaForgeUIGate", "tree": {
-        "$className": "DataModel", "Workspace": {"$className": "Workspace", "$attributes": {"SchemaForgeUIGate": True, "UIWidth": args.width, "UIHeight": args.height}},
+        "$className": "DataModel", "Workspace": {"$className": "Workspace", "$attributes": {"SchemaForgeUIGate": True, "UIWidth": args.width, "UIHeight": args.height, "UIDocked": args.docked}},
         "Lighting": {"$className": "Lighting", "$properties": {"Technology": "ShadowMap"}}
     }}))
     build(args.output / "SchemaForgeUIGate.rbxl")

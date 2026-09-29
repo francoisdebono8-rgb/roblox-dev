@@ -77,6 +77,10 @@ Screenshots are internal QA only. Public asset 84085408748744 must remain untouc
 
 ## Execution status
 
-Checkpoints 1-5 complete. The structural implementation, final native regression,
-responsive/theme matrix and gates 0-14 are recorded in [RELEASE_STATUS.md](RELEASE_STATUS.md).
-The public asset remains unchanged; this issue delivers an unpublished UI candidate.
+The first pass completed its technical checkpoints, but human review on 2026-09-29
+rejected visual acceptance. Its evidence remains historical in
+[RELEASE_STATUS.md](RELEASE_STATUS.md). The new binding reference, changed
+inspection/Preview mapping and second-pass status are in [SECOND_PASS.md](SECOND_PASS.md).
+In particular, the first-pass mapping to Engine.preview for finding inspection is
+superseded: inspection now reads the finding's recorded fix without creating a plan.
+The public asset remains unchanged. Issue #23 is open and not visually accepted.

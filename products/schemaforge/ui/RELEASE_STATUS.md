@@ -1,6 +1,19 @@
 # SchemaForge UI / issue #23
 
-**READY / PASS for the issue #23 internal UI gate. Not published.**
+**REOPENED / VISUAL ACCEPTANCE FAIL. Not ready as the Forge Studio reference.**
+
+Human review on 2026-09-29 rejected the first pass. Gate 15 is NOT PASS.
+The results below are historical technical evidence for `aaae6989...`, not
+acceptance of the second pass. New reference-fidelity work is tracked in
+[SECOND_PASS.md](SECOND_PASS.md). Do not reuse this UI as the PresetForge reference.
+
+Second-pass candidate `647741f2...`: **53 native tests PASS / 0 FAIL**, 41/41
+technical matrix rows PASS. Exact packaging/source correspondence PASS. The Rules
+Light geometry probe passes five sizes; only its 320px native capture is retained.
+The full GUI walkthrough, comparable Audit captures, Dark-theme review and human
+visual acceptance remain **NON TESTED / PENDING**. No completion claim for #23.
+
+## Historical First Pass (Superseded Visual Acceptance)
 
 Verified 2026-09-28 in native Roblox Studio 0.740.19.7400003, Edit mode.
 Canonical public asset **84085408748744 was not created, updated or otherwise changed**.

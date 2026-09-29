@@ -13,4 +13,6 @@ Build/verify with Rojo 7.7:
 `python3 products/schemaforge/tools/verify_candidate.py --rojo /path/to/rojo --build`.
 
 Issue #23 UI candidate: [native quality gates and before/after evidence](ui/RELEASE_STATUS.md).
+Human visual acceptance is pending after the first pass was rejected; do not treat
+the candidate as the approved Forge Studio reference.
 The functional engine is unchanged. No Creator Store update is included.

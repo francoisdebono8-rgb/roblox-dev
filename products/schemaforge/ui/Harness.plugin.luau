@@ -4,6 +4,17 @@ local modules = script.Parent.Candidate.Modules
 local Geometry = require(script.Parent.Geometry)
 local Schema, Store = require(modules.Schema), require(modules.Store)
 local history, selection = game:GetService("ChangeHistoryService"), game:GetService("Selection")
+local Engine=require(modules.Engine)
+local calls={audit=0,preview=0,selection=0}
+for _,name in ipairs({"audit","preview"}) do
+    local original=Engine[name]
+    Engine[name]=function(...)
+        calls[name]+=1
+        print("[SchemaForgeUI][ENGINE] "..name.."="..calls[name])
+        return original(...)
+    end
+end
+selection.SelectionChanged:Connect(function() calls.selection+=1 end)
 local folder = Instance.new("Folder"); folder.Name = "Greenhouse"; folder.Parent = workspace
 local reference = Instance.new("Part"); reference.Name = "ReferencePot"; reference.Anchored = true
 reference:SetAttribute("Cost", 25); reference:SetAttribute("GrowthRate", 1); reference:SetAttribute("Enabled", true)
@@ -46,21 +57,28 @@ local function mount()
     if dispose then dispose(); widget:Destroy() end
     local width, height = workspace:GetAttribute("UIWidth") or 560, workspace:GetAttribute("UIHeight") or 640
     widget = plugin:CreateDockWidgetPluginGuiAsync("SchemaForgeUI23_" .. game:GetService("HttpService"):GenerateGUID(false),
-        DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, true, true, width, height, width, 360))
+        DockWidgetPluginGuiInfo.new(workspace:GetAttribute("UIDocked") and Enum.InitialDockState.Right or Enum.InitialDockState.Float, true, true, width, height, width, 360))
     widget.Title = "SchemaForge UI review"
     host = Instance.new("Frame"); host.Name = "ExactViewport"; host.Size = UDim2.fromOffset(width, height); host.BackgroundTransparency = 1; host.Parent = widget
     host.DescendantAdded:Connect(function(v)
         if v:IsA("TextButton") then
             v.Activated:Connect(function()
                 print("[SchemaForgeUI][CLICK] "..v.Name)
+                if v.Name:match("^OpenFinding") or v.Name:match("^RuleField") or v.Name:match("^RuleChild") or v.Name:match("^LibraryEntry") then
+                    local before=table.clone(calls)
+                    task.delay(0.2,function()
+                        local unchanged=calls.audit==before.audit and calls.preview==before.preview and calls.selection==before.selection
+                        print("[SchemaForgeUI][INSPECTION "..(unchanged and "PASS" or "FAIL").."] "..v.Name.." audit="..calls.audit.." preview="..calls.preview.." selection="..calls.selection)
+                    end)
+                end
                 task.delay(0.3,snapshot)
             end)
         elseif v:IsA("TextBox") then
             v:GetPropertyChangedSignal("Text"):Connect(function()
-                local owner=v.Parent; local scroll=owner:IsA("ScrollingFrame") and owner.CanvasPosition or Vector2.zero
+                local owner=v:FindFirstAncestorWhichIsA("ScrollingFrame"); local scroll=owner and owner.CanvasPosition or Vector2.zero
                 task.defer(function()
                     if v.Parent then
-                        print("[SchemaForgeUI][TEXT] "..v.Name.." focus="..tostring(v:IsFocused()).." caret="..v.CursorPosition.." sameControl=true scrollStable="..tostring(not owner:IsA("ScrollingFrame") or owner.CanvasPosition==scroll))
+                        print("[SchemaForgeUI][TEXT] "..v.Name.." focus="..tostring(v:IsFocused()).." caret="..v.CursorPosition.." sameControl=true scrollStable="..tostring(not owner or owner.CanvasPosition==scroll))
                     end
                 end)
             end)
