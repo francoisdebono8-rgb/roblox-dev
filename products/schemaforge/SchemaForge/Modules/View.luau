@@ -147,7 +147,7 @@ function View.mount(widget, selection, history)
 		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",active and "selected" or "pressed") end end)
 		b.MouseButton1Up:Connect(resting)
 		b.Activated:Connect(act(function() if b.Active then fn() end end,inspection))
-		if text~="" then tip(b,text) end
+		-- Visible control labels do not get redundant hover tooltips. Hover feedback stays visual only.
 		return b
 	end
 	local function row(parent,count)
@@ -160,7 +160,7 @@ function View.mount(widget, selection, history)
 		paint(box,"BackgroundColor3",value and "accent" or "bg"); local stroke=make("UIStroke",box,{}); paint(stroke,"Color","border")
 		local mark=label(box,"Check",value and utf8.char(0x2713) or "","onAccent",16); mark.TextXAlignment=Enum.TextXAlignment.Center
 		local caption=label(b,"Caption",text,"text",24); caption.Position=UDim2.fromOffset(32,5); caption.Size=UDim2.new(1,-40,0,24)
-		tip(b,text); return b
+		return b
 	end
 	local function heading(parent,name,text)
 		local l=label(parent,name,text,"text",24); l.TextSize=16; l.Font=Enum.Font.BuilderSansBold; return l
@@ -179,7 +179,6 @@ function View.mount(widget, selection, history)
 		local stripe=make("Frame",b,{Size=UDim2.fromOffset(3,34),Position=UDim2.fromOffset(0,10),BorderSizePixel=0,Visible=selected or marker~=nil}); paint(stripe,"BackgroundColor3",marker==false and "warning" or "note")
 		local t=label(b,"Identity",titleText,"text",20); t.Position=UDim2.fromOffset(10,7); t.Size=UDim2.new(1,-20,0,20); t.Font=Enum.Font.BuilderSansBold
 		local m=label(b,"Metadata",meta,"muted",18); m.Position=UDim2.fromOffset(10,30); m.Size=UDim2.new(1,-20,0,18); m.TextSize=12
-		tip(b,titleText.."\n"..meta)
 		return b
 	end
 	local function errorFor(part,key)
@@ -567,7 +566,12 @@ function View.mount(widget, selection, history)
 	local tabs={}
 	local function navigate(name) state.tab=name; state.menu=nil; state.page=1; state.detail=false end
 	for _,name in ipairs({"Rules","Audit","Repairs","Library"}) do
-		tabs[name]=button(nav,"Tab"..name,name,function() navigate(name) end); tabs[name].TextSize=12
+		local b=button(nav,"Tab"..name,name,function() navigate(name) end)
+		b.TextSize=12; b.UIStroke.Transparency=1; b.BackgroundTransparency=1
+		b:SetAttribute("SurfaceRole","surface"); b:SetAttribute("RestTransparency",1)
+		local indicator=make("Frame",b,{Name="ActiveIndicator",Position=UDim2.new(0.18,0,1,-2),Size=UDim2.new(0.64,0,0,2),BorderSizePixel=0,Visible=false})
+		paint(indicator,"BackgroundColor3","note")
+		tabs[name]=b
 	end
 	local function enabled(b,value)
 		b.Active=value; b.Selectable=value; b.TextTransparency=value and 0 or 0.5
@@ -593,7 +597,12 @@ function View.mount(widget, selection, history)
 		for i,f in ipairs(state.schema.fields) do local r=collection:FindFirstChild("RuleField"..i); if r then r.Identity.Text=f.name end end
 		for i,c in ipairs(state.schema.children) do local r=collection:FindFirstChild("RuleChild"..i); if r then r.Identity.Text=c.path end end
 		for name,b in pairs(tabs) do
-			paint(b,"BackgroundColor3",state.tab==name and "selected" or "surface"); paint(b,"TextColor3",state.tab==name and "note" or "text"); enabled(b,not state.confirm)
+			local selected=state.tab==name
+			b:SetAttribute("SurfaceRole",selected and "selected" or "surface")
+			b:SetAttribute("RestTransparency",selected and 0 or 1)
+			b.BackgroundTransparency=selected and 0 or 1; b.UIStroke.Transparency=1
+			paint(b,"BackgroundColor3",selected and "selected" or "surface"); paint(b,"TextColor3",selected and "note" or "muted"); enabled(b,not state.confirm)
+			local indicator=b:FindFirstChild("ActiveIndicator"); if indicator then indicator.Visible=selected end
 		end
 	end
 	local function layout()
@@ -621,6 +630,9 @@ function View.mount(widget, selection, history)
 		local width=root.AbsoluteSize.X<280 and 112 or 144
 		b.Position=primary and UDim2.new(1,-width,0,0) or UDim2.new()
 		b.Size=primary and UDim2.new(0,width,1,0) or UDim2.new(0,wide and 124 or 84,1,0)
+		if not primary then
+			b:SetAttribute("SurfaceRole","surface"); b:SetAttribute("RestTransparency",1); b.BackgroundTransparency=1
+		end
 		return b
 	end
 	local function preview()
@@ -662,6 +674,7 @@ function View.mount(widget, selection, history)
 		for _,p in ipairs({body,collection,rail}) do
 			for _,obj in ipairs(p:GetChildren()) do obj:Destroy() end
 			padding(p,8); stack(p,p==rail and 4 or 8)
+			make("UICorner",p,{CornerRadius=UDim.new(0,6)})
 			local border=make("UIStroke",p,{Thickness=1}); paint(border,"Color","border")
 		end
 		for _,obj in ipairs(actions:GetChildren()) do obj:Destroy() end
