@@ -97,16 +97,18 @@ Why?**
 
 This decides where the strongest product identity belongs.
 
-### Structured question 3 — in-product Forge Studio signature
-The repository currently has the brand direction documented, but no proven canonical
-in-product F asset should be silently invented.
+### Forge Studio signature — mark is already decided
+The Forge F is **not an open design choice**. The canonical mark is the exact F already
+approved across the five commercial covers.
 
-Options:
-A. restrained text signature: "Forge Studio" under/near SchemaForge;
-B. small F mark + "Forge Studio" only if a canonical mark can be sourced from approved assets;
-C. product-only header, Forge Studio shown in one quiet footer/about location.
+The remaining implementation question is only:
+- where/how strongly should that existing F appear in the plugin;
+- how to recover/import the exact approved geometry if the reusable asset is not yet in repo.
 
-Recommendation: start from A unless a canonical F asset is actually available.
+Do not propose alternate F shapes, logo redesigns, shields, badges or new monograms.
+
+A text-only "Forge Studio" treatment may be used temporarily if the exact approved F asset
+cannot yet be recovered, but the final brand pass should use the approved F where practical.
 
 ### Structured question 4 — SchemaForge motif
 Potential motifs that remain subtle enough for a professional tool:
@@ -164,7 +166,7 @@ Needs one reusable family rule:
 - no product-specific redesign of the F.
 
 If a canonical mark is not available, text is the fallback.
-Do not synthesize a random logo in code.
+Do not synthesize a random logo in code. Use the approved cover F as the canonical geometry.
 
 ---
 
