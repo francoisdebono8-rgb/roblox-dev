@@ -248,10 +248,17 @@ Inside plugins:
 - product name remains primary;
 - Forge Studio acts as maker signature.
 
-If a canonical reusable F asset is unavailable in the repository:
-- do not invent a random new logo silently;
-- surface a Level A/B question;
-- use a restrained text signature as the reversible fallback.
+The canonical Forge **F is already locked**: it is the F used in the approved five-product
+cover family. It is not an open design question and must not be redesigned.
+
+If that exact approved F is not yet available as a reusable in-product asset:
+- do not invent, reinterpret or "improve" its geometry;
+- use the approved cover F as the sole visual reference;
+- if the exact asset cannot be recovered faithfully, surface an implementation question
+  about how to import/reconstruct the existing mark, not a branding question about choosing
+  a new one;
+- a restrained text-only "Forge Studio" signature is only a temporary reversible fallback,
+  never a substitute brand direction.
 
 ---
 
