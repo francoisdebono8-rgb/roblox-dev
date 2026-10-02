@@ -1,0 +1,12 @@
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 600 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI] mounted 560x600 theme=Light sha256=a1dec3006fa7fe5108cdc4652a6d313729b83949cb959742c2c380556199407d
+[SchemaForgeUI] viewport=0, 0 size=560, 600
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 320, 600 13
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract

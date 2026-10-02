@@ -3,10 +3,26 @@
 **REOPENED / VISUAL ACCEPTANCE FAIL. Not ready as the Forge Studio reference.**
 
 Human review on 2026-09-29 rejected the first pass. Gate 15 is NOT PASS.
-Current continuation: [PREMIUM_PASS.md](PREMIUM_PASS.md), 2026-10-02, approved A/A/A choices.
+Current continuation: [INSPECTOR_PASS.md](INSPECTOR_PASS.md), 2026-10-02, approved compact-inspector A choice.
 Do not reuse this UI as the PresetForge reference.
 
 ## Current Candidate
+
+SHA256: `a1dec3006fa7fe5108cdc4652a6d313729b83949cb959742c2c380556199407d`.
+Inline property inspector, lighter BuilderSans hierarchy, quieter borders and
+explicit hover/focus/pressed treatments. Only production View changed.
+Compilation, reproducible source/package equality and native Rules Light
+geometry/mount at 320x600 and 560x600: **PASS**. [Native evidence](inspector-pass/native.txt).
+
+**Complete final screenshots, controlled GUI smoke and effect-state verification:
+NON TESTED / BLOCKED by native-window access. Visual acceptance PENDING.** A docked
+partial render was inspected, but it was clipped by the Studio dock; floating
+captures were blank. Neither is counted as a complete screenshot gate. Previous
+captures below depict the previous binary, not this inspector iteration.
+Full regression remains deliberately deferred until visual acceptance. No public
+asset update; no claim that #23 or the Forge reference UI is complete.
+
+## Previous A/A/A Candidate
 
 SHA256: `59750f2a641fc27276adf2c78e278eef3eb86846558422c9d9ef3b982f502cad`.
 Continuous panes, compact 46px rows, section-level additions, monochrome wide

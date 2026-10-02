@@ -47,22 +47,23 @@ function View.mount(widget, selection, history)
 		local t=studio.Theme
 		local background=t:GetColor(Enum.StudioStyleGuideColor.MainBackground)
 		colors.accent=Color3.fromRGB(99,214,174); colors.onAccent=Color3.fromRGB(15,45,34)
+		colors.accentHover=Color3.fromRGB(116,221,185); colors.accentPressed=Color3.fromRGB(80,196,156)
 		local light=background.R+background.G+background.B>1.5
 		colors.bg=light and Color3.fromRGB(246,247,247) or Color3.fromRGB(24,26,28)
-		colors.text=light and Color3.fromRGB(31,42,38) or Color3.fromRGB(240,243,241)
-		colors.muted=light and Color3.fromRGB(92,106,100) or Color3.fromRGB(154,166,161)
+		colors.text=light and Color3.fromRGB(36,39,41) or Color3.fromRGB(232,234,236)
+		colors.muted=light and Color3.fromRGB(102,108,111) or Color3.fromRGB(158,163,166)
 		colors.border=light and Color3.fromRGB(221,224,223) or Color3.fromRGB(47,51,53)
 		colors.note=light and Color3.fromRGB(18,105,77) or colors.accent
 		colors.error=light and Color3.fromRGB(175,53,46) or Color3.fromRGB(239,106,98)
 		colors.warning=light and Color3.fromRGB(143,96,25) or Color3.fromRGB(229,168,77)
 		colors.surface=light and Color3.fromRGB(248,249,249) or Color3.fromRGB(27,29,31)
 		colors.raised=light and Color3.fromRGB(250,251,251) or Color3.fromRGB(30,32,34)
-		colors.field=light and Color3.fromRGB(239,241,240) or Color3.fromRGB(37,40,42)
+		colors.field=light and Color3.fromRGB(241,243,243) or Color3.fromRGB(37,40,42)
 		colors.selected=light and Color3.fromRGB(230,237,233) or Color3.fromRGB(39,48,44)
 		colors.selectedBorder=light and Color3.fromRGB(131,175,154) or Color3.fromRGB(60,102,86)
 		colors.repair=light and Color3.fromRGB(237,247,241) or Color3.fromRGB(23,43,36)
-		colors.hover=light and Color3.fromRGB(231,237,234) or Color3.fromRGB(42,50,53)
-		colors.pressed=light and Color3.fromRGB(215,229,221) or Color3.fromRGB(48,65,58)
+		colors.hover=light and Color3.fromRGB(235,238,237) or Color3.fromRGB(40,44,46)
+		colors.pressed=light and Color3.fromRGB(226,232,229) or Color3.fromRGB(46,52,49)
 		for obj,roles in pairs(styles) do for property,role in pairs(roles) do obj[property]=colors[role] end end
 	end
 	theme()
@@ -93,10 +94,10 @@ function View.mount(widget, selection, history)
 	end
 	local header=make("Frame",root,{Name="Header",Size=UDim2.new(1,0,0,118),BackgroundTransparency=1})
 	local title=label(header,"ProductTitle","SchemaForge","text",24)
-	title.Position=UDim2.fromOffset(12,6); title.Size=UDim2.new(1,-104,0,18); title.TextSize=13; title.Font=Enum.Font.BuilderSansBold; paint(title,"TextColor3","muted")
+	title.Position=UDim2.fromOffset(12,6); title.Size=UDim2.new(1,-104,0,18); title.TextSize=12; title.Font=Enum.Font.BuilderSansMedium; paint(title,"TextColor3","muted")
 	local status=label(header,"DocumentState","Draft","muted",22); status.Position=UDim2.new(1,-84,0,8); status.Size=UDim2.fromOffset(72,22); status.TextXAlignment=Enum.TextXAlignment.Center; status.TextYAlignment=Enum.TextYAlignment.Center; status.TextSize=12
 	status.TextXAlignment=Enum.TextXAlignment.Right
-	local context=label(header,"ContractName","","text",22); context.Position=UDim2.fromOffset(12,24); context.Size=UDim2.new(1,-24,0,22); context.Font=Enum.Font.BuilderSansBold; context.TextSize=18
+	local context=label(header,"ContractName","","text",22); context.Position=UDim2.fromOffset(12,24); context.Size=UDim2.new(1,-24,0,22); context.Font=Enum.Font.BuilderSansMedium; context.TextSize=18
 	local tag=label(header,"ContractTag","","muted",18); tag.Position=UDim2.fromOffset(12,47); tag.Size=UDim2.new(1,-24,0,18); tag.TextSize=12
 	local scopeText=label(header,"AuditScope","","muted",18); scopeText.Visible=false
 	for _,obj in ipairs({context,tag,scopeText}) do tip(obj) end
@@ -142,14 +143,14 @@ function View.mount(widget, selection, history)
 			TextSize=13,TextTruncate=Enum.TextTruncate.AtEnd,Active=enabled~=false,Selectable=enabled~=false,AutoButtonColor=false,TextTransparency=enabled==false and 0.5 or 0})
 		make("UICorner",b,{CornerRadius=UDim.new(0,4)})
 		b:SetAttribute("PrimaryAction",active==true)
-		local border=make("UIStroke",b,{ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Thickness=1,Transparency=active and 1 or 0})
+		local border=make("UIStroke",b,{ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Thickness=1,Transparency=active and 1 or 0.7})
 		paint(border,"Color","border")
 		local role=active and "accent" or "field"
 		paint(b,"BackgroundColor3",role); paint(b,"TextColor3",active and "onAccent" or "text")
 		local function resting() paint(b,"BackgroundColor3",b:GetAttribute("SurfaceRole") or role); b.BackgroundTransparency=b:GetAttribute("RestTransparency") or 0 end
-		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accent" or "hover") end end)
+		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accentHover" or "hover") end end)
 		b.MouseLeave:Connect(resting)
-		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "selected" or "pressed") end end)
+		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accentPressed" or "pressed") end end)
 		b.MouseButton1Up:Connect(resting)
 		b.Activated:Connect(act(function() if b.Active then fn() end end,inspection))
 		-- Visible control labels do not get redundant hover tooltips. Hover feedback stays visual only.
@@ -165,22 +166,28 @@ function View.mount(widget, selection, history)
 	end
 	local function toggle(parent,name,text,value,setter)
 		local b=button(parent,name,"",function() setter(not value) end); b.BackgroundTransparency=1; b:SetAttribute("RestTransparency",1); b.UIStroke.Transparency=1
-		local box=make("Frame",b,{Name="Checkbox",Position=UDim2.fromOffset(8,8),Size=UDim2.fromOffset(16,16),BorderSizePixel=0})
+		local box=make("Frame",b,{Name="Checkbox",Position=UDim2.new(1,-20,0,9),Size=UDim2.fromOffset(14,14),BorderSizePixel=0})
 		paint(box,"BackgroundColor3",value and "accent" or "bg"); local stroke=make("UIStroke",box,{}); paint(stroke,"Color","border")
-		local mark=label(box,"Check",value and utf8.char(0x2713) or "","onAccent",16); mark.TextXAlignment=Enum.TextXAlignment.Center
-		local caption=label(b,"Caption",text,"text",24); caption.Position=UDim2.fromOffset(32,5); caption.Size=UDim2.new(1,-40,0,24)
+		make("UICorner",box,{CornerRadius=UDim.new(0,3)})
+		local mark=label(box,"Check",value and utf8.char(0x2713) or "","onAccent",14); mark.TextXAlignment=Enum.TextXAlignment.Center; mark.TextSize=12
+		local caption=label(b,"Caption",text,"text",20); caption.Position=UDim2.fromOffset(0,6); caption.Size=UDim2.new(1,-32,0,20); caption.TextSize=12
 		return b
 	end
 	local function heading(parent,name,text)
-		local l=label(parent,name,text,"text",24); l.TextSize=16; l.Font=Enum.Font.BuilderSansBold; return l
+		local l=label(parent,name,text,"text",24); l.TextSize=15; l.Font=Enum.Font.BuilderSansMedium; return l
 	end
 	local function section(parent,text)
-		local l=label(parent,"Section",text,"muted",28); l.TextSize=11; l.TextYAlignment=Enum.TextYAlignment.Bottom; l.Font=Enum.Font.BuilderSansMedium; return l
+		if parent==rail then
+			local l=label(parent,"Section",text,"muted",24); l.TextSize=11; l.TextYAlignment=Enum.TextYAlignment.Center; return l
+		end
+		local frame=make("Frame",parent,{Name="InspectorSection",Size=UDim2.new(1,-4,0,32),BackgroundTransparency=1})
+		local line=make("Frame",frame,{Position=UDim2.fromOffset(0,5),Size=UDim2.new(1,0,0,1),BorderSizePixel=0}); paint(line,"BackgroundColor3","border")
+		local l=label(frame,"Section",text,"text",18); l.Position=UDim2.fromOffset(0,13); l.TextSize=12; l.Font=Enum.Font.BuilderSansMedium; return l
 	end
 	local function sectionAction(parent,text,count,name,fn,available)
 		local frame=make("Frame",parent,{Name=name.."Section",Size=UDim2.new(1,-4,0,36),BackgroundTransparency=1})
 		local caption=label(frame,"Section",text.."  "..count,"muted",28)
-		caption.Position=UDim2.fromOffset(0,8); caption.Size=UDim2.new(1,-32,0,28); caption.TextSize=11; caption.Font=Enum.Font.BuilderSansMedium; caption.TextYAlignment=Enum.TextYAlignment.Center
+		caption.Position=UDim2.fromOffset(0,8); caption.Size=UDim2.new(1,-32,0,28); caption.TextSize=12; caption.Font=Enum.Font.BuilderSansMedium; caption.TextYAlignment=Enum.TextYAlignment.Center
 		local add=quiet(button(frame,name,"+",fn,false,available)); add.Position=UDim2.new(1,-28,0,8); add.Size=UDim2.fromOffset(28,28); add.TextSize=20
 		tip(add,name=="AddField" and "Add attribute rule" or "Add child rule")
 	end
@@ -206,20 +213,32 @@ function View.mount(widget, selection, history)
 		local ok,err=pcall(Schema.validate,s); return ok and "" or cleanError(err)
 	end
 	local function input(parent,name,titleText,value,setter,validator)
+		local embedded=parent:GetAttribute("CompactValue")==true
+		local note=name=="FieldDescription" or name=="ChildDescription"
+		local inline=not note and (#titleText<=18 or embedded)
 		local group=make("Frame",parent,{Name=name.."Group",Size=UDim2.new(1,-4,0,0),AutomaticSize=Enum.AutomaticSize.Y,BackgroundTransparency=1}); stack(group,4)
 		parent=group
-		label(parent,name.."Label",titleText,"muted")
+		local line=make("Frame",parent,{Name="PropertyRow",Size=UDim2.new(1,0,0,note and 72 or inline and 30 or 52),BackgroundTransparency=1})
+		local caption=label(line,name.."Label",titleText,"muted",inline and 30 or 18); caption.TextSize=12; caption.TextYAlignment=Enum.TextYAlignment.Center
+		local labelWidth=embedded and UDim.new(0,36) or UDim.new(0.34,0)
+		caption.Size=inline and UDim2.new(labelWidth.Scale,labelWidth.Offset-4,0,30) or UDim2.new(1,0,0,18)
+		tip(caption)
 		local owner=(name=="SchemaName" or name=="TargetTag" or name=="requiredTags" or name=="forbiddenTags") and "schema"
 			or state.childMode and ("child:"..state.childIndex) or ("field:"..state.fieldIndex)
 		local key=owner..":"..name
-		local box=make("TextBox",parent,{Name=name,Text=state.drafts[key] or (value==nil and "" or tostring(value)),Size=UDim2.new(1,-4,0,32),
-			ClearTextOnFocus=false,BorderSizePixel=0,Font=Enum.Font.BuilderSans,TextSize=14,TextXAlignment=Enum.TextXAlignment.Left})
+		local box=make("TextBox",line,{Name=name,Text=state.drafts[key] or (value==nil and "" or tostring(value)),
+			Position=inline and UDim2.new(labelWidth.Scale,labelWidth.Offset,0,0) or UDim2.fromOffset(0,22),
+			Size=inline and UDim2.new(1-labelWidth.Scale,-labelWidth.Offset,0,30) or UDim2.new(1,0,0,note and 50 or 30),
+			ClearTextOnFocus=false,BorderSizePixel=0,Font=Enum.Font.BuilderSans,TextSize=13,TextXAlignment=Enum.TextXAlignment.Left,
+			TextWrapped=note,TextYAlignment=note and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center})
 		inputOwners[box]=owner=="schema" and state.schema or state.childMode and state.schema.children[state.childIndex] or state.schema.fields[state.fieldIndex]
 		paint(box,"BackgroundColor3","field"); paint(box,"TextColor3","text"); padding(box,6)
-		make("UICorner",box,{CornerRadius=UDim.new(0,6)})
-		local stroke=make("UIStroke",box,{ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Thickness=1}); paint(stroke,"Color","border")
-		box.Focused:Connect(function() paint(stroke,"Color","note") end)
-		box.FocusLost:Connect(function() paint(stroke,"Color","border") end)
+		make("UICorner",box,{CornerRadius=UDim.new(0,4)})
+		local stroke=make("UIStroke",box,{ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Thickness=1,Transparency=0.75}); paint(stroke,"Color","border")
+		box.MouseEnter:Connect(function() if not box:IsFocused() then stroke.Transparency=0.25; paint(box,"BackgroundColor3","hover") end end)
+		box.MouseLeave:Connect(function() if not box:IsFocused() then stroke.Transparency=0.75; paint(box,"BackgroundColor3","field") end end)
+		box.Focused:Connect(function() stroke.Transparency=0; paint(stroke,"Color","note"); paint(box,"BackgroundColor3","raised") end)
+		box.FocusLost:Connect(function() stroke.Transparency=0.75; paint(stroke,"Color","border"); paint(box,"BackgroundColor3","field") end)
 		local errorText=label(parent,name.."Error","","error")
 		local function validate()
 			local ok,err=pcall(function() return validator and validator() or "" end)
@@ -234,11 +253,18 @@ function View.mount(widget, selection, history)
 		return box
 	end
 	local function menu(parent,name,titleText,options,value,setter)
-		local b=button(parent,name,titleText..": "..tostring(value),function() state.menu=state.menu==name and nil or name end)
-		b.TextXAlignment=Enum.TextXAlignment.Left; padding(b,8)
+		local property=parent==body
+		if property then
+			local line=make("Frame",parent,{Name=name.."Group",Size=UDim2.new(1,-4,0,30),BackgroundTransparency=1})
+			local caption=label(line,name.."Label",titleText,"muted",30); caption.Size=UDim2.new(0.34,-4,0,30); caption.TextSize=12; caption.TextYAlignment=Enum.TextYAlignment.Center; tip(caption)
+			parent=line
+		end
+		local b=button(parent,name,property and tostring(value) or titleText..": "..tostring(value),function() state.menu=state.menu==name and nil or name end)
+		if property then b.Position=UDim2.fromScale(0.34,0); b.Size=UDim2.new(0.66,0,0,30) end
+		b.TextXAlignment=Enum.TextXAlignment.Left; b.Font=Enum.Font.BuilderSans; padding(b,6); b.UIPadding.PaddingRight=UDim.new(0,20)
 		local arrow=make("ImageLabel",b,{Name="MenuArrow",BackgroundTransparency=1,Image="rbxasset://textures/DevConsole/ArrowDown.png",
-			Position=UDim2.new(1,-12,0.5,-4),Size=UDim2.fromOffset(8,8)})
-		paint(arrow,"ImageColor3","text")
+			Position=UDim2.new(1,4,0.5,-3),Size=UDim2.fromOffset(6,6)})
+		paint(arrow,"ImageColor3","muted")
 		if state.menu==name then
 			local popup=make("ScrollingFrame",root,{Name="MenuPopup",Size=UDim2.fromOffset(180,math.min(192,#options*36+8)),ZIndex=30,
 				BorderSizePixel=0,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=3})
@@ -263,6 +289,7 @@ function View.mount(widget, selection, history)
 		local columns={}
 		for i=1,2 do
 			columns[i]=make("Frame",pair,{Size=UDim2.new(0.5,-4,0,0),AutomaticSize=Enum.AutomaticSize.Y,BackgroundTransparency=1}); stack(columns[i],4)
+			columns[i]:SetAttribute("CompactValue",true)
 		end
 		return columns
 	end
@@ -303,8 +330,8 @@ function View.mount(widget, selection, history)
 	local function rules()
 		if state.contract then
 		heading(body,"EditorTitle","Contract settings")
-		input(body,"SchemaName","Schema name",state.schema.name,function(v) state.schema.name=v end,function() return errorFor("schema","name") end)
-		input(body,"TargetTag","Target tag (exact)",state.schema.tag,function(v) state.schema.tag=v end,function() return errorFor("schema","tag") end)
+		input(body,"SchemaName","Name",state.schema.name,function(v) state.schema.name=v end,function() return errorFor("schema","name") end)
+		input(body,"TargetTag","Target tag",state.schema.tag,function(v) state.schema.tag=v end,function() return errorFor("schema","tag") end)
 		for _,key in ipairs({"requiredTags","forbiddenTags"}) do
 			input(body,key,key=="requiredTags" and "Required tags (comma-separated)" or "Forbidden tags (comma-separated)",table.concat(state.schema[key] or {},","),function(v)
 				state.schema[key]={}; if v~="" then for _,part in ipairs(string.split(v,",")) do table.insert(state.schema[key],part:match("^%s*(.-)%s*$")) end end
@@ -313,14 +340,14 @@ function View.mount(widget, selection, history)
 				local ok,err=pcall(Schema.validate,s); return ok and "" or cleanError(err)
 			end)
 		end
-		menu(body,"ExpectedClass","Expected class",Schema.classes,state.schema.className,function(v) state.schema.className=v; changed() end)
+		menu(body,"ExpectedClass","Class",Schema.classes,state.schema.className,function(v) state.schema.className=v; changed() end)
 		return
 		end
 		if state.childMode then
 			local c=state.schema.children[state.childIndex]
 			if c then
-				label(body,"EditorKind","CHILD RULE","muted",18); heading(body,"EditorTitle",c.path)
-				input(body,"ChildPath","Child path / nested child",c.path,function(v) c.path=v end,function()
+				label(body,"EditorKind","Child rule","muted",16).TextSize=11; heading(body,"EditorTitle",c.path)
+				input(body,"ChildPath","Path",c.path,function(v) c.path=v end,function()
 					local count=0; for _,other in ipairs(state.schema.children) do if other.path==c.path then count+=1 end end
 					if count>1 then return "Duplicate child path: "..c.path end
 					return errorFor("child")
@@ -329,15 +356,14 @@ function View.mount(widget, selection, history)
 				toggle(body,"OptionalChild","Optional if absent",c.optional==true,function(v) c.optional=v; changed() end)
 				input(body,"ChildDescription","Designer note",c.description,function(v) c.description=v end,function() return #c.description>240 and "At most 240 characters." or "" end)
 				separator(body)
-				local remove=button(body,"RemoveChild","Remove child rule",function() state.confirm={title="Remove this child rule?",fn=function() table.remove(state.schema.children,state.childIndex); state.childIndex=math.max(1,state.childIndex-1); state.drafts={}; state.detail=false; changed() end} end)
+				local remove=quiet(button(body,"RemoveChild","Remove child rule",function() state.confirm={title="Remove this child rule?",fn=function() table.remove(state.schema.children,state.childIndex); state.childIndex=math.max(1,state.childIndex-1); state.drafts={}; state.detail=false; changed() end} end))
 				paint(remove,"TextColor3","error")
 			end
 		else
 			local f=state.schema.fields[state.fieldIndex]
 			if f then
-				label(body,"EditorKind","ATTRIBUTE RULE","muted",18); heading(body,"EditorTitle",f.name)
-				section(body,"IDENTITY")
-				input(body,"FieldName","Attribute name",f.name,function(v) f.name=v end,function()
+				label(body,"EditorKind","Attribute rule","muted",16).TextSize=11; heading(body,"EditorTitle",f.name)
+				input(body,"FieldName","Name",f.name,function(v) f.name=v end,function()
 					local count=0; for _,other in ipairs(state.schema.fields) do if other.name==f.name then count+=1 end end
 					if count>1 then return "Duplicate attribute: "..f.name end
 					return errorFor("field")
@@ -348,7 +374,7 @@ function View.mount(widget, selection, history)
 					f.default=Schema.initialValue(v); state.drafts={}; changed()
 				end)
 				toggle(body,"Required","Required",f.required,function(v) f.required=v; changed() end)
-				section(body,"CONSTRAINTS")
+				if f.kind~="boolean" then section(body,"Constraints") end
 				if f.kind=="number" then
 					local pair=pairedInputs(body)
 					for i,key in ipairs({"min","max"}) do
@@ -386,21 +412,21 @@ function View.mount(widget, selection, history)
 						end,function() return errorFor("field") end)
 					end
 				end
-				section(body,"SAFE REPAIR")
+				section(body,"Missing-value repair")
 				toggle(body,"UseDefault","Repair missing",f.hasDefault,function(v) f.hasDefault=v; changed() end)
 				if f.hasDefault then
 					if f.kind=="boolean" then toggle(body,"DefaultBoolean","Default: true",f.default==true,function(v) f.default=v; changed() end)
-					else input(body,"DefaultValue",Schema.components(f.default) and "Default components (comma-separated)" or "Default value",Schema.editValue(f.default),function(v)
+					else input(body,"DefaultValue",Schema.components(f.default) and "Default components (comma-separated)" or "Default",Schema.editValue(f.default),function(v)
 						local ok,value=pcall(Schema.parseValue,f.kind,v); f.default=ok and value or v
 					end,function()
 						local ok,err=pcall(Schema.valueError,f,f.default)
 						return not ok and "Fix the rule bounds first." or err or ""
 					end) end
 				end
-				section(body,"DESIGNER NOTE")
-				input(body,"FieldDescription","Note",f.description,function(v) f.description=v end,function() return #f.description>240 and "At most 240 characters." or "" end)
 				separator(body)
-				local remove=button(body,"RemoveField","Remove attribute rule",function() state.confirm={title="Remove this attribute rule?",fn=function() table.remove(state.schema.fields,state.fieldIndex); state.fieldIndex=math.max(1,state.fieldIndex-1); state.drafts={}; state.detail=false; changed() end} end)
+				input(body,"FieldDescription","Designer note",f.description,function(v) f.description=v end,function() return #f.description>240 and "At most 240 characters." or "" end)
+				separator(body)
+				local remove=quiet(button(body,"RemoveField","Remove attribute rule",function() state.confirm={title="Remove this attribute rule?",fn=function() table.remove(state.schema.fields,state.fieldIndex); state.fieldIndex=math.max(1,state.fieldIndex-1); state.drafts={}; state.detail=false; changed() end} end))
 				paint(remove,"TextColor3","error")
 			end
 		end
@@ -414,7 +440,7 @@ function View.mount(widget, selection, history)
 			label(collection,"EmptyHint","Capture one configured reference to start.","muted")
 			button(collection,"Capture","Capture reference",capture)
 		end
-		sectionAction(collection,"ATTRIBUTES",#state.schema.fields,"AddField",function()
+		sectionAction(collection,"Attributes",#state.schema.fields,"AddField",function()
 			assert(#state.schema.fields<32,"Limit: 32 attribute rules")
 			table.insert(state.schema.fields,{name="Attribute"..(#state.schema.fields+1),kind="number",required=true,hasDefault=false,default=0,integer=false,choices={},description=""})
 			state.fieldIndex=#state.schema.fields; state.contract=false; state.childMode=false; state.detail=true; state.drafts={}; changed()
@@ -430,7 +456,7 @@ function View.mount(widget, selection, history)
 				state.contract=false; state.childMode=false; state.fieldIndex=i; state.detail=true; state.menu=nil
 			end)
 		end
-		sectionAction(collection,"CHILDREN",#state.schema.children,"AddChild",function()
+		sectionAction(collection,"Children",#state.schema.children,"AddChild",function()
 			assert(#state.schema.children<32,"Limit: 32 child rules")
 			table.insert(state.schema.children,{path="Child"..(#state.schema.children+1),className="Instance",description=""})
 			state.childIndex=#state.schema.children; state.contract=false; state.childMode=true; state.detail=true; state.drafts={}; changed()
@@ -707,12 +733,12 @@ function View.mount(widget, selection, history)
 		local popup=root:FindFirstChild("MenuPopup"); if popup then popup:Destroy() end
 		for _,p in ipairs({body,collection,rail}) do
 			for _,obj in ipairs(p:GetChildren()) do obj:Destroy() end
-			padding(p,p==rail and 8 or 12); stack(p,p==collection and 2 or p==rail and 4 or 6)
+			padding(p,p==rail and 8 or 12); stack(p,p==collection and 2 or 4)
 		end
 		for _,obj in ipairs(actions:GetChildren()) do obj:Destroy() end
 		layout()
 		if wide then
-			section(rail,"CONTRACT")
+			section(rail,"Contract")
 			for _,name in ipairs({"Rules","Audit","Repairs","Library"}) do
 				local b=button(rail,"Nav"..name,"",function() navigate(name) end,false,not state.confirm)
 				b:SetAttribute("SurfaceRole",state.tab==name and "selected" or "bg")
@@ -726,7 +752,7 @@ function View.mount(widget, selection, history)
 				local count=name=="Rules" and (#state.schema.fields+#state.schema.children) or name=="Audit" and state.audit and #state.audit.issues or name=="Repairs" and state.plan and #state.plan.changes
 				if count then local l=label(b,"Count",tostring(count),"muted",18); l.Position=UDim2.new(1,-18,0,7); l.Size=UDim2.fromOffset(14,18); l.TextSize=11; l.TextXAlignment=Enum.TextXAlignment.Right end
 			end
-			separator(rail); section(rail,"LIBRARY"); libraryList(rail,true)
+			separator(rail); section(rail,"Library"); libraryList(rail,true)
 		end
 		if state.confirm then
 			heading(body,"ConfirmationTitle","Confirm change")
