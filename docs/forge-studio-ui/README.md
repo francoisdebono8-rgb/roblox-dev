@@ -112,6 +112,7 @@ A shared visual grammar must **not** become five recolored clones.
   accents, required states and product signatures.
 - [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) — future UI-pass engineering
   boundaries and acceptance gates **after all five V2s are complete**.
+- [BRAND_PRODUCT_IDENTITY_PASS.md](BRAND_PRODUCT_IDENTITY_PASS.md) — reusable post-layout phase for reference convergence, Forge Studio maker identity, product-specific identity, open/structured design questions and cross-product pattern extraction.
 
 ## Core direction
 
