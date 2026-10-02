@@ -83,6 +83,7 @@ function View.mount(widget, selection, history)
 			hovering=true
 			task.delay(0.65,function()
 				if not hovering or not obj.Parent or disposed then return end
+				if text == nil and obj.TextFits then return end
 				tooltip.Text=text or obj.Text; tooltip.Size=UDim2.new(1,-24,0,0)
 				tooltip.Position=UDim2.fromOffset(12,math.clamp(obj.AbsolutePosition.Y-root.AbsolutePosition.Y+obj.AbsoluteSize.Y,8,math.max(8,root.AbsoluteSize.Y-100)))
 				tooltip.Visible=true

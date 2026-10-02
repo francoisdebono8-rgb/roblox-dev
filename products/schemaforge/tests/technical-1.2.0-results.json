@@ -1,16 +1,16 @@
 {
   "benchmark": {
-    "candidate_full_audit_median_ms": "0.171417",
+    "candidate_full_audit_median_ms": "0.383958",
     "candidate_visits": "20",
     "child_visits": "0",
     "descendants": "20000",
-    "old_full_audit_median_ms": "20.367583",
+    "old_full_audit_median_ms": "42.751000",
     "old_scope_visits": "20001",
     "repetitions": "7",
     "targets": "20",
     "warmup": "2"
   },
-  "candidate_sha256": "1ffab441b8ee88db2372e113776d2fb7cfdb5b890e8576cbae36ff378229fbec",
+  "candidate_sha256": "2f8436e1ee9590021e9c4ab86e6ef30363e2a59067108a2af24cd31247c07bda",
   "matrix": {
     "1": "PASS",
     "2": "PASS",
@@ -55,6 +55,6 @@
     "41": "PASS"
   },
   "native_fail": 0,
-  "native_pass": 52,
-  "studio_version": "0.740.19.7400003"
+  "native_pass": 53,
+  "studio_version": "0.741.19.7411056"
 }

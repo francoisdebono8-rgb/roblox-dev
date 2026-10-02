@@ -3,15 +3,30 @@
 **REOPENED / VISUAL ACCEPTANCE FAIL. Not ready as the Forge Studio reference.**
 
 Human review on 2026-09-29 rejected the first pass. Gate 15 is NOT PASS.
-The results below are historical technical evidence for `aaae6989...`, not
-acceptance of the second pass. New reference-fidelity work is tracked in
-[SECOND_PASS.md](SECOND_PASS.md). Do not reuse this UI as the PresetForge reference.
+Current continuation: [OCTOBER_REVIEW.md](OCTOBER_REVIEW.md), 2026-10-02.
+Do not reuse this UI as the PresetForge reference.
+
+## Current Candidate
+
+SHA256: `2f8436e1ee9590021e9c4ab86e6ef30363e2a59067108a2af24cd31247c07bda`.
+Includes the remote quiet-navigation/hover corrections and the remaining
+full-text-tooltip guard. Exact source/package correspondence and compilation
+PASS. Studio 0.741.19.7411056 executed **53 PASS / 0 FAIL**, all **41/41** technical
+matrix rows PASS on this exact artifact. [Evidence](october-review/native-technical.txt).
+
+**GUI walkthrough, final comparative screenshots and human visual acceptance:
+NON TESTED / PENDING.** The user cannot leave Studio available for reliable input
+now. A successful native mount/geometry check is not graphical acceptance.
+No publication, no other product work, no issue completion claim.
+
+## Historical Second Pass
 
 Second-pass candidate `647741f2...`: **53 native tests PASS / 0 FAIL**, 41/41
 technical matrix rows PASS. Exact packaging/source correspondence PASS. The Rules
 Light geometry probe passes five sizes; only its 320px native capture is retained.
 The full GUI walkthrough, comparable Audit captures, Dark-theme review and human
 visual acceptance remain **NON TESTED / PENDING**. No completion claim for #23.
+See [SECOND_PASS.md](SECOND_PASS.md). These results do not certify the current UI.
 
 ## Historical First Pass (Superseded Visual Acceptance)
 
