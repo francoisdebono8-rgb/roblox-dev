@@ -274,3 +274,25 @@ Do not create a speculative Forge framework before two implementations prove the
 component is useful.
 Do not weaken existing stale-plan, transaction, persistence or Undo/Redo safeguards to
 make a prettier flow easier to implement.
+
+
+## Hover and tooltip rule
+
+Forge Studio must not use a generic hover "magnifier" that repeats the hovered control's
+label in a floating/below-control tooltip.
+
+Hover should normally communicate only through subtle visual state:
+- restrained surface lift/tint;
+- border/focus treatment where appropriate;
+- cursor/pressed feedback.
+
+A tooltip is justified only when it reveals information that is genuinely unavailable
+in the visible control, for example:
+- a truncated full object/path value;
+- an icon-only action label;
+- a keyboard shortcut;
+- a concise explanation of an unfamiliar technical symbol.
+
+Do not tooltip ordinary visible text such as a button label, tab name, finding title,
+field name or other already-readable copy. Repeating the same text on hover is a FAIL
+for the Forge Studio visual system.
