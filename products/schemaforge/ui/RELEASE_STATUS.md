@@ -3,10 +3,27 @@
 **REOPENED / VISUAL ACCEPTANCE FAIL. Not ready as the Forge Studio reference.**
 
 Human review on 2026-09-29 rejected the first pass. Gate 15 is NOT PASS.
-Current continuation: [OCTOBER_REVIEW.md](OCTOBER_REVIEW.md), 2026-10-02.
+Current continuation: [PREMIUM_PASS.md](PREMIUM_PASS.md), 2026-10-02, approved A/A/A choices.
 Do not reuse this UI as the PresetForge reference.
 
 ## Current Candidate
+
+SHA256: `59750f2a641fc27276adf2c78e278eef3eb86846558422c9d9ef3b982f502cad`.
+Continuous panes, compact 46px rows, section-level additions, monochrome wide
+navigation and quiet secondary commands. Production changes limited to View.
+Compilation, reproducible source/package equality and native Rules Light
+geometry/mount at 320x600 and 560x600: **PASS**.
+
+Actual final-binary captures: [320](premium-pass/light-320x600-rules.png),
+[560](premium-pass/light-560x600-rules.png).
+
+**Visual acceptance PENDING; controlled GUI smoke NON TESTED.** Foreground changes
+prevented a reliable complete interaction walkthrough. No claim that the new
+candidate passes the previous 53/41 regression: that suite and the full theme/size
+matrix are deliberately deferred until visual acceptance, per the premium brief.
+No publication or completion claim. The public asset remains untouched.
+
+## Previous October Candidate
 
 SHA256: `2f8436e1ee9590021e9c4ab86e6ef30363e2a59067108a2af24cd31247c07bda`.
 Includes the remote quiet-navigation/hover corrections and the remaining

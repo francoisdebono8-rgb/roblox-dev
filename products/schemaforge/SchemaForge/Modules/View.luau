@@ -48,17 +48,17 @@ function View.mount(widget, selection, history)
 		local background=t:GetColor(Enum.StudioStyleGuideColor.MainBackground)
 		colors.accent=Color3.fromRGB(99,214,174); colors.onAccent=Color3.fromRGB(15,45,34)
 		local light=background.R+background.G+background.B>1.5
-		colors.bg=light and Color3.fromRGB(234,238,237) or Color3.fromRGB(21,25,28)
+		colors.bg=light and Color3.fromRGB(246,247,247) or Color3.fromRGB(24,26,28)
 		colors.text=light and Color3.fromRGB(31,42,38) or Color3.fromRGB(240,243,241)
 		colors.muted=light and Color3.fromRGB(92,106,100) or Color3.fromRGB(154,166,161)
-		colors.border=light and Color3.fromRGB(206,216,211) or Color3.fromRGB(52,60,66)
+		colors.border=light and Color3.fromRGB(221,224,223) or Color3.fromRGB(47,51,53)
 		colors.note=light and Color3.fromRGB(18,105,77) or colors.accent
 		colors.error=light and Color3.fromRGB(175,53,46) or Color3.fromRGB(239,106,98)
 		colors.warning=light and Color3.fromRGB(143,96,25) or Color3.fromRGB(229,168,77)
-		colors.surface=light and Color3.fromRGB(247,249,248) or Color3.fromRGB(26,31,35)
-		colors.raised=light and Color3.fromRGB(255,255,255) or Color3.fromRGB(32,38,43)
-		colors.field=light and Color3.fromRGB(240,244,242) or Color3.fromRGB(37,44,49)
-		colors.selected=light and Color3.fromRGB(229,241,235) or Color3.fromRGB(32,43,39)
+		colors.surface=light and Color3.fromRGB(248,249,249) or Color3.fromRGB(27,29,31)
+		colors.raised=light and Color3.fromRGB(250,251,251) or Color3.fromRGB(30,32,34)
+		colors.field=light and Color3.fromRGB(239,241,240) or Color3.fromRGB(37,40,42)
+		colors.selected=light and Color3.fromRGB(230,237,233) or Color3.fromRGB(39,48,44)
 		colors.selectedBorder=light and Color3.fromRGB(131,175,154) or Color3.fromRGB(60,102,86)
 		colors.repair=light and Color3.fromRGB(237,247,241) or Color3.fromRGB(23,43,36)
 		colors.hover=light and Color3.fromRGB(231,237,234) or Color3.fromRGB(42,50,53)
@@ -95,26 +95,29 @@ function View.mount(widget, selection, history)
 	local title=label(header,"ProductTitle","SchemaForge","text",24)
 	title.Position=UDim2.fromOffset(12,6); title.Size=UDim2.new(1,-104,0,18); title.TextSize=13; title.Font=Enum.Font.BuilderSansBold; paint(title,"TextColor3","muted")
 	local status=label(header,"DocumentState","Draft","muted",22); status.Position=UDim2.new(1,-84,0,8); status.Size=UDim2.fromOffset(72,22); status.TextXAlignment=Enum.TextXAlignment.Center; status.TextYAlignment=Enum.TextYAlignment.Center; status.TextSize=12
-	status.BackgroundTransparency=0; paint(status,"BackgroundColor3","selected"); make("UICorner",status,{CornerRadius=UDim.new(0,5)})
+	status.TextXAlignment=Enum.TextXAlignment.Right
 	local context=label(header,"ContractName","","text",22); context.Position=UDim2.fromOffset(12,24); context.Size=UDim2.new(1,-24,0,22); context.Font=Enum.Font.BuilderSansBold; context.TextSize=18
 	local tag=label(header,"ContractTag","","muted",18); tag.Position=UDim2.fromOffset(12,47); tag.Size=UDim2.new(1,-24,0,18); tag.TextSize=12
 	local scopeText=label(header,"AuditScope","","muted",18); scopeText.Visible=false
 	for _,obj in ipairs({context,tag,scopeText}) do tip(obj) end
 	local nav=make("Frame",header,{Name="Tabs",Position=UDim2.fromOffset(12,70),Size=UDim2.new(1,-24,0,30),BackgroundTransparency=1})
 	make("UIGridLayout",nav,{CellSize=UDim2.new(0.25,-3,1,0),CellPadding=UDim2.fromOffset(4,0),SortOrder=Enum.SortOrder.LayoutOrder})
+	local headerLine=make("Frame",header,{Position=UDim2.new(0,0,1,-1),Size=UDim2.new(1,0,0,1),BorderSizePixel=0}); paint(headerLine,"BackgroundColor3","border")
 	local workspaceUI=make("Frame",root,{Name="Body",BackgroundTransparency=1,ClipsDescendants=true})
 	local function pane(name)
 		local p=make("ScrollingFrame",workspaceUI,{Name=name,BorderSizePixel=0,CanvasSize=UDim2.new(),
 			AutomaticCanvasSize=Enum.AutomaticSize.Y,ScrollingDirection=Enum.ScrollingDirection.Y,ScrollBarThickness=3,ClipsDescendants=true})
-		paint(p,"BackgroundColor3",name=="Detail" and "raised" or "surface")
+		paint(p,"BackgroundColor3",name=="Navigation" and "bg" or name=="Detail" and "raised" or "surface")
 		return p
 	end
 	rail=pane("Navigation"); collection=pane("Collection"); body=pane("Detail")
-	local footer=make("Frame",root,{Name="Footer",Position=UDim2.new(0,12,1,-62),Size=UDim2.new(1,-24,0,62),BackgroundTransparency=1})
-	local message=label(footer,"Status","","muted",18); message.TextSize=12
+	local paneLines={}
+	for i=1,2 do paneLines[i]=make("Frame",workspaceUI,{Name="PaneSeparator"..i,Size=UDim2.new(0,1,1,0),BorderSizePixel=0}); paint(paneLines[i],"BackgroundColor3","border") end
+	local footer=make("Frame",root,{Name="Footer",Position=UDim2.new(0,12,1,-58),Size=UDim2.new(1,-24,0,58),BackgroundTransparency=1})
+	local message=label(footer,"Status","","muted",18); message.TextSize=11
 	tip(message)
-	local actions=make("Frame",footer,{Name="Actions",Position=UDim2.fromOffset(0,14),Size=UDim2.new(1,0,0,34),BackgroundTransparency=1})
-	local line=make("Frame",footer,{Size=UDim2.new(1,0,0,1),BorderSizePixel=0}); paint(line,"BackgroundColor3","border")
+	local actions=make("Frame",footer,{Name="Actions",Position=UDim2.fromOffset(0,14),Size=UDim2.new(1,0,0,32),BackgroundTransparency=1})
+	local line=make("Frame",footer,{Position=UDim2.fromOffset(-12,0),Size=UDim2.new(1,24,0,1),BorderSizePixel=0}); paint(line,"BackgroundColor3","border")
 	local function invalidate() state.audit=nil; state.plan=nil; state.stale=nil; state.finding=nil; state.page=1; state.picked={}; state.subsetActive=false end
 	local function changed()
 		local previousPlan=state.plan
@@ -137,18 +140,23 @@ function View.mount(widget, selection, history)
 	local function button(parent,name,text,fn,active,enabled,inspection)
 		local b=make("TextButton",parent,{Name=name,Text=text,Size=UDim2.new(1,-4,0,32),BorderSizePixel=0,Font=Enum.Font.BuilderSansMedium,
 			TextSize=13,TextTruncate=Enum.TextTruncate.AtEnd,Active=enabled~=false,Selectable=enabled~=false,AutoButtonColor=false,TextTransparency=enabled==false and 0.5 or 0})
-		make("UICorner",b,{CornerRadius=UDim.new(0,6)})
+		make("UICorner",b,{CornerRadius=UDim.new(0,4)})
+		b:SetAttribute("PrimaryAction",active==true)
 		local border=make("UIStroke",b,{ApplyStrokeMode=Enum.ApplyStrokeMode.Border,Thickness=1,Transparency=active and 1 or 0})
 		paint(border,"Color","border")
 		local role=active and "accent" or "field"
 		paint(b,"BackgroundColor3",role); paint(b,"TextColor3",active and "onAccent" or "text")
 		local function resting() paint(b,"BackgroundColor3",b:GetAttribute("SurfaceRole") or role); b.BackgroundTransparency=b:GetAttribute("RestTransparency") or 0 end
-		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",active and "accent" or "hover") end end)
+		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accent" or "hover") end end)
 		b.MouseLeave:Connect(resting)
-		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",active and "selected" or "pressed") end end)
+		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "selected" or "pressed") end end)
 		b.MouseButton1Up:Connect(resting)
 		b.Activated:Connect(act(function() if b.Active then fn() end end,inspection))
 		-- Visible control labels do not get redundant hover tooltips. Hover feedback stays visual only.
+		return b
+	end
+	local function quiet(b)
+		b.UIStroke.Transparency=1; b.BackgroundTransparency=1; b:SetAttribute("RestTransparency",1)
 		return b
 	end
 	local function row(parent,count)
@@ -167,19 +175,27 @@ function View.mount(widget, selection, history)
 		local l=label(parent,name,text,"text",24); l.TextSize=16; l.Font=Enum.Font.BuilderSansBold; return l
 	end
 	local function section(parent,text)
-		local l=label(parent,"Section",text,"muted",24); l.TextSize=12; l.TextYAlignment=Enum.TextYAlignment.Bottom; l.Font=Enum.Font.BuilderSansMedium; return l
+		local l=label(parent,"Section",text,"muted",28); l.TextSize=11; l.TextYAlignment=Enum.TextYAlignment.Bottom; l.Font=Enum.Font.BuilderSansMedium; return l
+	end
+	local function sectionAction(parent,text,count,name,fn,available)
+		local frame=make("Frame",parent,{Name=name.."Section",Size=UDim2.new(1,-4,0,36),BackgroundTransparency=1})
+		local caption=label(frame,"Section",text.."  "..count,"muted",28)
+		caption.Position=UDim2.fromOffset(0,8); caption.Size=UDim2.new(1,-32,0,28); caption.TextSize=11; caption.Font=Enum.Font.BuilderSansMedium; caption.TextYAlignment=Enum.TextYAlignment.Center
+		local add=quiet(button(frame,name,"+",fn,false,available)); add.Position=UDim2.new(1,-28,0,8); add.Size=UDim2.fromOffset(28,28); add.TextSize=20
+		tip(add,name=="AddField" and "Add attribute rule" or "Add child rule")
 	end
 	local function separator(parent)
 		local f=make("Frame",parent,{Size=UDim2.new(1,-4,0,1),BorderSizePixel=0}); paint(f,"BackgroundColor3","border")
 	end
 	local function entry(parent,name,titleText,meta,selected,fn,marker)
-		local b=button(parent,name,"",fn,false,true,true); b.Size=UDim2.new(1,-4,0,54); b.BackgroundTransparency=selected and 0 or 1
+		local b=button(parent,name,"",fn,false,true,true); b.Size=UDim2.new(1,-4,0,46); b.BackgroundTransparency=selected and 0 or 1
 		b:SetAttribute("SurfaceRole",selected and "selected" or "surface"); b:SetAttribute("RestTransparency",selected and 0 or 1)
 		paint(b,"BackgroundColor3",selected and "selected" or "surface")
-		b.UIStroke.Transparency=selected and 0 or 1; paint(b.UIStroke,"Color","selectedBorder")
-		local stripe=make("Frame",b,{Size=UDim2.fromOffset(3,34),Position=UDim2.fromOffset(0,10),BorderSizePixel=0,Visible=selected or marker~=nil}); paint(stripe,"BackgroundColor3",marker==false and "warning" or "note")
-		local t=label(b,"Identity",titleText,"text",20); t.Position=UDim2.fromOffset(10,7); t.Size=UDim2.new(1,-20,0,20); t.Font=Enum.Font.BuilderSansBold
-		local m=label(b,"Metadata",meta,"muted",18); m.Position=UDim2.fromOffset(10,30); m.Size=UDim2.new(1,-20,0,18); m.TextSize=12
+		b.UIStroke.Transparency=1
+		local stripe=make("Frame",b,{Size=UDim2.fromOffset(2,28),Position=UDim2.fromOffset(0,9),BorderSizePixel=0,Visible=marker~=nil}); paint(stripe,"BackgroundColor3",marker==false and "warning" or "note")
+		local t=label(b,"Identity",titleText,"text",18); t.Position=UDim2.fromOffset(8,5); t.Size=UDim2.new(1,-16,0,18); t.Font=Enum.Font.BuilderSansMedium
+		local m=label(b,"Metadata",meta,"muted",16); m.Position=UDim2.fromOffset(8,25); m.Size=UDim2.new(1,-16,0,16); m.TextSize=11
+		tip(t); tip(m)
 		return b
 	end
 	local function errorFor(part,key)
@@ -391,33 +407,39 @@ function View.mount(widget, selection, history)
 	end
 	local function ruleCollection()
 		heading(collection,"RulesTitle","Rules")
-		entry(collection,"ContractSettings","Contract settings","Tag, class & tag rules",state.contract,function() state.contract=true; state.detail=true; state.menu=nil end)
+		local contract=entry(collection,"ContractSettings","Contract settings","#"..state.schema.tag.." / "..state.schema.className.." / "..(#(state.schema.requiredTags or {})+#(state.schema.forbiddenTags or {})).." tag rules",state.contract,function() state.contract=true; state.detail=true; state.menu=nil end)
+		contract.Identity.Size=UDim2.new(1,-32,0,18); contract.Metadata.Size=UDim2.new(1,-32,0,16)
+		local disclosure=label(contract,"Disclosure",utf8.char(0x203A),"muted",20); disclosure.Position=UDim2.new(1,-20,0,13); disclosure.Size=UDim2.fromOffset(16,20); disclosure.TextSize=18
 		if #state.schema.fields==0 and #state.schema.children==0 then
 			label(collection,"EmptyHint","Capture one configured reference to start.","muted")
 			button(collection,"Capture","Capture reference",capture)
 		end
-		section(collection,"ATTRIBUTES  /  "..#state.schema.fields)
-		for i,f in ipairs(state.schema.fields) do
-			entry(collection,"RuleField"..i,f.name,f.kind..(f.required and " / required" or " / optional"),not state.contract and not state.childMode and state.fieldIndex==i,function()
-				state.contract=false; state.childMode=false; state.fieldIndex=i; state.detail=true; state.menu=nil
-			end)
-		end
-		button(collection,"AddField","+ Attribute",function()
+		sectionAction(collection,"ATTRIBUTES",#state.schema.fields,"AddField",function()
 			assert(#state.schema.fields<32,"Limit: 32 attribute rules")
 			table.insert(state.schema.fields,{name="Attribute"..(#state.schema.fields+1),kind="number",required=true,hasDefault=false,default=0,integer=false,choices={},description=""})
 			state.fieldIndex=#state.schema.fields; state.contract=false; state.childMode=false; state.detail=true; state.drafts={}; changed()
-		end,false,#state.schema.fields<32)
-		section(collection,"CHILDREN  /  "..#state.schema.children)
+		end,#state.schema.fields<32)
+		for i,f in ipairs(state.schema.fields) do
+			local constraint=""
+			if f.kind=="number" then
+				if f.min~=nil and f.max~=nil then constraint=" / "..tostring(f.min).." - "..tostring(f.max)
+				elseif f.min~=nil then constraint=" / min "..tostring(f.min)
+				elseif f.max~=nil then constraint=" / max "..tostring(f.max) end
+			end
+			entry(collection,"RuleField"..i,f.name,f.kind..(f.required and " / required" or " / optional")..constraint,not state.contract and not state.childMode and state.fieldIndex==i,function()
+				state.contract=false; state.childMode=false; state.fieldIndex=i; state.detail=true; state.menu=nil
+			end)
+		end
+		sectionAction(collection,"CHILDREN",#state.schema.children,"AddChild",function()
+			assert(#state.schema.children<32,"Limit: 32 child rules")
+			table.insert(state.schema.children,{path="Child"..(#state.schema.children+1),className="Instance",description=""})
+			state.childIndex=#state.schema.children; state.contract=false; state.childMode=true; state.detail=true; state.drafts={}; changed()
+		end,#state.schema.children<32)
 		for i,c in ipairs(state.schema.children) do
 			entry(collection,"RuleChild"..i,c.path,c.className..(c.optional and " / optional" or " / required"),not state.contract and state.childMode and state.childIndex==i,function()
 				state.contract=false; state.childMode=true; state.childIndex=i; state.detail=true; state.menu=nil
 			end)
 		end
-		button(collection,"AddChild","+ Child",function()
-			assert(#state.schema.children<32,"Limit: 32 child rules")
-			table.insert(state.schema.children,{path="Child"..(#state.schema.children+1),className="Instance",description=""})
-			state.childIndex=#state.schema.children; state.contract=false; state.childMode=true; state.detail=true; state.drafts={}; changed()
-		end,false,#state.schema.children<32)
 	end
 	local function pages(parent,items,draw)
 		local count=math.max(1,math.ceil(#items/30)); state.page=math.min(state.page,count)
@@ -434,9 +456,8 @@ function View.mount(widget, selection, history)
 		frame.BackgroundTransparency=1
 		make("UIListLayout",frame,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,8),SortOrder=Enum.SortOrder.LayoutOrder})
 		for i,item in ipairs({{"Expected",expected,"text"},{"Actual",actual,"error"}}) do
-			local cell=make("Frame",frame,{Name=item[1].."Cell",LayoutOrder=i,Size=UDim2.new(0.5,-4,0,96),AutomaticSize=Enum.AutomaticSize.Y,BorderSizePixel=0})
-			paint(cell,"BackgroundColor3","surface"); make("UICorner",cell,{CornerRadius=UDim.new(0,6)})
-			local stroke=make("UIStroke",cell,{}); paint(stroke,"Color","border"); padding(cell,8); stack(cell,8)
+			local cell=make("Frame",frame,{Name=item[1].."Cell",LayoutOrder=i,Size=UDim2.new(0.5,-4,0,72),AutomaticSize=Enum.AutomaticSize.Y,BorderSizePixel=0,BackgroundTransparency=1})
+			padding(cell,4); stack(cell,6)
 			local caption=label(cell,item[1].."Label",string.upper(item[1]),"muted",18); caption.TextSize=11
 			local value=label(cell,item[1],item[2],item[3]); value.TextSize=15; value.Font=Enum.Font.BuilderSansBold
 		end
@@ -464,7 +485,7 @@ function View.mount(widget, selection, history)
 			operation.Font=Enum.Font.BuilderSansBold; operation.TextSize=14
 			label(repair,"RepairSafety","Safe / additive only","muted",18).TextSize=12
 		elseif not finding.fix then label(body,"DiagnosticOnly","No automatic repair.","muted") end
-		button(body,"SelectFinding","Select in Studio",function() assert(Engine.allowed(finding.instance),"Object was removed. Audit again."); selectIssues({finding}) end)
+		quiet(button(body,"SelectFinding","Select in Studio",function() assert(Engine.allowed(finding.instance),"Object was removed. Audit again."); selectIssues({finding}) end))
 	end
 	local function findings()
 		heading(collection,"AuditTitle","Findings")
@@ -495,7 +516,7 @@ function View.mount(widget, selection, history)
 		local objectCount=0; for _ in pairs(objects) do objectCount+=1 end
 		label(collection,"SubsetSummary",#chosen.." / "..#visible.." included","muted",18)
 		pages(collection,ordered,function(finding,i)
-			local item=make("Frame",collection,{Name="Finding"..i,Size=UDim2.new(1,-4,0,54),BackgroundTransparency=1})
+			local item=make("Frame",collection,{Name="Finding"..i,Size=UDim2.new(1,-4,0,46),BackgroundTransparency=1})
 			local included=not state.subsetActive or state.picked[finding]==true
 			local pick=button(item,"Pick"..i,included and utf8.char(0x2713) or "",function()
 				if not state.subsetActive then for _,shown in ipairs(visible) do state.picked[shown]=true end end
@@ -585,11 +606,16 @@ function View.mount(widget, selection, history)
 		status.Text=state.stale and "Stale" or state.failed and "Blocked" or state.dirty and "Unsaved" or state.plan and "Ready" or state.success or state.loadedName and "Saved" or "Draft"
 		paint(status,"TextColor3",(state.stale or state.failed) and "error" or state.plan and "note" or "muted")
 		local safe=0; for _,finding in ipairs(subset()) do if finding.fix then safe+=1 end end
-		message.Text=state.stale or (state.failed and state.message) or (state.tab=="Audit" and state.audit and (safe.." safe additions selected")) or (state.message~="" and state.message) or "Project contract / 1.2.0"
+		message.Text=state.stale or (state.failed and state.message) or (state.tab=="Audit" and state.audit and (safe.." safe additions selected")) or (state.message~="" and state.message) or "Project contract"
 		paint(message,"TextColor3",(state.stale or state.failed) and "error" or "muted")
 		local repair=body:FindFirstChild("SafeRepair"); if repair then repair.Visible=not state.stale end
 		local save=actions:FindFirstChild("Save",true)
-		if save then local valid=pcall(Schema.validate,state.schema); enabled(save,valid and not state.stale); save.Text=state.dirty and "Save edits" or "Save contract" end
+		if save then
+			local valid=pcall(Schema.validate,state.schema); enabled(save,valid and not state.stale); save.Text=state.dirty and "Save edits" or "Save contract"
+			local primary=state.dirty or not state.loadedName
+			save:SetAttribute("PrimaryAction",primary); save:SetAttribute("SurfaceRole",primary and "accent" or "field")
+			paint(save,"BackgroundColor3",primary and "accent" or "field"); paint(save,"TextColor3",primary and "onAccent" or "muted")
+		end
 		for _,name in ipairs({"Apply","PrepareFixes"}) do
 			local b=actions:FindFirstChild(name,true)
 			if b then enabled(b,not state.stale and (name=="Apply" and state.plan~=nil and #state.plan.changes>0 or name=="PrepareFixes" and state.audit~=nil and safe>0)) end
@@ -599,10 +625,9 @@ function View.mount(widget, selection, history)
 		for i,c in ipairs(state.schema.children) do local r=collection:FindFirstChild("RuleChild"..i); if r then r.Identity.Text=c.path end end
 		for name,b in pairs(tabs) do
 			local selected=state.tab==name
-			b:SetAttribute("SurfaceRole",selected and "selected" or "surface")
-			b:SetAttribute("RestTransparency",selected and 0 or 1)
-			b.BackgroundTransparency=selected and 0 or 1; b.UIStroke.Transparency=1
-			paint(b,"BackgroundColor3",selected and "selected" or "surface"); paint(b,"TextColor3",selected and "note" or "muted"); enabled(b,not state.confirm)
+			b:SetAttribute("SurfaceRole","surface"); b:SetAttribute("RestTransparency",1)
+			b.BackgroundTransparency=1; b.UIStroke.Transparency=1
+			paint(b,"TextColor3",selected and "note" or "muted"); enabled(b,not state.confirm)
 			local indicator=b:FindFirstChild("ActiveIndicator"); if indicator then indicator.Visible=selected end
 		end
 	end
@@ -610,21 +635,23 @@ function View.mount(widget, selection, history)
 		wide=root.AbsoluteSize.X>=560; nav.Visible=not wide
 		local top=wide and 68 or 104
 		header.Size=UDim2.new(1,0,0,top)
-		workspaceUI.Position=UDim2.fromOffset(12,top+10); workspaceUI.Size=UDim2.new(1,-24,1,-top-82)
-		rail.Visible=wide and not state.confirm; rail.Position=UDim2.new(); rail.Size=UDim2.new(0,124,1,0)
+		workspaceUI.Position=UDim2.fromOffset(0,top); workspaceUI.Size=UDim2.new(1,0,1,-top-58)
+		rail.Visible=wide and not state.confirm; rail.Position=UDim2.new(); rail.Size=UDim2.new(0,128,1,0)
+		for _,divider in ipairs(paneLines) do divider.Visible=wide and not state.confirm end
 		collection.Visible=not state.confirm and (wide or not state.detail)
 		body.Visible=state.confirm~=nil or wide or state.detail
 		if wide and not state.confirm then
-			local listWidth=186+math.floor(math.max(0,root.AbsoluteSize.X-560)*0.35)
-			collection.Position=UDim2.fromOffset(132,0); collection.Size=UDim2.new(0,listWidth,1,0)
-			body.Position=UDim2.fromOffset(140+listWidth,0); body.Size=UDim2.new(1,-140-listWidth,1,0)
+			local listWidth=188+math.floor(math.max(0,root.AbsoluteSize.X-560)*0.35)
+			collection.Position=UDim2.fromOffset(129,0); collection.Size=UDim2.new(0,listWidth,1,0)
+			body.Position=UDim2.fromOffset(130+listWidth,0); body.Size=UDim2.new(1,-130-listWidth,1,0)
+			paneLines[1].Position=UDim2.fromOffset(128,0); paneLines[2].Position=UDim2.fromOffset(129+listWidth,0)
 		else
 			collection.Position=UDim2.new(); collection.Size=UDim2.fromScale(1,1)
 			body.Position=UDim2.new(); body.Size=UDim2.fromScale(1,1)
 		end
-		message.Position=wide and UDim2.fromOffset(132,12) or UDim2.fromOffset(0,3)
-		message.Size=wide and UDim2.new(1,-284,0,38) or UDim2.new(1,0,0,18); message.TextWrapped=wide
-		actions.Position=UDim2.fromOffset(0,wide and 14 or 24)
+		message.Position=wide and UDim2.fromOffset(132,10) or UDim2.fromOffset(0,2)
+		message.Size=wide and UDim2.new(1,-284,0,36) or UDim2.new(1,0,0,16); message.TextWrapped=wide
+		actions.Position=UDim2.fromOffset(0,wide and 13 or 22)
 	end
 	local function footerButton(name,text,fn,primary,available)
 		local b=button(actions,name,text,fn,primary,available)
@@ -632,7 +659,7 @@ function View.mount(widget, selection, history)
 		b.Position=primary and UDim2.new(1,-width,0,0) or UDim2.new()
 		b.Size=primary and UDim2.new(0,width,1,0) or UDim2.new(0,wide and 124 or 84,1,0)
 		if not primary then
-			b:SetAttribute("SurfaceRole","surface"); b:SetAttribute("RestTransparency",1); b.BackgroundTransparency=1
+			quiet(b); b:SetAttribute("SurfaceRole","surface")
 		end
 		return b
 	end
@@ -655,6 +682,12 @@ function View.mount(widget, selection, history)
 			or state.tab=="Audit" and tostring(state.finding) or state.tab=="Repairs" and tostring(state.repairIndex) or tostring(state.libraryName))
 	end
 	local renderedTab,renderedKey,renderedConfirmation
+	local navigationIcons={
+		Rules="studio_svg_textures/Lua/MaterialPicker/Dark/Standard/List@3x.png",
+		Audit="studio_svg_textures/Lua/FindReplaceAll/Dark/Standard/Search@3x.png",
+		Repairs="studio_svg_textures/Lua/Tutorials/Dark/Standard/Checkmark@3x.png",
+		Library="textures/StudioSharedUI/grid@2x.png",
+	}
 	render=function()
 		if disposed then return end
 		if rendering then task.defer(render); return end
@@ -674,23 +707,24 @@ function View.mount(widget, selection, history)
 		local popup=root:FindFirstChild("MenuPopup"); if popup then popup:Destroy() end
 		for _,p in ipairs({body,collection,rail}) do
 			for _,obj in ipairs(p:GetChildren()) do obj:Destroy() end
-			padding(p,8); stack(p,p==rail and 4 or 8)
-			make("UICorner",p,{CornerRadius=UDim.new(0,6)})
-			local border=make("UIStroke",p,{Thickness=1}); paint(border,"Color","border")
+			padding(p,p==rail and 8 or 12); stack(p,p==collection and 2 or p==rail and 4 or 6)
 		end
 		for _,obj in ipairs(actions:GetChildren()) do obj:Destroy() end
 		layout()
 		if wide then
 			section(rail,"CONTRACT")
 			for _,name in ipairs({"Rules","Audit","Repairs","Library"}) do
-				local b=button(rail,"Nav"..name,name,function() navigate(name) end,false,not state.confirm)
-				b.TextXAlignment=Enum.TextXAlignment.Left; padding(b,8); b:SetAttribute("SurfaceRole",state.tab==name and "selected" or "surface")
+				local b=button(rail,"Nav"..name,"",function() navigate(name) end,false,not state.confirm)
+				b:SetAttribute("SurfaceRole",state.tab==name and "selected" or "bg")
 				b:SetAttribute("RestTransparency",state.tab==name and 0 or 1); b.BackgroundTransparency=state.tab==name and 0 or 1
 				b.UIStroke.Transparency=1
-				paint(b,"BackgroundColor3",state.tab==name and "selected" or "surface"); paint(b,"TextColor3",state.tab==name and "note" or "text")
-				if state.tab==name then local marker=make("Frame",b,{Position=UDim2.fromOffset(0,7),Size=UDim2.fromOffset(3,18),BorderSizePixel=0}); paint(marker,"BackgroundColor3","note") end
+				paint(b,"BackgroundColor3",state.tab==name and "selected" or "bg")
+				local icon=make("ImageLabel",b,{Name="Icon",Image="rbxasset://"..navigationIcons[name],BackgroundTransparency=1,Position=UDim2.fromOffset(6,9),Size=UDim2.fromOffset(14,14)})
+				paint(icon,"ImageColor3",state.tab==name and "note" or "muted")
+				local caption=label(b,"Caption",name,state.tab==name and "text" or "muted",18)
+				caption.Position=UDim2.fromOffset(26,7); caption.Size=UDim2.new(1,-42,0,18); caption.TextSize=12
 				local count=name=="Rules" and (#state.schema.fields+#state.schema.children) or name=="Audit" and state.audit and #state.audit.issues or name=="Repairs" and state.plan and #state.plan.changes
-				if count then local l=label(b,"Count",tostring(count),"muted",18); l.Position=UDim2.new(1,-20,0,7); l.Size=UDim2.fromOffset(16,18); l.TextSize=12; l.TextXAlignment=Enum.TextXAlignment.Right end
+				if count then local l=label(b,"Count",tostring(count),"muted",18); l.Position=UDim2.new(1,-18,0,7); l.Size=UDim2.fromOffset(14,18); l.TextSize=11; l.TextXAlignment=Enum.TextXAlignment.Right end
 			end
 			separator(rail); section(rail,"LIBRARY"); libraryList(rail,true)
 		end
@@ -701,7 +735,10 @@ function View.mount(widget, selection, history)
 			local confirm=footerButton("Confirm","Confirm",function() local fn=state.confirm.fn; state.confirm=nil; fn() end,true)
 			paint(confirm,"BackgroundColor3","error"); paint(confirm,"TextColor3","bg")
 		else
-			if not wide and state.detail then button(body,"BackToList",utf8.char(0x2190).." "..(state.tab=="Audit" and "Findings" or state.tab),function() state.detail=false; state.menu=nil end) end
+			if not wide and state.detail then
+				local back=quiet(button(body,"BackToList",utf8.char(0x2190).." "..(state.tab=="Audit" and "Findings" or state.tab),function() state.detail=false; state.menu=nil end))
+				back.TextXAlignment=Enum.TextXAlignment.Left
+			end
 			if state.tab=="Rules" then ruleCollection(); rules() elseif state.tab=="Audit" then findings() elseif state.tab=="Repairs" then repairs() else library() end
 		end
 		if not state.confirm then
@@ -754,7 +791,7 @@ function View.mount(widget, selection, history)
 		if (root.AbsoluteSize.X>=560)~=wide then render() else
 			layout()
 			for _,b in ipairs(actions:GetChildren()) do
-				if b:IsA("TextButton") and b.Position.X.Scale==1 then local width=root.AbsoluteSize.X<280 and 112 or 144; b.Size=UDim2.fromOffset(width,34); b.Position=UDim2.new(1,-width,0,0) end
+				if b:IsA("TextButton") and b.Position.X.Scale==1 then local width=root.AbsoluteSize.X<280 and 112 or 144; b.Size=UDim2.fromOffset(width,32); b.Position=UDim2.new(1,-width,0,0) end
 			end
 			refresh()
 		end
