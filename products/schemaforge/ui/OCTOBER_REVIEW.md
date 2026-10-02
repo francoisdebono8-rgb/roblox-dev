@@ -70,3 +70,15 @@ were preserved. No settings/theme change was made during this continuation.
    supplied reference; iterate on demonstrated visual defects.
 4. Obtain explicit visual acceptance. Until then, leave #23 open and do not move
    to PresetForge or update canonical asset 84085408748744.
+
+## Five-minute follow-up
+
+User timebox: 2026-10-02, 13:09:35 to 13:14:35 UTC. No production source or
+artifact changed. The exact final candidate was opened in a fresh native Studio
+session. A docked QA tab was selected through macOS input; the native Command Bar
+resized its host to 320x600. [Actual Light Rules rendering](october-review/light-320x600-rules.png)
+is a crop only (640x1200 Retina pixels), with no redrawing or recoloring.
+This shorter capture does not replace the required 320x640/560/Dark/Audit matrix.
+The other native dock panes constrained the 560-wide QA host, so that clipped
+render was not accepted as a wide-layout PASS. The GUI walkthrough and gate 15
+remain pending. The isolated session was stopped and the QA plugin removed.

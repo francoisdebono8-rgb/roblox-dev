@@ -19,6 +19,10 @@ NON TESTED / PENDING.** The user cannot leave Studio available for reliable inpu
 now. A successful native mount/geometry check is not graphical acceptance.
 No publication, no other product work, no issue completion claim.
 
+Five-minute follow-up: an [actual final-candidate Light Rules capture](october-review/light-320x600-rules.png)
+at 320x600 is now available. It is internal QA evidence, not acceptance of the
+required full screenshot matrix or the Audit reference composition.
+
 ## Historical Second Pass
 
 Second-pass candidate `647741f2...`: **53 native tests PASS / 0 FAIL**, 41/41
