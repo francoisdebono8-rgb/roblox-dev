@@ -1,12 +1,36 @@
 # SchemaForge UI / issue #23
 
-**REOPENED / VISUAL ACCEPTANCE FAIL. Not ready as the Forge Studio reference.**
+**READY / PASS: issue #23 final UI gate, 2026-10-03. NOT PUBLISHED.**
 
-Human review on 2026-09-29 rejected the first pass. Gate 15 is NOT PASS.
-Current continuation: [INSPECTOR_PASS.md](INSPECTOR_PASS.md), 2026-10-02, approved compact-inspector A choice.
-Do not reuse this UI as the PresetForge reference.
+Human review on 2026-09-29 rejected the first pass. That decision is superseded
+by explicit acceptance of the final refinement and its completed native gate.
+Current evidence: [REFINED_REVIEW.md](REFINED_REVIEW.md), 2026-10-03.
+The sections below Current Candidate are historical, not current gate results.
 
 ## Current Candidate
+
+SHA256: `542131178c45716fca27d12f7b1ec8678fae3c414e6d33645cf23229f65cb126`.
+Human review accepted the actual 560px Audit and 320px diagnostic captures:
+"Oui, passe a la validation finale". Focused GUI editing, filtering, read-only
+Preview, exact-subset Apply and actual Edit-menu Undo/Redo PASS on this binary.
+Full final native regression: **53 PASS / 0 FAIL, 41/41 matrix rows PASS**, outer
+gate PASS. [Exact-candidate evidence](refined-review/native-technical.txt).
+Actual final screenshots: Dark 320/560, Light 560 and Light/Dark 240x360.
+Rules, Audit, populated Repairs and Library geometry pass all five sizes in both
+themes. Extended GUI PASS: load/save/capture/new, cancelled and confirmed delete,
+32-rule scrolling and retained position, Vector3 editor, empty/blocked/stale
+states. Stale Apply was clicked and remained disabled with no fixture write.
+Real screenshots include 400px long-list/editor and Light preview/stale/confirmation.
+The 560x900 cases are native layout probes, not full-height desktop screenshots;
+the Mac viewport is shorter. Representative visible captures satisfy Gate 12.
+
+All applicable gates 0-15 PASS; full table and environment exceptions are in
+REFINED_REVIEW.md. Targeted mouse automation was explicitly authorized and used
+after CUA lost click access. Dark restored; temporary QA plugins removed.
+No engine change, shared framework, other-product edit, commercial media or
+public asset update. Canonical asset **84085408748744 remains untouched**.
+
+## Previous Inline Inspector
 
 SHA256: `a1dec3006fa7fe5108cdc4652a6d313729b83949cb959742c2c380556199407d`.
 Inline property inspector, lighter BuilderSans hierarchy, quieter borders and
@@ -14,8 +38,10 @@ explicit hover/focus/pressed treatments. Only production View changed.
 Compilation, reproducible source/package equality and native Rules Light
 geometry/mount at 320x600 and 560x600: **PASS**. [Native evidence](inspector-pass/native.txt).
 
-**Complete final screenshots, controlled GUI smoke and effect-state verification:
-NON TESTED / BLOCKED by native-window access. Visual acceptance PENDING.** A docked
+The subsequent 2026-10-03 [real captures and smoke log](final-review/) recovered
+native access, but the user rejected this rendition. These are baseline evidence,
+not the accepted final candidate. Earlier status before that recovery was:
+**complete screenshots and controlled GUI smoke NON TESTED**. A docked
 partial render was inspected, but it was clipped by the Studio dock; floating
 captures were blank. Neither is counted as a complete screenshot gate. Previous
 captures below depict the previous binary, not this inspector iteration.

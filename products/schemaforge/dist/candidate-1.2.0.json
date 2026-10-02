@@ -1,12 +1,12 @@
 {
   "artifact": "SchemaForge-v1.2.0.rbxm",
-  "sha256": "a1dec3006fa7fe5108cdc4652a6d313729b83949cb959742c2c380556199407d",
+  "sha256": "542131178c45716fca27d12f7b1ec8678fae3c414e6d33645cf23229f65cb126",
   "source_sha256": {
     "Engine": "7fea604f4c06d12fbf55441c4c8101d871b1ce12035c70eb6811c271ef4544b4",
     "Main": "db9c82936db70dc8c5c5de8628dab27eee11d3f9206db8a16f731a7a5f3e3e01",
     "Schema": "be67585389f64e78489573d0c13efa7ddf528580aade68b2c927a053da525523",
     "Store": "eceb065aad8be3a072d56d7cb54d548e20c00672ebf302b44737bdcdfd73ec76",
-    "View": "377cb91bddc2bc24a6f61232c0c3b1687b961a07aec4c6fe744d1501e9074de3"
+    "View": "ad14826cde93b0670cddfe211bdf7dd53f6dda40cc321c0e0bb688ff2fa12376"
   },
   "status": "unpublished technical candidate",
   "version": "1.2.0"

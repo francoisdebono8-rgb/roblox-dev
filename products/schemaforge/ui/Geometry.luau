@@ -35,6 +35,14 @@ function Geometry.check(root)
     end
     assert(root.Header.ProductTitle.TextFits,"Product title clipped")
     assert(root.Body.Collection.Visible or root.Body.Detail.Visible,"No work surface")
+    for _,v in ipairs(root:GetDescendants()) do
+        if v.Name=="ExpectedActual" and visible(v,root) then
+            assert(math.abs(v.ExpectedCell.AbsoluteSize.Y-v.ActualCell.AbsoluteSize.Y)<=1,"Comparison cells misaligned")
+        elseif v.Name=="Icon" and v.Parent.Name:match("^Nav") and visible(v,root) then
+            local caption=v.Parent.Caption
+            assert(math.abs(v.AbsolutePosition.Y+v.AbsoluteSize.Y/2-caption.AbsolutePosition.Y-caption.AbsoluteSize.Y/2)<=1,"Navigation icon misaligned")
+        end
+    end
     if root.AbsoluteSize.X<560 then assert(not root.Body.Navigation.Visible,"Narrow rail shown") end
     return controls
 end

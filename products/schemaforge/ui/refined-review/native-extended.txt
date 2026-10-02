@@ -1,0 +1,266 @@
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI] mounted 560x640 theme=Dark sha256=542131178c45716fca27d12f7b1ec8678fae3c414e6d33645cf23229f65cb126
+[SchemaForgeUI] viewport=0, 0 size=560, 640
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / Loaded project contract.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / Loaded project contract.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][GEOMETRY PASS] Dark 240, 360 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Dark 320, 640 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Dark 400, 640 controls=13
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 640 controls=24
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 900 controls=24
+[SchemaForgeUI][TEXT] min focus=true caret=1 sameControl=true scrollStable=true
+[SchemaForgeUI][TEXT] min focus=true caret=2 sameControl=true scrollStable=true
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / Saved in this project.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][TEXT] min focus=true caret=1 sameControl=true scrollStable=true
+[SchemaForgeUI][TEXT] min focus=true caret=2 sameControl=true scrollStable=true
+[SchemaForgeUI][STATE] Unsaved / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save edits
+[SchemaForgeUI][ENGINE] audit=1
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / 4 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 30
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / 4 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 30
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][GEOMETRY PASS] Dark 240, 360 controls=27
+[SchemaForgeUI][GEOMETRY PASS] Dark 320, 640 controls=27
+[SchemaForgeUI][GEOMETRY PASS] Dark 400, 640 controls=27
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 640 controls=30
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 900 controls=30
+[SchemaForgeUI][ENGINE] preview=1
+[SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions. Preview is read-only.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 11
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=true text=Apply 4
+[SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions. Preview is read-only.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 11
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=true text=Apply 4
+[SchemaForgeUI][GEOMETRY PASS] Dark 240, 360 controls=10
+[SchemaForgeUI][GEOMETRY PASS] Dark 320, 640 controls=10
+[SchemaForgeUI][GEOMETRY PASS] Dark 400, 640 controls=10
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 640 controls=11
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 900 controls=11
+[SchemaForgeUI][STATE] Applied / Greenhouse Contract / 4 additions applied. Native Undo available.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=0 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
+[SchemaForgeUI][STATE] Applied / Greenhouse Contract / 4 additions applied. Native Undo available.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=0 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=6
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=6
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=6
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=7
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 9
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToRules active=true text=Rules
+[SchemaForgeUI][ACTION] Audit active=true text=Run audit
+[SchemaForgeUI][ENGINE] audit=2
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / 1 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / 1 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=24
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=24
+[SchemaForgeUI][STATE] Saved / Greenhouse Contract / 1 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=21
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=24
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=24
+[SchemaForgeUI][ENGINE] preview=2
+[SchemaForgeUI][STATE] Ready / Greenhouse Contract / 1 safe additions. Preview is read-only.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=true text=Apply 1
+[SchemaForgeUI][STATE] Ready / Greenhouse Contract / 1 safe additions. Preview is read-only.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=true text=Apply 1
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=8
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=8
+[SchemaForgeUI][STATE] Stale / Greenhouse Contract / Project changed. Audit and preview again.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 1
+[SchemaForgeUI][STATE] Stale / Greenhouse Contract / Project changed. Audit and preview again.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 10
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=7
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=10
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=10
+[SchemaForgeUI][STATE] Draft / New schema / Deleted. Native Undo available.
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 15
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=false text=Save contract
+[SchemaForgeUI][STATE] Draft / New schema / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 15
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=false text=Save contract
+[SchemaForgeUI][FIXTURE] long contract saved with 32 real attribute rules
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Loaded project contract.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 42
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Loaded project contract.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 42
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 27
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][STATE] Unsaved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 22
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save edits
+[SchemaForgeUI][STATE] Unsaved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 42
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save edits
+[SchemaForgeUI][GEOMETRY PASS] Light 240, 360 controls=42
+[SchemaForgeUI][GEOMETRY PASS] Light 320, 640 controls=42
+[SchemaForgeUI][GEOMETRY PASS] Light 400, 640 controls=42
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 640 controls=58
+[SchemaForgeUI][GEOMETRY PASS] Light 560, 900 controls=58
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Saved in this project.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 42
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][CLICK] TabLibrary
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Saved / Greenhouse Seasonal Prop Configuration and Interaction Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Draft / New schema / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 10
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=false text=Save contract
+[SchemaForgeUI][ENGINE] audit=3
+[SchemaForgeUI][ENGINE] audit=4
+[SchemaForgeUI][STATE] Blocked / New schema / A target tag is required (1-100 characters)
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToRules active=true text=Rules
+[SchemaForgeUI][ACTION] Audit active=true text=Run audit
+[SchemaForgeUI][CLICK] TabLibrary
+[SchemaForgeUI][STATE] Draft / New schema / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Draft / New schema / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 7
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Unsaved / ReferencePot / Reference captured. 0 unsupported attributes skipped.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 12
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save edits
+[SchemaForgeUI][STATE] Saved / ReferencePot / Saved in this project.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 12
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][STATE] Saved / ReferencePot / Saved in this project.
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 12
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI][GEOMETRY PASS] Dark 240, 360 controls=12
+[SchemaForgeUI][GEOMETRY PASS] Dark 320, 640 controls=12
+[SchemaForgeUI][GEOMETRY PASS] Dark 400, 640 controls=12
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 640 controls=23
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 900 controls=23
+[SchemaForgeUI][CLICK] TabLibrary
+[SchemaForgeUI][STATE] Saved / ReferencePot / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Saved / ReferencePot / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][STATE] Saved / ReferencePot / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 400, 640 8
+[SchemaForgeUI][FIXTURE] missingCosts=1 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] New active=true text=New
+[SchemaForgeUI][ACTION] Capture active=true text=Capture
+[SchemaForgeUI][GEOMETRY PASS] Dark 240, 360 controls=8
+[SchemaForgeUI][GEOMETRY PASS] Dark 320, 640 controls=8
+[SchemaForgeUI][GEOMETRY PASS] Dark 400, 640 controls=8
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 640 controls=11
+[SchemaForgeUI][GEOMETRY PASS] Dark 560, 900 controls=11

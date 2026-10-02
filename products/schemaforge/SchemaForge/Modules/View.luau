@@ -147,11 +147,13 @@ function View.mount(widget, selection, history)
 		paint(border,"Color","border")
 		local role=active and "accent" or "field"
 		paint(b,"BackgroundColor3",role); paint(b,"TextColor3",active and "onAccent" or "text")
+		local hovered=false
 		local function resting() paint(b,"BackgroundColor3",b:GetAttribute("SurfaceRole") or role); b.BackgroundTransparency=b:GetAttribute("RestTransparency") or 0 end
-		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accentHover" or "hover") end end)
-		b.MouseLeave:Connect(resting)
+		local function hover() if b.Active then b.BackgroundTransparency=0; paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accentHover" or "hover") end end
+		b.MouseEnter:Connect(function() hovered=true; hover() end)
+		b.MouseLeave:Connect(function() hovered=false; resting() end)
 		b.MouseButton1Down:Connect(function() if b.Active then paint(b,"BackgroundColor3",b:GetAttribute("PrimaryAction") and "accentPressed" or "pressed") end end)
-		b.MouseButton1Up:Connect(resting)
+		b.MouseButton1Up:Connect(function() if hovered then hover() else resting() end end)
 		b.Activated:Connect(act(function() if b.Active then fn() end end,inspection))
 		-- Visible control labels do not get redundant hover tooltips. Hover feedback stays visual only.
 		return b
@@ -169,7 +171,7 @@ function View.mount(widget, selection, history)
 		local box=make("Frame",b,{Name="Checkbox",Position=UDim2.new(1,-20,0,9),Size=UDim2.fromOffset(14,14),BorderSizePixel=0})
 		paint(box,"BackgroundColor3",value and "accent" or "bg"); local stroke=make("UIStroke",box,{}); paint(stroke,"Color","border")
 		make("UICorner",box,{CornerRadius=UDim.new(0,3)})
-		local mark=label(box,"Check",value and utf8.char(0x2713) or "","onAccent",14); mark.TextXAlignment=Enum.TextXAlignment.Center; mark.TextSize=12
+		local mark=label(box,"Check",value and utf8.char(0x2713) or "","onAccent",14); mark.TextXAlignment=Enum.TextXAlignment.Center; mark.TextYAlignment=Enum.TextYAlignment.Center; mark.TextSize=12
 		local caption=label(b,"Caption",text,"text",20); caption.Position=UDim2.fromOffset(0,6); caption.Size=UDim2.new(1,-32,0,20); caption.TextSize=12
 		return b
 	end
@@ -254,14 +256,17 @@ function View.mount(widget, selection, history)
 	end
 	local function menu(parent,name,titleText,options,value,setter)
 		local property=parent==body
+		local compact=parent:GetAttribute("CompactMenus")==true
 		if property then
 			local line=make("Frame",parent,{Name=name.."Group",Size=UDim2.new(1,-4,0,30),BackgroundTransparency=1})
 			local caption=label(line,name.."Label",titleText,"muted",30); caption.Size=UDim2.new(0.34,-4,0,30); caption.TextSize=12; caption.TextYAlignment=Enum.TextYAlignment.Center; tip(caption)
 			parent=line
 		end
-		local b=button(parent,name,property and tostring(value) or titleText..": "..tostring(value),function() state.menu=state.menu==name and nil or name end)
+		local display=compact and (name=="ReasonFilter" and value=="All" and "All reasons" or tostring(value)) or property and tostring(value) or titleText..": "..tostring(value)
+		local b=button(parent,name,display,function() state.menu=state.menu==name and nil or name end)
 		if property then b.Position=UDim2.fromScale(0.34,0); b.Size=UDim2.new(0.66,0,0,30) end
 		b.TextXAlignment=Enum.TextXAlignment.Left; b.Font=Enum.Font.BuilderSans; padding(b,6); b.UIPadding.PaddingRight=UDim.new(0,20)
+		if compact then b.TextSize=11; b.UIStroke.Transparency=0.5; tip(b) end
 		local arrow=make("ImageLabel",b,{Name="MenuArrow",BackgroundTransparency=1,Image="rbxasset://textures/DevConsole/ArrowDown.png",
 			Position=UDim2.new(1,4,0.5,-3),Size=UDim2.fromOffset(6,6)})
 		paint(arrow,"ImageColor3","muted")
@@ -431,6 +436,15 @@ function View.mount(widget, selection, history)
 			end
 		end
 	end
+	local function ruleSummary(f)
+		local constraint=""
+		if f.kind=="number" then
+			if f.min~=nil and f.max~=nil then constraint=" / "..tostring(f.min).." - "..tostring(f.max)
+			elseif f.min~=nil then constraint=" / min "..tostring(f.min)
+			elseif f.max~=nil then constraint=" / max "..tostring(f.max) end
+		end
+		return f.kind..(f.required and " / required" or " / optional")..constraint
+	end
 	local function ruleCollection()
 		heading(collection,"RulesTitle","Rules")
 		local contract=entry(collection,"ContractSettings","Contract settings","#"..state.schema.tag.." / "..state.schema.className.." / "..(#(state.schema.requiredTags or {})+#(state.schema.forbiddenTags or {})).." tag rules",state.contract,function() state.contract=true; state.detail=true; state.menu=nil end)
@@ -446,13 +460,7 @@ function View.mount(widget, selection, history)
 			state.fieldIndex=#state.schema.fields; state.contract=false; state.childMode=false; state.detail=true; state.drafts={}; changed()
 		end,#state.schema.fields<32)
 		for i,f in ipairs(state.schema.fields) do
-			local constraint=""
-			if f.kind=="number" then
-				if f.min~=nil and f.max~=nil then constraint=" / "..tostring(f.min).." - "..tostring(f.max)
-				elseif f.min~=nil then constraint=" / min "..tostring(f.min)
-				elseif f.max~=nil then constraint=" / max "..tostring(f.max) end
-			end
-			entry(collection,"RuleField"..i,f.name,f.kind..(f.required and " / required" or " / optional")..constraint,not state.contract and not state.childMode and state.fieldIndex==i,function()
+			entry(collection,"RuleField"..i,f.name,ruleSummary(f),not state.contract and not state.childMode and state.fieldIndex==i,function()
 				state.contract=false; state.childMode=false; state.fieldIndex=i; state.detail=true; state.menu=nil
 			end)
 		end
@@ -481,24 +489,41 @@ function View.mount(widget, selection, history)
 		local frame=make("Frame",parent,{Name="ExpectedActual",Size=UDim2.new(1,-4,0,0),AutomaticSize=Enum.AutomaticSize.Y,BorderSizePixel=0})
 		frame.BackgroundTransparency=1
 		make("UIListLayout",frame,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,8),SortOrder=Enum.SortOrder.LayoutOrder})
+		local cells,layouts={},{}
 		for i,item in ipairs({{"Expected",expected,"text"},{"Actual",actual,"error"}}) do
-			local cell=make("Frame",frame,{Name=item[1].."Cell",LayoutOrder=i,Size=UDim2.new(0.5,-4,0,72),AutomaticSize=Enum.AutomaticSize.Y,BorderSizePixel=0,BackgroundTransparency=1})
-			padding(cell,4); stack(cell,6)
+			local cell=make("Frame",frame,{Name=item[1].."Cell",LayoutOrder=i,Size=UDim2.new(0.5,-4,0,72),BorderSizePixel=0})
+			paint(cell,"BackgroundColor3","field"); make("UICorner",cell,{CornerRadius=UDim.new(0,4)})
+			padding(cell,8); stack(cell,6)
+			cells[i]=cell; layouts[i]=cell.UIListLayout
 			local caption=label(cell,item[1].."Label",string.upper(item[1]),"muted",18); caption.TextSize=11
 			local value=label(cell,item[1],item[2],item[3]); value.TextSize=15; value.Font=Enum.Font.BuilderSansBold
 		end
+		-- Wrapped values share a baseline and a common bottom edge at every width.
+		local pending=false
+		local function align()
+			if pending then return end
+			pending=true
+			task.defer(function()
+				pending=false; if not frame.Parent then return end
+				local height=math.max(72,layouts[1].AbsoluteContentSize.Y+16,layouts[2].AbsoluteContentSize.Y+16)
+				for _,cell in ipairs(cells) do cell.Size=UDim2.new(0.5,-4,0,height) end
+			end)
+		end
+		for _,layout in ipairs(layouts) do layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(align) end
+		align()
 	end
 	local function findingDetail()
 		local finding=state.finding
 		if not finding then heading(body,"DetailTitle","Finding detail"); label(body,"DetailEmpty","No finding selected.","muted"); return end
 		local category=label(body,"FindingCategory",string.upper(finding.category)..(finding.fix and " / FIXABLE" or " / DIAGNOSTIC"),finding.fix and "note" or "warning"); category.TextSize=11
-		local name=heading(body,"DetailTitle",finding.field); name.TextSize=18
+		local name=heading(body,"DetailTitle",finding.field); name.TextSize=18; name.Font=Enum.Font.BuilderSansBold
 		label(body,"FindingIdentity",finding.identity,"muted")
 		local path=label(body,"FindingPath",finding.path,"muted",18); path.TextSize=12; tip(path)
 		diff(body,finding.expected,finding.actual)
 		if finding.description~="" then
-			separator(body); label(body,"NoteCaption","Designer note","muted",18)
-			local note=label(body,"DesignerNote",finding.description,"muted",56); note.TextWrapped=true; tip(note)
+			separator(body); label(body,"NoteCaption","Designer note","muted",18).TextSize=12
+			local note=label(body,"DesignerNote",finding.description,"text"); note.TextSize=12
+			make("UIPadding",note,{PaddingBottom=UDim.new(0,8)})
 		end
 		if finding.fix and not state.stale then
 			-- Inspection presents the recorded finding; only explicit Preview creates a plan.
@@ -506,9 +531,9 @@ function View.mount(widget, selection, history)
 			local repair=make("Frame",body,{Name="SafeRepair",Size=UDim2.new(1,-4,0,0),AutomaticSize=Enum.AutomaticSize.Y,BorderSizePixel=0})
 			paint(repair,"BackgroundColor3","repair"); make("UICorner",repair,{CornerRadius=UDim.new(0,6)}); padding(repair,10); stack(repair,6)
 			local stroke=make("UIStroke",repair,{}); paint(stroke,"Color","selectedBorder")
-			local caption=label(repair,"RepairCaption","SUGGESTED REPAIR","note",18); caption.TextSize=11
-			local operation=label(repair,"SuggestedRepair",finding.field.."\nMissing "..utf8.char(0x2192).." "..(fix.action=="tag" and "Add tag" or Schema.formatValue(fix.value)),"text")
-			operation.Font=Enum.Font.BuilderSansBold; operation.TextSize=14
+			local caption=label(repair,"RepairCaption","Suggested repair","note",18); caption.TextSize=12
+			local operation=label(repair,"SuggestedRepair","Missing "..utf8.char(0x2192).." "..(fix.action=="tag" and "Add tag" or Schema.formatValue(fix.value)),"text")
+			operation.Font=Enum.Font.BuilderSansBold; operation.TextSize=15
 			label(repair,"RepairSafety","Safe / additive only","muted",18).TextSize=12
 		elseif not finding.fix then label(body,"DiagnosticOnly","No automatic repair.","muted") end
 		quiet(button(body,"SelectFinding","Select in Studio",function() assert(Engine.allowed(finding.instance),"Object was removed. Audit again."); selectIssues({finding}) end))
@@ -517,12 +542,13 @@ function View.mount(widget, selection, history)
 		heading(collection,"AuditTitle","Findings")
 		if state.audit then label(collection,"AuditSummary",string.format("%d checked / %d findings",state.audit.matched,#state.audit.issues),"muted",18).TextSize=12 end
 		local scopes=row(collection,2)
+		scopes.Size=UDim2.new(1,-4,0,28)
 		for _,scope in ipairs({"Selection","Workspace"}) do
 			local b=button(scopes,"Scope"..scope,scope,function()
 				local previousPlan=state.plan; state.scope=scope; invalidate()
 				if previousPlan then state.plan=previousPlan; state.stale="Scope changed. Audit and preview again." end
 			end)
-			b.TextSize=12; b:SetAttribute("SurfaceRole",state.scope==scope and "selected" or "surface")
+			b.TextSize=12; b.UIStroke.Transparency=1; b:SetAttribute("SurfaceRole",state.scope==scope and "selected" or "surface")
 			paint(b,"BackgroundColor3",state.scope==scope and "selected" or "surface"); paint(b,"TextColor3",state.scope==scope and "note" or "muted")
 		end
 		if not state.audit then label(collection,"AuditHint","No audit for this scope.","muted"); findingDetail(); return end
@@ -531,8 +557,9 @@ function View.mount(widget, selection, history)
 		local values={}; for _,i in ipairs(a.issues) do if not table.find(values,i.field) then table.insert(values,i.field) end end
 		local fields={"All fields"}; for _,value in ipairs(values) do table.insert(fields,value) end
 		if root.AbsoluteSize.X>=280 or state.filters then
-			menu(collection,"ReasonFilter","Reason",{"All","Missing","Wrong type","Invalid value","Required child","Required tag","Forbidden tag","Class"},state.reason,function(v) state.reason=v; state.page=1; subsetChanged(); state.finding=nil end)
-			menu(collection,"FieldFilter","Field",fields,state.field=="" and "All fields" or state.field,function(_,i) state.field=i==1 and "" or values[i-1]; state.page=1; subsetChanged(); state.finding=nil end)
+			local filters=row(collection,2); filters.Size=UDim2.new(1,-4,0,28); filters:SetAttribute("CompactMenus",true)
+			menu(filters,"ReasonFilter","Reason",{"All","Missing","Wrong type","Invalid value","Required child","Required tag","Forbidden tag","Class"},state.reason,function(v) state.reason=v; state.page=1; subsetChanged(); state.finding=nil end)
+			menu(filters,"FieldFilter","Field",fields,state.field=="" and "All fields" or state.field,function(_,i) state.field=i==1 and "" or values[i-1]; state.page=1; subsetChanged(); state.finding=nil end)
 		end
 		local visible=visibleIssues(); local chosen=subset()
 		local ordered={}; for _,i in ipairs(visible) do if i.fix then table.insert(ordered,i) end end
@@ -552,6 +579,8 @@ function View.mount(widget, selection, history)
 			paint(pick,"TextColor3",included and "note" or "muted"); tip(pick,"Include "..finding.field.." / "..finding.identity)
 			local b=entry(item,"OpenFinding"..i,finding.field,finding.identity.." / "..finding.category,state.finding==finding,function() state.finding=finding; state.detail=true end,finding.fix~=nil)
 			b.Position=UDim2.fromOffset(0,0); b.Size=UDim2.fromScale(1,1); b.Identity.Size=UDim2.new(1,-40,0,20)
+			b.Identity.TextSize=14
+			if state.finding==finding then b.UIStroke.Transparency=0.55; paint(b.UIStroke,"Color","selectedBorder") end
 			pick.ZIndex=3
 		end)
 		if #visible==0 then label(collection,"NoFindings",#a.issues==0 and "No contract findings." or "No findings match these filters.","muted") end
@@ -647,8 +676,13 @@ function View.mount(widget, selection, history)
 			if b then enabled(b,not state.stale and (name=="Apply" and state.plan~=nil and #state.plan.changes>0 or name=="PrepareFixes" and state.audit~=nil and safe>0)) end
 			if b and name=="PrepareFixes" then b.Text=root.AbsoluteSize.X<280 and "Preview "..safe or "Preview changes" end
 		end
-		for i,f in ipairs(state.schema.fields) do local r=collection:FindFirstChild("RuleField"..i); if r then r.Identity.Text=f.name end end
+		for i,f in ipairs(state.schema.fields) do local r=collection:FindFirstChild("RuleField"..i); if r then r.Identity.Text=f.name; r.Metadata.Text=ruleSummary(f) end end
 		for i,c in ipairs(state.schema.children) do local r=collection:FindFirstChild("RuleChild"..i); if r then r.Identity.Text=c.path end end
+		local editorTitle=body:FindFirstChild("EditorTitle")
+		if state.tab=="Rules" and editorTitle and not state.contract then
+			local selected=state.childMode and state.schema.children[state.childIndex] or state.schema.fields[state.fieldIndex]
+			if selected then editorTitle.Text=state.childMode and selected.path or selected.name end
+		end
 		for name,b in pairs(tabs) do
 			local selected=state.tab==name
 			b:SetAttribute("SurfaceRole","surface"); b:SetAttribute("RestTransparency",1)
@@ -709,10 +743,10 @@ function View.mount(widget, selection, history)
 	end
 	local renderedTab,renderedKey,renderedConfirmation
 	local navigationIcons={
-		Rules="studio_svg_textures/Lua/MaterialPicker/Dark/Standard/List@3x.png",
-		Audit="studio_svg_textures/Lua/FindReplaceAll/Dark/Standard/Search@3x.png",
-		Repairs="studio_svg_textures/Lua/Tutorials/Dark/Standard/Checkmark@3x.png",
-		Library="textures/StudioSharedUI/grid@2x.png",
+		Rules={"studio_svg_textures/Lua/MaterialPicker/Dark/Standard/List@3x.png",Vector2.new(7,7),Vector2.new(35,34)},
+		Audit={"studio_svg_textures/Lua/FindReplaceAll/Dark/Standard/Search@3x.png",Vector2.new(3,3),Vector2.new(42,42)},
+		Repairs={"studio_svg_textures/Lua/Tutorials/Dark/Standard/Checkmark@3x.png",Vector2.new(10,14),Vector2.new(28,20)},
+		Library={"textures/StudioSharedUI/grid@2x.png",Vector2.new(3,3),Vector2.new(26,26)},
 	}
 	render=function()
 		if disposed then return end
@@ -745,12 +779,14 @@ function View.mount(widget, selection, history)
 				b:SetAttribute("RestTransparency",state.tab==name and 0 or 1); b.BackgroundTransparency=state.tab==name and 0 or 1
 				b.UIStroke.Transparency=1
 				paint(b,"BackgroundColor3",state.tab==name and "selected" or "bg")
-				local icon=make("ImageLabel",b,{Name="Icon",Image="rbxasset://"..navigationIcons[name],BackgroundTransparency=1,Position=UDim2.fromOffset(6,9),Size=UDim2.fromOffset(14,14)})
+				-- Studio glyphs have different transparent margins; center their visible artwork.
+				local asset=navigationIcons[name]
+				local icon=make("ImageLabel",b,{Name="Icon",Image="rbxasset://"..asset[1],ImageRectOffset=asset[2],ImageRectSize=asset[3],ScaleType=Enum.ScaleType.Fit,BackgroundTransparency=1,AnchorPoint=Vector2.new(0,0.5),Position=UDim2.new(0,6,0.5,0),Size=UDim2.fromOffset(14,14)})
 				paint(icon,"ImageColor3",state.tab==name and "note" or "muted")
 				local caption=label(b,"Caption",name,state.tab==name and "text" or "muted",18)
-				caption.Position=UDim2.fromOffset(26,7); caption.Size=UDim2.new(1,-42,0,18); caption.TextSize=12
+				caption.Position=UDim2.fromOffset(26,0); caption.Size=UDim2.new(1,-42,1,0); caption.TextSize=12; caption.TextYAlignment=Enum.TextYAlignment.Center
 				local count=name=="Rules" and (#state.schema.fields+#state.schema.children) or name=="Audit" and state.audit and #state.audit.issues or name=="Repairs" and state.plan and #state.plan.changes
-				if count then local l=label(b,"Count",tostring(count),"muted",18); l.Position=UDim2.new(1,-18,0,7); l.Size=UDim2.fromOffset(14,18); l.TextSize=11; l.TextXAlignment=Enum.TextXAlignment.Right end
+				if count then local l=label(b,"Count",tostring(count),"muted",32); l.Position=UDim2.new(1,-18,0,0); l.Size=UDim2.fromOffset(14,32); l.TextSize=11; l.TextXAlignment=Enum.TextXAlignment.Right; l.TextYAlignment=Enum.TextYAlignment.Center end
 			end
 			separator(rail); section(rail,"Library"); libraryList(rail,true)
 		end

@@ -1,0 +1,46 @@
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Save active=true text=Save contract
+[SchemaForgeUI] mounted 560x640 theme=Dark sha256=a1dec3006fa7fe5108cdc4652a6d313729b83949cb959742c2c380556199407d
+[SchemaForgeUI] viewport=0, 0 size=560, 640
+[SchemaForgeUI][ENGINE] audit=1
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / 4 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 560, 640 30
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / 4 safe additions selected
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 28
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] Audit active=true text=Audit
+[SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+[SchemaForgeUI][ENGINE] preview=1
+[SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions. Preview is read-only.
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 10
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=true text=Apply 4
+[SchemaForgeUI][STATE] Applied / Greenhouse Contract / 4 additions applied. Native Undo available.
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 6
+[SchemaForgeUI][FIXTURE] missingCosts=0 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / History changed. Run a fresh audit.
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 6
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
+[SchemaForgeUI][NATIVE UNDO]
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / History changed. Run a fresh audit.
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 6
+[SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
+[SchemaForgeUI][NATIVE REDO]
+[SchemaForgeUI][STATE] Draft / Greenhouse Contract / History changed. Run a fresh audit.
+[SchemaForgeUI][GEOMETRY PASS] 320, 640 6
+[SchemaForgeUI][FIXTURE] missingCosts=0 missingTags=0 invalidCost=unknown invalidGrowth=-2
+[SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+[SchemaForgeUI][ACTION] Apply active=false text=Apply 0
