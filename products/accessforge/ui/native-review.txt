@@ -1,0 +1,6 @@
+[ForgeUIReview] AccessForge native mount + real engine Preview PASS; SHA256=8605ae5f948132bf9b309fe8b2b61b6a92023e0f0aca98eb2ba3f02185feedc1
+[ForgeUIReview] CAPTURE AccessForge 560 viewport=560, 640 origin=0, 0
+[ForgeUIReview] AccessForge 560 read-only PASS
+[ForgeUIReview] AccessForge native mount + real engine Preview PASS; SHA256=8605ae5f948132bf9b309fe8b2b61b6a92023e0f0aca98eb2ba3f02185feedc1
+[ForgeUIReview] CAPTURE AccessForge 320 viewport=320, 640 origin=0, 0
+[ForgeUIReview] AccessForge 320 read-only PASS

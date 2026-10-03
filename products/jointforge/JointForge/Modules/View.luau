@@ -2,9 +2,9 @@ local Schema = require(script.Parent.Schema)
 local Graph = require(script.Parent.Graph)
 local Planner = require(script.Parent.Planner)
 local Transaction = require(script.Parent.Transaction)
+local UI = require(script.Parent.StudioUI)
 local View = {}
 
-local colors = { bg = Color3.fromRGB(30, 32, 35), panel = Color3.fromRGB(43, 46, 50), text = Color3.fromRGB(239, 241, 243), muted = Color3.fromRGB(174, 182, 191), accent = Color3.fromRGB(54, 171, 149), error = Color3.fromRGB(250, 138, 117) }
 
 local function element(class, parent, props)
 	local item = Instance.new(class)
@@ -13,48 +13,32 @@ local function element(class, parent, props)
 	return item
 end
 
-local function stack(parent)
-	return element("UIListLayout", parent, { Padding = UDim.new(0, 7), SortOrder = Enum.SortOrder.LayoutOrder })
-end
-
-local function label(parent, text, size, color)
-	return element("TextLabel", parent, { Text = text, Font = Enum.Font.SourceSans, TextSize = size or 15, TextColor3 = color or colors.text, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top })
-end
-
-local function button(parent, text, fn, primary)
-	local b = element("TextButton", parent, { Text = text, Font = Enum.Font.SourceSansSemibold, TextSize = 15, TextWrapped = true, TextColor3 = colors.text, BackgroundColor3 = if primary then colors.accent else colors.panel, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 34), AutoButtonColor = true })
-	b.Activated:Connect(fn)
-	return b
-end
-
-local function row(parent, count)
-	local frame = element("Frame", parent, { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 34) })
-	element("UIGridLayout", frame, { CellSize = UDim2.new(1 / count, -6 * (count - 1) / count, 1, 0), CellPadding = UDim2.fromOffset(6, 0), SortOrder = Enum.SortOrder.LayoutOrder })
-	return frame
-end
 
 local function path(item)
 	return if item and item.Parent then item:GetFullName() else "Not assigned"
 end
 
 function View.mount(widget, selection, history)
-	local state = { tab = "Create", class = "WeldConstraint", entries = {}, inspected = {}, checked = {}, drafts = {}, message = "Choose endpoint parts to begin.", plan = nil }
-	local root = element("Frame", widget, { Name = "JointForgeUI", BackgroundColor3 = colors.bg, BorderSizePixel = 0, Size = UDim2.fromScale(1, 1) })
-	local header = element("Frame", root, { BackgroundTransparency = 1, Position = UDim2.fromOffset(12, 10), Size = UDim2.new(1, -24, 0, 72) })
-	stack(header)
-	label(header, "JointForge  /  1.1", 22)
-	local tabs = row(header, 3)
-	local body = element("ScrollingFrame", root, { Name = "Workflow", Position = UDim2.fromOffset(12, 91), Size = UDim2.new(1, -24, 1, -103), CanvasSize = UDim2.new(), AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 5, BackgroundTransparency = 1, BorderSizePixel = 0 })
+	local state = { tab = "Create", class = "WeldConstraint", entries = {}, inspected = {}, checked = {}, drafts = {}, message = "Choose endpoint parts to begin.", plan = nil, detailSection = "Properties" }
+	local root = element("Frame", widget, { Name = "JointForgeUI", BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ClipsDescendants=true })
+	local ui=UI.new(root,Color3.fromRGB(215,122,62)); local colors=ui.colors; colors.panel=colors.field
+	local label,row,stack=ui.label,ui.row,ui.stack
+	local function button(parent,text,fn,primary)
+		return ui.button(parent,text,text,fn,primary and "selected" or nil)
+	end
+	local body, commands, previewButton, disposed
 	local render
 	local function invalidate()
 		if state.plan then Planner.invalidate(state.plan) end
 		state.plan = nil
 		state.confirm = false
+		state.batchConflicts=nil
+		local apply=root:FindFirstChild("ApplyAction",true); if apply then apply:Destroy() end
 	end
 	local function act(fn)
 		return function()
 			local ok, err = pcall(fn)
-			if not ok then state.message = tostring(err); state.failed = true end
+			if not ok then state.message = tostring(err):gsub("^.-:%d+: ", ""); state.failed = true end
 			render()
 		end
 	end
@@ -87,37 +71,46 @@ function View.mount(widget, selection, history)
 			end
 		end)
 	end
-	for _, name in ipairs({ "Create", "Batch", "Inspect" }) do
-		button(tabs, name, act(function() state.tab = name; invalidate(); setMessage(name .. " workflow") end))
+	local function identity(parent, item, fallback)
+		local title=label(parent,item and item.Name or fallback,17,colors.text,28); title.Font=Enum.Font.BuilderSansBold
+		if item then ui.tip(title,path(item)) end
+		return title
 	end
-	local function endpoint(index)
+	local function endpoint(parent,index)
 		local key = if index == 0 then "a" else "b"
 		local attachmentKey = "attachment" .. index
-		label(body, "Part" .. index .. "  " .. path(state[key]), 15)
-		local actions = row(body, 2)
-		button(actions, "Use selected part", act(function() state[key] = one("BasePart"); state[attachmentKey] = nil; invalidate() end))
-		button(actions, "Select Part" .. index, act(function() assert(state[key], "Assign this endpoint first."); selection:Set({ state[key] }) end))
+		ui.section(parent,"PART "..index)
+		identity(parent,state[key],"Not assigned")
+		label(parent,state[key] and state[key].ClassName or "BasePart",12,colors.muted,20)
+		local actions = row(parent, 2)
+		button(actions, "Assign", act(function() state[key] = one("BasePart"); state[attachmentKey] = nil; invalidate() end))
+		button(actions, "Locate", act(function() assert(state[key], "Assign this endpoint first."); selection:Set({ state[key] }) end))
 		if Schema.usesAttachments(state.class) then
-			label(body, "Attachment" .. index .. ": " .. (state[attachmentKey] and path(state[attachmentKey]) or "Create new on Apply"), 14, colors.muted)
-			local attachments = row(body, 2)
-			button(attachments, "Use selected attachment", act(function()
+			label(parent, "Attachment " .. index,12,colors.muted,20)
+			local attachment=label(parent,state[attachmentKey] and state[attachmentKey].Name or "New on Apply",13,colors.text,22)
+			if state[attachmentKey] then ui.tip(attachment,path(state[attachmentKey])) end
+			local attachments = row(parent, 2)
+			local assign=button(attachments, "Assign", act(function()
 				local a = one("Attachment")
 				assert(a.Parent:IsA("BasePart"), "Use an attachment directly under a BasePart.")
 				state[key], state[attachmentKey] = a.Parent, a
 				invalidate()
 			end))
-			button(attachments, "Create new instead", act(function() state[attachmentKey] = nil; invalidate() end))
+			ui.tip(assign,"Use selected attachment")
+			button(attachments, "New", act(function() state[attachmentKey] = nil; invalidate() end))
 		end
 	end
 	local function showPreview()
 		local plan = state.plan
 		if not plan then return end
-		label(body, "PREVIEW  /  " .. #plan.operations .. " operations", 18)
+		ui.section(body,"EXACT PLAN  /  " .. #plan.operations .. " OPERATIONS")
 		for _, err in ipairs(plan.errors) do label(body, "BLOCKED: " .. err, 14, colors.error) end
 		for _, warning in ipairs(plan.warnings) do label(body, "NOTE: " .. warning, 14, colors.muted) end
 		for _, op in ipairs(plan.operations) do
 			if op.kind == "create" then
-				label(body, "+ " .. op.class .. "\n" .. path(op.a) .. " -> " .. path(op.b))
+				label(body,op.class,15)
+				local pair=label(body,op.a.Name .. "  \u{2194}  " .. op.b.Name,13,colors.muted)
+				ui.tip(pair,path(op.a).." -> "..path(op.b))
 				if Schema.usesAttachments(op.class) then
 					label(body, "A0: " .. (op.attachment0 and path(op.attachment0) or "NEW") .. " | A1: " .. (op.attachment1 and path(op.attachment1) or "NEW"), 14, colors.muted)
 				end
@@ -139,26 +132,32 @@ function View.mount(widget, selection, history)
 		if plan.request.kind == "remove" then
 			button(body, (state.confirm and "[x]" or "[ ]") .. " I confirm removal of these " .. #plan.operations .. " joints only", act(function() state.confirm = not state.confirm end))
 		end
-		button(body, "Apply " .. #plan.operations .. " operations", act(function()
+		ui.button(commands, "ApplyAction", "Apply " .. #plan.operations, act(function()
 			local result = Transaction.apply(plan, history, state.confirm)
 			invalidate()
 			state.drafts = {}
 			setMessage("Applied. Use Studio Undo once to restore the previous state.")
 			if #result > 0 then selection:Set(result) end
-		end), true)
+		end), "primary")
 	end
 	local function editForm(joint)
 		if not joint or not joint:IsDescendantOf(workspace) then return end
-		label(body, joint.ClassName .. " / " .. joint.Name, 18)
+		identity(body,joint,"Joint")
+		label(body,joint.ClassName,12,colors.muted)
 		local _, _, a, b = Graph.endpoints(joint)
-		label(body, "Endpoint 0: " .. path(a) .. "\nEndpoint 1: " .. path(b), 14, colors.muted)
+		local pair=label(body,(a and a.Name or "Missing") .. "  \u{2194}  " .. (b and b.Name or "Missing"),14,colors.text)
+		ui.tip(pair,path(a).." -> "..path(b))
 		local actions = row(body, 3)
 		for index, item in pairs({ [0] = a, [1] = b }) do
 			button(actions, "Select " .. index, act(function() selection:Set({ item }) end))
 		end
 		button(actions, "Locate joint", act(function() selection:Set({ joint }) end))
 		if not Schema.supported(joint) then label(body, "Inspect-only class. Edit its properties in Studio.", 14, colors.muted); return end
+		local sections=row(body,2)
+		for _,name in ipairs({"Properties","Endpoints"}) do button(sections,name,act(function() state.detailSection=name end),state.detailSection==name) end
+		ui.rule(body)
 		state.reassign = state.reassign or {}
+		if state.detailSection=="Endpoints" then
 		for index = 0, 1 do
 			local key = "endpoint" .. index
 			local value = state.reassign[key]
@@ -177,6 +176,7 @@ function View.mount(widget, selection, history)
 		button(body, "Preview explicit endpoint reassignment", act(function()
 			preview({ kind = "reassign", joint = joint, endpoint0 = state.reassign.endpoint0, endpoint1 = state.reassign.endpoint1, poseMode = state.rawPose and "raw" or "preserve" })
 		end))
+		else
 		if joint:IsA("Weld") or joint:IsA("Motor6D") then label(body, "C0 / C1: X Y Z RX RY RZ. Rotations in degrees. Editing or resetting offsets can move parts.", 14, colors.muted) end
 		local readers = {}
 		for _, field in ipairs(Schema.fields[joint.ClassName]) do
@@ -189,7 +189,7 @@ function View.mount(widget, selection, history)
 			elseif typeof(sample) == "EnumItem" then
 				choose(body, value.Name, { "None", "Motor", "Servo" }, function(v) state.drafts[field] = Enum.ActuatorType[v]; invalidate() end)
 			else
-				local input = element("TextBox", body, { Name = field, Text = if type(value) == "string" then value else Schema.format(value), ClearTextOnFocus = false, Font = Enum.Font.Code, TextSize = 14, TextColor3 = colors.text, BackgroundColor3 = colors.panel, BorderSizePixel = 0, Size = UDim2.new(1, -6, 0, if typeof(sample) == "CFrame" then 50 else 32), TextWrapped = true })
+				local input = element("TextBox", body, { Name = field, Text = if type(value) == "string" then value else Schema.format(value), ClearTextOnFocus = false, Font = Enum.Font.BuilderSans, TextSize = 13, TextColor3 = colors.text, BackgroundColor3 = colors.field, BorderSizePixel = 0, Size = UDim2.new(1, -6, 0, if typeof(sample) == "CFrame" then 50 else 32), TextWrapped = true })
 				readers[field] = function() return Schema.parse(input.Text, sample) end
 				input:GetPropertyChangedSignal("Text"):Connect(function() state.drafts[field] = input.Text; invalidate() end)
 				if typeof(sample) == "CFrame" then
@@ -205,21 +205,38 @@ function View.mount(widget, selection, history)
 			end
 			preview({ kind = "edit", joint = joint, changes = changes })
 		end))
+		end
 	end
 
 	render = function()
-		body:ClearAllChildren(); stack(body)
-		label(body, string.upper(state.tab) .. "  /  SELECT > TYPE > PREVIEW > APPLY", 15, colors.accent)
-		label(body, state.message, 14, if state.failed then colors.error else colors.muted)
+		if disposed then return end
+		root:ClearAllChildren()
+		local wide=root.AbsoluteSize.X>=520
+		local context=state.tab=="Create" and "New connection" or state.tab=="Batch" and "Assembly connections" or state.editing and state.editing.Name or "Joint inspector"
+		ui.header("JointForge",context,state.tab=="Create" and state.class or state.tab=="Batch" and (#state.entries.." parts") or (#state.inspected.." joints / constraints"))
+		local nav=element("Frame",root,{Position=UDim2.fromOffset(12,92),Size=UDim2.new(1,-24,0,30),BackgroundTransparency=1})
+		local tabs=row(nav,3)
+		for _,name in ipairs({"Create","Batch","Inspect"}) do button(tabs,name,act(function() state.tab=name; invalidate(); setMessage(name.." workflow") end),state.tab==name) end
+		local workflow=ui.scroll(root,"Workflow",UDim2.fromOffset(12,132),UDim2.new(1,-24,1,-232)); body=workflow
+		local footer=element("Frame",root,{Name="Commands",BackgroundTransparency=1,Position=UDim2.new(0,12,1,-90),Size=UDim2.new(1,-24,0,82)}); stack(footer,6)
+		local message=label(footer,state.message,12,state.failed and colors.error or colors.muted,36); ui.tip(message,state.message)
+		commands=row(footer,2,34)
+		previewButton=nil
 		if state.tab == "Create" then
-			label(body, "Assign each endpoint explicitly. Preview does not change your place.", 14, colors.muted)
 			choose(body, state.class, Schema.types, function(value) state.class = value; invalidate() end)
-			endpoint(0); endpoint(1)
-			if Schema.usesAttachments(state.class) then label(body, "New hinge/ball pivots meet at the midpoint (or the chosen attachment); hinge X axes follow Part0. Other constraints start at part centers. Adjust attachments in Studio for a custom pivot.", 14, colors.muted) end
-			button(body, "Preview joint", act(function() preview({ kind = "create", class = state.class, a = state.a, b = state.b, attachment0 = state.attachment0, attachment1 = state.attachment1 }) end), true)
+			if wide then
+				local pair=element("Frame",body,{Name="EndpointPair",BackgroundTransparency=1,Size=UDim2.new(1,0,0,Schema.usesAttachments(state.class) and 234 or 134)})
+				for i=0,1 do
+					local region=element("Frame",pair,{Name="Part"..i,BackgroundTransparency=1,Position=UDim2.new(i/2,i==1 and 12 or 0,0,0),Size=UDim2.new(0.5,-12,1,0)})
+					stack(region,4); endpoint(region,i)
+				end
+				local divider=element("Frame",pair,{Position=UDim2.new(0.5,0,0,8),Size=UDim2.new(0,1,1,-16),BackgroundColor3=colors.line,BorderSizePixel=0})
+			else endpoint(body,0); ui.rule(body); endpoint(body,1) end
+			ui.rule(body)
+			previewButton=button(commands,"Preview",act(function() preview({ kind = "create", class = state.class, a = state.a, b = state.b, attachment0 = state.attachment0, attachment1 = state.attachment1 }) end))
 		elseif state.tab == "Batch" then
-			label(body, "Choose a root/Handle, then select parts and assign Static or Moving. World poses stay unchanged. Existing connections block Apply.", 14, colors.muted)
-			label(body, "Root: " .. path(state.root))
+			ui.section(body,"ROOT")
+			identity(body,state.root,"Not assigned")
 			button(body, "Use selected part as root", act(function() state.root = one("BasePart"); invalidate() end))
 			local modes = row(body, 2)
 			for _, mode in ipairs({ "Static", "Moving" }) do
@@ -235,16 +252,31 @@ function View.mount(widget, selection, history)
 					invalidate()
 				end))
 			end
+			ui.rule(body)
+			ui.section(body,"PARTS  /  PLANNED CONNECTION")
 			for i, entry in ipairs(state.entries) do
-				label(body, path(entry.part) .. "  /  " .. entry.mode)
-				local actions = row(body, 2)
-				button(actions, "Select part", act(function() selection:Set({ entry.part }) end))
-				button(actions, "Remove from batch", act(function() table.remove(state.entries, i); invalidate() end))
+				local item=element("Frame",body,{Name="BatchRow",BackgroundTransparency=1,Size=UDim2.new(1,0,0,60)})
+				local part=button(item,entry.part.Name,act(function() selection:Set({entry.part}) end)); part.Size=UDim2.new(1,-114,0,28); part.TextXAlignment=Enum.TextXAlignment.Left; ui.tip(part,path(entry.part))
+				local role=button(item,entry.mode,act(function() entry.mode=entry.mode=="Static" and "Moving" or "Static"; invalidate() end),true); role.Position=UDim2.new(1,-108,0,0); role.Size=UDim2.fromOffset(78,28)
+				local remove=button(item,"\u{00D7}",act(function() table.remove(state.entries,i); invalidate() end)); remove.Position=UDim2.new(1,-26,0,0); remove.Size=UDim2.fromOffset(26,28); ui.tip(remove,"Remove from batch")
+				local connection=label(item,entry.mode=="Moving" and "Motor6D" or "WeldConstraint",12,colors.muted,24); connection.Position=UDim2.fromOffset(0,30)
+				if state.batchConflicts and state.batchConflicts[entry.part] then connection.Text=state.batchConflicts[entry.part]; connection.TextColor3=colors.error; ui.tip(connection,connection.Text) end
 			end
-			button(body, "Preview assembly", act(function() preview({ kind = "batch", root = state.root, entries = state.entries }) end), true)
+			previewButton=button(commands,"Preview",act(function()
+				preview({ kind = "batch", root = state.root, entries = state.entries })
+				state.batchConflicts={}
+				-- Presentation-only per-row diagnostics from the same bounded graph API.
+				local ok,index=pcall(Graph.build,workspace)
+				if ok then for _,entry in ipairs(state.entries) do
+					for _,edge in ipairs(index.adjacency[entry.part] or {}) do
+						if not edge.noCollision then state.batchConflicts[entry.part]="Existing physical connection"; break end
+					end
+				end end
+			end))
 		else
-			label(body, "Select parts or a model, then scan. Endpoint buttons select objects in Studio. Check joints to remove; removal always needs Preview and confirmation.", 14, colors.muted)
-			button(body, "Inspect current selection", act(function()
+			if wide then workflow.Size=UDim2.new(0,180,1,-232) end
+			workflow.Visible=wide or not state.editing
+			button(body, "Scan selection", act(function()
 				state.inspected = Graph.inspect(workspace, selection:Get())
 				state.checked, state.drafts, state.editing = {}, {}, nil
 				invalidate(); setMessage(#state.inspected .. " joints / constraints found.")
@@ -252,11 +284,11 @@ function View.mount(widget, selection, history)
 			for _, info in ipairs(state.inspected) do
 				local joint = info.joint
 				if joint:IsDescendantOf(workspace) then
-					label(body, (info.broken and "BROKEN  " or "") .. joint.ClassName .. " / " .. path(joint), 15, if info.broken then colors.error else colors.text)
-					label(body, path(info.endpoint0) .. " -> " .. path(info.endpoint1), 14, colors.muted)
-					local actions = row(body, 2)
-					button(actions, "Inspect / edit", act(function() state.editing = joint; state.drafts = {}; state.reassign = {}; state.rawPose = false; invalidate() end))
-					button(actions, (state.checked[joint] and "[x]" or "[ ]") .. " Remove", act(function() state.checked[joint] = not state.checked[joint]; invalidate() end))
+					local item=button(body,joint.Name,act(function() state.editing=joint; state.drafts={}; state.reassign={}; state.rawPose=false; invalidate() end),state.editing==joint)
+					item.TextXAlignment=Enum.TextXAlignment.Left; ui.tip(item,path(joint))
+					label(body,(info.broken and "Broken / " or "")..joint.ClassName,12,info.broken and colors.error or colors.muted)
+					ui.toggle(body,"Remove"..joint.Name,"Remove",state.checked[joint],act(function() state.checked[joint] = not state.checked[joint]; invalidate() end))
+					ui.rule(body)
 				end
 			end
 			button(body, "Preview checked removals", act(function()
@@ -264,12 +296,18 @@ function View.mount(widget, selection, history)
 				for joint, checked in pairs(state.checked) do if checked then table.insert(joints, joint) end end
 				preview({ kind = "remove", joints = joints })
 			end))
-			editForm(state.editing)
+			if wide or state.editing then
+				body=ui.scroll(root,"JointDetail",wide and UDim2.fromOffset(208,132) or UDim2.fromOffset(12,132),wide and UDim2.new(1,-220,1,-232) or UDim2.new(1,-24,1,-232))
+				if not wide then button(body,"\u{2190} Joints",act(function() state.editing=nil end)) end
+				if state.editing then editForm(state.editing) else label(body,"Select a joint",17,colors.muted) end
+			end
 		end
 		showPreview()
 	end
 	render()
 	local connections = {
+		root:GetPropertyChangedSignal("AbsoluteSize"):Connect(render),
+		settings().Studio.ThemeChanged:Connect(function() ui.theme(); colors.panel=colors.field; render() end),
 		selection.SelectionChanged:Connect(function()
 			if state.plan then invalidate(); setMessage("Selection changed. Preview again before Apply."); render() end
 		end),
@@ -277,6 +315,7 @@ function View.mount(widget, selection, history)
 		history.OnRedo:Connect(function() invalidate(); state.drafts = {}; setMessage("Redo completed. Refresh Inspect or Preview again."); render() end),
 	}
 	return function()
+		disposed=true
 		for _, connection in ipairs(connections) do connection:Disconnect() end
 		root:Destroy()
 	end

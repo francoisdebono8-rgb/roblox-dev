@@ -1,0 +1,6 @@
+[ForgeUIReview] JointForge native mount + real engine Preview PASS; SHA256=ccc7478418901dfda224860232e2c3aca1c74a19438cbcd2756f45519f452824
+[ForgeUIReview] CAPTURE JointForge 560 viewport=560, 640 origin=0, 0
+[ForgeUIReview] JointForge 560 read-only PASS
+[ForgeUIReview] JointForge native mount + real engine Preview PASS; SHA256=ccc7478418901dfda224860232e2c3aca1c74a19438cbcd2756f45519f452824
+[ForgeUIReview] CAPTURE JointForge 320 viewport=320, 640 origin=0, 0
+[ForgeUIReview] JointForge 320 read-only PASS

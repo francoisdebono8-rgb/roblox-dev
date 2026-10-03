@@ -1,7 +1,7 @@
 local toolbar = plugin:CreateToolbar("AccessForge")
 local toggle = toolbar:CreateButton("AccessForge", "Industrial stairs and catwalks", "")
 toggle.ClickableWhenViewportHidden = true
-local widget = plugin:CreateDockWidgetPluginGuiAsync("AccessForge1", DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 440, 780, 360, 600))
+local widget = plugin:CreateDockWidgetPluginGuiAsync("AccessForge1", DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 560, 720, 320, 480))
 widget.Title = "AccessForge"
 local dispose = require(script.Parent.Modules.View).mount(widget, game:GetService("Selection"), game:GetService("ChangeHistoryService"))
 toggle.Click:Connect(function() widget.Enabled = not widget.Enabled end)

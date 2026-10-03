@@ -1,0 +1,6 @@
+[ForgeUIReview] CurveForge native mount + real engine Preview PASS; SHA256=6c3fd7d1b5c1d498f383b8ba4099ad6d2bb2030bd2c9cf281889ff007bba6dd7
+[ForgeUIReview] CAPTURE CurveForge 560 viewport=560, 640 origin=0, 0
+[ForgeUIReview] CurveForge 560 read-only PASS
+[ForgeUIReview] CurveForge native mount + real engine Preview PASS; SHA256=6c3fd7d1b5c1d498f383b8ba4099ad6d2bb2030bd2c9cf281889ff007bba6dd7
+[ForgeUIReview] CAPTURE CurveForge 320 viewport=320, 640 origin=0, 0
+[ForgeUIReview] CurveForge 320 read-only PASS
