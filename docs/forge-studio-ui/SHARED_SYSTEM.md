@@ -29,6 +29,11 @@ Avoid:
 
 ## 2. Brand and product accents
 
+Canonical brand source: [`brand/CANONICAL_COVER_FAMILY.md`](brand/CANONICAL_COVER_FAMILY.md).
+Canonical Forge F geometry: [`brand/assets/forge-f.svg`](brand/assets/forge-f.svg).
+
+Do not retrace the F or re-infer product colors from screenshots.
+
 Candidate UI accent seeds, aligned to the approved Forge Studio cover family:
 
 | Product | Accent seed | Meaning in product |
