@@ -1,0 +1,29 @@
+2026-10-03T13:40:56.357Z [Playground29] PASS protocol defaults and index boundaries
+2026-10-03T13:40:56.357Z [Playground29] PASS server limiter refill
+2026-10-03T13:40:56.357Z [Playground29] PASS inactive station mutations rejected
+2026-10-03T13:40:56.357Z [Playground29] PASS Access select START gate
+2026-10-03T13:40:56.358Z [Playground29] PASS Access production parity Straight/rails=true
+2026-10-03T13:40:56.359Z [Playground29] PASS Access production parity Straight/rails=false
+2026-10-03T13:40:56.360Z [Playground29] PASS Access production parity Switchback/rails=true
+2026-10-03T13:40:56.361Z [Playground29] PASS Access production parity Switchback/rails=false
+2026-10-03T13:40:56.361Z [Playground29] PASS Access production parity Catwalk/rails=true
+2026-10-03T13:40:56.361Z [Playground29] PASS Access production parity Catwalk/rails=false
+2026-10-03T13:40:56.361Z [Playground29] PASS Access invalid endpoint keeps committed output and clears ghost
+2026-10-03T13:40:56.366Z [Playground29] PASS Curve production path and output parity Cable
+2026-10-03T13:40:56.369Z [Playground29] PASS Curve production path and output parity Repeat
+2026-10-03T13:40:56.370Z [Playground29] PASS Curve ghost collision and changed-control freshness
+2026-10-03T13:40:56.371Z [Playground29] PASS Joint diagnostics production parity
+2026-10-03T13:40:56.371Z [Playground29] PASS Joint endpoint decision rejects same-part repair
+2026-10-03T13:40:56.372Z [Playground29] PASS Joint explicit removal and pivot repair reduce actual findings
+2026-10-03T13:40:56.373Z [Playground29] PASS Schema audit parity and real fixture errors
+2026-10-03T13:40:56.384Z [Playground29] PASS Schema safe repairs do not rewrite invalid values or hierarchy
+2026-10-03T13:40:56.386Z [Playground29] PASS Schema stale audit cannot repair
+2026-10-03T13:40:56.387Z [Playground29] PASS Preset PreviewService exact sets counts changes parity
+2026-10-03T13:40:56.391Z [Playground29] PASS Preset applies only generated field writes
+2026-10-03T13:40:56.393Z [Playground29] PASS Preset stale plan and out-of-fixture adapter guard
+2026-10-03T13:40:56.396Z [Playground29] PASS every station reset restores exact baseline and removes previews
+2026-10-03T13:40:56.398Z [Playground29] PASS no mutation leaks to another session
+2026-10-03T13:40:56.399Z [Playground29] PASS navigation clears prior ghost and plan
+2026-10-03T13:40:56.400Z [Playground29] PASS session cleanup
+2026-10-03T13:40:56.400Z [Playground29] COMPLETE 27 passed / 0 failed
+2026-10-03T13:43:44.133Z [Playground29] Native source length/checksum parity PASS 36 scripts
