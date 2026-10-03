@@ -1,13 +1,32 @@
-# SchemaForge UI / issue #23
+# SchemaForge UI / issues #23 and #25
+
+## Current #25 Brand Candidate
+
+**VISUALLY ACCEPTED; TECHNICAL PASS; FINAL GRAPHICAL GATE PENDING. NOT PUBLISHED.**
+
+Current dist SHA256: `2a46a83c0cabd2867a699e0b888ea3a27eb99d905f4ea8a76af32b1d5cef3cc8`.
+Uses the new canonical SVG and brand specs from `2930298`, not cover extraction.
+User accepted the actual 320/560 renders: "c est acceptable" (2026-10-03).
+Compile, reproducible build, SVG-raster equality and focused native smoke PASS.
+Post-acceptance exact-binary native regression: **53 PASS / 0 FAIL, 41/41 PASS**,
+outer gate PASS. Evidence: `brand-review/native-technical.txt`.
+Real Dark 320/560 evidence and limitations: [BRAND_PASS.md](BRAND_PASS.md).
+Final Rules Dark geometry passes five sizes. Remaining Light/short captures and
+controlled GUI checks are pending because native window interaction failed while
+a full-screen browser was foreground. Failed attempts are not PASS.
+Full details and accepted pattern inventory: BRAND_PASS.md. The 53/41 suite need
+not be repeated unless source changes. No public asset update. #24 not started.
+
+## Accepted #23 Baseline
 
 **READY / PASS: issue #23 final UI gate, 2026-10-03. NOT PUBLISHED.**
 
 Human review on 2026-09-29 rejected the first pass. That decision is superseded
 by explicit acceptance of the final refinement and its completed native gate.
-Current evidence: [REFINED_REVIEW.md](REFINED_REVIEW.md), 2026-10-03.
-The sections below Current Candidate are historical, not current gate results.
+Baseline evidence: [REFINED_REVIEW.md](REFINED_REVIEW.md), 2026-10-03.
+These results apply to the exact #23 binary below, not the new #25 candidate.
 
-## Current Candidate
+## Accepted #23 Candidate
 
 SHA256: `542131178c45716fca27d12f7b1ec8678fae3c414e6d33645cf23229f65cb126`.
 Human review accepted the actual 560px Audit and 320px diagnostic captures:

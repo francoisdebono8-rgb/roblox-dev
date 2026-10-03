@@ -1,16 +1,16 @@
 {
   "benchmark": {
-    "candidate_full_audit_median_ms": "0.383958",
+    "candidate_full_audit_median_ms": "0.110750",
     "candidate_visits": "20",
     "child_visits": "0",
     "descendants": "20000",
-    "old_full_audit_median_ms": "42.751000",
+    "old_full_audit_median_ms": "13.620625",
     "old_scope_visits": "20001",
     "repetitions": "7",
     "targets": "20",
     "warmup": "2"
   },
-  "candidate_sha256": "2f8436e1ee9590021e9c4ab86e6ef30363e2a59067108a2af24cd31247c07bda",
+  "candidate_sha256": "2a46a83c0cabd2867a699e0b888ea3a27eb99d905f4ea8a76af32b1d5cef3cc8",
   "matrix": {
     "1": "PASS",
     "2": "PASS",

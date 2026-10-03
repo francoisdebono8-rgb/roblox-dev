@@ -1,0 +1,51 @@
+2026-10-03T00:08:58.007Z,6.007036,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Draft / Greenhouse Contract / Project contract
+2026-10-03T00:08:58.008Z,6.008008,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 560, 640 24
+2026-10-03T00:08:58.008Z,6.008099,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:08:58.008Z,6.008129,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+2026-10-03T00:08:58.008Z,6.008141,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Save active=true text=Save contract
+2026-10-03T00:08:58.857Z,6.857809,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI] mounted 560x640 theme=Dark sha256=2a46a83c0cabd2867a699e0b888ea3a27eb99d905f4ea8a76af32b1d5cef3cc8
+2026-10-03T00:08:58.857Z,6.857973,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI] viewport=0, 0 size=560, 640
+2026-10-03T00:10:14.238Z,82.238266,fab8cf40,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ENGINE] audit=1
+2026-10-03T00:10:14.453Z,82.453560,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Draft / Greenhouse Contract / 4 safe additions selected
+2026-10-03T00:10:14.454Z,82.454628,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 560, 640 30
+2026-10-03T00:10:14.454Z,82.454666,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:10:14.454Z,82.454674,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Re-run audit
+2026-10-03T00:10:14.454Z,82.454689,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+2026-10-03T00:10:39.337Z,107.337021,fab8cf40,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ENGINE] preview=1
+2026-10-03T00:10:39.553Z,107.553207,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions. Preview is read-only.
+2026-10-03T00:10:39.554Z,107.554016,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 560, 640 11
+2026-10-03T00:10:39.554Z,107.554047,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:10:39.554Z,107.554070,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+2026-10-03T00:10:39.554Z,107.554085,6fd83000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Apply active=true text=Apply 4
+2026-10-03T00:10:39.953Z,107.953690,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions. Preview is read-only.
+2026-10-03T00:10:39.954Z,107.954803,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 10
+2026-10-03T00:10:39.954Z,107.954857,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:10:39.954Z,107.954887,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] ToAudit active=true text=Audit
+2026-10-03T00:10:39.954Z,107.954910,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Apply active=true text=Apply 4
+2026-10-03T00:11:01.493Z,129.493942,fab8cf40,6,Info [FLog::CreatorOutput] [SchemaForgeUI][CLICK] TabAudit
+2026-10-03T00:11:01.652Z,129.652512,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions selected
+2026-10-03T00:11:01.653Z,129.653381,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 28
+2026-10-03T00:11:01.653Z,129.653412,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:11:01.653Z,129.653427,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Audit
+2026-10-03T00:11:01.653Z,129.653442,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+2026-10-03T00:11:01.802Z,129.802567,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Ready / Greenhouse Contract / 4 safe additions selected
+2026-10-03T00:11:01.803Z,129.803360,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 28
+2026-10-03T00:11:01.803Z,129.803391,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:11:01.803Z,129.803406,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Audit
+2026-10-03T00:11:01.803Z,129.803421,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+2026-10-03T00:11:02.669Z,130.669235,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Stale / Greenhouse Contract / Selection changed. Audit and preview again.
+2026-10-03T00:11:02.670Z,130.670181,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 28
+2026-10-03T00:11:02.670Z,130.670212,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:11:02.670Z,130.670227,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Audit
+2026-10-03T00:11:02.670Z,130.670242,6f367000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=false text=Preview changes
+2026-10-03T00:11:27.468Z,155.468674,fab8cf40,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ENGINE] audit=2
+2026-10-03T00:11:27.918Z,155.918121,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Draft / Greenhouse Contract / 4 safe additions selected
+2026-10-03T00:11:27.918Z,155.918915,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 28
+2026-10-03T00:11:27.918Z,155.918945,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:11:27.918Z,155.918961,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Audit
+2026-10-03T00:11:27.918Z,155.918976,6ff8f000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
+2026-10-03T00:12:16.899Z,204.899918,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][STATE] Draft / Greenhouse Contract / 4 safe additions selected
+2026-10-03T00:12:16.900Z,204.900940,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][GEOMETRY PASS] 320, 640 8
+2026-10-03T00:12:16.900Z,204.900970,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][FIXTURE] missingCosts=3 missingTags=1 invalidCost=unknown invalidGrowth=-2
+2026-10-03T00:12:16.900Z,204.900986,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] Audit active=true text=Audit
+2026-10-03T00:12:16.901Z,204.901001,6f573000,6,Info [FLog::CreatorOutput] [SchemaForgeUI][ACTION] PrepareFixes active=true text=Preview changes
