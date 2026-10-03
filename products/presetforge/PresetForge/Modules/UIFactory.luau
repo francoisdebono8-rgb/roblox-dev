@@ -2,6 +2,51 @@ local Constants = require(script.Parent.Constants)
 local TextService = game:GetService("TextService")
 
 local UIFactory = {}
+-- Canonical SVG raster, unchanged from SchemaForge (32 x 42).
+local forgeMarkRaster = [[
+5,1,51;6,2,68;8,1,85;9,2,102;11,2,119;13,1,136;14,2,153;16,2,170;18,1,187;19,2,204;21,2,221;23,1,238;24,1,255
+4,1,136;5,20,255
+3,1,68;4,21,255
+2,1,34;3,1,238;4,20,255;24,1,170
+2,1,204;3,20,255;23,1,170
+1,1,136;2,20,255;22,1,170
+0,1,85;1,20,255;21,1,170
+0,1,238;1,6,255;7,13,153;20,1,136
+0,1,238;1,5,255;6,1,102
+0,1,221;1,4,255;5,1,102
+0,1,221;1,3,255;4,1,119
+0,1,204;1,2,255;3,1,136;7,2,17;9,2,34;11,2,51;13,1,68;14,2,85;16,2,102;18,2,119;20,2,136;22,1,17
+0,1,187;1,1,255;2,1,153;5,1,51;6,1,238;7,14,255;21,1,102
+0,1,170;1,1,153;4,1,85;5,15,255;20,1,119
+0,1,85;3,1,119;4,15,255;19,1,153
+2,1,153;3,15,255;18,1,170
+0,1,17;1,1,187;2,15,255;17,1,187
+0,1,153;1,15,255;16,1,204;17,1,17
+0,1,153;1,6,255;7,1,102;8,1,85;9,2,68;11,1,51;12,2,34;14,2,17
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,6,255
+0,1,153;1,5,255;6,1,153
+0,1,153;1,4,255;5,1,136
+0,1,153;1,3,255;4,1,85
+0,1,153;1,1,255;2,1,238;3,1,51
+0,1,153;1,1,204;2,1,34
+0,1,85;1,1,17
+
+
+
+
+
+
+
+]]
 local contexts = setmetatable({}, { __mode = "k" })
 
 local function studioSettings()
@@ -13,31 +58,34 @@ end
 
 local function palette(studio)
 	local colors = {
-		background = Color3.fromRGB(29, 31, 34),
-		panel = Color3.fromRGB(38, 41, 45),
-		panelHover = Color3.fromRGB(48, 52, 57),
-		border = Color3.fromRGB(86, 92, 99),
-		text = Color3.fromRGB(239, 242, 244),
-		muted = Color3.fromRGB(174, 182, 190),
-		accent = Color3.fromRGB(34, 184, 207),
-		accentHover = Color3.fromRGB(67, 204, 224),
-		onAccent = Color3.fromRGB(12, 34, 39),
+		background = Color3.fromRGB(24, 26, 28),
+		panel = Color3.fromRGB(30, 32, 34),
+		panelHover = Color3.fromRGB(40, 44, 46),
+		border = Color3.fromRGB(47, 51, 53),
+		text = Color3.fromRGB(232, 234, 236),
+		muted = Color3.fromRGB(158, 163, 166),
+		accent = Color3.fromRGB(209, 163, 72),
+		accentHover = Color3.fromRGB(224, 180, 92),
+		onAccent = Color3.fromRGB(38, 30, 15),
 		danger = Color3.fromRGB(255, 139, 139),
 		success = Color3.fromRGB(116, 214, 158),
 		warning = Color3.fromRGB(245, 198, 106),
 	}
 	if studio then
 		local theme = studio.Theme
-		colors.background = theme:GetColor(Enum.StudioStyleGuideColor.MainBackground)
-		colors.panel = theme:GetColor(Enum.StudioStyleGuideColor.InputFieldBackground)
-		colors.panelHover = theme:GetColor(Enum.StudioStyleGuideColor.Button, Enum.StudioStyleGuideModifier.Hover)
-		colors.border = theme:GetColor(Enum.StudioStyleGuideColor.Border)
-		colors.text = theme:GetColor(Enum.StudioStyleGuideColor.MainText)
-		colors.muted = theme:GetColor(Enum.StudioStyleGuideColor.SubText)
+		local bg = theme:GetColor(Enum.StudioStyleGuideColor.MainBackground)
+		if bg.R + bg.G + bg.B > 1.5 then
+			colors.background = Color3.fromRGB(246, 247, 247)
+			colors.panel = Color3.fromRGB(241, 243, 243)
+			colors.panelHover = Color3.fromRGB(235, 238, 237)
+			colors.border = Color3.fromRGB(221, 224, 223)
+			colors.text = Color3.fromRGB(36, 39, 41)
+			colors.muted = Color3.fromRGB(102, 108, 111)
+		end
 	end
 	local light = colors.background.R + colors.background.G + colors.background.B > 1.5
-	colors.accentDark = colors.background:Lerp(colors.accent, light and 0.18 or 0.22)
-	colors.accentText = light and Color3.fromRGB(0, 102, 120) or colors.accent
+	colors.accentDark = colors.background:Lerp(colors.accent, 0.12)
+	colors.accentText = light and Color3.fromRGB(128, 86, 12) or colors.accent
 	if light then
 		colors.danger = Color3.fromRGB(174, 37, 43)
 		colors.success = Color3.fromRGB(30, 112, 66)
@@ -184,7 +232,10 @@ local function renderButton(target)
 	local hover = target:GetAttribute("Hovered") and target.Active
 	paint(target, "BackgroundColor3", selected and "accentDark"
 		or primary and (hover and "accentHover" or "accent")
-		or hover and "panelHover" or "panel")
+		or (hover or target:GetAttribute("Pressed")) and "panelHover" or "panel")
+	if target:GetAttribute("Quiet") then
+		target.BackgroundTransparency = (selected or hover or target:GetAttribute("Pressed")) and 0 or 1
+	end
 	local outline = target:FindFirstChildOfClass("UIStroke")
 	if outline then
 		paint(outline, "Color", (selected or primary) and "accent" or "border")
@@ -209,8 +260,11 @@ local function button(parent, text, primary)
 	end)
 	listen(result, result.MouseLeave, function()
 		result:SetAttribute("Hovered", false)
+		result:SetAttribute("Pressed", false)
 		renderButton(result)
 	end)
+	listen(result, result.MouseButton1Down, function() result:SetAttribute("Pressed", true); renderButton(result) end)
+	listen(result, result.MouseButton1Up, function() result:SetAttribute("Pressed", false); renderButton(result) end)
 	renderButton(result)
 	return result
 end
@@ -232,7 +286,9 @@ local function textBox(parent, placeholder)
 	paint(result, "TextColor3", "text")
 	paint(result, "PlaceholderColor3", "muted")
 	padding(result, 7, 8, 7, 8)
-	border(result)
+	local outline = border(result)
+	listen(result, result.Focused, function() paint(outline, "Color", "accent") end)
+	listen(result, result.FocusLost, function() paint(outline, "Color", "border") end)
 	fitWrappedText(result)
 	return result
 end
@@ -340,44 +396,149 @@ function UIFactory.setCheckbox(target, checked, text)
 	renderButton(target)
 end
 
+local function quiet(target)
+	target:SetAttribute("Quiet", true)
+	local outline = target:FindFirstChildOfClass("UIStroke")
+	if outline then outline:Destroy() end
+	renderButton(target)
+	return target
+end
+
+local function fixedLabel(parent, text, size, role, bold)
+	local result = label(parent, text, size, role, bold)
+	result.AutomaticSize = Enum.AutomaticSize.None
+	result.TextWrapped = false
+	result.TextTruncate = Enum.TextTruncate.AtEnd
+	result.TextYAlignment = Enum.TextYAlignment.Center
+	return result
+end
+
+local function tip(target, text)
+	local context = contextFor(target)
+	local hovering = false
+	listen(target, target.MouseEnter, function()
+		hovering = true
+		task.delay(0.6, function()
+			if not hovering or not target.Parent or context.destroyed or not context.tooltip then return end
+			if not text and target.TextFits then return end
+			local tooltip = context.tooltip
+			tooltip.Text = text or target.Text
+			tooltip.Position = UDim2.fromOffset(12, math.clamp(target.AbsolutePosition.Y - context.root.AbsolutePosition.Y + target.AbsoluteSize.Y, 8, math.max(8, context.root.AbsoluteSize.Y - 110)))
+			tooltip.Visible = true
+		end)
+	end)
+	listen(target, target.MouseLeave, function() hovering = false; if context.tooltip then context.tooltip.Visible = false end end)
+	listen(target, target.Destroying, function() hovering = false; if context.tooltip then context.tooltip.Visible = false end end)
+end
+
+local function separator(parent)
+	local rule = create("Frame", {Name = "Separator", Size = UDim2.new(1, 0, 0, 1)}, parent)
+	paint(rule, "BackgroundColor3", "border")
+	return rule
+end
+
 function UIFactory.createPresetButton(parent, recipe, selected)
-	local result = button(parent, string.format("%s\n%s | %s", recipe.name, recipe.library, recipe.schemaId), false)
+	local result = quiet(button(parent, "", false))
 	result.Name = "PresetButton"
-	result.AutomaticSize = Enum.AutomaticSize.Y
-	result.Size = UDim2.new(1, 0, 0, 48)
-	result.Font = selected and Enum.Font.BuilderSansBold or Enum.Font.BuilderSans
-	result.TextSize = 14
-	result.TextXAlignment = Enum.TextXAlignment.Left
-	result.TextYAlignment = Enum.TextYAlignment.Top
+	result.Size = UDim2.new(1, 0, 0, 52)
 	result:SetAttribute("RecipeName", recipe.name)
 	result:SetAttribute("Library", recipe.library)
-	padding(result, 8, 8, 8, 8)
-	fitWrappedText(result)
+	local name = fixedLabel(result, recipe.name, 13, selected and "accentText" or "text", selected)
+	name.Position = UDim2.fromOffset(10, 6); name.Size = UDim2.new(1, -18, 0, 20); tip(name)
+	local meta = fixedLabel(result, recipe.library .. "  /  " .. recipe.schemaId, 11, "muted", false)
+	meta.Position = UDim2.fromOffset(10, 28); meta.Size = UDim2.new(1, -18, 0, 16); tip(meta)
+	if selected then
+		local marker = create("Frame", {Position = UDim2.fromOffset(0, 10), Size = UDim2.fromOffset(2, 32)}, result)
+		paint(marker, "BackgroundColor3", "accent")
+	end
 	UIFactory.setSegment(result, selected)
 	return result
 end
 
-function UIFactory.createResultButton(parent, text, status)
-	local result = button(parent, text, false)
-	result.Name = "ResultButton"
-	result.AutomaticSize = Enum.AutomaticSize.Y
-	result.Size = UDim2.new(1, 0, 0, 42)
-	result.Font = Enum.Font.BuilderSans
-	result.TextSize = 13
-	result.TextXAlignment = Enum.TextXAlignment.Left
-	result.TextYAlignment = Enum.TextYAlignment.Top
-	result:SetAttribute("Status", status)
-	padding(result, 8, 8, 8, 12)
-	fitWrappedText(result)
-	local tone = status == "affected" and "warning" or status == "matching" and "success"
-		or status == "invalid" and "danger" or "muted"
-	local marker = create("Frame", {
-		Name = "StatusMarker",
-		Position = UDim2.fromOffset(-8, 0),
-		Size = UDim2.new(0, 2, 0, 20),
-	}, result)
-	paint(marker, "BackgroundColor3", tone)
-	return result
+function UIFactory.createResultRow(parent, result, formatValue)
+	local group = stack(parent, "ObjectChanges")
+	group:FindFirstChildOfClass("UIListLayout").Padding = UDim.new(0, 6)
+	group:SetAttribute("Status", result.status)
+	separator(group)
+	local heading = pair(group, "ObjectHeading")
+	heading.Size = UDim2.new(1, 0, 0, 42)
+	local title = fixedLabel(heading, result.instance.Name, 14, "text", true)
+	title.Size = UDim2.new(1, -96, 0, 22); tip(title)
+	local path = fixedLabel(heading, result.path, 11, "muted", false)
+	path.Name = "ObjectPath"
+	path.Position = UDim2.fromOffset(0, 23); path.Size = UDim2.new(1, 0, 0, 16); tip(path, result.path)
+	-- Native truncation can overflow an auto-height list in a floating Studio dock.
+	local function fitPath()
+		local rootWidth = contextFor(path).root.AbsoluteSize.X
+		local available = math.min(path.AbsoluteSize.X, rootWidth - (rootWidth >= 520 and 168 or 0) - 28)
+		if available <= 0 then return end
+		local function fits(text)
+			return TextService:GetTextSize(text, path.TextSize, path.Font, Vector2.new(4096, 100)).X <= available
+		end
+		if fits(result.path) then path.Text = result.path; return end
+		local offsets = {}
+		if utf8.len(result.path) then
+			for offset in utf8.codes(result.path) do offsets[#offsets + 1] = offset end
+		else
+			for offset = 1, #result.path do offsets[#offsets + 1] = offset end
+		end
+		offsets[#offsets + 1] = #result.path + 1
+		local low, high = 0, #offsets - 1
+		while low < high do
+			local middle = math.ceil((low + high) / 2)
+			if fits(string.sub(result.path, 1, offsets[middle + 1] - 1) .. "...") then low = middle else high = middle - 1 end
+		end
+		path.Text = string.sub(result.path, 1, offsets[low + 1] - 1) .. "..."
+	end
+	listen(path, path:GetPropertyChangedSignal("AbsoluteSize"), fitPath)
+	listen(path, contextFor(path).root:GetPropertyChangedSignal("AbsoluteSize"), fitPath)
+	fitPath()
+	local selectButton = quiet(button(heading, "Select", false))
+	selectButton.Position = UDim2.new(1, -96, 0, 0); selectButton.Size = UDim2.fromOffset(48, 24)
+	local frameButton = quiet(button(heading, "Frame", false))
+	frameButton.Position = UDim2.new(1, -48, 0, 0); frameButton.Size = UDim2.fromOffset(48, 24)
+	if #result.changes > 0 then
+		local headings = pair(group, "ValueHeadings"); headings.Size = UDim2.new(1, 0, 0, 16)
+		for i, name in ipairs({"FIELD", "BEFORE", "AFTER"}) do
+			local h = fixedLabel(headings, name, 10, "muted", false)
+			h.Position = UDim2.new(i == 1 and 0 or i == 2 and 0.42 or 0.71, 0, 0, 0)
+			h.Size = UDim2.new(i == 1 and 0.42 or 0.29, -6, 1, 0)
+		end
+		for _, change in ipairs(result.changes) do
+			local values = pair(group, "FieldChange")
+			local before = change.beforeExists == false and "Missing" or formatValue(change.before)
+			local texts = {change.name, before, formatValue(change.after)}
+			local cells = {}
+			for i, text in ipairs(texts) do
+				local cell = label(values, text, 12, i == 1 and "text" or i == 3 and "accentText" or "muted", i == 1)
+				cell.Position = UDim2.new(i == 1 and 0 or i == 2 and 0.42 or 0.71, 0, 0, 0)
+				cell.Size = UDim2.new(i == 1 and 0.42 or 0.29, -6, 0, 18)
+				cells[i] = cell
+				local value = i == 2 and change.before or i == 3 and change.after or nil
+				if typeof(value) == "Color3" then
+					local hex = value:ToHex():upper()
+					local byteColor = Color3.fromHex(hex)
+					-- Hex is exact only for byte-derived colors; retain arbitrary float values verbatim.
+					if value == byteColor then
+						cell.Text = "#" .. hex
+						cell.TextSize = 11
+						padding(cell, 0, 0, 0, 19)
+						local swatch = create("Frame", {Name = "ColorSwatch", BackgroundColor3 = value,
+							Position = cell.Position + UDim2.fromOffset(0, 2), Size = UDim2.fromOffset(12, 12)}, values)
+						border(swatch)
+					end
+					tip(cell, text)
+				end
+			end
+			tip(cells[1], change.kind .. " / " .. change.name)
+			local function sizeValues() values.Size = UDim2.new(1, 0, 0, math.max(cells[1].AbsoluteSize.Y, cells[2].AbsoluteSize.Y, cells[3].AbsoluteSize.Y, 22)) end
+			for _, cell in ipairs(cells) do listen(cell, cell:GetPropertyChangedSignal("AbsoluteSize"), sizeValues) end
+			sizeValues()
+		end
+	else
+		label(group, result.reason or "Every captured field already matches.", 12, "muted", false)
+	end
+	return group, selectButton, frameButton
 end
 
 local function refreshTheme(root, context, studio)
@@ -444,22 +605,45 @@ function UIFactory.build(widget)
 		ClipsDescendants = true,
 	}, widget))
 	contexts[root] = context
+	context.root = root
 	paint(root, "BackgroundColor3", "background")
+	context.tooltip = label(root, "", 12, "text", false)
+	context.tooltip.Name = "Tooltip"; context.tooltip.Visible = false; context.tooltip.ZIndex = 50
+	context.tooltip.Size = UDim2.new(1, -24, 0, 0); context.tooltip.BackgroundTransparency = 0
+	paint(context.tooltip, "BackgroundColor3", "panelHover"); padding(context.tooltip, 8, 8, 8, 8)
 	local header = expose("header", create("Frame", { Size = UDim2.new(1, 0, 0, 80) }, root))
 	paint(header, "BackgroundColor3", "background")
-	local title = label(header, "PresetForge", 18, "text", true)
+	local title = fixedLabel(header, "PresetForge", 13, "text", true)
 	title.Name = "ProductTitle"
-	title.Position = UDim2.fromOffset(12, 8)
-	title.Size = UDim2.new(1, -24, 0, 24)
+	title.Position = UDim2.fromOffset(38, 6)
+	title.Size = UDim2.fromOffset(82, 18)
+	local maker = fixedLabel(header, "Forge Studio", 11, "muted", false)
+	maker.Name = "Maker"; maker.Position = UDim2.fromOffset(121, 6); maker.Size = UDim2.fromOffset(76, 18)
+	local mark = create("Frame", {Name = "ForgeMark", Position = UDim2.fromOffset(12, 3), Size = UDim2.fromOffset(20, 26.25), BackgroundTransparency = 1}, header)
+	local markRow = 0
+	for row in forgeMarkRaster:gmatch("([^\n]*)\n") do
+		for x, width, alpha in row:gmatch("(%d+),(%d+),(%d+)") do
+			local run = create("Frame", {Position = UDim2.fromScale(tonumber(x)/32, markRow/42), Size = UDim2.fromScale(tonumber(width)/32, 1/42), BackgroundTransparency = 1-tonumber(alpha)/255}, mark)
+			paint(run, "BackgroundColor3", "text")
+		end
+		markRow += 1
+	end
+	expose("detailName", fixedLabel(header, "Choose a recipe", 18, "text", true))
+	ui.detailName.Position = UDim2.fromOffset(12, 32); ui.detailName.Size = UDim2.new(1, -94, 0, 25); tip(ui.detailName)
+	expose("libraryBadge", fixedLabel(header, "", 11, "accentText", false))
+	ui.libraryBadge.Position = UDim2.new(1, -78, 0, 35); ui.libraryBadge.Size = UDim2.fromOffset(66, 20); ui.libraryBadge.TextXAlignment = Enum.TextXAlignment.Right
+	expose("detailCounts", fixedLabel(header, "No recipe selected", 12, "muted", false))
+	ui.detailCounts.Position = UDim2.fromOffset(12, 59); ui.detailCounts.Size = UDim2.new(1, -24, 0, 18); tip(ui.detailCounts)
+	local headerLine = separator(header); headerLine.Position = UDim2.new(0, 0, 1, -1)
 	local navigation = create("Frame", {
 		Name = "Navigation",
 		BackgroundTransparency = 1,
-		Position = UDim2.fromOffset(12, 40),
+		Position = UDim2.fromOffset(12, 82),
 		Size = UDim2.new(1, -24, 0, 32),
 	}, header)
 	local tabLayout = create("UIGridLayout", {
 		CellPadding = UDim2.fromOffset(4, 4),
-		CellSize = UDim2.new(0.25, -3, 0, 32),
+		CellSize = UDim2.new(1/3, -3, 0, 30),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	}, navigation)
 	local body = expose("body", create("Frame", {
@@ -475,37 +659,47 @@ function UIFactory.build(widget)
 				Size = UDim2.fromScale(1, 1),
 				ClipsDescendants = true,
 			}, body)
+		elseif name == "Targets" then
+			view = stack(body, "TargetsView")
 		else
 			view = scroll(body, name .. "View")
 		end
 		view.Visible = name == "Library"
 		ui.views[name] = view
-		local tab = button(navigation, name, false)
+		local tab = quiet(button(navigation, name == "Changes" and "Targets / Changes" or name, false))
 		tab.Name = name .. "Tab"
 		tab.LayoutOrder = index
 		ui.viewButtons[name] = tab
+		if name == "Targets" then tab.Visible = false end
 		listen(tab, tab.Activated, function()
 			ui.showView(name)
 		end)
 	end
 	ui.detailScroll = ui.views.Recipe
+	ui.views.Targets.Parent = ui.views.Changes
+	ui.views.Targets.LayoutOrder = 0
+	local paneLine = separator(body); paneLine.Size = UDim2.new(0, 1, 1, 0)
 	local library = ui.views.Library
 	local libraryControls = stack(library, "LibraryControls")
 	libraryControls.Position = UDim2.fromOffset(12, 12)
 	libraryControls.Size = UDim2.new(1, -24, 0, 0)
+	local libraryTitle = pair(libraryControls, "LibraryHeading")
+	local libraryLabel = fixedLabel(libraryTitle, "RECIPES", 11, "muted", true); libraryLabel.Size = UDim2.new(1, -32, 1, 0)
+	expose("saveButton", quiet(button(libraryTitle, "+", false)))
+	ui.saveButton.Position = UDim2.new(1, -28, 0, 0); ui.saveButton.Size = UDim2.fromOffset(28, 28); ui.saveButton.TextSize = 22
+	tip(ui.saveButton, "Capture a recipe from the selected source")
 	expose("searchInput", textBox(libraryControls, "Search recipes"))
 	-- A search query stays on one line so a pasted query cannot hide the library.
 	ui.searchInput.AutomaticSize = Enum.AutomaticSize.None
 	ui.searchInput.TextWrapped = false
-	expose("saveButton", button(libraryControls, "Save Recipe", true))
 	expose("presetList", scroll(library, "PresetList"))
 	ui.presetList.Position = UDim2.fromOffset(0, 84)
 	ui.presetList.Size = UDim2.new(1, 0, 1, -84)
 
 	local recipe = ui.views.Recipe
-	expose("detailName", label(recipe, "Choose a recipe", 18, "text", true))
-	expose("libraryBadge", label(recipe, "", 12, "accentText", true))
-	expose("detailCounts", label(recipe, "No recipe selected", 13, "muted", false))
+	label(recipe, "Captured recipe", 16, "text", true)
+	expose("capturedFields", stack(recipe, "CapturedFields"))
+	separator(recipe)
 	local editRow = pair(recipe, "EditActions")
 	expose("editButton", inPair(button(editRow, "Edit", false), 1))
 	expose("duplicateButton", inPair(button(editRow, "Duplicate", false), 2))
@@ -518,35 +712,105 @@ function UIFactory.build(widget)
 	local renameActions = pair(renamePanel, "RenameActions")
 	expose("renameCancel", inPair(button(renameActions, "Cancel", false), 1))
 	expose("renameConfirm", inPair(button(renameActions, "Save", true), 2))
-	label(recipe, "Captured fields", 14, "text", true).Name = "FieldsTitle"
 	expose("capturedText", label(recipe, "Select a recipe to inspect its fields.", 14, "text", false))
+	ui.capturedText.Visible = false
 	expose("deleteButton", button(recipe, "Delete", false))
+	paint(ui.deleteButton, "TextColor3", "danger")
+	for _, key in ipairs({"editButton", "duplicateButton", "renameButton", "recaptureButton", "deleteButton"}) do quiet(ui[key]) end
+	function ui.renderCaptured(selectedRecipe, formatValue)
+		for _, child in ipairs(ui.capturedFields:GetChildren()) do if child:IsA("GuiObject") then child:Destroy() end end
+		if not selectedRecipe then label(ui.capturedFields, "No captured fields", 13, "muted", false); return end
+		local function section(name, values)
+			local keys = {}; for key in pairs(values) do keys[#keys + 1] = key end; table.sort(keys)
+			if #keys == 0 then return end
+			label(ui.capturedFields, name, 11, "muted", true)
+			for _, key in ipairs(keys) do
+				local field = stack(ui.capturedFields, "CapturedField")
+				field:FindFirstChildOfClass("UIListLayout").Padding = UDim.new(0, 2)
+				label(field, key, 13, "text", true)
+				label(field, formatValue(values[key]), 12, "muted", false)
+			end
+		end
+		section("PROPERTIES", selectedRecipe.properties)
+		if selectedRecipe.capture.tags and #selectedRecipe.tags > 0 then
+			label(ui.capturedFields, "TAGS", 11, "muted", true)
+			label(ui.capturedFields, table.concat(selectedRecipe.tags, ", "), 13, "text", false)
+		end
+		if selectedRecipe.capture.attributes then section("ATTRIBUTES", selectedRecipe.attributes) end
+	end
 
 	local targets = ui.views.Targets
-	label(targets, "Target scope", 14, "text", true).Name = "ScopeTitle"
-	expose("scopeSelectionButton", button(targets, "Selection", false))
-	expose("scopeDescendantsButton", button(targets, "Descendants", false))
+	targets:FindFirstChildOfClass("UIListLayout").Padding = UDim.new(0, 4)
+	local targetHeading = pair(targets, "TargetHeading"); targetHeading.Size = UDim2.new(1, 0, 0, 18)
+	local scopeTitle = fixedLabel(targetHeading, "TARGETS", 11, "muted", true); scopeTitle.Size = UDim2.new(0.35, 0, 1, 0)
+	expose("selectionText", fixedLabel(targetHeading, "0 selected", 11, "muted", false))
+	ui.selectionText.Position = UDim2.fromScale(0.35, 0); ui.selectionText.Size = UDim2.fromScale(0.65, 1); ui.selectionText.TextXAlignment = Enum.TextXAlignment.Right
+	tip(ui.selectionText)
+	local scopeRow = pair(targets, "ScopeOptions")
+	expose("scopeSelectionButton", inPair(quiet(button(scopeRow, "Selection", false)), 1))
+	expose("scopeDescendantsButton", inPair(quiet(button(scopeRow, "Descendants", false)), 2))
 	UIFactory.setSegment(ui.scopeSelectionButton, true)
-	expose("selectionText", label(targets, "0 selected", 14, "text", false))
 	local filters = expose("filterPanel", stack(targets, "FilterPanel"))
 	filters.Visible = false
-	label(filters, "Class / type", 13, "muted", false).Name = "ClassFilterLabel"
-	expose("classFilterInput", textBox(filters, "Required class"))
-	label(filters, "Name contains", 13, "muted", false).Name = "NameFilterLabel"
-	expose("nameFilterInput", textBox(filters, "Optional name"))
-	label(filters, "Tag", 13, "muted", false).Name = "TagFilterLabel"
-	expose("tagFilterInput", textBox(filters, "Optional tag"))
+	local filterToggle = quiet(button(filters, "Filters", false)); filterToggle.TextXAlignment = Enum.TextXAlignment.Left
+	filterToggle.Size = UDim2.new(1, 0, 0, 26); filterToggle.Font = Enum.Font.BuilderSans; filterToggle.TextSize = 12
+	local filterFields = stack(filters, "FilterFields"); filterFields.Visible = false
+	listen(filterToggle, filterToggle.Activated, function() filterFields.Visible = not filterFields.Visible end)
+	for _, spec in ipairs({{"classFilterInput", "Class", "Required class"}, {"nameFilterInput", "Name contains", "Optional name"}, {"tagFilterInput", "Tag", "Optional tag"}}) do
+		local row = pair(filterFields, spec[1] .. "Row")
+		local caption = fixedLabel(row, spec[2], 12, "muted", false); caption.Size = UDim2.fromOffset(92, 32)
+		local input = expose(spec[1], textBox(row, spec[3])); input.Position = UDim2.fromOffset(96, 0); input.Size = UDim2.new(1, -96, 0, 32)
+		input.AutomaticSize = Enum.AutomaticSize.None; input.TextWrapped = false
+		listen(input, input:GetPropertyChangedSignal("Text"), function()
+			filterToggle.Text = "Filters  /  " .. (ui.classFilterInput and ui.classFilterInput.Text or "")
+				.. ((ui.nameFilterInput and ui.nameFilterInput.Text ~= "") and "  /  name" or "")
+				.. ((ui.tagFilterInput and ui.tagFilterInput.Text ~= "") and "  /  tag" or "")
+		end)
+	end
 
 	local changes = ui.views.Changes
-	label(changes, "Changes", 14, "text", true).Name = "ChangesTitle"
-	expose("previewSummary", label(changes, "Run Preview to inspect pending changes.", 14, "muted", false))
-	expose("selectAffectedButton", button(changes, "Select affected", false))
-	expose("frameAffectedButton", button(changes, "Frame affected", false))
+	separator(changes)
+	local affectedActions = pair(changes, "AffectedActions")
+	affectedActions.Size = UDim2.new(1, 0, 0, 26)
+	local changesTitle = fixedLabel(affectedActions, "Changes", 17, "text", true); changesTitle.Name = "ChangesTitle"; changesTitle.Size = UDim2.new(1, -132, 1, 0)
+	expose("selectAffectedButton", quiet(button(affectedActions, "Select all", false)))
+	ui.selectAffectedButton.Position = UDim2.new(1, -132, 0, 0); ui.selectAffectedButton.Size = UDim2.fromOffset(70, 26); ui.selectAffectedButton.TextSize = 12
+	expose("frameAffectedButton", quiet(button(affectedActions, "Frame", false)))
+	ui.frameAffectedButton.Position = UDim2.new(1, -56, 0, 0); ui.frameAffectedButton.Size = UDim2.fromOffset(56, 26); ui.frameAffectedButton.TextSize = 12
+	tip(ui.selectAffectedButton, "Select affected objects only"); tip(ui.frameAffectedButton, "Frame affected objects")
+	expose("previewSummary", label(changes, "No preview", 12, "muted", false))
+	local metrics = expose("previewMetrics", create("Frame", {Size = UDim2.new(1, 0, 0, 100), BackgroundTransparency = 1, Visible = false}, changes))
+	local impact = fixedLabel(metrics, "", 20, "text", true)
+	impact.Name = "AffectedMetric"; impact.Size = UDim2.new(0.62, 0, 0, 30)
+	local matching = fixedLabel(metrics, "", 12, "muted", false)
+	matching.Name = "MatchingMetric"; matching.Position = UDim2.fromScale(0.62, 0); matching.Size = UDim2.new(0.38, 0, 0, 30)
+	matching.TextXAlignment = Enum.TextXAlignment.Right
+	local scanned = fixedLabel(metrics, "", 12, "muted", false)
+	scanned.Name = "ScopeMetrics"; scanned.Position = UDim2.fromOffset(0, 32); scanned.Size = UDim2.new(1, 0, 0, 20)
+	tip(scanned)
+	local writeMetrics = {}
+	for index, spec in ipairs({{"propertyWrites", "property writes"}, {"tagWrites", "tag writes"}, {"attributeWrites", "attribute writes"}}) do
+		local value = fixedLabel(metrics, "", 15, "text", true)
+		value.Name = spec[1]; value.Position = UDim2.new((index - 1)/3, 0, 0, 60); value.Size = UDim2.new(1/3, -4, 0, 20)
+		local caption = fixedLabel(metrics, spec[2], 11, "muted", false)
+		caption.Position = UDim2.new((index - 1)/3, 0, 0, 80); caption.Size = UDim2.new(1/3, -4, 0, 18)
+		writeMetrics[spec[1]] = value
+	end
+	function ui.renderMetrics(data)
+		metrics.Visible = data ~= nil
+		ui.previewSummary.Visible = data == nil
+		if not data then return end
+		impact.Text = tostring(data.affected) .. " will change"
+		matching.Text = tostring(data.matching) .. " matching"
+		scanned.Text = string.format("%d scanned / %d compatible / %d ignored", data.scanned, data.compatible, data.ignored)
+		for key, control in pairs(writeMetrics) do control.Text = tostring(data[key]) end
+	end
 	expose("resultList", stack(changes, "ResultList"))
-	expose("showMatchingButton", button(changes, "Show matching", false))
-	expose("selectMatchingButton", button(changes, "Select matching", false))
-	expose("showIgnoredButton", button(changes, "Show ignored", false))
-	expose("selectIgnoredButton", button(changes, "Select ignored", false))
+	for _, kind in ipairs({"Matching", "Ignored"}) do
+		local row = pair(changes, kind .. "Actions")
+		expose("show" .. kind .. "Button", inPair(quiet(button(row, "Show " .. kind:lower(), false)), 1))
+		expose("select" .. kind .. "Button", inPair(quiet(button(row, "Select " .. kind:lower(), false)), 2))
+	end
 
 	local footer = expose("footer", create("Frame", {
 		AnchorPoint = Vector2.new(0, 1),
@@ -554,6 +818,7 @@ function UIFactory.build(widget)
 		Size = UDim2.new(1, 0, 0, 76),
 	}, root))
 	paint(footer, "BackgroundColor3", "background")
+	separator(footer)
 	padding(footer, 8, 12, 8, 12)
 	local actions = pair(footer, "PreviewActions")
 	expose("previewButton", inPair(button(actions, "Preview", false), 1))
@@ -563,7 +828,7 @@ function UIFactory.build(widget)
 	version.AutomaticSize = Enum.AutomaticSize.None
 	version.Position = UDim2.fromOffset(0, 40)
 	version.Size = UDim2.new(1, -64, 0, 20)
-	local helpButton = expose("helpButton", button(footer, "Help", false))
+	local helpButton = expose("helpButton", quiet(button(footer, "Help", false)))
 	helpButton.Position = UDim2.new(1, -56, 0, 36)
 	helpButton.Size = UDim2.fromOffset(56, 28)
 
@@ -606,7 +871,13 @@ function UIFactory.build(widget)
 	label(editorScroll, "Fields", 14, "text", true).Name = "EditorFieldsTitle"
 	expose("fieldList", stack(editorScroll, "FieldList"))
 	expose("tagsCheck", UIFactory.createCheckbox(editorScroll, "Tags", false))
+	expose("tagList", stack(editorScroll, "TagList"))
 	expose("attributesCheck", UIFactory.createCheckbox(editorScroll, "Attributes", false))
+	expose("attributeList", stack(editorScroll, "AttributeList"))
+	for _, spec in ipairs({{ui.tagsCheck, ui.tagList}, {ui.attributesCheck, ui.attributeList}}) do
+		spec[2].Visible = false
+		listen(spec[1], spec[1]:GetAttributeChangedSignal("Checked"), function() spec[2].Visible = spec[1]:GetAttribute("Checked") == true end)
+	end
 	local editorFooter = expose("editorFooter", create("Frame", {
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(0, 1),
@@ -644,26 +915,41 @@ function UIFactory.build(widget)
 		help.Visible = false
 	end)
 
+	local function layoutViews()
+		local wide = root.AbsoluteSize.X >= 520
+		local current = ui.currentView or "Library"
+		for viewName, view in pairs(ui.views) do
+			if viewName ~= "Targets" then
+				view.Visible = (viewName == "Library" and wide) or viewName == current
+				view.Position = UDim2.fromOffset(wide and viewName ~= "Library" and 168 or 0, 0)
+				view.Size = viewName == "Library" and wide and UDim2.new(0, 168, 1, 0) or UDim2.new(1, wide and -168 or 0, 1, 0)
+			end
+			UIFactory.setSegment(ui.viewButtons[viewName], viewName == current)
+		end
+		ui.views.Targets.Visible = true
+		paneLine.Visible = wide; paneLine.Position = UDim2.fromOffset(167, 0)
+		ui.viewButtons.Library.Visible = not wide
+		navigation.Position = UDim2.fromOffset(wide and 180 or 12, 82)
+		navigation.Size = UDim2.new(1, wide and -192 or -24, 0, 30)
+		tabLayout.CellSize = UDim2.new(wide and 0.5 or 1/3, -3, 0, 30)
+	end
 	function ui.showView(name)
 		if context.destroyed or not ui.views[name] then
 			return false
 		end
+		if name == "Targets" then name = "Changes" end
+		if name == "Library" and root.AbsoluteSize.X >= 520 then name = "Recipe" end
 		ui.currentView = name
-		for viewName, view in pairs(ui.views) do
-			view.Visible = viewName == name
-			UIFactory.setSegment(ui.viewButtons[viewName], viewName == name)
-		end
+		layoutViews()
 		return true
 	end
 
 	local function resize()
-		local narrowTabs = root.AbsoluteSize.X < 320
-		local navigationHeight = narrowTabs and 68 or 32
-		local headerHeight = 48 + navigationHeight
+		local headerHeight = 120
 		local feedbackLimit = root.AbsoluteSize.Y < 480 and 48 or 72
 		local feedbackHeight = ui.feedback.Visible and math.min(feedbackLimit, ui.feedback.AbsoluteSize.Y + 8) or 0
-		tabLayout.CellSize = UDim2.new(narrowTabs and 0.5 or 0.25, narrowTabs and -2 or -3, 0, 32)
-		navigation.Size = UDim2.new(1, -24, 0, navigationHeight)
+		if root.AbsoluteSize.X >= 520 and ui.currentView == "Library" then ui.currentView = "Recipe" end
+		layoutViews()
 		header.Size = UDim2.new(1, 0, 0, headerHeight)
 		body.Position = UDim2.fromOffset(0, headerHeight)
 		body.Size = UDim2.new(1, 0, 1, -(headerHeight + 76 + feedbackHeight))

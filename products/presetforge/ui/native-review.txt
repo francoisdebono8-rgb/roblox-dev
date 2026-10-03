@@ -1,0 +1,26 @@
+PresetForge first-review evidence, 2026-10-03.
+Studio 0.741.19.7411056, local Edit mode.
+Captured predecessor SHA256: da434b56d6116f67630f0811c31081db3e0ccdc34f9307a333f2cdca6a98c638
+Not evidence for the later bounded-path correction.
+
+12:02:22 PASS selective tag/attribute controls: only checked names saved; source unchanged
+12:02:22 PASS disabled metadata does not validate unselected names over category limits
+12:02:22 PASS real read-only Preview: scanned=197 compatible=40 affected=30 matching=10 ignored=157 propertyWrites=60 tagWrites=0 attributeWrites=0
+12:02:27 PASS repeated real read-only Preview, same eight metrics
+12:02:30 CAPTURE dark-560 viewport=560,640
+12:03:16 PASS repeated real read-only Preview, same eight metrics
+12:03:19 CAPTURE dark-320 viewport=320,640
+
+Visual inspection: long path overflow in the narrow view; not visual PASS.
+Current candidate 89d469227090d94f446f627f143749b7c3ebd5f80fb5ee727f823549fcb30131:
+Luau compile, exact source import and deterministic rebuild PASS offline.
+Native recapture/visual acceptance/final regression NOT RUN.
+
+Full installed plugin reprise, same current SHA256 89d469...30131:
+PASS installed binary byte equality with source-verified candidate.
+PASS real Main loaded; actual native title PresetForge 2.2.0.
+PASS existing Local recipe loaded; no settings reset and no wrapper UI mounted.
+The UIReview wrapper was removed from the local plugins directory.
+After unlock, the actual installed panel was observed again in LightingWorkshop.
+Real hero clicks/560+320 screenshots: PENDING (stopped at user's explicit request).
+No Apply/Undo/Redo/final gate PASS is implied by these startup observations.

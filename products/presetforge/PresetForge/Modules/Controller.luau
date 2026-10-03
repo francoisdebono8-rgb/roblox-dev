@@ -100,6 +100,7 @@ function Controller.new(ui, repository, captureService, previewService, applySer
 	}, Controller)
 	self:_connect()
 	self:_render()
+	if self:_recipe() then self._ui.showView("Changes") end
 	return self
 end
 
@@ -409,6 +410,26 @@ function Controller:_openEditor(mode, source, schema, recipe)
 		UIFactory.setCheckbox(self._ui.attributesCheck, recipe.capture.attributes)
 	end
 	self:_buildEditorFields(source, schema, recipe and recipe.properties or {})
+	self._editorTags, self._editorAttributes = {}, {}
+	self:_clearDynamic(self._ui.tagList, {})
+	self:_clearDynamic(self._ui.attributeList, {})
+	local tagNames = source:GetTags()
+	if recipe then
+		for _, name in ipairs(recipe.tags) do if not table.find(tagNames, name) then tagNames[#tagNames + 1] = name end end
+	end
+	table.sort(tagNames)
+	for _, name in ipairs(tagNames) do
+		self._editorTags[name] = UIFactory.createCheckbox(self._ui.tagList, name, not recipe or table.find(recipe.tags, name) ~= nil)
+	end
+	local attributes = source:GetAttributes()
+	local attributeNames = sortedKeys(attributes)
+	if recipe then
+		for name in pairs(recipe.attributes) do if not table.find(attributeNames, name) then attributeNames[#attributeNames + 1] = name end end
+	end
+	table.sort(attributeNames)
+	for _, name in ipairs(attributeNames) do
+		self._editorAttributes[name] = UIFactory.createCheckbox(self._ui.attributeList, name .. "    " .. cleanValue(attributes[name]), not recipe or recipe.attributes[name] ~= nil)
+	end
 	self._ui.editorOverlay.Visible = true
 	self._ui.editorScroll.CanvasPosition = Vector2.zero
 	if mode == "create" then
@@ -461,10 +482,18 @@ function Controller:_saveEditor()
 		self._ui.editorHint.TextColor3 = self._ui.colors.danger
 		return
 	end
+	local function checkedNames(controls)
+		local names = {}
+		for name, check in pairs(controls or {}) do if check:GetAttribute("Checked") then names[#names + 1] = name end end
+		table.sort(names)
+		return names
+	end
 	local captured, captureError = self._captureService:capture(selection, {
 		properties = self:_selectedEditorFields(),
 		tags = self._ui.tagsCheck:GetAttribute("Checked") == true,
 		attributes = self._ui.attributesCheck:GetAttribute("Checked") == true,
+		tagNames = self._ui.tagsCheck:GetAttribute("Checked") and checkedNames(self._editorTags) or nil,
+		attributeNames = self._ui.attributesCheck:GetAttribute("Checked") and checkedNames(self._editorAttributes) or nil,
 	})
 	if not captured then
 		self._ui.editorHint.Text = captureError
@@ -615,7 +644,7 @@ function Controller:_runPreview()
 	self._showMatching = false
 	self._showIgnored = false
 	self:_watchPreview()
-	self:_setFeedback("Preview is read-only. Inspect the detailed changes before Apply.", "muted")
+	self:_setFeedback("Preview ready. No changes applied.", "muted")
 	self:_renderDetail()
 	self._ui.showView("Changes")
 end
@@ -712,7 +741,7 @@ function Controller:_renderPresetList()
 			self:_resetFilters(recipe)
 			self:_setFeedback(nil)
 			self:_render()
-			self._ui.showView("Recipe")
+			self._ui.showView("Changes")
 		end)
 	end
 	self._ui.presetList.CanvasPosition = scroll
@@ -758,6 +787,8 @@ end
 function Controller:_renderResults()
 	self:_clearDynamic(self._ui.resultList, self._resultConnections)
 	if not self._preview then
+		self._ui.showMatchingButton.Text = "Show matching"
+		self._ui.showIgnoredButton.Text = "Show ignored"
 		return
 	end
 	self._ui.showMatchingButton.Text = (self._showMatching and "Hide" or "Show") .. " matching (" .. self._preview.matchingCount .. ")"
@@ -771,10 +802,14 @@ function Controller:_renderResults()
 	local limit = math.min(#visible, Constants.MAX_RENDERED_RESULTS or 500)
 	for index = 1, limit do
 		local result = visible[index].result
-		local resultButton = UIFactory.createResultButton(self._ui.resultList, self:_resultText(result, visible[index].index), result.status)
-		resultButton.LayoutOrder = index
-		self._resultConnections[#self._resultConnections + 1] = resultButton.Activated:Connect(function()
+		local row, selectButton, frameButton = UIFactory.createResultRow(self._ui.resultList, result, cleanValue)
+		row.LayoutOrder = index
+		self._resultConnections[#self._resultConnections + 1] = selectButton.Activated:Connect(function()
 			self:_selectInstances({ result.instance })
+		end)
+		self._resultConnections[#self._resultConnections + 1] = frameButton.Activated:Connect(function()
+			local ok, err = SelectionNavigator.frame({result.instance}, workspace.CurrentCamera)
+			if not ok then self:_setFeedback(err, "warning") end
 		end)
 	end
 	if #visible > limit then
@@ -796,14 +831,12 @@ end
 function Controller:_renderDetail()
 	local recipe = self:_recipe()
 	local selection = self:_selection()
+	self._ui.renderCaptured(recipe, cleanValue)
 	UIFactory.setSegment(self._ui.scopeSelectionButton, self._scope == "Selection")
 	UIFactory.setSegment(self._ui.scopeDescendantsButton, self._scope == "Descendants")
 	self._ui.filterPanel.Visible = self._scope == "Descendants"
-	self._ui.selectionText.Text = string.format(
-		"%d selected | %s scope",
-		#selection,
-		self._scope
-	)
+	self._ui.selectionText.Text = #selection == 1 and selection[1].Name or string.format("%d selected", #selection)
+	self._ui.renderMetrics(self._preview and self._preview.metrics)
 
 	if not recipe then
 		self._ui.detailName.Text = "Choose a recipe"
@@ -834,7 +867,7 @@ function Controller:_renderDetail()
 	end
 
 	self._ui.detailName.Text = recipe.name
-	self._ui.libraryBadge.Text = recipe.library == "Project" and "Project / saved with place" or "Local / this computer"
+	self._ui.libraryBadge.Text = recipe.library
 	self._ui.detailCounts.Text = string.format(
 		"%s | %s | %s | %s",
 		recipe.schemaId,
@@ -846,15 +879,7 @@ function Controller:_renderDetail()
 	if not self._preview then
 		self._ui.previewSummary.Text = "Run Preview to inspect every pending change."
 	else
-		self._ui.previewSummary.Text = string.format(
-			"%d scanned | %d compatible\n%d changed / %d matching / %d ignored\n%d exact field writes",
-			self._preview.scannedCount,
-			self._preview.compatibleCount,
-			self._preview.affectedCount,
-			self._preview.matchingCount,
-			self._preview.ignoredCount,
-			self._preview.totalChanges
-		)
+		self._ui.previewSummary.Text = ""
 	end
 
 	for _, button in ipairs({ self._ui.renameButton, self._ui.editButton, self._ui.recaptureButton, self._ui.deleteButton, self._ui.duplicateButton }) do
