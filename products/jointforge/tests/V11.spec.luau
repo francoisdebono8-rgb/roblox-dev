@@ -1,5 +1,5 @@
 -- Opt-in Edit-mode gate; modules are imported from the exact commercial binaries.
-return function(modules, legacyModules, hostPlugin)
+return function(modules, legacyModules, hostPlugin, options)
 	local Schema, Graph = require(modules.Schema), require(modules.Graph)
 	local Planner, Transaction = require(modules.Planner), require(modules.Transaction)
 	local OldPlanner = require(legacyModules.Planner)
@@ -531,6 +531,7 @@ return function(modules, legacyModules, hostPlugin)
 	end)
 
 	test({19, 54}, "Native View mount with QA-captured button callbacks and immutable-plan invalidation", function()
+		if options and options.viewSmoke then options.viewSmoke(); return end
 		local View = require(modules.View)
 		local widget = hostPlugin:CreateDockWidgetPluginGuiAsync("JointForgeV11ControlSmoke",
 			DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 440, 680, 340, 400))
@@ -601,7 +602,8 @@ return function(modules, legacyModules, hostPlugin)
 	end)
 
 	test({55, 56}, "Exact imported production payload and no network/runtime/QA code", function()
-		assert(#modules.Parent:GetDescendants() == 7 and modules.Parent.Main.Disabled)
+		local sourceCount = options and options.sourceCount or 6
+		assert(#modules.Parent:GetDescendants() == sourceCount + 1 and modules.Parent.Main.Disabled)
 		assert(#modules.Parent.Parent:GetAttribute("CandidateSHA256") == 64)
 		local count = 0
 		for _, item in ipairs(modules.Parent:GetDescendants()) do
@@ -610,7 +612,7 @@ return function(modules, legacyModules, hostPlugin)
 				for _, token in ipairs({"GetAsync", "PostAsync", "RequestAsync", "loadstring", "TechnicalGate", "JointForgeV11", "AnalyticsService"}) do assert(not item.Source:find(token, 1, true)) end
 			end
 		end
-		assert(count == 6)
+		assert(count == sourceCount)
 	end)
 
 	for id = 1, 56 do

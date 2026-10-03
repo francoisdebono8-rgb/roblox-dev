@@ -1,0 +1,115 @@
+SchemaForge / Forge Studio 0.2.5
+Artifact SHA256: 1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe
+Native QA package importing the exact binary; not installed-GUI proof.
+Read individual results and final summary. Missing checks are not PASS.
+
+2026-10-03T13:18:19.145Z [SchemaForge025][ARTIFACT] 1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe mode=technical
+2026-10-03T13:18:19.207Z [SchemaForgeV12][PASS] V1 load is read-only; migration, reload and old engine parity
+2026-10-03T13:18:19.208Z [SchemaForgeV12][PASS] Malformed, cyclic, future, unknown-key and V1 extension payloads refuse safely
+2026-10-03T13:18:19.208Z [SchemaForgeV12][PASS] Scalar semantics and non-destructive invalid-value diagnostics
+2026-10-03T13:18:19.273Z [SchemaForgeV12][PASS] Vector2: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.303Z [SchemaForgeV12][PASS] Vector3: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.326Z [SchemaForgeV12][PASS] Color3: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.365Z [SchemaForgeV12][PASS] CFrame: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.452Z [SchemaForgeV12][PASS] UDim: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.497Z [SchemaForgeV12][PASS] UDim2: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.576Z [SchemaForgeV12][PASS] BrickColor: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.618Z [SchemaForgeV12][PASS] NumberRange: capture, exact codec/store roundtrip, default Apply and native Undo/Redo
+2026-10-03T13:18:19.618Z [SchemaForgeV12][PASS] Vector per-axis and magnitude bounds are inclusive, finite and dimensional
+2026-10-03T13:18:19.651Z [SchemaForgeV12][PASS] Tag contracts only add missing required tags; native Undo/Redo and wrong-class policy
+2026-10-03T13:18:19.651Z [SchemaForgeV12][PASS] Tag duplicates, contradictions, invalid names and count bounds refuse
+2026-10-03T13:18:19.652Z [SchemaForgeV12][PASS] Child rules distinguish every-segment ambiguity, missing and wrong class without writes
+2026-10-03T13:18:19.652Z [SchemaForgeV12][PASS] Optional child is absent-or-valid, with the same ambiguity and class diagnostics
+2026-10-03T13:18:19.653Z [SchemaForgeV12][PASS] Child cache shares scans and enforces depth/rule limits
+2026-10-03T13:18:19.654Z [SchemaForgeV12][PASS] Exact subset and audit/plan forgery checks include mutation of the source subset
+2026-10-03T13:18:19.654Z [SchemaForgeV12][PASS] Stale: attribute presence
+2026-10-03T13:18:19.654Z [SchemaForgeV12][PASS] Stale: attribute value
+2026-10-03T13:18:19.655Z [SchemaForgeV12][PASS] Stale: required tag
+2026-10-03T13:18:19.655Z [SchemaForgeV12][PASS] Stale: forbidden tag
+2026-10-03T13:18:19.655Z [SchemaForgeV12][PASS] Stale: target membership removed
+2026-10-03T13:18:19.656Z [SchemaForgeV12][PASS] Stale: new matching object
+2026-10-03T13:18:19.656Z [SchemaForgeV12][PASS] Stale: new tag on scope
+2026-10-03T13:18:19.656Z [SchemaForgeV12][PASS] Stale: target reparented
+2026-10-03T13:18:19.657Z [SchemaForgeV12][PASS] Stale: same-name target replaced
+2026-10-03T13:18:19.657Z [SchemaForgeV12][PASS] Stale: required child removed
+2026-10-03T13:18:19.657Z [SchemaForgeV12][PASS] Stale: required child renamed
+2026-10-03T13:18:19.657Z [SchemaForgeV12][PASS] Stale: required child replaced with wrong class
+2026-10-03T13:18:19.658Z [SchemaForgeV12][PASS] Stale: required intermediate duplicated
+2026-10-03T13:18:19.658Z [SchemaForgeV12][PASS] Stale: required child reparented
+2026-10-03T13:18:19.659Z [SchemaForgeV12][PASS] Schema version/content, roots and root ancestry are freshness dependencies
+2026-10-03T13:18:19.659Z [SchemaForgeV12][PASS] Unrelated attributes/tags/properties/names/children do not stale
+2026-10-03T13:18:19.659Z [SchemaForgeV12][PASS] Overlapping roots and duplicate names preserve stable object/finding identities
+2026-10-03T13:18:19.744Z [SchemaForgeV12][PASS] Exactly 5000 tagged objects accepted; 5001 refuses without writes
+2026-10-03T13:18:19.756Z [SchemaForgeV12][PASS] Exactly 2000 findings accepted; 2001 refuses the whole audit
+2026-10-03T13:18:20.797Z [SchemaForgeV12][PASS] Child traversal budget refuses oversized work and preserves hierarchy
+2026-10-03T13:18:20.798Z [SchemaForgeV12][PASS] Storage collisions, duplicate entries and compare-and-save concurrency refuse
+2026-10-03T13:18:20.798Z [SchemaForgeV12][PASS] Recording-opening races preserve the external writer and refuse save/delete
+2026-10-03T13:18:20.799Z [SchemaForgeV12][PASS] Plans from loaded contracts stale on independent saved edits, replacement or duplicate storage
+2026-10-03T13:18:20.799Z [SchemaForgeV12][PASS] Saved contract edit inside TryBeginRecording blocks a direct Engine Apply
+2026-10-03T13:18:20.799Z [SchemaForgeV12][PASS] Save recording refusal and create/update commit failure restore exact prior storage
+2026-10-03T13:18:20.820Z [SchemaForgeV12][PASS] Delete recording refusal, rollback and native Undo/Redo restore the same entry
+2026-10-03T13:18:20.820Z [SchemaForgeV12][PASS] Mixed repair commit failure rolls back every attribute and tag
+2026-10-03T13:18:20.821Z [SchemaForgeV12][PASS] Project change while opening recording blocks every repair
+2026-10-03T13:18:20.821Z [SchemaForgeV12][PASS] Injected mid-transaction readback failure after first attribute restores native state
+2026-10-03T13:18:20.821Z [SchemaForgeV12][PASS] Injected mid-transaction readback failure after first tag restores native state
+2026-10-03T13:18:20.821Z [SchemaForgeV12][PASS] Rollback attempts earlier native entries after an injected restoration-check error
+2026-10-03T13:18:21.104Z [SchemaForgeV12][PASS] Native DockWidget control mount and typed text edits, without graphical acceptance
+2026-10-03T13:18:21.157Z [SchemaForgeV12][PASS] Separate contract editor preserves native required/forbidden tag validation
+2026-10-03T13:18:21.399Z [SchemaForgeV12][BENCHMARK] descendants=20000 targets=20 warmup=2 repetitions=7 old_full_audit_median_ms=14.412250 candidate_full_audit_median_ms=0.123708 old_scope_visits=20001 candidate_visits=20 child_visits=0
+2026-10-03T13:18:21.431Z [SchemaForgeV12][PASS] Sparse benchmark: fixed 20000 descendants / 20 targets, warmup and seven medians
+2026-10-03T13:18:21.432Z [SchemaForgeV12][PASS] Production package has six known scripts, no QA/runtime/network payload
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 01 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 02 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 03 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 04 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 05 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 06 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 07 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 08 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 09 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 10 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 11 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 12 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 13 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 14 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 15 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 16 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 17 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 18 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 19 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 20 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 21 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 22 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 23 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 24 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 25 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 26 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 27 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 28 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 29 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 30 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 31 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 32 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 33 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 34 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 35 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 36 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 37 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 38 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 39 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 40 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][MATRIX] 41 PASS
+2026-10-03T13:18:21.432Z [SchemaForgeV12][SUMMARY] 53 PASS / 0 FAIL
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] No targets is zero checked, not a successful population
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] All targets valid
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] Multiple findings count an object once; false default repairs count
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] Diagnostic-only objects are never repairable
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] Missing without default remains diagnostic
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][PASS] Summary is detached and leaves finding identity/fix intact
+2026-10-03T13:18:21.432Z [SchemaForge025Summary][SUMMARY] 6 PASS / 0 FAIL
+2026-10-03T13:18:21.433Z [SchemaForge025Hero][PASS] Real fixture 8 checked / 3 valid / 5 objects with issues / 7 findings / 3 safe
+2026-10-03T13:18:21.454Z [SchemaForge025Hero][PASS] Preview read-only; missing-only Apply; native Undo and Redo
+2026-10-03T13:18:21.455Z [SchemaForge025Hero][PASS] Stale project blocks repair before opening history
+2026-10-03T13:18:21.456Z [SchemaForge025Hero][PASS] Exact subset preserves remaining missing fields and selections
+2026-10-03T13:18:21.456Z [SchemaForge025Hero][SUMMARY] 4 PASS / 0 FAIL
+2026-10-03T13:18:21.967Z [SchemaForge025][SUMMARY] PASS: 53 regression + 6 summary + 4 hero cases; 41 matrix rows

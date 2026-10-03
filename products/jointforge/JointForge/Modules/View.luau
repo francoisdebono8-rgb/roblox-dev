@@ -1,5 +1,6 @@
 local Schema = require(script.Parent.Schema)
 local Graph = require(script.Parent.Graph)
+local Inspection = require(script.Parent.Inspection)
 local Planner = require(script.Parent.Planner)
 local Transaction = require(script.Parent.Transaction)
 local UI = require(script.Parent.StudioUI)
@@ -19,7 +20,7 @@ local function path(item)
 end
 
 function View.mount(widget, selection, history)
-	local state = { tab = "Create", class = "WeldConstraint", entries = {}, inspected = {}, checked = {}, drafts = {}, message = "Choose endpoint parts to begin.", plan = nil, detailSection = "Properties" }
+	local state = { tab = "Inspect", class = "WeldConstraint", entries = {}, inspected = {}, checked = {}, drafts = {}, message = "Select an assembly to scan its connections.", plan = nil, detailSection = "Endpoints", issueFilter = "Issues" }
 	local root = element("Frame", widget, { Name = "JointForgeUI", BorderSizePixel = 0, Size = UDim2.fromScale(1, 1), ClipsDescendants=true })
 	local ui=UI.new(root,Color3.fromRGB(215,122,62)); local colors=ui.colors; colors.panel=colors.field
 	local label,row,stack=ui.label,ui.row,ui.stack
@@ -27,18 +28,23 @@ function View.mount(widget, selection, history)
 		return ui.button(parent,text,text,fn,primary and "selected" or nil)
 	end
 	local body, commands, previewButton, disposed
-	local render
+	local render, scan
+	local planConnections = {}
 	local function invalidate()
+		for _, connection in ipairs(planConnections) do connection:Disconnect() end
+		planConnections = {}
 		if state.plan then Planner.invalidate(state.plan) end
 		state.plan = nil
 		state.confirm = false
 		state.batchConflicts=nil
+		if state.message:sub(1,7)=="Applied" then state.message="Inputs changed. Preview again before Apply." end
 		local apply=root:FindFirstChild("ApplyAction",true); if apply then apply:Destroy() end
 	end
 	local function act(fn)
 		return function()
+			if state.scanning then return end
 			local ok, err = pcall(fn)
-			if not ok then state.message = tostring(err):gsub("^.-:%d+: ", ""); state.failed = true end
+			if not ok then invalidate(); state.message = tostring(err):gsub("^.-:%d+: ", ""); state.failed = true end
 			render()
 		end
 	end
@@ -52,9 +58,41 @@ function View.mount(widget, selection, history)
 		state.message, state.failed = text, false
 	end
 	local function preview(request)
+		invalidate()
 		state.plan = Planner.preview(workspace, request)
 		state.confirm = false
 		setMessage(if #state.plan.errors == 0 then "Preview ready. Review every operation before Apply." else "Preview blocked. Existing objects will be preserved.")
+		local exact = state.plan
+		local function stale()
+			if state.applying or state.plan ~= exact then return end
+			invalidate(); setMessage("Preview stale. Refresh Preview before Apply."); render()
+		end
+		for item in pairs(exact.snapshot or {}) do
+			table.insert(planConnections, item.Changed:Connect(stale))
+			table.insert(planConnections, item.AncestryChanged:Connect(stale))
+			table.insert(planConnections, item.ChildAdded:Connect(stale))
+			table.insert(planConnections, item.ChildRemoved:Connect(stale))
+		end
+		table.insert(planConnections, workspace.DescendantAdded:Connect(function(item) if Graph.isJoint(item) then stale() end end))
+	end
+	scan = function(useSelection)
+		invalidate()
+		if useSelection then state.scope = table.clone(selection:Get()) end
+		local token = { cancelled = false }
+		state.scanToken, state.scan, state.inspected = token, nil, {}
+		state.scanning = true; setMessage("Scanning connections..."); render(); task.wait()
+		local ok, result = pcall(Inspection.scan, workspace, state.scope or {}, function(index,total)
+			setMessage("Scanning " .. index .. " / " .. total .. " connections..."); render(); task.wait()
+			assert(not token.cancelled and not disposed,"Scan cancelled. No complete result.")
+		end)
+		state.scanning = false
+		if disposed then return end
+		if token.cancelled then state.scan, state.inspected, state.editing = nil, {}, nil; setMessage("Scan cancelled. No complete result."); return end
+		if not ok then state.scan, state.inspected, state.editing = nil, {}, nil; error(result, 0) end
+		state.scan, state.inspected = result, result.rows
+		state.checked, state.drafts, state.reassign = {}, {}, {}
+		if state.editing and not result.byJoint[state.editing] then state.editing = nil end
+		setMessage(result.jointCount .. " connections scanned. " .. result.issueCount .. " issues on " .. result.affectedCount .. " connections.")
 	end
 	local function choose(parent, current, options, callback)
 		local opened = false
@@ -81,7 +119,7 @@ function View.mount(widget, selection, history)
 		local attachmentKey = "attachment" .. index
 		ui.section(parent,"PART "..index)
 		identity(parent,state[key],"Not assigned")
-		label(parent,state[key] and state[key].ClassName or "BasePart",12,colors.muted,20)
+		label(parent,state[key] and (state[key].ClassName .. " #" .. Graph.id(state[key])) or "BasePart",12,colors.muted,20)
 		local actions = row(parent, 2)
 		button(actions, "Assign", act(function() state[key] = one("BasePart"); state[attachmentKey] = nil; invalidate() end))
 		button(actions, "Locate", act(function() assert(state[key], "Assign this endpoint first."); selection:Set({ state[key] }) end))
@@ -130,28 +168,55 @@ function View.mount(widget, selection, history)
 		end
 		if #plan.errors > 0 then return end
 		if plan.request.kind == "remove" then
-			button(body, (state.confirm and "[x]" or "[ ]") .. " I confirm removal of these " .. #plan.operations .. " joints only", act(function() state.confirm = not state.confirm end))
+			ui.toggle(body, "ConfirmRemoval", "Confirm removal of " .. #plan.operations .. " joints only", state.confirm, act(function() state.confirm = not state.confirm end))
 		end
+		if plan.request.kind == "remove" and not state.confirm then return end
 		ui.button(commands, "ApplyAction", "Apply " .. #plan.operations, act(function()
-			local result = Transaction.apply(plan, history, state.confirm)
+			state.applying = true
+			local ok, result = pcall(Transaction.apply, plan, history, state.confirm)
+			state.applying = false
+			assert(ok, result)
 			invalidate()
 			state.drafts = {}
 			setMessage("Applied. Use Studio Undo once to restore the previous state.")
+			if state.tab == "Inspect" and state.scope then
+				local before = state.scan and state.scan.issueCount
+				local scanned, scanError = pcall(scan, false)
+				if scanned and state.scan then
+					setMessage("Applied. Issues: " .. tostring(before or "?") .. " -> " .. state.scan.issueCount .. ". Undo available.")
+				else state.failed = true; state.message = "Applied; rescan needed. " .. tostring(scanError or "Scan cancelled."):gsub("^.-:%d+: ", "") end
+			end
 			if #result > 0 then selection:Set(result) end
 		end), "primary")
 	end
 	local function editForm(joint)
 		if not joint or not joint:IsDescendantOf(workspace) then return end
 		identity(body,joint,"Joint")
-		label(body,joint.ClassName,12,colors.muted)
-		local _, _, a, b = Graph.endpoints(joint)
-		local pair=label(body,(a and a.Name or "Missing") .. "  \u{2194}  " .. (b and b.Name or "Missing"),14,colors.text)
-		ui.tip(pair,path(a).." -> "..path(b))
+		label(body,joint.ClassName .. " #" .. Graph.id(joint),12,colors.muted)
+		local a, b, ea, eb = Graph.endpoints(joint)
+		for index = 0, 1 do
+			local item = if index == 0 then a else b
+			local endpointItem = if index == 0 then ea else eb
+			local relationship = label(body,"Part" .. index .. "  " .. (item and (item.Name .. " #" .. Graph.id(item)) or "Missing"),14,colors.text)
+			relationship.Name = "EndpointIdentity" .. index
+			ui.tip(relationship,path(item))
+			if endpointItem and endpointItem ~= item then
+				label(body,"Attachment" .. index .. "  " .. endpointItem.Name .. " #" .. Graph.id(endpointItem),12,colors.muted)
+			end
+		end
 		local actions = row(body, 3)
 		for index, item in pairs({ [0] = a, [1] = b }) do
-			button(actions, "Select " .. index, act(function() selection:Set({ item }) end))
+			local locatePart=button(actions, "Part" .. index, act(function() selection:Set({ item }) end)); ui.tip(locatePart,"Locate Part"..index.." #"..Graph.id(item))
 		end
-		button(actions, "Locate joint", act(function() selection:Set({ joint }) end))
+		local locateJoint=button(actions, "Locate", act(function() selection:Set({ joint }) end)); ui.tip(locateJoint,"Locate joint #"..Graph.id(joint))
+		local info = state.scan and state.scan.byJoint[joint]
+		if info then
+			ui.section(body,info.issueCount .. " ISSUES")
+			for _, diagnostic in ipairs(info.diagnostics) do
+				label(body,Inspection.labels[diagnostic.code] or diagnostic.code,14,colors.warning)
+				label(body,diagnostic.code .. " / " .. diagnostic.message,12,colors.muted)
+			end
+		end
 		if not Schema.supported(joint) then label(body, "Inspect-only class. Edit its properties in Studio.", 14, colors.muted); return end
 		local sections=row(body,2)
 		for _,name in ipairs({"Properties","Endpoints"}) do button(sections,name,act(function() state.detailSection=name end),state.detailSection==name) end
@@ -172,10 +237,13 @@ function View.mount(widget, selection, history)
 				end))
 			end
 		end
-		button(body, (state.rawPose and "[x]" or "[ ]") .. " Raw frames (may move parts)", act(function() state.rawPose = not state.rawPose; invalidate() end))
-		button(body, "Preview explicit endpoint reassignment", act(function()
+		ui.toggle(body,"RawPose","Raw frames (may move parts)",state.rawPose,act(function() state.rawPose = not state.rawPose; invalidate() end))
+		local repairReady = state.reassign.endpoint0 ~= nil or state.reassign.endpoint1 ~= nil
+		previewButton=ui.button(commands,"PreviewRepair","Preview repair",act(function()
 			preview({ kind = "reassign", joint = joint, endpoint0 = state.reassign.endpoint0, endpoint1 = state.reassign.endpoint1, poseMode = state.rawPose and "raw" or "preserve" })
-		end))
+		end),not state.plan and repairReady and "primary" or nil)
+		previewButton.Active=repairReady; previewButton.Interactable=repairReady
+		if not repairReady then previewButton.TextColor3=colors.muted; ui.tip(previewButton,"Assign at least one explicit endpoint first") end
 		else
 		if joint:IsA("Weld") or joint:IsA("Motor6D") then label(body, "C0 / C1: X Y Z RX RY RZ. Rotations in degrees. Editing or resetting offsets can move parts.", 14, colors.muted) end
 		local readers = {}
@@ -197,7 +265,7 @@ function View.mount(widget, selection, history)
 				end
 			end
 		end
-		button(body, "Preview field changes", act(function()
+		previewButton=button(commands, "Preview fields", act(function()
 			local changes = {}
 			for field, value in pairs(state.drafts) do
 				local parsed = if readers[field] then readers[field]() else value
@@ -206,21 +274,38 @@ function View.mount(widget, selection, history)
 			preview({ kind = "edit", joint = joint, changes = changes })
 		end))
 		end
+		ui.rule(body)
+		ui.section(body,"REMOVAL")
+		ui.toggle(body,"RemoveSelected","Include in removal",state.checked[joint],act(function() state.checked[joint] = not state.checked[joint]; invalidate() end))
+		local removalCount = 0
+		for _, checked in pairs(state.checked) do if checked then removalCount += 1 end end
+		if removalCount > 0 then
+			local remove = button(body,"Preview removal (" .. removalCount .. ")",act(function()
+				local joints = {}
+				for item, checked in pairs(state.checked) do if checked then table.insert(joints,item) end end
+				preview({kind="remove",joints=joints})
+			end)); remove.TextColor3=colors.error
+		end
 	end
 
 	render = function()
 		if disposed then return end
 		root:ClearAllChildren()
 		local wide=root.AbsoluteSize.X>=520
-		local context=state.tab=="Create" and "New connection" or state.tab=="Batch" and "Assembly connections" or state.editing and state.editing.Name or "Joint inspector"
-		ui.header("JointForge",context,state.tab=="Create" and state.class or state.tab=="Batch" and (#state.entries.." parts") or (#state.inspected.." joints / constraints"))
+		local context=state.tab=="Create" and "New connection" or state.tab=="Batch" and "Assembly connections" or state.scope and state.scope[1] and (state.scope[1].Name .. (#state.scope > 1 and " +" .. (#state.scope-1) or "")) or "Connection issues"
+		local summary=state.scan and (state.scan.jointCount .. " scanned / " .. state.scan.issueCount .. " issues / " .. state.scan.affectedCount .. " affected") or "Inspect / Issues"
+		ui.header("JointForge",context,state.tab=="Create" and state.class or state.tab=="Batch" and (#state.entries.." parts") or summary)
 		local nav=element("Frame",root,{Position=UDim2.fromOffset(12,92),Size=UDim2.new(1,-24,0,30),BackgroundTransparency=1})
 		local tabs=row(nav,3)
-		for _,name in ipairs({"Create","Batch","Inspect"}) do button(tabs,name,act(function() state.tab=name; invalidate(); setMessage(name.." workflow") end),state.tab==name) end
+		for _,name in ipairs({"Inspect","Create","Batch"}) do button(tabs,name,act(function() state.tab=name; invalidate(); setMessage(name.." workflow") end),state.tab==name) end
 		local workflow=ui.scroll(root,"Workflow",UDim2.fromOffset(12,132),UDim2.new(1,-24,1,-232)); body=workflow
 		local footer=element("Frame",root,{Name="Commands",BackgroundTransparency=1,Position=UDim2.new(0,12,1,-90),Size=UDim2.new(1,-24,0,82)}); stack(footer,6)
 		local message=label(footer,state.message,12,state.failed and colors.error or colors.muted,36); ui.tip(message,state.message)
 		commands=row(footer,2,34)
+		if state.scanning then
+			ui.button(commands,"CancelScan","Cancel scan",function() state.scanToken.cancelled=true end)
+			return
+		end
 		previewButton=nil
 		if state.tab == "Create" then
 			choose(body, state.class, Schema.types, function(value) state.class = value; invalidate() end)
@@ -240,7 +325,7 @@ function View.mount(widget, selection, history)
 			button(body, "Use selected part as root", act(function() state.root = one("BasePart"); invalidate() end))
 			local modes = row(body, 2)
 			for _, mode in ipairs({ "Static", "Moving" }) do
-				button(modes, "Assign selection: " .. mode, act(function()
+				local assignMode=ui.button(modes, "Assign selection: " .. mode, mode, act(function()
 					local parts = selection:Get()
 					assert(#parts > 0, "Select at least one part.")
 					for _, p in ipairs(parts) do assert(p:IsA("BasePart") and p:IsDescendantOf(workspace) and p ~= state.root, "Select BaseParts only, excluding the root.") end
@@ -251,6 +336,7 @@ function View.mount(widget, selection, history)
 					end
 					invalidate()
 				end))
+				ui.tip(assignMode,"Assign selected parts as " .. mode)
 			end
 			ui.rule(body)
 			ui.section(body,"PARTS  /  PLANNED CONNECTION")
@@ -258,7 +344,7 @@ function View.mount(widget, selection, history)
 				local item=element("Frame",body,{Name="BatchRow",BackgroundTransparency=1,Size=UDim2.new(1,0,0,60)})
 				local part=button(item,entry.part.Name,act(function() selection:Set({entry.part}) end)); part.Size=UDim2.new(1,-114,0,28); part.TextXAlignment=Enum.TextXAlignment.Left; ui.tip(part,path(entry.part))
 				local role=button(item,entry.mode,act(function() entry.mode=entry.mode=="Static" and "Moving" or "Static"; invalidate() end),true); role.Position=UDim2.new(1,-108,0,0); role.Size=UDim2.fromOffset(78,28)
-				local remove=button(item,"\u{00D7}",act(function() table.remove(state.entries,i); invalidate() end)); remove.Position=UDim2.new(1,-26,0,0); remove.Size=UDim2.fromOffset(26,28); ui.tip(remove,"Remove from batch")
+				local remove=button(item,"\u{00D7}",act(function() table.remove(state.entries,i); invalidate() end)); remove.Position=UDim2.new(1,-28,0,0); remove.Size=UDim2.fromOffset(28,28); ui.tip(remove,"Remove from batch")
 				local connection=label(item,entry.mode=="Moving" and "Motor6D" or "WeldConstraint",12,colors.muted,24); connection.Position=UDim2.fromOffset(0,30)
 				if state.batchConflicts and state.batchConflicts[entry.part] then connection.Text=state.batchConflicts[entry.part]; connection.TextColor3=colors.error; ui.tip(connection,connection.Text) end
 			end
@@ -276,30 +362,53 @@ function View.mount(widget, selection, history)
 		else
 			if wide then workflow.Size=UDim2.new(0,180,1,-232) end
 			workflow.Visible=wide or not state.editing
-			button(body, "Scan selection", act(function()
-				state.inspected = Graph.inspect(workspace, selection:Get())
-				state.checked, state.drafts, state.editing = {}, {}, nil
-				invalidate(); setMessage(#state.inspected .. " joints / constraints found.")
-			end), true)
+			if state.scope then button(body,"Scan selection",act(function() state.editing=nil; scan(true) end)) end
+			local filters=row(body,2)
+			for _, filter in ipairs({"Issues","All"}) do button(filters,filter,act(function() state.issueFilter=filter; state.codeFilter=nil end),state.issueFilter==filter) end
+			if state.scan and state.issueFilter=="Issues" and state.scan.issueCount>0 then
+				local options, codes = {"All issue types"}, {}
+				for code in pairs(state.scan.groups) do table.insert(codes,code) end
+				table.sort(codes)
+				for _,code in ipairs(codes) do table.insert(options,(Inspection.labels[code] or code) .. " (" .. state.scan.groups[code] .. ")") end
+				choose(body,state.codeFilter and ((Inspection.labels[state.codeFilter] or state.codeFilter) .. " (" .. (state.scan.groups[state.codeFilter] or 0) .. ")") or options[1],options,function(value)
+					state.codeFilter = codes[(table.find(options,value) or 1)-1]
+				end)
+			end
+			local visibleRows=0
 			for _, info in ipairs(state.inspected) do
 				local joint = info.joint
-				if joint:IsDescendantOf(workspace) then
-					local item=button(body,joint.Name,act(function() state.editing=joint; state.drafts={}; state.reassign={}; state.rawPose=false; invalidate() end),state.editing==joint)
-					item.TextXAlignment=Enum.TextXAlignment.Left; ui.tip(item,path(joint))
-					label(body,(info.broken and "Broken / " or "")..joint.ClassName,12,info.broken and colors.error or colors.muted)
-					ui.toggle(body,"Remove"..joint.Name,"Remove",state.checked[joint],act(function() state.checked[joint] = not state.checked[joint]; invalidate() end))
-					ui.rule(body)
+				local included=state.issueFilter=="All" or info.issueCount>0
+				if state.codeFilter then
+					included=false
+					for _,diagnostic in ipairs(info.diagnostics) do if diagnostic.code==state.codeFilter then included=true end end
+				end
+				if included and joint:IsDescendantOf(workspace) then
+					visibleRows+=1
+					local entry=element("Frame",body,{Name="IssueRow",BackgroundTransparency=1,Size=UDim2.new(1,0,0,58)})
+					local item=ui.button(entry,"InspectJoint"..Graph.id(joint),joint.Name,act(function()
+						state.editing=joint; state.drafts={}; state.reassign={}; state.rawPose=false; state.detailSection="Endpoints"; invalidate()
+					end),state.editing==joint and "selected" or nil)
+					item.Size=UDim2.new(1,-34,0,30); item.TextXAlignment=Enum.TextXAlignment.Left; ui.tip(item,"Inspect #"..Graph.id(joint).." / "..path(joint))
+					local locate=ui.button(entry,"LocateJoint"..Graph.id(joint),"\u{2316}",act(function() selection:Set({joint}) end)); locate.Size=UDim2.fromOffset(28,30); locate.Position=UDim2.new(1,-28,0,0); ui.tip(locate,"Locate joint #"..Graph.id(joint))
+					local first=info.diagnostics[1]
+					local status=first and (info.issueCount .. " / " .. (Inspection.labels[first.code] or first.code)) or ("Connected / " .. joint.ClassName)
+					local metadata=label(entry,status,12,info.issueCount>0 and colors.warning or colors.muted,24); metadata.Position=UDim2.fromOffset(0,32); ui.tip(metadata,status)
 				end
 			end
-			button(body, "Preview checked removals", act(function()
-				local joints = {}
-				for joint, checked in pairs(state.checked) do if checked then table.insert(joints, joint) end end
-				preview({ kind = "remove", joints = joints })
-			end))
+			if visibleRows==0 then
+				label(body,state.scanning and "Scanning..." or not state.scan and "Select an assembly to find connection issues." or state.scan.jointCount==0 and "No joints in this selection." or "No issues in this filter.",14,colors.muted)
+			end
+			if not state.editing or not Schema.supported(state.editing) then
+				ui.button(commands,"ScanAction",state.scanning and "Scanning..." or state.scope and "Rescan" or "Scan selection",act(function() scan(state.scope==nil) end),not state.scanning and "primary" or nil)
+			end
 			if wide or state.editing then
 				body=ui.scroll(root,"JointDetail",wide and UDim2.fromOffset(208,132) or UDim2.fromOffset(12,132),wide and UDim2.new(1,-220,1,-232) or UDim2.new(1,-24,1,-232))
-				if not wide then button(body,"\u{2190} Joints",act(function() state.editing=nil end)) end
-				if state.editing then editForm(state.editing) else label(body,"Select a joint",17,colors.muted) end
+				if state.editing then
+					local detailActions=row(body,2)
+					button(detailActions,"\u{2190} Issues",act(function() state.editing=nil; invalidate() end))
+					button(detailActions,"Rescan",act(function() scan(false) end))
+					editForm(state.editing)
+				else label(body,state.scan and "Select a connection" or "Inspect connections",17,colors.muted) end
 			end
 		end
 		showPreview()
@@ -311,11 +420,12 @@ function View.mount(widget, selection, history)
 		selection.SelectionChanged:Connect(function()
 			if state.plan then invalidate(); setMessage("Selection changed. Preview again before Apply."); render() end
 		end),
-		history.OnUndo:Connect(function() invalidate(); state.drafts = {}; setMessage("Undo completed. Refresh Inspect or Preview again."); render() end),
-		history.OnRedo:Connect(function() invalidate(); state.drafts = {}; setMessage("Redo completed. Refresh Inspect or Preview again."); render() end),
+		history.OnUndo:Connect(function() invalidate(); state.scan=nil; state.inspected={}; state.editing=nil; state.drafts = {}; setMessage("Undo completed. Rescan or Preview again."); render() end),
+		history.OnRedo:Connect(function() invalidate(); state.scan=nil; state.inspected={}; state.editing=nil; state.drafts = {}; setMessage("Redo completed. Rescan or Preview again."); render() end),
 	}
 	return function()
 		disposed=true
+		invalidate()
 		for _, connection in ipairs(connections) do connection:Disconnect() end
 		root:Destroy()
 	end

@@ -1,0 +1,120 @@
+AccessForge / Forge Studio 0.2.5
+Artifact SHA256: 839798041fdc1884df19e8cabccf7e1f698c0087d6f1e3bc8c9ec5bd25b1089d
+Native QA package importing the exact binary; not installed-GUI proof.
+Read individual results and final summary. Missing checks are not PASS.
+
+2026-10-03T13:09:08.220Z [AccessForge025Gate] candidate=839798041fdc1884df19e8cabccf7e1f698c0087d6f1e3bc8c9ec5bd25b1089d
+2026-10-03T13:09:08.220Z [AccessForge025Gate] legacy=53655a01ca0bb2e05886cdc401fa38003430f4f10f7317854a93c646d9dff44c
+2026-10-03T13:09:08.750Z [AccessForgeV11][PASS] Public V1 Straight load, migrate, native Undo/Redo exact identities
+2026-10-03T13:09:08.904Z [AccessForgeV11][PASS] Public V1 Switchback load, migrate, native Undo/Redo exact identities
+2026-10-03T13:09:09.017Z [AccessForgeV11][PASS] Public V1 Catwalk load, migrate, native Undo/Redo exact identities
+2026-10-03T13:09:09.019Z [AccessForgeV11][PASS] Straight endpoint heights, top landing and no landing
+2026-10-03T13:09:09.027Z [AccessForgeV11][PASS] Shallow solver avoids tiny risers; long run chooses nearest feasible tread
+2026-10-03T13:09:09.029Z [AccessForgeV11][PASS] Switchback minimum-feasible solver 19 steps
+2026-10-03T13:09:09.031Z [AccessForgeV11][PASS] Switchback minimum-feasible solver 20 steps
+2026-10-03T13:09:09.033Z [AccessForgeV11][PASS] Switchback minimum-feasible solver 21 steps
+2026-10-03T13:09:09.043Z [AccessForgeV11][PASS] Switchback Left across quadrants
+2026-10-03T13:09:09.053Z [AccessForgeV11][PASS] Switchback Right across quadrants
+2026-10-03T13:09:09.056Z [AccessForgeV11][PASS] Catwalk exact and tolerance boundary, above boundary refusal
+2026-10-03T13:09:09.069Z [AccessForgeV11][PASS] Rail sides, midrail and round/square native profiles
+2026-10-03T13:09:09.071Z [AccessForgeV11][PASS] Supports off/on and floor ordering
+2026-10-03T13:09:09.084Z [AccessForgeV11][PASS] MAX_STEPS accepts 256 Straight/Switchback, rejects mandatory 257
+2026-10-03T13:09:09.110Z [AccessForgeV11][PASS] MAX_PARTS exactly 1000 passes; 1001 refuses
+2026-10-03T13:09:09.110Z [AccessForgeV11][PASS] Invalid geometry refuses before any allocation or project mutation
+2026-10-03T13:09:09.112Z [AccessForgeV11][PASS] Immutable deterministic metrics; issued plan only; one-use; preview writes nothing
+2026-10-03T13:09:09.112Z [AccessForgeV11][PASS] marker translation stales before recording
+2026-10-03T13:09:09.112Z [AccessForgeV11][PASS] marker rotation stales before recording
+2026-10-03T13:09:09.112Z [AccessForgeV11][PASS] marker reparent stales before recording
+2026-10-03T13:09:09.113Z [AccessForgeV11][PASS] marker deletion stales before recording
+2026-10-03T13:09:09.113Z [AccessForgeV11][PASS] ancestor reparent stales before recording
+2026-10-03T13:09:09.113Z [AccessForgeV11][PASS] settings width stales before recording
+2026-10-03T13:09:09.113Z [AccessForgeV11][PASS] settings mode stales before recording
+2026-10-03T13:09:09.115Z [AccessForgeV11][PASS] owned tiny translation refuses safely
+2026-10-03T13:09:09.117Z [AccessForgeV11][PASS] owned size refuses safely
+2026-10-03T13:09:09.118Z [AccessForgeV11][PASS] owned rename refuses safely
+2026-10-03T13:09:09.120Z [AccessForgeV11][PASS] owned material refuses safely
+2026-10-03T13:09:09.122Z [AccessForgeV11][PASS] owned physics refuses safely
+2026-10-03T13:09:09.123Z [AccessForgeV11][PASS] owned reparent refuses safely
+2026-10-03T13:09:09.125Z [AccessForgeV11][PASS] metadata attribute refuses safely
+2026-10-03T13:09:09.127Z [AccessForgeV11][PASS] metadata duplicate refuses safely
+2026-10-03T13:09:09.128Z [AccessForgeV11][PASS] output duplicate refuses safely
+2026-10-03T13:09:09.130Z [AccessForgeV11][PASS] group duplicate refuses safely
+2026-10-03T13:09:09.132Z [AccessForgeV11][PASS] registry missing reference refuses safely
+2026-10-03T13:09:09.133Z [AccessForgeV11][PASS] registry duplicate identity refuses safely
+2026-10-03T13:09:09.135Z [AccessForgeV11][PASS] registry order refuses safely
+2026-10-03T13:09:09.136Z [AccessForgeV11][PASS] registry removed refuses safely
+2026-10-03T13:09:09.138Z [AccessForgeV11][PASS] generated metadata refuses safely
+2026-10-03T13:09:09.139Z [AccessForgeV11][PASS] owned child refuses safely
+2026-10-03T13:09:09.144Z [AccessForgeV11][PASS] Unrelated Workspace edits and user siblings at every level survive
+2026-10-03T13:09:09.144Z [AccessForgeV11][PASS] Recording nil/throw leaves scene intact and consumes the plan
+2026-10-03T13:09:09.147Z [AccessForgeV11][PASS] Recording-open mutation caught before replacement; external edit preserved
+2026-10-03T13:09:09.152Z [AccessForgeV11][PASS] QA-only failure after first-detach restores exact old identities
+2026-10-03T13:09:09.157Z [AccessForgeV11][PASS] QA-only failure after last-detach restores exact old identities
+2026-10-03T13:09:09.162Z [AccessForgeV11][PASS] QA-only failure after data-detach restores exact old identities
+2026-10-03T13:09:09.168Z [AccessForgeV11][PASS] QA-only failure after first-insert restores exact old identities
+2026-10-03T13:09:09.173Z [AccessForgeV11][PASS] QA-only failure after last-insert restores exact old identities
+2026-10-03T13:09:09.179Z [AccessForgeV11][PASS] QA-only failure after data-insert restores exact old identities
+2026-10-03T13:09:09.186Z [AccessForgeV11][PASS] Build/regenerate commit failure cleanup and exact rollback
+2026-10-03T13:09:09.237Z [AccessForgeV11][PASS] Build native single Undo/Redo restores exact model and parts
+2026-10-03T13:09:09.391Z [AccessForgeV11][PASS] New Markers native Undo/Redo, recording refusal and commit cleanup
+2026-10-03T13:09:09.397Z [AccessForgeV11][PASS] Large coordinates, near axes, minimum width and maximum landing
+2026-10-03T13:09:09.407Z [AccessForgeV11][PASS] Existing View mounts and loaded immutable settings can be edited by copy
+2026-10-03T13:09:09.408Z [AccessForgeV11][PASS] Exact candidate source correspondence and closed production payload
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 1 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 2 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 3 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 4 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 5 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 6 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 7 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 8 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 9 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 10 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 11 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 12 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 13 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 14 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 15 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 16 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 17 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 18 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 19 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 20 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 21 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 22 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 23 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 24 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 25 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 26 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 27 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 28 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 29 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 30 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 31 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 32 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 33 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 34 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 35 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 36 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 37 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 38 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 39 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 40 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 41 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 42 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 43 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][MATRIX] 44 PASS
+2026-10-03T13:09:09.408Z [AccessForgeV11][SUMMARY] 55 PASS / 0 FAIL
+2026-10-03T13:09:09.451Z [AccessForge025][PASS] Straight contextual fit and real metrics, Build/Undo/Redo
+2026-10-03T13:09:09.546Z [AccessForge025][PASS] Switchback contextual fit and real metrics, Build/Undo/Redo
+2026-10-03T13:09:09.597Z [AccessForge025][PASS] Catwalk contextual fit and real metrics, Build/Undo/Redo
+2026-10-03T13:09:09.597Z [AccessForge025][PASS] Invalid descending geometry refuses without Workspace/history writes
+2026-10-03T13:09:09.692Z [AccessForge025][PASS] Edit Existing, moved End, comparison, Regenerate, user additions, Undo/Redo
+2026-10-03T13:09:09.695Z [AccessForge025][PASS] Bounded child-free context; oversized omission; snapshot invalidation
+2026-10-03T13:09:09.698Z [AccessForge025][PASS] Unsupported meshes, unions, trusses and child meshes are omitted, never boxes
+2026-10-03T13:09:09.702Z [AccessForge025][PASS] Non-Archivable, oversized and invisible context have explicit omission counts
+2026-10-03T13:09:09.703Z [AccessForge025][PASS] Supported primitive classes and shapes stay exact; visual mesh additions stale
+2026-10-03T13:09:09.736Z [AccessForge025][PASS] Context snapshot opens no history recording
+2026-10-03T13:09:09.736Z [AccessForge025][SUMMARY] 10 PASS / 0 FAIL
+2026-10-03T13:09:10.242Z [AccessForge025Gate] Fixture ready. Installed production GUI and theme/width captures remain pending.
+2026-10-03T13:09:10.243Z [AccessForge025Gate][SUMMARY] PASS

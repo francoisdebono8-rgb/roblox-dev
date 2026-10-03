@@ -1,0 +1,127 @@
+JointForge / Forge Studio 0.2.5
+Artifact SHA256: e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216
+Native QA package importing the exact binary; not installed-GUI proof.
+Read individual results and final summary. Missing checks are not PASS.
+
+2026-10-03T13:28:53.385Z [JointForge025] sha256=e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216
+2026-10-03T13:28:53.754Z [JointForgeV11][PASS] WeldConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.245Z [JointForgeV11][PASS] Weld exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.288Z [JointForgeV11][PASS] Motor6D exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.323Z [JointForgeV11][PASS] HingeConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.368Z [JointForgeV11][PASS] BallSocketConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.398Z [JointForgeV11][PASS] RopeConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.448Z [JointForgeV11][PASS] RodConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.485Z [JointForgeV11][PASS] SpringConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.542Z [JointForgeV11][PASS] NoCollisionConstraint exact endpoints, read-only Preview and native Undo/Redo
+2026-10-03T13:28:54.543Z [JointForgeV11][PASS] Pair diagnostics and separate NoCollision semantics
+2026-10-03T13:28:54.543Z [JointForgeV11][PASS] Immutable request/operations, engine identity and one-use state
+2026-10-03T13:28:54.544Z [JointForgeV11][PASS] Relevant new edge stales; distant changes stay fresh; full ancestry stales
+2026-10-03T13:28:54.544Z [JointForgeV11][PASS] Broken/unsupported inspection, direct attachment ancestry and pivot diagnostics
+2026-10-03T13:28:54.545Z [JointForgeV11][PASS] Attachment local/world frame, reparent/delete and edited field stale exactly
+2026-10-03T13:28:54.547Z [JointForgeV11][PASS] Every exposed field uses native preflight/readback; bounds, enums, finite frames
+2026-10-03T13:28:54.577Z [JointForgeV11][PASS] WeldConstraint explicit endpoints preserve unanchored poses, fields and native history
+2026-10-03T13:28:54.612Z [JointForgeV11][PASS] Weld explicit endpoints preserve unanchored poses, fields and native history
+2026-10-03T13:28:54.643Z [JointForgeV11][PASS] Motor6D explicit endpoints preserve unanchored poses, fields and native history
+2026-10-03T13:28:54.677Z [JointForgeV11][PASS] NoCollisionConstraint explicit endpoints preserve unanchored poses, fields and native history
+2026-10-03T13:28:54.712Z [JointForgeV11][PASS] HingeConstraint explicit existing/new attachments retain fields, old attachments and native history
+2026-10-03T13:28:54.746Z [JointForgeV11][PASS] BallSocketConstraint explicit existing/new attachments retain fields, old attachments and native history
+2026-10-03T13:28:54.779Z [JointForgeV11][PASS] RopeConstraint explicit existing/new attachments retain fields, old attachments and native history
+2026-10-03T13:28:54.812Z [JointForgeV11][PASS] RodConstraint explicit existing/new attachments retain fields, old attachments and native history
+2026-10-03T13:28:54.846Z [JointForgeV11][PASS] SpringConstraint explicit existing/new attachments retain fields, old attachments and native history
+2026-10-03T13:28:54.847Z [JointForgeV11][PASS] Explicit broken repair; conflict/no-input/unsafe-transform refusals; opt-in raw frames
+2026-10-03T13:28:54.981Z [JointForgeV11][PASS] Bounded mixed batch, duplicate-name identities, exact poses and whole-batch refusal
+2026-10-03T13:28:54.982Z [JointForgeV11][PASS] Planned attachment world frames and lengths; near-zero refuses wholly
+2026-10-03T13:28:55.021Z [JointForgeV11][PASS] Confirmed removal retains exact instances and attachments; child/mixed/duplicate refusals
+2026-10-03T13:28:55.022Z [JointForgeV11][PASS] Recording refusal consumes plan; mutation during recording opens refuses before writes
+2026-10-03T13:28:55.022Z [JointForgeV11][PASS] Injected mid-create failure cleans only owned attachments and leaves no batch prefix
+2026-10-03T13:28:55.023Z [JointForgeV11][PASS] Injected mid-edit readback failure restores changed fields and connected poses
+2026-10-03T13:28:55.023Z [JointForgeV11][PASS] Injected mid-remove rollback restores exact first and unvisited second identities
+2026-10-03T13:28:55.024Z [JointForgeV11][PASS] Injected commit failure rolls back create/edit/reassign/remove and keeps native identity
+2026-10-03T13:28:55.079Z [JointForgeV11][PASS] Raw C0/C1 and numeric edit native Undo/Redo
+2026-10-03T13:28:55.157Z [JointForgeV11][CAP] scan PASS
+2026-10-03T13:28:55.259Z [JointForgeV11][CAP] nodes PASS
+2026-10-03T13:28:55.313Z [JointForgeV11][CAP] edges PASS
+2026-10-03T13:28:55.399Z [JointForgeV11][CAP] component PASS
+2026-10-03T13:28:55.418Z [JointForgeV11][CAP] batch PASS
+2026-10-03T13:28:55.420Z [JointForgeV11][CAP] operations PASS
+2026-10-03T13:28:55.422Z [JointForgeV11][CAP] remove PASS
+2026-10-03T13:28:55.423Z [JointForgeV11][CAP] request PASS
+2026-10-03T13:28:55.423Z [JointForgeV11][CAP] request-depth PASS
+2026-10-03T13:28:55.425Z [JointForgeV11][CAP] ancestry PASS
+2026-10-03T13:28:55.426Z [JointForgeV11][CAP] inspect-selection PASS
+2026-10-03T13:28:55.426Z [JointForgeV11][PASS] Each hierarchy/node/edge/component/entry/operation/remove/request/depth cap refuses wholly
+2026-10-03T13:28:55.764Z [JointForgeV11][BENCHMARK] descendants=5833 entries=32 edges=1000 warmup=2 repetitions=5 v1_preview_median_ms=36.172625 candidate_preview_median_ms=6.374792 candidate_graph_scans=1
+2026-10-03T13:28:55.779Z [JointForgeV11][PASS] Measured sparse assembly comparison against embedded public V1
+2026-10-03T13:28:56.274Z [JointForge025][VIEW] PASS callback-driven native controls; installed GUI still requires manual QA
+2026-10-03T13:28:56.274Z [JointForgeV11][PASS] Native View mount with QA-captured button callbacks and immutable-plan invalidation
+2026-10-03T13:28:56.274Z [JointForgeV11][PASS] Exact imported production payload and no network/runtime/QA code
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 01 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 02 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 03 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 04 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 05 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 06 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 07 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 08 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 09 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 10 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 11 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 12 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 13 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 14 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 15 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 16 PASS
+2026-10-03T13:28:56.274Z [JointForgeV11][MATRIX] 17 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 18 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 19 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 20 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 21 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 22 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 23 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 24 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 25 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 26 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 27 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 28 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 29 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 30 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 31 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 32 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 33 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 34 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 35 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 36 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 37 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 38 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 39 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 40 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 41 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 42 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 43 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 44 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 45 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 46 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 47 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 48 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 49 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 50 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 51 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 52 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 53 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 54 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 55 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][MATRIX] 56 PASS
+2026-10-03T13:28:56.275Z [JointForgeV11][SUMMARY] 38 PASS / 0 FAIL
+2026-10-03T13:28:56.277Z [JointForge025][PASS] 12 real joints, 12 diagnostic occurrences, 11 affected connections
+2026-10-03T13:28:56.279Z [JointForge025][PASS] Scan and repair Preview preserve every fixture object
+2026-10-03T13:28:56.307Z [JointForge025][PASS] Explicit repair, rescan 12 to 11, native Undo and Redo
+2026-10-03T13:28:56.309Z [JointForge025][PASS] Explicit duplicate reassignment clears both affected rows
+2026-10-03T13:28:56.310Z [JointForge025][PASS] Stale explicit repair refuses before native recording
+2026-10-03T13:28:56.315Z [JointForge025][PASS] NoCollision and physical edges keep separate duplicate policy
+2026-10-03T13:28:56.339Z [JointForge025][PASS] Create and Batch exact operations, native Undo and Redo
+2026-10-03T13:28:56.340Z [JointForge025][PASS] Scope, duplicate identities, inspect-only and invalid scope
+2026-10-03T13:28:56.379Z [JointForge025][PASS] Bounded overflow, yielded cancellation and changed-scan refusal
+2026-10-03T13:28:58.522Z [JointForge025][RESPONSIVENESS] joints=128 unrelatedFolders=2000 heartbeats=128 elapsed_ms=2129.901 longest_step_ms=11.073
+2026-10-03T13:28:58.532Z [JointForge025][PASS] 128 connection scan yields to heartbeat under unrelated scene load
+2026-10-03T13:28:58.532Z [JointForge025][ISSUES] 10 PASS / 0 FAIL
+2026-10-03T13:28:59.044Z [JointForge025][SUMMARY] PASS: full 56-row matrix and 10 issue scenarios

@@ -9,6 +9,7 @@ Constants.MAX_RENDERED_RESULTS = 500
 Constants.PROJECT_ROOT_NAME = "PresetForgeProjectRecipes"
 Constants.PROJECT_FORMAT_VERSION = 2
 Constants.VERSION = "2.2.0"
+Constants.CATALOGUE_RELEASE = "Forge Studio 0.2.5"
 Constants.SCHEMA_VERSION = 1
 Constants.MAX_ROOTS = 256
 Constants.MAX_SCANNED = 20000

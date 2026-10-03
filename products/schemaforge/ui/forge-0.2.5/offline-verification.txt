@@ -1,0 +1,10 @@
+Compiled 2 KLOC into 191 KB bytecode (read 0.00s, parse 0.00s, compile 0.00s)
+[SchemaForge025Summary][PASS] No targets is zero checked, not a successful population
+[SchemaForge025Summary][PASS] All targets valid
+[SchemaForge025Summary][PASS] Multiple findings count an object once; false default repairs count
+[SchemaForge025Summary][PASS] Diagnostic-only objects are never repairable
+[SchemaForge025Summary][PASS] Missing without default remains diagnostic
+[SchemaForge025Summary][PASS] Summary is detached and leaves finding identity/fix intact
+[SchemaForge025Summary][SUMMARY] 6 PASS / 0 FAIL
+PASS: exact-source candidate, deterministic bytes, isolated QA imports, protected historical files and engine hashes.
+NON TESTED: Studio native execution and actual installed GUI.

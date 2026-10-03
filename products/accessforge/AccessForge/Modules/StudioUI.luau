@@ -53,13 +53,16 @@ function UI.new(root, accent)
 		local base=primary and c.accent or selected and c.selected or c.bg
 		local b=make("TextButton",parent,{Name=name,Text=text,Font=Enum.Font.BuilderSansMedium,TextSize=13,
 			TextColor3=primary and Color3.new(1,1,1) or c.text,BackgroundColor3=base,BackgroundTransparency=style and 0 or 1,
-			BorderSizePixel=0,Size=UDim2.new(1,0,0,30),TextTruncate=Enum.TextTruncate.AtEnd,AutoButtonColor=false})
+			BorderSizePixel=0,Size=UDim2.new(1,0,0,30),TextTruncate=Enum.TextTruncate.AtEnd,AutoButtonColor=false,Active=true})
 		make("UICorner",b,{CornerRadius=UDim.new(0,4)})
-		b.MouseEnter:Connect(function() b.BackgroundTransparency=0; b.BackgroundColor3=primary and c.accent:Lerp(Color3.new(1,1,1),0.12) or c.hover end)
-		b.MouseLeave:Connect(function() b.BackgroundTransparency=style and 0 or 1; b.BackgroundColor3=base end)
-		b.MouseButton1Down:Connect(function() b.BackgroundColor3=base:Lerp(c.text,0.1) end)
-		b.MouseButton1Up:Connect(function() b.BackgroundColor3=base end)
-		b.Activated:Connect(callback)
+		b.MouseEnter:Connect(function() if b.Active then b.BackgroundTransparency=0; b.BackgroundColor3=primary and c.accent:Lerp(Color3.new(1,1,1),0.12) or c.hover end end)
+		b.MouseLeave:Connect(function() if b.Active then b.BackgroundTransparency=style and 0 or 1; b.BackgroundColor3=base end end)
+		b.MouseButton1Down:Connect(function() if b.Active then b.BackgroundColor3=base:Lerp(c.text,0.1) end end)
+		b.MouseButton1Up:Connect(function() if b.Active then b.BackgroundColor3=base end end)
+		b:GetPropertyChangedSignal("Active"):Connect(function()
+			if not b.Active then b.BackgroundTransparency=0; b.BackgroundColor3=c.field; b.TextColor3=c.muted end
+		end)
+		b.Activated:Connect(function() if b.Active then callback() end end)
 		return b
 	end
 	function ui.row(parent, count, height)
@@ -96,7 +99,7 @@ function UI.new(root, accent)
 		make("UIStroke",box,{Color=value and c.accent or c.line})
 		if value then local tick=ui.label(box,"\u{2713}",13,Color3.new(1,1,1),16); tick.TextXAlignment=Enum.TextXAlignment.Center end
 		local text=ui.label(b,title,13,c.text,30); text.Position=UDim2.fromOffset(24,0); text.Size=UDim2.new(1,-24,1,0)
-		ui.tip(b,title); return b
+		return b
 	end
 	function ui.header(product, context, subtitle)
 		local h=make("Frame",root,{Name="Header",Size=UDim2.new(1,0,0,88),BackgroundTransparency=1})
@@ -111,17 +114,27 @@ function UI.new(root, accent)
 			y+=1
 		end
 		local name=ui.label(h,product,13,c.text,22); name.Font=Enum.Font.BuilderSansBold; name.Position=UDim2.fromOffset(38,7); name.Size=UDim2.fromOffset(98,22)
-		local maker=ui.label(h,"Forge Studio",11,c.muted,22); maker.Position=UDim2.fromOffset(137,7); maker.Size=UDim2.fromOffset(80,22)
+		local maker=ui.label(h,"Forge Studio 0.2.5",11,c.muted,22); maker.Position=UDim2.fromOffset(137,7); maker.Size=UDim2.new(1,-145,0,22)
 		local title=ui.label(h,context,18,c.text,26); title.Font=Enum.Font.BuilderSansBold; title.Position=UDim2.fromOffset(12,34); title.Size=UDim2.new(1,-24,0,26); ui.tip(title,context)
 		local sub=ui.label(h,subtitle,12,c.muted,18); sub.Position=UDim2.fromOffset(12,62); sub.Size=UDim2.new(1,-24,0,18)
 		local line=ui.rule(h); line.Position=UDim2.new(0,0,1,-1)
 	end
-	function ui.viewport(parent, model, fraction)
-		local v=make("ViewportFrame",parent,{Name="GeometryPreview",Size=UDim2.new(1,0,1,-(fraction or 0)),BackgroundColor3=c.viewport,BorderSizePixel=0,
+	function ui.viewport(parent, model, preview)
+		local v=make("ViewportFrame",parent,{Name="GeometryPreview",Size=UDim2.fromScale(1,1),BackgroundColor3=c.viewport,BorderSizePixel=0,
 			Ambient=Color3.fromRGB(190,195,205),LightDirection=Vector3.new(-1,-2,-1),LightColor=Color3.fromRGB(255,246,228)})
 		local world=make("WorldModel",v,{}); model.Parent=world
 		local cf,size=model:GetBoundingBox()
+		if preview then cf,size=preview.cf,preview.size end
 		local camera=make("Camera",v,{FieldOfView=38}); v.CurrentCamera=camera
+		local endpoints={}
+		if preview then
+			for index,name in ipairs({"Start","End"}) do
+				local text=ui.label(v,name,12,c.text,20)
+				text.Name=name.."Label"; text.Size=UDim2.fromOffset(42,20); text.TextXAlignment=Enum.TextXAlignment.Center
+				text.BackgroundTransparency=0.1; text.BackgroundColor3=c.field; text.ZIndex=2
+				endpoints[index]={text=text,position=index==1 and preview.a or preview.b}
+			end
+		end
 		local function frame()
 			local aspect=math.max(v.AbsoluteSize.X,1)/math.max(v.AbsoluteSize.Y,1)
 			local direction=Vector3.new(0.65,0.55,1).Unit
@@ -134,6 +147,14 @@ function UI.new(root, accent)
 				distance=math.max(distance,p.Z+math.abs(p.Y)/tangent,p.Z+math.abs(p.X)/(tangent*aspect))
 			end end end
 			camera.CFrame=CFrame.lookAt(cf.Position+direction*distance*1.12,cf.Position)
+			-- ViewportFrame cameras do not own the main viewport; project labels using
+			-- this frame's dimensions and the same perspective used above.
+			for index,endpoint in ipairs(endpoints) do
+				local p=camera.CFrame:PointToObjectSpace(endpoint.position)
+				local x=(0.5+p.X/(-p.Z*2*tangent*aspect))*v.AbsoluteSize.X
+				local y=(0.5-p.Y/(-p.Z*2*tangent))*v.AbsoluteSize.Y
+				endpoint.text.Position=UDim2.fromOffset(math.clamp(x-21,0,math.max(0,v.AbsoluteSize.X-42)),math.clamp(y+(index==1 and 8 or -28),0,math.max(0,v.AbsoluteSize.Y-20)))
+			end
 		end
 		v:GetPropertyChangedSignal("AbsoluteSize"):Connect(frame); frame(); return v
 	end

@@ -1,0 +1,134 @@
+{
+  "artifact": "SchemaForge-ForgeStudio-0.2.5.rbxm",
+  "bytes": 45766,
+  "canonicalAssetId": "84085408748744",
+  "catalogueRelease": "Forge Studio 0.2.5",
+  "gates": {
+    "compilation": "PASS",
+    "advancedFirstUseCaptureFilterSubsetGui": "NOT EXHAUSTIVELY RUN",
+    "dark320": "PASS",
+    "dark560": "PASS",
+    "finalVisualReview": "PASS: GOOD",
+    "historicalAndEnginePreservation": "PASS",
+    "installedMainGui": "PASS: recorded hero workflow",
+    "installedGuiSafeRepairStaleUndoRedo": "PASS",
+    "lightSanity": "PASS: 560 and 320",
+    "nativeExactBinaryModules": "PASS",
+    "nativeFullRegression": "PASS",
+    "nativeSafeRepairStaleUndoRedo": "PASS",
+    "offlineSummaryCases": "6 PASS / 0 FAIL",
+    "qaImportExactSources": "PASS",
+    "width240400AndShort": "PASS: reviewed Dark 400 and 240x360; compact short body"
+  },
+  "guiEvidence": {
+    "artifactSha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe",
+    "classification": "GOOD",
+    "coverage": "Actual full installed Main and GUI; parent-operated actions corroborated by retained captures and CreatorOutput state/selection markers",
+    "date": "2026-10-03",
+    "document": "GUI_EVIDENCE.md",
+    "log": "0.741.19.7411056_20261003T141548Z_Studio_c7ea9_last.log",
+    "mode": "Edit",
+    "studioVersion": "0.741.19.7411056",
+    "themes": ["Dark", "Light"],
+    "snapshots": {
+      "order": ["checked", "valid", "objectsWithIssues", "findings", "safelyRepairableFindings"],
+      "beforeAndReadOnlyPreview": [8, 3, 5, 7, 3],
+      "afterApplyUndoRedoAndReaudit": [8, 5, 3, 4, 0],
+      "afterSubsequentUndo": [8, 3, 5, 7, 3]
+    },
+    "selectionAssertion": "2026-10-03T14:34:00.922Z [Forge025GUI] Schema SelectInStudio PASS",
+    "staleProof": "Actual Preview 3, deferred QA bridge Cost=99 mutation, visible Stale and disabled Apply in review/dark-stale.png",
+    "screenshots": {
+      "review/dark-560.png": "271e1f54ece5920ace7ba9b485dfc906f65a31dd70f780c1f7249fe125f8f35b",
+      "review/dark-320.png": "3efbe61d80a87f90662dd8d6dcff51138f19e4efac7e5ee4a0810a6c1f594720",
+      "review/light-560.png": "ebfa76af606cc277a43a09c51cc27c88c647ef72f1ed2ca62133b1f3e3718e7e",
+      "review/light-320.png": "c704dce5d16e096e70daffabc0b2016c4646a168df05ba7066c3a1ec4a25f54c",
+      "review/dark-preview.png": "02fef640451533b154d2b85d24570fb66bcd425315e4be9ba80025f3172fcd88",
+      "review/dark-after-repair.png": "c66927bb1877502cd81d0817616070956b4a1a5ea8ab6d485b17c3eb78f7fe6b",
+      "review/dark-stale.png": "493d8c4ed1b8c637ed5137fcb4ec38ec751c21198280944daa8ba06c06b69118",
+      "review/dark-400.png": "4e25cde06be01c9bd2226085003ba28c03e61f30d7bba161e22a19b550a3cb64",
+      "review/dark-240-short.png": "959b4519fdf053d8284c4fd824c359e6851cac6f575c3b6a1e785c7bcc8ebfc3"
+    },
+    "limitations": [
+      "Advanced first-use/capture/filter/subset GUI combinations were not exhaustively run; native regression remains separate evidence",
+      "240x360 has a very compact scrolling body with a usable footer",
+      "Dark Qt window title has poor contrast after theme switch outside the correctly themed plugin content",
+      "No exhaustive width/height/theme matrix or 560x900 GUI capture claimed"
+    ]
+  },
+  "nativeEvidence": {
+    "artifactSha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe",
+    "coverage": "Exact-binary module tests in separate native QA import; actual installed Main/GUI evidence is recorded separately",
+    "date": "2026-10-03",
+    "failed": 0,
+    "log": "native-dark-run.txt",
+    "matrixRowsPassed": 41,
+    "mode": "Edit",
+    "outerSummary": "PASS",
+    "passed": 63,
+    "studioVersion": "0.741.19.7411056",
+    "suites": {
+      "hero": "4 PASS / 0 FAIL",
+      "summary": "6 PASS / 0 FAIL",
+      "v12": "53 PASS / 0 FAIL"
+    },
+    "theme": "Dark"
+  },
+  "product": "SchemaForge",
+  "productVersion": "1.2.0",
+  "publication": "NOT PERFORMED",
+  "qa": {
+    "artifact": "SchemaForge025QA.rbxm",
+    "mode": "local Edit mode",
+    "nativeCases": 63,
+    "places": [
+      "SchemaForge025Technical.rbxl",
+      "SchemaForge025Fixture.rbxl"
+    ],
+    "prefix": "[SchemaForge025]",
+    "sha256": "6346b422579d431f303838d949afae9e0dd7ceadf3a53e2f62dde59969b5abe5",
+    "sources": {
+      "tests/V12.spec.luau": "dfbd4f5ab3b893fbc79b5d770d63de6ebc746a6f48617c0e6f81da97fb2babe8",
+      "ui/forge-0.2.5/AuditSummary.spec.luau": "8813c2473077168edf6a154b4907f41632f200d442739d34233e77bf9e6aa8ce",
+      "ui/forge-0.2.5/Fixture.luau": "f56261cdf0b86807f2e4976e73d742cb37c787655e410417f7a8baec46c32e70",
+      "ui/forge-0.2.5/Hero.spec.luau": "d2fcb92829f6f161b5e826693f64d51dea68e0b18af12073f868725b607c214a",
+      "ui/forge-0.2.5/Runner.plugin.luau": "01efc90e636a0416710c463bed8e8e26f682df47b4659765d4591a65209c2b0a",
+      "ui/forge-0.2.5/offline.luau": "3fc9f59cf25bc4c591dc491febeff5e6b297f9a9f9a3a324265c0a52027f4875"
+    },
+    "technicalMatrixRows": 41
+  },
+  "sha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe",
+  "sourceVerification": {
+    "commercialMainEnabled": true,
+    "exactEmbeddedSources": true,
+    "reproducibleBytes": true,
+    "sources": {
+      "AuditSummary": {
+        "path": "SchemaForge/Modules/AuditSummary.luau",
+        "sha256": "200b4d7edd415a02e54b22052ceba26359fdbe74631294ceddf2e72edc7e4d4f"
+      },
+      "Engine": {
+        "path": "SchemaForge/Modules/Engine.luau",
+        "sha256": "7fea604f4c06d12fbf55441c4c8101d871b1ce12035c70eb6811c271ef4544b4"
+      },
+      "Main": {
+        "path": "SchemaForge/Main.plugin.luau",
+        "sha256": "d96d65ffacced827592b689934fefe918476016352e06963777d45876fe2aebf"
+      },
+      "Schema": {
+        "path": "SchemaForge/Modules/Schema.luau",
+        "sha256": "be67585389f64e78489573d0c13efa7ddf528580aade68b2c927a053da525523"
+      },
+      "Store": {
+        "path": "SchemaForge/Modules/Store.luau",
+        "sha256": "eceb065aad8be3a072d56d7cb54d548e20c00672ebf302b44737bdcdfd73ec76"
+      },
+      "View": {
+        "path": "SchemaForge/Modules/View.luau",
+        "sha256": "cc6efe792e123c9498d980321d1858e17c5b2cf53bd60d0441ad26288b164d90"
+      }
+    },
+    "status": "PASS"
+  },
+  "status": "GOOD; NATIVE AND INSTALLED HERO GUI PASS; READY FOR PARENT CATALOGUE FREEZE"
+}

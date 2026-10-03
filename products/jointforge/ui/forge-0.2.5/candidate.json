@@ -1,0 +1,168 @@
+{
+  "artifact": "JointForge-ForgeStudio-0.2.5.rbxm",
+  "baselineCommit": "bff0d9d",
+  "canonicalAssetId": "103958912217728",
+  "catalogueAssessment": {
+    "classification": "GOOD",
+    "evidence": "GUI_EVIDENCE.md",
+    "basis": "Independent comparison of actual installed GUI screenshots with UI #28 baseline and real CreatorOutput assertions",
+    "scope": "Demonstrated Inspect/explicit-repair workflow and captured Dark/Light sizes; not blanket certification of unexecuted GUI checks"
+  },
+  "catalogueRelease": "Forge Studio 0.2.5",
+  "gates": {
+    "actualInstalledGui": "PASS",
+    "exactSourceArtifact": "PASS",
+    "fixturePackaging": "PASS",
+    "historicalPreservation": "PASS",
+    "guiCreateBatchStaleCancelRemoval": "NON TESTED",
+    "guiRedo": "NON TESTED",
+    "lightDarkSanity": "PASS",
+    "luauCompilation": "PASS",
+    "nativeIssueWorkflow": "PASS",
+    "nativeRegression": "PASS",
+    "nativeResponsiveness": "PASS",
+    "nativeScreenshots": "PASS"
+  },
+  "guiEvidence": {
+    "artifactSha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216",
+    "review": "GUI_EVIDENCE.md",
+    "executor": "parent coordinator, actual installed Main",
+    "interactionScope": ["Scan", "Inspect BrokenConnection", "Assign selected BrokenC to endpoint 1", "Read-only Preview repair", "Apply 1", "Automatic Rescan", "Locate", "Undo"],
+    "results": {
+      "scanned": 12,
+      "issuesBefore": 12,
+      "affectedBefore": 11,
+      "part0Before": "Endpoint #4",
+      "part1Before": "Missing",
+      "part1DuringPreview": "nil",
+      "part1AfterApply": "BrokenC #6",
+      "issuesAfter": 11,
+      "affectedAfter": 10,
+      "locateSelection": "BrokenConnection",
+      "part1AfterUndo": "nil",
+      "guiRedo": "NON TESTED"
+    },
+    "rawLogs": [
+      "/Users/francoisdebono/Library/Logs/Roblox/0.741.19.7411056_20261003T133443Z_Studio_d72fd_last.log",
+      "/Users/francoisdebono/Library/Logs/Roblox/0.741.19.7411056_20261003T134350Z_Studio_5a7f5_last.log"
+    ],
+    "actualCreatorOutputLines": {
+      "20261003T133443Z": [1508, 1542, 1543, 1566, 1592],
+      "20261003T134350Z": [2783, 2865, 2866, 3016, 3042]
+    },
+    "baseline": {
+      "image": "../review/dark-560.png",
+      "sha256": "3b33916fc21287d6a00bef45a0ae359e3a2cd22014bef9a308f089c185e73c00",
+      "comparison": "Create-first paired endpoints replaced by actual issues-first list/detail composition; accepted Forge branding retained"
+    },
+    "screenshots": [
+      { "path": "review/dark-560.png", "contentSize": [560, 642], "pngPixels": [1124, 1332], "sha256": "83ee769677fa2435e4b0c14df184f063283919e4ddccf8a8335e406146a2fa64" },
+      { "path": "review/dark-320.png", "contentSize": [320, 642], "pngPixels": [644, 1332], "sha256": "6d653ada8c1fde71f1f3e20df4172a8b93dc8dec7d289eef3d6f1d7b5b579128" },
+      { "path": "review/dark-after-repair.png", "contentSize": [320, 642], "pngPixels": [644, 1332], "sha256": "48f3f306b45a0050e1bf297e40d8f6703e4ab2e95f1eefd0aa33f1704dd75281" },
+      { "path": "review/light-560.png", "contentSize": [560, 640], "pngPixels": [1124, 1328], "sha256": "f87251b92ebd0de88699504a12d1d066bf15df1fa59d9dd52b83bc6a87589026" },
+      { "path": "review/light-320.png", "contentSize": [320, 640], "pngPixels": [644, 1328], "sha256": "d682ea80b2f125b4b2c6d561fa6e3e59e82a8acf9f9f9fc0007b4ffa1999f84a" },
+      { "path": "review/light-240-short.png", "contentSize": [240, 360], "pngPixels": [484, 768], "sha256": "d324c00eb77068b7195f8b1bd6d1869b0bbb5e6c9ad9fad74ac4512ee4bc6935" },
+      { "path": "review/light-400.png", "contentSize": [400, 640], "pngPixels": [804, 1328], "sha256": "e4cd8889d6159bc38c5dfa3ec708930180e56e29ef138d77ea6a235989eba1a8" }
+    ],
+    "captureNotes": "Dark content height is 642, outer height 666 logical px. PNGs include native frame at 2x. Corrected after-repair capture independently reviewed with 12 -> 11 result.",
+    "automationFailure": {
+      "session": "20261003T133443Z",
+      "timestamp": "2026-10-03T13:42:36.407Z",
+      "rawLogLine": 1593,
+      "trigger": "Coordinator direct Command Bar settings().Studio.Theme=t assignment",
+      "error": "HardAssert (UIContext::requireUIContext not on UI thread)",
+      "classification": "QA automation-triggered Studio crash, not JointForge product bug",
+      "recovery": "QA fixture recovered in session 20261003T134350Z; native Studio Settings theme switch worked, then actual Light/Locate/Apply/Undo verified",
+      "sourceOrBinaryChanged": false
+    },
+    "limitations": ["GUI Redo not verified; native Undo/Redo PASS", "Actual GUI Create/Batch/stale/cancel/removal walkthroughs not executed", "No exhaustive theme/size/state coverage or installed stress test", "240x360 footer sentence truncates; counts and action region remain visible", "Path-heavy assignment text and below-fold detail/plan content limit visual rating to GOOD"]
+  },
+  "historicalArtifacts": {
+    "dist/JointForge-v1.0.0.rbxm": "24f43cf04c7d4e8cf92310b3c725f827e36b1ea22d9806e20325a4af4d2633bd",
+    "dist/JointForge-v1.1.0.rbxm": "9e73c5e8387190d324eac57c762818f452758ad731000db24e2ab522df04cc17",
+    "dist/candidate-1.1.0.json": "82a1f4f6e1c75e1a461de85484edbf4cd6c461ce499699ae2ac62f7618e8d1e5",
+    "dist/manifest.json": "5adfbc7a28cb353814ebdc3332a1f9679a463e8d90f2a5c7d0017a0b513f4917"
+  },
+  "nativeEvidence": {
+    "artifactSha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216",
+    "completedAt": "2026-10-03T13:28:59.044Z",
+    "evidence": "native-dark-run.txt",
+    "evidenceSha256": "dae31ba248d10dd6388d8f7189691b3a31c51d02550ac65c3a4ec4eb91d6ccf6",
+    "executor": "parent coordinator",
+    "installedGui": {
+      "mainLoaded": true,
+      "mainLoadSource": "parent execution and separately reviewed installed-GUI evidence",
+      "interaction": "PASS for hero workflow, Locate and Undo; see guiEvidence for scope",
+      "widths": "PASS for captured 240/320/400/560 states only",
+      "lightSanity": "PASS",
+      "guiRedo": "NON TESTED",
+      "evidence": "GUI_EVIDENCE.md"
+    },
+    "issueScenarios": { "passed": 10, "failed": 0 },
+    "nativeUndoRedo": "PASS",
+    "rawLog": "/Users/francoisdebono/Library/Logs/Roblox/0.741.19.7411056_20261003T132850Z_Studio_59878_last.log",
+    "responsiveness": {
+      "joints": 128,
+      "unrelatedFolders": 2000,
+      "heartbeats": 128,
+      "elapsedMs": 2129.901,
+      "longestStepMs": 11.073,
+      "scope": "Native QA runner; installed-GUI responsiveness not yet tested"
+    },
+    "scope": "Exact-binary native QA import and callback-driven native controls; not installed-GUI proof",
+    "serializationWarningReview": {
+      "timestamp": "2026-10-03T13:28:54.199Z",
+      "rawLogLine": 1443,
+      "occurrences": 1,
+      "message": "SerializationService Parent locked; current parent JointForge025QA.rbxl, new parent NULL",
+      "assessment": "Observed in QA session without attributed JointForge stack; no SerializationService references in production or QA Sources. All assertions passed. Cause unestablished; no deterministic engine defect demonstrated.",
+      "engineChanged": false
+    },
+    "studioVersion": "0.741.19.7411056",
+    "technicalMatrix": { "passed": 56, "failed": 0 },
+    "v11Scenarios": { "passed": 38, "failed": 0 }
+  },
+  "product": "JointForge",
+  "productVersion": "1.1.0",
+  "publication": "NOT PERFORMED",
+  "qa": {
+    "additionalIssueScenarios": 10,
+    "artifact": "JointForge025QA.rbxm",
+    "demo": "JointForge025-Demo.rbxl",
+    "fixture": "JointForge-Issues.rbxmx",
+    "fixtureSha256": "68b21c38739c6a15eb9725e555a88845aa02605990742c4c5e2ef0341202dd75",
+    "installedGuiProof": false,
+    "mode": "Local Edit mode, guarded empty Workspace",
+    "outputPrefix": "[JointForge025]",
+    "place": "JointForge025QA.rbxl",
+    "sha256": "59f0a5df6f7bab3f559ca15a02390e50e7bdbdc3b8a60221a0a6c35cfd03de7f",
+    "technicalMatrixRows": 56,
+    "workspaceAttribute": "JointForge025Gate"
+  },
+  "sha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216",
+  "sourceVerification": {
+    "importedSourcesEqual": true,
+    "preservedBaselineSources": {
+      "ForgeMark": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+      "Graph": "b02d0158a85f5d9a4fe6aceef4280605a9385d15a5e1d9b2242a663bc1fb8cd9",
+      "Planner": "9dfe7d77a4d442c0faf1d6812e700a2d80f3f17d39e9c7418f2d4403ca82d16b",
+      "Schema": "32225d12b64bdb85efcedec3bad00224be6507c8dff82eda3c8634f38ecd9518",
+      "StudioUI": "9dddfb14a6a0308bedbb9ad486b8892914664f1263c1b91da788df643a979c5c",
+      "Transaction": "2e55e72375a71ea7de65956946742104eec19bc2402c04cecf8b2a78b222177f"
+    },
+    "reproducibleBuild": true,
+    "sourceCount": 9,
+    "sourceSha256": {
+      "JointForge/Main.plugin.luau": "783605cb37fba9707e26c32de29d9869e154558da73bc750b6d9a58ceb914104",
+      "JointForge/Modules/ForgeMark.luau": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+      "JointForge/Modules/Graph.luau": "b02d0158a85f5d9a4fe6aceef4280605a9385d15a5e1d9b2242a663bc1fb8cd9",
+      "JointForge/Modules/Inspection.luau": "63dcd3291d74de85fee27a0965e5ea05799ba9c159a2e35d1d5cd8c3752f3e14",
+      "JointForge/Modules/Planner.luau": "9dfe7d77a4d442c0faf1d6812e700a2d80f3f17d39e9c7418f2d4403ca82d16b",
+      "JointForge/Modules/Schema.luau": "32225d12b64bdb85efcedec3bad00224be6507c8dff82eda3c8634f38ecd9518",
+      "JointForge/Modules/StudioUI.luau": "9dddfb14a6a0308bedbb9ad486b8892914664f1263c1b91da788df643a979c5c",
+      "JointForge/Modules/Transaction.luau": "2e55e72375a71ea7de65956946742104eec19bc2402c04cecf8b2a78b222177f",
+      "JointForge/Modules/View.luau": "07e0d85cd556e5667ab77ae571991ac6e5b4f0936ac9cc8eb5c39a7301e2c1b6"
+    },
+    "status": "PASS"
+  }
+}

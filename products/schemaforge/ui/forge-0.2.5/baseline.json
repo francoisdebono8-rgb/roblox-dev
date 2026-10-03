@@ -1,0 +1,16 @@
+{
+  "commit": "92e4463cea4dc20ee59375b062e80b1caba55894",
+  "viewBeforeSha256": "ed971300786bb08a4d5a747c632e66246656d27f932127b513f841beebe245b0",
+  "protectedFiles": {
+    "dist/SchemaForge-v1.0.0.rbxm": "d6b29c5b9f76db7d96e4ac828e4eb2f56152c66c8e6e98c67ac598d383b99a2f",
+    "dist/SchemaForge-v1.1.0.rbxm": "4c6768ba0c484164a576287b3cb623b8fd23c5ae90054b415e640c483a1906e9",
+    "dist/SchemaForge-v1.2.0.rbxm": "ddd4b1599f6a77697bcc9de754f29e6467452cadc6b64a6029b28809831993ef",
+    "dist/candidate-1.2.0.json": "9bd782930d80e04998bc333c13632af7582e1f3f635a838d044d614765158229",
+    "dist/manifest.json": "7e3060a6f1cd4287eb39dc2b957f4d9f7b6407e9bbe25225b501c42dab2e7968",
+    "SchemaForge/Modules/Engine.luau": "7fea604f4c06d12fbf55441c4c8101d871b1ce12035c70eb6811c271ef4544b4",
+    "SchemaForge/Modules/Schema.luau": "be67585389f64e78489573d0c13efa7ddf528580aade68b2c927a053da525523",
+    "SchemaForge/Modules/Store.luau": "eceb065aad8be3a072d56d7cb54d548e20c00672ebf302b44737bdcdfd73ec76",
+    "ui/brand-review/lockup-dark-320.png": "7a15d9156691fb3fa055c56ea780c6cd10660b884def5176f614649fafa2f215",
+    "ui/brand-review/lockup-dark-560.png": "398c726fa926e206e1f3f010f93ae783aecb357143117324bd70503f9d976de0"
+  }
+}

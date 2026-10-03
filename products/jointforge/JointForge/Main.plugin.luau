@@ -1,9 +1,9 @@
 local toolbar = plugin:CreateToolbar("JointForge")
-local toggle = toolbar:CreateButton("JointForge", "Create, batch-assemble and inspect joints", "")
+local toggle = toolbar:CreateButton("JointForge", "Scan assemblies, inspect issues and preview explicit repairs", "")
 toggle.ClickableWhenViewportHidden = true
-local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 560, 720, 320, 480)
+local info = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Right, false, false, 560, 720, 240, 360)
 local widget = plugin:CreateDockWidgetPluginGuiAsync("JointForge1", info)
-widget.Title = "JointForge"
+widget.Title = "JointForge | Forge Studio 0.2.5"
 local dispose = require(script.Parent.Modules.View).mount(widget, game:GetService("Selection"), game:GetService("ChangeHistoryService"))
 toggle.Click:Connect(function() widget.Enabled = not widget.Enabled end)
 widget:GetPropertyChangedSignal("Enabled"):Connect(function() toggle:SetActive(widget.Enabled) end)

@@ -503,16 +503,18 @@ return function(modules, legacyModules, hostPlugin)
 		table.sort(before); table.sort(after)
 		print(string.format("[SchemaForgeV12][BENCHMARK] descendants=20000 targets=20 warmup=2 repetitions=7 old_full_audit_median_ms=%.6f candidate_full_audit_median_ms=%.6f old_scope_visits=20001 candidate_visits=20 child_visits=0", before[4], after[4]))
 	end)
-	test({40, 41}, "Production package has only five scripts, no QA/runtime/network payload", function()
-		local production = modules.Parent; assert(#production:GetDescendants() == 6)
+	test({40, 41}, "Production package has six known scripts, no QA/runtime/network payload", function()
+		local production = modules.Parent; assert(#production:GetDescendants() == 7)
+		local names = {Main=true, Schema=true, Engine=true, Store=true, View=true, AuditSummary=true}
 		local count = 0
 		for _, child in ipairs(production:GetDescendants()) do
 			if child:IsA("LuaSourceContainer") then
+				assert(names[child.Name], "Unexpected production source"); names[child.Name] = nil
 				count += 1
 				for _, pattern in ipairs({"GetAsync", "PostAsync", "RequestAsync", "loadstring", "TechnicalGate", "SchemaForgeV12", "AnalyticsService"}) do assert(not child.Source:find(pattern, 1, true)) end
 			end
 		end
-		assert(count == 5 and production.Main.Disabled)
+		assert(count == 6 and production.Main.Disabled and next(names) == nil)
 		assert(#production.Parent:GetAttribute("CandidateSHA256") == 64)
 	end)
 	for id = 1, 41 do

@@ -294,6 +294,8 @@ return function(test)
 		UIFactory.setCheckbox(controller._editorFields.Massless, true)
 		UIFactory.setCheckbox(ui.tagsCheck, true)
 		UIFactory.setCheckbox(ui.attributesCheck, true)
+		for name, check in pairs(controller._editorTags) do UIFactory.setCheckbox(check, name == "PresetForgeVariant") end
+		for name, check in pairs(controller._editorAttributes) do UIFactory.setCheckbox(check, name == "Level") end
 		controller:_saveEditor()
 		assert(not ui.editorOverlay.Visible)
 		local variant = assert(reopen():find("Project", "Variant"))
@@ -340,10 +342,11 @@ return function(test)
 		assert(Support.textIn(ui.resultList, "IgnoredObject"))
 		local rows = {}
 		for _, row in ipairs(ui.resultList:GetChildren()) do
-			if row:IsA("TextButton") then rows[#rows + 1] = row end
+			if row.Name == "ObjectChanges" then rows[#rows + 1] = row end
 		end
 		table.sort(rows, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
-		assert(#rows == 3 and rows[1].Text:find("ChangedObject", 1, true) and rows[2].Text:find("MatchingObject", 1, true))
+		assert(#rows == 3 and rows[1]:GetAttribute("Status") == "affected" and rows[2]:GetAttribute("Status") == "matching")
+		assert(Support.textIn(rows[1], "ChangedObject") and Support.textIn(rows[2], "MatchingObject"))
 		controller:_runPreview()
 		assert(not controller._showMatching and not controller._showIgnored)
 		assert(not affected.Anchored and matching.Anchored)

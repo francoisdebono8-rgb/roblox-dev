@@ -309,7 +309,7 @@ return function(modules, legacyModules)
 				for _,pattern in ipairs({"GetAsync","PostAsync","RequestAsync","loadstring","TechnicalGate","AccessForgeV11","AnalyticsService"}) do assert(not item.Source:find(pattern,1,true)) end
 			else assert(item:IsA("Folder")) end
 		end
-		assert(count==5)
+		assert(count==(root:GetAttribute("ProductionSourceCount") or 5))
 	end)
 	for id=1,44 do print("[AccessForgeV11][MATRIX] "..id.." "..(matrix[id]==true and "PASS" or matrix[id]==false and "FAIL" or "NON TESTED")) end
 	print(string.format("[AccessForgeV11][SUMMARY] %d PASS / %d FAIL",passed,failed))

@@ -1,0 +1,105 @@
+PresetForge / Forge Studio 0.2.5
+Artifact SHA256: a9726d442d8376a658cdb042da2212cced695ab2b7e6a96c4b8a08e71d881a63
+Native QA package importing the exact binary; not installed-GUI proof.
+Read individual results and final summary. Missing checks are not PASS.
+
+2026-10-03T13:17:21.786Z [PresetForge025Gate] artifact=PresetForge-ForgeStudio-0.2.5.rbxm sha256=a9726d442d8376a658cdb042da2212cced695ab2b7e6a96c4b8a08e71d881a63
+2026-10-03T13:17:21.786Z [PresetForge025Gate] catalogue=Forge Studio 0.2.5 product=2.2.0 mode=local-edit
+2026-10-03T13:17:21.786Z [PresetForge025Gate] Legacy20=31401503260a2d6a95b17d41553601ebcba0c590b490ef5fced3a08b622618ec
+2026-10-03T13:17:21.786Z [PresetForge025Gate] Legacy21=54746b6e7798094155bab145288723e19acc9e8bba010161d83f79e3649f1f15
+2026-10-03T13:17:21.791Z [PresetForge025Gate][PASS] baseline Schema.spec
+2026-10-03T13:17:21.792Z [PresetForge025Gate][PASS] baseline CapturePreview.spec
+2026-10-03T13:17:21.792Z [PresetForge025Gate][PASS] baseline ScopePreview.spec
+2026-10-03T13:17:21.793Z [PresetForge025Gate][PASS] baseline ApplyService.spec
+2026-10-03T13:17:21.795Z [PresetForge025Gate][PASS] baseline PresetStore.spec
+2026-10-03T13:17:21.798Z [PresetForge025Gate][PASS] baseline ProjectStore.spec
+2026-10-03T13:17:21.805Z [PresetForge025Gate][PASS] Workflow.spec / duplicate/edit Local -> Local
+2026-10-03T13:17:21.807Z [PresetForge025Gate][PASS] Workflow.spec / duplicate/edit Local -> Project
+2026-10-03T13:17:21.808Z [PresetForge025Gate][PASS] Workflow.spec / duplicate/edit Project -> Local
+2026-10-03T13:17:21.811Z [PresetForge025Gate][PASS] Workflow.spec / duplicate/edit Project -> Project
+2026-10-03T13:17:21.813Z [PresetForge025Gate][PASS] Workflow.spec / duplicate failures preserve both libraries
+2026-10-03T13:17:21.814Z [PresetForge025Gate][PASS] Workflow.spec / case-insensitive literal name search
+2026-10-03T13:17:21.814Z [PresetForge025Gate][PASS] Workflow.spec / changes-first stable resolver order, including duplicate paths
+2026-10-03T13:17:21.816Z [PresetForge025Gate][PASS] Workflow.spec / stale preview detects exact values, tags, membership and paths
+2026-10-03T13:17:21.879Z [PresetForge025Gate][PASS] Workflow.spec / controller exact before/after and captured values
+2026-10-03T13:17:21.910Z [PresetForge025Gate][PASS] Workflow.spec / controller Apply rechecks stale data even without watchers
+2026-10-03T13:17:21.971Z [PresetForge025Gate][PASS] Workflow.spec / controller watched property clears Preview and disables Apply
+2026-10-03T13:17:22.132Z [PresetForge025Gate][PASS] Workflow.spec / controller selection, scope and filter invalidate Preview
+2026-10-03T13:17:22.249Z [PresetForge025Gate][PASS] Workflow.spec / controller Select groups is read-only and requires fresh Preview
+2026-10-03T13:17:22.316Z [PresetForge025Gate][PASS] Workflow.spec / controller search filters the rendered library without editing recipes
+2026-10-03T13:17:22.355Z [PresetForge025Gate][PASS] Workflow.spec / controller Edit variant preserves original nested fields
+2026-10-03T13:17:22.369Z [PresetForge025Gate][PASS] Workflow.spec / controller duplicate confirmation creates and selects a separate variant
+2026-10-03T13:17:22.390Z [PresetForge025Gate][PASS] Workflow.spec / controller changes-only default and optional matching/ignored rows
+2026-10-03T13:17:22.416Z [PresetForge025Gate][PASS] Workflow.spec / controller retains capture draft but refuses a changed source
+2026-10-03T13:17:22.416Z [PresetForge025Gate][PASS] Workflow.spec / Frame uses rotated spatial bounds without changing instances
+2026-10-03T13:17:22.416Z [PresetForge025Gate][PASS] Workflow.spec / Frame refuses missing camera and nonspatial selection
+2026-10-03T13:17:22.447Z [PresetForge025Gate][PASS] NativeRelease.spec / actual ApplyService with one native Undo and Redo
+2026-10-03T13:17:22.453Z [PresetForge025Gate][PASS] NativeRelease.spec / real plugin settings reopen/recapture/rename/delete with restoration
+2026-10-03T13:17:23.753Z [PresetForge025Gate][PASS] Layout.spec / 240x360 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:24.987Z [PresetForge025Gate][PASS] Layout.spec / 240x640 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:26.221Z [PresetForge025Gate][PASS] Layout.spec / 240x900 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:27.522Z [PresetForge025Gate][PASS] Layout.spec / 320x360 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:28.753Z [PresetForge025Gate][PASS] Layout.spec / 320x640 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:29.983Z [PresetForge025Gate][PASS] Layout.spec / 320x900 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:31.204Z [PresetForge025Gate][PASS] Layout.spec / 400x360 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:32.421Z [PresetForge025Gate][PASS] Layout.spec / 400x640 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:33.639Z [PresetForge025Gate][PASS] Layout.spec / 400x900 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:34.971Z [PresetForge025Gate][PASS] Layout.spec / 560x360 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:36.203Z [PresetForge025Gate][PASS] Layout.spec / 560x640 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:37.488Z [PresetForge025Gate][PASS] Layout.spec / 560x900 / library, recipe, targets/changes, capture, fixed actions
+2026-10-03T13:17:37.502Z [PresetForge025Gate][PASS] M01 legacy 2.0 exact-binary Local/Project load
+2026-10-03T13:17:37.506Z [PresetForge025Gate][PASS] M02 legacy 2.1 exact-binary Local/Project load
+2026-10-03T13:17:37.509Z [PresetForge025Gate][PASS] M03 current Local real plugin round trip
+2026-10-03T13:17:37.512Z [PresetForge025Gate][PASS] M04 current Project round trip and transaction failures
+2026-10-03T13:17:37.513Z [PresetForge025Gate][PASS] M06 selective tag subset and recapture
+2026-10-03T13:17:37.513Z [PresetForge025Gate][PASS] M05 selective property subset and recapture
+2026-10-03T13:17:37.514Z [PresetForge025Gate][PASS] M07 selective attribute subset and recapture
+2026-10-03T13:17:37.514Z [PresetForge025Gate][PASS] M08 unrelated tag preservation
+2026-10-03T13:17:37.515Z [PresetForge025Gate][PASS] M09 unrelated attribute preservation
+2026-10-03T13:17:37.516Z [PresetForge025Gate][PASS] M10 mixed Selection immutable exact plan
+2026-10-03T13:17:37.516Z [PresetForge025Gate][PASS] M11 overlapping Descendants roots dedupe
+2026-10-03T13:17:37.517Z [PresetForge025Gate][PASS] M12 class/name/tag filters
+2026-10-03T13:17:37.517Z [PresetForge025Gate][PASS] M17 stale planned attribute tiny delta
+2026-10-03T13:17:37.518Z [PresetForge025Gate][PASS] M13 stale added matching descendant
+2026-10-03T13:17:37.518Z [PresetForge025Gate][PASS] M15 stale target reparent (identical paths)
+2026-10-03T13:17:37.519Z [PresetForge025Gate][PASS] M18 stale planned tag presence
+2026-10-03T13:17:37.519Z [PresetForge025Gate][PASS] M20 stale recipe content
+2026-10-03T13:17:37.520Z [PresetForge025Gate][PASS] M14 stale removed matching descendant
+2026-10-03T13:17:37.520Z [PresetForge025Gate][PASS] M16 stale planned property tiny delta
+2026-10-03T13:17:37.521Z [PresetForge025Gate][PASS] M19 unrelated property and nonmatching addition remain fresh
+2026-10-03T13:17:37.523Z [PresetForge025Gate][PASS] M21 no-change targets and no-change fields untouched
+2026-10-03T13:17:37.524Z [PresetForge025Gate][PASS] M22 exact metrics and write counts
+2026-10-03T13:17:37.524Z [PresetForge025Gate][PASS] M23 coercion preflight and readback rollback
+2026-10-03T13:17:37.525Z [PresetForge025Gate][PASS] M24 recording unavailable and recording-start reentrancy
+2026-10-03T13:17:37.526Z [PresetForge025Gate][PASS] M26 tag failure full rollback
+2026-10-03T13:17:37.527Z [PresetForge025Gate][PASS] M28 commit failure full rollback
+2026-10-03T13:17:37.527Z [PresetForge025Gate][PASS] M27 attribute failure full rollback
+2026-10-03T13:17:37.528Z [PresetForge025Gate][PASS] M25 property failure full rollback
+2026-10-03T13:17:37.546Z [PresetForge025Gate][PASS] M29 native Undo exact before and identity
+2026-10-03T13:17:37.750Z [PresetForge025Gate][PASS] M30 native Redo and Project create/update/rename/delete identity Undo
+2026-10-03T13:17:37.751Z [PresetForge025Gate][PASS] M31 one use including failed/stale/forged plans
+2026-10-03T13:17:37.992Z [PresetForge025Gate][PASS] M32 root/scan/compatible/affected/write caps
+2026-10-03T13:17:37.993Z [PresetForge025Gate][PASS] M33 malformed persistence duplicates/cycles/oversize/nested content
+2026-10-03T13:17:37.993Z [PresetForge025Gate][PASS] M34 no network telemetry/runtime addition
+2026-10-03T13:17:37.993Z [PresetForge025Gate][PASS] M35 exact candidate binary/source correspondence
+2026-10-03T13:17:37.994Z [PresetForge025Gate][PASS] extra selection order/filter membership/revision freshness
+2026-10-03T13:17:37.994Z [PresetForge025Gate][PASS] extra full recipe preflight rejects before history
+2026-10-03T13:17:37.995Z [PresetForge025Gate][PASS] extra recording-start recipe/selection mutations and one-use failure
+2026-10-03T13:17:38.065Z [PresetForge025Gate][PASS] extra controller revision and relevant watcher integration
+2026-10-03T13:17:38.066Z [PresetForge025Gate][PASS] extra project reentrant mutation and nonarchivable clone refuse
+2026-10-03T13:17:38.088Z [PresetForge025Gate][PASS] extra controller observes externally edited Project recipe
+2026-10-03T13:17:38.089Z [PresetForge025Gate][PASS] extra live Repository context rechecks stored recipe at recording start
+2026-10-03T13:17:38.090Z [PresetForge025Gate][PASS] extra corrupt Local reload and failed write preserve storage
+2026-10-03T13:17:38.091Z [PresetForge025Gate][PASS] extra typed metadata canonical round trips and nested corruption
+2026-10-03T13:17:38.092Z [PresetForge025Gate][PASS] extra exact class compatibility excludes Texture from Decal
+2026-10-03T13:17:38.110Z [PresetForge025Gate][PASS] H01 selective capture controls persist only selected metadata
+2026-10-03T13:17:38.164Z [PresetForge025Gate][PASS] H02 disabled metadata categories ignore over-limit source metadata
+2026-10-03T13:17:38.228Z [PresetForge025Gate][PASS] H03 real workshop read-only Preview and all eight metrics
+2026-10-03T13:17:38.252Z [PresetForge025Gate][PASS] H04 Apply exact subset, native Undo, Preview again and Redo
+2026-10-03T13:17:38.377Z [PresetForge025Gate][PASS] H05 stale target mutation blocks watched and synchronous Apply
+2026-10-03T13:17:38.384Z [PresetForge025Gate][PASS] H06 selective metadata Apply preserves every other field/tag/attribute
+2026-10-03T13:17:38.393Z [PresetForge025Gate][PASS] H07 release metadata retains product semver and accepted branding
+2026-10-03T13:17:39.328Z [PresetForge025Gate][PASS] H08 real long paths and hero metrics at 240/320/400/560
+2026-10-03T13:17:39.329Z [PresetForge025Gate][PASS] no asynchronous errors
+2026-10-03T13:17:39.329Z [PresetForge025Gate] checks=94 passed=94 failed=0
+2026-10-03T13:17:39.329Z [PresetForge025Gate][SUMMARY] PASS

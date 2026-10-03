@@ -1,0 +1,81 @@
+CurveForge / Forge Studio 0.2.5
+Artifact SHA256: 510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d
+Native QA package importing the exact binary; not installed-GUI proof.
+Read individual results and final summary. Missing checks are not PASS.
+
+2026-10-03T15:19:56.994Z [CurveForge025] Forge Studio 0.2.5 / product 1.1.0 / sha256=510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d
+2026-10-03T15:19:57.004Z [CurveForgeTests][PASS] 2-point straight path / endpoints / read-only preview
+2026-10-03T15:19:57.006Z [CurveForgeTests][PASS] 4-point curved path / controls interpolated
+2026-10-03T15:19:57.014Z [CurveForgeTests][PASS] vertical and 3D orientation / cable gap continuity / collision flags
+2026-10-03T15:19:57.022Z [CurveForgeTests][PASS] repeat spacing / count / endpoints / scale / tangent rotation
+2026-10-03T15:19:57.081Z [CurveForgeTests][PASS] Build native one-step Undo / Redo / unrelated objects preserved
+2026-10-03T15:19:57.207Z [CurveForgeTests][PASS] Repeat Model / reopen metadata / Regenerate / native Undo / source unchanged
+2026-10-03T15:19:57.219Z [CurveForgeTests][PASS] invalid / deleted / stale controls / settings / output limits
+2026-10-03T15:19:57.228Z [CurveForgeTests][PASS] scripted sources rejected / external references / unavailable Undo / rollback
+2026-10-03T15:19:57.386Z [CurveForgeTests][PASS] New Path markers / native Undo / widget mounts without project mutation
+2026-10-03T15:19:57.386Z [CurveForgeTests] 9 passed / 0 failed
+2026-10-03T15:19:57.389Z [CurveForgeV11][PASS] Stable continuous frames / straight
+2026-10-03T15:19:57.391Z [CurveForgeV11][PASS] Stable continuous frames / scurve
+2026-10-03T15:19:57.395Z [CurveForgeV11][PASS] Stable continuous frames / vertical
+2026-10-03T15:19:57.398Z [CurveForgeV11][PASS] Stable continuous frames / spatial
+2026-10-03T15:19:57.400Z [CurveForgeV11][PASS] Stable continuous frames / threshold
+2026-10-03T15:19:57.403Z [CurveForgeV11][PASS] Pure vertical endpoints and no world-up threshold roll flip
+2026-10-03T15:19:57.406Z [CurveForgeV11][PASS] Roll off preserves planar V1 reference and ignores control rotation
+2026-10-03T15:19:57.407Z [CurveForgeV11][PASS] Roll on interpolates guides smoothly without moving path
+2026-10-03T15:19:57.408Z [CurveForgeV11][PASS] Parallel roll guide fallback is finite and deterministic
+2026-10-03T15:19:57.409Z [CurveForgeV11][PASS] Half-turn roll guides interpolate without a discontinuous flip
+2026-10-03T15:19:57.410Z [CurveForgeV11][MEASURE] straight samples=2 oldSamples=65 length=20.000000000 referenceLength=20.000000000 maxPositionError=0.000001907 oldError=0.000000060
+2026-10-03T15:19:57.410Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / straight
+2026-10-03T15:19:57.413Z [CurveForgeV11][MEASURE] gentle samples=203 oldSamples=193 length=5400.978935242 referenceLength=5400.979007900 maxPositionError=0.003652939 oldError=0.006041317
+2026-10-03T15:19:57.413Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / gentle
+2026-10-03T15:19:57.417Z [CurveForgeV11][MEASURE] tight samples=601 oldSamples=193 length=3.431663251 referenceLength=3.431670645 maxPositionError=0.000153606 oldError=0.000124567
+2026-10-03T15:19:57.417Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / tight
+2026-10-03T15:19:57.423Z [CurveForgeV11][MEASURE] spatial samples=774 oldSamples=321 length=75.663885562 referenceLength=75.664096608 maxPositionError=0.001046231 oldError=0.001152848
+2026-10-03T15:19:57.423Z [CurveForgeV11][PASS] Adaptive accuracy / old fixed comparison / spatial
+2026-10-03T15:19:57.423Z [CurveForgeV11][PASS] Eight controls and translated valid paths remain bounded
+2026-10-03T15:19:57.424Z [CurveForgeV11][PASS] Cable closed shared endpoints / straight
+2026-10-03T15:19:57.429Z [CurveForgeV11][PASS] Cable closed shared endpoints / scurve
+2026-10-03T15:19:57.432Z [CurveForgeV11][PASS] Cable closed shared endpoints / vertical
+2026-10-03T15:19:57.438Z [CurveForgeV11][PASS] Cable closed shared endpoints / spatial
+2026-10-03T15:19:57.444Z [CurveForgeV11][PASS] Cable diameter extremes and short segment
+2026-10-03T15:19:57.465Z [CurveForgeV11][PASS] Repeat Count, endpoints, Orient, local offset, source and scale
+2026-10-03T15:19:57.465Z [CurveForgeV11][PASS] Repeat Spacing deterministic; explicit endpoint remainder
+2026-10-03T15:19:57.553Z [CurveForgeV11][MEASURE] actualCopies=30 spacing=2.5 maxReferenceArcStepError=0.000010135
+2026-10-03T15:19:57.553Z [CurveForgeV11][PASS] Actual 3D repeated copies have uniform reference arc spacing
+2026-10-03T15:19:57.569Z [CurveForgeV11][PASS] Repeated Edit Existing / Regenerate has no cumulative drift
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / internal move with unchanged pivot
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / resize
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / add descendant
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / remove descendant
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / rename descendant
+2026-10-03T15:19:57.570Z [CurveForgeV11][PASS] Stale source / reparent descendant
+2026-10-03T15:19:57.571Z [CurveForgeV11][PASS] Stale source / reparent root
+2026-10-03T15:19:57.571Z [CurveForgeV11][PASS] Stale source / delete source
+2026-10-03T15:19:57.571Z [CurveForgeV11][PASS] Stale source / source pivot
+2026-10-03T15:19:57.571Z [CurveForgeV11][PASS] Stale source / source attributes
+2026-10-03T15:19:57.572Z [CurveForgeV11][PASS] Control order/count/deletion/rotation and settings stale rules
+2026-10-03T15:19:58.225Z [CurveForgeV11][PASS] Actual V1 binary metadata loads and regenerates to V2
+2026-10-03T15:19:58.237Z [CurveForgeV11][PASS] Actual V1 curved Cable migrates with roll off and user additions intact
+2026-10-03T15:19:58.238Z [CurveForgeV11][PASS] Malformed metadata fails safely
+2026-10-03T15:19:58.245Z [CurveForgeV11][PASS] Hard limits before mutation and correct boundary estimates
+2026-10-03T15:19:58.348Z [CurveForgeV11][PASS] Build and Regenerate native history preserve exact output and user additions
+2026-10-03T15:19:58.354Z [CurveForgeV11][PASS] Recording refusal/throw, commit rollback and reentrant stale input
+2026-10-03T15:19:58.356Z [CurveForgeV11][PASS] Controls or source inside replaced output are rejected
+2026-10-03T15:19:58.356Z [CurveForgeV11][SUMMARY] 42 PASS / 0 FAIL
+2026-10-03T15:19:58.371Z [CurveForge025][PASS] Cable + custom Repeat contextual preview: no Workspace events, no source writes
+2026-10-03T15:19:58.410Z [CurveForge025][PASS] Preview retains native history head and next Undo/Redo
+2026-10-03T15:19:58.524Z [CurveForge025][PASS] Move point -> stale rejected -> regenerate both modes -> native Undo/Redo
+2026-10-03T15:19:58.536Z [CurveForge025][PASS] Context sanitization, non-Archivable fallback and bounded neighbor count
+2026-10-03T15:19:58.542Z [CurveForge025][PASS] Query failure retains actual output and ordered invisible control markers
+2026-10-03T15:19:58.542Z [CurveForge025][CONTEXT] 5 passed / 0 failed
+2026-10-03T15:19:58.548Z [CurveForge025][VIEW PASS] Cable/Repeat both first-class and initial Build disabled
+2026-10-03T15:19:58.552Z [CurveForge025][VIEW PASS] Edit Existing loads true comparison and exact result
+2026-10-03T15:19:58.557Z [CurveForge025][VIEW PASS] Direct Existing geometry edit invalidates comparison and disables write
+2026-10-03T15:19:58.566Z [CurveForge025][VIEW PASS] Refresh recaptures actual edited Existing geometry
+2026-10-03T15:19:58.574Z [CurveForge025][VIEW PASS] Repeat load exposes custom source and exact copies
+2026-10-03T15:19:58.672Z [CurveForge025][VIEW PASS] Short dock preserves review geometry and reachable commands
+2026-10-03T15:19:58.688Z [CurveForge025][VIEW PASS] Source attribute change clears ready state
+2026-10-03T15:19:58.689Z [CurveForge025][VIEW] 7 passed / 0 failed; callback smoke only
+2026-10-03T15:19:58.910Z [CurveForge025] Fixture ready: CurveForge025Demo.Cable.UtilityCable / Repeat.CustomBeaconPath
+2026-10-03T15:19:58.910Z [CurveForge025][SUMMARY] PASS: 9 baseline + 42 technical + 5 context + 7 view callback checks
+2026-10-03T15:19:58.910Z [CurveForge025] Installed commercial Main/GUI, physical interaction, screenshots and Light/Dark acceptance remain separate gates.

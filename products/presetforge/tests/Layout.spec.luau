@@ -51,8 +51,8 @@ local function checkGeometry(root)
 				assert(object.CanvasSize.X.Scale == 0 and object.CanvasSize.X.Offset == 0, object.Name .. ": horizontal canvas configured")
 				assert(object.AbsoluteCanvasSize.X <= object.AbsoluteSize.X + 1, object.Name .. ": canvas exceeds viewport width")
 			elseif (object:IsA("TextLabel") or object:IsA("TextButton")) and object.Text ~= "" then
-				assert(object.TextTruncate == Enum.TextTruncate.None, object.Name .. ": text truncation enabled")
-				local fits = object.TextFits
+				local truncatedIdentity = object:IsA("TextLabel") and object.TextTruncate == Enum.TextTruncate.AtEnd
+				local fits = truncatedIdentity or object.TextFits
 				if not fits then
 					-- TextFits also sees ancestor clipping. Measure the same control at its
 					-- actual size without that clipping; scroll reachability is checked separately.
@@ -67,6 +67,9 @@ local function checkGeometry(root)
 				end
 				assert(fits, string.format("%s: text does not fit: size=%s bounds=%s text=%s",
 					object:GetFullName(), tostring(object.AbsoluteSize), tostring(object.TextBounds), object.Text:sub(1, 70)))
+				if object.Name == "ObjectPath" then
+					assert(object.TextBounds.X <= object.AbsoluteSize.X + 1, "Object path overflows after truncation")
+				end
 			end
 		end
 	end
@@ -108,7 +111,7 @@ end
 return function(test)
 	for _, width in ipairs({ 240, 320, 400, 560 }) do
 		for _, height in ipairs({ 360, 640, 900 }) do
-			test(string.format("%dx%d / four views, rename, capture fields, fixed actions", width, height), function(cleanup)
+			test(string.format("%dx%d / library, recipe, targets/changes, capture, fixed actions", width, height), function(cleanup)
 				local repository = Support.repository(cleanup)
 				local folder = Instance.new("Folder")
 				folder.Name = "LongContainerNameWithoutSpacesForWrapping"
@@ -145,10 +148,13 @@ return function(test)
 				ui.renameInput.Text = longName
 				for _, name in ipairs({ "Library", "Recipe", "Targets", "Changes" }) do
 					assert(ui.showView(name) ~= false, "showView rejected " .. name)
+					ui.filterPanel.FilterFields.Visible = name == "Targets"
 					settle(ui.root)
 					assert(ui.views[name].Visible and ui.body.AbsoluteSize.Y > 0)
 					checkGeometry(ui.root)
-					for _, tab in pairs(ui.viewButtons) do inViewport(tab, ui.root) end
+					assert(not ui.viewButtons.Targets.Visible, "Targets must share the Changes workspace")
+					assert(ui.viewButtons.Library.Visible == (width < 520), "Wide library must use its own pane")
+					for _, tab in pairs(ui.viewButtons) do if tab.Visible then inViewport(tab, ui.root) end end
 					for _, key in ipairs(controls[name]) do reach(assert(ui[key], key), ui.root) end
 					if name == "Library" then
 						local rows = 0

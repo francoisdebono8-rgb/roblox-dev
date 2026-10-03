@@ -1,5 +1,9 @@
 # PresetForge Product Enablement + UI review
 
+Current continuation for issues #31/#35: see
+[`forge-0.2.5/STATUS.md`](forge-0.2.5/STATUS.md) and its exact-source candidate manifest.
+The checkpoint and evidence below remain historical; no native PASS transfers to 0.2.5.
+
 2026-10-03. Implements the new sequential brief, building on uncommitted #24 work.
 FIRST REVIEW PENDING. Not a final release gate. No publication or asset update.
 

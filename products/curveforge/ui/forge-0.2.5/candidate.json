@@ -1,0 +1,100 @@
+{
+  "artifact": "CurveForge-ForgeStudio-0.2.5.rbxm",
+  "baselineCommit": "bff0d9d",
+  "canonicalAssetId": "90642263224333",
+  "catalogueRelease": "Forge Studio 0.2.5",
+  "gates": {
+    "contextReadOnlyAndHistory": "PASS: 5 native context checks and separate installed Preview/history assertions",
+    "exactArtifactPackaging": "PASS",
+    "installedMainAndGUI": "PASS: scoped Cable/Repeat Edit Existing and Repeat stale/Preview/Regenerate/native Undo/Redo workflow",
+    "lightDarkSanity": "PASS: final Dark and Light plugin-content captures; native chrome palette caveat",
+    "luauCompilation": "PASS",
+    "nativeRegression": "PASS: 63 checks / 0 failures, including 7 View callback checks; not installed GUI proof",
+    "nativeScreenshots": "PASS: all 10 final captures independently inspected; not a complete size/theme/state matrix",
+    "shortDockPreview": "PASS: installed 240-short Built capture plus 240x338/360 native mount bounds checks",
+    "visualAcceptance": "GOOD: reviewed scope; no remaining blocker found in supplied final evidence",
+    "exhaustiveGuiMatrix": "NOT TESTED: 900-high physical capture and exhaustive advanced/error/new-Build GUI"
+  },
+  "historicalArtifacts": {
+    "dist/CurveForge-v1.0.0.rbxm": "476ee0fc81f9080130fe8b6914bac8e37a9a1021b71df93f7b87168ee164162b",
+    "dist/CurveForge-v1.1.0.rbxm": "947d71793699215d88548931256cb022b68ff1f62167e1613cc79e17b4f7c71c",
+    "ui/CurveForge-v1.1.0-ui26.rbxm": "6c3fd7d1b5c1d498f383b8ba4099ad6d2bb2030bd2c9cf281889ff007bba6dd7"
+  },
+  "nativeExpected": {
+    "baseline": 9,
+    "context": 5,
+    "technical": 42,
+    "viewCallbackSmoke": 7
+  },
+  "nativeResults": {
+    "artifactSha256": "510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d",
+    "date": "2026-10-03",
+    "studioVersion": "0.741.19.7411056",
+    "mode": "Edit",
+    "theme": "Dark",
+    "log": "native-final-run.txt",
+    "passed": 63,
+    "failed": 0,
+    "outerSummary": "PASS",
+    "scope": "Exact commercial binary duplicated into separate QA import with Main disabled only there; 7 native View callback checks are not installed GUI proof"
+  },
+  "installedGuiReview": {
+    "decision": "GOOD",
+    "scope": "Executed hero workflow and captured states only, not blanket quality-gate certification",
+    "evidence": "GUI_EVIDENCE.md",
+    "captures": "review/",
+    "captureCount": 10,
+    "allCapturesIndependentlyInspected": true,
+    "installedByteEquality": "Confirmed by coordinator; repository artifact hash independently verified",
+    "studioLog": "/Users/francoisdebono/Library/Logs/Roblox/0.741.19.7411056_20261003T151954Z_Studio_66ec5_last.log",
+    "previewReadOnlyPassUtc": "2026-10-03T15:24:25.975Z",
+    "regenerateUndoRedoSourcePassUtc": "2026-10-03T15:26:03.272Z",
+    "undoExactBaselinePassUtc": "2026-10-03T15:26:42.820Z",
+    "creatorError": "No FLog::CreatorError match in final Studio log at review",
+    "limitations": [
+      "Compact viewport is a survival layout; projected point 2 partly occludes selected point 1, with Path list available",
+      "Native title/tab palette inheritance remains visible outside correctly themed Light plugin content",
+      "No 900-high physical capture, tall-240 capture or exhaustive advanced/error/new-Build GUI matrix",
+      "Unshown hover/focus/scroll, long/duplicate-name and every size/theme/state combination are not certified",
+      "Control moved via Studio command bar, not physical Move-tool dragging"
+    ],
+    "historicalEvidenceOnly": [
+      "review-before-compact-fix/",
+      "native-dark-run.txt"
+    ]
+  },
+  "product": "CurveForge",
+  "productVersion": "1.1.0",
+  "publication": "NOT PERFORMED",
+  "qaArtifacts": {
+    "CurveForge-0.2.5-QA-import.rbxm": "a51a95b2b521da0d9af29d9b75a879449dd6046acfb8873c82b993e91f65b540",
+    "CurveForge-0.2.5-QA-runner.rbxm": "ccae4bf0f5a8a0017770afede85f2d68828acd0bf03b562b74bec5122bc9cb1b",
+    "CurveForge-0.2.5-QA.rbxl": "49657318b6112331ad976b4ef57a0febf7c4a406e9938a34677f199fb2da99d1"
+  },
+  "qaSourceSha256": {
+    "tests/Suite.luau": "b49809bd292c744bdf9d98ac7811852dbee6a8489b7d4b656894a296fc93fd55",
+    "tests/V11.spec.luau": "ffea3192409d55a43e8d621dc1c558b6901abce35488b0f0c21d0d252c0c0614",
+    "ui/forge-0.2.5/Context.spec.luau": "aa7fe71ebc5e8eebd841b52a77026f040ffc7d0480d44df1feb917ed7b82aa26",
+    "ui/forge-0.2.5/Fixture.luau": "c5f74fe2bbf0b14786d485f10bbca16bd0cecc8621c42d5767f8d29db932a609",
+    "ui/forge-0.2.5/Runner.plugin.luau": "bb27161ef98824cd42943240ffcb868cdd5ead2308b05b7ef31ef40055be967e",
+    "ui/forge-0.2.5/View.spec.luau": "5b2c77caf23d5b1f5fcef1a0444d983abc7b997d8a714e5629d5cb51f2d60de1"
+  },
+  "sha256": "510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d",
+  "sourceVerification": {
+    "deterministicRebuild": true,
+    "embeddedSourceEquality": true,
+    "productionOnly": true,
+    "protectedEngineAndBrandUnchanged": true,
+    "sources": {
+      "CurveForge/Main.plugin.luau": "f402db3b3a348c379bb705239f42656602afbcace85c28ccfe4e3b987e6b5af2",
+      "CurveForge/Modules/ContextPreview.luau": "82238c3f5150bb4f128f1723e24fe21fb0cbe8438c41067975b75a9d50a33828",
+      "CurveForge/Modules/Curve.luau": "c36bf9211a6efca8be50116bcd9ccd2f117bf2111b0eb74547407d074d6e3163",
+      "CurveForge/Modules/Engine.luau": "fe1f05916ec82c25d7a306e802e6dcd252611c97666d64fc168fdb42d9c006cb",
+      "CurveForge/Modules/ForgeMark.luau": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+      "CurveForge/Modules/Settings.luau": "e5364d260b1fd879ee2efba5d1c933bb6c142de89e7c62f60b0fd53ed2d826a8",
+      "CurveForge/Modules/StudioUI.luau": "76c6a1501ec9a4c3e4808b5033c6224fc576f96538c7058c1752e5ae10a38588",
+      "CurveForge/Modules/View.luau": "55359668cb05ba41a590a9abde2969a727c21c3332dfcbdf975b7bcab77f161f"
+    },
+    "status": "PASS"
+  }
+}

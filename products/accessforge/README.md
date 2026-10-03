@@ -1,6 +1,20 @@
-# AccessForge 1.0
+# AccessForge
 
 Industrial straight/switchback stairs, landings, guardrails and catwalks with editable regeneration. Roblox Studio edit-mode plugin. Generated output is ordinary Parts with transparent attributes and ObjectValues, not executable scripts.
+
+## Current candidate: Forge Studio 0.2.5
+
+The current sources preserve the 1.1.0 engine and add contextual assembly preview,
+Start/End labels, Existing/Proposed comparison and real fit metrics. Internal product
+version remains 1.1.0; common catalogue release is **Forge Studio 0.2.5**.
+Native regression and the installed hero-workflow GUI gate pass; the scoped visual
+review is GOOD. See the evidence for untested combinations. No publication has been performed.
+
+- Candidate, exact hashes and status: [0.2.5 status](ui/forge-0.2.5/STATUS.md).
+- Build and separate native runner: [native handoff](ui/forge-0.2.5/NATIVE.md).
+- Current artifact: `ui/forge-0.2.5/AccessForge-ForgeStudio-0.2.5.rbxm`.
+
+## Historical public release
 
 - Commercial plugin: `dist/AccessForge-v1.0.0.rbxm`.
 - Start here: `release/QUICK_START.md`.
@@ -9,12 +23,14 @@ Industrial straight/switchback stairs, landings, guardrails and catwalks with ed
 - Store copy and publication state: `release/STORE_LISTING.md`, `release/PUBLICATION_STATUS.md`.
 - Licensed demo: `release/scene/AccessForge-Media.rbxl` (not the upload artifact).
 
-## Technical candidate 1.1.0
+## Historical technical candidate 1.1.0
 
-The current sources implement the unpublished technical candidate. The public
-1.0.0 binary stays intact. Candidate contracts, solver tradeoffs and deferrals:
+The public 1.0.0 and technical 1.1.0 binaries stay intact. Contracts, solver tradeoffs and deferrals:
 [Technical notes](v2/TECHNICAL_1.1.0.md). Exact-binary native QA instructions and
-current status: [Technical matrix](tests/TECHNICAL_MATRIX_1.1.0.md).
+historical status: [Technical matrix](tests/TECHNICAL_MATRIX_1.1.0.md).
+
+These commands apply only to that historical source revision. Use the current
+0.2.5 builder above for current sources; do not overwrite the historical binaries.
 
 ```sh
 python3 products/accessforge/tools/verify_candidate.py --rojo rojo --build

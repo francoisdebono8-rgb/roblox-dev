@@ -461,12 +461,12 @@ function UIFactory.createResultRow(parent, result, formatValue)
 	group:SetAttribute("Status", result.status)
 	separator(group)
 	local heading = pair(group, "ObjectHeading")
-	heading.Size = UDim2.new(1, 0, 0, 42)
+	heading.Size = UDim2.new(1, 0, 0, 46)
 	local title = fixedLabel(heading, result.instance.Name, 14, "text", true)
 	title.Size = UDim2.new(1, -96, 0, 22); tip(title)
 	local path = fixedLabel(heading, result.path, 11, "muted", false)
 	path.Name = "ObjectPath"
-	path.Position = UDim2.fromOffset(0, 23); path.Size = UDim2.new(1, 0, 0, 16); tip(path, result.path)
+	path.Position = UDim2.fromOffset(0, 29); path.Size = UDim2.new(1, 0, 0, 16); tip(path, result.path)
 	-- Native truncation can overflow an auto-height list in a floating Studio dock.
 	local function fitPath()
 		local rootWidth = contextFor(path).root.AbsoluteSize.X
@@ -494,9 +494,9 @@ function UIFactory.createResultRow(parent, result, formatValue)
 	listen(path, contextFor(path).root:GetPropertyChangedSignal("AbsoluteSize"), fitPath)
 	fitPath()
 	local selectButton = quiet(button(heading, "Select", false))
-	selectButton.Position = UDim2.new(1, -96, 0, 0); selectButton.Size = UDim2.fromOffset(48, 24)
+	selectButton.Position = UDim2.new(1, -96, 0, 0); selectButton.Size = UDim2.fromOffset(48, 28)
 	local frameButton = quiet(button(heading, "Frame", false))
-	frameButton.Position = UDim2.new(1, -48, 0, 0); frameButton.Size = UDim2.fromOffset(48, 24)
+	frameButton.Position = UDim2.new(1, -48, 0, 0); frameButton.Size = UDim2.fromOffset(48, 28)
 	if #result.changes > 0 then
 		local headings = pair(group, "ValueHeadings"); headings.Size = UDim2.new(1, 0, 0, 16)
 		for i, name in ipairs({"FIELD", "BEFORE", "AFTER"}) do
@@ -753,7 +753,7 @@ function UIFactory.build(widget)
 	local filters = expose("filterPanel", stack(targets, "FilterPanel"))
 	filters.Visible = false
 	local filterToggle = quiet(button(filters, "Filters", false)); filterToggle.TextXAlignment = Enum.TextXAlignment.Left
-	filterToggle.Size = UDim2.new(1, 0, 0, 26); filterToggle.Font = Enum.Font.BuilderSans; filterToggle.TextSize = 12
+	filterToggle.Size = UDim2.new(1, 0, 0, 28); filterToggle.Font = Enum.Font.BuilderSans; filterToggle.TextSize = 12
 	local filterFields = stack(filters, "FilterFields"); filterFields.Visible = false
 	listen(filterToggle, filterToggle.Activated, function() filterFields.Visible = not filterFields.Visible end)
 	for _, spec in ipairs({{"classFilterInput", "Class", "Required class"}, {"nameFilterInput", "Name contains", "Optional name"}, {"tagFilterInput", "Tag", "Optional tag"}}) do
@@ -771,12 +771,12 @@ function UIFactory.build(widget)
 	local changes = ui.views.Changes
 	separator(changes)
 	local affectedActions = pair(changes, "AffectedActions")
-	affectedActions.Size = UDim2.new(1, 0, 0, 26)
+	affectedActions.Size = UDim2.new(1, 0, 0, 28)
 	local changesTitle = fixedLabel(affectedActions, "Changes", 17, "text", true); changesTitle.Name = "ChangesTitle"; changesTitle.Size = UDim2.new(1, -132, 1, 0)
 	expose("selectAffectedButton", quiet(button(affectedActions, "Select all", false)))
-	ui.selectAffectedButton.Position = UDim2.new(1, -132, 0, 0); ui.selectAffectedButton.Size = UDim2.fromOffset(70, 26); ui.selectAffectedButton.TextSize = 12
+	ui.selectAffectedButton.Position = UDim2.new(1, -132, 0, 0); ui.selectAffectedButton.Size = UDim2.fromOffset(70, 28); ui.selectAffectedButton.TextSize = 12
 	expose("frameAffectedButton", quiet(button(affectedActions, "Frame", false)))
-	ui.frameAffectedButton.Position = UDim2.new(1, -56, 0, 0); ui.frameAffectedButton.Size = UDim2.fromOffset(56, 26); ui.frameAffectedButton.TextSize = 12
+	ui.frameAffectedButton.Position = UDim2.new(1, -56, 0, 0); ui.frameAffectedButton.Size = UDim2.fromOffset(56, 28); ui.frameAffectedButton.TextSize = 12
 	tip(ui.selectAffectedButton, "Select affected objects only"); tip(ui.frameAffectedButton, "Frame affected objects")
 	expose("previewSummary", label(changes, "No preview", 12, "muted", false))
 	local metrics = expose("previewMetrics", create("Frame", {Size = UDim2.new(1, 0, 0, 100), BackgroundTransparency = 1, Visible = false}, changes))
@@ -823,11 +823,12 @@ function UIFactory.build(widget)
 	local actions = pair(footer, "PreviewActions")
 	expose("previewButton", inPair(button(actions, "Preview", false), 1))
 	expose("applyButton", inPair(button(actions, "Apply", true), 2))
-	local version = label(footer, "v" .. Constants.VERSION, 12, "muted", false)
+	local version = label(footer, Constants.CATALOGUE_RELEASE, 12, "muted", false)
 	version.Name = "Version"
 	version.AutomaticSize = Enum.AutomaticSize.None
 	version.Position = UDim2.fromOffset(0, 40)
 	version.Size = UDim2.new(1, -64, 0, 20)
+	tip(version, "PresetForge " .. Constants.VERSION)
 	local helpButton = expose("helpButton", quiet(button(footer, "Help", false)))
 	helpButton.Position = UDim2.new(1, -56, 0, 36)
 	helpButton.Size = UDim2.fromOffset(56, 28)
