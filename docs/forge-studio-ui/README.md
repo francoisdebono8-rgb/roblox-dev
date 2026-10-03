@@ -94,6 +94,12 @@ Not shared:
 
 A shared visual grammar must **not** become five recolored clones.
 
+## Canonical brand assets
+
+- [brand/CANONICAL_COVER_FAMILY.md](brand/CANONICAL_COVER_FAMILY.md) — binding source for the approved five-cover family, lockup logic, colors and in-product translation.
+- [brand/assets/forge-f.svg](brand/assets/forge-f.svg) — clean canonical F geometry; recolor/reuse, never retrace from screenshots.
+- `brand/products/*.md` — one identity spec per Forge product.
+
 ## Files
 
 - [VISUAL_DIRECTION.md](VISUAL_DIRECTION.md) — the future art direction and polish bar:
