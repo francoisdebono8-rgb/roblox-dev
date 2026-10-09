@@ -1,11 +1,55 @@
 # Mission — Ninja Duel V0: playable 1v1 vertical slice
 
+## Read this first — product vision, not just a prototype task
+This repository is intended to become a **commercial Roblox game** if the combat prototype is genuinely fun. Treat V0 as the first vertical slice of that game, not as disposable demo code.
+
+The long-term fantasy is an **ultimate young-shinobi tournament**: exceptionally talented fighters, broadly in the 12–14 age fantasy, drawn from different generations, regions and fighting traditions, meeting in competitive arena battles that could never happen in their original timelines. Naruto is an internal inspiration/reference for the kind of tactical ninja fantasy being explored, but the shipped commercial game must ultimately use original IP-safe names, designs, lore, techniques, VFX, animation and assets.
+
+The eventual roster target is roughly **24 strongly differentiated fighters**. They should not feel like reskins with four attacks. A mobility prodigy, illusion specialist, close-range chakra disruptor, zone controller, pure martial artist, trap strategist, elemental powerhouse, weapon specialist, etc. should fundamentally change how a player approaches a duel.
+
+Some fighters may intentionally be stronger, faster or more gifted in the fiction. Do not force perfect narrative symmetry. Competitive fairness should come from counterplay, execution difficulty, resource costs, recovery, matchup knowledge, readable weaknesses and player skill. A terrifying prodigy can feel terrifying without becoming an automatic win.
+
+The core promise is: **I want the player to feel like they are actually fighting intelligently as a ninja, not cycling ability cooldowns.**
+
+### If the prototype works, likely future directions
+Do not implement all of these now. Design V0 so they can be added without rewriting its foundations:
+- roster expansion toward ~24 fighters;
+- human PvP 1v1 and potentially tournament brackets;
+- multiple arenas with meaningful but readable geometry;
+- richer hand-sign / technique-execution mechanics;
+- interruptible channels and counter-techniques as a central game language;
+- genjutsu / perception manipulation that changes information without simply removing player control;
+- fighter-specific resources or conditions where justified;
+- ranked/casual modes only after combat quality is proven;
+- spectating/replays or tournament presentation if the game earns continued development;
+- mobile/gamepad input after desktop combat is validated;
+- progression/cosmetics/monetization later, without pay-to-win combat advantages;
+- original visual identity and worldbuilding strong enough to stand independently of the inspiration.
+
+Avoid premature systems for retention, shops, currencies, quests, open worlds or large content pipelines. **Combat fun comes first.** But avoid architectural decisions that obviously prevent these extensions.
+
+## Collaboration rule
+You are implementing autonomously, but you are also acting as a technical/game-design partner.
+
+Before substantial implementation, inspect the repository and this brief. If there is a **genuinely consequential ambiguity** whose answer would materially alter architecture, player experience, scope, or a difficult-to-reverse decision, ask François a concise question before committing to that choice. Bundle questions rather than interrupting repeatedly.
+
+Do **not** ask about routine implementation details you can decide professionally yourself. Do not turn the mission into an endless review loop. The default is still to execute end-to-end.
+
+If, while implementing or testing, you discover that an assumption in this brief makes the combat materially worse, technically fragile, or expensive to extend, flag it clearly and propose the better alternative. Preserve the product vision rather than blindly following a bad implementation detail.
+
+At completion, distinguish:
+1. what is proven to work;
+2. what still needs playtesting;
+3. technical debt acceptable for V0;
+4. architectural choices made specifically to support the future game;
+5. the next 3 highest-value steps **only if the prototype is fun**.
+
 ## Objective
 Build a complete, immediately playable Roblox Studio vertical slice of a tactical anime-inspired ninja arena fighter. At the end of this mission, one human player must be able to launch the game, choose one of **two original prototype fighters**, choose the opponent, and play a full **1v1 match against an AI** from start to finish.
 
 This is a gameplay prototype, not a menu mockup. Prioritize combat feel, readability, responsiveness, interruption/counterplay, and a working AI over content volume.
 
-Do the implementation end-to-end without stopping for review between subtasks. Make reasonable technical decisions yourself. Keep the architecture extensible so more fighters can later be added data-first.
+Do the implementation end-to-end without stopping for routine review between subtasks. Make reasonable technical decisions yourself. Keep the architecture extensible so more fighters can later be added data-first.
 
 ## IP / art direction constraint
 Naruto is a design reference for the fantasy of tactical young-ninja combat, but this prototype must use **original fighter names, visual identities, technique names, VFX, icons, lore and assets**. Do not copy Naruto characters, logos, costumes, named techniques, animations, audio or ripped assets. Placeholder geometry/VFX made in Studio is acceptable and preferable to copyrighted assets.
@@ -24,6 +68,11 @@ A tester can:
 
 ## Combat philosophy
 The game is not a button-spam battleground. Techniques are **actions performed during the fight** and create commitment. Strong actions require setup, timing, positioning or a condition. Preparations can be interrupted. Players should create openings, read reactions, bait defensive actions and punish mistakes.
+
+The desired mental loop is roughly:
+**observe -> provoke -> read -> create an opening -> execute -> opponent reacts/counters -> punish or disengage.**
+
+Movement, melee and low-commitment tools create opportunities for techniques; techniques should not replace the neutral game.
 
 Power does not need to be perfectly symmetrical. Fighter identity matters. Balance comes from counterplay, commitment, resources, cooldowns, telegraphs and execution rather than making every move equivalent.
 
@@ -76,7 +125,7 @@ Kit target:
 The illusion must have clear start/end feedback and must clean itself up reliably.
 
 ## Special-technique execution model
-This is the most important experimental system in the slice.
+This is the most important experimental system in the slice and should be treated as a foundation for the future roster.
 
 Every strong technique should define data/logic for:
 - prerequisites;
@@ -92,7 +141,9 @@ Every strong technique should define data/logic for:
 
 During an interruptible channel, a qualifying hit cancels the technique before payoff. The player sees/hears a clear interruption cue. Failed techniques still consume an appropriate amount of commitment/resource so attempts matter.
 
-Do not turn this into a complicated rhythm-game input sequence for V0. The execution challenge should initially come from finding the opening in live combat. Architect the technique system so hand-sign/input sequences could be added later without rewriting combat.
+Do not turn this into a complicated rhythm-game input sequence for V0. The execution challenge should initially come from finding the opening in live combat. **However, architect the technique pipeline so future fighters can define richer execution requirements — e.g. short hand-sign/input sequences, target conditions, placed marks, counters, stance requirements, accumulated information, environmental anchors — without replacing the combat engine.**
+
+Genjutsu/perception mechanics should preferably attack the player's information or confidence rather than simply hard-stun them. Future examples could include believable decoys, misleading cues, temporary false positions or altered targeting information, always with counterplay and short durations.
 
 ## AI opponent
 Create an AI suitable for testing combat rather than a dummy with random attacks.
@@ -109,6 +160,8 @@ The AI should have a small decision loop/state machine or utility scoring system
 - avoid impossible omniscience: reaction time and imperfect choices are required.
 
 Expose AI difficulty parameters (reaction delay, aggression, defensive tendency, technique usage) in configuration. For V0, one default difficulty is sufficient.
+
+Build AI against the same high-level combat/action interfaces that future human/networked controllers can use where practical. Avoid implementing a second combat system solely for bots.
 
 ## Camera and controls
 Use a third-person combat camera that keeps the duel readable. A soft-lock/target-lock system is acceptable and probably desirable. Do not fight Roblox's camera more than necessary.
@@ -167,10 +220,16 @@ Separate at minimum the concepts of:
 
 Make adding Fighter C later mostly a matter of defining configuration + technique modules/assets, not editing a giant conditional script.
 
+Design around **capabilities/composition rather than a giant fighter-name switch statement**. Future fighters may need mechanics that the first two do not use. The architecture should support optional fighter-specific components while preserving common combat contracts.
+
+Keep match orchestration sufficiently separate from fighter control that replacing the AI opponent with another human later does not require rebuilding the combat engine.
+
 Use tags/attributes/components where useful. Avoid unnecessary frameworks/dependencies unless the repository already relies on them.
 
 ## Networking and reliability
 Assume exploit-prone clients. The server owns match state, damage and authoritative resource/cooldown decisions. Rate-limit remote requests and validate action context.
+
+Even though V0 is human-vs-AI, do not bake assumptions into combat authority that make future human-vs-human networking unnecessarily difficult.
 
 Clean up temporary instances, effects, connections, anchors and AI tasks on death/rematch/return to selection. Match reset reliability is part of acceptance.
 
@@ -178,6 +237,8 @@ Clean up temporary instances, effects, connections, anchors and AI tasks on deat
 Use original procedural/primitive VFX: trails, particles, highlights, beams, tweens, camera shake used sparingly. Use placeholder sounds only if they are safe/original/available through legitimate Roblox assets; the prototype must not depend on copyrighted anime audio.
 
 Animations: use original/basic animation work or robust placeholders appropriate for the repo workflow. Do not import ripped animations. Combat readability is more important than animation polish in this mission.
+
+The future game should eventually have a recognizable original visual language, but do not spend V0 time creating a complete brand before the combat proves itself.
 
 ## Testing requirements
 Before declaring the mission complete, test at least:
@@ -204,9 +265,12 @@ Commit a working implementation plus:
 - architecture summary;
 - fighter config location and how to add/tune a fighter;
 - known limitations/TODOs;
-- manual QA checklist.
+- manual QA checklist;
+- a short `FUTURE.md` (or equivalent section) explaining which V0 architectural seams intentionally support roster expansion, PvP, richer techniques and future modes — **without implementing those future systems now**.
 
 ## Definition of done
 Do **not** stop at scaffolding, pseudocode, architecture documents, TODO stubs or disconnected modules. The mission is done only when the repository contains a playable vertical slice in which a human can select a fighter and complete a real 1v1 duel against a functioning AI, with the special-technique interruption system visibly working.
 
 When finished, summarize exactly what was implemented, which files matter, how to run it, what you personally tested, and any remaining blockers. If Studio-only manual steps remain unavoidable, minimize them and document them precisely.
+
+The goal of V0 is not to prove that we can write Roblox code. **The goal is to answer one question: is this combat concept fun enough that we should build the real game around it?**
