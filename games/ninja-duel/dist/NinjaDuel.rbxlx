@@ -1,0 +1,1294 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Workspace" referent="ND1">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="Gravity">140</float>
+      <float name="FallenPartsDestroyHeight">-100</float>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="ND2">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="ND3">
+      <Properties>
+        <string name="Name">NinjaDuel</string>
+      </Properties>
+      <Item class="ModuleScript" referent="ND4">
+        <Properties>
+          <string name="Name">Config</string>
+          <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
+return {
+	Version = "0.2.0",
+	ArenaRadius = 46, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
+	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
+	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
+	DodgeCost = 16, DodgeCooldown = 1.5, DodgeTime = 0.32, DodgeIFrames = 0.22,
+	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
+	PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 23, PursuitSpeed = 67,
+	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.1,
+	Movement = { SprintSpeed = 38, GroundAcceleration = 175, GroundDeceleration = 205, AirAcceleration = 88,
+		JumpVelocity = 70, JumpCooldown = 0.4, AttackWalkSpeed = 16, HardLandVelocity = 56,
+		HardLandRecovery = 0.12, SoftLandRecovery = 0, HardLandSpeed = 19,
+		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
+	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.65 },
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND5">
+        <Properties>
+          <string name="Name">Fighters</string>
+          <ProtectedString name="Source">return {
+	Flashstep = {
+		Name = "Flashstep", Title = "THE ANCHOR RUNNER", Color = { 82, 177, 244 },
+		Description = "Place a blade. Draw a reaction. Change the angle and punish.",
+		Health = 125, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, PreferredRange = 6,
+		MeleeDamage = { 6, 7, 8, 13 }, MeleeTravel = { 4.5, 3.4, 4.3, 6.6 }, Startup = 0.13, Recovery = 0.24,
+		Skin = { 225, 196, 166 }, Hair = { 225, 228, 212 }, Outfit = { 45, 104, 156 },
+		Techniques = {
+			{ Id = "MarkedBlade", Name = "Marked Blade", Cost = 12, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 2.5, Interruptible = true, Range = 36, Damage = 6, Hint = "Aim at floor / wall • anchor lasts 12s" },
+			{ Id = "Flashstep", Name = "Flashstep", Cost = 24, Channel = 0.24, Active = 0.06, Recovery = 0.38, Cooldown = 4, Interruptible = true, Range = 40, Requires = "Anchor", Hint = "Relocate to anchor • vulnerable arrival" },
+			{ Id = "BurstStrike", Name = "Burst Strike", Cost = 22, Channel = 0.32, Active = 0.08, Recovery = 0.55, Cooldown = 5, Interruptible = true, Range = 8, Damage = 24, Hint = "Close punish • unsafe on a miss" },
+		},
+	},
+	Mirage = {
+		Name = "Mirage", Title = "THE QUIET OBSERVER", Color = { 222, 106, 137 },
+		Description = "Provoke a commitment. Read it. Hide your next approach in an echo.",
+		Health = 135, Speed = 26, SprintScale = 0.98, JumpScale = 0.95, AirControlScale = 0.9, PreferredRange = 10,
+		MeleeDamage = { 7, 8, 9, 15 }, MeleeTravel = { 3.8, 3.2, 3.6, 5.3 }, Startup = 0.17, Recovery = 0.29,
+		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
+		Techniques = {
+			{ Id = "Read", Name = "Read", Cost = 14, Channel = 0.12, Active = 0.9, Recovery = 0.24, Cooldown = 4, Interruptible = false, Range = 10, Hint = "Read one frontal melee • punish window" },
+			{ Id = "NeedleFan", Name = "Needle Fan", Cost = 18, Channel = 0.42, Active = 0.08, Recovery = 0.32, Cooldown = 3.8, Interruptible = true, Range = 30, Damage = 5, Hint = "Three needles • force a sideways dodge" },
+			{ Id = "MirageCast", Name = "Mirage Cast", Cost = 32, Channel = 1.05, Active = 0.08, Recovery = 0.55, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "Facing + sight • 3s decoy, full movement" },
+		},
+	},
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND6">
+        <Properties>
+          <string name="Name">Rules</string>
+          <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
+local Rules = {}
+local free = { Neutral = true, Guarding = true }
+function Rules.finite(n)
+	return type(n) == "number" and n == n and math.abs(n) &lt; 1e6
+end
+function Rules.canAct(a, now)
+	return a.health &gt; 0 and free[a.state] == true and now &gt;= (a.lockUntil or 0)
+end
+function Rules.technique(a, spec, now, prerequisites)
+	if not Rules.canAct(a, now) then return false, "Committed" end
+	if (a.cooldowns[spec.Id] or 0) &gt; now then return false, "Cooldown" end
+	if a.chakra &lt; spec.Cost then return false, "Need chakra" end
+	if not prerequisites then return false, "Condition missing" end
+	return true
+end
+function Rules.reserve(a, spec, now)
+	a.chakra -= spec.Cost
+	a.cooldowns[spec.Id] = now + spec.Cooldown
+	a.state = "TechniqueChannel"
+	a.untilTime = now + spec.Channel
+end
+function Rules.consumeToken(bucket, now, rate, burst)
+	bucket.tokens = math.min(burst, bucket.tokens + math.max(0, now - bucket.time) * rate)
+	bucket.time = now
+	if bucket.tokens &lt; 1 then return false end
+	bucket.tokens -= 1
+	return true
+end
+function Rules.interruptible(a)
+	return a.state == "TechniqueChannel" and a.pending ~= nil and a.pending.spec.Interruptible == true
+end
+function Rules.isGuard(a, frontal)
+	return a.state == "Guarding" and frontal and a.chakra &gt; 0
+end
+return Rules
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="ND7">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Folder" referent="ND8">
+      <Properties>
+        <string name="Name">NinjaDuelServer</string>
+      </Properties>
+      <Item class="ModuleScript" referent="ND9">
+        <Properties>
+          <string name="Name">AI</string>
+          <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local AI={}; AI.__index=AI
+function AI.new(combat,actor,seed)
+	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
+end
+function AI:update(now)
+	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
+	if c.match.phase~="Duel" or a.health&lt;=0 or target.health&lt;=0 then a.move=Vector3.zero; return end
+	if now&lt;self.nextTick then return end
+	self.nextTick=now+tune.Tick
+	local position=if a.decoyPosition and a.illusionUntil&gt;now then a.decoyPosition else target.root.Position
+	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
+	local distance=delta.Magnitude; local toward=if distance&gt;0.1 then delta.Unit else Vector3.zAxis
+	if a.state~="Dodging" then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+	local tangent=Vector3.new(-toward.Z,0,toward.X)
+	local desired=a.def.PreferredRange or 7
+	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
+	a.move=(toward*radial+tangent*math.sin(now*0.7)*0.7)
+	a.sprinting=distance&gt;desired+6
+	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
+	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
+	if target.state~=self.observed then self.observed=target.state; self.observedAt=now end
+	local reacted=now-self.observedAt&gt;=tune.Reaction
+	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+	-- A newly observed telegraph may alter movement, but cannot trigger an
+	-- instant defensive action or coincidental interrupt before reaction latency.
+	if danger and not reacted then return end
+	if reacted and danger and distance&lt;9 then
+		if target.state=="TechniqueChannel" and distance&lt;=6.8 and self.rng:NextNumber()&lt;tune.Aggression then
+			c:request(a,"Attack"); return
+		end
+		if self.rng:NextNumber()&lt;tune.Defense then
+			if self.rng:NextNumber()&lt;0.45 then c:request(a,"Dodge")
+			else c:request(a,"Guard"); self.guardUntil=now+0.5 end
+			return
+		end
+	end
+	if a.pursuitUntil&gt;now and distance&gt;8 and distance&lt;Config.PursuitRange and self.rng:NextNumber()&lt;0.58 then
+		c:request(a,"Pursuit"); return
+	end
+	if a.state~="Neutral" then return end
+	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
+	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
+	if self.rng:NextNumber()&lt;tune.Technique then
+		for slot,spec in a.def.Techniques do
+			local use=false; local aim=target.root.Position
+			if spec.Id=="MarkedBlade" then use=not a.anchor and distance&gt;9; aim=position+target.hum.MoveDirection*2-Vector3.new(0,3,0)
+			elseif spec.Id=="Flashstep" then use=a.anchor~=nil and distance&gt;10
+			elseif spec.Id=="BurstStrike" then use=distance&lt;7 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery")
+			elseif spec.Id=="Read" then use=distance&lt;8 and danger and reacted
+			elseif spec.Id=="NeedleFan" then use=distance&gt;8 and distance&lt;27
+			elseif spec.Id=="MirageCast" then use=distance&gt;10 and distance&lt;21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()&lt;0.18) end
+			if use and c:request(a,"Technique"..slot,aim) then return end
+		end
+	end
+	if distance&lt;8 and self.rng:NextNumber()&lt;tune.Aggression then c:request(a,"Attack") end
+	if distance&gt;6 and distance&lt;17 and self.rng:NextNumber()&lt;0.1 then c:request(a,"Jump") end
+	-- Sidestep cover when the direct route is obstructed.
+	local block=workspace:Raycast(a.root.Position,toward*6,c:rayParams(true))
+	if block then a.move=tangent; c:request(a,"Jump") end
+end
+return AI
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND10">
+        <Properties>
+          <string name="Name">Combat</string>
+          <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
+local Config = require(Shared.Config)
+local Fighters = require(Shared.Fighters)
+local Rules = require(Shared.Rules)
+local World = require(script.Parent.World)
+local Motor = require(script.Parent.Motor)
+local Techniques = require(script.Parent.Techniques)
+local Combat = {}; Combat.__index = Combat
+function Combat.new(match)
+	return setmetatable({match=match,now=0,actors={},effects={},projectiles={}},Combat)
+end
+function Combat:add(id,model,hum,root,joints,definition)
+	local def = Fighters[definition]
+	local a = { id=id,model=model,hum=hum,root=root,joints=joints,def=def,health=def.Health,
+		chakra=Config.Chakra,state="Neutral",untilTime=0,lockUntil=0,cooldowns={},move=Vector3.zero,
+		combo=0,lastAttack=-10,readUntil=0,illusionUntil=0,bonusUntil=0,dodgeUntil=0,invulnerableUntil=0,
+		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
+		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
+		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false }
+	table.insert(self.actors,a)
+	return a
+end
+function Combat:clamp(p)
+	local o=self.match.origin; local r=Config.ArenaRadius
+	return Vector3.new(math.clamp(p.X,o.X-r,o.X+r),math.clamp(p.Y,o.Y+3,o.Y+8),math.clamp(p.Z,o.Z-r,o.Z+r))
+end
+function Combat:relocate(a,p)
+	local look=a.root.CFrame.LookVector
+	a.model:PivotTo(CFrame.lookAt(self:clamp(p),self:clamp(p)+Vector3.new(look.X,0,look.Z)))
+	a.root.AssemblyLinearVelocity=Vector3.zero
+end
+function Combat:rayParams(excludeActors)
+	local params=RaycastParams.new(); params.FilterType=Enum.RaycastFilterType.Exclude
+	local exclude={self.match.effects}
+	if excludeActors then for _,a in self.actors do table.insert(exclude,a.model) end end
+	params.FilterDescendantsInstances=exclude
+	return params
+end
+function Combat:overlapParams()
+	local p=OverlapParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
+	local exclude={self.match.effects}; for _,a in self.actors do table.insert(exclude,a.model) end
+	p.FilterDescendantsInstances=exclude; return p
+end
+function Combat:lineOfSight(a,b)
+	local delta=b.root.Position-a.root.Position
+	return workspace:Raycast(a.root.Position,delta,self:rayParams(true)) == nil
+end
+function Combat:targetValid(a,b,range,facing)
+	if not b or b.health&lt;=0 then return false end
+	local delta=b.root.Position-a.root.Position
+	if delta.Magnitude&gt;range then return false end
+	if delta.Magnitude&gt;0.1 and a.root.CFrame.LookVector:Dot(delta.Unit)&lt;facing then return false end
+	return self:lineOfSight(a,b)
+end
+function Combat:effect(name,p,color,size,lifetime)
+	local v=World.part(self.match.effects,name,size,CFrame.new(p),color,Enum.Material.Neon)
+	v.CanCollide=false; v.CanQuery=false; v.Transparency=0.4
+	table.insert(self.effects,{part=v,expires=self.now+lifetime})
+	return v
+end
+function Combat:cue(a,message,duration)
+	a.cue=message; a.cueUntil=self.now+(duration or 1.1)
+	if self.match.onCue then self.match.onCue(a,message) end
+end
+function Combat:setState(a,state,duration)
+	a.state=state; a.untilTime=self.now+duration
+end
+function Combat:damage(attacker,victim,amount,heavy,readEligible)
+	if self.match.phase~="Duel" or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
+	if victim.invulnerableUntil&gt;self.now then self:cue(victim,"EVADED"); return false end
+	local delta=attacker.root.Position-victim.root.Position
+	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
+	if readEligible and frontal and victim.readUntil&gt;self.now then
+		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.chakra=math.min(100,victim.chakra+10)
+		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
+		self:setState(victim,"Neutral",0)
+		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
+		return false
+	end
+	local guarded=Rules.isGuard(victim,frontal)
+	if guarded then
+		victim.chakra=math.max(0,victim.chakra-amount*1.6)
+		amount*=Config.GuardChip
+		self:cue(victim,"GUARDED")
+		if victim.chakra&lt;=0 then
+			victim.guardHeld=false; self:setState(victim,"Stunned",Config.GuardBreak); self:cue(victim,"GUARD BREAK")
+		end
+	else
+		local interrupted=Rules.interruptible(victim)
+		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
+		if not protected then
+			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
+			self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun)
+			if interrupted then self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
+		end
+	end
+	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
+	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
+	self:effect("Impact",victim.root.Position,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
+	if heavy and not guarded and victim.health&gt;0 then
+		attacker.pursuitUntil=self.now+Config.PursuitWindow
+		self:cue(attacker,"LAUNCH • E TO PURSUE",Config.PursuitWindow)
+		local push=Vector3.new(-delta.X,0,-delta.Z)
+		if push.Magnitude&gt;0.1 then victim.root.AssemblyLinearVelocity=push.Unit*38+Vector3.new(0,28,0) end
+	end
+	if victim.health&lt;=0 then
+		victim.state="Defeated"; victim.pending=nil; victim.move=Vector3.zero
+		self.match.finish(attacker,victim)
+	end
+	attacker.hitConfirmed=true
+	return true
+end
+function Combat:strike(a,damage,range,facing,heavy)
+	if self:targetValid(a,a.target,range,facing) then return self:damage(a,a.target,damage,heavy,true) end
+	return false
+end
+function Combat:projectile(a,aim,speed,range,damage,kind,onSurface)
+	local start=a.root.Position+a.root.CFrame.LookVector*1.4
+	local delta=aim-start
+	if delta.Magnitude&lt;0.1 then delta=a.root.CFrame.LookVector end
+	local visual=self:effect(kind,start,a.color,if kind=="blade" then Vector3.new(0.7,0.7,0.2) else Vector3.new(0.15,0.15,1.5),range/speed+0.15)
+	if kind=="blade" then visual.CFrame=CFrame.new(start)*CFrame.Angles(0,0,math.pi/4) end
+	table.insert(self.projectiles,{a=a,position=start,direction=delta.Unit,speed=speed,remaining=range,damage=damage,part=visual,onSurface=onSurface})
+end
+function Combat:request(a,action,aim)
+	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
+	if action=="GuardOff" then
+		a.guardHeld=false
+		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
+		return true
+	end
+	if action=="JumpOff" then
+		if a.airborne and a.root.AssemblyLinearVelocity.Y&gt;22 and self.now&lt;(a.takeoffUntil or 0)+0.18 then
+			local v=a.root.AssemblyLinearVelocity
+			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
+		end
+		return true
+	end
+	if action=="Pursuit" then
+		if a.pursuitUntil&lt;=self.now or a.target.health&lt;=0 then return false,"No pursuit" end
+		if a.chakra&lt;Config.PursuitCost then return false,"Need chakra" end
+		if (a.target.root.Position-a.root.Position).Magnitude&gt;Config.PursuitRange then return false,"Too far" end
+		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" then return false,"Committed" end
+		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
+		self:setState(a,"Pursuit",0.25)
+		self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
+		return true
+	end
+	if action=="Jump" then
+		if a.state~="Neutral" and a.state~="Recovery" then return false,"Committed" end
+		return Motor.jump(a,self,self.now),"Airborne"
+	end
+	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
+	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
+	if action=="Guard" then a.guardHeld=true; self:setState(a,"Guarding",0); return true end
+	if action=="Dodge" then
+		if a.chakra&lt;Config.DodgeCost then return false,"Need chakra" end
+		if a.airborne and a.airDodgeUsed then return false,"Air dodge used" end
+		if a.dodgeUntil&gt;self.now then return false,"Cooldown" end
+		a.chakra-=Config.DodgeCost; a.dodgeUntil=self.now+Config.DodgeCooldown
+		if a.airborne then a.airDodgeUsed=true end
+		a.dodgeDirection=if a.move.Magnitude&gt;0.1 then a.move.Unit else a.root.CFrame.RightVector
+		a.invulnerableUntil=self.now+Config.DodgeIFrames; a.guardHeld=false
+		self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
+		return true
+	end
+	if action=="Attack" then
+		a.combo=if self.now-a.lastAttack&gt;Config.ComboReset then 1 else a.combo%4+1
+		a.lastAttack=self.now; a.guardHeld=false
+		a.pending={kind="Melee",damage=a.def.MeleeDamage[a.combo],heavy=a.combo==4}
+		a.hitConfirmed=false; a.chainOpen=false
+		a.travelRemaining=a.def.MeleeTravel[a.combo]
+		a.travelDirection=a.root.CFrame.LookVector
+		local toTarget=a.target.root.Position-a.root.Position
+		local horizontal=Vector3.new(toTarget.X,0,toTarget.Z)
+		if horizontal.Magnitude&lt;9 and horizontal.Magnitude&gt;0.1 and a.root.CFrame.LookVector:Dot(horizontal.Unit)&gt;0.66 then
+			a.travelDirection=horizontal.Unit
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+horizontal.Unit)
+		end
+		self:setState(a,"Startup",a.def.Startup)
+		return true
+	end
+	local slot=tonumber(string.match(action,"^Technique([123])$"))
+	local spec=slot and a.def.Techniques[slot]
+	if not spec then return false,"Unknown action" end
+	local technique=Techniques[spec.Id]
+	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
+	if not ok then return false,reason end
+	Rules.reserve(a,spec,self.now); a.guardHeld=false
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position}
+	local offset=a.pending.aim-a.root.Position
+	local flat=Vector3.new(offset.X,0,offset.Z)
+	if flat.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
+	self:effect("Channel",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(4,0.12,4),spec.Channel)
+	return true
+end
+function Combat:updateActor(a,dt)
+	local now=self.now
+	if a.health&lt;=0 then a.hum:Move(Vector3.zero); return end
+	if a.anchor and a.anchor.expires&lt;=now then a.anchor.part:Destroy(); a.anchor=nil end
+	if a.illusionUntil&lt;=now then a.decoyPosition=nil end
+	if a.state=="Guarding" then
+		a.chakra=math.max(0,a.chakra-Config.GuardDrain*dt)
+		if a.chakra&lt;=0 then a.guardHeld=false; self:setState(a,"Stunned",Config.GuardBreak); self:cue(a,"GUARD BREAK") end
+	elseif a.state~="TechniqueChannel" and a.state~="Stunned" then
+		a.chakra=math.min(Config.Chakra,a.chakra+Config.ChakraRegen*dt)
+	end
+	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime&lt;=now then
+		local pending=a.pending
+		if a.state=="Startup" and pending then
+			self:setState(a,"Active",0.09)
+			self:strike(a,pending.damage,Config.MeleeRange,Config.MeleeFacing,pending.heavy)
+		elseif a.state=="Active" then
+			a.pending=nil; self:setState(a,"Recovery",if pending and pending.heavy then a.def.Recovery+0.14 else a.def.Recovery)
+			a.chainOpen=a.combo&lt;4 and a.hitConfirmed
+			a.chainAt=now+0.05
+		elseif a.state=="TechniqueChannel" and pending then
+			-- State changes before payoff so simultaneous channels resolve deterministically.
+			self:setState(a,"TechniqueActive",pending.spec.Active)
+			pending.implementation.execute(self,a,pending,now)
+		elseif a.state=="TechniqueActive" and pending then
+			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
+		else
+			a.pending=nil; self:setState(a,"Neutral",0)
+		end
+	end
+	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
+	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
+		a.hum.AutoRotate=false
+		local toward=a.target.root.Position-a.root.Position; toward=Vector3.new(toward.X,0,toward.Z)
+		if toward.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+	else a.hum.AutoRotate=not a.locked end
+	if a.state=="Dodging" then
+		Motor.travel(a,self,a.dodgeDirection,Config.DodgeSpeed*dt)
+	elseif a.state=="Pursuit" then
+		local toTarget=a.target.root.Position-a.root.Position
+		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
+		if flatTarget.Magnitude&gt;3 then Motor.travel(a,self,flatTarget,math.min(Config.PursuitSpeed*dt,flatTarget.Magnitude-3)) end
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Melee" and a.travelRemaining&gt;0 then
+		local toTarget=a.target.root.Position-a.root.Position
+		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
+		if flatTarget.Magnitude&gt;2.6 then
+			local distance=math.min(a.travelRemaining,a.def.MeleeTravel[a.combo]*dt/Config.Movement.MeleeTravelTime,flatTarget.Magnitude-2.6)
+			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
+		end
+	end
+	Motor.step(a,self,dt,now)
+	-- Server-owned humanoids + server-clamped arena coordinates.
+	local p=a.root.Position
+	if math.abs(p.X-self.match.origin.X)&gt;Config.ArenaRadius or math.abs(p.Z-self.match.origin.Z)&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
+	World.pose(a,now,dt)
+end
+function Combat:updateProjectiles(dt)
+	for i=#self.projectiles,1,-1 do
+		local p=self.projectiles[i]
+		if not p or self.match.phase~="Duel" then return end
+		local step=p.direction*math.min(p.speed*dt,p.remaining)
+		local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
+		ray.FilterDescendantsInstances={self.match.effects,p.a.model}
+		local hit=workspace:Raycast(p.position,step,ray)
+		local done=false
+		if hit then
+			if hit.Instance:IsDescendantOf(p.a.target.model) then
+				self:damage(p.a,p.a.target,p.damage,false,false)
+				if self.match.phase~="Duel" then return end
+				-- A blade also leaves an anchor beneath its struck target.
+				if p.onSurface then p.onSurface(hit.Position,hit.Normal) end
+			elseif p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+			done=true
+		end
+		p.position+=step; p.remaining-=step.Magnitude
+		if p.part.Parent then p.part.CFrame=CFrame.lookAt(p.position,p.position+p.direction) end
+		if done or p.remaining&lt;=0 or p.a.health&lt;=0 then p.part:Destroy(); table.remove(self.projectiles,i) end
+	end
+end
+function Combat:update(dt,now)
+	self.now=now
+	if self.match.phase~="Duel" then return end
+	for _,a in self.actors do
+		if self.match.phase~="Duel" then break end
+		self:updateActor(a,dt)
+	end
+	if self.match.phase=="Duel" then self:updateProjectiles(dt) end
+	for i=#self.effects,1,-1 do
+		local e=self.effects[i]
+		if e.expires&lt;=now or not e.part.Parent then e.part:Destroy(); table.remove(self.effects,i) end
+	end
+end
+function Combat:clear()
+	for _,a in self.actors do
+		a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero
+		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
+	end
+	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles)
+end
+return Combat
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="ND11">
+        <Properties>
+          <string name="Name">Main</string>
+          <ProtectedString name="Source">local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
+Players.CharacterAutoLoads=false
+local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Shared
+local Matches=require(script.Parent.Matches)
+local matches=Matches.new(remote)
+remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
+Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
+Players.PlayerRemoving:Connect(function(player) matches:remove(player) end)
+for _,player in Players:GetPlayers() do matches:selection(player) end
+RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerTimeNow()) end)
+-- Available only in the separately built native QA place; never in the playable artifact.
+if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
+	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
+end
+print("[NinjaDuel] Ready — select a fighter and start the duel")
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND12">
+        <Properties>
+          <string name="Name">Matches</string>
+          <ProtectedString name="Source">local Players=game:GetService("Players")
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Fighters=require(Shared.Fighters)
+local Rules=require(Shared.Rules)
+local World=require(script.Parent.World)
+local Combat=require(script.Parent.Combat)
+local AI=require(script.Parent.AI)
+local Matches={}; Matches.__index=Matches
+function Matches.new(remote)
+	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
+	return setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
+end
+function Matches:send(player,data)
+	if player.Parent==Players then self.remote:FireClient(player,data) end
+end
+function Matches:session(player)
+	if self.sessions[player] then return self.sessions[player] end
+	self.nextLane+=1
+	local s={phase="Selection",lane=self.nextLane,bucket={tokens=Config.RequestBurst,time=os.clock()},lastLifecycle=-10,epoch=0}
+	self.sessions[player]=s; return s
+end
+function Matches:destroy(s)
+	if s.combat then s.combat:clear() end
+	if s.folder then s.folder:Destroy() end
+	s.folder=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
+end
+function Matches:selection(player)
+	local s=self:session(player); self:destroy(s)
+	player.Character=nil; s.phase="Selection"; s.epoch+=1
+	self:send(player,{phase="Selection",epoch=s.epoch})
+end
+function Matches:start(player,playerId,botId)
+	local s=self:session(player)
+	if not Fighters[playerId] or not Fighters[botId] then return false end
+	self:destroy(s); s.epoch+=1
+	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*240,0,0)
+	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
+	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
+	World.arena(s.folder,s.origin)
+	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
+	local function actor(id,def,position,look)
+		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
+		return s.combat:add(id,model,hum,root,joints,def)
+	end
+	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,14),s.origin+Vector3.new(0,3,-14))
+	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-14),s.origin+Vector3.new(0,3,14))
+	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
+	player.Character=s.human.model
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
+	s.finish=function(winner,_loser)
+		if s.phase~="Duel" then return end
+		s.phase="Result"; s.winner=winner.id; s.combat:clear()
+		for _,a in s.combat.actors do a.hum.WalkSpeed=0 end
+		self:snapshot(player,s)
+	end
+	local epoch=s.epoch
+	s.human.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.human.health=0; s.human.state="Defeated"; s.finish(s.bot,s.human) end end)
+	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
+	self:snapshot(player,s)
+	return true
+end
+function Matches:snapshot(player,s)
+	local function data(a)
+		local ready={}
+		for i,spec in a.def.Techniques do
+			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-s.combat.now),condition=not spec.Requires or (spec.Requires=="Anchor" and a.anchor~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+		end
+		return {id=a.id,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,state=a.state,
+			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
+			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
+			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
+			speed=a.locomotion.Magnitude,airborne=a.airborne,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo}
+	end
+	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,origin=s.origin,human=data(s.human),bot=data(s.bot)})
+end
+function Matches:request(player,payload)
+	local s=self:session(player); local clock=os.clock()
+	if not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
+	if type(payload)~="table" or type(payload.action)~="string" or #payload.action&gt;24 then return end
+	local action=payload.action
+	if action=="Ready" then
+		if s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch}) else self:snapshot(player,s) end
+		return
+	end
+	if payload.epoch~=s.epoch then return end
+	if action=="Start" or action=="Rematch" or action=="Selection" then
+		if clock-s.lastLifecycle&lt;0.8 then return end
+		if action=="Start" and s.phase=="Selection" then
+			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
+			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot)
+		elseif action=="Rematch" and s.phase=="Result" then
+			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId)
+		elseif action=="Selection" and s.phase=="Result" then s.lastLifecycle=clock; self:selection(player) end
+		return
+	end
+	if s.phase~="Duel" or not s.human then return end
+	local function vector(v)
+		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
+	end
+	if action=="Move" then
+		if not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;0.01 then return end
+		s.human.move=payload.direction; s.human.lastMove=clock
+		if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
+		if type(payload.locked)=="boolean" then s.human.locked=payload.locked end
+		return
+	end
+	local aim=nil
+	if payload.aim~=nil then
+		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude&gt;150 then return end
+		aim=payload.aim
+	end
+	local ok,reason=s.combat:request(s.human,action,aim)
+	if not ok and reason~="Committed" then s.combat:cue(s.human,string.upper(reason)) end
+end
+function Matches:update(dt,now)
+	for player,s in self.sessions do
+		if s.phase=="Duel" then
+			if os.clock()-s.human.lastMove&gt;0.4 then s.human.move=Vector3.zero end
+			s.combat:update(math.min(dt,0.1),now)
+			if s.phase=="Duel" then s.ai:update(now) end
+		end
+		if s.combat and now&gt;=(s.nextSnapshot or 0) then
+			s.nextSnapshot=now+Config.SnapshotInterval; self:snapshot(player,s)
+		end
+	end
+end
+function Matches:remove(player)
+	local s=self.sessions[player]
+	if s then self:destroy(s); self.sessions[player]=nil end
+end
+return Matches
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND13">
+        <Properties>
+          <string name="Name">Motor</string>
+          <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
+-- action travel; AI and human actors use the same movement profile.
+local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local Motor={}
+local UP=Vector3.yAxis
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function approach(from,to,maxDelta)
+	local diff=to-from
+	if diff.Magnitude&lt;=maxDelta then return to end
+	return from+diff.Unit*maxDelta
+end
+function Motor.grounded(a,c)
+	local p=RaycastParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
+	p.FilterDescendantsInstances={a.model,c.match.effects}
+	p.RespectCanCollide=true
+	return workspace:Raycast(a.root.Position,Vector3.new(0,-3.6,0),p)~=nil
+end
+function Motor.jump(a,c,now)
+	if not Motor.grounded(a,c) or now&lt;(a.nextJump or 0) then return false end
+	a.nextJump=now+Config.Movement.JumpCooldown
+	a.root.AssemblyLinearVelocity=flat(a.root.AssemblyLinearVelocity)+UP*(Config.Movement.JumpVelocity*(a.def.JumpScale or 1))
+	a.airborne=true; a.airDodgeUsed=false; a.takeoffUntil=now+0.18
+	return true
+end
+function Motor.travel(a,c,direction,distance)
+	local v=flat(direction)
+	if v.Magnitude&lt;0.01 or distance&lt;=0 then return 0 end
+	local start=a.root.Position
+	local vector=v.Unit*distance
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances={a.model,c.match.effects}
+	params.RespectCanCollide=true
+	local hit=workspace:Raycast(start,vector,params)
+	local advance=if hit then math.max(0,hit.Distance-2.1) else vector.Magnitude
+	local target=c:clamp(start+v.Unit*advance)
+	a.root.CFrame=CFrame.new(target)*a.root.CFrame.Rotation
+	return (target-start).Magnitude
+end
+function Motor.step(a,c,dt,now)
+	local profile=Config.Movement
+	local grounded=Motor.grounded(a,c)
+	if grounded and a.airborne then
+		a.airborne=false; a.airDodgeUsed=false
+		local falling=math.abs(a.root.AssemblyLinearVelocity.Y)
+		a.landUntil=now+(if falling&gt;profile.HardLandVelocity then profile.HardLandRecovery else profile.SoftLandRecovery)
+		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
+	end
+	if not grounded then a.airborne=true end
+	local limit=a.def.Speed
+	if a.sprinting then limit=profile.SprintSpeed*(a.def.SprintScale or 1) end
+	if a.state=="Guarding" then limit=Config.GuardSpeed
+	elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
+	elseif a.state=="Stunned" or a.state=="Defeated" then limit=0
+	elseif a.state=="Dodging" or a.state=="Pursuit" then limit=0
+	elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
+	if now&lt;(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
+	local desired=flat(a.move)
+	if desired.Magnitude&gt;1 then desired=desired.Unit end
+	desired*=limit
+	local rate=if grounded then (if desired.Magnitude&gt; a.locomotion.Magnitude then profile.GroundAcceleration else profile.GroundDeceleration) else profile.AirAcceleration*(a.def.AirControlScale or 1)
+	a.locomotion=approach(a.locomotion,desired,rate*dt)
+	a.hum.WalkSpeed=a.locomotion.Magnitude
+	a.hum:Move(if a.locomotion.Magnitude&gt;0.05 then a.locomotion.Unit else Vector3.zero,false)
+	if a.state=="Dodging" or a.state=="Pursuit" then a.hum:Move(Vector3.zero,false) end
+	return grounded
+end
+return Motor
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND14">
+        <Properties>
+          <string name="Name">Techniques</string>
+          <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
+-- channel, interruption, active window and recovery for every entry.
+local Techniques = {}
+Techniques.MarkedBlade = {
+	check = function() return true end,
+	execute = function(c, a, pending, now)
+		c:projectile(a, pending.aim, 62, pending.spec.Range, pending.spec.Damage, "blade", function(position, normal)
+			if a.health &lt;= 0 or c.match.phase ~= "Duel" then return end
+			if a.anchor then a.anchor.part:Destroy() end
+			local at = c:clamp(position + Vector3.new(0, 3, 0))
+			local p = c:effect("Anchor", position + normal*0.2, a.color, Vector3.new(1.3,0.2,1.3), 12)
+			a.anchor = { position = at, expires = c.now + 12, part = p }
+			c:cue(a,"ANCHOR PLACED")
+		end)
+	end,
+}
+Techniques.Flashstep = {
+	check = function(c, a, _spec, now)
+		return a.anchor ~= nil and a.anchor.expires &gt; now and (a.anchor.position-a.root.Position).Magnitude &lt;= 40
+	end,
+	execute = function(c,a,_pending,now)
+		local anchor = a.anchor
+		if not anchor or anchor.expires &lt;= now then c:cue(a,"ANCHOR EXPIRED"); return end
+		local target = anchor.position
+		-- Never relocate into solid geometry, and never accept a client destination.
+		local overlaps = workspace:GetPartBoundsInBox(CFrame.new(target),Vector3.new(3,5,3),c:overlapParams())
+		for _, p in overlaps do
+			if p.CanCollide and not p:IsDescendantOf(a.model) then c:cue(a,"ARRIVAL BLOCKED"); return end
+		end
+		c:effect("Departure",a.root.Position,a.color,Vector3.new(2,5,2),0.3)
+		c:relocate(a,target)
+		c:effect("Arrival",target,a.color,Vector3.new(3,5,3),0.45)
+		anchor.part:Destroy(); a.anchor = nil
+		c:cue(a,"FLASHSTEP • RECOVERING")
+	end,
+}
+Techniques.BurstStrike = {
+	check = function() return true end,
+	execute = function(c,a,pending)
+		c:effect("Burst",a.root.Position+a.root.CFrame.LookVector*3,a.color,Vector3.new(4,3,5),0.2)
+		if not c:strike(a,pending.spec.Damage,pending.spec.Range,0.35,true) then c:cue(a,"WHIFF • RECOVERING") end
+	end,
+}
+Techniques.Read = {
+	check = function() return true end,
+	execute = function(c,a,pending,now)
+		a.readUntil = now + pending.spec.Active
+		c:effect("Read",a.root.Position,a.color,Vector3.new(4,0.2,4),pending.spec.Active)
+		c:cue(a,"READ WINDOW")
+	end,
+}
+Techniques.NeedleFan = {
+	check = function() return true end,
+	execute = function(c,a,pending)
+		local direction = pending.aim-a.root.Position
+		if direction.Magnitude &lt; 0.1 then direction = a.root.CFrame.LookVector end
+		for _, angle in { -0.13,0,0.13 } do
+			local d = CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(direction.Unit)
+			c:projectile(a,a.root.Position+d*pending.spec.Range,54,pending.spec.Range,pending.spec.Damage,"needle")
+		end
+	end,
+}
+Techniques.MirageCast = {
+	check = function(c,a,spec)
+		return c:targetValid(a,a.target,spec.Range,0.35)
+	end,
+	execute = function(c,a,pending,now)
+		if not c:targetValid(a,a.target,pending.spec.Range,0.35) then c:cue(a,"CAST LOST SIGHT"); return end
+		local victim = a.target
+		victim.illusionUntil = now+3
+		victim.decoyPosition = c:clamp(a.root.Position + a.root.CFrame.RightVector*7)
+		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),3)
+		c:cue(victim,"MIRAGE • TRUST THE BODY",3)
+		c:cue(a,"ECHO ACTIVE",3)
+	end,
+}
+return Techniques
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND15">
+        <Properties>
+          <string name="Name">World</string>
+          <ProtectedString name="Source">local World = {}
+local function part(parent, name, size, cf, color, material)
+	local p = Instance.new("Part")
+	p.Name, p.Size, p.CFrame = name, size, cf
+	p.Color, p.Material = color, material or Enum.Material.SmoothPlastic
+	p.Anchored, p.TopSurface, p.BottomSurface = true, Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+	p.Parent = parent
+	return p
+end
+World.part = part
+function World.arena(parent, origin)
+	local folder = Instance.new("Folder"); folder.Name = "Courtyard"; folder.Parent = parent
+	local stone, dark = Color3.fromRGB(116, 132, 135), Color3.fromRGB(42, 57, 63)
+	part(folder, "Training floor", Vector3.new(96, 2, 96), CFrame.new(origin - Vector3.new(0, 1, 0)), stone, Enum.Material.Slate)
+	for _, x in { -1, 1 } do
+		part(folder, "Boundary", Vector3.new(2, 12, 98), CFrame.new(origin + Vector3.new(x*49, 5, 0)), dark, Enum.Material.Concrete)
+		part(folder, "Boundary", Vector3.new(98, 12, 2), CFrame.new(origin + Vector3.new(0, 5, x*49)), dark, Enum.Material.Concrete)
+		for _, z in { -1, 1 } do
+			local at = origin + Vector3.new(x*37, 0, z*37)
+			part(folder, "Pillar", Vector3.new(3, 14, 3), CFrame.new(at + Vector3.new(0, 7, 0)), dark)
+			part(folder, "Lantern", Vector3.new(4, 1, 4), CFrame.new(at + Vector3.new(0, 12, 0)), Color3.fromRGB(233, 198, 130), Enum.Material.Neon)
+		end
+	end
+	for _, z in { -22, 22 } do
+		part(folder, "Cover", Vector3.new(8, 4, 3), CFrame.new(origin + Vector3.new(18, 2, z)), dark, Enum.Material.Slate)
+	end
+	for i = -3, 3 do
+		local stripe = part(folder, "Inlay", Vector3.new(0.09, 0.02, 82), CFrame.new(origin + Vector3.new(i*12, 0.02, 0)), Color3.fromRGB(147, 161, 156))
+		stripe.CanCollide = false; stripe.CanQuery = false
+	end
+	local ring = part(folder, "Duel circle", Vector3.new(0.03, 24, 24), CFrame.new(origin + Vector3.new(0, 0.04, 0))*CFrame.Angles(0,0,math.pi/2), Color3.fromRGB(157,175,165))
+	ring.Shape = Enum.PartType.Cylinder; ring.CanCollide = false; ring.CanQuery = false
+	return folder
+end
+function World.rig(parent, def, cf, name)
+	local model = Instance.new("Model"); model.Name=name; model.Parent=parent
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local outfit=Color3.fromRGB(table.unpack(def.Outfit))
+	local pants=Color3.fromRGB(35,43,54)
+	local color=Color3.fromRGB(table.unpack(def.Color))
+	local root=part(model,"HumanoidRootPart",Vector3.new(2,2,1),cf,outfit)
+	root.Transparency=1
+	local function body(name,size,offset,tint)
+		return part(model,name,size,cf*CFrame.new(offset),tint)
+	end
+	local lower=body("LowerTorso",Vector3.new(2,1,1),Vector3.new(0,0,0),outfit)
+	local upper=body("UpperTorso",Vector3.new(2,1.4,1),Vector3.new(0,1.15,0),outfit)
+	local head=body("Head",Vector3.new(1.5,1.5,1.5),Vector3.new(0,2.45,0),skin)
+	local hum=Instance.new("Humanoid")
+	hum.RigType=Enum.HumanoidRigType.R15; hum.RequiresNeck=true; hum.BreakJointsOnDeath=false
+	hum.MaxHealth=def.Health; hum.Health=def.Health; hum.WalkSpeed=def.Speed
+	hum.UseJumpPower=true; hum.JumpPower=68; hum.HipHeight=2
+	hum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None; hum.Parent=model
+	Instance.new("Animator",hum)
+	local joints={}
+	local function joint(name,p0,p1,c0,c1)
+		local m=Instance.new("Motor6D");m.Name=name;m.Part0=p0;m.Part1=p1;m.C0=CFrame.new(c0);m.C1=CFrame.new(c1);m.Parent=p0
+		joints[name]=m;return m
+	end
+	joint("Root",root,lower,Vector3.zero,Vector3.zero)
+	joint("Waist",lower,upper,Vector3.new(0,0.65,0),Vector3.new(0,-0.5,0))
+	joint("Neck",upper,head,Vector3.new(0,0.9,0),Vector3.new(0,-0.55,0))
+	for _,side in {-1,1} do
+		local prefix=if side==-1 then "Left" else "Right"
+		local armTop=body(prefix.."UpperArm",Vector3.new(0.8,1.1,0.8),Vector3.new(side*1.45,0.72,0),outfit)
+		local armLow=body(prefix.."LowerArm",Vector3.new(0.76,0.95,0.76),Vector3.new(side*1.45,-0.28,0),outfit)
+		local hand=body(prefix.."Hand",Vector3.new(0.72,0.5,0.72),Vector3.new(side*1.45,-1.0,0),skin)
+		local legTop=body(prefix.."UpperLeg",Vector3.new(0.85,1.1,0.85),Vector3.new(side*0.5,-0.85,0),pants)
+		local legLow=body(prefix.."LowerLeg",Vector3.new(0.8,1.05,0.8),Vector3.new(side*0.5,-1.75,0),pants)
+		local foot=body(prefix.."Foot",Vector3.new(0.8,0.42,1.15),Vector3.new(side*0.5,-2.55,-0.15),pants)
+		joint(prefix.."Shoulder",upper,armTop,Vector3.new(side*1.05,0.45,0),Vector3.new(-side*0.4,0.5,0))
+		joint(prefix.."Elbow",armTop,armLow,Vector3.new(0,-0.55,0),Vector3.new(0,0.45,0))
+		joint(prefix.."Wrist",armLow,hand,Vector3.new(0,-0.48,0),Vector3.new(0,0.25,0))
+		joint(prefix.."Hip",lower,legTop,Vector3.new(side*0.5,-0.55,0),Vector3.new(0,0.5,0))
+		joint(prefix.."Knee",legTop,legLow,Vector3.new(0,-0.55,0),Vector3.new(0,0.5,0))
+		joint(prefix.."Ankle",legLow,foot,Vector3.new(0,-0.5,0),Vector3.new(0,0.2,0.15))
+	end
+	local hair=body("Hair",Vector3.new(1.65,0.55,1.65),Vector3.new(0,3,0),Color3.fromRGB(table.unpack(def.Hair)))
+	joint("HairJoint",head,hair,Vector3.new(0,0.57,0),Vector3.new(0,-0.25,0))
+	local sash=body("Sash",Vector3.new(2.1,0.25,1.1),Vector3.new(0,-0.4,0),color)
+	joint("SashJoint",lower,sash,Vector3.new(0,-0.4,0),Vector3.zero)
+	local eyes=body("Eyes",Vector3.new(0.85,0.1,0.05),Vector3.new(0,2.6,-0.76),Color3.fromRGB(24,31,38))
+	joint("EyeJoint",head,eyes,Vector3.new(0,0.15,-0.76),Vector3.zero)
+	for _,piece in model:GetChildren() do
+		if piece:IsA("BasePart") then
+			piece.Anchored=false
+			piece.CanCollide=piece==root
+			piece.CanQuery=piece==root or piece==lower or piece==upper or piece==head
+			piece.Massless=piece~=root
+		end
+	end
+	model.PrimaryPart=root; root:SetNetworkOwner(nil)
+	return model,hum,root,joints
+end
+local function set(joints,name,base,angles,alpha)
+	local joint=joints[name]
+	if joint then joint.C0=joint.C0:Lerp(CFrame.new(base)*CFrame.Angles(angles.X,angles.Y,angles.Z),alpha) end
+end
+function World.pose(a,now,dt)
+	local j=a.joints
+	local speed=a.locomotion.Magnitude
+	local moving=speed&gt;2
+	local phase=now*(if a.sprinting then 17 else 12)
+	local swing=if moving then math.sin(phase)*math.min(0.95,speed/40) else math.sin(now*2)*0.03
+	local flank=if a.locked then a.move:Dot(a.root.CFrame.RightVector) else 0
+	local retreat=if a.locked then -a.move:Dot(a.root.CFrame.LookVector) else 0
+	local lean=if moving then math.clamp(speed/90,0,0.37) else 0
+	local leftArm,rightArm=swing,-swing
+	local leftLeg,rightLeg=-swing,swing
+	local waistTwist=math.sin(phase)*0.06
+	if a.state=="Guarding" then leftArm,rightArm=-1.35,-1.35; lean=0.08 end
+	if a.state=="Dodging" or a.state=="Pursuit" then leftArm,rightArm=-0.7,0.55; leftLeg,rightLeg=0.5,-0.5; lean=0.55 end
+	if a.state=="Stunned" then leftArm,rightArm=0.7,0.7; lean=-0.25 end
+	if a.state=="TechniqueChannel" then leftArm,rightArm=-1.55,-1.55; lean=0 end
+	if a.state=="TechniqueActive" then leftArm,rightArm=-0.8,-1.9; lean=0.18 end
+	if a.state=="Startup" or a.state=="Active" then
+		local beat=a.combo or 1
+		local attackPose={-1.5,-0.5,-1.1,-2.1}
+		rightArm=attackPose[beat] or -1.5
+		leftArm=if beat==2 then -1.5 elseif beat==4 then 0.85 else 0.15
+		waistTwist=if beat%2==0 then -0.27 else 0.22
+		lean=0.3
+		if beat==2 then rightLeg=-0.8 end
+		if beat==4 then leftLeg=-1.2 end
+	end
+	if a.airborne and a.state~="Startup" and a.state~="Active" and a.state~="Dodging" then
+		if now&lt;(a.takeoffUntil or 0) then leftArm,rightArm=-0.55,-0.55; leftLeg,rightLeg=0.4,0.4
+		else leftArm,rightArm=-0.55,-0.8; leftLeg,rightLeg=0.5,-0.5 end
+		lean=0.12
+	end
+	if not a.airborne and now&lt;(a.landUntil or 0) then
+		leftLeg,rightLeg=-0.35,-0.35; lean=0.32
+	end
+	if a.state=="Defeated" then leftArm,rightArm=1.4,1.4; leftLeg,rightLeg=0.8,0.8; lean=0.65 end
+	local alpha=1-math.exp(-math.min(dt,0.1)*18)
+	set(j,"Waist",Vector3.new(0,0.65,0),Vector3.new(lean,waistTwist+flank*0.12,0),alpha)
+	set(j,"Neck",Vector3.new(0,0.9,0),Vector3.new(-lean*0.45,-waistTwist*0.4,0),alpha)
+	for _,side in {-1,1} do
+		local prefix=if side==-1 then "Left" else "Right"
+		local arm=if side==-1 then leftArm else rightArm
+		local leg=if side==-1 then leftLeg else rightLeg
+		set(j,prefix.."Shoulder",Vector3.new(side*1.05,0.45,0),Vector3.new(arm,0,side*0.12),alpha)
+		set(j,prefix.."Elbow",Vector3.new(0,-0.55,0),Vector3.new(if a.state=="Guarding" then -0.55 else -0.16,0,0),alpha)
+		set(j,prefix.."Hip",Vector3.new(side*0.5,-0.55,0),Vector3.new(leg+retreat*0.1,0,0),alpha)
+		set(j,prefix.."Knee",Vector3.new(0,-0.55,0),Vector3.new(math.max(0,-leg)*0.35,0,0),alpha)
+	end
+end
+return World
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="ND16">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+      <float name="CameraMinZoomDistance">8</float>
+      <float name="CameraMaxZoomDistance">32</float>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="ND17">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="ND18">
+        <Properties>
+          <string name="Name">NinjaDuelClient</string>
+        </Properties>
+        <Item class="ModuleScript" referent="ND19">
+          <Properties>
+            <string name="Name">Camera</string>
+            <ProtectedString name="Source">local Camera={}; Camera.__index=Camera
+function Camera.new()
+	return setmetatable({locked=true,lastEpoch=-1,lastHealth=nil,shakeUntil=0,shakeSize=0,rng=Random.new()},Camera)
+end
+function Camera:update(data,dt)
+	local camera=workspace.CurrentCamera
+	if not data or data.phase=="Selection" then
+		self.lastHealth=nil; camera.FieldOfView=70
+		camera.CameraType=Enum.CameraType.Scriptable
+		camera.CFrame=CFrame.lookAt(Vector3.new(42,38,45),Vector3.new(0,0,0)); return
+	end
+	local character=game:GetService("Players").LocalPlayer.Character
+	local root=character and character:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	if not self.locked and data.phase=="Duel" then
+		camera.CameraType=Enum.CameraType.Custom; camera.CameraSubject=character:FindFirstChildOfClass("Humanoid"); return
+	end
+	camera.CameraType=Enum.CameraType.Scriptable
+	if self.lastEpoch~=data.epoch then self.lastHealth=data.human.health end
+	if self.lastHealth and data.human.health&lt;self.lastHealth then
+		local damage=self.lastHealth-data.human.health
+		self.shakeSize=if damage&gt;=12 then 0.37 else 0.18
+		self.shakeUntil=os.clock()+0.13
+	end
+	self.lastHealth=data.human.health
+	local targetFov=70+math.clamp((data.human.speed or 0)*0.18,0,8)
+	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*7))
+	local a=root.Position
+	local folder=root.Parent.Parent
+	local bot=folder and folder:FindFirstChild("AIFighter")
+	local b=bot and bot:FindFirstChild("HumanoidRootPart")
+	local target=if b then b.Position else data.bot.position
+	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+	if flat.Magnitude&lt;0.01 then flat=-Vector3.zAxis end
+	local distance=(target-a).Magnitude
+	local focus=a:Lerp(target,0.5)+Vector3.new(0,1.5,0)
+	local desired=a-flat.Unit*math.clamp(17+distance*0.32,18,29)+Vector3.new(0,11+distance*0.12,0)
+	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
+	ray.FilterDescendantsInstances={character,bot,folder:FindFirstChild("Effects")}
+	local hit=workspace:Raycast(focus,desired-focus,ray)
+	if hit then desired=hit.Position+hit.Normal*0.7 end
+	local cf=CFrame.lookAt(desired,focus)
+	if os.clock()&lt;self.shakeUntil then
+		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
+	end
+	if self.lastEpoch~=data.epoch then camera.CFrame=cf; self.lastEpoch=data.epoch
+	else camera.CFrame=camera.CFrame:Lerp(cf,1-math.exp(-dt*10)) end
+end
+return Camera
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND20">
+          <Properties>
+            <string name="Name">Input</string>
+            <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
+local UIS=game:GetService("UserInputService")
+local Input={}; Input.__index=Input
+function Input.new(send,getState,toggleLock)
+	local self=setmetatable({send=send,getState=getState,keys={}},Input)
+	local function bind(name,key,action)
+		CAS:BindActionAtPriority("Ninja"..name,function(_,state)
+			if UIS:GetFocusedTextBox() then return Enum.ContextActionResult.Pass end
+			local duel=getState() and getState().phase=="Duel"
+			if state==Enum.UserInputState.Begin and duel then action(true)
+			elseif state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel then action(false) end
+			return if duel then Enum.ContextActionResult.Sink else Enum.ContextActionResult.Pass
+		end,false,3000,key)
+	end
+	for _,key in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
+		bind(key.Name,key,function(down) self.keys[key.Name]=down end)
+	end
+	bind("Attack",Enum.UserInputType.MouseButton1,function(down) if down then send("Attack") end end)
+	bind("Guard",Enum.KeyCode.F,function(down) send(if down then "Guard" else "GuardOff") end)
+	bind("Dodge",Enum.KeyCode.Q,function(down) if down then send("Dodge") end end)
+	bind("Jump",Enum.KeyCode.Space,function(down) send(if down then "Jump" else "JumpOff") end)
+	bind("Sprint",Enum.KeyCode.LeftControl,function(down) self.sprinting=down end)
+	bind("Pursuit",Enum.KeyCode.E,function(down) if down then send("Pursuit") end end)
+	for i,key in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three} do
+		bind("Technique"..i,key,function(down) if down then send("Technique"..i) end end)
+	end
+	bind("Lock",Enum.KeyCode.LeftShift,function(down) if down then toggleLock() end end)
+	UIS.WindowFocusReleased:Connect(function() table.clear(self.keys); self.sprinting=false; send("GuardOff"); send("Move",Vector3.zero) end)
+	return self
+end
+function Input:direction(camera)
+	local x=(if self.keys.D then 1 else 0)-(if self.keys.A then 1 else 0)
+	local z=(if self.keys.W then 1 else 0)-(if self.keys.S then 1 else 0)
+	local look=camera.CFrame.LookVector; look=Vector3.new(look.X,0,look.Z)
+	if look.Magnitude&lt;0.01 then look=-Vector3.zAxis end
+	look=look.Unit
+	local right=Vector3.new(-look.Z,0,look.X)
+	local v=right*x+look*z
+	return if v.Magnitude&gt;1 then v.Unit else v
+end
+return Input
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="ND21">
+          <Properties>
+            <string name="Name">Main</string>
+            <ProtectedString name="Source">local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local player=Players.LocalPlayer
+local shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
+local remote=shared:WaitForChild("Action")
+pcall(function() game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Health,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.Chat,false); game:GetService("StarterGui"):SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList,false) end)
+local UI=require(script.Parent.UI)
+local Input=require(script.Parent.Input)
+local Camera=require(script.Parent.Camera)
+local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
+local mouse=player:GetMouse()
+local function send(action,extra)
+	local payload={action=action,epoch=current.epoch}
+	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
+	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
+	elseif string.match(action,"^Technique") then
+		local hit=mouse.Hit.Position
+		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root and (hit-root.Position).Magnitude&lt;=140 then payload.aim=hit end
+	end
+	remote:FireServer(payload)
+end
+ui=UI.new(player:WaitForChild("PlayerGui"),send)
+input=Input.new(send,function() return current end,function() camera.locked=not camera.locked end)
+-- Disable the default movement controller; server receives finite normalized intent.
+local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
+require(playerModule):GetControls():Disable()
+remote.OnClientEvent:Connect(function(data)
+	if data.epoch&lt;(current.epoch or 0) then return end
+	if data.epoch~=current.epoch or data.phase~=current.phase then table.clear(input.keys) end
+	current=data; ui:render(data)
+end)
+local nextMove=0
+RunService.RenderStepped:Connect(function(dt)
+	camera:update(current,dt)
+	if current.phase=="Duel" and os.clock()&gt;=nextMove then
+		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
+	end
+end)
+send("Ready")
+print("[NinjaDuel] Client ready")
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND22">
+          <Properties>
+            <string name="Name">UI</string>
+            <ProtectedString name="Source">local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local UI={}; UI.__index=UI
+local palette={bg=Color3.fromRGB(14,22,30),panel=Color3.fromRGB(25,36,47),text=Color3.fromRGB(235,240,232),muted=Color3.fromRGB(154,174,181),blue=Color3.fromRGB(82,177,244),red=Color3.fromRGB(222,106,137)}
+local function create(class,parent,props)
+	local x=Instance.new(class)
+	for k,v in props do x[k]=v end
+	x.Parent=parent; return x
+end
+local function frame(parent,position,size,color)
+	return create("Frame",parent,{Position=position,Size=size,BackgroundColor3=color or palette.panel,BorderSizePixel=0})
+end
+local function text(parent,value,position,size,fontSize,color)
+	return create("TextLabel",parent,{Text=value,Position=position,Size=size,TextSize=fontSize or 16,Font=Enum.Font.GothamMedium,TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true})
+end
+local function button(parent,value,position,size,callback,color)
+	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=16,Font=Enum.Font.GothamBold,TextColor3=palette.text,BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
+	create("UICorner",b,{CornerRadius=UDim.new(0,6)})
+	b.Activated:Connect(callback); return b
+end
+local function portrait(parent,def,position)
+	local vp=create("ViewportFrame",parent,{Position=position,Size=UDim2.new(0,100,0,116),BackgroundTransparency=1,Ambient=Color3.fromRGB(185,185,185),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
+	local function p(size,at,color)
+		create("Part",vp,{Size=size,CFrame=CFrame.new(at),Color=Color3.fromRGB(table.unpack(color)),Anchored=true})
+	end
+	p(Vector3.new(2,2,1),Vector3.zero,def.Outfit)
+	p(Vector3.new(1.5,1.5,1.5),Vector3.new(0,1.6,0),def.Skin)
+	p(Vector3.new(1.65,0.55,1.65),Vector3.new(0,2.12,0),def.Hair)
+	for _,s in {-1,1} do p(Vector3.new(1,2,1),Vector3.new(s*1.5,0,0),def.Outfit) end
+	p(Vector3.new(2.1,0.25,1.1),Vector3.new(0,-0.65,0),def.Color)
+	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(4,2.8,-8),Vector3.new(0,0.7,0))})
+	vp.CurrentCamera=camera
+end
+function UI.new(parent,send)
+	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={}},UI)
+	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
+	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg)
+	local shell=frame(self.selection,UDim2.new(0.5,-390,0.5,-255),UDim2.fromOffset(780,510),palette.bg)
+	create("UISizeConstraint",shell,{MinSize=Vector2.new(780,510),MaxSize=Vector2.new(780,510)})
+	text(shell,"NINJA DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(780,48),38)
+	text(shell,"V0.2  /  THE TRAINING COURTYARD",UDim2.fromOffset(2,51),UDim2.fromOffset(760,25),13,palette.muted)
+	text(shell,"A duel is won in the opening you create.",UDim2.fromOffset(2,85),UDim2.fromOffset(760,30),20)
+	for i,id in {"Flashstep","Mirage"} do
+		local def=Fighters[id]; local x=(i-1)*400
+		local card=frame(shell,UDim2.fromOffset(x,135),UDim2.fromOffset(380,215))
+		local accent=Color3.fromRGB(table.unpack(def.Color))
+		frame(card,UDim2.fromOffset(0,0),UDim2.fromOffset(380,3),accent)
+		portrait(card,def,UDim2.fromOffset(12,20))
+		text(card,def.Name,UDim2.fromOffset(128,21),UDim2.fromOffset(235,35),26,accent)
+		text(card,def.Title,UDim2.fromOffset(128,61),UDim2.fromOffset(235,20),11,palette.muted)
+		text(card,def.Description,UDim2.fromOffset(128,90),UDim2.fromOffset(235,58),14)
+		text(card,string.format("%d HP   •   %s",def.Health,if id=="Flashstep" then "Mobility / punishes" else "Reads / deception"),UDim2.fromOffset(18,176),UDim2.fromOffset(345,23),13,palette.muted)
+	end
+	text(shell,"YOUR FIGHTER",UDim2.fromOffset(0,371),UDim2.fromOffset(360,20),12,palette.muted)
+	text(shell,"AI OPPONENT",UDim2.fromOffset(400,371),UDim2.fromOffset(360,20),12,palette.muted)
+	for i,id in {"Flashstep","Mirage"} do
+		self.selectionButtons["player"..id]=button(shell,id,UDim2.fromOffset((i-1)*194,400),UDim2.fromOffset(186,36),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,id,UDim2.fromOffset(400+(i-1)*194,400),UDim2.fromOffset(186,36),function() self.bot=id; self:refreshSelection() end)
+	end
+	button(shell,"START DUEL  →",UDim2.fromOffset(0,459),UDim2.fromOffset(780,45),function() send("Start",{player=self.player,bot=self.bot}) end,Color3.fromRGB(36,88,109))
+	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1)); self.hud.BackgroundTransparency=1
+	local function meter(parent,name,pos,color)
+		local box=frame(parent,pos,UDim2.fromOffset(310,88))
+		local label=text(box,name,UDim2.fromOffset(14,7),UDim2.fromOffset(282,24),18)
+		local track=frame(box,UDim2.fromOffset(14,39),UDim2.fromOffset(282,8),palette.bg)
+		local fill=frame(track,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),color)
+		local status=text(box,"",UDim2.fromOffset(14,56),UDim2.fromOffset(282,22),12,palette.muted)
+		return {box=box,label=label,fill=fill,status=status}
+	end
+	self.hp=meter(self.hud,"",UDim2.fromOffset(22,20),palette.blue)
+	self.enemy=meter(self.hud,"",UDim2.new(1,-332,0,20),palette.red)
+	self.chakra=meter(self.hud,"CHAKRA",UDim2.new(0,22,1,-207),palette.blue)
+	self.cue=text(self.hud,"",UDim2.new(0.5,-250,0,128),UDim2.fromOffset(500,36),22); self.cue.TextXAlignment=Enum.TextXAlignment.Center
+	self.channel=text(self.hud,"",UDim2.new(0.5,-250,0,165),UDim2.fromOffset(500,28),15,palette.muted); self.channel.TextXAlignment=Enum.TextXAlignment.Center
+	self.techniqueButtons={}
+	for i=1,3 do
+		local box=frame(self.hud,UDim2.new(0.5,-297+(i-1)*202,1,-110),UDim2.fromOffset(194,66))
+		self.techniqueButtons[i]={title=text(box,"",UDim2.fromOffset(10,5),UDim2.fromOffset(176,26),15),status=text(box,"",UDim2.fromOffset(10,33),UDim2.fromOffset(176,22),12,palette.muted),box=box}
+	end
+	self.help=text(self.hud,"WASD move   CTRL sprint   SPACE ninja jump   LMB 4-hit chain   F guard   Q dash   E pursue   1/2/3 techniques   SHIFT lock",UDim2.new(0.5,-420,1,-34),UDim2.fromOffset(840,25),12,palette.muted)
+	self.help.TextXAlignment=Enum.TextXAlignment.Center
+	self.hint=text(self.hud,"",UDim2.new(0.5,-260,0,199),UDim2.fromOffset(520,30),13,palette.muted); self.hint.TextXAlignment=Enum.TextXAlignment.Center
+	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg); self.result.BackgroundTransparency=0.2
+	local resultBox=frame(self.result,UDim2.new(0.5,-240,0.5,-140),UDim2.fromOffset(480,280))
+	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,24),UDim2.fromOffset(420,50),32)
+	text(resultBox,"Read the commitment. Find a better opening.",UDim2.fromOffset(30,85),UDim2.fromOffset(420,45),15,palette.muted)
+	button(resultBox,"REMATCH",UDim2.fromOffset(30,151),UDim2.fromOffset(420,42),function() send("Rematch") end,Color3.fromRGB(36,88,109))
+	button(resultBox,"RETURN TO SELECTION",UDim2.fromOffset(30,211),UDim2.fromOffset(420,42),function() send("Selection") end)
+	-- A small displaced indicator during Mirage; real body remains visible and controllable.
+	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
+	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),17,palette.red); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
+	self:refreshSelection(); self:render({phase="Selection"})
+	return self
+end
+function UI:refreshSelection()
+	for key,b in self.selectionButtons do
+		local selected=key=="player"..self.player or key=="bot"..self.bot
+		b.BackgroundColor3=if selected then Color3.fromRGB(48,96,117) else palette.panel
+	end
+end
+function UI:render(data)
+	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel"; self.result.Visible=data.phase=="Result"
+	self.echo.Enabled=false
+	if data.phase=="Selection" then return end
+	local h,b=data.human,data.bot
+	if not h or not b then return end
+	self.hp.label.Text=h.fighter.."  /  YOU"; self.enemy.label.Text=b.fighter.."  /  AI"
+	self.hp.fill.Size=UDim2.fromScale(math.clamp(h.health/h.maxHealth,0,1),1)
+	self.enemy.fill.Size=UDim2.fromScale(math.clamp(b.health/b.maxHealth,0,1),1)
+	self.hp.status.Text=string.format("%d / %d HP   •   %s",math.ceil(h.health),h.maxHealth,h.state)
+	self.enemy.status.Text=string.format("%d / %d HP   •   %s",math.ceil(b.health),b.maxHealth,b.state)
+	self.chakra.label.Text=string.format("CHAKRA  %d / 100",math.floor(h.chakra)); self.chakra.fill.Size=UDim2.fromScale(h.chakra/100,1)
+	self.chakra.status.Text=if h.dodge&gt;0 then string.format("Dodge %.1fs",h.dodge) else "Dodge ready • 16 chakra"
+	self.cue.Text=h.cue
+	self.channel.Text=if h.channel&gt;0 then string.format("PREPARING %.1fs • vulnerable to interruption",h.channel) elseif b.channel&gt;0 then string.format("OPPONENT PREPARING %.1fs • interrupt or evade",b.channel) else ""
+	for i,tech in h.techniques do
+		local ui=self.techniqueButtons[i]; ui.title.Text=i.."  "..tech.name
+		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs cooldown",tech.remaining) elseif not tech.condition then "Setup required" elseif h.chakra&lt;tech.cost then "Need chakra" else tech.cost.." chakra • ready"
+		ui.box.BackgroundColor3=if tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost then Color3.fromRGB(30,57,69) else palette.panel
+	end
+	self.hint.Text=if h.pursuit&gt;0 then string.format("PURSUIT %.1fs • press E to close after launch",h.pursuit) elseif h.anchor then "ANCHOR ACTIVE • 2 to relocate • arrival has recovery" elseif h.read&gt;0 then "READ ACTIVE • one frontal melee • punish after success" else Fighters[h.fighter].Description
+	self.resultTitle.Text=if data.winner=="PlayerFighter" then "VICTORY" else "DEFEAT"
+	if h.illusion&gt;0 and data.phase=="Duel" then
+		local character=game:GetService("Players").LocalPlayer.Character
+		local folder=character and character.Parent
+		local effects=folder and folder:FindFirstChild("Effects")
+		local echo=effects and effects:FindFirstChild("Echo")
+		if echo then self.echo.Adornee=echo; self.echo.Enabled=true end
+	end
+end
+return UI
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Lighting" referent="ND23">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <token name="Technology">3</token>
+      <float name="ClockTime">15</float>
+      <float name="Brightness">2.5</float>
+      <Color3 name="Ambient">
+        <R>0.42</R>
+        <G>0.48</G>
+        <B>0.55</B>
+      </Color3>
+      <Color3 name="OutdoorAmbient">
+        <R>0.55</R>
+        <G>0.58</G>
+        <B>0.6</B>
+      </Color3>
+    </Properties>
+  </Item>
+  <Item class="SoundService" referent="ND24">
+    <Properties>
+      <string name="Name">SoundService</string>
+    </Properties>
+  </Item>
+</roblox>

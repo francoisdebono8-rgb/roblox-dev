@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "artifact": "NinjaDuel.rbxlx",
+  "sha256": "45684bf569c6107383ae48a83914e9a4d5981ddd35dfa672a94b8485a1131ae3",
+  "sources": {
+    "src/Client/Camera.luau": "44ffda4c81c8c448607010aa1568529c5fd87d892ecfa590b3c75ca07f765353",
+    "src/Client/Input.luau": "eab8c3ab72b38530e7461efd2704d45b2b6feab1ec4efeb35d0c14b39ce90fa4",
+    "src/Client/Main.client.luau": "e7f9b51ad08d535f5f3586e0e681472bfaef328a0ad2b1c7c1ed7271f468f072",
+    "src/Client/UI.luau": "398a0946c47ed1e7b6a6f9bf9a1db671fe0bd840e74ed336e1b938f850dad6e7",
+    "src/Server/AI.luau": "7ae8be4898127e7a261941f002d981629dc00c19c84a8c1e93747c7d301e9474",
+    "src/Server/Combat.luau": "717151799fddda270af9280ef87c055ae8a14bcfa84f93697b666a6094bf3113",
+    "src/Server/Main.server.luau": "8cbf7420f00c98b106c043d48aeabd5bb2cca120344540ed6781472252329573",
+    "src/Server/Matches.luau": "e783baa2d1b705477d720a80cc38c9d6f13a94b3f1f922a7e01d72b8ec251a64",
+    "src/Server/Motor.luau": "fed43ecfa9a051e072fc0c3c268eecf7e2d8a75a26133a96b9a46d65c2d2d830",
+    "src/Server/Techniques.luau": "67b31fd62010300907164a404110afc509cb142cd52e59ea1e9c0928d74f04f0",
+    "src/Server/World.luau": "773dadf9f9b793be921f916bf6e077d7386559d1273980c84237c9e2157f0c70",
+    "src/Shared/Config.luau": "782eca7d9e184d5787e4fa93e5413151c482cd596953082451981ef5366a303c",
+    "src/Shared/Fighters.luau": "79799570b1cb7610494cd795b8725aec2c0b4dae58ed6626771ce1aa69f60390",
+    "src/Shared/Rules.luau": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1"
+  },
+  "sourceEquality": "PASS",
+  "externalAssets": []
+}
