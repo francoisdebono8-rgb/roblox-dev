@@ -35,6 +35,12 @@ local function fakePart(position)
  return p
 end
 local World={pose=function() end,part=function(_,_,size,cf) local p=fakePart(cf.Position);p.Size=size;return p end}
+local attributes={}
+local effectEmits=0
+local function emitter() return {IsA=function(_,class) return class=="ParticleEmitter" end,GetAttribute=function() return 4 end,Emit=function(_,count) effectEmits+=count end} end
+local function attachment() return {Clone=function() return attachment() end,GetChildren=function() return {emitter()} end} end
+local assets={VFX={BasicPunch={Attachment=attachment()},ComboPunch={Attachment=attachment()}}}
+local sharedStub
 local names={}
 for _,dir in {"Shared","Server","Client"} do
  names[dir]={}
@@ -48,8 +54,20 @@ local inputServices={
  ContextActionService={BindActionAtPriority=function(_,name,callback,_,_,...) bindings[name]={callback=callback,keys={...}} end},
  UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end}},
 }
+envBase.Instance={new=function(class)
+ local obj=fakePart(V.zero)
+ obj.ClassName=class
+ function obj:IsA(query) return query==self.ClassName or query=="BasePart" and self.ClassName=="Part" end
+ function obj:Play() end
+ return obj
+end}
 envBase.game={GetService=function(_,name)
- if name=="ReplicatedStorage" then return {NinjaDuel=names.Shared} end
+ if name=="ReplicatedStorage" then
+  sharedStub=sharedStub or setmetatable({BanglaAssets=assets,WaitForChild=function(_,key) return assets end},{__index=names.Shared})
+  return {NinjaDuel=sharedStub}
+ end
+ if name=="Debris" then return {AddItem=function() end} end
+ if name=="RunService" or name=="KeyframeSequenceProvider" or name=="ServerStorage" then return {} end
  if inputServices[name] then return inputServices[name] end
  error("Unexpected service "..name)
 end}
@@ -70,8 +88,12 @@ local function pair()
  local c=Combat.new(match);c.now=100
  local function actor(id,key,z)
   local root=fakePart(V.new(0,3,z));root.CFrame=C.lookAt(root.Position,V.new(0,3,-z))
-  local model={root=root,Parent=true};function model:PivotTo(cf) self.root.CFrame=cf end
-  local hum={Health=125,WalkSpeed=0,FindFirstChildOfClass=function() return nil end,Move=function() end}
+  local model={root=root,Parent=true,attributes={}};function model:PivotTo(cf) self.root.CFrame=cf end
+  function model:SetAttribute(key,value) self.attributes[key]=value end
+  function model:GetAttribute(key) return self.attributes[key] end
+  function root:IsDescendantOf(other) return other==model end
+  function root:IsA(query) return query=="BasePart" end
+  local hum={Health=125,WalkSpeed=0,Parent=true,RigType=roblox.Enum.HumanoidRigType.R15,HipHeight=2,FloorMaterial=roblox.Enum.Material.Concrete,AutoRotate=true,Move=function(self,direction) self.MoveDirection=direction end,MoveDirection=V.zero,ChangeState=function(self,state) self.nativeState=state end,GetState=function(self) return self.nativeState or roblox.Enum.HumanoidStateType.Running end,FindFirstChildOfClass=function() return nil end}
   local a=c:add(id,model,hum,root,{},key);table.insert(actors,a);return a
  end
  local a,b=actor("A","Flashstep",2.5),actor("B","Mirage",-2.5);a.target=b;b.target=a
@@ -86,7 +108,7 @@ local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostri
 test("ground branch, real launch, 3D chase, two air hits, slam and wakeup",function()
  local c,a,b=pair();c.match.techniquesDisabled=true
  assert(not c:request(a,"Technique1"))
- for _=1,3 do assert(c:request(a,"Attack"));step(c,.3) end
+ for _=1,2 do assert(c:request(a,"Attack"));step(c,.3) end
  assert(c:request(a,"Heavy"));step(c,.35);assert(b.reaction=="Launched" and b.root.Position.Y>8)
  assert(c:request(a,"Pursuit"));step(c,.25)
  assert((a.root.Position-b.root.Position).Magnitude<8)
@@ -97,13 +119,13 @@ test("ground branch, real launch, 3D chase, two air hits, slam and wakeup",funct
 end)
 test("horizontal finisher differs from launcher",function()
  local c,a,b=pair()
- for _=1,4 do assert(c:request(a,"Attack"));step(c,.3) end
- assert(a.attackName=="Light4" and b.reaction=="Knockback" and b.reactionVelocity.Y<20)
+ for _=1,3 do assert(c:request(a,"Attack"));step(c,.3) end
+ assert(a.attackName=="Light3" and b.reaction=="Knockback" and b.reactionVelocity.Y<20)
 end)
 test("active window late entry, whiff recovery and combo buffer",function()
  local c,a,b=pair();b.root.CFrame=C.new(0,3,-20)
  assert(c:request(a,"Attack"));step(c,.12);assert(b.health==b.def.Health)
- b.root.CFrame=C.new(a.root.Position+a.root.CFrame.LookVector*5);step(c,.03);assert(b.health<b.def.Health)
+ b.root.CFrame=C.new(a.root.Position+a.root.CFrame.LookVector*3);step(c,.03);assert(b.health<b.def.Health)
  assert(not c:request(a,"Attack"));step(c,.14);assert(a.attackName=="Light2")
 end)
 test("grab, directional throw, no orphan relationship and upthrow",function()
@@ -181,4 +203,94 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
  input:reset();assert(camera.look.Magnitude==0 and input.stick.Magnitude==0 and not input.sprinting)
  state.phase="Selection";assert(press("Jump","ButtonA")==roblox.Enum.ContextActionResult.Pass,"Menu activation was consumed by combat")
 end)
-print("NinjaDuel headless combat: "..passed.." PASS (geometry adapter; native QA still required)")
+test("imported Bangla combo owns damage, contacts, effects and cleanup",function()
+ local c,a,b=pair();local health=b.health;local emits=effectEmits
+ assert(c:request(a,"Attack"));step(c,.3)
+ assert(health-b.health==5 and a.model:GetAttribute("CombatBase")=="BanglaBattlegrounds")
+ assert(a.donorHitCount==1 and effectEmits>emits)
+ health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(health-b.health==10)
+ health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(health-b.health==25)
+ assert(a.combo==3 and not a.chainOpen)
+ step(c,.5);assert(c:request(a,"Attack") and a.combo==1)
+ c:clear();assert(a.combo==0 and not a.pending and a.donorHitCount==0)
+end)
+test("Place1 sprint stamina, takeoff carry and air steering run on actors",function()
+ local Motor=loadModule("Server/Motor")
+ local c,a,b=pair();a.move=V.xAxis;a.sprinting=true
+ Motor.step(a,c,.1,c.now)
+ assert(a.hum.WalkSpeed>40 and a.model:GetAttribute("MovementBase")=="Place1")
+ assert(a.model:GetAttribute("MovementStamina")<1)
+ assert(Motor.jump(a,c,c.now))
+ assert(a.root.AssemblyLinearVelocity.X>=62 and a.root.AssemblyLinearVelocity.Y>=60)
+ a.root.CFrame=C.new(0,10,0);a.hum.FloorMaterial=roblox.Enum.Material.Air
+ a.move=V.zAxis;c.now+=.2
+ local speed=a.root.AssemblyLinearVelocity.Magnitude;local previousX=a.root.AssemblyLinearVelocity.X
+ Motor.step(a,c,.1,c.now)
+ assert(a.root.AssemblyLinearVelocity.Z>0 and a.root.AssemblyLinearVelocity.X<previousX)
+ assert(a.root.AssemblyLinearVelocity.Magnitude<=speed+10)
+ a.root.CFrame=C.new(0,3,0);a.hum.FloorMaterial=roblox.Enum.Material.Concrete
+ for _=1,610 do c.now+=.1;Motor.step(a,c,.1,c.now) end
+ assert(a.hum.WalkSpeed==a.def.Speed,"Exhausted sprint failed to drop to walk")
+ c:clear();assert(not a.movementDonor and not a.parkourDonor)
+end)
+test("Place1 mantle clearance, arc, state cancellation and wall-hop limits",function()
+ local Parkour=loadModule("Server/Place1Parkour")
+ local c,a,b=pair();a.root.CFrame=C.lookAt(V.new(0,3,0),V.new(1,3,0));a.move=V.xAxis
+ local oldRay,oldBox=workspace.Raycast,workspace.GetPartBoundsInBox
+ local wall={Anchored=true,CanCollide=true,Parent=nil,IsA=function(_,class) return class=="BasePart" end,GetAttribute=function() return nil end,GetFullName=function() return "Ledge" end}
+ local top=table.clone(wall)
+ workspace.Raycast=function(_,origin,delta)
+  if delta.Y<0 and origin.Y>5 then return {Instance=top,Position=V.new(origin.X,4,origin.Z),Normal=V.yAxis,Distance=origin.Y-4} end
+  if math.abs(delta.X)>1 then return {Instance=wall,Position=V.new(2,origin.Y,origin.Z),Normal=-V.xAxis,Distance=2} end
+  if delta.Y<0 then return {Instance=ground,Position=V.new(origin.X,0,origin.Z),Normal=V.yAxis,Distance=origin.Y} end
+ end
+ workspace.GetPartBoundsInBox=function() return {} end
+ local p=Parkour.new(a,c);assert(p.jump())
+ assert(a.model:GetAttribute("MovementTraversalActive"))
+ local start=a.root.Position;c.now+=.15;assert(p.step());assert(a.root.Position.Y>start.Y)
+ c.now+=.4;p.step();assert(not a.model:GetAttribute("MovementTraversalActive") and a.root.Position.Y>6)
+ -- A fresh mantle is cancelled immediately by a combat reaction.
+ p.reset();a.root.CFrame=C.lookAt(V.new(0,3,0),V.new(1,3,0));c.now+=.5
+ assert(p.jump());a.reaction="HitStun";p.step();assert(not a.model:GetAttribute("MovementTraversalActive"))
+ assert(a.hum:GetState()~=roblox.Enum.HumanoidStateType.Physics,"Cancelled mantle retained Physics state")
+ a.reaction=nil;a.hum.FloorMaterial=roblox.Enum.Material.Air
+ c.now+=.2;assert(p.rebound(-V.xAxis));assert(a.root.AssemblyLinearVelocity.Y==64)
+ c.now+=.2;assert(p.rebound(-V.xAxis));c.now+=.2;assert(not p.rebound(-V.xAxis))
+ workspace.Raycast,workspace.GetPartBoundsInBox=oldRay,oldBox
+end)
+test("Bangla evade remains directional, bounded by collision and finite",function()
+ local Evade=loadModule("Server/BanglaEvade");local Motor=loadModule("Server/Motor")
+ local c,a,b=pair();a.move=V.xAxis;local start=a.root.Position
+ Evade.begin(a,c);c.now+=.16;Evade.step(a,c,Motor.travel)
+ assert(a.root.Position.X>start.X+3 and a.root.Position.X<start.X+20)
+ c.now+=.2;Evade.step(a,c,Motor.travel);assert(not a.evade)
+ local old=workspace.Raycast
+ workspace.Raycast=function(_,origin,delta) return {Distance=2,Position=origin+delta.Unit*2,Normal=-delta.Unit,Instance=ground} end
+ local before=a.root.Position;Evade.begin(a,c);c.now+=.1;Evade.step(a,c,Motor.travel)
+ assert((a.root.Position-before).Magnitude<.01,"Evade crossed blocking geometry")
+ workspace.Raycast=old
+end)
+test("R6 donor retarget preserves timing, neutral limb bases and R15 hierarchy",function()
+ local factory=envBase.Instance;envBase.Instance=roblox.Instance
+ local Donor=loadModule("Server/DonorAnimations")
+ local frames={}
+ for _,time in {0,.3} do
+  local key=roblox.Instance.new("Keyframe");key.Name="Frame";key.Time=time
+  local root=roblox.Instance.new("Pose");root.Name="HumanoidRootPart";root.CFrame=C.identity;root.Weight=0;root.Parent=key
+  local torso=roblox.Instance.new("Pose");torso.Name="Torso";torso.CFrame=C.identity;torso.Weight=1;torso.Parent=root
+  local arm=roblox.Instance.new("Pose");arm.Name="Right Arm";arm.CFrame=C.identity;arm.Weight=1;arm.EasingStyle=roblox.Enum.PoseEasingStyle.Linear;arm.EasingDirection=roblox.Enum.PoseEasingDirection.In;arm.Parent=torso
+  table.insert(frames,key)
+ end
+ local seq={Name="Punch",Loop=false,Priority=roblox.Enum.AnimationPriority.Action,GetKeyframes=function() return frames end}
+ local r15=Donor.retarget(seq)
+ assert(#r15:GetChildren()==2)
+ for i,key in r15:GetChildren() do
+  assert(key.Time==frames[i].Time)
+  local lower=key.HumanoidRootPart.LowerTorso
+  local arm=lower.UpperTorso.RightUpperArm
+  assert(arm.CFrame:FuzzyEq(C.identity,1e-5))
+ end
+ r15:Destroy();for _,frame in frames do frame:Destroy() end
+ envBase.Instance=factory
+end)
+print("NinjaDuel headless combat/migration: "..passed.." PASS (geometry adapter; native QA still required)")

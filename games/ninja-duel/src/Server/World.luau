@@ -101,7 +101,7 @@ function World.rig(parent, def, cf, name)
 	model.PrimaryPart=root; root:SetNetworkOwner(nil)
 	return model,hum,root,joints
 end
--- AnimationTracks are optional; original keyed choreography is rendered by each client.
+-- Imported combat clips and Roblox catalogue movement tracks play on the server.
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end

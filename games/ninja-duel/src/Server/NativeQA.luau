@@ -11,6 +11,7 @@ local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local QA={}
 function QA.run(matches)
 	print("[NinjaDuelQA] START "..require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Version)
+	print("[NinjaDuelQA] BUILD "..game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value)
 	local passed,failed=0,0
 	local function test(name,fn)
 		local ok,err=xpcall(fn,debug.traceback)
@@ -27,7 +28,7 @@ function QA.run(matches)
 		local function add(id,def,z)
 			local p=match.origin+Vector3.new(0,3,z)
 			local m,h,r,j=World.rig(f,Fighters[def],CFrame.lookAt(p,match.origin+Vector3.new(0,3,-z)),id)
-			r.Anchored=true
+			r.Anchored=true;m:SetAttribute("SkipDonorAnimationQA",true)
 			return c:add(id,m,h,r,j,def)
 		end
 		local a,b=add("A",first,2.5),add("B",second,-2.5); a.target=b; b.target=a
@@ -48,6 +49,18 @@ function QA.run(matches)
 			end
 		end
 	end)
+ test("imported Bangla dependencies, three-hit route and Place1 runtime",function()
+  local shared=game:GetService("ReplicatedStorage").NinjaDuel
+  local combo=require(shared.BanglaCombo)
+  assert(combo.maxComboCount==3 and combo.Damage.Punch==5)
+  assert(shared.BanglaAssets.Animations.Punch.AnimationId=="rbxassetid://18342131933")
+  assert(shared.ThirdPartyLicenses.bangla.Value:find("Dewan Mukto"))
+  local c,a,b=pair("Flashstep","Mirage")
+  assert(c:request(a,"Attack"));step(c,.3)
+  assert(a.model:GetAttribute("CombatBase")=="BanglaBattlegrounds")
+  assert(a.model:GetAttribute("MovementBase")=="Place1")
+  assert(a.donorHitCount==1 and b.health==b.def.Health-5)
+ end)
 	test("data-driven identities and five element families",function()
 		assert(Fighters.Flashstep.Name=="Minato" and Fighters.Mirage.Name=="Itachi")
 		assert(Fighters.Flashstep.Speed>Fighters.Mirage.Speed)
@@ -106,7 +119,7 @@ function QA.run(matches)
 	end)
 	test("launcher chase air combo slam knockdown and wakeup",function()
  local c,a,b=pair("Flashstep","Mirage")
- for _=1,3 do assert(c:request(a,"Attack"));step(c,.3) end
+ for _=1,2 do assert(c:request(a,"Attack"));step(c,.3) end
  assert(c:request(a,"Heavy"));assert(a.attackName=="Launcher")
  step(c,.35);assert(b.reaction=="Launched" and b.root.Position.Y>8)
  local chakra=a.chakra;assert(c:request(a,"Pursuit"));assert(a.chakra==chakra-8)
@@ -131,7 +144,7 @@ function QA.run(matches)
  test("active window catches late entry, whiff cannot chain, defender can escape",function()
  local c,a,b=pair("Flashstep","Mirage")
  c:relocate(b,c.match.origin+Vector3.new(0,3,-18));assert(c:request(a,"Attack"));step(c,.12);assert(b.health==b.def.Health)
- c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5);step(c,.04);assert(b.health<b.def.Health)
+ c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3);step(c,.04);assert(b.health<b.def.Health)
  assert(c:request(b,"Dodge"));assert(b.subCharges==1 and not b.reaction)
  step(c,.7);c:relocate(b,c.match.origin+Vector3.new(0,3,-35));assert(c:request(a,"Attack"));step(c,.25)
  assert(not a.chainOpen and not c:request(a,"Attack"))
@@ -164,7 +177,7 @@ function QA.run(matches)
 	test("horizontal chain and dash attack remain advancing and bounded",function()
  local c,a,b=pair("Flashstep","Mirage");local first=a.root.Position
  for beat=1,4 do assert(c:request(a,"Attack"));step(c,.31) end
- assert(a.attackName=="Light4" and b.reaction=="Knockback")
+ assert(a.attackName=="Light3" and b.reaction=="Knockback")
  assert((a.root.Position-first).Magnitude>1)
  step(c,1);a.move=-Vector3.zAxis;assert(c:request(a,"Dodge"));step(c,.18)
  assert(c:request(a,"Attack") and a.attackName=="DashAttack")
@@ -334,6 +347,21 @@ function QA.run(matches)
 		assert(s.phase=="Duel" and s.human.def.Name=="Itachi")
 		matches:selection(player)
 	end)
+ test("R15 donor animation permission and actual playback",function()
+  local c,a,b=pair("Flashstep","Mirage")
+  a.model:SetAttribute("SkipDonorAnimationQA",nil)
+  local animation=require(script.Parent.Animation)
+  assert(animation.attach(a))
+  local deadline=os.clock()+15
+  repeat task.wait(.1) until a.model:GetAttribute("DonorAnimationStatus")~="Loading" or os.clock()>deadline
+  assert(a.model:GetAttribute("DonorAnimationStatus")=="Ready","Donor animation permission/retargeting BLOCKED; see ANIMATION_TODO.md")
+  for _,name in {"Punch","HardSmack","MegaPunch","Parry"} do
+   local track=a.animation.tracks[name];assert(track,name.." missing")
+   track:Play();task.wait(.2);assert(track.Length>0 and track.IsPlaying,name.." did not play");track:Stop()
+  end
+  animation.clear(a)
+ end)
+ for _,f in active do if f.Parent then f:Destroy() end end
 	print(string.format("[NinjaDuelQA] TOTAL %d PASS / %d FAIL",passed,failed))
 end
 return QA

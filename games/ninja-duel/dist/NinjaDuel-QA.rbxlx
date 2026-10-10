@@ -17,16 +17,27 @@
       </Properties>
       <Item class="ModuleScript" referent="ND4">
         <Properties>
+          <string name="Name">AnimationBindings</string>
+          <ProtectedString name="Source">-- After publishing the retargeted Bangla sequences under the experience owner,
+-- replace these zeros with that owner's R15 animation IDs (not the original R6 IDs).
+return {Punch=0,HardSmack=0,MegaPunch=0,Parry=0}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND5">
+        <Properties>
           <string name="Name">Attacks</string>
-          <ProtectedString name="Source">-- Original fighting grammar. Timing, travel, volume and reaction belong to the server.
+          <ProtectedString name="Source">-- Bangla three-strike M1 foundation; air/grab/launch branches are Ninja Duel glue.
+local Combo=require(script.Parent.BanglaCombo)
 local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
  return {startup=startup,active=active,recovery=recovery,damage=damage,travel=travel,
   travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,7),stun=stun or 0.27,
   range=7.8,width=5.5,height=6,blockable=true}
 end
 local attacks={
- Light1=move(.10,.12,.22,6,2.8), Light2=move(.11,.12,.22,7,3.2),
- Light3=move(.13,.13,.25,8,3.5), Light4=move(.18,.15,.42,12,4,"Knockback",Vector3.new(0,12,43),.4),
+ Light1=move(.10,.12,Combo.comboDelay-.22,Combo.Damage.Punch,2.8),
+ Light2=move(.11,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.2),
+ Light3=move(.13,.13,Combo.comboDelay-.26,Combo.Damage.MegaPunch,3.5,"Knockback",Vector3.new(0,12,43),.4),
  Heavy=move(.28,.17,.48,16,4.5,"Knockdown",Vector3.new(0,12,28),.65),
  Launcher=move(.18,.14,.28,9,2.5,"Launched",Vector3.new(0,52,11),1.15),
  DashAttack=move(.08,.15,.29,7,7,"HitStun",Vector3.new(0,0,9),.29),
@@ -39,19 +50,52 @@ local attacks={
 }
 
 for name,spec in attacks do
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Light3" or name=="Air1" or name=="Air2" or name=="DashAttack"
+ if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack"
 end
+for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND5">
+      <Item class="ModuleScript" referent="ND6">
+        <Properties>
+          <string name="Name">BanglaCombo</string>
+          <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds StarterPack/Punch/PunchMoves (Dewan Mukto, MIT).
+-- Input and cooldown authority moved to the server; no Tool or independent input loop.
+local Combo={maxComboCount=3,comboDelay=.5,resetDelay=1.1}
+function Combo.next(actor,now)
+ local comboTimer=now-actor.lastAttack
+ local comboCount=actor.combo
+ local maxComboCount=Combo.maxComboCount
+ local comboDelay=Combo.resetDelay
+ -- Donor combo progression, retained verbatim with per-actor state.
+ if comboTimer &lt;= comboDelay then
+  comboCount = comboCount + 1
+  if comboCount &gt; maxComboCount then
+   comboCount = 1
+  end
+ else
+  comboCount = 1
+ end
+ actor.combo=comboCount;actor.lastAttack=now
+ return 'Light'..comboCount
+end
+Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch'}
+-- Donor server damageValues and Animation objects, never supplied by clients.
+Combo.Damage={Punch=5,HardSmack=10,MegaPunch=25}
+Combo.AnimationIds={Punch=18342131933,HardSmack=18342045122,MegaPunch=18341956985,Parry=18341905406}
+return Combo
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND7">
         <Properties>
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.4.0-phase6",
+	Version = "0.4.1-phase6b",
 	ArenaRadius = 78, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
@@ -72,7 +116,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND6">
+      <Item class="ModuleScript" referent="ND8">
         <Properties>
           <string name="Name">Controls</string>
           <ProtectedString name="Source">-- Semantic bindings shared by client and QA. RB modifies the face buttons.
@@ -93,7 +137,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND7">
+      <Item class="ModuleScript" referent="ND9">
         <Properties>
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">return {
@@ -128,7 +172,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND8">
+      <Item class="ModuleScript" referent="ND10">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -170,17 +214,1057 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
+      <Item class="Folder" referent="DONOR_BanglaAssets_0">
+        <Properties>
+          <string name="Name">BanglaAssets</string>
+        </Properties>
+        <Item class="Folder" referent="DONOR_BanglaAssets_1">
+          <Properties>
+            <string name="Name">VFX</string>
+          </Properties>
+          <Item class="Part" referent="DONOR_BanglaAssets_2">
+            <Properties>
+              <string name="Name">BasicPunch</string>
+              <bool name="Anchored">true</bool>
+              <BinaryString name="AttributesSerialize" />
+              <float name="BackParamA">-0.5</float>
+              <float name="BackParamB">0.5</float>
+              <token name="BackSurface">0</token>
+              <token name="BackSurfaceInput">0</token>
+              <float name="BottomParamA">-0.5</float>
+              <float name="BottomParamB">0.5</float>
+              <token name="BottomSurface">0</token>
+              <token name="BottomSurfaceInput">0</token>
+              <CoordinateFrame name="CFrame">
+                <X>-92.03969</X>
+                <Y>38.122437</Y>
+                <Z>170.95288</Z>
+                <R00>1</R00>
+                <R01>-0.00006833953</R01>
+                <R02>-0.00017566979</R02>
+                <R10>0.00006838322</R10>
+                <R11>1</R11>
+                <R12>0.00024874465</R12>
+                <R20>0.00017565278</R20>
+                <R21>-0.00024875664</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <bool name="CanCollide">true</bool>
+              <bool name="CanQuery">true</bool>
+              <bool name="CanTouch">true</bool>
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="CastShadow">true</bool>
+              <string name="CollisionGroup">Default</string>
+              <int name="CollisionGroupId">0</int>
+              <Color3uint8 name="Color3uint8">10724005</Color3uint8>
+              <PhysicalProperties name="CustomPhysicalProperties">
+                <CustomPhysics>false</CustomPhysics>
+              </PhysicalProperties>
+              <bool name="EnableFluidForces">true</bool>
+              <token name="formFactorRaw">3</token>
+              <float name="FrontParamA">-0.5</float>
+              <float name="FrontParamB">0.5</float>
+              <token name="FrontSurface">0</token>
+              <token name="FrontSurfaceInput">0</token>
+              <float name="LeftParamA">-0.5</float>
+              <float name="LeftParamB">0.5</float>
+              <token name="LeftSurface">0</token>
+              <token name="LeftSurfaceInput">0</token>
+              <bool name="Locked">false</bool>
+              <bool name="Massless">false</bool>
+              <token name="Material">256</token>
+              <string name="MaterialVariantSerialized" />
+              <CoordinateFrame name="PivotOffset">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <float name="Reflectance">0</float>
+              <float name="RightParamA">-0.5</float>
+              <float name="RightParamB">0.5</float>
+              <token name="RightSurface">0</token>
+              <token name="RightSurfaceInput">0</token>
+              <int name="RootPriority">0</int>
+              <Vector3 name="RotVelocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+              <bool name="DefinesCapabilities">false</bool>
+              <token name="shape">1</token>
+              <Vector3 name="size">
+                <X>4</X>
+                <Y>3</Y>
+                <Z>4</Z>
+              </Vector3>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+              <float name="TopParamA">-0.5</float>
+              <float name="TopParamB">0.5</float>
+              <token name="TopSurface">0</token>
+              <token name="TopSurfaceInput">0</token>
+              <float name="Transparency">111</float>
+              <Vector3 name="Velocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+            </Properties>
+            <Item class="Attachment" referent="DONOR_BanglaAssets_3">
+              <Properties>
+                <string name="Name">Attachment</string>
+                <BinaryString name="AttributesSerialize" />
+                <CoordinateFrame name="CFrame">
+                  <X>0</X>
+                  <Y>0</Y>
+                  <Z>0</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                <bool name="DefinesCapabilities">false</bool>
+                <int64 name="SourceAssetId">-1</int64>
+                <BinaryString name="Tags" />
+                <bool name="Visible">false</bool>
+              </Properties>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_4">
+                <Properties>
+                  <string name="Name">ParticleEmitter</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">1</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 1 1 1 0 1 0.7843138 1 1 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.1 0.1 </NumberRange>
+                  <float name="LightEmission">1</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">20</float>
+                  <NumberRange name="RotSpeed">-40 40 </NumberRange>
+                  <NumberRange name="Rotation">0 360 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 2 0 0.5 2 2 1 2 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">0 0 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>0</X>
+                    <Y>0</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>http://www.roblox.com/asset/?id=248764835</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 1 0 0.2 0.25 0.25 0.8 0.25 0.25 1 1 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">3</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_5">
+                <Properties>
+                  <string name="Name">P2</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">1</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 1 1 1 0 1 1 1 1 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">5</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0 0.3 </NumberRange>
+                  <float name="LightEmission">3</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">true</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">10</float>
+                  <NumberRange name="RotSpeed">1 5 </NumberRange>
+                  <NumberRange name="Rotation">0 50 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 5 0 1 5 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">0 0 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>200</X>
+                    <Y>200</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://298984512</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0.8 0 1 0.8 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">3</float>
+                </Properties>
+              </Item>
+            </Item>
+          </Item>
+          <Item class="Part" referent="DONOR_BanglaAssets_6">
+            <Properties>
+              <string name="Name">ComboPunch</string>
+              <bool name="Anchored">false</bool>
+              <BinaryString name="AttributesSerialize" />
+              <float name="BackParamA">-0.5</float>
+              <float name="BackParamB">0.5</float>
+              <token name="BackSurface">0</token>
+              <token name="BackSurfaceInput">0</token>
+              <float name="BottomParamA">-0.5</float>
+              <float name="BottomParamB">0.5</float>
+              <token name="BottomSurface">0</token>
+              <token name="BottomSurfaceInput">0</token>
+              <CoordinateFrame name="CFrame">
+                <X>27.185242</X>
+                <Y>6.9615593</Y>
+                <Z>308.43228</Z>
+                <R00>-1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>-1</R22>
+              </CoordinateFrame>
+              <bool name="CanCollide">true</bool>
+              <bool name="CanQuery">true</bool>
+              <bool name="CanTouch">true</bool>
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="CastShadow">false</bool>
+              <string name="CollisionGroup">Default</string>
+              <int name="CollisionGroupId">0</int>
+              <Color3uint8 name="Color3uint8">10724005</Color3uint8>
+              <PhysicalProperties name="CustomPhysicalProperties">
+                <CustomPhysics>false</CustomPhysics>
+              </PhysicalProperties>
+              <bool name="EnableFluidForces">true</bool>
+              <token name="formFactorRaw">1</token>
+              <float name="FrontParamA">-0.5</float>
+              <float name="FrontParamB">0.5</float>
+              <token name="FrontSurface">0</token>
+              <token name="FrontSurfaceInput">0</token>
+              <float name="LeftParamA">-0.5</float>
+              <float name="LeftParamB">0.5</float>
+              <token name="LeftSurface">0</token>
+              <token name="LeftSurfaceInput">0</token>
+              <bool name="Locked">false</bool>
+              <bool name="Massless">false</bool>
+              <token name="Material">256</token>
+              <string name="MaterialVariantSerialized" />
+              <CoordinateFrame name="PivotOffset">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <float name="Reflectance">0</float>
+              <float name="RightParamA">-0.5</float>
+              <float name="RightParamB">0.5</float>
+              <token name="RightSurface">0</token>
+              <token name="RightSurfaceInput">0</token>
+              <int name="RootPriority">0</int>
+              <Vector3 name="RotVelocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+              <bool name="DefinesCapabilities">false</bool>
+              <token name="shape">1</token>
+              <Vector3 name="size">
+                <X>10</X>
+                <Y>1</Y>
+                <Z>10</Z>
+              </Vector3>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+              <float name="TopParamA">-0.5</float>
+              <float name="TopParamB">0.5</float>
+              <token name="TopSurface">0</token>
+              <token name="TopSurfaceInput">0</token>
+              <float name="Transparency">1</float>
+              <Vector3 name="Velocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+            </Properties>
+            <Item class="Attachment" referent="DONOR_BanglaAssets_7">
+              <Properties>
+                <string name="Name">Attachment</string>
+                <BinaryString name="AttributesSerialize" />
+                <CoordinateFrame name="CFrame">
+                  <X>0</X>
+                  <Y>-0.000011444092</Y>
+                  <Z>-5.216736</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>0</R11>
+                  <R12>-1</R12>
+                  <R20>0</R20>
+                  <R21>1</R21>
+                  <R22>0</R22>
+                </CoordinateFrame>
+                <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                <bool name="DefinesCapabilities">false</bool>
+                <int64 name="SourceAssetId">-1</int64>
+                <BinaryString name="Tags" />
+                <bool name="Visible">false</bool>
+              </Properties>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_8">
+                <Properties>
+                  <string name="Name">Gradient</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.99256885 0.6351263 0.3037156 0 1 0.99256885 0.6351263 0.3037156 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.6 0.6 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">3</token>
+                  <float name="Rate">3</float>
+                  <NumberRange name="RotSpeed">500 800 </NumberRange>
+                  <NumberRange name="Rotation">-360 360 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 1 7.9625 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">0.0139999995 0.0139999995 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>0</X>
+                    <Y>0</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8030746658</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 1 0 0.578059 0.73749995 0 1 1 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+              <Item class="PointLight" referent="DONOR_BanglaAssets_9">
+                <Properties>
+                  <string name="Name">PointLight</string>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">2</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <Color3 name="Color">
+                    <R>0.9921569</R>
+                    <G>0.6</G>
+                    <B>0.26666668</B>
+                  </Color3>
+                  <bool name="Enabled">true</bool>
+                  <float name="Range">10</float>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <bool name="Shadows">false</bool>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <BinaryString name="Tags" />
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_10">
+                <Properties>
+                  <string name="Name">Specs</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.9907378 0.52426946 0.2116579 0 1 0.99504083 0.7588922 0.17306782 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.85 1 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">30</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">0 0 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 0.16724738 0.87499976 0.4375 1 0 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">5 10 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>-30</X>
+                    <Y>30</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8030760338</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_11">
+                <Properties>
+                  <string name="Name">Shards</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>11.3102865</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.9882353 0.5058824 0.16862746 0 1 0.99607843 0.7764706 0.41568628 0 </ColorSequence>
+                  <float name="Drag">2.25</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.35 0.45 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">2</token>
+                  <float name="Rate">75</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">0 0 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 1 0 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">15.080382 22.62057 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>-36.5</X>
+                    <Y>-36.5</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 1 0 1 1 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8708744804</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">-1.5080382</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_12">
+                <Properties>
+                  <string name="Name">Stuff</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.9928435 0.6485847 0.24928664 0 1 0.9928435 0.6485847 0.24928664 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.85 1 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">20</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">0 0 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 0.5 0.313 0.313 1 0 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">5 10 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>0</X>
+                    <Y>0</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 1 0 1 1 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8271975883</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_13">
+                <Properties>
+                  <string name="Name">Ground</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>15.080382</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.9882353 0.5058824 0.16862746 0 1 0.99607843 0.7764706 0.41568628 0 </ColorSequence>
+                  <float name="Drag">2.5</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.3 0.4 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">75</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">90 90 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 0.16027875 1.5551642 0.47126195 1 0 0 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">15.080382 22.62057 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>-68.5</X>
+                    <Y>68.5</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 1 0 1 1 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8708744804</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">-1.5080382</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_14">
+                <Properties>
+                  <string name="Name">Ground1</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">4</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.9882353 0.5058824 0.16862746 0 1 0.99607843 0.7764706 0.41568628 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.5 0.6 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">50</float>
+                  <NumberRange name="RotSpeed">500 800 </NumberRange>
+                  <NumberRange name="Rotation">-180 60 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 0 0 1 3.9999998 0.93750024 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">0.01 0.01 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>0</X>
+                    <Y>0</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>rbxassetid://8618373035</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 1 0 0.22125436 0 0 0.5470383 0 0 1 1 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+            </Item>
+          </Item>
+          <Item class="Part" referent="DONOR_BanglaAssets_15">
+            <Properties>
+              <string name="Name">RedFlash</string>
+              <bool name="Anchored">true</bool>
+              <BinaryString name="AttributesSerialize" />
+              <float name="BackParamA">-0.5</float>
+              <float name="BackParamB">0.5</float>
+              <token name="BackSurface">0</token>
+              <token name="BackSurfaceInput">0</token>
+              <float name="BottomParamA">-0.5</float>
+              <float name="BottomParamB">0.5</float>
+              <token name="BottomSurface">4</token>
+              <token name="BottomSurfaceInput">0</token>
+              <CoordinateFrame name="CFrame">
+                <X>-87.23456</X>
+                <Y>32.937336</Y>
+                <Z>186.16408</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <bool name="CanCollide">true</bool>
+              <bool name="CanQuery">true</bool>
+              <bool name="CanTouch">true</bool>
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="CastShadow">true</bool>
+              <string name="CollisionGroup">Default</string>
+              <int name="CollisionGroupId">0</int>
+              <Color3uint8 name="Color3uint8">16316664</Color3uint8>
+              <PhysicalProperties name="CustomPhysicalProperties">
+                <CustomPhysics>false</CustomPhysics>
+              </PhysicalProperties>
+              <bool name="EnableFluidForces">true</bool>
+              <token name="formFactorRaw">2</token>
+              <float name="FrontParamA">-0.5</float>
+              <float name="FrontParamB">0.5</float>
+              <token name="FrontSurface">0</token>
+              <token name="FrontSurfaceInput">0</token>
+              <float name="LeftParamA">-0.5</float>
+              <float name="LeftParamB">0.5</float>
+              <token name="LeftSurface">0</token>
+              <token name="LeftSurfaceInput">0</token>
+              <bool name="Locked">false</bool>
+              <bool name="Massless">false</bool>
+              <token name="Material">256</token>
+              <string name="MaterialVariantSerialized" />
+              <CoordinateFrame name="PivotOffset">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+                <R00>1</R00>
+                <R01>0</R01>
+                <R02>0</R02>
+                <R10>0</R10>
+                <R11>1</R11>
+                <R12>0</R12>
+                <R20>0</R20>
+                <R21>0</R21>
+                <R22>1</R22>
+              </CoordinateFrame>
+              <float name="Reflectance">0</float>
+              <float name="RightParamA">-0.5</float>
+              <float name="RightParamB">0.5</float>
+              <token name="RightSurface">0</token>
+              <token name="RightSurfaceInput">0</token>
+              <int name="RootPriority">0</int>
+              <Vector3 name="RotVelocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+              <bool name="DefinesCapabilities">false</bool>
+              <token name="shape">1</token>
+              <Vector3 name="size">
+                <X>2</X>
+                <Y>2.4000006</Y>
+                <Z>2</Z>
+              </Vector3>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+              <float name="TopParamA">-0.5</float>
+              <float name="TopParamB">0.5</float>
+              <token name="TopSurface">3</token>
+              <token name="TopSurfaceInput">0</token>
+              <float name="Transparency">1</float>
+              <Vector3 name="Velocity">
+                <X>0</X>
+                <Y>0</Y>
+                <Z>0</Z>
+              </Vector3>
+            </Properties>
+            <Item class="Attachment" referent="DONOR_BanglaAssets_16">
+              <Properties>
+                <string name="Name">Attachment</string>
+                <BinaryString name="AttributesSerialize" />
+                <CoordinateFrame name="CFrame">
+                  <X>0</X>
+                  <Y>0</Y>
+                  <Z>0</Z>
+                  <R00>1</R00>
+                  <R01>0</R01>
+                  <R02>0</R02>
+                  <R10>0</R10>
+                  <R11>1</R11>
+                  <R12>0</R12>
+                  <R20>0</R20>
+                  <R21>0</R21>
+                  <R22>1</R22>
+                </CoordinateFrame>
+                <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                <bool name="DefinesCapabilities">false</bool>
+                <int64 name="SourceAssetId">-1</int64>
+                <BinaryString name="Tags" />
+                <bool name="Visible">false</bool>
+              </Properties>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_17">
+                <Properties>
+                  <string name="Name">ParticleEmitter</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">1</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.6666667 0 0 0 1 1 0 0 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.1 0.1 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">1000</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">0 360 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 1.0429448 0 0.06109726 3.3742332 0.7055218 0.11970075 0 0 0.1745636 3.3435583 0.82822084 0.23815462 0 0 0.3117207 3.3742332 0.7975466 0.39775562 0 0 0.47630924 3.6503072 0.9815948 0.53491277 0.030674934 0 0.6072319 3.7730062 0.9509206 0.6683292 0 0 0.72942644 3.8036811 1.1963196 0.82044894 0 0 0.87531173 3.834356 1.1349697 0.9326684 0 0 1 3 0.73619664 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">10 10 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>360</X>
+                    <Y>360</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>http://www.roblox.com/asset/?id=243098098</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+              <Item class="ParticleEmitter" referent="DONOR_BanglaAssets_18">
+                <Properties>
+                  <string name="Name">ParticleEmitter</string>
+                  <Vector3 name="Acceleration">
+                    <X>0</X>
+                    <Y>0</Y>
+                    <Z>0</Z>
+                  </Vector3>
+                  <BinaryString name="AttributesSerialize" />
+                  <float name="Brightness">1</float>
+                  <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+                  <ColorSequence name="Color">0 0.6666667 0 0 0 1 1 0 0 0 </ColorSequence>
+                  <float name="Drag">0</float>
+                  <token name="EmissionDirection">1</token>
+                  <bool name="Enabled">true</bool>
+                  <NumberRange name="FlipbookFramerate">1 1 </NumberRange>
+                  <string name="FlipbookIncompatible">Particle texture must be 1024 by 1024 to use flipbooks.</string>
+                  <token name="FlipbookLayout">0</token>
+                  <token name="FlipbookMode">0</token>
+                  <bool name="FlipbookStartRandom">false</bool>
+                  <NumberRange name="Lifetime">0.1 0.1 </NumberRange>
+                  <float name="LightEmission">0</float>
+                  <float name="LightInfluence">0</float>
+                  <bool name="LockedToPart">false</bool>
+                  <token name="Orientation">0</token>
+                  <float name="Rate">1000</float>
+                  <NumberRange name="RotSpeed">0 0 </NumberRange>
+                  <NumberRange name="Rotation">0 360 </NumberRange>
+                  <bool name="DefinesCapabilities">false</bool>
+                  <token name="Shape">0</token>
+                  <token name="ShapeInOut">0</token>
+                  <float name="ShapePartial">1</float>
+                  <token name="ShapeStyle">0</token>
+                  <NumberSequence name="Size">0 1.0429448 0 0.06109726 3.3742332 0.7055218 0.11970075 0 0 0.1745636 3.3435583 0.82822084 0.23815462 0 0 0.3117207 3.3742332 0.7975466 0.39775562 0 0 0.47630924 3.6503072 0.9815948 0.53491277 0.030674934 0 0.6072319 3.7730062 0.9509206 0.6683292 0 0 0.72942644 3.8036811 1.1963196 0.82044894 0 0 0.87531173 3.834356 1.1349697 0.9326684 0 0 1 3 0.73619664 </NumberSequence>
+                  <int64 name="SourceAssetId">-1</int64>
+                  <NumberRange name="Speed">10 10 </NumberRange>
+                  <Vector2 name="SpreadAngle">
+                    <X>360</X>
+                    <Y>360</Y>
+                  </Vector2>
+                  <NumberSequence name="Squash">0 0 0 1 0 0 </NumberSequence>
+                  <BinaryString name="Tags" />
+                  <Content name="TextureContent">
+                    <uri>http://www.roblox.com/asset/?id=243098098</uri>
+                  </Content>
+                  <float name="TimeScale">1</float>
+                  <NumberSequence name="Transparency">0 0 0 1 0 0 </NumberSequence>
+                  <float name="VelocityInheritance">0</float>
+                  <bool name="WindAffectsDrag">false</bool>
+                  <float name="ZOffset">0</float>
+                </Properties>
+              </Item>
+            </Item>
+          </Item>
+        </Item>
+        <Item class="Folder" referent="DONOR_BanglaAssets_19">
+          <Properties>
+            <string name="Name">Animations</string>
+          </Properties>
+          <Item class="Animation" referent="DONOR_BanglaAssets_20">
+            <Properties>
+              <string name="Name">MegaPunch</string>
+              <Content name="AnimationContent">
+                <uri>rbxassetid://18341956985</uri>
+              </Content>
+              <BinaryString name="AttributesSerialize" />
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="DefinesCapabilities">false</bool>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+            </Properties>
+          </Item>
+          <Item class="Animation" referent="DONOR_BanglaAssets_21">
+            <Properties>
+              <string name="Name">Parry</string>
+              <Content name="AnimationContent">
+                <uri>rbxassetid://18341905406</uri>
+              </Content>
+              <BinaryString name="AttributesSerialize" />
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="DefinesCapabilities">false</bool>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+            </Properties>
+          </Item>
+          <Item class="Animation" referent="DONOR_BanglaAssets_22">
+            <Properties>
+              <string name="Name">HardSmack</string>
+              <Content name="AnimationContent">
+                <uri>rbxassetid://18342045122</uri>
+              </Content>
+              <BinaryString name="AttributesSerialize" />
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="DefinesCapabilities">false</bool>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+            </Properties>
+          </Item>
+          <Item class="Animation" referent="DONOR_BanglaAssets_23">
+            <Properties>
+              <string name="Name">Punch</string>
+              <Content name="AnimationContent">
+                <uri>rbxassetid://18342131933</uri>
+              </Content>
+              <BinaryString name="AttributesSerialize" />
+              <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+              <bool name="DefinesCapabilities">false</bool>
+              <int64 name="SourceAssetId">-1</int64>
+              <BinaryString name="Tags" />
+            </Properties>
+          </Item>
+        </Item>
+      </Item>
+      <Item class="StringValue" referent="ND11">
+        <Properties>
+          <string name="Name">BuildFingerprint</string>
+          <string name="Value">07a5c8136ff7710f4e9f8bc204ed6d8ccd9f9a7e60332ff56f59968c3b9f8c9d</string>
+        </Properties>
+      </Item>
+      <Item class="Folder" referent="ND12">
+        <Properties>
+          <string name="Name">ThirdPartyLicenses</string>
+        </Properties>
+        <Item class="StringValue" referent="ND13">
+          <Properties>
+            <string name="Name">bangla</string>
+            <string name="Value">MIT License
+
+Copyright (c) 2024 Dewan Mukto
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</string>
+          </Properties>
+        </Item>
+        <Item class="StringValue" referent="ND14">
+          <Properties>
+            <string name="Name">place1</string>
+            <string name="Value">MIT License
+
+Copyright (c) 2026 alexkkork
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</string>
+          </Properties>
+        </Item>
+      </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND9">
+  <Item class="ServerScriptService" referent="ND15">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND10">
+    <Item class="Folder" referent="ND16">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND17">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -263,97 +1347,230 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">Animation</string>
-          <ProtectedString name="Source">-- Optional authored R15 clip player. The full set is required so partial uploads
--- never fight procedural Motor6D posing. Server combat timing remains authoritative.
+          <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
+-- Combat uses imported choreography; the previous procedural punch fallback is removed.
+local Shared=game:GetService('ReplicatedStorage').NinjaDuel
+local Combo=require(Shared.BanglaCombo)
+local Bindings=require(Shared.AnimationBindings)
+local Donor=require(script.Parent.DonorAnimations)
+local RunService=game:GetService('RunService')
+local Provider=game:GetService('KeyframeSequenceProvider')
+local ServerStorage=game:GetService('ServerStorage')
 local Animation={}
-Animation.Required={"Idle","Run","Strafe","Retreat","Jump","Fall","Land","Dash","AirDash","WallRun","WallJump",
-	"Guard","Hit","Substitute","Attack1","Attack2","Attack3","Attack4","AirStrike","Pursuit",
-	"TechniqueChannel","TechniqueRelease","TechniqueRecovery","Defeated","Heavy","Launcher","DashAttack","Air1","Air2","Slam","Grab","Throw","ThrowUp","Knockdown","Wakeup"}
+local catalog={Idle=656117400,Run=656118852,Walk=656121766,Jump=656117878,Fall=656115606,Climb=656114359}
+local cache,failures,loading={},{},{}
+local function resolve(name)
+ if Bindings[name] and Bindings[name]&gt;0 then return 'rbxassetid://'..Bindings[name] end
+ if not RunService:IsStudio() then return nil,'Publish the retargeted '..name..' R15 sequence and fill AnimationBindings.' end
+ if cache[name] then return cache[name] end
+ if failures[name] then return nil,failures[name] end
+ if loading[name] then
+  local deadline=os.clock()+15
+  repeat task.wait(.05) until not loading[name] or os.clock()&gt;=deadline
+  return cache[name],failures[name] or 'Animation fetch still pending'
+ end
+ loading[name]=true
+ local ok,value=pcall(function()
+ local seq=Provider:GetKeyframeSequenceAsync('rbxassetid://'..Combo.AnimationIds[name])
+ local r15=Donor.retarget(seq);seq:Destroy()
+ local folder=ServerStorage:FindFirstChild('BanglaR15Sequences')
+ if not folder then folder=Instance.new('Folder');folder.Name='BanglaR15Sequences';folder.Parent=ServerStorage end
+ r15.Name=name;r15.Parent=folder
+ return Provider:RegisterKeyframeSequence(r15)
+ end)
+ loading[name]=nil
+ if ok then cache[name]=value;return value end
+ failures[name]=tostring(value);return nil,failures[name]
+end
 function Animation.attach(a)
-	local ids=a.def.AnimationIds
-	if type(ids)~="table" then return false end
-	for _,name in Animation.Required do
-		if type(ids[name])~="number" or ids[name]&lt;=0 then return false end
-	end
-	local animator=a.hum:FindFirstChildOfClass("Animator")
-	if not animator then return false end
-	local tracks,instances={},{}
-	for _,name in Animation.Required do
-		local asset=Instance.new("Animation"); asset.Name=name; asset.AnimationId="rbxassetid://"..ids[name]
-		local ok,track=pcall(function() return animator:LoadAnimation(asset) end)
-		if not ok then
-			for _,created in instances do created:Destroy() end
-			return false
-		end
-		track.Priority=if name=="Idle" or name=="Run" or name=="Strafe" or name=="Retreat" then Enum.AnimationPriority.Movement else Enum.AnimationPriority.Action
-		tracks[name]=track;table.insert(instances,asset)
-	end
-	a.animation={tracks=tracks,instances=instances,current=nil}
-	a.model:SetAttribute("AuthoredAnimations",true)
-	return true
+ if a.model:GetAttribute('SkipDonorAnimationQA') then return false end
+ local animator=a.hum:FindFirstChildOfClass('Animator');if not animator then return false end
+ local player={tracks={},instances={},current=nil,currentEvent=nil};a.animation=player
+ a.model:SetAttribute('AuthoredAnimations',true)
+ a.model:SetAttribute('DonorAnimationStatus','Loading')
+ task.spawn(function()
+  for name,id in catalog do
+   local asset=Instance.new('Animation');asset.AnimationId='rbxassetid://'..id
+   local ok,track=pcall(function() return animator:LoadAnimation(asset) end)
+   if a.animation~=player then if ok then track:Destroy() end;asset:Destroy();return end
+   table.insert(player.instances,asset)
+   if ok then track.Priority=Enum.AnimationPriority.Movement;track.Looped=name=='Idle' or name=='Run' or name=='Walk' or name=='Climb';player.tracks[name]=track end
+  end
+  local ready=true
+  for name in Combo.AnimationIds do
+   local ok,id,reason=pcall(resolve,name)
+   if a.animation~=player then return end
+   if ok and id then
+    local asset=Instance.new('Animation');asset.Name=name;asset.AnimationId=id
+    local loaded,track=pcall(function() return animator:LoadAnimation(asset) end)
+    table.insert(player.instances,asset)
+    if loaded then track.Priority=Enum.AnimationPriority.Action;player.tracks[name]=track
+    else ready=false;warn('[NinjaDuelAnimation] BLOCKED '..name..': '..tostring(track)) end
+   else ready=false;warn('[NinjaDuelAnimation] BLOCKED '..name..': '..tostring(reason or id)) end
+  end
+  a.model:SetAttribute('DonorAnimationStatus',if ready then 'Ready' else 'Blocked')
+ end)
+ return true
 end
 local function choose(a,now)
-	if a.state=="Defeated" then return "Defeated" end
-	if now&lt;(a.subUntil or 0) then return "Substitute" end
-	if now&lt;(a.wallJumpUntil or 0) then return "WallJump" end
-	if a.reaction=="Knockdown" then return "Knockdown" end
-	if a.reaction=="Wakeup" then return "Wakeup" end
-	if a.reaction or a.state=="Stunned" then return "Hit" end
-	if a.state=="Dodging" then return if a.airborne then "AirDash" else "Dash" end
-	if a.state=="Pursuit" then return "Pursuit" end
-	if a.state=="Guarding" then return "Guard" end
-	if a.state=="TechniqueChannel" then return "TechniqueChannel" end
-	if a.state=="TechniqueActive" then return "TechniqueRelease" end
-	if a.state=="TechniqueRecovery" then return "TechniqueRecovery" end
-	if a.state=="Startup" or a.state=="Active" then
-		if a.attackName then return a.attackName:gsub("^Light","Attack") end
-		if a.pending and a.pending.air then return "AirStrike" end
-		return "Attack"..math.clamp(a.combo,1,4)
-	end
-	if a.wall then return "WallRun" end
-	if a.airborne then return if a.root.AssemblyLinearVelocity.Y&gt;0 then "Jump" else "Fall" end
-	if now&lt;(a.landUntil or 0) then return "Land" end
-	if a.locomotion.Magnitude&lt;2 then return "Idle" end
-	if a.locked then
-		local direction=a.move:Dot(a.root.CFrame.LookVector)
-		if direction&lt; -0.35 then return "Retreat" end
-		if math.abs(a.move:Dot(a.root.CFrame.RightVector))&gt;0.5 then return "Strafe" end
-	end
-	return "Run"
+ if a.health&lt;=0 then return nil end
+ if a.state=='Startup' or a.state=='Active' or a.state=='Recovery' and a.attackName and now-a.attackStarted&lt;.5 then
+  local action=Combo.Actions[a.attackName]
+  -- Missing ninja branches reuse the imported moves; no local pose timeline.
+  action=action or (if a.attackName=='Air1' or a.attackName=='DashAttack' then 'Punch' elseif a.attackName=='Air2' then 'HardSmack' else 'MegaPunch')
+  return action,a.attackStarted
+ end
+ if a.reaction or a.state=='Stunned' then return nil end
+ if a.state=='Guarding' then return 'Parry',0 end
+ if a.state=='TechniqueChannel' then return 'Parry',a.untilTime end
+ if a.wall then return 'Climb',0 end
+ if a.airborne then return if a.root.AssemblyLinearVelocity.Y&gt;0 then 'Jump' else 'Fall',0 end
+ if a.locomotion.Magnitude&gt;2 then return if a.locomotion.Magnitude&gt;30 then 'Run' else 'Walk',0 end
+ return 'Idle',0
 end
 function Animation.step(a,now)
-	local player=a.animation
-	if not player then return false end
-	local name=choose(a,now)
-	if player.current~=name then
-		if player.current then player.tracks[player.current]:Stop(0.1) end
-		player.current=name
-		player.tracks[name]:Play(0.1)
-	end
-	if name=="Run" then player.tracks[name]:AdjustSpeed(math.clamp(a.locomotion.Magnitude/26,0.75,1.55)) end
-	return true
+ local p=a.animation;if not p then return false end
+ local name,event=choose(a,now)
+ if p.current~=name or p.currentEvent~=event then
+  if p.current and p.tracks[p.current] then p.tracks[p.current]:Stop(.08) end
+  p.current=name;p.currentEvent=event
+  if name and p.tracks[name] then p.tracks[name]:Play(.06) end
+ elseif name and p.tracks[name] and not p.tracks[name].IsPlaying and (name=='Idle' or name=='Run' or name=='Walk' or name=='Climb' or name=='Parry') then
+  p.tracks[name]:Play(.08)
+ end
+ if (name=='Run' or name=='Walk') and p.tracks[name] then p.tracks[name]:AdjustSpeed(math.clamp(a.locomotion.Magnitude/(if name=='Run' then 32 else 18),.75,1.7)) end
+ return true
 end
 function Animation.clear(a)
-	local player=a.animation
-	if not player then return end
-	for _,track in player.tracks do track:Stop(0) end
-	for _,asset in player.instances do asset:Destroy() end
-	a.model:SetAttribute("AuthoredAnimations",nil)
-	a.animation=nil
+ local p=a.animation;a.animation=nil;if not p then return end
+ for _,track in p.tracks do track:Stop(0);track:Destroy() end
+ for _,asset in p.instances do asset:Destroy() end
 end
 return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND13">
+      <Item class="ModuleScript" referent="ND19">
+        <Properties>
+          <string name="Name">BanglaCombat</string>
+          <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
+-- Copyright (c) 2024 Dewan Mukto, MIT (vendor/bangla/LICENSE).
+-- Retained: forward hitbox, per-swing Hits, damage table, parry seam, hit counter,
+-- BasicPunch emission and swing/contact sounds. Changes: one validated actor API,
+-- deterministic broadphase for anchored hitboxes, active-window lifetime/cleanup,
+-- collision occlusion, and Ninja Duel's guard/chakra/damage authority.
+local Debris=game:GetService('Debris')
+local assets=game:GetService('ReplicatedStorage').NinjaDuel:WaitForChild('BanglaAssets')
+local Combo=require(game:GetService('ReplicatedStorage').NinjaDuel.BanglaCombo)
+local Bangla={}
+local weaponSounds={['Light Melee']='rbxassetid://8595980577',['Heavy Melee']='rbxassetid://9117969717'}
+local function sound(parent,id)
+ local s=Instance.new('Sound');s.SoundId=id;s.Volume=.5;s.Parent=parent
+ s:Play();Debris:AddItem(s,1.5)
+end
+function Bangla.begin(c,a,p)
+ local hitbox=Instance.new('Part')
+ hitbox.Name='BanglaHitbox';hitbox.Anchored=true;hitbox.CanCollide=false
+ hitbox.CanQuery=false;hitbox.CanTouch=false;hitbox.Transparency=1
+ hitbox.Size=Vector3.new(5,5,2)
+ hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-2)
+ hitbox.Parent=c.match.effects
+ p.donor={hitbox=hitbox,Hits={},action=Combo.Actions[p.name] or 'MegaPunch'}
+ -- The donor used Debris for lifetime; c.effects also cleans interrupted swings.
+ table.insert(c.effects,{part=hitbox,expires=c.now+p.spec.startup+p.spec.active+.05})
+ sound(a.root,'rbxassetid://5835032207')
+ a.model:SetAttribute('CombatBase','BanglaBattlegrounds')
+end
+function Bangla.close(p)
+ if p and p.donor then p.donor.hitbox:Destroy() end
+end
+function Bangla.tryHit(c,a,p)
+ local donor=p.donor;local target=a.target
+ if not donor or not donor.hitbox.Parent or not target or target.health&lt;=0 then return false end
+ -- Same donor forward volume; missing air/grab mechanics supply their bounded shape.
+ local hitbox=donor.hitbox
+ hitbox.Size=Vector3.new(p.spec.width or 5,p.spec.height or 5,p.spec.depth or 2)
+ hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-(p.spec.offset or 2))
+ local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include
+ params.FilterDescendantsInstances={target.model}
+ -- Touched on a teleported anchored part was unreliable; query the same volume.
+ for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
+  if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
+   if not c:targetValid(a,target,p.spec.range,.05) then continue end
+   donor.Hits[target.id]=true
+   local delta=a.root.Position-target.root.Position
+   local frontal=delta.Magnitude&lt;.001 or target.root.CFrame.LookVector:Dot(delta.Unit)&gt;.15
+   local guarded=target.state=='Guarding' and target.chakra&gt;0 and frontal
+   local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
+   local damage=if Combo.Actions[p.name] then Combo.Damage[donor.action] else p.spec.damage
+   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1),false,true)
+   if success then
+    local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
+    sound(target.root,weaponSounds[weaponType])
+    local vfx=if donor.action=='MegaPunch' then 'ComboPunch' else 'BasicPunch'
+    local basicPunch=assets.VFX[vfx].Attachment:Clone()
+    basicPunch.Parent=target.root
+    for _,v in basicPunch:GetChildren() do
+     if v:IsA('ParticleEmitter') then v:Emit(v:GetAttribute('EmitCount') or 1) end
+    end
+    Debris:AddItem(basicPunch,.25)
+    if c.now-(a.donorLastHit or -10)&gt;2 then a.donorHitCount=0 end
+    a.donorHitCount=(a.donorHitCount or 0)+1;a.donorLastHit=c.now
+   end
+   return success,guarded,protected
+  end
+ end
+ return false
+end
+return Bangla
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND20">
+        <Properties>
+          <string name="Name">BanglaEvade</string>
+          <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
+-- One finite server tick loop replaces leaked RenderStepped connections. No global
+-- gravity change; swept travel preserves walls, lane boundaries and root facing.
+local Evade={}
+function Evade.begin(a,c)
+ local direction=if a.move.Magnitude&gt;.1 then a.move.Unit else a.root.CFrame.RightVector
+ local evadeDistance=14*(a.def.DashScale or 1)
+ local evadeDuration=.32
+ a.evade={targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration}
+end
+function Evade.step(a,c,travel)
+ local e=a.evade;if not e then return end
+ local rootPart=a.root
+ local targetPosition=e.targetPosition
+ local evadeDuration=e.duration
+ local startTime=e.startTime
+ local elapsedTime=c.now-startTime
+ if elapsedTime&lt;evadeDuration then
+  -- Donor's moving-origin interpolation, applied through the collision seam.
+  local position=rootPart.Position:Lerp(targetPosition,elapsedTime/evadeDuration)
+  local delta=position-rootPart.Position
+  travel(a,c,delta,delta.Magnitude)
+  rootPart.AssemblyLinearVelocity=Vector3.zero
+ else a.evade=nil end
+end
+return Evade
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
+local Bangla=require(script.Parent.BanglaCombat)
+local Combo=require(Shared.BanglaCombo)
+-- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
+-- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true}
 function Brawler.free(a,now)
@@ -370,6 +1587,7 @@ function Brawler.releaseGrab(a)
 end
 function Brawler.react(c,a,kind,velocity,duration)
  Brawler.releaseGrab(a)
+ Bangla.close(a.pending)
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
  a.pending=nil;a.buffered=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  a.locomotion=Vector3.zero
@@ -377,10 +1595,12 @@ function Brawler.react(c,a,kind,velocity,duration)
  if kind=="Knockdown" then a.invulnerableUntil=c.now+duration+.24 end
 end
 function Brawler.start(c,a,name)
+ Bangla.close(a.pending)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
  a.buffered=nil
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.guardHeld=false
  a.pending={kind="Brawl",name=name,spec=spec,hit=false}
+ Bangla.begin(c,a,a.pending)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
@@ -414,15 +1634,15 @@ function Brawler.request(c,a,action)
  if action=="ThrowUp" then return false,"No grab" end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
-  if canChain and a.combo&gt;=2 then a.combo=4;return Brawler.start(c,a,"Launcher") end
+  if canChain and a.combo&gt;=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
   return Brawler.start(c,a,"Heavy")
  end
  if a.airborne then
   a.airCombo=if c.now-(a.lastAirAttack or 0)&gt;.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- a.combo=if c.now-a.lastAttack&gt;1.1 then 1 else a.combo%4+1;a.lastAttack=c.now
- return Brawler.start(c,a,if canDash then "DashAttack" else "Light"..a.combo)
+ local name=Combo.next(a,c.now)
+ return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -432,11 +1652,20 @@ function Brawler.hit(c,a,p)
   Brawler.releaseGrab(a)
   local direction=if a.move.Magnitude&gt;.2 then a.move.Unit else a.root.CFrame.LookVector
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
- elseif not c:targetValid(a,b,spec.range,.05) then return false
- else
-  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
-  local box=a.root.CFrame*CFrame.new(0,0,-spec.range*.42)
-  if #workspace:GetPartBoundsInBox(box,Vector3.new(spec.width,spec.height,spec.range),params)==0 then return false end
+ end
+ local success,guarded,protected
+ if p.name~="Throw" and p.name~="ThrowUp" then
+  -- Grab has no donor damage action; donor contact volume still validates it.
+  if p.name=="Grab" then
+   if not c:targetValid(a,b,spec.range,.05) then return false end
+   local donor=p.donor
+   donor.hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-2)
+   local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
+   if #workspace:GetPartBoundsInBox(donor.hitbox.CFrame,donor.hitbox.Size,params)==0 then return false end
+  else
+   success,guarded,protected=Bangla.tryHit(c,a,p)
+   if not success then return false end
+  end
  end
  if p.name=="Grab" then
   if b.invulnerableUntil&gt;c.now or b.grabbedBy or b.reaction=="Wakeup" then return false end
@@ -444,9 +1673,9 @@ function Brawler.hit(c,a,p)
   b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
- local guarded=b.state=="Guarding" and b.chakra&gt;0 and b.root.CFrame.LookVector:Dot((a.root.Position-b.root.Position).Unit)&gt;.15
- local protected=b.state=="TechniqueChannel" and b.pending and not b.pending.spec.Interruptible
- local success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+ if p.name=="Throw" or p.name=="ThrowUp" then
+  success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+ end
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
  if guarded then
@@ -515,7 +1744,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND14">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -527,6 +1756,8 @@ local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
+local Bangla = require(script.Parent.BanglaCombat)
+local Evade = require(script.Parent.BanglaEvade)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={}},Combat)
@@ -743,6 +1974,7 @@ function Combat:request(a,action,aim)
 		if a.airborne then a.airDodgeUsed=true end
 		a.dodgeDirection=if a.move.Magnitude&gt;0.1 then a.move.Unit else a.root.CFrame.RightVector
 		a.invulnerableUntil=self.now+Config.DodgeIFrames; a.guardHeld=false
+		Evade.begin(a,self)
 		Brawler.event(self,a,"Dodge"); self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
 		return true
 	end
@@ -784,6 +2016,7 @@ function Combat:updateActor(a,dt)
 		if a.state=="Startup" and pending then
 			self:setState(a,"Active",pending.spec.active)
 		elseif a.state=="Active" then
+			Bangla.close(pending)
 			a.pending=nil; self:setState(a,"Recovery",if pending then pending.spec.recovery else .22)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
 			a.chainAt=now+0.035
@@ -798,6 +2031,7 @@ function Combat:updateActor(a,dt)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
+ if a.state~="Dodging" then a.evade=nil end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
@@ -805,7 +2039,7 @@ function Combat:updateActor(a,dt)
 		if toward.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
-		Motor.travel(a,self,a.dodgeDirection,Config.DodgeSpeed*(a.def.DashScale or 1)*dt)
+		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" then
 		local toTarget=a.target.root.Position-a.root.Position
 		if toTarget.Magnitude&gt;3 then Motor.flight(a,self,toTarget.Unit*math.min(100*dt,toTarget.Magnitude-3)) end
@@ -892,8 +2126,10 @@ end
 function Combat:clear(preserveAnimations)
 	for _,a in self.actors do
 		if not preserveAnimations then Animation.clear(a) end
+		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated"; a.guardHeld=false; a.readUntil=0; a.bonusUntil=0; a.dodgeUntil=0; a.invulnerableUntil=0; a.travelRemaining=0
+		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
@@ -903,7 +2139,49 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND15">
+      <Item class="ModuleScript" referent="ND23">
+        <Properties>
+          <string name="Name">DonorAnimations</string>
+          <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
+local Donor={}
+local basis={
+ Torso=CFrame.Angles(-math.pi/2,0,math.pi),Head=CFrame.Angles(-math.pi/2,0,math.pi),
+ ['Right Arm']=CFrame.Angles(0,math.pi/2,0),['Left Arm']=CFrame.Angles(0,-math.pi/2,0),
+ ['Right Leg']=CFrame.Angles(0,math.pi/2,0),['Left Leg']=CFrame.Angles(0,-math.pi/2,0),
+}
+local mapped={Head='Head',['Right Arm']='RightUpperArm',['Left Arm']='LeftUpperArm',
+ ['Right Leg']='RightUpperLeg',['Left Leg']='LeftUpperLeg'}
+local function pose(parent,name,cf,weight)
+ local p=Instance.new('Pose');p.Name=name;p.CFrame=cf;p.Weight=weight or 1;p.Parent=parent;return p
+end
+function Donor.retarget(sequence)
+ local result=Instance.new('KeyframeSequence');result.Name=sequence.Name..'_R15';result.Loop=sequence.Loop;result.Priority=sequence.Priority
+ for _,frame in sequence:GetKeyframes() do
+  local key=Instance.new('Keyframe');key.Name=frame.Name;key.Time=frame.Time;key.Parent=result
+  local byName={};for _,p in frame:GetDescendants() do if p:IsA('Pose') then byName[p.Name]=p end end
+  local source=byName.Torso
+  local root=pose(key,'HumanoidRootPart',CFrame.identity,0)
+  local torsoCF=if source then basis.Torso*source.CFrame*basis.Torso:Inverse() else CFrame.identity
+  local lower=pose(root,'LowerTorso',torsoCF)
+  local upper=pose(lower,'UpperTorso',CFrame.identity)
+  for old,name in mapped do
+   local src=byName[old]
+   if src then
+    local b=basis[old]
+    local cf=b*src.CFrame*b:Inverse()
+    local p=pose(if old:find('Leg') then lower else upper,name,cf,src.Weight)
+    p.EasingStyle=src.EasingStyle;p.EasingDirection=src.EasingDirection
+   end
+  end
+  for _,child in frame:GetChildren() do if child:IsA('KeyframeMarker') then child:Clone().Parent=key end end
+ end
+ return result
+end
+return Donor
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -947,7 +2225,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND16">
+      <Item class="Script" referent="ND25">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelQA",true)
@@ -967,11 +2245,12 @@ RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerT
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
 end
+print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value)
 print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -1119,20 +2398,27 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
 -- action travel; AI and human actors use the same movement profile.
 local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local Place1Movement=require(script.Parent.Place1Movement)
+local Place1Parkour=require(script.Parent.Place1Parkour)
+-- This adapter retains swept action travel and the NinjaWall extension only.
+-- Place1 owns free locomotion/jump/air steering/mantle/wall-hop at runtime.
 local Motor={}
+local function donor(a,c)
+ if not a.movementDonor then a.movementDonor=Place1Movement.new(a,c);a.parkourDonor=Place1Parkour.new(a,c) end
+ return a.movementDonor,a.parkourDonor
+end
+function Motor.reset(a)
+ if a.parkourDonor then a.parkourDonor.reset() end
+ a.movementDonor=nil;a.parkourDonor=nil
+end
 local UP=Vector3.yAxis
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
-local function approach(from,to,maxDelta)
-	local diff=to-from
-	if diff.Magnitude&lt;=maxDelta then return to end
-	return from+diff.Unit*maxDelta
-end
 function Motor.grounded(a,c)
 	local p=RaycastParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
 	p.FilterDescendantsInstances={a.model,c.match.effects}
@@ -1140,18 +2426,17 @@ function Motor.grounded(a,c)
 	return workspace:Raycast(a.root.Position,Vector3.new(0,-3.6,0),p)~=nil
 end
 function Motor.jump(a,c,now)
-	if not Motor.grounded(a,c) or now&lt;(a.nextJump or 0) then return false end
-	a.nextJump=now+Config.Movement.JumpCooldown
-	a.root.AssemblyLinearVelocity=flat(a.root.AssemblyLinearVelocity)+UP*(Config.Movement.JumpVelocity*(a.def.JumpScale or 1))
-	a.airborne=true; a.airDodgeUsed=false; a.takeoffUntil=now+0.18
-	return true
+ local movement,parkour=donor(a,c)
+ if parkour.jump() then return true end
+ return movement.jump(Motor.grounded(a,c))
 end
 function Motor.detach(a,now,rebound)
 	local wall=a.wall
 	if not wall then return false end
 	a.wall=nil; a.wallNext=now+Config.Wall.ReattachDelay
 	if rebound then a.wallJumpUntil=now+0.22 end
-	a.root.AssemblyLinearVelocity=wall.normal*(if rebound then Config.Wall.ReboundAway else 12)+UP*(if rebound then Config.Wall.ReboundUp else 8)
+	if rebound and a.parkourDonor then a.parkourDonor.rebound(wall.normal)
+ else a.root.AssemblyLinearVelocity=wall.normal*12+UP*8 end
 	a.airborne=true
 	return true
 end
@@ -1159,9 +2444,8 @@ function Motor.tryWall(a,c,now)
 	if a.wall or now&lt;(a.wallNext or 0) or a.move.Magnitude&lt;0.25 or a.state~="Neutral" then return false end
 	local heading=flat(a.move)
 	if heading.Magnitude&lt;0.25 then return false end
-	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude
-	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true
-	local hit=workspace:Raycast(a.root.Position,heading.Unit*Config.Wall.Detect,p)
+ local _,parkour=donor(a,c)
+ local hit=parkour.wallSurface()
 	if not hit or not hit.Instance:GetAttribute("NinjaWall") or math.abs(hit.Normal.Y)&gt;0.18 then return false end
 	if heading.Unit:Dot(-hit.Normal)&lt;0.45 then return false end
 	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime}
@@ -1222,6 +2506,7 @@ function Motor.flight(a,c,delta)
 end
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
+ donor(a,c)
 	if not a.wall then Motor.tryWall(a,c,now) end
 	if Motor.stepWall(a,c,dt,now) then return false end
 	local grounded=Motor.grounded(a,c)
@@ -1232,30 +2517,28 @@ function Motor.step(a,c,dt,now)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
-	local limit=a.def.Speed
-	if a.sprinting then limit=profile.SprintSpeed*(a.def.SprintScale or 1) end
-	if a.state=="Guarding" then limit=Config.GuardSpeed
-	elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
-	elseif a.state=="Stunned" or a.state=="Defeated" then limit=0
-	elseif a.state=="Dodging" or a.state=="Pursuit" then limit=0
-	elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
-	if a.grabVictim then limit=math.min(limit,5) end
-	if now&lt;(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
-	local desired=flat(a.move)
-	if desired.Magnitude&gt;1 then desired=desired.Unit end
-	desired*=limit
-	local rate=(if grounded then (if desired.Magnitude&gt; a.locomotion.Magnitude then profile.GroundAcceleration else profile.GroundDeceleration) else profile.AirAcceleration*(a.def.AirControlScale or 1))*(a.def.AccelerationScale or 1)
-	a.locomotion=approach(a.locomotion,desired,rate*dt)
-	a.hum.WalkSpeed=a.locomotion.Magnitude
-	a.hum:Move(if a.locomotion.Magnitude&gt;0.05 then a.locomotion.Unit else Vector3.zero,false)
-	if a.state=="Dodging" or a.state=="Pursuit" then a.hum:Move(Vector3.zero,false) end
+ local movement,parkour=donor(a,c)
+ a.grounded=grounded
+ if parkour.step() then return false end
+ local sprinting=movement.step(dt,grounded)
+ local limit=a.hum.WalkSpeed
+ if a.state=="Guarding" then limit=Config.GuardSpeed
+ elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
+ elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
+ elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
+ if a.grabVictim then limit=math.min(limit,5) end
+ if now&lt;(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
+ a.hum.WalkSpeed=limit
+ a.hum:Move(if limit&gt;0 then a.move else Vector3.zero,false)
+ a.locomotion=a.move*limit
+ a.model:SetAttribute("MovementBase","Place1")
 	return grounded
 end
 return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -1271,6 +2554,7 @@ local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local QA={}
 function QA.run(matches)
 	print("[NinjaDuelQA] START "..require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Version)
+	print("[NinjaDuelQA] BUILD "..game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value)
 	local passed,failed=0,0
 	local function test(name,fn)
 		local ok,err=xpcall(fn,debug.traceback)
@@ -1287,7 +2571,7 @@ function QA.run(matches)
 		local function add(id,def,z)
 			local p=match.origin+Vector3.new(0,3,z)
 			local m,h,r,j=World.rig(f,Fighters[def],CFrame.lookAt(p,match.origin+Vector3.new(0,3,-z)),id)
-			r.Anchored=true
+			r.Anchored=true;m:SetAttribute("SkipDonorAnimationQA",true)
 			return c:add(id,m,h,r,j,def)
 		end
 		local a,b=add("A",first,2.5),add("B",second,-2.5); a.target=b; b.target=a
@@ -1308,6 +2592,18 @@ function QA.run(matches)
 			end
 		end
 	end)
+ test("imported Bangla dependencies, three-hit route and Place1 runtime",function()
+  local shared=game:GetService("ReplicatedStorage").NinjaDuel
+  local combo=require(shared.BanglaCombo)
+  assert(combo.maxComboCount==3 and combo.Damage.Punch==5)
+  assert(shared.BanglaAssets.Animations.Punch.AnimationId=="rbxassetid://18342131933")
+  assert(shared.ThirdPartyLicenses.bangla.Value:find("Dewan Mukto"))
+  local c,a,b=pair("Flashstep","Mirage")
+  assert(c:request(a,"Attack"));step(c,.3)
+  assert(a.model:GetAttribute("CombatBase")=="BanglaBattlegrounds")
+  assert(a.model:GetAttribute("MovementBase")=="Place1")
+  assert(a.donorHitCount==1 and b.health==b.def.Health-5)
+ end)
 	test("data-driven identities and five element families",function()
 		assert(Fighters.Flashstep.Name=="Minato" and Fighters.Mirage.Name=="Itachi")
 		assert(Fighters.Flashstep.Speed&gt;Fighters.Mirage.Speed)
@@ -1366,7 +2662,7 @@ function QA.run(matches)
 	end)
 	test("launcher chase air combo slam knockdown and wakeup",function()
  local c,a,b=pair("Flashstep","Mirage")
- for _=1,3 do assert(c:request(a,"Attack"));step(c,.3) end
+ for _=1,2 do assert(c:request(a,"Attack"));step(c,.3) end
  assert(c:request(a,"Heavy"));assert(a.attackName=="Launcher")
  step(c,.35);assert(b.reaction=="Launched" and b.root.Position.Y&gt;8)
  local chakra=a.chakra;assert(c:request(a,"Pursuit"));assert(a.chakra==chakra-8)
@@ -1391,7 +2687,7 @@ function QA.run(matches)
  test("active window catches late entry, whiff cannot chain, defender can escape",function()
  local c,a,b=pair("Flashstep","Mirage")
  c:relocate(b,c.match.origin+Vector3.new(0,3,-18));assert(c:request(a,"Attack"));step(c,.12);assert(b.health==b.def.Health)
- c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5);step(c,.04);assert(b.health&lt;b.def.Health)
+ c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3);step(c,.04);assert(b.health&lt;b.def.Health)
  assert(c:request(b,"Dodge"));assert(b.subCharges==1 and not b.reaction)
  step(c,.7);c:relocate(b,c.match.origin+Vector3.new(0,3,-35));assert(c:request(a,"Attack"));step(c,.25)
  assert(not a.chainOpen and not c:request(a,"Attack"))
@@ -1424,7 +2720,7 @@ function QA.run(matches)
 	test("horizontal chain and dash attack remain advancing and bounded",function()
  local c,a,b=pair("Flashstep","Mirage");local first=a.root.Position
  for beat=1,4 do assert(c:request(a,"Attack"));step(c,.31) end
- assert(a.attackName=="Light4" and b.reaction=="Knockback")
+ assert(a.attackName=="Light3" and b.reaction=="Knockback")
  assert((a.root.Position-first).Magnitude&gt;1)
  step(c,1);a.move=-Vector3.zAxis;assert(c:request(a,"Dodge"));step(c,.18)
  assert(c:request(a,"Attack") and a.attackName=="DashAttack")
@@ -1594,13 +2890,735 @@ function QA.run(matches)
 		assert(s.phase=="Duel" and s.human.def.Name=="Itachi")
 		matches:selection(player)
 	end)
+ test("R15 donor animation permission and actual playback",function()
+  local c,a,b=pair("Flashstep","Mirage")
+  a.model:SetAttribute("SkipDonorAnimationQA",nil)
+  local animation=require(script.Parent.Animation)
+  assert(animation.attach(a))
+  local deadline=os.clock()+15
+  repeat task.wait(.1) until a.model:GetAttribute("DonorAnimationStatus")~="Loading" or os.clock()&gt;deadline
+  assert(a.model:GetAttribute("DonorAnimationStatus")=="Ready","Donor animation permission/retargeting BLOCKED; see ANIMATION_TODO.md")
+  for _,name in {"Punch","HardSmack","MegaPunch","Parry"} do
+   local track=a.animation.tracks[name];assert(track,name.." missing")
+   track:Play();task.wait(.2);assert(track.Length&gt;0 and track.IsPlaying,name.." did not play");track:Stop()
+  end
+  animation.clear(a)
+ end)
+ for _,f in active do if f.Parent then f:Destroy() end end
 	print(string.format("[NinjaDuelQA] TOTAL %d PASS / %d FAIL",passed,failed))
 end
 return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND29">
+        <Properties>
+          <string name="Name">Place1Movement</string>
+          <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
+-- Per-actor/server execution replaces LocalPlayer, UI, input listeners and FPS camera.
+-- Ground sprint/stamina, takeoff momentum, bunny-hop and air steering are donor code.
+local Movement={}
+function Movement.new(a,c)
+ local WALK_SPEED=a.def.Speed
+ local SPRINT_SPEED=44*(a.def.SprintScale or 1)
+ local JUMP_VERTICAL_SPEED=60*(a.def.JumpScale or 1)
+ local WALK_BHOP_SPEED=36
+ local SPRINT_BHOP_SPEED=62*(a.def.SprintScale or 1)
+ local STAMINA_DRAIN_SECONDS=60
+ local STAMINA_REGEN_SECONDS=18
+ local STAMINA_REGEN_DELAY=.85
+ local EXHAUSTED_RECOVERY=.12
+ local AIR_CONTROL_ACCELERATION=72*(a.def.AirControlScale or 1)
+ local AIR_ACCELERATION_SPEED_CAP=72
+ local MOMENTUM_CARRY_CAP=120
+ local currentCharacter,currentHumanoid,currentRoot=a.model,a.hum,a.root
+ local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
+ local lastGroundHorizontalVelocity=Vector3.zero
+ local lastJumpRequestAt=-math.huge
+ local sprintInputs,jumpInputs='Sprint','Jump'
+ local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
+ local function movementIsBlocked(_character)
+  return a.wall~=nil or a.reaction~=nil or a.state~='Neutral'
+   or a.model:GetAttribute('MovementTraversalActive')==true
+ end
+ local function setCharacterAttribute(name,value) a.model:SetAttribute(name,value) end
+local function horizontalOf(vector)
+	return Vector3.new(vector.X, 0, vector.Z)
+end
+
+local function moveVectorToward(current, target, maximumDelta)
+	local difference = target - current
+	local distance = difference.Magnitude
+	if distance == 0 or distance &lt;= maximumDelta then
+		return target
+	end
+	return current + difference / distance * maximumDelta
+end
+
+local function preserveTakeoffMomentum()
+	local character = currentCharacter
+	local root = currentRoot
+	if not character or not root or not root.Parent or movementIsBlocked(character) then
+		return
+	end
+
+	local velocity = root.AssemblyLinearVelocity
+	local currentHorizontal = horizontalOf(velocity)
+	local carry = lastGroundHorizontalVelocity
+	local carrySpeed = carry.Magnitude
+	if carrySpeed &lt;= currentHorizontal.Magnitude + 0.1 then
+		return
+	end
+
+	if carrySpeed &gt; MOMENTUM_CARRY_CAP then
+		carry = carry.Unit * MOMENTUM_CARRY_CAP
+	end
+	root.AssemblyLinearVelocity = Vector3.new(carry.X, velocity.Y, carry.Z)
+end
+
+local function applyAirControl(deltaTime, desiredSprint)
+	local root = currentRoot
+	local humanoid = currentHumanoid
+	if not root or not humanoid then
+		return
+	end
+
+	local moveDirection = horizontalOf(a.move)
+	if moveDirection.Magnitude &lt; 0.05 then
+		return
+	end
+	moveDirection = moveDirection.Unit
+
+	local velocity = root.AssemblyLinearVelocity
+	local horizontal = horizontalOf(velocity)
+	local currentSpeed = horizontal.Magnitude
+	local requestedSpeed = desiredSprint and SPRINT_SPEED or WALK_SPEED
+	local targetSpeed
+	if currentSpeed &gt; AIR_ACCELERATION_SPEED_CAP then
+		targetSpeed = currentSpeed
+	else
+		targetSpeed = math.min(math.max(currentSpeed, requestedSpeed), AIR_ACCELERATION_SPEED_CAP)
+	end
+
+	local targetHorizontal = moveDirection * targetSpeed
+	local steeredHorizontal = moveVectorToward(
+		horizontal,
+		targetHorizontal,
+		AIR_CONTROL_ACCELERATION * deltaTime
+	)
+	local allowedSpeed = math.max(currentSpeed, AIR_ACCELERATION_SPEED_CAP)
+	if steeredHorizontal.Magnitude &gt; allowedSpeed then
+		steeredHorizontal = steeredHorizontal.Unit * allowedSpeed
+	end
+
+	if (steeredHorizontal - horizontal).Magnitude &gt; 0.001 then
+		root.AssemblyLinearVelocity = Vector3.new(steeredHorizontal.X, velocity.Y, steeredHorizontal.Z)
+	end
+end
+
+local function requestGroundJump()
+	local character = currentCharacter
+	local humanoid = currentHumanoid
+	local root = currentRoot
+	if not character or not humanoid or not root or movementIsBlocked(character)
+		or humanoid.Health &lt;= 0 or not a.grounded then
+		return
+	end
+	local now = c.now
+	if now - lastJumpRequestAt &lt; 0.12 then
+		return
+	end
+	lastJumpRequestAt = now
+
+	local jumpDirection = horizontalOf(a.move)
+	if jumpDirection.Magnitude &gt; 0.05 then
+		jumpDirection = jumpDirection.Unit
+		local fastHop = sprinting or anyHeld(sprintInputs)
+		local targetHopSpeed = fastHop and SPRINT_BHOP_SPEED or WALK_BHOP_SPEED
+		local currentVelocity = root.AssemblyLinearVelocity
+		local currentHorizontal = horizontalOf(currentVelocity)
+		local boostedSpeed = math.max(currentHorizontal.Magnitude, targetHopSpeed)
+		local boosted = jumpDirection * math.min(boostedSpeed, MOMENTUM_CARRY_CAP)
+		root.AssemblyLinearVelocity = Vector3.new(boosted.X, currentVelocity.Y, boosted.Z)
+		lastGroundHorizontalVelocity = boosted
+	end
+	humanoid.Jump = true
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	local takeoffVelocity = root.AssemblyLinearVelocity
+	root.AssemblyLinearVelocity = Vector3.new(
+		takeoffVelocity.X,
+		math.max(takeoffVelocity.Y, JUMP_VERTICAL_SPEED),
+		takeoffVelocity.Z
+	)
+	character:SetAttribute("MovementLastJumpAt", c.now)
+	character:SetAttribute(
+		"MovementLastJumpHorizontalSpeed",
+		horizontalOf(root.AssemblyLinearVelocity).Magnitude
+	)
+	character:SetAttribute("MovementLastJumpVerticalSpeed", root.AssemblyLinearVelocity.Y)
+end
+
+local function updateMovement(deltaTime)
+	local character = currentCharacter
+	local humanoid = currentHumanoid
+	local root = currentRoot
+	if not character or not humanoid or not root or humanoid.Health &lt;= 0 then
+		return
+	end
+
+	local blocked = movementIsBlocked(character)
+	local grounded = a.grounded
+	local horizontalVelocity = horizontalOf(root.AssemblyLinearVelocity)
+	local groundSpeed = horizontalVelocity.Magnitude
+	local hasMoveInput = a.move.Magnitude &gt; 0.05
+	local wantsSprint = anyHeld(sprintInputs) and hasMoveInput
+
+	if grounded then
+		lastGroundHorizontalVelocity = horizontalVelocity
+	end
+
+	if exhausted and stamina &gt;= EXHAUSTED_RECOVERY then
+		exhausted = false
+	end
+
+	sprinting = not blocked and wantsSprint and not exhausted and stamina &gt; 0
+	if sprinting then
+		stamina = math.max(0, stamina - deltaTime / STAMINA_DRAIN_SECONDS)
+		regenDelayRemaining = STAMINA_REGEN_DELAY
+		if stamina &lt;= 0 then
+			stamina = 0
+			exhausted = true
+			sprinting = false
+		end
+	else
+		regenDelayRemaining = math.max(0, regenDelayRemaining - deltaTime)
+		if regenDelayRemaining == 0 then
+			stamina = math.min(1, stamina + deltaTime / STAMINA_REGEN_SECONDS)
+		end
+	end
+
+	if not blocked then
+		local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+		if math.abs(humanoid.WalkSpeed - desiredWalkSpeed) &gt; 0.01 then
+			humanoid.WalkSpeed = desiredWalkSpeed
+		end
+
+		if anyHeld(jumpInputs) and grounded then
+			requestGroundJump()
+		end
+
+		if not grounded then
+			applyAirControl(deltaTime, sprinting)
+		end
+	end
+
+	setCharacterAttribute("MovementSprinting", sprinting)
+	setCharacterAttribute("MovementStamina", stamina)
+	setCharacterAttribute("MovementGroundSpeed", groundSpeed)
+end
+
+
+ local api={}
+ function api.step(dt,grounded)
+  a.grounded=grounded
+  currentHumanoid:Move(a.move,false)
+  updateMovement(math.min(dt,.1))
+  a.locomotion=a.move*currentHumanoid.WalkSpeed
+  return sprinting
+ end
+ function api.jump(grounded)
+  a.grounded=grounded
+  local previous=lastJumpRequestAt
+  requestGroundJump()
+  if lastJumpRequestAt~=previous then
+   preserveTakeoffMomentum()
+   a.airborne=true;a.airDodgeUsed=false;a.takeoffUntil=c.now+.18
+   return true
+  end
+  return false
+ end
+ return api
+end
+return Movement
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND30">
+        <Properties>
+          <string name="Name">Place1Parkour</string>
+          <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
+-- Per-actor server authority; semantic Jump API instead of donor UIS listeners.
+-- Mantle detection/clearance/Bezier arc and multi-direction wall hops are retained.
+local Parkour={}
+function Parkour.new(a,c)
+local MANTLE_REACH = 3.6
+local MIN_LEDGE_HEIGHT = 0.7
+local MAX_LEDGE_HEIGHT = 5.7
+local MANTLE_CHECK_INTERVAL = 0.055
+local MANTLE_COOLDOWN = 0.34
+local WALL_HOP_REACH = 3.25
+local WALL_HOP_AWAY_SPEED = 58
+local WALL_HOP_UP_SPEED = 64
+local WALL_HOP_COOLDOWN = 0.15
+local MAX_WALL_HOPS = 2
+
+ local character,humanoid,rootPart=a.model,a.hum,a.root
+ local rayParams=c:rayParams(true);rayParams.RespectCanCollide=true
+ local overlapParams=c:overlapParams();overlapParams.RespectCanCollide=true;overlapParams.MaxParts=32
+local traversing = false
+local mantleStartCFrame = CFrame.identity
+local mantleTargetCFrame = CFrame.identity
+local mantleStartedAt = 0
+local mantleDuration = 0.42
+local mantleHeight = 0
+local savedWalkSpeed: number? = nil
+local savedAutoRotate: boolean? = nil
+local lastMantleAt = -math.huge
+local lastMantleCheckAt = -math.huge
+
+local jumpKeyHeld = false
+local jumpPulseExpiresAt = 0
+local wallHopCount = 0
+local lastWallHopAt = -math.huge
+local lastGroundedAt = c.now
+
+local function horizontal(vector: Vector3): Vector3
+	return Vector3.new(vector.X, 0, vector.Z)
+end
+
+local function safeUnit(vector: Vector3, fallback: Vector3): Vector3
+	if vector.Magnitude &gt; 1e-4 then
+		return vector.Unit
+	end
+	return fallback
+end
+
+local function standingRootOffset(currentHumanoid: Humanoid, currentRoot: BasePart): number
+	if currentHumanoid.RigType == Enum.HumanoidRigType.R6 then
+		local currentCharacter = character
+		local torso = currentCharacter and currentCharacter:FindFirstChild("Torso")
+		local leg = currentCharacter and (
+			currentCharacter:FindFirstChild("Left Leg")
+			or currentCharacter:FindFirstChild("Right Leg")
+		)
+		if torso and torso:IsA("BasePart") and leg and leg:IsA("BasePart") then
+			return torso.Size.Y * 0.5 + leg.Size.Y
+		end
+		return 3
+	end
+	return math.max(2.2, currentHumanoid.HipHeight + currentRoot.Size.Y * 0.5)
+end
+
+local function setCharacterAttribute(name: string, value: any)
+	local currentCharacter = character
+	if currentCharacter and currentCharacter.Parent then
+		currentCharacter:SetAttribute(name, value)
+	end
+end
+
+local function hasAnyBooleanAttribute(instance: Instance, names: {string}): boolean
+	local cursor: Instance? = instance
+	while cursor do
+		for _, name in names do
+			if cursor:GetAttribute(name) == true then
+				return true
+			end
+		end
+		cursor = cursor.Parent
+	end
+	return false
+end
+
+local function mantleBlocked(instance: Instance): boolean
+	return hasAnyBooleanAttribute(instance, {"NoParkour", "NoClimb", "NoMantle"})
+end
+
+local function wallHopBlocked(instance: Instance): boolean
+	return hasAnyBooleanAttribute(instance, {"NoParkour", "NoClimb", "NoWallHop"})
+end
+
+local function isJumpHeld(): boolean
+	return jumpKeyHeld or c.now &lt; jumpPulseExpiresAt
+end
+
+local function canUseMovement(): boolean
+	local currentCharacter = character
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	return (a.state=="Neutral" or a.state=="Recovery") and not a.reaction and not a.wall
+		and currentCharacter ~= nil
+		and currentCharacter.Parent ~= nil
+		and currentHumanoid ~= nil
+		and currentHumanoid.Parent ~= nil
+		and currentHumanoid.Health &gt; 0
+		and not currentHumanoid.Sit
+		and currentRoot ~= nil
+		and currentRoot.Parent ~= nil
+end
+
+local function clearanceIsOpen(
+	targetPosition: Vector3,
+	characterHeight: number,
+	wallPart: BasePart,
+	topPart: BasePart
+): boolean
+	local params = overlapParams
+	if not params then
+		return false
+	end
+
+	local clearanceSize = Vector3.new(2.35, characterHeight, 1.85)
+	local clearanceCenter = targetPosition + Vector3.new(0, characterHeight * 0.5 + 0.14, 0)
+	local parts = workspace:GetPartBoundsInBox(CFrame.new(clearanceCenter), clearanceSize, params)
+	for _, part in parts do
+		if part.CanCollide and part ~= wallPart and part ~= topPart then
+			return false
+		end
+	end
+	return true
+end
+
+local function findMantleCandidate(): (CFrame?, number?, BasePart?)
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	local params = rayParams
+	if not currentHumanoid or not currentRoot or not params then
+		return nil, nil, nil
+	end
+
+	local moveDirection = horizontal(a.move)
+	if moveDirection.Magnitude &lt; 0.12 then
+		return nil, nil, nil
+	end
+	moveDirection = moveDirection.Unit
+
+	local rootOffset = standingRootOffset(currentHumanoid, currentRoot)
+	local feetY = currentRoot.Position.Y - rootOffset
+	local groundHit = workspace:Raycast(
+		currentRoot.Position + Vector3.new(0, 0.1, 0),
+		Vector3.new(0, -(rootOffset + 1.25), 0),
+		params
+	)
+	if groundHit and groundHit.Normal.Y &gt; 0.55 then
+		feetY = groundHit.Position.Y
+	end
+	local wallOrigin = Vector3.new(currentRoot.Position.X, feetY + 0.58, currentRoot.Position.Z)
+	local wallHit = workspace:Raycast(wallOrigin, moveDirection * MANTLE_REACH, params)
+	if not wallHit or not wallHit.Instance:IsA("BasePart") then
+		return nil, nil, nil
+	end
+
+	local wallPart = wallHit.Instance
+	if not wallPart.Anchored or not wallPart.CanCollide or math.abs(wallHit.Normal.Y) &gt; 0.4 then
+		return nil, nil, nil
+	end
+	if mantleBlocked(wallPart) then
+		return nil, nil, nil
+	end
+
+	local outwardNormal = safeUnit(horizontal(wallHit.Normal), -moveDirection)
+	if moveDirection:Dot(-outwardNormal) &lt; 0.45 then
+		return nil, nil, nil
+	end
+
+	local insidePoint = wallHit.Position - outwardNormal * 1.2
+	local topOrigin = Vector3.new(insidePoint.X, feetY + MAX_LEDGE_HEIGHT + 1.4, insidePoint.Z)
+	local topHit = workspace:Raycast(topOrigin, Vector3.new(0, -(MAX_LEDGE_HEIGHT + 2.2), 0), params)
+	if not topHit or not topHit.Instance:IsA("BasePart") then
+		return nil, nil, nil
+	end
+
+	local topPart = topHit.Instance
+	if not topPart.Anchored or not topPart.CanCollide or topHit.Normal.Y &lt; 0.72 then
+		return nil, nil, nil
+	end
+	if mantleBlocked(topPart) then
+		return nil, nil, nil
+	end
+
+	local ledgeHeight = topHit.Position.Y - feetY
+	if ledgeHeight &lt; MIN_LEDGE_HEIGHT or ledgeHeight &gt; MAX_LEDGE_HEIGHT then
+		return nil, nil, nil
+	end
+
+	local characterHeight = math.clamp(rootOffset + 2.3, 4.4, 6.7)
+	local landingSurfacePosition = topHit.Position - outwardNormal * 0.32
+	if not clearanceIsOpen(landingSurfacePosition, characterHeight, wallPart, topPart) then
+		return nil, nil, nil
+	end
+
+	local targetRootY = topHit.Position.Y + rootOffset + 0.12
+	local targetPosition = Vector3.new(landingSurfacePosition.X, targetRootY, landingSurfacePosition.Z)
+	local facing = -outwardNormal
+	local targetCFrame = CFrame.lookAt(targetPosition, targetPosition + facing)
+	return targetCFrame, ledgeHeight, topPart
+end
+
+local function restoreMantleOwnership()
+	local currentHumanoid = humanoid
+	if currentHumanoid and currentHumanoid.Parent then
+		if savedWalkSpeed ~= nil then
+			currentHumanoid.WalkSpeed = savedWalkSpeed
+		end
+		if savedAutoRotate ~= nil then
+			currentHumanoid.AutoRotate = savedAutoRotate
+		end
+	end
+	savedWalkSpeed = nil
+	savedAutoRotate = nil
+end
+
+local function finishMantle(reason: string, cancelled: boolean)
+	if not traversing then
+		return
+	end
+
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	traversing = false
+	lastMantleAt = c.now
+	setCharacterAttribute("MovementTraversalActive", false)
+	setCharacterAttribute("MovementTraversalType", "")
+	setCharacterAttribute("MovementTraversalState", if cancelled then "Cancelled" else "Completed")
+	setCharacterAttribute("MovementTraversalEndReason", reason)
+	restoreMantleOwnership()
+ if cancelled and currentHumanoid and currentRoot and currentHumanoid.Health&gt;0 then
+  currentHumanoid:ChangeState(if a.grounded then Enum.HumanoidStateType.Running else Enum.HumanoidStateType.Freefall)
+ end
+
+	if not cancelled and currentHumanoid and currentRoot and currentHumanoid.Health &gt; 0 then
+		currentRoot.CFrame = mantleTargetCFrame
+		currentRoot.AssemblyLinearVelocity = horizontal(mantleTargetCFrame.LookVector) * 8 + Vector3.new(0, -1.5, 0)
+		currentHumanoid:ChangeState(Enum.HumanoidStateType.Running)
+	end
+end
+
+local function startMantle(targetCFrame: CFrame, ledgeHeight: number, topPart: BasePart)
+	local currentCharacter = character
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	if traversing or not currentCharacter or not currentHumanoid or not currentRoot then
+		return
+	end
+	if currentCharacter:GetAttribute("MovementSliding") == true then
+		return
+	end
+
+	traversing = true
+	mantleStartCFrame = currentRoot.CFrame
+	mantleTargetCFrame = targetCFrame
+	mantleStartedAt = c.now
+	mantleHeight = ledgeHeight
+	mantleDuration = math.clamp(0.22 + ledgeHeight * 0.022, 0.24, 0.36)
+	savedWalkSpeed = currentHumanoid.WalkSpeed
+	savedAutoRotate = currentHumanoid.AutoRotate
+	currentHumanoid.WalkSpeed = 0
+	currentHumanoid.AutoRotate = false
+	currentHumanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	currentRoot.AssemblyLinearVelocity = Vector3.zero
+
+	setCharacterAttribute("MovementTraversalActive", true)
+	setCharacterAttribute("MovementTraversalType", "Mantle")
+	setCharacterAttribute("MovementTraversalState", "Active")
+	setCharacterAttribute("MovementTraversalEndReason", "")
+	setCharacterAttribute("MovementMantleHeight", ledgeHeight)
+	setCharacterAttribute("MovementMantleDuration", mantleDuration)
+	setCharacterAttribute("MovementMantleStartedAt", c.now)
+	setCharacterAttribute("MovementMantleSurface", topPart:GetFullName())
+end
+
+local function attemptMantle()
+	if traversing or not canUseMovement() then
+		return
+	end
+	local currentCharacter = character
+	local currentHumanoid = humanoid
+	if not currentCharacter or not currentHumanoid then
+		return
+	end
+	if currentCharacter:GetAttribute("MovementSliding") == true
+		or currentCharacter:GetAttribute("MovementTraversalActive") == true then
+		return
+	end
+	local slideJumpAt = currentCharacter:GetAttribute("MovementSlideJumpAt")
+	if typeof(slideJumpAt) == "number" and c.now - slideJumpAt &lt; 0.32 then
+		return
+	end
+	local state = currentHumanoid:GetState()
+	if state == Enum.HumanoidStateType.Seated or state == Enum.HumanoidStateType.Swimming
+		or state == Enum.HumanoidStateType.Climbing or state == Enum.HumanoidStateType.Dead then
+		return
+	end
+	if c.now - lastMantleAt &lt; MANTLE_COOLDOWN then
+		return
+	end
+
+	local targetCFrame, ledgeHeight, topPart = findMantleCandidate()
+	if targetCFrame and ledgeHeight and topPart then
+		startMantle(targetCFrame, ledgeHeight, topPart)
+	end
+end
+
+local function updateMantle(now: number)
+	if not traversing then
+		return
+	end
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	if not canUseMovement() or not currentHumanoid or not currentRoot or currentHumanoid.Health &lt;= 0 then
+		finishMantle("CharacterUnavailable", true)
+		return
+	end
+
+	local normalizedTime = math.clamp((now - mantleStartedAt) / mantleDuration, 0, 1)
+	local smoothTime = normalizedTime * normalizedTime * (3 - 2 * normalizedTime)
+	local startPosition = mantleStartCFrame.Position
+	local targetPosition = mantleTargetCFrame.Position
+	local controlPosition = startPosition:Lerp(targetPosition, 0.48)
+		+ Vector3.new(0, math.max(0.8, mantleHeight * 0.24), 0)
+	local inverse = 1 - smoothTime
+	local position = startPosition * (inverse * inverse)
+		+ controlPosition * (2 * inverse * smoothTime)
+		+ targetPosition * (smoothTime * smoothTime)
+
+	local startFacing = safeUnit(horizontal(mantleStartCFrame.LookVector), horizontal(mantleTargetCFrame.LookVector))
+	local targetFacing = safeUnit(horizontal(mantleTargetCFrame.LookVector), startFacing)
+	local facing = safeUnit(startFacing:Lerp(targetFacing, smoothTime), targetFacing)
+	currentHumanoid.WalkSpeed = 0
+	currentHumanoid.AutoRotate = false
+	currentRoot.AssemblyLinearVelocity = Vector3.zero
+	position=c:clamp(position)
+	currentRoot.CFrame = CFrame.lookAt(position, position + facing)
+
+	if normalizedTime &gt;= 1 then
+		finishMantle("Completed", false)
+	end
+end
+
+local function appendUniqueDirection(directions: {Vector3}, candidate: Vector3)
+	candidate = horizontal(candidate)
+	if candidate.Magnitude &lt; 0.1 then
+		return
+	end
+	candidate = candidate.Unit
+	for _, direction in directions do
+		if direction:Dot(candidate) &gt; 0.96 then
+			return
+		end
+	end
+	table.insert(directions, candidate)
+end
+
+local function findWallHopSurface(): RaycastResult?
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	local params = rayParams
+	if not currentHumanoid or not currentRoot or not params then
+		return nil
+	end
+
+	local directions: {Vector3} = {}
+	local look = horizontal(currentRoot.CFrame.LookVector)
+	local right = horizontal(currentRoot.CFrame.RightVector)
+	local velocity = horizontal(currentRoot.AssemblyLinearVelocity)
+	appendUniqueDirection(directions, currentHumanoid.MoveDirection)
+	appendUniqueDirection(directions, velocity)
+	appendUniqueDirection(directions, look)
+	appendUniqueDirection(directions, -look)
+	appendUniqueDirection(directions, right)
+	appendUniqueDirection(directions, -right)
+	appendUniqueDirection(directions, -velocity)
+
+	local bestHit: RaycastResult? = nil
+	local bestDistance = math.huge
+	local origin = currentRoot.Position + Vector3.new(0, 0.25, 0)
+	for _, direction in directions do
+		local hit = workspace:Raycast(origin, direction * WALL_HOP_REACH, params)
+		if hit and hit.Instance:IsA("BasePart") then
+			local part = hit.Instance
+			local distance = (hit.Position - origin).Magnitude
+			if part.Anchored and part.CanCollide and math.abs(hit.Normal.Y) &lt; 0.35
+				and not wallHopBlocked(part) and distance &lt; bestDistance then
+				bestHit = hit
+				bestDistance = distance
+			end
+		end
+	end
+	return bestHit
+end
+
+local function attemptWallHop(forcedNormal: Vector3?)
+	if traversing or wallHopCount &gt;= MAX_WALL_HOPS or not canUseMovement() then
+		return
+	end
+	local currentCharacter = character
+	local currentHumanoid = humanoid
+	local currentRoot = rootPart
+	if not currentCharacter or not currentHumanoid or not currentRoot then
+		return
+	end
+	if currentCharacter:GetAttribute("MovementSliding") == true
+		or currentCharacter:GetAttribute("MovementTraversalActive") == true then
+		return
+	end
+	local now = c.now
+	if (not forcedNormal and (currentHumanoid.FloorMaterial ~= Enum.Material.Air or now - lastGroundedAt &lt; 0.13))
+		or now - lastWallHopAt &lt; WALL_HOP_COOLDOWN then
+		return
+	end
+
+	local hit = findWallHopSurface()
+	if not forcedNormal and (not hit or not hit.Instance:IsA("BasePart")) then
+		return
+	end
+
+	local away = safeUnit(horizontal(forcedNormal or hit.Normal), -horizontal(currentRoot.CFrame.LookVector))
+	local currentHorizontal = horizontal(currentRoot.AssemblyLinearVelocity)
+	local tangentCarry = currentHorizontal - away * currentHorizontal:Dot(away)
+	if tangentCarry.Magnitude &gt; 28 then
+		tangentCarry = tangentCarry.Unit * 28
+	end
+
+	wallHopCount += 1
+	lastWallHopAt = now
+	currentHumanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	currentRoot.AssemblyLinearVelocity = away * WALL_HOP_AWAY_SPEED
+		+ tangentCarry * 0.55
+		+ Vector3.new(0, WALL_HOP_UP_SPEED, 0)
+	setCharacterAttribute("MovementWallHopCount", wallHopCount)
+	setCharacterAttribute("MovementLastWallHopAt", c.now)
+	setCharacterAttribute("MovementLastWallHopSurface", if hit then hit.Instance:GetFullName() else "NinjaWall")
+	a.airborne=true;a.airDodgeUsed=false;a.takeoffUntil=c.now+.18
+	return true
+end
+
+
+ local api={}
+ function api.jump()
+  jumpPulseExpiresAt=c.now+.34
+  attemptMantle()
+  if traversing then return true end
+  return attemptWallHop()==true
+ end
+ function api.rebound(normal) return attemptWallHop(normal)==true end
+ function api.wallSurface() return findWallHopSurface() end
+ function api.step()
+  if a.grounded then lastGroundedAt=c.now;wallHopCount=0 end
+  updateMantle(c.now)
+  if not traversing and isJumpHeld() and c.now-lastMantleCheckAt&gt;=MANTLE_CHECK_INTERVAL then
+   lastMantleCheckAt=c.now;attemptMantle()
+  end
+  if traversing then a.airborne=true;a.hum:Move(Vector3.zero);a.locomotion=Vector3.zero end
+  return traversing
+ end
+ function api.reset() finishMantle('SessionReset',true);wallHopCount=0;jumpPulseExpiresAt=0 end
+ return api
+end
+return Parkour
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -1700,7 +3718,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -1789,7 +3807,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -1895,7 +3913,7 @@ function World.rig(parent, def, cf, name)
 	model.PrimaryPart=root; root:SetNetworkOwner(nil)
 	return model,hum,root,joints
 end
--- AnimationTracks are optional; original keyed choreography is rendered by each client.
+-- Imported combat clips and Roblox catalogue movement tracks play on the server.
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end
@@ -1905,21 +3923,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND23">
+  <Item class="StarterPlayer" referent="ND34">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND24">
+    <Item class="StarterPlayerScripts" referent="ND35">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND25">
+      <Item class="Folder" referent="ND36">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND26">
+        <Item class="ModuleScript" referent="ND37">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">local Camera={}; Camera.__index=Camera
@@ -1989,7 +4007,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND27">
+        <Item class="ModuleScript" referent="ND38">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -2066,7 +4084,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND28">
+        <Item class="LocalScript" referent="ND39">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -2119,124 +4137,13 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND29">
+        <Item class="ModuleScript" referent="ND40">
           <Properties>
             <string name="Name">Presentation</string>
-            <ProtectedString name="Source">-- Original in-project key choreography. No third-party animation IDs/assets.
--- Timeline has anticipation, contact and follow-through; rendered locally at display rate.
-local Attacks=require(game:GetService("ReplicatedStorage").NinjaDuel.Attacks)
-local Tween=game:GetService("TweenService")
-local Debris=game:GetService("Debris")
+            <ProtectedString name="Source">-- Combat animation/feedback comes from the imported Bangla server components.
+-- This client module retains only Ninja Duel's Itachi deception visual.
 local Presentation={};Presentation.__index=Presentation
--- Engine-bundled sounds: referenced in place, never copied/uploaded.
-local sounds={Hit="action_jump_land.mp3",Heavy="impact_explosion_03.mp3",Guard="action_jump_land.mp3",Dash="action_falling.ogg",Jump="action_jump.mp3",Land="action_jump_land.mp3",Technique="action_swim.mp3"}
-local function sound(root,name)
- local s=Instance.new("Sound");s.Name="Combat"..name;s.SoundId="rbxasset://sounds/"..sounds[name]
- s.Volume=if name=="Heavy" then .18 else .27;s.PlaybackSpeed=if name=="Hit" then 1.8 elseif name=="Guard" then 2.4 elseif name=="Dash" then 1.7 else 1.1
- s.RollOffMaxDistance=65;s.Parent=root;s:Play();Debris:AddItem(s,2)
-end
-local function pose(waist,larm,rarm,lleg,rleg,twist,le,re,lk,rk)
- return {Waist=Vector3.new(waist or 0,twist or 0,0),LeftShoulder=Vector3.new(larm or -.45,0,-.2),RightShoulder=Vector3.new(rarm or -.6,0,.2),
- LeftHip=Vector3.new(lleg or 0,0,-.04),RightHip=Vector3.new(rleg or 0,0,.04),LeftElbow=Vector3.new(le or -.8,0,0),RightElbow=Vector3.new(re or -.8,0,0),LeftKnee=Vector3.new(lk or 0,0,0),RightKnee=Vector3.new(rk or 0,0,0)}
-end
--- Distinct jab, cross, turning kick, driving kick and uppercut, not pose cycling.
-local keys={
- Light1={pose(-.13,-.8,.6,0,-.2,-.5,-1.1,-1.4),pose(.23,-.5,-1.55,-.2,.3,.48,-1,-.1),pose(.1,-.5,-.8,0,.1,.18)},
- Light2={pose(-.1,.4,-.8,-.2,0,.6,-1.3,-1),pose(.3,-1.7,-.6,.25,-.25,-.65,-.1,-1.2),pose(.1,-.9,-.65,0,0,-.12)},
- Light3={pose(-.2,-.9,-.6,.5,-.6,-.65,-1,-1,.6,.2),pose(-.18,-.4,-1.1,.12,-1.7,.9,-.7,-.8,0,.12),pose(.1,-.6,-.8,0,-.45,.4)},
- Light4={pose(.15,-.8,-.4,-.8,.4,.3,-1,-1,1.2,0),pose(-.22,-1,-.3,-1.85,.3,-.25,-.9,-1,.05,0),pose(.22,-.4,-.8,-.4,.2,-.2)},
- Launcher={pose(.55,-.5,.5,-.65,-.6,-.35,-1.2,-1.5,.75,.5),pose(-.28,.2,-2.65,.4,-.3,.5,-.6,-.18),pose(.1,-.6,-1.3,.1,-.1,.2)},
- Heavy={pose(-.25,.4,.5,.4,-.7,-.75,-1.2,-1.3),pose(.55,-.7,-2.1,-.4,.4,.8,-.8,-.1),pose(.3,-.6,-.9,-.15,.1,.35)},
- DashAttack={pose(.55,.5,-.8,-.5,.7,-.4),pose(.4,-.5,-1.65,.5,-.5,.4,-1,-.1),pose(.15,-.5,-.8,0,0,.2)},
- Air1={pose(-.1,-.5,.6,.4,-.6,-.5),pose(.25,-.4,-1.75,-.6,.5,.65,-.8,-.1),pose(.1,-.7,-.7,.4,-.4,.2)},
- Air2={pose(.1,-.7,-.8,-.4,.6,.6),pose(-.3,-1,-.4,-1.9,.4,-.75,-.5,-.9,.1,.8),pose(.1,-.6,-.8,-.4,.4,-.2)},
- Slam={pose(-.5,-2.7,-2.7,.9,-.9,0,-.4,-.4,.8,.5),pose(.95,-1.35,-1.35,-.9,-.9,0,-.1,-.1,.2,.2),pose(.5,-.7,-.7,-.7,-.7,0,-.8,-.8,.7,.7)},
- Grab={pose(.1,-.7,-.7,-.2,.1),pose(.25,-1.5,-1.5,-.25,.2,0,-.3,-.3),pose(.15,-1.2,-1.2,0,0,0,-1,-1)},
- Throw={pose(.3,-1.2,-1.2,-.3,.3,-.65,-1.3,-1.3),pose(.55,-1.9,-1.9,.4,-.4,.9,-.1,-.1),pose(.2,-.6,-.6,0,0,.4)},
- ThrowUp={pose(.5,-1.4,-1.4,-.5,-.5,0,-1.3,-1.3),pose(-.3,-2.7,-2.7,.2,.2,0,-.1,-.1),pose(.1,-.9,-.9,0,0)},
-}
-function Presentation.new() return setmetatable({rigs={},impacts={}},Presentation) end
-function Presentation:burst(position,color,heavy)
- local folder=workspace:FindFirstChild("LocalCombatFX")
- if not folder then folder=Instance.new("Folder");folder.Name="LocalCombatFX";folder.Parent=workspace end
- for i=1,(if heavy then 10 else 6) do
-  local p=Instance.new("Part");p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.Material=Enum.Material.Neon;p.Color=color;p.Size=Vector3.new(.12,.12,if heavy then 1.3 else .65)
-  p.CFrame=CFrame.new(position)*CFrame.Angles(i*1.9,i*2.4,i*.7);p.Parent=folder
-  local direction=p.CFrame.LookVector
-  Tween:Create(p,TweenInfo.new(.17,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{CFrame=p.CFrame+direction*(if heavy then 3.3 else 1.8),Transparency=1,Size=Vector3.new(.02,.02,.1)}):Play();Debris:AddItem(p,.2)
- end
-end
-function Presentation:actor(model,data,dt,now)
- if not model or not data then return end
- local root=model:FindFirstChild("HumanoidRootPart");if not root then return end
- local rig=self.rigs[model]
- if not rig then
-  rig={joints={},trails={},lastImpact=data.impactSerial,lastAir=false,lastWall=false,events=table.clone(data.events or {})}
-  for _,v in model:GetDescendants() do if v:IsA("Motor6D") then rig.joints[v.Name]=v end end
-  for _,name in {"LeftHand","RightHand","LeftFoot","RightFoot"} do
-   local limb=model:FindFirstChild(name)
-   if limb then
-    local first=Instance.new("Attachment");first.Position=Vector3.new(-.2,0,0);first.Parent=limb
-    local second=Instance.new("Attachment");second.Position=Vector3.new(.2,0,0);second.Parent=limb
-    local trail=Instance.new("Trail");trail.Attachment0=first;trail.Attachment1=second;trail.Lifetime=.09;trail.MinLength=.1;trail.FaceCamera=true
-    trail.Color=ColorSequence.new(Color3.fromRGB(222,234,222));trail.Transparency=NumberSequence.new(.55,1);trail.Enabled=false;trail.Parent=limb
-    rig.trails[name]=trail
-   end
-  end
-  self.rigs[model]=rig
- end
- local authored=model:GetAttribute("AuthoredAnimations")==true
- local phase=now*(if data.speed&gt;30 then 17 else 12);local swing=math.sin(phase)*math.min(data.speed/38,.9)
- local composed=data.fighterId=="Mirage"
- local target=pose(if data.speed&gt;30 then .38 else .08,swing-(if composed then .75 else .3),-swing-(if composed then .8 else .45),-swing,swing,math.sin(phase)*.07,-.9,-.9,math.max(0,swing)*.8,math.max(0,-swing)*.8)
- local spec=Attacks[data.attackName]
- if spec and (data.state=="Startup" or data.state=="Active" or data.state=="Recovery") then
-  local timeline=keys[data.attackName];local t=data.attackElapsed+(now-(self.receivedAt or now));local from,to,alpha
-  if t&lt;spec.startup then from=pose();to=timeline[1];alpha=math.clamp(t/spec.startup,0,1)
-  elseif t&lt;spec.startup+spec.active then from=timeline[1];to=timeline[2];alpha=math.clamp((t-spec.startup)/(.07),0,1)
-  else from=timeline[2];to=timeline[3];alpha=math.clamp((t-spec.startup-spec.active)/spec.recovery,0,1) end
-  target={};for name,v in from do target[name]=v:Lerp(to[name],alpha) end
- elseif data.reaction=="Knockdown" or data.reaction=="WallSplat" then target=pose(-.1,.6,.6,.25,.25,0,-.3,-.3,.3,.3)
- elseif data.reaction=="Launched" or data.reaction=="Juggled" or data.reaction=="Knockback" then target=pose(-.7,.75,.55,.6,-.5,-.2,-.6,-.7,.7,.3)
- elseif data.reaction=="HitStun" or data.reaction=="GuardStun" or data.state=="Stunned" then target=pose(-.35,.6,.3,-.2,.4,-.35)
- elseif data.reaction=="Grabbed" then target=pose(.55,.3,.3,-.1,-.1,0,-.4,-.4)
- elseif data.reaction=="Wakeup" then target=pose(.65,-1.1,-1.1,-.8,-.8,0,-.7,-.7,1.1,1.1)
- elseif data.state=="Guarding" then target=pose(.1,-1.4,-1.4,-.1,.1,0,-1.4,-1.4)
- elseif data.state=="Dodging" or data.state=="Pursuit" then target=pose(.55,-.8,.6,-.7,.7,-.25,-.8,-1.2,.7,.2)
- elseif data.state=="TechniqueChannel" then target=pose(.15,-1.65,-1.65,-.2,.2,0,-1.3,-1.3)
- elseif data.state=="TechniqueActive" then target=pose(.4,-1.2,-1.9,.3,-.3,.35,-.4,-.15)
- elseif data.wall then target=pose(.45,-1.3,-.9,-swing*1.2,swing*1.2,.2,-.8,-.8,math.max(swing,0),math.max(-swing,0))
- elseif data.airborne then target=pose(.12,-.8,-.6,.7,-.5,0,-.8,-.8,.9,.3)
- elseif data.state=="Defeated" then target=pose(.08,.5,.5,.2,.2,0,-.2,-.2,.2,.2) end
- if data.wall then target.Root=Vector3.new(-.7,0,0) end
- local rootOffset=Vector3.zero
- if data.reaction=="Knockdown" or data.state=="Defeated" then target.Root=Vector3.new(-1.48,0,.1);rootOffset=Vector3.new(0,-1.6,0)
- elseif data.reaction=="Wakeup" then target.Root=Vector3.new(-.65,0,0);rootOffset=Vector3.new(0,-.8,0)
- elseif data.reaction=="Launched" or data.reaction=="Juggled" then target.Root=Vector3.new(-.45,0,.18) end
- for name,trail in rig.trails do
-  local kick=data.attackName=="Light3" or data.attackName=="Light4" or data.attackName=="Air2"
-  trail.Enabled=data.state=="Active" and ((kick and name:match("Foot")~=nil) or (not kick and name:match("Hand")~=nil))
- end
- local alpha=1-math.exp(-dt*28)
- for name,joint in (if authored then {} else rig.joints) do
-  local angles=target[name] or Vector3.zero
-  joint.Transform=joint.Transform:Lerp(CFrame.new(if name=="Root" then rootOffset else Vector3.zero)*CFrame.Angles(angles.X,angles.Y,angles.Z),alpha)
- end
- if rig.lastImpact~=data.impactSerial then
-  rig.lastImpact=data.impactSerial;sound(root,if data.impactHeavy then "Heavy" else "Hit");self:burst(root.Position,if composed then Color3.fromRGB(241,158,130) else Color3.fromRGB(130,208,241),data.impactHeavy)
- end
- for event,number in data.events or {} do
-  if number&gt;(rig.events[event] or 0) then
-   if event=="Dodge" or event=="Chase" or event=="Substitute" then sound(root,"Dash")
-   elseif event=="GuardHit" then sound(root,"Guard")
-   elseif event=="Technique" then sound(root,"Technique") end
-  end
- end
- rig.events=table.clone(data.events or {})
- if not rig.lastAir and data.airborne then sound(root,"Jump") end
- if rig.lastAir and not data.airborne then sound(root,"Land");self:burst(root.Position-Vector3.new(0,2.6,0),Color3.fromRGB(199,186,157),false) end
- rig.lastAir=data.airborne
-end
+function Presentation.new() return setmetatable({ghosts={}},Presentation) end
 function Presentation:illusion(data,model)
  local active=data.phase=="Duel" and data.human.illusion&gt;0 and data.human.decoy
  local opponent=model and model.Parent and model.Parent:FindFirstChild("AIFighter")
@@ -2254,22 +4161,18 @@ function Presentation:illusion(data,model)
   else self.echo:PivotTo(CFrame.new(data.human.decoy)*opponent:GetPivot().Rotation) end
  end
 end
-function Presentation:update(data,dt)
+function Presentation:update(data,_dt)
  if not data.human then
   if self.echo then self.echo:Destroy();self.echo=nil end
   return
  end
- local player=game:GetService("Players").LocalPlayer;local model=player.Character
- self:illusion(data,model)
- self:actor(model,data.human,dt,os.clock())
- self:actor(model and model.Parent and model.Parent:FindFirstChild("AIFighter"),data.bot,dt,os.clock())
- for m in self.rigs do if not m.Parent then self.rigs[m]=nil end end
+ self:illusion(data,game:GetService("Players").LocalPlayer.Character)
 end
 return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND30">
+        <Item class="ModuleScript" referent="ND41">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
@@ -2432,7 +4335,7 @@ return UI
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND31">
+  <Item class="Lighting" referent="ND42">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -2450,7 +4353,7 @@ return UI
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND32">
+  <Item class="SoundService" referent="ND43">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

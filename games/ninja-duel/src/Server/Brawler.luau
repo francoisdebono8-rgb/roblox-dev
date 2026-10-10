@@ -1,6 +1,10 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
+local Bangla=require(script.Parent.BanglaCombat)
+local Combo=require(Shared.BanglaCombo)
+-- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
+-- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true}
 function Brawler.free(a,now)
@@ -17,6 +21,7 @@ function Brawler.releaseGrab(a)
 end
 function Brawler.react(c,a,kind,velocity,duration)
  Brawler.releaseGrab(a)
+ Bangla.close(a.pending)
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
  a.pending=nil;a.buffered=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  a.locomotion=Vector3.zero
@@ -24,10 +29,12 @@ function Brawler.react(c,a,kind,velocity,duration)
  if kind=="Knockdown" then a.invulnerableUntil=c.now+duration+.24 end
 end
 function Brawler.start(c,a,name)
+ Bangla.close(a.pending)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
  a.buffered=nil
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.guardHeld=false
  a.pending={kind="Brawl",name=name,spec=spec,hit=false}
+ Bangla.begin(c,a,a.pending)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
@@ -61,15 +68,15 @@ function Brawler.request(c,a,action)
  if action=="ThrowUp" then return false,"No grab" end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
-  if canChain and a.combo>=2 then a.combo=4;return Brawler.start(c,a,"Launcher") end
+  if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
   return Brawler.start(c,a,"Heavy")
  end
  if a.airborne then
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- a.combo=if c.now-a.lastAttack>1.1 then 1 else a.combo%4+1;a.lastAttack=c.now
- return Brawler.start(c,a,if canDash then "DashAttack" else "Light"..a.combo)
+ local name=Combo.next(a,c.now)
+ return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -79,11 +86,20 @@ function Brawler.hit(c,a,p)
   Brawler.releaseGrab(a)
   local direction=if a.move.Magnitude>.2 then a.move.Unit else a.root.CFrame.LookVector
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
- elseif not c:targetValid(a,b,spec.range,.05) then return false
- else
-  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
-  local box=a.root.CFrame*CFrame.new(0,0,-spec.range*.42)
-  if #workspace:GetPartBoundsInBox(box,Vector3.new(spec.width,spec.height,spec.range),params)==0 then return false end
+ end
+ local success,guarded,protected
+ if p.name~="Throw" and p.name~="ThrowUp" then
+  -- Grab has no donor damage action; donor contact volume still validates it.
+  if p.name=="Grab" then
+   if not c:targetValid(a,b,spec.range,.05) then return false end
+   local donor=p.donor
+   donor.hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-2)
+   local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include;params.FilterDescendantsInstances={b.model}
+   if #workspace:GetPartBoundsInBox(donor.hitbox.CFrame,donor.hitbox.Size,params)==0 then return false end
+  else
+   success,guarded,protected=Bangla.tryHit(c,a,p)
+   if not success then return false end
+  end
  end
  if p.name=="Grab" then
   if b.invulnerableUntil>c.now or b.grabbedBy or b.reaction=="Wakeup" then return false end
@@ -91,9 +107,9 @@ function Brawler.hit(c,a,p)
   b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
- local guarded=b.state=="Guarding" and b.chakra>0 and b.root.CFrame.LookVector:Dot((a.root.Position-b.root.Position).Unit)>.15
- local protected=b.state=="TechniqueChannel" and b.pending and not b.pending.spec.Interruptible
- local success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+ if p.name=="Throw" or p.name=="ThrowUp" then
+  success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+ end
  if not success or b.health<=0 then return success end
  if protected then return true end
  if guarded then

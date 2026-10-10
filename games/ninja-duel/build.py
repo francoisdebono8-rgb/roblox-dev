@@ -1,8 +1,9 @@
-"""Build standalone Roblox XML places from reviewed source; no dependencies/assets."""
+"""Build reviewed Ninja Duel sources plus explicitly extracted donor assets."""
 from pathlib import Path
 import argparse
 import hashlib
 import json
+import re
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent
@@ -35,7 +36,24 @@ def sources(parent, directory):
 workspace = item(xml,'Workspace','Workspace', [('Gravity','float',140),('FallenPartsDestroyHeight','float',-100)])
 # Only the QA build sets the explicit Studio-only test attribute.
 replicated = item(xml, 'ReplicatedStorage','ReplicatedStorage')
-sources(item(replicated,'Folder','NinjaDuel'),ROOT/'src/Shared')
+shared=item(replicated,'Folder','NinjaDuel')
+sources(shared,ROOT/'src/Shared')
+# Extracted data-only dependencies, never a merged donor place or unknown script.
+asset_files=sorted((ROOT/'assets').glob('*.rbxmx'))
+for asset_file in asset_files:
+    donor_xml=ET.parse(asset_file).getroot()
+    assert not any(n.get('class') in ('Script','LocalScript','ModuleScript') for n in donor_xml.iter('Item'))
+    references={n.get('referent'):f'DONOR_{asset_file.stem}_{i}' for i,n in enumerate(donor_xml.iter('Item'))}
+    for n in donor_xml.iter('Item'):
+        n.set('referent',references[n.get('referent')])
+    for ref in donor_xml.iter('Ref'):
+        if ref.text in references: ref.text=references[ref.text]
+    for node in donor_xml.findall('Item'): shared.append(node)
+fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA')+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
+item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
+licenses=item(shared,'Folder','ThirdPartyLicenses')
+for vendor in ('bangla','place1'):
+    item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text())])
 server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
 starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','float',8),('CameraMaxZoomDistance','float',32)])
@@ -57,7 +75,10 @@ if args.qa:
     expected[expected.index(main_source)]='workspace:SetAttribute("NinjaDuelQA",true)\n'+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
 assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewed files'
-manifest={'version':'0.4.0-phase6','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','externalAssets':[]}
+external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
+for asset_file in asset_files:
+    external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text())))
+manifest={'version':'0.4.1-phase6b','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids), 'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'animationPermission':'PENDING'}
 output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(output)
 print(manifest['sha256'])

@@ -7,6 +7,8 @@ local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
+local Bangla = require(script.Parent.BanglaCombat)
+local Evade = require(script.Parent.BanglaEvade)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={}},Combat)
@@ -223,6 +225,7 @@ function Combat:request(a,action,aim)
 		if a.airborne then a.airDodgeUsed=true end
 		a.dodgeDirection=if a.move.Magnitude>0.1 then a.move.Unit else a.root.CFrame.RightVector
 		a.invulnerableUntil=self.now+Config.DodgeIFrames; a.guardHeld=false
+		Evade.begin(a,self)
 		Brawler.event(self,a,"Dodge"); self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
 		return true
 	end
@@ -264,6 +267,7 @@ function Combat:updateActor(a,dt)
 		if a.state=="Startup" and pending then
 			self:setState(a,"Active",pending.spec.active)
 		elseif a.state=="Active" then
+			Bangla.close(pending)
 			a.pending=nil; self:setState(a,"Recovery",if pending then pending.spec.recovery else .22)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
 			a.chainAt=now+0.035
@@ -278,6 +282,7 @@ function Combat:updateActor(a,dt)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
+ if a.state~="Dodging" then a.evade=nil end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
@@ -285,7 +290,7 @@ function Combat:updateActor(a,dt)
 		if toward.Magnitude>0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
-		Motor.travel(a,self,a.dodgeDirection,Config.DodgeSpeed*(a.def.DashScale or 1)*dt)
+		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" then
 		local toTarget=a.target.root.Position-a.root.Position
 		if toTarget.Magnitude>3 then Motor.flight(a,self,toTarget.Unit*math.min(100*dt,toTarget.Magnitude-3)) end
@@ -372,8 +377,10 @@ end
 function Combat:clear(preserveAnimations)
 	for _,a in self.actors do
 		if not preserveAnimations then Animation.clear(a) end
+		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated"; a.guardHeld=false; a.readUntil=0; a.bonusUntil=0; a.dodgeUntil=0; a.invulnerableUntil=0; a.travelRemaining=0
+		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end

@@ -1,0 +1,27 @@
+{
+  "snapshot": "d61c09b",
+  "donors": {
+    "bangla": {
+      "repository": "https://github.com/dwmk/RobloxGames",
+      "commit": "46e6241c607f1b7dea8b41380f7041055e86c9bc",
+      "place": "BanglaBattlegrounds_20240706_01.rbxl",
+      "placeSha256": "268eb1a09c3bcbc99217ec04161f10cb703be44810f7131e2d94ca051605ca36"
+    },
+    "place1": {
+      "repository": "https://github.com/alexkkork/place1-movement-system",
+      "commit": "87da75e2f2528291ebf65c4cbc52d1ce83c2f527"
+    }
+  },
+  "originalFiles": {
+    "vendor/bangla/LICENSE": "c73d3e1e4ccf291122936fa7a0445e9f877e3aadb7772fb87757d733c9d1f95f",
+    "vendor/bangla/original/PunchMoves.lua": "5d2eeee8a7d8a3e08d65a261ba9264fa667051a909affd8c093cb68e26e1ef4a",
+    "vendor/bangla/original/StarterCombat.lua": "febe0dc3d955258a69a623728979c574f9126c97b3d0cb6e4ce29dc655bc7caa",
+    "vendor/bangla/original/WalkRunHandler.lua": "bd13c622eea3bd8d528c1485cfcc336adad079e4f6532685fd3e4e5597d2d4ec",
+    "vendor/place1/LICENSE": "4894c48ad81da8dda9a2ae27c0ee15998315bd3bd382370e6cc4025cc9b26785",
+    "vendor/place1/original/FirstPersonMovementController.client.lua": "1866259fd5e0b2402105bf22a6753e78dc6f231d147a9f0f9ff43f66e991b8aa",
+    "vendor/place1/original/ParkourTraversalController.client.lua": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d"
+  },
+  "assets": {
+    "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
+  }
+}

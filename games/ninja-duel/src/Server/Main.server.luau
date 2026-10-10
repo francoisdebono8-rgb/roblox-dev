@@ -14,4 +14,5 @@ RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerT
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
 end
+print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value)
 print("[NinjaDuel] Ready — select a fighter and start the duel")

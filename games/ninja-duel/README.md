@@ -1,56 +1,44 @@
-# Ninja Duel — Phase 6 candidate
+# Ninja Duel — Phase 6B migration candidate
 
-Open `dist/NinjaDuel.rbxlx` in Roblox Studio, then **Test**. No plugins, paid assets or installation dependency. Choose Minato or Itachi and select **Interactive Tutorial** or **Duel**. Result offers rematch and character selection.
+Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. The normal game now runs imported/adapted Bangla M1 contact/damage/feedback and directional evade, plus Place1 sprint/stamina, takeoff momentum, air steering, mantle and wall hops. R15, both character kits, the AI, substitution, guided tutorial and rematch lifecycle remain connected to the same server authority. No donor installer or parallel input controller runs.
 
-The candidate contains advancing punch/kick chains, heavy and launcher branches, 3D chase, aerial hits, downslam, knockdown/wakeup, directional grab/throw, guard, dodge and limited substitution. Minato emphasizes movement/kunai/angles/anchors/Wind; Itachi emphasizes precision/shuriken/Read/deception/Fire. Walls and platforms share server validation with normal combat.
+**Pending acceptance:** compilation/build and automated policy/integration checks pass. Native Studio physics, donor animation access/retargeting, rendered choreography and controller hardware have not been validated. The public Punch asset download returned HTTP 403; Studio window control timed out. See `ANIMATION_TODO.md` for the exact owner publication step and remaining clip gaps. This is not a completed visual/feel gate.
 
-## Controller
-
-| Input | Action |
+| Controller | Action |
 |---|---|
 | Left stick / click LS | Move / toggle sprint |
-| Right stick / click RS | Camera / lock target |
-| A / Cross | Jump or contextual chase; wall rebound |
-| X / Square | Light; horizontal finisher after fourth light; throw while grabbing |
-| Y / Triangle | Heavy; launcher after two/three confirmed lights; air downslam; upward throw while grabbing |
-| B / Circle | Directional dodge; substitution during a fresh hit/grab reaction |
-| LB / L1 | Hold guard |
-| LT / L2 | Grab |
-| RT / R2 | Kunai / shuriken check |
-| RB + A / X / Y / B | Equipped techniques 1 / 2 / 3 / 4 |
-| D-pad up | Technique 5 (Minato Wind) |
-| View / touchpad | Skip tutorial |
-| D-pad / left stick + A | Select and activate menus |
+| Right stick / click RS | Camera / lock |
+| X / Square | Light; third light finishes horizontally; throw while grabbing |
+| Y / Triangle | Heavy; launcher after two confirmed lights; air slam; upward throw |
+| A / Cross | Jump / contextual chase / mantle / wall rebound |
+| B / Circle | Directional evade / substitution after a fresh hit |
+| LB / L1; LT / L2; RT / R2 | Guard; grab; kunai/shuriken |
+| RB + A / X / Y / B | Techniques 1 / 2 / 3 / 4 |
+| D-pad up; View / touchpad | Technique 5; skip tutorial |
+| D-pad / left stick + A | Menu selection and activation |
 
-Keyboard: WASD, CTRL sprint, SPACE jump, LMB light, T heavy/launcher/slam, V grab, F guard, Q dodge, X substitution, R tool, E chase, SHIFT lock, 1–5 techniques, C wall detach, G declared feint, ESC skip tutorial. Hold RMB and move mouse to orbit.
+Keyboard: WASD, CTRL sprint, SPACE jump, LMB light, T heavy/launcher/slam, V grab, F guard, Q evade, X substitution, R tool, E chase, SHIFT lock, 1–5 techniques, C wall detach, G feint, ESC skip tutorial. RMB + mouse orbits the third-person camera.
 
-**Ground route:** light → light → light → heavy launcher → chase → air light → air light → heavy slam. Repeated lights choose the horizontal finisher. Inputs can buffer near contact; whiffs retain recovery. Throws follow left-stick direction. Knockdown protects the defender until wakeup; substitution spends a limited charge and chakra.
+Ground-to-air route: **light → light → heavy launcher → chase → air light → air light → heavy slam**. A third grounded light chooses Bangla's finisher instead. Whiffs retain recovery; substitution spends charge/chakra; knockdown has a protected wakeup.
 
-## Five-minute controller playtest
+From the repo root: `python3 games/ninja-duel/build.py`, repeat with `--qa`; `luau games/ninja-duel/tests/Rules.spec.luau`; `lune run games/ninja-duel/tests/Combat.spec.luau`. Current evidence: 7 policy and 15 integration scenarios PASS with a geometry adapter. The native suite is in `dist/NinjaDuel-QA.rbxlx` and prints `[NinjaDuelQA] START 0.4.1-phase6b` then its totals. Reopen after rebuilding. An explicit native gate fails if donor R15 tracks cannot load/play.
 
-1. **0:00–0:45:** select Tutorial using only controller. Move, sprint, jump, lock and dash. Do the controls respond without fighting you?
-2. **0:45–2:30:** follow the current objective through wall rebound, light chain, launcher/chase/air hits/slam, guard/dodge, substitution and grab/throw. Failed air exercises reset quickly. Guided incoming telegraphs are slowed where needed.
-3. **2:30–3:30:** try a jutsu and interrupt the practice opponent. Skip with View/touchpad if needed, then start a Minato duel.
-4. **3:30–4:30:** use kunai, Quickstep, Burst Entry and the marked anchor; try one vertical exchange. Finish or lose the duel and select rematch with controller.
-5. **4:30–5:00:** return to selection, choose Itachi, test shuriken, Fire, timed Read and the afterimage. Report the first unpleasant input, camera problem or unconvincing exchange.
+## Normal-place acceptance route
 
-All feel/hardware checks are **NEEDS HUMAN TEST**. Tutorial completion normally takes longer than this smoke route; replay it fully afterward.
+1. Open the rebuilt **normal** place and Test.
+2. Select Minato against Itachi.
+3. Move, orbit, sprint and stop for 20 seconds.
+4. Jump, steer in air, approach a ledge and traverse/rebound from a wall.
+5. Lock Itachi and circle him.
+6. Land the three-light chain; check that contacts and misses are clear.
+7. Use two lights then heavy to launch intentionally.
+8. Press chase during the launch window.
+9. Land two air strikes then heavy slam; check landing and wakeup.
+10. Block an incoming strike, then evade in a chosen direction.
+11. Spend substitution immediately after being hit.
+12. Use Minato's kunai, marked anchor, teleport, entry and Wind.
+13. Rematch, return to selection and play Itachi.
+14. Test shuriken, Fire, timed Read and deception.
+15. Replay the complete interactive tutorial, including its reset/skip paths.
 
-## Verification
-
-From repository root:
-
-- `python3 games/ninja-duel/build.py` and `--qa`: standalone XML and source-equality/SHA manifests.
-- `luau games/ninja-duel/tests/Rules.spec.luau`: seven pure policy scenarios.
-- `lune run games/ninja-duel/tests/Combat.spec.luau`: ten deterministic scenarios using actual modules and a geometry adapter; not Studio physics/rendering.
-- Open `dist/NinjaDuel-QA.rbxlx` and Test for the native suite. Output starts `[NinjaDuelQA] START 0.4.0-phase6` and ends with PASS/FAIL totals. Reopen the file after a rebuild; Studio does not reload an already-open place from disk.
-
-Current evidence: compilation and source equality PASS, policy **7 PASS**, headless combat/controller/tutorial **10 PASS**. Final-artifact native and rendered/controller QA **PENDING** because the computer-control session times out. Earlier Phase 5 native totals do not validate this candidate.
-
-## Presentation / limitations
-
-Original keyed R15 choreography now includes anticipation/contact/follow-through, punches/kicks, launcher, air strikes, slam, grabs, reactions and wakeup. It is rendered locally and remains below final authored production quality. Published AnimationTracks can replace it through `AnimationIds`; see `ANIMATION_TODO.md`.
-
-Baseline feedback references Roblox's built-in sounds, with local limb trails, impacts, landing feedback and an original ghost afterimage. No downloaded animation/VFX packs are used. Resource/license audit: `THIRD_PARTY.md`.
-
-Native collision/physics, full tutorial reachability and actual Xbox/PlayStation input must still be checked on the final build. Do not describe Phase 6 as validated/completed before those checks and one human playtest.
+Record native errors and the first unpleasant control or unconvincing exchange. Source/import notices and exact components: `THIRD_PARTY.md`. Pre-migration snapshot: Git commit `d61c09b`; mission head: `2bac931`.

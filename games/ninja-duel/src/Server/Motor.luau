@@ -1,14 +1,21 @@
 -- Server movement authority. This module owns locomotion, landing and safe
 -- action travel; AI and human actors use the same movement profile.
 local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local Place1Movement=require(script.Parent.Place1Movement)
+local Place1Parkour=require(script.Parent.Place1Parkour)
+-- This adapter retains swept action travel and the NinjaWall extension only.
+-- Place1 owns free locomotion/jump/air steering/mantle/wall-hop at runtime.
 local Motor={}
+local function donor(a,c)
+ if not a.movementDonor then a.movementDonor=Place1Movement.new(a,c);a.parkourDonor=Place1Parkour.new(a,c) end
+ return a.movementDonor,a.parkourDonor
+end
+function Motor.reset(a)
+ if a.parkourDonor then a.parkourDonor.reset() end
+ a.movementDonor=nil;a.parkourDonor=nil
+end
 local UP=Vector3.yAxis
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
-local function approach(from,to,maxDelta)
-	local diff=to-from
-	if diff.Magnitude<=maxDelta then return to end
-	return from+diff.Unit*maxDelta
-end
 function Motor.grounded(a,c)
 	local p=RaycastParams.new(); p.FilterType=Enum.RaycastFilterType.Exclude
 	p.FilterDescendantsInstances={a.model,c.match.effects}
@@ -16,18 +23,17 @@ function Motor.grounded(a,c)
 	return workspace:Raycast(a.root.Position,Vector3.new(0,-3.6,0),p)~=nil
 end
 function Motor.jump(a,c,now)
-	if not Motor.grounded(a,c) or now<(a.nextJump or 0) then return false end
-	a.nextJump=now+Config.Movement.JumpCooldown
-	a.root.AssemblyLinearVelocity=flat(a.root.AssemblyLinearVelocity)+UP*(Config.Movement.JumpVelocity*(a.def.JumpScale or 1))
-	a.airborne=true; a.airDodgeUsed=false; a.takeoffUntil=now+0.18
-	return true
+ local movement,parkour=donor(a,c)
+ if parkour.jump() then return true end
+ return movement.jump(Motor.grounded(a,c))
 end
 function Motor.detach(a,now,rebound)
 	local wall=a.wall
 	if not wall then return false end
 	a.wall=nil; a.wallNext=now+Config.Wall.ReattachDelay
 	if rebound then a.wallJumpUntil=now+0.22 end
-	a.root.AssemblyLinearVelocity=wall.normal*(if rebound then Config.Wall.ReboundAway else 12)+UP*(if rebound then Config.Wall.ReboundUp else 8)
+	if rebound and a.parkourDonor then a.parkourDonor.rebound(wall.normal)
+ else a.root.AssemblyLinearVelocity=wall.normal*12+UP*8 end
 	a.airborne=true
 	return true
 end
@@ -35,9 +41,8 @@ function Motor.tryWall(a,c,now)
 	if a.wall or now<(a.wallNext or 0) or a.move.Magnitude<0.25 or a.state~="Neutral" then return false end
 	local heading=flat(a.move)
 	if heading.Magnitude<0.25 then return false end
-	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude
-	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true
-	local hit=workspace:Raycast(a.root.Position,heading.Unit*Config.Wall.Detect,p)
+ local _,parkour=donor(a,c)
+ local hit=parkour.wallSurface()
 	if not hit or not hit.Instance:GetAttribute("NinjaWall") or math.abs(hit.Normal.Y)>0.18 then return false end
 	if heading.Unit:Dot(-hit.Normal)<0.45 then return false end
 	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime}
@@ -98,6 +103,7 @@ function Motor.flight(a,c,delta)
 end
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
+ donor(a,c)
 	if not a.wall then Motor.tryWall(a,c,now) end
 	if Motor.stepWall(a,c,dt,now) then return false end
 	local grounded=Motor.grounded(a,c)
@@ -108,23 +114,21 @@ function Motor.step(a,c,dt,now)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
-	local limit=a.def.Speed
-	if a.sprinting then limit=profile.SprintSpeed*(a.def.SprintScale or 1) end
-	if a.state=="Guarding" then limit=Config.GuardSpeed
-	elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
-	elseif a.state=="Stunned" or a.state=="Defeated" then limit=0
-	elseif a.state=="Dodging" or a.state=="Pursuit" then limit=0
-	elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
-	if a.grabVictim then limit=math.min(limit,5) end
-	if now<(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
-	local desired=flat(a.move)
-	if desired.Magnitude>1 then desired=desired.Unit end
-	desired*=limit
-	local rate=(if grounded then (if desired.Magnitude> a.locomotion.Magnitude then profile.GroundAcceleration else profile.GroundDeceleration) else profile.AirAcceleration*(a.def.AirControlScale or 1))*(a.def.AccelerationScale or 1)
-	a.locomotion=approach(a.locomotion,desired,rate*dt)
-	a.hum.WalkSpeed=a.locomotion.Magnitude
-	a.hum:Move(if a.locomotion.Magnitude>0.05 then a.locomotion.Unit else Vector3.zero,false)
-	if a.state=="Dodging" or a.state=="Pursuit" then a.hum:Move(Vector3.zero,false) end
+ local movement,parkour=donor(a,c)
+ a.grounded=grounded
+ if parkour.step() then return false end
+ local sprinting=movement.step(dt,grounded)
+ local limit=a.hum.WalkSpeed
+ if a.state=="Guarding" then limit=Config.GuardSpeed
+ elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
+ elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
+ elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
+ if a.grabVictim then limit=math.min(limit,5) end
+ if now<(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
+ a.hum.WalkSpeed=limit
+ a.hum:Move(if limit>0 then a.move else Vector3.zero,false)
+ a.locomotion=a.move*limit
+ a.model:SetAttribute("MovementBase","Place1")
 	return grounded
 end
 return Motor

@@ -1,0 +1,226 @@
+-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
+-- Per-actor/server execution replaces LocalPlayer, UI, input listeners and FPS camera.
+-- Ground sprint/stamina, takeoff momentum, bunny-hop and air steering are donor code.
+local Movement={}
+function Movement.new(a,c)
+ local WALK_SPEED=a.def.Speed
+ local SPRINT_SPEED=44*(a.def.SprintScale or 1)
+ local JUMP_VERTICAL_SPEED=60*(a.def.JumpScale or 1)
+ local WALK_BHOP_SPEED=36
+ local SPRINT_BHOP_SPEED=62*(a.def.SprintScale or 1)
+ local STAMINA_DRAIN_SECONDS=60
+ local STAMINA_REGEN_SECONDS=18
+ local STAMINA_REGEN_DELAY=.85
+ local EXHAUSTED_RECOVERY=.12
+ local AIR_CONTROL_ACCELERATION=72*(a.def.AirControlScale or 1)
+ local AIR_ACCELERATION_SPEED_CAP=72
+ local MOMENTUM_CARRY_CAP=120
+ local currentCharacter,currentHumanoid,currentRoot=a.model,a.hum,a.root
+ local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
+ local lastGroundHorizontalVelocity=Vector3.zero
+ local lastJumpRequestAt=-math.huge
+ local sprintInputs,jumpInputs='Sprint','Jump'
+ local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
+ local function movementIsBlocked(_character)
+  return a.wall~=nil or a.reaction~=nil or a.state~='Neutral'
+   or a.model:GetAttribute('MovementTraversalActive')==true
+ end
+ local function setCharacterAttribute(name,value) a.model:SetAttribute(name,value) end
+local function horizontalOf(vector)
+	return Vector3.new(vector.X, 0, vector.Z)
+end
+
+local function moveVectorToward(current, target, maximumDelta)
+	local difference = target - current
+	local distance = difference.Magnitude
+	if distance == 0 or distance <= maximumDelta then
+		return target
+	end
+	return current + difference / distance * maximumDelta
+end
+
+local function preserveTakeoffMomentum()
+	local character = currentCharacter
+	local root = currentRoot
+	if not character or not root or not root.Parent or movementIsBlocked(character) then
+		return
+	end
+
+	local velocity = root.AssemblyLinearVelocity
+	local currentHorizontal = horizontalOf(velocity)
+	local carry = lastGroundHorizontalVelocity
+	local carrySpeed = carry.Magnitude
+	if carrySpeed <= currentHorizontal.Magnitude + 0.1 then
+		return
+	end
+
+	if carrySpeed > MOMENTUM_CARRY_CAP then
+		carry = carry.Unit * MOMENTUM_CARRY_CAP
+	end
+	root.AssemblyLinearVelocity = Vector3.new(carry.X, velocity.Y, carry.Z)
+end
+
+local function applyAirControl(deltaTime, desiredSprint)
+	local root = currentRoot
+	local humanoid = currentHumanoid
+	if not root or not humanoid then
+		return
+	end
+
+	local moveDirection = horizontalOf(a.move)
+	if moveDirection.Magnitude < 0.05 then
+		return
+	end
+	moveDirection = moveDirection.Unit
+
+	local velocity = root.AssemblyLinearVelocity
+	local horizontal = horizontalOf(velocity)
+	local currentSpeed = horizontal.Magnitude
+	local requestedSpeed = desiredSprint and SPRINT_SPEED or WALK_SPEED
+	local targetSpeed
+	if currentSpeed > AIR_ACCELERATION_SPEED_CAP then
+		targetSpeed = currentSpeed
+	else
+		targetSpeed = math.min(math.max(currentSpeed, requestedSpeed), AIR_ACCELERATION_SPEED_CAP)
+	end
+
+	local targetHorizontal = moveDirection * targetSpeed
+	local steeredHorizontal = moveVectorToward(
+		horizontal,
+		targetHorizontal,
+		AIR_CONTROL_ACCELERATION * deltaTime
+	)
+	local allowedSpeed = math.max(currentSpeed, AIR_ACCELERATION_SPEED_CAP)
+	if steeredHorizontal.Magnitude > allowedSpeed then
+		steeredHorizontal = steeredHorizontal.Unit * allowedSpeed
+	end
+
+	if (steeredHorizontal - horizontal).Magnitude > 0.001 then
+		root.AssemblyLinearVelocity = Vector3.new(steeredHorizontal.X, velocity.Y, steeredHorizontal.Z)
+	end
+end
+
+local function requestGroundJump()
+	local character = currentCharacter
+	local humanoid = currentHumanoid
+	local root = currentRoot
+	if not character or not humanoid or not root or movementIsBlocked(character)
+		or humanoid.Health <= 0 or not a.grounded then
+		return
+	end
+	local now = c.now
+	if now - lastJumpRequestAt < 0.12 then
+		return
+	end
+	lastJumpRequestAt = now
+
+	local jumpDirection = horizontalOf(a.move)
+	if jumpDirection.Magnitude > 0.05 then
+		jumpDirection = jumpDirection.Unit
+		local fastHop = sprinting or anyHeld(sprintInputs)
+		local targetHopSpeed = fastHop and SPRINT_BHOP_SPEED or WALK_BHOP_SPEED
+		local currentVelocity = root.AssemblyLinearVelocity
+		local currentHorizontal = horizontalOf(currentVelocity)
+		local boostedSpeed = math.max(currentHorizontal.Magnitude, targetHopSpeed)
+		local boosted = jumpDirection * math.min(boostedSpeed, MOMENTUM_CARRY_CAP)
+		root.AssemblyLinearVelocity = Vector3.new(boosted.X, currentVelocity.Y, boosted.Z)
+		lastGroundHorizontalVelocity = boosted
+	end
+	humanoid.Jump = true
+	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	local takeoffVelocity = root.AssemblyLinearVelocity
+	root.AssemblyLinearVelocity = Vector3.new(
+		takeoffVelocity.X,
+		math.max(takeoffVelocity.Y, JUMP_VERTICAL_SPEED),
+		takeoffVelocity.Z
+	)
+	character:SetAttribute("MovementLastJumpAt", c.now)
+	character:SetAttribute(
+		"MovementLastJumpHorizontalSpeed",
+		horizontalOf(root.AssemblyLinearVelocity).Magnitude
+	)
+	character:SetAttribute("MovementLastJumpVerticalSpeed", root.AssemblyLinearVelocity.Y)
+end
+
+local function updateMovement(deltaTime)
+	local character = currentCharacter
+	local humanoid = currentHumanoid
+	local root = currentRoot
+	if not character or not humanoid or not root or humanoid.Health <= 0 then
+		return
+	end
+
+	local blocked = movementIsBlocked(character)
+	local grounded = a.grounded
+	local horizontalVelocity = horizontalOf(root.AssemblyLinearVelocity)
+	local groundSpeed = horizontalVelocity.Magnitude
+	local hasMoveInput = a.move.Magnitude > 0.05
+	local wantsSprint = anyHeld(sprintInputs) and hasMoveInput
+
+	if grounded then
+		lastGroundHorizontalVelocity = horizontalVelocity
+	end
+
+	if exhausted and stamina >= EXHAUSTED_RECOVERY then
+		exhausted = false
+	end
+
+	sprinting = not blocked and wantsSprint and not exhausted and stamina > 0
+	if sprinting then
+		stamina = math.max(0, stamina - deltaTime / STAMINA_DRAIN_SECONDS)
+		regenDelayRemaining = STAMINA_REGEN_DELAY
+		if stamina <= 0 then
+			stamina = 0
+			exhausted = true
+			sprinting = false
+		end
+	else
+		regenDelayRemaining = math.max(0, regenDelayRemaining - deltaTime)
+		if regenDelayRemaining == 0 then
+			stamina = math.min(1, stamina + deltaTime / STAMINA_REGEN_SECONDS)
+		end
+	end
+
+	if not blocked then
+		local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+		if math.abs(humanoid.WalkSpeed - desiredWalkSpeed) > 0.01 then
+			humanoid.WalkSpeed = desiredWalkSpeed
+		end
+
+		if anyHeld(jumpInputs) and grounded then
+			requestGroundJump()
+		end
+
+		if not grounded then
+			applyAirControl(deltaTime, sprinting)
+		end
+	end
+
+	setCharacterAttribute("MovementSprinting", sprinting)
+	setCharacterAttribute("MovementStamina", stamina)
+	setCharacterAttribute("MovementGroundSpeed", groundSpeed)
+end
+
+
+ local api={}
+ function api.step(dt,grounded)
+  a.grounded=grounded
+  currentHumanoid:Move(a.move,false)
+  updateMovement(math.min(dt,.1))
+  a.locomotion=a.move*currentHumanoid.WalkSpeed
+  return sprinting
+ end
+ function api.jump(grounded)
+  a.grounded=grounded
+  local previous=lastJumpRequestAt
+  requestGroundJump()
+  if lastJumpRequestAt~=previous then
+   preserveTakeoffMomentum()
+   a.airborne=true;a.airDodgeUsed=false;a.takeoffUntil=c.now+.18
+   return true
+  end
+  return false
+ end
+ return api
+end
+return Movement
