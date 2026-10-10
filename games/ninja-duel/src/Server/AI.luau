@@ -22,9 +22,27 @@ function AI:update(now)
 	a.sprinting=distance>desired+6
 	if a.move.Magnitude>1 then a.move=a.move.Unit end
 	if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
-	if target.state~=self.observed then self.observed=target.state; self.observedAt=now end
+	if target.state~=self.observed then
+  if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
+  self.observed=target.state;self.observedAt=now
+ end
 	local reacted=now-self.observedAt>=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+ -- Remember the wind-up through Active/Recovery: short attacks used to erase
+ -- the observation before reaction latency elapsed, so defense never fired.
+ local remembered=self.threatAt and now-self.threatAt>=tune.Reaction and now-self.threatAt<.9
+ if remembered and distance<9 and a.state=="Neutral" and not a.reaction then
+  self.threatAt=nil
+  if target.state=="Recovery" then
+   a.move=toward;a.sprinting=true
+   if distance<6 then c:request(a,"Attack") else c:request(a,"Dodge") end
+  elseif minato then
+   a.move=tangent;c:request(a,"Dodge")
+  else
+   c:request(a,"Guard");self.guardUntil=now+.36
+  end
+  return
+ end
 	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted>.08 and self.rng:NextNumber()<(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.

@@ -1241,7 +1241,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND12">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7089b9ed1f98b7e6481feab9be34680e7da7a0cc81c0e047ff76fd888d0de050</string>
+          <string name="Value">fcb6f8dad23ec54ef3ecd8d9529b6959592e5143e444bfb5bd49ba7c27546034</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND13">
@@ -1367,9 +1367,27 @@ function AI:update(now)
 	a.sprinting=distance&gt;desired+6
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
-	if target.state~=self.observed then self.observed=target.state; self.observedAt=now end
+	if target.state~=self.observed then
+  if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
+  self.observed=target.state;self.observedAt=now
+ end
 	local reacted=now-self.observedAt&gt;=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+ -- Remember the wind-up through Active/Recovery: short attacks used to erase
+ -- the observation before reaction latency elapsed, so defense never fired.
+ local remembered=self.threatAt and now-self.threatAt&gt;=tune.Reaction and now-self.threatAt&lt;.9
+ if remembered and distance&lt;9 and a.state=="Neutral" and not a.reaction then
+  self.threatAt=nil
+  if target.state=="Recovery" then
+   a.move=toward;a.sprinting=true
+   if distance&lt;6 then c:request(a,"Attack") else c:request(a,"Dodge") end
+  elseif minato then
+   a.move=tangent;c:request(a,"Dodge")
+  else
+   c:request(a,"Guard");self.guardUntil=now+.36
+  end
+  return
+ end
 	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted&gt;.08 and self.rng:NextNumber()&lt;(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.
@@ -1786,7 +1804,7 @@ function Brawler.hit(c,a,p)
 	else
 		b.guardImpact=c.now+.18
 		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
-		Motor.travel(b,c,-a.root.CFrame.LookVector,push)
+		Motor.travel(b,c,a.root.CFrame.LookVector,push)
 	end
   return true
  end
@@ -2209,6 +2227,21 @@ function Combat:updateActor(a,dt)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
+ local attack=a.pending
+ if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
+  local delta=a.target.root.Position-a.root.Position
+  local flat=Vector3.new(delta.X,0,delta.Z)
+  if flat.Magnitude&gt;2 and flat.Magnitude&lt;9 then
+   local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
+   local spec=attack.spec
+   if a.fighterId=="Flashstep" and spec.angle then
+    Motor.travel(a,self,tangent*(if spec.angle&lt;0 then -1 else 1),dt*(if a.airborne then 9 else 7))
+   elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
+    Motor.travel(a,self,-flat,dt*9)
+   end
+   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+  end
+ end
 	if now&lt;(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end
@@ -2487,7 +2520,7 @@ function Matches:snapshot(player,s)
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=a.root.AssemblyLinearVelocity}
+			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity}
 	end
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot)})
 end
@@ -4251,6 +4284,23 @@ return World
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">local Camera={}; Camera.__index=Camera
+-- Persistent framing modes blend over several frames; controls remain live.
+local framing={
+ Ground={distance=18,height=7,fov=69,lift=1.4,side=.24},
+ Launcher={distance=20,height=5,fov=74,lift=4.5,side=.32},
+ Pursuit={distance=27,height=8,fov=82,lift=2.5,side=.48},
+ AirCombo={distance=23,height=4,fov=76,lift=1.8,side=.45},
+ Slam={distance=21,height=12,fov=79,lift=-2.2,side=.35},
+ Wall={distance=24,height=10,fov=77,lift=2.5,side=.6},
+}
+local function mode(h,b)
+ if h.attackName=="Slam" or b.attackName=="Slam" then return "Slam" end
+ if h.state=="Pursuit" or b.state=="Pursuit" then return "Pursuit" end
+ if h.wall or b.wall or h.reaction=="WallSplat" or b.reaction=="WallSplat" then return "Wall" end
+ if h.reaction=="Launched" or b.reaction=="Launched" then return "Launcher" end
+ if h.airborne or b.airborne then return "AirCombo" end
+ return "Ground"
+end
 function Camera.new()
 	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.28,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boom=nil,rng=Random.new()},Camera)
  local UIS=game:GetService("UserInputService")
@@ -4298,29 +4348,42 @@ function Camera:update(data,dt)
 	local vertical=math.abs(target.Y-a.Y);local aerial=data.human.airborne or data.bot.airborne or vertical&gt;5
 	local pursuit=data.human.state=="Pursuit" or data.bot.state=="Pursuit"
 	local slam=data.human.attackName=="Slam" or data.bot.attackName=="Slam"
-	local targetFocus=a:Lerp(target,.5)+Vector3.new(0,if aerial then 1.1 else 1.55,0)
+	local selected=mode(data.human,data.bot)
+ self.mode=selected
+ local frame=framing[selected]
+ local targetFocus=a:Lerp(target,.5)+Vector3.new(0,frame.lift,0)
 	local focusRate=if aerial or pursuit then 9 else 6
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
 	self.yaw+=(self.look.X or 0)*dt*2.2;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,0.08,.9)
 	local behind=if self.locked then (CFrame.Angles(0,self.yaw,0):VectorToWorldSpace(-flat.Unit)) else Vector3.new(math.sin(self.yaw),0,math.cos(self.yaw))
 	if not self.locked then focus=a+Vector3.new(0,1.5,0) end
-	self.boom=if self.boom and self.boom:Dot(behind)&gt;-.65 then self.boom:Lerp(behind,1-math.exp(-dt*5)) else behind
+	-- Preserve the viewing hemisphere when fighters cross instead of flipping 180°.
+ if self.locked and self.boom and self.boom:Dot(behind)&lt;0 then behind=-behind end
+ behind=(behind+Vector3.new(-behind.Z,0,behind.X)*frame.side).Unit
+ self.boom=if self.boom then self.boom:Lerp(behind,1-math.exp(-dt*4)) else behind
 	if self.boom.Magnitude&lt;.1 then self.boom=behind else self.boom=self.boom.Unit end
-	local boomDistance=math.clamp(15+distance*.48+vertical*.22+(if aerial then 2.5 else 0),17,34)
-	local height=6+self.pitch*12+vertical*.34+(if aerial then 2 else 0)
+	local boomDistance=math.clamp(frame.distance+math.max(0,distance-8)*.48+vertical*.22,17,40)
+	local height=frame.height+self.pitch*8+vertical*.24
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+self.boom*boomDistance+Vector3.new(0,height,0)
 	self.fovKick*=math.exp(-dt*10)
 	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
-	local targetFov=68+math.clamp(distance*.22,0,7)+math.clamp(speed*.1,0,5)+(if aerial then 3 else 0)+(if pursuit then 4 else 0)+(if data.human.wall or data.bot.wall then 2 else 0)+self.fovKick
+	local targetFov=frame.fov+math.clamp(distance*.12,0,5)+math.clamp(speed*.06,0,3)+self.fovKick
 	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam then 9 else 5)))
 	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
 	local exclude={character};if bot then table.insert(exclude,bot) end
 	local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
 	ray.FilterDescendantsInstances=exclude
 	local hit=workspace:Raycast(focus,desired-focus,ray)
-	if hit then desired=hit.Position+hit.Normal*0.7 end
+	if hit then
+  desired=hit.Position+hit.Normal*1.2
+  if (desired-focus).Magnitude&lt;8 then
+   local raised=focus+Vector3.new(0,13,0)+self.boom*5
+   local overhead=workspace:Raycast(focus,raised-focus,ray)
+   desired=if overhead then overhead.Position+overhead.Normal else raised
+  end
+ end
 	local cf=CFrame.lookAt(desired,focus)
 	if os.clock()&lt;self.shakeUntil then
 		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
@@ -4450,10 +4513,10 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch then camera.locked=true end
 	current=data; presentation.receivedAt=os.clock(); ui:render(data)
 end)
+RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
 RunService.RenderStepped:Connect(function(dt)
 	camera:update(current,dt)
-	presentation:update(current,dt)
 	if current.phase=="Duel" and os.clock()&gt;=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
 	end
@@ -4502,6 +4565,8 @@ function Presentation:update(data,_dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
+   Motion.clear(model)
+   Motion.weapon(model,actor)
    if previous and actor.health&lt;previous.health then
     local damage=previous.health-actor.health;local root=model:FindFirstChild("HumanoidRootPart")
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
@@ -4512,7 +4577,9 @@ function Presentation:update(data,_dt)
    end
 		 local recoil=self.recoil[key]
 		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
-		 if recoil and os.clock()-recoil.at&lt;recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
+		 if actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
+         elseif actor.state=="Dodging" or actor.reaction then Motion.defense(model,actor)
+         elseif recoil and os.clock()-recoil.at&lt;recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
 		 elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency),actor.fighterId)
 		 elseif actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
 		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity,actor.fighterId) end
@@ -4723,6 +4790,7 @@ local Motion={}
 local joints={
  Waist={"LowerTorso","Waist"},Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},Neck={"UpperTorso","Neck"},
  RightHip={"LowerTorso","RightHip"},LeftHip={"LowerTorso","LeftHip"},
+ Root={"HumanoidRootPart","Root"},RightElbow={"RightUpperArm","RightElbow"},LeftElbow={"LeftUpperArm","LeftElbow"},RightKnee={"RightUpperLeg","RightKnee"},LeftKnee={"LeftUpperLeg","LeftKnee"},
 }
 local function motor(char,key)
 	local d=joints[key];local part=char and char:FindFirstChild(d[1]);local m=part and part:FindFirstChild(d[2])
@@ -4739,29 +4807,89 @@ end
 local function set(char,key,value)
  local joint=motor(char,key);if joint then joint.Transform=value end
 end
+-- Each route has authored anticipation/contact/follow-through silhouettes.
+-- Degrees are local joint rotations, independent of the locomotion Animator.
+local function pose(root,waist,right,left,rhip,lhip,elbows,knees)
+ return {Root=root,Waist=waist,Right=right,Left=left,RightHip=rhip,LeftHip=lhip,
+ RightElbow={elbows and elbows[1] or 0,0,0},LeftElbow={elbows and elbows[2] or 0,0,0},
+ RightKnee={knees and knees[1] or 0,0,0},LeftKnee={knees and knees[2] or 0,0,0}}
+end
+local choreography={
+ Flashstep={
+ -- Reverse-grip kunai cut, low cross slash, turning heel finisher.
+ Light1={pose({0,-12,-8},{8,-32,0},{-35,0,65},{-40,0,-18},{-22,0,0},{18,0,0},{-95,-45}),pose({0,15,-5},{-15,48,-12},{-105,-35,-35},{20,0,-28},{22,0,0},{-28,0,0},{-12,-65})},
+ Light2={pose({12,18,10},{20,40,12},{-65,30,-15},{-20,0,-55},{25,0,0},{-35,0,0},{-80,-60}),pose({-8,-28,-12},{-8,-65,-18},{-65,-65,75},{-90,25,-35},{-20,0,15},{38,0,-10},{-15,-20})},
+ Light3={pose({0,-45,0},{-12,-45,0},{25,0,65},{-35,0,-65},{-55,15,-20},{15,0,0},{-60,-45},{-85,0}),pose({0,65,-18},{-18,48,-12},{25,0,75},{-50,0,-40},{-85,35,-65},{8,0,0},{-35,-80},{0,-12})},
+ Launcher={pose({18,0,-12},{25,-25,0},{40,0,25},{-40,0,-25},{-60,0,0},{-25,0,0},{-85,-60},{-90,-45}),pose({-15,25,0},{-28,32,0},{-165,0,15},{20,0,-35},{-65,0,0},{28,0,0},{-15,-70},{-75,0})},
+ DashAttack={pose({28,-20,-12},{12,-25,0},{55,0,15},{35,0,-25},{-35,0,0},{25,0,0},{-30,-25}),pose({15,20,-8},{-12,40,-10},{-95,-25,-20},{50,0,-30},{45,0,0},{-50,0,0},{-5,-45},{-15,-70})},
+ Air1={pose({0,-30,-28},{5,-30,-15},{-55,0,65},{-35,0,-35},{-55,0,-20},{30,0,20},{-80,-70},{-60,-40}),pose({0,35,30},{-15,55,20},{-100,-50,-30},{45,0,-35},{25,0,-35},{-65,0,10},{-10,-50},{-25,-80})},
+ Air2={pose({20,35,20},{20,35,0},{40,0,65},{-70,0,-25},{-45,0,0},{-65,0,15},{-50,-65},{-70,-90}),pose({-15,-50,-25},{-20,-45,-10},{-60,0,45},{20,0,-55},{-85,0,-30},{30,0,15},{-65,-25},{0,-65})},
+ Slam={pose({-25,0,-15},{-20,-30,0},{-165,0,25},{-45,0,-25},{-65,0,0},{-30,0,0},{-65,-60},{-90,-70}),pose({48,20,0},{25,30,0},{-85,0,-15},{50,0,-25},{20,0,0},{-30,0,0},{-10,-55},{-15,-60})},
+ },
+ Mirage={
+ -- Open palm check, shuriken flick, rooted side kick that creates space.
+ Light1={pose({0,8,0},{0,18,0},{-45,0,15},{-65,0,-15},{0,0,0},{-12,0,0},{-90,-95}),pose({0,-8,0},{-5,-18,0},{-88,0,8},{-40,0,-12},{-8,0,0},{12,0,0},{-5,-100})},
+ Light2={pose({0,-8,0},{0,-22,0},{-45,0,15},{-80,35,-50},{-10,0,0},{8,0,0},{-100,-115}),pose({0,12,0},{0,22,0},{-50,0,15},{-95,-30,-15},{10,0,0},{-8,0,0},{-90,-5})},
+ Light3={pose({0,15,0},{0,25,0},{-55,0,20},{-65,0,-15},{10,0,0},{-65,0,-10},{-85,-85},{0,-115}),pose({-12,-25,12},{-8,-25,0},{-40,0,35},{-65,0,-25},{12,0,0},{-100,-15,-25},{-70,-90},{0,0})},
+ Launcher={pose({6,-10,0},{12,-15,0},{-50,0,15},{-60,0,-15},{-65,0,0},{5,0,0},{-85,-90},{-110,0}),pose({-8,-15,-8},{-12,0,0},{-60,0,25},{-65,0,-20},{-145,0,0},{18,0,0},{-80,-90},{-8,0})},
+ DashAttack={pose({8,20,0},{0,30,0},{-50,0,20},{-75,0,-15},{-20,0,0},{15,0,0},{-110,-100}),pose({8,-18,0},{0,-35,0},{-75,0,-10},{-50,0,-25},{15,0,0},{-20,0,0},{-120,-85})},
+ Air1={pose({-8,10,0},{-8,20,0},{-55,0,15},{-65,0,-20},{-65,0,0},{-20,0,0},{-90,-90},{-100,-50}),pose({-10,-15,8},{-15,-20,0},{-45,0,25},{-60,0,-25},{-100,0,0},{20,0,0},{-90,-70},{0,-50})},
+ Air2={pose({0,-15,0},{0,-25,0},{-60,0,20},{-80,20,-45},{-35,0,0},{-30,0,0},{-100,-110},{-70,-65}),pose({0,20,0},{0,35,0},{-65,0,25},{-95,-20,-15},{-20,0,0},{-45,0,0},{-80,-5},{-55,-75})},
+ Slam={pose({-15,0,0},{-20,0,0},{-160,0,15},{-160,0,-15},{-45,0,0},{-45,0,0},{-110,-110},{-75,-75}),pose({25,0,0},{40,0,0},{-100,0,10},{-100,0,-10},{25,0,0},{15,0,0},{-5,-5},{-20,-30})},
+ },
+}
+local function rotation(v)
+ return if v then CFrame.Angles(math.rad(v[1]),math.rad(v[2]),math.rad(v[3])) else CFrame.identity
+end
 function Motion.pose(char,name,elapsed,fighterId)
-	local spec=Attacks[name]
-	if not spec then return end
-	spec=table.clone(spec)
-	local fighter=Fighters[fighterId];local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
-	if profile then spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1 end
-	local coil,drive,settle=phases(elapsed,spec);local hold=1-settle
-	local minato=fighterId=="Flashstep";local side=spec.side or 1
-	if profile and profile.angle then side=if profile.angle&lt;0 then -1 else 1 end
-	local twist=math.rad(spec.twist or 24)*(if minato then 1.18 else .86)
-	local lean=math.rad(spec.lean or 10)*(if minato then 1.12 else .72);local arm=math.rad(spec.arm or 80)*(if minato then 1 else .92)
-	local strike=drive*hold;local wind=coil*(1-drive)
-	local yaw=side*(-twist*.52*wind+twist*strike);local pitch=lean*(.2*wind-.72*strike)*hold
-	if name=="Launcher" or name=="ThrowUp" then pitch=-math.abs(lean)*(.65*wind+strike) end
-	if name=="Slam" then pitch=math.abs(lean)*(.22*wind+strike) end
-	set(char,"Waist",CFrame.Angles(pitch,yaw,side*math.rad(5)*(strike-wind)))
-	set(char,"Neck",CFrame.Angles(-pitch*.3,-yaw*.38,0))
-	local attack=CFrame.Angles(-arm*(.28*wind+strike),side*math.rad(if minato then 14 else 7)*strike,-side*math.rad(if minato then 22 else 13)*(wind+strike))
-	local guard=CFrame.Angles(math.rad(if minato then -18 else -28)*hold,-side*math.rad(5),side*math.rad(10)*hold)
-	if side&gt;0 then set(char,"Right",attack);set(char,"Left",guard) else set(char,"Left",attack);set(char,"Right",guard) end
-	local crouch=math.rad(16)*wind*hold;local stride=math.rad(14)*strike
-	set(char,"RightHip",CFrame.Angles(crouch+stride*side,0,-side*math.rad(5)*hold))
-	set(char,"LeftHip",CFrame.Angles(crouch-stride*side,0,side*math.rad(5)*hold))
+ local spec=Attacks[name];if not spec then return end
+ local fighter=Fighters[fighterId];local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
+ local startup=spec.startup*(profile and profile.startup or 1)
+ local active=spec.active*(profile and profile.active or 1)
+ local recovery=spec.recovery*(profile and profile.recovery or 1)
+ local route=choreography[fighterId] or choreography.Flashstep
+ local frames=route[name] or route.Light1
+ local from,to,t
+ if elapsed&lt;startup then from={};to=frames[1];t=smooth(elapsed/startup)
+ elseif elapsed&lt;startup+active*.55 then from=frames[1];to=frames[2];t=smooth((elapsed-startup)/(active*.55))
+ else from=frames[2];to={};t=smooth((elapsed-startup-active*.55)/(recovery+active*.45)) end
+ for key in joints do set(char,key,rotation(from[key]):Lerp(rotation(to[key]),t)) end
+end
+local weapons=setmetatable({}, {__mode="k"})
+function Motion.weapon(char,actor)
+ local item=weapons[char]
+ if not item then
+  local hand=char:FindFirstChild(if actor.fighterId=="Flashstep" then "RightHand" else "LeftHand")
+  if not hand then return end
+  item={};weapons[char]=item
+  local minato=actor.fighterId=="Flashstep"
+  for i=1,(if minato then 3 else 4) do
+   local blade=Instance.new("WedgePart");blade.Name="CombatBlade";blade.Size=if minato then Vector3.new(.13,.42,1.2) else Vector3.new(.09,.3,.75)
+   blade.Material=Enum.Material.Metal;blade.Color=Color3.fromRGB(195,210,222)
+   blade.Massless=true;blade.CanCollide=false;blade.CanQuery=false;blade.CanTouch=false;blade.Parent=hand
+   local weld=Instance.new("Weld");weld.Part0=hand;weld.Part1=blade
+   weld.C0=if minato then CFrame.new((i-2)*.24,-.45,-.3)*CFrame.Angles(0,0,math.rad((i-2)*22)) else CFrame.new(0,-.35,0)*CFrame.Angles(0,math.rad(i*90),0)*CFrame.new(0,0,-.3)
+   weld.Parent=blade;table.insert(item,blade)
+  end
+ end
+ local active=actor.attackName and actor.state~="Neutral"
+ local visible=active and (actor.fighterId=="Flashstep" and actor.attackName~="Light3" or actor.fighterId=="Mirage" and (actor.attackName=="Light2" or actor.attackName=="Air2"))
+ for _,blade in item do blade.Transparency=if visible then 0 else 1 end
+end
+function Motion.defense(char,actor)
+ local direction=actor.velocity or Vector3.zero
+ local root=char:FindFirstChild("HumanoidRootPart")
+ local localMotion=root and root.CFrame:VectorToObjectSpace(direction) or Vector3.zero
+ if actor.state=="Dodging" then
+  set(char,"Root",CFrame.Angles(math.rad(25),0,math.rad(math.clamp(-localMotion.X*2,-35,35))))
+  set(char,"Waist",CFrame.Angles(math.rad(20),0,0))
+  set(char,"RightHip",CFrame.Angles(math.rad(-60),0,0));set(char,"LeftHip",CFrame.Angles(math.rad(30),0,0))
+  set(char,"RightKnee",CFrame.Angles(math.rad(-90),0,0));set(char,"Right",CFrame.Angles(math.rad(45),0,0))
+ elseif actor.reaction=="Knockdown" or actor.reaction=="WallSplat" then
+  set(char,"Root",CFrame.Angles(math.rad(if actor.reaction=="WallSplat" then -22 else 65),0,math.rad(14)))
+  set(char,"Right",CFrame.Angles(0,0,math.rad(70)));set(char,"Left",CFrame.Angles(0,0,math.rad(-65)))
+ elseif actor.reaction then Motion.recoil(char,.03,actor.reaction,true)
+ end
 end
 function Motion.recoil(char,elapsed,reaction,heavy)
 	local duration=if heavy then .3 else .22;local t=1-smooth(elapsed/duration);local scale=if heavy then 1.35 else 1

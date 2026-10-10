@@ -135,7 +135,7 @@ function Brawler.hit(c,a,p)
 	else
 		b.guardImpact=c.now+.18
 		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
-		Motor.travel(b,c,-a.root.CFrame.LookVector,push)
+		Motor.travel(b,c,a.root.CFrame.LookVector,push)
 	end
   return true
  end

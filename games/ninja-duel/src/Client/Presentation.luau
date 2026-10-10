@@ -34,6 +34,8 @@ function Presentation:update(data,_dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
+   Motion.clear(model)
+   Motion.weapon(model,actor)
    if previous and actor.health<previous.health then
     local damage=previous.health-actor.health;local root=model:FindFirstChild("HumanoidRootPart")
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
@@ -44,7 +46,9 @@ function Presentation:update(data,_dt)
    end
 		 local recoil=self.recoil[key]
 		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
-		 if recoil and os.clock()-recoil.at<recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
+		 if actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
+         elseif actor.state=="Dodging" or actor.reaction then Motion.defense(model,actor)
+         elseif recoil and os.clock()-recoil.at<recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
 		 elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency),actor.fighterId)
 		 elseif actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
 		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity,actor.fighterId) end

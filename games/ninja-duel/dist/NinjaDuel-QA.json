@@ -1,25 +1,25 @@
 {
   "version": "0.5.0-velmora",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "e480fb0f85c2d8bfc844445cca52de5cb86dfa907c9531f88d6a8ba7ec3fc649",
+  "sha256": "b4b86f9a167a910682b4d823b263f3fa9fb773a79811ce491ffc4136c84486fc",
   "sources": {
-    "src/Client/Camera.luau": "f5490b4e964714bf8bde6e1d5a24a16c269a3d4eb394539c30a9641be87ac58d",
+    "src/Client/Camera.luau": "1f8c2918e79f402ee36908750c2e82a38d34a3dc9663ba8e77f065ff891ab17d",
     "src/Client/Input.luau": "9bc0f6fc7e3072728ca5a3612a70dae0612021649bc38401feb31e22bb3bae43",
-    "src/Client/Main.client.luau": "966222120b15494f1135a8771522bf110047fde8a6414ca17663d2624b3354a6",
-    "src/Client/Presentation.luau": "8132b9e9fe91b897edef40299276b2a6326145fa682de1bf21bd496f922a1144",
+    "src/Client/Main.client.luau": "aeb97a512215e0a919552155ab3d800276ba61ce0dcc14f4600827e59224ca8b",
+    "src/Client/Presentation.luau": "20275190b75e43770230ceba8a11477b7e07050f2a08d2061ee2f8669de56875",
     "src/Client/UI.luau": "32fd49dff5f65b9cd9d0a78dfb59cfd01001395c17d00c4a35992cb1af5c7964",
     "src/Client/VelmoraHitFeedback.luau": "c46ccd044b6f180b2eac7f376b7a6d72ddfe70d94523317841ae6233b99d59bf",
-    "src/Client/VelmoraMotionEngine.luau": "7a48c3500cc11373e61fac8029c25cbd875ff19805b499734d9cab1055bc4109",
-    "src/Server/AI.luau": "5f2853e7a8a24ca6f4627bae95eddf3c96a858afa9d5ad21c0ac3fa59bb539ea",
+    "src/Client/VelmoraMotionEngine.luau": "b8a199808e25cb1edcadfcb2339bd9c1432d474510f6f6880a555eceba5c2ff7",
+    "src/Server/AI.luau": "5a7967784ed44e53436c3b27dafe4398f2e23e34ec5b27ed56a2d337aff63cc8",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "fdd7860f9d1748ee8e69c16452bdba150b177281b3e37637552a7dd6264f3912",
     "src/Server/BanglaEvade.luau": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe",
-    "src/Server/Brawler.luau": "180163210a64a3e06b0581ca031a6ce977f12c51d4d0e15b076620d3d9aa71d2",
-    "src/Server/Combat.luau": "85bdbabcdf758cededc819bb1f6afbf8a31193cfe094040318ddaf2cf2f71b0a",
+    "src/Server/Brawler.luau": "9a6608a86c3682f556b672b04624869d961a1b339f55dffcc6c041ad377561fe",
+    "src/Server/Combat.luau": "b2e0afad0001733d2617d588f72d07b2eca5034c8111b79684bdeb09cae50d75",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "1026e53f40a3286feead4efc328c6323b66715be440a55f2937f459239c5901b",
     "src/Server/Main.server.luau": "1eb8aece02f3bf7adfd751438629840100dd18c77833c7bcc6122e02d3f3d6cc",
-    "src/Server/Matches.luau": "784bc00ea9c42a9025e0fb4d610e4825b2df5ec9dee63630299658d16f12d289",
+    "src/Server/Matches.luau": "545a441560c8dc4d6265ad0486afa0c586a744c33a5adf88d19e1200c3e5addb",
     "src/Server/Motor.luau": "e9d6992bad5dede07ce39f2a8cc9b7e68ca3b31f3d248bb1a598844df0a2c489",
     "src/Server/NativeQA.luau": "30e3555078dfb732bb01c6bbbca997b298718ea2be2357095e7eea82790c73c3",
     "src/Server/Place1Movement.luau": "a32c0c0ef8c086ede388422f715f98e00668168aa1a5bcadd12082a88153e7fe",
@@ -40,7 +40,7 @@
     "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
   },
   "sourceEquality": "PASS",
-  "buildFingerprint": "7089b9ed1f98b7e6481feab9be34680e7da7a0cc81c0e047ff76fd888d0de050",
+  "buildFingerprint": "fcb6f8dad23ec54ef3ecd8d9529b6959592e5143e444bfb5bd49ba7c27546034",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -65,7 +65,7 @@
     18342045122,
     18342131933
   ],
-  "nativeQA": "PASS — 32/32 in Roblox Studio 0.742 on exact QA artifact",
+  "nativeQA": "PENDING",
   "visualAcceptance": "PENDING",
-  "animationPermission": "BLOCKED_EXTERNAL_403 — procedural R15 motion active"
+  "animationPermission": "PENDING"
 }

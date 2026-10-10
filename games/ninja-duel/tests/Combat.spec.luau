@@ -303,4 +303,26 @@ test("R6 donor retarget preserves timing, neutral limb bases and R15 hierarchy",
  r15:Destroy();for _,frame in frames do frame:Destroy() end
  envBase.Instance=factory
 end)
+test("fighter choreography differs across eight attacks and resets all joints",function()
+ local Motion=loadModule("Client/VelmoraMotionEngine")
+ local function rig()
+  local joints={}
+  local model={FindFirstChild=function(_,part)
+   return {FindFirstChild=function(_,name)
+    joints[name]=joints[name] or {Transform=C.identity,IsA=function() return true end}
+    return joints[name]
+   end}
+  end}
+  return model,joints
+ end
+ local a,aj=rig();local b,bj=rig()
+ for _,name in {"Light1","Light2","Light3","Launcher","DashAttack","Air1","Air2","Slam"} do
+  Motion.pose(a,name,.16,"Flashstep");Motion.pose(b,name,.16,"Mirage")
+  local different=0
+  for key,joint in aj do if not joint.Transform:FuzzyEq(bj[key].Transform,.03) then different+=1 end end
+  assert(different>=5,name.." lacks distinct full-body choreography")
+  Motion.clear(a)
+  for _,joint in aj do assert(joint.Transform:FuzzyEq(C.identity,1e-5),"Stale attack joint") end
+ end
+end)
 print("NinjaDuel headless combat/migration: "..passed.." PASS (geometry adapter; native QA still required)")

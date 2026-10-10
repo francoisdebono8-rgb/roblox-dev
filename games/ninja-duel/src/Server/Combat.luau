@@ -351,6 +351,21 @@ function Combat:updateActor(a,dt)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
+ local attack=a.pending
+ if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
+  local delta=a.target.root.Position-a.root.Position
+  local flat=Vector3.new(delta.X,0,delta.Z)
+  if flat.Magnitude>2 and flat.Magnitude<9 then
+   local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
+   local spec=attack.spec
+   if a.fighterId=="Flashstep" and spec.angle then
+    Motor.travel(a,self,tangent*(if spec.angle<0 then -1 else 1),dt*(if a.airborne then 9 else 7))
+   elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
+    Motor.travel(a,self,-flat,dt*9)
+   end
+   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+  end
+ end
 	if now<(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end

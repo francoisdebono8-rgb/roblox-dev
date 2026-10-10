@@ -36,10 +36,10 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch then camera.locked=true end
 	current=data; presentation.receivedAt=os.clock(); ui:render(data)
 end)
+RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
 RunService.RenderStepped:Connect(function(dt)
 	camera:update(current,dt)
-	presentation:update(current,dt)
 	if current.phase=="Duel" and os.clock()>=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
 	end
