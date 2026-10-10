@@ -1,6 +1,6 @@
 # Ninja Duel — Velmora first playable fight
 
-Version `0.10.0-phase4-gamefeel-arena` — see `PHASE4_REPORT.md` (combo scaling, recharging substitution, wall combat loop, clashes, multi-seal Flying Thunder God, context Rasengan, Itachi's Sharingan and Phoenix Flower). Previous: `PHASE3_REPORT.md`, `VISION_GAP.md`, `CLAUDE_PASS_REPORT.md`.
+Version `0.11.0-final-today` — see `FINAL_TODAY_REPORT.md` (Neji Hyuga as third fighter, smooth bodies and planted feet, rhythm, more taijutsu). Before: `PHASE4_REPORT.md` (combo scaling, recharging substitution, wall combat loop, clashes, multi-seal Flying Thunder God, context Rasengan, Itachi's Sharingan and Phoenix Flower). Previous: `PHASE3_REPORT.md`, `VISION_GAP.md`, `CLAUDE_PASS_REPORT.md`.
 
 Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
 
