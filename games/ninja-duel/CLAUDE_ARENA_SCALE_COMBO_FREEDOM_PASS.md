@@ -75,7 +75,7 @@ The same combo grammar must produce different martial identity.
 
 ### Itachi
 - calm, precise, deceptive;
-- shuriken integrated inside taijutsu routes;
+- shuriken/kunai integrated inside taijutsu routes;
 - short counters, feints, redirects;
 - deceptive projectile angles;
 - can use tools to force movement before entering close range.
@@ -125,25 +125,37 @@ These should remain player-controlled enough that the game does not become a cut
 
 ## 7. Broaden ninja-tool and projectile freedom
 
-Expand the non-jutsu combat palette.
+Ninja tools are a **shared baseline system**, not an Itachi-only mechanic.
 
-Especially for Itachi, explore richer shuriken/kunai behavior such as:
-- ricochet/deflection interactions where appropriate;
-- delayed second projectile;
-- two projectiles colliding/redirecting to create a new trajectory;
-- projectile used during combo;
-- projectile used to force dodge direction;
-- projectile cancel into movement/taijutsu;
-- aerial throws;
-- different spread/angle patterns.
+All relevant fighters should be able to use basic ninja tools such as kunai/shuriken where it makes sense for the character and age. This should become part of the universal combat language of the game, like movement, guard or taijutsu.
 
-The exact implementation is up to you, but the goal is to make ninja tools feel like part of a deep fighting system, not a single ranged button.
+Then differentiate characters by **how good they are with those shared tools** and by what special interactions they unlock.
 
-Do similar thinking for Minato's marked kunai and Neji's ranged/space-control options where appropriate.
+Examples:
+- any fighter can throw a basic kunai/shuriken;
+- Minato is special because of marked kunai, seals, teleport routing and angle creation;
+- Itachi is naturally more advanced with shuriken/kunai precision, deception, ricochets, delayed trajectories, forced dodges and projectile combo integration;
+- Sasuke can also have strong shuriken/kunai usage, but with a more aggressive/younger style;
+- Neji can use standard tools, but they should remain secondary to Gentle Fist and space control.
+
+For Itachi specifically, it is fine to give him one or more **character-specific techniques or enhanced tool interactions** that prove he is better with ninja tools than the baseline roster, for example:
+- two projectiles colliding/redirecting into a new trajectory;
+- ricochet/deflection setups;
+- delayed second blade aimed at a dodge;
+- projectile feint into taijutsu;
+- projectile inside a combo route;
+- aerial multi-angle throws;
+- special shuriken pattern as an actual move/technique.
+
+But do **not** make basic kunai/shuriken exclusive to Itachi.
+
+The broader goal is to make ninja tools part of a deep fighting system instead of a single ranged button, while character mastery changes what each fighter can do with the same baseline tools.
+
+Do not over-engineer final balance yet. A later dedicated character-balance/loadout system will revisit exact move lists, power, cooldowns and roster balance. For now, prove the shared-tool foundation and character-specific mastery differences.
 
 ## 8. Fourth playable prototype
 
-Add a fourth prototype fighter. Use **young Sasuke (around 12–13)** unless there is a very strong technical reason to choose another roster character.
+Add a fourth prototype fighter: **young Sasuke (around 12–13)**.
 
 This is a prototype, not Minato/Itachi-level depth.
 
@@ -152,7 +164,7 @@ Target identity:
 - more aggressive than Itachi;
 - strong taijutsu base;
 - fire style;
-- shuriken/kunai usage;
+- good shared shuriken/kunai usage;
 - early Sharingan if useful to gameplay;
 - lightning/Chidori only if it fits the intended age/power rules and does not turn him into an adult/endgame kit.
 
@@ -160,7 +172,7 @@ Give him:
 - distinct idle/movement language;
 - at least one clearly different grounded combo route;
 - launcher/aerial route;
-- one projectile/tool identity;
+- one stronger-than-baseline ninja-tool interaction;
 - 2–4 prototype techniques;
 - enough AI/UI/costume support to fight the other three.
 
@@ -196,7 +208,8 @@ Before delivery, run complete playtests across all available fighters and major 
 - launcher/aerial/slam;
 - walls/wall-run/wall-tech;
 - substitutions;
-- projectiles;
+- shared ninja tools;
+- character-specific projectile/tool interactions;
 - teleports;
 - jutsu;
 - KO/results;
@@ -219,8 +232,8 @@ Priority order if time becomes limited:
 1. arena scale + meaningful running;
 2. directional combo grammar and hit reactions;
 3. speed/animation/camera continuity;
-4. richer ninja-tool interactions;
-5. fourth fighter prototype;
+4. shared ninja-tool foundation + character-specific mastery;
+5. fourth fighter prototype Sasuke;
 6. arena polish.
 
 Success criterion: even before using a flashy jutsu, the player should feel like they are controlling a highly skilled young ninja in a large arena, with freedom to run, angle, launch, pursue, throw tools, fight in the air and create visibly different combo routes.
