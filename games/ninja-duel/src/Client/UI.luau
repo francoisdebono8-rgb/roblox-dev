@@ -124,7 +124,19 @@ function UI.new(parent,send)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status}
+		-- Substitution charges: two diamonds, the recharging one fills up.
+		local pips={}
+		for k=1,2 do
+			local x=if right then 14+(k-1)*26 else 404-(k-1)*26
+			local pip=frame(box,UDim2.fromOffset(x,12),UDim2.fromOffset(16,16),palette.track)
+			pip.Rotation=45;pip.ClipsDescendants=true
+			local fill=frame(pip,UDim2.fromScale(0,1),UDim2.fromScale(1,1),palette.paper)
+			fill.AnchorPoint=Vector2.new(0,1)
+			pips[k]={pip=pip,fill=fill}
+		end
+		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 64 else 340,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
+			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -134,6 +146,20 @@ function UI.new(parent,send)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-118),UDim2.fromOffset(420,16),12,palette.muted)
+	-- Combo counters: yours on the left, the opponent's on you on the right.
+	local function counter(side)
+		local right=side=="right"
+		local box=frame(self.hud,if right then UDim2.new(1,-40,.36,0) else UDim2.new(0,40,.36,0),UDim2.fromOffset(220,90),palette.ink,1)
+		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
+		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+		local hits=text(box,"",UDim2.fromOffset(0,0),UDim2.fromOffset(220,56),54,palette.paper,TITLE_FONT,align)
+		create("UIStroke",hits,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local detail=text(box,"",UDim2.fromOffset(0,56),UDim2.fromOffset(220,18),14,palette.gold,BODY_FONT,align)
+		create("UIStroke",detail,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		return {box=box,hits=hits,detail=detail,shown=0}
+	end
+	self.comboMine=counter("left")
+	self.comboTheirs=counter("right")
 	self.techniqueButtons={}
 	for i=1,5 do
 		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
@@ -253,12 +279,37 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		local charges=actor.subCharges or 0
+		for k,pip in widget.pips do
+			local level=if k<=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)>0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
+			pip.fill.Size=UDim2.fromScale(1,level)
+			pip.fill.BackgroundColor3=if k<=charges then palette.paper else palette.muted
+		end
+	end
+	-- Combo counters with the damage scale of the next hit.
+	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
+		local widget,victim=pair[1],pair[2]
+		local hits=victim.comboHits or 0
+		if hits>=2 then
+			local scale=math.max(.35,1-.12*math.max(0,hits-1))
+			widget.hits.Text=hits.." HITS"
+			widget.detail.Text=string.format("%d DMG  •  NEXT x%.2f",math.floor((victim.comboDamage or 0)+.5),scale)
+			widget.box.Visible=true
+			if hits~=widget.shown then
+				widget.shown=hits
+				widget.hits.TextSize=64
+				Tween:Create(widget.hits,TweenInfo.new(.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=54}):Play()
+			end
+		else
+			widget.box.Visible=false;widget.shown=0
+		end
 	end
 	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
 		if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=h.cue or ""
-	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL CONVERT")
+	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
+		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -268,12 +319,20 @@ function UI:render(data)
 		ui.title.Text=string.upper(tech.name)
 		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost
 		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		if tech.id=="Flashstep" and #(h.seals or {})>0 and tech.remaining==0 then
+			local count=#(h.seals or {})
+			ui.status.Text=count.." SEAL"..(if count>1 then "S" else "").."  •  "..ui.status.Text
+		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self.hint.Text=if h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
+	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
+	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
+		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
+		elseif (h.counter or 0)>0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+		elseif h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b

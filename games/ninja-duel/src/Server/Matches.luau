@@ -70,6 +70,19 @@ function Matches:start(player,playerId,botId,training)
 end
 function Matches:snapshot(player,s)
 	local now=s.combat.now
+	-- Every Flying Thunder God seal the client should draw: planted kunai
+	-- (surface + normal) and the seal riding on the opponent's body.
+	local function sealList(a)
+		local list={}
+		for _,seal in Techniques.seals(s.combat,a,now) do
+			local entry=seal.anchor
+			if entry then
+				table.insert(list,{id=entry.id or 0,surface=entry.surface or seal.position,normal=entry.normal or Vector3.yAxis,
+					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id})
+			end
+		end
+		return list
+	end
 	local function data(a)
 		local ready={}
 		for i,spec in a.def.Techniques do
@@ -89,7 +102,13 @@ function Matches:snapshot(player,s)
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
-			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector}
+			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector,
+			-- Phase 4: combo scaling, recharging substitution, seals, wall state.
+			comboHits=a.comboHits or 0,comboDamage=a.comboDamage or 0,
+			subRegen=if (a.subRegenAt or math.huge)<math.huge then math.max(0,a.subRegenAt-now) else 0,
+			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
+			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
+			counter=math.max(0,(a.counterUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.

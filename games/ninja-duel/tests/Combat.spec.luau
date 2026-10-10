@@ -257,7 +257,8 @@ test("imported Bangla combo owns damage, contacts, effects and cleanup",function
  assert(health-b.health==5 and a.model:GetAttribute("CombatBase")=="BanglaBattlegrounds")
  assert(a.donorHitCount==1 and effectEmits>emits)
  health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(health-b.health==10)
- health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(health-b.health==25)
+ -- The third hit of a combo is scaled (Config.ComboScaling): 25 * 0.88.
+ health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(math.abs(health-b.health-22)<.01,"third hit not scaled: "..(health-b.health))
  assert(a.combo==3 and not a.chainOpen)
  step(c,.5);assert(c:request(a,"Attack") and a.combo==1)
  c:clear();assert(a.combo==0 and not a.pending and a.donorHitCount==0)

@@ -36,7 +36,8 @@ function Combat:add(id,model,hum,root,joints,definition)
 		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
 		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,airHold=0,
-		subCharges=Config.Substitution.Charges,subCooldown=0,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0 }
+		subCharges=Config.Substitution.Charges,subCooldown=0,subRegenAt=math.huge,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0,
+		comboHits=0,comboDamage=0,anchors={} }
 	table.insert(self.actors,a)
 	Defense.init(a)
 	Animation.attach(a)
@@ -142,6 +143,13 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
+	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
+	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt<.7 then
+		frontal=true
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude>.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
+		self:cue(victim,"SHARINGAN • TRACKED",.7)
+	end
 	if readEligible and frontal and victim.readUntil>self.now then
 		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
@@ -173,6 +181,14 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
+	-- Combo scaling: the opening hits of a combo land in full, every later hit
+	-- is worth less. Long routes stay possible; they just stop being lethal.
+	if not guarded then
+		local tune=Config.ComboScaling
+		local n=victim.comboHits or 0
+		if n>=tune.Free then amount*=math.max(tune.Floor,1-tune.Step*(n-tune.Free+1)) end
+		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
+	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
@@ -280,6 +296,106 @@ function Combat:stepThrow(a)
 	end
 	if a.throwing==throw and throw.fired>=throw.count then a.throwing=nil end
 end
+-- Kawarimi. A limited escape from a combo: two charges that come back one at a
+-- time, a chakra cost, and a short tracking window for the attacker so a
+-- predictable substitution can still be punished. Each prodigy reappears in
+-- his own way: Minato on a planted seal if he has one, Itachi as a crow clone
+-- behind the attacker, otherwise a short hop away.
+function Combat:substitute(a)
+	local tune=Config.Substitution
+	if a.subCharges<=0 then return false,"No substitution" end
+	if self.now<a.subCooldown then return false,"Substitution recovering" end
+	if a.chakra<tune.Cost then return false,"Need chakra" end
+	local hurt=(a.reaction~=nil and a.reaction~="Wakeup" and not (a.reaction=="Knockdown" and not a.airborne))
+		or a.state=="Stunned" or self.now-a.lastHurt<=tune.Window
+	if not hurt then return false,"No escape window" end
+	local attacker=a.target
+	local departure=a.root.Position
+	local destination,mode=nil,"hop"
+	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
+	if seal then
+		destination=self:clamp(seal.position);mode="seal"
+	elseif a.fighterId=="Mirage" and attacker and attacker.health>0 then
+		local back=-attacker.root.CFrame.LookVector*Vector3.new(1,0,1)
+		if back.Magnitude>.1 then
+			local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+back.Unit*5.5)
+			local blocked=false
+			for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
+				if part.CanCollide then blocked=true;break end
+			end
+			if not blocked and workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil then destination=spot;mode="crow" end
+		end
+	end
+	if destination then
+		self:relocate(a,destination)
+	else
+		local away=a.root.Position-(if attacker then attacker.root.Position else a.root.Position-a.root.CFrame.LookVector)
+		away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude<0.1 then away=a.root.CFrame.RightVector end
+		-- Pinned against a wall the straight escape is blocked: slide along it.
+		local moved=Motor.travel(a,self,away,tune.Distance)
+		if moved<2 then
+			local side=Vector3.new(-away.Z,0,away.X)
+			moved=Motor.travel(a,self,side,tune.Distance)
+			if moved<2 then moved=Motor.travel(a,self,-side,tune.Distance) end
+		end
+		if moved<2 then return false,"Escape blocked" end
+	end
+	if attacker then
+		local face=attacker.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
+		if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+	end
+	if a.subCharges>=tune.Charges then a.subRegenAt=self.now+tune.Recharge end
+	a.subCharges-=1; a.chakra-=tune.Cost; a.subCooldown=self.now+tune.Cooldown
+	a.subUntil=self.now+0.17
+	Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil;a.groundPose=nil
+	a.airborne=a.root.Position.Y>self.match.origin.Y+4.2
+	if seal then Techniques.consumeSeal(self,a,seal) end
+	Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.24
+	a.comboHits=0;a.comboDamage=0
+	self:setState(a,"Recovery",0.14)
+	-- The attacker may read the reappearance: a short chase window.
+	if attacker and attacker.health>0 then
+		attacker.pursuitUntil=math.max(attacker.pursuitUntil,self.now+tune.Track)
+		self:cue(attacker,"SUBSTITUTION • E TO TRACK",tune.Track)
+	end
+	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
+	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
+	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
+	self:cue(a,if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" else "SUBSTITUTION • REPOSITIONED")
+	return true
+end
+-- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
+-- (before the impact settles) or too late and the pin holds.
+function Combat:wallTech(a)
+	local tune=Config.Wall
+	local elapsed=self.now-(a.splatAt or -10)
+	if elapsed<tune.TechFrom or elapsed>tune.TechUntil or (a.hitstopUntil or 0)>self.now then
+		a.techLockUntil=self.now+.25
+		return false,"Tech missed"
+	end
+	if (a.techLockUntil or 0)>self.now then return false,"Tech missed" end
+	if a.chakra<tune.TechCost then return false,"Need chakra" end
+	local normal=a.splatNormal or -a.root.CFrame.LookVector
+	normal=Vector3.new(normal.X,0,normal.Z)
+	normal=if normal.Magnitude>.05 then normal.Unit else -a.root.CFrame.LookVector
+	a.chakra-=tune.TechCost
+	a.reaction=nil;a.reactionVelocity=nil;a.groundPose=nil;a.comboHits=0;a.comboDamage=0
+	-- Kick off along the stick (sideways along the wall or straight out).
+	local stick=Vector3.new(a.move.X,0,a.move.Z)
+	local along=stick-normal*stick:Dot(normal)
+	local out=normal*30+(if along.Magnitude>.3 then along.Unit*18 else Vector3.zero)
+	a.root.AssemblyLinearVelocity=out+Vector3.new(0,36,0)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
+	a.airborne=true;a.airDodgeUsed=false;a.takeoffUntil=self.now+.12;a.wallNext=self.now+.35
+	a.invulnerableUntil=self.now+.28
+	self:setState(a,"Recovery",.16)
+	Brawler.event(self,a,"WallTech")
+	self:pushImpact(a.root.Position-normal*1.2,"walltech",false,{owner=a.id,fighter=a.fighterId,normal=normal})
+	self:cue(a,"WALL TECH")
+	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
+	return true
+end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
@@ -296,29 +412,11 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	if action=="WallDetach" then Motor.detach(a,self.now,false); return true end
+	-- Pinned against a wall, the dodge button is a timed wall tech, never a
+	-- substitution: a mistimed tech must not silently spend a charge.
+	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
-	if action=="Substitute" then
-		local tune=Config.Substitution
-		if a.subCharges<=0 or self.now<a.subCooldown then return false,"No substitution" end
-		if a.chakra<tune.Cost then return false,"Need chakra" end
-		if self.now-a.lastHurt>tune.Window or (a.state~="Stunned" and Brawler.free(a,self.now)) then return false,"No escape window" end
-		local away=a.root.Position-a.target.root.Position
-		away=Vector3.new(away.X,0,away.Z)
-		if away.Magnitude<0.1 then away=a.root.CFrame.RightVector end
-		local departure=a.root.Position
-		local moved=Motor.travel(a,self,away,tune.Distance)
-		if moved<2 then return false,"Escape blocked" end
-		a.subCharges-=1; a.chakra-=tune.Cost; a.subCooldown=self.now+tune.Cooldown
-		a.subUntil=self.now+0.17
-		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil
-		Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.16
-		self:setState(a,"Recovery",0.16)
-		self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
-		self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
-		self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-		self:cue(a,"SUBSTITUTION • REPOSITIONED")
-		return true
-	end
+	if action=="Substitute" then return self:substitute(a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted<=pending.spec.startup*.62 then
@@ -403,6 +501,16 @@ function Combat:request(a,action,aim,clientTime)
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id
 	end
+	-- Flying Thunder God arrival: the Rasengan is already forming in the hand,
+	-- so it cancels the teleport recovery with almost no wind-up.
+	a.flashCancel=nil
+	local arriving=(a.flashUntil or 0)>self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
+		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
+	if cancelSpec and cancelSpec.Id=="BurstStrike" and arriving
+		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
+		a.flashCancel=true
+	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
@@ -428,6 +536,14 @@ function Combat:request(a,action,aim,clientTime)
 	local technique=Techniques[spec.Id]
 	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
 	a.stringCancel=nil
+	-- Context: the same Rasengan is a different tool after a teleport (instant
+	-- thrust) and in the air (a plunge that ends the air phase).
+	local variant=nil
+	if spec.Id=="BurstStrike" then
+		if a.flashCancel then spec=table.clone(spec);spec.Channel=.05;variant="FlashRasengan"
+		elseif a.airborne then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.12);variant="RasenganDrop" end
+	end
+	a.flashCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
@@ -447,7 +563,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
-	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position}
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
@@ -463,7 +579,16 @@ function Combat:updateActor(a,dt)
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
 	Defense.step(self,a,dt,now)
-	if a.anchor and a.anchor.expires<=now then a.anchor.part:Destroy(); a.anchor=nil end
+	Techniques.expireSeals(self,a,now)
+	-- A combo ends once the victim has been free to act for a moment.
+	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
+	if a.freeSince and now-a.freeSince>=Config.ComboScaling.Reset and (a.comboHits>0 or (a.wallSplats or 0)>0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false end
+	-- Substitution charges come back one at a time.
+	if a.subCharges<Config.Substitution.Charges and now>=a.subRegenAt then
+		a.subCharges+=1
+		a.subRegenAt=if a.subCharges<Config.Substitution.Charges then now+Config.Substitution.Recharge else math.huge
+		self:cue(a,"SUBSTITUTION READY",.6)
+	end
 	if a.illusionUntil<=now then a.decoyPosition=nil end
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
@@ -481,12 +606,23 @@ function Combat:updateActor(a,dt)
 			-- The slam's active window is its sized descent; everything else uses
 			-- the authored active duration.
 			self:setState(a,"Active",if pending.slamWindow and pending.slamWindow>0 then pending.slamWindow else pending.spec.active)
+			a.activeAt=now
 		elseif a.state=="Active" then
 			Bangla.close(pending)
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
+				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
+				local caster=a.target
+				if a.illusionUntil>now and caster and caster.health>0 and caster.fighterId=="Mirage" then
+					a.illusionUntil=0;a.decoyPosition=nil
+					caster.counterUntil=now+1.1;caster.bonusUntil=now+1.1
+					Brawler.event(self,caster,"MirageCatch")
+					self:pushImpact(a.root.Position,"mirage",false,{owner=caster.id,fighter=caster.fighterId})
+					self:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);self:cue(a,"GENJUTSU • EXPOSED",1)
+					pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
+				end
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -543,6 +679,15 @@ function Combat:updateActor(a,dt)
 			local distance=close.Magnitude
 			if distance<7 then speed=math.min(speed,40+distance*distance*2.4) end
 			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
+		end
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
+		-- Wall dive: a beat crouched against the wall (held by airHold), then a
+		-- straight lunge at the opponent's body.
+		local delta=a.target.root.Position-a.root.Position
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		if a.state=="Active" and delta.Magnitude>2.8 then
+			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
 		end
 	elseif a.state=="Active" and a.pending and a.pending.kind=="Brawl" and a.attackName=="Slam" then
   -- The slam owns a continuous plunge: a constant downward velocity with bounded
@@ -616,7 +761,23 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire"}
+local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember"}
+-- Delayed releases (hidden shuriken, the Phoenix Flower volley). Each entry
+-- re-checks its owner when it fires, so a hit fighter never keeps throwing.
+function Combat:schedule(at,fn)
+	self.scheduled=self.scheduled or {}
+	table.insert(self.scheduled,{at=at,fn=fn})
+end
+function Combat:runScheduled()
+	local list=self.scheduled
+	if not list or #list==0 then return end
+	local due={}
+	for i=#list,1,-1 do if list[i].at<=self.now then table.insert(due,1,list[i]);table.remove(list,i) end end
+	for _,entry in due do
+		if self.match.phase~="Duel" then return end
+		entry.fn()
+	end
+end
 local function closestOnSegment(a,b,point)
 	local ab=b-a
 	local length=ab:Dot(ab)
@@ -627,7 +788,10 @@ end
 -- ground dangerous for a moment.
 function Combat:fireExplosion(p,position,direct)
 	local target=p.a.target
-	self:addHazard(p.a,position,5.5,1.5,p.damage*.6,"Fire")
+	-- A blast that misses the body becomes space denial: a wider patch of
+	-- burning ground that holds the lane for a few seconds.
+	if direct then self:addHazard(p.a,position,5.5,1.5,p.damage*.6,"Fire")
+	else self:addHazard(p.a,position,7.5,3.2,p.damage*.45,"Fire") end
 	if not direct and target and target.health>0 then
 		local delta=target.root.Position-position
 		if delta.Magnitude<=7.5 and workspace:Raycast(position,delta,self:rayParams(true))==nil then
@@ -650,15 +814,28 @@ function Combat:projectileHit(p,target,position,normal)
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
 		end
 	end
+	-- Blades thrown at a body pinned against a wall nail it there a little longer
+	-- (Itachi's precision): the wall phase is extended, never restarted.
+	if damaged and not guarded and (p.kind=="shuriken" or p.kind=="kunai" or p.kind=="marked") and target.reaction=="WallSplat" then
+		Brawler.pin(self,target,.34,p.a)
+	end
 	-- A guarded blast is absorbed whole: no burning ground under a raised guard.
 	if p.kind=="fireball" and not guarded then self:fireExplosion(p,position,true) end
-	-- A marked blade also leaves its seal beneath the struck target.
-	if p.onSurface then p.onSurface(position,normal or Vector3.yAxis) end
+	-- A marked blade that connects leaves its seal on the body; a guarded one
+	-- drops at the guard's feet.
+	if p.onSurface then
+		if damaged and not guarded and target.health>0 then p.onSurface(position,normal or Vector3.yAxis,target)
+		else
+			local floor=workspace:Raycast(target.root.Position,Vector3.new(0,-8,0),self:rayParams(true))
+			p.onSurface(if floor then floor.Position else position,if floor then floor.Normal else Vector3.yAxis)
+		end
+	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="wind" then "jutsu" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" else "stick"
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
+	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
 	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
 end
@@ -666,6 +843,10 @@ function Combat:projectileExpire(p)
 	if p.kind=="fireball" then
 		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		self:fireExplosion(p,p.position,false)
+		return
+	end
+	if p.kind=="phoenix" then
+		self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		return
 	end
 	-- A marked kunai that reaches the end of its flight drops to the ground and
@@ -755,6 +936,7 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
+	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -769,10 +951,12 @@ function Combat:clear(preserveAnimations)
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
+	if self.scheduled then table.clear(self.scheduled) end
 	self.impacts={}; self.impactSerial=0
 end
 return Combat

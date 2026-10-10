@@ -33,4 +33,5 @@ run Regression "$LUNE" run tests/Regression.spec.luau
 run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Branches   "$LUNE" run tests/Branches.spec.luau
+run Phase4     "$LUNE" run tests/Phase4.spec.luau
 exit $status

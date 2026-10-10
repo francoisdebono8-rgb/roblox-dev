@@ -406,6 +406,36 @@ CLIPS.Mirage.CounterPalm={
 	K(3,I),
 }
 
+-- Phase 4 -----------------------------------------------------------------
+-- Wall dive: crouched against the wall during the startup, then a flying kick
+-- with the lead leg straight at the opponent, arms thrown back for balance.
+local DIVE_CROUCH={root={pitch=-8,y=-.4},torso={pitch=16},head={pitch=-20},ra={raise=40,out=40,elbow=90},la={raise=40,out=40,elbow=90},
+	rl={lift=96,knee=124,ankle=-20},ll={lift=88,knee=118,ankle=-20}}
+local DIVE_KICK={root={pitch=-14,roll=-6},torso={pitch=12,yaw=-18},head={pitch=-14,yaw=10},ra={raise=-36,out=46,elbow=26},la={raise=70,out=-14,elbow=96},
+	rl={lift=84,out=6,knee=4,ankle=-24},ll={lift=-24,knee=112,ankle=-10}}
+CLIPS.Flashstep.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	K(1,merge(AIR_M,DIVE_KICK),"out"),
+	K(2,merge(AIR_M,DIVE_KICK)),
+	K(3,m({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+CLIPS.Mirage.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	-- Itachi dives heel-first and keeps the shuriken hand ready.
+	K(1,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}}),"out"),
+	K(2,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}})),
+	K(3,i({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+-- Airborne Rasengan: the orb raised overhead, then driven straight down
+-- with the whole body behind the palm.
+CLIPS.Flashstep.RasenganDrop={
+	K(0,merge(AIR_M,{root={pitch=-16},torso={pitch=-18,yaw=-10},head={pitch=-20},ra={raise=168,out=12,twist=-40,elbow=30,wrist=-20},la={raise=130,out=-20,twist=30,elbow=70},rl={lift=70,knee=120},ll={lift=60,knee=110}})),
+	K(1,merge(AIR_M,{root={pitch=34},torso={pitch=40,yaw=-12},head={pitch=6},ra={raise=50,out=-6,twist=-40,elbow=2,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-10,knee=40},ll={lift=20,knee=70}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=36},torso={pitch=42,yaw=-12},ra={raise=44,out=-6,twist=-40,elbow=4,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-8,knee=38},ll={lift=22,knee=70}})),
+	K(3,m({root={y=-1.0,pitch=26},torso={pitch=22},ra={raise=60,out=10,elbow=20},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Mirage.RasenganDrop=CLIPS.Flashstep.RasenganDrop
+
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
 	if t<=keys[1].at then return built(keys[1].pose) end
@@ -424,7 +454,7 @@ end
 -- the server's active window.
 local LEAD=.03
 local function timing(name,fighterId)
-	local spec=Attacks[name] or Attacks.DashAttack
+	local spec=Attacks[name] or (if name=="RasenganDrop" then Attacks.Slam else Attacks.DashAttack)
 	local fighter=Fighters[fighterId]
 	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
 	local startup=spec.startup*(profile and profile.startup or 1)
@@ -501,7 +531,14 @@ local function castSpec(actor)
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
-	if id=="FireBloom" then
+	if id=="PhoenixFlower" then
+		if state=="TechniqueChannel" then return sealPose(base,t,false) end
+		-- Phoenix Flower: a quick sweep of the head across the fan while the hand
+		-- ring stays at the mouth.
+		local sweep=math.sin(math.clamp(t-(actor.channel or 0),0,.4)*14)*18
+		return merge(base,{root={y=-.55,pitch=10,yaw=sweep*.5},torso={pitch=8,yaw=sweep},head={pitch=8,yaw=sweep*.6},
+			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.0},rf={z=.95,yaw=24}})
+	elseif id=="FireBloom" then
 		if state=="TechniqueChannel" then
 			-- Signs, then a held tiger seal and a deep inhale before the breath.
 			local remaining=(actor.channel or 0)
@@ -677,7 +714,7 @@ local function reactionTargets(actor)
 		return build({root={y=-.3,pitch=10},torso={pitch=14},head={pitch=18},ra={raise=30,out=24,elbow=60},la={raise=30,out=24,elbow=60},rf={z=.3,toe=-30},lf={z=.2,toe=-30}}),RATE.defense
 	end
 	if kind=="WallSplat" then
-		local splat=smooth(math.clamp(elapsed/.1,0,1))
+		local splat=smooth(math.clamp(elapsed/.08,0,1))
 		return build({root={pitch=-18*splat},torso={pitch=-22*splat},head={pitch=-20*splat},ra={raise=30,out=70*splat,elbow=40},la={raise=30,out=70*splat,elbow=40},
 			rl={lift=20,knee=30},ll={lift=10,knee=26}}),RATE.defense
 	end
@@ -694,6 +731,11 @@ local function groundTargets(actor)
 	local side=actor.groundSide or 1
 	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
 		ra={raise=20,out=62,elbow=24},la={raise=14,out=56,elbow=30},rl={lift=18,out=8,knee=30},ll={lift=6,out=10,knee=12}}
+	if pose=="Splat" and actor.reaction=="WallSplat" then
+		-- Slid down to the foot of the wall: sitting, back against it, legs out.
+		return build({root={y=-1.95,z=.35,pitch=-28},torso={pitch=-10},head={pitch=12,roll=side*8},
+			ra={raise=12,out=44,elbow=20},la={raise=10,out=40,elbow=26},rl={lift=78,out=10,knee=22},ll={lift=70,out=14,knee=34}}),RATE.ground
+	end
 	if pose=="Wakeup" or actor.reaction=="Wakeup" then
 		local push=smooth(math.clamp((actor.reactionElapsed or 0)/.24,0,1))
 		local crouch={root={y=-1.0,pitch=22},torso={pitch=14},head={pitch=-10},ra={raise=30,out=20,elbow=60},la={raise=40,out=20,elbow=60},lf={z=-.7},rf={z=.6,x=.2}}
@@ -845,7 +887,7 @@ end
 -- --------------------------------------------------------- public entries
 -- Attack pose on its own (blended over the rest pose): used by tests and tools.
 function Motion.pose(char,name,elapsed,fighterId,dt)
-	if not Attacks[name] and name~="Rasengan" then return end
+	if not Attacks[name] and name~="Rasengan" and name~="RasenganDrop" then return end
 	local targets,weight=attackTargets(name,elapsed,fighterId)
 	apply(char,blend({},targets,weight),RATE.attack,dt)
 end
@@ -968,7 +1010,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if swinging then
-		local name=if subject.attackVariant=="Rasengan" then "Rasengan" else subject.attackName
+		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		apply(char,blend(base,targets,weight),RATE.attack,dt)
 		return "attack"

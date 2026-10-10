@@ -4,6 +4,7 @@ local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local Combo=require(Shared.BanglaCombo)
 local MoveGraphs=require(Shared.MoveGraphs)
+local Config=require(Shared.Config)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
@@ -59,6 +60,10 @@ function Brawler.start(c,a,name)
   local drop=math.max(6,a.root.Position.Y-(c.match.origin.Y+3.4))
   -- 118 studs/s is the plunge speed the slam uses at runtime.
   slamWindow=math.clamp(drop/118,.28,1.1)
+ elseif name=="WallDive" then
+  -- The dive lasts as long as the flight to the opponent (92 studs/s).
+  local gap=(a.target.root.Position-a.root.Position).Magnitude
+  slamWindow=math.clamp(gap/88,.16,.5)
  end
  a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow}
  Bangla.begin(c,a,a.pending)
@@ -69,6 +74,7 @@ function Brawler.start(c,a,name)
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
 end
@@ -105,7 +111,15 @@ function Brawler.request(c,a,action)
  local relevant=action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp"
  if not relevant then return nil end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
- if a.wall then Motor.detach(a,c.now,false) end
+ if a.wall then
+  -- From a wall run a strike becomes a dive at the opponent: height and an
+  -- angle the guard has to read.
+  Motor.detach(a,c.now,false)
+  if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health>0
+   and (a.target.root.Position-a.root.Position).Magnitude<=Config.Wall.DiveRange then
+   return Brawler.start(c,a,"WallDive")
+  end
+ end
  if a.grabVictim then
   if action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp" then
    return Brawler.start(c,a,if action=="Heavy" or action=="ThrowUp" then "ThrowUp" else "Throw")
@@ -116,9 +130,10 @@ function Brawler.request(c,a,action)
  local canDash=a.state=="Dodging" and c.now>=a.untilTime-.23
  -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
  -- so the teleport flows straight into an attack from the new angle.
- local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now and a.pending==nil
+ local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now
+  and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
  if canFlash then
-  a.flashUntil=0;a.state="Neutral";a.untilTime=c.now
+  a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   if action=="Heavy" then
    if a.airborne then return Brawler.start(c,a,"Slam") end
@@ -182,6 +197,91 @@ function Brawler.stopStyle(p)
  if p.name=="Air1" or p.name=="Air2" then return "air" end
  return "light"
 end
+-- Surfaces a flying body can be slammed into: the stadium wall, the field
+-- trees and the boulders.
+function Brawler.splatSurface(part)
+ return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
+end
+-- Wall splat: a body carried into a wall hard enough sticks to it for a
+-- moment. The attacker chooses: pursue (E), pin it with lighter hits or
+-- blades, bounce it back out with a heavy blow, or reset. The defender can
+-- tech off the wall on the impact (Q), spend a substitution, or take it.
+function Brawler.splat(c,a,hit)
+ local tune=Config.Wall
+ local normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z)
+ normal=if normal.Magnitude>.05 then normal.Unit else -a.root.CFrame.LookVector
+ a.reaction="WallSplat";a.reactionUntil=c.now+tune.SplatTime;a.splatAt=c.now;a.splatNormal=normal;a.splatPart=hit.Instance
+ a.wallSplats=(a.wallSplats or 0)+1
+ a.reactionVelocity=Vector3.zero;a.groundPose="Splat";a.invulnerableUntil=c.now
+ a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
+ a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.07)
+ Brawler.event(c,a,"WallSplat")
+ c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
+ local source=a.reactionSource
+ if source and source.health>0 then
+  c:damage(source,a,tune.SplatDamage,false,false)
+  if c.match.phase~="Duel" then return end
+  a.reaction="WallSplat";a.state="Neutral";a.untilTime=c.now
+  source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.8)
+  Brawler.event(c,source,"WallConvert")
+  c:cue(source,"WALL SPLAT • E PURSUE • HEAVY BOUNCE",.8)
+ end
+ c:cue(a,"WALL SPLAT • Q ON IMPACT TO TECH",.6)
+end
+-- Keep a splatted body on the wall a little longer (lighter hits, blades).
+function Brawler.pin(c,b,duration,source)
+ if b.reaction~="WallSplat" or (b.splatPins or 0)>=Config.Wall.PinMax then return false end
+ b.splatPins=(b.splatPins or 0)+1
+ b.reactionUntil=math.max(b.reactionUntil,c.now+duration)
+ b.reactionVelocity=Vector3.zero
+ c:pushImpact(b.root.Position,"pin",false,{owner=source and source.id,normal=b.splatNormal})
+ if source then c:cue(source,"WALL PIN",.5) end
+ return true
+end
+-- Hits on a pinned body: a heavy blow (heavy, launcher, Rasengan, dive) bounces
+-- it off the wall back into the open for a fresh air phase; lighter hits pin
+-- it for a short extension. Both are limited, so a wall is a phase, not a trap.
+function Brawler.wallFollow(c,a,b,p)
+ local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true
+ if heavy and not b.wallBounced then
+  b.wallBounced=true
+  local out=b.splatNormal or -a.root.CFrame.LookVector
+  Brawler.react(c,b,"Launched",out*24+Vector3.new(0,46,0),1.05,a)
+  a.pursuitUntil=c.now+1.1
+  c:pushImpact(b.root.Position-out*1.2,"wallbounce",true,{normal=out,owner=b.id})
+  Brawler.event(c,a,"WallBounce");c:cue(a,"WALL BOUNCE • E TO PURSUE",.9)
+  return true
+ end
+ if not heavy and Brawler.pin(c,b,Config.Wall.PinTime,a) then Brawler.event(c,a,"WallPin");return true end
+ return false
+end
+-- Clash: both strikes became active together, facing, in reach. Neither
+-- lands; both fighters are pushed apart into a fresh close-range neutral.
+function Brawler.clash(c,a,p)
+ local b=a.target
+ local q=b and b.pending
+ if not q or q.kind~="Brawl" or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
+ if q.name=="Grab" or q.name=="Throw" or q.name=="ThrowUp" then return false end
+ -- Simultaneous means the two active frames start within the clash window
+ -- (the other swing may be a frame or two from becoming active).
+ local other=if b.state=="Active" then (b.activeAt or 10) else b.untilTime
+ if math.abs((a.activeAt or -10)-other)>Config.Clash.Window then return false end
+ local delta=b.root.Position-a.root.Position
+ local flat=Vector3.new(delta.X,0,delta.Z)
+ if flat.Magnitude<.1 or delta.Magnitude>math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
+ if a.root.CFrame.LookVector:Dot(flat.Unit)<.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)<.4 then return false end
+ for _,x in {a,b} do
+  Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.queuedLight=nil;x.travelRemaining=0
+  x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
+  x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
+ end
+ a.hop={direction=-flat.Unit,remaining=Config.Clash.Push,speed=30}
+ b.hop={direction=flat.Unit,remaining=Config.Clash.Push,speed=30}
+ c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"clash",true,{direction=flat.Unit})
+ Brawler.event(c,a,"Clash");Brawler.event(c,b,"Clash")
+ c:cue(a,"CLASH",.6);c:cue(b,"CLASH",.6)
+ return true
+end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
  if p.name=="Throw" or p.name=="ThrowUp" then
@@ -193,6 +293,8 @@ function Brawler.hit(c,a,p)
  end
  local success,guarded,protected
  if p.name~="Throw" and p.name~="ThrowUp" then
+	-- Two strikes meeting in the same instant cancel out.
+	if p.name~="Grab" and Brawler.clash(c,a,p) then return false end
 	if p.spec.chainTool and not p.chainToolFired then
 		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
 	end
@@ -235,7 +337,14 @@ function Brawler.hit(c,a,p)
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
+ if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ -- A combo that runs too long drops the body out of it (with wake-up cover).
+ if (b.comboHits or 0)>=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
+  Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
+  c:cue(a,"COMBO LIMIT",.7);Brawler.event(c,a,"ComboLimit")
+  return true
+ end
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
@@ -257,7 +366,12 @@ function Brawler.step(c,a,dt)
  if a.reaction then
   if a.reaction=="Grabbed" then return true end
   if c.now>=a.reactionUntil then
-   if a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+   if a.reaction=="WallSplat" and a.airborne and a.root.Position.Y>c.match.origin.Y+5 then
+    -- Released high on the wall: drop to the floor, then wake up.
+    local normal=a.splatNormal or Vector3.zero
+    a.reaction="Knockdown";a.reactionUntil=c.now+.9;a.reactionVelocity=normal*7+Vector3.new(0,-6,0)
+    a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
+   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
     a.reaction=nil;a.reactionVelocity=nil
     -- Fully recovered: drop the grounded presentation state with it.
@@ -267,7 +381,12 @@ function Brawler.step(c,a,dt)
   if a.reaction then
    a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
    local velocity=a.reactionVelocity or Vector3.zero
-   if airReactions[a.reaction] then
+   if a.reaction=="WallSplat" then
+    -- Pinned: slide slowly down the wall instead of falling off it.
+    velocity=Vector3.new(0,math.max(velocity.Y-30*dt,-11),0)
+    local hit=Motor.flight(a,c,velocity*dt)
+    if hit and hit.Normal.Y>.5 then velocity=Vector3.zero;a.airborne=false;a.landedAt=c.now end
+   elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
     if hit then
@@ -278,12 +397,10 @@ function Brawler.step(c,a,dt)
       a.airborne=false
       a.landedAt=c.now
       velocity=Vector3.zero
-     elseif math.abs(hit.Normal.Y)<.2 and hit.Instance:GetAttribute("NinjaWall") then
-			 a.reaction="WallSplat";a.reactionUntil=c.now+.42;velocity=hit.Normal*8;Brawler.event(c,a,"WallSplat")
-			 a.groundPose="Splat"
-			 c:pushImpact(hit.Position,"wall",false)
-			 local source=a.reactionSource
-			 if source and source.health>0 then source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.72);Brawler.event(c,source,"WallConvert");c:cue(source,"WALL CONVERT • PURSUE",.65) end
+     elseif math.abs(hit.Normal.Y)<.3 and Brawler.splatSurface(hit.Instance) and -velocity:Dot(hit.Normal)>=Config.Wall.SplatSpeed and (a.wallSplats or 0)<2 then
+      Brawler.splat(c,a,hit)
+      if c.match.phase~="Duel" or not a.reaction then return true end
+      velocity=a.reactionVelocity or Vector3.zero
      end
     end
    else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end

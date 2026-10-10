@@ -25,7 +25,7 @@ local SOUND={
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8}
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5}
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -219,7 +219,16 @@ end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
 local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
-	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind}
+	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
+	-- Phoenix Flower: the same fire build, shrunk and dimmer.
+	phoenix=function()
+		local model=FX.buildFireball()
+		local light=model.PrimaryPart:FindFirstChildOfClass("PointLight");if light then light.Range=12;light.Brightness=2.5 end
+		local at=model.PrimaryPart:FindFirstChildOfClass("Attachment")
+		local smoke=at and at:FindFirstChild("Smoke");if smoke then smoke.Rate=8 end
+		local flames=at and at:FindFirstChild("Flames");if flames then flames.Rate=60 end
+		return model
+	end}
 -- Snapshot sync: create visuals for newly announced projectiles, mark the ones
 -- the server no longer reports.
 function FX:sync(data)
@@ -243,6 +252,8 @@ function FX:sync(data)
 			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
 			if p.kind=="fireball" then
 				sound(root,SOUND.boom,.35,.55)
+			elseif p.kind=="phoenix" then
+				sound(root,SOUND.whoosh,.25,.7)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
@@ -290,7 +301,7 @@ function FX:stepProjectiles(dt)
 		elseif p.kind=="shuriken" then
 			entry.spin+=dt*42
 			cf=look*CFrame.Angles(0,entry.spin,0)*CFrame.Angles(0,0,math.rad(8))
-		elseif p.kind=="fireball" then
+		elseif p.kind=="fireball" or p.kind=="phoenix" then
 			local radius=(p.radius or 2.4)+(p.growth or 0)*math.max(0,age)
 			local wobble=1+math.sin(os.clock()*31)*.05
 			entry.root.Size=Vector3.one*radius*1.15*wobble
@@ -437,7 +448,7 @@ function FX:impact(impact,folder)
 		local model=modelFor(folder,impact.owner)
 		local hands=model and model:FindFirstChild("RightHand")
 		if hands then
-			local color=if impact.technique=="FireBloom" then Color3.fromRGB(255,120,50) elseif impact.technique=="MirageCast" or impact.technique=="Read" then Color3.fromRGB(220,30,40)
+			local color=if impact.technique=="FireBloom" or impact.technique=="PhoenixFlower" then Color3.fromRGB(255,120,50) elseif impact.technique=="MirageCast" or impact.technique=="Read" then Color3.fromRGB(220,30,40)
 				elseif impact.technique=="WindCut" then Color3.fromRGB(170,255,220) else Color3.fromRGB(140,200,255)
 			sparks(self.folder,hands.Position,color,10,8)
 		end
@@ -456,6 +467,40 @@ function FX:impact(impact,folder)
 	elseif style=="burst" then
 		local model=modelFor(folder,impact.owner)
 		if model then self:ghost(model,Color3.fromRGB(140,200,255),.25,.5) end
+	elseif style=="clash" then
+		-- Two strikes meeting: a hard white-gold flash and a ring across the line
+		-- between the fighters, nothing else. It has to read instantly.
+		local across=impact.direction or Vector3.zAxis
+		sparks(self.folder,position,Color3.fromRGB(255,244,200),28,34)
+		flash(self.folder,position,Color3.fromRGB(255,252,232),1,7,.16,.1)
+		shockRing(self.folder,position,Color3.fromRGB(255,232,170),2,14,.26,across)
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.5,2.2)
+	elseif style=="wall" or style=="wallbounce" then
+		-- Impact on the wall: a ring flat on the surface, dust pushed out of it and
+		-- a few chips of stone.
+		local normal=impact.normal or Vector3.zAxis
+		local big=style=="wallbounce"
+		shockRing(self.folder,position+normal*.15,Color3.fromRGB(236,226,200),2,if big then 16 else 11,if big then .34 else .26,normal)
+		smokePuff(self.folder,position+normal*.8,Color3.fromRGB(196,188,168),if big then 22 else 14,if big then 2.6 else 2)
+		for k=1,(if big then 7 else 4) do
+			local chip=block(self.folder,Vector3.new(.4,.3,.35),CFrame.new(position+normal*.5)*CFrame.Angles(math.random()*6,math.random()*6,0),Color3.fromRGB(186,178,160),Enum.Material.Concrete)
+			local out=(normal+Vector3.new((math.random()-.5)*1.4,math.random()*.9,(math.random()-.5)*1.4)).Unit
+			tween(chip,.45,{CFrame=chip.CFrame+out*(2.5+math.random()*3)+Vector3.new(0,-1.5,0),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+			Debris:AddItem(chip,.5)
+		end
+		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
+	elseif style=="walltech" then
+		local model=modelFor(folder,impact.owner)
+		if model then self:ghost(model,Color3.fromRGB(220,230,255),.2,.55) end
+		local normal=impact.normal or Vector3.zAxis
+		smokePuff(self.folder,position,Color3.fromRGB(226,222,210),12,1.8)
+		shockRing(self.folder,position,Color3.fromRGB(220,232,255),1.5,8,.22,normal)
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
+	elseif style=="pin" then
+		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="ember" then
+		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
+		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
 	end
 end
 -- A thrown blade that missed stays embedded where it landed for a moment.
@@ -541,44 +586,77 @@ end
 -- ------------------------------------------------------------------ persistent
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.
-function FX:seal(owner,actor)
-	local entry=self.seals[owner]
-	local surface=actor and actor.anchorSurface
-	if not surface then
-		if entry then
-			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then tween(d,.15,{Transparency=1}) end end
-			Debris:AddItem(entry.model,.2);Debris:AddItem(entry.glyph,.2)
-			self.seals[owner]=nil
+function FX:seal(owner,actor,folder)
+	local live={}
+	for _,info in (actor and actor.seals) or {} do
+		local key=tostring(owner)..":"..tostring(info.id)
+		live[key]=true
+		local entry=self.seals[key]
+		if info.body then
+			-- A seal riding on the opponent: a small glowing formula on the back.
+			local model=folder and folder:FindFirstChild(info.body)
+			local torso=model and (model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart"))
+			if torso then
+				if not entry then
+					local glyph=new("Model",{Name="Body seal"},self.folder)
+					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
+					local marks={}
+					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,MINATO,Enum.Material.Neon)) end
+					local light=new("PointLight",{Color=MINATO,Brightness=2,Range=7,Shadows=false},disc)
+					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
+					self.seals[key]=entry
+					flash(self.folder,torso.Position,MINATO,.6,4,.2,.2)
+				end
+				local back=torso.CFrame*CFrame.new(0,.1,.62)
+				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
+				entry.disc.CFrame=base
+				for i,mark in entry.marks do
+					mark.CFrame=base*CFrame.Angles((i-1)/6*math.pi*2+os.clock()*2,0,0)*CFrame.new(0,.5,0)
+				end
+				local pulse=.5+.5*math.sin((os.clock()-entry.born)*7)
+				entry.disc.Transparency=.25+pulse*.3
+				entry.light.Brightness=1.5+pulse*1.5
+			end
+		elseif info.surface then
+			local surface=info.surface
+			local normal=info.normal or Vector3.yAxis
+			if not entry then
+				local model=FX.buildKunai(true)
+				model.Parent=self.folder
+				local into=-normal
+				local tilt=(if math.abs(normal.Y)>.7 then Vector3.xAxis else Vector3.yAxis)*.35
+				local axis=(into+tilt).Unit
+				model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				local glyph=new("Model",{Name="Seal"},self.folder)
+				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
+				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
+				for i=0,5 do
+					local a=i/6*math.pi*2
+					local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
+					mark.Transparency=.35
+				end
+				local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
+				entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
+				self.seals[key]=entry
+				flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
+			end
+			local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
+			-- The last seconds of a seal flicker so its expiry is readable.
+			local fading=(info.remaining or 12)<2 and math.sin(os.clock()*30)>0
+			entry.disc.Transparency=if fading then .95 else .72+pulse*.18
+			entry.light.Brightness=if fading then .3 else 1+pulse*1.2
 		end
-		return
 	end
-	local normal=actor.anchorNormal or Vector3.yAxis
-	if entry and (entry.surface-surface).Magnitude>.05 then
-		entry.model:Destroy();entry.glyph:Destroy();entry=nil;self.seals[owner]=nil
-	end
-	if not entry then
-		local model=FX.buildKunai(true)
-		model.Parent=self.folder
-		local into=-normal
-		local tilt=(if math.abs(normal.Y)>.7 then Vector3.xAxis else Vector3.yAxis)*.35
-		local axis=(into+tilt).Unit
-		model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
-		local glyph=new("Model",{Name="Seal"},self.folder)
-		local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
-		local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
-		for i=0,5 do
-			local a=i/6*math.pi*2
-			local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
-			mark.Transparency=.35
+	for key,entry in self.seals do
+		if string.sub(key,1,#tostring(owner)+1)==tostring(owner)..":" and not live[key] then
+			if entry.model then
+				for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then tween(d,.15,{Transparency=1}) end end
+				Debris:AddItem(entry.model,.2)
+			end
+			Debris:AddItem(entry.glyph,.2)
+			self.seals[key]=nil
 		end
-		local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
-		entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
-		self.seals[owner]=entry
-		flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
 	end
-	local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
-	entry.disc.Transparency=.72+pulse*.18
-	entry.light.Brightness=1+pulse*1.2
 end
 function FX:hazardsStep(data)
 	local live={}
@@ -623,21 +701,31 @@ function FX:fighter(model,actor,dt)
 		local color=if minato then MINATO else Color3.fromRGB(170,30,48)
 		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
-		local eyes=model:FindFirstChild("Eyes")
-		aura.eyes=eyes
+		local irises={}
+		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
+		aura.irises=irises
+		local head=model:FindFirstChild("Head")
+		if head and actor.fighterId=="Mirage" then
+			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
+		end
 	end
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed>34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)>0
-	-- Itachi: the Sharingan flares while he reads, casts, or sizes up an opponent.
-	if aura.eyes and actor.fighterId=="Mirage" then
-		local lit=(actor.read or 0)>0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom" or (actor.intro or 0)>0
-		aura.eyes.Color=if lit then Color3.fromRGB(255,40,40) else Color3.fromRGB(190,20,30)
-		aura.eyes.Material=Enum.Material.Neon
+	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
+	-- counters, or during the intro.
+	if actor.fighterId=="Mirage" and aura.irises then
+		local lit=(actor.read or 0)>0 or (actor.counter or 0)>0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
+			or actor.castId=="PhoenixFlower" or (actor.intro or 0)>0
+		for _,iris in aura.irises do
+			iris.Material=Enum.Material.Neon
+			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
+		end
+		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
 	-- Rasengan forms in the right hand during the channel and stays through the strike.
 	local rasengan=(actor.castId=="BurstStrike" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
-		or (actor.attackVariant=="Rasengan" and (actor.state=="Startup" or actor.state=="Active"))
+		or ((actor.attackVariant=="Rasengan" or actor.attackVariant=="RasenganDrop") and (actor.state=="Startup" or actor.state=="Active"))
 	local orb=self.rasengan[model]
 	local hand=model:FindFirstChild("RightHand")
 	if rasengan and hand then
@@ -676,7 +764,7 @@ function FX:fighter(model,actor,dt)
 	-- Katon: embers gather at the mouth during the hand signs, then the breath.
 	if actor.fighterId=="Mirage" then
 		local head=model:FindFirstChild("Head")
-		local casting=actor.castId=="FireBloom" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
+		local casting=(actor.castId=="FireBloom" or actor.castId=="PhoenixFlower") and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
 		if casting and head then
 			if not aura.mouth then
 				local at=new("Attachment",{Position=Vector3.new(0,-.25,-.8)},head)
@@ -753,7 +841,7 @@ function FX:update(data,dt,folder)
 		local actor=data[key]
 		if actor then
 			actor.intro=data.intro
-			self:seal(actor.id or key,actor)
+			self:seal(actor.id or key,actor,folder)
 			local model=folder and folder:FindFirstChild(actor.id or "")
 			self:fighter(model,actor,dt)
 		end

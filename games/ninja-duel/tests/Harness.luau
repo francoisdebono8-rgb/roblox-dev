@@ -60,7 +60,28 @@ Harness.workspace=workspace
 -- Floor plane at y=0. A swept ray answers when the body's swept extent reaches
 -- the plane, matching how the real arena floor stops a descending root.
 local FLOOR_REACH=1.9
+-- Optional vertical walls for wall-combat specs: planes x = X facing -X.
+Harness.walls={}
+function Harness.addWall(x)
+ local part=fakePart(V.new(x+1,20,0));part.Name="Boundary";part.Size=V.new(2,40,400);part.Anchored=true
+ part.attributes.NinjaWall=true
+ table.insert(Harness.walls,{x=x,part=part})
+ return part
+end
+function Harness.clearWalls() table.clear(Harness.walls) end
+local floorRaycast
 function workspace:Raycast(origin,delta,params)
+ local floor=floorRaycast(origin,delta,params)
+ for _,w in Harness.walls do
+  if delta.X>0 and origin.X<=w.x and origin.X+delta.X>=w.x then
+   local t=(w.x-origin.X)/delta.X
+   local hit={Position=origin+delta*t,Normal=-V.xAxis,Distance=(delta*t).Magnitude,Instance=w.part}
+   if not floor or hit.Distance<floor.Distance then floor=hit end
+  end
+ end
+ return floor
+end
+function floorRaycast(origin,delta,params)
  if delta.Y<0 and origin.Y+delta.Y<FLOOR_REACH then
   local travel=math.max(0,origin.Y-FLOOR_REACH)
   local t=math.min(1,travel/ -delta.Y)

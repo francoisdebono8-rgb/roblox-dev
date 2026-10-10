@@ -25,7 +25,7 @@ local PALETTE={
 	roof=rgb(222,164,58),roofDark=rgb(176,120,38),trim=rgb(70,62,56),wood=rgb(120,84,54),woodDark=rgb(84,58,38),
 	leaf=rgb(70,112,58),leafDark=rgb(52,90,48),bark=rgb(96,70,50),
 }
-World.WALL_RADIUS=81.6
+World.WALL_RADIUS=66.5
 local function deco(parent,name,size,cf,color,material,shape)
 	local p=part(parent,name,size,cf,color,material)
 	p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
@@ -117,17 +117,17 @@ function World.arena(parent, origin)
 	local height=46
 	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
-	disc(decor,"Earth",50,.03,origin,C.earth,Enum.Material.Ground)
+	disc(decor,"Earth",41,.03,origin,C.earth,Enum.Material.Ground)
 	for k=0,9 do
 		local a=k/10*math.pi*2+.3
-		local r=38+((k*37)%5)*4
+		local r=31+((k*37)%5)*3.3
 		disc(decor,"Earth patch",10+((k*53)%4)*3,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
 	end
 	-- Worn grass islands: clusters of overlapping small patches, never one
 	-- perfect circle, so the field reads as trampled ground.
 	for k=0,7 do
 		local a=k/8*math.pi*2+1.1
-		local r=18+((k*29)%4)*6
+		local r=15+((k*29)%4)*5
 		local center=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
 		for j=0,4 do
 			local b=j*1.7+k
@@ -201,11 +201,11 @@ function World.arena(parent, origin)
 	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
 	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
 	-- Field trees: line of sight and something to fight around, as in the finals.
-	for _,spot in {{.55,64,24,7},{2.4,60,20,6},{3.9,66,26,7.5},{5.3,62,22,6.5}} do
+	for _,spot in {{.55,52,24,7},{2.4,49,20,6},{3.9,54,26,7.5},{5.3,50.5,22,6.5}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
 	-- Two weathered boulders for low cover.
-	for _,spot in {{1.5,34},{4.6,30}} do
+	for _,spot in {{1.5,28},{4.6,24.5}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2,math.cos(spot[1])*spot[2])
 		part(folder,"Cover",Vector3.new(7,4,4),CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
 		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4),CFrame.new(at+Vector3.new(-.5,2.2,0))*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
@@ -220,7 +220,7 @@ function World.arena(parent, origin)
 		deco(decor,"Forest crown",Vector3.one*(22+((k*13)%4)*4),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
 	-- A few leaves drifting over the field.
-	local sky=deco(decor,"Leaf source",Vector3.new(140,1,140),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
+	local sky=deco(decor,"Leaf source",Vector3.new(116,1,116),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
 	sky.Transparency=1
 	local leaves=Instance.new("ParticleEmitter");leaves.Name="Leaves"
 	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=4;leaves.Lifetime=NumberRange.new(9,13)
@@ -426,6 +426,14 @@ local function dressItachi(model,def)
 	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
 	face(model,rgb(200,20,30),hair)
 	for _,p in model:GetChildren() do if p.Name=="Iris" then p.Material=Enum.Material.Neon end end
+	-- Sharingan: a pupil and three tomoe on each red iris.
+	for _,side in {-1,1} do
+		wear(model,"Head","Pupil",Vector3.new(.045,.045,.02),CFrame.new(side*.3,.07,-.842),rgb(12,8,10))
+		for k=0,2 do
+			local a=math.rad(90+k*120)
+			wear(model,"Head","Tomoe",Vector3.new(.032,.032,.02),CFrame.new(side*.3+math.cos(a)*.048,.07+math.sin(a)*.048,-.842),rgb(12,8,10))
+		end
+	end
 	hairCap(model,hair)
 	-- Long dark hair tied low, centre-parted bangs framing the face.
 	for _,side in {-1,1} do

@@ -26,6 +26,11 @@ local look={
  whiff   ={shards=2, range=4,  color=Color3.fromRGB(176,188,200),pitch=1.6, volume=.14,hit=Color3.fromRGB(200,208,218)},
  landing ={shards=6, range=7,  color=Color3.fromRGB(170,158,132),pitch=0.8, volume=.26,hit=Color3.fromRGB(206,196,172)},
  wall    ={shards=5, range=8,  color=Color3.fromRGB(184,178,158),pitch=0.86,volume=.30,hit=Color3.fromRGB(214,208,186)},
+ wallbounce={shards=8,range=12,color=Color3.fromRGB(255,206,150),pitch=0.74,volume=.48,hit=Color3.fromRGB(255,224,190)},
+ clash   ={shards=9, range=12, color=Color3.fromRGB(255,240,190),pitch=1.25,volume=.5, hit=Color3.fromRGB(255,250,224)},
+ walltech={shards=4, range=6,  color=Color3.fromRGB(206,222,255),pitch=1.3, volume=.22,hit=Color3.fromRGB(226,236,255)},
+ pin     ={shards=3, range=5,  color=Color3.fromRGB(220,224,232),pitch=1.5, volume=.22,hit=Color3.fromRGB(236,240,246)},
+ ember   ={shards=4, range=7,  color=Color3.fromRGB(255,170,90),pitch=1.1, volume=.26,hit=Color3.fromRGB(255,214,170)},
 }
 local function anchorAt(position)
 	local anchor=Instance.new("Part")

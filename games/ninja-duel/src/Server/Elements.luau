@@ -26,6 +26,27 @@ function Elements.fire(c,a,pending,now)
 	c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
 	c:cue(a,"KATON • GREAT FIREBALL")
 end
+-- Katon: Phoenix Flower. Five small flames released one after another, each
+-- re-aimed at the opponent with a lateral offset: a fan that follows the
+-- target and pressures a sidestep, with small burning patches where they land.
+function Elements.phoenix(c,a,pending,now)
+	local spec=pending.spec
+	local offsets={0,-5,5,-2.5,2.5}
+	for k,offset in offsets do
+		c:schedule(now+(k-1)*.06,function()
+			if a.health<=0 or a.reaction or a.state=="Stunned" then return end
+			local victim=a.target
+			local goal=if victim and victim.health>0 then victim.root.Position+victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.15 else a.root.Position+a.root.CFrame.LookVector*spec.Range
+			local origin=c.launchPoint(a,"Fireball")
+			local flat=Vector3.new(goal.X-origin.X,0,goal.Z-origin.Z)
+			if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+			local side=Vector3.new(-flat.Unit.Z,0,flat.Unit.X)
+			local aim=goal+side*offset+Vector3.new(0,-.6,0)
+			c:projectile(a,aim,spec.Speed or 68,spec.Range,spec.Damage,"phoenix",nil,{origin=origin,radius=.9,growth=.35})
+		end)
+	end
+	c:cue(a,"KATON • PHOENIX FLOWER")
+end
 function Elements.wind(c,a,pending)
 	local aim=pending.aim
 	if (aim-a.root.Position).Magnitude<1 then aim=a.root.Position+a.root.CFrame.LookVector*pending.spec.Range end

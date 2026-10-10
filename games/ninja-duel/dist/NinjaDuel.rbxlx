@@ -37,7 +37,7 @@ end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
  Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
- Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,10,48),.44),
+ Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,14,50),.48),
  Heavy=move(.30,.17,.52,16,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,9,3.2,"Launched",Vector3.new(0,58,13),1.18),
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
@@ -54,6 +54,8 @@ local attacks={
  -- and the palm that answers a successful Read.
  Sweep=move(.12,.14,.34,7,1.6,"Knockdown",Vector3.new(0,6,12),.62),
  CounterPalm=move(.05,.12,.3,10,2.6,"Knockback",Vector3.new(0,14,46),.5),
+ -- From a wall run: a diving strike at the opponent (active window sized to the flight).
+ WallDive=move(.1,.3,.32,9,0,"Knockdown",Vector3.new(0,10,30),.62),
 }
 
 for name,spec in attacks do
@@ -78,11 +80,13 @@ local motion={
  AngleStep={side=1,twist=40,lean=10,arm=90,step=1.1},
  Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
+ WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
+attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
 </ProtectedString>
@@ -124,23 +128,33 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.9.0-phase3-youth-tournament",
-	ArenaRadius = 79.5, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	Version = "0.10.0-phase4-gamefeel-arena",
+	ArenaRadius = 64.4, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
 	PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
-	Substitution = {Cost = 22, Charges = 2, Cooldown = 5, Window = 0.42, Distance = 8},
+	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
+	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
+	-- short window to track the reappearance.
+	Substitution = {Cost = 15, Charges = 2, Recharge = 9, Cooldown = 1.1, Window = 0.42, Distance = 8, Track = 0.75},
+	-- Damage scaling inside one combo: the first hits land in full, every later
+	-- hit is worth less, and a combo that runs too long ends in a knockdown.
+	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
+	Clash = {Window = 0.07, Push = 4.5},
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
-		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4},
+		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
+		-- Wall combat: splat state, pins, tech window and the dive from a wall run.
+		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
+		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 40},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
 	Movement = { SprintSpeed = 46, GroundAcceleration = 420, GroundDeceleration = 480, TurnAcceleration = 620, AirAcceleration = 76,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
-	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.65 },
+	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34 },
 }
 </ProtectedString>
         </Properties>
@@ -206,7 +220,7 @@ return {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
-		Health = 125, Chakra = 110, ChakraRegen = 10.5, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
+		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles",
 		AttackProfile = {
@@ -218,31 +232,36 @@ return {
 		Techniques = {
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
-			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 50, Damage = 6, Hint = "Throw a sealed kunai • lasts 12s once planted" },
-			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 18, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 2.6, Interruptible = true, Range = 60, Requires = "Anchor", Hint = "Teleport to the seal • strike on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Unfinished prototype • cancel a clean string into it" },
+			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 50, Damage = 6, Hint = "Two seals planted at once • a hit seals the body" },
+			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 60, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
+			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
 			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 29, Damage = 7, Hint = "Displace with a cutting gust" },
 		},
 	},
 	Mirage = {
-		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE QUIET OBSERVER", Color = { 222, 70, 80 },
-		Description = "Calm control. Shuriken geometry, timed reads, deception and the clan's first fire.",
-		Health = 145, Chakra = 125, ChakraRegen = 8, Speed = 26, SprintScale = 0.98, JumpScale = 0.95, AirControlScale = 0.9, AccelerationScale = 0.92,
-		CombatTravel = 0.95, CombatDamage = 1.08, DashScale = 0.93, GuardStrength = 0.08, PreferredRange = 10,
+		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
+		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
+		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 27.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
+		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
+		-- The Sharingan (three tomoe at 13): it sees strikes coming. Wider parry
+		-- and perfect-dodge windows, each successful one opens a counter, and a
+		-- raised guard tracks a teleport instead of being crossed up.
+		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
 		ComboToolCancel = true, CombatStyle = "Control",
 		AttackProfile = {
-			Light1={startup=1.08,recovery=.92,travel=.88,range=6.5},Light2={startup=1.12,recovery=.9,travel=.84,range=7,chainTool=true},
-			Light3={startup=1.15,recovery=1.08,travel=.78,impulseZ=58},Heavy={startup=1.08,recovery=1.12,travel=.82},
-			Launcher={startup=1.12,travel=.78,impulseY=51,impulseZ=20},DashAttack={startup=1.05,travel=.86},
-			Air1={startup=1.06,travel=.86},Air2={startup=1.08,travel=.82},Slam={startup=1.12,recovery=1.05},
+			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
+			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
+			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
+			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
-			{ Id = "Read", Name = "Read", Cost = 14, Channel = 0.12, Active = 0.9, Recovery = 0.24, Cooldown = 4, Interruptible = false, Range = 10, Hint = "Read one frontal melee • punish window" },
-			{ Id = "NeedleFan", Name = "Shuriken Barrage", Cost = 18, Channel = 0.3, Active = 0.08, Recovery = 0.28, Cooldown = 3.8, Interruptible = true, Range = 42, Damage = 3, Hint = "Five blades • close the sideways escape" },
-			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "Facing + sight • 3s decoy, full movement" },
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 62, Speed = 54, Damage = 16, Hint = "Hand signs • a travelling Katon blast" },
+			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike or Rasengan • counter" },
+			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 42, Damage = 3, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "3s decoy • a swing at it opens a punish" },
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 62, Speed = 54, Damage = 16, Hint = "A miss leaves the lane burning" },
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 48, Speed = 68, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
 		},
 	},
 }
@@ -1329,7 +1348,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">90dba99300ff298efac6ddc6bf2191c31392e761eae8ccf08082051c63dc1053</string>
+          <string name="Value">134eda15b192bf68f558aa922318702603cc3326e7821ac797bcbe833c8ec78b</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1437,15 +1456,49 @@ local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
 end
+local function slotOf(a,id)
+	for slot,spec in a.def.Techniques do if spec.Id==id then return "Technique"..slot,spec end end
+	return nil
+end
+local function plantedSeals(a)
+	local count=0
+	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
+	return count
+end
+-- Defence first: wall tech on the impact, and a substitution decided once per
+-- combo (like a player choosing when to spend it), not rolled every tick.
+function AI:defend(now)
+	local c,a=self.combat,self.actor
+	if a.reaction=="WallSplat" then
+		local elapsed=now-(a.splatAt or now)
+		if self.techPlan==nil then self.techPlan=self.rng:NextNumber()&lt;.5 end
+		if self.techPlan and elapsed&gt;=Config.Wall.TechFrom+.03 and elapsed&lt;=Config.Wall.TechUntil then
+			if c:request(a,"Dodge") then self.techPlan=nil;return true end
+		end
+	else self.techPlan=nil end
+	local hits=a.comboHits or 0
+	if hits==0 then self.subPlan=nil end
+	if hits&gt;0 and self.subPlan==nil then
+		self.subPlan=if self.rng:NextNumber()&lt;.5 then 3+math.floor(self.rng:NextNumber()*3) else false
+	end
+	local hurt=a.state=="Stunned" or (a.reaction~=nil and a.reaction~="Wakeup")
+	if hurt and self.subPlan and hits&gt;=self.subPlan and a.subCharges&gt;0 and a.chakra&gt;=Config.Substitution.Cost then
+		if c:request(a,"Substitute") then self.subPlan=false;return true end
+	end
+	return false
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health&lt;=0 or target.health&lt;=0 then a.move=Vector3.zero; return end
 	if now&lt;self.nextTick then return end
 	self.nextTick=now+tune.Tick
-	if (a.state=="Stunned" or a.reaction) and a.subCharges&gt;0 and a.chakra&gt;=Config.Substitution.Cost and self.rng:NextNumber()&lt;0.42 then
-		c:request(a,"Substitute")
-	end
-	local position=if a.decoyPosition and a.illusionUntil&gt;now then a.decoyPosition else target.root.Position
+	if self:defend(now) then return end
+	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.
+	if a.illusionUntil&gt;now then
+		if self.illusionSeen==nil then self.illusionSeen=self.rng:NextNumber()&lt;.35 end
+	else self.illusionSeen=nil end
+	local fooled=a.decoyPosition and a.illusionUntil&gt;now and not self.illusionSeen
+	local position=if fooled then a.decoyPosition else target.root.Position
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance&gt;0.1 then delta.Unit else Vector3.zAxis
 	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
@@ -1456,6 +1509,27 @@ function AI:update(now)
 	a.sprinting=distance&gt;desired+6
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
+	-- Wall run: rise along the wall, then dive at the opponent.
+	local fromCenter=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
+	local outward=if fromCenter.Magnitude&gt;.1 then fromCenter.Unit else Vector3.xAxis
+	if a.wall then
+		self.wallSince=self.wallSince or now
+		local along=Vector3.new(-a.wall.normal.Z,0,a.wall.normal.X)
+		a.move=(-a.wall.normal*.7+along*(self.wallSide or 1)*.7).Unit
+		if now-self.wallSince&gt;.3 and (target.root.Position-a.root.Position).Magnitude&lt;=Config.Wall.DiveRange and self.rng:NextNumber()&lt;.55 then
+			c:request(a,"Attack")
+		end
+		return
+	end
+	self.wallSince=nil
+	if self.wallRun and now&lt;self.wallRun and a.state=="Neutral" and not a.reaction then
+		a.move=(outward+tangent*.25).Unit;a.sprinting=true
+		return
+	end
+	if fromCenter.Magnitude&gt;Config.ArenaRadius-15 and distance&gt;11 and distance&lt;32 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()&lt;.22 then
+		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()&lt;.5 then 1 else -1
+		return
+	end
 	if target.state~=self.observed then
   if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
   self.observed=target.state;self.observedAt=now
@@ -1492,23 +1566,39 @@ function AI:update(now)
 		end
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()&lt;.4 then "Heavy" else "Attack");return end
-	-- Flying Thunder God arrival: strike from the new angle immediately.
+	-- A read that landed (Read or a caught genjutsu): cash it in.
+	if (a.counterUntil or 0)&gt;now and distance&lt;8 then a.move=toward;c:request(a,"Attack");return end
+	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
 	if (a.flashUntil or 0)&gt;now then
+		local rasengan=slotOf(a,"BurstStrike")
+		if rasengan and self.rng:NextNumber()&lt;.35 and c:request(a,rasengan) then return end
 		c:request(a,if self.rng:NextNumber()&lt;.3 then "Heavy" else "Attack");return
+	end
+	-- The opponent is pinned against a wall: pursue, extend, bounce or pin it.
+	if target.reaction=="WallSplat" then
+		local gap=(target.root.Position-a.root.Position).Magnitude
+		if gap&lt;7 then a.move=toward;c:request(a,if self.rng:NextNumber()&lt;.45 then "Heavy" else "Attack");return end
+		if a.pursuitUntil&gt;now and gap&lt;Config.PursuitRange and c:request(a,"Pursuit") then return end
+		if not minato and gap&lt;32 and c:request(a,"Tool",target.root.Position) then return end
+		a.move=toward;a.sprinting=true;return
 	end
 	-- A marked kunai that is about to pass the opponent is a teleport cue.
 	if minato and a.state=="Neutral" then
 		local seal=Techniques.sealOf(c,a,now)
-		if seal and (seal-target.root.Position).Magnitude&lt;7 and c:markedInFlight(a) then
-			for slot,spec in a.def.Techniques do
-				if spec.Id=="Flashstep" and c:request(a,"Technique"..slot) then return end
-			end
+		if seal and (seal-target.root.Position).Magnitude&lt;7 and (c:markedInFlight(a) or self.rng:NextNumber()&lt;.5) then
+			local slot=slotOf(a,"Flashstep")
+			if slot and c:request(a,slot) then return end
 		end
 	end
 	if a.pursuitUntil&gt;now and distance&gt;8 and distance&lt;Config.PursuitRange and self.rng:NextNumber()&lt;0.58 then
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then
+		-- In the air Minato may finish with a plunging Rasengan instead of the slam.
+		if a.airborne and minato and (a.airCombo or 0)&gt;=1 and self.rng:NextNumber()&lt;.25 then
+			local rasengan=slotOf(a,"BurstStrike")
+			if rasengan and c:request(a,rasengan) then return end
+		end
 		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
 		-- Character branches: the stick picks an alternative inside the string.
@@ -1530,13 +1620,14 @@ function AI:update(now)
 	if self.rng:NextNumber()&lt;tune.Technique then
 		for slot,spec in a.def.Techniques do
 			local use=false; local aim=target.root.Position
-			if spec.Id=="MarkedBlade" then use=not a.anchor and not c:markedInFlight(a) and distance&gt;8; aim=position+target.hum.MoveDirection*3
+			if spec.Id=="MarkedBlade" then use=plantedSeals(a)&lt;2 and not c:markedInFlight(a) and distance&gt;8; aim=position+target.hum.MoveDirection*3
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance&gt;14 or (seal-target.root.Position).Magnitude&lt;7)
 			elseif spec.Id=="BurstStrike" then use=distance&lt;7 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery")
 			elseif spec.Id=="Read" then use=distance&lt;8 and danger and reacted
 			elseif spec.Id=="NeedleFan" then use=distance&gt;8 and distance&lt;36
 			elseif spec.Id=="MirageCast" then use=distance&gt;10 and distance&lt;21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()&lt;0.18) end
 			if spec.Id=="FireBloom" then use=distance&gt;6 and distance&lt;46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()&lt;0.32) end
+			if spec.Id=="PhoenixFlower" then use=distance&gt;9 and distance&lt;34 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.5 end
 			if spec.Id=="WindCut" then use=distance&gt;8 and distance&lt;28 end
 			if spec.Id=="Quickstep" then use=distance&gt;9 and distance&lt;20 and self.rng:NextNumber()&lt;0.25 end
 			if use and c:request(a,"Technique"..slot,aim) then return end
@@ -1708,7 +1799,7 @@ function Bangla.tryHit(c,a,p)
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,.05) then continue end
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05) then continue end
    donor.Hits[target.id]=true
    local delta=a.root.Position-target.root.Position
    local frontal=delta.Magnitude&lt;.001 or target.root.CFrame.LookVector:Dot(delta.Unit)&gt;.15
@@ -1783,6 +1874,7 @@ local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local Combo=require(Shared.BanglaCombo)
 local MoveGraphs=require(Shared.MoveGraphs)
+local Config=require(Shared.Config)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
@@ -1838,6 +1930,10 @@ function Brawler.start(c,a,name)
   local drop=math.max(6,a.root.Position.Y-(c.match.origin.Y+3.4))
   -- 118 studs/s is the plunge speed the slam uses at runtime.
   slamWindow=math.clamp(drop/118,.28,1.1)
+ elseif name=="WallDive" then
+  -- The dive lasts as long as the flight to the opponent (92 studs/s).
+  local gap=(a.target.root.Position-a.root.Position).Magnitude
+  slamWindow=math.clamp(gap/88,.16,.5)
  end
  a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow}
  Bangla.begin(c,a,a.pending)
@@ -1848,6 +1944,7 @@ function Brawler.start(c,a,name)
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
 end
@@ -1884,7 +1981,15 @@ function Brawler.request(c,a,action)
  local relevant=action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp"
  if not relevant then return nil end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
- if a.wall then Motor.detach(a,c.now,false) end
+ if a.wall then
+  -- From a wall run a strike becomes a dive at the opponent: height and an
+  -- angle the guard has to read.
+  Motor.detach(a,c.now,false)
+  if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health&gt;0
+   and (a.target.root.Position-a.root.Position).Magnitude&lt;=Config.Wall.DiveRange then
+   return Brawler.start(c,a,"WallDive")
+  end
+ end
  if a.grabVictim then
   if action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp" then
    return Brawler.start(c,a,if action=="Heavy" or action=="ThrowUp" then "ThrowUp" else "Throw")
@@ -1895,9 +2000,10 @@ function Brawler.request(c,a,action)
  local canDash=a.state=="Dodging" and c.now&gt;=a.untilTime-.23
  -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
  -- so the teleport flows straight into an attack from the new angle.
- local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)&gt;c.now and a.pending==nil
+ local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)&gt;c.now
+  and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
  if canFlash then
-  a.flashUntil=0;a.state="Neutral";a.untilTime=c.now
+  a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   if action=="Heavy" then
    if a.airborne then return Brawler.start(c,a,"Slam") end
@@ -1961,6 +2067,91 @@ function Brawler.stopStyle(p)
  if p.name=="Air1" or p.name=="Air2" then return "air" end
  return "light"
 end
+-- Surfaces a flying body can be slammed into: the stadium wall, the field
+-- trees and the boulders.
+function Brawler.splatSurface(part)
+ return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
+end
+-- Wall splat: a body carried into a wall hard enough sticks to it for a
+-- moment. The attacker chooses: pursue (E), pin it with lighter hits or
+-- blades, bounce it back out with a heavy blow, or reset. The defender can
+-- tech off the wall on the impact (Q), spend a substitution, or take it.
+function Brawler.splat(c,a,hit)
+ local tune=Config.Wall
+ local normal=Vector3.new(hit.Normal.X,0,hit.Normal.Z)
+ normal=if normal.Magnitude&gt;.05 then normal.Unit else -a.root.CFrame.LookVector
+ a.reaction="WallSplat";a.reactionUntil=c.now+tune.SplatTime;a.splatAt=c.now;a.splatNormal=normal;a.splatPart=hit.Instance
+ a.wallSplats=(a.wallSplats or 0)+1
+ a.reactionVelocity=Vector3.zero;a.groundPose="Splat";a.invulnerableUntil=c.now
+ a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
+ a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.07)
+ Brawler.event(c,a,"WallSplat")
+ c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
+ local source=a.reactionSource
+ if source and source.health&gt;0 then
+  c:damage(source,a,tune.SplatDamage,false,false)
+  if c.match.phase~="Duel" then return end
+  a.reaction="WallSplat";a.state="Neutral";a.untilTime=c.now
+  source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.8)
+  Brawler.event(c,source,"WallConvert")
+  c:cue(source,"WALL SPLAT • E PURSUE • HEAVY BOUNCE",.8)
+ end
+ c:cue(a,"WALL SPLAT • Q ON IMPACT TO TECH",.6)
+end
+-- Keep a splatted body on the wall a little longer (lighter hits, blades).
+function Brawler.pin(c,b,duration,source)
+ if b.reaction~="WallSplat" or (b.splatPins or 0)&gt;=Config.Wall.PinMax then return false end
+ b.splatPins=(b.splatPins or 0)+1
+ b.reactionUntil=math.max(b.reactionUntil,c.now+duration)
+ b.reactionVelocity=Vector3.zero
+ c:pushImpact(b.root.Position,"pin",false,{owner=source and source.id,normal=b.splatNormal})
+ if source then c:cue(source,"WALL PIN",.5) end
+ return true
+end
+-- Hits on a pinned body: a heavy blow (heavy, launcher, Rasengan, dive) bounces
+-- it off the wall back into the open for a fresh air phase; lighter hits pin
+-- it for a short extension. Both are limited, so a wall is a phase, not a trap.
+function Brawler.wallFollow(c,a,b,p)
+ local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true
+ if heavy and not b.wallBounced then
+  b.wallBounced=true
+  local out=b.splatNormal or -a.root.CFrame.LookVector
+  Brawler.react(c,b,"Launched",out*24+Vector3.new(0,46,0),1.05,a)
+  a.pursuitUntil=c.now+1.1
+  c:pushImpact(b.root.Position-out*1.2,"wallbounce",true,{normal=out,owner=b.id})
+  Brawler.event(c,a,"WallBounce");c:cue(a,"WALL BOUNCE • E TO PURSUE",.9)
+  return true
+ end
+ if not heavy and Brawler.pin(c,b,Config.Wall.PinTime,a) then Brawler.event(c,a,"WallPin");return true end
+ return false
+end
+-- Clash: both strikes became active together, facing, in reach. Neither
+-- lands; both fighters are pushed apart into a fresh close-range neutral.
+function Brawler.clash(c,a,p)
+ local b=a.target
+ local q=b and b.pending
+ if not q or q.kind~="Brawl" or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
+ if q.name=="Grab" or q.name=="Throw" or q.name=="ThrowUp" then return false end
+ -- Simultaneous means the two active frames start within the clash window
+ -- (the other swing may be a frame or two from becoming active).
+ local other=if b.state=="Active" then (b.activeAt or 10) else b.untilTime
+ if math.abs((a.activeAt or -10)-other)&gt;Config.Clash.Window then return false end
+ local delta=b.root.Position-a.root.Position
+ local flat=Vector3.new(delta.X,0,delta.Z)
+ if flat.Magnitude&lt;.1 or delta.Magnitude&gt;math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
+ if a.root.CFrame.LookVector:Dot(flat.Unit)&lt;.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)&lt;.4 then return false end
+ for _,x in {a,b} do
+  Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.queuedLight=nil;x.travelRemaining=0
+  x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
+  x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
+ end
+ a.hop={direction=-flat.Unit,remaining=Config.Clash.Push,speed=30}
+ b.hop={direction=flat.Unit,remaining=Config.Clash.Push,speed=30}
+ c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"clash",true,{direction=flat.Unit})
+ Brawler.event(c,a,"Clash");Brawler.event(c,b,"Clash")
+ c:cue(a,"CLASH",.6);c:cue(b,"CLASH",.6)
+ return true
+end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
  if p.name=="Throw" or p.name=="ThrowUp" then
@@ -1972,6 +2163,8 @@ function Brawler.hit(c,a,p)
  end
  local success,guarded,protected
  if p.name~="Throw" and p.name~="ThrowUp" then
+	-- Two strikes meeting in the same instant cancel out.
+	if p.name~="Grab" and Brawler.clash(c,a,p) then return false end
 	if p.spec.chainTool and not p.chainToolFired then
 		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
 	end
@@ -2014,7 +2207,14 @@ function Brawler.hit(c,a,p)
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
+ if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ -- A combo that runs too long drops the body out of it (with wake-up cover).
+ if (b.comboHits or 0)&gt;=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
+  Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
+  c:cue(a,"COMBO LIMIT",.7);Brawler.event(c,a,"ComboLimit")
+  return true
+ end
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
@@ -2036,7 +2236,12 @@ function Brawler.step(c,a,dt)
  if a.reaction then
   if a.reaction=="Grabbed" then return true end
   if c.now&gt;=a.reactionUntil then
-   if a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+   if a.reaction=="WallSplat" and a.airborne and a.root.Position.Y&gt;c.match.origin.Y+5 then
+    -- Released high on the wall: drop to the floor, then wake up.
+    local normal=a.splatNormal or Vector3.zero
+    a.reaction="Knockdown";a.reactionUntil=c.now+.9;a.reactionVelocity=normal*7+Vector3.new(0,-6,0)
+    a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
+   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
     a.reaction=nil;a.reactionVelocity=nil
     -- Fully recovered: drop the grounded presentation state with it.
@@ -2046,7 +2251,12 @@ function Brawler.step(c,a,dt)
   if a.reaction then
    a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
    local velocity=a.reactionVelocity or Vector3.zero
-   if airReactions[a.reaction] then
+   if a.reaction=="WallSplat" then
+    -- Pinned: slide slowly down the wall instead of falling off it.
+    velocity=Vector3.new(0,math.max(velocity.Y-30*dt,-11),0)
+    local hit=Motor.flight(a,c,velocity*dt)
+    if hit and hit.Normal.Y&gt;.5 then velocity=Vector3.zero;a.airborne=false;a.landedAt=c.now end
+   elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
     if hit then
@@ -2057,12 +2267,10 @@ function Brawler.step(c,a,dt)
       a.airborne=false
       a.landedAt=c.now
       velocity=Vector3.zero
-     elseif math.abs(hit.Normal.Y)&lt;.2 and hit.Instance:GetAttribute("NinjaWall") then
-			 a.reaction="WallSplat";a.reactionUntil=c.now+.42;velocity=hit.Normal*8;Brawler.event(c,a,"WallSplat")
-			 a.groundPose="Splat"
-			 c:pushImpact(hit.Position,"wall",false)
-			 local source=a.reactionSource
-			 if source and source.health&gt;0 then source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.72);Brawler.event(c,source,"WallConvert");c:cue(source,"WALL CONVERT • PURSUE",.65) end
+     elseif math.abs(hit.Normal.Y)&lt;.3 and Brawler.splatSurface(hit.Instance) and -velocity:Dot(hit.Normal)&gt;=Config.Wall.SplatSpeed and (a.wallSplats or 0)&lt;2 then
+      Brawler.splat(c,a,hit)
+      if c.match.phase~="Duel" or not a.reaction then return true end
+      velocity=a.reactionVelocity or Vector3.zero
      end
     end
    else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end
@@ -2128,7 +2336,8 @@ function Combat:add(id,model,hum,root,joints,definition)
 		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
 		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,airHold=0,
-		subCharges=Config.Substitution.Charges,subCooldown=0,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0 }
+		subCharges=Config.Substitution.Charges,subCooldown=0,subRegenAt=math.huge,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0,
+		comboHits=0,comboDamage=0,anchors={} }
 	table.insert(self.actors,a)
 	Defense.init(a)
 	Animation.attach(a)
@@ -2234,6 +2443,13 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
+	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
+	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt&lt;.7 then
+		frontal=true
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude&gt;.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
+		self:cue(victim,"SHARINGAN • TRACKED",.7)
+	end
 	if readEligible and frontal and victim.readUntil&gt;self.now then
 		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
@@ -2265,6 +2481,14 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
+	-- Combo scaling: the opening hits of a combo land in full, every later hit
+	-- is worth less. Long routes stay possible; they just stop being lethal.
+	if not guarded then
+		local tune=Config.ComboScaling
+		local n=victim.comboHits or 0
+		if n&gt;=tune.Free then amount*=math.max(tune.Floor,1-tune.Step*(n-tune.Free+1)) end
+		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
+	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount&gt;=12
@@ -2372,6 +2596,106 @@ function Combat:stepThrow(a)
 	end
 	if a.throwing==throw and throw.fired&gt;=throw.count then a.throwing=nil end
 end
+-- Kawarimi. A limited escape from a combo: two charges that come back one at a
+-- time, a chakra cost, and a short tracking window for the attacker so a
+-- predictable substitution can still be punished. Each prodigy reappears in
+-- his own way: Minato on a planted seal if he has one, Itachi as a crow clone
+-- behind the attacker, otherwise a short hop away.
+function Combat:substitute(a)
+	local tune=Config.Substitution
+	if a.subCharges&lt;=0 then return false,"No substitution" end
+	if self.now&lt;a.subCooldown then return false,"Substitution recovering" end
+	if a.chakra&lt;tune.Cost then return false,"Need chakra" end
+	local hurt=(a.reaction~=nil and a.reaction~="Wakeup" and not (a.reaction=="Knockdown" and not a.airborne))
+		or a.state=="Stunned" or self.now-a.lastHurt&lt;=tune.Window
+	if not hurt then return false,"No escape window" end
+	local attacker=a.target
+	local departure=a.root.Position
+	local destination,mode=nil,"hop"
+	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
+	if seal then
+		destination=self:clamp(seal.position);mode="seal"
+	elseif a.fighterId=="Mirage" and attacker and attacker.health&gt;0 then
+		local back=-attacker.root.CFrame.LookVector*Vector3.new(1,0,1)
+		if back.Magnitude&gt;.1 then
+			local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+back.Unit*5.5)
+			local blocked=false
+			for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
+				if part.CanCollide then blocked=true;break end
+			end
+			if not blocked and workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil then destination=spot;mode="crow" end
+		end
+	end
+	if destination then
+		self:relocate(a,destination)
+	else
+		local away=a.root.Position-(if attacker then attacker.root.Position else a.root.Position-a.root.CFrame.LookVector)
+		away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude&lt;0.1 then away=a.root.CFrame.RightVector end
+		-- Pinned against a wall the straight escape is blocked: slide along it.
+		local moved=Motor.travel(a,self,away,tune.Distance)
+		if moved&lt;2 then
+			local side=Vector3.new(-away.Z,0,away.X)
+			moved=Motor.travel(a,self,side,tune.Distance)
+			if moved&lt;2 then moved=Motor.travel(a,self,-side,tune.Distance) end
+		end
+		if moved&lt;2 then return false,"Escape blocked" end
+	end
+	if attacker then
+		local face=attacker.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
+		if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+	end
+	if a.subCharges&gt;=tune.Charges then a.subRegenAt=self.now+tune.Recharge end
+	a.subCharges-=1; a.chakra-=tune.Cost; a.subCooldown=self.now+tune.Cooldown
+	a.subUntil=self.now+0.17
+	Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil;a.groundPose=nil
+	a.airborne=a.root.Position.Y&gt;self.match.origin.Y+4.2
+	if seal then Techniques.consumeSeal(self,a,seal) end
+	Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.24
+	a.comboHits=0;a.comboDamage=0
+	self:setState(a,"Recovery",0.14)
+	-- The attacker may read the reappearance: a short chase window.
+	if attacker and attacker.health&gt;0 then
+		attacker.pursuitUntil=math.max(attacker.pursuitUntil,self.now+tune.Track)
+		self:cue(attacker,"SUBSTITUTION • E TO TRACK",tune.Track)
+	end
+	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
+	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
+	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
+	self:cue(a,if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" else "SUBSTITUTION • REPOSITIONED")
+	return true
+end
+-- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
+-- (before the impact settles) or too late and the pin holds.
+function Combat:wallTech(a)
+	local tune=Config.Wall
+	local elapsed=self.now-(a.splatAt or -10)
+	if elapsed&lt;tune.TechFrom or elapsed&gt;tune.TechUntil or (a.hitstopUntil or 0)&gt;self.now then
+		a.techLockUntil=self.now+.25
+		return false,"Tech missed"
+	end
+	if (a.techLockUntil or 0)&gt;self.now then return false,"Tech missed" end
+	if a.chakra&lt;tune.TechCost then return false,"Need chakra" end
+	local normal=a.splatNormal or -a.root.CFrame.LookVector
+	normal=Vector3.new(normal.X,0,normal.Z)
+	normal=if normal.Magnitude&gt;.05 then normal.Unit else -a.root.CFrame.LookVector
+	a.chakra-=tune.TechCost
+	a.reaction=nil;a.reactionVelocity=nil;a.groundPose=nil;a.comboHits=0;a.comboDamage=0
+	-- Kick off along the stick (sideways along the wall or straight out).
+	local stick=Vector3.new(a.move.X,0,a.move.Z)
+	local along=stick-normal*stick:Dot(normal)
+	local out=normal*30+(if along.Magnitude&gt;.3 then along.Unit*18 else Vector3.zero)
+	a.root.AssemblyLinearVelocity=out+Vector3.new(0,36,0)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
+	a.airborne=true;a.airDodgeUsed=false;a.takeoffUntil=self.now+.12;a.wallNext=self.now+.35
+	a.invulnerableUntil=self.now+.28
+	self:setState(a,"Recovery",.16)
+	Brawler.event(self,a,"WallTech")
+	self:pushImpact(a.root.Position-normal*1.2,"walltech",false,{owner=a.id,fighter=a.fighterId,normal=normal})
+	self:cue(a,"WALL TECH")
+	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
+	return true
+end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
 	if self.match.introUntil and self.now&lt;self.match.introUntil then return false,"Intro" end
@@ -2388,29 +2712,11 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	if action=="WallDetach" then Motor.detach(a,self.now,false); return true end
+	-- Pinned against a wall, the dodge button is a timed wall tech, never a
+	-- substitution: a mistimed tech must not silently spend a charge.
+	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
-	if action=="Substitute" then
-		local tune=Config.Substitution
-		if a.subCharges&lt;=0 or self.now&lt;a.subCooldown then return false,"No substitution" end
-		if a.chakra&lt;tune.Cost then return false,"Need chakra" end
-		if self.now-a.lastHurt&gt;tune.Window or (a.state~="Stunned" and Brawler.free(a,self.now)) then return false,"No escape window" end
-		local away=a.root.Position-a.target.root.Position
-		away=Vector3.new(away.X,0,away.Z)
-		if away.Magnitude&lt;0.1 then away=a.root.CFrame.RightVector end
-		local departure=a.root.Position
-		local moved=Motor.travel(a,self,away,tune.Distance)
-		if moved&lt;2 then return false,"Escape blocked" end
-		a.subCharges-=1; a.chakra-=tune.Cost; a.subCooldown=self.now+tune.Cooldown
-		a.subUntil=self.now+0.17
-		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil
-		Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.16
-		self:setState(a,"Recovery",0.16)
-		self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
-		self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
-		self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-		self:cue(a,"SUBSTITUTION • REPOSITIONED")
-		return true
-	end
+	if action=="Substitute" then return self:substitute(a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted&lt;=pending.spec.startup*.62 then
@@ -2495,6 +2801,16 @@ function Combat:request(a,action,aim,clientTime)
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id
 	end
+	-- Flying Thunder God arrival: the Rasengan is already forming in the hand,
+	-- so it cancels the teleport recovery with almost no wind-up.
+	a.flashCancel=nil
+	local arriving=(a.flashUntil or 0)&gt;self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
+		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
+	if cancelSpec and cancelSpec.Id=="BurstStrike" and arriving
+		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
+		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
+		a.flashCancel=true
+	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
@@ -2520,6 +2836,14 @@ function Combat:request(a,action,aim,clientTime)
 	local technique=Techniques[spec.Id]
 	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
 	a.stringCancel=nil
+	-- Context: the same Rasengan is a different tool after a teleport (instant
+	-- thrust) and in the air (a plunge that ends the air phase).
+	local variant=nil
+	if spec.Id=="BurstStrike" then
+		if a.flashCancel then spec=table.clone(spec);spec.Channel=.05;variant="FlashRasengan"
+		elseif a.airborne then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.12);variant="RasenganDrop" end
+	end
+	a.flashCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
@@ -2539,7 +2863,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
-	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position}
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
@@ -2555,7 +2879,16 @@ function Combat:updateActor(a,dt)
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
 	Defense.step(self,a,dt,now)
-	if a.anchor and a.anchor.expires&lt;=now then a.anchor.part:Destroy(); a.anchor=nil end
+	Techniques.expireSeals(self,a,now)
+	-- A combo ends once the victim has been free to act for a moment.
+	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
+	if a.freeSince and now-a.freeSince&gt;=Config.ComboScaling.Reset and (a.comboHits&gt;0 or (a.wallSplats or 0)&gt;0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false end
+	-- Substitution charges come back one at a time.
+	if a.subCharges&lt;Config.Substitution.Charges and now&gt;=a.subRegenAt then
+		a.subCharges+=1
+		a.subRegenAt=if a.subCharges&lt;Config.Substitution.Charges then now+Config.Substitution.Recharge else math.huge
+		self:cue(a,"SUBSTITUTION READY",.6)
+	end
 	if a.illusionUntil&lt;=now then a.decoyPosition=nil end
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
@@ -2573,12 +2906,23 @@ function Combat:updateActor(a,dt)
 			-- The slam's active window is its sized descent; everything else uses
 			-- the authored active duration.
 			self:setState(a,"Active",if pending.slamWindow and pending.slamWindow&gt;0 then pending.slamWindow else pending.spec.active)
+			a.activeAt=now
 		elseif a.state=="Active" then
 			Bangla.close(pending)
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
+				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
+				local caster=a.target
+				if a.illusionUntil&gt;now and caster and caster.health&gt;0 and caster.fighterId=="Mirage" then
+					a.illusionUntil=0;a.decoyPosition=nil
+					caster.counterUntil=now+1.1;caster.bonusUntil=now+1.1
+					Brawler.event(self,caster,"MirageCatch")
+					self:pushImpact(a.root.Position,"mirage",false,{owner=caster.id,fighter=caster.fighterId})
+					self:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);self:cue(a,"GENJUTSU • EXPOSED",1)
+					pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
+				end
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -2635,6 +2979,15 @@ function Combat:updateActor(a,dt)
 			local distance=close.Magnitude
 			if distance&lt;7 then speed=math.min(speed,40+distance*distance*2.4) end
 			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
+		end
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
+		-- Wall dive: a beat crouched against the wall (held by airHold), then a
+		-- straight lunge at the opponent's body.
+		local delta=a.target.root.Position-a.root.Position
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		if a.state=="Active" and delta.Magnitude&gt;2.8 then
+			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
 		end
 	elseif a.state=="Active" and a.pending and a.pending.kind=="Brawl" and a.attackName=="Slam" then
   -- The slam owns a continuous plunge: a constant downward velocity with bounded
@@ -2708,7 +3061,23 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire"}
+local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember"}
+-- Delayed releases (hidden shuriken, the Phoenix Flower volley). Each entry
+-- re-checks its owner when it fires, so a hit fighter never keeps throwing.
+function Combat:schedule(at,fn)
+	self.scheduled=self.scheduled or {}
+	table.insert(self.scheduled,{at=at,fn=fn})
+end
+function Combat:runScheduled()
+	local list=self.scheduled
+	if not list or #list==0 then return end
+	local due={}
+	for i=#list,1,-1 do if list[i].at&lt;=self.now then table.insert(due,1,list[i]);table.remove(list,i) end end
+	for _,entry in due do
+		if self.match.phase~="Duel" then return end
+		entry.fn()
+	end
+end
 local function closestOnSegment(a,b,point)
 	local ab=b-a
 	local length=ab:Dot(ab)
@@ -2719,7 +3088,10 @@ end
 -- ground dangerous for a moment.
 function Combat:fireExplosion(p,position,direct)
 	local target=p.a.target
-	self:addHazard(p.a,position,5.5,1.5,p.damage*.6,"Fire")
+	-- A blast that misses the body becomes space denial: a wider patch of
+	-- burning ground that holds the lane for a few seconds.
+	if direct then self:addHazard(p.a,position,5.5,1.5,p.damage*.6,"Fire")
+	else self:addHazard(p.a,position,7.5,3.2,p.damage*.45,"Fire") end
 	if not direct and target and target.health&gt;0 then
 		local delta=target.root.Position-position
 		if delta.Magnitude&lt;=7.5 and workspace:Raycast(position,delta,self:rayParams(true))==nil then
@@ -2742,15 +3114,28 @@ function Combat:projectileHit(p,target,position,normal)
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
 		end
 	end
+	-- Blades thrown at a body pinned against a wall nail it there a little longer
+	-- (Itachi's precision): the wall phase is extended, never restarted.
+	if damaged and not guarded and (p.kind=="shuriken" or p.kind=="kunai" or p.kind=="marked") and target.reaction=="WallSplat" then
+		Brawler.pin(self,target,.34,p.a)
+	end
 	-- A guarded blast is absorbed whole: no burning ground under a raised guard.
 	if p.kind=="fireball" and not guarded then self:fireExplosion(p,position,true) end
-	-- A marked blade also leaves its seal beneath the struck target.
-	if p.onSurface then p.onSurface(position,normal or Vector3.yAxis) end
+	-- A marked blade that connects leaves its seal on the body; a guarded one
+	-- drops at the guard's feet.
+	if p.onSurface then
+		if damaged and not guarded and target.health&gt;0 then p.onSurface(position,normal or Vector3.yAxis,target)
+		else
+			local floor=workspace:Raycast(target.root.Position,Vector3.new(0,-8,0),self:rayParams(true))
+			p.onSurface(if floor then floor.Position else position,if floor then floor.Normal else Vector3.yAxis)
+		end
+	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="wind" then "jutsu" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" else "stick"
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
+	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
 	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
 end
@@ -2758,6 +3143,10 @@ function Combat:projectileExpire(p)
 	if p.kind=="fireball" then
 		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		self:fireExplosion(p,p.position,false)
+		return
+	end
+	if p.kind=="phoenix" then
+		self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		return
 	end
 	-- A marked kunai that reaches the end of its flight drops to the ground and
@@ -2847,6 +3236,7 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
+	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -2861,10 +3251,12 @@ function Combat:clear(preserveAnimations)
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
+	if self.scheduled then table.clear(self.scheduled) end
 	self.impacts={}; self.impactSerial=0
 end
 return Combat
@@ -2905,7 +3297,7 @@ function DevHooks.install(matches)
 		return {state=a.state,health=a.health,chakra=math.floor(a.chakra),position=a.root.Position,reaction=a.reaction,attackName=a.attackName,
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
-			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now}
+			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant}
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
@@ -2931,7 +3323,7 @@ function DevHooks.install(matches)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
 		elseif op=="refill" then
-			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0 end
+			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0;a.subRegenAt=math.huge end
 			return true
 		elseif op=="place" then
 			-- arg1 / arg2 = offsets from the arena origin for human / bot
@@ -2955,7 +3347,7 @@ function DevHooks.install(matches)
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
-			return {phase=s.phase,now=c.now,human=summary(s.human,c.now),bot=summary(s.bot,c.now),projectiles=projectiles,hazards=#c.hazards,events=s.human.events}
+			return {phase=s.phase,now=c.now,human=summary(s.human,c.now),bot=summary(s.bot,c.now),projectiles=projectiles,hazards=#c.hazards,events=s.human.events,botEvents=s.bot.events}
 		end
 		return "unknown op"
 	end
@@ -3041,6 +3433,27 @@ function Elements.fire(c,a,pending,now)
 	local target=origin+flat.Unit*spec.Range+Vector3.new(0,drop*spec.Range/math.max(flat.Magnitude,1),0)
 	c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
 	c:cue(a,"KATON • GREAT FIREBALL")
+end
+-- Katon: Phoenix Flower. Five small flames released one after another, each
+-- re-aimed at the opponent with a lateral offset: a fan that follows the
+-- target and pressures a sidestep, with small burning patches where they land.
+function Elements.phoenix(c,a,pending,now)
+	local spec=pending.spec
+	local offsets={0,-5,5,-2.5,2.5}
+	for k,offset in offsets do
+		c:schedule(now+(k-1)*.06,function()
+			if a.health&lt;=0 or a.reaction or a.state=="Stunned" then return end
+			local victim=a.target
+			local goal=if victim and victim.health&gt;0 then victim.root.Position+victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.15 else a.root.Position+a.root.CFrame.LookVector*spec.Range
+			local origin=c.launchPoint(a,"Fireball")
+			local flat=Vector3.new(goal.X-origin.X,0,goal.Z-origin.Z)
+			if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+			local side=Vector3.new(-flat.Unit.Z,0,flat.Unit.X)
+			local aim=goal+side*offset+Vector3.new(0,-.6,0)
+			c:projectile(a,aim,spec.Speed or 68,spec.Range,spec.Damage,"phoenix",nil,{origin=origin,radius=.9,growth=.35})
+		end)
+	end
+	c:cue(a,"KATON • PHOENIX FLOWER")
 end
 function Elements.wind(c,a,pending)
 	local aim=pending.aim
@@ -3153,6 +3566,19 @@ function Matches:start(player,playerId,botId,training)
 end
 function Matches:snapshot(player,s)
 	local now=s.combat.now
+	-- Every Flying Thunder God seal the client should draw: planted kunai
+	-- (surface + normal) and the seal riding on the opponent's body.
+	local function sealList(a)
+		local list={}
+		for _,seal in Techniques.seals(s.combat,a,now) do
+			local entry=seal.anchor
+			if entry then
+				table.insert(list,{id=entry.id or 0,surface=entry.surface or seal.position,normal=entry.normal or Vector3.yAxis,
+					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id})
+			end
+		end
+		return list
+	end
 	local function data(a)
 		local ready={}
 		for i,spec in a.def.Techniques do
@@ -3172,7 +3598,13 @@ function Matches:snapshot(player,s)
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
-			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)&gt;now,lookVector=a.root.CFrame.LookVector}
+			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)&gt;now,lookVector=a.root.CFrame.LookVector,
+			-- Phase 4: combo scaling, recharging substitution, seals, wall state.
+			comboHits=a.comboHits or 0,comboDamage=a.comboDamage or 0,
+			subRegen=if (a.subRegenAt or math.huge)&lt;math.huge then math.max(0,a.subRegenAt-now) else 0,
+			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
+			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
+			counter=math.max(0,(a.counterUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -4213,49 +4645,173 @@ return Parkour
 -- channel, interruption, active window and recovery for every entry.
 local Techniques = {}
 local Elements=require(script.Parent.Elements)
--- Where Minato's seal currently is: a planted kunai, or the marked kunai that is
--- still flying. Relocating onto a kunai in flight is the signature move.
-local function sealOf(c,a,now)
+-- Flying Thunder God seals. Minato can hold up to two planted kunai, one seal
+-- placed on the opponent's body (a marked kunai that connects), and the marked
+-- kunai still in flight. The stick chooses between them; with no input the
+-- seal closest to the opponent wins, and a kunai in flight always does.
+local MAX_PLANTED=2
+local BODY_SEAL=5
+Techniques.RANGE=60
+local function syncAnchor(a)
+	-- a.anchor mirrors the newest planted seal for HUD, AI and tooling.
+	a.anchor=nil
+	for _,entry in a.anchors or {} do if not entry.actor then a.anchor=entry end end
+end
+local function seals(c,a,now)
+	local list={}
 	local flying=c:markedInFlight(a)
-	if flying then return flying.position,flying end
-	if a.anchor and a.anchor.expires&gt;now then return a.anchor.position,nil end
+	if flying then table.insert(list,{position=flying.position,flying=flying}) end
+	local known={}
+	for _,entry in a.anchors or {} do
+		known[entry]=true
+		if entry.expires&gt;now and (not entry.actor or entry.actor.health&gt;0) then
+			table.insert(list,{position=if entry.actor then entry.actor.root.Position else entry.position,anchor=entry,body=entry.actor~=nil})
+		end
+	end
+	-- A seal written directly into the single legacy slot still counts.
+	if a.anchor and not known[a.anchor] and a.anchor.expires&gt;now then table.insert(list,{position=a.anchor.position,anchor=a.anchor}) end
+	return list
+end
+Techniques.seals=seals
+local function pick(c,a,now,range)
+	local best,bestScore
+	local stick=Vector3.new(a.move.X,0,a.move.Z)
+	for _,seal in seals(c,a,now) do
+		local gap=(seal.position-a.root.Position).Magnitude
+		if gap&lt;=range then
+			local score
+			if seal.flying then score=1000
+			else
+				local toward=Vector3.new(seal.position.X-a.root.Position.X,0,seal.position.Z-a.root.Position.Z)
+				if stick.Magnitude&gt;.4 and toward.Magnitude&gt;2 then
+					local dot=stick.Unit:Dot(toward.Unit)
+					if dot&gt;.3 then score=500+dot*100-gap*.2 end
+				end
+				if not score then score=100-(if a.target then (seal.position-a.target.root.Position).Magnitude else gap) end
+			end
+			if not bestScore or score&gt;bestScore then best,bestScore=seal,score end
+		end
+	end
+	return best
+end
+Techniques.pickSeal=pick
+local function sealOf(c,a,now)
+	local seal=pick(c,a,now,math.huge)
+	if seal then return seal.position,seal.flying end
 	return nil,nil
 end
 Techniques.sealOf=sealOf
+function Techniques.consumeSeal(c,a,seal)
+	if seal.flying then seal.flying.dead=true;c:removeProjectile(seal.flying);return end
+	local entry=seal.anchor
+	if not entry then return end
+	if entry.part then entry.part:Destroy() end
+	local index=a.anchors and table.find(a.anchors,entry)
+	if index then table.remove(a.anchors,index) end
+	if a.anchor==entry then a.anchor=nil end
+	syncAnchor(a)
+end
+function Techniques.expireSeals(c,a,now)
+	if a.anchor and a.anchor.expires&lt;=now and not (a.anchors and table.find(a.anchors,a.anchor)) then
+		if a.anchor.part then a.anchor.part:Destroy() end
+		a.anchor=nil
+	end
+	if not a.anchors then return end
+	local changed=false
+	for i=#a.anchors,1,-1 do
+		local entry=a.anchors[i]
+		if entry.expires&lt;=now or (entry.actor and entry.actor.health&lt;=0) then
+			if entry.part then entry.part:Destroy() end
+			table.remove(a.anchors,i);changed=true
+		end
+	end
+	if changed then syncAnchor(a) end
+end
+-- Plant a seal on a surface, or on the opponent's body when the kunai connects.
+function Techniques.plant(c,a,surface,normal,victim)
+	a.anchors=a.anchors or {}
+	a.sealSerial=(a.sealSerial or 0)+1
+	local entry
+	if victim then
+		for i=#a.anchors,1,-1 do
+			if a.anchors[i].actor then
+				if a.anchors[i].part then a.anchors[i].part:Destroy() end
+				table.remove(a.anchors,i)
+			end
+		end
+		entry={actor=victim,position=victim.root.Position,expires=c.now+BODY_SEAL,id=a.sealSerial,
+			part=c:effect("Body seal",victim.root.Position,a.color,Vector3.new(.6,.6,.6),BODY_SEAL)}
+		c:cue(a,"SEAL ON TARGET • 2 TO FOLLOW",.9)
+	else
+		local planted={}
+		for i,existing in a.anchors do if not existing.actor then table.insert(planted,i) end end
+		if #planted&gt;=MAX_PLANTED then
+			local oldest=a.anchors[planted[1]]
+			if oldest.part then oldest.part:Destroy() end
+			table.remove(a.anchors,planted[1])
+		end
+		local offset=if normal.Y&gt;0.5 then Vector3.new(0,3,0) else normal*3+Vector3.new(0,1,0)
+		local at=c:clamp(surface+offset)
+		entry={position=at,surface=surface,normal=normal,expires=c.now+12,id=a.sealSerial,
+			part=c:effect("Anchor",surface+normal*0.2,a.color,Vector3.new(1.3,0.2,1.3),12)}
+		local count=0
+		for _,existing in a.anchors do if not existing.actor then count+=1 end end
+		c:cue(a,if count&gt;=1 then "SECOND SEAL PLANTED" else "SEAL PLANTED")
+	end
+	table.insert(a.anchors,entry)
+	syncAnchor(a)
+	return entry
+end
+-- Minato's substitution can reach a planted seal: the farthest one from the
+-- attacker that is still in range. Spending a seal to escape is the cost.
+function Techniques.escapeSeal(c,a,now)
+	local attacker=a.target
+	local best,bestGap
+	for _,seal in seals(c,a,now) do
+		if not seal.flying and not seal.body then
+			local gap=(seal.position-a.root.Position).Magnitude
+			local fromAttacker=if attacker then (seal.position-attacker.root.Position).Magnitude else gap
+			if gap&lt;=70 and fromAttacker&gt;9 and (not bestGap or fromAttacker&gt;bestGap) then best,bestGap=seal,fromAttacker end
+		end
+	end
+	return best
+end
 Techniques.MarkedBlade = {
 	check = function() return true end,
 	execute = function(c, a, pending, now)
 		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*30
-		c:projectile(a, aim, 82, pending.spec.Range, pending.spec.Damage, "marked", function(position, normal)
+		c:projectile(a, aim, 82, pending.spec.Range, pending.spec.Damage, "marked", function(position, normal, victim)
 			if a.health &lt;= 0 or c.match.phase ~= "Duel" then return end
-			if a.anchor then a.anchor.part:Destroy() end
-			local offset=if normal.Y&gt;0.5 then Vector3.new(0,3,0) else normal*3+Vector3.new(0,1,0)
-			local at = c:clamp(position + offset)
-			local p = c:effect("Anchor", position + normal*0.2, a.color, Vector3.new(1.3,0.2,1.3), 12)
-			a.anchor = { position = at, surface = position, normal = normal, expires = c.now + 12, part = p }
-			c:cue(a,"SEAL PLANTED")
+			Techniques.plant(c,a,position,normal,victim)
 		end)
 	end,
 }
 Techniques.Flashstep = {
 	check = function(c, a, _spec, now)
-		local seal=sealOf(c,a,now)
-		return seal~=nil and (seal-a.root.Position).Magnitude &lt;= 60
+		return pick(c,a,now,Techniques.RANGE)~=nil
 	end,
 	execute = function(c,a,_pending,now)
-		local seal,flying=sealOf(c,a,now)
+		local seal=pick(c,a,now,Techniques.RANGE)
 		if not seal then c:cue(a,"SEAL LOST"); return end
-		local target=c:clamp(seal)
-		-- A seal sitting on (or right next to) the opponent puts Minato behind
-		-- them, on the far side from where he left: the angle change is the attack.
+		local target=c:clamp(seal.position)
+		-- A seal on (or right next to) the opponent puts Minato beside them. The
+		-- stick picks the side; with no input he lands on the far side from where
+		-- he left. Choosing the side is the mixup.
 		local victim=a.target
+		local beside=false
 		if victim and victim.health&gt;0 then
-			local toward=victim.root.Position-seal
+			local toward=victim.root.Position-seal.position
 			local flatGap=Vector3.new(toward.X,0,toward.Z).Magnitude
-			if flatGap&lt;7 then
-				local away=Vector3.new(victim.root.Position.X-a.root.Position.X,0,victim.root.Position.Z-a.root.Position.Z)
-				if away.Magnitude&lt;.1 then away=victim.root.CFrame.LookVector*-1 end
-				target=c:clamp(Vector3.new(victim.root.Position.X,math.max(victim.root.Position.Y,c.match.origin.Y+3),victim.root.Position.Z)+away.Unit*3.4)
+			if flatGap&lt;7 or seal.body then
+				local stick=Vector3.new(a.move.X,0,a.move.Z)
+				local side
+				if stick.Magnitude&gt;.4 then side=stick.Unit
+				else
+					side=Vector3.new(victim.root.Position.X-a.root.Position.X,0,victim.root.Position.Z-a.root.Position.Z)
+					side=if side.Magnitude&lt;.1 then -victim.root.CFrame.LookVector else side.Unit
+				end
+				target=c:clamp(Vector3.new(victim.root.Position.X,math.max(victim.root.Position.Y,c.match.origin.Y+3),victim.root.Position.Z)+side*3.4)
+				beside=true
 			end
 		end
 		if target.Y&lt;c.match.origin.Y+3 then target=Vector3.new(target.X,c.match.origin.Y+3,target.Z) end
@@ -4263,7 +4819,7 @@ Techniques.Flashstep = {
 		local overlaps = workspace:GetPartBoundsInBox(CFrame.new(target),Vector3.new(2.6,4.6,2.6),c:overlapParams())
 		for _, p in overlaps do
 			if p.CanCollide and not p:IsDescendantOf(a.model) then
-				if seal~=target then target=c:clamp(seal);break end
+				if beside then target=c:clamp(seal.position);beside=false;break end
 				c:cue(a,"ARRIVAL BLOCKED"); return
 			end
 		end
@@ -4277,27 +4833,43 @@ Techniques.Flashstep = {
 		end
 		a.airborne=a.root.Position.Y&gt;c.match.origin.Y+4.2
 		c:effect("Arrival",target,a.color,Vector3.new(3,5,3),0.45)
-		if flying then flying.dead=true;c:removeProjectile(flying)
-		elseif a.anchor then a.anchor.part:Destroy(); a.anchor = nil end
-		-- The arrival opens a short window in which any strike cancels the
-		-- technique recovery: teleport -&gt; immediate attack from the new angle.
-		a.flashUntil=now+.55
+		Techniques.consumeSeal(c,a,seal)
+		-- The arrival opens a short window in which a strike (or Rasengan, with
+		-- almost no wind-up) cancels the technique recovery.
+		a.flashUntil=now+.55;a.teleportAt=now
 		a.teleportSerial=(a.teleportSerial or 0)+1
-		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=flying and flying.id})
-		c:cue(a,"FLYING THUNDER GOD",.6)
+		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id})
+		local left=#seals(c,a,now)
+		c:cue(a,if left&gt;0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left&gt;1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7)
 	end,
 }
 Techniques.BurstStrike = {
 	check = function() return true end,
 	execute = function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		if pending.variant=="RasenganDrop" then
+			-- Airborne (chase, jump, wall): the Rasengan is driven straight down
+			-- into the opponent and the floor, ending the air phase.
+			Brawler.start(c,a,"Slam")
+			local spec=table.clone(a.pending.spec)
+			spec.damage=pending.spec.Damage*.9;spec.reaction="Knockdown";spec.impulse=Vector3.new(0,-70,16);spec.stun=.92
+			spec.width=6.5;spec.height=8
+			a.pending.spec=spec;a.pending.rasengan=true;a.attackVariant="RasenganDrop"
+			c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
+			return
+		end
 		-- Channel commits chakra; release becomes a travelling physical attack.
-		require(script.Parent.Brawler).start(c,a,"DashAttack")
+		Brawler.start(c,a,"DashAttack")
 		a.pending.spec=table.clone(a.pending.spec)
 		a.pending.spec.damage=pending.spec.Damage;a.pending.spec.travel=10;a.pending.spec.recovery=.48
 		-- Rasengan drives the body away spinning instead of a jab's stagger.
-		a.pending.spec.reaction="Knockback";a.pending.spec.impulse=Vector3.new(0,22,66);a.pending.spec.stun=.62
+		a.pending.spec.reaction="Knockback";a.pending.spec.impulse=Vector3.new(0,22,70);a.pending.spec.stun=.62
 		a.pending.rasengan=true;a.attackVariant="Rasengan"
 		a.travelRemaining=10
+		if pending.variant=="FlashRasengan" then
+			-- Out of a teleport he is already beside the target: a short, fast thrust.
+			a.pending.spec.travel=5;a.travelRemaining=5;a.pending.spec.recovery=.4
+		end
 		c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
 	end,
 }
@@ -4321,6 +4893,17 @@ Techniques.NeedleFan = {
 			local d = CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(direction.Unit)
 			c:projectile(a,origin+d*pending.spec.Range,74,pending.spec.Range,pending.spec.Damage,"shuriken",nil,{origin=origin})
 		end
+		-- Shadow Shuriken: two more blades hidden behind the fan, released a beat
+		-- later at wherever the opponent went to dodge it.
+		for k=1,2 do
+			c:schedule(c.now+.26+k*.06,function()
+				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
+				local victim=a.target
+				local lead=victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.18
+				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage+1,"shuriken")
+			end)
+		end
+		c:cue(a,"SHADOW SHURIKEN",.6)
 	end,
 }
 Techniques.MirageCast = {
@@ -4350,6 +4933,7 @@ Techniques.Quickstep={
 	end,
 }
 Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
 Techniques.WindCut={check=function() return true end,execute=Elements.wind}
 return Techniques
 </ProtectedString>
@@ -4387,13 +4971,13 @@ end
 function Tutorial.enter(s,now)
  local t,a,b=s.tutorial,s.human,s.bot;t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false;t.health=a.health;t.lastPosition=a.root.Position
  local c=s.combat;c:clear(true)
- for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.cooldowns={};actor.invulnerableUntil=0 end
+ for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
  t.health=a.health
  b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
  local near=t.index&gt;=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
  -- Wall step: start a few strides from the stadium wall (east side).
- if t.index==6 then c:relocate(a,s.origin+Vector3.new(74,3,0));c:relocate(b,s.origin+Vector3.new(64,3,0)) end
+ if t.index==6 then local R=require(script.Parent.World).WALL_RADIUS;c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0)) end
  a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
  if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
  if t.index==10 or t.index==11 then
@@ -4492,17 +5076,26 @@ function Defense.dodge(a,now)
 	a.invulnerableUntil=math.max(a.invulnerableUntil,now+Tune.DodgeIFrames)
 end
 function Defense.resolve(c,attacker,victim,amount,frontal)
+	-- Itachi's Sharingan sees the strike coming: wider windows, and every
+	-- clean read opens a counter.
+	local eye=victim.def and victim.def.Sharingan
 	if victim.invulnerableUntil&gt;c.now then
-		local clean=c.now-victim.dodgeStartedAt&lt;=Tune.BloodstepWindow and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
-		if clean then victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8;c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
+		local clean=c.now-victim.dodgeStartedAt&lt;=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
+		if clean then
+			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8
+			if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PERFECT DODGE • COUNTER')
+			else c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
+		end
 		return 'Evaded',0
 	end
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
-	if since&lt;=Tune.ParryWindow and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
+	if since&lt;=(if eye then eye.ParryWindow else Tune.ParryWindow) and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
 		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
 		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
-		c:cue(victim,'PARRY • PUNISH');c:cue(attacker,'PARRIED • EXPOSED')
+		if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PARRY • COUNTER')
+		else c:cue(victim,'PARRY • PUNISH') end
+		c:cue(attacker,'PARRIED • EXPOSED')
 		return 'Parried',0
 	end
 	if victim.stamina&gt;=Tune.BlockHitCost then
@@ -4603,7 +5196,7 @@ local PALETTE={
 	roof=rgb(222,164,58),roofDark=rgb(176,120,38),trim=rgb(70,62,56),wood=rgb(120,84,54),woodDark=rgb(84,58,38),
 	leaf=rgb(70,112,58),leafDark=rgb(52,90,48),bark=rgb(96,70,50),
 }
-World.WALL_RADIUS=81.6
+World.WALL_RADIUS=66.5
 local function deco(parent,name,size,cf,color,material,shape)
 	local p=part(parent,name,size,cf,color,material)
 	p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
@@ -4695,17 +5288,17 @@ function World.arena(parent, origin)
 	local height=46
 	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
-	disc(decor,"Earth",50,.03,origin,C.earth,Enum.Material.Ground)
+	disc(decor,"Earth",41,.03,origin,C.earth,Enum.Material.Ground)
 	for k=0,9 do
 		local a=k/10*math.pi*2+.3
-		local r=38+((k*37)%5)*4
+		local r=31+((k*37)%5)*3.3
 		disc(decor,"Earth patch",10+((k*53)%4)*3,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
 	end
 	-- Worn grass islands: clusters of overlapping small patches, never one
 	-- perfect circle, so the field reads as trampled ground.
 	for k=0,7 do
 		local a=k/8*math.pi*2+1.1
-		local r=18+((k*29)%4)*6
+		local r=15+((k*29)%4)*5
 		local center=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
 		for j=0,4 do
 			local b=j*1.7+k
@@ -4779,11 +5372,11 @@ function World.arena(parent, origin)
 	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
 	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
 	-- Field trees: line of sight and something to fight around, as in the finals.
-	for _,spot in {{.55,64,24,7},{2.4,60,20,6},{3.9,66,26,7.5},{5.3,62,22,6.5}} do
+	for _,spot in {{.55,52,24,7},{2.4,49,20,6},{3.9,54,26,7.5},{5.3,50.5,22,6.5}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
 	-- Two weathered boulders for low cover.
-	for _,spot in {{1.5,34},{4.6,30}} do
+	for _,spot in {{1.5,28},{4.6,24.5}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2,math.cos(spot[1])*spot[2])
 		part(folder,"Cover",Vector3.new(7,4,4),CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
 		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4),CFrame.new(at+Vector3.new(-.5,2.2,0))*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
@@ -4798,7 +5391,7 @@ function World.arena(parent, origin)
 		deco(decor,"Forest crown",Vector3.one*(22+((k*13)%4)*4),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
 	-- A few leaves drifting over the field.
-	local sky=deco(decor,"Leaf source",Vector3.new(140,1,140),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
+	local sky=deco(decor,"Leaf source",Vector3.new(116,1,116),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
 	sky.Transparency=1
 	local leaves=Instance.new("ParticleEmitter");leaves.Name="Leaves"
 	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=4;leaves.Lifetime=NumberRange.new(9,13)
@@ -5004,6 +5597,14 @@ local function dressItachi(model,def)
 	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
 	face(model,rgb(200,20,30),hair)
 	for _,p in model:GetChildren() do if p.Name=="Iris" then p.Material=Enum.Material.Neon end end
+	-- Sharingan: a pupil and three tomoe on each red iris.
+	for _,side in {-1,1} do
+		wear(model,"Head","Pupil",Vector3.new(.045,.045,.02),CFrame.new(side*.3,.07,-.842),rgb(12,8,10))
+		for k=0,2 do
+			local a=math.rad(90+k*120)
+			wear(model,"Head","Tomoe",Vector3.new(.032,.032,.02),CFrame.new(side*.3+math.cos(a)*.048,.07+math.sin(a)*.048,-.842),rgb(12,8,10))
+		end
+	end
 	hairCap(model,hair)
 	-- Long dark hair tied low, centre-parted bangs framing the face.
 	for _,side in {-1,1} do
@@ -5133,7 +5734,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.08,.8},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -5315,7 +5916,7 @@ local SOUND={
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8}
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5}
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -5509,7 +6110,16 @@ end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
 local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
-	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind}
+	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
+	-- Phoenix Flower: the same fire build, shrunk and dimmer.
+	phoenix=function()
+		local model=FX.buildFireball()
+		local light=model.PrimaryPart:FindFirstChildOfClass("PointLight");if light then light.Range=12;light.Brightness=2.5 end
+		local at=model.PrimaryPart:FindFirstChildOfClass("Attachment")
+		local smoke=at and at:FindFirstChild("Smoke");if smoke then smoke.Rate=8 end
+		local flames=at and at:FindFirstChild("Flames");if flames then flames.Rate=60 end
+		return model
+	end}
 -- Snapshot sync: create visuals for newly announced projectiles, mark the ones
 -- the server no longer reports.
 function FX:sync(data)
@@ -5533,6 +6143,8 @@ function FX:sync(data)
 			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
 			if p.kind=="fireball" then
 				sound(root,SOUND.boom,.35,.55)
+			elseif p.kind=="phoenix" then
+				sound(root,SOUND.whoosh,.25,.7)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
@@ -5580,7 +6192,7 @@ function FX:stepProjectiles(dt)
 		elseif p.kind=="shuriken" then
 			entry.spin+=dt*42
 			cf=look*CFrame.Angles(0,entry.spin,0)*CFrame.Angles(0,0,math.rad(8))
-		elseif p.kind=="fireball" then
+		elseif p.kind=="fireball" or p.kind=="phoenix" then
 			local radius=(p.radius or 2.4)+(p.growth or 0)*math.max(0,age)
 			local wobble=1+math.sin(os.clock()*31)*.05
 			entry.root.Size=Vector3.one*radius*1.15*wobble
@@ -5727,7 +6339,7 @@ function FX:impact(impact,folder)
 		local model=modelFor(folder,impact.owner)
 		local hands=model and model:FindFirstChild("RightHand")
 		if hands then
-			local color=if impact.technique=="FireBloom" then Color3.fromRGB(255,120,50) elseif impact.technique=="MirageCast" or impact.technique=="Read" then Color3.fromRGB(220,30,40)
+			local color=if impact.technique=="FireBloom" or impact.technique=="PhoenixFlower" then Color3.fromRGB(255,120,50) elseif impact.technique=="MirageCast" or impact.technique=="Read" then Color3.fromRGB(220,30,40)
 				elseif impact.technique=="WindCut" then Color3.fromRGB(170,255,220) else Color3.fromRGB(140,200,255)
 			sparks(self.folder,hands.Position,color,10,8)
 		end
@@ -5746,6 +6358,40 @@ function FX:impact(impact,folder)
 	elseif style=="burst" then
 		local model=modelFor(folder,impact.owner)
 		if model then self:ghost(model,Color3.fromRGB(140,200,255),.25,.5) end
+	elseif style=="clash" then
+		-- Two strikes meeting: a hard white-gold flash and a ring across the line
+		-- between the fighters, nothing else. It has to read instantly.
+		local across=impact.direction or Vector3.zAxis
+		sparks(self.folder,position,Color3.fromRGB(255,244,200),28,34)
+		flash(self.folder,position,Color3.fromRGB(255,252,232),1,7,.16,.1)
+		shockRing(self.folder,position,Color3.fromRGB(255,232,170),2,14,.26,across)
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.5,2.2)
+	elseif style=="wall" or style=="wallbounce" then
+		-- Impact on the wall: a ring flat on the surface, dust pushed out of it and
+		-- a few chips of stone.
+		local normal=impact.normal or Vector3.zAxis
+		local big=style=="wallbounce"
+		shockRing(self.folder,position+normal*.15,Color3.fromRGB(236,226,200),2,if big then 16 else 11,if big then .34 else .26,normal)
+		smokePuff(self.folder,position+normal*.8,Color3.fromRGB(196,188,168),if big then 22 else 14,if big then 2.6 else 2)
+		for k=1,(if big then 7 else 4) do
+			local chip=block(self.folder,Vector3.new(.4,.3,.35),CFrame.new(position+normal*.5)*CFrame.Angles(math.random()*6,math.random()*6,0),Color3.fromRGB(186,178,160),Enum.Material.Concrete)
+			local out=(normal+Vector3.new((math.random()-.5)*1.4,math.random()*.9,(math.random()-.5)*1.4)).Unit
+			tween(chip,.45,{CFrame=chip.CFrame+out*(2.5+math.random()*3)+Vector3.new(0,-1.5,0),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+			Debris:AddItem(chip,.5)
+		end
+		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
+	elseif style=="walltech" then
+		local model=modelFor(folder,impact.owner)
+		if model then self:ghost(model,Color3.fromRGB(220,230,255),.2,.55) end
+		local normal=impact.normal or Vector3.zAxis
+		smokePuff(self.folder,position,Color3.fromRGB(226,222,210),12,1.8)
+		shockRing(self.folder,position,Color3.fromRGB(220,232,255),1.5,8,.22,normal)
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
+	elseif style=="pin" then
+		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="ember" then
+		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
+		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
 	end
 end
 -- A thrown blade that missed stays embedded where it landed for a moment.
@@ -5831,44 +6477,77 @@ end
 -- ------------------------------------------------------------------ persistent
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.
-function FX:seal(owner,actor)
-	local entry=self.seals[owner]
-	local surface=actor and actor.anchorSurface
-	if not surface then
-		if entry then
-			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then tween(d,.15,{Transparency=1}) end end
-			Debris:AddItem(entry.model,.2);Debris:AddItem(entry.glyph,.2)
-			self.seals[owner]=nil
+function FX:seal(owner,actor,folder)
+	local live={}
+	for _,info in (actor and actor.seals) or {} do
+		local key=tostring(owner)..":"..tostring(info.id)
+		live[key]=true
+		local entry=self.seals[key]
+		if info.body then
+			-- A seal riding on the opponent: a small glowing formula on the back.
+			local model=folder and folder:FindFirstChild(info.body)
+			local torso=model and (model:FindFirstChild("UpperTorso") or model:FindFirstChild("HumanoidRootPart"))
+			if torso then
+				if not entry then
+					local glyph=new("Model",{Name="Body seal"},self.folder)
+					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
+					local marks={}
+					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,MINATO,Enum.Material.Neon)) end
+					local light=new("PointLight",{Color=MINATO,Brightness=2,Range=7,Shadows=false},disc)
+					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
+					self.seals[key]=entry
+					flash(self.folder,torso.Position,MINATO,.6,4,.2,.2)
+				end
+				local back=torso.CFrame*CFrame.new(0,.1,.62)
+				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
+				entry.disc.CFrame=base
+				for i,mark in entry.marks do
+					mark.CFrame=base*CFrame.Angles((i-1)/6*math.pi*2+os.clock()*2,0,0)*CFrame.new(0,.5,0)
+				end
+				local pulse=.5+.5*math.sin((os.clock()-entry.born)*7)
+				entry.disc.Transparency=.25+pulse*.3
+				entry.light.Brightness=1.5+pulse*1.5
+			end
+		elseif info.surface then
+			local surface=info.surface
+			local normal=info.normal or Vector3.yAxis
+			if not entry then
+				local model=FX.buildKunai(true)
+				model.Parent=self.folder
+				local into=-normal
+				local tilt=(if math.abs(normal.Y)&gt;.7 then Vector3.xAxis else Vector3.yAxis)*.35
+				local axis=(into+tilt).Unit
+				model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				local glyph=new("Model",{Name="Seal"},self.folder)
+				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
+				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
+				for i=0,5 do
+					local a=i/6*math.pi*2
+					local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
+					mark.Transparency=.35
+				end
+				local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
+				entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
+				self.seals[key]=entry
+				flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
+			end
+			local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
+			-- The last seconds of a seal flicker so its expiry is readable.
+			local fading=(info.remaining or 12)&lt;2 and math.sin(os.clock()*30)&gt;0
+			entry.disc.Transparency=if fading then .95 else .72+pulse*.18
+			entry.light.Brightness=if fading then .3 else 1+pulse*1.2
 		end
-		return
 	end
-	local normal=actor.anchorNormal or Vector3.yAxis
-	if entry and (entry.surface-surface).Magnitude&gt;.05 then
-		entry.model:Destroy();entry.glyph:Destroy();entry=nil;self.seals[owner]=nil
-	end
-	if not entry then
-		local model=FX.buildKunai(true)
-		model.Parent=self.folder
-		local into=-normal
-		local tilt=(if math.abs(normal.Y)&gt;.7 then Vector3.xAxis else Vector3.yAxis)*.35
-		local axis=(into+tilt).Unit
-		model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
-		local glyph=new("Model",{Name="Seal"},self.folder)
-		local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
-		local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
-		for i=0,5 do
-			local a=i/6*math.pi*2
-			local mark=block(glyph,Vector3.new(.04,.12,.7),base*CFrame.Angles(a,0,0)*CFrame.new(0,1.1,0),MINATO,Enum.Material.Neon)
-			mark.Transparency=.35
+	for key,entry in self.seals do
+		if string.sub(key,1,#tostring(owner)+1)==tostring(owner)..":" and not live[key] then
+			if entry.model then
+				for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then tween(d,.15,{Transparency=1}) end end
+				Debris:AddItem(entry.model,.2)
+			end
+			Debris:AddItem(entry.glyph,.2)
+			self.seals[key]=nil
 		end
-		local light=new("PointLight",{Color=MINATO,Brightness=1.5,Range=9,Shadows=false},disc)
-		entry={model=model,glyph=glyph,disc=disc,light=light,surface=surface,born=os.clock()}
-		self.seals[owner]=entry
-		flash(self.folder,surface,MINATO,.6,3.5,.2,.2)
 	end
-	local pulse=.5+.5*math.sin((os.clock()-entry.born)*4)
-	entry.disc.Transparency=.72+pulse*.18
-	entry.light.Brightness=1+pulse*1.2
 end
 function FX:hazardsStep(data)
 	local live={}
@@ -5913,21 +6592,31 @@ function FX:fighter(model,actor,dt)
 		local color=if minato then MINATO else Color3.fromRGB(170,30,48)
 		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
-		local eyes=model:FindFirstChild("Eyes")
-		aura.eyes=eyes
+		local irises={}
+		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
+		aura.irises=irises
+		local head=model:FindFirstChild("Head")
+		if head and actor.fighterId=="Mirage" then
+			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
+		end
 	end
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed&gt;34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)&gt;0
-	-- Itachi: the Sharingan flares while he reads, casts, or sizes up an opponent.
-	if aura.eyes and actor.fighterId=="Mirage" then
-		local lit=(actor.read or 0)&gt;0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom" or (actor.intro or 0)&gt;0
-		aura.eyes.Color=if lit then Color3.fromRGB(255,40,40) else Color3.fromRGB(190,20,30)
-		aura.eyes.Material=Enum.Material.Neon
+	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
+	-- counters, or during the intro.
+	if actor.fighterId=="Mirage" and aura.irises then
+		local lit=(actor.read or 0)&gt;0 or (actor.counter or 0)&gt;0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
+			or actor.castId=="PhoenixFlower" or (actor.intro or 0)&gt;0
+		for _,iris in aura.irises do
+			iris.Material=Enum.Material.Neon
+			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
+		end
+		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
 	-- Rasengan forms in the right hand during the channel and stays through the strike.
 	local rasengan=(actor.castId=="BurstStrike" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
-		or (actor.attackVariant=="Rasengan" and (actor.state=="Startup" or actor.state=="Active"))
+		or ((actor.attackVariant=="Rasengan" or actor.attackVariant=="RasenganDrop") and (actor.state=="Startup" or actor.state=="Active"))
 	local orb=self.rasengan[model]
 	local hand=model:FindFirstChild("RightHand")
 	if rasengan and hand then
@@ -5966,7 +6655,7 @@ function FX:fighter(model,actor,dt)
 	-- Katon: embers gather at the mouth during the hand signs, then the breath.
 	if actor.fighterId=="Mirage" then
 		local head=model:FindFirstChild("Head")
-		local casting=actor.castId=="FireBloom" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
+		local casting=(actor.castId=="FireBloom" or actor.castId=="PhoenixFlower") and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
 		if casting and head then
 			if not aura.mouth then
 				local at=new("Attachment",{Position=Vector3.new(0,-.25,-.8)},head)
@@ -6043,7 +6732,7 @@ function FX:update(data,dt,folder)
 		local actor=data[key]
 		if actor then
 			actor.intro=data.intro
-			self:seal(actor.id or key,actor)
+			self:seal(actor.id or key,actor,folder)
 			local model=folder and folder:FindFirstChild(actor.id or "")
 			self:fighter(model,actor,dt)
 		end
@@ -6538,7 +7227,19 @@ function UI.new(parent,send)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status}
+		-- Substitution charges: two diamonds, the recharging one fills up.
+		local pips={}
+		for k=1,2 do
+			local x=if right then 14+(k-1)*26 else 404-(k-1)*26
+			local pip=frame(box,UDim2.fromOffset(x,12),UDim2.fromOffset(16,16),palette.track)
+			pip.Rotation=45;pip.ClipsDescendants=true
+			local fill=frame(pip,UDim2.fromScale(0,1),UDim2.fromScale(1,1),palette.paper)
+			fill.AnchorPoint=Vector2.new(0,1)
+			pips[k]={pip=pip,fill=fill}
+		end
+		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 64 else 340,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
+			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -6548,6 +7249,20 @@ function UI.new(parent,send)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-118),UDim2.fromOffset(420,16),12,palette.muted)
+	-- Combo counters: yours on the left, the opponent's on you on the right.
+	local function counter(side)
+		local right=side=="right"
+		local box=frame(self.hud,if right then UDim2.new(1,-40,.36,0) else UDim2.new(0,40,.36,0),UDim2.fromOffset(220,90),palette.ink,1)
+		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
+		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+		local hits=text(box,"",UDim2.fromOffset(0,0),UDim2.fromOffset(220,56),54,palette.paper,TITLE_FONT,align)
+		create("UIStroke",hits,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local detail=text(box,"",UDim2.fromOffset(0,56),UDim2.fromOffset(220,18),14,palette.gold,BODY_FONT,align)
+		create("UIStroke",detail,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		return {box=box,hits=hits,detail=detail,shown=0}
+	end
+	self.comboMine=counter("left")
+	self.comboTheirs=counter("right")
 	self.techniqueButtons={}
 	for i=1,5 do
 		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
@@ -6667,12 +7382,37 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		local charges=actor.subCharges or 0
+		for k,pip in widget.pips do
+			local level=if k&lt;=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)&gt;0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
+			pip.fill.Size=UDim2.fromScale(1,level)
+			pip.fill.BackgroundColor3=if k&lt;=charges then palette.paper else palette.muted
+		end
+	end
+	-- Combo counters with the damage scale of the next hit.
+	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
+		local widget,victim=pair[1],pair[2]
+		local hits=victim.comboHits or 0
+		if hits&gt;=2 then
+			local scale=math.max(.35,1-.12*math.max(0,hits-1))
+			widget.hits.Text=hits.." HITS"
+			widget.detail.Text=string.format("%d DMG  •  NEXT x%.2f",math.floor((victim.comboDamage or 0)+.5),scale)
+			widget.box.Visible=true
+			if hits~=widget.shown then
+				widget.shown=hits
+				widget.hits.TextSize=64
+				Tween:Create(widget.hits,TweenInfo.new(.18,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=54}):Play()
+			end
+		else
+			widget.box.Visible=false;widget.shown=0
+		end
 	end
 	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
 		if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=h.cue or ""
-	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL CONVERT")
+	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
+		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -6682,12 +7422,20 @@ function UI:render(data)
 		ui.title.Text=string.upper(tech.name)
 		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost
 		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		if tech.id=="Flashstep" and #(h.seals or {})&gt;0 and tech.remaining==0 then
+			local count=#(h.seals or {})
+			ui.status.Text=count.." SEAL"..(if count&gt;1 then "S" else "").."  •  "..ui.status.Text
+		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
 		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self.hint.Text=if h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
+	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
+	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
+		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
+		elseif (h.counter or 0)&gt;0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+		elseif h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
@@ -6738,6 +7486,11 @@ local look={
  whiff   ={shards=2, range=4,  color=Color3.fromRGB(176,188,200),pitch=1.6, volume=.14,hit=Color3.fromRGB(200,208,218)},
  landing ={shards=6, range=7,  color=Color3.fromRGB(170,158,132),pitch=0.8, volume=.26,hit=Color3.fromRGB(206,196,172)},
  wall    ={shards=5, range=8,  color=Color3.fromRGB(184,178,158),pitch=0.86,volume=.30,hit=Color3.fromRGB(214,208,186)},
+ wallbounce={shards=8,range=12,color=Color3.fromRGB(255,206,150),pitch=0.74,volume=.48,hit=Color3.fromRGB(255,224,190)},
+ clash   ={shards=9, range=12, color=Color3.fromRGB(255,240,190),pitch=1.25,volume=.5, hit=Color3.fromRGB(255,250,224)},
+ walltech={shards=4, range=6,  color=Color3.fromRGB(206,222,255),pitch=1.3, volume=.22,hit=Color3.fromRGB(226,236,255)},
+ pin     ={shards=3, range=5,  color=Color3.fromRGB(220,224,232),pitch=1.5, volume=.22,hit=Color3.fromRGB(236,240,246)},
+ ember   ={shards=4, range=7,  color=Color3.fromRGB(255,170,90),pitch=1.1, volume=.26,hit=Color3.fromRGB(255,214,170)},
 }
 local function anchorAt(position)
 	local anchor=Instance.new("Part")
@@ -7238,6 +7991,36 @@ CLIPS.Mirage.CounterPalm={
 	K(3,I),
 }
 
+-- Phase 4 -----------------------------------------------------------------
+-- Wall dive: crouched against the wall during the startup, then a flying kick
+-- with the lead leg straight at the opponent, arms thrown back for balance.
+local DIVE_CROUCH={root={pitch=-8,y=-.4},torso={pitch=16},head={pitch=-20},ra={raise=40,out=40,elbow=90},la={raise=40,out=40,elbow=90},
+	rl={lift=96,knee=124,ankle=-20},ll={lift=88,knee=118,ankle=-20}}
+local DIVE_KICK={root={pitch=-14,roll=-6},torso={pitch=12,yaw=-18},head={pitch=-14,yaw=10},ra={raise=-36,out=46,elbow=26},la={raise=70,out=-14,elbow=96},
+	rl={lift=84,out=6,knee=4,ankle=-24},ll={lift=-24,knee=112,ankle=-10}}
+CLIPS.Flashstep.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	K(1,merge(AIR_M,DIVE_KICK),"out"),
+	K(2,merge(AIR_M,DIVE_KICK)),
+	K(3,m({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+CLIPS.Mirage.WallDive={
+	K(0,merge(AIR_M,DIVE_CROUCH)),
+	-- Itachi dives heel-first and keeps the shuriken hand ready.
+	K(1,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}}),"out"),
+	K(2,merge(merge(AIR_M,DIVE_KICK),{torso={yaw=14},la={raise=96,out=10,twist=30,elbow=40},ra={raise=-30,out=40,elbow=30}})),
+	K(3,i({root={y=-.9,pitch=18},torso={pitch=12},lf={z=-.8},rf={z=.8}})),
+}
+-- Airborne Rasengan: the orb raised overhead, then driven straight down
+-- with the whole body behind the palm.
+CLIPS.Flashstep.RasenganDrop={
+	K(0,merge(AIR_M,{root={pitch=-16},torso={pitch=-18,yaw=-10},head={pitch=-20},ra={raise=168,out=12,twist=-40,elbow=30,wrist=-20},la={raise=130,out=-20,twist=30,elbow=70},rl={lift=70,knee=120},ll={lift=60,knee=110}})),
+	K(1,merge(AIR_M,{root={pitch=34},torso={pitch=40,yaw=-12},head={pitch=6},ra={raise=50,out=-6,twist=-40,elbow=2,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-10,knee=40},ll={lift=20,knee=70}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=36},torso={pitch=42,yaw=-12},ra={raise=44,out=-6,twist=-40,elbow=4,wrist=-30},la={raise=30,out=40,elbow=40},rl={lift=-8,knee=38},ll={lift=22,knee=70}})),
+	K(3,m({root={y=-1.0,pitch=26},torso={pitch=22},ra={raise=60,out=10,elbow=20},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Mirage.RasenganDrop=CLIPS.Flashstep.RasenganDrop
+
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
 	if t&lt;=keys[1].at then return built(keys[1].pose) end
@@ -7256,7 +8039,7 @@ end
 -- the server's active window.
 local LEAD=.03
 local function timing(name,fighterId)
-	local spec=Attacks[name] or Attacks.DashAttack
+	local spec=Attacks[name] or (if name=="RasenganDrop" then Attacks.Slam else Attacks.DashAttack)
 	local fighter=Fighters[fighterId]
 	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
 	local startup=spec.startup*(profile and profile.startup or 1)
@@ -7333,7 +8116,14 @@ local function castSpec(actor)
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
-	if id=="FireBloom" then
+	if id=="PhoenixFlower" then
+		if state=="TechniqueChannel" then return sealPose(base,t,false) end
+		-- Phoenix Flower: a quick sweep of the head across the fan while the hand
+		-- ring stays at the mouth.
+		local sweep=math.sin(math.clamp(t-(actor.channel or 0),0,.4)*14)*18
+		return merge(base,{root={y=-.55,pitch=10,yaw=sweep*.5},torso={pitch=8,yaw=sweep},head={pitch=8,yaw=sweep*.6},
+			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.0},rf={z=.95,yaw=24}})
+	elseif id=="FireBloom" then
 		if state=="TechniqueChannel" then
 			-- Signs, then a held tiger seal and a deep inhale before the breath.
 			local remaining=(actor.channel or 0)
@@ -7509,7 +8299,7 @@ local function reactionTargets(actor)
 		return build({root={y=-.3,pitch=10},torso={pitch=14},head={pitch=18},ra={raise=30,out=24,elbow=60},la={raise=30,out=24,elbow=60},rf={z=.3,toe=-30},lf={z=.2,toe=-30}}),RATE.defense
 	end
 	if kind=="WallSplat" then
-		local splat=smooth(math.clamp(elapsed/.1,0,1))
+		local splat=smooth(math.clamp(elapsed/.08,0,1))
 		return build({root={pitch=-18*splat},torso={pitch=-22*splat},head={pitch=-20*splat},ra={raise=30,out=70*splat,elbow=40},la={raise=30,out=70*splat,elbow=40},
 			rl={lift=20,knee=30},ll={lift=10,knee=26}}),RATE.defense
 	end
@@ -7526,6 +8316,11 @@ local function groundTargets(actor)
 	local side=actor.groundSide or 1
 	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
 		ra={raise=20,out=62,elbow=24},la={raise=14,out=56,elbow=30},rl={lift=18,out=8,knee=30},ll={lift=6,out=10,knee=12}}
+	if pose=="Splat" and actor.reaction=="WallSplat" then
+		-- Slid down to the foot of the wall: sitting, back against it, legs out.
+		return build({root={y=-1.95,z=.35,pitch=-28},torso={pitch=-10},head={pitch=12,roll=side*8},
+			ra={raise=12,out=44,elbow=20},la={raise=10,out=40,elbow=26},rl={lift=78,out=10,knee=22},ll={lift=70,out=14,knee=34}}),RATE.ground
+	end
 	if pose=="Wakeup" or actor.reaction=="Wakeup" then
 		local push=smooth(math.clamp((actor.reactionElapsed or 0)/.24,0,1))
 		local crouch={root={y=-1.0,pitch=22},torso={pitch=14},head={pitch=-10},ra={raise=30,out=20,elbow=60},la={raise=40,out=20,elbow=60},lf={z=-.7},rf={z=.6,x=.2}}
@@ -7677,7 +8472,7 @@ end
 -- --------------------------------------------------------- public entries
 -- Attack pose on its own (blended over the rest pose): used by tests and tools.
 function Motion.pose(char,name,elapsed,fighterId,dt)
-	if not Attacks[name] and name~="Rasengan" then return end
+	if not Attacks[name] and name~="Rasengan" and name~="RasenganDrop" then return end
 	local targets,weight=attackTargets(name,elapsed,fighterId)
 	apply(char,blend({},targets,weight),RATE.attack,dt)
 end
@@ -7800,7 +8595,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if swinging then
-		local name=if subject.attackVariant=="Rasengan" then "Rasengan" else subject.attackName
+		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		apply(char,blend(base,targets,weight),RATE.attack,dt)
 		return "attack"

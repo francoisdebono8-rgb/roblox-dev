@@ -14,17 +14,26 @@ function Defense.dodge(a,now)
 	a.invulnerableUntil=math.max(a.invulnerableUntil,now+Tune.DodgeIFrames)
 end
 function Defense.resolve(c,attacker,victim,amount,frontal)
+	-- Itachi's Sharingan sees the strike coming: wider windows, and every
+	-- clean read opens a counter.
+	local eye=victim.def and victim.def.Sharingan
 	if victim.invulnerableUntil>c.now then
-		local clean=c.now-victim.dodgeStartedAt<=Tune.BloodstepWindow and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
-		if clean then victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8;c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
+		local clean=c.now-victim.dodgeStartedAt<=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
+		if clean then
+			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8
+			if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PERFECT DODGE • COUNTER')
+			else c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
+		end
 		return 'Evaded',0
 	end
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
-	if since<=Tune.ParryWindow and c.now>=victim.parryReadyAt and victim.stamina>=Tune.ParryCost then
+	if since<=(if eye then eye.ParryWindow else Tune.ParryWindow) and c.now>=victim.parryReadyAt and victim.stamina>=Tune.ParryCost then
 		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
 		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
-		c:cue(victim,'PARRY • PUNISH');c:cue(attacker,'PARRIED • EXPOSED')
+		if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PARRY • COUNTER')
+		else c:cue(victim,'PARRY • PUNISH') end
+		c:cue(attacker,'PARRIED • EXPOSED')
 		return 'Parried',0
 	end
 	if victim.stamina>=Tune.BlockHitCost then

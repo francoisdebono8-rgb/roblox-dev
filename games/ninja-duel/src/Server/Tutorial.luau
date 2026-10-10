@@ -27,13 +27,13 @@ end
 function Tutorial.enter(s,now)
  local t,a,b=s.tutorial,s.human,s.bot;t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false;t.health=a.health;t.lastPosition=a.root.Position
  local c=s.combat;c:clear(true)
- for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.cooldowns={};actor.invulnerableUntil=0 end
+ for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
  t.health=a.health
  b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
  local near=t.index>=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
  -- Wall step: start a few strides from the stadium wall (east side).
- if t.index==6 then c:relocate(a,s.origin+Vector3.new(74,3,0));c:relocate(b,s.origin+Vector3.new(64,3,0)) end
+ if t.index==6 then local R=require(script.Parent.World).WALL_RADIUS;c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0)) end
  a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
  if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
  if t.index==10 or t.index==11 then

@@ -29,7 +29,7 @@ function DevHooks.install(matches)
 		return {state=a.state,health=a.health,chakra=math.floor(a.chakra),position=a.root.Position,reaction=a.reaction,attackName=a.attackName,
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
-			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)>now}
+			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)>now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant}
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
@@ -55,7 +55,7 @@ function DevHooks.install(matches)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
 		elseif op=="refill" then
-			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0 end
+			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0;a.subRegenAt=math.huge end
 			return true
 		elseif op=="place" then
 			-- arg1 / arg2 = offsets from the arena origin for human / bot
@@ -79,7 +79,7 @@ function DevHooks.install(matches)
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
-			return {phase=s.phase,now=c.now,human=summary(s.human,c.now),bot=summary(s.bot,c.now),projectiles=projectiles,hazards=#c.hazards,events=s.human.events}
+			return {phase=s.phase,now=c.now,human=summary(s.human,c.now),bot=summary(s.bot,c.now),projectiles=projectiles,hazards=#c.hazards,events=s.human.events,botEvents=s.bot.events}
 		end
 		return "unknown op"
 	end

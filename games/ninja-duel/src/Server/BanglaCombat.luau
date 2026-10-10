@@ -41,7 +41,7 @@ function Bangla.tryHit(c,a,p)
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,.05) then continue end
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05) then continue end
    donor.Hits[target.id]=true
    local delta=a.root.Position-target.root.Position
    local frontal=delta.Magnitude<.001 or target.root.CFrame.LookVector:Dot(delta.Unit)>.15

@@ -8,7 +8,7 @@ end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
  Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
- Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,10,48),.44),
+ Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,14,50),.48),
  Heavy=move(.30,.17,.52,16,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,9,3.2,"Launched",Vector3.new(0,58,13),1.18),
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
@@ -25,6 +25,8 @@ local attacks={
  -- and the palm that answers a successful Read.
  Sweep=move(.12,.14,.34,7,1.6,"Knockdown",Vector3.new(0,6,12),.62),
  CounterPalm=move(.05,.12,.3,10,2.6,"Knockback",Vector3.new(0,14,46),.5),
+ -- From a wall run: a diving strike at the opponent (active window sized to the flight).
+ WallDive=move(.1,.3,.32,9,0,"Knockdown",Vector3.new(0,10,30),.62),
 }
 
 for name,spec in attacks do
@@ -49,10 +51,12 @@ local motion={
  AngleStep={side=1,twist=40,lean=10,arm=90,step=1.1},
  Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
+ WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
+attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
