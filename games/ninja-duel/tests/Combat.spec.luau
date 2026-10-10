@@ -273,6 +273,8 @@ end)
 test("Place1 sprint stamina, takeoff carry and air steering run on actors",function()
  local Motor=loadModule("Server/Motor")
  local c,a,b=pair();a.move=V.xAxis;a.sprinting=true
+ -- Sprinting runs where the body faces (a side step is slower).
+ a.root.CFrame=C.lookAt(a.root.Position,a.root.Position+V.xAxis)
  Motor.step(a,c,.1,c.now)
  assert(a.hum.WalkSpeed>40 and a.model:GetAttribute("MovementBase")=="Place1")
  assert(a.model:GetAttribute("MovementStamina")<1)
@@ -284,7 +286,7 @@ test("Place1 sprint stamina, takeoff carry and air steering run on actors",funct
  Motor.step(a,c,.1,c.now)
  assert(a.root.AssemblyLinearVelocity.Z>0 and a.root.AssemblyLinearVelocity.X<previousX)
  assert(a.root.AssemblyLinearVelocity.Magnitude<=speed+10)
- a.root.CFrame=C.new(0,3,0);a.hum.FloorMaterial=roblox.Enum.Material.Concrete
+ a.root.CFrame=C.lookAt(V.new(0,3,0),V.new(0,3,1));a.hum.FloorMaterial=roblox.Enum.Material.Concrete
  for _=1,610 do c.now+=.1;Motor.step(a,c,.1,c.now) end
  assert(a.hum.WalkSpeed==a.def.Speed,"Exhausted sprint failed to drop to walk")
  c:clear();assert(not a.movementDonor and not a.parkourDonor)

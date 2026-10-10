@@ -72,7 +72,9 @@ function Brawler.start(c,a,name)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
- if delta.Magnitude>.1 and delta.Magnitude<11 and flat:Dot(delta.Unit)>.55 then flat=delta.Unit end
+ if delta.Magnitude>.1 and delta.Magnitude<11 and (flat:Dot(delta.Unit)>.55 or a.locked) then flat=delta.Unit end
+ -- Locked on, a strike started mid-run snaps the body to the opponent.
+ if a.locked and delta.Magnitude>.1 and delta.Magnitude<11 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+delta.Unit) end
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
@@ -125,6 +127,14 @@ function Brawler.request(c,a,action)
   return true
  end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
+ -- Riposte: right after a clean block or a perfect dodge, a strike comes out
+ -- at once and opens the string.
+ if action=="Attack" and (a.riposteUntil or 0)>c.now and (a.state=="Guarding" or a.state=="Neutral" or a.state=="Dodging" or a.state=="Recovery") and not a.airborne then
+  a.riposteUntil=0;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
+  a.combo=1;a.lastAttack=c.now;a.queuedLight=nil
+  c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
+  return Brawler.start(c,a,"Riposte")
+ end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
   -- angle the guard has to read.
@@ -377,6 +387,7 @@ function Brawler.hit(c,a,p)
  end
  if guarded then
   a.hitBlocked=true
+  b.riposteUntil=c.now+.34
 	 c:applyHitstop(a,b,"block",false)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end

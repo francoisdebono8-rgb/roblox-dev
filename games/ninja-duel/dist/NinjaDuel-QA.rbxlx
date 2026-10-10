@@ -65,12 +65,15 @@ local attacks={
  -- Running taijutsu: out of a full sprint, a flying kick (strike) and a
  -- sliding sweep (heavy). The run is the wind-up; a whiff overshoots.
  FlyingKick=move(.1,.16,.32,9,10,"Knockback",Vector3.new(0,14,48),.5),
+ -- Riposte: out of a clean block or a perfect dodge, an instant strike that
+ -- opens the string (block -&gt; riposte -&gt; combo).
+ Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
 }
 
 for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep"
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -94,6 +97,7 @@ local motion={
  PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
  KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
  FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
+ Riposte={side=1,twist=24,lean=12,arm=92,step=1.2},
  SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
@@ -1432,7 +1436,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1159af7e654f4c444cea93cf44073434f396585ab70b863f68c67c556f1c3e2a</string>
+          <string name="Value">4fa8f51eb5ed287ca176cab8417c8fe4b0ceb8b050e4b67ec462569d8e7b55ba</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -2100,7 +2104,9 @@ function Brawler.start(c,a,name)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
- if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and flat:Dot(delta.Unit)&gt;.55 then flat=delta.Unit end
+ if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and (flat:Dot(delta.Unit)&gt;.55 or a.locked) then flat=delta.Unit end
+ -- Locked on, a strike started mid-run snaps the body to the opponent.
+ if a.locked and delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+delta.Unit) end
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
@@ -2153,6 +2159,14 @@ function Brawler.request(c,a,action)
   return true
  end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
+ -- Riposte: right after a clean block or a perfect dodge, a strike comes out
+ -- at once and opens the string.
+ if action=="Attack" and (a.riposteUntil or 0)&gt;c.now and (a.state=="Guarding" or a.state=="Neutral" or a.state=="Dodging" or a.state=="Recovery") and not a.airborne then
+  a.riposteUntil=0;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
+  a.combo=1;a.lastAttack=c.now;a.queuedLight=nil
+  c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
+  return Brawler.start(c,a,"Riposte")
+ end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
   -- angle the guard has to read.
@@ -2405,6 +2419,7 @@ function Brawler.hit(c,a,p)
  end
  if guarded then
   a.hitBlocked=true
+  b.riposteUntil=c.now+.34
 	 c:applyHitstop(a,b,"block",false)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
@@ -2832,6 +2847,41 @@ function Combat:stepThrow(a)
 		throw.nextRelease+=throw.interval
 	end
 	if a.throwing==throw and throw.fired&gt;=throw.count then a.throwing=nil end
+end
+-- Facing while locked on. Small moves around the opponent are strafes with
+-- the chest on them; a committed run (held away from them, sprinting, or from
+-- far) turns the body into the run, three-quarters toward the opponent, so a
+-- fighter never slides around a point like a mannequin. The turn is
+-- progressive; guarding always squares up.
+function Combat:faceLocked(a,dt)
+	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
+	if toward.Magnitude&lt;.1 then return end
+	local target=toward.Unit
+	local distance=toward.Magnitude
+	local intent=Vector3.new(a.move.X,0,a.move.Z)
+	local desired=target
+	local committed=false
+	if a.state=="Neutral" and intent.Magnitude&gt;.4 then
+		local moveDir=intent.Unit
+		local along=target:Dot(moveDir) -- 1 toward, -1 away, 0 around
+		if along&lt;.55 then a.awayHeld=(a.awayHeld or 0)+dt else a.awayHeld=0 end
+		committed=a.sprinting or (a.awayHeld or 0)&gt;.3 or (distance&gt;16 and along&lt;.55)
+		-- Close in and retreating a step: a backpedal keeps the chest on them.
+		if along&lt;-.5 and distance&lt;10 and not a.sprinting then committed=false end
+		if committed then
+			local look=if distance&lt;12 then .45 else .2
+			desired=(moveDir+target*look).Unit
+		end
+	else a.awayHeld=0 end
+	local current=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	if current.Magnitude&lt;.01 then current=desired end
+	current=current.Unit
+	local angle=math.atan2(current:Cross(desired).Y,current:Dot(desired))
+	local rate=math.rad(if committed then 540 else 760)*dt
+	local turn=math.clamp(angle,-rate,rate)
+	local look=CFrame.fromAxisAngle(Vector3.yAxis,turn):VectorToWorldSpace(current)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+	a.facingCommitted=committed
 end
 -- Kawarimi. A limited escape from a combo: two charges that come back one at a
 -- time, a chakra cost, and a short tracking window for the attacker so a
@@ -3266,8 +3316,7 @@ function Combat:updateActor(a,dt)
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
-		local toward=a.target.root.Position-a.root.Position; toward=Vector3.new(toward.X,0,toward.Z)
-		if toward.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+		self:faceLocked(a,dt)
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
@@ -4984,7 +5033,13 @@ local function updateMovement(deltaTime)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
-		if not blocked and input.Magnitude&gt;.05 then target=input.Unit*desiredWalkSpeed end
+		if not blocked and input.Magnitude&gt;.05 then
+			-- A backpedal or side step is slower than running where the body faces.
+			local face=horizontalOf(root.CFrame.LookVector)
+			local along=if face.Magnitude&gt;.01 then face.Unit:Dot(input.Unit) else 1
+			local scale=if along&lt;-.3 then .72 elseif along&lt;.5 then .88 else 1
+			target=input.Unit*desiredWalkSpeed*scale
+		end
 		local acceleration=profile.GroundAcceleration*(a.def.AccelerationScale or 1)
 		-- Rhythm: ordinary steps carry weight; a sprint that starts, or a move
 		-- committed from a near standstill, bursts. Fast moments read as fast
@@ -6072,7 +6127,7 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	if victim.invulnerableUntil&gt;c.now then
 		local clean=c.now-victim.dodgeStartedAt&lt;=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
 		if clean then
-			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8
+			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8;victim.riposteUntil=c.now+.5
 			if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PERFECT DODGE • COUNTER')
 			else c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
 		end
@@ -6886,6 +6941,14 @@ function Camera:update(data,dt)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local targetFocus=a:Lerp(target,if separation&gt;26 then .5 else .42)+Vector3.new(0,frame.lift,0)
+	-- Lead a little where the player is going so a run is framed ahead of it.
+	local moving=presentation and presentation:visualVelocity("human")
+	if moving then
+		local lead=Vector3.new(moving.X,0,moving.Z)*.11
+		if lead.Magnitude&gt;2.6 then lead=lead.Unit*2.6 end
+		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
+		targetFocus+=self.lead
+	end
 	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
@@ -8464,6 +8527,8 @@ function Presentation:update(data,dt)
    visual.attackElapsed=clock.attackElapsed
    visual.landing=self.landingUntil~=nil and now&lt;self.landingUntil
    visual.intro=data.intro
+   local other=if key=="human" then "bot" else "human"
+   visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
    -- Throws and casts run on the shared server clock (slightly behind, like the
    -- projectiles), so the blade leaves the hand on the frame it starts flying.
    if data.serverNow then
@@ -8828,7 +8893,7 @@ function UI:render(data)
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
-		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY")
+		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -9566,6 +9631,10 @@ local function runningClips(f,base)
 	}
 end
 runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N)
+-- Riposte: each fighter's shortest strike, thrown straight out of the guard.
+CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
+CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
+CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -9592,6 +9661,80 @@ for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist
 						local p,b=pose[foot],base[foot] or {}
 						if p and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*STEP,-1.9,1.6) end
 					end
+				end
+			end
+		end
+	end
+end
+
+-- Kinetic chain: every ground strike is driven from the floor up. Between the
+-- load and the contact a key is inserted where the feet and hips have already
+-- moved (the step and the hip turn) while the chest and the striking limb are
+-- still loaded; the contact then snaps the shoulders through. After the active
+-- frames a follow-through key carries the chest and arms past the strike, so
+-- weight is seen transferring rather than a limb moving alone.
+local CHAIN={root=.78,rf=.88,lf=.88,torso=.32,head=.4,ra=.14,la=.14,rl=.4,ll=.4}
+local function mixPart(a,b,base,w)
+	local out={}
+	local seen={}
+	for k in a or {} do seen[k]=true end
+	for k in b or {} do seen[k]=true end
+	for k in seen do
+		local va=(a and a[k]) or (base and base[k]) or 0
+		local vb=(b and b[k]) or (base and base[k]) or 0
+		if type(va)=="number" and type(vb)=="number" then out[k]=va+(vb-va)*w end
+	end
+	return out
+end
+local function chainPose(p0,p1,base)
+	local out={}
+	for part,w in CHAIN do
+		local free=part=="rl" or part=="ll"
+		local plant=part=="rf" or part=="lf"
+		local freeKey=if part=="rf" then "rl" elseif part=="lf" then "ll" else nil
+		if free then
+			if p0[part] and p1[part] then out[part]=mixPart(p0[part],p1[part],nil,w) end
+		elseif plant then
+			if not (p0[freeKey] or p1[freeKey]) then out[part]=mixPart(p0[part],p1[part],base[part],w) end
+		else
+			out[part]=mixPart(p0[part],p1[part],base[part],w)
+		end
+	end
+	-- A leg that kicks in both keys stays free; one that kicks in only one of
+	-- them is left to the neighbouring keys (no mixed planted/free leg).
+	if out.rl==nil and out.rf==nil and not (p0.rl or p1.rl) then out.rf=mixPart(p0.rf,p1.rf,base.rf,.88) end
+	if out.ll==nil and out.lf==nil and not (p0.ll or p1.ll) then out.lf=mixPart(p0.lf,p1.lf,base.lf,.88) end
+	return out
+end
+local function followPose(p2,base)
+	local out={}
+	for part,v in p2 do
+		if type(v)=="table" then out[part]=table.clone(v) end
+	end
+	local function push(part,field,k)
+		local t=out[part];if not t or not t[field] then return end
+		local b=(base[part] and base[part][field]) or 0
+		t[field]=t[field]+(t[field]-b)*k
+	end
+	push("torso","yaw",.16);push("torso","pitch",.12);push("root","yaw",.1)
+	for _,arm in {"ra","la"} do push(arm,"raise",.06);push(arm,"out",.1) end
+	if out.root then out.root.z=math.clamp((out.root.z or 0)-.08,-1.5,1.5) end
+	return out
+end
+local chained={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" and not chained[keys] and #keys&gt;=3 then
+			chained[keys]=true
+			if keys[1].at==0 and keys[2].at==1 then
+				table.insert(keys,2,K(.55,chainPose(keys[1].pose,keys[2].pose,base),"smooth"))
+				keys[3].ease="out"
+			end
+			for index=1,#keys-1 do
+				if keys[index].at==2 and keys[index+1].at&gt;2.2 then
+					table.insert(keys,index+1,K(2.25,followPose(keys[index].pose,base),"out"))
+					break
 				end
 			end
 		end
@@ -9802,6 +9945,15 @@ end
 -- stopping and turning on the spot all come out of the same rule, so feet
 -- never skate and the steps always match the real displacement.
 local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
+-- How each prodigy carries his body before any jutsu: stride and cadence
+-- (Minato long and explosive, Itachi economical, Neji short precise steps),
+-- arm swing, forward lean, vertical bounce, and a guard carried while moving.
+local GAIT={
+	Flashstep={stride=1.12,cadence=.98,arm=50,lean=5,bob=1.15,guard=0},
+	Mirage={stride=1.0,cadence=.94,arm=24,lean=-1,bob=.7,guard=.35},
+	GentleFist={stride=.84,cadence=1.12,arm=16,lean=0,bob=.55,guard=.8},
+}
+local function gaitOf(id) return GAIT[id] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -9872,8 +10024,9 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local running=not mode and speed&gt;=RUN_SPEED
 	local runDip=0
 	if running then
-		local cadence=math.clamp(speed/7.2,1.7,3.1)
-		local stanceLen=math.clamp(.9+speed*.028,1,1.9)
+		local gait=s.gait or GAIT.Flashstep
+		local cadence=math.clamp(speed/7.2,1.7,3.1)*gait.cadence
+		local stanceLen=math.clamp((.9+speed*.028)*gait.stride,.9,1.95)
 		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
 		if not s.runPhase then
 			-- Enter the cycle with the foot that is already ahead in stance.
@@ -9932,7 +10085,7 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	-- it sinks through each stance and floats in the flight phase).
 	local swingP=feet.R.p or feet.L.p
 	local bob
-	if running then bob=.03-.13*runDip
+	if running then bob=(.03-.13*runDip)*((s.gait and s.gait.bob) or 1)
 	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
 	-- Arms answer the legs: the left arm comes forward with the right foot.
 	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then 2.6 else 2.2),-1,1)
@@ -9945,10 +10098,33 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
 	local base=stance(fighterId)
+	local gait=gaitOf(fighterId)
+	s.gait=gait
 	local rf,lf,bob,armSwing=stepFeet(char,s,rest or base,velocity,speed,dt,mode)
+	-- Centre of gravity: the body leans into acceleration (forward to start,
+	-- back to brake, into a turn), from the drawn body's real velocity.
+	local accel=Vector3.zero
+	if s.lastVel and dt and dt&gt;0 then accel=(velocity-s.lastVel)/dt end
+	s.lastVel=velocity
+	s.accel=(s.accel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*10))
+	local accLocal=if root then root.CFrame:VectorToObjectSpace(s.accel) else Vector3.zero
+	local accForward,accSide=math.clamp(-accLocal.Z*.045,-11,11),math.clamp(accLocal.X*.04,-10,10)
+	-- Eyes on the opponent: when the body runs another way, the head and the
+	-- chest keep tracking them (a three-quarter run, never a blind one).
+	local trackTorso,trackHead=0,0
+	if root and actor.lookAt then
+		local to=actor.lookAt-root.Position
+		local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
+		if l.Magnitude&gt;1 then
+			local angle=math.deg(math.atan2(l.X,-l.Z))
+			trackTorso=math.clamp(angle*.4,-38,38)
+			trackHead=math.clamp(angle*.8-trackTorso,-48,48)
+		end
+	end
 	if speed&lt;1.2 then
 		local breath=math.sin(elapsedTime*(base.tempo or 6))
-		local spec=merge(base,{root={y=base.root.y+breath*.03+bob},torso={pitch=base.torso.pitch+breath*(base.breath or 1)}})
+		local spec=merge(base,{root={y=base.root.y+breath*.03+bob,pitch=(base.root.pitch or 0)+accForward*.5,roll=(base.root.roll or 0)+accSide*.5},
+			torso={pitch=base.torso.pitch+breath*(base.breath or 1),yaw=(base.torso.yaw or 0)+trackTorso*.5},head={yaw=(base.head.yaw or 0)+trackHead*.5}})
 		spec.rf=rf;spec.lf=lf
 		return build(spec),RATE.locomotion
 	end
@@ -9968,7 +10144,7 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
 	else
-		local arm=(if minato then 46 else 34)*math.clamp(speed/16,.3,1)
+		local arm=gait.arm*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
 			torso={pitch=(if forward&lt;-.3 then -6 else 4)+alpha*4,yaw=-swing*15*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=swing*4*alpha},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
@@ -9991,6 +10167,16 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			local guard=1-math.clamp((speed-8)/16,0,1)
 			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
 		end
+	end
+	-- Lean into acceleration, carry the guard, keep eyes on the opponent.
+	spec.root.pitch=(spec.root.pitch or 0)+accForward+gait.lean*alpha
+	spec.root.roll=(spec.root.roll or 0)+accSide
+	spec.torso.yaw=(spec.torso.yaw or 0)+trackTorso
+	spec.head.yaw=(spec.head.yaw or 0)+trackHead
+	if gait.guard&gt;0 and not (sprint and forward&gt;.3) then
+		local g=gait.guard*(1-math.clamp((speed-12)/20,0,.6))
+		spec.ra.raise=spec.ra.raise+(58-spec.ra.raise)*g;spec.ra.elbow=spec.ra.elbow+(96-spec.ra.elbow)*g
+		spec.la.raise=spec.la.raise+(66-spec.la.raise)*g;spec.la.elbow=spec.la.elbow+(80-spec.la.elbow)*g
 	end
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
@@ -10139,7 +10325,7 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart

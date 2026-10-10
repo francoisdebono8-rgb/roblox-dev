@@ -222,6 +222,8 @@ function Presentation:update(data,dt)
    visual.attackElapsed=clock.attackElapsed
    visual.landing=self.landingUntil~=nil and now<self.landingUntil
    visual.intro=data.intro
+   local other=if key=="human" then "bot" else "human"
+   visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
    -- Throws and casts run on the shared server clock (slightly behind, like the
    -- projectiles), so the blade leaves the hand on the frame it starts flying.
    if data.serverNow then

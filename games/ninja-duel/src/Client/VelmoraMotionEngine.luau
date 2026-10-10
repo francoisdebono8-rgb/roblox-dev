@@ -555,6 +555,10 @@ local function runningClips(f,base)
 	}
 end
 runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N)
+-- Riposte: each fighter's shortest strike, thrown straight out of the guard.
+CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
+CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
+CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -581,6 +585,80 @@ for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist
 						local p,b=pose[foot],base[foot] or {}
 						if p and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*STEP,-1.9,1.6) end
 					end
+				end
+			end
+		end
+	end
+end
+
+-- Kinetic chain: every ground strike is driven from the floor up. Between the
+-- load and the contact a key is inserted where the feet and hips have already
+-- moved (the step and the hip turn) while the chest and the striking limb are
+-- still loaded; the contact then snaps the shoulders through. After the active
+-- frames a follow-through key carries the chest and arms past the strike, so
+-- weight is seen transferring rather than a limb moving alone.
+local CHAIN={root=.78,rf=.88,lf=.88,torso=.32,head=.4,ra=.14,la=.14,rl=.4,ll=.4}
+local function mixPart(a,b,base,w)
+	local out={}
+	local seen={}
+	for k in a or {} do seen[k]=true end
+	for k in b or {} do seen[k]=true end
+	for k in seen do
+		local va=(a and a[k]) or (base and base[k]) or 0
+		local vb=(b and b[k]) or (base and base[k]) or 0
+		if type(va)=="number" and type(vb)=="number" then out[k]=va+(vb-va)*w end
+	end
+	return out
+end
+local function chainPose(p0,p1,base)
+	local out={}
+	for part,w in CHAIN do
+		local free=part=="rl" or part=="ll"
+		local plant=part=="rf" or part=="lf"
+		local freeKey=if part=="rf" then "rl" elseif part=="lf" then "ll" else nil
+		if free then
+			if p0[part] and p1[part] then out[part]=mixPart(p0[part],p1[part],nil,w) end
+		elseif plant then
+			if not (p0[freeKey] or p1[freeKey]) then out[part]=mixPart(p0[part],p1[part],base[part],w) end
+		else
+			out[part]=mixPart(p0[part],p1[part],base[part],w)
+		end
+	end
+	-- A leg that kicks in both keys stays free; one that kicks in only one of
+	-- them is left to the neighbouring keys (no mixed planted/free leg).
+	if out.rl==nil and out.rf==nil and not (p0.rl or p1.rl) then out.rf=mixPart(p0.rf,p1.rf,base.rf,.88) end
+	if out.ll==nil and out.lf==nil and not (p0.ll or p1.ll) then out.lf=mixPart(p0.lf,p1.lf,base.lf,.88) end
+	return out
+end
+local function followPose(p2,base)
+	local out={}
+	for part,v in p2 do
+		if type(v)=="table" then out[part]=table.clone(v) end
+	end
+	local function push(part,field,k)
+		local t=out[part];if not t or not t[field] then return end
+		local b=(base[part] and base[part][field]) or 0
+		t[field]=t[field]+(t[field]-b)*k
+	end
+	push("torso","yaw",.16);push("torso","pitch",.12);push("root","yaw",.1)
+	for _,arm in {"ra","la"} do push(arm,"raise",.06);push(arm,"out",.1) end
+	if out.root then out.root.z=math.clamp((out.root.z or 0)-.08,-1.5,1.5) end
+	return out
+end
+local chained={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" and not chained[keys] and #keys>=3 then
+			chained[keys]=true
+			if keys[1].at==0 and keys[2].at==1 then
+				table.insert(keys,2,K(.55,chainPose(keys[1].pose,keys[2].pose,base),"smooth"))
+				keys[3].ease="out"
+			end
+			for index=1,#keys-1 do
+				if keys[index].at==2 and keys[index+1].at>2.2 then
+					table.insert(keys,index+1,K(2.25,followPose(keys[index].pose,base),"out"))
+					break
 				end
 			end
 		end
@@ -791,6 +869,15 @@ end
 -- stopping and turning on the spot all come out of the same rule, so feet
 -- never skate and the steps always match the real displacement.
 local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
+-- How each prodigy carries his body before any jutsu: stride and cadence
+-- (Minato long and explosive, Itachi economical, Neji short precise steps),
+-- arm swing, forward lean, vertical bounce, and a guard carried while moving.
+local GAIT={
+	Flashstep={stride=1.12,cadence=.98,arm=50,lean=5,bob=1.15,guard=0},
+	Mirage={stride=1.0,cadence=.94,arm=24,lean=-1,bob=.7,guard=.35},
+	GentleFist={stride=.84,cadence=1.12,arm=16,lean=0,bob=.55,guard=.8},
+}
+local function gaitOf(id) return GAIT[id] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -861,8 +948,9 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local running=not mode and speed>=RUN_SPEED
 	local runDip=0
 	if running then
-		local cadence=math.clamp(speed/7.2,1.7,3.1)
-		local stanceLen=math.clamp(.9+speed*.028,1,1.9)
+		local gait=s.gait or GAIT.Flashstep
+		local cadence=math.clamp(speed/7.2,1.7,3.1)*gait.cadence
+		local stanceLen=math.clamp((.9+speed*.028)*gait.stride,.9,1.95)
 		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
 		if not s.runPhase then
 			-- Enter the cycle with the foot that is already ahead in stance.
@@ -921,7 +1009,7 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	-- it sinks through each stance and floats in the flight phase).
 	local swingP=feet.R.p or feet.L.p
 	local bob
-	if running then bob=.03-.13*runDip
+	if running then bob=(.03-.13*runDip)*((s.gait and s.gait.bob) or 1)
 	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
 	-- Arms answer the legs: the left arm comes forward with the right foot.
 	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then 2.6 else 2.2),-1,1)
@@ -934,10 +1022,33 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
 	local base=stance(fighterId)
+	local gait=gaitOf(fighterId)
+	s.gait=gait
 	local rf,lf,bob,armSwing=stepFeet(char,s,rest or base,velocity,speed,dt,mode)
+	-- Centre of gravity: the body leans into acceleration (forward to start,
+	-- back to brake, into a turn), from the drawn body's real velocity.
+	local accel=Vector3.zero
+	if s.lastVel and dt and dt>0 then accel=(velocity-s.lastVel)/dt end
+	s.lastVel=velocity
+	s.accel=(s.accel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*10))
+	local accLocal=if root then root.CFrame:VectorToObjectSpace(s.accel) else Vector3.zero
+	local accForward,accSide=math.clamp(-accLocal.Z*.045,-11,11),math.clamp(accLocal.X*.04,-10,10)
+	-- Eyes on the opponent: when the body runs another way, the head and the
+	-- chest keep tracking them (a three-quarter run, never a blind one).
+	local trackTorso,trackHead=0,0
+	if root and actor.lookAt then
+		local to=actor.lookAt-root.Position
+		local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
+		if l.Magnitude>1 then
+			local angle=math.deg(math.atan2(l.X,-l.Z))
+			trackTorso=math.clamp(angle*.4,-38,38)
+			trackHead=math.clamp(angle*.8-trackTorso,-48,48)
+		end
+	end
 	if speed<1.2 then
 		local breath=math.sin(elapsedTime*(base.tempo or 6))
-		local spec=merge(base,{root={y=base.root.y+breath*.03+bob},torso={pitch=base.torso.pitch+breath*(base.breath or 1)}})
+		local spec=merge(base,{root={y=base.root.y+breath*.03+bob,pitch=(base.root.pitch or 0)+accForward*.5,roll=(base.root.roll or 0)+accSide*.5},
+			torso={pitch=base.torso.pitch+breath*(base.breath or 1),yaw=(base.torso.yaw or 0)+trackTorso*.5},head={yaw=(base.head.yaw or 0)+trackHead*.5}})
 		spec.rf=rf;spec.lf=lf
 		return build(spec),RATE.locomotion
 	end
@@ -957,7 +1068,7 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
 	else
-		local arm=(if minato then 46 else 34)*math.clamp(speed/16,.3,1)
+		local arm=gait.arm*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
 			torso={pitch=(if forward<-.3 then -6 else 4)+alpha*4,yaw=-swing*15*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=swing*4*alpha},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
@@ -980,6 +1091,16 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			local guard=1-math.clamp((speed-8)/16,0,1)
 			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
 		end
+	end
+	-- Lean into acceleration, carry the guard, keep eyes on the opponent.
+	spec.root.pitch=(spec.root.pitch or 0)+accForward+gait.lean*alpha
+	spec.root.roll=(spec.root.roll or 0)+accSide
+	spec.torso.yaw=(spec.torso.yaw or 0)+trackTorso
+	spec.head.yaw=(spec.head.yaw or 0)+trackHead
+	if gait.guard>0 and not (sprint and forward>.3) then
+		local g=gait.guard*(1-math.clamp((speed-12)/20,0,.6))
+		spec.ra.raise=spec.ra.raise+(58-spec.ra.raise)*g;spec.ra.elbow=spec.ra.elbow+(96-spec.ra.elbow)*g
+		spec.la.raise=spec.la.raise+(66-spec.la.raise)*g;spec.la.elbow=spec.la.elbow+(80-spec.la.elbow)*g
 	end
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
@@ -1128,7 +1249,7 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart

@@ -24,7 +24,7 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	if victim.invulnerableUntil>c.now then
 		local clean=c.now-victim.dodgeStartedAt<=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
 		if clean then
-			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8
+			victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8;victim.riposteUntil=c.now+.5
 			if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PERFECT DODGE • COUNTER')
 			else c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
 		end

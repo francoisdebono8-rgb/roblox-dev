@@ -185,7 +185,13 @@ local function updateMovement(deltaTime)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
-		if not blocked and input.Magnitude>.05 then target=input.Unit*desiredWalkSpeed end
+		if not blocked and input.Magnitude>.05 then
+			-- A backpedal or side step is slower than running where the body faces.
+			local face=horizontalOf(root.CFrame.LookVector)
+			local along=if face.Magnitude>.01 then face.Unit:Dot(input.Unit) else 1
+			local scale=if along<-.3 then .72 elseif along<.5 then .88 else 1
+			target=input.Unit*desiredWalkSpeed*scale
+		end
 		local acceleration=profile.GroundAcceleration*(a.def.AccelerationScale or 1)
 		-- Rhythm: ordinary steps carry weight; a sprint that starts, or a move
 		-- committed from a near standstill, bursts. Fast moments read as fast

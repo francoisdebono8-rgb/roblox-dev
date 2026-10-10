@@ -125,6 +125,14 @@ function Camera:update(data,dt)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local targetFocus=a:Lerp(target,if separation>26 then .5 else .42)+Vector3.new(0,frame.lift,0)
+	-- Lead a little where the player is going so a run is framed ahead of it.
+	local moving=presentation and presentation:visualVelocity("human")
+	if moving then
+		local lead=Vector3.new(moving.X,0,moving.Z)*.11
+		if lead.Magnitude>2.6 then lead=lead.Unit*2.6 end
+		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
+		targetFocus+=self.lead
+	end
 	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus

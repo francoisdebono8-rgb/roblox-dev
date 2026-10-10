@@ -36,12 +36,15 @@ local attacks={
  -- Running taijutsu: out of a full sprint, a flying kick (strike) and a
  -- sliding sweep (heavy). The run is the wind-up; a whiff overshoots.
  FlyingKick=move(.1,.16,.32,9,10,"Knockback",Vector3.new(0,14,48),.5),
+ -- Riposte: out of a clean block or a perfect dodge, an instant strike that
+ -- opens the string (block -> riposte -> combo).
+ Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
 }
 
 for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep"
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -65,6 +68,7 @@ local motion={
  PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
  KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
  FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
+ Riposte={side=1,twist=24,lean=12,arm=92,step=1.2},
  SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end

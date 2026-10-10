@@ -315,6 +315,41 @@ function Combat:stepThrow(a)
 	end
 	if a.throwing==throw and throw.fired>=throw.count then a.throwing=nil end
 end
+-- Facing while locked on. Small moves around the opponent are strafes with
+-- the chest on them; a committed run (held away from them, sprinting, or from
+-- far) turns the body into the run, three-quarters toward the opponent, so a
+-- fighter never slides around a point like a mannequin. The turn is
+-- progressive; guarding always squares up.
+function Combat:faceLocked(a,dt)
+	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
+	if toward.Magnitude<.1 then return end
+	local target=toward.Unit
+	local distance=toward.Magnitude
+	local intent=Vector3.new(a.move.X,0,a.move.Z)
+	local desired=target
+	local committed=false
+	if a.state=="Neutral" and intent.Magnitude>.4 then
+		local moveDir=intent.Unit
+		local along=target:Dot(moveDir) -- 1 toward, -1 away, 0 around
+		if along<.55 then a.awayHeld=(a.awayHeld or 0)+dt else a.awayHeld=0 end
+		committed=a.sprinting or (a.awayHeld or 0)>.3 or (distance>16 and along<.55)
+		-- Close in and retreating a step: a backpedal keeps the chest on them.
+		if along<-.5 and distance<10 and not a.sprinting then committed=false end
+		if committed then
+			local look=if distance<12 then .45 else .2
+			desired=(moveDir+target*look).Unit
+		end
+	else a.awayHeld=0 end
+	local current=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	if current.Magnitude<.01 then current=desired end
+	current=current.Unit
+	local angle=math.atan2(current:Cross(desired).Y,current:Dot(desired))
+	local rate=math.rad(if committed then 540 else 760)*dt
+	local turn=math.clamp(angle,-rate,rate)
+	local look=CFrame.fromAxisAngle(Vector3.yAxis,turn):VectorToWorldSpace(current)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+	a.facingCommitted=committed
+end
 -- Kawarimi. A limited escape from a combo: two charges that come back one at a
 -- time, a chakra cost, and a short tracking window for the attacker so a
 -- predictable substitution can still be punished. Each prodigy reappears in
@@ -748,8 +783,7 @@ function Combat:updateActor(a,dt)
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
-		local toward=a.target.root.Position-a.root.Position; toward=Vector3.new(toward.X,0,toward.Z)
-		if toward.Magnitude>0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+		self:faceLocked(a,dt)
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
