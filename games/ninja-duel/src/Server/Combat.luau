@@ -9,9 +9,11 @@ local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
 local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
+local HitDetection = require(script.Parent.VelmoraHitDetection)
+local Defense = require(script.Parent.VelmoraDefense)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
-	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={}},Combat)
+	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0},Combat)
 end
 function Combat:add(id,model,hum,root,joints,definition)
 	local def = Fighters[definition]
@@ -23,6 +25,7 @@ function Combat:add(id,model,hum,root,joints,definition)
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,
 		subCharges=Config.Substitution.Charges,subCooldown=0,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0 }
 	table.insert(self.actors,a)
+	Defense.init(a)
 	Animation.attach(a)
 	return a
 end
@@ -53,10 +56,12 @@ function Combat:lineOfSight(a,b)
 end
 function Combat:targetValid(a,b,range,facing)
 	if not b or b.health<=0 then return false end
-	local delta=b.root.Position-a.root.Position
-	if delta.Magnitude>range then return false end
-	if delta.Magnitude>0.1 and a.root.CFrame.LookVector:Dot(delta.Unit)<facing then return false end
-	return self:lineOfSight(a,b)
+	local roots={};for _,candidate in self.actors do table.insert(roots,candidate.root) end
+	local angle=math.deg(math.acos(math.clamp(facing,-1,1)))
+	-- Resolve each active-window sample against the newest recorded pose; the short
+	-- history keeps interpolation stable without freezing a target at button-down.
+	local root=HitDetection.resolve(a.root,range,angle,a.root.Position,a.root.CFrame.LookVector,self.now,roots,self.match.effects)
+	return root==b.root
 end
 function Combat:effect(name,p,color,size,lifetime)
 	local v=World.part(self.match.effects,name,size,CFrame.new(p),color,Enum.Material.Neon)
@@ -78,7 +83,6 @@ function Combat:setState(a,state,duration)
 end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or victim.health<=0 or attacker.health<=0 then return false end
-	if victim.invulnerableUntil>self.now then Brawler.event(self,victim,"Evaded"); self:cue(victim,"EVADED"); return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
@@ -89,21 +93,24 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
 		return false
 	end
-	local guarded=Rules.isGuard(victim,frontal)
+	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
+	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
+	if outcome=="Parried" then
+		Brawler.event(self,victim,"Parry");Brawler.event(self,attacker,"Parried")
+		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
+		return false
+	end
+	amount=resolved
+	local guarded=outcome=="Blocked"
 	if guarded then
-		victim.chakra=math.max(0,victim.chakra-amount*1.6)
-		amount*=victim.def.GuardStrength or Config.GuardChip
 		self:cue(victim,"GUARDED")
-		if victim.chakra<=0 then
-			victim.guardHeld=false; self:setState(victim,"Stunned",Config.GuardBreak); self:cue(victim,"GUARD BREAK")
-		end
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
-			self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun)
+			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
 			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
@@ -140,10 +147,10 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface)
 	if kind=="blade" then visual.CFrame=CFrame.new(start)*CFrame.Angles(0,0,math.pi/4) end
 	table.insert(self.projectiles,{a=a,position=start,direction=delta.Unit,speed=speed,remaining=range,damage=damage,part=visual,onSurface=onSurface,kind=kind})
 end
-function Combat:request(a,action,aim)
+function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if action=="GuardOff" then
-		a.guardHeld=false
+		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		return true
 	end
@@ -185,6 +192,7 @@ function Combat:request(a,action,aim)
 		a.pending=nil; self:setState(a,"Recovery",0.24); self:cue(a,"FEINT • CHAKRA PARTIAL")
 		return true
 	end
+	if action=="Attack" or action=="Heavy" or action=="Grab" then a.attackCommitTime=clientTime or self.now end
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
@@ -215,7 +223,7 @@ function Combat:request(a,action,aim)
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
-	if action=="Guard" then Brawler.event(self,a,"Guard"); a.guardHeld=true; self:setState(a,"Guarding",0); return true end
+	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
 	if action=="Dodge" then
 		if a.chakra<Config.DodgeCost then return false,"Need chakra" end
 		if a.airborne and a.airDodgeUsed then return false,"Air dodge used" end
@@ -224,7 +232,7 @@ function Combat:request(a,action,aim)
 		if a.wall then Motor.detach(a,self.now,false) end
 		if a.airborne then a.airDodgeUsed=true end
 		a.dodgeDirection=if a.move.Magnitude>0.1 then a.move.Unit else a.root.CFrame.RightVector
-		a.invulnerableUntil=self.now+Config.DodgeIFrames; a.guardHeld=false
+		a.invulnerableUntil=self.now+Config.DodgeIFrames;Defense.guard(a,false,self.now);Defense.dodge(a,self.now)
 		Evade.begin(a,self)
 		Brawler.event(self,a,"Dodge"); self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
 		return true
@@ -254,12 +262,10 @@ end
 function Combat:updateActor(a,dt)
 	local now=self.now
 	if a.health<=0 then a.hum:Move(Vector3.zero); return end
+	Defense.step(self,a,dt,now)
 	if a.anchor and a.anchor.expires<=now then a.anchor.part:Destroy(); a.anchor=nil end
 	if a.illusionUntil<=now then a.decoyPosition=nil end
-	if a.state=="Guarding" then
-		a.chakra=math.max(0,a.chakra-Config.GuardDrain*dt)
-		if a.chakra<=0 then a.guardHeld=false; self:setState(a,"Stunned",Config.GuardBreak); self:cue(a,"GUARD BREAK") end
-	elseif a.state~="TechniqueChannel" and a.state~="Stunned" then
+	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
 	end
 	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime<=now then
@@ -364,6 +370,10 @@ end
 function Combat:update(dt,now)
 	self.now=now
 	if self.match.phase~="Duel" then return end
+	if now>=self.historyAt then
+		self.historyAt=now+1/30
+		for _,a in self.actors do HitDetection.record(a.root,now) end
+	end
 	for _,a in self.actors do
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
@@ -376,10 +386,11 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	for _,a in self.actors do
+		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
-		a.state=if a.health>0 then "Neutral" else "Defeated"; a.guardHeld=false; a.readUntil=0; a.bonusUntil=0; a.dodgeUntil=0; a.invulnerableUntil=0; a.travelRemaining=0
+		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false

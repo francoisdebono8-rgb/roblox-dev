@@ -52,7 +52,7 @@ for asset_file in asset_files:
 fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA')+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
 item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
-for vendor in ('bangla','place1'):
+for vendor in ('bangla','place1','velmora'):
     item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text())])
 server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
@@ -78,7 +78,7 @@ assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewe
 external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
 for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text())))
-manifest={'version':'0.4.1-phase6b','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids), 'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'animationPermission':'PENDING'}
+manifest={'version':'0.5.0-velmora','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids), 'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'animationPermission':'PENDING'}
 output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(output)
 print(manifest['sha256'])

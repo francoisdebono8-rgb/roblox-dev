@@ -95,7 +95,7 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.4.1-phase6b",
+	Version = "0.5.0-velmora",
 	ArenaRadius = 78, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
@@ -211,6 +211,27 @@ function Rules.isGuard(a, frontal)
 	return a.state == "Guarding" and frontal and a.chakra &gt; 0
 end
 return Rules
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND11">
+        <Properties>
+          <string name="Name">VelmoraCombatConfig</string>
+          <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+return table.freeze({
+	ParryWindow = 0.20,
+	ParryStun = 0.50,
+	ParryCost = 16,
+	ParryCooldown = 0.60,
+	BlockHitCost = 9,
+	BlockDamageMultiplier = 0.24,
+	DodgeIFrames = 0.28,
+	BloodstepWindow = 0.16,
+	History = 0.20,
+	TimestampWindow = 0.10,
+	Rates = table.freeze({Attack=0.16,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
+})
 </ProtectedString>
         </Properties>
       </Item>
@@ -1189,17 +1210,17 @@ return Rules
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND11">
+      <Item class="StringValue" referent="ND12">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6a2a9fe65658fc2434645c94dbe01d08575a0cc867e9515f80929bcedad7a21e</string>
+          <string name="Value">ad5292f381442bc21fb2183debd6442d641b08319dbda18d3ec63e14003f1de4</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND12">
+      <Item class="Folder" referent="ND13">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND13">
+        <Item class="StringValue" referent="ND14">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -1226,7 +1247,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND14">
+        <Item class="StringValue" referent="ND15">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -1253,18 +1274,45 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
+        <Item class="StringValue" referent="ND16">
+          <Properties>
+            <string name="Name">velmora</string>
+            <string name="Value">MIT License
+
+Copyright (c) 2026 Yashveer Singh (Yashveer Labs)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</string>
+          </Properties>
+        </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND15">
+  <Item class="ServerScriptService" referent="ND17">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND16">
+    <Item class="Folder" referent="ND18">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -1347,7 +1395,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -1453,7 +1501,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -1529,7 +1577,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -1561,7 +1609,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -1744,7 +1792,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -1758,9 +1806,11 @@ local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
 local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
+local HitDetection = require(script.Parent.VelmoraHitDetection)
+local Defense = require(script.Parent.VelmoraDefense)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
-	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={}},Combat)
+	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0},Combat)
 end
 function Combat:add(id,model,hum,root,joints,definition)
 	local def = Fighters[definition]
@@ -1772,6 +1822,7 @@ function Combat:add(id,model,hum,root,joints,definition)
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,
 		subCharges=Config.Substitution.Charges,subCooldown=0,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0 }
 	table.insert(self.actors,a)
+	Defense.init(a)
 	Animation.attach(a)
 	return a
 end
@@ -1802,10 +1853,12 @@ function Combat:lineOfSight(a,b)
 end
 function Combat:targetValid(a,b,range,facing)
 	if not b or b.health&lt;=0 then return false end
-	local delta=b.root.Position-a.root.Position
-	if delta.Magnitude&gt;range then return false end
-	if delta.Magnitude&gt;0.1 and a.root.CFrame.LookVector:Dot(delta.Unit)&lt;facing then return false end
-	return self:lineOfSight(a,b)
+	local roots={};for _,candidate in self.actors do table.insert(roots,candidate.root) end
+	local angle=math.deg(math.acos(math.clamp(facing,-1,1)))
+	-- Resolve each active-window sample against the newest recorded pose; the short
+	-- history keeps interpolation stable without freezing a target at button-down.
+	local root=HitDetection.resolve(a.root,range,angle,a.root.Position,a.root.CFrame.LookVector,self.now,roots,self.match.effects)
+	return root==b.root
 end
 function Combat:effect(name,p,color,size,lifetime)
 	local v=World.part(self.match.effects,name,size,CFrame.new(p),color,Enum.Material.Neon)
@@ -1827,7 +1880,6 @@ function Combat:setState(a,state,duration)
 end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
-	if victim.invulnerableUntil&gt;self.now then Brawler.event(self,victim,"Evaded"); self:cue(victim,"EVADED"); return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
@@ -1838,21 +1890,24 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
 		return false
 	end
-	local guarded=Rules.isGuard(victim,frontal)
+	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
+	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
+	if outcome=="Parried" then
+		Brawler.event(self,victim,"Parry");Brawler.event(self,attacker,"Parried")
+		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
+		return false
+	end
+	amount=resolved
+	local guarded=outcome=="Blocked"
 	if guarded then
-		victim.chakra=math.max(0,victim.chakra-amount*1.6)
-		amount*=victim.def.GuardStrength or Config.GuardChip
 		self:cue(victim,"GUARDED")
-		if victim.chakra&lt;=0 then
-			victim.guardHeld=false; self:setState(victim,"Stunned",Config.GuardBreak); self:cue(victim,"GUARD BREAK")
-		end
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
-			self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun)
+			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
 			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
@@ -1889,10 +1944,10 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface)
 	if kind=="blade" then visual.CFrame=CFrame.new(start)*CFrame.Angles(0,0,math.pi/4) end
 	table.insert(self.projectiles,{a=a,position=start,direction=delta.Unit,speed=speed,remaining=range,damage=damage,part=visual,onSurface=onSurface,kind=kind})
 end
-function Combat:request(a,action,aim)
+function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
 	if action=="GuardOff" then
-		a.guardHeld=false
+		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		return true
 	end
@@ -1934,6 +1989,7 @@ function Combat:request(a,action,aim)
 		a.pending=nil; self:setState(a,"Recovery",0.24); self:cue(a,"FEINT • CHAKRA PARTIAL")
 		return true
 	end
+	if action=="Attack" or action=="Heavy" or action=="Grab" then a.attackCommitTime=clientTime or self.now end
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
@@ -1964,7 +2020,7 @@ function Combat:request(a,action,aim)
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
-	if action=="Guard" then Brawler.event(self,a,"Guard"); a.guardHeld=true; self:setState(a,"Guarding",0); return true end
+	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
 	if action=="Dodge" then
 		if a.chakra&lt;Config.DodgeCost then return false,"Need chakra" end
 		if a.airborne and a.airDodgeUsed then return false,"Air dodge used" end
@@ -1973,7 +2029,7 @@ function Combat:request(a,action,aim)
 		if a.wall then Motor.detach(a,self.now,false) end
 		if a.airborne then a.airDodgeUsed=true end
 		a.dodgeDirection=if a.move.Magnitude&gt;0.1 then a.move.Unit else a.root.CFrame.RightVector
-		a.invulnerableUntil=self.now+Config.DodgeIFrames; a.guardHeld=false
+		a.invulnerableUntil=self.now+Config.DodgeIFrames;Defense.guard(a,false,self.now);Defense.dodge(a,self.now)
 		Evade.begin(a,self)
 		Brawler.event(self,a,"Dodge"); self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
 		return true
@@ -2003,12 +2059,10 @@ end
 function Combat:updateActor(a,dt)
 	local now=self.now
 	if a.health&lt;=0 then a.hum:Move(Vector3.zero); return end
+	Defense.step(self,a,dt,now)
 	if a.anchor and a.anchor.expires&lt;=now then a.anchor.part:Destroy(); a.anchor=nil end
 	if a.illusionUntil&lt;=now then a.decoyPosition=nil end
-	if a.state=="Guarding" then
-		a.chakra=math.max(0,a.chakra-Config.GuardDrain*dt)
-		if a.chakra&lt;=0 then a.guardHeld=false; self:setState(a,"Stunned",Config.GuardBreak); self:cue(a,"GUARD BREAK") end
-	elseif a.state~="TechniqueChannel" and a.state~="Stunned" then
+	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
 	end
 	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime&lt;=now then
@@ -2113,6 +2167,10 @@ end
 function Combat:update(dt,now)
 	self.now=now
 	if self.match.phase~="Duel" then return end
+	if now&gt;=self.historyAt then
+		self.historyAt=now+1/30
+		for _,a in self.actors do HitDetection.record(a.root,now) end
+	end
 	for _,a in self.actors do
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
@@ -2125,10 +2183,11 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	for _,a in self.actors do
+		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
-		a.state=if a.health&gt;0 then "Neutral" else "Defeated"; a.guardHeld=false; a.readUntil=0; a.bonusUntil=0; a.dodgeUntil=0; a.invulnerableUntil=0; a.travelRemaining=0
+		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
@@ -2139,7 +2198,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -2181,7 +2240,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -2225,7 +2284,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND25">
+      <Item class="Script" referent="ND27">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -2249,7 +2308,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -2261,6 +2320,7 @@ local World=require(script.Parent.World)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
+local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Matches={}; Matches.__index=Matches
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
@@ -2277,6 +2337,7 @@ function Matches:session(player)
 end
 function Matches:destroy(s)
 	if s.combat then s.combat:clear() end
+	if s.human then AntiCheat.clear(s.human) end
 	if s.folder then s.folder:Destroy() end
 	s.tutorial=nil; s.folder=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
 end
@@ -2323,7 +2384,7 @@ function Matches:snapshot(player,s)
 		for i,spec in a.def.Techniques do
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-s.combat.now),condition=not spec.Requires or (spec.Requires=="Anchor" and a.anchor~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
-		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,state=a.state,
+		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
@@ -2354,6 +2415,7 @@ function Matches:request(player,payload)
 		return
 	end
 	if s.phase~="Duel" or not s.human then return end
+	if action~="Move" and not AntiCheat.check(s.human,action,payload.clientTime,workspace:GetServerTimeNow()) then return end
 	local function vector(v)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
@@ -2372,7 +2434,7 @@ function Matches:request(player,payload)
 		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude&gt;150 then return end
 		aim=payload.aim
 	end
-	local ok,reason=s.combat:request(s.human,action,aim)
+	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)
@@ -2397,7 +2459,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -2537,7 +2599,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -2769,7 +2831,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -3244,7 +3306,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -3344,7 +3406,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -3433,7 +3495,135 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND34">
+        <Properties>
+          <string name="Name">VelmoraAntiCheat</string>
+          <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+local Tune=require(game:GetService('ReplicatedStorage').NinjaDuel.VelmoraCombatConfig)
+local AntiCheat={}
+local last={}
+function AntiCheat.check(actor,action,clientTime,now)
+	if type(action)~='string' then return false end
+	if clientTime~=nil then
+		if type(clientTime)~='number' or clientTime~=clientTime then return false end
+		local delta=now-clientTime
+		if delta&lt;-.05 or delta&gt;Tune.History+Tune.TimestampWindow then return false end
+	end
+	local clock=os.clock();local bucket=last[actor]
+	if not bucket then bucket={};last[actor]=bucket end
+	local family=if string.match(action,'^Technique') then 'Technique' else action
+	local gap=Tune.Rates[family] or .04
+	if bucket[family] and clock-bucket[family]&lt;gap then return false end
+	bucket[family]=clock
+	return true
+end
+function AntiCheat.clear(actor) last[actor]=nil end
+return AntiCheat
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND35">
+        <Properties>
+          <string name="Name">VelmoraDefense</string>
+          <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+local Tune=require(game:GetService('ReplicatedStorage').NinjaDuel.VelmoraCombatConfig)
+local Defense={}
+function Defense.init(a)
+	a.stamina=100;a.guardPressedAt=-math.huge;a.parryReadyAt=0;a.dodgeStartedAt=-math.huge;a.bloodstepGrantedFor=-math.huge
+end
+function Defense.guard(a,down,now)
+	if down and not a.guardHeld then a.guardPressedAt=now end
+	a.guardHeld=down
+end
+function Defense.dodge(a,now)
+	a.dodgeStartedAt=now
+	a.invulnerableUntil=math.max(a.invulnerableUntil,now+Tune.DodgeIFrames)
+end
+function Defense.resolve(c,attacker,victim,amount,frontal)
+	if victim.invulnerableUntil&gt;c.now then
+		local clean=c.now-victim.dodgeStartedAt&lt;=Tune.BloodstepWindow and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
+		if clean then victim.bloodstepGrantedFor=victim.dodgeStartedAt;victim.bonusUntil=c.now+.8;c:cue(victim,'PERFECT DODGE • BLOODSTEP') end
+		return 'Evaded',0
+	end
+	if not frontal or not victim.guardHeld then return 'Hit',amount end
+	local since=c.now-victim.guardPressedAt
+	if since&lt;=Tune.ParryWindow and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
+		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
+		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
+		c:cue(victim,'PARRY • PUNISH');c:cue(attacker,'PARRIED • EXPOSED')
+		return 'Parried',0
+	end
+	if victim.stamina&gt;=Tune.BlockHitCost then
+		victim.stamina-=Tune.BlockHitCost
+		return 'Blocked',amount*Tune.BlockDamageMultiplier
+	end
+	victim.guardHeld=false;c:setState(victim,'Stunned',.65);c:cue(victim,'GUARD BREAK')
+	return 'GuardBreak',amount
+end
+function Defense.step(c,a,dt,now)
+	if a.guardHeld then
+		a.stamina=math.max(0,a.stamina-12*dt)
+		if a.stamina&lt;=0 then a.guardHeld=false;c:setState(a,'Stunned',.45);c:cue(a,'GUARD EXHAUSTED') end
+	else a.stamina=math.min(100,a.stamina+18*dt) end
+end
+return Defense
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">VelmoraHitDetection</string>
+          <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+-- Keeps the donor's short position history, interpolation, reach/cone and world LOS.
+local Tune=require(game:GetService('ReplicatedStorage').NinjaDuel.VelmoraCombatConfig)
+local HitDetection={}
+local history={}
+function HitDetection.record(root,t)
+	local buf=history[root]
+	if not buf then buf={};history[root]=buf end
+	table.insert(buf,{t=t,pos=root.Position})
+	local cutoff=t-(Tune.History+Tune.TimestampWindow)
+	while #buf&gt;2 and buf[1].t&lt;cutoff do table.remove(buf,1) end
+end
+function HitDetection.positionAt(root,t)
+	local buf=history[root]
+	if not buf or #buf==0 then return root.Position end
+	if t&lt;=buf[1].t then return buf[1].pos end
+	if t&gt;=buf[#buf].t then return buf[#buf].pos end
+	for i=1,#buf-1 do
+		local a,b=buf[i],buf[i+1]
+		if t&gt;=a.t and t&lt;=b.t then
+			local span=b.t-a.t
+			return a.pos:Lerp(b.pos,if span&gt;0 then (t-a.t)/span else 0)
+		end
+	end
+	return buf[#buf].pos
+end
+function HitDetection.clear(root) history[root]=nil end
+function HitDetection.resolve(attackerRoot,range,arcAngle,origin,aim,t,candidates,effects)
+	local look=if aim.Magnitude&gt;.001 then aim.Unit else attackerRoot.CFrame.LookVector
+	local exclude={effects,attackerRoot.Parent}
+	for _,root in candidates do if root.Parent then table.insert(exclude,root.Parent) end end
+	local ray=RaycastParams.new();ray.FilterType=Enum.RaycastFilterType.Exclude;ray.FilterDescendantsInstances=exclude;ray.IgnoreWater=true
+	local best,bestPos,bestDistance=nil,nil,math.huge
+	for _,root in candidates do
+		if root~=attackerRoot and root.Parent then
+			local pos=HitDetection.positionAt(root,t);local delta=pos-origin;local distance=delta.Magnitude
+			if distance&lt;=range and (distance&lt;.001 or math.deg(math.acos(math.clamp(look:Dot(delta.Unit),-1,1)))&lt;=arcAngle) and workspace:Raycast(origin,delta,ray)==nil and distance&lt;bestDistance then
+				best,bestPos,bestDistance=root,pos,distance
+			end
+		end
+	end
+	return best,bestPos
+end
+return HitDetection
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -3549,21 +3739,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND33">
+  <Item class="StarterPlayer" referent="ND38">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND34">
+    <Item class="StarterPlayerScripts" referent="ND39">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND35">
+      <Item class="Folder" referent="ND40">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND36">
+        <Item class="ModuleScript" referent="ND41">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">local Camera={}; Camera.__index=Camera
@@ -3633,7 +3823,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND37">
+        <Item class="ModuleScript" referent="ND42">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -3710,7 +3900,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND38">
+        <Item class="LocalScript" referent="ND43">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -3728,6 +3918,7 @@ local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; 
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
+	if current.phase=="Duel" and action~="Move" then payload.clientTime=workspace:GetServerTimeNow() end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
@@ -3763,13 +3954,14 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND39">
+        <Item class="ModuleScript" referent="ND44">
           <Properties>
             <string name="Name">Presentation</string>
-            <ProtectedString name="Source">-- Combat animation/feedback comes from the imported Bangla server components.
--- This client module retains only Ninja Duel's Itachi deception visual.
+            <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's deception visual.
+local Motion=require(script.Parent.VelmoraMotionEngine)
+local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Presentation={};Presentation.__index=Presentation
-function Presentation.new() return setmetatable({ghosts={}},Presentation) end
+function Presentation.new() return setmetatable({last={},recoil={}},Presentation) end
 function Presentation:illusion(data,model)
  local active=data.phase=="Duel" and data.human.illusion&gt;0 and data.human.decoy
  local opponent=model and model.Parent and model.Parent:FindFirstChild("AIFighter")
@@ -3792,13 +3984,36 @@ function Presentation:update(data,_dt)
   if self.echo then self.echo:Destroy();self.echo=nil end
   return
  end
- self:illusion(data,game:GetService("Players").LocalPlayer.Character)
+ local character=game:GetService("Players").LocalPlayer.Character
+ self:illusion(data,character)
+ local folder=character and character.Parent
+ local bot=folder and folder:FindFirstChild("AIFighter")
+ local models={human=character,bot=bot}
+ local latency=os.clock()-(self.receivedAt or os.clock())
+ for key,model in models do
+  local actor=data[key];local previous=self.last[key]
+  if model and actor then
+   if previous and actor.health&lt;previous.health then
+    local damage=previous.health-actor.health;local root=model:FindFirstChild("HumanoidRootPart")
+    if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
+    self.recoil[key]=os.clock()
+   end
+   if actor.events and previous and actor.events.Parry and actor.events.Parry&gt;(previous.parry or 0) then
+    local root=model:FindFirstChild("HumanoidRootPart");if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
+   end
+   local recoilAt=self.recoil[key]
+   if recoilAt and os.clock()-recoilAt&lt;.22 then Motion.recoil(model,os.clock()-recoilAt)
+   elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency))
+   elseif previous and previous.attackName then Motion.clear(model) end
+   self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0}
+  end
+ end
 end
 return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND40">
+        <Item class="ModuleScript" referent="ND45">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
@@ -3934,7 +4149,7 @@ function UI:render(data)
 	self.hp.status.Text=string.format("%d / %d",math.ceil(h.health),h.maxHealth)
 	self.enemy.status.Text=string.format("%d / %d",math.ceil(b.health),b.maxHealth)
 	self.chakra.label.Text=string.format("CHAKRA  %d / %d",math.floor(h.chakra),h.maxChakra); self.chakra.fill.Size=UDim2.fromScale(h.chakra/h.maxChakra,1)
-	self.chakra.status.Text=string.format("Substitution %d charges  •  %s",h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
+	self.chakra.status.Text=string.format("STAMINA %d  •  Sub %d  •  %s",math.floor(h.stamina or 100),h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
 	self.cue.Text=""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -3958,10 +4173,79 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
+        <Item class="ModuleScript" referent="ND46">
+          <Properties>
+            <string name="Name">VelmoraHitFeedback</string>
+            <ProtectedString name="Source">-- Adapted from Velmora src/client/Combat/HitFeedback.luau.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+local Debris=game:GetService("Debris")
+local TweenService=game:GetService("TweenService")
+local Feedback={}
+function Feedback.burst(position,color,damage,blocked)
+	local anchor=Instance.new("Part");anchor.Name="LocalImpact";anchor.Anchored=true;anchor.CanCollide=false;anchor.CanQuery=false;anchor.Transparency=1;anchor.Size=Vector3.one;anchor.Position=position;anchor.Parent=workspace
+	local light=Instance.new("PointLight");light.Color=color;light.Brightness=if blocked then 5 else 3;light.Range=if blocked then 11 else 8;light.Parent=anchor
+	TweenService:Create(light,TweenInfo.new(.2),{Brightness=0}):Play()
+	for i=1,(if blocked then 10 else 7) do
+		local shard=Instance.new("Part");shard.Anchored=true;shard.CanCollide=false;shard.CanQuery=false;shard.Material=Enum.Material.Neon;shard.Color=color;shard.Size=Vector3.new(.08,.08,math.random(5,11)/10);shard.CFrame=CFrame.lookAt(position,position+Vector3.new(math.random()-0.5,math.random()-0.5,math.random()-0.5));shard.Parent=workspace
+		TweenService:Create(shard,TweenInfo.new(.18,Enum.EasingStyle.Quad),{CFrame=shard.CFrame*CFrame.new(0,0,-math.random(2,5)),Transparency=1}):Play();Debris:AddItem(shard,.22)
+	end
+	if damage and damage&gt;0 then
+		local bill=Instance.new("BillboardGui");bill.Size=UDim2.fromOffset(80,40);bill.StudsOffset=Vector3.new(0,2.5,0);bill.AlwaysOnTop=true;bill.Parent=anchor
+		local label=Instance.new("TextLabel");label.Size=UDim2.fromScale(1,1);label.BackgroundTransparency=1;label.Text=string.format("-%d",math.floor(damage+.5));label.TextColor3=color;label.TextStrokeTransparency=.15;label.Font=Enum.Font.GothamBlack;label.TextScaled=true;label.Parent=bill
+		TweenService:Create(bill,TweenInfo.new(.45),{StudsOffset=Vector3.new(0,4.5,0)}):Play();TweenService:Create(label,TweenInfo.new(.45),{TextTransparency=1,TextStrokeTransparency=1}):Play()
+	end
+	Debris:AddItem(anchor,.55)
+end
+return Feedback
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND47">
+          <Properties>
+            <string name="Name">VelmoraMotionEngine</string>
+            <ProtectedString name="Source">-- Adapted from Velmora src/client/Combat/MotionEngine.luau.
+-- Copyright (c) 2026 Yashveer Singh, MIT.
+-- A local additive R15 coil/drive/settle layer synchronized to server attack timings.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Attacks=require(Shared.Attacks)
+local Motion={}
+local joints={Waist={"LowerTorso","Waist"},Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},Neck={"UpperTorso","Neck"}}
+local function motor(char,key)
+	local d=joints[key];local part=char and char:FindFirstChild(d[1]);local m=part and part:FindFirstChild(d[2])
+	return if m and m:IsA("Motor6D") then m else nil
+end
+local function smooth(t) return t*t*(3-2*t) end
+local function envelope(elapsed,spec)
+	if elapsed&lt;0 then return 0 end
+	if elapsed&lt;spec.startup then return -smooth(elapsed/spec.startup) end
+	if elapsed&lt;spec.startup+spec.active then return -1+2*smooth((elapsed-spec.startup)/spec.active) end
+	local recovery=math.max(spec.recovery,.01)
+	return math.max(0,1-(elapsed-spec.startup-spec.active)/recovery)
+end
+function Motion.pose(char,name,elapsed)
+	local spec=Attacks[name]
+	if not spec then return end
+	local e=envelope(elapsed,spec);local heavy=spec.damage&gt;=12 and 1.25 or 1
+	local coil=math.rad(math.min(18,(8+spec.startup*30)*heavy))*e
+	local waist=motor(char,"Waist");if waist then waist.Transform=CFrame.Angles(-math.abs(coil)*.22,coil,0) end
+	local right=motor(char,"Right");if right then right.Transform=CFrame.Angles(-math.abs(coil)*.85,0,-coil*.35) end
+	local left=motor(char,"Left");if left then left.Transform=CFrame.Angles(math.abs(coil)*.25,0,coil*.2) end
+	local neck=motor(char,"Neck");if neck then neck.Transform=CFrame.Angles(0,-coil*.35,0) end
+end
+function Motion.recoil(char,elapsed)
+	local waist=motor(char,"Waist");if waist then waist.Transform=CFrame.Angles(math.rad(-18)*math.max(0,1-elapsed/.22),0,0) end
+end
+function Motion.clear(char)
+	for key in joints do local m=motor(char,key);if m then m.Transform=CFrame.identity end end
+end
+return Motion
+</ProtectedString>
+          </Properties>
+        </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND41">
+  <Item class="Lighting" referent="ND48">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -3979,7 +4263,7 @@ return UI
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND42">
+  <Item class="SoundService" referent="ND49">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

@@ -10,6 +10,10 @@
     "place1": {
       "repository": "https://github.com/alexkkork/place1-movement-system",
       "commit": "87da75e2f2528291ebf65c4cbc52d1ce83c2f527"
+    },
+    "velmora": {
+      "repository": "https://github.com/yashveer-singh-speaks/velmora",
+      "commit": "402f4f3bea6d24aae2942de0dbb72c80d428b843"
     }
   },
   "originalFiles": {
@@ -19,7 +23,8 @@
     "vendor/bangla/original/WalkRunHandler.lua": "bd13c622eea3bd8d528c1485cfcc336adad079e4f6532685fd3e4e5597d2d4ec",
     "vendor/place1/LICENSE": "4894c48ad81da8dda9a2ae27c0ee15998315bd3bd382370e6cc4025cc9b26785",
     "vendor/place1/original/FirstPersonMovementController.client.lua": "1866259fd5e0b2402105bf22a6753e78dc6f231d147a9f0f9ff43f66e991b8aa",
-    "vendor/place1/original/ParkourTraversalController.client.lua": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d"
+    "vendor/place1/original/ParkourTraversalController.client.lua": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d",
+    "vendor/velmora/LICENSE": "7ba3f76ede3904ebc64045b7cea4d5347795a8a1c307bb884c062ae75e830d49"
   },
   "assets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"

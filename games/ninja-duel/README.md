@@ -1,8 +1,8 @@
-# Ninja Duel — Phase 6B migration candidate
+# Ninja Duel — Velmora first playable fight
 
-Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. The normal game now runs imported/adapted Bangla M1 contact/damage/feedback and directional evade, plus Place1 sprint/stamina, takeoff momentum, air steering, mantle and wall hops. R15, both character kits, the AI, substitution, guided tutorial and rematch lifecycle remain connected to the same server authority. No donor installer or parallel input controller runs.
+Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
 
-**Pending acceptance:** compilation/build and automated policy/integration checks pass. Native Studio physics, donor animation access/retargeting, rendered choreography and controller hardware have not been validated. The public Punch asset download returned HTTP 403; Studio window control timed out. See `ANIMATION_TODO.md` for the exact owner publication step and remaining clip gaps. This is not a completed visual/feel gate.
+The build manifest records automated and native status separately. Controller feel remains a human acceptance gate; open the exact normal artifact above for the final pass.
 
 | Controller | Action |
 |---|---|
@@ -21,7 +21,7 @@ Keyboard: WASD, CTRL sprint, SPACE jump, LMB light, T heavy/launcher/slam, V gra
 
 Ground-to-air route: **light → light → heavy launcher → chase → air light → air light → heavy slam**. A third grounded light chooses Bangla's finisher instead. Whiffs retain recovery; substitution spends charge/chakra; knockdown has a protected wakeup.
 
-From the repo root: `python3 games/ninja-duel/build.py`, repeat with `--qa`; `luau games/ninja-duel/tests/Rules.spec.luau`; `lune run games/ninja-duel/tests/Combat.spec.luau`. Current evidence: 7 policy and 15 integration scenarios PASS with a geometry adapter. The native suite is in `dist/NinjaDuel-QA.rbxlx` and prints `[NinjaDuelQA] START 0.4.1-phase6b` then its totals. Reopen after rebuilding. An explicit native gate fails if donor R15 tracks cannot load/play.
+From the repo root: `python3 games/ninja-duel/build.py`, repeat with `--qa`; `luau games/ninja-duel/tests/Rules.spec.luau`; `lune run games/ninja-duel/tests/Combat.spec.luau`. The native suite is in `dist/NinjaDuel-QA.rbxlx` and prints `[NinjaDuelQA] START 0.5.0-velmora` then its totals. Reopen after rebuilding.
 
 ## Normal-place acceptance route
 

@@ -13,6 +13,7 @@ local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; 
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
+	if current.phase=="Duel" and action~="Move" then payload.clientTime=workspace:GetServerTimeNow() end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then

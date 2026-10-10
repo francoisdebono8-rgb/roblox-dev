@@ -169,13 +169,23 @@ test("tutorial launcher-to-slam objectives observe completed real actions",funct
  assert(c:request(a,"Attack"));tick(.28);assert(c:request(a,"Attack"));tick(.5);assert(s.tutorial.index==11)
  assert(c:request(a,"Heavy"));tick(.45);assert(s.tutorial.index==12)
 end)
-test("guarded Fire costs resources and interruptible channel cannot release",function()
+test("guarded Fire costs stamina and interruptible channel cannot release",function()
  local c,a,b=pair();a,b=b,a
- assert(c:request(b,"Guard"));local health=b.health;local chakra=b.chakra
+	 assert(c:request(b,"Guard"));local health=b.health;local stamina=b.stamina
  assert(c:request(a,"Technique4",b.root.Position));step(c,.6)
- assert(b.health<health and health-b.health<4 and b.chakra<chakra)
+	 assert(b.health<health and health-b.health<4 and b.stamina<stamina)
  local x,y,z=pair();assert(x:request(z,"Technique4",y.root.Position));x:damage(y,z,7,false,true);step(x,1)
  assert(#x.hazards==0 and z.pending==nil and not x:request(z,"Technique4"))
+end)
+test("Velmora parry and perfect dodge create punish windows",function()
+ local c,a,b=pair();local health=b.health
+ assert(c:request(b,"Guard"));assert(not c:damage(a,b,8,false,true))
+ assert(b.health==health and a.state=="Stunned" and b.events.Parry==1)
+ local x,y,z=pair();local dodgeHealth=z.health
+ assert(x:request(z,"Dodge"));assert(not x:damage(y,z,8,false,true))
+ assert(z.health==dodgeHealth and z.bonusUntil>x.now and z.events.Evaded==1)
+ local guard,u,v=pair();v.stamina=.1;assert(guard:request(v,"Guard"));step(guard,.02)
+ assert(v.state=="Stunned" and v.cue=="GUARD EXHAUSTED")
 end)
 test("actual controller callbacks cover branches, sticks, modifiers and release",function()
  local Input=loadModule("Client/Input");local sent={};local state={phase="Duel",human={pursuit=0}};local camera={look=roblox.Vector2.zero}

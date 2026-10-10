@@ -7,6 +7,7 @@ local World=require(script.Parent.World)
 local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
+local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Matches={}; Matches.__index=Matches
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
@@ -23,6 +24,7 @@ function Matches:session(player)
 end
 function Matches:destroy(s)
 	if s.combat then s.combat:clear() end
+	if s.human then AntiCheat.clear(s.human) end
 	if s.folder then s.folder:Destroy() end
 	s.tutorial=nil; s.folder=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
 end
@@ -69,7 +71,7 @@ function Matches:snapshot(player,s)
 		for i,spec in a.def.Techniques do
 			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-s.combat.now),condition=not spec.Requires or (spec.Requires=="Anchor" and a.anchor~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
-		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,state=a.state,
+		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil>s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
@@ -100,6 +102,7 @@ function Matches:request(player,payload)
 		return
 	end
 	if s.phase~="Duel" or not s.human then return end
+	if action~="Move" and not AntiCheat.check(s.human,action,payload.clientTime,workspace:GetServerTimeNow()) then return end
 	local function vector(v)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
@@ -118,7 +121,7 @@ function Matches:request(player,payload)
 		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude>150 then return end
 		aim=payload.aim
 	end
-	local ok,reason=s.combat:request(s.human,action,aim)
+	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)

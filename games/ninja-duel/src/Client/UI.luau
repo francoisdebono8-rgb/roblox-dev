@@ -131,7 +131,7 @@ function UI:render(data)
 	self.hp.status.Text=string.format("%d / %d",math.ceil(h.health),h.maxHealth)
 	self.enemy.status.Text=string.format("%d / %d",math.ceil(b.health),b.maxHealth)
 	self.chakra.label.Text=string.format("CHAKRA  %d / %d",math.floor(h.chakra),h.maxChakra); self.chakra.fill.Size=UDim2.fromScale(h.chakra/h.maxChakra,1)
-	self.chakra.status.Text=string.format("Substitution %d charges  •  %s",h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
+	self.chakra.status.Text=string.format("STAMINA %d  •  Sub %d  •  %s",math.floor(h.stamina or 100),h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
 	self.cue.Text=""
 	self.channel.Text=""
 	for i,tech in h.techniques do
