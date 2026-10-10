@@ -805,6 +805,20 @@ local function locomotionTargets(char,actor,fighterId,dt)
 			torso={pitch=(if forward<-.3 then -6 else 4),yaw=-swing*11*alpha,roll=-side*6},head={pitch=-lean*.4,yaw=0},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
+		-- Readable directions: a strafe leans into the step with the shoulders
+		-- turned to the opponent; a retreat sits back behind a raised guard.
+		local strafe=math.clamp(math.abs(side)-math.max(0,forward),0,1)
+		if strafe>.2 then
+			spec.root.roll=(spec.root.roll or 0)+side*10*strafe
+			spec.torso.yaw=(spec.torso.yaw or 0)-side*14*strafe
+			spec.head.yaw=-side*10*strafe
+		end
+		if forward<-.3 then
+			local back=math.clamp(-forward,0,1)
+			spec.root.pitch=-8*back;spec.torso.pitch=-6*back;spec.head.pitch=4*back
+			spec.ra={raise=62,out=-16,twist=30,elbow=104,wrist=-10}
+			spec.la={raise=70,out=-12,twist=30,elbow=96,wrist=-10}
+		end
 		if fighterId=="GentleFist" then
 			local guard=1-math.clamp((speed-8)/22,0,1)
 			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}

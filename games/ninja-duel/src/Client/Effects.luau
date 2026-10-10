@@ -754,6 +754,40 @@ function FX:hazardsStep(data)
 		end
 	end
 end
+-- Battle wear: as health drops (75 / 50 / 25 %), dirt, scuffs, small grazes
+-- and darkened cloth accumulate on the body. Feedback, not gore.
+local WEAR={
+	-- {body part, size, offset, kind}
+	{ {"UpperTorso",Vector3.new(.7,.5,.05),CFrame.new(.35,-.2,-.53),"dirt"},{"RightUpperLeg",Vector3.new(.5,.6,.05),CFrame.new(0,-.1,-.5),"dirt"},{"LeftLowerArm",Vector3.new(.45,.4,.05),CFrame.new(0,0,-.43),"dirt"} },
+	{ {"UpperTorso",Vector3.new(.55,.35,.05),CFrame.new(-.4,.35,.53),"dirt"},{"LeftUpperLeg",Vector3.new(.55,.45,.05),CFrame.new(.1,.2,-.5),"tear"},{"Head",Vector3.new(.18,.06,.03),CFrame.new(.42,-.18,-.78),"graze"},{"RightUpperArm",Vector3.new(.5,.12,.05),CFrame.new(0,-.35,-.45),"tear"} },
+	{ {"LowerTorso",Vector3.new(.8,.3,.05),CFrame.new(-.2,0,-.53),"dirt"},{"RightLowerArm",Vector3.new(.2,.08,.03),CFrame.new(.05,.1,-.44),"graze"},{"LeftLowerLeg",Vector3.new(.5,.5,.05),CFrame.new(0,.2,-.45),"dirt"},{"UpperTorso",Vector3.new(.3,.5,.05),CFrame.new(.1,.1,-.535),"tear"} },
+}
+local WEAR_LOOK={dirt={Color3.fromRGB(96,78,58),.35},tear={Color3.fromRGB(40,34,32),.25},graze={Color3.fromRGB(150,46,40),.2}}
+function FX:wear(model,actor,aura)
+	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
+	local level=if ratio<=.25 then 3 elseif ratio<=.5 then 2 elseif ratio<=.75 then 1 else 0
+	aura.wear=aura.wear or 0
+	while aura.wear<level do
+		aura.wear+=1
+		for _,spec in WEAR[aura.wear] do
+			local body=model:FindFirstChild(spec[1])
+			if body and body:IsA("BasePart") then
+				local look=WEAR_LOOK[spec[4]]
+				local mark=block(model,spec[2],body.CFrame*spec[3],look[1],Enum.Material.SmoothPlastic)
+				mark.Name="BattleWear";mark.Anchored=false;mark.Massless=true;mark.Transparency=look[2];mark.CastShadow=false
+				new("WeldConstraint",{Part0=body,Part1=mark},mark)
+			end
+		end
+		if aura.wear==3 then
+			-- Low health: cloth looks dusty and darker.
+			for _,p in model:GetChildren() do
+				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency<1 and p.Material~=Enum.Material.Neon then
+					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
+				end
+			end
+		end
+	end
+end
 -- Per-fighter identity layer: Minato's speed trail and Rasengan, Itachi's
 -- Sharingan glow and fire breath. Restrained: it switches on only for the
 -- moments it describes.
@@ -780,6 +814,7 @@ function FX:fighter(model,actor,dt)
 			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
 		end
 	end
+	self:wear(model,actor,aura)
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed>34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)>0

@@ -118,7 +118,7 @@ function Matches:snapshot(player,s)
 			subRegen=if (a.subRegenAt or math.huge)<math.huge then math.max(0,a.subRegenAt-now) else 0,
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
-			counter=math.max(0,(a.counterUntil or 0)-now),
+			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
 			sealed=math.max(0,(a.sealedUntil or 0)-now)}

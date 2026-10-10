@@ -152,6 +152,18 @@ function World.arena(parent, origin)
 		deco(decor,"Outer face",Vector3.new(width,height,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
 		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
 	end
+	-- Tournament banners hang down the wall between the stands and the field.
+	for k=0,11 do
+		local a=k/12*math.pi*2+math.pi/12
+		local dir=Vector3.new(math.sin(a),0,math.cos(a))
+		local at=origin+dir*(R-.15)+Vector3.new(0,height-11,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,height-11,0))
+		local cloth=deco(decor,"Wall banner",Vector3.new(5.5,15,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.Fabric)
+		deco(decor,"Banner rod",Vector3.new(6.4,.35,.35),look*CFrame.new(0,7.6,0),rgb(70,52,36),Enum.Material.Wood)
+		local gui=label(cloth,Enum.NormalId.Front,if k%3==0 then "火" elseif k%3==1 then "忍" else "試",if k%2==0 then rgb(232,226,210) else rgb(170,40,36))
+		-- Match the cloth's proportions so the character is not squashed.
+		gui.CanvasSize=Vector2.new(220,600)
+	end
 	-- Bushes along the foot of the wall.
 	for k=0,63 do
 		local a=k/64*math.pi*2+((k*17)%5)*.01
@@ -197,7 +209,14 @@ function World.arena(parent, origin)
 	deco(decor,"Balcony rail",Vector3.new(16,1.6,.3),east*CFrame.new(0,1.3,-1.9),C.wood,Enum.Material.Wood)
 	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
 	local south=CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0))
-	deco(decor,"Gate",Vector3.new(18,16,.2),south,rgb(40,38,36),Enum.Material.SmoothPlastic)
+	-- The competitors' gate: two heavy wooden doors in a dark frame.
+	deco(decor,"Gate",Vector3.new(18,16,.2),south*CFrame.new(0,0,.15),rgb(30,28,26),Enum.Material.SmoothPlastic)
+	for _,x in {-4.4,4.4} do
+		local door=south*CFrame.new(x,-.2,-.1)
+		deco(decor,"Gate door",Vector3.new(8.4,15.4,.5),door,rgb(104,72,46),Enum.Material.WoodPlanks)
+		for _,y in {-5,0,5} do deco(decor,"Gate band",Vector3.new(8.4,.4,.08),door*CFrame.new(0,y,-.29),rgb(52,50,50),Enum.Material.Metal) end
+		deco(decor,"Gate ring",Vector3.new(.7,.7,.1),door*CFrame.new(if x<0 then 3.4 else -3.4,0,-.33),rgb(150,120,60),Enum.Material.Metal,Enum.PartType.Cylinder)
+	end
 	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
 	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
 	-- Field trees: line of sight and something to fight around, as in the finals.

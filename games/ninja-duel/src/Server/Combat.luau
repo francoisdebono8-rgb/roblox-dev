@@ -52,6 +52,9 @@ function Combat:clamp(p)
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
 end
 function Combat:relocate(a,p)
+	-- A real teleport (seal, substitution, setup): the client snaps on it and
+	-- smooths everything else.
+	a.warpSerial=(a.warpSerial or 0)+1
 	local look=a.root.CFrame.LookVector
 	a.model:PivotTo(CFrame.lookAt(self:clamp(p),self:clamp(p)+Vector3.new(look.X,0,look.Z)))
 	a.root.AssemblyLinearVelocity=Vector3.zero

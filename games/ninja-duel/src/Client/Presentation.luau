@@ -14,66 +14,92 @@ end
 -- body drawn on it advances in jerks. Each fighter is instead drawn on a short
 -- interpolated track of its replicated positions, a fixed ~45 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
-local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,9,6,8
-function Presentation:smoothRoot(key,actual,dt)
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+local function yawOf(cf)
+	local look=cf.LookVector
+	return math.atan2(-look.X,-look.Z)
+end
+local function lerpAngle(a,b,t)
+	local d=(b-a+math.pi)%(2*math.pi)-math.pi
+	return a+d*t
+end
+function Presentation:smoothRoot(key,actualCF,dt,warp)
 	local now=os.clock()
 	local st=self.smooth[key]
-	if not st then st={samples={}};self.smooth[key]=st end
+	if not st then st={samples={},vel=Vector3.zero};self.smooth[key]=st end
 	local samples=st.samples
+	local actual=actualCF.Position
 	local newest=samples[#samples]
-	if newest and (actual-newest.p).Magnitude>TRACK_SNAP then table.clear(samples);newest=nil end
-	if not newest or (actual-newest.p).Magnitude>1e-4 then
-		table.insert(samples,{t=now,p=actual})
+	if (warp and warp~=st.warp) or (newest and (actual-newest.p).Magnitude>TRACK_SNAP) then
+		table.clear(samples);newest=nil;st.vel=Vector3.zero;st.pos=nil
+	end
+	st.warp=warp
+	local yaw=yawOf(actualCF)
+	if not newest or (actual-newest.p).Magnitude>1e-4 or math.abs(lerpAngle(newest.yaw,yaw,1)-newest.yaw)>1e-4 then
+		table.insert(samples,{t=now,p=actual,yaw=yaw})
 		while #samples>TRACK_SAMPLES do table.remove(samples,1) end
 	elseif now-newest.t>.1 then
 		-- Standing still: keep the track anchored to the present.
 		newest.t=now
 	end
 	local at=now-TRACK_DELAY
-	local pos=samples[#samples].p
-	if at<=samples[1].t then pos=samples[1].p
+	local pos,face=samples[#samples].p,samples[#samples].yaw
+	if at<=samples[1].t then pos,face=samples[1].p,samples[1].yaw
 	else
 		for i=#samples-1,1,-1 do
 			local a,b=samples[i],samples[i+1]
 			if at>=a.t then
 				local span=b.t-a.t
-				pos=if span>1e-4 then a.p:Lerp(b.p,math.clamp((at-a.t)/span,0,1)) else b.p
+				local t=if span>1e-4 then math.clamp((at-a.t)/span,0,1) else 1
+				pos=a.p:Lerp(b.p,t);face=lerpAngle(a.yaw,b.yaw,t)
 				break
 			end
 		end
 	end
 	local offset=pos-actual
 	if offset.Magnitude>TRACK_MAX then pos=actual+offset.Unit*TRACK_MAX end
-	st.pos=pos
-	return pos
+	-- Velocity of the drawn body: what the legs and lean must match.
+	if st.pos then
+		local v=(pos-st.pos)/math.max(dt,1/240)
+		st.vel=st.vel:Lerp(v,math.min(1,dt*18))
+	end
+	st.pos=pos;st.yaw=face
+	return CFrame.new(pos)*CFrame.Angles(0,face,0)
 end
 function Presentation:visualRoot(key)
 	local st=self.smooth[key]
 	return st and st.pos
 end
--- Post-simulation: the replicated roots have moved for this frame; advance the
--- filter and draw each skeleton on its smoothed track before rendering.
+function Presentation:visualVelocity(key)
+	local st=self.smooth[key]
+	return st and st.vel
+end
+-- Just before rendering: the replicated roots have their positions for this
+-- frame; advance each track and draw the body on it (position and facing).
 function Presentation:smoothStep(data,dt)
 	if not data or data.phase~="Duel" then return end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local folder=character and character.Parent
 	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
-		if root and not root.Anchored then
-			-- The true replicated position: if the root still sits exactly where we
-			-- drew it last frame, no new packet arrived and the server position is
-			-- the one we last saw.
+		local actor=data[key]
+		if root and not root.Anchored and actor then
+			-- The true replicated pose: if the root still sits exactly where we
+			-- drew it last frame, no new packet arrived since.
 			local st=self.smooth[key]
-			local actual=root.Position
-			if st and st.drawn and st.replicated and (actual-st.drawn).Magnitude<1e-3 then actual=st.replicated end
-			local smoothed=self:smoothRoot(key,actual,math.max(dt,1/240))
+			local actualCF=root.CFrame
+			if st and st.drawnCF and st.replicatedCF and (actualCF.Position-st.drawnCF.Position).Magnitude<1e-3
+				and actualCF.LookVector:Dot(st.drawnCF.LookVector)>.99999 then actualCF=st.replicatedCF end
+			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
 			st=self.smooth[key]
-			st.replicated=actual
-			-- Draw the whole body on the smoothed track for this frame only; the
-			-- next replication packet overwrites the client copy, never the server.
-			local delta=smoothed-root.Position
-			if delta.Magnitude>1e-4 then model:PivotTo(model:GetPivot()+delta) end
-			st.drawn=root.Position
+			st.replicatedCF=actualCF
+			-- Draw the whole body on the track for this frame only; the next
+			-- replication packet overwrites the client copy, never the server.
+			local target=drawn
+			if (target.Position-root.Position).Magnitude>1e-4 or target.LookVector:Dot(root.CFrame.LookVector)<.99999 then
+				model:PivotTo(target*root.CFrame:Inverse()*model:GetPivot())
+			end
+			st.drawnCF=root.CFrame
 		end
 	end
 end
@@ -175,7 +201,9 @@ function Presentation:update(data,dt)
     if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
    end
    -- Locomotion is posed from the rig's live velocity, not a 10 Hz value.
+   local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
+   if tracked and velocity then velocity=Vector3.new(tracked.X,velocity.Y,tracked.Z) end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
    local speed=math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so

@@ -126,7 +126,7 @@ function Camera:update(data,dt)
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local targetFocus=a:Lerp(target,if separation>26 then .5 else .42)+Vector3.new(0,frame.lift,0)
 	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
-	local focusRate=if aerial or pursuit then 10 else 7
+	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
@@ -200,9 +200,9 @@ function Camera:update(data,dt)
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
-		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 12 else 9)))
+		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
 		local move=nextCF.Position-camera.CFrame.Position
-		local limit=math.max(3.5,90*dt)
+		local limit=math.max(3.5,520*dt)
 		if move.Magnitude>limit then nextCF=CFrame.new(camera.CFrame.Position+move.Unit*limit)*nextCF.Rotation end
 		camera.CFrame=nextCF
 	end

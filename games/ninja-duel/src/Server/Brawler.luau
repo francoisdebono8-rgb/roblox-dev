@@ -196,6 +196,11 @@ function Brawler.request(c,a,action)
   name=Combo.next(a,c.now)
   a.queuedLight=name
  end
+ -- Context finisher (Neji): with three chakra points closed, the third palm
+ -- becomes the twin-palm thrust that throws the body away.
+ if name=="Light3" and a.def.GentleFist and a.target and (a.target.tenketsuUntil or 0)>c.now and (a.target.tenketsu or 0)>=3 then
+  a.queuedLight=nil;return Brawler.start(c,a,"PalmThrust")
+ end
  return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
 function Brawler.stopStyle(p)
@@ -367,6 +372,12 @@ function Brawler.hit(c,a,p)
   return true
  end
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
+ -- Knock-away -> chase -> re-entry: a body sent flying by a strike can be
+ -- chased down (E) for a fresh exchange.
+ if spec.reaction=="Knockback" and b.reaction=="Knockback" then
+  a.pursuitUntil=math.max(a.pursuitUntil or 0,c.now+.8)
+  c:cue(a,"KNOCK AWAY • E TO CHASE",.7)
+ end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
  if p.name=="Throw" or p.name=="ThrowUp" then Brawler.event(c,a,"ThrowHit") end

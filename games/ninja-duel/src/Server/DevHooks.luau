@@ -54,6 +54,8 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="health" then
+			actor.health=math.max(1,arg2 or actor.health);actor.hum.Health=actor.health;return actor.health
 		elseif op=="sprint" then
 			actor.sprinting=arg2==true;return true
 		elseif op=="refill" then

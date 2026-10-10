@@ -146,7 +146,7 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.11.0-final-today",
+	Version = "0.12.0-final-playable",
 	ArenaRadius = 64.4, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
@@ -1412,7 +1412,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">4bde8b6125e37f4bdc183a15010e91037acece632ad374dd4e6175e31a2cf346</string>
+          <string name="Value">337005e985c8f98e41c1e0db40caf4db5976325b876f72844eae2ae920e7bf14</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -2189,6 +2189,11 @@ function Brawler.request(c,a,action)
   name=Combo.next(a,c.now)
   a.queuedLight=name
  end
+ -- Context finisher (Neji): with three chakra points closed, the third palm
+ -- becomes the twin-palm thrust that throws the body away.
+ if name=="Light3" and a.def.GentleFist and a.target and (a.target.tenketsuUntil or 0)&gt;c.now and (a.target.tenketsu or 0)&gt;=3 then
+  a.queuedLight=nil;return Brawler.start(c,a,"PalmThrust")
+ end
  return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
 function Brawler.stopStyle(p)
@@ -2360,6 +2365,12 @@ function Brawler.hit(c,a,p)
   return true
  end
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
+ -- Knock-away -&gt; chase -&gt; re-entry: a body sent flying by a strike can be
+ -- chased down (E) for a fresh exchange.
+ if spec.reaction=="Knockback" and b.reaction=="Knockback" then
+  a.pursuitUntil=math.max(a.pursuitUntil or 0,c.now+.8)
+  c:cue(a,"KNOCK AWAY • E TO CHASE",.7)
+ end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
  if p.name=="Throw" or p.name=="ThrowUp" then Brawler.event(c,a,"ThrowHit") end
@@ -2496,6 +2507,9 @@ function Combat:clamp(p)
 	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
 end
 function Combat:relocate(a,p)
+	-- A real teleport (seal, substitution, setup): the client snaps on it and
+	-- smooths everything else.
+	a.warpSerial=(a.warpSerial or 0)+1
 	local look=a.root.CFrame.LookVector
 	a.model:PivotTo(CFrame.lookAt(self:clamp(p),self:clamp(p)+Vector3.new(look.X,0,look.Z)))
 	a.root.AssemblyLinearVelocity=Vector3.zero
@@ -3532,6 +3546,8 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="health" then
+			actor.health=math.max(1,arg2 or actor.health);actor.hum.Health=actor.health;return actor.health
 		elseif op=="sprint" then
 			actor.sprinting=arg2==true;return true
 		elseif op=="refill" then
@@ -3846,7 +3862,7 @@ function Matches:snapshot(player,s)
 			subRegen=if (a.subRegenAt or math.huge)&lt;math.huge then math.max(0,a.subRegenAt-now) else 0,
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
-			counter=math.max(0,(a.counterUntil or 0)-now),
+			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
 			sealed=math.max(0,(a.sealedUntil or 0)-now)}
@@ -5678,6 +5694,18 @@ function World.arena(parent, origin)
 		deco(decor,"Outer face",Vector3.new(width,height,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
 		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
 	end
+	-- Tournament banners hang down the wall between the stands and the field.
+	for k=0,11 do
+		local a=k/12*math.pi*2+math.pi/12
+		local dir=Vector3.new(math.sin(a),0,math.cos(a))
+		local at=origin+dir*(R-.15)+Vector3.new(0,height-11,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,height-11,0))
+		local cloth=deco(decor,"Wall banner",Vector3.new(5.5,15,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.Fabric)
+		deco(decor,"Banner rod",Vector3.new(6.4,.35,.35),look*CFrame.new(0,7.6,0),rgb(70,52,36),Enum.Material.Wood)
+		local gui=label(cloth,Enum.NormalId.Front,if k%3==0 then "火" elseif k%3==1 then "忍" else "試",if k%2==0 then rgb(232,226,210) else rgb(170,40,36))
+		-- Match the cloth's proportions so the character is not squashed.
+		gui.CanvasSize=Vector2.new(220,600)
+	end
 	-- Bushes along the foot of the wall.
 	for k=0,63 do
 		local a=k/64*math.pi*2+((k*17)%5)*.01
@@ -5723,7 +5751,14 @@ function World.arena(parent, origin)
 	deco(decor,"Balcony rail",Vector3.new(16,1.6,.3),east*CFrame.new(0,1.3,-1.9),C.wood,Enum.Material.Wood)
 	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
 	local south=CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0))
-	deco(decor,"Gate",Vector3.new(18,16,.2),south,rgb(40,38,36),Enum.Material.SmoothPlastic)
+	-- The competitors' gate: two heavy wooden doors in a dark frame.
+	deco(decor,"Gate",Vector3.new(18,16,.2),south*CFrame.new(0,0,.15),rgb(30,28,26),Enum.Material.SmoothPlastic)
+	for _,x in {-4.4,4.4} do
+		local door=south*CFrame.new(x,-.2,-.1)
+		deco(decor,"Gate door",Vector3.new(8.4,15.4,.5),door,rgb(104,72,46),Enum.Material.WoodPlanks)
+		for _,y in {-5,0,5} do deco(decor,"Gate band",Vector3.new(8.4,.4,.08),door*CFrame.new(0,y,-.29),rgb(52,50,50),Enum.Material.Metal) end
+		deco(decor,"Gate ring",Vector3.new(.7,.7,.1),door*CFrame.new(if x&lt;0 then 3.4 else -3.4,0,-.33),rgb(150,120,60),Enum.Material.Metal,Enum.PartType.Cylinder)
+	end
 	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
 	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
 	-- Field trees: line of sight and something to fight around, as in the finals.
@@ -6223,7 +6258,7 @@ function Camera:update(data,dt)
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local targetFocus=a:Lerp(target,if separation&gt;26 then .5 else .42)+Vector3.new(0,frame.lift,0)
 	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
-	local focusRate=if aerial or pursuit then 10 else 7
+	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
@@ -6297,9 +6332,9 @@ function Camera:update(data,dt)
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
-		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 12 else 9)))
+		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
 		local move=nextCF.Position-camera.CFrame.Position
-		local limit=math.max(3.5,90*dt)
+		local limit=math.max(3.5,520*dt)
 		if move.Magnitude&gt;limit then nextCF=CFrame.new(camera.CFrame.Position+move.Unit*limit)*nextCF.Rotation end
 		camera.CFrame=nextCF
 	end
@@ -7067,6 +7102,40 @@ function FX:hazardsStep(data)
 		end
 	end
 end
+-- Battle wear: as health drops (75 / 50 / 25 %), dirt, scuffs, small grazes
+-- and darkened cloth accumulate on the body. Feedback, not gore.
+local WEAR={
+	-- {body part, size, offset, kind}
+	{ {"UpperTorso",Vector3.new(.7,.5,.05),CFrame.new(.35,-.2,-.53),"dirt"},{"RightUpperLeg",Vector3.new(.5,.6,.05),CFrame.new(0,-.1,-.5),"dirt"},{"LeftLowerArm",Vector3.new(.45,.4,.05),CFrame.new(0,0,-.43),"dirt"} },
+	{ {"UpperTorso",Vector3.new(.55,.35,.05),CFrame.new(-.4,.35,.53),"dirt"},{"LeftUpperLeg",Vector3.new(.55,.45,.05),CFrame.new(.1,.2,-.5),"tear"},{"Head",Vector3.new(.18,.06,.03),CFrame.new(.42,-.18,-.78),"graze"},{"RightUpperArm",Vector3.new(.5,.12,.05),CFrame.new(0,-.35,-.45),"tear"} },
+	{ {"LowerTorso",Vector3.new(.8,.3,.05),CFrame.new(-.2,0,-.53),"dirt"},{"RightLowerArm",Vector3.new(.2,.08,.03),CFrame.new(.05,.1,-.44),"graze"},{"LeftLowerLeg",Vector3.new(.5,.5,.05),CFrame.new(0,.2,-.45),"dirt"},{"UpperTorso",Vector3.new(.3,.5,.05),CFrame.new(.1,.1,-.535),"tear"} },
+}
+local WEAR_LOOK={dirt={Color3.fromRGB(96,78,58),.35},tear={Color3.fromRGB(40,34,32),.25},graze={Color3.fromRGB(150,46,40),.2}}
+function FX:wear(model,actor,aura)
+	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
+	local level=if ratio&lt;=.25 then 3 elseif ratio&lt;=.5 then 2 elseif ratio&lt;=.75 then 1 else 0
+	aura.wear=aura.wear or 0
+	while aura.wear&lt;level do
+		aura.wear+=1
+		for _,spec in WEAR[aura.wear] do
+			local body=model:FindFirstChild(spec[1])
+			if body and body:IsA("BasePart") then
+				local look=WEAR_LOOK[spec[4]]
+				local mark=block(model,spec[2],body.CFrame*spec[3],look[1],Enum.Material.SmoothPlastic)
+				mark.Name="BattleWear";mark.Anchored=false;mark.Massless=true;mark.Transparency=look[2];mark.CastShadow=false
+				new("WeldConstraint",{Part0=body,Part1=mark},mark)
+			end
+		end
+		if aura.wear==3 then
+			-- Low health: cloth looks dusty and darker.
+			for _,p in model:GetChildren() do
+				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency&lt;1 and p.Material~=Enum.Material.Neon then
+					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
+				end
+			end
+		end
+	end
+end
 -- Per-fighter identity layer: Minato's speed trail and Rasengan, Itachi's
 -- Sharingan glow and fire breath. Restrained: it switches on only for the
 -- moments it describes.
@@ -7093,6 +7162,7 @@ function FX:fighter(model,actor,dt)
 			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
 		end
 	end
+	self:wear(model,actor,aura)
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed&gt;34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)&gt;0
@@ -7511,66 +7581,92 @@ end
 -- body drawn on it advances in jerks. Each fighter is instead drawn on a short
 -- interpolated track of its replicated positions, a fixed ~45 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
-local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,9,6,8
-function Presentation:smoothRoot(key,actual,dt)
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+local function yawOf(cf)
+	local look=cf.LookVector
+	return math.atan2(-look.X,-look.Z)
+end
+local function lerpAngle(a,b,t)
+	local d=(b-a+math.pi)%(2*math.pi)-math.pi
+	return a+d*t
+end
+function Presentation:smoothRoot(key,actualCF,dt,warp)
 	local now=os.clock()
 	local st=self.smooth[key]
-	if not st then st={samples={}};self.smooth[key]=st end
+	if not st then st={samples={},vel=Vector3.zero};self.smooth[key]=st end
 	local samples=st.samples
+	local actual=actualCF.Position
 	local newest=samples[#samples]
-	if newest and (actual-newest.p).Magnitude&gt;TRACK_SNAP then table.clear(samples);newest=nil end
-	if not newest or (actual-newest.p).Magnitude&gt;1e-4 then
-		table.insert(samples,{t=now,p=actual})
+	if (warp and warp~=st.warp) or (newest and (actual-newest.p).Magnitude&gt;TRACK_SNAP) then
+		table.clear(samples);newest=nil;st.vel=Vector3.zero;st.pos=nil
+	end
+	st.warp=warp
+	local yaw=yawOf(actualCF)
+	if not newest or (actual-newest.p).Magnitude&gt;1e-4 or math.abs(lerpAngle(newest.yaw,yaw,1)-newest.yaw)&gt;1e-4 then
+		table.insert(samples,{t=now,p=actual,yaw=yaw})
 		while #samples&gt;TRACK_SAMPLES do table.remove(samples,1) end
 	elseif now-newest.t&gt;.1 then
 		-- Standing still: keep the track anchored to the present.
 		newest.t=now
 	end
 	local at=now-TRACK_DELAY
-	local pos=samples[#samples].p
-	if at&lt;=samples[1].t then pos=samples[1].p
+	local pos,face=samples[#samples].p,samples[#samples].yaw
+	if at&lt;=samples[1].t then pos,face=samples[1].p,samples[1].yaw
 	else
 		for i=#samples-1,1,-1 do
 			local a,b=samples[i],samples[i+1]
 			if at&gt;=a.t then
 				local span=b.t-a.t
-				pos=if span&gt;1e-4 then a.p:Lerp(b.p,math.clamp((at-a.t)/span,0,1)) else b.p
+				local t=if span&gt;1e-4 then math.clamp((at-a.t)/span,0,1) else 1
+				pos=a.p:Lerp(b.p,t);face=lerpAngle(a.yaw,b.yaw,t)
 				break
 			end
 		end
 	end
 	local offset=pos-actual
 	if offset.Magnitude&gt;TRACK_MAX then pos=actual+offset.Unit*TRACK_MAX end
-	st.pos=pos
-	return pos
+	-- Velocity of the drawn body: what the legs and lean must match.
+	if st.pos then
+		local v=(pos-st.pos)/math.max(dt,1/240)
+		st.vel=st.vel:Lerp(v,math.min(1,dt*18))
+	end
+	st.pos=pos;st.yaw=face
+	return CFrame.new(pos)*CFrame.Angles(0,face,0)
 end
 function Presentation:visualRoot(key)
 	local st=self.smooth[key]
 	return st and st.pos
 end
--- Post-simulation: the replicated roots have moved for this frame; advance the
--- filter and draw each skeleton on its smoothed track before rendering.
+function Presentation:visualVelocity(key)
+	local st=self.smooth[key]
+	return st and st.vel
+end
+-- Just before rendering: the replicated roots have their positions for this
+-- frame; advance each track and draw the body on it (position and facing).
 function Presentation:smoothStep(data,dt)
 	if not data or data.phase~="Duel" then return end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local folder=character and character.Parent
 	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
-		if root and not root.Anchored then
-			-- The true replicated position: if the root still sits exactly where we
-			-- drew it last frame, no new packet arrived and the server position is
-			-- the one we last saw.
+		local actor=data[key]
+		if root and not root.Anchored and actor then
+			-- The true replicated pose: if the root still sits exactly where we
+			-- drew it last frame, no new packet arrived since.
 			local st=self.smooth[key]
-			local actual=root.Position
-			if st and st.drawn and st.replicated and (actual-st.drawn).Magnitude&lt;1e-3 then actual=st.replicated end
-			local smoothed=self:smoothRoot(key,actual,math.max(dt,1/240))
+			local actualCF=root.CFrame
+			if st and st.drawnCF and st.replicatedCF and (actualCF.Position-st.drawnCF.Position).Magnitude&lt;1e-3
+				and actualCF.LookVector:Dot(st.drawnCF.LookVector)&gt;.99999 then actualCF=st.replicatedCF end
+			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
 			st=self.smooth[key]
-			st.replicated=actual
-			-- Draw the whole body on the smoothed track for this frame only; the
-			-- next replication packet overwrites the client copy, never the server.
-			local delta=smoothed-root.Position
-			if delta.Magnitude&gt;1e-4 then model:PivotTo(model:GetPivot()+delta) end
-			st.drawn=root.Position
+			st.replicatedCF=actualCF
+			-- Draw the whole body on the track for this frame only; the next
+			-- replication packet overwrites the client copy, never the server.
+			local target=drawn
+			if (target.Position-root.Position).Magnitude&gt;1e-4 or target.LookVector:Dot(root.CFrame.LookVector)&lt;.99999 then
+				model:PivotTo(target*root.CFrame:Inverse()*model:GetPivot())
+			end
+			st.drawnCF=root.CFrame
 		end
 	end
 end
@@ -7672,7 +7768,9 @@ function Presentation:update(data,dt)
     if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
    end
    -- Locomotion is posed from the rig's live velocity, not a 10 Hz value.
+   local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
+   if tracked and velocity then velocity=Vector3.new(tracked.X,velocity.Y,tracked.Z) end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
    local speed=math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
@@ -9019,6 +9117,20 @@ local function locomotionTargets(char,actor,fighterId,dt)
 			torso={pitch=(if forward&lt;-.3 then -6 else 4),yaw=-swing*11*alpha,roll=-side*6},head={pitch=-lean*.4,yaw=0},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
+		-- Readable directions: a strafe leans into the step with the shoulders
+		-- turned to the opponent; a retreat sits back behind a raised guard.
+		local strafe=math.clamp(math.abs(side)-math.max(0,forward),0,1)
+		if strafe&gt;.2 then
+			spec.root.roll=(spec.root.roll or 0)+side*10*strafe
+			spec.torso.yaw=(spec.torso.yaw or 0)-side*14*strafe
+			spec.head.yaw=-side*10*strafe
+		end
+		if forward&lt;-.3 then
+			local back=math.clamp(-forward,0,1)
+			spec.root.pitch=-8*back;spec.torso.pitch=-6*back;spec.head.pitch=4*back
+			spec.ra={raise=62,out=-16,twist=30,elbow=104,wrist=-10}
+			spec.la={raise=70,out=-12,twist=30,elbow=96,wrist=-10}
+		end
 		if fighterId=="GentleFist" then
 			local guard=1-math.clamp((speed-8)/22,0,1)
 			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
