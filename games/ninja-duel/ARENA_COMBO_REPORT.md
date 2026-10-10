@@ -53,6 +53,9 @@ thrown out of a chase once close.
 - Studio sweep, all 16 matchups (4 × 4): intro → AI fight → K.O. over two rounds → result → rematch →
   selection, 0 stuck states, 0 server or client errors.
 - AI balance sim (4 seeds per pair, single rounds): Minato 62 %, Neji 54 %, Sasuke 46 %, Itachi 38 %.
+- Smoothness probes in the new stadium: walking 0.1 % of frames with a visual jump (3.8 % before this pass);
+  in AI fights 15–19 % of frames carry a sharp head/root acceleration — impact frames (snapping reactions,
+  launches, spikes, flips), not stutter.
 
 ## Still visibly weak
 - Animation is keyframed on a block rig: readable, not Storm-fluid; spins and flips are approximations.
