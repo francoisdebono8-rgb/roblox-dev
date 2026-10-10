@@ -6,6 +6,9 @@ return {
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+		-- Shared ninja tools: everyone throws; mastery changes what a throw does.
+		-- Minato: one fast kunai, the quickest recovery (the seals are his art).
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 96, Damage = 3, Recover = .55 },
 		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
 		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
@@ -35,6 +38,10 @@ return {
 		-- raised guard tracks a teleport instead of being crossed up.
 		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
+		-- Itachi: a pair of shuriken; side + tool is Shuriken Geometry (a wide
+		-- blade struck by a second one, redirected into the flank); his blades
+		-- ricochet off walls and cover once; in the air he fans three down.
+		ToolMastery = { Kind = "shuriken", Count = 2, Speed = 84, Damage = 2, Recover = .75, Geometry = true, Ricochet = true, AirSpread = 3 },
 		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
 		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
@@ -61,6 +68,8 @@ return {
 		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		-- Neji: standard kunai, secondary to the Gentle Fist.
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 86, Damage = 3, Recover = .85 },
 		-- Awakening: Byakugan full field. No blind spot, palms drain twice as much.
 		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
@@ -80,6 +89,35 @@ return {
 			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
 			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
 			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • seals the chakra points (no jutsu)" },
+		},
+	},
+	-- Fourth playable prototype: Sasuke at the Chunin Exam (12). Faster and
+	-- more aggressive than his brother, a kicking taijutsu base, fire, wire and
+	-- the Chidori he has just learned: one opening becomes a mobile assault,
+	-- but every big commitment can be punished.
+	Lion = {
+		Name = "Sasuke", FullName = "Sasuke Uchiha", Age = 12, Title = "THE ROOKIE OF THE YEAR", Color = { 92, 132, 255 },
+		Routes = "↑ rising kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  ↓ low kick sweep  ·  ←→ vault over into a back kick  ·  air: drive / axe kick / switch",
+		Description = "Pressure. Kicks, wire and fire. A launcher he follows into the air and a Chidori that ends everything — or him.",
+		Health = 120, Chakra = 105, ChakraRegen = 7.5, Speed = 19, SprintScale = 1.1, JumpScale = 1.15, AirControlScale = 1.15, AccelerationScale = 1.12,
+		CombatTravel = 1.12, CombatDamage = 1.05, DashScale = 1.08, GuardStrength = 0.08, PreferredRange = 6,
+		ComboToolCancel = true, CombatStyle = "Lion", Tool = "Shuriken",
+		-- Aggressive shuriken use: a fast pair and a short recovery.
+		ToolMastery = { Kind = "shuriken", Count = 2, Speed = 92, Damage = 2, Recover = .6 },
+		-- Two-tomoe Sharingan: smaller windows than Itachi's, the same idea.
+		Sharingan = { ParryWindow = 0.24, PerfectDodge = 0.18, Counter = 0.7 },
+		-- The cursed seal: faster and harder, but it eats his body while it burns.
+		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.18, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Color = { 120, 60, 200 } },
+		AttackProfile = {
+			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6},Light3={startup=1.05,impulseZ=56,range=6.8},
+			DashAttack={travel=1.1},Air1={startup=.92},Air2={startup=.92},
+		},
+		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
+		Techniques = {
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15, Hint = "On a wired opponent: Dragon Flame runs along the wire" },
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open" },
 		},
 	},
 	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient

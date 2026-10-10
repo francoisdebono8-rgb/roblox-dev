@@ -152,7 +152,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)>self.now then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
-	local delta=attacker.root.Position-victim.root.Position
+	-- A blade is judged from where it came from (a redirected shuriken reaches
+	-- the flank even when the thrower stands in front).
+	local delta=(self.hitOrigin or attacker.root.Position)-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
 	-- Byakugan: the guard covers every side but a narrow blind spot behind.
 	if victim.def.Byakugan and delta.Magnitude>=0.1 then
@@ -586,7 +588,9 @@ function Combat:request(a,action,aim,clientTime)
 		if a.pursuitUntil<=self.now or a.target.health<=0 then return self:rush(a) end
 		if a.chakra<Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
-		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		-- Any launcher that connected may be cancelled into the chase.
+		local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+			and (a.attackName=="Launcher" or (a.pending~=nil and a.pending.kind=="Brawl" and a.pending.spec.reaction=="Launched"))
 		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
 		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
 		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
@@ -620,7 +624,6 @@ function Combat:request(a,action,aim,clientTime)
 		end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		local minato=(a.def.Tool or "Kunai")=="Kunai"
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
 			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
@@ -629,17 +632,26 @@ function Combat:request(a,action,aim,clientTime)
 			self:cue(a,"SAND BULLET",.5)
 			return true
 		end
-		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
+		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
+		local blade=mastery.Kind=="kunai"
+		a.neutralToolAt=self.now+(if chainCancel then .42 else mastery.Recover)
 		local range=if chainCancel then 20 else 62
-		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
-		-- pair of shuriken. Both keep running while the arm throws.
-		self:beginThrow(a,{kind=if minato then "Kunai" else "Shuriken",release=if minato then .1 else .13,
-			count=if minato then 1 else 2,interval=.08,aim=aim,
+		-- Shuriken Geometry (mastery): side + tool throws one blade wide and a
+		-- second that strikes it beside the opponent; both fly into the flank.
+		local dir,sideSign=Brawler.intent(a)
+		if mastery.Geometry and dir=="side" and not chainCancel and a.target and a.target.health>0 then
+			return self:shurikenGeometry(a,sideSign)
+		end
+		-- In the air a master fans several blades down at the opponent.
+		local count=if a.airborne and mastery.AirSpread then mastery.AirSpread else mastery.Count
+		self:beginThrow(a,{kind=if blade then "Kunai" else "Shuriken",release=if blade then .1 else .13,
+			count=count,interval=if count>2 then .05 else .08,aim=aim,
 			fire=function(index,target)
-				local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.9 else .9)
-				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 3 else 2,if minato then "kunai" else "shuriken")
+				local spread=Vector3.zero
+				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken")
 			end})
-		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -> technique: Minato may spend a confirmed string on Rasengan with
@@ -774,6 +786,10 @@ function Combat:updateActor(a,dt)
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
 	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
+	-- The curse mark burns the body that carries it (never to a KO).
+	if (a.awakenUntil or 0)>now and a.def.Awakening.HealthDrain and a.health>1 then
+		a.health=math.max(1,a.health-a.def.Awakening.HealthDrain*dt);a.hum.Health=math.max(1,a.health)
+	end
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
@@ -844,6 +860,18 @@ function Combat:updateActor(a,dt)
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
+	elseif a.state=="Pursuit" and (a.shadowUntil or 0)>now then
+		-- Shadow of the Dancing Leaf: glued just behind and below the rising
+		-- body, closing the gap in proportion to it (no overshoot, no bobbing).
+		local b=a.target
+		local back=a.root.Position-b.root.Position;back=Vector3.new(back.X,0,back.Z)
+		back=if back.Magnitude>.1 then back.Unit else -b.root.CFrame.LookVector
+		local point=b.root.Position+back*2.1-Vector3.new(0,1.1,0)
+		local offset=point-a.root.Position
+		a.airborne=true
+		a.aimIntent={target=point,speed=math.clamp(offset.Magnitude*16,0,140),acceleration=3200}
+		local flat=Vector3.new(-back.X,0,-back.Z)
+		a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
 	elseif a.state=="Pursuit" then
 		-- Reach a rising victim in three dimensions, but kinetically: the chase
 		-- keeps a continuous velocity instead of being teleported frame by frame.
@@ -952,7 +980,7 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
+local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
 -- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
 -- opponent inside it is thrown out once. Repelling a strike opens a counter.
 function Combat:stepRotation(a)
@@ -1029,13 +1057,17 @@ function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	self.damageTag=p.kind
+	self.hitOrigin=position-p.direction*4
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
 			Techniques.bindInSand(self,p.a,target)
+		elseif p.kind=="wire" then
+			Techniques.wireBind(self,p.a,target)
 		elseif p.kind=="palm" then
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
@@ -1073,8 +1105,59 @@ function Combat:projectileSurface(p,hit)
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
 	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+	local mastery=p.a.def.ToolMastery
+	local target=p.a.target
+	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)<.7
+		and target and target.health>0 and (target.root.Position-hit.Position).Magnitude<36 then
+		local from=hit.Position+hit.Normal*.8
+		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
+		if not clear or clear.Instance:IsDescendantOf(target.model) then
+			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
+			bounce.bounced=true
+			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+			Brawler.event(self,p.a,"Ricochet")
+		end
+	end
+end
+-- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second
+-- thrown to strike it beside them; the collision sends both into the flank.
+function Combat:shurikenGeometry(a,sideSign)
+	local b=a.target
+	local start=Combat.launchPoint(a,"Shuriken")
+	local toward=Vector3.new(b.root.Position.X-start.X,0,b.root.Position.Z-start.Z)
+	if toward.Magnitude<.1 then toward=a.root.CFrame.LookVector end
+	local forward=toward.Unit
+	local right=forward:Cross(Vector3.yAxis).Unit*-(sideSign~=0 and sideSign or 1)
+	-- The meeting point: beside the opponent and a little past them.
+	local meet=b.root.Position+right*-6+forward*1.5
+	meet=Vector3.new(meet.X,start.Y,meet.Z)
+	local flight=(meet-start).Magnitude
+	local arrive=flight/70
+	a.neutralToolAt=self.now+.8
+	self:beginThrow(a,{kind="Shuriken",release=.12,count=2,interval=.1,fire=function(index)
+		local from=Combat.launchPoint(a,"Shuriken")
+		local gap=(meet-from).Magnitude
+		-- The second blade is thrown later and faster: both reach the point together.
+		local speed=if index==1 then 70 else math.max(70,gap/math.max(.08,arrive-.1))
+		local p=self:projectile(a,meet,speed,gap,0,"shuriken",nil,{origin=from})
+		p.geometry=index==1 and {meet=meet}
+	end})
+	self:cue(a,"SHURIKEN GEOMETRY",.7)
+	Brawler.event(self,a,"Geometry")
+	return true
 end
 function Combat:projectileExpire(p)
+	if p.geometry and p.a.target and p.a.target.health>0 then
+		local b=p.a.target
+		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
+		for k=1,2 do
+			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
+			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position})
+			redirected.bounced=true
+		end
+		Brawler.event(self,p.a,"GeometryHit")
+		return
+	end
 	if p.kind=="fireball" then
 		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		self:fireExplosion(p,p.position,false)

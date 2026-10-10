@@ -10,7 +10,7 @@ H.envBase.Random={new=function(seed)
   NextInteger=function(_,a,b) return math.floor(a+(b-a+1)*roll()) end}
 end}
 local AI=H.load("Server/AI")
-local ids={"Flashstep","Mirage","GentleFist","Sand"}
+local ids={"Flashstep","Mirage","GentleFist","Lion"}
 local seeds=4
 local wins,time={}, {}
 for _,x in ids do wins[x]={};time[x]={} for _,y in ids do wins[x][y]=0;time[x][y]=0 end end
@@ -18,7 +18,7 @@ for _,x in ids do for _,y in ids do if x~=y then
  for seed=1,seeds do
   H.clearWalls()
   local c,a,b,match=H.duel(x,y)
-  c:relocate(a,V.new(0,3,9));c:relocate(b,V.new(0,3,-9))
+  c:relocate(a,V.new(0,3,24));c:relocate(b,V.new(0,3,-24))
   local one,two=AI.new(c,a,seed*7),AI.new(c,b,seed*13+1)
   local t=0
   while match.phase=="Duel" and t<120 do one:update(c.now);two:update(c.now);H.step(c,.02);t+=.02 end

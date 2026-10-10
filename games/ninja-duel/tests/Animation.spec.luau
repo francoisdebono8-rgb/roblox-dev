@@ -63,7 +63,7 @@ local function body(actor,overrides)
 end
 
 test("every pose stays inside human joint limits",function()
- for _,fighter in {"Flashstep","Mirage"} do
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion"} do
   local c,a=H.duel(fighter,if fighter=="Flashstep" then "Mirage" else "Flashstep")
   local actors={
    body(a,{}),
@@ -77,6 +77,14 @@ test("every pose stays inside human joint limits",function()
    body(a,{reaction="Knockback",airborne=true,reactionElapsed=.2}),
    body(a,{reaction="Juggled",airborne=true,reactionElapsed=.15}),
    body(a,{reaction="HitStun",reactionElapsed=.05,hitStrength=1}),
+   body(a,{reaction="HitStun",reactionElapsed=.04,hitStrength=1,hitZone="head",hitTwist=-1}),
+   body(a,{reaction="HitStun",reactionElapsed=.04,hitStrength=1,hitZone="legs",hitTwist=1}),
+   body(a,{reaction="HitStun",reactionElapsed=.04,hitStrength=1,hitZone="body",hitAngle=180}),
+   body(a,{reaction="Knockdown",airborne=true,reactionElapsed=.12,hitKind="sweep"}),
+   body(a,{reaction="Knockdown",airborne=true,reactionElapsed=.3,hitKind="heavy",hitTwist=-1}),
+   body(a,{reaction="Spiked",airborne=true,reactionElapsed=.1}),
+   body(a,{reaction="Launched",airborne=true,reactionElapsed=.05,hitZone="chin",hitKind="launch"}),
+   body(a,{reaction="WallSplat",reactionElapsed=.02}),
    body(a,{reaction="WallSplat",reactionElapsed=.1}),
    body(a,{state="Dodging",velocity=V.new(0,0,20)}),
    body(a,{state="Dodging",velocity=V.new(20,0,0)}),
@@ -114,6 +122,26 @@ test("every pose stays inside human joint limits",function()
    for _=1,60 do Motion.ko(a.model,style,1/60) end
    for key,joint in a.model.joints do
     assert(tiltOf(joint)<math.pi*1.4,"KO "..style.." left "..key.." over-rotated")
+   end
+  end
+ end
+end)
+test("every strike of every fighter stays finite and inside joint limits through its timeline",function()
+ local names={"LionBarrage","Rasengan","RasenganDrop"}
+ for name in H.Attacks do table.insert(names,name) end
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion"} do
+  local c,a=H.duel(fighter,"Mirage")
+  for _,name in names do
+   Motion.reset(a.model)
+   for step=0,40 do
+    Motion.pose(a.model,name,step*.03,fighter,1/60)
+    for key,joint in a.model.joints do
+     local x,y,z=joint.Transform:ToOrientation()
+     assert(x==x and y==y and z==z,fighter.." "..name.." non-finite at "..step)
+    end
+   end
+   for key,joint in a.model.joints do
+    assert(tiltOf(joint)<math.pi*1.4,fighter.." "..name.." left "..key.." at "..string.format("%.0f",math.deg(tiltOf(joint))).." deg")
    end
   end
  end

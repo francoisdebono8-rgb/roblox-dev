@@ -157,7 +157,9 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
+ local close=a.target and (a.target.root.Position-a.root.Position).Magnitude<5.5
  local canDash=(a.state=="Dodging" and c.now>=a.untilTime-.23) or (a.state=="Rush" and c.now>=a.untilTime-.15)
+  or (a.state=="Pursuit" and close and c.now-(a.pursuitStarted or 0)>=.12)
   or (a.state=="Neutral" and (a.rushArriveUntil or 0)>c.now)
  -- Rhythm: a chained press made on the beat (around the moment the chain
  -- opens, not mashed early during the swing) becomes a Flow strike.
@@ -206,7 +208,25 @@ function Brawler.request(c,a,action)
   if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
  end
  if action=="Heavy" then
-  if a.airborne then return Brawler.start(c,a,"Slam") end
+  if a.airborne then
+   -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
+   -- that ends in a heel drop driving the body into the floor.
+   if (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then
+    a.lionUntil=0
+    -- The flip over the body: the heel comes down from above it.
+    local b=a.target
+    local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+    look=if look.Magnitude>.1 then look.Unit else a.root.CFrame.LookVector
+    c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+    a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+    a.airborne=true
+    local ok=Brawler.start(c,a,"Slam")
+    if a.pending then a.pending.spec.damage=17;a.pending.spec.impulse=Vector3.new(0,-90,8);a.attackVariant="LionBarrage" end
+    c:cue(a,"LION COMBO",.9);Brawler.event(c,a,"LionCombo")
+    return ok
+   end
+   return Brawler.start(c,a,"Slam")
+  end
   local heavyGraph=MoveGraphs[a.fighterId] or {}
   if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
   if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
@@ -284,6 +304,22 @@ function Brawler.routePayoff(c,a,b,p)
     local spread=a.root.CFrame.RightVector*(if index==1 then -.6 else .6)
     c:projectile(a,target+spread,92,30,1.5,"shuriken")
    end})
+  end)
+ elseif kind=="shadowLeaf" then
+  -- Sasuke: Shadow of the Dancing Leaf. He shoots up after the rising body
+  -- (a free chase); a heavy up there is the Lion Combo.
+  a.lionUntil=c.now+2.1
+  c:schedule(c.now+.12,function()
+   if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+   a.chakra+=Config.PursuitCost
+   local from=a.root.Position
+   if c:request(a,"Pursuit") then
+    -- The shadow sticks to the rising body up to its apex, then hangs there.
+    a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
+    c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = LION COMBO",1)
+    Brawler.event(c,a,"ShadowLeaf")
+   else a.chakra-=Config.PursuitCost end
   end)
  elseif kind=="tenketsu" then
   -- Neji: the low route strikes a second chakra point.

@@ -294,7 +294,58 @@ Techniques.Quickstep={
 		c:cue(a,if moved>3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
-Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+-- Great Fireball; on an opponent held by Sasuke's wire it becomes the Dragon
+-- Flame: the fire runs along the wire and cannot miss.
+Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+	local b=a.wireVictim
+	if b and b.reaction=="Bound" and b.boundBy==a and b.health>0 then
+		a.wireVictim=nil;b.boundBy=nil
+		c.damageTag="Dragon Flame"
+		local hit=c:damage(a,b,pending.spec.Damage,true,false)
+		c.damageTag=nil
+		if c.match.phase~="Duel" then return end
+		c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=a.root.Position})
+		if hit then
+			local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+			away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
+			local Brawler=require(script.Parent.Brawler)
+			Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
+		end
+		c:cue(a,"KATON • DRAGON FLAME",1)
+		return
+	end
+	Elements.fire(c,a,pending,now)
+end}
+-- Wire Trap: a shuriken trailing ninja wire; a body it reaches is bound.
+Techniques.WireTrap={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7})
+		c:cue(a,"WIRE TRAP",.5)
+	end,
+}
+function Techniques.wireBind(c,owner,victim)
+	if victim.health<=0 then return end
+	local Brawler=require(script.Parent.Brawler)
+	Brawler.react(c,victim,"Bound",Vector3.zero,1.0,owner)
+	victim.boundBy=owner;owner.wireVictim=victim
+	c:cue(owner,"WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	Brawler.event(c,owner,"WireBind")
+end
+-- Chidori: the charge is the channel (slowed, interruptible); the release is
+-- a straight lightning thrust that ends the fight's momentum either way.
+Techniques.Chidori={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		a.stringCancel=nil
+		Brawler.start(c,a,"ChidoriThrust")
+		if a.pending then a.pending.spec.damage=pending.spec.Damage end
+		c:pushImpact(a.root.Position,"chidori",true,{owner=a.id})
+		c:cue(a,"CHIDORI",.8)
+	end,
+}
 -- Gaara ----------------------------------------------------------------
 -- Sand Coffin: a wave of sand runs along the ground; a body it reaches is bound
 -- (held where it stands) and buried a beat later unless it substitutes out.

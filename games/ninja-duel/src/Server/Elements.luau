@@ -45,6 +45,16 @@ function Elements.phoenix(c,a,pending,now)
 			c:projectile(a,aim,spec.Speed or 68,spec.Range,spec.Damage,"phoenix",nil,{origin=origin,radius=.9,growth=.35})
 		end)
 	end
+	-- Sasuke hides two shuriken inside the flames.
+	if spec.HiddenBlades then
+		for k=1,2 do
+			c:schedule(now+.14+k*.07,function()
+				if a.health<=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health<=0 then return end
+				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
+				c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+			end)
+		end
+	end
 	c:cue(a,"KATON • PHOENIX FLOWER")
 end
 function Elements.wind(c,a,pending)

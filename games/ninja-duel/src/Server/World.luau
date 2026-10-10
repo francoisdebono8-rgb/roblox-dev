@@ -556,6 +556,72 @@ local function dressNeji(model,def)
 	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.88,.5,.88),CFrame.new(0,0,0),bandage)
 	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(48,52,70))
 end
+-- Sasuke at the Chunin Exam (12): dark blue high-collared shirt with the
+-- Uchiha fan on the back, light shorts, white arm warmers, the Leaf headband,
+-- black hair swept back into spikes, a two-tomoe Sharingan. The cursed seal
+-- marks are there but hidden until he awakens it.
+local function dressSasuke(model,def)
+	local hair=rgb(24,26,40)
+	local hairShade=rgb(36,40,62)
+	local shirt=rgb(34,40,72)
+	local shorts=rgb(222,216,204)
+	local warmer=rgb(236,236,232)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(200,20,30),hair)
+	for _,p in model:GetChildren() do if p.Name=="Iris" then p.Material=Enum.Material.Neon end end
+	for _,side in {-1,1} do
+		wear(model,"Head","Pupil",Vector3.new(.045,.045,.02),CFrame.new(side*.3,.07,-.842),rgb(12,8,10))
+		for k=0,1 do
+			local a=math.rad(90+k*180)
+			wear(model,"Head","Tomoe",Vector3.new(.034,.034,.02),CFrame.new(side*.3+math.cos(a)*.05,.07+math.sin(a)*.05,-.842),rgb(12,8,10))
+		end
+	end
+	hairCap(model,hair)
+	-- Swept back: long spikes pointing back and up behind the crown, two long
+	-- bangs framing the face, a short fringe over the headband.
+	local back={
+		{Vector3.new(0,.62,.5),Vector3.new(0,.55,1),1.05,.62,.4},
+		{Vector3.new(-.45,.5,.5),Vector3.new(-.45,.5,1),.95,.52,.36},
+		{Vector3.new(.45,.5,.5),Vector3.new(.45,.5,1),.95,.52,.36},
+		{Vector3.new(0,.25,.66),Vector3.new(0,.25,1),.9,.6,.38},
+		{Vector3.new(-.5,.12,.6),Vector3.new(-.55,.15,1),.8,.46,.32},
+		{Vector3.new(.5,.12,.6),Vector3.new(.55,.15,1),.8,.46,.32},
+		{Vector3.new(0,.8,.2),Vector3.new(0,.9,.7),.7,.5,.32},
+		{Vector3.new(-.3,-.1,.68),Vector3.new(-.2,-.2,1),.7,.44,.3},
+		{Vector3.new(.3,-.1,.68),Vector3.new(.2,-.2,1),.7,.44,.3},
+	}
+	for index,s in back do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	for _,x in {-.34,0,.34} do spike(model,Vector3.new(x,.66,-.55),Vector3.new(x*.3,-.8,-.5),.46,.4,.22,hair) end
+	for _,side in {-1,1} do
+		wear(model,"Head","Bang",Vector3.new(.2,1.2,.36),CFrame.new(side*.78,-.2,-.44)*A(R(2),0,R(side*6)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.16,.85,.85),CFrame.new(side*.8,.05,.28),hair)
+	end
+	headband(model,false)
+	-- The cursed seal (hidden): three black flame marks on the left of the neck.
+	for k=0,2 do
+		local mark=wear(model,"Head","CurseMark",Vector3.new(.05,.22,.14),CFrame.new(-.78,-.42+k*.18,.08-k*.12)*A(R(20*k),0,R(10)),rgb(12,10,14))
+		if mark then mark.Transparency=1 end
+	end
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=shirt end
+	end
+	wear(model,"UpperTorso","HighCollar",Vector3.new(1.5,.62,1.16),CFrame.new(0,.86,.04),shirt)
+	crest(model,"UpperTorso",CFrame.new(0,.1,.53)*A(0,R(180),0),1.25)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.3,0),rgb(30,30,36))
+	for _,side in {"Left","Right"} do
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=warmer end
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.86,.42,.86),CFrame.new(0,.3,0),shirt)
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=shorts end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.42,.84),CFrame.new(0,-.28,0),rgb(40,46,70))
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(36,40,62) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.38,.9),CFrame.new(0,-.1,0),warmer)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.1,0),rgb(40,46,70))
+	wear(model,"LowerTorso","ToolPouch",Vector3.new(.66,.4,.3),CFrame.new(0,.1,.62),rgb(70,64,58))
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -567,7 +633,8 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def) end
+	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
+	elseif def.Name=="Sasuke" then dressSasuke(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

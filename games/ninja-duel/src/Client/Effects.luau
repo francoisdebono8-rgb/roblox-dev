@@ -27,7 +27,7 @@ local SOUND={
 	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -35,6 +35,8 @@ FX.DELAY=.06
 local STEEL=Color3.fromRGB(64,68,76)
 local STEEL_EDGE=Color3.fromRGB(150,158,170)
 local MINATO=Color3.fromRGB(255,214,92)
+local LION=Color3.fromRGB(150,180,255)
+local CURSE=Color3.fromRGB(120,60,200)
 local MINATO_CORE=Color3.fromRGB(255,248,214)
 
 local function new(class,props,parent)
@@ -221,7 +223,7 @@ function FX:reset()
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
+local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
 	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
@@ -260,8 +262,19 @@ function FX:sync(data)
 			local root=model.PrimaryPart
 			if p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
-			elseif p.kind=="shuriken" then
+			elseif p.kind=="shuriken" or p.kind=="wire" then
 				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
+			end
+			if p.kind=="wire" then
+				-- Ninja wire: a thin line from the thrower's hand to the blade.
+				local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
+				local hand=owner and owner:FindFirstChild("RightHand")
+				if hand then
+					local a0=new("Attachment",{Name="WireStart"},hand)
+					local a1=new("Attachment",{Name="WireEnd"},root)
+					new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.06,Width1=.06,Color=ColorSequence.new(Color3.fromRGB(210,214,220)),LightEmission=.3,FaceCamera=true,Segments=2},root)
+					Debris:AddItem(a0,1.2)
+				end
 			end
 			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true}
 			self.projectiles[p.id]=entry
@@ -272,7 +285,7 @@ function FX:sync(data)
 				sound(root,SOUND.whoosh,.25,.7)
 			elseif p.kind=="palm" then
 				sound(root,SOUND.whoosh,.45,.6)
-			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
+			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
 		end
@@ -316,7 +329,7 @@ function FX:stepProjectiles(dt)
 			-- Point first, with a slow roll so the blade catches the light.
 			entry.spin+=dt*14
 			cf=look*CFrame.Angles(0,0,entry.spin)
-		elseif p.kind=="shuriken" then
+		elseif p.kind=="shuriken" or p.kind=="wire" then
 			entry.spin+=dt*42
 			cf=look*CFrame.Angles(0,entry.spin,0)*CFrame.Angles(0,0,math.rad(8))
 		elseif p.kind=="fireball" or p.kind=="phoenix" then
@@ -351,6 +364,15 @@ local function flash(parent,position,color,from,to,time,transparency)
 	tween(ball,time,{Size=Vector3.one*to,Transparency=1})
 	Debris:AddItem(ball,time+.05)
 	return ball
+end
+-- The floor under a point, ignoring bodies and effects: marks laid on the
+-- ground (scorch, trigrams, burning lanes) must never land on a fighter.
+local function floorUnder(fx,position,up,depth)
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+	local exclude={fx.folder}
+	if fx.fighters then table.insert(exclude,fx.fighters) end
+	params.FilterDescendantsInstances=exclude
+	return workspace:Raycast(position+Vector3.new(0,up,0),Vector3.new(0,-depth,0),params)
 end
 local function shockRing(parent,position,color,from,to,time,normal)
 	local up=normal or Vector3.yAxis
@@ -453,7 +475,7 @@ function FX:impact(impact,folder)
 		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
-		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.22,.55)
+		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.22,.55)
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),8,1.4)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
@@ -530,7 +552,7 @@ function FX:impact(impact,folder)
 		shockRing(self.folder,position,Color3.fromRGB(200,226,255),1,6+math.min(count,4)*1.5,.18)
 	elseif style=="awaken" then
 		local model=modelFor(folder,impact.owner)
-		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then CURSE else Color3.fromRGB(230,40,50)
 		if model then self:ghost(model,tone,.35,.4) end
 		flash(self.folder,position,tone,2,14,.35,.2)
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),tone,3,24,.45)
@@ -560,8 +582,11 @@ function FX:impact(impact,folder)
 	elseif style=="afterimage" then
 		-- A lateral route: the body leaves a fading copy where it stood.
 		local model=modelFor(folder,impact.owner)
-		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.3,.45) end
+		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.3,.45) end
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(196,186,166),5,1)
+	elseif style=="chidori" then
+		flash(self.folder,position,Color3.fromRGB(170,200,255),1,6,.18,.25)
+		sparks(self.folder,position,Color3.fromRGB(200,225,255),24,30)
 	elseif style=="groundbounce" then
 		-- A spiked body hits the floor and pops back up: dust ring and cracks.
 		smokePuff(self.folder,position,Color3.fromRGB(176,160,130),16,2.2)
@@ -571,7 +596,7 @@ function FX:impact(impact,folder)
 end
 -- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
 function FX:trigram(position)
-	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-10,0))
+	local floor=floorUnder(self,position,2,10)
 	local at=if floor then floor.Position+Vector3.new(0,.05,0) else position-Vector3.new(0,2.9,0)
 	local glyph=new("Model",{Name="Trigrams"},self.folder)
 	local base=CFrame.new(at)*CFrame.Angles(0,0,math.pi/2)
@@ -630,7 +655,7 @@ function FX:explosion(position,normal)
 	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=9,Range=40,Shadows=false},holder)
 	tween(light,.7,{Brightness=0})
 	-- Scorched ground under the blast.
-	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-12,0))
+	local floor=floorUnder(self,position,2,12)
 	if floor then
 		local scorch=block(self.folder,Vector3.new(.05,9,9),CFrame.new(floor.Position+floor.Normal*.04)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(24,18,16),Enum.Material.Slate)
 		scorch.Shape=Enum.PartType.Cylinder;scorch.Transparency=.25
@@ -762,7 +787,7 @@ function FX:hazardsStep(data)
 		live[key]=true
 		local entry=self.hazards[key]
 		if not entry then
-			local floor=workspace:Raycast(h.position+Vector3.new(0,3,0),Vector3.new(0,-14,0))
+			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
 			local holder=anchorPart(self.folder,at);holder.Transparency=1;holder.Size=Vector3.new(h.radius*1.6,.2,h.radius*1.6)
 			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(3,7),
@@ -829,7 +854,7 @@ function FX:fighter(model,actor,dt)
 		aura={}
 		self.auras[model]=aura
 		local minato=actor.fighterId=="Flashstep"
-		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(170,30,48)
+		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA elseif actor.fighterId=="Lion" then LION else Color3.fromRGB(170,30,48)
 		local veins={}
 		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
 		aura.veins=veins
@@ -839,7 +864,10 @@ function FX:fighter(model,actor,dt)
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
 		aura.irises=irises
 		local head=model:FindFirstChild("Head")
-		if head and actor.fighterId=="Mirage" then
+		local marks={}
+		for _,p in model:GetChildren() do if p.Name=="CurseMark" then table.insert(marks,p) end end
+		aura.marks=marks
+		if head and (actor.fighterId=="Mirage" or actor.fighterId=="Lion") then
 			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
 		end
 	end
@@ -849,9 +877,9 @@ function FX:fighter(model,actor,dt)
 	aura.trail.Enabled=fast==true and (actor.health or 1)>0
 	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
 	-- counters, or during the intro.
-	if actor.fighterId=="Mirage" and aura.irises then
+	if (actor.fighterId=="Mirage" or actor.fighterId=="Lion") and aura.irises then
 		local lit=(actor.read or 0)>0 or (actor.counter or 0)>0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
-			or actor.castId=="PhoenixFlower" or (actor.intro or 0)>0
+			or actor.castId=="PhoenixFlower" or actor.castId=="Chidori" or (actor.intro or 0)>0 or (actor.awaken or 0)>0
 		for _,iris in aura.irises do
 			iris.Material=Enum.Material.Neon
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
@@ -862,7 +890,7 @@ function FX:fighter(model,actor,dt)
 	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
 	if awake and not aura.mantle then
 		local torso=model:FindFirstChild("UpperTorso") or root
-		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA elseif actor.fighterId=="Lion" then CURSE else Color3.fromRGB(230,40,50)
 		local at=new("Attachment",{Name="AwakenMantle"},torso)
 		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=55,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(30,30),
 			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(tone),LightEmission=1,LightInfluence=0,
@@ -874,6 +902,24 @@ function FX:fighter(model,actor,dt)
 		Debris:AddItem(aura.mantle.attachment,1)
 		aura.mantle=nil
 	end
+	for _,mark in aura.marks or {} do mark.Transparency=if awake then 0 else 1 end
+	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
+	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
+		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
+	if chidori and not aura.chidori and (actor.health or 1)>0 then
+		local hand=model:FindFirstChild("RightHand") or root
+		local at=new("Attachment",{Name="Chidori"},hand)
+		local e=new("ParticleEmitter",{Texture=TEX.spark,Rate=160,Lifetime=NumberRange.new(.06,.16),Speed=NumberRange.new(8,18),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(Color3.fromRGB(200,225,255)),LightEmission=1,LightInfluence=0,Size=num({{0,.7},{1,0}}),Transparency=num({{0,0},{1,1}})},at)
+		local light=new("PointLight",{Color=Color3.fromRGB(150,190,255),Brightness=4,Range=14,Shadows=false},at)
+		aura.chidori={attachment=at,emitter=e,light=light}
+		sound(hand,SOUND.whoosh,.5,2.6)
+	elseif not chidori and aura.chidori then
+		aura.chidori.emitter.Enabled=false
+		Debris:AddItem(aura.chidori.attachment,.4)
+		aura.chidori=nil
+	end
+	if aura.chidori then aura.chidori.light.Brightness=3+math.random()*3 end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
 		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true
@@ -1015,6 +1061,7 @@ function FX:ambient(dt)
 	end
 end
 function FX:update(data,dt,folder)
+	self.fighters=folder
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
 		self:stepProjectiles(dt)

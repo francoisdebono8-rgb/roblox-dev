@@ -54,6 +54,16 @@ return {
 		-- After Rotation repels an attack, the next press is the palm thrust.
 		readCounter="PalmThrust",
 	},
+	Lion={
+		routes={up="LionKick",down="Sweep",side="VaultKick",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Shuriken",
+		-- The rising kick is followed into the air at once (Shadow of the
+		-- Dancing Leaf); a heavy there is the Lion Combo.
+		onRoute={LionKick="shadowLeaf"},
+		heavyAfterOne="KneeStrike",
+		stringCancels={Chidori=true},
+		blockCancels={},
+	},
 	Sand={
 		routes={up="SandPillar",down="Sweep"},
 		-- One lash, then the pillar: sand erupts under the opponent.

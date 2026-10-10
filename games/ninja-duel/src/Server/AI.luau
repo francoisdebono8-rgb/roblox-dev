@@ -165,6 +165,15 @@ function AI:update(now)
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()<.4 then "Heavy" else "Attack");return end
 	if a.state=="Rush" or (a.rushArriveUntil or 0)>now then c:request(a,"Attack");return end
+	-- Sasuke under the rising body: one strike, then the Lion Combo.
+	if (a.lionUntil or 0)>now and a.airborne and a.state=="Neutral" then
+		c:request(a,if (a.airCombo or 0)>=1 and self.rng:NextNumber()<.7 then "Heavy" else "Attack");return
+	end
+	-- Wired opponent: Dragon Flame at once.
+	if a.wireVictim and a.wireVictim.reaction=="Bound" and a.state=="Neutral" then
+		local fire=slotOf(a,"FireBloom")
+		if fire and c:request(a,fire,target.root.Position) then return end
+	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
 	if (a.counterUntil or 0)>now and distance<8 then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
@@ -233,6 +242,10 @@ function AI:update(now)
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
 	if distance>7 and distance<46 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then 1.8 else 1) and target.state~="Guarding" then
+		-- A tool master sometimes throws the geometry instead (side + tool).
+		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()<.4 then
+			a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
+		end
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
@@ -246,6 +259,9 @@ function AI:update(now)
 			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
 			if spec.Id=="FireBloom" then use=distance>6 and distance<46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()<0.32) end
+			if spec.Id=="WireTrap" then use=distance>7 and distance<28 and c:lineOfSight(a,target) and self.rng:NextNumber()<.4 end
+			if spec.Id=="Chidori" then use=distance>4 and distance<16 and (target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound" or self.rng:NextNumber()<.06) end
+			if spec.Id=="FireBloom" and a.wireVictim and a.wireVictim.reaction=="Bound" then use=true end
 			if spec.Id=="SandCoffin" then use=distance>7 and distance<28 and c:lineOfSight(a,target) and self.rng:NextNumber()<.45 end
 			if spec.Id=="SandShuriken" then use=distance>9 and distance<34 and self.rng:NextNumber()<.5 end
 			if spec.Id=="DesertWave" then use=distance<8 and (target.state=="Startup" or target.state=="Rush" or target.state=="Active" or self.rng:NextNumber()<.25) end
