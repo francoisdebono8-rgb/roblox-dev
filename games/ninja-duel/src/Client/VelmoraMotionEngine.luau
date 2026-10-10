@@ -217,7 +217,15 @@ local STANCE={
 		ra={raise=14,out=9,twist=8,elbow=32,wrist=0},la={raise=42,out=-6,twist=24,elbow=84,wrist=10},
 		rf={x=.12,z=.5,yaw=22},lf={x=0,z=-.46,yaw=-2},breath=.7,tempo=5},
 }
+-- Neji: the Gentle Fist stance. Side-on and low, lead palm extended toward the
+-- opponent, rear palm guarding the centre line.
+STANCE.GentleFist={root={y=-.62,pitch=6,yaw=38},torso={pitch=4,yaw=-14},head={pitch=-2,yaw=-22},
+	la={raise=80,out=-6,twist=-40,elbow=26,wrist=-46},ra={raise=56,out=-30,twist=40,elbow=96,wrist=-36},
+	rf={x=.32,z=.92,yaw=64},lf={x=-.18,z=-.95,yaw=-6},breath=.8,tempo=5.5}
 local function stance(id) return STANCE[id] or STANCE.Flashstep end
+-- Gait families: springy (Minato) or controlled (Itachi, Neji).
+local SPRINGY={Flashstep=true}
+local function springy(id) return SPRINGY[id]==true or (id~="Mirage" and id~="GentleFist" and STANCE[id]==nil) end
 
 -- ---------------------------------------------------------- attack clips
 -- Keys are placed on the move's own timeline: 0 = start, 1 = end of startup
@@ -228,7 +236,9 @@ local M=STANCE.Flashstep
 local I=STANCE.Mirage
 local function m(over) return merge(M,over) end
 local function i(over) return merge(I,over) end
-local CLIPS={Flashstep={},Mirage={}}
+local N=STANCE.GentleFist
+local function n(over) return merge(N,over) end
+local CLIPS={Flashstep={},Mirage={},GentleFist={}}
 -- Minato --------------------------------------------------------------
 CLIPS.Flashstep.Light1={ -- reverse-grip kunai: cross-body load, outward slash
 	K(0,m({root={y=-.55,yaw=10,pitch=12},torso={yaw=-28,pitch=8},ra={raise=72,out=-42,twist=38,elbow=112,wrist=-30},la={raise=40,out=12,elbow=70},lf={z=-.95}})),
@@ -406,6 +416,58 @@ CLIPS.Mirage.CounterPalm={
 	K(3,I),
 }
 
+-- Neji ----------------------------------------------------------------
+-- Gentle Fist: open palms driven by the hips, never fists. Every strike turns
+-- the waist through the target; the rear hand stays on the centre line.
+local PALM_L={raise=90,out=-4,twist=-72,elbow=2,wrist=-62}
+local PALM_R={raise=90,out=-2,twist=72,elbow=2,wrist=-62}
+CLIPS.GentleFist.Light1={ -- lead palm to the chest
+	K(0,n({root={y=-.66,yaw=48},torso={yaw=-6},la={raise=60,out=-10,twist=-60,elbow=100,wrist=-40}})),
+	K(1,n({root={y=-.6,z=-.38,yaw=18,pitch=8},torso={yaw=-24,pitch=4},head={yaw=-10},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}}),"out"),
+	K(2,n({root={y=-.6,z=-.4,yaw=16,pitch=8},torso={yaw=-26,pitch=4},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light2={ -- rear palm, hips turning square
+	K(0,n({root={y=-.66,yaw=46},torso={yaw=10},ra={raise=46,out=10,twist=60,elbow=112,wrist=-30},la={raise=70,out=-6,elbow=60}})),
+	K(1,n({root={y=-.58,z=-.46,yaw=-12,pitch=10},torso={yaw=-30,pitch=6},head={yaw=8},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}}),"out"),
+	K(2,n({root={y=-.58,z=-.48,yaw=-14,pitch=10},torso={yaw=-32,pitch=6},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light3={ -- twin palms from the hips: the shove that creates space
+	K(0,n({root={y=-.86,z=.22,yaw=12,pitch=6},torso={yaw=0},ra={raise=20,out=6,twist=50,elbow=118,wrist=-20},la={raise=20,out=6,twist=-50,elbow=118,wrist=-20},lf={z=-1.0},rf={z=.9}})),
+	K(1,n({root={y=-.62,z=-.85,yaw=4,pitch=16},torso={yaw=-4,pitch=8},head={yaw=-4},ra={raise=86,out=-8,twist=72,elbow=4,wrist=-64},la={raise=86,out=-8,twist=-72,elbow=4,wrist=-64},lf={z=-1.55},rf={z=1.2,toe=-18}}),"out"),
+	K(2,n({root={y=-.62,z=-.88,yaw=4,pitch=16},torso={yaw=-4,pitch=8},ra={raise=84,out=-8,twist=72,elbow=8,wrist=-62},la={raise=84,out=-8,twist=-72,elbow=8,wrist=-62},lf={z=-1.55},rf={z=1.2,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Heavy={ -- deep stepping palm: the whole body coils, then drives through
+	K(0,n({root={y=-.92,z=.3,yaw=74,pitch=10},torso={yaw=18,pitch=6},la={raise=30,out=-4,twist=-50,elbow=120,wrist=-30},ra={raise=70,out=-30,elbow=80},lf={z=-1.05},rf={z=1.0,yaw=70}})),
+	K(.75,n({root={y=-.98,z=.34,yaw=80,pitch=12},torso={yaw=22,pitch=8},la={raise=26,out=-4,twist=-52,elbow=124,wrist=-30},ra={raise=72,out=-30,elbow=78},lf={z=-1.1},rf={z=1.05,yaw=72}})),
+	K(1,n({root={y=-.64,z=-1.0,yaw=-6,pitch=20},torso={yaw=-28,pitch=10},head={yaw=12},la={raise=92,out=-4,twist=-72,elbow=0,wrist=-64},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}}),"out"),
+	K(2,n({root={y=-.64,z=-1.02,yaw=-8,pitch=20},torso={yaw=-30,pitch=10},la={raise=90,out=-4,twist=-72,elbow=4,wrist=-62},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Launcher={ -- rising palm heel under the chin
+	K(0,n({root={y=-.98,pitch=16,yaw=30},torso={pitch=10},la={raise=-10,out=12,twist=-40,elbow=108},ra={raise=60,out=-24,elbow=90},lf={z=-.7},rf={z=.7}})),
+	K(1,n({root={y=.12,pitch=-10,yaw=10},torso={pitch=-12,yaw=-10},head={pitch=-22},la={raise=168,out=4,twist=-70,elbow=6,wrist=-40},ra={raise=20,out=24,elbow=50},lf={toe=-24},rf={z=.6}}),"out"),
+	K(2,n({root={y=.1,pitch=-10,yaw=8},torso={pitch=-12,yaw=-12},head={pitch=-20},la={raise=162,out=4,twist=-70,elbow=10},ra={raise=20,out=24,elbow=50},lf={toe=-20},rf={z=.6}})),
+	K(3,N),
+}
+CLIPS.GentleFist.DashAttack={ -- gliding lead palm
+	K(0,n({root={y=-.8,z=.2,pitch=24,yaw=30},la={raise=40,out=-6,twist=-50,elbow=104},ra={raise=60,out=-24,elbow=90},lf={z=-1.1},rf={z=1.15}})),
+	K(1,n({root={y=-.72,z=-.95,pitch=22,yaw=6},torso={yaw=-18},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}}),"out"),
+	K(2,n({root={y=-.72,z=-.96,pitch=20,yaw=4},torso={yaw=-20},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.PalmThrust={ -- twin palm thrust: the counter that throws a body into a wall
+	K(0,n({root={y=-1.0,z=.32,yaw=8,pitch=8},torso={yaw=0,pitch=4},ra={raise=14,out=8,twist=50,elbow=124,wrist=-20},la={raise=14,out=8,twist=-50,elbow=124,wrist=-20},lf={z=-1.1},rf={z=1.0}})),
+	K(1,n({root={y=-.6,z=-1.15,yaw=2,pitch=20},torso={yaw=-2,pitch=10},head={pitch=-4},ra={raise=94,out=-10,twist=72,elbow=0,wrist=-66},la={raise=94,out=-10,twist=-72,elbow=0,wrist=-66},lf={z=-1.8},rf={z=1.35,toe=-24}}),"out"),
+	K(2,n({root={y=-.6,z=-1.18,yaw=2,pitch=20},torso={yaw=-2,pitch=10},ra={raise=92,out=-10,twist=72,elbow=4,wrist=-64},la={raise=92,out=-10,twist=-72,elbow=4,wrist=-64},lf={z=-1.8},rf={z=1.35,toe=-24}})),
+	K(3,N),
+}
+-- Anything Neji does not author yet (air strings, throws, sweep) borrows
+-- Itachi's controlled clips rather than Minato's.
+setmetatable(CLIPS.GentleFist,{__index=CLIPS.Mirage})
+
 -- Phase 4 -----------------------------------------------------------------
 -- Wall dive: crouched against the wall during the startup, then a flying kick
 -- with the lead leg straight at the opponent, arms thrown back for balance.
@@ -531,7 +593,26 @@ local function castSpec(actor)
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
-	if id=="PhoenixFlower" then
+	if id=="Rotation" then
+		-- Eight Trigrams Rotation: a full-body spin, arms out, weight centred.
+		local spin=(t*1500)%360
+		return merge(base,{root={y=-.45,pitch=2,yaw=spin},torso={pitch=0,yaw=0},head={pitch=0,yaw=0},
+			ra={raise=78,out=64,twist=0,elbow=12,wrist=-20},la={raise=78,out=64,twist=0,elbow=12,wrist=-20},rf={x=.3,z=.4},lf={x=-.3,z=-.4}})
+	elseif id=="VacuumPalm" then
+		if state=="TechniqueChannel" then return merge(base,{root={y=-.8,yaw=56},torso={yaw=10},la={raise=50,out=-10,twist=-60,elbow=112,wrist=-30}}) end
+		return merge(base,{root={y=-.66,z=-.4,yaw=14,pitch=10},torso={yaw=-26},la={raise=94,out=-4,twist=-72,elbow=0,wrist=-70},ra={raise=40,out=20,elbow=80},lf={z=-1.4},rf={z=1.1}})
+	elseif id=="SixtyFourPalms" then
+		if state=="TechniqueChannel" then
+			-- "You are within my field of divination": very wide, very low.
+			return merge(base,{root={y=-1.05,yaw=44,pitch=8},torso={yaw=-10},head={yaw=-26},la={raise=86,out=-4,twist=-60,elbow=12,wrist=-50},ra={raise=140,out=-20,twist=30,elbow=60,wrist=-40},lf={z=-1.45,x=-.2},rf={z=1.35,x=.35,yaw=70}})
+		end
+		local beat=math.floor(t*16)%2==0
+		local jitter=math.sin(t*50)*6
+		return merge(base,{root={y=-.95,z=-.3,yaw=24+jitter,pitch=12},torso={yaw=if beat then -18 else 12},head={yaw=-14},
+			la=if beat then {raise=92,out=-6,twist=-72,elbow=2,wrist=-64} else {raise=60,out=-10,twist=-50,elbow=90,wrist=-30},
+			ra=if beat then {raise=60,out=-20,twist=50,elbow=92,wrist=-30} else {raise=92,out=-4,twist=72,elbow=2,wrist=-64},
+			lf={z=-1.45,x=-.2},rf={z=1.3,x=.35,yaw=64}})
+	elseif id=="PhoenixFlower" then
 		if state=="TechniqueChannel" then return sealPose(base,t,false) end
 		-- Phoenix Flower: a quick sweep of the head across the fan while the hand
 		-- ring stays at the mouth.
@@ -587,7 +668,7 @@ local function stanceTargets(fighterId)
 end
 local function locomotionTargets(char,actor,fighterId,dt)
 	local s=stateOf(char)
-	local minato=fighterId~="Mirage"
+	local minato=springy(fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
@@ -638,6 +719,10 @@ local function locomotionTargets(char,actor,fighterId,dt)
 			torso={pitch=(if forward<-.3 then -6 else 4),yaw=-swing*11*alpha,roll=-side*6},head={pitch=-lean*.4,yaw=0},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
+		if fighterId=="GentleFist" then
+			local guard=1-math.clamp((speed-8)/22,0,1)
+			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
+		end
 	end
 	-- Feet travel along the movement direction (x right, z back in root space).
 	local axis=Vector3.new(dir.X,0,dir.Z)
@@ -649,7 +734,7 @@ local function locomotionTargets(char,actor,fighterId,dt)
 end
 local function airTargets(char,actor,fighterId)
 	local rise=(actor.velocity and actor.velocity.Y or 0)/70
-	local minato=fighterId~="Mirage"
+	local minato=springy(fighterId)
 	local spec
 	if rise>.25 then
 		spec={root={pitch=-4},torso={pitch=-10},head={pitch=-10},ra={raise=-20,out=30,elbow=40},la={raise=60,out=24,elbow=70},
@@ -817,11 +902,14 @@ local function weaponsFor(char,fighterId)
 	items={}
 	weapons[char]=items
 	local minato=fighterId~="Mirage"
+	local palms=fighterId=="GentleFist"
 	local hand=char:FindFirstChild(if minato then "RightHand" else "LeftHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
-		if minato then
+		if palms then
+			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+		elseif minato then
 			-- Reverse grip: blade out of the little-finger side, along the forearm.
 			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
 			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
@@ -858,7 +946,9 @@ function Motion.weapon(char,actor)
 	local holding=throwKind~=nil and throwElapsed>=0 and throwElapsed<releaseAt
 	if throwKind=="Shuriken" and throwElapsed>=releaseAt and throwElapsed<releaseAt+.08 then holding=throwElapsed>=releaseAt+.03 end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
-	if minato then
+	if actor.fighterId=="GentleFist" then
+		setVisible(items.throw,holding and throwKind=="Kunai")
+	elseif minato then
 		setVisible(items.melee,meleeOut and not holding)
 		setVisible(items.throw,holding and throwKind=="Kunai")
 		setVisible(items.marked,holding and throwKind=="MarkedKunai")
@@ -956,6 +1046,9 @@ function Motion.present(char,actor,clock,dt)
 		local spec
 		if subject.fighterId=="Mirage" then
 			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		elseif subject.fighterId=="GentleFist" then
+			-- Byakugan: two fingers raised to the eyes, then the stance.
+			spec=merge(base,{root={y=-.4,yaw=30},head={pitch=0,yaw=-18},ra={raise=128,out=-30,twist=20,elbow=146,wrist=0},la={raise=40,out=10,elbow=40}})
 		else
 			spec=merge(base,{ra={raise=78,out=22,twist=10,elbow=112,wrist=0,wroll=(elapsedTime*1080)%360},la={raise=30,out=14,elbow=40},head={yaw=-18,pitch=-4}})
 		end

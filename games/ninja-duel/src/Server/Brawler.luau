@@ -162,6 +162,8 @@ function Brawler.request(c,a,action)
  if action=="ThrowUp" then return false,"No grab" end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
+  local heavyGraph=MoveGraphs[a.fighterId] or {}
+  if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
   if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
   return Brawler.start(c,a,"Heavy")
  end
@@ -247,6 +249,7 @@ function Brawler.wallFollow(c,a,b,p)
   b.wallBounced=true
   local out=b.splatNormal or -a.root.CFrame.LookVector
   Brawler.react(c,b,"Launched",out*24+Vector3.new(0,46,0),1.05,a)
+  b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+.07);a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.04)
   a.pursuitUntil=c.now+1.1
   c:pushImpact(b.root.Position-out*1.2,"wallbounce",true,{normal=out,owner=b.id})
   Brawler.event(c,a,"WallBounce");c:cue(a,"WALL BOUNCE • E TO PURSUE",.9)
@@ -281,6 +284,17 @@ function Brawler.clash(c,a,p)
  Brawler.event(c,a,"Clash");Brawler.event(c,b,"Clash")
  c:cue(a,"CLASH",.6);c:cue(b,"CLASH",.6)
  return true
+end
+-- Neji's Gentle Fist: palms reach the chakra network. Every palm drains
+-- chakra, even through a guard; a clean one closes a chakra point, which slows
+-- the victim's chakra recovery for a few seconds (stacks up to four).
+function Brawler.gentleFist(c,a,b,guarded)
+ local g=a.def.GentleFist
+ b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain))
+ if not guarded then
+  local points=if (b.tenketsuUntil or 0)>c.now then (b.tenketsu or 0) else 0
+  b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ end
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -321,6 +335,7 @@ function Brawler.hit(c,a,p)
  end
  if not success or b.health<=0 then return success end
  if protected then return true end
+ if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
  if guarded then
   a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)

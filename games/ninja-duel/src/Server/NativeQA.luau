@@ -394,7 +394,7 @@ function QA.run(matches)
 		matches:request(player,{action="Move",epoch=s.epoch-1,direction=Vector3.xAxis}); assert(s.human.move==Vector3.zero)
 		for _=1,2 do
 			s.combat:damage(s.human,s.bot,1000,false,true)
-			local old=s.folder; assert(s.phase=="Result")
+			local old=s.folder; assert(s.phase=="Result" or s.finishing)
 			s.lastLifecycle=-10; matches:request(player,{action="Rematch",epoch=s.epoch})
 			assert(s.phase=="Duel" and old.Parent==nil and s.human.health==125)
 		end

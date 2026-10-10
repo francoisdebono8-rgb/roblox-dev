@@ -32,6 +32,9 @@ function AI:defend(now)
 				local gap=offset.Magnitude
 				if gap<16 and gap>2 and p.direction:Dot(offset.Unit)>.92 then
 					self.projectileReact=now+.6
+					-- Neji answers blades and fire with Rotation when it is ready.
+					local rotation=slotOf(a,"Rotation")
+					if rotation and gap<11 and self.rng:NextNumber()<.55 and c:request(a,rotation) then return true end
 					local roll=self.rng:NextNumber()
 					if roll<.35 then
 						c:request(a,"Guard");self.guardUntil=now+.35;return true
@@ -72,9 +75,21 @@ function AI:update(now)
 	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
 	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
+	-- Rhythm: press for a while, then probe at range (spacing, reading), and
+	-- breathe after a combo lands instead of restarting at once.
+	if now>=(self.modeUntil or 0) then
+		self.probing=not self.probing and self.rng:NextNumber()<.55
+		self.modeUntil=now+(if self.probing then 1.4+self.rng:NextNumber()*1.6 else 2.2+self.rng:NextNumber()*2.6)
+	end
+	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
+	if downed and not self.wasDowned and a.pursuitUntil<=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
+	self.wasDowned=downed
+	local calm=self.probing or now<(self.breathUntil or 0)
+	if calm then desired+=4 end
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
 	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
-	a.sprinting=distance>desired+6
+	a.sprinting=distance>desired+6 and not calm
+	if calm then a.move*=.7 end
 	if a.move.Magnitude>1 then a.move=a.move.Unit end
 	if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	-- Wall run: rise along the wall, then dive at the opponent.
@@ -104,6 +119,7 @@ function AI:update(now)
  end
 	local reacted=now-self.observedAt>=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
  -- Remember the wind-up through Active/Recovery: short attacks used to erase
  -- the observation before reaction latency elapsed, so defense never fired.
  local remembered=self.threatAt and now-self.threatAt>=tune.Reaction and now-self.threatAt<.9
@@ -119,6 +135,10 @@ function AI:update(now)
   end
   return
  end
+	-- Neji: a strike about to land at close range is a Rotation read.
+	if reactedThreat and a.state=="Neutral" and distance<6.5 and slotOf(a,"Rotation") and self.rng:NextNumber()<.3 then
+		if c:request(a,(slotOf(a,"Rotation"))) then return end
+	end
 	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted>.08 and self.rng:NextNumber()<(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.
@@ -169,6 +189,15 @@ function AI:update(now)
 		end
 		local branch=if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()<(if minato then .18 else .34) then branch="Tool" end
+		-- Neji: one palm then the twin-palm thrust, or end a string with Vacuum Palm.
+		if a.fighterId=="GentleFist" and not a.airborne then
+			if a.combo==1 and self.rng:NextNumber()<.3 then branch="Heavy" end
+			if a.combo>=2 and self.rng:NextNumber()<.3 then
+				local palm=slotOf(a,"VacuumPalm")
+				if palm and c:request(a,palm,target.root.Position) then return end
+			end
+			if branch=="Tool" and self.rng:NextNumber()<.6 then branch="Attack" end
+		end
 		-- Character branches: the stick picks an alternative inside the string.
 		if branch=="Attack" and not a.airborne then
 			local roll=self.rng:NextNumber()
@@ -195,6 +224,9 @@ function AI:update(now)
 			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
 			if spec.Id=="FireBloom" then use=distance>6 and distance<46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()<0.32) end
+			if spec.Id=="VacuumPalm" then use=distance>7 and distance<24 and c:lineOfSight(a,target) and self.rng:NextNumber()<.45 end
+			if spec.Id=="SixtyFourPalms" then use=distance<4.6 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery" or target.state=="TechniqueChannel") end
+			if spec.Id=="Rotation" then use=false end
 			if spec.Id=="PhoenixFlower" then use=distance>9 and distance<34 and c:lineOfSight(a,target) and self.rng:NextNumber()<.5 end
 			if spec.Id=="WindCut" then use=distance>8 and distance<28 end
 			if spec.Id=="Quickstep" then use=distance>9 and distance<20 and self.rng:NextNumber()<0.25 end
@@ -203,6 +235,8 @@ function AI:update(now)
 	end
 	local whiff=target.state=="Recovery" and (target.attackName=="Heavy" or not target.hitConfirmed)
 	if whiff and distance<10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
+	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
+	if calm then return end
 	if distance<8 and self.rng:NextNumber()<tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end

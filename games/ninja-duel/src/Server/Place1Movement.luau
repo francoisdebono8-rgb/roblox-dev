@@ -20,6 +20,8 @@ function Movement.new(a,c)
  local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
  local lastGroundHorizontalVelocity=Vector3.zero
  local groundLocomotion=Vector3.zero
+ -- Movement rhythm state (sprint and standstill bursts).
+ local wasSprinting,burstUntil,burstReadyAt=false,0,0
  local lastJumpRequestAt=-math.huge
  local sprintInputs,jumpInputs='Sprint','Jump'
  local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
@@ -184,8 +186,17 @@ local function updateMovement(deltaTime)
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
 		if not blocked and input.Magnitude>.05 then target=input.Unit*desiredWalkSpeed end
-		local acceleration=profile.GroundAcceleration
+		local acceleration=profile.GroundAcceleration*(a.def.AccelerationScale or 1)
+		-- Rhythm: ordinary steps carry weight; a sprint that starts, or a move
+		-- committed from a near standstill, bursts. Fast moments read as fast
+		-- because the rest is not.
+		if sprinting and not wasSprinting then burstUntil=c.now+(profile.BurstWindow or .16) end
+		if target.Magnitude>.05 and groundLocomotion.Magnitude<desiredWalkSpeed*.35 and c.now>=(burstReadyAt or 0) then
+			burstUntil=c.now+(profile.BurstWindow or .16)*.6;burstReadyAt=c.now+.5
+		end
+		wasSprinting=sprinting
 		if target.Magnitude<.05 then acceleration=profile.GroundDeceleration
+		elseif c.now<(burstUntil or 0) then acceleration=profile.BurstAcceleration or acceleration
 		elseif groundLocomotion.Magnitude>.05 and groundLocomotion.Unit:Dot(target.Unit)<.45 then acceleration=profile.TurnAcceleration end
 		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
 		if groundLocomotion.Magnitude<.03 then groundLocomotion=Vector3.zero end

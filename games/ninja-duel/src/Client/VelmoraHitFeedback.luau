@@ -31,6 +31,12 @@ local look={
  walltech={shards=4, range=6,  color=Color3.fromRGB(206,222,255),pitch=1.3, volume=.22,hit=Color3.fromRGB(226,236,255)},
  pin     ={shards=3, range=5,  color=Color3.fromRGB(220,224,232),pitch=1.5, volume=.22,hit=Color3.fromRGB(236,240,246)},
  ember   ={shards=4, range=7,  color=Color3.fromRGB(255,170,90),pitch=1.1, volume=.26,hit=Color3.fromRGB(255,214,170)},
+ palm    ={shards=3, range=6,  color=Color3.fromRGB(196,212,255),pitch=1.3, volume=.26,hit=Color3.fromRGB(226,234,255)},
+ palmburst={shards=6,range=10, color=Color3.fromRGB(214,226,255),pitch=0.9, volume=.38,hit=Color3.fromRGB(232,238,255)},
+ deflect ={shards=4, range=6,  color=Color3.fromRGB(226,236,255),pitch=1.5, volume=.22,hit=Color3.fromRGB(240,244,255)},
+ repel   ={shards=7, range=11, color=Color3.fromRGB(200,216,255),pitch=0.84,volume=.44,hit=Color3.fromRGB(228,236,255)},
+ rotation={shards=2, range=10, color=Color3.fromRGB(200,216,255),pitch=0.7, volume=.2, hit=Color3.fromRGB(228,236,255)},
+ trigram ={shards=0, range=9,  color=Color3.fromRGB(200,216,255),pitch=0.8, volume=.16,hit=Color3.fromRGB(228,236,255)},
 }
 local function anchorAt(position)
 	local anchor=Instance.new("Part")

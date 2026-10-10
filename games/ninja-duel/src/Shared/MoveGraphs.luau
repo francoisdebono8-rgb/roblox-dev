@@ -30,4 +30,17 @@ return {
 		blockCancels={Tool=true},
 		readCounter="CounterPalm",
 	},
+	GentleFist={
+		stringBranches={
+			side={kind="move",name="Sweep"},
+			back={kind="disengage",projectile="Kunai"},
+		},
+		-- Heavy after a single clean palm: a twin-palm thrust that drives the
+		-- opponent away (into a wall when one is near) instead of the launcher.
+		heavyAfterOne="PalmThrust",
+		stringCancels={VacuumPalm=true},
+		blockCancels={},
+		-- After Rotation repels an attack, the next press is the palm thrust.
+		readCounter="PalmThrust",
+	},
 }

@@ -48,7 +48,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -58,6 +58,9 @@ function Camera:impulse(style,role)
 	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
 	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)
 	self.shakeUntil=math.max(self.shakeUntil or 0,now+(if style=="slam" or style=="fire" then .18 else .07))
+	-- A decisive blow gets a beat of space: the lens eases back, then settles.
+	local SETTLE={finisher=1.6,launcher=1.2,slam=2.4,wallbounce=2.4,wall=1.4,clash=1.4,repel=1.8,parry=1.4,fire=2}
+	if SETTLE[style] then self.settleSize=math.max(if now<(self.settleUntil or 0) then self.settleSize or 0 else 0,SETTLE[style]);self.settleUntil=now+.75 end
 end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
@@ -124,7 +127,10 @@ function Camera:update(data,dt)
 	local focusRate=if aerial or pursuit then 10 else 7
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom,12,52)
+	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
+	-- K.O.: a slow drift around the finish while the lens eases out.
+	if data.ko then self.yaw+=dt*.3 end
+	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,52)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
 	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
@@ -164,12 +170,15 @@ function Camera:update(data,dt)
 	for part in faded do part.LocalTransparencyModifier=.72 end
 	self.faded=faded
 	if hit then
-		desired=hit.Position+hit.Normal*1.2
-		if (desired-focus).Magnitude<7 then
-			local raised=focus+Vector3.new(0,12,0)+boom*5
-			local overhead=workspace:Raycast(focus,raised-focus,ray)
-			desired=if overhead then overhead.Position+overhead.Normal else raised
-		end
+		local offset=desired-focus
+		local full=offset.Magnitude
+		local allowed=math.max(0,hit.Distance-1.2)
+		local lost=math.clamp(full-allowed,0,full)
+		-- The closer the wall pushes the lens, the higher it rises over the fight:
+		-- continuous in the push, so a fight along the wall never snaps the view.
+		desired=focus+offset.Unit*math.max(allowed,4.5)+Vector3.new(0,lost*.6,0)
+		local check=workspace:Raycast(focus,desired-focus,ray)
+		if check then desired=check.Position+check.Normal*1.2 end
 	end
 	local cf=CFrame.lookAt(desired,focus)
 	if os.clock()<self.shakeUntil then

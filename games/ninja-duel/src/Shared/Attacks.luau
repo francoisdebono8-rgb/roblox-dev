@@ -27,6 +27,9 @@ local attacks={
  CounterPalm=move(.05,.12,.3,10,2.6,"Knockback",Vector3.new(0,14,46),.5),
  -- From a wall run: a diving strike at the opponent (active window sized to the flight).
  WallDive=move(.1,.3,.32,9,0,"Knockdown",Vector3.new(0,10,30),.62),
+ -- Neji: twin palms driven from the hips (heavy after one clean palm, or the
+ -- counter after Rotation).
+ PalmThrust=move(.11,.14,.34,10,3.4,"Knockback",Vector3.new(0,12,62),.52),
 }
 
 for name,spec in attacks do
@@ -52,6 +55,7 @@ local motion={
  Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
  WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
+ PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end

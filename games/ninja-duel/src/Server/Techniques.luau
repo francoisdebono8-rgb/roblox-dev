@@ -270,6 +270,11 @@ Techniques.MirageCast = {
 	execute = function(c,a,pending,now)
 		if not c:targetValid(a,a.target,pending.spec.Range,0.35) then c:cue(a,"CAST LOST SIGHT"); return end
 		local victim = a.target
+		-- The Byakugan sees chakra, not light: the afterimage has none.
+		if victim.def.Byakugan then
+			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
+			return
+		end
 		victim.illusionUntil = now+3
 		victim.decoyPosition = c:clamp(a.root.Position + a.root.CFrame.RightVector*7)
 		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),3)
@@ -290,6 +295,92 @@ Techniques.Quickstep={
 	end,
 }
 Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+-- Neji -----------------------------------------------------------------
+Techniques.ROTATION_REACH=7
+Techniques.Rotation={
+	check=function() return true end,
+	execute=function(c,a,pending,now)
+		local active=pending.spec.Active
+		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
+		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
+		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
+		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
+	end,
+}
+Techniques.VacuumPalm={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		local origin=c.launchPoint(a,"Palm")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		local goal=origin+flat.Unit*pending.spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-4,2),0)
+		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5})
+		c:cue(a,"EIGHT TRIGRAMS • VACUUM PALM",.6)
+	end,
+}
+-- Eight Trigrams Sixty-Four Palms. The opening palm must land (and can be
+-- guarded); once it does, the flurry locks the opponent in place, drains its
+-- chakra point by point and ends by sealing its techniques. The victim keeps one
+-- answer: a substitution.
+local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
+Techniques.SixtyFourPalms={
+	check=function() return true end,
+	execute=function(c,a,pending,now)
+		local Brawler=require(script.Parent.Brawler)
+		local victim=a.target
+		pending.spec=table.clone(pending.spec)
+		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId})
+		local reach=victim and victim.health>0 and c:targetValid(a,victim,pending.spec.Range,.4)
+		if not reach or victim.invulnerableUntil>now or (victim.rotationUntil or 0)>now then
+			pending.spec.Recovery=.85
+			c:cue(a,"64 PALMS • MISSED",.7)
+			return
+		end
+		c.damageTag="64 Palms"
+		local opened=c:damage(a,victim,pending.spec.Damage,false,true)
+		c.damageTag=nil
+		if c.match.phase~="Duel" then return end
+		if not opened or victim.impactStyle=="block" then
+			pending.spec.Recovery=.7
+			c:cue(a,"64 PALMS • GUARDED",.7)
+			return
+		end
+		Brawler.gentleFist(c,a,victim,false)
+		-- Lock: Neji holds the technique, the victim is held in place.
+		local strikes=7
+		local interval=.15
+		c:setState(a,"TechniqueActive",strikes*interval+.25)
+		a.flurryUntil=now+strikes*interval+.2
+		Brawler.react(c,victim,"HitStun",Vector3.zero,strikes*interval+.3,a)
+		victim.flurriedBy=a
+		c:cue(a,"EIGHT TRIGRAMS • 64 PALMS",1)
+		for k=1,strikes do
+			c:schedule(now+k*interval,function()
+				if a.health<=0 or a.state~="TechniqueActive" or victim.health<=0 or victim.reaction~="HitStun" or victim.flurriedBy~=a then return end
+				local last=k==strikes
+				c.damageTag="64 Palms"
+				c:damage(a,victim,if last then pending.spec.Damage*2.5 else pending.spec.Damage,false,false)
+				c.damageTag=nil
+				if c.match.phase~="Duel" or victim.health<=0 then return end
+				Brawler.gentleFist(c,a,victim,false)
+				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
+				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
+				if last then
+					victim.flurriedBy=nil
+					victim.sealedUntil=c.now+3.5
+					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
+					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+					away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
+					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
+					c:cue(victim,"CHAKRA POINTS SEALED",1.2)
+				else
+					victim.reactionUntil=math.max(victim.reactionUntil,c.now+interval+.15)
+				end
+			end)
+		end
+	end,
+}
 Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
 Techniques.WindCut={check=function() return true end,execute=Elements.wind}
 return Techniques

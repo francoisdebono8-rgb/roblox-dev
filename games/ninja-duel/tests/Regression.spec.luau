@@ -203,10 +203,11 @@ test("hitstop weight is proportional and never stalls a light combo",function()
  local Hitstop=H.load("Server/Combat").Hitstop
  assert(Hitstop.light==0 and Hitstop.air==0,"a clean light hit must not stop the fight")
  assert(Hitstop.block<=.012,"a normal block must barely register")
- assert(Hitstop.finisher>=.02 and Hitstop.finisher<=.04,"finisher weight out of range")
- assert(Hitstop.launcher>=.03 and Hitstop.launcher<=.05,"launcher weight out of range")
- assert(Hitstop.parry>=.04 and Hitstop.parry<=.06,"parry weight out of range")
- assert(Hitstop.slam>=.05 and Hitstop.slam<=.08,"slam weight out of range")
+ -- Final pass: important hits breathe (rhythm), lights still never stop the fight.
+ assert(Hitstop.finisher>=.04 and Hitstop.finisher<=.06,"finisher weight out of range")
+ assert(Hitstop.launcher>=.05 and Hitstop.launcher<=.07,"launcher weight out of range")
+ assert(Hitstop.parry>=.06 and Hitstop.parry<=.09,"parry weight out of range")
+ assert(Hitstop.slam>=.07 and Hitstop.slam<=.1,"slam weight out of range")
  assert(Hitstop.light<Hitstop.finisher and Hitstop.finisher<Hitstop.launcher
   and Hitstop.launcher<=Hitstop.parry and Hitstop.parry<Hitstop.slam,"hitstop hierarchy is not ordered")
  -- A clean jab must not freeze either body, and must not shift the swing clock.
@@ -233,7 +234,7 @@ test("hitstop weight is proportional and never stalls a light combo",function()
   end
   engage(d,e,f)
  end
- assert(longest>0 and longest<=.035,"finisher stop out of range: "..string.format("%.3f",longest))
+ assert(longest>0 and longest<=.06,"finisher stop out of range: "..string.format("%.3f",longest))
 end)
 test("presentation damps Motor6D instead of snapping between frames",function()
  local Motion=H.load("Client/VelmoraMotionEngine")

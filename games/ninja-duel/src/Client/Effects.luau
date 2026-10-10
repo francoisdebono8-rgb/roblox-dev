@@ -25,7 +25,8 @@ local SOUND={
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5}
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -220,6 +221,19 @@ local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
 local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
 	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
+	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
+	palm=function()
+		local model=new("Model",{Name="VacuumPalm"})
+		local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
+		local ring=block(model,Vector3.new(.3,3,3),CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(214,228,255),Enum.Material.Neon);ring.Name="Ring"
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.62
+		local core=block(model,Vector3.new(.2,1.6,1.6),CFrame.Angles(0,math.pi/2,0)*CFrame.new(-.4,0,0),Color3.fromRGB(240,246,255),Enum.Material.Neon);core.Name="Core"
+		core.Shape=Enum.PartType.Cylinder;core.Transparency=.45
+		weldAll(root,{ring,core})
+		addTrail(root,Vector3.new(0,1.2,0),Vector3.new(0,-1.2,0),Color3.fromRGB(206,222,255),.12,.6,1)
+		model.PrimaryPart=root
+		return model
+	end,
 	-- Phoenix Flower: the same fire build, shrunk and dimmer.
 	phoenix=function()
 		local model=FX.buildFireball()
@@ -254,6 +268,8 @@ function FX:sync(data)
 				sound(root,SOUND.boom,.35,.55)
 			elseif p.kind=="phoenix" then
 				sound(root,SOUND.whoosh,.25,.7)
+			elseif p.kind=="palm" then
+				sound(root,SOUND.whoosh,.45,.6)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
@@ -313,6 +329,12 @@ function FX:stepProjectiles(dt)
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end
 			end
 			cf=look*CFrame.Angles(0,0,os.clock()*3)
+		elseif p.kind=="palm" then
+			local radius=(p.radius or 1.5)+(p.growth or 0)*math.max(0,age)
+			local ring=entry.model:FindFirstChild("Ring");local core=entry.model:FindFirstChild("Core")
+			if ring then ring.Size=Vector3.new(.3,radius*2.2,radius*2.2) end
+			if core then core.Size=Vector3.new(.2,radius*1.2,radius*1.2) end
+			cf=look
 		else
 			cf=look
 		end
@@ -429,7 +451,7 @@ function FX:impact(impact,folder)
 		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
-		self:ghost(model,if impact.fighter=="Flashstep" then MINATO else Color3.fromRGB(150,40,60),.22,.55)
+		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.22,.55)
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),8,1.4)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
@@ -498,10 +520,56 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
 	elseif style=="pin" then
 		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="palmburst" then
+		local along=impact.direction or Vector3.zAxis
+		shockRing(self.folder,position,Color3.fromRGB(220,232,255),2,12,.24,along)
+		smokePuff(self.folder,position,Color3.fromRGB(226,230,240),10,1.8)
+	elseif style=="palm" then
+		-- A Gentle Fist palm: a small, sharp chakra flash; no debris.
+		flash(self.folder,position,HYUGA,.5,impact.heavy and 6 or 3,.12,.25)
+		sparks(self.folder,position,HYUGA,impact.heavy and 16 or 6,impact.heavy and 22 or 12)
+	elseif style=="deflect" then
+		sparks(self.folder,position,Color3.fromRGB(230,240,255),12,24)
+	elseif style=="repel" then
+		shockRing(self.folder,position,HYUGA,3,16,.3,impact.direction)
+		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(214,206,190),14,2)
+	elseif style=="rotation" then
+		shockRing(self.folder,position-Vector3.new(0,2.6,0),HYUGA,4,18,.5)
+		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(214,206,190),18,2.4)
+	elseif style=="trigram" then
+		self:trigram(position)
 	elseif style=="ember" then
 		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
 		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
 	end
+end
+-- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
+function FX:trigram(position)
+	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-10,0))
+	local at=if floor then floor.Position+Vector3.new(0,.05,0) else position-Vector3.new(0,2.9,0)
+	local glyph=new("Model",{Name="Trigrams"},self.folder)
+	local base=CFrame.new(at)*CFrame.Angles(0,0,math.pi/2)
+	local disc=block(glyph,Vector3.new(.04,15,15),base,HYUGA,Enum.Material.SmoothPlastic);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.9
+	local inner=block(glyph,Vector3.new(.05,3.4,3.4),base,Color3.fromRGB(236,240,255),Enum.Material.Neon);inner.Shape=Enum.PartType.Cylinder;inner.Transparency=.5
+	for k=0,7 do
+		local a=k/8*math.pi*2
+		for line=0,2 do
+			local broken=(k+line)%3==0
+			local radius=5+line*.55
+			local cf=CFrame.new(at+Vector3.new(math.sin(a)*radius,.02,math.cos(a)*radius))*CFrame.Angles(0,a,0)
+			if broken then
+				for _,side in {-1,1} do block(glyph,Vector3.new(.55,.05,.16),cf*CFrame.new(side*.42,0,0),HYUGA,Enum.Material.Neon) end
+			else
+				block(glyph,Vector3.new(1.4,.05,.16),cf,HYUGA,Enum.Material.Neon)
+			end
+		end
+	end
+	for _,d in glyph:GetDescendants() do if d:IsA("BasePart") then d.Transparency=math.max(d.Transparency,.35) end end
+	flash(self.folder,at+Vector3.new(0,1,0),HYUGA,1,8,.25,.4)
+	task.delay(1.6,function()
+		for _,d in glyph:GetDescendants() do if d:IsA("BasePart") then tween(d,.4,{Transparency=1}) end end
+	end)
+	Debris:AddItem(glyph,2.1)
 end
 -- A thrown blade that missed stays embedded where it landed for a moment.
 function FX:stick(kind,position,normal,direction,owner)
@@ -698,7 +766,10 @@ function FX:fighter(model,actor,dt)
 		aura={}
 		self.auras[model]=aura
 		local minato=actor.fighterId=="Flashstep"
-		local color=if minato then MINATO else Color3.fromRGB(170,30,48)
+		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(170,30,48)
+		local veins={}
+		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
+		aura.veins=veins
 		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
 		local irises={}
@@ -722,6 +793,42 @@ function FX:fighter(model,actor,dt)
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
+	end
+	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
+	if actor.fighterId=="GentleFist" then
+		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true
+		for _,vein in aura.veins or {} do vein.Transparency=if focused then 0 else 1 end
+		local dome=aura.dome
+		if actor.rotation and not dome then
+			local holder=new("Model",{Name="Rotation"},self.folder)
+			local shell=block(holder,Vector3.one*12,root.CFrame,Color3.fromRGB(200,220,255),Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.86
+			local inner=block(holder,Vector3.one*9,root.CFrame,Color3.fromRGB(236,244,255),Enum.Material.ForceField);inner.Shape=Enum.PartType.Ball;inner.Transparency=.55
+			local bands={}
+			for k=1,3 do
+				local band=block(holder,Vector3.new(.12,12.4,12.4),root.CFrame,HYUGA,Enum.Material.Neon);band.Shape=Enum.PartType.Cylinder;band.Transparency=.7
+				table.insert(bands,band)
+			end
+			local light=new("PointLight",{Color=HYUGA,Brightness=4,Range=18,Shadows=false},shell)
+			dome={holder=holder,shell=shell,inner=inner,bands=bands,light=light,born=os.clock()}
+			aura.dome=dome
+			sound(shell,SOUND.whoosh,.5,.45)
+		end
+		if dome then
+			if actor.rotation then
+				local grow=math.clamp((os.clock()-dome.born)/.12,.3,1)
+				local center=root.CFrame*CFrame.new(0,-.6,0)
+				dome.shell.CFrame=center;dome.shell.Size=Vector3.one*12*grow
+				dome.inner.CFrame=center*CFrame.Angles(0,os.clock()*20,0);dome.inner.Size=Vector3.one*9*grow
+				for k,band in dome.bands do
+					band.CFrame=center*CFrame.Angles(0,os.clock()*(18+k*4),0)*CFrame.Angles(0,0,math.rad(60*k))
+					band.Size=Vector3.new(.12,12.4*grow,12.4*grow)
+				end
+			else
+				aura.dome=nil
+				for _,d in dome.holder:GetDescendants() do if d:IsA("BasePart") then tween(d,.18,{Transparency=1,Size=d.Size*1.15}) end end
+				Debris:AddItem(dome.holder,.25)
+			end
+		end
 	end
 	-- Rasengan forms in the right hand during the channel and stays through the strike.
 	local rasengan=(actor.castId=="BurstStrike" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))

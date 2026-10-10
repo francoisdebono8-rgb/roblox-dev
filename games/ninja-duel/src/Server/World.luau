@@ -466,6 +466,62 @@ local function dressItachi(model,def)
 	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.36,.9),CFrame.new(0,.05,0),rgb(206,206,198))
 	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),dark)
 end
+-- Neji at the Chunin Exam (13): cream high-collared Hyuga top, dark shorts,
+-- bandaged right arm and thigh, long hair tied at the end, Byakugan eyes.
+local function dressNeji(model,def)
+	local hair=rgb(52,36,30)
+	local robe=rgb(232,226,212)
+	local robeShade=rgb(204,196,182)
+	local shorts=rgb(72,54,46)
+	local bandage=rgb(240,238,230)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(198,192,232),hair)
+	-- Byakugan: pale irises with no pupil; the veins show when it flares.
+	for _,p in model:GetChildren() do
+		if p.Name=="Eye" then p.Color=rgb(242,240,252) end
+		if p.Name=="Iris" then p.Material=Enum.Material.Neon;p.Transparency=.2 end
+	end
+	for _,side in {-1,1} do
+		for k=0,2 do
+			local vein=wear(model,"Head","ByakuganVein",Vector3.new(.035,.2,.02),CFrame.new(side*(.52+k*.06),.08+(k-1)*.07,-.79)*A(0,0,R(side*(30-k*30))),rgb(150,138,196))
+			if vein then vein.Transparency=1 end
+		end
+	end
+	hairCap(model,hair)
+	for _,side in {-1,1} do
+		wear(model,"Head","Bang",Vector3.new(.22,1.32,.4),CFrame.new(side*.74,-.24,-.44)*A(R(2),0,R(side*2)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.18,1.25,.95),CFrame.new(side*.8,-.14,.22),hair)
+	end
+	-- Centre parting: two smooth panels over the forehead, no spikes.
+	for _,x in {-.36,.36} do
+		wear(model,"Head","Fringe",Vector3.new(.62,.3,.16),CFrame.new(x,.5,-.7)*A(R(8),0,R(if x>0 then -10 else 10)),hair)
+	end
+	wear(model,"Head","BackHair",Vector3.new(1.66,1.45,.3),CFrame.new(0,-.14,.72),hair)
+	wear(model,"UpperTorso","LongHair",Vector3.new(.72,1.5,.22),CFrame.new(0,.32,.62),hair)
+	wear(model,"UpperTorso","HairTie",Vector3.new(.5,.12,.26),CFrame.new(0,-.38,.63),rgb(240,236,226))
+	wear(model,"UpperTorso","HairTip",Vector3.new(.4,.48,.2),CFrame.new(0,-.68,.62),hair)
+	headband(model,false)
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=robe end
+	end
+	wear(model,"UpperTorso","HighCollar",Vector3.new(1.42,.5,1.1),CFrame.new(0,.86,.04),robe)
+	wear(model,"UpperTorso","Overlap",Vector3.new(.08,1.3,.04),CFrame.new(-.32,-.05,-.53)*A(0,0,R(-10)),robeShade)
+	wear(model,"LowerTorso","WaistTie",Vector3.new(2.06,.26,1.06),CFrame.new(0,.3,0),robeShade)
+	for _,side in {"Left","Right"} do
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=shorts end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.5,.84),CFrame.new(0,-.2,0),rgb(48,52,70))
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,46,66) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.88,.36,.88),CFrame.new(0,-.2,0),robe)
+	end
+	local leftArm=model:FindFirstChild("LeftLowerArm");if leftArm then leftArm.Color=skin end
+	local rightArm=model:FindFirstChild("RightLowerArm");if rightArm then rightArm.Color=bandage end
+	for k=0,2 do wear(model,"RightLowerArm","BandageLine",Vector3.new(.84,.04,.84),CFrame.new(0,.25-k*.25,0)*A(0,0,R(8)),rgb(212,208,198)) end
+	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.88,.5,.88),CFrame.new(0,0,0),bandage)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(48,52,70))
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -477,7 +533,7 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) end
+	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

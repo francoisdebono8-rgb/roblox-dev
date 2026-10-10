@@ -76,6 +76,17 @@ function DevHooks.install(matches)
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
+		elseif op=="ko" then
+			-- arg1 = "human"/"bot": that fighter is knocked out by the other.
+			local victim=if arg1=="human" then s.human else s.bot
+			local by=if arg1=="human" then s.bot else s.human
+			victim.invulnerableUntil=0;victim.rotationUntil=0;victim.readUntil=0;victim.guardHeld=false;victim.comboHits=0
+			c:damage(by,victim,victim.health+50,false,false)
+			return if s.finishing then "KO" else s.phase
+		elseif op=="rematch" then
+			s.lastLifecycle=-10
+			matches:request(player,{action="Rematch",epoch=s.epoch})
+			return s.phase
 		elseif op=="damagelog" then
 			-- arg1=true clears it; the log starts when first requested.
 			c.damageLog=c.damageLog or {}

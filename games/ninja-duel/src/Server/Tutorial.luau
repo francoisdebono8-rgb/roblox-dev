@@ -29,7 +29,7 @@ function Tutorial.enter(s,now)
  local c=s.combat;c:clear(true)
  for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
  t.health=a.health
- b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
+ b.trainingChannelScale=if t.index==17 then 3 else 1
  local near=t.index>=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
  -- Wall step: start a few strides from the stadium wall (east side).
@@ -41,6 +41,14 @@ function Tutorial.enter(s,now)
   Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
  end
  t.attackAt=now+1
+end
+-- The bot's longest interruptible channel: the one the player learns to break.
+function Tutorial.interruptSlot(b)
+ local best,bestChannel="Technique1",-1
+ for slot,spec in b.def.Techniques do
+  if spec.Interruptible and spec.Channel>bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+ end
+ return best
 end
 function Tutorial.update(s,now,dt)
  local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
@@ -69,7 +77,7 @@ function Tutorial.update(s,now,dt)
   b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
  end
  if t.index==17 and now>=t.attackAt then
-  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,if b.fighterId=="Mirage" then "Technique4" else "Technique5",a.root.Position);t.attackAt=now+1.4
+  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
  end
  -- Failed launch/juggle exercises reset quickly without skipping their objectives.
  if (t.index==9 or t.index==10 or t.index==11) and now-t.entered>3 then Tutorial.enter(s,now) end

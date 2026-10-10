@@ -70,7 +70,7 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	local playable={"Flashstep","Mirage"}
+	local playable={"Flashstep","Mirage","GentleFist"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -83,7 +83,11 @@ function UI.new(parent,send)
 			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
 			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
 			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
-			pick.Activated:Connect(function() self.player=id;if self.bot==id then self.bot=playable[3-index] end;self:refreshSelection() end)
+			pick.Activated:Connect(function()
+				self.player=id
+				if self.bot==id then self.bot=playable[index%#playable+1] end
+				self:refreshSelection()
+			end)
 			self.selectionButtons["slot"..id]=slot
 		else
 			text(slot,"?",UDim2.fromOffset(0,14),UDim2.fromOffset(84,56),48,Color3.fromRGB(70,66,74),TITLE_FONT,Enum.TextXAlignment.Center)
@@ -96,8 +100,8 @@ function UI.new(parent,send)
 	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
 	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*214,480),UDim2.fromOffset(206,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*214,480),UDim2.fromOffset(206,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*145,480),UDim2.fromOffset(138,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*145,480),UDim2.fromOffset(138,40),function() self.bot=id; self:refreshSelection() end)
 	end
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
 	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
@@ -173,6 +177,9 @@ function UI.new(parent,send)
 	end
 	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.ko.Visible=false
 	-- ---------------------------------------------------------------- intro
 	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.introLeft=frame(self.intro,UDim2.new(0,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
@@ -269,6 +276,11 @@ function UI:render(data)
 		end
 		return
 	end
+	if data.ko and not self.ko.Visible then
+		self.ko.TextSize=170
+		Tween:Create(self.ko,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=120}):Play()
+	end
+	self.ko.Visible=data.ko==true
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
@@ -279,6 +291,9 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		-- Gentle Fist effects on this fighter.
+		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
+		elseif (actor.tenketsu or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
 		local charges=actor.subCharges or 0
 		for k,pip in widget.pips do
 			local level=if k<=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)>0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
@@ -310,6 +325,7 @@ function UI:render(data)
 	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
+		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do

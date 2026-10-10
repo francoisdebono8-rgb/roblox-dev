@@ -56,6 +56,9 @@ local attacks={
  CounterPalm=move(.05,.12,.3,10,2.6,"Knockback",Vector3.new(0,14,46),.5),
  -- From a wall run: a diving strike at the opponent (active window sized to the flight).
  WallDive=move(.1,.3,.32,9,0,"Knockdown",Vector3.new(0,10,30),.62),
+ -- Neji: twin palms driven from the hips (heavy after one clean palm, or the
+ -- counter after Rotation).
+ PalmThrust=move(.11,.14,.34,10,3.4,"Knockback",Vector3.new(0,12,62),.52),
 }
 
 for name,spec in attacks do
@@ -81,6 +84,7 @@ local motion={
  Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
  WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
+ PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
@@ -130,7 +134,7 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.10.0-phase4-gamefeel-arena",
+	Version = "0.11.0-final-today",
 	ArenaRadius = 64.4, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
@@ -152,7 +156,8 @@ return {
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
 		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 40},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
-	Movement = { SprintSpeed = 46, GroundAcceleration = 420, GroundDeceleration = 480, TurnAcceleration = 620, AirAcceleration = 76,
+	Movement = { SprintSpeed = 46, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
+		BurstAcceleration = 520, BurstWindow = 0.16,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
@@ -222,9 +227,9 @@ return {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
-		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
+		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 25, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
-		ComboToolCancel = true, CombatStyle = "Angles",
+		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -244,13 +249,13 @@ return {
 	Mirage = {
 		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
-		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 27.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
+		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 23.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
 		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
 		-- The Sharingan (three tomoe at 13): it sees strikes coming. Wider parry
 		-- and perfect-dodge windows, each successful one opens a counter, and a
 		-- raised guard tracks a teleport instead of being crossed up.
 		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
-		ComboToolCancel = true, CombatStyle = "Control",
+		ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -264,6 +269,33 @@ return {
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "3s decoy • a swing at it opens a punish" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 62, Speed = 54, Damage = 16, Hint = "A miss leaves the lane burning" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 48, Speed = 68, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
+		},
+	},
+	-- Third prototype: the Hyuga genius at the Chunin Exam finals. Pure taijutsu
+	-- with a different engine: palms that attack chakra, not health alone.
+	GentleFist = {
+		Name = "Neji", FullName = "Neji Hyuga", Age = 13, Title = "THE HYUGA GENIUS", Color = { 176, 196, 255 },
+		Description = "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
+		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 23.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
+		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
+		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		-- Byakugan: near-360-degree sight. His guard covers every side except a
+		-- narrow blind spot straight behind, and genjutsu decoys do not fool him.
+		Byakugan = { BlindSpot = 0.9 },
+		-- Gentle Fist: every palm drains chakra (even through a guard) and a clean
+		-- one closes a chakra point, slowing the victim's chakra recovery.
+		GentleFist = { Drain = 6, GuardDrain = 3, RegenCut = 0.15, MaxPoints = 4, Duration = 5 },
+		AttackProfile = {
+			Light1={startup=.92,recovery=.9,travel=1.0,range=6.4},Light2={startup=.94,recovery=.9,travel=1.0,range=6.6},
+			Light3={startup=1.0,recovery=.96,travel=1.05,impulseZ=54},Heavy={startup=1.02,recovery=1.0},
+			Launcher={startup=.98,travel=.95,impulseY=56},DashAttack={startup=.94,travel=1.02},
+			Air1={startup=.96},Air2={startup=.98},Slam={startup=1.0},
+		},
+		Skin = { 228, 202, 178 }, Hair = { 52, 36, 30 }, Outfit = { 226, 220, 206 },
+		Techniques = {
+			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
+			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Range = 26, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
+			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • seals the chakra points (no jutsu)" },
 		},
 	},
 }
@@ -304,6 +336,19 @@ return {
 		stringCancels={},
 		blockCancels={Tool=true},
 		readCounter="CounterPalm",
+	},
+	GentleFist={
+		stringBranches={
+			side={kind="move",name="Sweep"},
+			back={kind="disengage",projectile="Kunai"},
+		},
+		-- Heavy after a single clean palm: a twin-palm thrust that drives the
+		-- opponent away (into a wall when one is near) instead of the launcher.
+		heavyAfterOne="PalmThrust",
+		stringCancels={VacuumPalm=true},
+		blockCancels={},
+		-- After Rotation repels an attack, the next press is the palm thrust.
+		readCounter="PalmThrust",
 	},
 }
 </ProtectedString>
@@ -1350,7 +1395,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">8e0aacd1dd30559dbbfcb07e28af5fcf06dbe70bde48183b46c210f714b203dd</string>
+          <string name="Value">eb2f4492f5ff98b91993409ab0a715220dd52cf78bca4d9becfa8bc5cca01aa3</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1486,6 +1531,9 @@ function AI:defend(now)
 				local gap=offset.Magnitude
 				if gap&lt;16 and gap&gt;2 and p.direction:Dot(offset.Unit)&gt;.92 then
 					self.projectileReact=now+.6
+					-- Neji answers blades and fire with Rotation when it is ready.
+					local rotation=slotOf(a,"Rotation")
+					if rotation and gap&lt;11 and self.rng:NextNumber()&lt;.55 and c:request(a,rotation) then return true end
 					local roll=self.rng:NextNumber()
 					if roll&lt;.35 then
 						c:request(a,"Guard");self.guardUntil=now+.35;return true
@@ -1526,9 +1574,21 @@ function AI:update(now)
 	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
 	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
+	-- Rhythm: press for a while, then probe at range (spacing, reading), and
+	-- breathe after a combo lands instead of restarting at once.
+	if now&gt;=(self.modeUntil or 0) then
+		self.probing=not self.probing and self.rng:NextNumber()&lt;.55
+		self.modeUntil=now+(if self.probing then 1.4+self.rng:NextNumber()*1.6 else 2.2+self.rng:NextNumber()*2.6)
+	end
+	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
+	if downed and not self.wasDowned and a.pursuitUntil&lt;=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
+	self.wasDowned=downed
+	local calm=self.probing or now&lt;(self.breathUntil or 0)
+	if calm then desired+=4 end
 	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
 	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
-	a.sprinting=distance&gt;desired+6
+	a.sprinting=distance&gt;desired+6 and not calm
+	if calm then a.move*=.7 end
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	-- Wall run: rise along the wall, then dive at the opponent.
@@ -1558,6 +1618,7 @@ function AI:update(now)
  end
 	local reacted=now-self.observedAt&gt;=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
  -- Remember the wind-up through Active/Recovery: short attacks used to erase
  -- the observation before reaction latency elapsed, so defense never fired.
  local remembered=self.threatAt and now-self.threatAt&gt;=tune.Reaction and now-self.threatAt&lt;.9
@@ -1573,6 +1634,10 @@ function AI:update(now)
   end
   return
  end
+	-- Neji: a strike about to land at close range is a Rotation read.
+	if reactedThreat and a.state=="Neutral" and distance&lt;6.5 and slotOf(a,"Rotation") and self.rng:NextNumber()&lt;.3 then
+		if c:request(a,(slotOf(a,"Rotation"))) then return end
+	end
 	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted&gt;.08 and self.rng:NextNumber()&lt;(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.
@@ -1623,6 +1688,15 @@ function AI:update(now)
 		end
 		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
+		-- Neji: one palm then the twin-palm thrust, or end a string with Vacuum Palm.
+		if a.fighterId=="GentleFist" and not a.airborne then
+			if a.combo==1 and self.rng:NextNumber()&lt;.3 then branch="Heavy" end
+			if a.combo&gt;=2 and self.rng:NextNumber()&lt;.3 then
+				local palm=slotOf(a,"VacuumPalm")
+				if palm and c:request(a,palm,target.root.Position) then return end
+			end
+			if branch=="Tool" and self.rng:NextNumber()&lt;.6 then branch="Attack" end
+		end
 		-- Character branches: the stick picks an alternative inside the string.
 		if branch=="Attack" and not a.airborne then
 			local roll=self.rng:NextNumber()
@@ -1649,6 +1723,9 @@ function AI:update(now)
 			elseif spec.Id=="NeedleFan" then use=distance&gt;8 and distance&lt;36
 			elseif spec.Id=="MirageCast" then use=distance&gt;10 and distance&lt;21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()&lt;0.18) end
 			if spec.Id=="FireBloom" then use=distance&gt;6 and distance&lt;46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()&lt;0.32) end
+			if spec.Id=="VacuumPalm" then use=distance&gt;7 and distance&lt;24 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.45 end
+			if spec.Id=="SixtyFourPalms" then use=distance&lt;4.6 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery" or target.state=="TechniqueChannel") end
+			if spec.Id=="Rotation" then use=false end
 			if spec.Id=="PhoenixFlower" then use=distance&gt;9 and distance&lt;34 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.5 end
 			if spec.Id=="WindCut" then use=distance&gt;8 and distance&lt;28 end
 			if spec.Id=="Quickstep" then use=distance&gt;9 and distance&lt;20 and self.rng:NextNumber()&lt;0.25 end
@@ -1657,6 +1734,8 @@ function AI:update(now)
 	end
 	local whiff=target.state=="Recovery" and (target.attackName=="Heavy" or not target.hitConfirmed)
 	if whiff and distance&lt;10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
+	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
+	if calm then return end
 	if distance&lt;8 and self.rng:NextNumber()&lt;tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance&lt;5 and self.rng:NextNumber()&lt;.12 then "Grab" elseif self.rng:NextNumber()&lt;.16 then "Heavy" else "Attack")
 	end
@@ -1831,6 +1910,8 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=if p.rasengan then "Rasengan" else p.name
    local success=c:damage(a,target,damage*(a.def.CombatDamage or 1),false,true)
    c.damageTag=nil
+   -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
+   if success then guarded=target.impactStyle=='block' end
    if success then
     local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
     sound(target.root,weaponSounds[weaponType])
@@ -2056,6 +2137,8 @@ function Brawler.request(c,a,action)
  if action=="ThrowUp" then return false,"No grab" end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
+  local heavyGraph=MoveGraphs[a.fighterId] or {}
+  if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
   if canChain and a.combo&gt;=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
   return Brawler.start(c,a,"Heavy")
  end
@@ -2141,6 +2224,7 @@ function Brawler.wallFollow(c,a,b,p)
   b.wallBounced=true
   local out=b.splatNormal or -a.root.CFrame.LookVector
   Brawler.react(c,b,"Launched",out*24+Vector3.new(0,46,0),1.05,a)
+  b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+.07);a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.04)
   a.pursuitUntil=c.now+1.1
   c:pushImpact(b.root.Position-out*1.2,"wallbounce",true,{normal=out,owner=b.id})
   Brawler.event(c,a,"WallBounce");c:cue(a,"WALL BOUNCE • E TO PURSUE",.9)
@@ -2175,6 +2259,17 @@ function Brawler.clash(c,a,p)
  Brawler.event(c,a,"Clash");Brawler.event(c,b,"Clash")
  c:cue(a,"CLASH",.6);c:cue(b,"CLASH",.6)
  return true
+end
+-- Neji's Gentle Fist: palms reach the chakra network. Every palm drains
+-- chakra, even through a guard; a clean one closes a chakra point, which slows
+-- the victim's chakra recovery for a few seconds (stacks up to four).
+function Brawler.gentleFist(c,a,b,guarded)
+ local g=a.def.GentleFist
+ b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain))
+ if not guarded then
+  local points=if (b.tenketsuUntil or 0)&gt;c.now then (b.tenketsu or 0) else 0
+  b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ end
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -2215,6 +2310,7 @@ function Brawler.hit(c,a,p)
  end
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
+ if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
  if guarded then
   a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)
@@ -2344,7 +2440,7 @@ end
 -- approximation of the animated hand/mouth so the projectile's first frame is
 -- where the throwing arm actually is, not the middle of the chest.
 local LAUNCH={
-	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},
+	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},
 	Shuriken={side=-1.1,up=.9,forward=1.2},Fireball={side=0,up=2.1,forward=2.6},Wind={side=.6,up=1,forward=2.2},
 }
 function Combat.launchPoint(a,kind)
@@ -2422,7 +2518,7 @@ end
 -- Hitstop budget by impact weight. Only the defender stops, and only briefly:
 -- freezing both actors on every light made a normal combo read as
 -- move -&gt; stop -&gt; move -&gt; stop.
-local HITSTOP={light=0,air=0,block=.01,finisher=.03,launcher=.04,parry=.05,slam=.065,jutsu=.055,default=.02}
+local HITSTOP={light=0,air=0,block=.01,finisher=.05,launcher=.06,parry=.075,slam=.09,jutsu=.065,default=.025}
 Combat.Hitstop=HITSTOP
 function Combat:applyHitstop(attacker,victim,style,heavy)
 	local stop=HITSTOP[style] or (if heavy then HITSTOP.default else 0)
@@ -2463,10 +2559,14 @@ function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
-	if self.match.phase~="Duel" or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
+	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
+	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
+	if (victim.rotationUntil or 0)&gt;self.now then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
+	-- Byakugan: the guard covers every side but a narrow blind spot behind.
+	if victim.def.Byakugan and delta.Magnitude&gt;=0.1 then frontal=victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;-victim.def.Byakugan.BlindSpot end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
 	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt&lt;.7 then
 		frontal=true
@@ -2555,6 +2655,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- Remember the blow that ended it so the KO body matches the final hit.
 		victim.koStyle=style
 		victim.koAirborne=victim.airborne==true
+		-- The last blow freezes for a beat on both bodies.
+		attacker.hitstopUntil=self.now+.22;victim.hitstopUntil=self.now+.22
+		attacker.pending=nil;attacker.move=Vector3.zero
 		self.match.finish(attacker,victim)
 	end
 	attacker.hitConfirmed=true
@@ -2725,6 +2828,7 @@ end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
 	if self.match.introUntil and self.now&lt;self.match.introUntil then return false,"Intro" end
+	if self.match.finishing then return false,"Intro" end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -2806,7 +2910,7 @@ function Combat:request(a,action,aim,clientTime)
 		if not chainCancel then a.chakra-=Config.ToolCost end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		local minato=a.def.Name=="Minato"
+		local minato=(a.def.Tool or "Kunai")=="Kunai"
 		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
 		local range=if chainCancel then 20 else 44
 		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
@@ -2859,6 +2963,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	if self.match.techniquesDisabled then return false,"Techniques disabled" end
+	if string.match(action,"^Technique") and (a.sealedUntil or 0)&gt;self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local spec=slot and a.def.Techniques[slot]
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
@@ -2921,8 +3026,14 @@ function Combat:updateActor(a,dt)
 	end
 	if a.illusionUntil&lt;=now then a.decoyPosition=nil end
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
-		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
+		local regen=a.def.ChakraRegen or Config.ChakraRegen
+		-- Closed chakra points (Gentle Fist) slow the recovery.
+		if (a.tenketsuUntil or 0)&gt;now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
+	if (a.rotationUntil or 0)&gt;now then self:stepRotation(a) end
+	-- Rooted while spinning or striking the sixty-four palms.
+	if (a.rotationUntil or 0)&gt;now or (a.flurryUntil or 0)&gt;now then a.move=Vector3.zero end
 	if now&lt;(a.hitstopUntil or 0) then
 		-- Weight, not a pause: the swing clock keeps running so the animation never
 		-- drifts behind the hitbox, and only the frozen body is held still.
@@ -3091,7 +3202,40 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember"}
+local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst"}
+-- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
+-- opponent inside it is thrown out once. Repelling a strike opens a counter.
+function Combat:stepRotation(a)
+	local reach=Techniques.ROTATION_REACH or 7
+	for i=#self.projectiles,1,-1 do
+		local p=self.projectiles[i]
+		if p.a~=a and (p.position-a.root.Position).Magnitude&lt;=reach+1.5 then
+			table.remove(self.projectiles,i)
+			self:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
+			Brawler.event(self,a,"Deflect")
+		end
+	end
+	local b=a.target
+	a.rotationHit=a.rotationHit or {}
+	if b and b.health&gt;0 and not a.rotationHit[b] and (b.root.Position-a.root.Position).Magnitude&lt;=reach then
+		a.rotationHit[b]=true
+		local attacking=b.state=="Startup" or b.state=="Active" or b.state=="Pursuit"
+		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+		away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
+		self.damageTag="Rotation"
+		local hit=self:damage(a,b,a.rotationDamage or 6,false,false)
+		self.damageTag=nil
+		if self.match.phase~="Duel" then return end
+		-- The dome throws the body out even through a guard.
+		if hit then Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		self:pushImpact(b.root.Position,"repel",true,{owner=a.id,direction=away})
+		if attacking then
+			a.counterUntil=self.now+.9
+			Brawler.event(self,a,"Repel")
+			self:cue(a,"ROTATION • REPELLED • COUNTER",.8);self:cue(b,"REPELLED",.6)
+		end
+	end
+end
 -- Delayed releases (hidden shuriken, the Phoenix Flower volley). Each entry
 -- re-checks its owner when it fires, so a hit fighter never keeps throwing.
 function Combat:schedule(at,fn)
@@ -3140,7 +3284,12 @@ function Combat:projectileHit(p,target,position,normal)
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
-		if p.kind=="wind" then
+		if p.kind=="palm" then
+			-- Vacuum Palm: a wall of air that carries the body away.
+			local push=Vector3.new(p.direction.X,0,p.direction.Z)
+			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
+			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a)
+		elseif p.kind=="wind" then
 			target.root.AssemblyLinearVelocity=p.direction*37+Vector3.new(0,14,0)
 		elseif p.kind=="fireball" then
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
@@ -3166,7 +3315,7 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
@@ -3288,6 +3437,7 @@ function Combat:clear(preserveAnimations)
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
+		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
@@ -3380,6 +3530,17 @@ function DevHooks.install(matches)
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
+		elseif op=="ko" then
+			-- arg1 = "human"/"bot": that fighter is knocked out by the other.
+			local victim=if arg1=="human" then s.human else s.bot
+			local by=if arg1=="human" then s.bot else s.human
+			victim.invulnerableUntil=0;victim.rotationUntil=0;victim.readUntil=0;victim.guardHeld=false;victim.comboHits=0
+			c:damage(by,victim,victim.health+50,false,false)
+			return if s.finishing then "KO" else s.phase
+		elseif op=="rematch" then
+			s.lastLifecycle=-10
+			matches:request(player,{action="Rematch",epoch=s.epoch})
+			return s.phase
 		elseif op=="damagelog" then
 			-- arg1=true clears it; the log starts when first requested.
 			c.damageLog=c.damageLog or {}
@@ -3591,12 +3752,22 @@ function Matches:start(player,playerId,botId,training)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
+	s.finishing=false
 	s.finish=function(winner,_loser)
-		if s.phase~="Duel" then return end
-		s.phase="Result"; s.winner=winner.id; s.combat:clear(true)
-		for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
-		for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
+		if s.phase~="Duel" or s.finishing then return end
+		-- The finishing blow gets a beat: the world holds, the camera eases out
+		-- and K.O. is called before the result screen.
+		s.finishing=true; s.winner=winner.id
+		local finishEpoch=s.epoch
 		self:snapshot(player,s)
+		task.delay(1.5,function()
+			if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
+			s.finishing=false
+			s.phase="Result"; s.combat:clear(true)
+			for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
+			for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
+			self:snapshot(player,s)
+		end)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s) end
 	-- Tournament framing: both fighters are shown before the round begins.
@@ -3647,7 +3818,10 @@ function Matches:snapshot(player,s)
 			subRegen=if (a.subRegenAt or math.huge)&lt;math.huge then math.max(0,a.subRegenAt-now) else 0,
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
-			counter=math.max(0,(a.counterUntil or 0)-now)}
+			counter=math.max(0,(a.counterUntil or 0)-now),
+			-- Neji: Rotation dome, closed chakra points and sealed techniques.
+			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
+			sealed=math.max(0,(a.sealedUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -3666,7 +3840,7 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial&gt;sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now)})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -3684,9 +3858,9 @@ function Matches:request(player,payload)
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
 			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot,action=="Tutorial")
-		elseif action=="Rematch" and s.phase=="Result" then
+		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
 			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil)
-		elseif action=="Selection" and (s.phase=="Result" or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
+		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
 	if s.phase~="Duel" or not s.human then return end
@@ -3695,7 +3869,7 @@ function Matches:request(player,payload)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
 	if action=="Move" then
-		if s.autopilot or s.scripted then return end
+		if s.autopilot or s.scripted or s.finishing then return end
 		if not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;0.01 then return end
 		s.human.move=payload.direction; s.human.lastMove=clock
 		if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
@@ -3720,7 +3894,7 @@ function Matches:update(dt,now)
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now&lt;s.introUntil
-				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro then s.ai:update(now) end
+				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 			end
 		end
 		-- Regular cadence, plus an immediate packet when a contact, throw or
@@ -4360,7 +4534,7 @@ function QA.run(matches)
 		matches:request(player,{action="Move",epoch=s.epoch-1,direction=Vector3.xAxis}); assert(s.human.move==Vector3.zero)
 		for _=1,2 do
 			s.combat:damage(s.human,s.bot,1000,false,true)
-			local old=s.folder; assert(s.phase=="Result")
+			local old=s.folder; assert(s.phase=="Result" or s.finishing)
 			s.lastLifecycle=-10; matches:request(player,{action="Rematch",epoch=s.epoch})
 			assert(s.phase=="Duel" and old.Parent==nil and s.human.health==125)
 		end
@@ -4420,6 +4594,8 @@ function Movement.new(a,c)
  local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
  local lastGroundHorizontalVelocity=Vector3.zero
  local groundLocomotion=Vector3.zero
+ -- Movement rhythm state (sprint and standstill bursts).
+ local wasSprinting,burstUntil,burstReadyAt=false,0,0
  local lastJumpRequestAt=-math.huge
  local sprintInputs,jumpInputs='Sprint','Jump'
  local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
@@ -4584,8 +4760,17 @@ local function updateMovement(deltaTime)
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
 		if not blocked and input.Magnitude&gt;.05 then target=input.Unit*desiredWalkSpeed end
-		local acceleration=profile.GroundAcceleration
+		local acceleration=profile.GroundAcceleration*(a.def.AccelerationScale or 1)
+		-- Rhythm: ordinary steps carry weight; a sprint that starts, or a move
+		-- committed from a near standstill, bursts. Fast moments read as fast
+		-- because the rest is not.
+		if sprinting and not wasSprinting then burstUntil=c.now+(profile.BurstWindow or .16) end
+		if target.Magnitude&gt;.05 and groundLocomotion.Magnitude&lt;desiredWalkSpeed*.35 and c.now&gt;=(burstReadyAt or 0) then
+			burstUntil=c.now+(profile.BurstWindow or .16)*.6;burstReadyAt=c.now+.5
+		end
+		wasSprinting=sprinting
 		if target.Magnitude&lt;.05 then acceleration=profile.GroundDeceleration
+		elseif c.now&lt;(burstUntil or 0) then acceleration=profile.BurstAcceleration or acceleration
 		elseif groundLocomotion.Magnitude&gt;.05 and groundLocomotion.Unit:Dot(target.Unit)&lt;.45 then acceleration=profile.TurnAcceleration end
 		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
 		if groundLocomotion.Magnitude&lt;.03 then groundLocomotion=Vector3.zero end
@@ -5390,6 +5575,11 @@ Techniques.MirageCast = {
 	execute = function(c,a,pending,now)
 		if not c:targetValid(a,a.target,pending.spec.Range,0.35) then c:cue(a,"CAST LOST SIGHT"); return end
 		local victim = a.target
+		-- The Byakugan sees chakra, not light: the afterimage has none.
+		if victim.def.Byakugan then
+			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
+			return
+		end
 		victim.illusionUntil = now+3
 		victim.decoyPosition = c:clamp(a.root.Position + a.root.CFrame.RightVector*7)
 		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),3)
@@ -5410,6 +5600,92 @@ Techniques.Quickstep={
 	end,
 }
 Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+-- Neji -----------------------------------------------------------------
+Techniques.ROTATION_REACH=7
+Techniques.Rotation={
+	check=function() return true end,
+	execute=function(c,a,pending,now)
+		local active=pending.spec.Active
+		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
+		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
+		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
+		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
+	end,
+}
+Techniques.VacuumPalm={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		local origin=c.launchPoint(a,"Palm")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		local goal=origin+flat.Unit*pending.spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-4,2),0)
+		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5})
+		c:cue(a,"EIGHT TRIGRAMS • VACUUM PALM",.6)
+	end,
+}
+-- Eight Trigrams Sixty-Four Palms. The opening palm must land (and can be
+-- guarded); once it does, the flurry locks the opponent in place, drains its
+-- chakra point by point and ends by sealing its techniques. The victim keeps one
+-- answer: a substitution.
+local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
+Techniques.SixtyFourPalms={
+	check=function() return true end,
+	execute=function(c,a,pending,now)
+		local Brawler=require(script.Parent.Brawler)
+		local victim=a.target
+		pending.spec=table.clone(pending.spec)
+		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId})
+		local reach=victim and victim.health&gt;0 and c:targetValid(a,victim,pending.spec.Range,.4)
+		if not reach or victim.invulnerableUntil&gt;now or (victim.rotationUntil or 0)&gt;now then
+			pending.spec.Recovery=.85
+			c:cue(a,"64 PALMS • MISSED",.7)
+			return
+		end
+		c.damageTag="64 Palms"
+		local opened=c:damage(a,victim,pending.spec.Damage,false,true)
+		c.damageTag=nil
+		if c.match.phase~="Duel" then return end
+		if not opened or victim.impactStyle=="block" then
+			pending.spec.Recovery=.7
+			c:cue(a,"64 PALMS • GUARDED",.7)
+			return
+		end
+		Brawler.gentleFist(c,a,victim,false)
+		-- Lock: Neji holds the technique, the victim is held in place.
+		local strikes=7
+		local interval=.15
+		c:setState(a,"TechniqueActive",strikes*interval+.25)
+		a.flurryUntil=now+strikes*interval+.2
+		Brawler.react(c,victim,"HitStun",Vector3.zero,strikes*interval+.3,a)
+		victim.flurriedBy=a
+		c:cue(a,"EIGHT TRIGRAMS • 64 PALMS",1)
+		for k=1,strikes do
+			c:schedule(now+k*interval,function()
+				if a.health&lt;=0 or a.state~="TechniqueActive" or victim.health&lt;=0 or victim.reaction~="HitStun" or victim.flurriedBy~=a then return end
+				local last=k==strikes
+				c.damageTag="64 Palms"
+				c:damage(a,victim,if last then pending.spec.Damage*2.5 else pending.spec.Damage,false,false)
+				c.damageTag=nil
+				if c.match.phase~="Duel" or victim.health&lt;=0 then return end
+				Brawler.gentleFist(c,a,victim,false)
+				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
+				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
+				if last then
+					victim.flurriedBy=nil
+					victim.sealedUntil=c.now+3.5
+					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
+					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+					away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
+					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
+					c:cue(victim,"CHAKRA POINTS SEALED",1.2)
+				else
+					victim.reactionUntil=math.max(victim.reactionUntil,c.now+interval+.15)
+				end
+			end)
+		end
+	end,
+}
 Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
 Techniques.WindCut={check=function() return true end,execute=Elements.wind}
 return Techniques
@@ -5450,7 +5726,7 @@ function Tutorial.enter(s,now)
  local c=s.combat;c:clear(true)
  for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
  t.health=a.health
- b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
+ b.trainingChannelScale=if t.index==17 then 3 else 1
  local near=t.index&gt;=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
  -- Wall step: start a few strides from the stadium wall (east side).
@@ -5462,6 +5738,14 @@ function Tutorial.enter(s,now)
   Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
  end
  t.attackAt=now+1
+end
+-- The bot's longest interruptible channel: the one the player learns to break.
+function Tutorial.interruptSlot(b)
+ local best,bestChannel="Technique1",-1
+ for slot,spec in b.def.Techniques do
+  if spec.Interruptible and spec.Channel&gt;bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+ end
+ return best
 end
 function Tutorial.update(s,now,dt)
  local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
@@ -5490,7 +5774,7 @@ function Tutorial.update(s,now,dt)
   b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
  end
  if t.index==17 and now&gt;=t.attackAt then
-  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,if b.fighterId=="Mirage" then "Technique4" else "Technique5",a.root.Position);t.attackAt=now+1.4
+  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
  end
  -- Failed launch/juggle exercises reset quickly without skipping their objectives.
  if (t.index==9 or t.index==10 or t.index==11) and now-t.entered&gt;3 then Tutorial.enter(s,now) end
@@ -6114,6 +6398,62 @@ local function dressItachi(model,def)
 	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.36,.9),CFrame.new(0,.05,0),rgb(206,206,198))
 	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),dark)
 end
+-- Neji at the Chunin Exam (13): cream high-collared Hyuga top, dark shorts,
+-- bandaged right arm and thigh, long hair tied at the end, Byakugan eyes.
+local function dressNeji(model,def)
+	local hair=rgb(52,36,30)
+	local robe=rgb(232,226,212)
+	local robeShade=rgb(204,196,182)
+	local shorts=rgb(72,54,46)
+	local bandage=rgb(240,238,230)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(198,192,232),hair)
+	-- Byakugan: pale irises with no pupil; the veins show when it flares.
+	for _,p in model:GetChildren() do
+		if p.Name=="Eye" then p.Color=rgb(242,240,252) end
+		if p.Name=="Iris" then p.Material=Enum.Material.Neon;p.Transparency=.2 end
+	end
+	for _,side in {-1,1} do
+		for k=0,2 do
+			local vein=wear(model,"Head","ByakuganVein",Vector3.new(.035,.2,.02),CFrame.new(side*(.52+k*.06),.08+(k-1)*.07,-.79)*A(0,0,R(side*(30-k*30))),rgb(150,138,196))
+			if vein then vein.Transparency=1 end
+		end
+	end
+	hairCap(model,hair)
+	for _,side in {-1,1} do
+		wear(model,"Head","Bang",Vector3.new(.22,1.32,.4),CFrame.new(side*.74,-.24,-.44)*A(R(2),0,R(side*2)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.18,1.25,.95),CFrame.new(side*.8,-.14,.22),hair)
+	end
+	-- Centre parting: two smooth panels over the forehead, no spikes.
+	for _,x in {-.36,.36} do
+		wear(model,"Head","Fringe",Vector3.new(.62,.3,.16),CFrame.new(x,.5,-.7)*A(R(8),0,R(if x&gt;0 then -10 else 10)),hair)
+	end
+	wear(model,"Head","BackHair",Vector3.new(1.66,1.45,.3),CFrame.new(0,-.14,.72),hair)
+	wear(model,"UpperTorso","LongHair",Vector3.new(.72,1.5,.22),CFrame.new(0,.32,.62),hair)
+	wear(model,"UpperTorso","HairTie",Vector3.new(.5,.12,.26),CFrame.new(0,-.38,.63),rgb(240,236,226))
+	wear(model,"UpperTorso","HairTip",Vector3.new(.4,.48,.2),CFrame.new(0,-.68,.62),hair)
+	headband(model,false)
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=robe end
+	end
+	wear(model,"UpperTorso","HighCollar",Vector3.new(1.42,.5,1.1),CFrame.new(0,.86,.04),robe)
+	wear(model,"UpperTorso","Overlap",Vector3.new(.08,1.3,.04),CFrame.new(-.32,-.05,-.53)*A(0,0,R(-10)),robeShade)
+	wear(model,"LowerTorso","WaistTie",Vector3.new(2.06,.26,1.06),CFrame.new(0,.3,0),robeShade)
+	for _,side in {"Left","Right"} do
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=shorts end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.5,.84),CFrame.new(0,-.2,0),rgb(48,52,70))
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,46,66) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.88,.36,.88),CFrame.new(0,-.2,0),robe)
+	end
+	local leftArm=model:FindFirstChild("LeftLowerArm");if leftArm then leftArm.Color=skin end
+	local rightArm=model:FindFirstChild("RightLowerArm");if rightArm then rightArm.Color=bandage end
+	for k=0,2 do wear(model,"RightLowerArm","BandageLine",Vector3.new(.84,.04,.84),CFrame.new(0,.25-k*.25,0)*A(0,0,R(8)),rgb(212,208,198)) end
+	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.88,.5,.88),CFrame.new(0,0,0),bandage)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(48,52,70))
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -6125,7 +6465,7 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) end
+	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -6211,7 +6551,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -6221,6 +6561,9 @@ function Camera:impulse(style,role)
 	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
 	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)
 	self.shakeUntil=math.max(self.shakeUntil or 0,now+(if style=="slam" or style=="fire" then .18 else .07))
+	-- A decisive blow gets a beat of space: the lens eases back, then settles.
+	local SETTLE={finisher=1.6,launcher=1.2,slam=2.4,wallbounce=2.4,wall=1.4,clash=1.4,repel=1.8,parry=1.4,fire=2}
+	if SETTLE[style] then self.settleSize=math.max(if now&lt;(self.settleUntil or 0) then self.settleSize or 0 else 0,SETTLE[style]);self.settleUntil=now+.75 end
 end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
@@ -6287,7 +6630,10 @@ function Camera:update(data,dt)
 	local focusRate=if aerial or pursuit then 10 else 7
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom,12,52)
+	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
+	-- K.O.: a slow drift around the finish while the lens eases out.
+	if data.ko then self.yaw+=dt*.3 end
+	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,52)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
 	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
@@ -6327,12 +6673,15 @@ function Camera:update(data,dt)
 	for part in faded do part.LocalTransparencyModifier=.72 end
 	self.faded=faded
 	if hit then
-		desired=hit.Position+hit.Normal*1.2
-		if (desired-focus).Magnitude&lt;7 then
-			local raised=focus+Vector3.new(0,12,0)+boom*5
-			local overhead=workspace:Raycast(focus,raised-focus,ray)
-			desired=if overhead then overhead.Position+overhead.Normal else raised
-		end
+		local offset=desired-focus
+		local full=offset.Magnitude
+		local allowed=math.max(0,hit.Distance-1.2)
+		local lost=math.clamp(full-allowed,0,full)
+		-- The closer the wall pushes the lens, the higher it rises over the fight:
+		-- continuous in the push, so a fight along the wall never snaps the view.
+		desired=focus+offset.Unit*math.max(allowed,4.5)+Vector3.new(0,lost*.6,0)
+		local check=workspace:Raycast(focus,desired-focus,ray)
+		if check then desired=check.Position+check.Normal*1.2 end
 	end
 	local cf=CFrame.lookAt(desired,focus)
 	if os.clock()&lt;self.shakeUntil then
@@ -6393,7 +6742,8 @@ local SOUND={
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5}
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -6588,6 +6938,19 @@ local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
 local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
 	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
+	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
+	palm=function()
+		local model=new("Model",{Name="VacuumPalm"})
+		local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
+		local ring=block(model,Vector3.new(.3,3,3),CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(214,228,255),Enum.Material.Neon);ring.Name="Ring"
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.62
+		local core=block(model,Vector3.new(.2,1.6,1.6),CFrame.Angles(0,math.pi/2,0)*CFrame.new(-.4,0,0),Color3.fromRGB(240,246,255),Enum.Material.Neon);core.Name="Core"
+		core.Shape=Enum.PartType.Cylinder;core.Transparency=.45
+		weldAll(root,{ring,core})
+		addTrail(root,Vector3.new(0,1.2,0),Vector3.new(0,-1.2,0),Color3.fromRGB(206,222,255),.12,.6,1)
+		model.PrimaryPart=root
+		return model
+	end,
 	-- Phoenix Flower: the same fire build, shrunk and dimmer.
 	phoenix=function()
 		local model=FX.buildFireball()
@@ -6622,6 +6985,8 @@ function FX:sync(data)
 				sound(root,SOUND.boom,.35,.55)
 			elseif p.kind=="phoenix" then
 				sound(root,SOUND.whoosh,.25,.7)
+			elseif p.kind=="palm" then
+				sound(root,SOUND.whoosh,.45,.6)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
@@ -6681,6 +7046,12 @@ function FX:stepProjectiles(dt)
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end
 			end
 			cf=look*CFrame.Angles(0,0,os.clock()*3)
+		elseif p.kind=="palm" then
+			local radius=(p.radius or 1.5)+(p.growth or 0)*math.max(0,age)
+			local ring=entry.model:FindFirstChild("Ring");local core=entry.model:FindFirstChild("Core")
+			if ring then ring.Size=Vector3.new(.3,radius*2.2,radius*2.2) end
+			if core then core.Size=Vector3.new(.2,radius*1.2,radius*1.2) end
+			cf=look
 		else
 			cf=look
 		end
@@ -6797,7 +7168,7 @@ function FX:impact(impact,folder)
 		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
-		self:ghost(model,if impact.fighter=="Flashstep" then MINATO else Color3.fromRGB(150,40,60),.22,.55)
+		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.22,.55)
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),8,1.4)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
@@ -6866,10 +7237,56 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
 	elseif style=="pin" then
 		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="palmburst" then
+		local along=impact.direction or Vector3.zAxis
+		shockRing(self.folder,position,Color3.fromRGB(220,232,255),2,12,.24,along)
+		smokePuff(self.folder,position,Color3.fromRGB(226,230,240),10,1.8)
+	elseif style=="palm" then
+		-- A Gentle Fist palm: a small, sharp chakra flash; no debris.
+		flash(self.folder,position,HYUGA,.5,impact.heavy and 6 or 3,.12,.25)
+		sparks(self.folder,position,HYUGA,impact.heavy and 16 or 6,impact.heavy and 22 or 12)
+	elseif style=="deflect" then
+		sparks(self.folder,position,Color3.fromRGB(230,240,255),12,24)
+	elseif style=="repel" then
+		shockRing(self.folder,position,HYUGA,3,16,.3,impact.direction)
+		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(214,206,190),14,2)
+	elseif style=="rotation" then
+		shockRing(self.folder,position-Vector3.new(0,2.6,0),HYUGA,4,18,.5)
+		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(214,206,190),18,2.4)
+	elseif style=="trigram" then
+		self:trigram(position)
 	elseif style=="ember" then
 		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
 		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
 	end
+end
+-- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
+function FX:trigram(position)
+	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-10,0))
+	local at=if floor then floor.Position+Vector3.new(0,.05,0) else position-Vector3.new(0,2.9,0)
+	local glyph=new("Model",{Name="Trigrams"},self.folder)
+	local base=CFrame.new(at)*CFrame.Angles(0,0,math.pi/2)
+	local disc=block(glyph,Vector3.new(.04,15,15),base,HYUGA,Enum.Material.SmoothPlastic);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.9
+	local inner=block(glyph,Vector3.new(.05,3.4,3.4),base,Color3.fromRGB(236,240,255),Enum.Material.Neon);inner.Shape=Enum.PartType.Cylinder;inner.Transparency=.5
+	for k=0,7 do
+		local a=k/8*math.pi*2
+		for line=0,2 do
+			local broken=(k+line)%3==0
+			local radius=5+line*.55
+			local cf=CFrame.new(at+Vector3.new(math.sin(a)*radius,.02,math.cos(a)*radius))*CFrame.Angles(0,a,0)
+			if broken then
+				for _,side in {-1,1} do block(glyph,Vector3.new(.55,.05,.16),cf*CFrame.new(side*.42,0,0),HYUGA,Enum.Material.Neon) end
+			else
+				block(glyph,Vector3.new(1.4,.05,.16),cf,HYUGA,Enum.Material.Neon)
+			end
+		end
+	end
+	for _,d in glyph:GetDescendants() do if d:IsA("BasePart") then d.Transparency=math.max(d.Transparency,.35) end end
+	flash(self.folder,at+Vector3.new(0,1,0),HYUGA,1,8,.25,.4)
+	task.delay(1.6,function()
+		for _,d in glyph:GetDescendants() do if d:IsA("BasePart") then tween(d,.4,{Transparency=1}) end end
+	end)
+	Debris:AddItem(glyph,2.1)
 end
 -- A thrown blade that missed stays embedded where it landed for a moment.
 function FX:stick(kind,position,normal,direction,owner)
@@ -7066,7 +7483,10 @@ function FX:fighter(model,actor,dt)
 		aura={}
 		self.auras[model]=aura
 		local minato=actor.fighterId=="Flashstep"
-		local color=if minato then MINATO else Color3.fromRGB(170,30,48)
+		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(170,30,48)
+		local veins={}
+		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
+		aura.veins=veins
 		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
 		local irises={}
@@ -7090,6 +7510,42 @@ function FX:fighter(model,actor,dt)
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
+	end
+	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
+	if actor.fighterId=="GentleFist" then
+		local focused=(actor.intro or 0)&gt;0 or actor.castId~=nil or (actor.counter or 0)&gt;0 or actor.rotation==true
+		for _,vein in aura.veins or {} do vein.Transparency=if focused then 0 else 1 end
+		local dome=aura.dome
+		if actor.rotation and not dome then
+			local holder=new("Model",{Name="Rotation"},self.folder)
+			local shell=block(holder,Vector3.one*12,root.CFrame,Color3.fromRGB(200,220,255),Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.86
+			local inner=block(holder,Vector3.one*9,root.CFrame,Color3.fromRGB(236,244,255),Enum.Material.ForceField);inner.Shape=Enum.PartType.Ball;inner.Transparency=.55
+			local bands={}
+			for k=1,3 do
+				local band=block(holder,Vector3.new(.12,12.4,12.4),root.CFrame,HYUGA,Enum.Material.Neon);band.Shape=Enum.PartType.Cylinder;band.Transparency=.7
+				table.insert(bands,band)
+			end
+			local light=new("PointLight",{Color=HYUGA,Brightness=4,Range=18,Shadows=false},shell)
+			dome={holder=holder,shell=shell,inner=inner,bands=bands,light=light,born=os.clock()}
+			aura.dome=dome
+			sound(shell,SOUND.whoosh,.5,.45)
+		end
+		if dome then
+			if actor.rotation then
+				local grow=math.clamp((os.clock()-dome.born)/.12,.3,1)
+				local center=root.CFrame*CFrame.new(0,-.6,0)
+				dome.shell.CFrame=center;dome.shell.Size=Vector3.one*12*grow
+				dome.inner.CFrame=center*CFrame.Angles(0,os.clock()*20,0);dome.inner.Size=Vector3.one*9*grow
+				for k,band in dome.bands do
+					band.CFrame=center*CFrame.Angles(0,os.clock()*(18+k*4),0)*CFrame.Angles(0,0,math.rad(60*k))
+					band.Size=Vector3.new(.12,12.4*grow,12.4*grow)
+				end
+			else
+				aura.dome=nil
+				for _,d in dome.holder:GetDescendants() do if d:IsA("BasePart") then tween(d,.18,{Transparency=1,Size=d.Size*1.15}) end end
+				Debris:AddItem(dome.holder,.25)
+			end
+		end
 	end
 	-- Rasengan forms in the right hand during the channel and stays through the strike.
 	local rasengan=(actor.castId=="BurstStrike" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
@@ -7650,7 +8106,7 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	local playable={"Flashstep","Mirage"}
+	local playable={"Flashstep","Mirage","GentleFist"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -7663,7 +8119,11 @@ function UI.new(parent,send)
 			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
 			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
 			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
-			pick.Activated:Connect(function() self.player=id;if self.bot==id then self.bot=playable[3-index] end;self:refreshSelection() end)
+			pick.Activated:Connect(function()
+				self.player=id
+				if self.bot==id then self.bot=playable[index%#playable+1] end
+				self:refreshSelection()
+			end)
 			self.selectionButtons["slot"..id]=slot
 		else
 			text(slot,"?",UDim2.fromOffset(0,14),UDim2.fromOffset(84,56),48,Color3.fromRGB(70,66,74),TITLE_FONT,Enum.TextXAlignment.Center)
@@ -7676,8 +8136,8 @@ function UI.new(parent,send)
 	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
 	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*214,480),UDim2.fromOffset(206,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*214,480),UDim2.fromOffset(206,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*145,480),UDim2.fromOffset(138,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*145,480),UDim2.fromOffset(138,40),function() self.bot=id; self:refreshSelection() end)
 	end
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
 	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
@@ -7753,6 +8213,9 @@ function UI.new(parent,send)
 	end
 	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.ko.Visible=false
 	-- ---------------------------------------------------------------- intro
 	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.introLeft=frame(self.intro,UDim2.new(0,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
@@ -7849,6 +8312,11 @@ function UI:render(data)
 		end
 		return
 	end
+	if data.ko and not self.ko.Visible then
+		self.ko.TextSize=170
+		Tween:Create(self.ko,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=120}):Play()
+	end
+	self.ko.Visible=data.ko==true
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
@@ -7859,6 +8327,9 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		-- Gentle Fist effects on this fighter.
+		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
+		elseif (actor.tenketsu or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
 		local charges=actor.subCharges or 0
 		for k,pip in widget.pips do
 			local level=if k&lt;=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)&gt;0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
@@ -7890,6 +8361,7 @@ function UI:render(data)
 	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
+		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -7968,6 +8440,12 @@ local look={
  walltech={shards=4, range=6,  color=Color3.fromRGB(206,222,255),pitch=1.3, volume=.22,hit=Color3.fromRGB(226,236,255)},
  pin     ={shards=3, range=5,  color=Color3.fromRGB(220,224,232),pitch=1.5, volume=.22,hit=Color3.fromRGB(236,240,246)},
  ember   ={shards=4, range=7,  color=Color3.fromRGB(255,170,90),pitch=1.1, volume=.26,hit=Color3.fromRGB(255,214,170)},
+ palm    ={shards=3, range=6,  color=Color3.fromRGB(196,212,255),pitch=1.3, volume=.26,hit=Color3.fromRGB(226,234,255)},
+ palmburst={shards=6,range=10, color=Color3.fromRGB(214,226,255),pitch=0.9, volume=.38,hit=Color3.fromRGB(232,238,255)},
+ deflect ={shards=4, range=6,  color=Color3.fromRGB(226,236,255),pitch=1.5, volume=.22,hit=Color3.fromRGB(240,244,255)},
+ repel   ={shards=7, range=11, color=Color3.fromRGB(200,216,255),pitch=0.84,volume=.44,hit=Color3.fromRGB(228,236,255)},
+ rotation={shards=2, range=10, color=Color3.fromRGB(200,216,255),pitch=0.7, volume=.2, hit=Color3.fromRGB(228,236,255)},
+ trigram ={shards=0, range=9,  color=Color3.fromRGB(200,216,255),pitch=0.8, volume=.16,hit=Color3.fromRGB(228,236,255)},
 }
 local function anchorAt(position)
 	local anchor=Instance.new("Part")
@@ -8279,7 +8757,15 @@ local STANCE={
 		ra={raise=14,out=9,twist=8,elbow=32,wrist=0},la={raise=42,out=-6,twist=24,elbow=84,wrist=10},
 		rf={x=.12,z=.5,yaw=22},lf={x=0,z=-.46,yaw=-2},breath=.7,tempo=5},
 }
+-- Neji: the Gentle Fist stance. Side-on and low, lead palm extended toward the
+-- opponent, rear palm guarding the centre line.
+STANCE.GentleFist={root={y=-.62,pitch=6,yaw=38},torso={pitch=4,yaw=-14},head={pitch=-2,yaw=-22},
+	la={raise=80,out=-6,twist=-40,elbow=26,wrist=-46},ra={raise=56,out=-30,twist=40,elbow=96,wrist=-36},
+	rf={x=.32,z=.92,yaw=64},lf={x=-.18,z=-.95,yaw=-6},breath=.8,tempo=5.5}
 local function stance(id) return STANCE[id] or STANCE.Flashstep end
+-- Gait families: springy (Minato) or controlled (Itachi, Neji).
+local SPRINGY={Flashstep=true}
+local function springy(id) return SPRINGY[id]==true or (id~="Mirage" and id~="GentleFist" and STANCE[id]==nil) end
 
 -- ---------------------------------------------------------- attack clips
 -- Keys are placed on the move's own timeline: 0 = start, 1 = end of startup
@@ -8290,7 +8776,9 @@ local M=STANCE.Flashstep
 local I=STANCE.Mirage
 local function m(over) return merge(M,over) end
 local function i(over) return merge(I,over) end
-local CLIPS={Flashstep={},Mirage={}}
+local N=STANCE.GentleFist
+local function n(over) return merge(N,over) end
+local CLIPS={Flashstep={},Mirage={},GentleFist={}}
 -- Minato --------------------------------------------------------------
 CLIPS.Flashstep.Light1={ -- reverse-grip kunai: cross-body load, outward slash
 	K(0,m({root={y=-.55,yaw=10,pitch=12},torso={yaw=-28,pitch=8},ra={raise=72,out=-42,twist=38,elbow=112,wrist=-30},la={raise=40,out=12,elbow=70},lf={z=-.95}})),
@@ -8468,6 +8956,58 @@ CLIPS.Mirage.CounterPalm={
 	K(3,I),
 }
 
+-- Neji ----------------------------------------------------------------
+-- Gentle Fist: open palms driven by the hips, never fists. Every strike turns
+-- the waist through the target; the rear hand stays on the centre line.
+local PALM_L={raise=90,out=-4,twist=-72,elbow=2,wrist=-62}
+local PALM_R={raise=90,out=-2,twist=72,elbow=2,wrist=-62}
+CLIPS.GentleFist.Light1={ -- lead palm to the chest
+	K(0,n({root={y=-.66,yaw=48},torso={yaw=-6},la={raise=60,out=-10,twist=-60,elbow=100,wrist=-40}})),
+	K(1,n({root={y=-.6,z=-.38,yaw=18,pitch=8},torso={yaw=-24,pitch=4},head={yaw=-10},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}}),"out"),
+	K(2,n({root={y=-.6,z=-.4,yaw=16,pitch=8},torso={yaw=-26,pitch=4},la=PALM_L,ra={raise=50,out=-26,twist=40,elbow=100}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light2={ -- rear palm, hips turning square
+	K(0,n({root={y=-.66,yaw=46},torso={yaw=10},ra={raise=46,out=10,twist=60,elbow=112,wrist=-30},la={raise=70,out=-6,elbow=60}})),
+	K(1,n({root={y=-.58,z=-.46,yaw=-12,pitch=10},torso={yaw=-30,pitch=6},head={yaw=8},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}}),"out"),
+	K(2,n({root={y=-.58,z=-.48,yaw=-14,pitch=10},torso={yaw=-32,pitch=6},ra=PALM_R,la={raise=40,out=10,twist=-40,elbow=96},lf={z=-1.05},rf={z=.7,x=.2}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Light3={ -- twin palms from the hips: the shove that creates space
+	K(0,n({root={y=-.86,z=.22,yaw=12,pitch=6},torso={yaw=0},ra={raise=20,out=6,twist=50,elbow=118,wrist=-20},la={raise=20,out=6,twist=-50,elbow=118,wrist=-20},lf={z=-1.0},rf={z=.9}})),
+	K(1,n({root={y=-.62,z=-.85,yaw=4,pitch=16},torso={yaw=-4,pitch=8},head={yaw=-4},ra={raise=86,out=-8,twist=72,elbow=4,wrist=-64},la={raise=86,out=-8,twist=-72,elbow=4,wrist=-64},lf={z=-1.55},rf={z=1.2,toe=-18}}),"out"),
+	K(2,n({root={y=-.62,z=-.88,yaw=4,pitch=16},torso={yaw=-4,pitch=8},ra={raise=84,out=-8,twist=72,elbow=8,wrist=-62},la={raise=84,out=-8,twist=-72,elbow=8,wrist=-62},lf={z=-1.55},rf={z=1.2,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Heavy={ -- deep stepping palm: the whole body coils, then drives through
+	K(0,n({root={y=-.92,z=.3,yaw=74,pitch=10},torso={yaw=18,pitch=6},la={raise=30,out=-4,twist=-50,elbow=120,wrist=-30},ra={raise=70,out=-30,elbow=80},lf={z=-1.05},rf={z=1.0,yaw=70}})),
+	K(.75,n({root={y=-.98,z=.34,yaw=80,pitch=12},torso={yaw=22,pitch=8},la={raise=26,out=-4,twist=-52,elbow=124,wrist=-30},ra={raise=72,out=-30,elbow=78},lf={z=-1.1},rf={z=1.05,yaw=72}})),
+	K(1,n({root={y=-.64,z=-1.0,yaw=-6,pitch=20},torso={yaw=-28,pitch=10},head={yaw=12},la={raise=92,out=-4,twist=-72,elbow=0,wrist=-64},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}}),"out"),
+	K(2,n({root={y=-.64,z=-1.02,yaw=-8,pitch=20},torso={yaw=-30,pitch=10},la={raise=90,out=-4,twist=-72,elbow=4,wrist=-62},ra={raise=-10,out=24,elbow=60},lf={z=-1.7},rf={z=1.25,yaw=20,toe=-20}})),
+	K(3,N),
+}
+CLIPS.GentleFist.Launcher={ -- rising palm heel under the chin
+	K(0,n({root={y=-.98,pitch=16,yaw=30},torso={pitch=10},la={raise=-10,out=12,twist=-40,elbow=108},ra={raise=60,out=-24,elbow=90},lf={z=-.7},rf={z=.7}})),
+	K(1,n({root={y=.12,pitch=-10,yaw=10},torso={pitch=-12,yaw=-10},head={pitch=-22},la={raise=168,out=4,twist=-70,elbow=6,wrist=-40},ra={raise=20,out=24,elbow=50},lf={toe=-24},rf={z=.6}}),"out"),
+	K(2,n({root={y=.1,pitch=-10,yaw=8},torso={pitch=-12,yaw=-12},head={pitch=-20},la={raise=162,out=4,twist=-70,elbow=10},ra={raise=20,out=24,elbow=50},lf={toe=-20},rf={z=.6}})),
+	K(3,N),
+}
+CLIPS.GentleFist.DashAttack={ -- gliding lead palm
+	K(0,n({root={y=-.8,z=.2,pitch=24,yaw=30},la={raise=40,out=-6,twist=-50,elbow=104},ra={raise=60,out=-24,elbow=90},lf={z=-1.1},rf={z=1.15}})),
+	K(1,n({root={y=-.72,z=-.95,pitch=22,yaw=6},torso={yaw=-18},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}}),"out"),
+	K(2,n({root={y=-.72,z=-.96,pitch=20,yaw=4},torso={yaw=-20},la=PALM_L,ra={raise=30,out=20,elbow=70},lf={z=-1.6},rf={z=1.35,toe=-18}})),
+	K(3,N),
+}
+CLIPS.GentleFist.PalmThrust={ -- twin palm thrust: the counter that throws a body into a wall
+	K(0,n({root={y=-1.0,z=.32,yaw=8,pitch=8},torso={yaw=0,pitch=4},ra={raise=14,out=8,twist=50,elbow=124,wrist=-20},la={raise=14,out=8,twist=-50,elbow=124,wrist=-20},lf={z=-1.1},rf={z=1.0}})),
+	K(1,n({root={y=-.6,z=-1.15,yaw=2,pitch=20},torso={yaw=-2,pitch=10},head={pitch=-4},ra={raise=94,out=-10,twist=72,elbow=0,wrist=-66},la={raise=94,out=-10,twist=-72,elbow=0,wrist=-66},lf={z=-1.8},rf={z=1.35,toe=-24}}),"out"),
+	K(2,n({root={y=-.6,z=-1.18,yaw=2,pitch=20},torso={yaw=-2,pitch=10},ra={raise=92,out=-10,twist=72,elbow=4,wrist=-64},la={raise=92,out=-10,twist=-72,elbow=4,wrist=-64},lf={z=-1.8},rf={z=1.35,toe=-24}})),
+	K(3,N),
+}
+-- Anything Neji does not author yet (air strings, throws, sweep) borrows
+-- Itachi's controlled clips rather than Minato's.
+setmetatable(CLIPS.GentleFist,{__index=CLIPS.Mirage})
+
 -- Phase 4 -----------------------------------------------------------------
 -- Wall dive: crouched against the wall during the startup, then a flying kick
 -- with the lead leg straight at the opponent, arms thrown back for balance.
@@ -8593,7 +9133,26 @@ local function castSpec(actor)
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
-	if id=="PhoenixFlower" then
+	if id=="Rotation" then
+		-- Eight Trigrams Rotation: a full-body spin, arms out, weight centred.
+		local spin=(t*1500)%360
+		return merge(base,{root={y=-.45,pitch=2,yaw=spin},torso={pitch=0,yaw=0},head={pitch=0,yaw=0},
+			ra={raise=78,out=64,twist=0,elbow=12,wrist=-20},la={raise=78,out=64,twist=0,elbow=12,wrist=-20},rf={x=.3,z=.4},lf={x=-.3,z=-.4}})
+	elseif id=="VacuumPalm" then
+		if state=="TechniqueChannel" then return merge(base,{root={y=-.8,yaw=56},torso={yaw=10},la={raise=50,out=-10,twist=-60,elbow=112,wrist=-30}}) end
+		return merge(base,{root={y=-.66,z=-.4,yaw=14,pitch=10},torso={yaw=-26},la={raise=94,out=-4,twist=-72,elbow=0,wrist=-70},ra={raise=40,out=20,elbow=80},lf={z=-1.4},rf={z=1.1}})
+	elseif id=="SixtyFourPalms" then
+		if state=="TechniqueChannel" then
+			-- "You are within my field of divination": very wide, very low.
+			return merge(base,{root={y=-1.05,yaw=44,pitch=8},torso={yaw=-10},head={yaw=-26},la={raise=86,out=-4,twist=-60,elbow=12,wrist=-50},ra={raise=140,out=-20,twist=30,elbow=60,wrist=-40},lf={z=-1.45,x=-.2},rf={z=1.35,x=.35,yaw=70}})
+		end
+		local beat=math.floor(t*16)%2==0
+		local jitter=math.sin(t*50)*6
+		return merge(base,{root={y=-.95,z=-.3,yaw=24+jitter,pitch=12},torso={yaw=if beat then -18 else 12},head={yaw=-14},
+			la=if beat then {raise=92,out=-6,twist=-72,elbow=2,wrist=-64} else {raise=60,out=-10,twist=-50,elbow=90,wrist=-30},
+			ra=if beat then {raise=60,out=-20,twist=50,elbow=92,wrist=-30} else {raise=92,out=-4,twist=72,elbow=2,wrist=-64},
+			lf={z=-1.45,x=-.2},rf={z=1.3,x=.35,yaw=64}})
+	elseif id=="PhoenixFlower" then
 		if state=="TechniqueChannel" then return sealPose(base,t,false) end
 		-- Phoenix Flower: a quick sweep of the head across the fan while the hand
 		-- ring stays at the mouth.
@@ -8649,7 +9208,7 @@ local function stanceTargets(fighterId)
 end
 local function locomotionTargets(char,actor,fighterId,dt)
 	local s=stateOf(char)
-	local minato=fighterId~="Mirage"
+	local minato=springy(fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
@@ -8700,6 +9259,10 @@ local function locomotionTargets(char,actor,fighterId,dt)
 			torso={pitch=(if forward&lt;-.3 then -6 else 4),yaw=-swing*11*alpha,roll=-side*6},head={pitch=-lean*.4,yaw=0},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
+		if fighterId=="GentleFist" then
+			local guard=1-math.clamp((speed-8)/22,0,1)
+			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
+		end
 	end
 	-- Feet travel along the movement direction (x right, z back in root space).
 	local axis=Vector3.new(dir.X,0,dir.Z)
@@ -8711,7 +9274,7 @@ local function locomotionTargets(char,actor,fighterId,dt)
 end
 local function airTargets(char,actor,fighterId)
 	local rise=(actor.velocity and actor.velocity.Y or 0)/70
-	local minato=fighterId~="Mirage"
+	local minato=springy(fighterId)
 	local spec
 	if rise&gt;.25 then
 		spec={root={pitch=-4},torso={pitch=-10},head={pitch=-10},ra={raise=-20,out=30,elbow=40},la={raise=60,out=24,elbow=70},
@@ -8879,11 +9442,14 @@ local function weaponsFor(char,fighterId)
 	items={}
 	weapons[char]=items
 	local minato=fighterId~="Mirage"
+	local palms=fighterId=="GentleFist"
 	local hand=char:FindFirstChild(if minato then "RightHand" else "LeftHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
-		if minato then
+		if palms then
+			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
+		elseif minato then
 			-- Reverse grip: blade out of the little-finger side, along the forearm.
 			items.melee=makeItem(hand,Effects.buildKunai(false),CF(0,-.14,.12)*ANG(math.rad(-12),math.pi,0))
 			items.throw=makeItem(hand,Effects.buildKunai(false),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
@@ -8920,7 +9486,9 @@ function Motion.weapon(char,actor)
 	local holding=throwKind~=nil and throwElapsed&gt;=0 and throwElapsed&lt;releaseAt
 	if throwKind=="Shuriken" and throwElapsed&gt;=releaseAt and throwElapsed&lt;releaseAt+.08 then holding=throwElapsed&gt;=releaseAt+.03 end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
-	if minato then
+	if actor.fighterId=="GentleFist" then
+		setVisible(items.throw,holding and throwKind=="Kunai")
+	elseif minato then
 		setVisible(items.melee,meleeOut and not holding)
 		setVisible(items.throw,holding and throwKind=="Kunai")
 		setVisible(items.marked,holding and throwKind=="MarkedKunai")
@@ -9018,6 +9586,9 @@ function Motion.present(char,actor,clock,dt)
 		local spec
 		if subject.fighterId=="Mirage" then
 			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		elseif subject.fighterId=="GentleFist" then
+			-- Byakugan: two fingers raised to the eyes, then the stance.
+			spec=merge(base,{root={y=-.4,yaw=30},head={pitch=0,yaw=-18},ra={raise=128,out=-30,twist=20,elbow=146,wrist=0},la={raise=40,out=10,elbow=40}})
 		else
 			spec=merge(base,{ra={raise=78,out=22,twist=10,elbow=112,wrist=0,wroll=(elapsedTime*1080)%360},la={raise=30,out=14,elbow=40},head={yaw=-18,pitch=-4}})
 		end

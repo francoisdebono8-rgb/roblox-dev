@@ -20,7 +20,7 @@ end
 -- approximation of the animated hand/mouth so the projectile's first frame is
 -- where the throwing arm actually is, not the middle of the chest.
 local LAUNCH={
-	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},
+	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},
 	Shuriken={side=-1.1,up=.9,forward=1.2},Fireball={side=0,up=2.1,forward=2.6},Wind={side=.6,up=1,forward=2.2},
 }
 function Combat.launchPoint(a,kind)
@@ -98,7 +98,7 @@ end
 -- Hitstop budget by impact weight. Only the defender stops, and only briefly:
 -- freezing both actors on every light made a normal combo read as
 -- move -> stop -> move -> stop.
-local HITSTOP={light=0,air=0,block=.01,finisher=.03,launcher=.04,parry=.05,slam=.065,jutsu=.055,default=.02}
+local HITSTOP={light=0,air=0,block=.01,finisher=.05,launcher=.06,parry=.075,slam=.09,jutsu=.065,default=.025}
 Combat.Hitstop=HITSTOP
 function Combat:applyHitstop(attacker,victim,style,heavy)
 	local stop=HITSTOP[style] or (if heavy then HITSTOP.default else 0)
@@ -139,10 +139,14 @@ function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
-	if self.match.phase~="Duel" or victim.health<=0 or attacker.health<=0 then return false end
+	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
+	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
+	if (victim.rotationUntil or 0)>self.now then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
+	-- Byakugan: the guard covers every side but a narrow blind spot behind.
+	if victim.def.Byakugan and delta.Magnitude>=0.1 then frontal=victim.root.CFrame.LookVector:Dot(delta.Unit)>-victim.def.Byakugan.BlindSpot end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
 	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt<.7 then
 		frontal=true
@@ -231,6 +235,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- Remember the blow that ended it so the KO body matches the final hit.
 		victim.koStyle=style
 		victim.koAirborne=victim.airborne==true
+		-- The last blow freezes for a beat on both bodies.
+		attacker.hitstopUntil=self.now+.22;victim.hitstopUntil=self.now+.22
+		attacker.pending=nil;attacker.move=Vector3.zero
 		self.match.finish(attacker,victim)
 	end
 	attacker.hitConfirmed=true
@@ -401,6 +408,7 @@ end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
+	if self.match.finishing then return false,"Intro" end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -482,7 +490,7 @@ function Combat:request(a,action,aim,clientTime)
 		if not chainCancel then a.chakra-=Config.ToolCost end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		local minato=a.def.Name=="Minato"
+		local minato=(a.def.Tool or "Kunai")=="Kunai"
 		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
 		local range=if chainCancel then 20 else 44
 		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
@@ -535,6 +543,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	if self.match.techniquesDisabled then return false,"Techniques disabled" end
+	if string.match(action,"^Technique") and (a.sealedUntil or 0)>self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local spec=slot and a.def.Techniques[slot]
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
@@ -597,8 +606,14 @@ function Combat:updateActor(a,dt)
 	end
 	if a.illusionUntil<=now then a.decoyPosition=nil end
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
-		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
+		local regen=a.def.ChakraRegen or Config.ChakraRegen
+		-- Closed chakra points (Gentle Fist) slow the recovery.
+		if (a.tenketsuUntil or 0)>now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
+	if (a.rotationUntil or 0)>now then self:stepRotation(a) end
+	-- Rooted while spinning or striking the sixty-four palms.
+	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
 		-- Weight, not a pause: the swing clock keeps running so the animation never
 		-- drifts behind the hitbox, and only the frozen body is held still.
@@ -767,7 +782,40 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember"}
+local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst"}
+-- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
+-- opponent inside it is thrown out once. Repelling a strike opens a counter.
+function Combat:stepRotation(a)
+	local reach=Techniques.ROTATION_REACH or 7
+	for i=#self.projectiles,1,-1 do
+		local p=self.projectiles[i]
+		if p.a~=a and (p.position-a.root.Position).Magnitude<=reach+1.5 then
+			table.remove(self.projectiles,i)
+			self:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
+			Brawler.event(self,a,"Deflect")
+		end
+	end
+	local b=a.target
+	a.rotationHit=a.rotationHit or {}
+	if b and b.health>0 and not a.rotationHit[b] and (b.root.Position-a.root.Position).Magnitude<=reach then
+		a.rotationHit[b]=true
+		local attacking=b.state=="Startup" or b.state=="Active" or b.state=="Pursuit"
+		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+		away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
+		self.damageTag="Rotation"
+		local hit=self:damage(a,b,a.rotationDamage or 6,false,false)
+		self.damageTag=nil
+		if self.match.phase~="Duel" then return end
+		-- The dome throws the body out even through a guard.
+		if hit then Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		self:pushImpact(b.root.Position,"repel",true,{owner=a.id,direction=away})
+		if attacking then
+			a.counterUntil=self.now+.9
+			Brawler.event(self,a,"Repel")
+			self:cue(a,"ROTATION • REPELLED • COUNTER",.8);self:cue(b,"REPELLED",.6)
+		end
+	end
+end
 -- Delayed releases (hidden shuriken, the Phoenix Flower volley). Each entry
 -- re-checks its owner when it fires, so a hit fighter never keeps throwing.
 function Combat:schedule(at,fn)
@@ -816,7 +864,12 @@ function Combat:projectileHit(p,target,position,normal)
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
-		if p.kind=="wind" then
+		if p.kind=="palm" then
+			-- Vacuum Palm: a wall of air that carries the body away.
+			local push=Vector3.new(p.direction.X,0,p.direction.Z)
+			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
+			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a)
+		elseif p.kind=="wind" then
 			target.root.AssemblyLinearVelocity=p.direction*37+Vector3.new(0,14,0)
 		elseif p.kind=="fireball" then
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
@@ -842,7 +895,7 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
@@ -964,6 +1017,7 @@ function Combat:clear(preserveAnimations)
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
+		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end

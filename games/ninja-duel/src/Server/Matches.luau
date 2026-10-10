@@ -52,12 +52,22 @@ function Matches:start(player,playerId,botId,training)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
+	s.finishing=false
 	s.finish=function(winner,_loser)
-		if s.phase~="Duel" then return end
-		s.phase="Result"; s.winner=winner.id; s.combat:clear(true)
-		for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
-		for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
+		if s.phase~="Duel" or s.finishing then return end
+		-- The finishing blow gets a beat: the world holds, the camera eases out
+		-- and K.O. is called before the result screen.
+		s.finishing=true; s.winner=winner.id
+		local finishEpoch=s.epoch
 		self:snapshot(player,s)
+		task.delay(1.5,function()
+			if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
+			s.finishing=false
+			s.phase="Result"; s.combat:clear(true)
+			for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
+			for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
+			self:snapshot(player,s)
+		end)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s) end
 	-- Tournament framing: both fighters are shown before the round begins.
@@ -108,7 +118,10 @@ function Matches:snapshot(player,s)
 			subRegen=if (a.subRegenAt or math.huge)<math.huge then math.max(0,a.subRegenAt-now) else 0,
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
-			counter=math.max(0,(a.counterUntil or 0)-now)}
+			counter=math.max(0,(a.counterUntil or 0)-now),
+			-- Neji: Rotation dome, closed chakra points and sealed techniques.
+			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
+			sealed=math.max(0,(a.sealedUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -127,7 +140,7 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now)})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -145,9 +158,9 @@ function Matches:request(player,payload)
 		if (action=="Start" or action=="Tutorial") and s.phase=="Selection" then
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
 			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot,action=="Tutorial")
-		elseif action=="Rematch" and s.phase=="Result" then
+		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
 			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil)
-		elseif action=="Selection" and (s.phase=="Result" or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
+		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
 	if s.phase~="Duel" or not s.human then return end
@@ -156,7 +169,7 @@ function Matches:request(player,payload)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
 	if action=="Move" then
-		if s.autopilot or s.scripted then return end
+		if s.autopilot or s.scripted or s.finishing then return end
 		if not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>0.01 then return end
 		s.human.move=payload.direction; s.human.lastMove=clock
 		if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
@@ -181,7 +194,7 @@ function Matches:update(dt,now)
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
 				local intro=s.introUntil and now<s.introUntil
-				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro then s.ai:update(now) end
+				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro and not s.finishing then s.ai:update(now) end
 			end
 		end
 		-- Regular cadence, plus an immediate packet when a contact, throw or
