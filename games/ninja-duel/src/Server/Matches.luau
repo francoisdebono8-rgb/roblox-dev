@@ -38,7 +38,7 @@ function Matches:start(player,playerId,botId,training)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
 	self:destroy(s); s.epoch+=1
-	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*240,0,0)
+	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*520,0,0)
 	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	World.arena(s.folder,s.origin)
@@ -47,8 +47,8 @@ function Matches:start(player,playerId,botId,training)
 		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
 		return s.combat:add(id,model,hum,root,joints,def)
 	end
-	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,14),s.origin+Vector3.new(0,3,-14))
-	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-14),s.origin+Vector3.new(0,3,14))
+	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance))
+	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance))
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
@@ -97,7 +97,7 @@ function Matches:nextRound(player,s)
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
-	c:relocate(s.human,s.origin+Vector3.new(0,3,14));c:relocate(s.bot,s.origin+Vector3.new(0,3,-14))
+	c:relocate(s.human,s.origin+Vector3.new(0,3,Config.StartDistance));c:relocate(s.bot,s.origin+Vector3.new(0,3,-Config.StartDistance))
 	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
 	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
 	s.introUntil=c.now+1.8
@@ -131,7 +131,7 @@ function Matches:snapshot(player,s)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,

@@ -48,7 +48,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -69,7 +69,7 @@ function Camera:update(data,dt)
 		camera.CameraType=Enum.CameraType.Scriptable
 		-- Slow establishing orbit over the training ground behind the menu.
 		local t=os.clock()*.06
-		camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(t)*58,26,math.cos(t)*58),Vector3.new(0,6,0)); return
+		camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(t)*88,38,math.cos(t)*88),Vector3.new(0,8,0)); return
 	end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -124,7 +124,8 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local targetFocus=a:Lerp(target,if separation>26 then .5 else .42)+Vector3.new(0,frame.lift,0)
+	local bias=if separation<=26 then .42 else math.max(.3,.42-(separation-26)*.004)
+	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Lead a little where the player is going so a run is framed ahead of it.
 	local moving=presentation and presentation:visualVelocity("human")
 	if moving then
@@ -140,9 +141,10 @@ function Camera:update(data,dt)
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,52)
+	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
+	local wantDistance=math.clamp(frame.distance+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
+	local height=frame.height+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal

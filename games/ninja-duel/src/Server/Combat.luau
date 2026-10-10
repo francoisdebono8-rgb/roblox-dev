@@ -612,19 +612,25 @@ function Combat:request(a,action,aim,clientTime)
 		-- the throw that cancels a confirmed string stays free.
 		if not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
 		if not chainCancel then a.chakra-=Config.ToolCost end
+		-- Stick away + tool inside a string: hop out of it behind the throw.
+		local disengage=(MoveGraphs[a.fighterId] or {}).disengage
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
+			a.neutralToolAt=self.now+.5
+			return Brawler.disengage(self,a,disengage)
+		end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
 		local minato=(a.def.Tool or "Kunai")=="Kunai"
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
 			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
-				self:projectile(a,target,90,if chainCancel then 20 else 40,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
+				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
 			end})
 			self:cue(a,"SAND BULLET",.5)
 			return true
 		end
 		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
-		local range=if chainCancel then 20 else 44
+		local range=if chainCancel then 20 else 62
 		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
 		-- pair of shuriken. Both keep running while the arm throws.
 		self:beginThrow(a,{kind=if minato then "Kunai" else "Shuriken",release=if minato then .1 else .13,
@@ -746,7 +752,7 @@ function Combat:updateActor(a,dt)
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
 	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
-	if a.freeSince and now-a.freeSince>=Config.ComboScaling.Reset and (a.comboHits>0 or (a.wallSplats or 0)>0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false end
+	if a.freeSince and now-a.freeSince>=Config.ComboScaling.Reset and (a.comboHits>0 or (a.wallSplats or 0)>0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false;a.groundBounced=false end
 	-- Substitution charges come back one at a time.
 	if a.subCharges<Config.Substitution.Charges and now>=a.subRegenAt then
 		a.subCharges+=1
@@ -888,7 +894,7 @@ function Combat:updateActor(a,dt)
     a.root.AssemblyLinearVelocity=Vector3.zero
    end
   end
-	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2") then
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.pending.spec.air and not a.pending.spec.orbit then
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude<10 and self:lineOfSight(a,a.target) then
 		 local horizontal=Vector3.new(delta.X,0,delta.Z)
@@ -918,8 +924,10 @@ function Combat:updateActor(a,dt)
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
-    -- AngleStep: swing around the opponent's guard while cutting.
-    Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit)
+    -- Lateral routes: swing around the opponent's guard while striking (an
+    -- air switch vaults all the way to the other side).
+    if spec.air then Motor.flight(a,self,tangent*(a.angleSide or 1)*dt*spec.orbit)
+    else Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit) end
    elseif a.fighterId=="Flashstep" and spec.angle then
     Motor.travel(a,self,tangent*(if spec.angle<0 then -1 else 1),dt*(if a.airborne then 9 else 7))
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then

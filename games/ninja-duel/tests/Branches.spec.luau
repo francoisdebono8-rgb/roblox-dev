@@ -45,33 +45,116 @@ test("Minato: side input inside a clean string swings around the guard",function
  H.step(c,.6)
  assert(a.pending==nil,"AngleStep left a committed swing")
 end)
-test("Minato: back input disengages behind a kunai and ends the string",function()
+test("Minato: back + tool inside a clean string disengages behind a kunai and ends the string",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  confirm(c,a,b)
  local gap=(a.root.Position-b.root.Position).Magnitude
  a.move=-a.root.CFrame.LookVector
- assert(c:request(a,"Attack"),"disengage refused")
+ assert(c:request(a,"Tool",b.root.Position),"disengage refused")
  assert(a.state=="Recovery" and not a.chainOpen,"disengage kept the string open")
  local thrown=0
  for _=1,40 do H.step(c,.01);thrown=math.max(thrown,#c.projectiles) end
  assert(thrown>=1,"no kunai covered the retreat")
  assert((a.root.Position-b.root.Position).Magnitude>gap+2.5,"disengage did not create space")
 end)
-test("Itachi: side input trades the string for a knockdown sweep",function()
- local c,a,b=H.duel("Mirage","Flashstep")
+-- Two clean hits, then stop inside the second chain window.
+local function confirm2(c,a,b)
  confirm(c,a,b)
- a.move=a.root.CFrame.RightVector
- assert(c:request(a,"Attack"),"sweep refused")
- assert(a.attackName=="Sweep","side input did not pick the sweep: "..tostring(a.attackName))
- local downed=false
- for _=1,60 do H.step(c,.01);if b.reaction=="Knockdown" then downed=true end end
- assert(downed,"the sweep did not knock the opponent down")
+ assert(c:request(a,"Attack"),"second light refused")
+ for _=1,80 do
+  H.step(c,.01)
+  if a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt and a.combo>=2 then return end
+ end
+ error("the second chain never opened")
+end
+test("grammar: two hits + toward the opponent launches, for every fighter",function()
+ for _,id in {"Flashstep","Mirage","GentleFist"} do
+  local c,a,b=H.duel(id,"Flashstep")
+  confirm2(c,a,b)
+  a.move=a.root.CFrame.LookVector
+  assert(c:request(a,"Attack"),id..": launcher press refused")
+  assert(a.attackName=="Launcher",id..": forward picked "..tostring(a.attackName))
+  local up=false
+  for _=1,60 do H.step(c,.01);if b.reaction=="Launched" then up=true end end
+  assert(up,id..": the launcher did not launch")
+  if id=="Flashstep" then
+   local body=false
+   for _,entry in a.anchors or {} do if entry.actor==b then body=true end end
+   assert(body,"Minato's rising kick left no seal on the body")
+  elseif id=="Mirage" then
+   local blades=false
+   for _=1,40 do H.step(c,.01);for _,p in c.projectiles do if p.a==a then blades=true end end end
+   assert(blades,"Itachi's launcher was not covered by shuriken")
+  end
+ end
 end)
-test("Itachi: back input hops away behind two shuriken",function()
+test("grammar: two hits + away from the opponent goes low and takes the legs",function()
+ for _,id in {"Flashstep","Mirage","GentleFist"} do
+  local c,a,b=H.duel(id,"Flashstep")
+  confirm2(c,a,b)
+  a.move=-a.root.CFrame.LookVector
+  assert(c:request(a,"Attack"),id..": low press refused")
+  assert(a.attackName=="Sweep",id..": back picked "..tostring(a.attackName))
+  local downed=false
+  for _=1,60 do H.step(c,.01);if b.reaction=="Knockdown" then downed=true end end
+  assert(downed,id..": the sweep did not knock down")
+  assert(b.hitZone=="legs" and b.hitKind=="sweep","the sweep did not mark the legs ("..tostring(b.hitZone)..")")
+  if id=="Flashstep" then
+   local planted=false
+   for _,entry in a.anchors or {} do if not entry.actor then planted=true end end
+   assert(planted,"Minato's sweep planted no seal")
+  end
+ end
+end)
+test("grammar: sideways keeps the string and turns the angle (Itachi feint, Neji circle)",function()
+ for _,pair in {{"Mirage","FeintStep"},{"GentleFist","CircleStep"}} do
+  local c,a,b=H.duel(pair[1],"Flashstep")
+  confirm(c,a,b)
+  local before=angleAround(b,a.root.Position)
+  a.move=a.root.CFrame.RightVector
+  assert(c:request(a,"Attack"))
+  assert(a.attackName==pair[2],pair[1]..": side picked "..tostring(a.attackName))
+  local chained=false
+  for _=1,40 do H.step(c,.01);if a.chainOpen then chained=true end end
+  local after=angleAround(b,a.root.Position)
+  local turned=math.deg(math.abs((after-before+math.pi)%(2*math.pi)-math.pi))
+  assert(turned>15,pair[2].." turned only "..string.format("%.1f",turned).." deg")
+  assert(chained,pair[2].." did not keep the string open")
+ end
+end)
+test("grammar: a route pressed early keeps its direction after the stick is released",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ confirm(c,a,b)
+ assert(c:request(a,"Attack"),"second light refused")
+ H.step(c,.03)
+ a.move=a.root.CFrame.LookVector
+ assert(c:request(a,"Attack"),"early route press refused")
+ a.move=V.zero
+ for _=1,80 do H.step(c,.01);if a.attackName=="Launcher" then break end end
+ assert(a.attackName=="Launcher","the buffered forward press lost its direction ("..tostring(a.attackName)..")")
+end)
+test("air grammar: after an air hit, away spikes the body into a ground bounce",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ face(c,a,b,3)
+ for _,x in {a,b} do c:relocate(x,x.root.Position+V.new(0,7,0));x.airborne=true;x.airHold=c.now+1 end
+ b.reaction="Juggled";b.reactionUntil=c.now+1;b.reactionVelocity=V.zero
+ assert(c:request(a,"Attack"),"air strike refused")
+ local open=false
+ for _=1,60 do H.step(c,.01);b.reactionVelocity=V.zero;if a.chainOpen and c.now>=a.chainAt then open=true;break end end
+ assert(open,"the air string never opened")
+ a.move=-a.root.CFrame.LookVector
+ assert(c:request(a,"Attack"),"spike refused")
+ assert(a.attackName=="AirSpike","air back picked "..tostring(a.attackName))
+ local bounced=false
+ for _=1,150 do H.step(c,.01);if (b.events or {}).GroundBounce then bounced=true;break end end
+ assert(bounced,"the spiked body never bounced ("..tostring(b.reaction)..")")
+ assert(b.reaction=="Juggled","after the bounce the body is "..tostring(b.reaction))
+end)
+test("Itachi: back + tool hops away behind two shuriken",function()
  local c,a,b=H.duel("Mirage","Flashstep")
  confirm(c,a,b)
  a.move=-a.root.CFrame.LookVector
- assert(c:request(a,"Attack"),"disengage refused")
+ assert(c:request(a,"Tool",b.root.Position),"disengage refused")
  local thrown=0
  for _=1,50 do H.step(c,.01);thrown=math.max(thrown,#c.projectiles) end
  assert(thrown>=2,"Itachi covered the retreat with fewer than two shuriken")

@@ -8,7 +8,7 @@ local Config=require(Shared.Config)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
-local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true}
+local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
 function Brawler.free(a,now)
  return a.reaction==nil or now>=(a.reactionUntil or 0)
 end
@@ -77,7 +77,11 @@ function Brawler.start(c,a,name)
  if a.locked and delta.Magnitude>.1 and delta.Magnitude<11 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+delta.Unit) end
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
- if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if spec.air or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ -- Lateral routes leave an afterimage where the body was (a flash for Minato).
+ if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
+  c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})
+ end
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
@@ -85,6 +89,8 @@ end
 -- Movement intent relative to the fighter's facing, read when a press lands:
 -- this is what turns one string into a small move graph per character.
 function Brawler.intent(a)
+ -- A buffered press replays the direction it was pressed with.
+ if a.intentOverride then return a.intentOverride[1],a.intentOverride[2] end
  local m=Vector3.new(a.move.X,0,a.move.Z)
  if m.Magnitude<.4 then return "neutral",0 end
  local l=a.root.CFrame:VectorToObjectSpace(m.Unit)
@@ -180,7 +186,10 @@ function Brawler.request(c,a,action)
     -- made a few frames early must not be eaten. It only fires if the chain
     -- opens (the swing landed cleanly); after a whiff it simply expires, so no
     -- phantom combo runs through a recovery the player must respect.
-    a.buffered={action=action,at=c.now,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
+    -- The stick is read at the press, not when the buffer fires: a route
+    -- pressed early (toward + strike) must not turn neutral on release.
+    local dir,sideSign=Brawler.intent(a)
+    a.buffered={action=action,at=c.now,intent={dir,sideSign},expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
     return true,"Buffered"
    end
    return false,"Committed"
@@ -203,21 +212,40 @@ function Brawler.request(c,a,action)
   if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
   return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
+ local graph=MoveGraphs[a.fighterId] or {}
+ local routes=graph.routes or {}
  if a.airborne then
+  -- Air grammar: after an air hit the stick picks the follow-up.
+  if canChain and (a.airCombo or 0)>=1 and c.now-(a.lastAirAttack or 0)<=.8 then
+   local dir,sideSign=Brawler.intent(a)
+   local route=if dir=="forward" then routes.airUp elseif dir=="back" then routes.airDown elseif dir=="side" then routes.airSide else nil
+   if route then
+    a.angleSide=sideSign;a.airCombo=0;a.lastAirAttack=c.now
+    Brawler.event(c,a,"Route");return Brawler.start(c,a,route)
+   end
+  end
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- local graph=MoveGraphs[a.fighterId] or {}
  -- A successful Read (Itachi) pays off with the graph's counter on the next press.
  if action=="Attack" and graph.readCounter and (a.counterUntil or 0)>c.now and not canChain then
   a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
  end
- -- Character move graphs: inside a confirmed string the stick picks a branch.
- if action=="Attack" and canChain and graph.stringBranches then
+ -- Directional combo grammar: inside a confirmed string the stick picks the
+ -- route. Toward the opponent launches, away goes low, sideways turns the
+ -- angle; each fighter answers with its own move.
+ if action=="Attack" and canChain then
   local dir,sideSign=Brawler.intent(a)
-  local branch=graph.stringBranches[dir]
-  if branch and branch.kind=="move" then a.angleSide=sideSign;return Brawler.start(c,a,branch.name) end
-  if branch and branch.kind=="disengage" then return Brawler.disengage(c,a,branch.projectile) end
+  local route=nil
+  if dir=="forward" and a.combo>=2 then route=routes.up
+  elseif dir=="back" and a.combo>=2 then route=routes.down
+  elseif dir=="side" and a.combo>=1 then route=routes.side end
+  if route and Attacks[route] then
+   a.angleSide=sideSign;a.queuedLight=nil
+   if not Attacks[route].chain then a.combo=0 end
+   Brawler.event(c,a,"Route")
+   return Brawler.start(c,a,route)
+  end
  end
  -- The ground light step is resolved once per accepted press, so a buffered
  -- chain cannot advance the combo counter twice.
@@ -233,11 +261,40 @@ function Brawler.request(c,a,action)
  end
  return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
+-- What a fighter's own version of a route adds on contact.
+function Brawler.routePayoff(c,a,b,p)
+ local graph=MoveGraphs[a.fighterId]
+ local kind=graph and graph.onRoute and graph.onRoute[p.name]
+ if not kind or b.health<=0 then return end
+ local Techniques=require(script.Parent.Techniques)
+ if kind=="bodySeal" then
+  -- Minato: the rising kick leaves a short seal on the body: 2 follows it up.
+  local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+  entry.expires=c.now+1.8
+  c:cue(a,"SEALED • 2 TO FOLLOW UP",.8)
+ elseif kind=="floorSeal" then
+  -- Minato: the sweep plants a marked kunai where the opponent falls.
+  local floor=Vector3.new(b.root.Position.X,c.match.origin.Y,b.root.Position.Z)
+  Techniques.plant(c,a,floor,Vector3.yAxis)
+ elseif kind=="coverBlades" then
+  -- Itachi: two shuriken follow the body up, keeping it in the air.
+  c:schedule(c.now+.2,function()
+   if a.health<=0 or b.health<=0 or c.match.phase~="Duel" then return end
+   c:beginThrow(a,{kind="Shuriken",release=.06,count=2,interval=.08,fire=function(index,target)
+    local spread=a.root.CFrame.RightVector*(if index==1 then -.6 else .6)
+    c:projectile(a,target+spread,92,30,1.5,"shuriken")
+   end})
+  end)
+ elseif kind=="tenketsu" then
+  -- Neji: the low route strikes a second chakra point.
+  Brawler.gentleFist(c,a,b,false)
+ end
+end
 function Brawler.stopStyle(p)
  if p.name=="Slam" then return "slam" end
  if p.name=="Launcher" or p.name=="ThrowUp" then return "launcher" end
  if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" then return "finisher" end
- if p.name=="Air1" or p.name=="Air2" then return "air" end
+ if p.spec and p.spec.air then return "air" end
  return "light"
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
@@ -400,6 +457,9 @@ function Brawler.hit(c,a,p)
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
+ -- What the body took: the client answers a head snap, a fold, a swept base.
+ b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
+ Brawler.routePayoff(c,a,b,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
@@ -466,7 +526,17 @@ function Brawler.step(c,a,dt)
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
     if hit then
+     if hit.Normal.Y>.5 and velocity.Y<0 and a.reaction=="Spiked" and not a.groundBounced then
+      -- Ground bounce: the spike drives the body into the floor and it pops
+      -- back up once, low, for a pick-up.
+      a.groundBounced=true;a.reaction="Juggled";a.reactionUntil=c.now+.62
+      velocity=Vector3.new(velocity.X*.3,30,velocity.Z*.3)
+      c:pushImpact(a.root.Position-Vector3.new(0,2.6,0),"groundbounce",true,{victim=a.id})
+      Brawler.event(c,a,"GroundBounce")
+      a.reactionVelocity=velocity;return true
+     end
      if hit.Normal.Y>.5 and velocity.Y<0 then
+      if a.reaction=="Spiked" then a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionUntil=c.now+.6;a.invulnerableUntil=c.now+.85 end
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
@@ -493,7 +563,10 @@ function Brawler.step(c,a,dt)
   end
  end
 	if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then
-  local action,at=a.buffered.action,a.buffered.at;a.buffered=nil;a.pressAt=at;Brawler.request(c,a,action)
+  local action,at,intent=a.buffered.action,a.buffered.at,a.buffered.intent;a.buffered=nil;a.pressAt=at
+  a.intentOverride=intent
+  Brawler.request(c,a,action)
+  a.intentOverride=nil
  end
  return false
 end

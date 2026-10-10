@@ -27,7 +27,7 @@ local SOUND={
 	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -557,6 +557,16 @@ function FX:impact(impact,folder)
 	elseif style=="ember" then
 		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
 		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
+	elseif style=="afterimage" then
+		-- A lateral route: the body leaves a fading copy where it stood.
+		local model=modelFor(folder,impact.owner)
+		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.3,.45) end
+		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(196,186,166),5,1)
+	elseif style=="groundbounce" then
+		-- A spiked body hits the floor and pops back up: dust ring and cracks.
+		smokePuff(self.folder,position,Color3.fromRGB(176,160,130),16,2.2)
+		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
+		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
 	end
 end
 -- Eight trigrams drawn on the ground around Neji for the sixty-four palms.

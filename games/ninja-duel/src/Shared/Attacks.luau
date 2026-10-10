@@ -42,11 +42,22 @@ local attacks={
  -- Gaara: sand erupts under the opponent at range and throws them up.
  SandPillar=move(.27,.14,.5,9,0,"Launched",Vector3.new(0,54,4),1.1),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
+ -- Lateral routes: Itachi's feint step (an afterimage stays, he reappears at
+ -- the flank) and Neji's circular step onto a chakra point. Both keep the string.
+ FeintStep=move(.1,.12,.22,6,0,"HitStun",Vector3.new(0,4,9),.34),
+ CircleStep=move(.09,.12,.22,6,0,"HitStun",Vector3.new(0,3,8),.34),
+ -- Air routes after an air hit: drive the body away (toward a wall), spike it
+ -- into the floor (it bounces once), or vault to its other side.
+ AirDrive=move(.08,.13,.22,7,3,"Knockback",Vector3.new(0,8,48),.5),
+ AirSpike=move(.09,.12,.24,7,2,"Spiked",Vector3.new(0,-72,6),.9),
+ AirSwitch=move(.1,.14,.2,6,0,"Juggled",Vector3.new(0,13,9),.6),
 }
 
 for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
+  or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch"
+ spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -73,6 +84,11 @@ local motion={
  Riposte={side=1,twist=24,lean=12,arm=92,step=1.2},
  SandPillar={side=1,twist=10,lean=-6,arm=120,step=1},
  SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
+ FeintStep={side=-1,twist=30,lean=10,arm=90,step=1.1},
+ CircleStep={side=1,twist=40,lean=8,arm=90,step=1.05},
+ AirDrive={side=1,twist=20,lean=-10,arm=60,step=1},
+ AirSpike={side=1,twist=10,lean=40,arm=120,step=1},
+ AirSwitch={side=-1,twist=60,lean=10,arm=80,step=1},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
@@ -82,5 +98,18 @@ attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;at
 attacks.FlyingKick.range=7.5;attacks.FlyingKick.width=5.5
 attacks.SandPillar.range=12.5;attacks.SandPillar.width=6;attacks.SandPillar.height=8;attacks.SandPillar.depth=11;attacks.SandPillar.offset=6;attacks.SandPillar.facing=.25
 attacks.SlideSweep.range=7.5;attacks.SlideSweep.height=3.5;attacks.SlideSweep.width=6.5
+attacks.FeintStep.width=5;attacks.FeintStep.range=6.5;attacks.FeintStep.orbit=34
+attacks.CircleStep.width=5;attacks.CircleStep.range=6;attacks.CircleStep.orbit=28
+attacks.AirSwitch.orbit=40;attacks.AirSwitch.width=6;attacks.AirSwitch.height=7
+attacks.AirSpike.height=7;attacks.AirDrive.height=7
+-- Where a strike lands and what it is: the victim's body answers the blow it
+-- actually took (head snaps, body folds, legs are taken away, ...).
+local ZONE={Light1="head",Light2="body",Light3="body",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
+ Slam="body",AngleStep="body",Sweep="legs",CounterPalm="body",WallDive="body",PalmThrust="body",KneeStrike="body",FlyingKick="head",
+ Riposte="head",SlideSweep="legs",SandPillar="legs",FeintStep="body",CircleStep="body",AirDrive="body",AirSpike="head",AirSwitch="head",
+ Throw="body",ThrowUp="body",Grab="body"}
+local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam",Sweep="sweep",SlideSweep="sweep",KneeStrike="knee",
+ FlyingKick="kick",WallDive="kick",SandPillar="launch",AirDrive="kick",AirSpike="spike",AirSwitch="kick",PalmThrust="palm",CounterPalm="palm"}
+for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks

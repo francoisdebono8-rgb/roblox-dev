@@ -47,5 +47,8 @@ return {
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
 	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	-- The directional combo grammar, shared by every fighter.
+	Grammar = "STRINGS  2 hits + W (toward) = launcher  ·  2 hits + S (away) = low sweep  ·  A/D = side route  ·  after an air hit: W drive · S spike · A/D switch  ·  S + R in a string = hop out",
+	GrammarPad = "STRINGS  2 hits + ↑ (toward) = launcher  ·  2 hits + ↓ (away) = low sweep  ·  ← → = side route  ·  after an air hit: ↑ drive · ↓ spike · ← → switch  ·  ↓ + RT in a string = hop out",
 	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad: up jutsu 5 · left chakra dash · down awaken",
 }

@@ -96,12 +96,16 @@ function UI.new(parent,send)
 	end
 	-- Matchup panel.
 	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.matchupNote=text(shell,"",UDim2.fromOffset(0,414),UDim2.fromOffset(900,40),14,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
-	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
+	self.matchupNote=text(shell,"",UDim2.fromOffset(0,410),UDim2.fromOffset(900,34),13,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	-- The selected fighter's reading of the shared combo grammar.
+	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
+	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(300,18),14,palette.muted)
+	-- Fighter buttons share each half of the panel, however many are playable.
+	local stride=math.floor(430/#playable)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*145,480),UDim2.fromOffset(138,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*145,480),UDim2.fromOffset(138,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.bot=id; self:refreshSelection() end)
 	end
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
 	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
@@ -182,6 +186,7 @@ function UI.new(parent,send)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
 	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(.5,-640,1,-48),UDim2.fromOffset(1280,18),11,Color3.fromRGB(196,176,130),BODY_FONT,Enum.TextXAlignment.Center)
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -239,6 +244,7 @@ function UI:refreshSelection()
 	local p,o=Fighters[self.player],Fighters[self.bot]
 	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
 	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
+	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
@@ -363,8 +369,11 @@ function UI:render(data)
 		elseif (h.counter or 0)>0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
-		elseif h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
+		elseif h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
+		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then (if pad then "↑ LAUNCH  ·  ↓ SWEEP  ·  ← → ANGLE" else "W LAUNCH  ·  S SWEEP  ·  A/D ANGLE")
+		else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
+	self.grammar.Text=if pad then Controls.GrammarPad else Controls.Grammar
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")

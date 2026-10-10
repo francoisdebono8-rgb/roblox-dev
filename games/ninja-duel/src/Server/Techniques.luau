@@ -8,7 +8,7 @@ local Elements=require(script.Parent.Elements)
 -- seal closest to the opponent wins, and a kunai in flight always does.
 local MAX_PLANTED=2
 local BODY_SEAL=5
-Techniques.RANGE=60
+Techniques.RANGE=90
 local function syncAnchor(a)
 	-- a.anchor mirrors the newest planted seal for HUD, AI and tooling.
 	a.anchor=nil

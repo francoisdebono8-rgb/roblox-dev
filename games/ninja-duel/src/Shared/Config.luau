@@ -1,13 +1,13 @@
 -- Tunable V0 values; no client-supplied balance values are accepted.
 return {
 	Version = "0.12.0-final-playable",
-	ArenaRadius = 64.4, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	ArenaRadius = 101, ArenaHeight = 62, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
-	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
+	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 46, PursuitSpeed = 74,
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.
@@ -17,13 +17,16 @@ return {
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	Clash = {Window = 0.07, Push = 4.5},
 	-- Chakra dash (E outside a chase window): a committed burst at the opponent.
-	Rush = {Cost = 10, Speed = 78, Range = 34, MinRange = 7, MaxTime = 0.45, Cooldown = 0.9, Arrive = 0.3},
+	Rush = {Cost = 10, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3},
 	-- Awakening: once per match, at low health, a fighter-specific power-up.
 	Awaken = {Threshold = 0.35, Duration = 12},
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
 	Flow = {Early = 0.07, Late = 0.13, Damage = 1.15, Stop = 0.035},
 	ThrowBreak = 0.35,
 	RoundsToWin = 2,
+	-- Where each fighter starts (studs from the centre): far enough apart that
+	-- the round opens on an approach, not on a punch.
+	StartDistance = 24,
 	-- Server-side Animator playback (donor clips, default locomotion). Off: the
 	-- client motion engine animates every body.
 	DonorAnimations = false,
@@ -31,9 +34,9 @@ return {
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
 		-- Wall combat: splat state, pins, tech window and the dive from a wall run.
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
-		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 40},
+		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 50},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
-	Movement = { SprintSpeed = 38, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
+	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,

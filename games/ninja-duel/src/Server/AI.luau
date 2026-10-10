@@ -87,13 +87,15 @@ function AI:update(now)
 	-- breathe after a combo lands instead of restarting at once.
 	if now>=(self.modeUntil or 0) then
 		self.probing=not self.probing and self.rng:NextNumber()<.55
-		self.modeUntil=now+(if self.probing then 1.4+self.rng:NextNumber()*1.6 else 2.2+self.rng:NextNumber()*2.6)
+		self.modeUntil=now+(if self.probing then 1.6+self.rng:NextNumber()*2 else 2.2+self.rng:NextNumber()*2.6)
+		self.probeRange=8+self.rng:NextNumber()*12
 	end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil<=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
 	local calm=self.probing or now<(self.breathUntil or 0)
-	if calm then desired+=4 end
+	-- Probing happens at tool range: spacing, throws and reads before running in.
+	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
 	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
 	a.sprinting=distance>desired+6 and not calm
@@ -117,7 +119,7 @@ function AI:update(now)
 		a.move=(outward+tangent*.25).Unit;a.sprinting=true
 		return
 	end
-	if fromCenter.Magnitude>Config.ArenaRadius-15 and distance>11 and distance<32 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()<.22 then
+	if fromCenter.Magnitude>Config.ArenaRadius-18 and distance>11 and distance<44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()<.22 then
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()<.5 then 1 else -1
 		return
 	end
@@ -196,31 +198,41 @@ function AI:update(now)
 			local rasengan=slotOf(a,"BurstStrike")
 			if rasengan and c:request(a,rasengan) then return end
 		end
-		local branch=if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack"
-		if not a.airborne and self.rng:NextNumber()<(if minato then .18 else .34) then branch="Tool" end
-		-- After one clean strike, sometimes take the heavy branch (knee, palm, thrust).
-		if not a.airborne and a.combo==1 and self.rng:NextNumber()<.25 then branch="Heavy" end
+		-- The directional grammar: the stick picks the route, so the bot sets it
+		-- explicitly (an approach held by accident must not pick a launcher).
+		local roll=self.rng:NextNumber()
+		if a.airborne then
+			if (a.airCombo or 0)>=2 and roll<.4 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+			if (a.airCombo or 0)>=1 then
+				if roll<.22 then a.move=-toward
+				elseif roll<.42 then a.move=toward
+				elseif roll<.54 then a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
+				else a.move=Vector3.zero end
+			else a.move=Vector3.zero end
+			c:request(a,"Attack");return
+		end
 		-- Neji: end a string with Vacuum Palm.
-		if a.fighterId=="GentleFist" and not a.airborne then
-			if a.combo>=2 and self.rng:NextNumber()<.3 then
-				local palm=slotOf(a,"VacuumPalm")
-				if palm and c:request(a,palm,target.root.Position) then return end
-			end
-			if branch=="Tool" and self.rng:NextNumber()<.6 then branch="Attack" end
+		if a.fighterId=="GentleFist" and a.combo>=2 and roll<.18 then
+			local palm=slotOf(a,"VacuumPalm")
+			if palm and c:request(a,palm,target.root.Position) then return end
 		end
-		-- Character branches: the stick picks an alternative inside the string.
-		if branch=="Attack" and not a.airborne then
-			local roll=self.rng:NextNumber()
-			if minato and roll<.28 then a.move=tangent*(if roll<.14 then 1 else -1)
-			elseif minato and roll<.36 then a.move=-toward
-			elseif not minato and roll<.22 then a.move=-toward
-			elseif not minato and roll<.34 and a.combo>=2 then a.move=tangent end
+		local nearWall=fromCenter.Magnitude>Config.ArenaRadius-22
+		if a.combo>=2 then
+			if roll<.3 then a.move=toward;c:request(a,"Attack");return end -- launcher
+			if roll<.46 then a.move=-toward;c:request(a,"Attack");return end -- low route
+			if roll<.56 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+		elseif a.combo==1 and roll<.2 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+		if roll<.7 and roll>=.56 then a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1);c:request(a,"Attack");return end
+		if roll>=.92 then
+			-- Tool inside the string; away + tool hops out behind it.
+			a.move=if nearWall or self.rng:NextNumber()<.5 then Vector3.zero else -toward
+			c:request(a,"Tool",target.root.Position);return
 		end
-		c:request(a,branch);return
+		a.move=Vector3.zero;c:request(a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
-	if distance>7 and distance<30 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09) and target.state~="Guarding" then
+	if distance>7 and distance<46 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then 1.8 else 1) and target.state~="Guarding" then
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
@@ -263,7 +275,7 @@ function AI:update(now)
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
 	-- Chakra dash in from mid range when the opponent is not attacking.
-	if not calm and distance>11 and distance<30 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()<.1 then
+	if not calm and distance>11 and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()<.1 then
 		if c:request(a,"Pursuit") then return end
 	end
 	-- Sidestep cover when the direct route is obstructed.
