@@ -7,7 +7,7 @@ return {
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
-	PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
+	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.

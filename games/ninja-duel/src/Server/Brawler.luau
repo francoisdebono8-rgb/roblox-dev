@@ -102,7 +102,7 @@ function Brawler.disengage(c,a,kind)
  c:beginThrow(a,{kind=kind,release=if minato then .07 else .1,count=if minato then 1 else 2,interval=.07,
   fire=function(index,target)
    local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.7 else .7)
-   c:projectile(a,target+spread,if minato then 96 else 84,22,3,if minato then "kunai" else "shuriken")
+   c:projectile(a,target+spread,if minato then 96 else 84,22,2,if minato then "kunai" else "shuriken")
   end})
  Brawler.event(c,a,"Disengage")
  return true
@@ -219,7 +219,7 @@ function Brawler.splat(c,a,hit)
  c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
  local source=a.reactionSource
  if source and source.health>0 then
-  c:damage(source,a,tune.SplatDamage,false,false)
+  c.damageTag="wall";c:damage(source,a,tune.SplatDamage,false,false);c.damageTag=nil
   if c.match.phase~="Duel" then return end
   a.reaction="WallSplat";a.state="Neutral";a.untilTime=c.now
   source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.8)
@@ -317,7 +317,7 @@ function Brawler.hit(c,a,p)
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
  if p.name=="Throw" or p.name=="ThrowUp" then
-  success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+  c.damageTag=p.name;success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true);c.damageTag=nil
  end
  if not success or b.health<=0 then return success end
  if protected then return true end

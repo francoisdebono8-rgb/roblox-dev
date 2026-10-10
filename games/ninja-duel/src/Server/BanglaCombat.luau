@@ -48,7 +48,9 @@ function Bangla.tryHit(c,a,p)
    local guarded=target.state=='Guarding' and target.chakra>0 and frontal
    local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
    local damage=if Combo.Actions[p.name] then Combo.Damage[donor.action] else p.spec.damage
+   c.damageTag=if p.rasengan then "Rasengan" else p.name
    local success=c:damage(a,target,damage*(a.def.CombatDamage or 1),false,true)
+   c.damageTag=nil
    if success then
     local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
     sound(target.root,weaponSounds[weaponType])

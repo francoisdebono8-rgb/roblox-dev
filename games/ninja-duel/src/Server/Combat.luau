@@ -191,6 +191,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
+	-- Studio tooling only: where damage comes from, to tune fight length.
+	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
 	local style=(if guarded then "block" elseif heavy and amount>=16 then "slam" elseif heavy then "launcher" elseif amount>=20 then "finisher" else "light")
 	victim.impactStyle=style
@@ -474,6 +476,10 @@ function Combat:request(a,action,aim,clientTime)
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now>=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
+		-- A neutral throw costs a little chakra so blades pressure, not spam;
+		-- the throw that cancels a confirmed string stays free.
+		if not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
+		if not chainCancel then a.chakra-=Config.ToolCost end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
 		local minato=a.def.Name=="Minato"
@@ -485,7 +491,7 @@ function Combat:request(a,action,aim,clientTime)
 			count=if minato then 1 else 2,interval=.08,aim=aim,
 			fire=function(index,target)
 				local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.9 else .9)
-				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 4 else 3,if minato then "kunai" else "shuriken")
+				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 3 else 2,if minato then "kunai" else "shuriken")
 			end})
 		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
 		return true
@@ -795,14 +801,18 @@ function Combat:fireExplosion(p,position,direct)
 	if not direct and target and target.health>0 then
 		local delta=target.root.Position-position
 		if delta.Magnitude<=7.5 and workspace:Raycast(position,delta,self:rayParams(true))==nil then
+			self.damageTag="splash"
 			self:damage(p.a,target,p.damage*.5,false,false)
+			self.damageTag=nil
 		end
 	end
 end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
+	self.damageTag=p.kind
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
@@ -919,7 +929,9 @@ function Combat:updateHazards()
 				local ray=workspace:Raycast(h.position,target.root.Position-h.position,self:rayParams(true))
 				if not ray then
 					h.lastHit[target]=self.now
+					self.damageTag="burn"
 					self:damage(h.a,target,h.damage*0.34,false,false)
+					self.damageTag=nil
 				end
 			end
 		end

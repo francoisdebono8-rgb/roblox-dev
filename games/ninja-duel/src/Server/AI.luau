@@ -24,6 +24,26 @@ function AI:defend(now)
 			if c:request(a,"Dodge") then self.techPlan=nil;return true end
 		end
 	else self.techPlan=nil end
+	-- Incoming blades or fire: guard or sidestep once, at reaction speed.
+	if a.state=="Neutral" and not a.reaction and not a.wall and now>=(self.projectileReact or 0) then
+		for _,p in c.projectiles do
+			if p.a~=a then
+				local offset=a.root.Position-p.position
+				local gap=offset.Magnitude
+				if gap<16 and gap>2 and p.direction:Dot(offset.Unit)>.92 then
+					self.projectileReact=now+.6
+					local roll=self.rng:NextNumber()
+					if roll<.35 then
+						c:request(a,"Guard");self.guardUntil=now+.35;return true
+					elseif roll<.6 and a.dodgeUntil<=now then
+						a.move=Vector3.new(-p.direction.Z,0,p.direction.X)*(if self.rng:NextNumber()<.5 then 1 else -1)
+						if c:request(a,"Dodge") then return true end
+					end
+					break
+				end
+			end
+		end
+	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
 	if hits>0 and self.subPlan==nil then
@@ -161,7 +181,7 @@ function AI:update(now)
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
-	if distance>7 and distance<30 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.24 else 0.18) then
+	if distance>7 and distance<30 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09) and target.state~="Guarding" then
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.

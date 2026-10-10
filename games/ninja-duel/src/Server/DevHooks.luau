@@ -76,6 +76,12 @@ function DevHooks.install(matches)
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
+		elseif op=="damagelog" then
+			-- arg1=true clears it; the log starts when first requested.
+			c.damageLog=c.damageLog or {}
+			local out=c.damageLog
+			if arg1 then c.damageLog={} end
+			return out
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end

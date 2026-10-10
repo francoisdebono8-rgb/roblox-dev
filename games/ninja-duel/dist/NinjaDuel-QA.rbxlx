@@ -38,12 +38,12 @@ local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
  Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
  Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,14,50),.48),
- Heavy=move(.30,.17,.52,16,5.4,"Knockdown",Vector3.new(0,12,34),.68),
- Launcher=move(.17,.14,.28,9,3.2,"Launched",Vector3.new(0,58,13),1.18),
+ Heavy=move(.30,.17,.52,14,5.4,"Knockdown",Vector3.new(0,12,34),.68),
+ Launcher=move(.17,.14,.28,8,3.2,"Launched",Vector3.new(0,58,13),1.18),
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
  Air1=move(.08,.13,.18,6,2.8,"Juggled",Vector3.new(0,15,8),.62),
  Air2=move(.09,.14,.19,7,3.1,"Juggled",Vector3.new(0,10,12),.64),
- Slam=move(.15,.20,.38,13,2.8,"Knockdown",Vector3.new(0,-78,10),.86),
+ Slam=move(.15,.20,.38,11,2.8,"Knockdown",Vector3.new(0,-78,10),.86),
  Grab=move(.18,.14,.5,0,2,"Grabbed",Vector3.zero,.8),
  Throw=move(.12,.1,.34,10,0,"Knockdown",Vector3.new(0,18,48),.7),
  ThrowUp=move(.12,.1,.3,7,0,"Launched",Vector3.new(0,50,10),1.1),
@@ -117,7 +117,9 @@ function Combo.next(actor,now)
 end
 Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch'}
 -- Donor server damageValues and Animation objects, never supplied by clients.
-Combo.Damage={Punch=5,HardSmack=10,MegaPunch=25}
+-- MegaPunch tuned 25 -&gt; 18 for Ninja Duel pacing (a three-hit string is no
+-- longer a third of a health bar); Punch and HardSmack keep the donor values.
+Combo.Damage={Punch=5,HardSmack=10,MegaPunch=18}
 Combo.AnimationIds={Punch=18342131933,HardSmack=18342045122,MegaPunch=18341956985,Parry=18341905406}
 return Combo
 </ProtectedString>
@@ -135,7 +137,7 @@ return {
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
-	PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
+	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.
@@ -258,7 +260,7 @@ return {
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
 			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike or Rasengan • counter" },
-			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 42, Damage = 3, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 42, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "3s decoy • a swing at it opens a punish" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 62, Speed = 54, Damage = 16, Hint = "A miss leaves the lane burning" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 48, Speed = 68, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
@@ -1348,7 +1350,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">8a87e6bcecb4cc67a5e8cfb342efac747cfa436d52715c0faca64fcb7e8b0640</string>
+          <string name="Value">8e0aacd1dd30559dbbfcb07e28af5fcf06dbe70bde48183b46c210f714b203dd</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1476,6 +1478,26 @@ function AI:defend(now)
 			if c:request(a,"Dodge") then self.techPlan=nil;return true end
 		end
 	else self.techPlan=nil end
+	-- Incoming blades or fire: guard or sidestep once, at reaction speed.
+	if a.state=="Neutral" and not a.reaction and not a.wall and now&gt;=(self.projectileReact or 0) then
+		for _,p in c.projectiles do
+			if p.a~=a then
+				local offset=a.root.Position-p.position
+				local gap=offset.Magnitude
+				if gap&lt;16 and gap&gt;2 and p.direction:Dot(offset.Unit)&gt;.92 then
+					self.projectileReact=now+.6
+					local roll=self.rng:NextNumber()
+					if roll&lt;.35 then
+						c:request(a,"Guard");self.guardUntil=now+.35;return true
+					elseif roll&lt;.6 and a.dodgeUntil&lt;=now then
+						a.move=Vector3.new(-p.direction.Z,0,p.direction.X)*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
+						if c:request(a,"Dodge") then return true end
+					end
+					break
+				end
+			end
+		end
+	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
 	if hits&gt;0 and self.subPlan==nil then
@@ -1613,7 +1635,7 @@ function AI:update(now)
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
-	if distance&gt;7 and distance&lt;30 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.24 else 0.18) then
+	if distance&gt;7 and distance&lt;30 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09) and target.state~="Guarding" then
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
@@ -1806,7 +1828,9 @@ function Bangla.tryHit(c,a,p)
    local guarded=target.state=='Guarding' and target.chakra&gt;0 and frontal
    local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
    local damage=if Combo.Actions[p.name] then Combo.Damage[donor.action] else p.spec.damage
+   c.damageTag=if p.rasengan then "Rasengan" else p.name
    local success=c:damage(a,target,damage*(a.def.CombatDamage or 1),false,true)
+   c.damageTag=nil
    if success then
     local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
     sound(target.root,weaponSounds[weaponType])
@@ -1972,7 +1996,7 @@ function Brawler.disengage(c,a,kind)
  c:beginThrow(a,{kind=kind,release=if minato then .07 else .1,count=if minato then 1 else 2,interval=.07,
   fire=function(index,target)
    local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.7 else .7)
-   c:projectile(a,target+spread,if minato then 96 else 84,22,3,if minato then "kunai" else "shuriken")
+   c:projectile(a,target+spread,if minato then 96 else 84,22,2,if minato then "kunai" else "shuriken")
   end})
  Brawler.event(c,a,"Disengage")
  return true
@@ -2089,7 +2113,7 @@ function Brawler.splat(c,a,hit)
  c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
  local source=a.reactionSource
  if source and source.health&gt;0 then
-  c:damage(source,a,tune.SplatDamage,false,false)
+  c.damageTag="wall";c:damage(source,a,tune.SplatDamage,false,false);c.damageTag=nil
   if c.match.phase~="Duel" then return end
   a.reaction="WallSplat";a.state="Neutral";a.untilTime=c.now
   source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.8)
@@ -2187,7 +2211,7 @@ function Brawler.hit(c,a,p)
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
  if p.name=="Throw" or p.name=="ThrowUp" then
-  success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true)
+  c.damageTag=p.name;success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true);c.damageTag=nil
  end
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
@@ -2491,6 +2515,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
+	-- Studio tooling only: where damage comes from, to tune fight length.
+	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount&gt;=12
 	local style=(if guarded then "block" elseif heavy and amount&gt;=16 then "slam" elseif heavy then "launcher" elseif amount&gt;=20 then "finisher" else "light")
 	victim.impactStyle=style
@@ -2774,6 +2800,10 @@ function Combat:request(a,action,aim,clientTime)
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now&gt;=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
+		-- A neutral throw costs a little chakra so blades pressure, not spam;
+		-- the throw that cancels a confirmed string stays free.
+		if not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+		if not chainCancel then a.chakra-=Config.ToolCost end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
 		local minato=a.def.Name=="Minato"
@@ -2785,7 +2815,7 @@ function Combat:request(a,action,aim,clientTime)
 			count=if minato then 1 else 2,interval=.08,aim=aim,
 			fire=function(index,target)
 				local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.9 else .9)
-				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 4 else 3,if minato then "kunai" else "shuriken")
+				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 3 else 2,if minato then "kunai" else "shuriken")
 			end})
 		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
 		return true
@@ -3095,14 +3125,18 @@ function Combat:fireExplosion(p,position,direct)
 	if not direct and target and target.health&gt;0 then
 		local delta=target.root.Position-position
 		if delta.Magnitude&lt;=7.5 and workspace:Raycast(position,delta,self:rayParams(true))==nil then
+			self.damageTag="splash"
 			self:damage(p.a,target,p.damage*.5,false,false)
+			self.damageTag=nil
 		end
 	end
 end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
+	self.damageTag=p.kind
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
@@ -3219,7 +3253,9 @@ function Combat:updateHazards()
 				local ray=workspace:Raycast(h.position,target.root.Position-h.position,self:rayParams(true))
 				if not ray then
 					h.lastHit[target]=self.now
+					self.damageTag="burn"
 					self:damage(h.a,target,h.damage*0.34,false,false)
+					self.damageTag=nil
 				end
 			end
 		end
@@ -3344,6 +3380,12 @@ function DevHooks.install(matches)
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
+		elseif op=="damagelog" then
+			-- arg1=true clears it; the log starts when first requested.
+			c.damageLog=c.damageLog or {}
+			local out=c.damageLog
+			if arg1 then c.damageLog={} end
+			return out
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
@@ -5335,7 +5377,7 @@ Techniques.NeedleFan = {
 				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
 				local victim=a.target
 				local lead=victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.18
-				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage+1,"shuriken")
+				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage,"shuriken")
 			end)
 		end
 		c:cue(a,"SHADOW SHURIKEN",.6)
@@ -7672,7 +7714,7 @@ function UI.new(parent,send)
 			fill.AnchorPoint=Vector2.new(0,1)
 			pips[k]={pip=pip,fill=fill}
 		end
-		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 64 else 340,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
+		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 314,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
 		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
 	end

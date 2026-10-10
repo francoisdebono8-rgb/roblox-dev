@@ -134,7 +134,7 @@ function UI.new(parent,send)
 			fill.AnchorPoint=Vector2.new(0,1)
 			pips[k]={pip=pip,fill=fill}
 		end
-		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 64 else 340,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
+		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 314,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
 		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
 	end

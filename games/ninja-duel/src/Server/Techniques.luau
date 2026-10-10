@@ -257,7 +257,7 @@ Techniques.NeedleFan = {
 				if a.health<=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health<=0 then return end
 				local victim=a.target
 				local lead=victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.18
-				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage+1,"shuriken")
+				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage,"shuriken")
 			end)
 		end
 		c:cue(a,"SHADOW SHURIKEN",.6)

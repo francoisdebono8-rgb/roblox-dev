@@ -60,7 +60,8 @@ test("the impact feed stays bounded and clears with the duel",function()
   c:relocate(b,a.root.Position+a.root.CFrame.LookVector*40)
   c:request(a,"Attack");H.step(c,.5)
  end
- assert(#(c.impacts or {})<=8,"impact feed grew to "..#c.impacts)
+ -- Bounded by Combat:pushImpact (12 entries); snapshots only send unsent ones.
+ assert(#(c.impacts or {})<=12,"impact feed grew to "..#c.impacts)
  c:clear(true)
  assert(#c.impacts==0,"cleared duel kept its impact feed")
 end)

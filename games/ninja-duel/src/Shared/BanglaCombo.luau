@@ -20,6 +20,8 @@ function Combo.next(actor,now)
 end
 Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch'}
 -- Donor server damageValues and Animation objects, never supplied by clients.
-Combo.Damage={Punch=5,HardSmack=10,MegaPunch=25}
+-- MegaPunch tuned 25 -> 18 for Ninja Duel pacing (a three-hit string is no
+-- longer a third of a health bar); Punch and HardSmack keep the donor values.
+Combo.Damage={Punch=5,HardSmack=10,MegaPunch=18}
 Combo.AnimationIds={Punch=18342131933,HardSmack=18342045122,MegaPunch=18341956985,Parry=18341905406}
 return Combo
