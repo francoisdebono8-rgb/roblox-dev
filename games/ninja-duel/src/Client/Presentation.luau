@@ -3,6 +3,7 @@
 -- buffer instead of stepping the whole body once per network packet.
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
+local Effects=require(script.Parent.Effects)
 local Presentation={};Presentation.__index=Presentation
 -- Render slightly behind the newest snapshot so motion is always interpolated
 -- between two known samples instead of being extrapolated from one.
@@ -13,18 +14,25 @@ local BUFFER=8
 local SNAP_DISTANCE=14
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,samples={},clocks={},botModel=nil},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,samples={},clocks={},botModel=nil,fx=Effects.new()},Presentation)
 end
 -- Contact feed straight from the server: play the impact on the frame the hit
 -- happened, so sound and VFX never lead or lag the animation.
 function Presentation:impacts(data,camera)
+ -- Projectiles first, so a contact in the same packet can finish its blade.
+ if data.phase=="Duel" then self.fx:sync(data) end
  if not data.impacts then return end
+ -- The server restarts its contact serial with every duel.
+ if self.impactEpoch~=data.epoch then self.impactEpoch=data.epoch;self.impactSerial=0 end
  local serial=data.impactSerial or 0
  if serial<=self.impactSerial then return end
+ local character=game:GetService("Players").LocalPlayer.Character
+ local folder=character and character.Parent
  for _,impact in data.impacts do
   if impact.serial==nil or impact.serial>self.impactSerial then
    Feedback.impact(impact.style or "light",impact.position)
-   if camera and camera.impulse then camera:impulse(impact.style,impact.role) end
+   self.fx:impact(impact,folder)
+   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
   end
  end
  self.impactSerial=serial
@@ -51,8 +59,9 @@ end
 local function clockFor(self,key,actor,now)
  local clock=self.clocks[key]
  if not clock then clock={};self.clocks[key]=clock end
- if actor.attackName~=clock.attackName then
-  clock.attackName=actor.attackName;clock.attackAt=now
+ -- A new swing restarts the clock even when it repeats the same move name.
+ if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
+  clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=now
  end
  if actor.reaction~=clock.reaction then
   clock.reaction=actor.reaction;clock.reactionAt=now
@@ -93,6 +102,7 @@ function Presentation:update(data,dt)
  local players=game:GetService("Players")
  if not data.human then
   if self.echo then self.echo:Destroy();self.echo=nil end
+  self.fx:update(data,dt,nil)
   return
  end
  if self.epoch~=data.epoch then
@@ -127,7 +137,6 @@ function Presentation:update(data,dt)
      model:PivotTo(CFrame.new(root.Position:Lerp(visual,alpha))*model:GetPivot().Rotation)
     end
    end
-   Motion.weapon(model,actor)
    if previous and previous.airborne and not actor.airborne then
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
@@ -146,15 +155,26 @@ function Presentation:update(data,dt)
    -- Everything the presentation contract needs, with locally measured clocks so
    -- a late packet cannot make the body replay its wind-up.
    local visual=table.clone(actor)
-   visual.velocity=velocity
+   -- A dash is server-driven translation: pose it from its declared direction.
+   visual.velocity=if actor.state=="Dodging" then actor.velocity else velocity
    visual.speed=speed
    visual.reactionElapsed=clock.reactionElapsed
    visual.attackElapsed=clock.attackElapsed
    visual.landing=self.landingUntil~=nil and now<self.landingUntil
+   -- Throws and casts run on the shared server clock (slightly behind, like the
+   -- projectiles), so the blade leaves the hand on the frame it starts flying.
+   if data.serverNow then
+    local visualNow=workspace:GetServerTimeNow()-Effects.DELAY
+    if actor.throwElapsed then visual.throwElapsed=visualNow-(data.serverNow-actor.throwElapsed) end
+    if actor.castElapsed then visual.castElapsed=workspace:GetServerTimeNow()-(data.serverNow-actor.castElapsed) end
+    if actor.channel then visual.channel=math.max(0,actor.channel-(workspace:GetServerTimeNow()-data.serverNow)) end
+   end
+   Motion.weapon(model,visual)
    Motion.present(model,visual,clock,dt)
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
   end
  end
+ self.fx:update(data,dt,folder)
 end
 return Presentation

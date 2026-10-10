@@ -135,6 +135,7 @@ function Matches:request(player,payload)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
 	if action=="Move" then
+		if s.autopilot or s.scripted then return end
 		if not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>0.01 then return end
 		s.human.move=payload.direction; s.human.lastMove=clock
 		if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
@@ -158,7 +159,7 @@ function Matches:update(dt,now)
 			if os.clock()-s.human.lastMove>0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
-				if s.tutorial then Tutorial.update(s,now,dt) else s.ai:update(now) end
+				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen then s.ai:update(now) end
 			end
 		end
 		-- Regular cadence, plus an immediate packet when a contact, throw or

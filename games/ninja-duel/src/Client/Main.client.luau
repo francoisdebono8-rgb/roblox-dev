@@ -44,5 +44,21 @@ RunService.RenderStepped:Connect(function(dt)
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
 	end
 end)
+-- Studio-only diagnostics channel (created by the server's DevHooks).
+if RunService:IsStudio() then
+	task.spawn(function()
+		local log=shared:WaitForChild("NinjaDuelDevLog",10) or game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelDevLog",10)
+		if not log then return end
+		game:GetService("LogService").MessageOut:Connect(function(message,kind)
+			if kind==Enum.MessageType.MessageError or kind==Enum.MessageType.MessageWarning then log:FireServer("log",string.sub(message,1,400)) end
+		end)
+		log.OnClientEvent:Connect(function(kind)
+			if kind=="info" then
+				local cam=workspace.CurrentCamera
+				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize})
+			end
+		end)
+	end)
+end
 send("Ready")
 print("[NinjaDuel] Client ready")
