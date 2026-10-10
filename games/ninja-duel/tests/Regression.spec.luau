@@ -76,9 +76,12 @@ test("a whiffed swing keeps its recovery and cannot queue a phantom combo",funct
  c:relocate(b,c.match.origin+V.new(0,3,-30))
  H.step(c,.2)
  assert(c:request(a,"Attack"),"follow-up swing refused")
- assert(not c:request(a,"Attack"),"a whiffed swing accepted a queued chain")
+ local ok,reason=c:request(a,"Attack")
+ assert(not ok or reason=="Buffered","a whiffed swing accepted a queued chain")
+ local swing=a.attackName
  H.step(c,.6)
  assert(not a.chainOpen,"whiff opened a chain")
+ assert(a.attackName==nil or a.attackName==swing,"a buffered press chained after a whiff ("..tostring(a.attackName)..")")
  assert(a.state=="Neutral" or a.state=="Recovery","whiff left "..a.state)
 end)
 test("pursuit reaches a victim that is still rising",function()

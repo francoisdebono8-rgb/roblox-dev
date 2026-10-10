@@ -250,7 +250,15 @@ function World.arena(parent, origin)
 	atmosphere()
 	return folder
 end
+local function fighterGroup()
+	local physics=game:GetService("PhysicsService")
+	pcall(function()
+		if not physics:IsCollisionGroupRegistered("NinjaFighters") then physics:RegisterCollisionGroup("NinjaFighters") end
+		physics:CollisionGroupSetCollidable("NinjaFighters","NinjaFighters",false)
+	end)
+end
 function World.rig(parent, def, cf, name)
+	fighterGroup()
 	local model = Instance.new("Model"); model.Name=name; model.Parent=parent
 	local skin=Color3.fromRGB(table.unpack(def.Skin))
 	local outfit=Color3.fromRGB(table.unpack(def.Outfit))
@@ -309,6 +317,8 @@ function World.rig(parent, def, cf, name)
 	end
 	World.dress(model,def)
 	model.PrimaryPart=root; root:SetNetworkOwner(nil)
+	-- Fighters pass through each other physically; Combat keeps them apart.
+	for _,p in model:GetDescendants() do if p:IsA("BasePart") then p.CollisionGroup="NinjaFighters" end end
 	return model,hum,root,joints
 end
 -- --------------------------------------------------------------- costumes

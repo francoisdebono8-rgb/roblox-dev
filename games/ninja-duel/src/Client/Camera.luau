@@ -189,13 +189,28 @@ function Camera:update(data,dt)
 	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
-	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
+	local studio=game:GetService("RunService"):IsStudio()
+	-- Studio film camera (tooling only): a low side view of both fighters, the
+	-- way a fighting-game camera shows feet, ground contact and body mechanics.
+	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")
+	if film then
+		local mid=a:Lerp(target,.5)
+		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+		if line.Magnitude<.1 then line=Vector3.xAxis end
+		local side=line.Unit:Cross(Vector3.yAxis)
+		local dist=(if type(film)=="number" then film else 0)+math.max(11,separation*.75+8)
+		local look=mid+Vector3.new(0,-.4,0)
+		cf=CFrame.lookAt(look+side*dist+Vector3.new(0,1.2,0),look)
+		camera.FieldOfView=50
+	end
+	if studio and workspace:GetAttribute("NinjaDuelCaptureShift") then
 		-- Turn about the world vertical, then pitch, and rebuild with a world up
 		-- so the horizon never rolls.
 		local look=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(-21)):VectorToWorldSpace(cf.LookVector)
 		look=(look-Vector3.yAxis*math.tan(math.rad(12))).Unit
 		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
+	if film then camera.CFrame=cf;return end
 	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few

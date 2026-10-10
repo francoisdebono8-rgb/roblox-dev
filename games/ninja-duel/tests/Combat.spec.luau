@@ -145,9 +145,12 @@ test("active window late entry, whiff recovery and combo buffer",function()
  b.root.CFrame=C.new(0,3,-30);step(c,.6)
  local health=b.health
  assert(c:request(a,"Attack"));assert(a.attackName=="Light3")
- assert(not c:request(a,"Attack"),"whiffed swing accepted a chain")
+ -- An early press may be held in the buffer, but a whiff must never chain it.
+ local ok,reason=c:request(a,"Attack")
+ assert(not ok or reason=="Buffered","whiffed swing accepted a chain")
  step(c,.5)
  assert(b.health==health and not a.chainOpen,"whiff produced a contact or a chain")
+ assert(a.attackName==nil or a.attackName=="Light3","a buffered press chained after a whiff ("..tostring(a.attackName)..")")
 end)
 test("grab, directional throw, no orphan relationship and upthrow",function()
  local c,a,b=pair();assert(c:request(a,"Grab"));step(c,.23)

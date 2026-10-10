@@ -2,7 +2,7 @@ return {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
-		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 25, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
+		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
 		AttackProfile = {
@@ -24,7 +24,7 @@ return {
 	Mirage = {
 		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
-		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 23.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
+		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 18, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
 		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
 		-- The Sharingan (three tomoe at 13): it sees strikes coming. Wider parry
 		-- and perfect-dodge windows, each successful one opens a counter, and a
@@ -51,7 +51,7 @@ return {
 	GentleFist = {
 		Name = "Neji", FullName = "Neji Hyuga", Age = 13, Title = "THE HYUGA GENIUS", Color = { 176, 196, 255 },
 		Description = "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
-		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 23.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
+		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
 		-- Byakugan: near-360-degree sight. His guard covers every side except a

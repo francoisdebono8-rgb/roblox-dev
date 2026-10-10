@@ -372,4 +372,42 @@ test("weapons follow the hand and only appear for their own moves",function()
  Motion.weapon(b.model,body(b,{attackName="Slam",state="Active",attackElapsed=.14}))
  assert(not Motion.weaponState(b.model).visible,"a body move kept the shuriken out")
 end)
+test("planted feet stay put in the world while walking, strafing, stopping and turning",function()
+ local root={CFrame=H.C.lookAt(V.new(0,3,0),V.new(1,3,0))}
+ local char={FindFirstChild=function(_,name) if name=="HumanoidRootPart" then return root end return nil end}
+ local base={rf={x=.2,z=.7},lf={x=-.1,z=-.7}}
+ local dt=1/60
+ local lastWorld={}
+ local planted={}
+ local steps=0
+ local worstSlide=0
+ local worstReach=0
+ local segments={{V.new(18,0,0),1.5,0},{V.new(38,0,0),1,0},{V.new(0,0,15),1,0},{V.new(-12,0,0),.8,0},{V.zero,.8,0},{V.zero,1,2.5}}
+ for _,seg in segments do
+  local velocity,duration,turn=seg[1],seg[2],seg[3]
+  for _=1,math.floor(duration/dt) do
+   Motion.tick(dt)
+   local look=root.CFrame.LookVector
+   local yaw=math.atan2(-look.X,-look.Z)+turn*dt
+   local pos=root.CFrame.Position+velocity*dt
+   root.CFrame=H.C.new(pos)*H.C.Angles(0,yaw,0)
+   local rf,lf=Motion._stepFeet(char,base,velocity,dt)
+   for side,f in {R=rf,L=lf} do
+    local sign=if side=="R" then 1 else -1
+    local world=root.CFrame:PointToWorldSpace(V.new(.5*sign+f.x,Motion._ankleY+f.y,f.z))
+    local isPlanted=f.toe==0
+    if isPlanted and planted[side] and lastWorld[side] then
+     worstSlide=math.max(worstSlide,(world-lastWorld[side]).Magnitude)
+    end
+    if not isPlanted and planted[side] then steps+=1 end
+    planted[side]=isPlanted;lastWorld[side]=world
+    worstReach=math.max(worstReach,math.sqrt(f.x*f.x+f.z*f.z))
+   end
+  end
+ end
+ assert(worstSlide<.05,string.format("a planted foot slid %.3f studs in one frame",worstSlide))
+ assert(steps>=10,"the feet barely stepped ("..steps..")")
+ assert(worstReach<2.2,string.format("a foot was left %.2f studs from its hip",worstReach))
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

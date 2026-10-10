@@ -146,11 +146,12 @@ function Brawler.request(c,a,action)
   end
  end
   if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
-   if pending and pending.kind=="Brawl" and a.hitConfirmed then
-    -- Buffer the follow-up, but only behind a swing that actually connected.
-    -- Waiting for the open chain felt sticky; buffering a whiffed swing would
-    -- queue a phantom combo through a recovery the player is meant to respect.
-    a.buffered={action=action,expires=c.now+.32}
+   if pending and pending.kind=="Brawl" then
+    -- Buffer the follow-up pressed during a swing, even before contact: a press
+    -- made a few frames early must not be eaten. It only fires if the chain
+    -- opens (the swing landed cleanly); after a whiff it simply expires, so no
+    -- phantom combo runs through a recovery the player must respect.
+    a.buffered={action=action,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
     return true,"Buffered"
    end
    return false,"Committed"

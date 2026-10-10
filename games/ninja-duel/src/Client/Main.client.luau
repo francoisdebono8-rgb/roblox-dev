@@ -37,12 +37,12 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch then camera.locked=true end
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 end)
-RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
 RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
 	-- Last moment before the frame is drawn: the replicated roots have their
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
 	presentation:smoothStep(current,dt)
+	presentation:update(current,dt)
 	camera:update(current,dt)
 	if current.phase=="Duel" and os.clock()>=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))

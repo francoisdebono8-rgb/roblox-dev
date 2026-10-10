@@ -333,4 +333,16 @@ test("running taijutsu: out of a sprint, strike = flying kick, heavy = sliding s
  end
 end)
 
+test("a press made before contact is not eaten: it chains once the swing lands",function()
+ for _,fighter in {"Flashstep","Mirage","GentleFist"} do
+  local c,a,b=H.duel(fighter,"Mirage")
+  place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+  assert(c:request(a,"Attack"))
+  assert(a.state=="Startup","first light did not start")
+  local ok,reason=c:request(a,"Attack")
+  assert(ok and reason=="Buffered",fighter..": an early press was refused ("..tostring(reason)..")")
+  until_(c,.8,function() return a.attackName=="Light2" end,fighter..": the early press never chained")
+ end
+end)
+
 print("NinjaDuel phase 4 depth: "..passed.." PASS")

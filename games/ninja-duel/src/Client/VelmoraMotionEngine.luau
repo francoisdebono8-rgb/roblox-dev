@@ -92,8 +92,25 @@ local function write(char,key,target,rate,dt)
 	s.pose[key]=nextCF
 	joint.Transform=nextCF
 end
+local LEG_SIDE={RightHip="R",RightKnee="R",RightAnkle="R",LeftHip="L",LeftKnee="L",LeftAnkle="L"}
+local legIK
 local function apply(char,targets,rate,dt)
-	for key in JOINTS do write(char,key,targets[key] or IDENTITY,rate,dt) end
+	local feet=targets.__feet
+	for key in JOINTS do
+		local side=LEG_SIDE[key]
+		if not (feet and side and feet[side]) then write(char,key,targets[key] or IDENTITY,rate,dt) end
+	end
+	if feet then
+		-- The hips are damped; a planted foot must not be. Solve each planted leg
+		-- against the hips as drawn this frame and set it almost at once.
+		local s=stateOf(char)
+		local hips=s.pose.Root or targets.Root
+		for side,f in feet do
+			local prefix=if side=="R" then "Right" else "Left"
+			local hip,knee,ankle=legIK(hips,if side=="R" then 1 else -1,f.ankle,f.yaw,f.toe)
+			write(char,prefix.."Hip",hip,60,dt);write(char,prefix.."Knee",knee,60,dt);write(char,prefix.."Ankle",ankle,60,dt)
+		end
+	end
 end
 
 -- ------------------------------------------------------------- pose builder
@@ -125,7 +142,7 @@ local function legFK(side,l)
 end
 -- Two-bone IK in the LowerTorso frame: thigh/shin lengths are the rig's real
 -- joint spacing; knees point forward (and a little out); the foot stays flat.
-local function legIK(rootCF,side,ankle,footYaw,toe)
+function legIK(rootCF,side,ankle,footYaw,toe)
 	local hip=rootCF*Vector3.new(.5*side,-.55,0)
 	local inv=rootCF.Rotation:Inverse()
 	local d=inv*(ankle-hip)
@@ -172,6 +189,10 @@ local function build(spec)
 			local foot=(if side==1 then spec.rf else spec.lf) or {}
 			local ankle=Vector3.new(.5*side+(foot.x or 0),ANKLE_Y+(foot.y or 0),foot.z or 0)
 			out[prefix.."Hip"],out[prefix.."Knee"],out[prefix.."Ankle"]=legIK(rootCF,side,ankle,foot.yaw,foot.toe)
+			-- Remember the planted foot: apply() re-solves the leg against the
+			-- hips actually drawn this frame, so the foot stays where it was put.
+			out.__feet=out.__feet or {}
+			out.__feet[if side==1 then "R" else "L"]={ankle=ankle,yaw=foot.yaw or 0,toe=foot.toe or 0}
 		end
 	end
 	return out
@@ -187,6 +208,16 @@ local function blend(a,b,t)
 	if t>=1 then return b end
 	local out={}
 	for key in JOINTS do out[key]=(a[key] or IDENTITY):Lerp(b[key] or IDENTITY,t) end
+	local fa,fb=a.__feet,b.__feet
+	if fa and fb then
+		for _,side in {"R","L"} do
+			local x,y=fa[side],fb[side]
+			if x and y then
+				out.__feet=out.__feet or {}
+				out.__feet[side]={ankle=x.ankle:Lerp(y.ankle,t),yaw=x.yaw+(y.yaw-x.yaw)*t,toe=x.toe+(y.toe-x.toe)*t}
+			end
+		end
+	end
 	return out
 end
 -- Deep merge: `over` replaces numeric fields of `base`; tables are merged.
@@ -590,6 +621,36 @@ local function attackPhase(name,elapsed,fighterId)
 	if t<startup+active then return 1+(t-startup)/math.max(active,1e-3),startup,active,recovery end
 	return 2+math.min(1,(t-startup-active)/math.max(recovery,1e-3)),startup,active,recovery
 end
+-- The clip's footwork at `elapsed`: where each planted foot should be (root
+-- space), or nil for a leg that is kicking (free) at this moment.
+local function attackFeet(name,elapsed,fighterId)
+	local route=CLIPS[fighterId] or CLIPS.Flashstep
+	local keys=route[name] or route.Light1
+	local t=attackPhase(name,elapsed,fighterId)
+	local a,b=keys[1],keys[1]
+	local u=0
+	if t>keys[1].at then
+		a,b=keys[#keys],keys[#keys]
+		for index=1,#keys-1 do
+			if t<=keys[index+1].at then
+				a,b=keys[index],keys[index+1]
+				u=(EASE[b.ease] or smooth)((t-a.at)/math.max(b.at-a.at,1e-3))
+				break
+			end
+		end
+	end
+	local out={}
+	for _,side in {"R","L"} do
+		local free=if side=="R" then "rl" else "ll"
+		local plant=if side=="R" then "rf" else "lf"
+		if not (a.pose[free] or b.pose[free]) then
+			local fa,fb=a.pose[plant] or {},b.pose[plant] or {}
+			local function mix(k) return (fa[k] or 0)+((fb[k] or 0)-(fa[k] or 0))*u end
+			out[side]={x=mix("x"),z=mix("z"),yaw=mix("yaw"),y=mix("y"),toe=mix("toe")}
+		end
+	end
+	return out
+end
 -- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId)
@@ -724,85 +785,122 @@ local function stanceTargets(fighterId)
 	local spec=merge(base,{root={y=base.root.y+breath*.03},torso={pitch=base.torso.pitch+breath*(base.breath or 1)}})
 	return build(spec)
 end
-local function locomotionTargets(char,actor,fighterId,dt)
+-- Feet planted in the world. A foot stays exactly where it was put down until
+-- it drifts too far from where it belongs under the moving body; then it steps
+-- (one foot at a time, the other holds the ground). Walking, strafing,
+-- stopping and turning on the spot all come out of the same rule, so feet
+-- never skate and the steps always match the real displacement.
+local STEP_REACH,STEP_LEAD=1.3,1.05
+local function stepFeet(char,s,base,velocity,speed,dt,mode)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	dt=dt or 1/60
+	local function authored(side) return ((if side==1 then base.rf else base.lf) or {}) end
+	if not root then return authored(1),authored(-1),0,0 end
+	local rootCF=root.CFrame
+	local look=Vector3.new(rootCF.LookVector.X,0,rootCF.LookVector.Z)
+	if look.Magnitude<1e-3 then look=Vector3.new(0,0,-1) end
+	local flat=CFrame.lookAt(rootCF.Position,rootCF.Position+look.Unit)
+	local groundY=rootCF.Position.Y+ANKLE_Y
+	-- Re-seat after anything that was not ground locomotion (air, a reaction).
+	if s.feet and elapsedTime-(s.feetAt or -1)>.25 then s.feet=nil end
+	s.feetAt=elapsedTime
+	local moving=if mode then 0 else math.clamp(speed/8,0,1)
+	-- Cadence from geometry: a foot lands `lead` ahead of the hip and may drift
+	-- `threshold` behind before it must step, so it holds the ground for
+	-- (lead+threshold)/speed; the swing must fit inside the other foot's stance
+	-- or the body outruns its own legs.
+	local threshold=if mode=="attack" then .28 elseif mode=="react" then .35 else math.clamp(.3+speed*.03,.3,STEP_REACH)
+	local leadLength=math.min(STEP_LEAD,speed*.06)
+	local stanceTime=if speed>.5 then (leadLength+threshold)/speed else .3
+	local swingTime=if mode=="attack" then .09 elseif mode=="react" then .12 else math.clamp(stanceTime*.92,.065,.26)
+	local lead=if speed>.01 then velocity.Unit*leadLength else Vector3.zero
+	local feet=s.feet or {}
+	s.feet=feet
+	local rests={}
+	for _,side in {1,-1} do
+		local key=if side==1 then "R" else "L"
+		local a=authored(side)
+		local restLocal=Vector3.new(.5*side+(a.x or 0)*(1-moving)+.06*side*moving,0,(a.z or 0)*(1-moving))
+		local rest=flat:PointToWorldSpace(restLocal)+lead
+		rests[key]=Vector3.new(rest.X,groundY,rest.Z)
+		if not feet[key] then feet[key]={world=rests[key],planted=true} end
+	end
+	for key,f in feet do
+		if not f.planted then
+			f.t+=dt
+			f.p=math.min(1,f.t/f.dur)
+			if f.p>=1 then f.planted=true;f.world=rests[key];f.p=nil end
+		end
+		-- The ground under a planted foot is the floor the body stands on.
+		if f.planted then f.world=Vector3.new(f.world.X,groundY,f.world.Z) end
+	end
+	local function drift(key)
+		local w,r=feet[key].world,rests[key]
+		return Vector3.new(w.X-r.X,0,w.Z-r.Z).Magnitude
+	end
+	local order=if drift("L")>drift("R") then {"L","R"} else {"R","L"}
+	for _,key in order do
+		local f=feet[key];local other=feet[if key=="R" then "L" else "R"]
+		local e=drift(key)
+		if f.planted and e>STEP_REACH*2.4 then f.world=rests[key] -- carried away (knockback, slide): re-seat
+		elseif f.planted and e>threshold and (other.planted or (other.p or 0)>.6) then
+			f.planted=false;f.from=f.world;f.t=0;f.p=0;f.dur=swingTime*math.clamp(e/math.max(threshold,.01),.75,1.15)
+			break
+		end
+	end
+	local lift=math.clamp(.22+speed*.012,.22,.75)
+	local out={}
+	for key,f in feet do
+		local pos=f.world
+		if not f.planted then
+			local p=f.p or 0
+			pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+		end
+		local side=if key=="R" then 1 else -1
+		local l=rootCF:PointToObjectSpace(pos)
+		local a=authored(side)
+		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=if f.planted then 0 else -18}
+	end
+	-- The body is lowest as a foot lands and rises through the step.
+	local swingP=feet.R.p or feet.L.p
+	local bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving
+	-- Arms answer the legs: the left arm comes forward with the right foot.
+	local armSwing=math.clamp((out.L.z-out.R.z)/2.2,-1,1)
+	return out.R,out.L,bob,armSwing
+end
+local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	local s=stateOf(char)
 	local minato=springy(fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
-	-- Turning on the spot: measure the root's yaw rate so the feet can step
-	-- round instead of sliding while the hips rotate.
-	local yawRate=0
-	if root then
-		local look=root.CFrame.LookVector
-		local yaw=math.atan2(-look.X,-look.Z)
-		if s.lastYaw and dt and dt>0 then
-			local d=(yaw-s.lastYaw+math.pi)%(2*math.pi)-math.pi
-			yawRate=d/dt
-		end
-		s.lastYaw=yaw
-		s.turnRate=(s.turnRate or 0)+(yawRate-(s.turnRate or 0))*math.min(1,(dt or 1/60)*12)
-	end
+	local base=stance(fighterId)
+	local rf,lf,bob,armSwing=stepFeet(char,s,rest or base,velocity,speed,dt,mode)
 	if speed<1.2 then
-		local turning=math.abs(s.turnRate or 0)
-		if turning>1.6 then
-			-- A small pivot step: alternate feet lift and swing toward the turn.
-			s.turnPhase=((s.turnPhase or 0)+(dt or 1/60)*math.clamp(turning*.55,1.6,4))%1
-			local p=s.turnPhase
-			local base=stance(fighterId)
-			local spec=merge(base,{})
-			local lift=math.clamp(turning*.06,.15,.35)
-			local swing=math.clamp((s.turnRate or 0)*.05,-.35,.35)
-			local r=math.sin(p*math.pi*2);local l=math.sin((p+.5)*math.pi*2)
-			spec.rf=merge(base.rf or {},{y=math.max(0,r)*lift,x=(base.rf and base.rf.x or 0)+math.max(0,r)*swing})
-			spec.lf=merge(base.lf or {},{y=math.max(0,l)*lift,x=(base.lf and base.lf.x or 0)+math.max(0,l)*swing})
-			return build(spec),RATE.locomotion
-		end
-		s.phase=0
-		return stanceTargets(fighterId),RATE.locomotion
+		local breath=math.sin(elapsedTime*(base.tempo or 6))
+		local spec=merge(base,{root={y=base.root.y+breath*.03+bob},torso={pitch=base.torso.pitch+breath*(base.breath or 1)}})
+		spec.rf=rf;spec.lf=lf
+		return build(spec),RATE.locomotion
 	end
 	local localMove=if root then root.CFrame:VectorToObjectSpace(velocity) else Vector3.new(0,0,-speed)
 	local dir=Vector3.new(localMove.X,0,localMove.Z)
 	dir=if dir.Magnitude>1e-3 then dir.Unit else Vector3.new(0,0,-1)
 	local forward=-dir.Z -- +1 moving where the body faces
 	local side=dir.X
-	local sprint=speed>(if minato then 38 else 34)
-	-- Planted feet must not skate: during its stance phase a foot travels back
-	-- under the body at exactly the body's speed. Stride is limited by leg
-	-- reach, so the cadence rises with speed (an anime sprint = fast legs).
-	local duty=if speed<10 then .62 elseif sprint then .32 else .4
-	local stride=math.clamp(.45+speed*.035,.45,1.35)
-	local frequency=math.clamp(speed*duty/(2*stride),1.2,5.6)
-	s.phase=(s.phase+(dt or 1/60)*frequency)%1
-	local phase=s.phase
-	local lift=math.clamp(.28+speed*.013,.28,1.0)
-	local function foot(offset)
-		local p=(phase+offset)%1
-		local along,height
-		if p<duty then
-			along=stride*(1-2*p/duty);height=0
-		else
-			local q=(p-duty)/(1-duty)
-			along=-stride+2*stride*smooth(q);height=lift*math.sin(math.pi*q)
-		end
-		return along,height
-	end
-	local rAlong,rHeight=foot(0)
-	local lAlong,lHeight=foot(.5)
-	local swing=math.sin(phase*math.pi*2)
-	local bounce=math.abs(math.cos(phase*math.pi*2))
-	local alpha=math.clamp(speed/40,0,1)
-	local lean=if forward>-.3 then forward*(6+alpha*(if minato then 20 else 13)) else forward*10
+	local sprint=speed>(if minato then 30 else 28)
+	local swing=armSwing
+	local alpha=math.clamp(speed/30,0,1)
+	local lean=if forward>-.3 then forward*(5+alpha*(if minato then 18 else 12)) else forward*10
 	local spec
 	if sprint and forward>.3 then
-		-- The ninja run: chest low, arms swept back, legs cycling hard.
-		spec={root={y=-.55-bounce*.12,pitch=(if minato then 22 else 16),yaw=swing*8},
-			torso={pitch=(if minato then 26 else 20),yaw=-swing*10},head={pitch=-30},
+		-- The ninja run: chest low, arms swept back, legs driving.
+		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16),yaw=swing*6},
+			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
 	else
-		local arm=(if minato then 38 else 24)*math.clamp(speed/24,.3,1)
-		spec={root={y=-.3-bounce*.1*alpha,pitch=lean,yaw=swing*7*alpha,roll=side*(if minato then 9 else 6)},
-			torso={pitch=(if forward<-.3 then -6 else 4),yaw=-swing*11*alpha,roll=-side*6},head={pitch=-lean*.4,yaw=0},
+		local arm=(if minato then 36 else 24)*math.clamp(speed/18,.3,1)
+		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
+			torso={pitch=(if forward<-.3 then -6 else 4),yaw=-swing*10*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=0},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
 		-- Readable directions: a strafe leans into the step with the shoulders
@@ -820,16 +918,11 @@ local function locomotionTargets(char,actor,fighterId,dt)
 			spec.la={raise=70,out=-12,twist=30,elbow=96,wrist=-10}
 		end
 		if fighterId=="GentleFist" then
-			local guard=1-math.clamp((speed-8)/22,0,1)
+			local guard=1-math.clamp((speed-8)/16,0,1)
 			spec.la={raise=spec.la.raise+(64-spec.la.raise)*guard,out=-4,twist=-30*guard,elbow=40+20*guard,wrist=-30*guard}
 		end
 	end
-	-- Feet travel along the movement direction (x right, z back in root space).
-	local axis=Vector3.new(dir.X,0,dir.Z)
-	local rFoot=-axis*rAlong
-	local lFoot=-axis*lAlong
-	spec.rf={x=rFoot.X+.05,z=rFoot.Z,y=rHeight,yaw=math.deg(math.atan2(-dir.X,-dir.Z))*.35}
-	spec.lf={x=lFoot.X-.05,z=lFoot.Z,y=lHeight,yaw=math.deg(math.atan2(-dir.X,-dir.Z))*.35}
+	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
 end
 local function airTargets(char,actor,fighterId)
@@ -869,7 +962,7 @@ end
 
 -- ------------------------------------------------------------ reactions
 local reactionDuration={HitStun=.24,GuardStun=.42,Knockback=.36,Launched=.5,Juggled=.42,WallSplat=.42,Grabbed=.3}
-local function reactionTargets(actor)
+local function reactionTargets(actor,feet)
 	local kind=actor.reaction or "HitStun"
 	local elapsed=actor.reactionElapsed or 0
 	local t=1-smooth(math.clamp(elapsed/(reactionDuration[kind] or .24),0,1))
@@ -908,7 +1001,7 @@ local function reactionTargets(actor)
 	return build({root={y=-.3-.25*t*strong,z=from*.35*t,pitch=-6*t*strong+behind*14*t,yaw=-side*10*t,roll=-side*8*t},
 		torso={pitch=pitch,yaw=-side*24*t,roll=-side*12*t},head={pitch=-16*t*strong+behind*26*t,yaw=-side*14*t},
 		ra={raise=30*t*strong,out=34*t,elbow=40},la={raise=26*t*strong,out=30*t,elbow=36},
-		rf={z=.25},lf={z=-.35}}),RATE.recoil
+		rf=feet and feet.rf or {z=.25},lf=feet and feet.lf or {z=-.35}}),RATE.recoil
 end
 -- Lying on the floor after a knockdown, then a quick, readable get-up.
 local function groundTargets(actor)
@@ -1103,7 +1196,15 @@ function Motion.defense(char,actor,dt)
 	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
 		targets,rate=groundTargets(actor)
 	elseif actor.reaction then
-		targets,rate=reactionTargets(actor)
+		-- Standing hit: the feet stay planted and stagger-step as the body is
+		-- pushed, instead of sliding with it.
+		local feet=nil
+		if not actor.airborne then
+			local velocity=planar(actor.velocity)
+			local rf,lf=stepFeet(char,stateOf(char),stance(actor.fighterId),velocity,velocity.Magnitude,dt,"react")
+			feet={rf=rf,lf=lf}
+		end
+		targets,rate=reactionTargets(actor,feet)
 	else
 		return
 	end
@@ -1188,7 +1289,14 @@ function Motion.present(char,actor,clock,dt)
 	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
 	-- The base the body returns to: gait on the ground, air pose in the air.
 	local base,baseRate
+	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
+	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
 	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
+	elseif footwork then
+		-- Attack footwork: the clip says where each foot goes; the stepping
+		-- system plants it there in the world, so a lunge is a real step.
+		local stanceFeet=stance(subject.fighterId)
+		base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt,{rf=footwork.R or stanceFeet.rf,lf=footwork.L or stanceFeet.lf},"attack")
 	else base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt) end
 	if casting and not swinging then
 		local spec=castSpec(subject)
@@ -1205,7 +1313,14 @@ function Motion.present(char,actor,clock,dt)
 	if swinging then
 		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
-		apply(char,blend(base,targets,weight),RATE.attack,dt)
+		-- (Clone: blend may hand back a cached clip pose, which must not change.)
+		local final=table.clone(blend(base,targets,weight))
+		-- Planted feet come from the stepping system; kicking legs from the clip.
+		if footwork and base.__feet then
+			final.__feet={}
+			for side in footwork do final.__feet[side]=base.__feet[side] end
+		else final.__feet=nil end
+		apply(char,final,RATE.attack,dt)
 		return "attack"
 	end
 	if subject.landing then
@@ -1237,4 +1352,7 @@ function Motion.reset(char)
 	for key in JOINTS do local joint=motor(char,key);if joint then joint.Transform=IDENTITY end end
 end
 Motion.clear=Motion.reset
+-- Exposed for the headless suite: the world-planted stepping rule.
+Motion._stepFeet=function(char,base,velocity,dt,mode) return stepFeet(char,stateOf(char),base,velocity,velocity.Magnitude,dt,mode) end
+Motion._ankleY=ANKLE_Y
 return Motion

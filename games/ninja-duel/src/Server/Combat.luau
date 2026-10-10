@@ -993,6 +993,19 @@ function Combat:updateHazards()
 		end
 	end
 end
+-- Bodies do not collide physically (that made fighters climb each other);
+-- two grounded fighters closer than a body width are eased apart instead.
+function Combat:separate()
+	local a,b=self.actors[1],self.actors[2]
+	if not a or not b or a.health<=0 or b.health<=0 or a.grabVictim or b.grabVictim then return end
+	local delta=b.root.Position-a.root.Position
+	local flat=Vector3.new(delta.X,0,delta.Z)
+	local gap=flat.Magnitude
+	if gap>=2.4 or math.abs(delta.Y)>4 then return end
+	local push=(2.4-gap)*.5
+	local dir=if gap>.05 then flat.Unit else a.root.CFrame.RightVector
+	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
+end
 function Combat:update(dt,now)
 	self.now=now
 	if self.match.phase~="Duel" then return end
@@ -1004,6 +1017,7 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
+	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do

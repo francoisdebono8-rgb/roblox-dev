@@ -22,7 +22,7 @@ return {
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
 		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 40},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
-	Movement = { SprintSpeed = 46, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
+	Movement = { SprintSpeed = 38, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
