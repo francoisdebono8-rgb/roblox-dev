@@ -295,6 +295,84 @@ Techniques.Quickstep={
 	end,
 }
 Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+-- Gaara ----------------------------------------------------------------
+-- Sand Coffin: a wave of sand runs along the ground; a body it reaches is bound
+-- (held where it stands) and buried a beat later unless it substitutes out.
+function Techniques.bindInSand(c,owner,victim)
+	if victim.health<=0 or victim.invulnerableUntil>c.now then return end
+	local Brawler=require(script.Parent.Brawler)
+	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
+	victim.boundBy=owner
+	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • X TO ESCAPE",.9)
+	local spec
+	for _,t in owner.def.Techniques do if t.Id=="SandCoffin" then spec=t end end
+	c:schedule(c.now+1.05,function()
+		if victim.reaction~="Bound" or victim.boundBy~=owner or owner.health<=0 or victim.health<=0 then return end
+		victim.boundBy=nil
+		c.damageTag="Sand Burial"
+		c:damage(owner,victim,(spec and spec.Damage) or 18,false,false)
+		c.damageTag=nil
+		if c.match.phase~="Duel" or victim.health<=0 then return end
+		Brawler.react(c,victim,"Knockdown",Vector3.new(0,16,0),.7,owner)
+		c:pushImpact(victim.root.Position,"sandburial",true,{owner=owner.id})
+		c:cue(owner,"SAND BURIAL",.8)
+	end)
+end
+Techniques.SandCoffin={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		local origin=c.launchPoint(a,"Ground")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		c:projectile(a,origin+flat.Unit*pending.spec.Range+Vector3.new(0,2,0),pending.spec.Speed or 46,pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
+		c:cue(a,"SAND COFFIN",.6)
+	end,
+}
+Techniques.SandShuriken={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local direction=pending.aim-a.root.Position
+		if direction.Magnitude<.1 then direction=a.root.CFrame.LookVector end
+		local origin=c.launchPoint(a,"Palm")
+		for _,angle in {-.25,-.15,-.05,.05,.15,.25} do
+			local d=CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(direction.Unit)
+			c:projectile(a,origin+d*pending.spec.Range,80,pending.spec.Range,pending.spec.Damage,"sand",nil,{origin=origin,radius=.5})
+		end
+	end,
+}
+-- Desert Wave: a wall of sand rises in front of him and throws close
+-- attackers away; blades and fire in it are swallowed.
+Techniques.DesertWave={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		local reach=pending.spec.Range
+		local look=a.root.CFrame.LookVector
+		for i=#c.projectiles,1,-1 do
+			local p=c.projectiles[i]
+			local d=p.position-a.root.Position
+			if p.a~=a and d.Magnitude<=reach and look:Dot(d.Unit)>.2 then
+				table.remove(c.projectiles,i)
+				c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
+			end
+		end
+		local b=a.target
+		if b and b.health>0 then
+			local d=b.root.Position-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			if flat.Magnitude<=reach and (flat.Magnitude<2 or look:Dot(flat.Unit)>.25) then
+				c.damageTag="Desert Wave"
+				local hit=c:damage(a,b,pending.spec.Damage,false,false)
+				c.damageTag=nil
+				if c.match.phase~="Duel" then return end
+				if hit then Brawler.react(c,b,"Knockback",(if flat.Magnitude>.1 then flat.Unit else look)*48+Vector3.new(0,16,0),.55,a) end
+			end
+		end
+		c:pushImpact(a.root.Position+look*4,"sandwall",true,{owner=a.id,direction=look})
+		c:cue(a,"DESERT WAVE",.6)
+	end,
+}
 -- Neji -----------------------------------------------------------------
 Techniques.ROTATION_REACH=7
 Techniques.Rotation={

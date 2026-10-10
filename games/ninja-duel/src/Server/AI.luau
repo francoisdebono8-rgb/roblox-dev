@@ -234,6 +234,9 @@ function AI:update(now)
 			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
 			if spec.Id=="FireBloom" then use=distance>6 and distance<46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()<0.32) end
+			if spec.Id=="SandCoffin" then use=distance>7 and distance<28 and c:lineOfSight(a,target) and self.rng:NextNumber()<.45 end
+			if spec.Id=="SandShuriken" then use=distance>9 and distance<34 and self.rng:NextNumber()<.5 end
+			if spec.Id=="DesertWave" then use=distance<8 and (target.state=="Startup" or target.state=="Rush" or target.state=="Active" or self.rng:NextNumber()<.25) end
 			if spec.Id=="VacuumPalm" then use=distance>7 and distance<24 and c:lineOfSight(a,target) and self.rng:NextNumber()<.45 end
 			if spec.Id=="SixtyFourPalms" then use=distance<4.6 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery" or target.state=="TechniqueChannel") end
 			if spec.Id=="Rotation" then use=false end
@@ -247,8 +250,16 @@ function AI:update(now)
 	if whiff and distance<10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
 	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
 	if calm then return end
-	if distance<8 and self.rng:NextNumber()<tune.Aggression then
+	local reach=(a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.range or 6)+1.5
+	if distance<math.max(8,reach) and self.rng:NextNumber()<tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
+	end
+	-- Out-ranged (sand lashes): close the gap instead of waiting at its edge.
+	local theirs=(target.def.AttackProfile and target.def.AttackProfile.Light1 and target.def.AttackProfile.Light1.range or 6)
+	if theirs>reach and distance>reach-1 and distance<theirs+3 and target.state~="Startup" then
+		a.move=toward;a.sprinting=true
+		if distance>Config.Rush.MinRange+.5 and self.rng:NextNumber()<.3 and c:request(a,"Pursuit") then return end
+		if self.rng:NextNumber()<.2 then c:request(a,"Dodge");return end
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
 	-- Chakra dash in from mid range when the opponent is not attacking.

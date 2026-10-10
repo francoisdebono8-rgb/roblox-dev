@@ -20,7 +20,7 @@ end
 -- approximation of the animated hand/mouth so the projectile's first frame is
 -- where the throwing arm actually is, not the middle of the chest.
 local LAUNCH={
-	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},
+	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},Ground={side=0,up=-2.2,forward=2.2},
 	Shuriken={side=-1.1,up=.9,forward=1.2},Fireball={side=0,up=2.1,forward=2.6},Wind={side=.6,up=1,forward=2.2},
 }
 function Combat.launchPoint(a,kind)
@@ -37,7 +37,8 @@ function Combat:add(id,model,hum,root,joints,definition)
 		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,airHold=0,
 		subCharges=Config.Substitution.Charges,subCooldown=0,subRegenAt=math.huge,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0,
-		comboHits=0,comboDamage=0,anchors={} }
+		comboHits=0,comboDamage=0,anchors={},
+		shieldCharges=def.SandShield and def.SandShield.Charges or 0,shieldRegenAt=0 }
 	table.insert(self.actors,a)
 	Defense.init(a)
 	-- The client motion engine owns every pose. Server Animator tracks (Roblox
@@ -144,6 +145,8 @@ end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 end
+-- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
+local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
@@ -168,6 +171,26 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
 		self:setState(victim,"Neutral",0)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
+		return false
+	end
+	-- Gaara's sand shield stops the hit by itself while it has charges.
+	local shield=victim.def.SandShield
+	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
+	if shield and (victim.shieldCharges or 0)>0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
+		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil<=self.now then
+		local breaking=heavy or amount>=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
+		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
+		victim.shieldRegenAt=self.now+shield.Regen
+		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
+		-- (light, light, third hit) is how the shield is cracked.
+		attacker.hitConfirmed=true
+		local face=if delta.Magnitude>.1 then delta.Unit else victim.root.CFrame.LookVector
+		self:pushImpact(victim.root.Position+face*1.6,"sandshield",breaking,{owner=victim.id,direction=face})
+		Brawler.event(self,victim,"SandShield")
+		if breaking then
+			self:setState(victim,"Stunned",.5)
+			self:cue(victim,"SAND SHIELD BROKEN",.8);self:cue(attacker,"SAND SHIELD BROKEN",.8)
+		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
 	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
@@ -592,6 +615,14 @@ function Combat:request(a,action,aim,clientTime)
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
 		local minato=(a.def.Tool or "Kunai")=="Kunai"
+		if a.def.Tool=="Sand" then
+			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
+			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
+				self:projectile(a,target,90,if chainCancel then 20 else 40,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
+			end})
+			self:cue(a,"SAND BULLET",.5)
+			return true
+		end
 		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
 		local range=if chainCancel then 20 else 44
 		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
@@ -629,6 +660,21 @@ function Combat:request(a,action,aim,clientTime)
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
+	if action=="Dodge" and a.def.SandFlicker and not a.airborne then
+		-- Gaara's dodge: a sand body-flicker, an instant reposition.
+		if a.chakra<Config.DodgeCost then return false,"Need chakra" end
+		if a.dodgeUntil>self.now then return false,"Cooldown" end
+		a.chakra-=Config.DodgeCost;a.dodgeUntil=self.now+Config.DodgeCooldown
+		local direction=if a.move.Magnitude>.1 then a.move.Unit else -a.root.CFrame.LookVector
+		local from=a.root.Position
+		Motor.travel(a,self,direction,a.def.SandFlicker.Distance)
+		a.warpSerial=(a.warpSerial or 0)+1
+		a.invulnerableUntil=self.now+.24;Defense.guard(a,false,self.now);Defense.dodge(a,self.now)
+		self:setState(a,"Recovery",.14)
+		self:pushImpact(from,"sandflicker",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
+		Brawler.event(self,a,"Dodge")
+		return true
+	end
 	if action=="Dodge" then
 		if a.chakra<Config.DodgeCost then return false,"Need chakra" end
 		if a.airborne and a.airDodgeUsed then return false,"Air dodge used" end
@@ -716,6 +762,11 @@ function Combat:updateActor(a,dt)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)>now then self:stepRotation(a) end
+	if a.def.SandShield and a.shieldCharges<a.def.SandShield.Charges and now>=(a.shieldRegenAt or 0) then
+		a.shieldCharges+=1
+		local rate=if (a.awakenUntil or 0)>now then (a.def.Awakening.ShieldRegen or 1) else 1
+		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
+	end
 	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
@@ -893,7 +944,7 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst"}
+local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
 -- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
 -- opponent inside it is thrown out once. Repelling a strike opens a counter.
 function Combat:stepRotation(a)
@@ -975,7 +1026,9 @@ function Combat:projectileHit(p,target,position,normal)
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
-		if p.kind=="palm" then
+		if p.kind=="sandwave" then
+			Techniques.bindInSand(self,p.a,target)
+		elseif p.kind=="palm" then
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
@@ -1143,7 +1196,8 @@ function Combat:clear(preserveAnimations)
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
-		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil
+		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
+		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end

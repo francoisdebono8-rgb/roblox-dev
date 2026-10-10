@@ -48,4 +48,11 @@ return {
 		-- After Rotation repels an attack, the next press is the palm thrust.
 		readCounter="PalmThrust",
 	},
+	Sand={
+		stringBranches={},
+		-- One lash, then the pillar: sand erupts under the opponent.
+		heavyAfterOne="SandPillar",
+		stringCancels={SandCoffin=true},
+		blockCancels={Tool=true},
+	},
 }

@@ -39,6 +39,8 @@ local attacks={
  -- Riposte: out of a clean block or a perfect dodge, an instant strike that
  -- opens the string (block -> riposte -> combo).
  Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
+ -- Gaara: sand erupts under the opponent at range and throws them up.
+ SandPillar=move(.27,.14,.5,9,0,"Launched",Vector3.new(0,54,4),1.1),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
 }
 
@@ -69,6 +71,7 @@ local motion={
  KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
  FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
  Riposte={side=1,twist=24,lean=12,arm=92,step=1.2},
+ SandPillar={side=1,twist=10,lean=-6,arm=120,step=1},
  SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
@@ -77,6 +80,7 @@ attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
 attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
 attacks.FlyingKick.range=7.5;attacks.FlyingKick.width=5.5
+attacks.SandPillar.range=12.5;attacks.SandPillar.width=6;attacks.SandPillar.height=8;attacks.SandPillar.depth=11;attacks.SandPillar.offset=6;attacks.SandPillar.facing=.25
 attacks.SlideSweep.range=7.5;attacks.SlideSweep.height=3.5;attacks.SlideSweep.width=6.5
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks

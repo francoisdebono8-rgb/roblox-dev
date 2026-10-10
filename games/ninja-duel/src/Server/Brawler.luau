@@ -46,7 +46,7 @@ function Brawler.start(c,a,name)
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
-		spec.chainTool=profile.chainTool;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
  a.queuedLight=nil
@@ -200,8 +200,8 @@ function Brawler.request(c,a,action)
   if a.airborne then return Brawler.start(c,a,"Slam") end
   local heavyGraph=MoveGraphs[a.fighterId] or {}
   if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
-  if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
-  return Brawler.start(c,a,"Heavy")
+  if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
+  return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
  if a.airborne then
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
@@ -436,6 +436,11 @@ function Brawler.step(c,a,dt)
  end
  if a.reaction then
   if a.reaction=="Grabbed" then return true end
+  -- Bound in sand: held in place until the burial or a substitution.
+  if a.reaction=="Bound" and c.now<a.reactionUntil then
+   a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
+   return true
+  end
   if c.now>=a.reactionUntil then
    if a.reaction=="WallSplat" and a.airborne and a.root.Position.Y>c.match.origin.Y+5 then
     -- Released high on the wall: drop to the floor, then wake up.

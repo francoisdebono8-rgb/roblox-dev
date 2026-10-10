@@ -95,6 +95,7 @@ function Matches:nextRound(player,s)
 		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
 		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
+		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
 	c:relocate(s.human,s.origin+Vector3.new(0,3,14));c:relocate(s.bot,s.origin+Vector3.new(0,3,-14))
 	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
@@ -144,6 +145,7 @@ function Matches:snapshot(player,s)
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
+			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",
 			awaken=math.max(0,(a.awakenUntil or 0)-now),
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.

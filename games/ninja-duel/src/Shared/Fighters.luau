@@ -79,4 +79,36 @@ return {
 			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • seals the chakra points (no jutsu)" },
 		},
 	},
+	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient
+	-- controller: the sand blocks for him, strikes at range and binds.
+	Sand = {
+		Name = "Gaara", FullName = "Gaara of the Sand", Age = 12, Title = "THE SAND PRODIGY", Color = { 222, 176, 112 },
+		Description = "The sand fights for him: an automatic shield, long sand lashes and a coffin that binds. Slow, patient, crushing.",
+		Health = 140, Chakra = 130, ChakraRegen = 7, Speed = 16.5, SprintScale = 0.85, JumpScale = 0.9, AirControlScale = 0.85, AccelerationScale = 0.85,
+		CombatTravel = 0.2, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 11,
+		ComboToolCancel = true, CombatStyle = "Sand", Tool = "Sand",
+		-- Sand shield: while charged it stops hits by itself (not while he is
+		-- attacking or already hurt). A heavy blow, a third string hit or a
+		-- Rasengan breaks it outright; charges come back one at a time.
+		SandShield = { Charges = 3, Regen = 3.5, Break = 17 },
+		-- His heavy is not a punch: sand erupts under the opponent at range.
+		HeavyMove = "SandPillar", LauncherMove = "SandPillar",
+		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
+		SandFlicker = { Distance = 12 },
+		Awakening = { Name = "SHUKAKU'S SAND", Speed = 1.12, Damage = 1.12, Regen = 1.6, Cooldown = 0.5, ShieldRegen = 2, Color = { 222, 176, 112 } },
+		AttackProfile = {
+			-- Sand lashes: long, narrow volumes in front of him.
+			-- Slower than a fist, long to recover and light: the reach is paid for
+			-- (pokes that set up the pillar and the coffin, not a damage string).
+			Light1={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
+			Light3={startup=1.5,recovery=1.35,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
+			Air1={startup=1.1,range=8},Air2={startup=1.1,range=8},Slam={startup=1.1},
+		},
+		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },
+		Techniques = {
+			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
+			{ Id = "SandShuriken", Name = "Sand Shuriken", Cost = 16, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 3.5, Interruptible = true, Range = 38, Damage = 3, Hint = "Six hardened sand blades" },
+			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
+		},
+	},
 }

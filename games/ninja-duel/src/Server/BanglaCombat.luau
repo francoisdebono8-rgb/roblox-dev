@@ -51,7 +51,7 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=if p.rasengan then "Rasengan" else p.name
    -- A Flow strike (chained on the beat) lands a little harder.
    local flow=if p.flow then require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Flow.Damage else 1
-   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow,false,true)
+   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow*(p.spec.damageScale or 1),false,true)
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
