@@ -1,32 +1,56 @@
-# Ninja Duel V0.2 — prototype Roblox Studio
+# Ninja Duel — Phase 6 candidate
 
-Prototype de duel ninja 1 contre 1 contre une IA. Ouvrir **`dist/NinjaDuel.rbxlx`** dans Roblox Studio, puis cliquer sur **Test**. Aucun plugin, asset externe ni compte de publication n'est nécessaire. Les personnages Flashstep et Mirage sont des prototypes originaux destinés à tester deux boucles de combat différentes. Les références de la mission à des personnages de fiction restent internes et ne sont pas des assets du jeu.
+Open `dist/NinjaDuel.rbxlx` in Roblox Studio, then **Test**. No plugins, paid assets or installation dependency. Choose Minato or Itachi and select **Interactive Tutorial** or **Duel**. Result offers rematch and character selection.
 
-## Commandes
+The candidate contains advancing punch/kick chains, heavy and launcher branches, 3D chase, aerial hits, downslam, knockdown/wakeup, directional grab/throw, guard, dodge and limited substitution. Minato emphasizes movement/kunai/angles/anchors/Wind; Itachi emphasizes precision/shuriken/Read/deception/Fire. Walls and platforms share server validation with normal combat.
 
-| Action | Commande |
-| --- | --- |
-| Déplacer / tourner autour de l'adversaire verrouillé | WASD |
-| Sprinter | Ctrl maintenu |
-| Grand saut / saut court en relâchant | Espace |
-| Esquive directionnelle, utilisable une fois par saut | Q + direction |
-| Chaîne de quatre coups | Clic gauche, à répéter pendant l'ouverture après un coup confirmé |
-| Poursuivre un adversaire lancé par le quatrième coup | E |
-| Garde | F maintenu |
-| Techniques | 1, 2, 3 |
-| Basculer le verrouillage et la caméra | Maj gauche |
+## Controller
 
-Flashstep est plus rapide et contrôle mieux l'air ; sa lame peut créer une ancre pour un déplacement risqué. Mirage préfère la moyenne distance, peut lire une attaque frontale et poser un leurre. Les techniques consomment du chakra, ont un délai et peuvent généralement être interrompues pendant leur préparation.
+| Input | Action |
+|---|---|
+| Left stick / click LS | Move / toggle sprint |
+| Right stick / click RS | Camera / lock target |
+| A / Cross | Jump or contextual chase; wall rebound |
+| X / Square | Light; horizontal finisher after fourth light; throw while grabbing |
+| Y / Triangle | Heavy; launcher after two/three confirmed lights; air downslam; upward throw while grabbing |
+| B / Circle | Directional dodge; substitution during a fresh hit/grab reaction |
+| LB / L1 | Hold guard |
+| LT / L2 | Grab |
+| RT / R2 | Kunai / shuriken check |
+| RB + A / X / Y / B | Equipped techniques 1 / 2 / 3 / 4 |
+| D-pad up | Technique 5 (Minato Wind) |
+| View / touchpad | Skip tutorial |
+| D-pad / left stick + A | Select and activate menus |
 
-## Construction et vérification
+Keyboard: WASD, CTRL sprint, SPACE jump, LMB light, T heavy/launcher/slam, V grab, F guard, Q dodge, X substitution, R tool, E chase, SHIFT lock, 1–5 techniques, C wall detach, G declared feint, ESC skip tutorial. Hold RMB and move mouse to orbit.
 
-La source Luau est sous `src/Shared`, `src/Server` et `src/Client`. Le serveur valide actions, portée, ligne de vue, coûts, temps de récupération, mouvement et entrées réseau. `build.py` incorpore ces sources dans des places Roblox XML autonomes et écrit des manifestes de hachage SHA-256. La place QA inclut seule `NativeQA.luau`; celle destinée au jeu ne l'embarque pas.
+**Ground route:** light → light → light → heavy launcher → chase → air light → air light → heavy slam. Repeated lights choose the horizontal finisher. Inputs can buffer near contact; whiffs retain recovery. Throws follow left-stick direction. Knockdown protects the defender until wakeup; substitution spends a limited charge and chakra.
 
-```sh
-python3 games/ninja-duel/build.py
-python3 games/ninja-duel/build.py --qa
-```
+## Five-minute controller playtest
 
-Pour le test natif, ouvrir `dist/NinjaDuel-QA.rbxlx`, lancer **Test**, puis chercher `[NinjaDuelQA] TOTAL` dans la fenêtre Output. Le test couvre rig R15, accélération/saut, chaîne/poursuite, esquive aérienne, quatre appariements, techniques/interruption, IA, validation distante et deux rematches. `tests/Rules.spec.luau` couvre séparément les règles pures avec Luau CLI si installé.
+1. **0:00–0:45:** select Tutorial using only controller. Move, sprint, jump, lock and dash. Do the controls respond without fighting you?
+2. **0:45–2:30:** follow the current objective through wall rebound, light chain, launcher/chase/air hits/slam, guard/dodge, substitution and grab/throw. Failed air exercises reset quickly. Guided incoming telegraphs are slowed where needed.
+3. **2:30–3:30:** try a jutsu and interrupt the practice opponent. Skip with View/touchpad if needed, then start a Minato duel.
+4. **3:30–4:30:** use kunai, Quickstep, Burst Entry and the marked anchor; try one vertical exchange. Finish or lose the duel and select rematch with controller.
+5. **4:30–5:00:** return to selection, choose Itachi, test shuriken, Fire, timed Read and the afterimage. Report the first unpleasant input, camera problem or unconvincing exchange.
 
-L'animation actuelle est **procédurale et provisoire**. Elle apporte des poses distinctes et des transitions amorties sur un rig R15, mais n'atteint pas encore la qualité d'animations authored. Voir [ANIMATION_TODO.md](ANIMATION_TODO.md) pour le travail Studio restant. Le verdict sur le plaisir du déplacement et du combat après 30 secondes doit venir d'un essai humain ; les tests automatisés ne le remplacent pas.
+All feel/hardware checks are **NEEDS HUMAN TEST**. Tutorial completion normally takes longer than this smoke route; replay it fully afterward.
+
+## Verification
+
+From repository root:
+
+- `python3 games/ninja-duel/build.py` and `--qa`: standalone XML and source-equality/SHA manifests.
+- `luau games/ninja-duel/tests/Rules.spec.luau`: seven pure policy scenarios.
+- `lune run games/ninja-duel/tests/Combat.spec.luau`: ten deterministic scenarios using actual modules and a geometry adapter; not Studio physics/rendering.
+- Open `dist/NinjaDuel-QA.rbxlx` and Test for the native suite. Output starts `[NinjaDuelQA] START 0.4.0-phase6` and ends with PASS/FAIL totals. Reopen the file after a rebuild; Studio does not reload an already-open place from disk.
+
+Current evidence: compilation and source equality PASS, policy **7 PASS**, headless combat/controller/tutorial **10 PASS**. Final-artifact native and rendered/controller QA **PENDING** because the computer-control session times out. Earlier Phase 5 native totals do not validate this candidate.
+
+## Presentation / limitations
+
+Original keyed R15 choreography now includes anticipation/contact/follow-through, punches/kicks, launcher, air strikes, slam, grabs, reactions and wakeup. It is rendered locally and remains below final authored production quality. Published AnimationTracks can replace it through `AnimationIds`; see `ANIMATION_TODO.md`.
+
+Baseline feedback references Roblox's built-in sounds, with local limb trails, impacts, landing feedback and an original ghost afterimage. No downloaded animation/VFX packs are used. Resource/license audit: `THIRD_PARTY.md`.
+
+Native collision/physics, full tutorial reachability and actual Xbox/PlayStation input must still be checked on the final build. Do not describe Phase 6 as validated/completed before those checks and one human playtest.
