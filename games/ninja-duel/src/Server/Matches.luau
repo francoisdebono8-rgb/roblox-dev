@@ -76,7 +76,7 @@ function Matches:snapshot(player,s)
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil>s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=a.root.AssemblyLinearVelocity}
+			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=a.root.AssemblyLinearVelocity}
 	end
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot)})
 end

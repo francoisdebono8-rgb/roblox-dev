@@ -45,8 +45,9 @@ function Presentation:update(data,_dt)
 		 local recoil=self.recoil[key]
 		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
 		 if recoil and os.clock()-recoil.at<recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
-   elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency))
-		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity) end
+		 elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency),actor.fighterId)
+		 elseif actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
+		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity,actor.fighterId) end
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0}
   end
  end

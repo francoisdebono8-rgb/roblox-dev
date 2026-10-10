@@ -186,6 +186,11 @@ function Combat:request(a,action,aim,clientTime)
 	end
 	if action=="Feint" then
 		local pending=a.pending
+		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted<=pending.spec.startup*.62 then
+			Bangla.close(pending);a.pending=nil;a.attackName=nil;a.travelRemaining=0;a.chakra=math.max(0,a.chakra-4)
+			self:setState(a,"Recovery",.09);self:cue(a,"HEAVY FEINT • MOVE");Brawler.event(self,a,"Feint")
+			return true
+		end
 		if a.state~="TechniqueChannel" or not pending or not pending.spec.Feintable then return false,"No feint window" end
 		if self.now>a.untilTime-pending.spec.Channel*0.5 then return false,"Feint too late" end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+pending.spec.Cost*0.35)
@@ -220,11 +225,14 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		if not Rules.canAct(a,self.now) or self.now<a.neutralToolAt then return false,"Tool recovering" end
+		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
+		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		a.neutralToolAt=self.now+(if a.def.Name=="Minato" then 0.7 else 0.9)
-		self:projectile(a,aim or a.target.root.Position,if a.def.Name=="Minato" then 76 else 69,34,if a.def.Name=="Minato" then 4 else 5,"tool")
-		self:setState(a,"Recovery",0.12); self:cue(a,"PROJECTILE")
+		a.neutralToolAt=self.now+(if chainCancel then .42 elseif a.def.Name=="Minato" then .7 else .9)
+		local range=if chainCancel then 15 else 34
+		self:projectile(a,aim or a.target.root.Position,if a.def.Name=="Minato" then 88 else 72,range,if a.def.Name=="Minato" then 4 else 5,if a.def.Name=="Minato" then "blade" else "needle")
+		self:setState(a,"Recovery",if chainCancel then .16 else .12); self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else "PROJECTILE")
 		return true
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
@@ -290,7 +298,7 @@ function Combat:updateActor(a,dt)
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
-			a.chainAt=now+0.025
+			a.chainAt=now
 			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
 		elseif a.state=="TechniqueChannel" and pending then

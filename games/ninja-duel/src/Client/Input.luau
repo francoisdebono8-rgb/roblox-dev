@@ -38,7 +38,7 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Guard",Controls.Guard,function(state) send(if begin(state) then "Guard" else "GuardOff") end)
  bind("Tool",Controls.Tool,function(state) if begin(state) then send("Tool") end end)
- bind("Grab",Controls.Grab,function(state) if begin(state) then send("Grab") end end)
+ bind("Grab",Controls.Grab,function(state) if begin(state) then send(if self.modifier then "Feint" else "Grab") end end)
  bind("Lock",Controls.Lock,function(state) if begin(state) then toggleLock() end end)
  bind("Sprint",Controls.Sprint,function(state,obj)
   if obj.KeyCode==Enum.KeyCode.ButtonL3 then if begin(state) then self.sprinting=not self.sprinting end

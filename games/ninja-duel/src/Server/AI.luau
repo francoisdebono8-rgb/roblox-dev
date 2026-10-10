@@ -15,16 +15,17 @@ function AI:update(now)
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance>0.1 then delta.Unit else Vector3.zAxis
 	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
-	local tangent=Vector3.new(-toward.Z,0,toward.X)
+	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
-	a.move=(toward*radial+tangent*math.sin(now*0.7)*0.7)
+	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
 	a.sprinting=distance>desired+6
 	if a.move.Magnitude>1 then a.move=a.move.Unit end
 	if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	if target.state~=self.observed then self.observed=target.state; self.observedAt=now end
 	local reacted=now-self.observedAt>=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted>.08 and self.rng:NextNumber()<(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.
 	if danger and not reacted then return end
@@ -43,7 +44,9 @@ function AI:update(now)
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then
-		c:request(a,if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack");return
+		local branch=if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack"
+		if not a.airborne and self.rng:NextNumber()<(if minato then .18 else .34) then branch="Tool" end
+		c:request(a,branch);return
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
@@ -66,6 +69,8 @@ function AI:update(now)
 			if use and c:request(a,"Technique"..slot,aim) then return end
 		end
 	end
+	local whiff=target.state=="Recovery" and (target.attackName=="Heavy" or not target.hitConfirmed)
+	if whiff and distance<10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
 	if distance<8 and self.rng:NextNumber()<tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end

@@ -32,6 +32,12 @@ end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
+	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
+	if profile then
+		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
+		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
+		spec.chainTool=profile.chainTool;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+	end
  a.buffered=nil
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.guardHeld=false
  a.pending={kind="Brawl",name=name,spec=spec,hit=false}
@@ -40,7 +46,8 @@ function Brawler.start(c,a,name)
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  if delta.Magnitude>.1 and delta.Magnitude<11 and flat:Dot(delta.Unit)>.55 then flat=delta.Unit end
- a.travelDirection=flat.Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+	local side=a.root.CFrame.RightVector*(spec.angle or 0)
+	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+spec.active+spec.recovery+.18 end
  Brawler.event(c,a,name)
  return true
@@ -94,6 +101,9 @@ function Brawler.hit(c,a,p)
  end
  local success,guarded,protected
  if p.name~="Throw" and p.name~="ThrowUp" then
+	if p.spec.chainTool and not p.chainToolFired then
+		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
+	end
   -- Grab has no donor damage action; donor contact volume still validates it.
   if p.name=="Grab" then
    if not c:targetValid(a,b,spec.range,.05) then return false end
@@ -122,7 +132,11 @@ function Brawler.hit(c,a,p)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
   if b.chakra<=0 then Brawler.react(c,b,"GuardStun",Vector3.zero,.6);b.guardHeld=false
-  else b.guardImpact=c.now+.15 end
+	else
+		b.guardImpact=c.now+.18
+		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
+		Motor.travel(b,c,-a.root.CFrame.LookVector,push)
+	end
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y

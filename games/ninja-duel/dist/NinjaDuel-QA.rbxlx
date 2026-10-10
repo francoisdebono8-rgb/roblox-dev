@@ -161,6 +161,12 @@ return {
 		Description = "Kunai pressure, agile angles, a risky marked entry and wind control.",
 		Health = 125, Chakra = 110, ChakraRegen = 10.5, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
+		ComboToolCancel = true, CombatStyle = "Angles",
+		AttackProfile = {
+			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
+			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
+			DashAttack={startup=.78,travel=1.16,angle=-.18},Air1={startup=.8,angle=.24},Air2={startup=.82,angle=-.3},Slam={startup=.78,recovery=.86},
+		},
 		Skin = { 225, 196, 166 }, Hair = { 225, 228, 212 }, Outfit = { 45, 104, 156 },
 		Techniques = {
 			{ Id = "MarkedBlade", Name = "Marked Blade", Cost = 12, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 2.5, Interruptible = true, Feintable = true, Range = 36, Damage = 6, Hint = "Aim at floor / wall • anchor lasts 12s" },
@@ -175,6 +181,13 @@ return {
 		Description = "Precise shuriken, timed reads, interactive deception and fire pressure.",
 		Health = 145, Chakra = 125, ChakraRegen = 8, Speed = 26, SprintScale = 0.98, JumpScale = 0.95, AirControlScale = 0.9, AccelerationScale = 0.92,
 		CombatTravel = 0.95, CombatDamage = 1.08, DashScale = 0.93, GuardStrength = 0.08, PreferredRange = 10,
+		ComboToolCancel = true, CombatStyle = "Control",
+		AttackProfile = {
+			Light1={startup=1.08,recovery=.92,travel=.88,range=6.5},Light2={startup=1.12,recovery=.9,travel=.84,range=7,chainTool=true},
+			Light3={startup=1.15,recovery=1.08,travel=.78,impulseZ=58},Heavy={startup=1.08,recovery=1.12,travel=.82},
+			Launcher={startup=1.12,travel=.78,impulseY=51,impulseZ=20},DashAttack={startup=1.05,travel=.86},
+			Air1={startup=1.06,travel=.86},Air2={startup=1.08,travel=.82},Slam={startup=1.12,recovery=1.05},
+		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
 			{ Id = "Read", Name = "Read", Cost = 14, Channel = 0.12, Active = 0.9, Recovery = 0.24, Cooldown = 4, Interruptible = false, Range = 10, Hint = "Read one frontal melee • punish window" },
@@ -241,8 +254,8 @@ return table.freeze({
 	ParryCooldown = 0.60,
 	BlockHitCost = 9,
 	BlockDamageMultiplier = 0.24,
-	DodgeIFrames = 0.28,
-	BloodstepWindow = 0.16,
+	DodgeIFrames = 0.19,
+	BloodstepWindow = 0.13,
 	History = 0.20,
 	TimestampWindow = 0.10,
 	Rates = table.freeze({Attack=0.16,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
@@ -1228,7 +1241,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND12">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">41207a77b6f20a67d55475b4159d46178a0bd172781abe8e69729d0c9ed9133e</string>
+          <string name="Value">7089b9ed1f98b7e6481feab9be34680e7da7a0cc81c0e047ff76fd888d0de050</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND13">
@@ -1347,16 +1360,17 @@ function AI:update(now)
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance&gt;0.1 then delta.Unit else Vector3.zAxis
 	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
-	local tangent=Vector3.new(-toward.Z,0,toward.X)
+	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
 	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
-	a.move=(toward*radial+tangent*math.sin(now*0.7)*0.7)
+	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
 	a.sprinting=distance&gt;desired+6
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	if target.state~=self.observed then self.observed=target.state; self.observedAt=now end
 	local reacted=now-self.observedAt&gt;=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
+	if a.state=="Startup" and a.attackName=="Heavy" and now-a.attackStarted&gt;.08 and self.rng:NextNumber()&lt;(if minato then .18 else .3) then c:request(a,"Feint");return end
 	-- A newly observed telegraph may alter movement, but cannot trigger an
 	-- instant defensive action or coincidental interrupt before reaction latency.
 	if danger and not reacted then return end
@@ -1375,7 +1389,9 @@ function AI:update(now)
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then
-		c:request(a,if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack");return
+		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
+		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
+		c:request(a,branch);return
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
@@ -1398,6 +1414,8 @@ function AI:update(now)
 			if use and c:request(a,"Technique"..slot,aim) then return end
 		end
 	end
+	local whiff=target.state=="Recovery" and (target.attackName=="Heavy" or not target.hitConfirmed)
+	if whiff and distance&lt;10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
 	if distance&lt;8 and self.rng:NextNumber()&lt;tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance&lt;5 and self.rng:NextNumber()&lt;.12 then "Grab" elseif self.rng:NextNumber()&lt;.16 then "Heavy" else "Attack")
 	end
@@ -1665,6 +1683,12 @@ end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
+	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
+	if profile then
+		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
+		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
+		spec.chainTool=profile.chainTool;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+	end
  a.buffered=nil
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.guardHeld=false
  a.pending={kind="Brawl",name=name,spec=spec,hit=false}
@@ -1673,7 +1697,8 @@ function Brawler.start(c,a,name)
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and flat:Dot(delta.Unit)&gt;.55 then flat=delta.Unit end
- a.travelDirection=flat.Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+	local side=a.root.CFrame.RightVector*(spec.angle or 0)
+	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+spec.active+spec.recovery+.18 end
  Brawler.event(c,a,name)
  return true
@@ -1727,6 +1752,9 @@ function Brawler.hit(c,a,p)
  end
  local success,guarded,protected
  if p.name~="Throw" and p.name~="ThrowUp" then
+	if p.spec.chainTool and not p.chainToolFired then
+		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
+	end
   -- Grab has no donor damage action; donor contact volume still validates it.
   if p.name=="Grab" then
    if not c:targetValid(a,b,spec.range,.05) then return false end
@@ -1755,7 +1783,11 @@ function Brawler.hit(c,a,p)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
   if b.chakra&lt;=0 then Brawler.react(c,b,"GuardStun",Vector3.zero,.6);b.guardHeld=false
-  else b.guardImpact=c.now+.15 end
+	else
+		b.guardImpact=c.now+.18
+		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
+		Motor.travel(b,c,-a.root.CFrame.LookVector,push)
+	end
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
@@ -2012,6 +2044,11 @@ function Combat:request(a,action,aim,clientTime)
 	end
 	if action=="Feint" then
 		local pending=a.pending
+		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted&lt;=pending.spec.startup*.62 then
+			Bangla.close(pending);a.pending=nil;a.attackName=nil;a.travelRemaining=0;a.chakra=math.max(0,a.chakra-4)
+			self:setState(a,"Recovery",.09);self:cue(a,"HEAVY FEINT • MOVE");Brawler.event(self,a,"Feint")
+			return true
+		end
 		if a.state~="TechniqueChannel" or not pending or not pending.spec.Feintable then return false,"No feint window" end
 		if self.now&gt;a.untilTime-pending.spec.Channel*0.5 then return false,"Feint too late" end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+pending.spec.Cost*0.35)
@@ -2046,11 +2083,14 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		if not Rules.canAct(a,self.now) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
+		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and a.chainOpen and self.now&gt;=(a.chainAt or 0)
+		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
+		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		a.neutralToolAt=self.now+(if a.def.Name=="Minato" then 0.7 else 0.9)
-		self:projectile(a,aim or a.target.root.Position,if a.def.Name=="Minato" then 76 else 69,34,if a.def.Name=="Minato" then 4 else 5,"tool")
-		self:setState(a,"Recovery",0.12); self:cue(a,"PROJECTILE")
+		a.neutralToolAt=self.now+(if chainCancel then .42 elseif a.def.Name=="Minato" then .7 else .9)
+		local range=if chainCancel then 15 else 34
+		self:projectile(a,aim or a.target.root.Position,if a.def.Name=="Minato" then 88 else 72,range,if a.def.Name=="Minato" then 4 else 5,if a.def.Name=="Minato" then "blade" else "needle")
+		self:setState(a,"Recovery",if chainCancel then .16 else .12); self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else "PROJECTILE")
 		return true
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
@@ -2116,7 +2156,7 @@ function Combat:updateActor(a,dt)
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
-			a.chainAt=now+0.025
+			a.chainAt=now
 			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
 		elseif a.state=="TechniqueChannel" and pending then
@@ -2447,7 +2487,7 @@ function Matches:snapshot(player,s)
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=a.root.AssemblyLinearVelocity}
+			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,events=a.events,velocity=a.root.AssemblyLinearVelocity}
 	end
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot)})
 end
@@ -4212,7 +4252,7 @@ return World
             <string name="Name">Camera</string>
             <ProtectedString name="Source">local Camera={}; Camera.__index=Camera
 function Camera.new()
-	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.28,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,shakeUntil=0,shakeSize=0,rng=Random.new()},Camera)
+	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.28,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boom=nil,rng=Random.new()},Camera)
  local UIS=game:GetService("UserInputService")
  UIS.InputChanged:Connect(function(input)
   if input.UserInputType==Enum.UserInputType.MouseMovement and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
@@ -4232,21 +4272,21 @@ function Camera:update(data,dt)
 	local root=character and character:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
-	if self.lastEpoch~=data.epoch then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.28 end
+	if self.lastEpoch~=data.epoch then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.28;self.focus=nil;self.boom=nil end
 	if self.lastHealth and data.human.health&lt;self.lastHealth then
 		local damage=self.lastHealth-data.human.health
-		self.shakeSize=if damage&gt;=12 then 0.37 else 0.18
-		self.shakeUntil=os.clock()+0.13
+		self.shakeSize=if data.human.impactHeavy or damage&gt;=12 then .34 else .045
+		self.fovKick=if data.human.impactHeavy or damage&gt;=12 then 4 else 1
+		self.shakeUntil=os.clock()+(if damage&gt;=12 then .13 else .06)
 	end
 	if self.lastEnemyHealth and data.bot.health&lt;self.lastEnemyHealth then
 		local damage=self.lastEnemyHealth-data.bot.health
-		self.shakeSize=if damage&gt;=12 then 0.28 else 0.1
-		self.shakeUntil=os.clock()+0.1
+		self.shakeSize=if data.bot.impactHeavy or damage&gt;=12 then .26 else .035
+		self.fovKick=if data.bot.impactHeavy or damage&gt;=12 then 3 else .7
+		self.shakeUntil=os.clock()+(if damage&gt;=12 then .11 else .05)
 	end
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
-	local targetFov=70+math.clamp((data.human.speed or 0)*0.18,0,8)+(if data.human.wall then 3 else 0)
-	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*7))
 	local a=root.Position
 	local folder=root.Parent.Parent
 	local bot=folder and folder:FindFirstChild("AIFighter")
@@ -4255,11 +4295,26 @@ function Camera:update(data,dt)
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 	if flat.Magnitude&lt;0.01 then flat=-Vector3.zAxis end
 	local distance=(target-a).Magnitude
-	local focus=a:Lerp(target,0.5)+Vector3.new(0,1.5,0)
+	local vertical=math.abs(target.Y-a.Y);local aerial=data.human.airborne or data.bot.airborne or vertical&gt;5
+	local pursuit=data.human.state=="Pursuit" or data.bot.state=="Pursuit"
+	local slam=data.human.attackName=="Slam" or data.bot.attackName=="Slam"
+	local targetFocus=a:Lerp(target,.5)+Vector3.new(0,if aerial then 1.1 else 1.55,0)
+	local focusRate=if aerial or pursuit then 9 else 6
+	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
+	local focus=self.focus
 	self.yaw+=(self.look.X or 0)*dt*2.2;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,0.08,.9)
 	local behind=if self.locked then (CFrame.Angles(0,self.yaw,0):VectorToWorldSpace(-flat.Unit)) else Vector3.new(math.sin(self.yaw),0,math.cos(self.yaw))
 	if not self.locked then focus=a+Vector3.new(0,1.5,0) end
-	local desired=a+behind*math.clamp(17+distance*0.32,18,31)+Vector3.new(0,7+self.pitch*15+math.abs(target.Y-a.Y)*.32,0)
+	self.boom=if self.boom and self.boom:Dot(behind)&gt;-.65 then self.boom:Lerp(behind,1-math.exp(-dt*5)) else behind
+	if self.boom.Magnitude&lt;.1 then self.boom=behind else self.boom=self.boom.Unit end
+	local boomDistance=math.clamp(15+distance*.48+vertical*.22+(if aerial then 2.5 else 0),17,34)
+	local height=6+self.pitch*12+vertical*.34+(if aerial then 2 else 0)
+	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
+	local desired=focus+self.boom*boomDistance+Vector3.new(0,height,0)
+	self.fovKick*=math.exp(-dt*10)
+	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
+	local targetFov=68+math.clamp(distance*.22,0,7)+math.clamp(speed*.1,0,5)+(if aerial then 3 else 0)+(if pursuit then 4 else 0)+(if data.human.wall or data.bot.wall then 2 else 0)+self.fovKick
+	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam then 9 else 5)))
 	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
 	local exclude={character};if bot then table.insert(exclude,bot) end
 	local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
@@ -4271,7 +4326,7 @@ function Camera:update(data,dt)
 		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
 	end
 	if self.lastEpoch~=data.epoch then camera.CFrame=cf; self.lastEpoch=data.epoch
-	else camera.CFrame=camera.CFrame:Lerp(cf,1-math.exp(-dt*10)) end
+	else camera.CFrame=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 11 else 7))) end
 end
 return Camera
 </ProtectedString>
@@ -4320,7 +4375,7 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  bind("Guard",Controls.Guard,function(state) send(if begin(state) then "Guard" else "GuardOff") end)
  bind("Tool",Controls.Tool,function(state) if begin(state) then send("Tool") end end)
- bind("Grab",Controls.Grab,function(state) if begin(state) then send("Grab") end end)
+ bind("Grab",Controls.Grab,function(state) if begin(state) then send(if self.modifier then "Feint" else "Grab") end end)
  bind("Lock",Controls.Lock,function(state) if begin(state) then toggleLock() end end)
  bind("Sprint",Controls.Sprint,function(state,obj)
   if obj.KeyCode==Enum.KeyCode.ButtonL3 then if begin(state) then self.sprinting=not self.sprinting end
@@ -4458,8 +4513,9 @@ function Presentation:update(data,_dt)
 		 local recoil=self.recoil[key]
 		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
 		 if recoil and os.clock()-recoil.at&lt;recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
-   elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency))
-		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity) end
+		 elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency),actor.fighterId)
+		 elseif actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
+		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity,actor.fighterId) end
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0}
   end
  end
@@ -4662,6 +4718,7 @@ return Feedback
 -- This stays a presentation layer: combat authority remains server-side.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
+local Fighters=require(Shared.Fighters)
 local Motion={}
 local joints={
  Waist={"LowerTorso","Waist"},Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},Neck={"UpperTorso","Neck"},
@@ -4682,19 +4739,25 @@ end
 local function set(char,key,value)
  local joint=motor(char,key);if joint then joint.Transform=value end
 end
-function Motion.pose(char,name,elapsed)
+function Motion.pose(char,name,elapsed,fighterId)
 	local spec=Attacks[name]
 	if not spec then return end
+	spec=table.clone(spec)
+	local fighter=Fighters[fighterId];local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
+	if profile then spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1 end
 	local coil,drive,settle=phases(elapsed,spec);local hold=1-settle
-	local side=spec.side or 1;local twist=math.rad(spec.twist or 24);local lean=math.rad(spec.lean or 10);local arm=math.rad(spec.arm or 80)
+	local minato=fighterId=="Flashstep";local side=spec.side or 1
+	if profile and profile.angle then side=if profile.angle&lt;0 then -1 else 1 end
+	local twist=math.rad(spec.twist or 24)*(if minato then 1.18 else .86)
+	local lean=math.rad(spec.lean or 10)*(if minato then 1.12 else .72);local arm=math.rad(spec.arm or 80)*(if minato then 1 else .92)
 	local strike=drive*hold;local wind=coil*(1-drive)
 	local yaw=side*(-twist*.52*wind+twist*strike);local pitch=lean*(.2*wind-.72*strike)*hold
 	if name=="Launcher" or name=="ThrowUp" then pitch=-math.abs(lean)*(.65*wind+strike) end
 	if name=="Slam" then pitch=math.abs(lean)*(.22*wind+strike) end
 	set(char,"Waist",CFrame.Angles(pitch,yaw,side*math.rad(5)*(strike-wind)))
 	set(char,"Neck",CFrame.Angles(-pitch*.3,-yaw*.38,0))
-	local attack=CFrame.Angles(-arm*(.28*wind+strike),side*math.rad(10)*strike,-side*math.rad(18)*(wind+strike))
-	local guard=CFrame.Angles(math.rad(-18)*hold,-side*math.rad(5),side*math.rad(10)*hold)
+	local attack=CFrame.Angles(-arm*(.28*wind+strike),side*math.rad(if minato then 14 else 7)*strike,-side*math.rad(if minato then 22 else 13)*(wind+strike))
+	local guard=CFrame.Angles(math.rad(if minato then -18 else -28)*hold,-side*math.rad(5),side*math.rad(10)*hold)
 	if side&gt;0 then set(char,"Right",attack);set(char,"Left",guard) else set(char,"Left",attack);set(char,"Right",guard) end
 	local crouch=math.rad(16)*wind*hold;local stride=math.rad(14)*strike
 	set(char,"RightHip",CFrame.Angles(crouch+stride*side,0,-side*math.rad(5)*hold))
@@ -4708,14 +4771,19 @@ function Motion.recoil(char,elapsed,reaction,heavy)
 	set(char,"Right",CFrame.Angles(math.rad(38)*t,0,math.rad(22)*t));set(char,"Left",CFrame.Angles(math.rad(24)*t,0,math.rad(-28)*t))
 	set(char,"RightHip",CFrame.Angles(-pitch*.25,0,math.rad(-8)*t));set(char,"LeftHip",CFrame.Angles(-pitch*.18,0,math.rad(8)*t))
 end
-function Motion.locomotion(char,speed,airborne,velocity)
+function Motion.guard(char,impact,fighterId)
+	local recoil=math.clamp(impact/.18,0,1);local calm=if fighterId=="Mirage" then .72 else 1
+	set(char,"Waist",CFrame.Angles(math.rad(-7+16*recoil)*calm,0,0));set(char,"Right",CFrame.Angles(math.rad(-54+18*recoil),0,math.rad(17)));set(char,"Left",CFrame.Angles(math.rad(-54+18*recoil),0,math.rad(-17)))
+	set(char,"RightHip",CFrame.Angles(math.rad(8*recoil),0,0));set(char,"LeftHip",CFrame.Angles(math.rad(-8*recoil),0,0))
+end
+function Motion.locomotion(char,speed,airborne,velocity,fighterId)
 	local alpha=math.clamp(speed/46,0,1)
 	if airborne then
 		local rise=math.clamp((velocity and velocity.Y or 0)/72,-1,1)
 		set(char,"Waist",CFrame.Angles(math.rad(-8-7*rise),0,0));set(char,"RightHip",CFrame.Angles(math.rad(18),0,math.rad(-5)));set(char,"LeftHip",CFrame.Angles(math.rad(-12),0,math.rad(5)));return
 	end
-	local cycle=os.clock()*(7+alpha*5);local swing=math.sin(cycle)*math.rad(10)*alpha
-	set(char,"Waist",CFrame.Angles(math.rad(-9)*alpha,0,math.sin(cycle*2)*math.rad(2)*alpha))
+	local minato=fighterId=="Flashstep";local cycle=os.clock()*((if minato then 8.5 else 6.5)+alpha*(if minato then 6 else 3.5));local swing=math.sin(cycle)*math.rad(if minato then 12 else 7)*alpha
+	set(char,"Waist",CFrame.Angles(math.rad(if minato then -11 else -4)*alpha,0,math.sin(cycle*2)*math.rad(if minato then 2.5 else 1.2)*alpha))
 	set(char,"Right",CFrame.Angles(swing,0,0));set(char,"Left",CFrame.Angles(-swing,0,0));set(char,"RightHip",CFrame.Angles(-swing,0,0));set(char,"LeftHip",CFrame.Angles(swing,0,0));set(char,"Neck",CFrame.identity)
 end
 function Motion.clear(char)
