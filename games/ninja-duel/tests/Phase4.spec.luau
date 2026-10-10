@@ -309,4 +309,28 @@ test("Shadow Shuriken and Phoenix Flower release their full volleys",function()
  assert(flames==5,"Phoenix Flower released "..flames.." flames")
 end)
 
+test("taijutsu routes: heavy after one clean strike differs per prodigy",function()
+ for fighter,expect in {Flashstep={"KneeStrike","Juggled"},Mirage={"CounterPalm","Knockback"}} do
+  local c,a,b=H.duel(fighter,"GentleFist")
+  place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+  assert(c:request(a,"Attack"))
+  for _=1,80 do H.step(c,.01);if a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then break end end
+  assert(a.chainOpen,fighter..": the first strike did not open the string")
+  assert(c:request(a,"Heavy"))
+  assert(a.attackName==expect[1],fighter..": heavy after one is "..tostring(a.attackName))
+  until_(c,.5,function() return b.reaction==expect[2] end,fighter..": "..expect[1].." did not cause "..expect[2])
+ end
+end)
+
+test("running taijutsu: out of a sprint, strike = flying kick, heavy = sliding sweep",function()
+ for _,pair in {{"Attack","FlyingKick","Knockback"},{"Heavy","SlideSweep","Knockdown"}} do
+  local c,a,b=H.duel("Mirage","Flashstep")
+  place(c,a,b,V.new(0,3,9),V.new(0,3,-2))
+  a.sprinting=true;a.locomotion=a.root.CFrame.LookVector*40
+  assert(c:request(a,pair[1]))
+  assert(a.attackName==pair[2],"sprint "..pair[1].." is "..tostring(a.attackName))
+  until_(c,.6,function() return b.reaction==pair[3] end,pair[2].." did not land ("..tostring(b.reaction)..")")
+ end
+end)
+
 print("NinjaDuel phase 4 depth: "..passed.." PASS")

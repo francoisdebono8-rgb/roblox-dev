@@ -30,6 +30,13 @@ local attacks={
  -- Neji: twin palms driven from the hips (heavy after one clean palm, or the
  -- counter after Rotation).
  PalmThrust=move(.11,.14,.34,10,3.4,"Knockback",Vector3.new(0,12,62),.52),
+ -- Minato: a knee driven up into the body after one clean cut. The opponent is
+ -- popped to waist height: continue on the ground, jump after it, or chase.
+ KneeStrike=move(.08,.12,.3,7,2.6,"Juggled",Vector3.new(0,26,4),.62),
+ -- Running taijutsu: out of a full sprint, a flying kick (strike) and a
+ -- sliding sweep (heavy). The run is the wind-up; a whiff overshoots.
+ FlyingKick=move(.1,.16,.32,9,10,"Knockback",Vector3.new(0,14,48),.5),
+ SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
 }
 
 for name,spec in attacks do
@@ -56,11 +63,16 @@ local motion={
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
  WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
  PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
+ KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
+ FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
+ SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
 attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
+attacks.FlyingKick.range=7.5;attacks.FlyingKick.width=5.5
+attacks.SlideSweep.range=7.5;attacks.SlideSweep.height=3.5;attacks.SlideSweep.width=6.5
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks

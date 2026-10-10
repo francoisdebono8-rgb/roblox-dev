@@ -160,6 +160,12 @@ function Brawler.request(c,a,action)
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
  end
  if action=="ThrowUp" then return false,"No grab" end
+ -- Running taijutsu: out of a full sprint the strike becomes a flying kick
+ -- and the heavy a sliding sweep.
+ if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude>30 then
+  if action=="Attack" then a.combo=0;return Brawler.start(c,a,"FlyingKick") end
+  if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
+ end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
   local heavyGraph=MoveGraphs[a.fighterId] or {}

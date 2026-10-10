@@ -65,7 +65,7 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=30,throw=30,cast=22,recoil=30,guard=24,defense=24,locomotion=16,air=14,ground=12,wall=16,chase=18}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=16,air=14,ground=12,wall=16,chase=18}
 local MAX_SPEED=1750
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
@@ -82,7 +82,8 @@ local function write(char,key,target,rate,dt)
 	local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
 	local nextCF=current:Lerp(target,alpha)
 	local step=angleBetween(current,nextCF)
-	local limit=rad(MAX_SPEED)*dt
+	-- Strikes may whip faster than ordinary motion so their shape reads.
+	local limit=rad(if (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
 	if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
@@ -392,6 +393,13 @@ CLIPS.Flashstep.Rasengan={
 	K(3,M),
 }
 
+-- Minato's KneeStrike: hands pull the opponent down onto a rising knee.
+CLIPS.Flashstep.KneeStrike={
+	K(0,m({root={y=-.5,z=.1,pitch=6},torso={pitch=4},ra={raise=86,out=-10,elbow=60},la={raise=86,out=-10,elbow=60},rl={lift=40,knee=80}})),
+	K(1,m({root={y=-.2,z=-.5,pitch=-6},torso={pitch=14},head={pitch=10},ra={raise=60,out=-16,elbow=90,wrist=-20},la={raise=60,out=-16,elbow=90,wrist=-20},rl={lift=112,knee=138,ankle=-20},lf={toe=-24}}),"out"),
+	K(2,m({root={y=-.22,z=-.52,pitch=-4},torso={pitch=12},ra={raise=58,out=-16,elbow=92},la={raise=58,out=-16,elbow=92},rl={lift=104,knee=134},lf={toe=-20}})),
+	K(3,M),
+}
 -- Branch moves ----------------------------------------------------------
 -- Minato's AngleStep: a crossing sidestep that cuts on the way past.
 CLIPS.Flashstep.AngleStep={
@@ -497,6 +505,56 @@ CLIPS.Flashstep.RasenganDrop={
 	K(3,m({root={y=-1.0,pitch=26},torso={pitch=22},ra={raise=60,out=10,elbow=20},lf={z=-.9},rf={z=.9}})),
 }
 CLIPS.Mirage.RasenganDrop=CLIPS.Flashstep.RasenganDrop
+
+-- Running taijutsu ---------------------------------------------------------
+-- Out of a full sprint: a flying kick (strike) or a sliding sweep (heavy).
+local function runningClips(f,base)
+	CLIPS[f].FlyingKick={
+		K(0,merge(base,{root={y=-.2,pitch=-8},torso={pitch=-4},ra={raise=-30,out=40,elbow=40},la={raise=60,out=10,elbow=90},rl={lift=70,knee=120,ankle=-10},ll={lift=-10,knee=40}})),
+		K(1,merge(base,{root={y=.35,pitch=-16,yaw=-10},torso={pitch=6,yaw=-14},head={pitch=10},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=92,out=4,knee=2,ankle=-24},ll={lift=-18,knee=112,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=.3,pitch=-14,yaw=-10},torso={pitch=6,yaw=-14},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=88,out=4,knee=6,ankle=-24},ll={lift=-18,knee=112}})),
+		K(3,base),
+	}
+	CLIPS[f].SlideSweep={
+		K(0,merge(base,{root={y=-1.0,pitch=14},torso={pitch=10},ra={raise=30,out=40,elbow=60},la={raise=60,out=20,elbow=80}})),
+		K(1,merge(base,{root={y=-1.7,pitch=-28,yaw=14},torso={pitch=-6,yaw=-10},head={pitch=20},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=84,out=10,knee=2,ankle=-30},ll={lift=30,knee=118,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=-1.7,pitch=-26,yaw=16},torso={pitch=-6,yaw=-10},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=80,out=10,knee=6,ankle=-30},ll={lift=30,knee=118}})),
+		K(2.6,merge(base,{root={y=-1.1,pitch=8},rl={lift=50,knee=80},ll={lift=20,knee=100}})),
+		K(3,base),
+	}
+end
+runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N)
+-- Taijutsu readability: on ground strikes, push hips, shoulders and the step
+-- further from the stance so the body mechanics read at fight distance.
+local EXAGGERATE,STEP=1.3,1.15
+local AIRBORNE={Air1=true,Air2=true,Slam=true,RasenganDrop=true,WallDive=true,FlyingKick=true}
+local done={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" then
+			for _,key in keys do
+				local pose=key.pose
+				if type(pose)=="table" and pose~=base and not done[pose] and pose~=M and pose~=I and pose~=N then
+					done[pose]=true
+					for _,part in {"root","torso"} do
+						local p,b=pose[part],base[part] or {}
+						if p then
+							for _,field in {"yaw","pitch","roll"} do
+								if p[field] then p[field]=(b[field] or 0)+(p[field]-(b[field] or 0))*EXAGGERATE end
+							end
+							if part=="root" and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*EXAGGERATE,-1.4,1.4) end
+						end
+					end
+					for _,foot in {"rf","lf"} do
+						local p,b=pose[foot],base[foot] or {}
+						if p and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*STEP,-1.9,1.6) end
+					end
+				end
+			end
+		end
+	end
+end
 
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
@@ -672,7 +730,34 @@ local function locomotionTargets(char,actor,fighterId,dt)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
+	-- Turning on the spot: measure the root's yaw rate so the feet can step
+	-- round instead of sliding while the hips rotate.
+	local yawRate=0
+	if root then
+		local look=root.CFrame.LookVector
+		local yaw=math.atan2(-look.X,-look.Z)
+		if s.lastYaw and dt and dt>0 then
+			local d=(yaw-s.lastYaw+math.pi)%(2*math.pi)-math.pi
+			yawRate=d/dt
+		end
+		s.lastYaw=yaw
+		s.turnRate=(s.turnRate or 0)+(yawRate-(s.turnRate or 0))*math.min(1,(dt or 1/60)*12)
+	end
 	if speed<1.2 then
+		local turning=math.abs(s.turnRate or 0)
+		if turning>1.6 then
+			-- A small pivot step: alternate feet lift and swing toward the turn.
+			s.turnPhase=((s.turnPhase or 0)+(dt or 1/60)*math.clamp(turning*.55,1.6,4))%1
+			local p=s.turnPhase
+			local base=stance(fighterId)
+			local spec=merge(base,{})
+			local lift=math.clamp(turning*.06,.15,.35)
+			local swing=math.clamp((s.turnRate or 0)*.05,-.35,.35)
+			local r=math.sin(p*math.pi*2);local l=math.sin((p+.5)*math.pi*2)
+			spec.rf=merge(base.rf or {},{y=math.max(0,r)*lift,x=(base.rf and base.rf.x or 0)+math.max(0,r)*swing})
+			spec.lf=merge(base.lf or {},{y=math.max(0,l)*lift,x=(base.lf and base.lf.x or 0)+math.max(0,l)*swing})
+			return build(spec),RATE.locomotion
+		end
 		s.phase=0
 		return stanceTargets(fighterId),RATE.locomotion
 	end
@@ -682,14 +767,15 @@ local function locomotionTargets(char,actor,fighterId,dt)
 	local forward=-dir.Z -- +1 moving where the body faces
 	local side=dir.X
 	local sprint=speed>(if minato then 38 else 34)
-	-- Cadence and stride grow with speed but are capped: at anime speeds the
-	-- legs blur through a fast cycle instead of taking impossible steps.
-	local frequency=math.clamp(speed/(if sprint then 9 else 6.5),1.4,if minato then 3.9 else 3.3)
+	-- Planted feet must not skate: during its stance phase a foot travels back
+	-- under the body at exactly the body's speed. Stride is limited by leg
+	-- reach, so the cadence rises with speed (an anime sprint = fast legs).
+	local duty=if speed<10 then .62 elseif sprint then .32 else .4
+	local stride=math.clamp(.45+speed*.035,.45,1.35)
+	local frequency=math.clamp(speed*duty/(2*stride),1.2,5.6)
 	s.phase=(s.phase+(dt or 1/60)*frequency)%1
 	local phase=s.phase
-	local stride=math.clamp(speed*.05,.35,1.45)
 	local lift=math.clamp(.28+speed*.013,.28,1.0)
-	local duty=if speed<14 then .58 else .4
 	local function foot(offset)
 		local p=(phase+offset)%1
 		local along,height

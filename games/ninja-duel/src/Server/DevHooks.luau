@@ -54,6 +54,8 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="sprint" then
+			actor.sprinting=arg2==true;return true
 		elseif op=="refill" then
 			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0;a.subRegenAt=math.huge end
 			return true
@@ -74,6 +76,9 @@ function DevHooks.install(matches)
 			return true
 		elseif op=="clientlog" then
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
+		elseif op=="probe" then
+			-- Smoothness probe from the client (Studio only); resets on read.
+			logRemote:FireAllClients("probe");task.wait(.3);return clientInfo.probe
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
 		elseif op=="ko" then

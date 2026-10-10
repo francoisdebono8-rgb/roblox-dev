@@ -10,6 +10,7 @@ local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
 local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
+camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
@@ -38,7 +39,10 @@ remote.OnClientEvent:Connect(function(data)
 end)
 RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
-RunService.RenderStepped:Connect(function(dt)
+RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
+	-- Last moment before the frame is drawn: the replicated roots have their
+	-- final positions for this frame, so the smoothed bodies and the camera agree.
+	presentation:smoothStep(current,dt)
 	camera:update(current,dt)
 	if current.phase=="Duel" and os.clock()>=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
@@ -52,7 +56,55 @@ if RunService:IsStudio() then
 		game:GetService("LogService").MessageOut:Connect(function(message,kind)
 			if kind==Enum.MessageType.MessageError or kind==Enum.MessageType.MessageWarning then log:FireServer("log",string.sub(message,1,400)) end
 		end)
+		-- Smoothness probe: per rendered frame, the apparent acceleration of each
+		-- fighter's head (what the eye follows) and root. A visual jump shows up
+		-- as an acceleration spike.
+		local probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0}
+		local track={}
+		local trace={}
+		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
+			if current.phase~="Duel" or dt<=0 then return end
+			local folder=player.Character and player.Character.Parent
+			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
+				for _,partName in {"Head","HumanoidRootPart"} do
+					local part=model and model:FindFirstChild(partName)
+					if part then
+						local key=model.Name..partName
+						local st=track[key] or {}
+						local p=part.Position
+						if model==player.Character and #trace<90 and partName=="Head" then
+							local vr=presentation:visualRoot("human")
+							local root=model:FindFirstChild("HumanoidRootPart")
+							local lt=model:FindFirstChild("LowerTorso")
+							local joint=lt and lt:FindFirstChild("Root") or (root and root:FindFirstChild("Root"))
+							table.insert(trace,string.format("H%.2f off%.2f lt%.2f tf%.2f",(p-(st.p or p)).Magnitude,vr and root and (vr-root.Position).Magnitude or -1,
+								lt and root and (lt.Position-root.Position).Magnitude or -1,joint and joint.Transform.Position.Magnitude or -1))
+						end
+						if st.p then
+							local v=(p-st.p)/dt
+							if st.v then
+								local acc=(v-st.v).Magnitude/dt
+								local head=partName=="Head"
+								if head then probe.frames+=1 end
+								if acc>900 and v.Magnitude<150 then
+									if head then probe.headSpikes+=1 else probe.rootSpikes+=1 end
+								end
+								if head then probe.headMax=math.max(probe.headMax,acc) else probe.rootMax=math.max(probe.rootMax,acc) end
+							end
+							st.v=v
+						end
+						st.p=p;track[key]=st
+					end
+				end
+			end
+		end)
 		log.OnClientEvent:Connect(function(kind)
+			if kind=="probe" then
+				local out=table.clone(probe);out.trace=table.concat(trace," ")
+				log:FireServer("info",{probe=out})
+				probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0};trace={}
+				return
+			end
 			if kind=="info" then
 				local cam=workspace.CurrentCamera
 				local gui={}

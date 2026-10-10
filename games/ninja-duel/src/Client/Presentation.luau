@@ -1,20 +1,81 @@
 -- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
--- deception visual. Rendering is continuous: it interpolates a short snapshot
--- buffer instead of stepping the whole body once per network packet.
+-- deception visual. Rendering is continuous: bodies are drawn on a smoothed
+-- track of their replicated roots instead of jumping once per network packet.
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
 local Presentation={};Presentation.__index=Presentation
--- Render slightly behind the newest snapshot so motion is always interpolated
--- between two known samples instead of being extrapolated from one.
-local RENDER_DELAY=.085
-local BUFFER=8
--- Beyond this, the server really did move the actor (substitution, flashstep,
--- respawn) and a hard correction is correct.
-local SNAP_DISTANCE=14
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,samples={},clocks={},botModel=nil,fx=Effects.new()},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
+end
+-- The replicated root of a server-owned fighter only moves every other
+-- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
+-- body drawn on it advances in jerks. Each fighter is instead drawn on a short
+-- interpolated track of its replicated positions, a fixed ~45 ms behind: the
+-- motion is continuous every frame. A real teleport still snaps.
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,9,6,8
+function Presentation:smoothRoot(key,actual,dt)
+	local now=os.clock()
+	local st=self.smooth[key]
+	if not st then st={samples={}};self.smooth[key]=st end
+	local samples=st.samples
+	local newest=samples[#samples]
+	if newest and (actual-newest.p).Magnitude>TRACK_SNAP then table.clear(samples);newest=nil end
+	if not newest or (actual-newest.p).Magnitude>1e-4 then
+		table.insert(samples,{t=now,p=actual})
+		while #samples>TRACK_SAMPLES do table.remove(samples,1) end
+	elseif now-newest.t>.1 then
+		-- Standing still: keep the track anchored to the present.
+		newest.t=now
+	end
+	local at=now-TRACK_DELAY
+	local pos=samples[#samples].p
+	if at<=samples[1].t then pos=samples[1].p
+	else
+		for i=#samples-1,1,-1 do
+			local a,b=samples[i],samples[i+1]
+			if at>=a.t then
+				local span=b.t-a.t
+				pos=if span>1e-4 then a.p:Lerp(b.p,math.clamp((at-a.t)/span,0,1)) else b.p
+				break
+			end
+		end
+	end
+	local offset=pos-actual
+	if offset.Magnitude>TRACK_MAX then pos=actual+offset.Unit*TRACK_MAX end
+	st.pos=pos
+	return pos
+end
+function Presentation:visualRoot(key)
+	local st=self.smooth[key]
+	return st and st.pos
+end
+-- Post-simulation: the replicated roots have moved for this frame; advance the
+-- filter and draw each skeleton on its smoothed track before rendering.
+function Presentation:smoothStep(data,dt)
+	if not data or data.phase~="Duel" then return end
+	local character=game:GetService("Players").LocalPlayer.Character
+	local folder=character and character.Parent
+	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
+		local root=model and model:FindFirstChild("HumanoidRootPart")
+		if root and not root.Anchored then
+			-- The true replicated position: if the root still sits exactly where we
+			-- drew it last frame, no new packet arrived and the server position is
+			-- the one we last saw.
+			local st=self.smooth[key]
+			local actual=root.Position
+			if st and st.drawn and st.replicated and (actual-st.drawn).Magnitude<1e-3 then actual=st.replicated end
+			local smoothed=self:smoothRoot(key,actual,math.max(dt,1/240))
+			st=self.smooth[key]
+			st.replicated=actual
+			-- Draw the whole body on the smoothed track for this frame only; the
+			-- next replication packet overwrites the client copy, never the server.
+			local delta=smoothed-root.Position
+			if delta.Magnitude>1e-4 then model:PivotTo(model:GetPivot()+delta) end
+			st.drawn=root.Position
+		end
+	end
 end
 -- Contact feed straight from the server: play the impact on the frame the hit
 -- happened, so sound and VFX never lead or lag the animation.
@@ -70,31 +131,6 @@ local function clockFor(self,key,actor,now)
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
 end
-function Presentation:record(key,position)
- local samples=self.samples[key]
- if not samples then samples={};self.samples[key]=samples end
- local newest=samples[#samples]
- -- A stalled actor must not accumulate latency from identical samples.
- if newest and (newest.position-position).Magnitude<.01 and os.clock()-newest.at<.05 then return end
- table.insert(samples,{at=os.clock(),position=position})
- while #samples>BUFFER do table.remove(samples,1) end
-end
-function Presentation:visualPosition(key)
- local samples=self.samples[key]
- if not samples or #samples==0 then return nil end
- local target=os.clock()-RENDER_DELAY
- local newest=samples[#samples]
- if target>=newest.at then return newest.position end
- if target<=samples[1].at then return samples[1].position end
- for i=#samples-1,1,-1 do
-  local a,b=samples[i],samples[i+1]
-  if target>=a.at and target<=b.at then
-   local span=b.at-a.at
-   return a.position:Lerp(b.position,if span>0 then (target-a.at)/span else 0)
-  end
- end
- return newest.position
-end
 function Presentation:update(data,dt)
  dt=math.max(dt or 1/60,.001)
  -- One presentation tick per rendered frame; every pose below reads this clock.
@@ -109,7 +145,7 @@ function Presentation:update(data,dt)
   -- Character switch, rematch or a fresh duel: the only place a hard reset is
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
-  table.clear(self.samples);table.clear(self.clocks);table.clear(self.last)
+  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth)
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -123,20 +159,10 @@ function Presentation:update(data,dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
-   self:record(key,actor.position)
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
-   -- Continue the body smoothly towards the interpolated network position.
-   local visual=self:visualPosition(key)
-   if root and visual then
-    local error_=(root.Position-visual).Magnitude
-    if error_>SNAP_DISTANCE then
-     model:PivotTo(CFrame.new(visual)*model:GetPivot().Rotation)
-    elseif error_>.05 then
-     local alpha=1-math.exp(-dt*18)
-     model:PivotTo(CFrame.new(root.Position:Lerp(visual,alpha))*model:GetPivot().Rotation)
-    end
-   end
+   -- The body is drawn on a smoothed track of the replicated root (see
+   -- Presentation:smoothStep, run just before each frame is rendered).
    if previous and previous.airborne and not actor.airborne then
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)

@@ -189,9 +189,10 @@ function AI:update(now)
 		end
 		local branch=if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()<(if minato then .18 else .34) then branch="Tool" end
-		-- Neji: one palm then the twin-palm thrust, or end a string with Vacuum Palm.
+		-- After one clean strike, sometimes take the heavy branch (knee, palm, thrust).
+		if not a.airborne and a.combo==1 and self.rng:NextNumber()<.25 then branch="Heavy" end
+		-- Neji: end a string with Vacuum Palm.
 		if a.fighterId=="GentleFist" and not a.airborne then
-			if a.combo==1 and self.rng:NextNumber()<.3 then branch="Heavy" end
 			if a.combo>=2 and self.rng:NextNumber()<.3 then
 				local palm=slotOf(a,"VacuumPalm")
 				if palm and c:request(a,palm,target.root.Position) then return end

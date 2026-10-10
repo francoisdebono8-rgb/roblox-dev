@@ -86,11 +86,13 @@ function Camera:update(data,dt)
 	end
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
-	local a=root.Position
+	-- Frame the bodies where they are drawn (smoothed), not the stepping roots.
+	local presentation=self.presentation
+	local a=(presentation and presentation:visualRoot("human")) or root.Position
 	local folder=root.Parent and root.Parent.Parent
 	local bot=folder and folder:FindFirstChild("AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
-	local target=if b then b.Position else data.bot.position
+	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 	if flat.Magnitude<.01 then flat=-Vector3.zAxis end
 	local separation=flat.Magnitude

@@ -18,6 +18,8 @@ return {
 			side={kind="move",name="AngleStep"},
 			back={kind="disengage",projectile="Kunai"},
 		},
+		-- Heavy after one clean cut: a rising knee that pops the opponent up.
+		heavyAfterOne="KneeStrike",
 		stringCancels={BurstStrike=true},
 		blockCancels={},
 	},
@@ -26,6 +28,9 @@ return {
 			side={kind="move",name="Sweep"},
 			back={kind="disengage",projectile="Shuriken"},
 		},
+		-- Heavy after one clean strike: the palm that drives the opponent away
+		-- (toward a wall when one is near) instead of the launcher.
+		heavyAfterOne="CounterPalm",
 		stringCancels={},
 		blockCancels={Tool=true},
 		readCounter="CounterPalm",

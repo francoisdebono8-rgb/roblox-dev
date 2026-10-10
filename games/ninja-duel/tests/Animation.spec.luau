@@ -269,9 +269,9 @@ test("the whole fight presents without a single snap between states",function()
   c:request(a,"Heavy");advance(1.4)
   c:damage(a,b,999,false,true);advance(1.8)
   assert(seen.attack and seen.locomotion,"the fight never presented an attack or locomotion")
-  -- 32 deg in one 60 Hz frame is a fast anticipation, not a teleport; anything
-  -- above that is the pose snapping rather than damping into place.
-  assert(worst<32,"a snap of "..string.format("%.1f",worst).." deg/frame at "..worstAt)
+  -- Strikes may whip at up to 38 deg per 60 Hz frame (2280 deg/s: a fast kick,
+  -- not a teleport); anything above that is a pose snapping into place.
+  assert(worst<39,"a snap of "..string.format("%.1f",worst).." deg/frame at "..worstAt)
  end
 end)
 test("knockdown, wakeup and reset leave no broken animation state",function()

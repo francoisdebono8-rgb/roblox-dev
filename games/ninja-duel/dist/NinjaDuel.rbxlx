@@ -59,6 +59,13 @@ local attacks={
  -- Neji: twin palms driven from the hips (heavy after one clean palm, or the
  -- counter after Rotation).
  PalmThrust=move(.11,.14,.34,10,3.4,"Knockback",Vector3.new(0,12,62),.52),
+ -- Minato: a knee driven up into the body after one clean cut. The opponent is
+ -- popped to waist height: continue on the ground, jump after it, or chase.
+ KneeStrike=move(.08,.12,.3,7,2.6,"Juggled",Vector3.new(0,26,4),.62),
+ -- Running taijutsu: out of a full sprint, a flying kick (strike) and a
+ -- sliding sweep (heavy). The run is the wind-up; a whiff overshoots.
+ FlyingKick=move(.1,.16,.32,9,10,"Knockback",Vector3.new(0,14,48),.5),
+ SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
 }
 
 for name,spec in attacks do
@@ -85,12 +92,17 @@ local motion={
  CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
  WallDive={side=1,twist=24,lean=42,arm=80,step=1.2},
  PalmThrust={side=1,twist=20,lean=18,arm=100,step=1.25},
+ KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
+ FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
+ SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
 attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
+attacks.FlyingKick.range=7.5;attacks.FlyingKick.width=5.5
+attacks.SlideSweep.range=7.5;attacks.SlideSweep.height=3.5;attacks.SlideSweep.width=6.5
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
 </ProtectedString>
@@ -325,6 +337,8 @@ return {
 			side={kind="move",name="AngleStep"},
 			back={kind="disengage",projectile="Kunai"},
 		},
+		-- Heavy after one clean cut: a rising knee that pops the opponent up.
+		heavyAfterOne="KneeStrike",
 		stringCancels={BurstStrike=true},
 		blockCancels={},
 	},
@@ -333,6 +347,9 @@ return {
 			side={kind="move",name="Sweep"},
 			back={kind="disengage",projectile="Shuriken"},
 		},
+		-- Heavy after one clean strike: the palm that drives the opponent away
+		-- (toward a wall when one is near) instead of the launcher.
+		heavyAfterOne="CounterPalm",
 		stringCancels={},
 		blockCancels={Tool=true},
 		readCounter="CounterPalm",
@@ -1395,7 +1412,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">255a08f568a00953876342f519aac5010d6bdd2db11749a24a0f595f0f27afab</string>
+          <string name="Value">4bde8b6125e37f4bdc183a15010e91037acece632ad374dd4e6175e31a2cf346</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1688,9 +1705,10 @@ function AI:update(now)
 		end
 		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
-		-- Neji: one palm then the twin-palm thrust, or end a string with Vacuum Palm.
+		-- After one clean strike, sometimes take the heavy branch (knee, palm, thrust).
+		if not a.airborne and a.combo==1 and self.rng:NextNumber()&lt;.25 then branch="Heavy" end
+		-- Neji: end a string with Vacuum Palm.
 		if a.fighterId=="GentleFist" and not a.airborne then
-			if a.combo==1 and self.rng:NextNumber()&lt;.3 then branch="Heavy" end
 			if a.combo&gt;=2 and self.rng:NextNumber()&lt;.3 then
 				local palm=slotOf(a,"VacuumPalm")
 				if palm and c:request(a,palm,target.root.Position) then return end
@@ -2135,6 +2153,12 @@ function Brawler.request(c,a,action)
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
  end
  if action=="ThrowUp" then return false,"No grab" end
+ -- Running taijutsu: out of a full sprint the strike becomes a flying kick
+ -- and the heavy a sliding sweep.
+ if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude&gt;30 then
+  if action=="Attack" then a.combo=0;return Brawler.start(c,a,"FlyingKick") end
+  if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
+ end
  if action=="Heavy" then
   if a.airborne then return Brawler.start(c,a,"Slam") end
   local heavyGraph=MoveGraphs[a.fighterId] or {}
@@ -3508,6 +3532,8 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="sprint" then
+			actor.sprinting=arg2==true;return true
 		elseif op=="refill" then
 			for _,a in {s.human,s.bot} do a.chakra=a.def.Chakra;a.cooldowns={};a.health=a.def.Health;a.hum.Health=a.health;a.subCharges=2;a.subCooldown=0;a.subRegenAt=math.huge end
 			return true
@@ -3528,6 +3554,9 @@ function DevHooks.install(matches)
 			return true
 		elseif op=="clientlog" then
 			local out=table.concat(clientLog," || ");if arg1 then table.clear(clientLog) end;return out
+		elseif op=="probe" then
+			-- Smoothness probe from the client (Studio only); resets on read.
+			logRemote:FireAllClients("probe");task.wait(.3);return clientInfo.probe
 		elseif op=="clientinfo" then
 			logRemote:FireAllClients("info");task.wait(.3);return clientInfo
 		elseif op=="ko" then
@@ -6154,11 +6183,13 @@ function Camera:update(data,dt)
 	end
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
-	local a=root.Position
+	-- Frame the bodies where they are drawn (smoothed), not the stepping roots.
+	local presentation=self.presentation
+	local a=(presentation and presentation:visualRoot("human")) or root.Position
 	local folder=root.Parent and root.Parent.Parent
 	local bot=folder and folder:FindFirstChild("AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
-	local target=if b then b.Position else data.bot.position
+	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 	if flat.Magnitude&lt;.01 then flat=-Vector3.zAxis end
 	local separation=flat.Magnitude
@@ -7345,6 +7376,7 @@ local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
 local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
+camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
@@ -7373,7 +7405,10 @@ remote.OnClientEvent:Connect(function(data)
 end)
 RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
-RunService.RenderStepped:Connect(function(dt)
+RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
+	-- Last moment before the frame is drawn: the replicated roots have their
+	-- final positions for this frame, so the smoothed bodies and the camera agree.
+	presentation:smoothStep(current,dt)
 	camera:update(current,dt)
 	if current.phase=="Duel" and os.clock()&gt;=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
@@ -7387,7 +7422,55 @@ if RunService:IsStudio() then
 		game:GetService("LogService").MessageOut:Connect(function(message,kind)
 			if kind==Enum.MessageType.MessageError or kind==Enum.MessageType.MessageWarning then log:FireServer("log",string.sub(message,1,400)) end
 		end)
+		-- Smoothness probe: per rendered frame, the apparent acceleration of each
+		-- fighter's head (what the eye follows) and root. A visual jump shows up
+		-- as an acceleration spike.
+		local probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0}
+		local track={}
+		local trace={}
+		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
+			if current.phase~="Duel" or dt&lt;=0 then return end
+			local folder=player.Character and player.Character.Parent
+			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
+				for _,partName in {"Head","HumanoidRootPart"} do
+					local part=model and model:FindFirstChild(partName)
+					if part then
+						local key=model.Name..partName
+						local st=track[key] or {}
+						local p=part.Position
+						if model==player.Character and #trace&lt;90 and partName=="Head" then
+							local vr=presentation:visualRoot("human")
+							local root=model:FindFirstChild("HumanoidRootPart")
+							local lt=model:FindFirstChild("LowerTorso")
+							local joint=lt and lt:FindFirstChild("Root") or (root and root:FindFirstChild("Root"))
+							table.insert(trace,string.format("H%.2f off%.2f lt%.2f tf%.2f",(p-(st.p or p)).Magnitude,vr and root and (vr-root.Position).Magnitude or -1,
+								lt and root and (lt.Position-root.Position).Magnitude or -1,joint and joint.Transform.Position.Magnitude or -1))
+						end
+						if st.p then
+							local v=(p-st.p)/dt
+							if st.v then
+								local acc=(v-st.v).Magnitude/dt
+								local head=partName=="Head"
+								if head then probe.frames+=1 end
+								if acc&gt;900 and v.Magnitude&lt;150 then
+									if head then probe.headSpikes+=1 else probe.rootSpikes+=1 end
+								end
+								if head then probe.headMax=math.max(probe.headMax,acc) else probe.rootMax=math.max(probe.rootMax,acc) end
+							end
+							st.v=v
+						end
+						st.p=p;track[key]=st
+					end
+				end
+			end
+		end)
 		log.OnClientEvent:Connect(function(kind)
+			if kind=="probe" then
+				local out=table.clone(probe);out.trace=table.concat(trace," ")
+				log:FireServer("info",{probe=out})
+				probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0};trace={}
+				return
+			end
 			if kind=="info" then
 				local cam=workspace.CurrentCamera
 				local gui={}
@@ -7413,22 +7496,83 @@ print("[NinjaDuel] Client ready")
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
--- deception visual. Rendering is continuous: it interpolates a short snapshot
--- buffer instead of stepping the whole body once per network packet.
+-- deception visual. Rendering is continuous: bodies are drawn on a smoothed
+-- track of their replicated roots instead of jumping once per network packet.
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
 local Presentation={};Presentation.__index=Presentation
--- Render slightly behind the newest snapshot so motion is always interpolated
--- between two known samples instead of being extrapolated from one.
-local RENDER_DELAY=.085
-local BUFFER=8
--- Beyond this, the server really did move the actor (substitution, flashstep,
--- respawn) and a hard correction is correct.
-local SNAP_DISTANCE=14
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,samples={},clocks={},botModel=nil,fx=Effects.new()},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
+end
+-- The replicated root of a server-owned fighter only moves every other
+-- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
+-- body drawn on it advances in jerks. Each fighter is instead drawn on a short
+-- interpolated track of its replicated positions, a fixed ~45 ms behind: the
+-- motion is continuous every frame. A real teleport still snaps.
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,9,6,8
+function Presentation:smoothRoot(key,actual,dt)
+	local now=os.clock()
+	local st=self.smooth[key]
+	if not st then st={samples={}};self.smooth[key]=st end
+	local samples=st.samples
+	local newest=samples[#samples]
+	if newest and (actual-newest.p).Magnitude&gt;TRACK_SNAP then table.clear(samples);newest=nil end
+	if not newest or (actual-newest.p).Magnitude&gt;1e-4 then
+		table.insert(samples,{t=now,p=actual})
+		while #samples&gt;TRACK_SAMPLES do table.remove(samples,1) end
+	elseif now-newest.t&gt;.1 then
+		-- Standing still: keep the track anchored to the present.
+		newest.t=now
+	end
+	local at=now-TRACK_DELAY
+	local pos=samples[#samples].p
+	if at&lt;=samples[1].t then pos=samples[1].p
+	else
+		for i=#samples-1,1,-1 do
+			local a,b=samples[i],samples[i+1]
+			if at&gt;=a.t then
+				local span=b.t-a.t
+				pos=if span&gt;1e-4 then a.p:Lerp(b.p,math.clamp((at-a.t)/span,0,1)) else b.p
+				break
+			end
+		end
+	end
+	local offset=pos-actual
+	if offset.Magnitude&gt;TRACK_MAX then pos=actual+offset.Unit*TRACK_MAX end
+	st.pos=pos
+	return pos
+end
+function Presentation:visualRoot(key)
+	local st=self.smooth[key]
+	return st and st.pos
+end
+-- Post-simulation: the replicated roots have moved for this frame; advance the
+-- filter and draw each skeleton on its smoothed track before rendering.
+function Presentation:smoothStep(data,dt)
+	if not data or data.phase~="Duel" then return end
+	local character=game:GetService("Players").LocalPlayer.Character
+	local folder=character and character.Parent
+	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
+		local root=model and model:FindFirstChild("HumanoidRootPart")
+		if root and not root.Anchored then
+			-- The true replicated position: if the root still sits exactly where we
+			-- drew it last frame, no new packet arrived and the server position is
+			-- the one we last saw.
+			local st=self.smooth[key]
+			local actual=root.Position
+			if st and st.drawn and st.replicated and (actual-st.drawn).Magnitude&lt;1e-3 then actual=st.replicated end
+			local smoothed=self:smoothRoot(key,actual,math.max(dt,1/240))
+			st=self.smooth[key]
+			st.replicated=actual
+			-- Draw the whole body on the smoothed track for this frame only; the
+			-- next replication packet overwrites the client copy, never the server.
+			local delta=smoothed-root.Position
+			if delta.Magnitude&gt;1e-4 then model:PivotTo(model:GetPivot()+delta) end
+			st.drawn=root.Position
+		end
+	end
 end
 -- Contact feed straight from the server: play the impact on the frame the hit
 -- happened, so sound and VFX never lead or lag the animation.
@@ -7484,31 +7628,6 @@ local function clockFor(self,key,actor,now)
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
 end
-function Presentation:record(key,position)
- local samples=self.samples[key]
- if not samples then samples={};self.samples[key]=samples end
- local newest=samples[#samples]
- -- A stalled actor must not accumulate latency from identical samples.
- if newest and (newest.position-position).Magnitude&lt;.01 and os.clock()-newest.at&lt;.05 then return end
- table.insert(samples,{at=os.clock(),position=position})
- while #samples&gt;BUFFER do table.remove(samples,1) end
-end
-function Presentation:visualPosition(key)
- local samples=self.samples[key]
- if not samples or #samples==0 then return nil end
- local target=os.clock()-RENDER_DELAY
- local newest=samples[#samples]
- if target&gt;=newest.at then return newest.position end
- if target&lt;=samples[1].at then return samples[1].position end
- for i=#samples-1,1,-1 do
-  local a,b=samples[i],samples[i+1]
-  if target&gt;=a.at and target&lt;=b.at then
-   local span=b.at-a.at
-   return a.position:Lerp(b.position,if span&gt;0 then (target-a.at)/span else 0)
-  end
- end
- return newest.position
-end
 function Presentation:update(data,dt)
  dt=math.max(dt or 1/60,.001)
  -- One presentation tick per rendered frame; every pose below reads this clock.
@@ -7523,7 +7642,7 @@ function Presentation:update(data,dt)
   -- Character switch, rematch or a fresh duel: the only place a hard reset is
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
-  table.clear(self.samples);table.clear(self.clocks);table.clear(self.last)
+  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth)
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -7537,20 +7656,10 @@ function Presentation:update(data,dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
-   self:record(key,actor.position)
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
-   -- Continue the body smoothly towards the interpolated network position.
-   local visual=self:visualPosition(key)
-   if root and visual then
-    local error_=(root.Position-visual).Magnitude
-    if error_&gt;SNAP_DISTANCE then
-     model:PivotTo(CFrame.new(visual)*model:GetPivot().Rotation)
-    elseif error_&gt;.05 then
-     local alpha=1-math.exp(-dt*18)
-     model:PivotTo(CFrame.new(root.Position:Lerp(visual,alpha))*model:GetPivot().Rotation)
-    end
-   end
+   -- The body is drawn on a smoothed track of the replicated root (see
+   -- Presentation:smoothStep, run just before each frame is rendered).
    if previous and previous.airborne and not actor.airborne then
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
@@ -8170,7 +8279,7 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=30,throw=30,cast=22,recoil=30,guard=24,defense=24,locomotion=16,air=14,ground=12,wall=16,chase=18}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=16,air=14,ground=12,wall=16,chase=18}
 local MAX_SPEED=1750
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
@@ -8187,7 +8296,8 @@ local function write(char,key,target,rate,dt)
 	local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
 	local nextCF=current:Lerp(target,alpha)
 	local step=angleBetween(current,nextCF)
-	local limit=rad(MAX_SPEED)*dt
+	-- Strikes may whip faster than ordinary motion so their shape reads.
+	local limit=rad(if (rate or 0)&gt;=RATE.attack then 2280 else MAX_SPEED)*dt
 	if step&gt;limit and step&gt;1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
@@ -8497,6 +8607,13 @@ CLIPS.Flashstep.Rasengan={
 	K(3,M),
 }
 
+-- Minato's KneeStrike: hands pull the opponent down onto a rising knee.
+CLIPS.Flashstep.KneeStrike={
+	K(0,m({root={y=-.5,z=.1,pitch=6},torso={pitch=4},ra={raise=86,out=-10,elbow=60},la={raise=86,out=-10,elbow=60},rl={lift=40,knee=80}})),
+	K(1,m({root={y=-.2,z=-.5,pitch=-6},torso={pitch=14},head={pitch=10},ra={raise=60,out=-16,elbow=90,wrist=-20},la={raise=60,out=-16,elbow=90,wrist=-20},rl={lift=112,knee=138,ankle=-20},lf={toe=-24}}),"out"),
+	K(2,m({root={y=-.22,z=-.52,pitch=-4},torso={pitch=12},ra={raise=58,out=-16,elbow=92},la={raise=58,out=-16,elbow=92},rl={lift=104,knee=134},lf={toe=-20}})),
+	K(3,M),
+}
 -- Branch moves ----------------------------------------------------------
 -- Minato's AngleStep: a crossing sidestep that cuts on the way past.
 CLIPS.Flashstep.AngleStep={
@@ -8602,6 +8719,56 @@ CLIPS.Flashstep.RasenganDrop={
 	K(3,m({root={y=-1.0,pitch=26},torso={pitch=22},ra={raise=60,out=10,elbow=20},lf={z=-.9},rf={z=.9}})),
 }
 CLIPS.Mirage.RasenganDrop=CLIPS.Flashstep.RasenganDrop
+
+-- Running taijutsu ---------------------------------------------------------
+-- Out of a full sprint: a flying kick (strike) or a sliding sweep (heavy).
+local function runningClips(f,base)
+	CLIPS[f].FlyingKick={
+		K(0,merge(base,{root={y=-.2,pitch=-8},torso={pitch=-4},ra={raise=-30,out=40,elbow=40},la={raise=60,out=10,elbow=90},rl={lift=70,knee=120,ankle=-10},ll={lift=-10,knee=40}})),
+		K(1,merge(base,{root={y=.35,pitch=-16,yaw=-10},torso={pitch=6,yaw=-14},head={pitch=10},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=92,out=4,knee=2,ankle=-24},ll={lift=-18,knee=112,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=.3,pitch=-14,yaw=-10},torso={pitch=6,yaw=-14},ra={raise=-40,out=56,elbow=20},la={raise=74,out=-10,elbow=96},rl={lift=88,out=4,knee=6,ankle=-24},ll={lift=-18,knee=112}})),
+		K(3,base),
+	}
+	CLIPS[f].SlideSweep={
+		K(0,merge(base,{root={y=-1.0,pitch=14},torso={pitch=10},ra={raise=30,out=40,elbow=60},la={raise=60,out=20,elbow=80}})),
+		K(1,merge(base,{root={y=-1.7,pitch=-28,yaw=14},torso={pitch=-6,yaw=-10},head={pitch=20},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=84,out=10,knee=2,ankle=-30},ll={lift=30,knee=118,ankle=-10}}),"out"),
+		K(2,merge(base,{root={y=-1.7,pitch=-26,yaw=16},torso={pitch=-6,yaw=-10},ra={raise=-10,out=70,elbow=10},la={raise=70,out=20,elbow=90},rl={lift=80,out=10,knee=6,ankle=-30},ll={lift=30,knee=118}})),
+		K(2.6,merge(base,{root={y=-1.1,pitch=8},rl={lift=50,knee=80},ll={lift=20,knee=100}})),
+		K(3,base),
+	}
+end
+runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N)
+-- Taijutsu readability: on ground strikes, push hips, shoulders and the step
+-- further from the stance so the body mechanics read at fight distance.
+local EXAGGERATE,STEP=1.3,1.15
+local AIRBORNE={Air1=true,Air2=true,Slam=true,RasenganDrop=true,WallDive=true,FlyingKick=true}
+local done={}
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+	local base=stance(fighterId)
+	for name,keys in route do
+		if not AIRBORNE[name] and type(keys)=="table" then
+			for _,key in keys do
+				local pose=key.pose
+				if type(pose)=="table" and pose~=base and not done[pose] and pose~=M and pose~=I and pose~=N then
+					done[pose]=true
+					for _,part in {"root","torso"} do
+						local p,b=pose[part],base[part] or {}
+						if p then
+							for _,field in {"yaw","pitch","roll"} do
+								if p[field] then p[field]=(b[field] or 0)+(p[field]-(b[field] or 0))*EXAGGERATE end
+							end
+							if part=="root" and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*EXAGGERATE,-1.4,1.4) end
+						end
+					end
+					for _,foot in {"rf","lf"} do
+						local p,b=pose[foot],base[foot] or {}
+						if p and p.z then p.z=math.clamp((b.z or 0)+(p.z-(b.z or 0))*STEP,-1.9,1.6) end
+					end
+				end
+			end
+		end
+	end
+end
 
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
@@ -8777,7 +8944,34 @@ local function locomotionTargets(char,actor,fighterId,dt)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local velocity=planar(actor.velocity)
 	local speed=velocity.Magnitude
+	-- Turning on the spot: measure the root's yaw rate so the feet can step
+	-- round instead of sliding while the hips rotate.
+	local yawRate=0
+	if root then
+		local look=root.CFrame.LookVector
+		local yaw=math.atan2(-look.X,-look.Z)
+		if s.lastYaw and dt and dt&gt;0 then
+			local d=(yaw-s.lastYaw+math.pi)%(2*math.pi)-math.pi
+			yawRate=d/dt
+		end
+		s.lastYaw=yaw
+		s.turnRate=(s.turnRate or 0)+(yawRate-(s.turnRate or 0))*math.min(1,(dt or 1/60)*12)
+	end
 	if speed&lt;1.2 then
+		local turning=math.abs(s.turnRate or 0)
+		if turning&gt;1.6 then
+			-- A small pivot step: alternate feet lift and swing toward the turn.
+			s.turnPhase=((s.turnPhase or 0)+(dt or 1/60)*math.clamp(turning*.55,1.6,4))%1
+			local p=s.turnPhase
+			local base=stance(fighterId)
+			local spec=merge(base,{})
+			local lift=math.clamp(turning*.06,.15,.35)
+			local swing=math.clamp((s.turnRate or 0)*.05,-.35,.35)
+			local r=math.sin(p*math.pi*2);local l=math.sin((p+.5)*math.pi*2)
+			spec.rf=merge(base.rf or {},{y=math.max(0,r)*lift,x=(base.rf and base.rf.x or 0)+math.max(0,r)*swing})
+			spec.lf=merge(base.lf or {},{y=math.max(0,l)*lift,x=(base.lf and base.lf.x or 0)+math.max(0,l)*swing})
+			return build(spec),RATE.locomotion
+		end
 		s.phase=0
 		return stanceTargets(fighterId),RATE.locomotion
 	end
@@ -8787,14 +8981,15 @@ local function locomotionTargets(char,actor,fighterId,dt)
 	local forward=-dir.Z -- +1 moving where the body faces
 	local side=dir.X
 	local sprint=speed&gt;(if minato then 38 else 34)
-	-- Cadence and stride grow with speed but are capped: at anime speeds the
-	-- legs blur through a fast cycle instead of taking impossible steps.
-	local frequency=math.clamp(speed/(if sprint then 9 else 6.5),1.4,if minato then 3.9 else 3.3)
+	-- Planted feet must not skate: during its stance phase a foot travels back
+	-- under the body at exactly the body's speed. Stride is limited by leg
+	-- reach, so the cadence rises with speed (an anime sprint = fast legs).
+	local duty=if speed&lt;10 then .62 elseif sprint then .32 else .4
+	local stride=math.clamp(.45+speed*.035,.45,1.35)
+	local frequency=math.clamp(speed*duty/(2*stride),1.2,5.6)
 	s.phase=(s.phase+(dt or 1/60)*frequency)%1
 	local phase=s.phase
-	local stride=math.clamp(speed*.05,.35,1.45)
 	local lift=math.clamp(.28+speed*.013,.28,1.0)
-	local duty=if speed&lt;14 then .58 else .4
 	local function foot(offset)
 		local p=(phase+offset)%1
 		local along,height
