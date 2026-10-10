@@ -520,6 +520,19 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
 	elseif style=="pin" then
 		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="flow" then
+		-- On the beat: a crisp white-blue ring at the contact, nothing heavy.
+		local count=impact.count or 1
+		flash(self.folder,position,Color3.fromRGB(220,236,255),.6,3+math.min(count,4),.12,.15)
+		shockRing(self.folder,position,Color3.fromRGB(200,226,255),1,6+math.min(count,4)*1.5,.18)
+	elseif style=="awaken" then
+		local model=modelFor(folder,impact.owner)
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		if model then self:ghost(model,tone,.35,.4) end
+		flash(self.folder,position,tone,2,14,.35,.2)
+		shockRing(self.folder,position-Vector3.new(0,2.6,0),tone,3,24,.45)
+		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(214,206,190),20,2.6)
+		self:cheer(1)
 	elseif style=="palmburst" then
 		local along=impact.direction or Vector3.zAxis
 		shockRing(self.folder,position,Color3.fromRGB(220,232,255),2,12,.24,along)
@@ -816,7 +829,7 @@ function FX:fighter(model,actor,dt)
 	end
 	self:wear(model,actor,aura)
 	local speed=actor.speed or 0
-	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed>34)
+	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.state=="Rush" or (actor.awaken or 0)>0 or actor.flash or (actor.fighterId=="Flashstep" and speed>34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)>0
 	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
 	-- counters, or during the intro.
@@ -828,6 +841,22 @@ function FX:fighter(model,actor,dt)
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
+	end
+	-- Awakening: a chakra mantle that rises off the body for the whole state.
+	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
+	if awake and not aura.mantle then
+		local torso=model:FindFirstChild("UpperTorso") or root
+		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local at=new("Attachment",{Name="AwakenMantle"},torso)
+		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=55,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(30,30),
+			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(tone),LightEmission=1,LightInfluence=0,
+			Size=num({{0,1.6},{.5,1.2},{1,0}}),Transparency=num({{0,.45},{1,1}}),Acceleration=Vector3.new(0,6,0)},at)
+		local light=new("PointLight",{Color=tone,Brightness=2.5,Range=12,Shadows=false},at)
+		aura.mantle={attachment=at,emitter=e,light=light}
+	elseif not awake and aura.mantle then
+		aura.mantle.emitter.Enabled=false
+		Debris:AddItem(aura.mantle.attachment,1)
+		aura.mantle=nil
 	end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then

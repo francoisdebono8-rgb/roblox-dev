@@ -40,7 +40,10 @@ function Combat:add(id,model,hum,root,joints,definition)
 		comboHits=0,comboDamage=0,anchors={} }
 	table.insert(self.actors,a)
 	Defense.init(a)
-	Animation.attach(a)
+	-- The client motion engine owns every pose. Server Animator tracks (Roblox
+	-- default walk/run/idle, donor punches) replicate to clients and overwrote
+	-- that motion, so they only play when explicitly enabled.
+	if Config.DonorAnimations then Animation.attach(a) end
 	return a
 end
 -- The tournament stage is round: positions are held inside a circle so no
@@ -149,7 +152,10 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
 	-- Byakugan: the guard covers every side but a narrow blind spot behind.
-	if victim.def.Byakugan and delta.Magnitude>=0.1 then frontal=victim.root.CFrame.LookVector:Dot(delta.Unit)>-victim.def.Byakugan.BlindSpot end
+	if victim.def.Byakugan and delta.Magnitude>=0.1 then
+		local full=(victim.awakenUntil or 0)>self.now and victim.def.Awakening and victim.def.Awakening.NoBlindSpot
+		frontal=full or victim.root.CFrame.LookVector:Dot(delta.Unit)>-victim.def.Byakugan.BlindSpot
+	end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
 	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt<.7 then
 		frontal=true
@@ -188,6 +194,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
+	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
 	-- is worth less. Long routes stay possible; they just stop being lethal.
 	if not guarded then
@@ -197,7 +204,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
 	victim.lastHurt=self.now
-	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
+	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
@@ -379,6 +386,60 @@ function Combat:substitute(a)
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
+-- Chakra dash. A committed straight burst at the opponent from neutral (or
+-- out of a recovery's cancel point). It is not armoured: a blade, a guard or a
+-- read answers it. A strike on arrival becomes the dash attack.
+function Combat:rush(a)
+	local tune=Config.Rush
+	local cancel=a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge)
+	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
+	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
+	if a.chakra<tune.Cost then return false,"Need chakra" end
+	if self.now<(a.rushReadyAt or 0) then return false,"Cooldown" end
+	local gap=(a.target.root.Position-a.root.Position).Magnitude
+	if gap<tune.MinRange then return false,"Too close" end
+	if gap>tune.Range then return false,"Too far" end
+	if cancel then Bangla.close(a.pending) end
+	a.chakra-=tune.Cost;a.rushReadyAt=self.now+tune.Cooldown
+	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
+	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
+	self:setState(a,"Rush",duration)
+	a.rushArriveUntil=self.now+duration+tune.Arrive
+	Brawler.event(self,a,"Rush")
+	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
+	return true
+end
+-- Awakening: once per match, below a third of health. A shockwave buys space,
+-- chakra comes back, and each prodigy's own strength is pushed for a while.
+function Combat:awaken(a)
+	local tune=a.def.Awakening
+	if not tune or a.awakened then return false,"No awakening" end
+	if a.health>a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
+	if not Brawler.free(a,self.now) then return false,"Reacting" end
+	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration
+	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
+	a.cooldowns={}
+	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
+	a.pending=nil;a.guardHeld=false;self:setState(a,"Recovery",.3)
+	local b=a.target
+	if b and b.health>0 then
+		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude<9 and away.Magnitude>.05 then Brawler.react(self,b,"Knockback",away.Unit*34+Vector3.new(0,12,0),.45,a) end
+	end
+	a.hitstopUntil=self.now+.12
+	self:pushImpact(a.root.Position,"awaken",true,{owner=a.id,fighter=a.fighterId})
+	self:cue(a,"AWAKENING • "..tune.Name,1.4)
+	if b then self:cue(b,"OPPONENT AWAKENED",1) end
+	Brawler.event(self,a,"Awaken")
+	return true
+end
+-- Awakened techniques recover faster (and Itachi's cost less).
+function Combat:awakenTechnique(a,spec)
+	if (a.awakenUntil or 0)<=self.now then return end
+	local tune=a.def.Awakening
+	a.cooldowns[spec.Id]=self.now+spec.Cooldown*(tune.Cooldown or 1)
+	if tune.CostScale then a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+spec.Cost*(1-tune.CostScale)) end
+end
 function Combat:wallTech(a)
 	local tune=Config.Wall
 	local elapsed=self.now-(a.splatAt or -10)
@@ -430,6 +491,7 @@ function Combat:request(a,action,aim,clientTime)
 	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
+	if action=="Awaken" then return self:awaken(a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted<=pending.spec.startup*.62 then
@@ -462,7 +524,8 @@ function Combat:request(a,action,aim,clientTime)
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
 	if action=="Pursuit" then
-		if a.pursuitUntil<=self.now or a.target.health<=0 then return false,"No pursuit" end
+		-- Outside a chase window, E is the chakra dash.
+		if a.pursuitUntil<=self.now or a.target.health<=0 then return self:rush(a) end
 		if a.chakra<Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
 		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
@@ -570,6 +633,7 @@ function Combat:request(a,action,aim,clientTime)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		self:awakenTechnique(a,spec)
 		a.castId=spec.Id;a.castStarted=self.now
 		local pending={kind="Technique",spec=spec,implementation=technique,aim=aim}
 		self:beginThrow(a,{kind=spec.Throw or "MarkedKunai",release=spec.Channel,count=1,aim=aim,fire=function(_,target)
@@ -581,6 +645,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
+	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
@@ -612,9 +677,11 @@ function Combat:updateActor(a,dt)
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
 		if (a.tenketsuUntil or 0)>now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		if (a.awakenUntil or 0)>now then regen*=a.def.Awakening.Regen or 1 end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)>now then self:stepRotation(a) end
+	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
@@ -704,6 +771,13 @@ function Combat:updateActor(a,dt)
 			if distance<7 then speed=math.min(speed,40+distance*distance*2.4) end
 			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
 		end
+	elseif a.state=="Rush" then
+		-- Chakra dash: a straight burst at the opponent that stops a step short.
+		local delta=a.target.root.Position-a.root.Position
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		if flat.Magnitude>3.2 then a.aimIntent={target=a.root.Position+flat-flat.Unit*2.8,speed=Config.Rush.Speed,acceleration=1100}
+		else a.untilTime=math.min(a.untilTime,now) end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
 		-- straight lunge at the opponent's body.
@@ -1001,8 +1075,8 @@ function Combat:separate()
 	local delta=b.root.Position-a.root.Position
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
-	if gap>=2.4 or math.abs(delta.Y)>4 then return end
-	local push=(2.4-gap)*.5
+	if gap>=3 or math.abs(delta.Y)>4 then return end
+	local push=math.min(3-gap,.35)*.5
 	local dir=if gap>.05 then flat.Unit else a.root.CFrame.RightVector
 	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
 end
@@ -1035,6 +1109,7 @@ function Combat:clear(preserveAnimations)
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
+		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end

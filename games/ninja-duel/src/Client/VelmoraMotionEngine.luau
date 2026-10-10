@@ -65,7 +65,7 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=16,air=14,ground=12,wall=16,chase=18}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22}
 local MAX_SPEED=1750
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
@@ -790,7 +790,7 @@ end
 -- (one foot at a time, the other holds the ground). Walking, strafing,
 -- stopping and turning on the spot all come out of the same rule, so feet
 -- never skate and the steps always match the real displacement.
-local STEP_REACH,STEP_LEAD=1.3,1.05
+local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -826,10 +826,13 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		if not feet[key] then feet[key]={world=rests[key],planted=true} end
 	end
 	for key,f in feet do
-		if not f.planted then
+		if not f.planted and f.runStance==nil and f.t then
 			f.t+=dt
 			f.p=math.min(1,f.t/f.dur)
 			if f.p>=1 then f.planted=true;f.world=rests[key];f.p=nil end
+		elseif not f.planted and f.runStance==nil then
+			-- Left a run mid-flight: finish the step onto the rest spot.
+			f.t=0;f.dur=.12;f.from=f.from or f.world
 		end
 		-- The ground under a planted foot is the floor the body stands on.
 		if f.planted then f.world=Vector3.new(f.world.X,groundY,f.world.Z) end
@@ -839,6 +842,7 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		return Vector3.new(w.X-r.X,0,w.Z-r.Z).Magnitude
 	end
 	local order=if drift("L")>drift("R") then {"L","R"} else {"R","L"}
+	if not mode and speed>=RUN_SPEED then order={} end
 	for _,key in order do
 		local f=feet[key];local other=feet[if key=="R" then "L" else "R"]
 		local e=drift(key)
@@ -849,23 +853,78 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		end
 	end
 	local lift=math.clamp(.22+speed*.012,.22,.75)
+	-- Running (not walking, turning or attacking): a real stride with a flight
+	-- phase. A phase clock sets a natural cadence; each foot holds the ground
+	-- for exactly stanceLen/speed (so it never skates while planted), then
+	-- flies forward to land ahead of the hip. Steps get long instead of the
+	-- legs pattering, and the arms and chest have time to move.
+	local running=not mode and speed>=RUN_SPEED
+	local runDip=0
+	if running then
+		local cadence=math.clamp(speed/7.2,1.7,3.1)
+		local stanceLen=math.clamp(.9+speed*.028,1,1.9)
+		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
+		if not s.runPhase then
+			-- Enter the cycle with the foot that is already ahead in stance.
+			local rz=rootCF:PointToObjectSpace(feet.R.world).Z
+			s.runPhase=if rz<0 then 0 else .5
+		end
+		s.runPhase=(s.runPhase+dt*cadence)%1
+		local dirUnit=if speed>.01 then velocity.Unit else look.Unit
+		for key,f in feet do
+			local side=if key=="R" then 1 else -1
+			local q=(s.runPhase+(if key=="R" then 0 else .5))%1
+			local hip=flat:PointToWorldSpace(Vector3.new(.45*side,0,0))
+			if q<duty then
+				-- Stance: planted on its landing spot, locked in the world.
+				if not f.runStance then
+					local land=hip+dirUnit*stanceLen*.5
+					f.world=Vector3.new(land.X,groundY,land.Z);f.planted=true;f.p=nil
+				end
+				f.runStance=true
+				runDip=math.max(runDip,math.sin(math.pi*q/duty))
+			else
+				-- Flight / swing: the foot is carried with the hips, from where it
+				-- pushed off (behind) to its landing spot (ahead of the hip).
+				if f.runStance~=false then
+					local back=f.world-hip
+					f.fromRel=Vector3.new(back.X,0,back.Z);f.planted=false
+				end
+				f.runStance=false
+				local u=(q-duty)/(1-duty)
+				f.p=u
+				f.runRel=f.fromRel:Lerp(dirUnit*stanceLen*.5,smooth(u))
+				f.hipNow=Vector3.new(hip.X,groundY,hip.Z)
+			end
+		end
+	else
+		s.runPhase=nil
+		for _,f in feet do
+			if f.runStance==false and f.runRel then f.world=f.hipNow+f.runRel;f.from=f.world end
+			f.runStance=nil;f.runRel=nil
+		end
+	end
 	local out={}
 	for key,f in feet do
 		local pos=f.world
 		if not f.planted then
 			local p=f.p or 0
-			pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+			if f.runRel and f.runStance==false then pos=f.hipNow+f.runRel+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+			else pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0) end
 		end
 		local side=if key=="R" then 1 else -1
 		local l=rootCF:PointToObjectSpace(pos)
 		local a=authored(side)
 		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=if f.planted then 0 else -18}
 	end
-	-- The body is lowest as a foot lands and rises through the step.
+	-- The body is lowest as a foot lands and rises through the step (running:
+	-- it sinks through each stance and floats in the flight phase).
 	local swingP=feet.R.p or feet.L.p
-	local bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving
+	local bob
+	if running then bob=.03-.13*runDip
+	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
 	-- Arms answer the legs: the left arm comes forward with the right foot.
-	local armSwing=math.clamp((out.L.z-out.R.z)/2.2,-1,1)
+	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then 2.6 else 2.2),-1,1)
 	return out.R,out.L,bob,armSwing
 end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
@@ -898,9 +957,9 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
 	else
-		local arm=(if minato then 36 else 24)*math.clamp(speed/18,.3,1)
+		local arm=(if minato then 46 else 34)*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
-			torso={pitch=(if forward<-.3 then -6 else 4),yaw=-swing*10*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=0},
+			torso={pitch=(if forward<-.3 then -6 else 4)+alpha*4,yaw=-swing*15*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=swing*4*alpha},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
 		-- Readable directions: a strafe leans into the step with the shoulders
@@ -1270,7 +1329,7 @@ function Motion.present(char,actor,clock,dt)
 		Motion.defense(char,subject,dt)
 		return "defense"
 	end
-	if subject.state=="Pursuit" then
+	if subject.state=="Pursuit" or subject.state=="Rush" then
 		local targets,rate=chaseTargets(char,subject,dt)
 		apply(char,targets,rate,dt)
 		return "chase"

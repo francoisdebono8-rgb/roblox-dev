@@ -5,6 +5,8 @@ return {
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
+		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -31,6 +33,8 @@ return {
 		-- raised guard tracks a teleport instead of being crossed up.
 		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
+		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
+		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -54,6 +58,8 @@ return {
 		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		-- Awakening: Byakugan full field. No blind spot, palms drain twice as much.
+		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
 		-- narrow blind spot straight behind, and genjutsu decoys do not fool him.
 		Byakugan = { BlindSpot = 0.9 },

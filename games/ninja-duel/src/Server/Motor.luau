@@ -193,7 +193,7 @@ function Motor.step(a,c,dt,now)
  local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
- elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
+ elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0
  elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
  if a.aimIntent then
   -- Chase and slam supply their own continuous motion for this frame.

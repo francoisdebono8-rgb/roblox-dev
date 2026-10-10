@@ -53,16 +53,22 @@ function Matches:start(player,playerId,botId,training)
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
 	s.finishing=false
+	-- Tournament rounds: first to two (one in training).
+	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
 	s.finish=function(winner,_loser)
 		if s.phase~="Duel" or s.finishing then return end
 		-- The finishing blow gets a beat: the world holds, the camera eases out
-		-- and K.O. is called before the result screen.
+		-- and K.O. is called before the next round or the result screen.
 		s.finishing=true; s.winner=winner.id
+		s.wins[winner.id]=(s.wins[winner.id] or 0)+1
+		local decided=s.wins[winner.id]>=s.roundsToWin
+		s.matchPoint=decided
 		local finishEpoch=s.epoch
 		self:snapshot(player,s)
-		task.delay(1.5,function()
+		task.delay(if decided then 1.5 else 1.9,function()
 			if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
 			s.finishing=false
+			if not decided then self:nextRound(player,s);return end
 			s.phase="Result"; s.combat:clear(true)
 			for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
 			for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
@@ -77,6 +83,25 @@ function Matches:start(player,playerId,botId,training)
 	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
 	self:snapshot(player,s)
 	return true
+end
+-- Next round: same stage and bodies, fresh fighters, a short intro. A new
+-- epoch tells the client to reset its presentation like a fresh duel.
+function Matches:nextRound(player,s)
+	local c=s.combat
+	s.epoch+=1;s.round+=1;s.winner=nil;s.matchPoint=false
+	c:clear(true)
+	for _,a in {s.human,s.bot} do
+		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
+		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
+		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
+		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
+	end
+	c:relocate(s.human,s.origin+Vector3.new(0,3,14));c:relocate(s.bot,s.origin+Vector3.new(0,3,-14))
+	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
+	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
+	s.introUntil=c.now+1.8
+	s.ai=AI.new(c,s.bot,player.UserId%100000+s.epoch)
+	self:snapshot(player,s)
 end
 function Matches:snapshot(player,s)
 	local now=s.combat.now
@@ -119,6 +144,8 @@ function Matches:snapshot(player,s)
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
+			awaken=math.max(0,(a.awakenUntil or 0)-now),
+			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
 			sealed=math.max(0,(a.sealedUntil or 0)-now)}
@@ -140,7 +167,8 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
+		round=s.round or 1,wins={human=s.wins and s.wins.PlayerFighter or 0,bot=s.wins and s.wins.AIFighter or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()

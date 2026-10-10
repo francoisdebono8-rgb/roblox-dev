@@ -61,6 +61,8 @@ function Input.new(send,getState,toggleLock,camera)
  bind("FeintKey",key(KEYBOARD.Feint),function(state) if begin(state) then send("Feint") end end)
  bind("PursuitKey",key(KEYBOARD.Pursuit),function(state) if begin(state) then send("Pursuit") end end)
  bind("Technique5",both("Technique5"),function(state) if begin(state) then send("Technique5") end end)
+ bind("Awaken",both("Awaken"),function(state) if begin(state) then send("Awaken") end end)
+ bind("RushPad",key(GAMEPAD.Rush),function(state) if begin(state) then send("Pursuit") end end)
  bind("Skip",both("Skip"),function(state) if begin(state) and getState().tutorial then send("TutorialSkip") end end)
  for index,input in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(input),function(state) if begin(state) then send("Technique"..index) end end)

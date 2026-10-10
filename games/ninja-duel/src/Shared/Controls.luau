@@ -19,6 +19,7 @@ return {
 		Lock = Enum.KeyCode.LeftShift,
 		Sprint = Enum.KeyCode.LeftControl,
 		Technique5 = Enum.KeyCode.Five,
+		Awaken = Enum.KeyCode.T,
 		Skip = Enum.KeyCode.Escape,
 	},
 	Gamepad = {
@@ -33,16 +34,18 @@ return {
 		Sprint = Enum.KeyCode.ButtonL3,
 		Modifier = Enum.KeyCode.ButtonR1,
 		Technique5 = Enum.KeyCode.DPadUp,
+		Awaken = Enum.KeyCode.DPadDown,
+		Rush = Enum.KeyCode.DPadLeft,
 		Skip = Enum.KeyCode.ButtonSelect,
 	},
 	-- Human-readable key names so HUD and tutorial copy cannot drift from bindings.
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Skip = "ESC",
+		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Skip = "ESC",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump / wall rebound   Q dodge   LMB light   RMB heavy   F guard   V grab   E chase   R tool   X substitute   G feint   C wall detach   CTRL sprint   SHIFT lock   1-5 jutsu",
-	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad up = jutsu 5",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad: up jutsu 5 · left chakra dash · down awaken",
 }

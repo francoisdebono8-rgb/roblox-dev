@@ -181,7 +181,7 @@ local function updateMovement(deltaTime)
 		end
 	end
 
-	local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+	local desiredWalkSpeed = (sprinting and SPRINT_SPEED or WALK_SPEED)*(a.speedScale or 1)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero

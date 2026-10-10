@@ -16,6 +16,17 @@ return {
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	Clash = {Window = 0.07, Push = 4.5},
+	-- Chakra dash (E outside a chase window): a committed burst at the opponent.
+	Rush = {Cost = 10, Speed = 78, Range = 34, MinRange = 7, MaxTime = 0.45, Cooldown = 0.9, Arrive = 0.3},
+	-- Awakening: once per match, at low health, a fighter-specific power-up.
+	Awaken = {Threshold = 0.35, Duration = 12},
+	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
+	Flow = {Early = 0.07, Late = 0.13, Damage = 1.15, Stop = 0.035},
+	ThrowBreak = 0.35,
+	RoundsToWin = 2,
+	-- Server-side Animator playback (donor clips, default locomotion). Off: the
+	-- client motion engine animates every body.
+	DonorAnimations = false,
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
 		-- Wall combat: splat state, pins, tech window and the dive from a wall run.

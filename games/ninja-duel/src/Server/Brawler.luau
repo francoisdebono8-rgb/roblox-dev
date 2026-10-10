@@ -65,7 +65,9 @@ function Brawler.start(c,a,name)
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   slamWindow=math.clamp(gap/88,.16,.5)
  end
- a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow}
+ a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true}
+ if not a.nextFlow then a.flowStreak=0 end
+ a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
@@ -110,6 +112,18 @@ end
 function Brawler.request(c,a,action)
  local relevant=action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp"
  if not relevant then return nil end
+ -- Throw break: grab back right as you are seized and both are thrown apart.
+ if action=="Grab" and a.reaction=="Grabbed" and a.grabbedBy and c.now-(a.grabbedAt or -10)<=Config.ThrowBreak then
+  local g=a.grabbedBy
+  Brawler.releaseGrab(g);Brawler.releaseGrab(a)
+  local away=a.root.Position-g.root.Position;away=Vector3.new(away.X,0,away.Z)
+  away=if away.Magnitude>.05 then away.Unit else -a.root.CFrame.LookVector
+  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
+  a.hop={direction=away,remaining=3.5,speed=30};g.hop={direction=-away,remaining=3.5,speed=30}
+  c:pushImpact(a.root.Position:Lerp(g.root.Position,.5),"clash",true,{direction=away})
+  Brawler.event(c,a,"ThrowBreak");c:cue(a,"THROW BREAK",.7);c:cue(g,"THROW BROKEN",.7)
+  return true
+ end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
@@ -127,7 +141,12 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
- local canDash=a.state=="Dodging" and c.now>=a.untilTime-.23
+ local canDash=(a.state=="Dodging" and c.now>=a.untilTime-.23) or (a.state=="Rush" and c.now>=a.untilTime-.15)
+  or (a.state=="Neutral" and (a.rushArriveUntil or 0)>c.now)
+ -- Rhythm: a chained press made on the beat (around the moment the chain
+ -- opens, not mashed early during the swing) becomes a Flow strike.
+ local pressAt=a.pressAt or c.now;a.pressAt=nil
+ a.nextFlow=canChain and pressAt>=(a.chainAt or 0)-Config.Flow.Early and pressAt<=(a.chainAt or 0)+Config.Flow.Late
  -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
  -- so the teleport flows straight into an attack from the new angle.
  local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now
@@ -151,7 +170,7 @@ function Brawler.request(c,a,action)
     -- made a few frames early must not be eaten. It only fires if the chain
     -- opens (the swing landed cleanly); after a whiff it simply expires, so no
     -- phantom combo runs through a recovery the player must respect.
-    a.buffered={action=action,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
+    a.buffered={action=action,at=c.now,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
     return true,"Buffered"
    end
    return false,"Committed"
@@ -302,7 +321,8 @@ end
 -- the victim's chakra recovery for a few seconds (stacks up to four).
 function Brawler.gentleFist(c,a,b,guarded)
  local g=a.def.GentleFist
- b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain))
+ local boost=if (a.awakenUntil or 0)>c.now and a.def.Awakening then (a.def.Awakening.Drain or 1) else 1
+ b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain)*boost)
  if not guarded then
   local points=if (b.tenketsuUntil or 0)>c.now then (b.tenketsu or 0) else 0
   b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
@@ -339,7 +359,7 @@ function Brawler.hit(c,a,p)
  if p.name=="Grab" then
   if b.invulnerableUntil>c.now or b.grabbedBy or b.reaction=="Wakeup" then return false end
   Brawler.releaseGrab(b);b.pending=nil;b.state="Neutral";b.guardHeld=false
-  b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b
+  b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b;b.grabbedAt=c.now
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
  if p.name=="Throw" or p.name=="ThrowUp" then
@@ -348,6 +368,13 @@ function Brawler.hit(c,a,p)
  if not success or b.health<=0 then return success end
  if protected then return true end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
+ if p.flow and not guarded and b.health>0 then
+  a.flowStreak=(a.flowStreak or 0)+1
+  b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
+  c:pushImpact(b.root.Position,"flow",false,{owner=a.id,fighter=a.fighterId,count=a.flowStreak})
+  c:cue(a,if a.flowStreak>1 then "FLOW ×"..a.flowStreak else "FLOW",.6)
+  Brawler.event(c,a,"Flow")
+ end
  if guarded then
   a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)
@@ -450,7 +477,7 @@ function Brawler.step(c,a,dt)
   end
  end
 	if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then
-  local action=a.buffered.action;a.buffered=nil;Brawler.request(c,a,action)
+  local action,at=a.buffered.action,a.buffered.at;a.buffered=nil;a.pressAt=at;Brawler.request(c,a,action)
  end
  return false
 end

@@ -47,6 +47,14 @@ function AI:defend(now)
 			end
 		end
 	end
+	-- Grabbed: try to break the throw on reaction.
+	if a.reaction=="Grabbed" and a.grabbedAt and now-a.grabbedAt>.12 and self.rng:NextNumber()<.45 then
+		if c:request(a,"Grab") then return true end
+	end
+	-- Low on health: awaken (once per match).
+	if not a.awakened and a.def.Awakening and a.health<=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()<.4 then
+		if c:request(a,"Awaken") then return true end
+	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
 	if hits>0 and self.subPlan==nil then
@@ -154,6 +162,7 @@ function AI:update(now)
 		end
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()<.4 then "Heavy" else "Attack");return end
+	if a.state=="Rush" or (a.rushArriveUntil or 0)>now then c:request(a,"Attack");return end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
 	if (a.counterUntil or 0)>now and distance<8 then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
@@ -242,6 +251,10 @@ function AI:update(now)
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
+	-- Chakra dash in from mid range when the opponent is not attacking.
+	if not calm and distance>11 and distance<30 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()<.1 then
+		if c:request(a,"Pursuit") then return end
+	end
 	-- Sidestep cover when the direct route is obstructed.
 	local block=workspace:Raycast(a.root.Position,toward*6,c:rayParams(true))
 	if block then a.move=tangent; c:request(a,"Jump") end

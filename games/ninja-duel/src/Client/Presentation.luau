@@ -185,6 +185,12 @@ function Presentation:update(data,dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
+   -- The motion engine owns every joint. A Humanoid Animator (run locally for
+   -- the player's own character) resets the joints between our write and the
+   -- render, which left the body in its rest pose; remove it on this client.
+   local humanoid=model:FindFirstChildOfClass("Humanoid")
+   local animator=humanoid and humanoid:FindFirstChildOfClass("Animator")
+   if animator then animator:Destroy() end
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see
@@ -225,7 +231,8 @@ function Presentation:update(data,dt)
     if actor.channel then visual.channel=math.max(0,actor.channel-(workspace:GetServerTimeNow()-data.serverNow)) end
    end
    Motion.weapon(model,visual)
-   Motion.present(model,visual,clock,dt)
+   self.presented=self.presented or {}
+   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
   end

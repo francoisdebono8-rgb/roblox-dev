@@ -127,7 +127,9 @@ test("ground branch, real launch, 3D chase, two air hits, slam and wakeup",funct
  assert(c:request(a,"Attack"));step(c,.28);assert(b.reaction=="Juggled")
  assert(c:request(a,"Attack"));step(c,.29);assert(a.events.AirHit==2)
  assert(c:request(a,"Heavy"));step(c,.4);assert(b.reaction=="Knockdown" and a.events.SlamHit==1)
- step(c,1.1);assert(b.reaction==nil);assert(not c:request(a,"Pursuit"))
+ step(c,1.1);assert(b.reaction==nil)
+ -- Outside a chase window E is the chakra dash, never the aerial pursuit.
+ c:request(a,"Pursuit");assert(a.state~="Pursuit","pursuit without a window")
 end)
 test("horizontal finisher differs from launcher",function()
  local c,a,b=pair()
@@ -259,9 +261,11 @@ test("imported Bangla combo owns damage, contacts, effects and cleanup",function
  assert(c:request(a,"Attack"));step(c,.3)
  assert(health-b.health==5 and a.model:GetAttribute("CombatBase")=="BanglaBattlegrounds")
  assert(a.donorHitCount==1 and effectEmits>emits)
- health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(health-b.health==10)
+ -- A press on the beat is a Flow strike (Config.Flow.Damage = x1.15).
+ local function flowScale() return if a.pending and a.pending.flow then 1.15 else 1 end
+ health=b.health;assert(c:request(a,"Attack"));local f2=flowScale();step(c,.3);assert(math.abs(health-b.health-10*f2)<.01,"second hit "..(health-b.health))
  -- The third hit (MegaPunch 18) is scaled by Config.ComboScaling: 18 * 0.88.
- health=b.health;assert(c:request(a,"Attack"));step(c,.3);assert(math.abs(health-b.health-15.84)<.01,"third hit not scaled: "..(health-b.health))
+ health=b.health;assert(c:request(a,"Attack"));local f3=flowScale();step(c,.3);assert(math.abs(health-b.health-15.84*f3)<.01,"third hit not scaled: "..(health-b.health))
  assert(a.combo==3 and not a.chainOpen)
  step(c,.5);assert(c:request(a,"Attack") and a.combo==1)
  c:clear();assert(a.combo==0 and not a.pending and a.donorHitCount==0)

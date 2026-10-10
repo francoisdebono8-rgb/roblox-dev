@@ -17,6 +17,10 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
+	if eye and (victim.awakenUntil or 0)>c.now and victim.def.Awakening and victim.def.Awakening.Windows then
+		local k=victim.def.Awakening.Windows
+		eye={ParryWindow=eye.ParryWindow*k,PerfectDodge=eye.PerfectDodge*k,Counter=eye.Counter}
+	end
 	if victim.invulnerableUntil>c.now then
 		local clean=c.now-victim.dodgeStartedAt<=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
 		if clean then

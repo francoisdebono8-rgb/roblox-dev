@@ -162,6 +162,17 @@ return {
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	Clash = {Window = 0.07, Push = 4.5},
+	-- Chakra dash (E outside a chase window): a committed burst at the opponent.
+	Rush = {Cost = 10, Speed = 78, Range = 34, MinRange = 7, MaxTime = 0.45, Cooldown = 0.9, Arrive = 0.3},
+	-- Awakening: once per match, at low health, a fighter-specific power-up.
+	Awaken = {Threshold = 0.35, Duration = 12},
+	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
+	Flow = {Early = 0.07, Late = 0.13, Damage = 1.15, Stop = 0.035},
+	ThrowBreak = 0.35,
+	RoundsToWin = 2,
+	-- Server-side Animator playback (donor clips, default locomotion). Off: the
+	-- client motion engine animates every body.
+	DonorAnimations = false,
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
 		-- Wall combat: splat state, pins, tech window and the dive from a wall run.
@@ -202,6 +213,7 @@ return {
 		Lock = Enum.KeyCode.LeftShift,
 		Sprint = Enum.KeyCode.LeftControl,
 		Technique5 = Enum.KeyCode.Five,
+		Awaken = Enum.KeyCode.T,
 		Skip = Enum.KeyCode.Escape,
 	},
 	Gamepad = {
@@ -216,18 +228,20 @@ return {
 		Sprint = Enum.KeyCode.ButtonL3,
 		Modifier = Enum.KeyCode.ButtonR1,
 		Technique5 = Enum.KeyCode.DPadUp,
+		Awaken = Enum.KeyCode.DPadDown,
+		Rush = Enum.KeyCode.DPadLeft,
 		Skip = Enum.KeyCode.ButtonSelect,
 	},
 	-- Human-readable key names so HUD and tutorial copy cannot drift from bindings.
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Skip = "ESC",
+		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Skip = "ESC",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump / wall rebound   Q dodge   LMB light   RMB heavy   F guard   V grab   E chase   R tool   X substitute   G feint   C wall detach   CTRL sprint   SHIFT lock   1-5 jutsu",
-	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad up = jutsu 5",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad: up jutsu 5 · left chakra dash · down awaken",
 }
 </ProtectedString>
         </Properties>
@@ -242,6 +256,8 @@ return {
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
+		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -268,6 +284,8 @@ return {
 		-- raised guard tracks a teleport instead of being crossed up.
 		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
+		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
+		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -291,6 +309,8 @@ return {
 		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		-- Awakening: Byakugan full field. No blind spot, palms drain twice as much.
+		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
 		-- narrow blind spot straight behind, and genjutsu decoys do not fool him.
 		Byakugan = { BlindSpot = 0.9 },
@@ -1412,7 +1432,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">13a5089c4392dd1c334d961679132817da9bd7b07ccc9d845ad305a49d9c946a</string>
+          <string name="Value">b1a1d75d9fddb9c1bffe27a9198d29f53815c5205d5be689fc3c1697dbacb63f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1563,6 +1583,14 @@ function AI:defend(now)
 			end
 		end
 	end
+	-- Grabbed: try to break the throw on reaction.
+	if a.reaction=="Grabbed" and a.grabbedAt and now-a.grabbedAt&gt;.12 and self.rng:NextNumber()&lt;.45 then
+		if c:request(a,"Grab") then return true end
+	end
+	-- Low on health: awaken (once per match).
+	if not a.awakened and a.def.Awakening and a.health&lt;=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()&lt;.4 then
+		if c:request(a,"Awaken") then return true end
+	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
 	if hits&gt;0 and self.subPlan==nil then
@@ -1670,6 +1698,7 @@ function AI:update(now)
 		end
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()&lt;.4 then "Heavy" else "Attack");return end
+	if a.state=="Rush" or (a.rushArriveUntil or 0)&gt;now then c:request(a,"Attack");return end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
 	if (a.counterUntil or 0)&gt;now and distance&lt;8 then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
@@ -1758,6 +1787,10 @@ function AI:update(now)
 		c:request(a,if a.grabVictim then "Attack" elseif distance&lt;5 and self.rng:NextNumber()&lt;.12 then "Grab" elseif self.rng:NextNumber()&lt;.16 then "Heavy" else "Attack")
 	end
 	if distance&gt;6 and distance&lt;17 and self.rng:NextNumber()&lt;0.1 then c:request(a,"Jump") end
+	-- Chakra dash in from mid range when the opponent is not attacking.
+	if not calm and distance&gt;11 and distance&lt;30 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()&lt;.1 then
+		if c:request(a,"Pursuit") then return end
+	end
 	-- Sidestep cover when the direct route is obstructed.
 	local block=workspace:Raycast(a.root.Position,toward*6,c:rayParams(true))
 	if block then a.move=tangent; c:request(a,"Jump") end
@@ -1926,7 +1959,9 @@ function Bangla.tryHit(c,a,p)
    local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
    local damage=if Combo.Actions[p.name] then Combo.Damage[donor.action] else p.spec.damage
    c.damageTag=if p.rasengan then "Rasengan" else p.name
-   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1),false,true)
+   -- A Flow strike (chained on the beat) lands a little harder.
+   local flow=if p.flow then require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Flow.Damage else 1
+   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow,false,true)
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
@@ -2058,7 +2093,9 @@ function Brawler.start(c,a,name)
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   slamWindow=math.clamp(gap/88,.16,.5)
  end
- a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow}
+ a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true}
+ if not a.nextFlow then a.flowStreak=0 end
+ a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
@@ -2103,6 +2140,18 @@ end
 function Brawler.request(c,a,action)
  local relevant=action=="Attack" or action=="Heavy" or action=="Grab" or action=="ThrowUp"
  if not relevant then return nil end
+ -- Throw break: grab back right as you are seized and both are thrown apart.
+ if action=="Grab" and a.reaction=="Grabbed" and a.grabbedBy and c.now-(a.grabbedAt or -10)&lt;=Config.ThrowBreak then
+  local g=a.grabbedBy
+  Brawler.releaseGrab(g);Brawler.releaseGrab(a)
+  local away=a.root.Position-g.root.Position;away=Vector3.new(away.X,0,away.Z)
+  away=if away.Magnitude&gt;.05 then away.Unit else -a.root.CFrame.LookVector
+  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
+  a.hop={direction=away,remaining=3.5,speed=30};g.hop={direction=-away,remaining=3.5,speed=30}
+  c:pushImpact(a.root.Position:Lerp(g.root.Position,.5),"clash",true,{direction=away})
+  Brawler.event(c,a,"ThrowBreak");c:cue(a,"THROW BREAK",.7);c:cue(g,"THROW BROKEN",.7)
+  return true
+ end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
@@ -2120,7 +2169,12 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now&gt;=(a.chainAt or 0)
- local canDash=a.state=="Dodging" and c.now&gt;=a.untilTime-.23
+ local canDash=(a.state=="Dodging" and c.now&gt;=a.untilTime-.23) or (a.state=="Rush" and c.now&gt;=a.untilTime-.15)
+  or (a.state=="Neutral" and (a.rushArriveUntil or 0)&gt;c.now)
+ -- Rhythm: a chained press made on the beat (around the moment the chain
+ -- opens, not mashed early during the swing) becomes a Flow strike.
+ local pressAt=a.pressAt or c.now;a.pressAt=nil
+ a.nextFlow=canChain and pressAt&gt;=(a.chainAt or 0)-Config.Flow.Early and pressAt&lt;=(a.chainAt or 0)+Config.Flow.Late
  -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
  -- so the teleport flows straight into an attack from the new angle.
  local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)&gt;c.now
@@ -2144,7 +2198,7 @@ function Brawler.request(c,a,action)
     -- made a few frames early must not be eaten. It only fires if the chain
     -- opens (the swing landed cleanly); after a whiff it simply expires, so no
     -- phantom combo runs through a recovery the player must respect.
-    a.buffered={action=action,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
+    a.buffered={action=action,at=c.now,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
     return true,"Buffered"
    end
    return false,"Committed"
@@ -2295,7 +2349,8 @@ end
 -- the victim's chakra recovery for a few seconds (stacks up to four).
 function Brawler.gentleFist(c,a,b,guarded)
  local g=a.def.GentleFist
- b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain))
+ local boost=if (a.awakenUntil or 0)&gt;c.now and a.def.Awakening then (a.def.Awakening.Drain or 1) else 1
+ b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain)*boost)
  if not guarded then
   local points=if (b.tenketsuUntil or 0)&gt;c.now then (b.tenketsu or 0) else 0
   b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
@@ -2332,7 +2387,7 @@ function Brawler.hit(c,a,p)
  if p.name=="Grab" then
   if b.invulnerableUntil&gt;c.now or b.grabbedBy or b.reaction=="Wakeup" then return false end
   Brawler.releaseGrab(b);b.pending=nil;b.state="Neutral";b.guardHeld=false
-  b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b
+  b.lastHurt=c.now; b.reaction="Grabbed";b.reactionUntil=c.now+.8;b.grabbedBy=a;a.grabVictim=b;b.grabbedAt=c.now
   a.grabUntil=c.now+.8;Brawler.event(c,a,"GrabHit");return true
  end
  if p.name=="Throw" or p.name=="ThrowUp" then
@@ -2341,6 +2396,13 @@ function Brawler.hit(c,a,p)
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
+ if p.flow and not guarded and b.health&gt;0 then
+  a.flowStreak=(a.flowStreak or 0)+1
+  b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
+  c:pushImpact(b.root.Position,"flow",false,{owner=a.id,fighter=a.fighterId,count=a.flowStreak})
+  c:cue(a,if a.flowStreak&gt;1 then "FLOW ×"..a.flowStreak else "FLOW",.6)
+  Brawler.event(c,a,"Flow")
+ end
  if guarded then
   a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)
@@ -2443,7 +2505,7 @@ function Brawler.step(c,a,dt)
   end
  end
 	if a.buffered and c.now&lt;=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now&gt;=a.chainAt then
-  local action=a.buffered.action;a.buffered=nil;Brawler.request(c,a,action)
+  local action,at=a.buffered.action,a.buffered.at;a.buffered=nil;a.pressAt=at;Brawler.request(c,a,action)
  end
  return false
 end
@@ -2496,7 +2558,10 @@ function Combat:add(id,model,hum,root,joints,definition)
 		comboHits=0,comboDamage=0,anchors={} }
 	table.insert(self.actors,a)
 	Defense.init(a)
-	Animation.attach(a)
+	-- The client motion engine owns every pose. Server Animator tracks (Roblox
+	-- default walk/run/idle, donor punches) replicate to clients and overwrote
+	-- that motion, so they only play when explicitly enabled.
+	if Config.DonorAnimations then Animation.attach(a) end
 	return a
 end
 -- The tournament stage is round: positions are held inside a circle so no
@@ -2605,7 +2670,10 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
 	-- Byakugan: the guard covers every side but a narrow blind spot behind.
-	if victim.def.Byakugan and delta.Magnitude&gt;=0.1 then frontal=victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;-victim.def.Byakugan.BlindSpot end
+	if victim.def.Byakugan and delta.Magnitude&gt;=0.1 then
+		local full=(victim.awakenUntil or 0)&gt;self.now and victim.def.Awakening and victim.def.Awakening.NoBlindSpot
+		frontal=full or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;-victim.def.Byakugan.BlindSpot
+	end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
 	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt&lt;.7 then
 		frontal=true
@@ -2644,6 +2712,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
+	if (attacker.awakenUntil or 0)&gt;self.now then amount*=attacker.def.Awakening.Damage or 1 end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
 	-- is worth less. Long routes stay possible; they just stop being lethal.
 	if not guarded then
@@ -2653,7 +2722,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
 	victim.lastHurt=self.now
-	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
+	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount&gt;=12
@@ -2835,6 +2904,60 @@ function Combat:substitute(a)
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
+-- Chakra dash. A committed straight burst at the opponent from neutral (or
+-- out of a recovery's cancel point). It is not armoured: a blade, a guard or a
+-- read answers it. A strike on arrival becomes the dash attack.
+function Combat:rush(a)
+	local tune=Config.Rush
+	local cancel=a.state=="Recovery" and self.now&gt;=(a.recoveryCancelAt or math.huge)
+	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
+	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
+	if a.chakra&lt;tune.Cost then return false,"Need chakra" end
+	if self.now&lt;(a.rushReadyAt or 0) then return false,"Cooldown" end
+	local gap=(a.target.root.Position-a.root.Position).Magnitude
+	if gap&lt;tune.MinRange then return false,"Too close" end
+	if gap&gt;tune.Range then return false,"Too far" end
+	if cancel then Bangla.close(a.pending) end
+	a.chakra-=tune.Cost;a.rushReadyAt=self.now+tune.Cooldown
+	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
+	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
+	self:setState(a,"Rush",duration)
+	a.rushArriveUntil=self.now+duration+tune.Arrive
+	Brawler.event(self,a,"Rush")
+	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
+	return true
+end
+-- Awakening: once per match, below a third of health. A shockwave buys space,
+-- chakra comes back, and each prodigy's own strength is pushed for a while.
+function Combat:awaken(a)
+	local tune=a.def.Awakening
+	if not tune or a.awakened then return false,"No awakening" end
+	if a.health&gt;a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
+	if not Brawler.free(a,self.now) then return false,"Reacting" end
+	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration
+	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
+	a.cooldowns={}
+	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
+	a.pending=nil;a.guardHeld=false;self:setState(a,"Recovery",.3)
+	local b=a.target
+	if b and b.health&gt;0 then
+		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude&lt;9 and away.Magnitude&gt;.05 then Brawler.react(self,b,"Knockback",away.Unit*34+Vector3.new(0,12,0),.45,a) end
+	end
+	a.hitstopUntil=self.now+.12
+	self:pushImpact(a.root.Position,"awaken",true,{owner=a.id,fighter=a.fighterId})
+	self:cue(a,"AWAKENING • "..tune.Name,1.4)
+	if b then self:cue(b,"OPPONENT AWAKENED",1) end
+	Brawler.event(self,a,"Awaken")
+	return true
+end
+-- Awakened techniques recover faster (and Itachi's cost less).
+function Combat:awakenTechnique(a,spec)
+	if (a.awakenUntil or 0)&lt;=self.now then return end
+	local tune=a.def.Awakening
+	a.cooldowns[spec.Id]=self.now+spec.Cooldown*(tune.Cooldown or 1)
+	if tune.CostScale then a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+spec.Cost*(1-tune.CostScale)) end
+end
 function Combat:wallTech(a)
 	local tune=Config.Wall
 	local elapsed=self.now-(a.splatAt or -10)
@@ -2886,6 +3009,7 @@ function Combat:request(a,action,aim,clientTime)
 	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
+	if action=="Awaken" then return self:awaken(a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted&lt;=pending.spec.startup*.62 then
@@ -2918,7 +3042,8 @@ function Combat:request(a,action,aim,clientTime)
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
 	if action=="Pursuit" then
-		if a.pursuitUntil&lt;=self.now or a.target.health&lt;=0 then return false,"No pursuit" end
+		-- Outside a chase window, E is the chakra dash.
+		if a.pursuitUntil&lt;=self.now or a.target.health&lt;=0 then return self:rush(a) end
 		if a.chakra&lt;Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude&gt;Config.PursuitRange then return false,"Too far" end
 		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
@@ -3026,6 +3151,7 @@ function Combat:request(a,action,aim,clientTime)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		self:awakenTechnique(a,spec)
 		a.castId=spec.Id;a.castStarted=self.now
 		local pending={kind="Technique",spec=spec,implementation=technique,aim=aim}
 		self:beginThrow(a,{kind=spec.Throw or "MarkedKunai",release=spec.Channel,count=1,aim=aim,fire=function(_,target)
@@ -3037,6 +3163,7 @@ function Combat:request(a,action,aim,clientTime)
 		return true
 	end
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
+	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
@@ -3068,9 +3195,11 @@ function Combat:updateActor(a,dt)
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
 		if (a.tenketsuUntil or 0)&gt;now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		if (a.awakenUntil or 0)&gt;now then regen*=a.def.Awakening.Regen or 1 end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)&gt;now then self:stepRotation(a) end
+	a.speedScale=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)&gt;now or (a.flurryUntil or 0)&gt;now then a.move=Vector3.zero end
 	if now&lt;(a.hitstopUntil or 0) then
@@ -3160,6 +3289,13 @@ function Combat:updateActor(a,dt)
 			if distance&lt;7 then speed=math.min(speed,40+distance*distance*2.4) end
 			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
 		end
+	elseif a.state=="Rush" then
+		-- Chakra dash: a straight burst at the opponent that stops a step short.
+		local delta=a.target.root.Position-a.root.Position
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if flat.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		if flat.Magnitude&gt;3.2 then a.aimIntent={target=a.root.Position+flat-flat.Unit*2.8,speed=Config.Rush.Speed,acceleration=1100}
+		else a.untilTime=math.min(a.untilTime,now) end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
 		-- straight lunge at the opponent's body.
@@ -3457,8 +3593,8 @@ function Combat:separate()
 	local delta=b.root.Position-a.root.Position
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
-	if gap&gt;=2.4 or math.abs(delta.Y)&gt;4 then return end
-	local push=(2.4-gap)*.5
+	if gap&gt;=3 or math.abs(delta.Y)&gt;4 then return end
+	local push=math.min(3-gap,.35)*.5
 	local dir=if gap&gt;.05 then flat.Unit else a.root.CFrame.RightVector
 	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
 end
@@ -3491,6 +3627,7 @@ function Combat:clear(preserveAnimations)
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
+		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
@@ -3812,16 +3949,22 @@ function Matches:start(player,playerId,botId,training)
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
 	s.finishing=false
+	-- Tournament rounds: first to two (one in training).
+	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
 	s.finish=function(winner,_loser)
 		if s.phase~="Duel" or s.finishing then return end
 		-- The finishing blow gets a beat: the world holds, the camera eases out
-		-- and K.O. is called before the result screen.
+		-- and K.O. is called before the next round or the result screen.
 		s.finishing=true; s.winner=winner.id
+		s.wins[winner.id]=(s.wins[winner.id] or 0)+1
+		local decided=s.wins[winner.id]&gt;=s.roundsToWin
+		s.matchPoint=decided
 		local finishEpoch=s.epoch
 		self:snapshot(player,s)
-		task.delay(1.5,function()
+		task.delay(if decided then 1.5 else 1.9,function()
 			if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
 			s.finishing=false
+			if not decided then self:nextRound(player,s);return end
 			s.phase="Result"; s.combat:clear(true)
 			for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
 			for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
@@ -3836,6 +3979,25 @@ function Matches:start(player,playerId,botId,training)
 	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
 	self:snapshot(player,s)
 	return true
+end
+-- Next round: same stage and bodies, fresh fighters, a short intro. A new
+-- epoch tells the client to reset its presentation like a fresh duel.
+function Matches:nextRound(player,s)
+	local c=s.combat
+	s.epoch+=1;s.round+=1;s.winner=nil;s.matchPoint=false
+	c:clear(true)
+	for _,a in {s.human,s.bot} do
+		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
+		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
+		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
+		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
+	end
+	c:relocate(s.human,s.origin+Vector3.new(0,3,14));c:relocate(s.bot,s.origin+Vector3.new(0,3,-14))
+	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
+	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
+	s.introUntil=c.now+1.8
+	s.ai=AI.new(c,s.bot,player.UserId%100000+s.epoch)
+	self:snapshot(player,s)
 end
 function Matches:snapshot(player,s)
 	local now=s.combat.now
@@ -3878,6 +4040,8 @@ function Matches:snapshot(player,s)
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
+			awaken=math.max(0,(a.awakenUntil or 0)-now),
+			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
 			sealed=math.max(0,(a.sealedUntil or 0)-now)}
@@ -3899,7 +4063,8 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial&gt;sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
+		round=s.round or 1,wins={human=s.wins and s.wins.PlayerFighter or 0,bot=s.wins and s.wins.AIFighter or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -4170,7 +4335,7 @@ function Motor.step(a,c,dt,now)
  local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
- elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
+ elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0
  elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
  if a.aimIntent then
   -- Chase and slam supply their own continuous motion for this frame.
@@ -4380,7 +4545,7 @@ local function updateMovement(deltaTime)
 		end
 	end
 
-	local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+	local desiredWalkSpeed = (sprinting and SPRINT_SPEED or WALK_SPEED)*(a.speedScale or 1)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
@@ -5465,6 +5630,10 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
+	if eye and (victim.awakenUntil or 0)&gt;c.now and victim.def.Awakening and victim.def.Awakening.Windows then
+		local k=victim.def.Awakening.Windows
+		eye={ParryWindow=eye.ParryWindow*k,PerfectDodge=eye.PerfectDodge*k,Counter=eye.Counter}
+	end
 	if victim.invulnerableUntil&gt;c.now then
 		local clean=c.now-victim.dodgeStartedAt&lt;=(if eye then eye.PerfectDodge else Tune.BloodstepWindow) and victim.bloodstepGrantedFor~=victim.dodgeStartedAt
 		if clean then
@@ -6205,7 +6374,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -6908,6 +7077,19 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.4,1.3)
 	elseif style=="pin" then
 		sparks(self.folder,position,Color3.fromRGB(255,236,200),8,16)
+	elseif style=="flow" then
+		-- On the beat: a crisp white-blue ring at the contact, nothing heavy.
+		local count=impact.count or 1
+		flash(self.folder,position,Color3.fromRGB(220,236,255),.6,3+math.min(count,4),.12,.15)
+		shockRing(self.folder,position,Color3.fromRGB(200,226,255),1,6+math.min(count,4)*1.5,.18)
+	elseif style=="awaken" then
+		local model=modelFor(folder,impact.owner)
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		if model then self:ghost(model,tone,.35,.4) end
+		flash(self.folder,position,tone,2,14,.35,.2)
+		shockRing(self.folder,position-Vector3.new(0,2.6,0),tone,3,24,.45)
+		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(214,206,190),20,2.6)
+		self:cheer(1)
 	elseif style=="palmburst" then
 		local along=impact.direction or Vector3.zAxis
 		shockRing(self.folder,position,Color3.fromRGB(220,232,255),2,12,.24,along)
@@ -7204,7 +7386,7 @@ function FX:fighter(model,actor,dt)
 	end
 	self:wear(model,actor,aura)
 	local speed=actor.speed or 0
-	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed&gt;34)
+	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.state=="Rush" or (actor.awaken or 0)&gt;0 or actor.flash or (actor.fighterId=="Flashstep" and speed&gt;34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)&gt;0
 	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
 	-- counters, or during the intro.
@@ -7216,6 +7398,22 @@ function FX:fighter(model,actor,dt)
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
+	end
+	-- Awakening: a chakra mantle that rises off the body for the whole state.
+	local awake=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
+	if awake and not aura.mantle then
+		local torso=model:FindFirstChild("UpperTorso") or root
+		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local at=new("Attachment",{Name="AwakenMantle"},torso)
+		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=55,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(30,30),
+			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(tone),LightEmission=1,LightInfluence=0,
+			Size=num({{0,1.6},{.5,1.2},{1,0}}),Transparency=num({{0,.45},{1,1}}),Acceleration=Vector3.new(0,6,0)},at)
+		local light=new("PointLight",{Color=tone,Brightness=2.5,Range=12,Shadows=false},at)
+		aura.mantle={attachment=at,emitter=e,light=light}
+	elseif not awake and aura.mantle then
+		aura.mantle.emitter.Enabled=false
+		Debris:AddItem(aura.mantle.attachment,1)
+		aura.mantle=nil
 	end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
@@ -7447,6 +7645,8 @@ function Input.new(send,getState,toggleLock,camera)
  bind("FeintKey",key(KEYBOARD.Feint),function(state) if begin(state) then send("Feint") end end)
  bind("PursuitKey",key(KEYBOARD.Pursuit),function(state) if begin(state) then send("Pursuit") end end)
  bind("Technique5",both("Technique5"),function(state) if begin(state) then send("Technique5") end end)
+ bind("Awaken",both("Awaken"),function(state) if begin(state) then send("Awaken") end end)
+ bind("RushPad",key(GAMEPAD.Rush),function(state) if begin(state) then send("Pursuit") end end)
  bind("Skip",both("Skip"),function(state) if begin(state) and getState().tutorial then send("TutorialSkip") end end)
  for index,input in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
   bind("Technique"..index,key(input),function(state) if begin(state) then send("Technique"..index) end end)
@@ -7592,7 +7792,7 @@ if RunService:IsStudio() then
 						end
 					end
 				end
-				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
+				log:FireServer("info",{presented=presentation.presented,camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
 			end
 		end)
 	end)
@@ -7792,6 +7992,12 @@ function Presentation:update(data,dt)
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
+   -- The motion engine owns every joint. A Humanoid Animator (run locally for
+   -- the player's own character) resets the joints between our write and the
+   -- render, which left the body in its rest pose; remove it on this client.
+   local humanoid=model:FindFirstChildOfClass("Humanoid")
+   local animator=humanoid and humanoid:FindFirstChildOfClass("Animator")
+   if animator then animator:Destroy() end
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see
@@ -7832,7 +8038,8 @@ function Presentation:update(data,dt)
     if actor.channel then visual.channel=math.max(0,actor.channel-(workspace:GetServerTimeNow()-data.serverNow)) end
    end
    Motion.weapon(model,visual)
-   Motion.present(model,visual,clock,dt)
+   self.presented=self.presented or {}
+   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
   end
@@ -7988,7 +8195,13 @@ function UI.new(parent,send)
 		end
 		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 314,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
+		-- Round wins: small medallions under the plate.
+		local medals={}
+		for k=1,2 do
+			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
+			corner(m,7);table.insert(medals,m)
+		end
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -8114,7 +8327,7 @@ function UI:render(data)
 		self.introLeftName.Text=fullName(h);self.introLeftTitle.Text=subtitle(h)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
-		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND 1"
+		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND "..(data.round or 1)..(if (data.round or 1)&gt;1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
 		self.introBegin.Text=if data.intro&lt;.75 then "始め!  BEGIN" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
@@ -8129,6 +8342,7 @@ function UI:render(data)
 		Tween:Create(self.ko,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=120}):Play()
 	end
 	self.ko.Visible=data.ko==true
+	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
@@ -8142,6 +8356,11 @@ function UI:render(data)
 		-- Gentle Fist effects on this fighter.
 		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
 		elseif (actor.tenketsu or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
+		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
+		for k,m in widget.medals do
+			m.Visible=(data.roundsToWin or 1)&gt;1 and k&lt;=(data.roundsToWin or 1)
+			m.BackgroundColor3=if k&lt;=won then palette.gold else palette.track
+		end
 		local charges=actor.subCharges or 0
 		for k,pip in widget.pips do
 			local level=if k&lt;=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)&gt;0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
@@ -8174,6 +8393,7 @@ function UI:render(data)
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
+		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -8196,11 +8416,13 @@ function UI:render(data)
 	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
 		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)&gt;0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
+		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
 		elseif h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
-	self.resultTitle.Text=if won then "VICTORY" else "DEFEAT"
+	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
 	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
@@ -8253,6 +8475,8 @@ local look={
  pin     ={shards=3, range=5,  color=Color3.fromRGB(220,224,232),pitch=1.5, volume=.22,hit=Color3.fromRGB(236,240,246)},
  ember   ={shards=4, range=7,  color=Color3.fromRGB(255,170,90),pitch=1.1, volume=.26,hit=Color3.fromRGB(255,214,170)},
  palm    ={shards=3, range=6,  color=Color3.fromRGB(196,212,255),pitch=1.3, volume=.26,hit=Color3.fromRGB(226,234,255)},
+ flow    ={shards=4, range=7,  color=Color3.fromRGB(214,232,255),pitch=1.45,volume=.3, hit=Color3.fromRGB(236,244,255)},
+ awaken  ={shards=8, range=14, color=Color3.fromRGB(255,236,190),pitch=0.7, volume=.5, hit=Color3.fromRGB(255,244,220)},
  palmburst={shards=6,range=10, color=Color3.fromRGB(214,226,255),pitch=0.9, volume=.38,hit=Color3.fromRGB(232,238,255)},
  deflect ={shards=4, range=6,  color=Color3.fromRGB(226,236,255),pitch=1.5, volume=.22,hit=Color3.fromRGB(240,244,255)},
  repel   ={shards=7, range=11, color=Color3.fromRGB(200,216,255),pitch=0.84,volume=.44,hit=Color3.fromRGB(228,236,255)},
@@ -8417,7 +8641,7 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=16,air=14,ground=12,wall=16,chase=18}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22}
 local MAX_SPEED=1750
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
@@ -9142,7 +9366,7 @@ end
 -- (one foot at a time, the other holds the ground). Walking, strafing,
 -- stopping and turning on the spot all come out of the same rule, so feet
 -- never skate and the steps always match the real displacement.
-local STEP_REACH,STEP_LEAD=1.3,1.05
+local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -9178,10 +9402,13 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		if not feet[key] then feet[key]={world=rests[key],planted=true} end
 	end
 	for key,f in feet do
-		if not f.planted then
+		if not f.planted and f.runStance==nil and f.t then
 			f.t+=dt
 			f.p=math.min(1,f.t/f.dur)
 			if f.p&gt;=1 then f.planted=true;f.world=rests[key];f.p=nil end
+		elseif not f.planted and f.runStance==nil then
+			-- Left a run mid-flight: finish the step onto the rest spot.
+			f.t=0;f.dur=.12;f.from=f.from or f.world
 		end
 		-- The ground under a planted foot is the floor the body stands on.
 		if f.planted then f.world=Vector3.new(f.world.X,groundY,f.world.Z) end
@@ -9191,6 +9418,7 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		return Vector3.new(w.X-r.X,0,w.Z-r.Z).Magnitude
 	end
 	local order=if drift("L")&gt;drift("R") then {"L","R"} else {"R","L"}
+	if not mode and speed&gt;=RUN_SPEED then order={} end
 	for _,key in order do
 		local f=feet[key];local other=feet[if key=="R" then "L" else "R"]
 		local e=drift(key)
@@ -9201,23 +9429,78 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 		end
 	end
 	local lift=math.clamp(.22+speed*.012,.22,.75)
+	-- Running (not walking, turning or attacking): a real stride with a flight
+	-- phase. A phase clock sets a natural cadence; each foot holds the ground
+	-- for exactly stanceLen/speed (so it never skates while planted), then
+	-- flies forward to land ahead of the hip. Steps get long instead of the
+	-- legs pattering, and the arms and chest have time to move.
+	local running=not mode and speed&gt;=RUN_SPEED
+	local runDip=0
+	if running then
+		local cadence=math.clamp(speed/7.2,1.7,3.1)
+		local stanceLen=math.clamp(.9+speed*.028,1,1.9)
+		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
+		if not s.runPhase then
+			-- Enter the cycle with the foot that is already ahead in stance.
+			local rz=rootCF:PointToObjectSpace(feet.R.world).Z
+			s.runPhase=if rz&lt;0 then 0 else .5
+		end
+		s.runPhase=(s.runPhase+dt*cadence)%1
+		local dirUnit=if speed&gt;.01 then velocity.Unit else look.Unit
+		for key,f in feet do
+			local side=if key=="R" then 1 else -1
+			local q=(s.runPhase+(if key=="R" then 0 else .5))%1
+			local hip=flat:PointToWorldSpace(Vector3.new(.45*side,0,0))
+			if q&lt;duty then
+				-- Stance: planted on its landing spot, locked in the world.
+				if not f.runStance then
+					local land=hip+dirUnit*stanceLen*.5
+					f.world=Vector3.new(land.X,groundY,land.Z);f.planted=true;f.p=nil
+				end
+				f.runStance=true
+				runDip=math.max(runDip,math.sin(math.pi*q/duty))
+			else
+				-- Flight / swing: the foot is carried with the hips, from where it
+				-- pushed off (behind) to its landing spot (ahead of the hip).
+				if f.runStance~=false then
+					local back=f.world-hip
+					f.fromRel=Vector3.new(back.X,0,back.Z);f.planted=false
+				end
+				f.runStance=false
+				local u=(q-duty)/(1-duty)
+				f.p=u
+				f.runRel=f.fromRel:Lerp(dirUnit*stanceLen*.5,smooth(u))
+				f.hipNow=Vector3.new(hip.X,groundY,hip.Z)
+			end
+		end
+	else
+		s.runPhase=nil
+		for _,f in feet do
+			if f.runStance==false and f.runRel then f.world=f.hipNow+f.runRel;f.from=f.world end
+			f.runStance=nil;f.runRel=nil
+		end
+	end
 	local out={}
 	for key,f in feet do
 		local pos=f.world
 		if not f.planted then
 			local p=f.p or 0
-			pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+			if f.runRel and f.runStance==false then pos=f.hipNow+f.runRel+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+			else pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0) end
 		end
 		local side=if key=="R" then 1 else -1
 		local l=rootCF:PointToObjectSpace(pos)
 		local a=authored(side)
 		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=if f.planted then 0 else -18}
 	end
-	-- The body is lowest as a foot lands and rises through the step.
+	-- The body is lowest as a foot lands and rises through the step (running:
+	-- it sinks through each stance and floats in the flight phase).
 	local swingP=feet.R.p or feet.L.p
-	local bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving
+	local bob
+	if running then bob=.03-.13*runDip
+	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
 	-- Arms answer the legs: the left arm comes forward with the right foot.
-	local armSwing=math.clamp((out.L.z-out.R.z)/2.2,-1,1)
+	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then 2.6 else 2.2),-1,1)
 	return out.R,out.L,bob,armSwing
 end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
@@ -9250,9 +9533,9 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
 	else
-		local arm=(if minato then 36 else 24)*math.clamp(speed/18,.3,1)
+		local arm=(if minato then 46 else 34)*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 8 else 5)},
-			torso={pitch=(if forward&lt;-.3 then -6 else 4),yaw=-swing*10*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=0},
+			torso={pitch=(if forward&lt;-.3 then -6 else 4)+alpha*4,yaw=-swing*15*alpha,roll=-side*5},head={pitch=-lean*.4,yaw=swing*4*alpha},
 			ra={raise=12-swing*arm,out=12,twist=10,elbow=40+alpha*40},la={raise=12+swing*arm,out=12,twist=10,elbow=40+alpha*40}}
 		if not minato then spec.la.raise+=12;spec.la.elbow+=10 end
 		-- Readable directions: a strafe leans into the step with the shoulders
@@ -9622,7 +9905,7 @@ function Motion.present(char,actor,clock,dt)
 		Motion.defense(char,subject,dt)
 		return "defense"
 	end
-	if subject.state=="Pursuit" then
+	if subject.state=="Pursuit" or subject.state=="Rush" then
 		local targets,rate=chaseTargets(char,subject,dt)
 		apply(char,targets,rate,dt)
 		return "chase"

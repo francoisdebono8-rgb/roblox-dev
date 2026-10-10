@@ -140,7 +140,13 @@ function UI.new(parent,send)
 		end
 		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 314,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel}
+		-- Round wins: small medallions under the plate.
+		local medals={}
+		for k=1,2 do
+			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
+			corner(m,7);table.insert(medals,m)
+		end
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -266,7 +272,7 @@ function UI:render(data)
 		self.introLeftName.Text=fullName(h);self.introLeftTitle.Text=subtitle(h)
 		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
 		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
-		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND 1"
+		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND "..(data.round or 1)..(if (data.round or 1)>1 and (data.wins and (data.wins.human==1 and data.wins.bot==1)) then "  •  FINAL ROUND" else "")
 		self.introBegin.Text=if data.intro<.75 then "始め!  BEGIN" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
@@ -281,6 +287,7 @@ function UI:render(data)
 		Tween:Create(self.ko,TweenInfo.new(.35,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{TextSize=120}):Play()
 	end
 	self.ko.Visible=data.ko==true
+	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
@@ -294,6 +301,11 @@ function UI:render(data)
 		-- Gentle Fist effects on this fighter.
 		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
 		elseif (actor.tenketsu or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
+		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
+		for k,m in widget.medals do
+			m.Visible=(data.roundsToWin or 1)>1 and k<=(data.roundsToWin or 1)
+			m.BackgroundColor3=if k<=won then palette.gold else palette.track
+		end
 		local charges=actor.subCharges or 0
 		for k,pip in widget.pips do
 			local level=if k<=charges then 1 elseif k==charges+1 and (actor.subRegen or 0)>0 then 1-math.clamp((actor.subRegen or 0)/9,0,1) else 0
@@ -326,6 +338,7 @@ function UI:render(data)
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
+		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY")
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
@@ -348,11 +361,13 @@ function UI:render(data)
 	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)>0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
+		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
 		elseif h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
-	self.resultTitle.Text=if won then "VICTORY" else "DEFEAT"
+	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
 	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
