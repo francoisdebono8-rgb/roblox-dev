@@ -72,7 +72,7 @@ function QA.run(matches)
 	end)
 	test("wall enter, rise, rebound and clean detach",function()
 		local c,a,b=pair("Flashstep","Mirage")
-		c:relocate(a,c.match.origin+Vector3.new(24,3,0))
+		c:relocate(a,c.match.origin+Vector3.new(76,3,0))
 		a.move=Vector3.xAxis
 		step(c,0.3)
 		assert(a.wall~=nil,"Wall did not attach")

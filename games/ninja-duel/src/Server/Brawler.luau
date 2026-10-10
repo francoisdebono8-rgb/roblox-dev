@@ -3,6 +3,7 @@ local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local Combo=require(Shared.BanglaCombo)
+local MoveGraphs=require(Shared.MoveGraphs)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
@@ -153,20 +154,17 @@ function Brawler.request(c,a,action)
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- -- Itachi's Read pays off with a decisive palm on the next press.
- if action=="Attack" and (a.counterUntil or 0)>c.now and not canChain then
-  a.counterUntil=0;return Brawler.start(c,a,"CounterPalm")
+ local graph=MoveGraphs[a.fighterId] or {}
+ -- A successful Read (Itachi) pays off with the graph's counter on the next press.
+ if action=="Attack" and graph.readCounter and (a.counterUntil or 0)>c.now and not canChain then
+  a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
  end
  -- Character move graphs: inside a confirmed string the stick picks a branch.
- if action=="Attack" and canChain then
+ if action=="Attack" and canChain and graph.stringBranches then
   local dir,sideSign=Brawler.intent(a)
-  if a.fighterId=="Flashstep" then
-   if dir=="side" then a.angleSide=sideSign;return Brawler.start(c,a,"AngleStep") end
-   if dir=="back" then return Brawler.disengage(c,a,"Kunai") end
-  elseif a.fighterId=="Mirage" then
-   if dir=="back" then return Brawler.disengage(c,a,"Shuriken") end
-   if dir=="side" then return Brawler.start(c,a,"Sweep") end
-  end
+  local branch=graph.stringBranches[dir]
+  if branch and branch.kind=="move" then a.angleSide=sideSign;return Brawler.start(c,a,branch.name) end
+  if branch and branch.kind=="disengage" then return Brawler.disengage(c,a,branch.projectile) end
  end
  -- The ground light step is resolved once per accepted press, so a buffered
  -- chain cannot advance the combo counter twice.

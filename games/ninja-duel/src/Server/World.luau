@@ -10,18 +10,22 @@ local function part(parent, name, size, cf, color, material)
 end
 World.part = part
 -- --------------------------------------------------------------- arena
--- The Prodigy Tournament ground: a ringed stone stage in a walled bowl, tiered
--- wooden stands full of spectators, a judges' pavilion, banners, a torii
--- entrance and a forest/mountain backdrop. Everything the fighters use keeps
--- the combat contract: flat floor at the origin plane, NinjaWall slabs at
--- x = ±28 for wall running, raised platforms for height, stone posts for cover
--- and line of sight. Decoration never collides or blocks queries.
+-- The Konoha Chunin Exam finals stadium, as close as the block toolkit allows:
+-- a round field of packed earth and grass, bushes along the foot of a very tall
+-- circular wall of pale panels (the wall fighters run up), a few big trees on
+-- the field, spectator stands crowning the wall under white pavilions with
+-- golden roofs, the larger Kage box, the participants' balcony and the gate.
+-- Combat contract: flat floor at the origin plane; the wall segments are the
+-- NinjaWall surfaces just outside the fighters' round limit.
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 local PALETTE={
-	grass=rgb(88,116,66),sand=rgb(176,154,118),stone=rgb(172,164,146),stoneDark=rgb(116,110,98),stoneDeep=rgb(78,74,68),
-	wood=rgb(126,86,54),woodDark=rgb(82,56,36),red=rgb(178,40,36),cream=rgb(240,232,212),roof=rgb(58,64,74),
-	leaf=rgb(66,98,60),leafDark=rgb(46,74,48),blossom=rgb(240,176,190),rock=rgb(120,116,108),
+	grass=rgb(104,136,70),grassDark=rgb(84,116,58),earth=rgb(178,152,110),earthDark=rgb(150,126,92),
+	wall=rgb(218,216,196),wallSeam=rgb(178,180,160),wallBand=rgb(196,198,178),
+	brick=rgb(152,74,52),brickDark=rgb(118,56,40),plaster=rgb(238,236,226),
+	roof=rgb(222,164,58),roofDark=rgb(176,120,38),trim=rgb(70,62,56),wood=rgb(120,84,54),woodDark=rgb(84,58,38),
+	leaf=rgb(70,112,58),leafDark=rgb(52,90,48),bark=rgb(96,70,50),
 }
+World.WALL_RADIUS=81.6
 local function deco(parent,name,size,cf,color,material,shape)
 	local p=part(parent,name,size,cf,color,material)
 	p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
@@ -29,8 +33,8 @@ local function deco(parent,name,size,cf,color,material,shape)
 	return p
 end
 -- A flat disc lying on the floor (cylinder axis pointing up).
-local function disc(parent,name,radius,y,origin,color,material)
-	return deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(origin+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+local function disc(parent,name,radius,y,center,color,material)
+	return deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
 end
 local function label(target,face,text,color,font)
 	local gui=Instance.new("SurfaceGui");gui.Face=face;gui.CanvasSize=Vector2.new(400,400);gui.LightInfluence=1;gui.Parent=target
@@ -38,8 +42,9 @@ local function label(target,face,text,color,font)
 	t.Font=font or Enum.Font.GothamBlack;t.TextScaled=true;t.Parent=gui
 	return gui
 end
-local function spectator(parent,at,facing,seed)
-	local tones={rgb(70,86,120),rgb(120,70,62),rgb(86,104,76),rgb(140,120,90),rgb(96,80,110),rgb(60,64,72),rgb(150,140,128)}
+local function spectator(folder,at,facing,seed)
+	local parent=Instance.new("Model");parent.Name="SpectatorFigure";parent.Parent=folder
+	local tones={rgb(70,96,74),rgb(70,86,120),rgb(120,70,62),rgb(140,120,90),rgb(96,80,110),rgb(60,64,72),rgb(150,140,128),rgb(86,104,76)}
 	local skin={rgb(232,198,166),rgb(204,166,136),rgb(176,134,104)}
 	local body=deco(parent,"Spectator",Vector3.new(1.3,2.0,.9),CFrame.lookAt(at+Vector3.new(0,1.0,0),at+Vector3.new(0,1.0,0)+facing),tones[seed%#tones+1],Enum.Material.SmoothPlastic)
 	body.CastShadow=false
@@ -47,201 +52,182 @@ local function spectator(parent,at,facing,seed)
 	head.CastShadow=false
 	deco(parent,"SpectatorHair",Vector3.new(1.0,.45,1.0),head.CFrame*CFrame.new(0,.28,.05),if seed%4==0 then rgb(220,190,120) else rgb(36,30,28),Enum.Material.SmoothPlastic).CastShadow=false
 end
-local function pine(parent,at,scale)
-	deco(parent,"Trunk",Vector3.new(1.4*scale,10*scale,1.4*scale),CFrame.new(at+Vector3.new(0,5*scale,0)),PALETTE.woodDark,Enum.Material.Wood)
-	for k=0,3 do
-		local r=(6-k*1.3)*scale
-		deco(parent,"Needles",Vector3.new(r*2,3*scale,r*2),CFrame.new(at+Vector3.new(0,(7+k*3)*scale,0)),if k%2==0 then PALETTE.leafDark else PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+local function tree(parent,at,height,spread)
+	-- Field trees: a real trunk (cover and line of sight) under a loose crown.
+	local trunk=part(parent,"Field tree",Vector3.new(2.6,height,2.6),CFrame.new(at+Vector3.new(0,height/2,0)),PALETTE.bark,Enum.Material.Wood)
+	trunk.Shape=Enum.PartType.Block
+	local crown=deco(parent,"Crown",Vector3.new(spread*2,spread*1.4,spread*2),CFrame.new(at+Vector3.new(0,height+spread*.3,0)),PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	crown.Size=Vector3.one*spread*1.9
+	for k=0,4 do
+		local a=k/5*math.pi*2
+		deco(parent,"Crown",Vector3.one*spread*(1.1+(k%2)*.25),CFrame.new(at+Vector3.new(math.sin(a)*spread*.75,height-spread*.1+(k%3)*.8,math.cos(a)*spread*.75)),
+			if k%2==0 then PALETTE.leafDark else PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
+	for k=0,2 do
+		local a=k/3*math.pi*2+.4
+		deco(parent,"Branch",Vector3.new(.9,spread*1.1,.9),CFrame.new(at+Vector3.new(0,height*.72,0))*CFrame.Angles(0,a,math.rad(48))*CFrame.new(0,spread*.5,0),PALETTE.bark,Enum.Material.Wood)
+	end
+	return trunk
 end
-local function blossom(parent,at,scale)
-	deco(parent,"Trunk",Vector3.new(1.2*scale,7*scale,1.2*scale),CFrame.new(at+Vector3.new(0,3.5*scale,0))*CFrame.Angles(0,0,math.rad(6)),PALETTE.woodDark,Enum.Material.Wood)
-	for k,offset in {Vector3.new(0,8,0),Vector3.new(2.5,7,1),Vector3.new(-2.2,7.4,-1.4),Vector3.new(.6,9.4,-1.8)} do
-		deco(parent,"Blossom",Vector3.new(6,4.6,6)*scale*(if k==1 then 1.2 else .9),CFrame.new(at+offset*scale),PALETTE.blossom,Enum.Material.SmoothPlastic,Enum.PartType.Ball)
+-- A white pavilion with a golden curved roof sitting on the stands.
+local function pavilion(parent,cf,width,depth,height,tiers)
+	deco(parent,"Pavilion",Vector3.new(width,height,depth),cf*CFrame.new(0,height/2,0),PALETTE.plaster,Enum.Material.SmoothPlastic)
+	for k=-math.floor(width/6),math.floor(width/6) do
+		deco(parent,"Window",Vector3.new(2.6,height*.38,.2),cf*CFrame.new(k*5.2,height*.58,-depth/2-.05),PALETTE.trim,Enum.Material.SmoothPlastic)
+	end
+	deco(parent,"Base trim",Vector3.new(width+.4,.8,depth+.4),cf*CFrame.new(0,.4,0),PALETTE.trim,Enum.Material.Wood)
+	local y=height
+	for tier=1,tiers do
+		local w=width+6-tier*3;local d=depth+6-tier*3
+		local pitch=math.rad(24)
+		for _,side in {-1,1} do
+			deco(parent,"Roof",Vector3.new(w,.9,d/2+1),cf*CFrame.new(0,y+1.1,side*(d/4))*CFrame.Angles(side*-pitch,0,0),PALETTE.roof,Enum.Material.SmoothPlastic)
+			-- Up-turned eaves at the four corners.
+			for _,ex in {-1,1} do
+				deco(parent,"Eave",Vector3.new(2.2,.7,2.2),cf*CFrame.new(ex*(w/2-.6),y+.4,side*(d/2+.4))*CFrame.Angles(side*math.rad(-20),0,ex*math.rad(18)),PALETTE.roofDark,Enum.Material.SmoothPlastic)
+			end
+		end
+		deco(parent,"Ridge",Vector3.new(w+.6,.7,.9),cf*CFrame.new(0,y+1.1+math.tan(pitch)*(d/4)+.6,0),PALETTE.roofDark,Enum.Material.SmoothPlastic)
+		if tier<tiers then
+			deco(parent,"Upper storey",Vector3.new(w-6,4,d-6),cf*CFrame.new(0,y+3.6,0),PALETTE.plaster,Enum.Material.SmoothPlastic)
+			y+=4.6
+		end
 	end
 end
 local function atmosphere()
 	local Lighting=game:GetService("Lighting")
 	if Lighting:FindFirstChild("NinjaDuelAtmosphere") then return end
-	-- Late-afternoon tournament light: warm sun, soft haze, gentle bloom.
-	Lighting.ClockTime=16.4;Lighting.GeographicLatitude=32
-	Lighting.Brightness=2.6;Lighting.EnvironmentDiffuseScale=.6;Lighting.EnvironmentSpecularScale=.4
-	Lighting.Ambient=rgb(92,88,96);Lighting.OutdoorAmbient=rgb(142,134,128)
+	-- Bright exam-day afternoon, as in the anime: clear sky, warm sun, soft haze.
+	Lighting.ClockTime=14.6;Lighting.GeographicLatitude=30
+	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
+	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
 	pcall(function() Lighting.Technology=Enum.Technology.ShadowMap end)
-	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.32;atmo.Offset=.12
-	atmo.Color=rgb(222,206,182);atmo.Decay=rgb(130,112,104);atmo.Glare=.4;atmo.Haze=1.4;atmo.Parent=Lighting
-	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.12;cc.Contrast=.08;cc.Brightness=.01;cc.TintColor=rgb(255,246,236);cc.Parent=Lighting
-	local bloom=Instance.new("BloomEffect");bloom.Name="NinjaDuelBloom";bloom.Intensity=.55;bloom.Size=26;bloom.Threshold=1.4;bloom.Parent=Lighting
-	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.05;rays.Spread=.6;rays.Parent=Lighting
+	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
+	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
+	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
+	local bloom=Instance.new("BloomEffect");bloom.Name="NinjaDuelBloom";bloom.Intensity=.45;bloom.Size=24;bloom.Threshold=1.5;bloom.Parent=Lighting
+	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.04;rays.Spread=.6;rays.Parent=Lighting
 end
 World.atmosphere=atmosphere
 function World.arena(parent, origin)
 	local folder = Instance.new("Folder"); folder.Name = "Courtyard"; folder.Parent = parent
 	local decor=Instance.new("Folder");decor.Name="Decor";decor.Parent=folder
 	local C=PALETTE
-	-- Ground and the ringed stage. The walkable floor is one flat plane.
+	local R=World.WALL_RADIUS
+	local height=46
+	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
-	disc(decor,"Sand ring",84,.03,origin,C.sand,Enum.Material.Sand)
-	disc(decor,"Stage",66,.06,origin,C.stone,Enum.Material.Slate)
-	disc(decor,"Stage edge",66.6,.05,origin,C.stoneDeep,Enum.Material.Slate)
-	disc(decor,"Line",44.4,.07,origin,C.stoneDark,Enum.Material.Slate)
-	disc(decor,"Inner",44,.08,origin,C.stone,Enum.Material.Slate)
-	-- Tournament emblem at the centre: red ring, cream field, the 天才 seal.
-	disc(decor,"Emblem ring",13,.09,origin,C.red,Enum.Material.SmoothPlastic)
-	disc(decor,"Emblem field",11.6,.1,origin,C.cream,Enum.Material.SmoothPlastic)
-	local seal=deco(decor,"Emblem seal",Vector3.new(16,.05,16),CFrame.new(origin+Vector3.new(0,.13,0)),C.cream,Enum.Material.SmoothPlastic)
-	seal.Transparency=1
-	label(seal,Enum.NormalId.Top,"天才",C.red,Enum.Font.GothamBlack)
-	-- Curb stones around the stage edge.
-	for k=0,47 do
-		local a=k/48*math.pi*2
-		local at=origin+Vector3.new(math.sin(a)*67,.25,math.cos(a)*67)
-		deco(decor,"Curb",Vector3.new(7.6,.5,1.4),CFrame.lookAt(at,origin+Vector3.new(0,.25,0)),if k%2==0 then C.stoneDark else C.stone,Enum.Material.Slate)
+	disc(decor,"Earth",50,.03,origin,C.earth,Enum.Material.Ground)
+	for k=0,9 do
+		local a=k/10*math.pi*2+.3
+		local r=38+((k*37)%5)*4
+		disc(decor,"Earth patch",10+((k*53)%4)*3,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
 	end
-	-- Low boundary wall of the bowl (just outside the fighters' limit).
-	local wallRadius=82
-	for k=0,39 do
-		local a=k/40*math.pi*2
-		local at=origin+Vector3.new(math.sin(a)*wallRadius,3,math.cos(a)*wallRadius)
-		local w=part(folder,"Boundary",Vector3.new(13.4,6,2.4),CFrame.lookAt(at,origin+Vector3.new(0,3,0)),C.stoneDark,Enum.Material.Slate)
-		w.CanQuery=false
-		deco(decor,"Coping",Vector3.new(13.6,.6,3),w.CFrame*CFrame.new(0,3.3,0),C.stone,Enum.Material.Slate)
+	-- Worn grass islands: clusters of overlapping small patches, never one
+	-- perfect circle, so the field reads as trampled ground.
+	for k=0,7 do
+		local a=k/8*math.pi*2+1.1
+		local r=18+((k*29)%4)*6
+		local center=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
+		for j=0,4 do
+			local b=j*1.7+k
+			local offset=Vector3.new(math.sin(b)*(2+j*1.3),0,math.cos(b)*(1.5+j))
+			disc(decor,"Grass tuft",1.6+((j*13+k)%4)*.9,.045,center+offset,if j%2==0 then C.grassDark else C.grass,Enum.Material.Grass)
+		end
 	end
-	-- Tiered stands with spectators, broken by the judges' pavilion (north)
-	-- and the torii entrance (south).
+	-- The tall panelled wall. Each segment is a wall-run surface.
+	local segments=56
+	local width=2*math.pi*(R+1)/segments+.3
+	for k=0,segments-1 do
+		local a=k/segments*math.pi*2
+		local dir=Vector3.new(math.sin(a),0,math.cos(a))
+		local at=origin+dir*(R+1)+Vector3.new(0,height/2,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,height/2,0))
+		local w=part(folder,"Boundary",Vector3.new(width,height,2),look,C.wall,Enum.Material.Concrete)
+		w:SetAttribute("NinjaWall",true)
+		deco(decor,"Seam",Vector3.new(.25,height,.1),look*CFrame.new(width/2,0,-1.02),C.wallSeam,Enum.Material.Concrete)
+		deco(decor,"Band",Vector3.new(width,1.2,.1),look*CFrame.new(0,height/2-6,-1.02),C.wallBand,Enum.Material.Concrete)
+		deco(decor,"Footing",Vector3.new(width,2.2,.6),look*CFrame.new(0,-height/2+1.1,-1.2),C.wallSeam,Enum.Material.Concrete)
+		-- Brick outer face and the parapet in front of the first row of seats.
+		deco(decor,"Outer face",Vector3.new(width,height,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
+		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
+	end
+	-- Bushes along the foot of the wall.
+	for k=0,63 do
+		local a=k/64*math.pi*2+((k*17)%5)*.01
+		local r=R-1.6-((k*29)%3)*.6
+		local size=3.4+((k*41)%4)*.7
+		deco(decor,"Bush",Vector3.one*size,CFrame.new(origin+Vector3.new(math.sin(a)*r,size*.32,math.cos(a)*r)),if k%3==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	end
+	-- Stands crowning the wall: rising tiers full of spectators.
 	local seed=0
+	local top=height
 	for tier=1,4 do
-		local radius=wallRadius+3+tier*4.2
-		local height=tier*2.6
-		local steps=math.floor(radius*2*math.pi/7)
+		local radius=R+3+tier*3.4
+		local steps=math.floor(radius*2*math.pi/6.5)
 		for k=0,steps-1 do
 			local a=k/steps*math.pi*2
-			local north=math.abs(((a+math.pi)%(2*math.pi))-math.pi)<.32
-			local south=math.abs(a-math.pi)<.22
-			if not south then
-				local at=origin+Vector3.new(math.sin(a)*radius,height/2,math.cos(a)*radius)
-				local look=CFrame.lookAt(at,origin+Vector3.new(0,height/2,0))
-				deco(decor,"Stand",Vector3.new(7.4,height,4.4),look,if tier%2==0 then C.wood else C.woodDark,Enum.Material.Wood)
-				if not north then
-					seed+=1
-					if seed%3~=0 then
-						local seat=look*CFrame.new(((seed*37)%5-2)*.9,height/2,.6)
-						spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),seed)
-					end
-				end
+			local at=origin+Vector3.new(math.sin(a)*radius,top+tier*2.1-.6,math.cos(a)*radius)
+			local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
+			deco(decor,"Stand",Vector3.new(6.8,tier*2.1+1,3.6),look*CFrame.new(0,-(tier*2.1+1)/2+.8,0),if tier%2==0 then C.wood else C.woodDark,Enum.Material.Wood)
+			seed+=1
+			if seed%4~=0 then
+				local seat=look*CFrame.new(((seed*37)%5-2)*.9,.8,.4)
+				spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),seed)
 			end
 		end
 	end
-	-- Judges' pavilion on the north side: raised floor, posts, roof, three judges.
-	local judges=origin+Vector3.new(0,0,-(wallRadius+9))
-	local face=CFrame.lookAt(judges,origin)
-	deco(decor,"Pavilion floor",Vector3.new(26,9,12),face*CFrame.new(0,4.5,0),C.woodDark,Enum.Material.Wood)
-	for _,x in {-12,-4,4,12} do deco(decor,"Pavilion post",Vector3.new(1.2,12,1.2),face*CFrame.new(x,15,4.6),C.red,Enum.Material.Wood) end
-	for _,side in {-1,1} do
-		local roof=deco(decor,"Pavilion roof",Vector3.new(30,2.6,8.5),face*CFrame.new(0,22.2,side*3.4)*CFrame.Angles(math.rad(side*-22),0,0),C.roof,Enum.Material.Slate,Enum.PartType.Block)
-		roof.Name="Pavilion roof"
+	-- Pavilions on the stands; the Kage box is the large two-storey one (north).
+	for k=0,9 do
+		local a=k/10*math.pi*2+math.pi/10
+		local at=origin+Vector3.new(math.sin(a)*(R+20),top+5,math.cos(a)*(R+20))
+		pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
 	end
-	deco(decor,"Pavilion ridge",Vector3.new(31,1,1),face*CFrame.new(0,23.8,0),C.red,Enum.Material.Wood)
-	for _,x in {-6,0,6} do
-		local seat=face*CFrame.new(x,9,-1)
-		spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),if x==0 then 5 else 2)
-		deco(decor,"Judge desk",Vector3.new(4.5,1.6,1.4),face*CFrame.new(x,9.8,-3.4),C.red,Enum.Material.Wood)
+	local kage=origin+Vector3.new(0,top+6,-(R+16))
+	local kageCF=CFrame.lookAt(kage,Vector3.new(origin.X,kage.Y,origin.Z))
+	pavilion(decor,kageCF,34,16,11,2)
+	local box=deco(decor,"Kage box",Vector3.new(14,6,4),kageCF*CFrame.new(0,4,-9.6),C.trim,Enum.Material.Wood)
+	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x,1.4,-8.6)).Position,(origin-kage)*Vector3.new(1,0,1),if x<0 then 5 else 2) end
+	local plaque=deco(decor,"Kage plaque",Vector3.new(4,4,.3),kageCF*CFrame.new(0,8.5,-9.9),C.plaster,Enum.Material.SmoothPlastic)
+	label(plaque,Enum.NormalId.Front,"火",rgb(190,40,36))
+	box.Transparency=0
+	-- Participants' balcony on the east wall, and the arena gate to the south.
+	local east=CFrame.lookAt(origin+Vector3.new(R-1.2,24,0),origin+Vector3.new(0,24,0))
+	deco(decor,"Participants balcony",Vector3.new(16,1,4),east,C.woodDark,Enum.Material.Wood)
+	deco(decor,"Balcony rail",Vector3.new(16,1.6,.3),east*CFrame.new(0,1.3,-1.9),C.wood,Enum.Material.Wood)
+	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
+	local south=CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0))
+	deco(decor,"Gate",Vector3.new(18,16,.2),south,rgb(40,38,36),Enum.Material.SmoothPlastic)
+	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
+	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
+	-- Field trees: line of sight and something to fight around, as in the finals.
+	for _,spot in {{.55,64,24,7},{2.4,60,20,6},{3.9,66,26,7.5},{5.3,62,22,6.5}} do
+		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
-	local hanging=deco(decor,"Pavilion banner",Vector3.new(14,4.2,.2),face*CFrame.new(0,18.6,-4.7),C.cream,Enum.Material.SmoothPlastic)
-	label(hanging,Enum.NormalId.Back,"天才忍者大会",C.red)
-	-- Torii gate at the south entrance.
-	local gate=CFrame.lookAt(origin+Vector3.new(0,0,wallRadius+2),origin)
-	for _,x in {-7,7} do deco(decor,"Torii post",Vector3.new(18,1.8,1.8),gate*CFrame.new(x,9,0)*CFrame.Angles(0,0,math.pi/2),C.red,Enum.Material.Wood,Enum.PartType.Cylinder) end
-	deco(decor,"Torii kasagi",Vector3.new(21,1.6,2.4),gate*CFrame.new(0,18.6,0),C.roof,Enum.Material.Wood)
-	deco(decor,"Torii nuki",Vector3.new(17,1.1,1.4),gate*CFrame.new(0,15,0),C.red,Enum.Material.Wood)
-	local plaque=deco(decor,"Torii plaque",Vector3.new(3.2,3,.3),gate*CFrame.new(0,16.8,0),C.roof,Enum.Material.Wood)
-	label(plaque,Enum.NormalId.Front,"試",C.cream)
-	-- Banners on tall poles around the bowl.
-	for k=0,7 do
-		local a=(k+.5)/8*math.pi*2
-		local at=origin+Vector3.new(math.sin(a)*(wallRadius-1.5),0,math.cos(a)*(wallRadius-1.5))
-		local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
-		deco(decor,"Banner pole",Vector3.new(.5,22,.5),look*CFrame.new(0,11,0),C.woodDark,Enum.Material.Wood)
-		deco(decor,"Banner bar",Vector3.new(5.4,.4,.4),look*CFrame.new(0,21.4,-.3),C.woodDark,Enum.Material.Wood)
-		local cloth=deco(decor,"Banner",Vector3.new(5,12,.12),look*CFrame.new(0,15,-.4),if k%2==0 then C.red else C.cream,Enum.Material.SmoothPlastic)
-		label(cloth,Enum.NormalId.Front,"天\n才",if k%2==0 then C.cream else C.red)
+	-- Two weathered boulders for low cover.
+	for _,spot in {{1.5,34},{4.6,30}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2,math.cos(spot[1])*spot[2])
+		part(folder,"Cover",Vector3.new(7,4,4),CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
+		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4),CFrame.new(at+Vector3.new(-.5,2.2,0))*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 	end
-	-- Stone lanterns around the stage with warm light.
-	for k=0,7 do
-		local a=k/8*math.pi*2
-		local at=origin+Vector3.new(math.sin(a)*70.5,0,math.cos(a)*70.5)
-		deco(decor,"Lantern base",Vector3.new(2.2,1,2.2),CFrame.new(at+Vector3.new(0,.5,0)),C.stoneDark,Enum.Material.Slate)
-		deco(decor,"Lantern post",Vector3.new(1,3.4,1),CFrame.new(at+Vector3.new(0,2.7,0)),C.stone,Enum.Material.Slate)
-		local box=deco(decor,"Lantern",Vector3.new(1.9,1.6,1.9),CFrame.new(at+Vector3.new(0,5.2,0)),rgb(255,214,150),Enum.Material.Neon)
-		deco(decor,"Lantern cap",Vector3.new(3,.6,3),CFrame.new(at+Vector3.new(0,6.3,0)),C.stoneDark,Enum.Material.Slate)
-		local light=Instance.new("PointLight");light.Color=rgb(255,190,120);light.Range=18;light.Brightness=1.4;light.Shadows=false;light.Parent=box
-	end
-	-- Fight-space features.
-	for _,x in { -1, 1 } do
-		-- Carved stone slabs: the wall-run surfaces (and the tutorial's wall).
-		local wall=part(folder,"Ninja wall",Vector3.new(3,23,26),CFrame.new(origin+Vector3.new(x*28,11.5,0)),C.stoneDark,Enum.Material.Slate)
-		wall:SetAttribute("NinjaWall",true)
-		for _,y in {4,11.5,19} do
-			deco(decor,"Carving",Vector3.new(3.1,.5,24),CFrame.new(origin+Vector3.new(x*28,y,0)),C.stoneDeep,Enum.Material.Slate)
-		end
-		local mark=deco(decor,"Slab mark",Vector3.new(3.12,8,8),CFrame.new(origin+Vector3.new(x*28,14,0)),C.stoneDark,Enum.Material.Slate)
-		mark.Transparency=1
-		label(mark,if x<0 then Enum.NormalId.Right else Enum.NormalId.Left,"忍",C.red)
-		local ledge=part(folder,"Wall ledge",Vector3.new(10,1,29),CFrame.new(origin+Vector3.new(x*28,23,0)),C.wood,Enum.Material.Wood)
-		ledge.CanQuery=true
-		part(folder,"Training beam",Vector3.new(1.2,1.2,28),CFrame.new(origin+Vector3.new(x*28,20,0)),C.woodDark,Enum.Material.Wood)
-	end
-	for _, z in { -40, 40 } do
-		-- Rock cover and raised wooden platforms for height and sight lines.
-		local rock=part(folder,"Cover",Vector3.new(8,4,3),CFrame.new(origin+Vector3.new(18,2,z)),C.rock,Enum.Material.Slate)
-		deco(decor,"Rock cap",Vector3.new(6,2.4,4),rock.CFrame*CFrame.new(-.6,2.2,0)*CFrame.Angles(0,math.rad(18),math.rad(8)),C.rock,Enum.Material.Slate)
-		local platform=part(folder,"Step platform",Vector3.new(14,1.2,14),CFrame.new(origin+Vector3.new(-17,7,z)),C.wood,Enum.Material.WoodPlanks)
-		for _,cx in {-6,6} do for _,cz in {-6,6} do
-			part(folder,"Platform post",Vector3.new(1,6.4,1),platform.CFrame*CFrame.new(cx,-3.8,cz),C.woodDark,Enum.Material.Wood)
-		end end
-	end
-	-- Three training posts: the classic test of a genin team.
-	for k,x in {-6,0,6} do
-		local post=part(folder,"Training post",Vector3.new(5,1.8,1.8),CFrame.new(origin+Vector3.new(x,2.5,54))*CFrame.Angles(0,0,math.pi/2),C.wood,Enum.Material.Wood)
-		post.Shape=Enum.PartType.Cylinder
-		deco(decor,"Rope",Vector3.new(.4,1.9,1.9),post.CFrame*CFrame.new(.6,0,0),C.cream,Enum.Material.Fabric,Enum.PartType.Cylinder)
-	end
-	-- Backdrop: pines and blossoms around the bowl, mountains beyond.
-	for k=0,23 do
-		local a=k/24*math.pi*2+.13
-		local r=112+((k*53)%7)*4
+	-- The forest of Konoha around the stadium, seen over the stands.
+	for k=0,35 do
+		local a=k/36*math.pi*2+.07
+		local r=R+44+((k*53)%5)*6
 		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
-		if k%3==0 then blossom(decor,at,1.4) else pine(decor,at,1.5+((k*31)%3)*.25) end
+		local h=38+((k*31)%4)*6
+		deco(decor,"Forest trunk",Vector3.new(3,h,3),CFrame.new(at+Vector3.new(0,h/2,0)),C.bark,Enum.Material.Wood)
+		deco(decor,"Forest crown",Vector3.one*(22+((k*13)%4)*4),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
-	-- Distant ridges: four-sided peaks hazed by the atmosphere.
-	for k=0,11 do
-		local a=k/12*math.pi*2+.2
-		local r=250+((k*37)%3)*30
-		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
-		local h=90+((k*41)%5)*22
-		local half=70+((k*29)%4)*12
-		local tone=if k%2==0 then rgb(104,118,122) else rgb(90,104,110)
-		for q=0,3 do
-			local turn=CFrame.new(at)*CFrame.Angles(0,q*math.pi/2+a,0)
-			deco(decor,"Mountain",Vector3.new(half,h,half),turn*CFrame.new(half/2,h/2-6,-half/2),tone,Enum.Material.Rock).Name="Mountain"
-		end
-	end
-	-- Peaks are corner wedges so four of them meet at a summit.
-	for _,m in decor:GetChildren() do
-		if m.Name=="Mountain" and m:IsA("Part") then
-			local w=Instance.new("CornerWedgePart");w.Name="Mountain";w.Size=m.Size;w.CFrame=m.CFrame;w.Color=m.Color;w.Material=m.Material
-			w.Anchored=true;w.CanCollide=false;w.CanQuery=false;w.CanTouch=false;w.CastShadow=false;w.Parent=decor;m:Destroy()
-		end
-	end
-	-- Drifting petals over the stage.
-	local sky=deco(decor,"Petal source",Vector3.new(140,1,140),CFrame.new(origin+Vector3.new(0,44,0)),C.cream,Enum.Material.SmoothPlastic)
+	-- A few leaves drifting over the field.
+	local sky=deco(decor,"Leaf source",Vector3.new(140,1,140),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
 	sky.Transparency=1
-	local petals=Instance.new("ParticleEmitter");petals.Name="Petals"
-	petals.Texture="rbxasset://textures/particles/sparkles_main.dds";petals.Rate=6;petals.Lifetime=NumberRange.new(9,13)
-	petals.Speed=NumberRange.new(2,4);petals.EmissionDirection=Enum.NormalId.Bottom;petals.SpreadAngle=Vector2.new(30,30)
-	petals.Color=ColorSequence.new(C.blossom);petals.LightEmission=.2;petals.Size=NumberSequence.new(.35)
-	petals.Rotation=NumberRange.new(0,360);petals.RotSpeed=NumberRange.new(-90,90);petals.Acceleration=Vector3.new(1.2,-.6,.4)
-	petals.Parent=sky
+	local leaves=Instance.new("ParticleEmitter");leaves.Name="Leaves"
+	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=4;leaves.Lifetime=NumberRange.new(9,13)
+	leaves.Speed=NumberRange.new(2,4);leaves.EmissionDirection=Enum.NormalId.Bottom;leaves.SpreadAngle=Vector2.new(30,30)
+	leaves.Color=ColorSequence.new(rgb(120,160,80));leaves.LightEmission=.1;leaves.Size=NumberSequence.new(.35)
+	leaves.Rotation=NumberRange.new(0,360);leaves.RotSpeed=NumberRange.new(-90,90);leaves.Acceleration=Vector3.new(1.2,-.6,.4)
+	leaves.Parent=sky
 	atmosphere()
 	return folder
 end

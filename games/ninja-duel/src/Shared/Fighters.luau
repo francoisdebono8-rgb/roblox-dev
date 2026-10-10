@@ -1,7 +1,7 @@
 return {
 	Flashstep = {
-		Name = "Minato", Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
-		Description = "Kunai pressure, agile angles, a risky marked entry and wind control.",
+		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
+		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
 		Health = 125, Chakra = 110, ChakraRegen = 10.5, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles",
@@ -22,8 +22,8 @@ return {
 		},
 	},
 	Mirage = {
-		Name = "Itachi", Title = "THE QUIET OBSERVER", Color = { 222, 106, 137 },
-		Description = "Precise shuriken, timed reads, interactive deception and fire pressure.",
+		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE QUIET OBSERVER", Color = { 222, 70, 80 },
+		Description = "Calm control. Shuriken geometry, timed reads, deception and the clan's first fire.",
 		Health = 145, Chakra = 125, ChakraRegen = 8, Speed = 26, SprintScale = 0.98, JumpScale = 0.95, AirControlScale = 0.9, AccelerationScale = 0.92,
 		CombatTravel = 0.95, CombatDamage = 1.08, DashScale = 0.93, GuardStrength = 0.08, PreferredRange = 10,
 		ComboToolCancel = true, CombatStyle = "Control",

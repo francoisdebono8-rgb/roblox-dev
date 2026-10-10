@@ -114,7 +114,7 @@ for spec,data in automated['suites'].items():
 if automated['status']=='FAIL':
     sys.exit('Automated suites failed: '+', '.join(automated['failed']))
 
-manifest={'version':'0.8.0-claude-final-pass','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+manifest={'version':'0.9.0-phase3-youth-tournament','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are
  # only moved off PENDING by an actual Studio run on this exact artifact.

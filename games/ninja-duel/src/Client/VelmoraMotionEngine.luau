@@ -807,8 +807,8 @@ function Motion.weapon(char,actor)
 	local spec=name and Attacks[name]
 	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
 	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*.45 end)() else .35
-	local meleeOut=swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)<=release
-		and actor.attackVariant~="Rasengan"
+	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)<=release
+		and actor.attackVariant~="Rasengan") or (minato and (actor.intro or 0)>0)
 	-- Thrown weapons sit in the hand from the wind-up until their release frame.
 	local throwKind=actor.throwKind
 	local throwElapsed=actor.throwElapsed or 99
@@ -907,6 +907,18 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.health or 1)<=0 then
 		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
 		return "ko"
+	end
+	-- Match intro attitude: Minato twirls a kunai, Itachi waits, perfectly still.
+	if (subject.intro or 0)>0 and subject.state=="Neutral" then
+		local base=stance(subject.fighterId)
+		local spec
+		if subject.fighterId=="Mirage" then
+			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		else
+			spec=merge(base,{ra={raise=78,out=22,twist=10,elbow=112,wrist=0,wroll=(elapsedTime*1080)%360},la={raise=30,out=14,elbow=40},head={yaw=-18,pitch=-4}})
+		end
+		apply(char,build(spec),RATE.cast,dt)
+		return "intro"
 	end
 	if subject.groundPose~=nil and subject.airborne~=true then
 		local targets,rate=groundTargets(subject)

@@ -1,6 +1,6 @@
 # Ninja Duel — Velmora first playable fight
 
-Version `0.8.0-claude-final-pass` — see `CLAUDE_PASS_REPORT.md` for this pass (new body animation engine, real kunai/shuriken/fireball, Flying Thunder God, costumes, camera).
+Version `0.9.0-phase3-youth-tournament` — see `PHASE3_REPORT.md` (youth prodigy costumes, Chunin Exam stadium, move graphs, tournament presentation) and `VISION_GAP.md`. Previous pass: `CLAUDE_PASS_REPORT.md`.
 
 Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
 

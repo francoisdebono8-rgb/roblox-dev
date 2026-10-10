@@ -60,6 +60,8 @@ function Matches:start(player,playerId,botId,training)
 		self:snapshot(player,s)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s) end
+	-- Tournament framing: both fighters are shown before the round begins.
+	s.introUntil=if training then nil else s.combat.now+2.6
 	local epoch=s.epoch
 	s.human.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.human.health=0; s.human.state="Defeated"; s.finish(s.bot,s.human) end end)
 	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
@@ -106,7 +108,7 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now)})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -151,7 +153,7 @@ function Matches:request(player,payload)
 		aim=payload.aim
 	end
 	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
-	if not ok and reason~="Committed" then s.combat:cue(s.human,string.upper(reason)) end
+	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
@@ -159,7 +161,8 @@ function Matches:update(dt,now)
 			if os.clock()-s.human.lastMove>0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
-				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen then s.ai:update(now) end
+				local intro=s.introUntil and now<s.introUntil
+				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro then s.ai:update(now) end
 			end
 		end
 		-- Regular cadence, plus an immediate packet when a contact, throw or

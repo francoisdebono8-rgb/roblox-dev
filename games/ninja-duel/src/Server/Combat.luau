@@ -11,6 +11,7 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
+local MoveGraphs = require(Shared.MoveGraphs)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -281,6 +282,7 @@ function Combat:stepThrow(a)
 end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
+	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -370,7 +372,8 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.def.CombatStyle=="Control" and a.hitBlocked)) and self.now>=(a.chainAt or 0)
+		local graph=MoveGraphs[a.fighterId] or {}
+		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now>=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
@@ -394,7 +397,8 @@ function Combat:request(a,action,aim,clientTime)
 	a.stringCancel=nil
 	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
-	if cancelSpec and cancelSpec.Id=="BurstStrike" and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+	local cancelGraph=MoveGraphs[a.fighterId] or {}
+	if cancelSpec and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id

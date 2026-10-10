@@ -47,11 +47,18 @@ local attacks={
  Grab=move(.18,.14,.5,0,2,"Grabbed",Vector3.zero,.8),
  Throw=move(.12,.1,.34,10,0,"Knockdown",Vector3.new(0,18,48),.7),
  ThrowUp=move(.12,.1,.3,7,0,"Launched",Vector3.new(0,50,10),1.1),
+ -- Character branches (directional input inside a confirmed string).
+ -- Minato: a sidestep cut that swings him around the opponent's guard.
+ AngleStep=move(.08,.1,.2,6,1.2,"HitStun",Vector3.new(0,0,9),.3),
+ -- Itachi: a low spinning sweep that trades the string for a knockdown,
+ -- and the palm that answers a successful Read.
+ Sweep=move(.12,.14,.34,7,1.6,"Knockdown",Vector3.new(0,6,12),.62),
+ CounterPalm=move(.05,.12,.3,10,2.6,"Knockback",Vector3.new(0,14,46),.5),
 }
 
 for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack"
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -68,9 +75,14 @@ local motion={
  Grab={side=1,twist=10,lean=18,arm=72,step=1.05},
  Throw={side=1,twist=70,lean=22,arm=92,step=1.1},
  ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1},
+ AngleStep={side=1,twist=40,lean=10,arm=90,step=1.1},
+ Sweep={side=-1,twist=60,lean=20,arm=60,step=1.0},
+ CounterPalm={side=1,twist=30,lean=16,arm=100,step=1.2},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
+attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
+attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
 </ProtectedString>
@@ -112,8 +124,8 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.8.0-claude-final-pass",
-	ArenaRadius = 78, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	Version = "0.9.0-phase3-youth-tournament",
+	ArenaRadius = 79.5, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
@@ -192,8 +204,8 @@ return {
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">return {
 	Flashstep = {
-		Name = "Minato", Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
-		Description = "Kunai pressure, agile angles, a risky marked entry and wind control.",
+		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
+		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
 		Health = 125, Chakra = 110, ChakraRegen = 10.5, Speed = 29, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles",
@@ -208,14 +220,14 @@ return {
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 50, Damage = 6, Hint = "Throw a sealed kunai • lasts 12s once planted" },
 			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 18, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 2.6, Interruptible = true, Range = 60, Requires = "Anchor", Hint = "Teleport to the seal • strike on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 24, Hint = "Close punish • unsafe on a miss" },
+			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Unfinished prototype • cancel a clean string into it" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
 			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 29, Damage = 7, Hint = "Displace with a cutting gust" },
 		},
 	},
 	Mirage = {
-		Name = "Itachi", Title = "THE QUIET OBSERVER", Color = { 222, 106, 137 },
-		Description = "Precise shuriken, timed reads, interactive deception and fire pressure.",
+		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE QUIET OBSERVER", Color = { 222, 70, 80 },
+		Description = "Calm control. Shuriken geometry, timed reads, deception and the clan's first fire.",
 		Health = 145, Chakra = 125, ChakraRegen = 8, Speed = 26, SprintScale = 0.98, JumpScale = 0.95, AirControlScale = 0.9, AccelerationScale = 0.92,
 		CombatTravel = 0.95, CombatDamage = 1.08, DashScale = 0.93, GuardStrength = 0.08, PreferredRange = 10,
 		ComboToolCancel = true, CombatStyle = "Control",
@@ -238,6 +250,45 @@ return {
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND10">
+        <Properties>
+          <string name="Name">MoveGraphs</string>
+          <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
+-- Shared fundamentals (strings, launcher, chase, air route, defence) live in
+-- Brawler/Combat; what a fighter does *differently* inside them is declared
+-- here, so a new prodigy adds a table entry plus only the bespoke code its kit
+-- really needs.
+--
+--   stringBranches[direction]  what a press does inside a clean string when the
+--                              stick points side / back / forward:
+--                              {kind="move",name=&lt;Attacks entry&gt;} or
+--                              {kind="disengage",projectile=&lt;throw kind&gt;}
+--   stringCancels[techniqueId] techniques that may cancel a clean string
+--                              (with a shortened wind-up)
+--   blockCancels[action]       actions still allowed out of a blocked light
+--   readCounter                move started by the next press after a Read
+return {
+	Flashstep={
+		stringBranches={
+			side={kind="move",name="AngleStep"},
+			back={kind="disengage",projectile="Kunai"},
+		},
+		stringCancels={BurstStrike=true},
+		blockCancels={},
+	},
+	Mirage={
+		stringBranches={
+			side={kind="move",name="Sweep"},
+			back={kind="disengage",projectile="Shuriken"},
+		},
+		stringCancels={},
+		blockCancels={Tool=true},
+		readCounter="CounterPalm",
+	},
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND11">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -279,7 +330,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1275,17 +1326,17 @@ return table.freeze({
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND12">
+      <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b0e6c041b9a61dfd9a6eba296c827333f3f3fed9abe6244b184f8306fc438f6f</string>
+          <string name="Value">90dba99300ff298efac6ddc6bf2191c31392e761eae8ccf08082051c63dc1053</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND13">
+      <Item class="Folder" referent="ND14">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND14">
+        <Item class="StringValue" referent="ND15">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -1312,7 +1363,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND15">
+        <Item class="StringValue" referent="ND16">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -1339,7 +1390,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND16">
+        <Item class="StringValue" referent="ND17">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -1369,15 +1420,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND17">
+  <Item class="ServerScriptService" referent="ND18">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND18">
+    <Item class="Folder" referent="ND19">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -1460,6 +1511,14 @@ function AI:update(now)
 	if a.state=="Recovery" and a.chainOpen then
 		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
+		-- Character branches: the stick picks an alternative inside the string.
+		if branch=="Attack" and not a.airborne then
+			local roll=self.rng:NextNumber()
+			if minato and roll&lt;.28 then a.move=tangent*(if roll&lt;.14 then 1 else -1)
+			elseif minato and roll&lt;.36 then a.move=-toward
+			elseif not minato and roll&lt;.22 then a.move=-toward
+			elseif not minato and roll&lt;.34 and a.combo&gt;=2 then a.move=tangent end
+		end
 		c:request(a,branch);return
 	end
 	if a.state~="Neutral" or a.reaction then return end
@@ -1497,7 +1556,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -1603,7 +1662,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -1679,7 +1738,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -1715,7 +1774,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -1723,6 +1782,7 @@ local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local Combo=require(Shared.BanglaCombo)
+local MoveGraphs=require(Shared.MoveGraphs)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
@@ -1769,6 +1829,7 @@ function Brawler.start(c,a,name)
  a.buffered=nil
  a.queuedLight=nil
  a.attackVariant=nil
+ a.hitBlocked=false
  a.attackSerial=(a.attackSerial or 0)+1
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
  local slamWindow=0
@@ -1788,6 +1849,35 @@ function Brawler.start(c,a,name)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
  Brawler.event(c,a,name)
+ return true
+end
+-- Movement intent relative to the fighter's facing, read when a press lands:
+-- this is what turns one string into a small move graph per character.
+function Brawler.intent(a)
+ local m=Vector3.new(a.move.X,0,a.move.Z)
+ if m.Magnitude&lt;.4 then return "neutral",0 end
+ local l=a.root.CFrame:VectorToObjectSpace(m.Unit)
+ local forward,side=-l.Z,l.X
+ if forward&lt;-.55 then return "back",0 end
+ if math.abs(side)&gt;.55 then return "side",if side&gt;0 then 1 else -1 end
+ if forward&gt;.55 then return "forward",0 end
+ return "neutral",0
+end
+-- Disengage branch: hop out of the string while a blade (Minato) or a pair of
+-- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
+function Brawler.disengage(c,a,kind)
+ Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.queuedLight=nil;a.buffered=nil
+ local away=a.root.Position-a.target.root.Position;away=Vector3.new(away.X,0,away.Z)
+ if away.Magnitude&lt;.1 then away=-a.root.CFrame.LookVector end
+ local minato=kind=="Kunai"
+ a.state="Recovery";a.untilTime=c.now+(if minato then .26 else .32);a.recoveryCancelAt=a.untilTime
+ a.hop={direction=away.Unit,remaining=if minato then 5 else 6,speed=if minato then 46 else 38}
+ c:beginThrow(a,{kind=kind,release=if minato then .07 else .1,count=if minato then 1 else 2,interval=.07,
+  fire=function(index,target)
+   local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.7 else .7)
+   c:projectile(a,target+spread,if minato then 96 else 84,22,3,if minato then "kunai" else "shuriken")
+  end})
+ Brawler.event(c,a,"Disengage")
  return true
 end
 function Brawler.request(c,a,action)
@@ -1843,6 +1933,18 @@ function Brawler.request(c,a,action)
   a.airCombo=if c.now-(a.lastAirAttack or 0)&gt;.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
+ local graph=MoveGraphs[a.fighterId] or {}
+ -- A successful Read (Itachi) pays off with the graph's counter on the next press.
+ if action=="Attack" and graph.readCounter and (a.counterUntil or 0)&gt;c.now and not canChain then
+  a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
+ end
+ -- Character move graphs: inside a confirmed string the stick picks a branch.
+ if action=="Attack" and canChain and graph.stringBranches then
+  local dir,sideSign=Brawler.intent(a)
+  local branch=graph.stringBranches[dir]
+  if branch and branch.kind=="move" then a.angleSide=sideSign;return Brawler.start(c,a,branch.name) end
+  if branch and branch.kind=="disengage" then return Brawler.disengage(c,a,branch.projectile) end
+ end
  -- The ground light step is resolved once per accepted press, so a buffered
  -- chain cannot advance the combo counter twice.
  local name=a.queuedLight
@@ -1897,6 +1999,7 @@ function Brawler.hit(c,a,p)
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
  if guarded then
+  a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
@@ -1984,7 +2087,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -2000,6 +2103,7 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
+local MoveGraphs = require(Shared.MoveGraphs)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -2030,9 +2134,13 @@ function Combat:add(id,model,hum,root,joints,definition)
 	Animation.attach(a)
 	return a
 end
+-- The tournament stage is round: positions are held inside a circle so no
+-- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
 	local o=self.match.origin; local r=Config.ArenaRadius
-	return Vector3.new(math.clamp(p.X,o.X-r,o.X+r),math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),math.clamp(p.Z,o.Z-r,o.Z+r))
+	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
+	if flat.Magnitude&gt;r then flat=flat.Unit*r end
+	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
 end
 function Combat:relocate(a,p)
 	local look=a.root.CFrame.LookVector
@@ -2127,7 +2235,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
 	if readEligible and frontal and victim.readUntil&gt;self.now then
-		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
+		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
 		self:setState(victim,"Neutral",0)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
@@ -2266,6 +2374,7 @@ function Combat:stepThrow(a)
 end
 function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
+	if self.match.introUntil and self.now&lt;self.match.introUntil then return false,"Intro" end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -2355,7 +2464,8 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and a.chainOpen and self.now&gt;=(a.chainAt or 0)
+		local graph=MoveGraphs[a.fighterId] or {}
+		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now&gt;=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
@@ -2373,6 +2483,17 @@ function Combat:request(a,action,aim,clientTime)
 			end})
 		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
 		return true
+	end
+	-- Melee -&gt; technique: Minato may spend a confirmed string on Rasengan with
+	-- a shortened wind-up. It is a read/finisher, not a neutral button.
+	a.stringCancel=nil
+	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
+	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
+	local cancelGraph=MoveGraphs[a.fighterId] or {}
+	if cancelSpec and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now&gt;=(a.chainAt or 0)
+		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
+		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
+		a.stringCancel=cancelSpec.Id
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
@@ -2397,6 +2518,8 @@ function Combat:request(a,action,aim,clientTime)
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
+	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
+	a.stringCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
@@ -2459,7 +2582,10 @@ function Combat:updateActor(a,dt)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
-			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
+			-- Cancel philosophy: a string continues only on a clean hit. On block the
+			-- attacker keeps a dodge cancel (and Itachi a shuriken cancel); a whiff
+			-- keeps its full recovery.
+			a.chainOpen=a.hitConfirmed and not a.hitBlocked and pending and pending.kind=="Brawl" and pending.spec.chain==true
 			a.chainAt=now
 			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
@@ -2477,6 +2603,12 @@ function Combat:updateActor(a,dt)
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
  if a.state~="Dodging" then a.evade=nil end
 	self:stepThrow(a)
+	if a.hop then
+		local step=math.min(a.hop.remaining,a.hop.speed*dt)
+		a.hop.remaining-=step
+		Motor.travel(a,self,a.hop.direction,step)
+		if a.hop.remaining&lt;=.01 or a.reaction then a.hop=nil end
+	end
 	if a.castId and not a.pending and not a.throwing and a.state~="TechniqueRecovery" then a.castId=nil end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
@@ -2549,7 +2681,10 @@ function Combat:updateActor(a,dt)
   if flat.Magnitude&gt;2 and flat.Magnitude&lt;9 then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
-   if a.fighterId=="Flashstep" and spec.angle then
+   if spec.orbit and a.state~="Recovery" then
+    -- AngleStep: swing around the opponent's guard while cutting.
+    Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit)
+   elseif a.fighterId=="Flashstep" and spec.angle then
     Motor.travel(a,self,tangent*(if spec.angle&lt;0 then -1 else 1),dt*(if a.airborne then 9 else 7))
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
@@ -2570,7 +2705,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if math.abs(p.X-self.match.origin.X)&gt;Config.ArenaRadius or math.abs(p.Z-self.match.origin.Z)&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
 local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire"}
@@ -2725,7 +2860,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;
+		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
@@ -2736,7 +2871,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -2834,7 +2969,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -2876,7 +3011,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -2917,7 +3052,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND28">
+      <Item class="Script" referent="ND29">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -2943,7 +3078,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -3008,6 +3143,8 @@ function Matches:start(player,playerId,botId,training)
 		self:snapshot(player,s)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s) end
+	-- Tournament framing: both fighters are shown before the round begins.
+	s.introUntil=if training then nil else s.combat.now+2.6
 	local epoch=s.epoch
 	s.human.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.human.health=0; s.human.state="Defeated"; s.finish(s.bot,s.human) end end)
 	s.bot.hum.Died:Connect(function() if s.epoch==epoch and s.phase=="Duel" then s.bot.health=0; s.bot.state="Defeated"; s.finish(s.human,s.bot) end end)
@@ -3054,7 +3191,7 @@ function Matches:snapshot(player,s)
 	for _,impact in s.combat.impacts do if impact.serial&gt;sent then table.insert(feed,impact) end end
 	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
 	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now})
+		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now)})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -3099,7 +3236,7 @@ function Matches:request(player,payload)
 		aim=payload.aim
 	end
 	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
-	if not ok and reason~="Committed" then s.combat:cue(s.human,string.upper(reason)) end
+	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
@@ -3107,7 +3244,8 @@ function Matches:update(dt,now)
 			if os.clock()-s.human.lastMove&gt;0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
-				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen then s.ai:update(now) end
+				local intro=s.introUntil and now&lt;s.introUntil
+				if s.tutorial then Tutorial.update(s,now,dt) elseif not s.botFrozen and not intro then s.ai:update(now) end
 			end
 		end
 		-- Regular cadence, plus an immediate packet when a contact, throw or
@@ -3126,7 +3264,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -3348,7 +3486,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -3593,7 +3731,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -4068,7 +4206,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -4217,7 +4355,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -4254,7 +4392,8 @@ function Tutorial.enter(s,now)
  b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
  local near=t.index&gt;=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
- if t.index==6 then c:relocate(a,s.origin+Vector3.new(24,3,0));c:relocate(b,s.origin+Vector3.new(16,3,0)) end
+ -- Wall step: start a few strides from the stadium wall (east side).
+ if t.index==6 then c:relocate(a,s.origin+Vector3.new(74,3,0));c:relocate(b,s.origin+Vector3.new(64,3,0)) end
  a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
  if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
  if t.index==10 or t.index==11 then
@@ -4306,7 +4445,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -4334,7 +4473,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -4383,7 +4522,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -4434,7 +4573,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -4448,36 +4587,226 @@ local function part(parent, name, size, cf, color, material)
 	return p
 end
 World.part = part
-function World.arena(parent, origin)
-	local folder = Instance.new("Folder"); folder.Name = "Courtyard"; folder.Parent = parent
-	local stone, dark = Color3.fromRGB(151, 145, 122), Color3.fromRGB(56, 65, 57)
-	part(folder, "Training floor", Vector3.new(160, 2, 160), CFrame.new(origin - Vector3.new(0, 1, 0)), stone, Enum.Material.Slate)
-	for _, x in { -1, 1 } do
-		part(folder, "Boundary", Vector3.new(2, 25, 162), CFrame.new(origin + Vector3.new(x*81, 11.5, 0)), dark, Enum.Material.Concrete)
-		part(folder, "Boundary", Vector3.new(162, 25, 2), CFrame.new(origin + Vector3.new(0, 11.5, x*81)), dark, Enum.Material.Concrete)
-		local wall=part(folder,"Ninja wall",Vector3.new(3,23,26),CFrame.new(origin+Vector3.new(x*28,11.5,0)),dark,Enum.Material.Slate)
-		wall:SetAttribute("NinjaWall",true)
-		local ledge=part(folder,"Wall ledge",Vector3.new(10,1,29),CFrame.new(origin+Vector3.new(x*28,23,0)),stone,Enum.Material.Concrete)
-		ledge.CanQuery=true
-		for _, z in { -1, 1 } do
-			local at = origin + Vector3.new(x*58, 0, z*58)
-			part(folder, "Pillar", Vector3.new(3, 14, 3), CFrame.new(at + Vector3.new(0, 7, 0)), dark)
-			part(folder, "Lantern", Vector3.new(4, 1, 4), CFrame.new(at + Vector3.new(0, 12, 0)), Color3.fromRGB(233, 198, 130), Enum.Material.Neon)
+-- --------------------------------------------------------------- arena
+-- The Konoha Chunin Exam finals stadium, as close as the block toolkit allows:
+-- a round field of packed earth and grass, bushes along the foot of a very tall
+-- circular wall of pale panels (the wall fighters run up), a few big trees on
+-- the field, spectator stands crowning the wall under white pavilions with
+-- golden roofs, the larger Kage box, the participants' balcony and the gate.
+-- Combat contract: flat floor at the origin plane; the wall segments are the
+-- NinjaWall surfaces just outside the fighters' round limit.
+local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+local PALETTE={
+	grass=rgb(104,136,70),grassDark=rgb(84,116,58),earth=rgb(178,152,110),earthDark=rgb(150,126,92),
+	wall=rgb(218,216,196),wallSeam=rgb(178,180,160),wallBand=rgb(196,198,178),
+	brick=rgb(152,74,52),brickDark=rgb(118,56,40),plaster=rgb(238,236,226),
+	roof=rgb(222,164,58),roofDark=rgb(176,120,38),trim=rgb(70,62,56),wood=rgb(120,84,54),woodDark=rgb(84,58,38),
+	leaf=rgb(70,112,58),leafDark=rgb(52,90,48),bark=rgb(96,70,50),
+}
+World.WALL_RADIUS=81.6
+local function deco(parent,name,size,cf,color,material,shape)
+	local p=part(parent,name,size,cf,color,material)
+	p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
+	if shape then p.Shape=shape end
+	return p
+end
+-- A flat disc lying on the floor (cylinder axis pointing up).
+local function disc(parent,name,radius,y,center,color,material)
+	return deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+end
+local function label(target,face,text,color,font)
+	local gui=Instance.new("SurfaceGui");gui.Face=face;gui.CanvasSize=Vector2.new(400,400);gui.LightInfluence=1;gui.Parent=target
+	local t=Instance.new("TextLabel");t.Size=UDim2.fromScale(1,1);t.BackgroundTransparency=1;t.Text=text;t.TextColor3=color
+	t.Font=font or Enum.Font.GothamBlack;t.TextScaled=true;t.Parent=gui
+	return gui
+end
+local function spectator(folder,at,facing,seed)
+	local parent=Instance.new("Model");parent.Name="SpectatorFigure";parent.Parent=folder
+	local tones={rgb(70,96,74),rgb(70,86,120),rgb(120,70,62),rgb(140,120,90),rgb(96,80,110),rgb(60,64,72),rgb(150,140,128),rgb(86,104,76)}
+	local skin={rgb(232,198,166),rgb(204,166,136),rgb(176,134,104)}
+	local body=deco(parent,"Spectator",Vector3.new(1.3,2.0,.9),CFrame.lookAt(at+Vector3.new(0,1.0,0),at+Vector3.new(0,1.0,0)+facing),tones[seed%#tones+1],Enum.Material.SmoothPlastic)
+	body.CastShadow=false
+	local head=deco(parent,"SpectatorHead",Vector3.new(.95,.95,.95),body.CFrame*CFrame.new(0,1.45,0),skin[seed%#skin+1],Enum.Material.SmoothPlastic,Enum.PartType.Ball)
+	head.CastShadow=false
+	deco(parent,"SpectatorHair",Vector3.new(1.0,.45,1.0),head.CFrame*CFrame.new(0,.28,.05),if seed%4==0 then rgb(220,190,120) else rgb(36,30,28),Enum.Material.SmoothPlastic).CastShadow=false
+end
+local function tree(parent,at,height,spread)
+	-- Field trees: a real trunk (cover and line of sight) under a loose crown.
+	local trunk=part(parent,"Field tree",Vector3.new(2.6,height,2.6),CFrame.new(at+Vector3.new(0,height/2,0)),PALETTE.bark,Enum.Material.Wood)
+	trunk.Shape=Enum.PartType.Block
+	local crown=deco(parent,"Crown",Vector3.new(spread*2,spread*1.4,spread*2),CFrame.new(at+Vector3.new(0,height+spread*.3,0)),PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	crown.Size=Vector3.one*spread*1.9
+	for k=0,4 do
+		local a=k/5*math.pi*2
+		deco(parent,"Crown",Vector3.one*spread*(1.1+(k%2)*.25),CFrame.new(at+Vector3.new(math.sin(a)*spread*.75,height-spread*.1+(k%3)*.8,math.cos(a)*spread*.75)),
+			if k%2==0 then PALETTE.leafDark else PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	end
+	for k=0,2 do
+		local a=k/3*math.pi*2+.4
+		deco(parent,"Branch",Vector3.new(.9,spread*1.1,.9),CFrame.new(at+Vector3.new(0,height*.72,0))*CFrame.Angles(0,a,math.rad(48))*CFrame.new(0,spread*.5,0),PALETTE.bark,Enum.Material.Wood)
+	end
+	return trunk
+end
+-- A white pavilion with a golden curved roof sitting on the stands.
+local function pavilion(parent,cf,width,depth,height,tiers)
+	deco(parent,"Pavilion",Vector3.new(width,height,depth),cf*CFrame.new(0,height/2,0),PALETTE.plaster,Enum.Material.SmoothPlastic)
+	for k=-math.floor(width/6),math.floor(width/6) do
+		deco(parent,"Window",Vector3.new(2.6,height*.38,.2),cf*CFrame.new(k*5.2,height*.58,-depth/2-.05),PALETTE.trim,Enum.Material.SmoothPlastic)
+	end
+	deco(parent,"Base trim",Vector3.new(width+.4,.8,depth+.4),cf*CFrame.new(0,.4,0),PALETTE.trim,Enum.Material.Wood)
+	local y=height
+	for tier=1,tiers do
+		local w=width+6-tier*3;local d=depth+6-tier*3
+		local pitch=math.rad(24)
+		for _,side in {-1,1} do
+			deco(parent,"Roof",Vector3.new(w,.9,d/2+1),cf*CFrame.new(0,y+1.1,side*(d/4))*CFrame.Angles(side*-pitch,0,0),PALETTE.roof,Enum.Material.SmoothPlastic)
+			-- Up-turned eaves at the four corners.
+			for _,ex in {-1,1} do
+				deco(parent,"Eave",Vector3.new(2.2,.7,2.2),cf*CFrame.new(ex*(w/2-.6),y+.4,side*(d/2+.4))*CFrame.Angles(side*math.rad(-20),0,ex*math.rad(18)),PALETTE.roofDark,Enum.Material.SmoothPlastic)
+			end
+		end
+		deco(parent,"Ridge",Vector3.new(w+.6,.7,.9),cf*CFrame.new(0,y+1.1+math.tan(pitch)*(d/4)+.6,0),PALETTE.roofDark,Enum.Material.SmoothPlastic)
+		if tier&lt;tiers then
+			deco(parent,"Upper storey",Vector3.new(w-6,4,d-6),cf*CFrame.new(0,y+3.6,0),PALETTE.plaster,Enum.Material.SmoothPlastic)
+			y+=4.6
 		end
 	end
-	for _, z in { -40, 40 } do
-		part(folder, "Cover", Vector3.new(8, 4, 3), CFrame.new(origin + Vector3.new(18, 2, z)), dark, Enum.Material.Slate)
-		part(folder,"Step platform",Vector3.new(14,1.2,14),CFrame.new(origin+Vector3.new(-17,7,z)),stone,Enum.Material.Concrete)
+end
+local function atmosphere()
+	local Lighting=game:GetService("Lighting")
+	if Lighting:FindFirstChild("NinjaDuelAtmosphere") then return end
+	-- Bright exam-day afternoon, as in the anime: clear sky, warm sun, soft haze.
+	Lighting.ClockTime=14.6;Lighting.GeographicLatitude=30
+	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
+	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
+	pcall(function() Lighting.Technology=Enum.Technology.ShadowMap end)
+	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
+	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
+	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
+	local bloom=Instance.new("BloomEffect");bloom.Name="NinjaDuelBloom";bloom.Intensity=.45;bloom.Size=24;bloom.Threshold=1.5;bloom.Parent=Lighting
+	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.04;rays.Spread=.6;rays.Parent=Lighting
+end
+World.atmosphere=atmosphere
+function World.arena(parent, origin)
+	local folder = Instance.new("Folder"); folder.Name = "Courtyard"; folder.Parent = parent
+	local decor=Instance.new("Folder");decor.Name="Decor";decor.Parent=folder
+	local C=PALETTE
+	local R=World.WALL_RADIUS
+	local height=46
+	-- Field: grass with a broad packed-earth centre and worn patches.
+	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
+	disc(decor,"Earth",50,.03,origin,C.earth,Enum.Material.Ground)
+	for k=0,9 do
+		local a=k/10*math.pi*2+.3
+		local r=38+((k*37)%5)*4
+		disc(decor,"Earth patch",10+((k*53)%4)*3,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
 	end
-	for i = -3, 3 do
-		local stripe = part(folder, "Inlay", Vector3.new(0.09, 0.02, 146), CFrame.new(origin + Vector3.new(i*12, 0.02, 0)), Color3.fromRGB(147, 161, 156))
-		stripe.CanCollide = false; stripe.CanQuery = false
+	-- Worn grass islands: clusters of overlapping small patches, never one
+	-- perfect circle, so the field reads as trampled ground.
+	for k=0,7 do
+		local a=k/8*math.pi*2+1.1
+		local r=18+((k*29)%4)*6
+		local center=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
+		for j=0,4 do
+			local b=j*1.7+k
+			local offset=Vector3.new(math.sin(b)*(2+j*1.3),0,math.cos(b)*(1.5+j))
+			disc(decor,"Grass tuft",1.6+((j*13+k)%4)*.9,.045,center+offset,if j%2==0 then C.grassDark else C.grass,Enum.Material.Grass)
+		end
 	end
-	for _,side in {-1,1} do
-		part(folder,"Training beam",Vector3.new(1.2,1.2,28),CFrame.new(origin+Vector3.new(side*28,20,0)),Color3.fromRGB(109,73,46),Enum.Material.Wood)
+	-- The tall panelled wall. Each segment is a wall-run surface.
+	local segments=56
+	local width=2*math.pi*(R+1)/segments+.3
+	for k=0,segments-1 do
+		local a=k/segments*math.pi*2
+		local dir=Vector3.new(math.sin(a),0,math.cos(a))
+		local at=origin+dir*(R+1)+Vector3.new(0,height/2,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,height/2,0))
+		local w=part(folder,"Boundary",Vector3.new(width,height,2),look,C.wall,Enum.Material.Concrete)
+		w:SetAttribute("NinjaWall",true)
+		deco(decor,"Seam",Vector3.new(.25,height,.1),look*CFrame.new(width/2,0,-1.02),C.wallSeam,Enum.Material.Concrete)
+		deco(decor,"Band",Vector3.new(width,1.2,.1),look*CFrame.new(0,height/2-6,-1.02),C.wallBand,Enum.Material.Concrete)
+		deco(decor,"Footing",Vector3.new(width,2.2,.6),look*CFrame.new(0,-height/2+1.1,-1.2),C.wallSeam,Enum.Material.Concrete)
+		-- Brick outer face and the parapet in front of the first row of seats.
+		deco(decor,"Outer face",Vector3.new(width,height,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
+		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
 	end
-	local ring = part(folder, "Duel circle", Vector3.new(0.03, 24, 24), CFrame.new(origin + Vector3.new(0, 0.04, 0))*CFrame.Angles(0,0,math.pi/2), Color3.fromRGB(157,175,165))
-	ring.Shape = Enum.PartType.Cylinder; ring.CanCollide = false; ring.CanQuery = false
+	-- Bushes along the foot of the wall.
+	for k=0,63 do
+		local a=k/64*math.pi*2+((k*17)%5)*.01
+		local r=R-1.6-((k*29)%3)*.6
+		local size=3.4+((k*41)%4)*.7
+		deco(decor,"Bush",Vector3.one*size,CFrame.new(origin+Vector3.new(math.sin(a)*r,size*.32,math.cos(a)*r)),if k%3==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	end
+	-- Stands crowning the wall: rising tiers full of spectators.
+	local seed=0
+	local top=height
+	for tier=1,4 do
+		local radius=R+3+tier*3.4
+		local steps=math.floor(radius*2*math.pi/6.5)
+		for k=0,steps-1 do
+			local a=k/steps*math.pi*2
+			local at=origin+Vector3.new(math.sin(a)*radius,top+tier*2.1-.6,math.cos(a)*radius)
+			local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
+			deco(decor,"Stand",Vector3.new(6.8,tier*2.1+1,3.6),look*CFrame.new(0,-(tier*2.1+1)/2+.8,0),if tier%2==0 then C.wood else C.woodDark,Enum.Material.Wood)
+			seed+=1
+			if seed%4~=0 then
+				local seat=look*CFrame.new(((seed*37)%5-2)*.9,.8,.4)
+				spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),seed)
+			end
+		end
+	end
+	-- Pavilions on the stands; the Kage box is the large two-storey one (north).
+	for k=0,9 do
+		local a=k/10*math.pi*2+math.pi/10
+		local at=origin+Vector3.new(math.sin(a)*(R+20),top+5,math.cos(a)*(R+20))
+		pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
+	end
+	local kage=origin+Vector3.new(0,top+6,-(R+16))
+	local kageCF=CFrame.lookAt(kage,Vector3.new(origin.X,kage.Y,origin.Z))
+	pavilion(decor,kageCF,34,16,11,2)
+	local box=deco(decor,"Kage box",Vector3.new(14,6,4),kageCF*CFrame.new(0,4,-9.6),C.trim,Enum.Material.Wood)
+	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x,1.4,-8.6)).Position,(origin-kage)*Vector3.new(1,0,1),if x&lt;0 then 5 else 2) end
+	local plaque=deco(decor,"Kage plaque",Vector3.new(4,4,.3),kageCF*CFrame.new(0,8.5,-9.9),C.plaster,Enum.Material.SmoothPlastic)
+	label(plaque,Enum.NormalId.Front,"火",rgb(190,40,36))
+	box.Transparency=0
+	-- Participants' balcony on the east wall, and the arena gate to the south.
+	local east=CFrame.lookAt(origin+Vector3.new(R-1.2,24,0),origin+Vector3.new(0,24,0))
+	deco(decor,"Participants balcony",Vector3.new(16,1,4),east,C.woodDark,Enum.Material.Wood)
+	deco(decor,"Balcony rail",Vector3.new(16,1.6,.3),east*CFrame.new(0,1.3,-1.9),C.wood,Enum.Material.Wood)
+	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
+	local south=CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0))
+	deco(decor,"Gate",Vector3.new(18,16,.2),south,rgb(40,38,36),Enum.Material.SmoothPlastic)
+	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
+	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
+	-- Field trees: line of sight and something to fight around, as in the finals.
+	for _,spot in {{.55,64,24,7},{2.4,60,20,6},{3.9,66,26,7.5},{5.3,62,22,6.5}} do
+		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
+	end
+	-- Two weathered boulders for low cover.
+	for _,spot in {{1.5,34},{4.6,30}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2,math.cos(spot[1])*spot[2])
+		part(folder,"Cover",Vector3.new(7,4,4),CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
+		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4),CFrame.new(at+Vector3.new(-.5,2.2,0))*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
+	end
+	-- The forest of Konoha around the stadium, seen over the stands.
+	for k=0,35 do
+		local a=k/36*math.pi*2+.07
+		local r=R+44+((k*53)%5)*6
+		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
+		local h=38+((k*31)%4)*6
+		deco(decor,"Forest trunk",Vector3.new(3,h,3),CFrame.new(at+Vector3.new(0,h/2,0)),C.bark,Enum.Material.Wood)
+		deco(decor,"Forest crown",Vector3.one*(22+((k*13)%4)*4),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+	end
+	-- A few leaves drifting over the field.
+	local sky=deco(decor,"Leaf source",Vector3.new(140,1,140),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
+	sky.Transparency=1
+	local leaves=Instance.new("ParticleEmitter");leaves.Name="Leaves"
+	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=4;leaves.Lifetime=NumberRange.new(9,13)
+	leaves.Speed=NumberRange.new(2,4);leaves.EmissionDirection=Enum.NormalId.Bottom;leaves.SpreadAngle=Vector2.new(30,30)
+	leaves.Color=ColorSequence.new(rgb(120,160,80));leaves.LightEmission=.1;leaves.Size=NumberSequence.new(.35)
+	leaves.Rotation=NumberRange.new(0,360);leaves.RotSpeed=NumberRange.new(-90,90);leaves.Acceleration=Vector3.new(1.2,-.6,.4)
+	leaves.Parent=sky
+	atmosphere()
 	return folder
 end
 function World.rig(parent, def, cf, name)
@@ -4556,7 +4885,6 @@ local function wear(model,bodyName,name,size,offset,color,material,class)
 	return p
 end
 World.wear=wear
-local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 local function cyl(p)
 	if p then p.Shape=Enum.PartType.Cylinder end
 	return p
@@ -4564,10 +4892,10 @@ end
 local A=CFrame.Angles
 local R=math.rad
 local function headband(model,slashed)
-	wear(model,"Head","Headband",Vector3.new(1.6,.24,1.6),CFrame.new(0,.36,0),rgb(28,36,58),Enum.Material.SmoothPlastic)
-	wear(model,"Head","HeadbandPlate",Vector3.new(.86,.3,.06),CFrame.new(0,.36,-.81),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"Head","Headband",Vector3.new(1.66,.24,1.66),CFrame.new(0,.36,0),rgb(28,36,58),Enum.Material.SmoothPlastic)
+	wear(model,"Head","HeadbandPlate",Vector3.new(.86,.3,.06),CFrame.new(0,.36,-.85),rgb(176,184,194),Enum.Material.Metal)
 	-- The Leaf symbol, reduced to a readable spiral mark.
-	wear(model,"Head","LeafMark",Vector3.new(.3,.14,.02),CFrame.new(0,.38,-.85),rgb(70,78,90),Enum.Material.Metal)
+	wear(model,"Head","LeafMark",Vector3.new(.3,.14,.02),CFrame.new(0,.38,-.89),rgb(70,78,90),Enum.Material.Metal)
 	if slashed then wear(model,"Head","Slash",Vector3.new(.92,.04,.03),CFrame.new(0,.36,-.86)*A(0,0,R(-8)),rgb(30,30,34),Enum.Material.Metal) end
 	for _,side in {-1,1} do
 		wear(model,"Head","HeadbandTail",Vector3.new(.16,.55,.08),CFrame.new(side*.25,.18,.84)*A(R(18),0,R(side*10)),rgb(28,36,58),Enum.Material.SmoothPlastic)
@@ -4577,11 +4905,11 @@ local function face(model,eye,brow)
 	local eyes=model:FindFirstChild("Eyes")
 	if eyes then eyes.Transparency=1 end
 	for _,side in {-1,1} do
-		wear(model,"Head","Eye",Vector3.new(.3,.17,.04),CFrame.new(side*.3,.08,-.76),rgb(245,245,240))
-		wear(model,"Head","Iris",Vector3.new(.15,.15,.03),CFrame.new(side*.3,.07,-.785),eye,Enum.Material.SmoothPlastic)
-		wear(model,"Head","Brow",Vector3.new(.34,.06,.04),CFrame.new(side*.3,.27,-.765)*A(0,0,R(side*-8)),brow)
+		wear(model,"Head","Eye",Vector3.new(.3,.17,.04),CFrame.new(side*.3,.08,-.8),rgb(245,245,240))
+		wear(model,"Head","Iris",Vector3.new(.15,.15,.03),CFrame.new(side*.3,.07,-.825),eye,Enum.Material.SmoothPlastic)
+		wear(model,"Head","Brow",Vector3.new(.34,.06,.04),CFrame.new(side*.3,.27,-.8)*A(0,0,R(side*-8)),brow)
 	end
-	wear(model,"Head","Mouth",Vector3.new(.28,.04,.03),CFrame.new(0,-.36,-.765),rgb(120,70,64))
+	wear(model,"Head","Mouth",Vector3.new(.28,.04,.03),CFrame.new(0,-.36,-.78),rgb(120,70,64))
 end
 -- Smooth rounded hair cap over the crown.
 local function hairCap(model,color)
@@ -4600,175 +4928,135 @@ local function spike(model,base,direction,length,width,height,color)
 	local cf=CFrame.lookAt(center,center+d,up)
 	return wear(model,"Head","HairSpike",Vector3.new(width,height,length),cf,color,Enum.Material.SmoothPlastic,"WedgePart")
 end
+-- Young prodigies (12-14), not adult final forms: practical genin/chunin gear,
+-- bigger heads and lighter builds, with only hints of who they will become.
 local function dressMinato(model,def)
-	local hair=rgb(248,214,96)
-	local hairShade=rgb(226,180,58)
-	local navy=rgb(30,44,78)
-	local vest=rgb(86,104,62)
-	local white=rgb(240,240,236)
-	local flame=rgb(226,82,36)
+	local hair=rgb(250,216,98)
+	local hairShade=rgb(228,182,60)
+	local navy=rgb(34,52,92)
+	local navyDark=rgb(24,34,60)
+	local light=rgb(226,230,232)
+	local accent=rgb(236,110,44)
 	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
-	face(model,rgb(60,120,200),hairShade)
+	face(model,rgb(70,140,220),hairShade)
 	hairCap(model,hair)
-	-- Spiky mane swept back from the crown, side flicks, and two long bangs.
+	-- Spiky but younger mane: shorter locks, two framing bangs.
 	local spikes={
-		{Vector3.new(0,.78,.25),Vector3.new(0,.35,1),1.05,.62,.4},
-		{Vector3.new(-.45,.66,.28),Vector3.new(-.45,.3,1),.95,.5,.36},
-		{Vector3.new(.45,.66,.28),Vector3.new(.45,.3,1),.95,.5,.36},
-		{Vector3.new(0,.45,.62),Vector3.new(0,-.1,1),.9,.7,.4},
-		{Vector3.new(-.5,.3,.58),Vector3.new(-.5,-.35,.9),.8,.5,.34},
-		{Vector3.new(.5,.3,.58),Vector3.new(.5,-.35,.9),.8,.5,.34},
-		{Vector3.new(0,-.15,.68),Vector3.new(0,-.7,.75),.7,.62,.32},
-		{Vector3.new(-.72,.5,.05),Vector3.new(-1,.45,.35),.6,.42,.3},
-		{Vector3.new(.72,.5,.05),Vector3.new(1,.45,.35),.6,.42,.3},
-		{Vector3.new(-.25,.82,-.2),Vector3.new(-.3,1,-.2),.5,.4,.3},
-		{Vector3.new(.25,.82,-.2),Vector3.new(.3,1,-.2),.5,.4,.3},
+		{Vector3.new(0,.78,.25),Vector3.new(0,.4,1),.9,.6,.38},
+		{Vector3.new(-.45,.66,.28),Vector3.new(-.5,.35,1),.82,.5,.34},
+		{Vector3.new(.45,.66,.28),Vector3.new(.5,.35,1),.82,.5,.34},
+		{Vector3.new(0,.45,.62),Vector3.new(0,-.05,1),.78,.66,.38},
+		{Vector3.new(-.5,.3,.58),Vector3.new(-.55,-.3,.9),.7,.48,.32},
+		{Vector3.new(.5,.3,.58),Vector3.new(.55,-.3,.9),.7,.48,.32},
+		{Vector3.new(0,-.12,.68),Vector3.new(0,-.7,.75),.6,.6,.3},
+		{Vector3.new(-.72,.5,.05),Vector3.new(-1,.5,.35),.52,.4,.28},
+		{Vector3.new(.72,.5,.05),Vector3.new(1,.5,.35),.52,.4,.28},
+		{Vector3.new(-.25,.82,-.2),Vector3.new(-.35,1,-.25),.45,.38,.28},
+		{Vector3.new(.25,.82,-.2),Vector3.new(.35,1,-.25),.45,.38,.28},
 	}
 	for index,s in spikes do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
-	for _,x in {-.38,0,.38} do spike(model,Vector3.new(x,.62,-.55),Vector3.new(x*.4,-.75,-.55),.55,.42,.24,hair) end
+	for _,x in {-.38,0,.38} do spike(model,Vector3.new(x,.62,-.55),Vector3.new(x*.4,-.75,-.55),.5,.42,.24,hair) end
 	for _,side in {-1,1} do
-		wear(model,"Head","Bang",Vector3.new(.2,1.15,.34),CFrame.new(side*.78,-.12,-.42)*A(R(4),0,R(side*4)),hair,Enum.Material.SmoothPlastic)
-		wear(model,"Head","SideHair",Vector3.new(.16,.85,.8),CFrame.new(side*.79,.05,.3),hair)
+		wear(model,"Head","Bang",Vector3.new(.2,.95,.34),CFrame.new(side*.8,-.05,-.42)*A(R(4),0,R(side*4)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.16,.8,.8),CFrame.new(side*.8,.08,.3),hair)
 	end
-	wear(model,"Head","BackHair",Vector3.new(1.6,1.05,.26),CFrame.new(0,.05,.74),hair)
+	wear(model,"Head","BackHair",Vector3.new(1.6,1.0,.26),CFrame.new(0,.05,.74),hair)
 	headband(model,false)
-	-- Jonin flak vest over the navy uniform, scroll pouches, high collar.
-	local upper=model:FindFirstChild("UpperTorso");if upper then upper.Color=navy end
-	local lower=model:FindFirstChild("LowerTorso");if lower then lower.Color=navy end
-	wear(model,"UpperTorso","FlakVest",Vector3.new(2.1,1.32,1.12),CFrame.new(0,-.02,0),vest,Enum.Material.SmoothPlastic)
-	wear(model,"UpperTorso","VestCollar",Vector3.new(1.3,.32,1.05),CFrame.new(0,.78,.02),vest,Enum.Material.SmoothPlastic)
-	for _,x in {-.62,-.2,.2,.62} do
-		wear(model,"UpperTorso","ScrollPouch",Vector3.new(.34,.5,.16),CFrame.new(x,-.12,-.62),rgb(74,90,52),Enum.Material.SmoothPlastic)
+	-- Navy zip-up with a high collar, a light open half-vest (the seed of the
+	-- future cloak, no rank marks), kunai holster on the right thigh.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=navy end
 	end
-	wear(model,"UpperTorso","Spiral",Vector3.new(.3,.3,.05),CFrame.new(0,.1,.6),rgb(170,40,30),Enum.Material.SmoothPlastic)
-	-- White haori: shoulders and sleeves on the torso and arms, skirts on the
-	-- hips so they follow the legs, flame hem.
-	-- The haori is open at the front: shoulders, back and side panels only.
-	wear(model,"UpperTorso","HaoriShoulders",Vector3.new(2.26,.3,1.2),CFrame.new(0,.62,.03),white)
-	for _,side in {-1,1} do wear(model,"UpperTorso","HaoriSide",Vector3.new(.1,1.38,1.2),CFrame.new(side*1.1,.02,.03),white) end
-	local back=wear(model,"UpperTorso","HaoriBack",Vector3.new(2.26,1.4,.08),CFrame.new(0,0,.62),white,Enum.Material.SmoothPlastic)
-	if back then
-		local gui=Instance.new("SurfaceGui");gui.Face=Enum.NormalId.Back;gui.CanvasSize=Vector2.new(220,140);gui.LightInfluence=1;gui.Parent=back
-		local label=Instance.new("TextLabel");label.Size=UDim2.fromScale(1,1);label.BackgroundTransparency=1;label.Text="四代目\n火影"
-		label.TextColor3=rgb(200,40,30);label.Font=Enum.Font.GothamBlack;label.TextScaled=true;label.Parent=gui
-	end
-	-- Front opening: the haori hangs as two panels either side of the vest.
+	wear(model,"UpperTorso","Collar",Vector3.new(1.25,.36,1.02),CFrame.new(0,.8,.02),navy)
+	wear(model,"UpperTorso","Zip",Vector3.new(.06,1.3,.03),CFrame.new(0,0,-.52),light)
+	wear(model,"UpperTorso","HalfVestBack",Vector3.new(2.12,1.36,.08),CFrame.new(0,-.02,.56),light)
 	for _,side in {-1,1} do
-		wear(model,"UpperTorso","HaoriFront",Vector3.new(.5,1.4,.08),CFrame.new(side*.86,0,-.62),white,Enum.Material.SmoothPlastic)
-		wear(model,"LeftUpperArm","Sleeve",Vector3.new(.98,.9,.98),CFrame.new(0,.14,0),white,Enum.Material.SmoothPlastic)
-		wear(model,"RightUpperArm","Sleeve",Vector3.new(.98,.9,.98),CFrame.new(0,.14,0),white,Enum.Material.SmoothPlastic)
+		wear(model,"UpperTorso","HalfVestFront",Vector3.new(.62,1.3,.08),CFrame.new(side*.72,-.05,-.56),light)
+		wear(model,"UpperTorso","HalfVestSide",Vector3.new(.08,1.32,1.12),CFrame.new(side*1.04,-.03,0),light)
+		wear(model,"UpperTorso","VestTrim",Vector3.new(.64,.08,.1),CFrame.new(side*.72,-.66,-.56),accent)
 	end
-	local skirts={
-		{"HaoriSkirtBack",Vector3.new(2.3,1.9,.08),CFrame.new(0,-.85,.58)*A(R(-6),0,0)},
-		{"HaoriSkirtLeft",Vector3.new(.08,1.9,1.1),CFrame.new(-1.08,-.85,0)*A(0,0,R(-6))},
-		{"HaoriSkirtRight",Vector3.new(.08,1.9,1.1),CFrame.new(1.08,-.85,0)*A(0,0,R(6))},
-		{"HaoriSkirtFrontL",Vector3.new(.55,1.9,.08),CFrame.new(-.84,-.85,-.58)*A(R(6),0,0)},
-		{"HaoriSkirtFrontR",Vector3.new(.55,1.9,.08),CFrame.new(.84,-.85,-.58)*A(R(6),0,0)},
-	}
-	for _,s in skirts do
-		local panel=wear(model,"LowerTorso",s[1],s[2],s[3],white,Enum.Material.SmoothPlastic)
-		if panel then
-			-- Flame hem: a band along the bottom edge crowned by a row of
-			-- diamond tongues, so the hem reads as fire from any side.
-			local spansX=s[2].X&gt;s[2].Z
-			local width=if spansX then s[2].X else s[2].Z
-			local count=math.max(1,math.floor(width/.38))
-			local bottom=-s[2].Y/2
-			for k=1,count do
-				local along=-width/2+(k-.5)*width/count
-				local lift=bottom+.4+((k*37)%3)*.07
-				local offset=if spansX then CFrame.new(along,lift,0)*A(0,0,R(45)) else CFrame.new(0,lift,along)*A(R(45),0,0)
-				wear(model,"LowerTorso","Flame",if spansX then Vector3.new(.3,.3,s[2].Z+.02) else Vector3.new(s[2].X+.02,.3,.3),s[3]*offset,flame)
-			end
-			wear(model,"LowerTorso","FlameBand",Vector3.new(s[2].X+.02,.3,s[2].Z+.02),s[3]*CFrame.new(0,bottom+.15,0),flame)
-		end
-	end
-	-- Navy pants with white shin wraps; shinobi sandals.
+	wear(model,"UpperTorso","VestTrimBack",Vector3.new(2.14,.08,.1),CFrame.new(0,-.66,.56),accent)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.24,1.06),CFrame.new(0,.28,0),navyDark)
+	wear(model,"LowerTorso","ToolPouch",Vector3.new(.7,.42,.3),CFrame.new(0,.12,.62),rgb(70,80,92))
+	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.4,.9),CFrame.new(0,.05,0),light)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),navyDark)
+	cyl(wear(model,"RightUpperLeg","HolsterRing",Vector3.new(.06,.22,.22),CFrame.new(.55,.3,0),rgb(120,126,134),Enum.Material.Metal))
 	for _,side in {"Left","Right"} do
-		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=navy end
-		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=navy end
-		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.62,.84),CFrame.new(0,-.12,0),rgb(214,214,206),Enum.Material.SmoothPlastic)
-		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(26,32,52) end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=navyDark end
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=navyDark end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.55,.84),CFrame.new(0,-.15,0),light)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(28,36,56) end
 		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),Color3.fromRGB(table.unpack(def.Skin)))
-		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=navy end
+		wear(model,side.."LowerArm","Cuff",Vector3.new(.8,.18,.8),CFrame.new(0,-.38,0),light)
 	end
 end
-local function cloud(model,body,offset,scale)
-	-- Akatsuki cloud: white outline behind three red lobes.
-	for index,lobe in {{-.32,0,.38},{0,.08,.46},{.3,-.02,.36}} do
-		wear(model,body,"CloudEdge",Vector3.new(.03,lobe[3]*2*scale+.08,lobe[3]*2*scale+.08),offset*CFrame.new(lobe[1]*scale,lobe[2]*scale,0)*A(0,R(90),0),rgb(236,236,236))
-		wear(model,body,"Cloud",Vector3.new(.04,lobe[3]*2*scale,lobe[3]*2*scale),offset*CFrame.new(lobe[1]*scale,lobe[2]*scale,-.035)*A(0,R(90),0),rgb(196,26,36))
-	end
-	for _,p in model:GetChildren() do
-		if (p.Name=="Cloud" or p.Name=="CloudEdge") and p:IsA("Part") and p.Shape~=Enum.PartType.Cylinder then p.Shape=Enum.PartType.Cylinder end
-	end
+-- Uchiha fan crest: red upper disc, white lower disc in front, short handle.
+local function crest(model,body,offset,scale)
+	cyl(wear(model,body,"CrestRed",Vector3.new(.04,.66*scale,.66*scale),offset*CFrame.new(0,.12*scale,0)*A(0,R(90),0),rgb(200,30,36)))
+	cyl(wear(model,body,"CrestWhite",Vector3.new(.04,.46*scale,.46*scale),offset*CFrame.new(0,-.06*scale,-.02)*A(0,R(90),0),rgb(238,238,236)))
+	wear(model,body,"CrestHandle",Vector3.new(.09*scale,.34*scale,.03),offset*CFrame.new(0,-.4*scale,-.02),rgb(238,238,236))
 end
 local function dressItachi(model,def)
 	local hair=rgb(22,22,28)
-	local cloak=rgb(20,20,26)
+	local shirt=rgb(48,52,68)
+	local dark=rgb(22,22,30)
+	local gray=rgb(132,136,146)
 	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
 	face(model,rgb(200,20,30),hair)
-	hairCap(model,hair)
 	for _,p in model:GetChildren() do if p.Name=="Iris" then p.Material=Enum.Material.Neon end end
-	-- Long dark bangs framing the face, a crown, and the low tie at the nape.
+	hairCap(model,hair)
+	-- Long dark hair tied low, centre-parted bangs framing the face.
 	for _,side in {-1,1} do
-		wear(model,"Head","Bang",Vector3.new(.24,1.35,.42),CFrame.new(side*.74,-.2,-.42)*A(R(3),0,R(side*3)),hair)
-		wear(model,"Head","SideHair",Vector3.new(.18,1.1,.9),CFrame.new(side*.8,-.05,.25),hair)
+		wear(model,"Head","Bang",Vector3.new(.24,1.15,.42),CFrame.new(side*.76,-.12,-.42)*A(R(3),0,R(side*3)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.18,1.0,.9),CFrame.new(side*.8,-.02,.25),hair)
 	end
 	for _,x in {-.42,-.12,.18,.45} do
-		wear(model,"Head","Fringe",Vector3.new(.32,.46,.26),CFrame.new(x,.5,-.68)*A(R(196),0,0),hair,Enum.Material.SmoothPlastic,"WedgePart")
+		wear(model,"Head","Fringe",Vector3.new(.32,.42,.26),CFrame.new(x,.52,-.68)*A(R(196),0,0),hair,Enum.Material.SmoothPlastic,"WedgePart")
 	end
-	wear(model,"Head","BackHair",Vector3.new(1.62,1.25,.3),CFrame.new(0,-.05,.72),hair)
-	local tail=wear(model,"Head","Ponytail",Vector3.new(1.1,.24,.24),CFrame.new(0,-.85,.86)*A(0,0,R(80))*A(0,R(10),0),hair)
-	cyl(tail)
-	headband(model,true)
-	-- Akatsuki cloak: black shell, high collar, long skirt to the knees, wide
-	-- sleeves, red clouds outlined in white.
-	local upper=model:FindFirstChild("UpperTorso");if upper then upper.Color=cloak end
-	local lower=model:FindFirstChild("LowerTorso");if lower then lower.Color=cloak end
-	wear(model,"UpperTorso","Cloak",Vector3.new(2.22,1.44,1.18),CFrame.new(0,.02,0),cloak,Enum.Material.SmoothPlastic)
-	wear(model,"UpperTorso","CollarBack",Vector3.new(1.6,.8,.14),CFrame.new(0,.98,.48),cloak,Enum.Material.SmoothPlastic)
-	for _,side in {-1,1} do
-		wear(model,"UpperTorso","Collar",Vector3.new(.14,.8,1.0),CFrame.new(side*.74,.98,.0)*A(0,R(side*-12),0),cloak,Enum.Material.SmoothPlastic)
-		wear(model,"UpperTorso","CollarLining",Vector3.new(.06,.7,.86),CFrame.new(side*.66,.98,-.02)*A(0,R(side*-12),0),rgb(150,20,30),Enum.Material.SmoothPlastic)
+	wear(model,"Head","BackHair",Vector3.new(1.62,1.2,.3),CFrame.new(0,-.05,.72),hair)
+	cyl(wear(model,"Head","Ponytail",Vector3.new(1.0,.24,.24),CFrame.new(0,-.85,.86)*A(0,0,R(80))*A(0,R(10),0),hair))
+	headband(model,false)
+	-- Village-era Uchiha: dark high-collared shirt with the clan crest on the
+	-- back, grey arm guards, shuriken holster. No cloak, no rings.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=shirt end
 	end
-	local skirts={
-		{"CloakBack",Vector3.new(2.34,2.5,.1),CFrame.new(0,-1.15,.6)*A(R(-5),0,0)},
-		{"CloakLeft",Vector3.new(.1,2.5,1.16),CFrame.new(-1.1,-1.15,0)*A(0,0,R(-5))},
-		{"CloakRight",Vector3.new(.1,2.5,1.16),CFrame.new(1.1,-1.15,0)*A(0,0,R(5))},
-		{"CloakFrontL",Vector3.new(1.1,2.5,.1),CFrame.new(-.58,-1.15,-.6)*A(R(5),0,0)},
-		{"CloakFrontR",Vector3.new(1.1,2.5,.1),CFrame.new(.58,-1.15,-.6)*A(R(5),0,0)},
-	}
-	for _,s in skirts do wear(model,"LowerTorso",s[1],s[2],s[3],cloak,Enum.Material.SmoothPlastic) end
+	wear(model,"UpperTorso","HighCollar",Vector3.new(1.45,.55,1.12),CFrame.new(0,.86,.04),shirt)
+	crest(model,"UpperTorso",CFrame.new(0,.1,.53)*A(0,R(180),0),1.2)
 	for _,side in {"Left","Right"} do
-		wear(model,side.."UpperArm","Sleeve",Vector3.new(1.0,1.15,1.0),CFrame.new(0,0,0),cloak,Enum.Material.SmoothPlastic)
-		wear(model,side.."LowerArm","Sleeve",Vector3.new(1.04,.95,1.04),CFrame.new(0,.05,0),cloak,Enum.Material.SmoothPlastic)
-		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=rgb(34,36,50) end
-		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=rgb(34,36,50) end
-		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.6,.84),CFrame.new(0,-.12,0),rgb(206,206,198),Enum.Material.SmoothPlastic)
+		wear(model,side.."LowerArm","ArmGuard",Vector3.new(.84,.72,.84),CFrame.new(0,-.05,0),gray,Enum.Material.Metal)
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.86,.5,.86),CFrame.new(0,.28,0),shirt)
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=dark end
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=dark end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.55,.84),CFrame.new(0,-.15,0),rgb(206,206,198))
 		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(28,28,36) end
 		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),Color3.fromRGB(table.unpack(def.Skin)))
 	end
-	cloud(model,"UpperTorso",CFrame.new(-.55,.2,.6+.08)*A(0,R(180),0),.55)
-	cloud(model,"LowerTorso",CFrame.new(.45,-.9,.66)*A(0,R(180),0),.65)
-	cloud(model,"LowerTorso",CFrame.new(-.6,-1.55,-.66),.6)
-	cloud(model,"UpperTorso",CFrame.new(.55,-.1,-.62),.5)
-	cloud(model,"LeftUpperArm",CFrame.new(-.52,0,0)*A(0,R(90),0),.4)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.3,0),dark)
+	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.36,.9),CFrame.new(0,.05,0),rgb(206,206,198))
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),dark)
 end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
-		local mesh=Instance.new("SpecialMesh");mesh.MeshType=Enum.MeshType.Head;mesh.Scale=Vector3.new(1.18,1.2,1.18);mesh.Parent=head
+		-- A slightly larger, rounded head reads as a 12-14 year old, not an adult.
+		local mesh=Instance.new("SpecialMesh");mesh.MeshType=Enum.MeshType.Head;mesh.Scale=Vector3.new(1.24,1.26,1.24);mesh.Parent=head
 	end
 end
 function World.dress(model,def)
 	soften(model)
+	-- The rig's coloured test sash is replaced by each costume's own belt.
+	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) end
+	-- Hair and head gear never shadow the face; the body still casts.
+	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
-		if p:IsA("BasePart") and p.Name~="HumanoidRootPart" then p.CastShadow=true end
+		if p:IsA("BasePart") and p.Name~="HumanoidRootPart" then
+			local weld=p:FindFirstChildOfClass("WeldConstraint")
+			p.CastShadow=not (p==head or (weld and weld.Part0==head))
+		end
 	end
 end
--- Imported combat clips and Roblox catalogue movement tracks play on the server.
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end
@@ -4778,21 +5066,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND39">
+  <Item class="StarterPlayer" referent="ND40">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND40">
+    <Item class="StarterPlayerScripts" referent="ND41">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND41">
+      <Item class="Folder" referent="ND42">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND42">
+        <Item class="ModuleScript" referent="ND43">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -4921,11 +5209,20 @@ function Camera:update(data,dt)
 	local focusRate=if aerial or pursuit then 10 else 7
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.55+vertical*.3+self.zoom,12,48)
+	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom,12,52)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28
+	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
+	-- Match intro: a slow orbit that presents both fighters, then the normal
+	-- rig takes over from wherever the orbit ended.
+	if (data.intro or 0)&gt;0 then
+		local mid=a:Lerp(target,.5)
+		local turn=self.boomAngle+math.rad(70)-(data.intro/2.6)*math.rad(110)
+		focus=mid+Vector3.new(0,2.6,0)
+		desired=focus+Vector3.new(math.sin(turn),0,math.cos(turn))*(separation*.5+13)+Vector3.new(0,3.2,0)
+		self.focus=focus
+	end
 	self.fovKick*=math.exp(-dt*9)
 	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
 	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,3)+self.fovKick
@@ -4936,7 +5233,21 @@ function Camera:update(data,dt)
 	local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
 	local fx=workspace:FindFirstChild("NinjaDuelFX");if fx then table.insert(exclude,fx) end
 	ray.FilterDescendantsInstances=exclude
+	-- Fighting-space props (slabs, cover, posts, platforms) never shove the lens
+	-- into the player's back: the camera looks through them and they fade.
+	-- Only the floor and the bowl's boundary still stop the lens.
+	local faded={}
 	local hit=workspace:Raycast(focus,desired-focus,ray)
+	for _=1,4 do
+		if not hit or hit.Instance.Name=="Training floor" or hit.Instance.Name=="Boundary" then break end
+		faded[hit.Instance]=true
+		table.insert(exclude,hit.Instance)
+		ray.FilterDescendantsInstances=exclude
+		hit=workspace:Raycast(focus,desired-focus,ray)
+	end
+	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+	for part in faded do part.LocalTransparencyModifier=.72 end
+	self.faded=faded
 	if hit then
 		desired=hit.Position+hit.Normal*1.2
 		if (desired-focus).Magnitude&lt;7 then
@@ -4948,6 +5259,16 @@ function Camera:update(data,dt)
 	local cf=CFrame.lookAt(desired,focus)
 	if os.clock()&lt;self.shakeUntil then
 		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
+	end
+	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
+	-- top-left two thirds of the play viewport, so tooling can ask for the view
+	-- to be re-aimed at that visible region. Never active outside Studio.
+	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
+		-- Turn about the world vertical, then pitch, and rebuild with a world up
+		-- so the horizon never rolls.
+		local look=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(-21)):VectorToWorldSpace(cf.LookVector)
+		look=(look-Vector3.yAxis*math.tan(math.rad(12))).Unit
+		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
 	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
 	else
@@ -4964,7 +5285,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND43">
+        <Item class="ModuleScript" referent="ND44">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -4993,6 +5314,8 @@ local SOUND={
 	boom="rbxasset://sounds/impact_explosion_03.mp3",
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
+-- Contacts that bring the crowd to its feet, by strength.
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8}
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -5373,6 +5696,7 @@ function FX:impact(impact,folder)
 			self:stick(impact.kind,position,impact.normal or Vector3.yAxis,direction,impact.owner)
 		end
 	end
+	if CHEER[style] then self:cheer(CHEER[style]) end
 	if style=="fire" then
 		self:explosion(position,impact.normal)
 	elseif style=="teleport" then
@@ -5595,9 +5919,9 @@ function FX:fighter(model,actor,dt)
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed&gt;34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)&gt;0
-	-- Itachi: the Sharingan flares while he reads or casts.
+	-- Itachi: the Sharingan flares while he reads, casts, or sizes up an opponent.
 	if aura.eyes and actor.fighterId=="Mirage" then
-		local lit=(actor.read or 0)&gt;0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
+		local lit=(actor.read or 0)&gt;0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom" or (actor.intro or 0)&gt;0
 		aura.eyes.Color=if lit then Color3.fromRGB(255,40,40) else Color3.fromRGB(190,20,30)
 		aura.eyes.Material=Enum.Material.Neon
 	end
@@ -5659,6 +5983,52 @@ function FX:fighter(model,actor,dt)
 		end
 	end
 end
+-- ----------------------------------------------------------------- crowd
+-- The stands react to the fight: big moments bring spectators to their feet,
+-- banners sway in the wind. Local-only motion of anchored decor.
+function FX:crowdOf(folder)
+	if self.crowdFolder==folder then return end
+	self.crowdFolder=folder
+	self.crowd={};self.banners={}
+	local yard=folder and folder:FindFirstChild("Courtyard")
+	local decor=yard and yard:FindFirstChild("Decor")
+	if not decor then return end
+	for _,m in decor:GetChildren() do
+		if m.Name=="SpectatorFigure" then
+			local parts={}
+			for _,p in m:GetChildren() do if p:IsA("BasePart") then table.insert(parts,{part=p,base=p.CFrame}) end end
+			table.insert(self.crowd,{parts=parts,phase=math.random()*math.pi*2,speed=7+math.random()*4})
+		elseif m.Name=="Banner" or m.Name=="Pavilion banner" then
+			table.insert(self.banners,{part=m,base=m.CFrame,phase=math.random()*math.pi*2})
+		end
+	end
+end
+function FX:cheer(strength)
+	self.cheerStart=os.clock()
+	self.cheerStrength=math.max(strength,if self.cheerStart and os.clock()-self.cheerStart&lt;.4 then self.cheerStrength or 0 else 0)
+end
+function FX:ambient(dt)
+	local t=os.clock()
+	for _,b in self.banners or {} do
+		if b.part.Parent then
+			local h=b.part.Size.Y
+			local angle=math.rad(math.sin(t*1.3+b.phase)*3+math.sin(t*3.1+b.phase)*1)
+			b.part.CFrame=b.base*CFrame.new(0,h/2,0)*CFrame.Angles(angle,0,0)*CFrame.new(0,-h/2,0)
+		end
+	end
+	local elapsed=t-(self.cheerStart or -10)
+	local active=elapsed&lt;1.1
+	if active or self.cheering then
+		local strength=(self.cheerStrength or 0)*(1-math.clamp((elapsed-.6)/.5,0,1))
+		for _,fig in self.crowd or {} do
+			local lift=if active then math.abs(math.sin(t*fig.speed+fig.phase))*.75*strength else 0
+			for _,entry in fig.parts do
+				if entry.part.Parent then entry.part.CFrame=entry.base+Vector3.new(0,lift,0) end
+			end
+		end
+		self.cheering=active
+	end
+end
 function FX:update(data,dt,folder)
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
@@ -5667,9 +6037,12 @@ function FX:update(data,dt,folder)
 	end
 	self:stepProjectiles(dt)
 	self:hazardsStep(data)
+	self:crowdOf(folder)
+	self:ambient(dt)
 	for _,key in {"human","bot"} do
 		local actor=data[key]
 		if actor then
+			actor.intro=data.intro
 			self:seal(actor.id or key,actor)
 			local model=folder and folder:FindFirstChild(actor.id or "")
 			self:fighter(model,actor,dt)
@@ -5680,7 +6053,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND44">
+        <Item class="ModuleScript" referent="ND45">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -5770,7 +6143,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND45">
+        <Item class="LocalScript" referent="ND46">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5830,7 +6203,16 @@ if RunService:IsStudio() then
 		log.OnClientEvent:Connect(function(kind)
 			if kind=="info" then
 				local cam=workspace.CurrentCamera
-				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize})
+				local gui={}
+				local hud=player.PlayerGui:FindFirstChild("NinjaDuelHUD")
+				if hud then
+					for _,g in hud:GetDescendants() do
+						if g:IsA("GuiObject") and #gui&lt;40 and (g.Parent==hud or (g.Parent and g.Parent.Parent==hud)) then
+							table.insert(gui,string.format("%s vis=%s pos=%s size=%s",g:GetFullName():sub(-40),tostring(g.Visible),tostring(g.AbsolutePosition),tostring(g.AbsoluteSize)))
+						end
+					end
+				end
+				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
 			end
 		end)
 	end)
@@ -5840,7 +6222,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND46">
+        <Item class="ModuleScript" referent="ND47">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -6006,6 +6388,7 @@ function Presentation:update(data,dt)
    visual.reactionElapsed=clock.reactionElapsed
    visual.attackElapsed=clock.attackElapsed
    visual.landing=self.landingUntil~=nil and now&lt;self.landingUntil
+   visual.intro=data.intro
    -- Throws and casts run on the shared server clock (slightly behind, like the
    -- projectiles), so the blade leaves the hand on the frame it starts flying.
    if data.serverNow then
@@ -6026,160 +6409,292 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND47">
+        <Item class="ModuleScript" referent="ND48">
           <Properties>
             <string name="Name">UI</string>
-            <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+            <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
+-- result framing. Presentation only; every value comes from the snapshot.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
 local UI={}; UI.__index=UI
-local palette={bg=Color3.fromRGB(14,22,30),panel=Color3.fromRGB(25,36,47),text=Color3.fromRGB(235,240,232),muted=Color3.fromRGB(154,174,181),blue=Color3.fromRGB(82,177,244),red=Color3.fromRGB(222,106,137)}
+local palette={
+	ink=Color3.fromRGB(16,15,20),panel=Color3.fromRGB(28,26,32),paper=Color3.fromRGB(240,232,212),
+	text=Color3.fromRGB(240,236,226),muted=Color3.fromRGB(170,164,150),red=Color3.fromRGB(190,40,36),
+	gold=Color3.fromRGB(230,184,86),blue=Color3.fromRGB(82,177,244),crimson=Color3.fromRGB(222,70,80),
+	track=Color3.fromRGB(46,42,48),locked=Color3.fromRGB(38,36,42),
+}
+local TITLE_FONT=Enum.Font.Bangers
+local BODY_FONT=Enum.Font.GothamBold
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
 	x.Parent=parent; return x
 end
-local function frame(parent,position,size,color)
-	return create("Frame",parent,{Position=position,Size=size,BackgroundColor3=color or palette.panel,BorderSizePixel=0})
+local function frame(parent,position,size,color,transparency)
+	return create("Frame",parent,{Position=position,Size=size,BackgroundColor3=color or palette.panel,BorderSizePixel=0,BackgroundTransparency=transparency or 0})
 end
-local function text(parent,value,position,size,fontSize,color)
-	return create("TextLabel",parent,{Text=value,Position=position,Size=size,TextSize=fontSize or 16,Font=Enum.Font.GothamMedium,TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true})
+local function text(parent,value,position,size,fontSize,color,font,align)
+	return create("TextLabel",parent,{Text=value,Position=position,Size=size,TextSize=fontSize or 16,Font=font or BODY_FONT,
+		TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=align or Enum.TextXAlignment.Left,TextWrapped=true})
 end
+local function corner(parent,radius) return create("UICorner",parent,{CornerRadius=UDim.new(0,radius or 6)}) end
+local function stroke(parent,color,thickness) return create("UIStroke",parent,{Color=color or palette.ink,Thickness=thickness or 2}) end
 local function button(parent,value,position,size,callback,color)
-	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=16,Font=Enum.Font.GothamBold,TextColor3=palette.text,BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
-	create("UICorner",b,{CornerRadius=UDim.new(0,6)})
+	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,
+		BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
+	corner(b,6)
 	b.Activated:Connect(callback); return b
 end
-local function portrait(parent,def,position)
-	local vp=create("ViewportFrame",parent,{Position=position,Size=UDim2.new(0,100,0,116),BackgroundTransparency=1,Ambient=Color3.fromRGB(185,185,185),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
-	local function p(size,at,color)
-		create("Part",vp,{Size=size,CFrame=CFrame.new(at),Color=Color3.fromRGB(table.unpack(color)),Anchored=true})
+local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
+-- A tiny posed figure built from the fighter's palette.
+local function portrait(parent,def,position,size)
+	local vp=create("ViewportFrame",parent,{Position=position,Size=size or UDim2.fromOffset(100,116),BackgroundTransparency=1,
+		Ambient=Color3.fromRGB(190,186,180),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
+	local function p(sz,at,color)
+		create("Part",vp,{Size=sz,CFrame=CFrame.new(at),Color=if typeof(color)=="Color3" then color else Color3.fromRGB(table.unpack(color)),Anchored=true})
 	end
 	p(Vector3.new(2,2,1),Vector3.zero,def.Outfit)
-	p(Vector3.new(1.5,1.5,1.5),Vector3.new(0,1.6,0),def.Skin)
-	p(Vector3.new(1.65,0.55,1.65),Vector3.new(0,2.12,0),def.Hair)
-	for _,s in {-1,1} do p(Vector3.new(1,2,1),Vector3.new(s*1.5,0,0),def.Outfit) end
-	p(Vector3.new(2.1,0.25,1.1),Vector3.new(0,-0.65,0),def.Color)
-	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(4,2.8,-8),Vector3.new(0,0.7,0))})
+	p(Vector3.new(1.6,1.6,1.6),Vector3.new(0,1.7,0),def.Skin)
+	p(Vector3.new(1.8,.7,1.8),Vector3.new(0,2.55,0),def.Hair)
+	p(Vector3.new(1.7,.25,1.7),Vector3.new(0,2.1,0),Color3.fromRGB(28,36,58))
+	for _,s in {-1,1} do p(Vector3.new(.9,2,.9),Vector3.new(s*1.45,0,0),def.Outfit) end
+	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(3.5,2.6,-7.5),Vector3.new(0,.9,0))})
 	vp.CurrentCamera=camera
+	return vp
 end
+local ROSTER_SLOTS=20
 function UI.new(parent,send)
-	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={}},UI)
-	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
-	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(780,510),palette.bg)
+	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
+	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
+	-- ------------------------------------------------------------ selection
+	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,600),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1,workspace.CurrentCamera.ViewportSize.X/850,workspace.CurrentCamera.ViewportSize.Y/610) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/660) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
-	create("UISizeConstraint",shell,{MinSize=Vector2.new(780,510),MaxSize=Vector2.new(780,510)})
-	text(shell,"NINJA DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(780,48),38)
-	text(shell,"TRAINING COURT  /  MINATO × ITACHI",UDim2.fromOffset(2,51),UDim2.fromOffset(760,25),13,palette.muted)
-	text(shell,"Choose your fighter. Learn the exchange.",UDim2.fromOffset(2,85),UDim2.fromOffset(760,30),20)
-	for i,id in {"Flashstep","Mirage"} do
-		local def=Fighters[id]; local x=(i-1)*400
-		local card=frame(shell,UDim2.fromOffset(x,135),UDim2.fromOffset(380,215))
-		local accent=Color3.fromRGB(table.unpack(def.Color))
-		frame(card,UDim2.fromOffset(0,0),UDim2.fromOffset(380,3),accent)
-		portrait(card,def,UDim2.fromOffset(12,20))
-		text(card,def.Name,UDim2.fromOffset(128,21),UDim2.fromOffset(235,35),26,accent)
-		text(card,def.Title,UDim2.fromOffset(128,61),UDim2.fromOffset(235,20),11,palette.muted)
-		text(card,def.Description,UDim2.fromOffset(128,90),UDim2.fromOffset(235,58),14)
-		text(card,string.format("%d HP  •  %d chakra  •  %d speed  •  %s",def.Health,def.Chakra,def.Speed,if id=="Flashstep" then "Agile" else "Precise"),UDim2.fromOffset(18,176),UDim2.fromOffset(345,23),12,palette.muted)
+	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
+	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
+	text(shell,"天才忍者大会",UDim2.fromOffset(620,10),UDim2.fromOffset(280,56),40,palette.red,BODY_FONT,Enum.TextXAlignment.Right)
+	text(shell,"Twenty future legends. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
+		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
+	-- Roster: the two prodigies who have arrived, and the slots still empty.
+	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
+	local playable={"Flashstep","Mirage"}
+	for index=1,ROSTER_SLOTS do
+		local col=(index-1)%10;local row=math.floor((index-1)/10)
+		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
+		corner(slot,6)
+		local id=playable[index]
+		if id then
+			local def=Fighters[id]
+			slot.BackgroundColor3=palette.panel
+			stroke(slot,accentOf(def),2)
+			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
+			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
+			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
+			pick.Activated:Connect(function() self.player=id;if self.bot==id then self.bot=playable[3-index] end;self:refreshSelection() end)
+			self.selectionButtons["slot"..id]=slot
+		else
+			text(slot,"?",UDim2.fromOffset(0,14),UDim2.fromOffset(84,56),48,Color3.fromRGB(70,66,74),TITLE_FONT,Enum.TextXAlignment.Center)
+			text(slot,"PRODIGY "..index,UDim2.fromOffset(0,78),UDim2.fromOffset(84,22),14,Color3.fromRGB(96,90,98),TITLE_FONT,Enum.TextXAlignment.Center)
+		end
 	end
-	text(shell,"YOUR FIGHTER",UDim2.fromOffset(0,371),UDim2.fromOffset(360,20),12,palette.muted)
-	text(shell,"AI OPPONENT",UDim2.fromOffset(400,371),UDim2.fromOffset(360,20),12,palette.muted)
-	for i,id in {"Flashstep","Mirage"} do
-		self.selectionButtons["player"..id]=button(shell,Fighters[id].Name,UDim2.fromOffset((i-1)*194,400),UDim2.fromOffset(186,36),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,Fighters[id].Name,UDim2.fromOffset(400+(i-1)*194,400),UDim2.fromOffset(186,36),function() self.bot=id; self:refreshSelection() end)
+	-- Matchup panel.
+	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.matchupNote=text(shell,"",UDim2.fromOffset(0,414),UDim2.fromOffset(900,40),14,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
+	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
+	for i,id in playable do
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*214,480),UDim2.fromOffset(206,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*214,480),UDim2.fromOffset(206,40),function() self.bot=id; self:refreshSelection() end)
 	end
-	self.startButton=button(shell,"DUEL  →",UDim2.fromOffset(400,459),UDim2.fromOffset(380,45),function() send("Start",{player=self.player,bot=self.bot}) end,Color3.fromRGB(36,88,109))
-	self.tutorialButton=button(shell,"INTERACTIVE TUTORIAL",UDim2.fromOffset(0,459),UDim2.fromOffset(380,45),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
-	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1)); self.hud.BackgroundTransparency=1
-	local function meter(parent,name,pos,color)
-		local box=frame(parent,pos,UDim2.fromOffset(290,60))
-		local label=text(box,name,UDim2.fromOffset(14,7),UDim2.fromOffset(262,20),15)
-		local track=frame(box,UDim2.fromOffset(14,31),UDim2.fromOffset(262,6),palette.bg)
-		local fill=frame(track,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),color)
-		local status=text(box,"",UDim2.fromOffset(14,41),UDim2.fromOffset(262,16),10,palette.muted)
-		return {box=box,label=label,fill=fill,status=status}
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
+	-- ------------------------------------------------------------------ HUD
+	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	local hudScale=create("UIScale",self.hud,{Scale=1})
+	self.hudScale=hudScale
+	local function plate(side)
+		local right=side=="right"
+		local box=frame(self.hud,if right then UDim2.new(1,-24,0,18) else UDim2.fromOffset(24,18),UDim2.fromOffset(440,92),palette.ink,.25)
+		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
+		corner(box,8)
+		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+		local name=text(box,"",UDim2.fromOffset(14,4),UDim2.fromOffset(412,34),32,palette.paper,TITLE_FONT,align)
+		local title=text(box,"",UDim2.fromOffset(14,36),UDim2.fromOffset(412,16),12,palette.muted,BODY_FONT,align)
+		local track=frame(box,UDim2.fromOffset(14,56),UDim2.fromOffset(412,14),palette.track)
+		corner(track,4)
+		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
+		corner(lag,4)
+		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
+		corner(fill,4)
+		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
+		local chakraTrack=frame(box,UDim2.fromOffset(14,74),UDim2.fromOffset(412,6),palette.track)
+		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
+		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
+		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status}
 	end
-	self.hp=meter(self.hud,"",UDim2.fromOffset(22,20),palette.blue)
-	self.enemy=meter(self.hud,"",UDim2.new(1,-312,0,20),palette.red)
-	self.chakra=meter(self.hud,"CHAKRA",UDim2.new(0,22,1,-160),palette.blue)
-	self.cue=text(self.hud,"",UDim2.new(0.5,-250,0,128),UDim2.fromOffset(500,36),22); self.cue.TextXAlignment=Enum.TextXAlignment.Center
-	self.channel=text(self.hud,"",UDim2.new(0.5,-250,0,165),UDim2.fromOffset(500,28),15,palette.muted); self.channel.TextXAlignment=Enum.TextXAlignment.Center
+	self.hp=plate("left")
+	self.enemy=plate("right")
+	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,50),UDim2.fromOffset(240,16),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-118),UDim2.fromOffset(420,16),12,palette.muted)
 	self.techniqueButtons={}
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(0.5,-418+(i-1)*168,1,-78),UDim2.fromOffset(160,48))
-		self.techniqueButtons[i]={title=text(box,"",UDim2.fromOffset(8,5),UDim2.fromOffset(146,26),13),status=text(box,"",UDim2.fromOffset(8,27),UDim2.fromOffset(146,16),10,palette.muted),box=box}
+		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
+		corner(box,8)
+		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(40,30),26,palette.gold,TITLE_FONT)
+		local title=text(box,"",UDim2.fromOffset(40,8),UDim2.fromOffset(126,22),18,palette.paper,TITLE_FONT)
+		local status=text(box,"",UDim2.fromOffset(40,32),UDim2.fromOffset(126,18),11,palette.muted)
+		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
+		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
+		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
-	self.help=text(self.hud,Controls.Help,UDim2.new(0.5,-600,1,-34),UDim2.fromOffset(1200,25),11,palette.muted)
-	self.help.TextXAlignment=Enum.TextXAlignment.Center
-	self.hint=text(self.hud,"",UDim2.new(0.5,-260,0,199),UDim2.fromOffset(520,30),13,palette.muted); self.hint.TextXAlignment=Enum.TextXAlignment.Center
-	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg); self.result.BackgroundTransparency=0.2
-	local resultBox=frame(self.result,UDim2.new(0.5,-240,0.5,-140),UDim2.fromOffset(480,280))
-	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,24),UDim2.fromOffset(420,50),32)
-	text(resultBox,"Read the commitment. Find a better opening.",UDim2.fromOffset(30,85),UDim2.fromOffset(420,45),15,palette.muted)
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,151),UDim2.fromOffset(420,42),function() send("Rematch") end,Color3.fromRGB(36,88,109))
-	button(resultBox,"RETURN TO SELECTION",UDim2.fromOffset(30,211),UDim2.fromOffset(420,42),function() send("Selection") end)
+	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	-- ---------------------------------------------------------------- intro
+	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	self.introLeft=frame(self.intro,UDim2.new(0,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introRight=frame(self.intro,UDim2.new(.5,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
+	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
+	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
+	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,.62,8),UDim2.fromOffset(160,96),88,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.introVs,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.introRound=text(self.intro,"",UDim2.new(.5,-400,.5,-48),UDim2.fromOffset(800,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.introBegin=text(self.intro,"",UDim2.new(.5,-400,.38,-60),UDim2.fromOffset(800,120),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.intro.Visible=false
+	-- --------------------------------------------------------------- result
+	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
+	local resultBox=frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),palette.ink,.1)
+	corner(resultBox,10)
+	stroke(resultBox,palette.red,3)
+	self.resultBox=resultBox
+	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
+	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
 	-- A small displaced indicator during Mirage; real body remains visible and controllable.
 	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
-	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),17,palette.red); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
-	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-250,0,94),UDim2.fromOffset(500,88),palette.bg)
-	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(470,26),18)
-	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(470,38),13,palette.muted)
+	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
+	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),palette.ink,.15)
+	corner(self.tutorialPanel,8)
+	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,6),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
+	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
+	-- HUD scale follows the viewport so plates and slots never leave the screen.
+	local function fitHud()
+		local size=workspace.CurrentCamera.ViewportSize
+		local s=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.25)
+		-- Studio capture aid (see Camera): shrink the HUD into the visible region.
+		if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then s*=.66 end
+		hudScale.Scale=s
+	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitHud);fitHud()
 	self:refreshSelection(); self:render({phase="Selection"})
 	return self
 end
 function UI:refreshSelection()
 	for key,b in self.selectionButtons do
-		local selected=key=="player"..self.player or key=="bot"..self.bot
-		b.BackgroundColor3=if selected then Color3.fromRGB(48,96,117) else palette.panel
+		local selected=key=="player"..self.player or key=="bot"..self.bot or key=="slot"..self.player
+		b.BackgroundColor3=if selected then Color3.fromRGB(120,36,34) else palette.panel
 	end
+	local p,o=Fighters[self.player],Fighters[self.bot]
+	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
+	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
+end
+local function fullName(actor)
+	local def=Fighters[actor.fighterId]
+	return string.upper(def and def.FullName or actor.fighter or "")
+end
+local function subtitle(actor)
+	local def=Fighters[actor.fighterId]
+	if not def then return "" end
+	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
 function UI:render(data)
-	if self.lastPhase~=data.phase then
-		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
-		self.lastPhase=data.phase
-	end
 	local pad=UIS:GetLastInputType().Name:match("Gamepad")~=nil
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "View / touchpad to skip" else "ESC to skip")
 	end
-	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel"; self.result.Visible=data.phase=="Result"
+	local introActive=data.phase=="Duel" and (data.intro or 0)&gt;0
+	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.intro.Visible=introActive
+	-- Gamepad focus moves only after the matching screen is visible.
+	if self.lastPhase~=data.phase then
+		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
+		self.lastPhase=data.phase
+	end
 	self.echo.Enabled=false
 	if data.phase=="Selection" then return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
-	self.hp.label.Text=h.fighter.."  /  YOU"; self.enemy.label.Text=b.fighter.."  /  AI"
-	Tween:Create(self.hp.fill,TweenInfo.new(.12),{Size=UDim2.fromScale(math.clamp(h.health/h.maxHealth,0,1),1)}):Play()
-	Tween:Create(self.enemy.fill,TweenInfo.new(.12),{Size=UDim2.fromScale(math.clamp(b.health/b.maxHealth,0,1),1)}):Play()
-	self.hp.status.Text=string.format("%d / %d",math.ceil(h.health),h.maxHealth)
-	self.enemy.status.Text=string.format("%d / %d",math.ceil(b.health),b.maxHealth)
-	self.chakra.label.Text=string.format("CHAKRA  %d / %d",math.floor(h.chakra),h.maxChakra); self.chakra.fill.Size=UDim2.fromScale(h.chakra/h.maxChakra,1)
-	self.chakra.status.Text=string.format("STAMINA %d  •  Sub %d  •  %s",math.floor(h.stamina or 100),h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
-	self.cue.Text=""
+	if introActive then
+		self.introLeftName.Text=fullName(h);self.introLeftTitle.Text=subtitle(h)
+		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
+		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
+		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND 1"
+		self.introBegin.Text=if data.intro&lt;.75 then "始め!  BEGIN" else ""
+		if self.introShown~=data.epoch then
+			self.introShown=data.epoch
+			self.introLeft.Position=UDim2.new(-.5,0,.62,0);self.introRight.Position=UDim2.new(1,0,.62,0)
+			Tween:Create(self.introLeft,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(0,0,.62,0)}):Play()
+			Tween:Create(self.introRight,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(.5,0,.62,0)}):Play()
+		end
+		return
+	end
+	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
+	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
+	for _,pair in {{self.hp,h},{self.enemy,b}} do
+		local widget,actor=pair[1],pair[2]
+		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
+		widget.fill.Size=UDim2.fromScale(ratio,1)
+		widget.fill.BackgroundColor3=if ratio&gt;.5 then palette.gold elseif ratio&gt;.25 then Color3.fromRGB(236,134,60) else palette.red
+		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
+		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
+		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+	end
+	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
+		if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
+	-- Only decisive moments speak; routine cues stay silent.
+	local cue=h.cue or ""
+	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL CONVERT")
+	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
-		-- Each slot owns its own widgets; `ui` was an undefined global, so every
-		-- render used to throw here and the rest of the HUD never refreshed.
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
-		ui.title.Text=(if pad then ({"RB+A","RB+X","RB+Y","RB+B","\u{2191}"})[i] else string.format("%d",i)).."  "..tech.name
-		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "Needs setup" elseif h.chakra&lt;tech.cost then "Need chakra" else tech.cost.." chakra"
-		ui.box.BackgroundColor3=if tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost then Color3.fromRGB(30,57,69) else palette.panel
+		ui.key.Text=if pad then ({"A","X","Y","B","\u{2191}"})[i] else string.format("%d",i)
+		ui.title.Text=string.upper(tech.name)
+		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost
+		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		ui.box.BackgroundTransparency=if ready then .05 else .35
+		ui.title.TextColor3=if ready then palette.paper else palette.muted
+		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self.hint.Text=if h.pursuit&gt;0 then (if pad then "A / Cross \u{2014} chase" else Controls.KeyLabel.Pursuit.." / SPACE \u{2014} chase") else ""
+	self.hint.Text=if h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
-	self.resultTitle.Text=if data.winner=="PlayerFighter" then "VICTORY" else "DEFEAT"
+	local won=data.winner=="PlayerFighter"
+	local winner=if won then h else b
+	self.resultTitle.Text=if won then "VICTORY" else "DEFEAT"
+	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
+	self.resultName.Text=fullName(winner).."  ADVANCES"
+	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	if h.illusion&gt;0 and data.phase=="Duel" then
 		local character=game:GetService("Players").LocalPlayer.Character
 		local folder=character and character.Parent
@@ -6192,7 +6707,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND48">
+        <Item class="ModuleScript" referent="ND49">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -6312,7 +6827,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND49">
+        <Item class="ModuleScript" referent="ND50">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -6699,6 +7214,30 @@ CLIPS.Flashstep.Rasengan={
 	K(3,M),
 }
 
+-- Branch moves ----------------------------------------------------------
+-- Minato's AngleStep: a crossing sidestep that cuts on the way past.
+CLIPS.Flashstep.AngleStep={
+	K(0,m({root={y=-.62,yaw=-30,pitch=12,roll=10},torso={yaw=-24},ra={raise=66,out=-40,twist=36,elbow=110,wrist=-28},la={raise=30,out=30,elbow=60},lf={z=-.4,x=-.4},rf={z=.8,x=.5}})),
+	K(1,m({root={y=-.55,yaw=40,pitch=14,roll=-12},torso={yaw=26,roll=-8},head={yaw=-26},ra={raise=84,out=34,twist=-16,elbow=20,wrist=12},la={raise=20,out=40,elbow=50},lf={z=-.9,x=.3},rf={z=.6,x=.8}}),"out"),
+	K(2,m({root={y=-.5,yaw=48,pitch=12,roll=-10},torso={yaw=32},ra={raise=70,out=58,twist=-28,elbow=30},la={raise=22,out=40,elbow=54},lf={z=-.9,x=.3},rf={z=.6,x=.8}})),
+	K(3,M),
+}
+-- Itachi's Sweep: drop low, pivot on the lead foot, extended leg reaps.
+CLIPS.Mirage.Sweep={
+	K(0,i({root={y=-1.05,pitch=24,yaw=-30},torso={pitch=12,yaw=-14},ra={raise=-20,out=40,elbow=30},la={raise=40,out=-10,elbow=100},lf={z=-.6,yaw=-30},rf={z=.8}})),
+	K(1,i({root={y=-1.25,pitch=30,yaw=70},torso={pitch=16,yaw=12},head={yaw=-50},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=20,out=72,twist=-40,knee=6,ankle=-10},lf={z=-.4,yaw=60}}),"out"),
+	K(2,i({root={y=-1.2,pitch=28,yaw=120},torso={pitch=14,yaw=16},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=18,out=70,twist=-40,knee=10},lf={z=-.4,yaw=100}})),
+	K(2.7,i({root={y=-.8,yaw=170},lf={yaw=150}})),
+	K(3,I),
+}
+-- Itachi's CounterPalm: the read has already happened; no wind-up, all hip.
+CLIPS.Mirage.CounterPalm={
+	K(0,i({root={y=-.5,yaw=24,pitch=8},torso={yaw=16},ra={raise=30,out=14,twist=40,elbow=110},la={raise=60,out=-20,elbow=100}})),
+	K(1,i({root={y=-.55,z=-.6,yaw=-20,pitch=16},torso={yaw=-24,pitch=8},head={yaw=12},ra={raise=90,out=-2,twist=72,elbow=2,wrist=-62},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}}),"out"),
+	K(2,i({root={y=-.55,z=-.62,yaw=-22,pitch=16},torso={yaw=-26,pitch=8},ra={raise=88,out=-2,twist=72,elbow=6,wrist=-60},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}})),
+	K(3,I),
+}
+
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
 	if t&lt;=keys[1].at then return built(keys[1].pose) end
@@ -7042,7 +7581,7 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -7100,8 +7639,8 @@ function Motion.weapon(char,actor)
 	local spec=name and Attacks[name]
 	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
 	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*.45 end)() else .35
-	local meleeOut=swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)&lt;=release
-		and actor.attackVariant~="Rasengan"
+	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)&lt;=release
+		and actor.attackVariant~="Rasengan") or (minato and (actor.intro or 0)&gt;0)
 	-- Thrown weapons sit in the hand from the wind-up until their release frame.
 	local throwKind=actor.throwKind
 	local throwElapsed=actor.throwElapsed or 99
@@ -7201,6 +7740,18 @@ function Motion.present(char,actor,clock,dt)
 		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
 		return "ko"
 	end
+	-- Match intro attitude: Minato twirls a kunai, Itachi waits, perfectly still.
+	if (subject.intro or 0)&gt;0 and subject.state=="Neutral" then
+		local base=stance(subject.fighterId)
+		local spec
+		if subject.fighterId=="Mirage" then
+			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		else
+			spec=merge(base,{ra={raise=78,out=22,twist=10,elbow=112,wrist=0,wroll=(elapsedTime*1080)%360},la={raise=30,out=14,elbow=40},head={yaw=-18,pitch=-4}})
+		end
+		apply(char,build(spec),RATE.cast,dt)
+		return "intro"
+	end
 	if subject.groundPose~=nil and subject.airborne~=true then
 		local targets,rate=groundTargets(subject)
 		apply(char,targets,rate,dt)
@@ -7290,7 +7841,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND50">
+  <Item class="Lighting" referent="ND51">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -7308,7 +7859,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND51">
+  <Item class="SoundService" referent="ND52">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

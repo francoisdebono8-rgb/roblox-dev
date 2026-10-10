@@ -1,3 +1,5 @@
+-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
+-- result framing. Presentation only; every value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
@@ -5,154 +7,280 @@ local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
 local UI={}; UI.__index=UI
-local palette={bg=Color3.fromRGB(14,22,30),panel=Color3.fromRGB(25,36,47),text=Color3.fromRGB(235,240,232),muted=Color3.fromRGB(154,174,181),blue=Color3.fromRGB(82,177,244),red=Color3.fromRGB(222,106,137)}
+local palette={
+	ink=Color3.fromRGB(16,15,20),panel=Color3.fromRGB(28,26,32),paper=Color3.fromRGB(240,232,212),
+	text=Color3.fromRGB(240,236,226),muted=Color3.fromRGB(170,164,150),red=Color3.fromRGB(190,40,36),
+	gold=Color3.fromRGB(230,184,86),blue=Color3.fromRGB(82,177,244),crimson=Color3.fromRGB(222,70,80),
+	track=Color3.fromRGB(46,42,48),locked=Color3.fromRGB(38,36,42),
+}
+local TITLE_FONT=Enum.Font.Bangers
+local BODY_FONT=Enum.Font.GothamBold
 local function create(class,parent,props)
 	local x=Instance.new(class)
 	for k,v in props do x[k]=v end
 	x.Parent=parent; return x
 end
-local function frame(parent,position,size,color)
-	return create("Frame",parent,{Position=position,Size=size,BackgroundColor3=color or palette.panel,BorderSizePixel=0})
+local function frame(parent,position,size,color,transparency)
+	return create("Frame",parent,{Position=position,Size=size,BackgroundColor3=color or palette.panel,BorderSizePixel=0,BackgroundTransparency=transparency or 0})
 end
-local function text(parent,value,position,size,fontSize,color)
-	return create("TextLabel",parent,{Text=value,Position=position,Size=size,TextSize=fontSize or 16,Font=Enum.Font.GothamMedium,TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true})
+local function text(parent,value,position,size,fontSize,color,font,align)
+	return create("TextLabel",parent,{Text=value,Position=position,Size=size,TextSize=fontSize or 16,Font=font or BODY_FONT,
+		TextColor3=color or palette.text,BackgroundTransparency=1,TextXAlignment=align or Enum.TextXAlignment.Left,TextWrapped=true})
 end
+local function corner(parent,radius) return create("UICorner",parent,{CornerRadius=UDim.new(0,radius or 6)}) end
+local function stroke(parent,color,thickness) return create("UIStroke",parent,{Color=color or palette.ink,Thickness=thickness or 2}) end
 local function button(parent,value,position,size,callback,color)
-	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=16,Font=Enum.Font.GothamBold,TextColor3=palette.text,BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
-	create("UICorner",b,{CornerRadius=UDim.new(0,6)})
+	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,
+		BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
+	corner(b,6)
 	b.Activated:Connect(callback); return b
 end
-local function portrait(parent,def,position)
-	local vp=create("ViewportFrame",parent,{Position=position,Size=UDim2.new(0,100,0,116),BackgroundTransparency=1,Ambient=Color3.fromRGB(185,185,185),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
-	local function p(size,at,color)
-		create("Part",vp,{Size=size,CFrame=CFrame.new(at),Color=Color3.fromRGB(table.unpack(color)),Anchored=true})
+local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
+-- A tiny posed figure built from the fighter's palette.
+local function portrait(parent,def,position,size)
+	local vp=create("ViewportFrame",parent,{Position=position,Size=size or UDim2.fromOffset(100,116),BackgroundTransparency=1,
+		Ambient=Color3.fromRGB(190,186,180),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
+	local function p(sz,at,color)
+		create("Part",vp,{Size=sz,CFrame=CFrame.new(at),Color=if typeof(color)=="Color3" then color else Color3.fromRGB(table.unpack(color)),Anchored=true})
 	end
 	p(Vector3.new(2,2,1),Vector3.zero,def.Outfit)
-	p(Vector3.new(1.5,1.5,1.5),Vector3.new(0,1.6,0),def.Skin)
-	p(Vector3.new(1.65,0.55,1.65),Vector3.new(0,2.12,0),def.Hair)
-	for _,s in {-1,1} do p(Vector3.new(1,2,1),Vector3.new(s*1.5,0,0),def.Outfit) end
-	p(Vector3.new(2.1,0.25,1.1),Vector3.new(0,-0.65,0),def.Color)
-	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(4,2.8,-8),Vector3.new(0,0.7,0))})
+	p(Vector3.new(1.6,1.6,1.6),Vector3.new(0,1.7,0),def.Skin)
+	p(Vector3.new(1.8,.7,1.8),Vector3.new(0,2.55,0),def.Hair)
+	p(Vector3.new(1.7,.25,1.7),Vector3.new(0,2.1,0),Color3.fromRGB(28,36,58))
+	for _,s in {-1,1} do p(Vector3.new(.9,2,.9),Vector3.new(s*1.45,0,0),def.Outfit) end
+	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(3.5,2.6,-7.5),Vector3.new(0,.9,0))})
 	vp.CurrentCamera=camera
+	return vp
 end
+local ROSTER_SLOTS=20
 function UI.new(parent,send)
-	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={}},UI)
-	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
-	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(780,510),palette.bg)
+	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
+	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
+	-- ------------------------------------------------------------ selection
+	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,600),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1,workspace.CurrentCamera.ViewportSize.X/850,workspace.CurrentCamera.ViewportSize.Y/610) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/660) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
-	create("UISizeConstraint",shell,{MinSize=Vector2.new(780,510),MaxSize=Vector2.new(780,510)})
-	text(shell,"NINJA DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(780,48),38)
-	text(shell,"TRAINING COURT  /  MINATO × ITACHI",UDim2.fromOffset(2,51),UDim2.fromOffset(760,25),13,palette.muted)
-	text(shell,"Choose your fighter. Learn the exchange.",UDim2.fromOffset(2,85),UDim2.fromOffset(760,30),20)
-	for i,id in {"Flashstep","Mirage"} do
-		local def=Fighters[id]; local x=(i-1)*400
-		local card=frame(shell,UDim2.fromOffset(x,135),UDim2.fromOffset(380,215))
-		local accent=Color3.fromRGB(table.unpack(def.Color))
-		frame(card,UDim2.fromOffset(0,0),UDim2.fromOffset(380,3),accent)
-		portrait(card,def,UDim2.fromOffset(12,20))
-		text(card,def.Name,UDim2.fromOffset(128,21),UDim2.fromOffset(235,35),26,accent)
-		text(card,def.Title,UDim2.fromOffset(128,61),UDim2.fromOffset(235,20),11,palette.muted)
-		text(card,def.Description,UDim2.fromOffset(128,90),UDim2.fromOffset(235,58),14)
-		text(card,string.format("%d HP  •  %d chakra  •  %d speed  •  %s",def.Health,def.Chakra,def.Speed,if id=="Flashstep" then "Agile" else "Precise"),UDim2.fromOffset(18,176),UDim2.fromOffset(345,23),12,palette.muted)
+	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
+	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
+	text(shell,"天才忍者大会",UDim2.fromOffset(620,10),UDim2.fromOffset(280,56),40,palette.red,BODY_FONT,Enum.TextXAlignment.Right)
+	text(shell,"Twenty future legends. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
+		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
+	-- Roster: the two prodigies who have arrived, and the slots still empty.
+	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
+	local playable={"Flashstep","Mirage"}
+	for index=1,ROSTER_SLOTS do
+		local col=(index-1)%10;local row=math.floor((index-1)/10)
+		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
+		corner(slot,6)
+		local id=playable[index]
+		if id then
+			local def=Fighters[id]
+			slot.BackgroundColor3=palette.panel
+			stroke(slot,accentOf(def),2)
+			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
+			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
+			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
+			pick.Activated:Connect(function() self.player=id;if self.bot==id then self.bot=playable[3-index] end;self:refreshSelection() end)
+			self.selectionButtons["slot"..id]=slot
+		else
+			text(slot,"?",UDim2.fromOffset(0,14),UDim2.fromOffset(84,56),48,Color3.fromRGB(70,66,74),TITLE_FONT,Enum.TextXAlignment.Center)
+			text(slot,"PRODIGY "..index,UDim2.fromOffset(0,78),UDim2.fromOffset(84,22),14,Color3.fromRGB(96,90,98),TITLE_FONT,Enum.TextXAlignment.Center)
+		end
 	end
-	text(shell,"YOUR FIGHTER",UDim2.fromOffset(0,371),UDim2.fromOffset(360,20),12,palette.muted)
-	text(shell,"AI OPPONENT",UDim2.fromOffset(400,371),UDim2.fromOffset(360,20),12,palette.muted)
-	for i,id in {"Flashstep","Mirage"} do
-		self.selectionButtons["player"..id]=button(shell,Fighters[id].Name,UDim2.fromOffset((i-1)*194,400),UDim2.fromOffset(186,36),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,Fighters[id].Name,UDim2.fromOffset(400+(i-1)*194,400),UDim2.fromOffset(186,36),function() self.bot=id; self:refreshSelection() end)
+	-- Matchup panel.
+	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.matchupNote=text(shell,"",UDim2.fromOffset(0,414),UDim2.fromOffset(900,40),14,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
+	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
+	for i,id in playable do
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*214,480),UDim2.fromOffset(206,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*214,480),UDim2.fromOffset(206,40),function() self.bot=id; self:refreshSelection() end)
 	end
-	self.startButton=button(shell,"DUEL  →",UDim2.fromOffset(400,459),UDim2.fromOffset(380,45),function() send("Start",{player=self.player,bot=self.bot}) end,Color3.fromRGB(36,88,109))
-	self.tutorialButton=button(shell,"INTERACTIVE TUTORIAL",UDim2.fromOffset(0,459),UDim2.fromOffset(380,45),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
-	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1)); self.hud.BackgroundTransparency=1
-	local function meter(parent,name,pos,color)
-		local box=frame(parent,pos,UDim2.fromOffset(290,60))
-		local label=text(box,name,UDim2.fromOffset(14,7),UDim2.fromOffset(262,20),15)
-		local track=frame(box,UDim2.fromOffset(14,31),UDim2.fromOffset(262,6),palette.bg)
-		local fill=frame(track,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),color)
-		local status=text(box,"",UDim2.fromOffset(14,41),UDim2.fromOffset(262,16),10,palette.muted)
-		return {box=box,label=label,fill=fill,status=status}
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
+	-- ------------------------------------------------------------------ HUD
+	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	local hudScale=create("UIScale",self.hud,{Scale=1})
+	self.hudScale=hudScale
+	local function plate(side)
+		local right=side=="right"
+		local box=frame(self.hud,if right then UDim2.new(1,-24,0,18) else UDim2.fromOffset(24,18),UDim2.fromOffset(440,92),palette.ink,.25)
+		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
+		corner(box,8)
+		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+		local name=text(box,"",UDim2.fromOffset(14,4),UDim2.fromOffset(412,34),32,palette.paper,TITLE_FONT,align)
+		local title=text(box,"",UDim2.fromOffset(14,36),UDim2.fromOffset(412,16),12,palette.muted,BODY_FONT,align)
+		local track=frame(box,UDim2.fromOffset(14,56),UDim2.fromOffset(412,14),palette.track)
+		corner(track,4)
+		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
+		corner(lag,4)
+		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
+		corner(fill,4)
+		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
+		local chakraTrack=frame(box,UDim2.fromOffset(14,74),UDim2.fromOffset(412,6),palette.track)
+		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
+		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
+		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status}
 	end
-	self.hp=meter(self.hud,"",UDim2.fromOffset(22,20),palette.blue)
-	self.enemy=meter(self.hud,"",UDim2.new(1,-312,0,20),palette.red)
-	self.chakra=meter(self.hud,"CHAKRA",UDim2.new(0,22,1,-160),palette.blue)
-	self.cue=text(self.hud,"",UDim2.new(0.5,-250,0,128),UDim2.fromOffset(500,36),22); self.cue.TextXAlignment=Enum.TextXAlignment.Center
-	self.channel=text(self.hud,"",UDim2.new(0.5,-250,0,165),UDim2.fromOffset(500,28),15,palette.muted); self.channel.TextXAlignment=Enum.TextXAlignment.Center
+	self.hp=plate("left")
+	self.enemy=plate("right")
+	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,50),UDim2.fromOffset(240,16),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-118),UDim2.fromOffset(420,16),12,palette.muted)
 	self.techniqueButtons={}
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(0.5,-418+(i-1)*168,1,-78),UDim2.fromOffset(160,48))
-		self.techniqueButtons[i]={title=text(box,"",UDim2.fromOffset(8,5),UDim2.fromOffset(146,26),13),status=text(box,"",UDim2.fromOffset(8,27),UDim2.fromOffset(146,16),10,palette.muted),box=box}
+		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
+		corner(box,8)
+		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(40,30),26,palette.gold,TITLE_FONT)
+		local title=text(box,"",UDim2.fromOffset(40,8),UDim2.fromOffset(126,22),18,palette.paper,TITLE_FONT)
+		local status=text(box,"",UDim2.fromOffset(40,32),UDim2.fromOffset(126,18),11,palette.muted)
+		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
+		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
+		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
-	self.help=text(self.hud,Controls.Help,UDim2.new(0.5,-600,1,-34),UDim2.fromOffset(1200,25),11,palette.muted)
-	self.help.TextXAlignment=Enum.TextXAlignment.Center
-	self.hint=text(self.hud,"",UDim2.new(0.5,-260,0,199),UDim2.fromOffset(520,30),13,palette.muted); self.hint.TextXAlignment=Enum.TextXAlignment.Center
-	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg); self.result.BackgroundTransparency=0.2
-	local resultBox=frame(self.result,UDim2.new(0.5,-240,0.5,-140),UDim2.fromOffset(480,280))
-	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,24),UDim2.fromOffset(420,50),32)
-	text(resultBox,"Read the commitment. Find a better opening.",UDim2.fromOffset(30,85),UDim2.fromOffset(420,45),15,palette.muted)
-	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,151),UDim2.fromOffset(420,42),function() send("Rematch") end,Color3.fromRGB(36,88,109))
-	button(resultBox,"RETURN TO SELECTION",UDim2.fromOffset(30,211),UDim2.fromOffset(420,42),function() send("Selection") end)
+	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	-- ---------------------------------------------------------------- intro
+	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	self.introLeft=frame(self.intro,UDim2.new(0,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introRight=frame(self.intro,UDim2.new(.5,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
+	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
+	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
+	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,.62,8),UDim2.fromOffset(160,96),88,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.introVs,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.introRound=text(self.intro,"",UDim2.new(.5,-400,.5,-48),UDim2.fromOffset(800,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.introBegin=text(self.intro,"",UDim2.new(.5,-400,.38,-60),UDim2.fromOffset(800,120),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.intro.Visible=false
+	-- --------------------------------------------------------------- result
+	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
+	local resultBox=frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),palette.ink,.1)
+	corner(resultBox,10)
+	stroke(resultBox,palette.red,3)
+	self.resultBox=resultBox
+	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
+	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
 	-- A small displaced indicator during Mirage; real body remains visible and controllable.
 	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
-	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),17,palette.red); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
-	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-250,0,94),UDim2.fromOffset(500,88),palette.bg)
-	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(470,26),18)
-	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(470,38),13,palette.muted)
+	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
+	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),palette.ink,.15)
+	corner(self.tutorialPanel,8)
+	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,6),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
+	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
-	-- Studio capture aid (see Camera): shrink the HUD into the visible region.
-	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
-		create("UIScale",self.hud,{Scale=.62})
+	-- HUD scale follows the viewport so plates and slots never leave the screen.
+	local function fitHud()
+		local size=workspace.CurrentCamera.ViewportSize
+		local s=math.clamp(math.min(size.X/1500,size.Y/860),.55,1.25)
+		-- Studio capture aid (see Camera): shrink the HUD into the visible region.
+		if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then s*=.66 end
+		hudScale.Scale=s
 	end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitHud);fitHud()
 	self:refreshSelection(); self:render({phase="Selection"})
 	return self
 end
 function UI:refreshSelection()
 	for key,b in self.selectionButtons do
-		local selected=key=="player"..self.player or key=="bot"..self.bot
-		b.BackgroundColor3=if selected then Color3.fromRGB(48,96,117) else palette.panel
+		local selected=key=="player"..self.player or key=="bot"..self.bot or key=="slot"..self.player
+		b.BackgroundColor3=if selected then Color3.fromRGB(120,36,34) else palette.panel
 	end
+	local p,o=Fighters[self.player],Fighters[self.bot]
+	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
+	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
+end
+local function fullName(actor)
+	local def=Fighters[actor.fighterId]
+	return string.upper(def and def.FullName or actor.fighter or "")
+end
+local function subtitle(actor)
+	local def=Fighters[actor.fighterId]
+	if not def then return "" end
+	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
 function UI:render(data)
-	if self.lastPhase~=data.phase then
-		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
-		self.lastPhase=data.phase
-	end
 	local pad=UIS:GetLastInputType().Name:match("Gamepad")~=nil
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "View / touchpad to skip" else "ESC to skip")
 	end
-	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel"; self.result.Visible=data.phase=="Result"
+	local introActive=data.phase=="Duel" and (data.intro or 0)>0
+	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.intro.Visible=introActive
+	-- Gamepad focus moves only after the matching screen is visible.
+	if self.lastPhase~=data.phase then
+		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
+		self.lastPhase=data.phase
+	end
 	self.echo.Enabled=false
 	if data.phase=="Selection" then return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
-	self.hp.label.Text=h.fighter.."  /  YOU"; self.enemy.label.Text=b.fighter.."  /  AI"
-	Tween:Create(self.hp.fill,TweenInfo.new(.12),{Size=UDim2.fromScale(math.clamp(h.health/h.maxHealth,0,1),1)}):Play()
-	Tween:Create(self.enemy.fill,TweenInfo.new(.12),{Size=UDim2.fromScale(math.clamp(b.health/b.maxHealth,0,1),1)}):Play()
-	self.hp.status.Text=string.format("%d / %d",math.ceil(h.health),h.maxHealth)
-	self.enemy.status.Text=string.format("%d / %d",math.ceil(b.health),b.maxHealth)
-	self.chakra.label.Text=string.format("CHAKRA  %d / %d",math.floor(h.chakra),h.maxChakra); self.chakra.fill.Size=UDim2.fromScale(h.chakra/h.maxChakra,1)
-	self.chakra.status.Text=string.format("STAMINA %d  •  Sub %d  •  %s",math.floor(h.stamina or 100),h.subCharges or 0,if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("Dash %.1fs",h.dodge) else "Dash ready")
-	self.cue.Text=""
+	if introActive then
+		self.introLeftName.Text=fullName(h);self.introLeftTitle.Text=subtitle(h)
+		self.introRightName.Text=fullName(b);self.introRightTitle.Text=subtitle(b)
+		self.introLeftName.TextColor3=accentOf(Fighters[h.fighterId]);self.introRightName.TextColor3=accentOf(Fighters[b.fighterId])
+		self.introRound.Text="PRODIGY TOURNAMENT  —  ROUND 1"
+		self.introBegin.Text=if data.intro<.75 then "始め!  BEGIN" else ""
+		if self.introShown~=data.epoch then
+			self.introShown=data.epoch
+			self.introLeft.Position=UDim2.new(-.5,0,.62,0);self.introRight.Position=UDim2.new(1,0,.62,0)
+			Tween:Create(self.introLeft,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(0,0,.62,0)}):Play()
+			Tween:Create(self.introRight,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(.5,0,.62,0)}):Play()
+		end
+		return
+	end
+	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
+	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
+	for _,pair in {{self.hp,h},{self.enemy,b}} do
+		local widget,actor=pair[1],pair[2]
+		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
+		widget.fill.Size=UDim2.fromScale(ratio,1)
+		widget.fill.BackgroundColor3=if ratio>.5 then palette.gold elseif ratio>.25 then Color3.fromRGB(236,134,60) else palette.red
+		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
+		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
+		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+	end
+	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
+		if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
+	-- Only decisive moments speak; routine cues stay silent.
+	local cue=h.cue or ""
+	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL CONVERT")
+	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do
-		-- Each slot owns its own widgets; `ui` was an undefined global, so every
-		-- render used to throw here and the rest of the HUD never refreshed.
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
-		ui.title.Text=(if pad then ({"RB+A","RB+X","RB+Y","RB+B","\u{2191}"})[i] else string.format("%d",i)).."  "..tech.name
-		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "Needs setup" elseif h.chakra<tech.cost then "Need chakra" else tech.cost.." chakra"
-		ui.box.BackgroundColor3=if tech.remaining==0 and tech.condition and h.chakra>=tech.cost then Color3.fromRGB(30,57,69) else palette.panel
+		ui.key.Text=if pad then ({"A","X","Y","B","\u{2191}"})[i] else string.format("%d",i)
+		ui.title.Text=string.upper(tech.name)
+		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost
+		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		ui.box.BackgroundTransparency=if ready then .05 else .35
+		ui.title.TextColor3=if ready then palette.paper else palette.muted
+		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self.hint.Text=if h.pursuit>0 then (if pad then "A / Cross \u{2014} chase" else Controls.KeyLabel.Pursuit.." / SPACE \u{2014} chase") else ""
+	self.hint.Text=if h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
-	self.resultTitle.Text=if data.winner=="PlayerFighter" then "VICTORY" else "DEFEAT"
+	local won=data.winner=="PlayerFighter"
+	local winner=if won then h else b
+	self.resultTitle.Text=if won then "VICTORY" else "DEFEAT"
+	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
+	self.resultName.Text=fullName(winner).."  ADVANCES"
+	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
 	if h.illusion>0 and data.phase=="Duel" then
 		local character=game:GetService("Players").LocalPlayer.Character
 		local folder=character and character.Parent

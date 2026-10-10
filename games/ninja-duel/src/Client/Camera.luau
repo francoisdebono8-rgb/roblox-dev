@@ -124,11 +124,20 @@ function Camera:update(data,dt)
 	local focusRate=if aerial or pursuit then 10 else 7
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.55+vertical*.3+self.zoom,12,48)
+	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom,12,52)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28
+	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
+	-- Match intro: a slow orbit that presents both fighters, then the normal
+	-- rig takes over from wherever the orbit ended.
+	if (data.intro or 0)>0 then
+		local mid=a:Lerp(target,.5)
+		local turn=self.boomAngle+math.rad(70)-(data.intro/2.6)*math.rad(110)
+		focus=mid+Vector3.new(0,2.6,0)
+		desired=focus+Vector3.new(math.sin(turn),0,math.cos(turn))*(separation*.5+13)+Vector3.new(0,3.2,0)
+		self.focus=focus
+	end
 	self.fovKick*=math.exp(-dt*9)
 	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
 	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,3)+self.fovKick
@@ -139,7 +148,21 @@ function Camera:update(data,dt)
 	local effects=folder and folder:FindFirstChild("Effects");if effects then table.insert(exclude,effects) end
 	local fx=workspace:FindFirstChild("NinjaDuelFX");if fx then table.insert(exclude,fx) end
 	ray.FilterDescendantsInstances=exclude
+	-- Fighting-space props (slabs, cover, posts, platforms) never shove the lens
+	-- into the player's back: the camera looks through them and they fade.
+	-- Only the floor and the bowl's boundary still stop the lens.
+	local faded={}
 	local hit=workspace:Raycast(focus,desired-focus,ray)
+	for _=1,4 do
+		if not hit or hit.Instance.Name=="Training floor" or hit.Instance.Name=="Boundary" then break end
+		faded[hit.Instance]=true
+		table.insert(exclude,hit.Instance)
+		ray.FilterDescendantsInstances=exclude
+		hit=workspace:Raycast(focus,desired-focus,ray)
+	end
+	for part in self.faded or {} do if not faded[part] and part.Parent then part.LocalTransparencyModifier=0 end end
+	for part in faded do part.LocalTransparencyModifier=.72 end
+	self.faded=faded
 	if hit then
 		desired=hit.Position+hit.Normal*1.2
 		if (desired-focus).Magnitude<7 then
@@ -156,7 +179,11 @@ function Camera:update(data,dt)
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
 	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
-		cf*=CFrame.Angles(math.rad(-12),math.rad(-21),0)
+		-- Turn about the world vertical, then pitch, and rebuild with a world up
+		-- so the horizon never rolls.
+		local look=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(-21)):VectorToWorldSpace(cf.LookVector)
+		look=(look-Vector3.yAxis*math.tan(math.rad(12))).Unit
+		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
 	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
 	else

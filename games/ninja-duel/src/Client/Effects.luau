@@ -24,6 +24,8 @@ local SOUND={
 	boom="rbxasset://sounds/impact_explosion_03.mp3",
 	land="rbxasset://sounds/action_jump_land.mp3",
 }
+-- Contacts that bring the crowd to its feet, by strength.
+local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8}
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
 FX.DELAY=.06
@@ -404,6 +406,7 @@ function FX:impact(impact,folder)
 			self:stick(impact.kind,position,impact.normal or Vector3.yAxis,direction,impact.owner)
 		end
 	end
+	if CHEER[style] then self:cheer(CHEER[style]) end
 	if style=="fire" then
 		self:explosion(position,impact.normal)
 	elseif style=="teleport" then
@@ -626,9 +629,9 @@ function FX:fighter(model,actor,dt)
 	local speed=actor.speed or 0
 	local fast=actor.state=="Dodging" or actor.state=="Pursuit" or actor.flash or (actor.fighterId=="Flashstep" and speed>34)
 	aura.trail.Enabled=fast==true and (actor.health or 1)>0
-	-- Itachi: the Sharingan flares while he reads or casts.
+	-- Itachi: the Sharingan flares while he reads, casts, or sizes up an opponent.
 	if aura.eyes and actor.fighterId=="Mirage" then
-		local lit=(actor.read or 0)>0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
+		local lit=(actor.read or 0)>0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom" or (actor.intro or 0)>0
 		aura.eyes.Color=if lit then Color3.fromRGB(255,40,40) else Color3.fromRGB(190,20,30)
 		aura.eyes.Material=Enum.Material.Neon
 	end
@@ -690,6 +693,52 @@ function FX:fighter(model,actor,dt)
 		end
 	end
 end
+-- ----------------------------------------------------------------- crowd
+-- The stands react to the fight: big moments bring spectators to their feet,
+-- banners sway in the wind. Local-only motion of anchored decor.
+function FX:crowdOf(folder)
+	if self.crowdFolder==folder then return end
+	self.crowdFolder=folder
+	self.crowd={};self.banners={}
+	local yard=folder and folder:FindFirstChild("Courtyard")
+	local decor=yard and yard:FindFirstChild("Decor")
+	if not decor then return end
+	for _,m in decor:GetChildren() do
+		if m.Name=="SpectatorFigure" then
+			local parts={}
+			for _,p in m:GetChildren() do if p:IsA("BasePart") then table.insert(parts,{part=p,base=p.CFrame}) end end
+			table.insert(self.crowd,{parts=parts,phase=math.random()*math.pi*2,speed=7+math.random()*4})
+		elseif m.Name=="Banner" or m.Name=="Pavilion banner" then
+			table.insert(self.banners,{part=m,base=m.CFrame,phase=math.random()*math.pi*2})
+		end
+	end
+end
+function FX:cheer(strength)
+	self.cheerStart=os.clock()
+	self.cheerStrength=math.max(strength,if self.cheerStart and os.clock()-self.cheerStart<.4 then self.cheerStrength or 0 else 0)
+end
+function FX:ambient(dt)
+	local t=os.clock()
+	for _,b in self.banners or {} do
+		if b.part.Parent then
+			local h=b.part.Size.Y
+			local angle=math.rad(math.sin(t*1.3+b.phase)*3+math.sin(t*3.1+b.phase)*1)
+			b.part.CFrame=b.base*CFrame.new(0,h/2,0)*CFrame.Angles(angle,0,0)*CFrame.new(0,-h/2,0)
+		end
+	end
+	local elapsed=t-(self.cheerStart or -10)
+	local active=elapsed<1.1
+	if active or self.cheering then
+		local strength=(self.cheerStrength or 0)*(1-math.clamp((elapsed-.6)/.5,0,1))
+		for _,fig in self.crowd or {} do
+			local lift=if active then math.abs(math.sin(t*fig.speed+fig.phase))*.75*strength else 0
+			for _,entry in fig.parts do
+				if entry.part.Parent then entry.part.CFrame=entry.base+Vector3.new(0,lift,0) end
+			end
+		end
+		self.cheering=active
+	end
+end
 function FX:update(data,dt,folder)
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
@@ -698,9 +747,12 @@ function FX:update(data,dt,folder)
 	end
 	self:stepProjectiles(dt)
 	self:hazardsStep(data)
+	self:crowdOf(folder)
+	self:ambient(dt)
 	for _,key in {"human","bot"} do
 		local actor=data[key]
 		if actor then
+			actor.intro=data.intro
 			self:seal(actor.id or key,actor)
 			local model=folder and folder:FindFirstChild(actor.id or "")
 			self:fighter(model,actor,dt)

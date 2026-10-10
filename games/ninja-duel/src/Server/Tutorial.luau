@@ -32,7 +32,8 @@ function Tutorial.enter(s,now)
  b.trainingChannelScale=if t.index==17 and b.fighterId=="Flashstep" then 3 else 1
  local near=t.index>=7 and t.index~=16
  c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
- if t.index==6 then c:relocate(a,s.origin+Vector3.new(24,3,0));c:relocate(b,s.origin+Vector3.new(16,3,0)) end
+ -- Wall step: start a few strides from the stadium wall (east side).
+ if t.index==6 then c:relocate(a,s.origin+Vector3.new(74,3,0));c:relocate(b,s.origin+Vector3.new(64,3,0)) end
  a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
  if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
  if t.index==10 or t.index==11 then

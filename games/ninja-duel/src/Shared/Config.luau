@@ -1,7 +1,7 @@
 -- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.8.0-claude-final-pass",
-	ArenaRadius = 78, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	Version = "0.9.0-phase3-youth-tournament",
+	ArenaRadius = 79.5, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
