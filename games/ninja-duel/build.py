@@ -57,7 +57,7 @@ if args.qa:
     expected[expected.index(main_source)]='workspace:SetAttribute("NinjaDuelQA",true)\n'+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
 assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewed files'
-manifest={'version':'0.2.0','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','externalAssets':[]}
+manifest={'version':'0.4.0-phase6','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','externalAssets':[]}
 output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(output)
 print(manifest['sha256'])

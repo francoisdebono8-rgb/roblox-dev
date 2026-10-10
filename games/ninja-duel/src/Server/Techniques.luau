@@ -1,13 +1,15 @@
 -- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
 -- channel, interruption, active window and recovery for every entry.
 local Techniques = {}
+local Elements=require(script.Parent.Elements)
 Techniques.MarkedBlade = {
 	check = function() return true end,
 	execute = function(c, a, pending, now)
 		c:projectile(a, pending.aim, 62, pending.spec.Range, pending.spec.Damage, "blade", function(position, normal)
 			if a.health <= 0 or c.match.phase ~= "Duel" then return end
 			if a.anchor then a.anchor.part:Destroy() end
-			local at = c:clamp(position + Vector3.new(0, 3, 0))
+			local offset=if normal.Y>0.5 then Vector3.new(0,3,0) else normal*3+Vector3.new(0,1,0)
+			local at = c:clamp(position + offset)
 			local p = c:effect("Anchor", position + normal*0.2, a.color, Vector3.new(1.3,0.2,1.3), 12)
 			a.anchor = { position = at, expires = c.now + 12, part = p }
 			c:cue(a,"ANCHOR PLACED")
@@ -37,8 +39,12 @@ Techniques.Flashstep = {
 Techniques.BurstStrike = {
 	check = function() return true end,
 	execute = function(c,a,pending)
-		c:effect("Burst",a.root.Position+a.root.CFrame.LookVector*3,a.color,Vector3.new(4,3,5),0.2)
-		if not c:strike(a,pending.spec.Damage,pending.spec.Range,0.35,true) then c:cue(a,"WHIFF • RECOVERING") end
+		-- Channel commits chakra; release becomes a travelling physical attack.
+		require(script.Parent.Brawler).start(c,a,"DashAttack")
+		a.pending.spec=table.clone(a.pending.spec)
+		a.pending.spec.damage=pending.spec.Damage;a.pending.spec.travel=10;a.pending.spec.recovery=.48
+		a.travelRemaining=10
+
 	end,
 }
 Techniques.Read = {
@@ -74,4 +80,15 @@ Techniques.MirageCast = {
 		c:cue(a,"ECHO ACTIVE",3)
 	end,
 }
+Techniques.Quickstep={
+	check=function() return true end,
+	execute=function(c,a)
+		local direction=if a.move.Magnitude>0.2 then a.move else a.root.CFrame.RightVector
+		local moved=require(script.Parent.Motor).travel(a,c,direction,11)
+		c:effect("Quickstep",a.root.Position,a.color,Vector3.new(2,3,2),0.22)
+		c:cue(a,if moved>3 then "ANGLE CREATED" else "ANGLE BLOCKED")
+	end,
+}
+Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+Techniques.WindCut={check=function() return true end,execute=Elements.wind}
 return Techniques

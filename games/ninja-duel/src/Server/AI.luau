@@ -8,10 +8,13 @@ function AI:update(now)
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	if (a.state=="Stunned" or a.reaction) and a.subCharges>0 and a.chakra>=Config.Substitution.Cost and self.rng:NextNumber()<0.42 then
+		c:request(a,"Substitute")
+	end
 	local position=if a.decoyPosition and a.illusionUntil>now then a.decoyPosition else target.root.Position
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance>0.1 then delta.Unit else Vector3.zAxis
-	if a.state~="Dodging" then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
 	local tangent=Vector3.new(-toward.Z,0,toward.X)
 	local desired=a.def.PreferredRange or 7
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
@@ -35,11 +38,18 @@ function AI:update(now)
 			return
 		end
 	end
+	if a.grabVictim then c:request(a,if self.rng:NextNumber()<.4 then "Heavy" else "Attack");return end
 	if a.pursuitUntil>now and distance>8 and distance<Config.PursuitRange and self.rng:NextNumber()<0.58 then
 		c:request(a,"Pursuit"); return
 	end
-	if a.state~="Neutral" then return end
+	if a.state=="Recovery" and a.chainOpen then
+		c:request(a,if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack");return
+	end
+	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
+	if distance>7 and distance<30 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.24 else 0.18) then
+		if c:request(a,"Tool",target.root.Position) then return end
+	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
 	if self.rng:NextNumber()<tune.Technique then
 		for slot,spec in a.def.Techniques do
@@ -50,10 +60,15 @@ function AI:update(now)
 			elseif spec.Id=="Read" then use=distance<8 and danger and reacted
 			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<27
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
+			if spec.Id=="FireBloom" then use=distance<15 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.28) end
+			if spec.Id=="WindCut" then use=distance>8 and distance<28 end
+			if spec.Id=="Quickstep" then use=distance>9 and distance<20 and self.rng:NextNumber()<0.25 end
 			if use and c:request(a,"Technique"..slot,aim) then return end
 		end
 	end
-	if distance<8 and self.rng:NextNumber()<tune.Aggression then c:request(a,"Attack") end
+	if distance<8 and self.rng:NextNumber()<tune.Aggression then
+		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
+	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
 	-- Sidestep cover when the direct route is obstructed.
 	local block=workspace:Raycast(a.root.Position,toward*6,c:rayParams(true))
