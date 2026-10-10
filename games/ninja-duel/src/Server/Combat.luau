@@ -41,9 +41,13 @@ function Combat:add(id,model,hum,root,joints,definition)
 	Animation.attach(a)
 	return a
 end
+-- The tournament stage is round: positions are held inside a circle so no
+-- corner of the old square limit reaches into the stands.
 function Combat:clamp(p)
 	local o=self.match.origin; local r=Config.ArenaRadius
-	return Vector3.new(math.clamp(p.X,o.X-r,o.X+r),math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),math.clamp(p.Z,o.Z-r,o.Z+r))
+	local flat=Vector3.new(p.X-o.X,0,p.Z-o.Z)
+	if flat.Magnitude>r then flat=flat.Unit*r end
+	return Vector3.new(o.X+flat.X,math.clamp(p.Y,o.Y+3,o.Y+Config.ArenaHeight),o.Z+flat.Z)
 end
 function Combat:relocate(a,p)
 	local look=a.root.CFrame.LookVector
@@ -138,7 +142,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	local delta=attacker.root.Position-victim.root.Position
 	local frontal=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>0.15
 	if readEligible and frontal and victim.readUntil>self.now then
-		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
+		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
 		self:setState(victim,"Neutral",0)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
@@ -366,7 +370,7 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.def.CombatStyle=="Control" and a.hitBlocked)) and self.now>=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
@@ -384,6 +388,16 @@ function Combat:request(a,action,aim,clientTime)
 			end})
 		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
 		return true
+	end
+	-- Melee -> technique: Minato may spend a confirmed string on Rasengan with
+	-- a shortened wind-up. It is a read/finisher, not a neutral button.
+	a.stringCancel=nil
+	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
+	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
+	if cancelSpec and cancelSpec.Id=="BurstStrike" and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
+		a.stringCancel=cancelSpec.Id
 	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
@@ -408,6 +422,8 @@ function Combat:request(a,action,aim,clientTime)
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
+	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
+	a.stringCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
@@ -470,7 +486,10 @@ function Combat:updateActor(a,dt)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
-			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
+			-- Cancel philosophy: a string continues only on a clean hit. On block the
+			-- attacker keeps a dodge cancel (and Itachi a shuriken cancel); a whiff
+			-- keeps its full recovery.
+			a.chainOpen=a.hitConfirmed and not a.hitBlocked and pending and pending.kind=="Brawl" and pending.spec.chain==true
 			a.chainAt=now
 			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
@@ -488,6 +507,12 @@ function Combat:updateActor(a,dt)
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
  if a.state~="Dodging" then a.evade=nil end
 	self:stepThrow(a)
+	if a.hop then
+		local step=math.min(a.hop.remaining,a.hop.speed*dt)
+		a.hop.remaining-=step
+		Motor.travel(a,self,a.hop.direction,step)
+		if a.hop.remaining<=.01 or a.reaction then a.hop=nil end
+	end
 	if a.castId and not a.pending and not a.throwing and a.state~="TechniqueRecovery" then a.castId=nil end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
@@ -560,7 +585,10 @@ function Combat:updateActor(a,dt)
   if flat.Magnitude>2 and flat.Magnitude<9 then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
-   if a.fighterId=="Flashstep" and spec.angle then
+   if spec.orbit and a.state~="Recovery" then
+    -- AngleStep: swing around the opponent's guard while cutting.
+    Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit)
+   elseif a.fighterId=="Flashstep" and spec.angle then
     Motor.travel(a,self,tangent*(if spec.angle<0 then -1 else 1),dt*(if a.airborne then 9 else 7))
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
@@ -581,7 +609,7 @@ function Combat:updateActor(a,dt)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
 	local p=a.root.Position
-	if math.abs(p.X-self.match.origin.X)>Config.ArenaRadius or math.abs(p.Z-self.match.origin.Z)>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
+	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude>Config.ArenaRadius or p.Y<self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
 local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire"}
@@ -736,7 +764,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;
+		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end

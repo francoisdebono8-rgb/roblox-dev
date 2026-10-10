@@ -49,6 +49,7 @@ function Brawler.start(c,a,name)
  a.buffered=nil
  a.queuedLight=nil
  a.attackVariant=nil
+ a.hitBlocked=false
  a.attackSerial=(a.attackSerial or 0)+1
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
  local slamWindow=0
@@ -68,6 +69,35 @@ function Brawler.start(c,a,name)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
  Brawler.event(c,a,name)
+ return true
+end
+-- Movement intent relative to the fighter's facing, read when a press lands:
+-- this is what turns one string into a small move graph per character.
+function Brawler.intent(a)
+ local m=Vector3.new(a.move.X,0,a.move.Z)
+ if m.Magnitude<.4 then return "neutral",0 end
+ local l=a.root.CFrame:VectorToObjectSpace(m.Unit)
+ local forward,side=-l.Z,l.X
+ if forward<-.55 then return "back",0 end
+ if math.abs(side)>.55 then return "side",if side>0 then 1 else -1 end
+ if forward>.55 then return "forward",0 end
+ return "neutral",0
+end
+-- Disengage branch: hop out of the string while a blade (Minato) or a pair of
+-- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
+function Brawler.disengage(c,a,kind)
+ Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.queuedLight=nil;a.buffered=nil
+ local away=a.root.Position-a.target.root.Position;away=Vector3.new(away.X,0,away.Z)
+ if away.Magnitude<.1 then away=-a.root.CFrame.LookVector end
+ local minato=kind=="Kunai"
+ a.state="Recovery";a.untilTime=c.now+(if minato then .26 else .32);a.recoveryCancelAt=a.untilTime
+ a.hop={direction=away.Unit,remaining=if minato then 5 else 6,speed=if minato then 46 else 38}
+ c:beginThrow(a,{kind=kind,release=if minato then .07 else .1,count=if minato then 1 else 2,interval=.07,
+  fire=function(index,target)
+   local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.7 else .7)
+   c:projectile(a,target+spread,if minato then 96 else 84,22,3,if minato then "kunai" else "shuriken")
+  end})
+ Brawler.event(c,a,"Disengage")
  return true
 end
 function Brawler.request(c,a,action)
@@ -123,6 +153,21 @@ function Brawler.request(c,a,action)
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
+ -- Itachi's Read pays off with a decisive palm on the next press.
+ if action=="Attack" and (a.counterUntil or 0)>c.now and not canChain then
+  a.counterUntil=0;return Brawler.start(c,a,"CounterPalm")
+ end
+ -- Character move graphs: inside a confirmed string the stick picks a branch.
+ if action=="Attack" and canChain then
+  local dir,sideSign=Brawler.intent(a)
+  if a.fighterId=="Flashstep" then
+   if dir=="side" then a.angleSide=sideSign;return Brawler.start(c,a,"AngleStep") end
+   if dir=="back" then return Brawler.disengage(c,a,"Kunai") end
+  elseif a.fighterId=="Mirage" then
+   if dir=="back" then return Brawler.disengage(c,a,"Shuriken") end
+   if dir=="side" then return Brawler.start(c,a,"Sweep") end
+  end
+ end
  -- The ground light step is resolved once per accepted press, so a buffered
  -- chain cannot advance the combo counter twice.
  local name=a.queuedLight
@@ -177,6 +222,7 @@ function Brawler.hit(c,a,p)
  if not success or b.health<=0 then return success end
  if protected then return true end
  if guarded then
+  a.hitBlocked=true
 	 c:applyHitstop(a,b,"block",false)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end

@@ -78,6 +78,14 @@ function AI:update(now)
 	if a.state=="Recovery" and a.chainOpen then
 		local branch=if a.airborne then (if (a.airCombo or 0)>=2 then "Heavy" else "Attack") elseif a.combo>=2 and self.rng:NextNumber()<.55 then "Heavy" else "Attack"
 		if not a.airborne and self.rng:NextNumber()<(if minato then .18 else .34) then branch="Tool" end
+		-- Character branches: the stick picks an alternative inside the string.
+		if branch=="Attack" and not a.airborne then
+			local roll=self.rng:NextNumber()
+			if minato and roll<.28 then a.move=tangent*(if roll<.14 then 1 else -1)
+			elseif minato and roll<.36 then a.move=-toward
+			elseif not minato and roll<.22 then a.move=-toward
+			elseif not minato and roll<.34 and a.combo>=2 then a.move=tangent end
+		end
 		c:request(a,branch);return
 	end
 	if a.state~="Neutral" or a.reaction then return end

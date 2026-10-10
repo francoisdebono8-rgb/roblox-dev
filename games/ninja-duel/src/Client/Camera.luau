@@ -152,6 +152,12 @@ function Camera:update(data,dt)
 	if os.clock()<self.shakeUntil then
 		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
 	end
+	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
+	-- top-left two thirds of the play viewport, so tooling can ask for the view
+	-- to be re-aimed at that visible region. Never active outside Studio.
+	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
+		cf*=CFrame.Angles(math.rad(-12),math.rad(-21),0)
+	end
 	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few

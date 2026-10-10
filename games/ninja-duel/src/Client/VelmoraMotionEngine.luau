@@ -382,6 +382,30 @@ CLIPS.Flashstep.Rasengan={
 	K(3,M),
 }
 
+-- Branch moves ----------------------------------------------------------
+-- Minato's AngleStep: a crossing sidestep that cuts on the way past.
+CLIPS.Flashstep.AngleStep={
+	K(0,m({root={y=-.62,yaw=-30,pitch=12,roll=10},torso={yaw=-24},ra={raise=66,out=-40,twist=36,elbow=110,wrist=-28},la={raise=30,out=30,elbow=60},lf={z=-.4,x=-.4},rf={z=.8,x=.5}})),
+	K(1,m({root={y=-.55,yaw=40,pitch=14,roll=-12},torso={yaw=26,roll=-8},head={yaw=-26},ra={raise=84,out=34,twist=-16,elbow=20,wrist=12},la={raise=20,out=40,elbow=50},lf={z=-.9,x=.3},rf={z=.6,x=.8}}),"out"),
+	K(2,m({root={y=-.5,yaw=48,pitch=12,roll=-10},torso={yaw=32},ra={raise=70,out=58,twist=-28,elbow=30},la={raise=22,out=40,elbow=54},lf={z=-.9,x=.3},rf={z=.6,x=.8}})),
+	K(3,M),
+}
+-- Itachi's Sweep: drop low, pivot on the lead foot, extended leg reaps.
+CLIPS.Mirage.Sweep={
+	K(0,i({root={y=-1.05,pitch=24,yaw=-30},torso={pitch=12,yaw=-14},ra={raise=-20,out=40,elbow=30},la={raise=40,out=-10,elbow=100},lf={z=-.6,yaw=-30},rf={z=.8}})),
+	K(1,i({root={y=-1.25,pitch=30,yaw=70},torso={pitch=16,yaw=12},head={yaw=-50},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=20,out=72,twist=-40,knee=6,ankle=-10},lf={z=-.4,yaw=60}}),"out"),
+	K(2,i({root={y=-1.2,pitch=28,yaw=120},torso={pitch=14,yaw=16},ra={raise=-40,out=60,elbow=10},la={raise=30,out=10,elbow=90},rl={lift=18,out=70,twist=-40,knee=10},lf={z=-.4,yaw=100}})),
+	K(2.7,i({root={y=-.8,yaw=170},lf={yaw=150}})),
+	K(3,I),
+}
+-- Itachi's CounterPalm: the read has already happened; no wind-up, all hip.
+CLIPS.Mirage.CounterPalm={
+	K(0,i({root={y=-.5,yaw=24,pitch=8},torso={yaw=16},ra={raise=30,out=14,twist=40,elbow=110},la={raise=60,out=-20,elbow=100}})),
+	K(1,i({root={y=-.55,z=-.6,yaw=-20,pitch=16},torso={yaw=-24,pitch=8},head={yaw=12},ra={raise=90,out=-2,twist=72,elbow=2,wrist=-62},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}}),"out"),
+	K(2,i({root={y=-.55,z=-.62,yaw=-22,pitch=16},torso={yaw=-26,pitch=8},ra={raise=88,out=-2,twist=72,elbow=6,wrist=-60},la={raise=20,out=30,elbow=60},lf={z=-1.25},rf={z=1.0,yaw=20}})),
+	K(3,I),
+}
+
 -- Sample a key list at time `t` on the [0,3] attack timeline.
 local function sampleKeys(keys,t)
 	if t<=keys[1].at then return built(keys[1].pose) end
@@ -725,7 +749,7 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart

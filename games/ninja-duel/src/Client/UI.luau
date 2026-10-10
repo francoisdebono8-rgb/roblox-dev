@@ -102,6 +102,10 @@ function UI.new(parent,send)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(470,26),18)
 	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(470,38),13,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
+	-- Studio capture aid (see Camera): shrink the HUD into the visible region.
+	if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then
+		create("UIScale",self.hud,{Scale=.62})
+	end
 	self:refreshSelection(); self:render({phase="Selection"})
 	return self
 end

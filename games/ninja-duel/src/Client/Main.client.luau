@@ -55,7 +55,16 @@ if RunService:IsStudio() then
 		log.OnClientEvent:Connect(function(kind)
 			if kind=="info" then
 				local cam=workspace.CurrentCamera
-				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize})
+				local gui={}
+				local hud=player.PlayerGui:FindFirstChild("NinjaDuelHUD")
+				if hud then
+					for _,g in hud:GetDescendants() do
+						if g:IsA("GuiObject") and #gui<40 and (g.Parent==hud or (g.Parent and g.Parent.Parent==hud)) then
+							table.insert(gui,string.format("%s vis=%s pos=%s size=%s",g:GetFullName():sub(-40),tostring(g.Visible),tostring(g.AbsolutePosition),tostring(g.AbsoluteSize)))
+						end
+					end
+				end
+				log:FireServer("info",{camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
 			end
 		end)
 	end)

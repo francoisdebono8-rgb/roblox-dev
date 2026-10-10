@@ -16,7 +16,7 @@ return {
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 50, Damage = 6, Hint = "Throw a sealed kunai • lasts 12s once planted" },
 			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 18, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 2.6, Interruptible = true, Range = 60, Requires = "Anchor", Hint = "Teleport to the seal • strike on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 24, Hint = "Close punish • unsafe on a miss" },
+			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Unfinished prototype • cancel a clean string into it" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
 			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 29, Damage = 7, Hint = "Displace with a cutting gust" },
 		},
