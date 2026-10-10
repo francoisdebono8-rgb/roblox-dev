@@ -309,8 +309,9 @@ function QA.run(matches)
 	end)
  test("controller semantic actions and tutorial objectives are complete",function()
  for _,name in {"Light","Heavy","Jump","Dodge","Guard","Tool","Grab","Lock","Sprint","Modifier","Technique5","Skip"} do
-  local mapped=false;for _,key in Controls[name] do if string.match(key.Name,"^Button") or string.match(key.Name,"^DPad") then mapped=true end end
-  assert(mapped,"No gamepad mapping "..name)
+  local key=Controls.Gamepad[name]
+  assert(key~=nil,"No gamepad mapping "..name)
+  assert(string.match(key.Name,"^Button") or string.match(key.Name,"^DPad"),"Not a controller key for "..name)
  end
  assert(#Tutorial.Steps==18)
  local c,a,b=pair("Flashstep","Mirage");local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai=AI.new(c,b,23)
@@ -325,6 +326,62 @@ function QA.run(matches)
  assert(c:request(a,"Grab"));step(c,.23);assert(a.grabVictim==b)
  c:damage(b,a,1000,false,false);assert(m.phase=="Result" and not b.grabbedBy and not a.grabVictim and not b.reaction)
  end)
+	test("contacts are reported once with a hit position and a style",function()
+		local c,a,b=pair("Flashstep","Mirage")
+		assert(c:request(a,"Attack"));step(c,.4)
+		assert(b.health<b.def.Health,"native strike did not land")
+		local feed=c.impacts or {}
+		assert(#feed>0,"no contact was reported")
+		local last=0
+		for _,impact in feed do
+			assert(impact.serial>last,"impact serials are not ordered")
+			assert(typeof(impact.position)=="Vector3","impact without a position")
+			assert(type(impact.style)=="string","impact without a style")
+			last=impact.serial
+		end
+		assert(c.impactSerial==last,"impactSerial disagrees with the feed")
+		-- A whiff must be reported separately from a contact.
+		local before=#(c.impacts or {})
+		c:relocate(b,c.match.origin+Vector3.new(0,3,-40))
+		assert(c:request(a,"Attack"));step(c,.6)
+		local sawWhiff=false;local sawContact=false
+		for _,impact in c.impacts or {} do
+			if impact.style=="whiff" then sawWhiff=true end
+			if impact.style=="light" or impact.style=="finisher" then sawContact=true end
+		end
+		assert(sawWhiff,"native whiff was not reported")
+		assert(not sawContact,"out-of-range swing reported a contact")
+	end)
+	test("the slam brings its own actor back to the floor",function()
+		local c,a,b=pair("Flashstep","Mirage")
+		c:relocate(a,c.match.origin+Vector3.new(0,26,1))
+		c:relocate(b,c.match.origin+Vector3.new(0,3,-1))
+		a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position)
+		a.root.Anchored=false
+		a.airborne=true;a.hitConfirmed=true;a.chainOpen=true;a.attackName="Air2";a.state="Recovery";a.chainAt=0
+		assert(c:request(a,"Heavy"),"slam refused")
+		assert(a.attackName=="Slam","air heavy did not select the slam")
+		step(c,2)
+		assert(not a.airborne,"slam left the attacker airborne")
+		assert(a.root.Position.Y<c.match.origin.Y+7,"slam parked the attacker at Y="..string.format("%.1f",a.root.Position.Y))
+		a.root.Anchored=true
+	end)
+	-- The animation/presentation contract is a client module and cannot be
+	-- required from the server; it is covered by tests/Animation.spec.luau.
+	test("PC keyboard mapping matches the documented home-row layout",function()
+		local keyboard=Controls.Keyboard
+		for _,action in {"Light","Heavy","Dodge","Guard","Grab","Pursuit","Tool","Jump","Substitute"} do
+			assert(keyboard[action]~=nil,"no keyboard binding for "..action)
+		end
+		assert(keyboard.Light==Enum.UserInputType.MouseButton1 and keyboard.Heavy==Enum.UserInputType.MouseButton2)
+		assert(keyboard.Jump==Enum.KeyCode.Space and keyboard.Dodge==Enum.KeyCode.Q)
+		assert(keyboard.Grab==Enum.KeyCode.V and keyboard.Guard==Enum.KeyCode.F)
+		local seen={}
+		for action,key in keyboard do
+			assert(seen[key.Name]==nil,"key "..key.Name.." drives both "..seen[key.Name].." and "..action)
+			seen[key.Name]=action
+		end
+	end)
 	for _,f in active do f:Destroy() end
 	local player=Players:GetPlayers()[1] or Players.PlayerAdded:Wait()
 	test("remote validation + two rematches + return selection",function()

@@ -1,4 +1,6 @@
-local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Controls=require(Shared.Controls)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -84,7 +86,7 @@ function UI.new(parent,send)
 		local box=frame(self.hud,UDim2.new(0.5,-418+(i-1)*168,1,-78),UDim2.fromOffset(160,48))
 		self.techniqueButtons[i]={title=text(box,"",UDim2.fromOffset(8,5),UDim2.fromOffset(146,26),13),status=text(box,"",UDim2.fromOffset(8,27),UDim2.fromOffset(146,16),10,palette.muted),box=box}
 	end
-	self.help=text(self.hud,"WASD move  CTRL sprint  SPACE jump/wall rebound  C detach  LMB chain/air  R tool  F guard  Q dash  X substitute  G feint  E pursue  1–5 techniques  SHIFT lock",UDim2.new(0.5,-600,1,-34),UDim2.fromOffset(1200,25),11,palette.muted)
+	self.help=text(self.hud,Controls.Help,UDim2.new(0.5,-600,1,-34),UDim2.fromOffset(1200,25),11,palette.muted)
 	self.help.TextXAlignment=Enum.TextXAlignment.Center
 	self.hint=text(self.hud,"",UDim2.new(0.5,-260,0,199),UDim2.fromOffset(520,30),13,palette.muted); self.hint.TextXAlignment=Enum.TextXAlignment.Center
 	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.bg); self.result.BackgroundTransparency=0.2
@@ -135,13 +137,13 @@ function UI:render(data)
 	self.cue.Text=""
 	self.channel.Text=""
 	for i,tech in h.techniques do
-		local ui=self.techniqueButtons[i];ui.box.Visible=true; ui.title.Text=(if pad then ({"RB+A","RB+X","RB+Y","RB+B","↑"})[i] else tostring(i)).."  "..tech.name
+		ui.title.Text=(if pad then ({"RB+A","RB+X","RB+Y","RB+B","\u{2191}"})[i] else string.format("%d",i)).."  "..tech.name
 		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "Needs setup" elseif h.chakra<tech.cost then "Need chakra" else tech.cost.." chakra"
 		ui.box.BackgroundColor3=if tech.remaining==0 and tech.condition and h.chakra>=tech.cost then Color3.fromRGB(30,57,69) else palette.panel
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
-	self.hint.Text=if h.pursuit>0 then (if pad then "A / Cross — chase" else "E — chase") else ""
-	self.help.Text=if pad then "X light   Y heavy / launcher / slam   B dodge / escape   LB guard   LT grab   RT tool   RB + face jutsu   LS sprint   RS lock" else "LMB light   T heavy / launcher / slam   Q dodge   X escape   F guard   V grab   R tool   E chase   CTRL sprint   SHIFT lock"
+	self.hint.Text=if h.pursuit>0 then (if pad then "A / Cross \u{2014} chase" else Controls.KeyLabel.Pursuit.." / SPACE \u{2014} chase") else ""
+	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	self.resultTitle.Text=if data.winner=="PlayerFighter" then "VICTORY" else "DEFEAT"
 	if h.illusion>0 and data.phase=="Duel" then
 		local character=game:GetService("Players").LocalPlayer.Character

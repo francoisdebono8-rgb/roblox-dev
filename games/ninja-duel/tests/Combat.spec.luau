@@ -41,10 +41,16 @@ local function emitter() return {IsA=function(_,class) return class=="ParticleEm
 local function attachment() return {Clone=function() return attachment() end,GetChildren=function() return {emitter()} end} end
 local assets={VFX={BasicPunch={Attachment=attachment()},ComboPunch={Attachment=attachment()}}}
 local sharedStub
+-- Resolve src/ from either the repository root or the game folder.
+local SRC
+for _,candidate in {"games/ninja-duel/src","src"} do
+ if fs.isDir(candidate) then SRC=candidate break end
+end
+assert(SRC,"Could not locate ninja-duel src; run lune from the repository root or games/ninja-duel")
 local names={}
 for _,dir in {"Shared","Server","Client"} do
  names[dir]={}
- for _,file in fs.readDir("games/ninja-duel/src/"..dir) do if file:match("%.luau$") then local name=file:gsub("%.luau$","");names[dir][name]=dir.."/"..name end end
+ for _,file in fs.readDir(SRC.."/"..dir) do if file:match("%.luau$") then local name=file:gsub("%.luau$","");names[dir][name]=dir.."/"..name end end
 end
 local cached={["Server/World"]=World};local loadModule
 local envBase={Vector3=V,Vector2=roblox.Vector2,CFrame=C,Color3=roblox.Color3,Enum=roblox.Enum,workspace=workspace,
@@ -52,7 +58,9 @@ local envBase={Vector3=V,Vector2=roblox.Vector2,CFrame=C,Color3=roblox.Color3,En
 local bindings={}
 local inputServices={
  ContextActionService={BindActionAtPriority=function(_,name,callback,_,_,...) bindings[name]={callback=callback,keys={...}} end},
- UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end}},
+ UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},
+  InputChanged={Connect=function() end},GetLastInputType=function() return roblox.Enum.UserInputType.Keyboard end,
+  IsMouseButtonPressed=function() return false end},
 }
 envBase.Instance={new=function(class)
  local obj=fakePart(V.zero)
@@ -73,7 +81,7 @@ envBase.game={GetService=function(_,name)
 end}
 loadModule=function(path)
  if cached[path] then return cached[path] end
- local fn=assert(loadstring(fs.readFile("games/ninja-duel/src/"..path..".luau"),path))
+ local fn=assert(loadstring(fs.readFile(SRC.."/"..path..".luau"),path))
  local env=setmetatable({require=loadModule,script={Parent=names[path:match("^(%w+)/")] }},{__index=function(_,key) return envBase[key] or getfenv()[key] end})
  setfenv(fn,env);cached[path]=fn();return cached[path]
 end
@@ -104,7 +112,11 @@ local function step(c,time)
  for _=1,math.ceil(time/.01) do c:update(.01,c.now+.01) end
 end
 local passed=0
-local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));passed+=1;print("PASS "..name) end
+local function test(name,fn)
+ local ok,err=pcall(fn)
+ if not ok then print("FAIL "..name..": "..tostring(err));error(name..": "..tostring(err),0) end
+ passed+=1;print("PASS "..name)
+end
 test("ground branch, real launch, 3D chase, two air hits, slam and wakeup",function()
  local c,a,b=pair();c.match.techniquesDisabled=true
  assert(not c:request(a,"Technique1"))
@@ -126,7 +138,16 @@ test("active window late entry, whiff recovery and combo buffer",function()
  local c,a,b=pair();b.root.CFrame=C.new(0,3,-20)
  assert(c:request(a,"Attack"));step(c,.12);assert(b.health==b.def.Health)
  b.root.CFrame=C.new(a.root.Position+a.root.CFrame.LookVector*3);step(c,.03);assert(b.health<b.def.Health)
- assert(not c:request(a,"Attack"));step(c,.14);assert(a.attackName=="Light2")
+ -- The swing connected, so the next press is buffered and chains on recovery.
+ assert(c:request(a,"Attack"));step(c,.4)
+ assert(a.attackName=="Light2" and a.combo==2,"connected light did not chain")
+ -- A whiffed swing keeps its recovery: no chain and no phantom combo.
+ b.root.CFrame=C.new(0,3,-30);step(c,.6)
+ local health=b.health
+ assert(c:request(a,"Attack"));assert(a.attackName=="Light3")
+ assert(not c:request(a,"Attack"),"whiffed swing accepted a chain")
+ step(c,.5)
+ assert(b.health==health and not a.chainOpen,"whiff produced a contact or a chain")
 end)
 test("grab, directional throw, no orphan relationship and upthrow",function()
  local c,a,b=pair();assert(c:request(a,"Grab"));step(c,.23)
@@ -147,9 +168,11 @@ test("death and reset clear launch, grab, buffer and chase",function()
  assert(c.match.phase=="Result" and not a.grabVictim and not b.grabbedBy and not b.reaction and not a.buffered and a.pursuitUntil==0)
 end)
 test("every semantic action has controller mapping; tutorial cannot skip success",function()
- for name,keys in Controls do
-  local pad=false;for _,key in keys do if key.Name:match("^Button") or key.Name:match("^DPad") then pad=true end end
-  assert(pad,name)
+ for name,key in Controls.Gamepad do
+  assert(typeof(key)=="EnumItem","gamepad mapping missing for "..name)
+ end
+ for name,key in Controls.Keyboard do
+  assert(typeof(key)=="EnumItem" and type(key.Name)=="string","keyboard mapping missing for "..name)
  end
  local c,a,b=pair();local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai={update=function() end};Tutorial.new(s)
  Tutorial.update(s,100,.02);assert(s.tutorial.index==1)
@@ -191,7 +214,10 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
  local Input=loadModule("Client/Input");local sent={};local state={phase="Duel",human={pursuit=0}};local camera={look=roblox.Vector2.zero}
  local input=Input.new(function(action) table.insert(sent,action) end,function() return state end,function() table.insert(sent,"Lock") end,camera)
  local function press(name,key,mode,position)
-  return bindings["Ninja"..name].callback("Ninja"..name,mode or roblox.Enum.UserInputState.Begin,{KeyCode=roblox.Enum.KeyCode[key],Position=position or V.zero})
+  local isMouse=key:match("^Mouse")
+  local code=if isMouse then roblox.Enum.UserInputType[key] else roblox.Enum.KeyCode[key]
+  return bindings["Ninja"..name].callback("Ninja"..name,mode or roblox.Enum.UserInputState.Begin,
+   {KeyCode=code,UserInputType=if isMouse then code else roblox.Enum.UserInputType.Keyboard,Position=position or V.zero})
  end
  press("Light","ButtonX");assert(sent[#sent]=="Attack")
  press("Heavy","ButtonY");assert(sent[#sent]=="Heavy")
@@ -207,6 +233,18 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
  press("Guard","ButtonL1",roblox.Enum.UserInputState.End);assert(sent[#sent]=="GuardOff")
  press("Tool","ButtonR2");assert(sent[#sent]=="Tool")
  press("Sprint","ButtonL3");assert(input.sprinting)
+ -- Keyboard side of the remap: the physical keys must reach the same semantics.
+ press("Dodge","Space");assert(sent[#sent]=="Dodge","SPACE is not dodge")
+ press("Guard","F");assert(sent[#sent]=="Guard","F is not guard")
+ press("Guard","F",roblox.Enum.UserInputState.End);assert(sent[#sent]=="GuardOff")
+ press("Grab","Q");assert(sent[#sent]=="Grab","Q is not grab")
+ press("Tool","R");assert(sent[#sent]=="Tool","R is not tool")
+ press("PursuitKey","E");assert(sent[#sent]=="Pursuit","E is not pursuit")
+ press("Substitute","X");assert(sent[#sent]=="Substitute","X is not substitution")
+ state.human.pursuit=0
+ press("Jump","V");assert(sent[#sent]=="Jump","V is not jump")
+ press("Heavy","MouseButton2");assert(sent[#sent]=="Heavy","RMB is not heavy")
+ press("Light","MouseButton1");assert(sent[#sent]=="Attack","LMB is not light")
  press("MoveStick","Thumbstick1",roblox.Enum.UserInputState.Change,V.new(0,1,0))
  assert(input:direction({CFrame=C.new()}).Z<-.9)
  press("LookStick","Thumbstick2",roblox.Enum.UserInputState.Change,V.new(.7,0,0));assert(camera.look.X>.6)

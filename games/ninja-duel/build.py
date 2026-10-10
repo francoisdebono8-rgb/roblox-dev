@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import xml.etree.ElementTree as ET
+import shutil
 
 ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
@@ -78,7 +79,38 @@ assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewe
 external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
 for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text())))
-manifest={'version':'0.5.0-velmora','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids), 'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'animationPermission':'PENDING'}
+import subprocess,sys
+# Automated gate: every headless spec must pass on the exact sources built here.
+TEST_RUNNERS=[('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau')]
+def run_automated():
+    tool={}
+    for probe in ('luau','lune'):
+        for candidate in ('/private/tmp/ninja-duel-tools/'+probe,probe):
+            if shutil.which(candidate) or Path(candidate).exists():
+                tool[probe]=candidate
+                break
+    results={}
+    if len(tool)<2:
+        return {'status':'SKIPPED','reason':'luau/lune not available in this environment','suites':{}}
+    for engine,spec in TEST_RUNNERS:
+        command=[tool[engine],'run',spec] if engine=='lune' else [tool[engine],spec]
+        proc=subprocess.run(command,cwd=ROOT,capture_output=True,text=True)
+        tail=(proc.stdout or '').strip().splitlines()
+        results[spec]={'exit':proc.returncode,'summary':tail[-1] if tail else ''}
+    failed=[spec for spec,data in results.items() if data['exit']!=0]
+    return {'status':'PASS' if not failed else 'FAIL','failed':failed,'suites':results}
+automated=run_automated()
+print('Automated suites:',automated['status'])
+for spec,data in automated['suites'].items():
+    print('  ',spec,data['exit'],data['summary'])
+if automated['status']=='FAIL':
+    sys.exit('Automated suites failed: '+', '.join(automated['failed']))
+
+manifest={'version':'0.7.0-animation','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+ 'automatedQA':automated,
+ # Native (Roblox Studio) and human-feel gates are recorded separately and are
+ # only moved off PENDING by an actual Studio run on this exact artifact.
+ 'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'controllerFeel':'PENDING', 'animationPermission':'PENDING'}
 output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
 print(output)
 print(manifest['sha256'])

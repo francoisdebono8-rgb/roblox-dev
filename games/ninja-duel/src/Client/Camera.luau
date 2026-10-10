@@ -17,14 +17,35 @@ local function mode(h,b)
  return "Ground"
 end
 function Camera.new()
-	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.28,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boom=nil,rng=Random.new()},Camera)
+	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.28,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boom=nil,rng=Random.new(),zoom=0},Camera)
  local UIS=game:GetService("UserInputService")
+ -- Right mouse now owns the heavy attack, so orbit and zoom are always live
+ -- instead of needing a held modifier. Free-look only applies unlocked.
  UIS.InputChanged:Connect(function(input)
-  if input.UserInputType==Enum.UserInputType.MouseMovement and UIS:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
+  if input.UserInputType==Enum.UserInputType.MouseMovement and not self.locked then
    self.yaw+=input.Delta.X*.004;self.pitch=math.clamp(self.pitch-input.Delta.Y*.003,.08,.9)
+  elseif input.UserInputType==Enum.UserInputType.MouseWheel then
+   self.zoom=math.clamp(self.zoom-input.Position.Z*1.4,-7,11)
   end
  end)
  return self
+end
+-- Impact-driven impulse. Small events must not make the camera twitch: only a
+-- finisher, launcher, parry, slam or big jutsu earns a noticeable reaction.
+local IMPULSE={
+ whiff={0,0},kunai={0,0},shuriken={0,0},dodge={.012,.25},substitute={.02,.4},
+ light={.02,.35},air={.028,.5},landing={.05,.8},block={.045,.7},
+ launcher={.1,1.3},finisher={.14,1.7},parry={.15,1.8},jutsu={.17,2},
+ slam={.26,3},
+}
+function Camera:impulse(style,role)
+	local spec=IMPULSE[style] or IMPULSE.light
+	if not spec or spec[1]<=0 then return end
+	local weight=if role=="victim" then 1.35 elseif role=="neutral" then .5 else .85
+	local now=os.clock()
+	self.shakeSize=math.max(self.shakeSize or 0,spec[1]*weight)
+	self.fovKick=math.max(self.fovKick or 0,spec[2]*weight)
+	self.shakeUntil=math.max(self.shakeUntil or 0,now+(if style=="slam" then .16 else .07))
 end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
@@ -38,17 +59,23 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	if self.lastEpoch~=data.epoch then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.28;self.focus=nil;self.boom=nil end
+	-- Fallback only: the impact-style impulse above owns normal reactions. A big
+	-- scratch should still register if the style never arrived.
 	if self.lastHealth and data.human.health<self.lastHealth then
 		local damage=self.lastHealth-data.human.health
-		self.shakeSize=if data.human.impactHeavy or damage>=12 then .34 else .045
-		self.fovKick=if data.human.impactHeavy or damage>=12 then 4 else 1
-		self.shakeUntil=os.clock()+(if damage>=12 then .13 else .06)
+		if data.human.impactHeavy or damage>=12 then
+			self.shakeSize=math.max(self.shakeSize or 0,.22)
+			self.fovKick=math.max(self.fovKick or 0,2.4)
+			self.shakeUntil=os.clock()+.12
+		end
 	end
 	if self.lastEnemyHealth and data.bot.health<self.lastEnemyHealth then
 		local damage=self.lastEnemyHealth-data.bot.health
-		self.shakeSize=if data.bot.impactHeavy or damage>=12 then .26 else .035
-		self.fovKick=if data.bot.impactHeavy or damage>=12 then 3 else .7
-		self.shakeUntil=os.clock()+(if damage>=12 then .11 else .05)
+		if data.bot.impactHeavy or damage>=12 then
+			self.shakeSize=math.max(self.shakeSize or 0,.16)
+			self.fovKick=math.max(self.fovKick or 0,1.8)
+			self.shakeUntil=os.clock()+.1
+		end
 	end
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
@@ -78,7 +105,7 @@ function Camera:update(data,dt)
  behind=(behind+Vector3.new(-behind.Z,0,behind.X)*frame.side).Unit
  self.boom=if self.boom then self.boom:Lerp(behind,1-math.exp(-dt*4)) else behind
 	if self.boom.Magnitude<.1 then self.boom=behind else self.boom=self.boom.Unit end
-	local boomDistance=math.clamp(frame.distance+math.max(0,distance-8)*.48+vertical*.22,17,40)
+	local boomDistance=math.clamp(frame.distance+math.max(0,distance-8)*.48+vertical*.22+self.zoom,15,42)
 	local height=frame.height+self.pitch*8+vertical*.24
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+self.boom*boomDistance+Vector3.new(0,height,0)

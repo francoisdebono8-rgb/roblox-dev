@@ -27,7 +27,15 @@ function Brawler.react(c,a,kind,velocity,duration,source)
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
- if kind=="Knockdown" then a.invulnerableUntil=c.now+duration+.24 end
+ if kind=="Knockdown" then
+  a.invulnerableUntil=c.now+duration+.24
+  a.groundPose="Knockdown"
+  -- Which side the body rolls onto, taken from the incoming direction.
+  local from=a.hitFrom or Vector3.zAxis
+  a.groundSide=if a.root.CFrame.RightVector:Dot(from)>=0 then 1 else -1
+ end
+ if kind=="WallSplat" then a.groundPose="Splat" end
+ if not airReactions[kind] then a.groundPose=nil end
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
@@ -39,8 +47,16 @@ function Brawler.start(c,a,name)
 		spec.chainTool=profile.chainTool;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
- a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.guardHeld=false
- a.pending={kind="Brawl",name=name,spec=spec,hit=false}
+ a.queuedLight=nil
+ a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
+ local slamWindow=0
+ if name=="Slam" then
+  -- Size the descent so the active window provably ends on or near the floor.
+  local drop=math.max(6,a.root.Position.Y-(c.match.origin.Y+3.4))
+  -- 118 studs/s is the plunge speed the slam uses at runtime.
+  slamWindow=math.clamp(drop/118,.28,1.1)
+ end
+ a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow}
  Bangla.begin(c,a,a.pending)
  a.travelRemaining=spec.travel
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
@@ -48,7 +64,7 @@ function Brawler.start(c,a,name)
  if delta.Magnitude>.1 and delta.Magnitude<11 and flat:Dot(delta.Unit)>.55 then flat=delta.Unit end
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
- if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+spec.active+spec.recovery+.18 end
+ if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
  Brawler.event(c,a,name)
  return true
 end
@@ -65,14 +81,16 @@ function Brawler.request(c,a,action)
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
  local canDash=a.state=="Dodging" and c.now>=a.untilTime-.23
- if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
-	if a.state=="Recovery" and a.chainOpen and c.now<(a.chainAt or 0) then a.buffered={action=action,expires=c.now+.32};return true,"Buffered" end
-  if pending and pending.kind=="Brawl" and (a.state=="Active" or a.state=="Recovery" or (a.state=="Startup" and c.now>=a.untilTime-.1)) then
-	 a.buffered={action=action,expires=c.now+.32}
-	 if pending.name=="Air1" or pending.name=="Air2" then return true,"Buffered" end
-	end
-  return false,"Committed"
- end
+  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
+   if pending and pending.kind=="Brawl" and a.hitConfirmed then
+    -- Buffer the follow-up, but only behind a swing that actually connected.
+    -- Waiting for the open chain felt sticky; buffering a whiffed swing would
+    -- queue a phantom combo through a recovery the player is meant to respect.
+    a.buffered={action=action,expires=c.now+.32}
+    return true,"Buffered"
+   end
+   return false,"Committed"
+  end
  if action=="Grab" then
   if a.airborne or (a.grabCooldown or 0)>c.now then return false,"Grab unavailable" end
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
@@ -87,8 +105,21 @@ function Brawler.request(c,a,action)
   a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- local name=Combo.next(a,c.now)
+ -- The ground light step is resolved once per accepted press, so a buffered
+ -- chain cannot advance the combo counter twice.
+ local name=a.queuedLight
+ if not name then
+  name=Combo.next(a,c.now)
+  a.queuedLight=name
+ end
  return Brawler.start(c,a,if canDash then "DashAttack" else name)
+end
+function Brawler.stopStyle(p)
+ if p.name=="Slam" then return "slam" end
+ if p.name=="Launcher" or p.name=="ThrowUp" then return "launcher" end
+ if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" then return "finisher" end
+ if p.name=="Air1" or p.name=="Air2" then return "air" end
+ return "light"
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -128,7 +159,7 @@ function Brawler.hit(c,a,p)
  if not success or b.health<=0 then return success end
  if protected then return true end
  if guarded then
-	 local stop=math.min(spec.hitstop or .04,.055);a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
+	 c:applyHitstop(a,b,"block",false)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
   if b.chakra<=0 then Brawler.react(c,b,"GuardStun",Vector3.zero,.6);b.guardHeld=false
@@ -140,8 +171,8 @@ function Brawler.hit(c,a,p)
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
- local stop=spec.hitstop or .045
- a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
+ -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
+ c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
@@ -165,7 +196,11 @@ function Brawler.step(c,a,dt)
   if a.reaction=="Grabbed" then return true end
   if c.now>=a.reactionUntil then
    if a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
-   else a.reaction=nil;a.reactionVelocity=nil end
+   else
+    a.reaction=nil;a.reactionVelocity=nil
+    -- Fully recovered: drop the grounded presentation state with it.
+    a.groundPose=nil
+   end
   end
   if a.reaction then
    a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
@@ -176,9 +211,15 @@ function Brawler.step(c,a,dt)
     if hit then
      if hit.Normal.Y>.5 and velocity.Y<0 then
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
+      -- The body is on the floor now: stop reporting it as airborne so the
+      -- presentation plays the grounded pose instead of an air reaction.
+      a.airborne=false
+      a.landedAt=c.now
       velocity=Vector3.zero
      elseif math.abs(hit.Normal.Y)<.2 and hit.Instance:GetAttribute("NinjaWall") then
 			 a.reaction="WallSplat";a.reactionUntil=c.now+.42;velocity=hit.Normal*8;Brawler.event(c,a,"WallSplat")
+			 a.groundPose="Splat"
+			 c:pushImpact(hit.Position,"wall",false)
 			 local source=a.reactionSource
 			 if source and source.health>0 then source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.72);Brawler.event(c,source,"WallConvert");c:cue(source,"WALL CONVERT • PURSUE",.65) end
      end
@@ -190,7 +231,10 @@ function Brawler.step(c,a,dt)
  local p=a.pending
  if p and p.kind=="Brawl" then
   if a.state=="Active" and not p.hit then
-   p.hit=Brawler.hit(c,a,p);a.hitConfirmed=p.hit or a.hitConfirmed
+   -- Re-check every active frame. A single early test used to mark the whole
+   -- swing as a whiff, so a target that entered the volume one frame later
+   -- took no damage from a visibly connected strike.
+   p.hit=Brawler.hit(c,a,p) or nil;a.hitConfirmed=p.hit==true or a.hitConfirmed
   end
  end
 	if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then

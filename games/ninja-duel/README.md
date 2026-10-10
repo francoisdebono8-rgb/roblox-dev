@@ -1,8 +1,10 @@
 # Ninja Duel — Velmora first playable fight
 
+Version `0.7.0-animation`.
+
 Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
 
-The build manifest records automated and native status separately. Controller feel remains a human acceptance gate; open the exact normal artifact above for the final pass.
+The build manifest records automated and native status separately (`automatedQA`, `nativeQA`, `visualAcceptance`, `controllerFeel`). Controller feel and native Studio behaviour remain human gates; open the exact normal artifact above for the final pass. Pass history and open items: `STABILITY_PASS.md` (0.6.0 bugs), `FLUIDITY_PASS.md` (0.6.1 feel), `ANIMATION_PASS.md` (0.7.0 body animation, reactions, impact).
 
 | Controller | Action |
 |---|---|
@@ -17,11 +19,54 @@ The build manifest records automated and native status separately. Controller fe
 | D-pad up; View / touchpad | Technique 5; skip tutorial |
 | D-pad / left stick + A | Menu selection and activation |
 
-Keyboard: WASD, CTRL sprint, SPACE jump, LMB light, T heavy/launcher/slam, V grab, F guard, Q evade, X substitution, R tool, E chase, SHIFT lock, 1–5 techniques, C wall detach, G feint, ESC skip tutorial. RMB + mouse orbits the third-person camera.
+### Keyboard (grouped around WASD)
+
+| Key | Action |
+|---|---|
+| **WASD** | Move |
+| **LMB** | Light chain (third light finishes; throws while grabbing) |
+| **RMB** | Heavy — launcher after two confirmed lights, air slam, upward throw |
+| **SPACE** | Jump / wall rebound / contextual chase |
+| **Q** | Dodge (becomes substitution right after being hit) |
+| **F** | Guard (hold) |
+| **V** | Grab |
+| **R** | Kunai / shuriken |
+| **E** | Chase during the launch window |
+| **X** | Substitution (accessible, but never next to the movement keys) |
+| **G / C** | Feint / wall detach |
+| **CTRL / SHIFT** | Sprint / lock-on |
+| **1–5** | Jutsu |
+| Mouse move / wheel | Free-look when unlocked; camera distance |
+| **ESC** | Skip tutorial |
+
+Every key is declared once in `src/Shared/Controls.luau`, which also feeds the on-screen help and the tutorial copy. A key can never drive two actions; `tests/Regression.spec.luau` enforces that.
 
 Ground-to-air route: **light → light → heavy launcher → chase → air light → air light → heavy slam**. A third grounded light chooses Bangla's finisher instead. Whiffs retain recovery; substitution spends charge/chakra; knockdown has a protected wakeup.
 
-From the repo root: `python3 games/ninja-duel/build.py`, repeat with `--qa`; `luau games/ninja-duel/tests/Rules.spec.luau`; `lune run games/ninja-duel/tests/Combat.spec.luau`. The native suite is in `dist/NinjaDuel-QA.rbxlx` and prints `[NinjaDuelQA] START 0.5.0-velmora` then its totals. Reopen after rebuilding.
+## Build and tests
+
+From the repository root (or `games/ninja-duel`):
+
+```
+python3 games/ninja-duel/build.py          # normal place  -> dist/NinjaDuel.rbxlx
+python3 games/ninja-duel/build.py --qa     # QA place      -> dist/NinjaDuel-QA.rbxlx
+games/ninja-duel/tests/run.sh              # every headless suite
+```
+
+`build.py` runs all headless suites against the exact sources it embeds and refuses to write an artifact if one fails; the result is recorded in `dist/NinjaDuel.json` under `automatedQA`.
+
+| Suite | Covers |
+|---|---|
+| `tests/Rules.spec.luau` | pure policy: states, costs, cooldowns, token bucket |
+| `tests/Combat.spec.luau` | combat, donour migrations, controller callbacks, choreography |
+| `tests/Sequences.spec.luau` | the 14-step acceptance route for both fighters, camera, AI, joints |
+| `tests/Regression.spec.luau` | the bugs fixed in this pass, plus a randomised soak |
+| `tests/Feedback.spec.luau` | contact feed and impact hierarchy |
+| `tests/Animation.spec.luau` | stances, directional locomotion, hit reactions, knockdown/KO, weapons, and a full-fight no-snap contract |
+
+The headless suites share `tests/Harness.luau`, a stubbed Roblox environment. They prove timing and state, not Studio physics, rendering or controller feel.
+
+The native suite lives in `dist/NinjaDuel-QA.rbxlx`: open it in Studio, press **Test**, and read `[NinjaDuelQA] START 0.7.0-animation` followed by one `PASS`/`FAIL` line per case and the totals. `nativeQA` stays `PENDING` in the manifest until that run is recorded on the exact artifact.
 
 ## Normal-place acceptance route
 

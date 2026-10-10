@@ -1,8 +1,34 @@
--- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's deception visual.
+-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
+-- deception visual. Rendering is continuous: it interpolates a short snapshot
+-- buffer instead of stepping the whole body once per network packet.
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Presentation={};Presentation.__index=Presentation
-function Presentation.new() return setmetatable({last={},recoil={}},Presentation) end
+-- Render slightly behind the newest snapshot so motion is always interpolated
+-- between two known samples instead of being extrapolated from one.
+local RENDER_DELAY=.085
+local BUFFER=8
+-- Beyond this, the server really did move the actor (substitution, flashstep,
+-- respawn) and a hard correction is correct.
+local SNAP_DISTANCE=14
+local LOCOMOTION_POSE_SPEED=26
+function Presentation.new()
+	return setmetatable({last={},recoil={},impactSerial=0,samples={},clocks={},botModel=nil},Presentation)
+end
+-- Contact feed straight from the server: play the impact on the frame the hit
+-- happened, so sound and VFX never lead or lag the animation.
+function Presentation:impacts(data,camera)
+ if not data.impacts then return end
+ local serial=data.impactSerial or 0
+ if serial<=self.impactSerial then return end
+ for _,impact in data.impacts do
+  if impact.serial==nil or impact.serial>self.impactSerial then
+   Feedback.impact(impact.style or "light",impact.position)
+   if camera and camera.impulse then camera:impulse(impact.style,impact.role) end
+  end
+ end
+ self.impactSerial=serial
+end
 function Presentation:illusion(data,model)
  local active=data.phase=="Duel" and data.human.illusion>0 and data.human.decoy
  local opponent=model and model.Parent and model.Parent:FindFirstChild("AIFighter")
@@ -20,39 +46,114 @@ function Presentation:illusion(data,model)
   else self.echo:PivotTo(CFrame.new(data.human.decoy)*opponent:GetPivot().Rotation) end
  end
 end
-function Presentation:update(data,_dt)
+-- Local presentation clocks: an attack animates from the frame it was first
+-- seen, so a late or jittery packet cannot make the body jump backwards.
+local function clockFor(self,key,actor,now)
+ local clock=self.clocks[key]
+ if not clock then clock={};self.clocks[key]=clock end
+ if actor.attackName~=clock.attackName then
+  clock.attackName=actor.attackName;clock.attackAt=now
+ end
+ if actor.reaction~=clock.reaction then
+  clock.reaction=actor.reaction;clock.reactionAt=now
+ end
+ clock.attackElapsed=if actor.attackName then now-clock.attackAt else 0
+ clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
+ return clock
+end
+function Presentation:record(key,position)
+ local samples=self.samples[key]
+ if not samples then samples={};self.samples[key]=samples end
+ local newest=samples[#samples]
+ -- A stalled actor must not accumulate latency from identical samples.
+ if newest and (newest.position-position).Magnitude<.01 and os.clock()-newest.at<.05 then return end
+ table.insert(samples,{at=os.clock(),position=position})
+ while #samples>BUFFER do table.remove(samples,1) end
+end
+function Presentation:visualPosition(key)
+ local samples=self.samples[key]
+ if not samples or #samples==0 then return nil end
+ local target=os.clock()-RENDER_DELAY
+ local newest=samples[#samples]
+ if target>=newest.at then return newest.position end
+ if target<=samples[1].at then return samples[1].position end
+ for i=#samples-1,1,-1 do
+  local a,b=samples[i],samples[i+1]
+  if target>=a.at and target<=b.at then
+   local span=b.at-a.at
+   return a.position:Lerp(b.position,if span>0 then (target-a.at)/span else 0)
+  end
+ end
+ return newest.position
+end
+function Presentation:update(data,dt)
+ dt=math.max(dt or 1/60,.001)
+ -- One presentation tick per rendered frame; every pose below reads this clock.
+ Motion.tick(dt)
+ local players=game:GetService("Players")
  if not data.human then
   if self.echo then self.echo:Destroy();self.echo=nil end
   return
  end
- local character=game:GetService("Players").LocalPlayer.Character
+ if self.epoch~=data.epoch then
+  -- Character switch, rematch or a fresh duel: the only place a hard reset is
+  -- right. Normal presentation never snaps the skeleton.
+  self.epoch=data.epoch
+  table.clear(self.samples);table.clear(self.clocks);table.clear(self.last)
+  if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
+  if self.botModel then Motion.reset(self.botModel) end
+ end
+ local now=os.clock()
+ local character=players.LocalPlayer.Character
  self:illusion(data,character)
  local folder=character and character.Parent
  local bot=folder and folder:FindFirstChild("AIFighter")
+ self.botModel=bot
  local models={human=character,bot=bot}
- local latency=os.clock()-(self.receivedAt or os.clock())
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
-   Motion.clear(model)
+   self:record(key,actor.position)
+   local clock=clockFor(self,key,actor,now)
+   local root=model:FindFirstChild("HumanoidRootPart")
+   -- Continue the body smoothly towards the interpolated network position.
+   local visual=self:visualPosition(key)
+   if root and visual then
+    local error_=(root.Position-visual).Magnitude
+    if error_>SNAP_DISTANCE then
+     model:PivotTo(CFrame.new(visual)*model:GetPivot().Rotation)
+    elseif error_>.05 then
+     local alpha=1-math.exp(-dt*18)
+     model:PivotTo(CFrame.new(root.Position:Lerp(visual,alpha))*model:GetPivot().Rotation)
+    end
+   end
    Motion.weapon(model,actor)
-   if previous and actor.health<previous.health then
-    local damage=previous.health-actor.health;local root=model:FindFirstChild("HumanoidRootPart")
+   if previous and previous.airborne and not actor.airborne then
+    -- Landing compression lasts a few frames; a soft landing barely shows.
+    self.landingUntil=now+(if actor.landStrong then .22 else .1)
+   end
+   if previous and actor.health<previous.health and actor.impactSerial==(previous.impactSerial or -1) then
+    local damage=previous.health-actor.health
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
-			self.recoil[key]={at=os.clock(),reaction=actor.reaction,heavy=actor.impactHeavy}
    end
    if actor.events and previous and actor.events.Parry and actor.events.Parry>(previous.parry or 0) then
-    local root=model:FindFirstChild("HumanoidRootPart");if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
+    if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
    end
-		 local recoil=self.recoil[key]
-		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
-		 if actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
-         elseif actor.state=="Dodging" or actor.reaction then Motion.defense(model,actor)
-         elseif recoil and os.clock()-recoil.at<recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
-		 elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency),actor.fighterId)
-		 elseif actor.state=="Guarding" then Motion.guard(model,actor.guardImpact or 0,actor.fighterId)
-		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity,actor.fighterId) end
-   self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0}
+   -- Locomotion is posed from the rig's live velocity, not a 10 Hz value.
+   local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
+   local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
+   local speed=math.max(actor.speed or 0,planar)
+   -- Everything the presentation contract needs, with locally measured clocks so
+   -- a late packet cannot make the body replay its wind-up.
+   local visual=table.clone(actor)
+   visual.velocity=velocity
+   visual.speed=speed
+   visual.reactionElapsed=clock.reactionElapsed
+   visual.attackElapsed=clock.attackElapsed
+   visual.landing=self.landingUntil~=nil and now<self.landingUntil
+   Motion.present(model,visual,clock,dt)
+   self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
+    impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
   end
  end
 end

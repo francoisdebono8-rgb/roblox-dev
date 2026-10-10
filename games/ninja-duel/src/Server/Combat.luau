@@ -13,7 +13,7 @@ local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
-	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0},Combat)
+	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0},Combat)
 end
 function Combat:add(id,model,hum,root,joints,definition)
 	local def = Fighters[definition]
@@ -22,7 +22,7 @@ function Combat:add(id,model,hum,root,joints,definition)
 		combo=0,lastAttack=-10,readUntil=0,illusionUntil=0,bonusUntil=0,dodgeUntil=0,invulnerableUntil=0,
 		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
 		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
-		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,
+		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,airHold=0,
 		subCharges=Config.Substitution.Charges,subCooldown=0,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0 }
 	table.insert(self.actors,a)
 	Defense.init(a)
@@ -74,6 +74,36 @@ function Combat:addHazard(a,position,radius,duration,damage,kind)
 	table.insert(self.hazards,hazard)
 	return hazard
 end
+-- Hitstop budget by impact weight. Only the defender stops, and only briefly:
+-- freezing both actors on every light made a normal combo read as
+-- move -> stop -> move -> stop.
+local HITSTOP={light=0,air=0,block=.01,finisher=.03,launcher=.04,parry=.05,slam=.065,jutsu=.055,default=.02}
+Combat.Hitstop=HITSTOP
+function Combat:applyHitstop(attacker,victim,style,heavy)
+	local stop=HITSTOP[style] or (if heavy then HITSTOP.default else 0)
+	if stop<=0 then return stop end
+	victim.hitstopUntil=math.max(victim.hitstopUntil or 0,self.now+stop)
+	-- The attacker only joins on a genuinely heavy contact.
+	if heavy then attacker.hitstopUntil=math.max(attacker.hitstopUntil or 0,self.now+stop*.5) end
+	return stop
+end
+-- Short feed of contacts that actually happened. Snapshots carry it so the
+-- client can layer sound and VFX on the real contact frame, never on the press.
+function Combat:pushImpact(position,style,heavy)
+	local feed=self.impacts or {}
+	self.impacts=feed
+	self.impactSerial=(self.impactSerial or 0)+1
+	local role="neutral"
+	for _,actor in self.actors do
+		if actor.root and (actor.root.Position-position).Magnitude<4.5 then
+			role=if actor.health>0 then "victim" else "neutral"
+			break
+		end
+	end
+	table.insert(feed,{style=style,at=self.now,position=position,heavy=heavy==true,serial=self.impactSerial,role=role})
+	while #feed>8 do table.remove(feed,1) end
+	return self.impactSerial
+end
 function Combat:cue(a,message,duration)
 	a.cue=message; a.cueUntil=self.now+(duration or 1.1)
 	if self.match.onCue then self.match.onCue(a,message) end
@@ -97,6 +127,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
 	if outcome=="Parried" then
 		Brawler.event(self,victim,"Parry");Brawler.event(self,attacker,"Parried")
+		victim.impactStyle="parry";victim.impactAt=self.now
+		self:pushImpact(victim.root.Position,"parry",false)
 		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
 		return false
 	end
@@ -118,6 +150,29 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=victim.health
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
+	local style=(if guarded then "block" elseif heavy and amount>=16 then "slam" elseif heavy then "launcher" elseif amount>=20 then "finisher" else "light")
+	victim.impactStyle=style
+	victim.impactAt=self.now
+	-- Direction and weight of the contact so the victim's body can answer the
+	-- hit it actually took instead of playing one generic recoil.
+	local toward=Vector3.new(delta.X,0,delta.Z)
+	if toward.Magnitude>.05 then
+		victim.hitFrom=toward.Unit
+		local facing=Vector3.new(victim.root.CFrame.LookVector.X,0,victim.root.CFrame.LookVector.Z)
+		if facing.Magnitude>.05 then
+			facing=facing.Unit
+			victim.hitAngle=math.deg(math.atan2(facing:Cross(victim.hitFrom).Y,facing:Dot(victim.hitFrom)))
+		else
+			victim.hitAngle=0
+		end
+	else
+		victim.hitFrom=Vector3.zAxis
+		victim.hitAngle=0
+	end
+	victim.hitStrength=math.clamp(amount/26,0,1)
+	-- Seed the stop; Brawler adds the exact per-move weight once it knows the move.
+	self:applyHitstop(attacker,victim,style,heavy)
+	self:pushImpact(victim.root.Position,style,victim.impactHeavy)
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
 	self:effect("Impact",victim.root.Position,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health>0 then
@@ -129,6 +184,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if victim.health<=0 then
 		Brawler.releaseGrab(victim); victim.reaction=nil
 		victim.state="Defeated"; victim.pending=nil; victim.move=Vector3.zero
+		-- Remember the blow that ended it so the KO body matches the final hit.
+		victim.koStyle=style
+		victim.koAirborne=victim.airborne==true
 		self.match.finish(attacker,victim)
 	end
 	attacker.hitConfirmed=true
@@ -179,6 +237,7 @@ function Combat:request(a,action,aim,clientTime)
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0
 		Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.16
 		self:setState(a,"Recovery",0.16)
+		self:pushImpact(departure,"substitute",false)
 		self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 		self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
 		self:cue(a,"SUBSTITUTION • REPOSITIONED")
@@ -196,6 +255,11 @@ function Combat:request(a,action,aim,clientTime)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+pending.spec.Cost*0.35)
 		a.pending=nil; self:setState(a,"Recovery",0.24); self:cue(a,"FEINT • CHAKRA PARTIAL")
 		return true
+	end
+	if action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0) and a.queuedLight==nil then
+		-- A buffered press is resolved when it actually chains, never when it was
+		-- first pressed, so the light progression advances exactly once per hit.
+		a.queuedLight=require(Shared.BanglaCombo).next(a,self.now)
 	end
 	if action=="Attack" or action=="Heavy" or action=="Grab" then a.attackCommitTime=clientTime or self.now end
 	local handled,reason=Brawler.request(self,a,action)
@@ -248,6 +312,7 @@ function Combat:request(a,action,aim,clientTime)
 		a.dodgeDirection=if a.move.Magnitude>0.1 then a.move.Unit else a.root.CFrame.RightVector
 		a.invulnerableUntil=self.now+Config.DodgeIFrames;Defense.guard(a,false,self.now);Defense.dodge(a,self.now)
 		Evade.begin(a,self)
+		self:pushImpact(a.root.Position,"dodge",false)
 		Brawler.event(self,a,"Dodge"); self:setState(a,"Dodging",Config.DodgeTime); self:effect("Dodge",a.root.Position,a.color,Vector3.new(2,4,1),0.2)
 		return true
 	end
@@ -276,6 +341,8 @@ end
 function Combat:updateActor(a,dt)
 	local now=self.now
 	if a.health<=0 then a.hum:Move(Vector3.zero); return end
+	-- Movement intents last exactly one frame; each control block re-declares its own.
+	a.aimIntent=nil
 	Defense.step(self,a,dt,now)
 	if a.anchor and a.anchor.expires<=now then a.anchor.part:Destroy(); a.anchor=nil end
 	if a.illusionUntil<=now then a.decoyPosition=nil end
@@ -283,18 +350,25 @@ function Combat:updateActor(a,dt)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
 	end
 	if now<(a.hitstopUntil or 0) then
-		a.untilTime+=dt
-		if a.attackStarted then a.attackStarted+=dt end
-		if a.reactionUntil and a.reactionUntil>now then a.reactionUntil+=dt end
-		a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
+		-- Weight, not a pause: the swing clock keeps running so the animation never
+		-- drifts behind the hitbox, and only the frozen body is held still.
+		a.hum:Move(Vector3.zero)
+		if a.reaction then a.root.AssemblyLinearVelocity=Vector3.zero end
 		World.pose(a,now,dt);return
 	end
 	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime<=now then
 		local pending=a.pending
 		if a.state=="Startup" and pending then
-			self:setState(a,"Active",pending.spec.active)
+			-- The slam's active window is its sized descent; everything else uses
+			-- the authored active duration.
+			self:setState(a,"Active",if pending.slamWindow and pending.slamWindow>0 then pending.slamWindow else pending.spec.active)
 		elseif a.state=="Active" then
 			Bangla.close(pending)
+			-- A committed swing that never touched anything: report the whiff so
+			-- the client can answer with air movement instead of silence.
+			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
+				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
+			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
@@ -322,20 +396,46 @@ function Combat:updateActor(a,dt)
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" then
+		-- Reach a rising victim in three dimensions, but kinetically: the chase
+		-- keeps a continuous velocity instead of being teleported frame by frame.
+		local elapsed=now-(a.pursuitStarted or now)
+		local remaining=math.max(.02,.24-elapsed)
 		local toTarget=a.target.root.Position-a.root.Position
-		if toTarget.Magnitude>3 then
-			local progress=math.clamp((now-(a.pursuitStarted or now))/.24,0,1)
-			local speed=70+65*math.sin(progress*math.pi)
-			Motor.flight(a,self,toTarget.Unit*math.min(speed*dt,toTarget.Magnitude-3))
+		local grab=toTarget+a.target.root.AssemblyLinearVelocity*remaining*.6
+		local close=a.target.root.Position-a.root.Position
+		local point=if grab.Magnitude>3.2 then grab-grab.Unit*3
+			else close-close.Unit*3
+		if point.Magnitude>.05 then
+			-- Reach the window in time, then brake on approach so the chaser never
+			-- overshoots its own target and snaps back.
+			local speed=math.clamp(point.Magnitude/math.max(remaining,.06),70,420)
+			local distance=close.Magnitude
+			if distance<7 then speed=math.min(speed,40+distance*distance*2.4) end
+			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
 		end
-	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2" or a.attackName=="Slam") then
+	elseif a.state=="Active" and a.pending and a.pending.kind=="Brawl" and a.attackName=="Slam" then
+  -- The slam owns a continuous plunge: a constant downward velocity with bounded
+  -- acceleration, plus a gentle drift onto the victim. No per-frame correction.
+  local delta=a.target.root.Position-a.root.Position
+  local horizontal=Vector3.new(delta.X,0,delta.Z)
+  if horizontal.Magnitude>2.7 then
+   Motor.move(a,self,{target=a.root.Position+horizontal-horizontal.Unit*2.7,speed=42,acceleration=220},dt)
+  end
+  if a.airborne then
+   local landed=Motor.descend(a,self,118,dt)
+   if landed or a.root.Position.Y<=self.match.origin.Y+3.6 then
+    a.hum:ChangeState(Enum.HumanoidStateType.Landed)
+    a.airborne=false;a.airHold=0
+    a.root.AssemblyLinearVelocity=Vector3.zero
+   end
+  end
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2") then
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude<10 and self:lineOfSight(a,a.target) then
 		 local horizontal=Vector3.new(delta.X,0,delta.Z)
 		 local planar=if horizontal.Magnitude>2.7 then horizontal.Unit*math.min(horizontal.Magnitude-2.7,30*dt) else Vector3.zero
 		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
-		 if a.attackName=="Slam" then vertical=math.min(vertical,-34*dt) end
-		 if math.abs(delta.Y)<.45 and a.attackName~="Slam" then vertical=0 end
+		 if math.abs(delta.Y)<.45 then vertical=0 end
 		 local correction=planar+Vector3.new(0,vertical,0)
    Motor.flight(a,self,correction)
   end
@@ -366,7 +466,15 @@ function Combat:updateActor(a,dt)
    a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
   end
  end
-	if now<(a.airHold or 0) and a.airborne then
+	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
+		a.landedAtSerial=a.model:GetAttribute("MovementLandedAt")
+		if a.landedAtSerial then self:pushImpact(a.root.Position,"landing",false) end
+	end
+	if a.aimIntent then
+		-- Chase, slam drift and any other aimed motion outrank the hover window;
+		-- hovering exists to hold a fighter still, never to cancel their movement.
+		Motor.step(a,self,dt,now)
+	elseif now<(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end
 	-- Server-owned humanoids + server-clamped arena coordinates.
@@ -385,6 +493,8 @@ function Combat:updateProjectiles(dt)
 		local done=false
 		if hit then
 			if hit.Instance:IsDescendantOf(p.a.target.model) then
+				local style=(if p.kind=="wind" then "jutsu" elseif p.kind=="blade" then "kunai" else "shuriken")
+				self:pushImpact(hit.Position,style,false)
 				local damaged=self:damage(p.a,p.a.target,p.damage,false,false)
 				if damaged and p.kind=="wind" then
 					p.a.target.root.AssemblyLinearVelocity=p.direction*37+Vector3.new(0,14,0)
@@ -421,10 +531,10 @@ end
 function Combat:update(dt,now)
 	self.now=now
 	if self.match.phase~="Duel" then return end
-	if now>=self.historyAt then
-		self.historyAt=now+1/30
-		for _,a in self.actors do HitDetection.record(a.root,now) end
-	end
+	-- Record every frame. Sampling at 1/30 used to validate contact against a
+	-- position up to a third of a second stale while the attacker closed in,
+	-- so visibly connected strikes were rejected as out of range.
+	for _,a in self.actors do HitDetection.record(a.root,now) end
 	for _,a in self.actors do
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
@@ -447,5 +557,6 @@ function Combat:clear(preserveAnimations)
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
+	self.impacts={}; self.impactSerial=0
 end
 return Combat

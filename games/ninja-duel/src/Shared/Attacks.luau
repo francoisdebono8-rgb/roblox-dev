@@ -24,19 +24,21 @@ for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack"
 end
+-- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
+-- a light jab cannot be given a heavy stop by accident.
 local motion={
- Light1={side=1,twist=30,lean=8,arm=82,step=1.05,hitstop=.045},
- Light2={side=-1,twist=34,lean=10,arm=88,step=1.08,hitstop=.05},
- Light3={side=1,twist=72,lean=12,arm=102,step=1.2,hitstop=.07},
- Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3,hitstop=.085},
- Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15,hitstop=.075},
- DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35,hitstop=.055},
- Air1={side=1,twist=38,lean=12,arm=98,step=1.1,hitstop=.05},
- Air2={side=-1,twist=44,lean=18,arm=104,step=1.15,hitstop=.055},
- Slam={side=1,twist=12,lean=46,arm=128,step=1.2,hitstop=.09},
- Grab={side=1,twist=10,lean=18,arm=72,step=1.05,hitstop=.04},
- Throw={side=1,twist=70,lean=22,arm=92,step=1.1,hitstop=.08},
- ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1,hitstop=.08},
+ Light1={side=1,twist=30,lean=8,arm=82,step=1.05},
+ Light2={side=-1,twist=34,lean=10,arm=88,step=1.08},
+ Light3={side=1,twist=72,lean=12,arm=102,step=1.2},
+ Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3},
+ Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15},
+ DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35},
+ Air1={side=1,twist=38,lean=12,arm=98,step=1.1},
+ Air2={side=-1,twist=44,lean=18,arm=104,step=1.15},
+ Slam={side=1,twist=12,lean=46,arm=128,step=1.2},
+ Grab={side=1,twist=10,lean=18,arm=72,step=1.05},
+ Throw={side=1,twist=70,lean=22,arm=92,step=1.1},
+ ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end

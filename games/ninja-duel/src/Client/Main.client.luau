@@ -34,7 +34,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
 	if data.epoch~=current.epoch then camera.locked=true end
-	current=data; presentation.receivedAt=os.clock(); ui:render(data)
+	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 end)
 RunService.PreSimulation:Connect(function(dt) presentation:update(current,dt) end)
 local nextMove=0
