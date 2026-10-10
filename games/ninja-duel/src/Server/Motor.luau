@@ -106,11 +106,15 @@ function Motor.step(a,c,dt,now)
  donor(a,c)
 	if not a.wall then Motor.tryWall(a,c,now) end
 	if Motor.stepWall(a,c,dt,now) then return false end
+	local vertical=a.root.AssemblyLinearVelocity.Y
+	if vertical<0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now>(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y<=5 then
 		a.airborne=false; a.airDodgeUsed=false
-		local falling=math.abs(a.root.AssemblyLinearVelocity.Y)
+		local falling=a.fallSpeed or 0;a.fallSpeed=0
 		a.landUntil=now+(if falling>profile.HardLandVelocity then profile.HardLandRecovery else profile.SoftLandRecovery)
+		a.model:SetAttribute("MovementLandedAt",now)
+		a.model:SetAttribute("MovementHardLanding",falling>profile.HardLandVelocity)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
@@ -118,16 +122,18 @@ function Motor.step(a,c,dt,now)
  a.grounded=grounded
  if parkour.step() then return false end
  local sprinting=movement.step(dt,grounded)
- local limit=a.hum.WalkSpeed
+ local locomotion=a.locomotion
+ local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
  elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
  if a.grabVictim then limit=math.min(limit,5) end
  if now<(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
- a.hum.WalkSpeed=limit
- a.hum:Move(if limit>0 then a.move else Vector3.zero,false)
- a.locomotion=a.move*limit
+	 if locomotion.Magnitude>limit then locomotion=locomotion.Unit*limit end
+	 a.locomotion=locomotion
+	 a.hum.WalkSpeed=locomotion.Magnitude
+	 a.hum:Move(if locomotion.Magnitude>.01 then locomotion.Unit else Vector3.zero,false)
  a.model:SetAttribute("MovementBase","Place1")
 	return grounded
 end

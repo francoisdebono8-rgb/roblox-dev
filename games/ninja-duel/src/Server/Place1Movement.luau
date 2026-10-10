@@ -3,21 +3,23 @@
 -- Ground sprint/stamina, takeoff momentum, bunny-hop and air steering are donor code.
 local Movement={}
 function Movement.new(a,c)
+ local profile=require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Movement
  local WALK_SPEED=a.def.Speed
- local SPRINT_SPEED=44*(a.def.SprintScale or 1)
- local JUMP_VERTICAL_SPEED=60*(a.def.JumpScale or 1)
+ local SPRINT_SPEED=profile.SprintSpeed*(a.def.SprintScale or 1)
+ local JUMP_VERTICAL_SPEED=profile.JumpVelocity*(a.def.JumpScale or 1)
  local WALK_BHOP_SPEED=36
  local SPRINT_BHOP_SPEED=62*(a.def.SprintScale or 1)
  local STAMINA_DRAIN_SECONDS=60
  local STAMINA_REGEN_SECONDS=18
  local STAMINA_REGEN_DELAY=.85
  local EXHAUSTED_RECOVERY=.12
- local AIR_CONTROL_ACCELERATION=72*(a.def.AirControlScale or 1)
+ local AIR_CONTROL_ACCELERATION=profile.AirAcceleration*(a.def.AirControlScale or 1)
  local AIR_ACCELERATION_SPEED_CAP=72
  local MOMENTUM_CARRY_CAP=120
  local currentCharacter,currentHumanoid,currentRoot=a.model,a.hum,a.root
  local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
  local lastGroundHorizontalVelocity=Vector3.zero
+ local groundLocomotion=Vector3.zero
  local lastJumpRequestAt=-math.huge
  local sprintInputs,jumpInputs='Sprint','Jump'
  local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
@@ -157,10 +159,6 @@ local function updateMovement(deltaTime)
 	local hasMoveInput = a.move.Magnitude > 0.05
 	local wantsSprint = anyHeld(sprintInputs) and hasMoveInput
 
-	if grounded then
-		lastGroundHorizontalVelocity = horizontalVelocity
-	end
-
 	if exhausted and stamina >= EXHAUSTED_RECOVERY then
 		exhausted = false
 	end
@@ -181,11 +179,27 @@ local function updateMovement(deltaTime)
 		end
 	end
 
+	local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+	if grounded then
+		local input=horizontalOf(a.move)
+		local target=Vector3.zero
+		if not blocked and input.Magnitude>.05 then target=input.Unit*desiredWalkSpeed end
+		local acceleration=profile.GroundAcceleration
+		if target.Magnitude<.05 then acceleration=profile.GroundDeceleration
+		elseif groundLocomotion.Magnitude>.05 and groundLocomotion.Unit:Dot(target.Unit)<.45 then acceleration=profile.TurnAcceleration end
+		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
+		if groundLocomotion.Magnitude<.03 then groundLocomotion=Vector3.zero end
+		lastGroundHorizontalVelocity=groundLocomotion
+		humanoid.WalkSpeed=groundLocomotion.Magnitude
+		humanoid:Move(if groundLocomotion.Magnitude>.01 then groundLocomotion.Unit else Vector3.zero,false)
+		a.locomotion=groundLocomotion
+	else
+		-- Preserve the last grounded vector at takeoff, then bend it gradually in air.
+		groundLocomotion=horizontalVelocity
+		a.locomotion=horizontalVelocity
+	end
+
 	if not blocked then
-		local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
-		if math.abs(humanoid.WalkSpeed - desiredWalkSpeed) > 0.01 then
-			humanoid.WalkSpeed = desiredWalkSpeed
-		end
 
 		if anyHeld(jumpInputs) and grounded then
 			requestGroundJump()
@@ -193,6 +207,7 @@ local function updateMovement(deltaTime)
 
 		if not grounded then
 			applyAirControl(deltaTime, sprinting)
+			a.locomotion=horizontalOf(root.AssemblyLinearVelocity)
 		end
 	end
 
@@ -205,9 +220,7 @@ end
  local api={}
  function api.step(dt,grounded)
   a.grounded=grounded
-  currentHumanoid:Move(a.move,false)
   updateMovement(math.min(dt,.1))
-  a.locomotion=a.move*currentHumanoid.WalkSpeed
   return sprinting
  end
  function api.jump(grounded)

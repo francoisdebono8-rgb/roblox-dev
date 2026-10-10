@@ -12,9 +12,9 @@ return {
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.1,
-	Movement = { SprintSpeed = 38, GroundAcceleration = 175, GroundDeceleration = 205, AirAcceleration = 88,
-		JumpVelocity = 70, JumpCooldown = 0.4, AttackWalkSpeed = 16, HardLandVelocity = 56,
-		HardLandRecovery = 0.12, SoftLandRecovery = 0, HardLandSpeed = 19,
+	Movement = { SprintSpeed = 46, GroundAcceleration = 420, GroundDeceleration = 480, TurnAcceleration = 620, AirAcceleration = 76,
+		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
+		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.65 },
 }

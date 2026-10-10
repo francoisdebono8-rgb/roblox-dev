@@ -196,13 +196,19 @@ function Combat:request(a,action,aim,clientTime)
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
+	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge) then
+		a.pending=nil;self:setState(a,"Neutral",0)
+	end
 	if action=="Pursuit" then
 		if a.pursuitUntil<=self.now or a.target.health<=0 then return false,"No pursuit" end
 		if a.chakra<Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
-		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" then return false,"Committed" end
+		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
+		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
 		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
 		a.reaction=nil; a.airborne=true; a.airHold=self.now+.75
+		a.pursuitStarted=self.now
 		Brawler.event(self,a,"Chase")
 		self:setState(a,"Pursuit",0.24)
 		self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
@@ -268,15 +274,25 @@ function Combat:updateActor(a,dt)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
 	end
+	if now<(a.hitstopUntil or 0) then
+		a.untilTime+=dt
+		if a.attackStarted then a.attackStarted+=dt end
+		if a.reactionUntil and a.reactionUntil>now then a.reactionUntil+=dt end
+		a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
+		World.pose(a,now,dt);return
+	end
 	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime<=now then
 		local pending=a.pending
 		if a.state=="Startup" and pending then
 			self:setState(a,"Active",pending.spec.active)
 		elseif a.state=="Active" then
 			Bangla.close(pending)
-			a.pending=nil; self:setState(a,"Recovery",if pending then pending.spec.recovery else .22)
+			local recovery=if pending then pending.spec.recovery else .22
+			a.pending=nil; self:setState(a,"Recovery",recovery)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
-			a.chainAt=now+0.035
+			a.chainAt=now+0.025
+			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
+			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
@@ -284,7 +300,7 @@ function Combat:updateActor(a,dt)
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
 		else
-			a.pending=nil; self:setState(a,"Neutral",0)
+			a.pending=nil;a.attackName=nil; self:setState(a,"Neutral",0)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
@@ -299,19 +315,31 @@ function Combat:updateActor(a,dt)
 		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" then
 		local toTarget=a.target.root.Position-a.root.Position
-		if toTarget.Magnitude>3 then Motor.flight(a,self,toTarget.Unit*math.min(100*dt,toTarget.Magnitude-3)) end
+		if toTarget.Magnitude>3 then
+			local progress=math.clamp((now-(a.pursuitStarted or now))/.24,0,1)
+			local speed=70+65*math.sin(progress*math.pi)
+			Motor.flight(a,self,toTarget.Unit*math.min(speed*dt,toTarget.Magnitude-3))
+		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2" or a.attackName=="Slam") then
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude<10 and self:lineOfSight(a,a.target) then
-   local correction=Vector3.new(0,math.clamp(delta.Y,-40*dt,40*dt),0)
-   if math.abs(delta.Y)<.6 then correction=Vector3.zero end
+		 local horizontal=Vector3.new(delta.X,0,delta.Z)
+		 local planar=if horizontal.Magnitude>2.7 then horizontal.Unit*math.min(horizontal.Magnitude-2.7,30*dt) else Vector3.zero
+		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
+		 if a.attackName=="Slam" then vertical=math.min(vertical,-34*dt) end
+		 if math.abs(delta.Y)<.45 and a.attackName~="Slam" then vertical=0 end
+		 local correction=planar+Vector3.new(0,vertical,0)
    Motor.flight(a,self,correction)
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining>0 then
 		local toTarget=a.target.root.Position-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
 		if flatTarget.Magnitude>2.6 then
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
+			local elapsed=now-(a.attackStarted or now)
+			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
+			local drive=.32+1.18*math.sin(progress*math.pi)
+			if flatTarget.Magnitude>.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end

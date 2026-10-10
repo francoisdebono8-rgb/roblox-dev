@@ -19,11 +19,12 @@ function Brawler.releaseGrab(a)
  if b then b.grabbedBy=nil;b.reaction=nil;b.reactionUntil=0;a.grabVictim=nil end
  if a.grabbedBy then a.grabbedBy.grabVictim=nil;a.grabbedBy=nil end
 end
-function Brawler.react(c,a,kind,velocity,duration)
+function Brawler.react(c,a,kind,velocity,duration,source)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
- a.pending=nil;a.buffered=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
+	 a.reactionSource=source
+ a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then a.invulnerableUntil=c.now+duration+.24 end
@@ -56,9 +57,13 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
- local canDash=a.state=="Dodging" and c.now>=a.untilTime-.16
+ local canDash=a.state=="Dodging" and c.now>=a.untilTime-.23
  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
-  if pending and pending.kind=="Brawl" and (a.state=="Active" or a.state=="Recovery" or (a.state=="Startup" and c.now>=a.untilTime-.07)) then a.buffered={action=action,expires=c.now+.24} end
+	if a.state=="Recovery" and a.chainOpen and c.now<(a.chainAt or 0) then a.buffered={action=action,expires=c.now+.32};return true,"Buffered" end
+  if pending and pending.kind=="Brawl" and (a.state=="Active" or a.state=="Recovery" or (a.state=="Startup" and c.now>=a.untilTime-.1)) then
+	 a.buffered={action=action,expires=c.now+.32}
+	 if pending.name=="Air1" or pending.name=="Air2" then return true,"Buffered" end
+	end
   return false,"Committed"
  end
  if action=="Grab" then
@@ -113,6 +118,7 @@ function Brawler.hit(c,a,p)
  if not success or b.health<=0 then return success end
  if protected then return true end
  if guarded then
+	 local stop=math.min(spec.hitstop or .04,.055);a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
   if b.chakra<=0 then Brawler.react(c,b,"GuardStun",Vector3.zero,.6);b.guardHeld=false
@@ -120,7 +126,9 @@ function Brawler.hit(c,a,p)
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
- Brawler.react(c,b,spec.reaction,impulse,spec.stun)
+ local stop=spec.hitstop or .045
+ a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
+ Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
@@ -156,11 +164,13 @@ function Brawler.step(c,a,dt)
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
       velocity=Vector3.zero
      elseif math.abs(hit.Normal.Y)<.2 and hit.Instance:GetAttribute("NinjaWall") then
-      a.reaction="WallSplat";a.reactionUntil=c.now+.35;velocity=hit.Normal*10;Brawler.event(c,a,"WallSplat")
+			 a.reaction="WallSplat";a.reactionUntil=c.now+.42;velocity=hit.Normal*8;Brawler.event(c,a,"WallSplat")
+			 local source=a.reactionSource
+			 if source and source.health>0 then source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.72);Brawler.event(c,source,"WallConvert");c:cue(source,"WALL CONVERT • PURSUE",.65) end
      end
     end
    else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end
-   a.reactionVelocity=velocity;return true
+		 a.reactionVelocity=velocity;return true
   end
  end
  local p=a.pending
@@ -169,7 +179,7 @@ function Brawler.step(c,a,dt)
    p.hit=Brawler.hit(c,a,p);a.hitConfirmed=p.hit or a.hitConfirmed
   end
  end
- if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then
+	if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then
   local action=a.buffered.action;a.buffered=nil;Brawler.request(c,a,action)
  end
  return false

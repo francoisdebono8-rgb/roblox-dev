@@ -6,15 +6,15 @@ local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
   range=7.8,width=5.5,height=6,blockable=true}
 end
 local attacks={
- Light1=move(.10,.12,Combo.comboDelay-.22,Combo.Damage.Punch,2.8),
- Light2=move(.11,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.2),
- Light3=move(.13,.13,Combo.comboDelay-.26,Combo.Damage.MegaPunch,3.5,"Knockback",Vector3.new(0,12,43),.4),
- Heavy=move(.28,.17,.48,16,4.5,"Knockdown",Vector3.new(0,12,28),.65),
- Launcher=move(.18,.14,.28,9,2.5,"Launched",Vector3.new(0,52,11),1.15),
- DashAttack=move(.08,.15,.29,7,7,"HitStun",Vector3.new(0,0,9),.29),
- Air1=move(.09,.13,.19,6,2.5,"Juggled",Vector3.new(0,13,5),.6),
- Air2=move(.11,.13,.20,7,2.5,"Juggled",Vector3.new(0,15,5),.6),
- Slam=move(.17,.18,.37,13,2,"Knockdown",Vector3.new(0,-65,8),.8),
+ Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
+ Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
+ Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,10,48),.44),
+ Heavy=move(.30,.17,.52,16,5.4,"Knockdown",Vector3.new(0,12,34),.68),
+ Launcher=move(.17,.14,.28,9,3.2,"Launched",Vector3.new(0,58,13),1.18),
+ DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
+ Air1=move(.08,.13,.18,6,2.8,"Juggled",Vector3.new(0,15,8),.62),
+ Air2=move(.09,.14,.19,7,3.1,"Juggled",Vector3.new(0,10,12),.64),
+ Slam=move(.15,.20,.38,13,2.8,"Knockdown",Vector3.new(0,-78,10),.86),
  Grab=move(.18,.14,.5,0,2,"Grabbed",Vector3.zero,.8),
  Throw=move(.12,.1,.34,10,0,"Knockdown",Vector3.new(0,18,48),.7),
  ThrowUp=move(.12,.1,.3,7,0,"Launched",Vector3.new(0,50,10),1.1),
@@ -24,6 +24,21 @@ for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack"
 end
+local motion={
+ Light1={side=1,twist=30,lean=8,arm=82,step=1.05,hitstop=.045},
+ Light2={side=-1,twist=34,lean=10,arm=88,step=1.08,hitstop=.05},
+ Light3={side=1,twist=72,lean=12,arm=102,step=1.2,hitstop=.07},
+ Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3,hitstop=.085},
+ Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15,hitstop=.075},
+ DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35,hitstop=.055},
+ Air1={side=1,twist=38,lean=12,arm=98,step=1.1,hitstop=.05},
+ Air2={side=-1,twist=44,lean=18,arm=104,step=1.15,hitstop=.055},
+ Slam={side=1,twist=12,lean=46,arm=128,step=1.2,hitstop=.09},
+ Grab={side=1,twist=10,lean=18,arm=72,step=1.05,hitstop=.04},
+ Throw={side=1,twist=70,lean=22,arm=92,step=1.1,hitstop=.08},
+ ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1,hitstop=.08},
+}
+for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks

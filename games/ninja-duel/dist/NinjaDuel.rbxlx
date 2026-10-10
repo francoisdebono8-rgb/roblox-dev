@@ -35,15 +35,15 @@ local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
   range=7.8,width=5.5,height=6,blockable=true}
 end
 local attacks={
- Light1=move(.10,.12,Combo.comboDelay-.22,Combo.Damage.Punch,2.8),
- Light2=move(.11,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.2),
- Light3=move(.13,.13,Combo.comboDelay-.26,Combo.Damage.MegaPunch,3.5,"Knockback",Vector3.new(0,12,43),.4),
- Heavy=move(.28,.17,.48,16,4.5,"Knockdown",Vector3.new(0,12,28),.65),
- Launcher=move(.18,.14,.28,9,2.5,"Launched",Vector3.new(0,52,11),1.15),
- DashAttack=move(.08,.15,.29,7,7,"HitStun",Vector3.new(0,0,9),.29),
- Air1=move(.09,.13,.19,6,2.5,"Juggled",Vector3.new(0,13,5),.6),
- Air2=move(.11,.13,.20,7,2.5,"Juggled",Vector3.new(0,15,5),.6),
- Slam=move(.17,.18,.37,13,2,"Knockdown",Vector3.new(0,-65,8),.8),
+ Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
+ Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
+ Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,10,48),.44),
+ Heavy=move(.30,.17,.52,16,5.4,"Knockdown",Vector3.new(0,12,34),.68),
+ Launcher=move(.17,.14,.28,9,3.2,"Launched",Vector3.new(0,58,13),1.18),
+ DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
+ Air1=move(.08,.13,.18,6,2.8,"Juggled",Vector3.new(0,15,8),.62),
+ Air2=move(.09,.14,.19,7,3.1,"Juggled",Vector3.new(0,10,12),.64),
+ Slam=move(.15,.20,.38,13,2.8,"Knockdown",Vector3.new(0,-78,10),.86),
  Grab=move(.18,.14,.5,0,2,"Grabbed",Vector3.zero,.8),
  Throw=move(.12,.1,.34,10,0,"Knockdown",Vector3.new(0,18,48),.7),
  ThrowUp=move(.12,.1,.3,7,0,"Launched",Vector3.new(0,50,10),1.1),
@@ -53,6 +53,21 @@ for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack"
 end
+local motion={
+ Light1={side=1,twist=30,lean=8,arm=82,step=1.05,hitstop=.045},
+ Light2={side=-1,twist=34,lean=10,arm=88,step=1.08,hitstop=.05},
+ Light3={side=1,twist=72,lean=12,arm=102,step=1.2,hitstop=.07},
+ Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3,hitstop=.085},
+ Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15,hitstop=.075},
+ DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35,hitstop=.055},
+ Air1={side=1,twist=38,lean=12,arm=98,step=1.1,hitstop=.05},
+ Air2={side=-1,twist=44,lean=18,arm=104,step=1.15,hitstop=.055},
+ Slam={side=1,twist=12,lean=46,arm=128,step=1.2,hitstop=.09},
+ Grab={side=1,twist=10,lean=18,arm=72,step=1.05,hitstop=.04},
+ Throw={side=1,twist=70,lean=22,arm=92,step=1.1,hitstop=.08},
+ ThrowUp={side=-1,twist=28,lean=-30,arm=110,step=1.1,hitstop=.08},
+}
+for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
@@ -107,9 +122,9 @@ return {
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.1,
-	Movement = { SprintSpeed = 38, GroundAcceleration = 175, GroundDeceleration = 205, AirAcceleration = 88,
-		JumpVelocity = 70, JumpCooldown = 0.4, AttackWalkSpeed = 16, HardLandVelocity = 56,
-		HardLandRecovery = 0.12, SoftLandRecovery = 0, HardLandSpeed = 19,
+	Movement = { SprintSpeed = 46, GroundAcceleration = 420, GroundDeceleration = 480, TurnAcceleration = 620, AirAcceleration = 76,
+		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
+		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.65 },
 }
@@ -1213,7 +1228,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND12">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ad5292f381442bc21fb2183debd6442d641b08319dbda18d3ec63e14003f1de4</string>
+          <string name="Value">6e59d130a7c0cda44888db51838967eaa8c364ee6fb6c38ab1f9738a09bb142f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND13">
@@ -1588,7 +1603,7 @@ function Evade.begin(a,c)
  local direction=if a.move.Magnitude&gt;.1 then a.move.Unit else a.root.CFrame.RightVector
  local evadeDistance=14*(a.def.DashScale or 1)
  local evadeDuration=.32
- a.evade={targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration}
+ a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction}
 end
 function Evade.step(a,c,travel)
  local e=a.evade;if not e then return end
@@ -1598,10 +1613,14 @@ function Evade.step(a,c,travel)
  local startTime=e.startTime
  local elapsedTime=c.now-startTime
  if elapsedTime&lt;evadeDuration then
-  -- Donor's moving-origin interpolation, applied through the collision seam.
-  local position=rootPart.Position:Lerp(targetPosition,elapsedTime/evadeDuration)
+  local t=math.clamp(elapsedTime/evadeDuration,0,1)
+  -- Fast launch, soft brake: distance stays deterministic without the donor's
+  -- moving-origin snap near the end of the evade.
+  local eased=1-(1-t)^3
+  local position=e.startPosition:Lerp(targetPosition,eased)
   local delta=position-rootPart.Position
   travel(a,c,delta,delta.Magnitude)
+  if e.direction.Magnitude&gt;.1 then rootPart.CFrame=CFrame.lookAt(rootPart.Position,rootPart.Position+e.direction) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else a.evade=nil end
 end
@@ -1633,11 +1652,12 @@ function Brawler.releaseGrab(a)
  if b then b.grabbedBy=nil;b.reaction=nil;b.reactionUntil=0;a.grabVictim=nil end
  if a.grabbedBy then a.grabbedBy.grabVictim=nil;a.grabbedBy=nil end
 end
-function Brawler.react(c,a,kind,velocity,duration)
+function Brawler.react(c,a,kind,velocity,duration,source)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
- a.pending=nil;a.buffered=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
+	 a.reactionSource=source
+ a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then a.invulnerableUntil=c.now+duration+.24 end
@@ -1670,9 +1690,13 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now&gt;=(a.chainAt or 0)
- local canDash=a.state=="Dodging" and c.now&gt;=a.untilTime-.16
+ local canDash=a.state=="Dodging" and c.now&gt;=a.untilTime-.23
  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
-  if pending and pending.kind=="Brawl" and (a.state=="Active" or a.state=="Recovery" or (a.state=="Startup" and c.now&gt;=a.untilTime-.07)) then a.buffered={action=action,expires=c.now+.24} end
+	if a.state=="Recovery" and a.chainOpen and c.now&lt;(a.chainAt or 0) then a.buffered={action=action,expires=c.now+.32};return true,"Buffered" end
+  if pending and pending.kind=="Brawl" and (a.state=="Active" or a.state=="Recovery" or (a.state=="Startup" and c.now&gt;=a.untilTime-.1)) then
+	 a.buffered={action=action,expires=c.now+.32}
+	 if pending.name=="Air1" or pending.name=="Air2" then return true,"Buffered" end
+	end
   return false,"Committed"
  end
  if action=="Grab" then
@@ -1727,6 +1751,7 @@ function Brawler.hit(c,a,p)
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
  if guarded then
+	 local stop=math.min(spec.hitstop or .04,.055);a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
   Brawler.event(c,b,"GuardHit")
   if p.name=="Heavy" or p.name=="Slam" then b.chakra=math.max(0,b.chakra-25) end
   if b.chakra&lt;=0 then Brawler.react(c,b,"GuardStun",Vector3.zero,.6);b.guardHeld=false
@@ -1734,7 +1759,9 @@ function Brawler.hit(c,a,p)
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
- Brawler.react(c,b,spec.reaction,impulse,spec.stun)
+ local stop=spec.hitstop or .045
+ a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+stop);b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+stop)
+ Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
  if spec.reaction=="Launched" then a.pursuitUntil=c.now+1.15;Brawler.event(c,a,"LaunchHit") end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
@@ -1770,11 +1797,13 @@ function Brawler.step(c,a,dt)
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
       velocity=Vector3.zero
      elseif math.abs(hit.Normal.Y)&lt;.2 and hit.Instance:GetAttribute("NinjaWall") then
-      a.reaction="WallSplat";a.reactionUntil=c.now+.35;velocity=hit.Normal*10;Brawler.event(c,a,"WallSplat")
+			 a.reaction="WallSplat";a.reactionUntil=c.now+.42;velocity=hit.Normal*8;Brawler.event(c,a,"WallSplat")
+			 local source=a.reactionSource
+			 if source and source.health&gt;0 then source.pursuitUntil=math.max(source.pursuitUntil or 0,c.now+.72);Brawler.event(c,source,"WallConvert");c:cue(source,"WALL CONVERT • PURSUE",.65) end
      end
     end
    else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end
-   a.reactionVelocity=velocity;return true
+		 a.reactionVelocity=velocity;return true
   end
  end
  local p=a.pending
@@ -1783,7 +1812,7 @@ function Brawler.step(c,a,dt)
    p.hit=Brawler.hit(c,a,p);a.hitConfirmed=p.hit or a.hitConfirmed
   end
  end
- if a.buffered and c.now&lt;=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now&gt;=a.chainAt then
+	if a.buffered and c.now&lt;=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now&gt;=a.chainAt then
   local action=a.buffered.action;a.buffered=nil;Brawler.request(c,a,action)
  end
  return false
@@ -1993,13 +2022,19 @@ function Combat:request(a,action,aim,clientTime)
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
+	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now&gt;=(a.recoveryCancelAt or math.huge) then
+		a.pending=nil;self:setState(a,"Neutral",0)
+	end
 	if action=="Pursuit" then
 		if a.pursuitUntil&lt;=self.now or a.target.health&lt;=0 then return false,"No pursuit" end
 		if a.chakra&lt;Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude&gt;Config.PursuitRange then return false,"Too far" end
-		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" then return false,"Committed" end
+		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
+		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
 		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
 		a.reaction=nil; a.airborne=true; a.airHold=self.now+.75
+		a.pursuitStarted=self.now
 		Brawler.event(self,a,"Chase")
 		self:setState(a,"Pursuit",0.24)
 		self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
@@ -2065,15 +2100,25 @@ function Combat:updateActor(a,dt)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+(a.def.ChakraRegen or Config.ChakraRegen)*dt)
 	end
+	if now&lt;(a.hitstopUntil or 0) then
+		a.untilTime+=dt
+		if a.attackStarted then a.attackStarted+=dt end
+		if a.reactionUntil and a.reactionUntil&gt;now then a.reactionUntil+=dt end
+		a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
+		World.pose(a,now,dt);return
+	end
 	if a.state~="Neutral" and a.state~="Guarding" and a.untilTime&lt;=now then
 		local pending=a.pending
 		if a.state=="Startup" and pending then
 			self:setState(a,"Active",pending.spec.active)
 		elseif a.state=="Active" then
 			Bangla.close(pending)
-			a.pending=nil; self:setState(a,"Recovery",if pending then pending.spec.recovery else .22)
+			local recovery=if pending then pending.spec.recovery else .22
+			a.pending=nil; self:setState(a,"Recovery",recovery)
 			a.chainOpen=a.hitConfirmed and pending and pending.kind=="Brawl" and pending.spec.chain==true
-			a.chainAt=now+0.035
+			a.chainAt=now+0.025
+			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
+			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
@@ -2081,7 +2126,7 @@ function Combat:updateActor(a,dt)
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
 		else
-			a.pending=nil; self:setState(a,"Neutral",0)
+			a.pending=nil;a.attackName=nil; self:setState(a,"Neutral",0)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
@@ -2096,19 +2141,31 @@ function Combat:updateActor(a,dt)
 		Evade.step(a,self,Motor.travel)
 	elseif a.state=="Pursuit" then
 		local toTarget=a.target.root.Position-a.root.Position
-		if toTarget.Magnitude&gt;3 then Motor.flight(a,self,toTarget.Unit*math.min(100*dt,toTarget.Magnitude-3)) end
+		if toTarget.Magnitude&gt;3 then
+			local progress=math.clamp((now-(a.pursuitStarted or now))/.24,0,1)
+			local speed=70+65*math.sin(progress*math.pi)
+			Motor.flight(a,self,toTarget.Unit*math.min(speed*dt,toTarget.Magnitude-3))
+		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2" or a.attackName=="Slam") then
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude&lt;10 and self:lineOfSight(a,a.target) then
-   local correction=Vector3.new(0,math.clamp(delta.Y,-40*dt,40*dt),0)
-   if math.abs(delta.Y)&lt;.6 then correction=Vector3.zero end
+		 local horizontal=Vector3.new(delta.X,0,delta.Z)
+		 local planar=if horizontal.Magnitude&gt;2.7 then horizontal.Unit*math.min(horizontal.Magnitude-2.7,30*dt) else Vector3.zero
+		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
+		 if a.attackName=="Slam" then vertical=math.min(vertical,-34*dt) end
+		 if math.abs(delta.Y)&lt;.45 and a.attackName~="Slam" then vertical=0 end
+		 local correction=planar+Vector3.new(0,vertical,0)
    Motor.flight(a,self,correction)
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining&gt;0 then
 		local toTarget=a.target.root.Position-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
 		if flatTarget.Magnitude&gt;2.6 then
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
+			local elapsed=now-(a.attackStarted or now)
+			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
+			local drive=.32+1.18*math.sin(progress*math.pi)
+			if flatTarget.Magnitude&gt;.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
@@ -2570,11 +2627,15 @@ function Motor.step(a,c,dt,now)
  donor(a,c)
 	if not a.wall then Motor.tryWall(a,c,now) end
 	if Motor.stepWall(a,c,dt,now) then return false end
+	local vertical=a.root.AssemblyLinearVelocity.Y
+	if vertical&lt;0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now&gt;(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y&lt;=5 then
 		a.airborne=false; a.airDodgeUsed=false
-		local falling=math.abs(a.root.AssemblyLinearVelocity.Y)
+		local falling=a.fallSpeed or 0;a.fallSpeed=0
 		a.landUntil=now+(if falling&gt;profile.HardLandVelocity then profile.HardLandRecovery else profile.SoftLandRecovery)
+		a.model:SetAttribute("MovementLandedAt",now)
+		a.model:SetAttribute("MovementHardLanding",falling&gt;profile.HardLandVelocity)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
@@ -2582,16 +2643,18 @@ function Motor.step(a,c,dt,now)
  a.grounded=grounded
  if parkour.step() then return false end
  local sprinting=movement.step(dt,grounded)
- local limit=a.hum.WalkSpeed
+ local locomotion=a.locomotion
+ local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" then limit=0
  elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
  if a.grabVictim then limit=math.min(limit,5) end
  if now&lt;(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
- a.hum.WalkSpeed=limit
- a.hum:Move(if limit&gt;0 then a.move else Vector3.zero,false)
- a.locomotion=a.move*limit
+	 if locomotion.Magnitude&gt;limit then locomotion=locomotion.Unit*limit end
+	 a.locomotion=locomotion
+	 a.hum.WalkSpeed=locomotion.Magnitude
+	 a.hum:Move(if locomotion.Magnitude&gt;.01 then locomotion.Unit else Vector3.zero,false)
  a.model:SetAttribute("MovementBase","Place1")
 	return grounded
 end
@@ -2607,21 +2670,23 @@ return Motor
 -- Ground sprint/stamina, takeoff momentum, bunny-hop and air steering are donor code.
 local Movement={}
 function Movement.new(a,c)
+ local profile=require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Movement
  local WALK_SPEED=a.def.Speed
- local SPRINT_SPEED=44*(a.def.SprintScale or 1)
- local JUMP_VERTICAL_SPEED=60*(a.def.JumpScale or 1)
+ local SPRINT_SPEED=profile.SprintSpeed*(a.def.SprintScale or 1)
+ local JUMP_VERTICAL_SPEED=profile.JumpVelocity*(a.def.JumpScale or 1)
  local WALK_BHOP_SPEED=36
  local SPRINT_BHOP_SPEED=62*(a.def.SprintScale or 1)
  local STAMINA_DRAIN_SECONDS=60
  local STAMINA_REGEN_SECONDS=18
  local STAMINA_REGEN_DELAY=.85
  local EXHAUSTED_RECOVERY=.12
- local AIR_CONTROL_ACCELERATION=72*(a.def.AirControlScale or 1)
+ local AIR_CONTROL_ACCELERATION=profile.AirAcceleration*(a.def.AirControlScale or 1)
  local AIR_ACCELERATION_SPEED_CAP=72
  local MOMENTUM_CARRY_CAP=120
  local currentCharacter,currentHumanoid,currentRoot=a.model,a.hum,a.root
  local stamina,regenDelayRemaining,exhausted,sprinting=1,0,false,false
  local lastGroundHorizontalVelocity=Vector3.zero
+ local groundLocomotion=Vector3.zero
  local lastJumpRequestAt=-math.huge
  local sprintInputs,jumpInputs='Sprint','Jump'
  local function anyHeld(kind) return kind=='Sprint' and a.sprinting end
@@ -2761,10 +2826,6 @@ local function updateMovement(deltaTime)
 	local hasMoveInput = a.move.Magnitude &gt; 0.05
 	local wantsSprint = anyHeld(sprintInputs) and hasMoveInput
 
-	if grounded then
-		lastGroundHorizontalVelocity = horizontalVelocity
-	end
-
 	if exhausted and stamina &gt;= EXHAUSTED_RECOVERY then
 		exhausted = false
 	end
@@ -2785,11 +2846,27 @@ local function updateMovement(deltaTime)
 		end
 	end
 
+	local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
+	if grounded then
+		local input=horizontalOf(a.move)
+		local target=Vector3.zero
+		if not blocked and input.Magnitude&gt;.05 then target=input.Unit*desiredWalkSpeed end
+		local acceleration=profile.GroundAcceleration
+		if target.Magnitude&lt;.05 then acceleration=profile.GroundDeceleration
+		elseif groundLocomotion.Magnitude&gt;.05 and groundLocomotion.Unit:Dot(target.Unit)&lt;.45 then acceleration=profile.TurnAcceleration end
+		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
+		if groundLocomotion.Magnitude&lt;.03 then groundLocomotion=Vector3.zero end
+		lastGroundHorizontalVelocity=groundLocomotion
+		humanoid.WalkSpeed=groundLocomotion.Magnitude
+		humanoid:Move(if groundLocomotion.Magnitude&gt;.01 then groundLocomotion.Unit else Vector3.zero,false)
+		a.locomotion=groundLocomotion
+	else
+		-- Preserve the last grounded vector at takeoff, then bend it gradually in air.
+		groundLocomotion=horizontalVelocity
+		a.locomotion=horizontalVelocity
+	end
+
 	if not blocked then
-		local desiredWalkSpeed = sprinting and SPRINT_SPEED or WALK_SPEED
-		if math.abs(humanoid.WalkSpeed - desiredWalkSpeed) &gt; 0.01 then
-			humanoid.WalkSpeed = desiredWalkSpeed
-		end
 
 		if anyHeld(jumpInputs) and grounded then
 			requestGroundJump()
@@ -2797,6 +2874,7 @@ local function updateMovement(deltaTime)
 
 		if not grounded then
 			applyAirControl(deltaTime, sprinting)
+			a.locomotion=horizontalOf(root.AssemblyLinearVelocity)
 		end
 	end
 
@@ -2809,9 +2887,7 @@ end
  local api={}
  function api.step(dt,grounded)
   a.grounded=grounded
-  currentHumanoid:Move(a.move,false)
   updateMovement(math.min(dt,.1))
-  a.locomotion=a.move*currentHumanoid.WalkSpeed
   return sprinting
  end
  function api.jump(grounded)
@@ -3996,15 +4072,16 @@ function Presentation:update(data,_dt)
    if previous and actor.health&lt;previous.health then
     local damage=previous.health-actor.health;local root=model:FindFirstChild("HumanoidRootPart")
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
-    self.recoil[key]=os.clock()
+			self.recoil[key]={at=os.clock(),reaction=actor.reaction,heavy=actor.impactHeavy}
    end
    if actor.events and previous and actor.events.Parry and actor.events.Parry&gt;(previous.parry or 0) then
     local root=model:FindFirstChild("HumanoidRootPart");if root then Feedback.burst(root.Position,Color3.fromRGB(255,245,176),0,true) end
    end
-   local recoilAt=self.recoil[key]
-   if recoilAt and os.clock()-recoilAt&lt;.22 then Motion.recoil(model,os.clock()-recoilAt)
+		 local recoil=self.recoil[key]
+		 local recoilDuration=recoil and (if recoil.heavy then .3 else .22) or 0
+		 if recoil and os.clock()-recoil.at&lt;recoilDuration then Motion.recoil(model,os.clock()-recoil.at,recoil.reaction,recoil.heavy)
    elseif actor.attackName then Motion.pose(model,actor.attackName,math.max(0,actor.attackElapsed+latency))
-   elseif previous and previous.attackName then Motion.clear(model) end
+		 else Motion.locomotion(model,actor.speed or 0,actor.airborne,actor.velocity) end
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0}
   end
  end
@@ -4203,37 +4280,65 @@ return Feedback
         <Item class="ModuleScript" referent="ND47">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
-            <ProtectedString name="Source">-- Adapted from Velmora src/client/Combat/MotionEngine.luau.
--- Copyright (c) 2026 Yashveer Singh, MIT.
--- A local additive R15 coil/drive/settle layer synchronized to server attack timings.
+            <ProtectedString name="Source">-- Velmora additive R15 motion, adapted to Ninja Duel's server timings.
+-- This stays a presentation layer: combat authority remains server-side.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Motion={}
-local joints={Waist={"LowerTorso","Waist"},Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},Neck={"UpperTorso","Neck"}}
+local joints={
+ Waist={"LowerTorso","Waist"},Right={"UpperTorso","RightShoulder"},Left={"UpperTorso","LeftShoulder"},Neck={"UpperTorso","Neck"},
+ RightHip={"LowerTorso","RightHip"},LeftHip={"LowerTorso","LeftHip"},
+}
 local function motor(char,key)
 	local d=joints[key];local part=char and char:FindFirstChild(d[1]);local m=part and part:FindFirstChild(d[2])
 	return if m and m:IsA("Motor6D") then m else nil
 end
-local function smooth(t) return t*t*(3-2*t) end
-local function envelope(elapsed,spec)
-	if elapsed&lt;0 then return 0 end
-	if elapsed&lt;spec.startup then return -smooth(elapsed/spec.startup) end
-	if elapsed&lt;spec.startup+spec.active then return -1+2*smooth((elapsed-spec.startup)/spec.active) end
-	local recovery=math.max(spec.recovery,.01)
-	return math.max(0,1-(elapsed-spec.startup-spec.active)/recovery)
+local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
+local function phases(elapsed,spec)
+ if elapsed&lt;spec.startup then return smooth(elapsed/math.max(spec.startup,.01)),0,0 end
+ elapsed-=spec.startup
+ if elapsed&lt;spec.active then return 1,smooth(elapsed/math.max(spec.active,.01)),0 end
+ elapsed-=spec.active
+ return 0,1,smooth(elapsed/math.max(spec.recovery,.01))
+end
+local function set(char,key,value)
+ local joint=motor(char,key);if joint then joint.Transform=value end
 end
 function Motion.pose(char,name,elapsed)
 	local spec=Attacks[name]
 	if not spec then return end
-	local e=envelope(elapsed,spec);local heavy=spec.damage&gt;=12 and 1.25 or 1
-	local coil=math.rad(math.min(18,(8+spec.startup*30)*heavy))*e
-	local waist=motor(char,"Waist");if waist then waist.Transform=CFrame.Angles(-math.abs(coil)*.22,coil,0) end
-	local right=motor(char,"Right");if right then right.Transform=CFrame.Angles(-math.abs(coil)*.85,0,-coil*.35) end
-	local left=motor(char,"Left");if left then left.Transform=CFrame.Angles(math.abs(coil)*.25,0,coil*.2) end
-	local neck=motor(char,"Neck");if neck then neck.Transform=CFrame.Angles(0,-coil*.35,0) end
+	local coil,drive,settle=phases(elapsed,spec);local hold=1-settle
+	local side=spec.side or 1;local twist=math.rad(spec.twist or 24);local lean=math.rad(spec.lean or 10);local arm=math.rad(spec.arm or 80)
+	local strike=drive*hold;local wind=coil*(1-drive)
+	local yaw=side*(-twist*.52*wind+twist*strike);local pitch=lean*(.2*wind-.72*strike)*hold
+	if name=="Launcher" or name=="ThrowUp" then pitch=-math.abs(lean)*(.65*wind+strike) end
+	if name=="Slam" then pitch=math.abs(lean)*(.22*wind+strike) end
+	set(char,"Waist",CFrame.Angles(pitch,yaw,side*math.rad(5)*(strike-wind)))
+	set(char,"Neck",CFrame.Angles(-pitch*.3,-yaw*.38,0))
+	local attack=CFrame.Angles(-arm*(.28*wind+strike),side*math.rad(10)*strike,-side*math.rad(18)*(wind+strike))
+	local guard=CFrame.Angles(math.rad(-18)*hold,-side*math.rad(5),side*math.rad(10)*hold)
+	if side&gt;0 then set(char,"Right",attack);set(char,"Left",guard) else set(char,"Left",attack);set(char,"Right",guard) end
+	local crouch=math.rad(16)*wind*hold;local stride=math.rad(14)*strike
+	set(char,"RightHip",CFrame.Angles(crouch+stride*side,0,-side*math.rad(5)*hold))
+	set(char,"LeftHip",CFrame.Angles(crouch-stride*side,0,side*math.rad(5)*hold))
 end
-function Motion.recoil(char,elapsed)
-	local waist=motor(char,"Waist");if waist then waist.Transform=CFrame.Angles(math.rad(-18)*math.max(0,1-elapsed/.22),0,0) end
+function Motion.recoil(char,elapsed,reaction,heavy)
+	local duration=if heavy then .3 else .22;local t=1-smooth(elapsed/duration);local scale=if heavy then 1.35 else 1
+	local airborne=reaction=="Launched" or reaction=="Juggled" or reaction=="Knockback" or reaction=="Knockdown"
+	local pitch=math.rad(if airborne then 28 else -19)*t*scale
+	set(char,"Waist",CFrame.Angles(pitch,math.rad(12)*t,math.rad(-7)*t));set(char,"Neck",CFrame.Angles(-pitch*.45,math.rad(-8)*t,0))
+	set(char,"Right",CFrame.Angles(math.rad(38)*t,0,math.rad(22)*t));set(char,"Left",CFrame.Angles(math.rad(24)*t,0,math.rad(-28)*t))
+	set(char,"RightHip",CFrame.Angles(-pitch*.25,0,math.rad(-8)*t));set(char,"LeftHip",CFrame.Angles(-pitch*.18,0,math.rad(8)*t))
+end
+function Motion.locomotion(char,speed,airborne,velocity)
+	local alpha=math.clamp(speed/46,0,1)
+	if airborne then
+		local rise=math.clamp((velocity and velocity.Y or 0)/72,-1,1)
+		set(char,"Waist",CFrame.Angles(math.rad(-8-7*rise),0,0));set(char,"RightHip",CFrame.Angles(math.rad(18),0,math.rad(-5)));set(char,"LeftHip",CFrame.Angles(math.rad(-12),0,math.rad(5)));return
+	end
+	local cycle=os.clock()*(7+alpha*5);local swing=math.sin(cycle)*math.rad(10)*alpha
+	set(char,"Waist",CFrame.Angles(math.rad(-9)*alpha,0,math.sin(cycle*2)*math.rad(2)*alpha))
+	set(char,"Right",CFrame.Angles(swing,0,0));set(char,"Left",CFrame.Angles(-swing,0,0));set(char,"RightHip",CFrame.Angles(-swing,0,0));set(char,"LeftHip",CFrame.Angles(swing,0,0));set(char,"Neck",CFrame.identity)
 end
 function Motion.clear(char)
 	for key in joints do local m=motor(char,key);if m then m.Transform=CFrame.identity end end
