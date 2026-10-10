@@ -68,12 +68,30 @@ local attacks={
  -- Riposte: out of a clean block or a perfect dodge, an instant strike that
  -- opens the string (block -&gt; riposte -&gt; combo).
  Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
+ -- Gaara: sand erupts under the opponent at range and throws them up.
+ SandPillar=move(.27,.14,.5,9,0,"Launched",Vector3.new(0,54,4),1.1),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
+ -- Lateral routes: Itachi's feint step (an afterimage stays, he reappears at
+ -- the flank) and Neji's circular step onto a chakra point. Both keep the string.
+ FeintStep=move(.1,.12,.22,6,0,"HitStun",Vector3.new(0,4,9),.34),
+ CircleStep=move(.09,.12,.22,6,0,"HitStun",Vector3.new(0,3,8),.34),
+ -- Air routes after an air hit: drive the body away (toward a wall), spike it
+ -- into the floor (it bounces once), or vault to its other side.
+ AirDrive=move(.08,.13,.22,7,3,"Knockback",Vector3.new(0,8,48),.5),
+ AirSpike=move(.09,.12,.24,7,2,"Spiked",Vector3.new(0,-72,6),.9),
+ AirSwitch=move(.1,.14,.2,6,0,"Juggled",Vector3.new(0,13,9),.6),
+ -- Sasuke: an acrobatic rising kick he follows into the air, a vault over the
+ -- opponent into a back kick, and the Chidori thrust (started by the jutsu).
+ LionKick=move(.15,.14,.28,8,3,"Launched",Vector3.new(0,50,5),1.25),
+ VaultKick=move(.12,.12,.24,7,0,"HitStun",Vector3.new(0,6,12),.36),
+ ChidoriThrust=move(.04,.26,.62,22,15,"Knockback",Vector3.new(0,12,70),.7),
 }
 
 for name,spec in attacks do
  if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
+  or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
+ spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -98,7 +116,16 @@ local motion={
  KneeStrike={side=1,twist=16,lean=14,arm=70,step=1.15},
  FlyingKick={side=1,twist=10,lean=-12,arm=60,step=1.3},
  Riposte={side=1,twist=24,lean=12,arm=92,step=1.2},
+ SandPillar={side=1,twist=10,lean=-6,arm=120,step=1},
  SlideSweep={side=1,twist=14,lean=-20,arm=40,step=1.3},
+ FeintStep={side=-1,twist=30,lean=10,arm=90,step=1.1},
+ CircleStep={side=1,twist=40,lean=8,arm=90,step=1.05},
+ AirDrive={side=1,twist=20,lean=-10,arm=60,step=1},
+ AirSpike={side=1,twist=10,lean=40,arm=120,step=1},
+ AirSwitch={side=-1,twist=60,lean=10,arm=80,step=1},
+ LionKick={side=1,twist=10,lean=-30,arm=100,step=1.15},
+ VaultKick={side=-1,twist=70,lean=10,arm=60,step=1.1},
+ ChidoriThrust={side=1,twist=20,lean=30,arm=110,step=1.4},
 }
 for name,pose in motion do for key,value in pose do attacks[name][key]=value end end
 for _,name in {"Light1","Light2","Light3"} do attacks[name].width=5;attacks[name].height=5;attacks[name].range=6 end
@@ -106,7 +133,25 @@ attacks.AngleStep.width=5;attacks.AngleStep.range=6.5;attacks.AngleStep.orbit=17
 attacks.Sweep.height=3.5;attacks.Sweep.width=6.5;attacks.Sweep.range=6.5
 attacks.WallDive.width=6;attacks.WallDive.height=8;attacks.WallDive.range=7.5;attacks.WallDive.facing=-.45
 attacks.FlyingKick.range=7.5;attacks.FlyingKick.width=5.5
+attacks.SandPillar.range=12.5;attacks.SandPillar.width=6;attacks.SandPillar.height=8;attacks.SandPillar.depth=11;attacks.SandPillar.offset=6;attacks.SandPillar.facing=.25
 attacks.SlideSweep.range=7.5;attacks.SlideSweep.height=3.5;attacks.SlideSweep.width=6.5
+attacks.FeintStep.width=5;attacks.FeintStep.range=6.5;attacks.FeintStep.orbit=34
+attacks.CircleStep.width=5;attacks.CircleStep.range=6;attacks.CircleStep.orbit=28
+attacks.AirSwitch.orbit=40;attacks.AirSwitch.width=6;attacks.AirSwitch.height=7
+attacks.AirSpike.height=7;attacks.AirDrive.height=7
+attacks.VaultKick.width=5.5;attacks.VaultKick.range=6.5;attacks.VaultKick.orbit=50
+attacks.ChidoriThrust.range=7;attacks.ChidoriThrust.width=4.5
+-- Where a strike lands and what it is: the victim's body answers the blow it
+-- actually took (head snaps, body folds, legs are taken away, ...).
+local ZONE={Light1="head",Light2="body",Light3="body",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
+ Slam="body",AngleStep="body",Sweep="legs",CounterPalm="body",WallDive="body",PalmThrust="body",KneeStrike="body",FlyingKick="head",
+ Riposte="head",SlideSweep="legs",SandPillar="legs",FeintStep="body",CircleStep="body",AirDrive="body",AirSpike="head",AirSwitch="head",
+ LionKick="chin",VaultKick="head",ChidoriThrust="body",
+ Throw="body",ThrowUp="body",Grab="body"}
+local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam",Sweep="sweep",SlideSweep="sweep",KneeStrike="knee",
+ FlyingKick="kick",WallDive="kick",SandPillar="launch",AirDrive="kick",AirSpike="spike",AirSwitch="kick",PalmThrust="palm",CounterPalm="palm",
+ LionKick="launch",VaultKick="kick",ChidoriThrust="heavy"}
+for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 return attacks
 </ProtectedString>
@@ -150,14 +195,14 @@ return Combo
           <string name="Name">Config</string>
           <ProtectedString name="Source">-- Tunable V0 values; no client-supplied balance values are accepted.
 return {
-	Version = "0.12.0-final-playable",
-	ArenaRadius = 64.4, ArenaHeight = 48, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
+	Version = "0.13.0-arena-combo",
+	ArenaRadius = 101, ArenaHeight = 62, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
-	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 35, PursuitSpeed = 67,
+	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 46, PursuitSpeed = 74,
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.
@@ -167,13 +212,16 @@ return {
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	Clash = {Window = 0.07, Push = 4.5},
 	-- Chakra dash (E outside a chase window): a committed burst at the opponent.
-	Rush = {Cost = 10, Speed = 78, Range = 34, MinRange = 7, MaxTime = 0.45, Cooldown = 0.9, Arrive = 0.3},
+	Rush = {Cost = 10, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3},
 	-- Awakening: once per match, at low health, a fighter-specific power-up.
 	Awaken = {Threshold = 0.35, Duration = 12},
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
 	Flow = {Early = 0.07, Late = 0.13, Damage = 1.15, Stop = 0.035},
 	ThrowBreak = 0.35,
 	RoundsToWin = 2,
+	-- Where each fighter starts (studs from the centre): far enough apart that
+	-- the round opens on an approach, not on a punch.
+	StartDistance = 24,
 	-- Server-side Animator playback (donor clips, default locomotion). Off: the
 	-- client motion engine animates every body.
 	DonorAnimations = false,
@@ -181,9 +229,9 @@ return {
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4,
 		-- Wall combat: splat state, pins, tech window and the dive from a wall run.
 		SplatSpeed = 17, SplatTime = 0.62, SplatDamage = 3, PinTime = 0.42, PinMax = 2,
-		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 40},
+		TechFrom = 0.05, TechUntil = 0.34, TechCost = 12, DiveRange = 50},
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
-	Movement = { SprintSpeed = 38, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
+	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
@@ -245,6 +293,9 @@ return {
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
 	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	-- The directional combo grammar, shared by every fighter.
+	Grammar = "STRINGS  2 hits + W (toward) = launcher  ·  2 hits + S (away) = low sweep  ·  A/D = side route  ·  after an air hit: W drive · S spike · A/D switch  ·  S + R in a string = hop out",
+	GrammarPad = "STRINGS  2 hits + ↑ (toward) = launcher  ·  2 hits + ↓ (away) = low sweep  ·  ← → = side route  ·  after an air hit: ↑ drive · ↓ spike · ← → switch  ·  ↓ + RT in a string = hop out",
 	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad: up jutsu 5 · left chakra dash · down awaken",
 }
 </ProtectedString>
@@ -256,10 +307,14 @@ return {
           <ProtectedString name="Source">return {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
+		Routes = "↑ rising kick (seals the body: 2 follows it up)  ·  ↓ spinning leg sweep (plants a marked kunai)  ·  ←→ angle step  ·  air: push kick / axe kick / flash switch",
 		Description = "Decision speed. Kunai placement, angle changes and an unfinished teleport seal.",
 		Health = 125, Chakra = 110, ChakraRegen = 8, Speed = 19.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.15,
 		CombatTravel = 1.18, CombatDamage = 1, DashScale = 1.15, GuardStrength = 0.10, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+		-- Shared ninja tools: everyone throws; mastery changes what a throw does.
+		-- Minato: one fast kunai, the quickest recovery (the seals are his art).
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 96, Damage = 3, Recover = .55 },
 		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
 		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
@@ -271,15 +326,16 @@ return {
 		Techniques = {
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
-			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 50, Damage = 6, Hint = "Two seals planted at once • a hit seals the body" },
-			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 60, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
+			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Two seals planted at once • a hit seals the body" },
+			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
 			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
-			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 29, Damage = 7, Hint = "Displace with a cutting gust" },
+			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 36, Damage = 7, Hint = "Displace with a cutting gust" },
 		},
 	},
 	Mirage = {
 		Name = "Itachi", FullName = "Itachi Uchiha", Age = 13, Title = "THE SHARINGAN PRODIGY", Color = { 222, 70, 80 },
+		Routes = "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
 		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 18, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
 		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
@@ -288,6 +344,10 @@ return {
 		-- raised guard tracks a teleport instead of being crossed up.
 		Sharingan = { ParryWindow = 0.3, PerfectDodge = 0.22, Counter = 0.9 },
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
+		-- Itachi: a pair of shuriken; side + tool is Shuriken Geometry (a wide
+		-- blade struck by a second one, redirected into the flank); his blades
+		-- ricochet off walls and cover once; in the air he fans three down.
+		ToolMastery = { Kind = "shuriken", Count = 2, Speed = 84, Damage = 2, Recover = .75, Geometry = true, Ricochet = true, AirSpread = 3 },
 		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
 		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
@@ -299,20 +359,23 @@ return {
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
 			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike or Rasengan • counter" },
-			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 42, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 56, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "3s decoy • a swing at it opens a punish" },
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 62, Speed = 54, Damage = 16, Hint = "A miss leaves the lane burning" },
-			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 48, Speed = 68, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Hint = "A miss leaves the lane burning" },
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
 		},
 	},
 	-- Third prototype: the Hyuga genius at the Chunin Exam finals. Pure taijutsu
 	-- with a different engine: palms that attack chakra, not health alone.
 	GentleFist = {
 		Name = "Neji", FullName = "Neji Hyuga", Age = 13, Title = "THE HYUGA GENIUS", Color = { 176, 196, 255 },
+		Routes = "↑ palm heel under the chin  ·  ↓ low rotation sweep (closes two points)  ·  ←→ circular step onto a chakra point  ·  air: twin palms / descending palm / spinning palm",
 		Description = "Byakugan and the Gentle Fist. Palms that close chakra points, a perfect rotation defence.",
 		Health = 135, Chakra = 115, ChakraRegen = 7.6, Speed = 18.5, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 1.02,
 		CombatTravel = 1.0, CombatDamage = 0.95, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 5,
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		-- Neji: standard kunai, secondary to the Gentle Fist.
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 86, Damage = 3, Recover = .85 },
 		-- Awakening: Byakugan full field. No blind spot, palms drain twice as much.
 		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
@@ -330,8 +393,69 @@ return {
 		Skin = { 228, 202, 178 }, Hair = { 52, 36, 30 }, Outfit = { 226, 220, 206 },
 		Techniques = {
 			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
-			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Range = 26, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
+			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
 			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • seals the chakra points (no jutsu)" },
+		},
+	},
+	-- Fourth playable prototype: Sasuke at the Chunin Exam (12). Faster and
+	-- more aggressive than his brother, a kicking taijutsu base, fire, wire and
+	-- the Chidori he has just learned: one opening becomes a mobile assault,
+	-- but every big commitment can be punished.
+	Lion = {
+		Name = "Sasuke", FullName = "Sasuke Uchiha", Age = 12, Title = "THE ROOKIE OF THE YEAR", Color = { 92, 132, 255 },
+		Routes = "↑ rising kick into Shadow of the Dancing Leaf (heavy in the air: LION COMBO)  ·  ↓ low kick sweep  ·  ←→ vault over into a back kick  ·  air: drive / axe kick / switch",
+		Description = "Pressure. Kicks, wire and fire. A launcher he follows into the air and a Chidori that ends everything — or him.",
+		Health = 120, Chakra = 105, ChakraRegen = 7.5, Speed = 19, SprintScale = 1.1, JumpScale = 1.15, AirControlScale = 1.15, AccelerationScale = 1.12,
+		CombatTravel = 1.12, CombatDamage = 1.05, DashScale = 1.08, GuardStrength = 0.08, PreferredRange = 6,
+		ComboToolCancel = true, CombatStyle = "Lion", Tool = "Shuriken",
+		-- Aggressive shuriken use: a fast pair and a short recovery.
+		ToolMastery = { Kind = "shuriken", Count = 2, Speed = 92, Damage = 2, Recover = .6 },
+		-- Two-tomoe Sharingan: smaller windows than Itachi's, the same idea.
+		Sharingan = { ParryWindow = 0.24, PerfectDodge = 0.18, Counter = 0.7 },
+		-- The cursed seal: faster and harder, but it eats his body while it burns.
+		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.18, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Color = { 120, 60, 200 } },
+		AttackProfile = {
+			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6},Light3={startup=1.05,impulseZ=56,range=6.8},
+			DashAttack={travel=1.1},Air1={startup=.92},Air2={startup=.92},
+		},
+		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
+		Techniques = {
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15, Hint = "On a wired opponent: Dragon Flame runs along the wire" },
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open" },
+		},
+	},
+	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient
+	-- controller: the sand blocks for him, strikes at range and binds.
+	Sand = {
+		Name = "Gaara", FullName = "Gaara of the Sand", Age = 12, Title = "THE SAND PRODIGY", Color = { 222, 176, 112 },
+		Description = "The sand fights for him: an automatic shield, long sand lashes and a coffin that binds. Slow, patient, crushing.",
+		Health = 140, Chakra = 130, ChakraRegen = 7, Speed = 16.5, SprintScale = 0.85, JumpScale = 0.9, AirControlScale = 0.85, AccelerationScale = 0.85,
+		CombatTravel = 0.2, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 11,
+		ComboToolCancel = true, CombatStyle = "Sand", Tool = "Sand",
+		-- Sand shield: while charged it stops hits by itself (not while he is
+		-- attacking or already hurt). A heavy blow, a third string hit or a
+		-- Rasengan breaks it outright; charges come back one at a time.
+		SandShield = { Charges = 3, Regen = 3.5, Break = 17 },
+		-- His heavy is not a punch: sand erupts under the opponent at range.
+		HeavyMove = "SandPillar", LauncherMove = "SandPillar",
+		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
+		SandFlicker = { Distance = 12 },
+		Awakening = { Name = "SHUKAKU'S SAND", Speed = 1.12, Damage = 1.12, Regen = 1.6, Cooldown = 0.5, ShieldRegen = 2, Color = { 222, 176, 112 } },
+		AttackProfile = {
+			-- Sand lashes: long, narrow volumes in front of him.
+			-- Slower than a fist, long to recover and light: the reach is paid for
+			-- (pokes that set up the pillar and the coffin, not a damage string).
+			Light1={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
+			Light3={startup=1.5,recovery=1.35,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
+			Air1={startup=1.1,range=8},Air2={startup=1.1,range=8},Slam={startup=1.1},
+		},
+		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },
+		Techniques = {
+			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
+			{ Id = "SandShuriken", Name = "Sand Shuriken", Cost = 16, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 3.5, Interruptible = true, Range = 38, Damage = 3, Hint = "Six hardened sand blades" },
+			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
 		},
 	},
 }
@@ -347,30 +471,36 @@ return {
 -- here, so a new prodigy adds a table entry plus only the bespoke code its kit
 -- really needs.
 --
---   stringBranches[direction]  what a press does inside a clean string when the
---                              stick points side / back / forward:
---                              {kind="move",name=&lt;Attacks entry&gt;} or
---                              {kind="disengage",projectile=&lt;throw kind&gt;}
+-- Directional combo grammar (shared by every fighter, interpreted by each):
+--   routes.up      stick toward the opponent + strike, 2+ hits in: launcher
+--   routes.down    stick away + strike, 2+ hits in: low route (sweep)
+--   routes.side    stick left/right + strike, 1+ hit in: lateral route
+--   routes.airUp / airDown / airSide   the same grammar after an air hit:
+--                  drive away, spike down, switch sides
+--   disengage      stick away + tool inside a string: hop out behind a throw
+--   onRoute[name]  what that fighter's version of a route adds (a seal, blades)
 --   stringCancels[techniqueId] techniques that may cancel a clean string
 --                              (with a shortened wind-up)
 --   blockCancels[action]       actions still allowed out of a blocked light
 --   readCounter                move started by the next press after a Read
 return {
 	Flashstep={
-		stringBranches={
-			side={kind="move",name="AngleStep"},
-			back={kind="disengage",projectile="Kunai"},
-		},
+		routes={up="Launcher",down="Sweep",side="AngleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		-- The rising kick leaves a seal on the body (2 follows it up); the leg
+		-- sweep plants a marked kunai where the opponent fell.
+		onRoute={Launcher="bodySeal",Sweep="floorSeal"},
 		-- Heavy after one clean cut: a rising knee that pops the opponent up.
 		heavyAfterOne="KneeStrike",
 		stringCancels={BurstStrike=true},
 		blockCancels={},
 	},
 	Mirage={
-		stringBranches={
-			side={kind="move",name="Sweep"},
-			back={kind="disengage",projectile="Shuriken"},
-		},
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Shuriken",
+		-- The rising palm is covered by two shuriken thrown up after the body;
+		-- the feint step leaves an afterimage where he stood.
+		onRoute={Launcher="coverBlades",AirDrive="coverBlades"},
 		-- Heavy after one clean strike: the palm that drives the opponent away
 		-- (toward a wall when one is near) instead of the launcher.
 		heavyAfterOne="CounterPalm",
@@ -379,10 +509,10 @@ return {
 		readCounter="CounterPalm",
 	},
 	GentleFist={
-		stringBranches={
-			side={kind="move",name="Sweep"},
-			back={kind="disengage",projectile="Kunai"},
-		},
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		-- Every Gentle Fist route closes chakra points; the low route closes two.
+		onRoute={Sweep="tenketsu"},
 		-- Heavy after a single clean palm: a twin-palm thrust that drives the
 		-- opponent away (into a wall when one is near) instead of the launcher.
 		heavyAfterOne="PalmThrust",
@@ -390,6 +520,23 @@ return {
 		blockCancels={},
 		-- After Rotation repels an attack, the next press is the palm thrust.
 		readCounter="PalmThrust",
+	},
+	Lion={
+		routes={up="LionKick",down="Sweep",side="VaultKick",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Shuriken",
+		-- The rising kick is followed into the air at once (Shadow of the
+		-- Dancing Leaf); a heavy there is the Lion Combo.
+		onRoute={LionKick="shadowLeaf"},
+		heavyAfterOne="KneeStrike",
+		stringCancels={Chidori=true},
+		blockCancels={},
+	},
+	Sand={
+		routes={up="SandPillar",down="Sweep"},
+		-- One lash, then the pillar: sand erupts under the opponent.
+		heavyAfterOne="SandPillar",
+		stringCancels={SandCoffin=true},
+		blockCancels={Tool=true},
 	},
 }
 </ProtectedString>
@@ -1436,7 +1583,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">0b8a59cc990fb906f74b20eb3b3f85c1f5a70c75196cb4eeeb9585e6fb475fbb</string>
+          <string name="Value">93e92bd91b11c6667fedb10549225c5c01cf69371c4bf8806e45f7f8837bb225</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1627,13 +1774,15 @@ function AI:update(now)
 	-- breathe after a combo lands instead of restarting at once.
 	if now&gt;=(self.modeUntil or 0) then
 		self.probing=not self.probing and self.rng:NextNumber()&lt;.55
-		self.modeUntil=now+(if self.probing then 1.4+self.rng:NextNumber()*1.6 else 2.2+self.rng:NextNumber()*2.6)
+		self.modeUntil=now+(if self.probing then 1.6+self.rng:NextNumber()*2 else 2.2+self.rng:NextNumber()*2.6)
+		self.probeRange=8+self.rng:NextNumber()*12
 	end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil&lt;=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
 	local calm=self.probing or now&lt;(self.breathUntil or 0)
-	if calm then desired+=4 end
+	-- Probing happens at tool range: spacing, throws and reads before running in.
+	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
 	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
 	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
 	a.sprinting=distance&gt;desired+6 and not calm
@@ -1657,7 +1806,7 @@ function AI:update(now)
 		a.move=(outward+tangent*.25).Unit;a.sprinting=true
 		return
 	end
-	if fromCenter.Magnitude&gt;Config.ArenaRadius-15 and distance&gt;11 and distance&lt;32 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()&lt;.22 then
+	if fromCenter.Magnitude&gt;Config.ArenaRadius-18 and distance&gt;11 and distance&lt;44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()&lt;.22 then
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()&lt;.5 then 1 else -1
 		return
 	end
@@ -1703,6 +1852,15 @@ function AI:update(now)
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()&lt;.4 then "Heavy" else "Attack");return end
 	if a.state=="Rush" or (a.rushArriveUntil or 0)&gt;now then c:request(a,"Attack");return end
+	-- Sasuke under the rising body: one strike, then the Lion Combo.
+	if (a.lionUntil or 0)&gt;now and a.airborne and a.state=="Neutral" then
+		c:request(a,if (a.airCombo or 0)&gt;=1 and self.rng:NextNumber()&lt;.7 then "Heavy" else "Attack");return
+	end
+	-- Wired opponent: Dragon Flame at once.
+	if a.wireVictim and a.wireVictim.reaction=="Bound" and a.state=="Neutral" then
+		local fire=slotOf(a,"FireBloom")
+		if fire and c:request(a,fire,target.root.Position) then return end
+	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
 	if (a.counterUntil or 0)&gt;now and distance&lt;8 then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
@@ -1736,31 +1894,45 @@ function AI:update(now)
 			local rasengan=slotOf(a,"BurstStrike")
 			if rasengan and c:request(a,rasengan) then return end
 		end
-		local branch=if a.airborne then (if (a.airCombo or 0)&gt;=2 then "Heavy" else "Attack") elseif a.combo&gt;=2 and self.rng:NextNumber()&lt;.55 then "Heavy" else "Attack"
-		if not a.airborne and self.rng:NextNumber()&lt;(if minato then .18 else .34) then branch="Tool" end
-		-- After one clean strike, sometimes take the heavy branch (knee, palm, thrust).
-		if not a.airborne and a.combo==1 and self.rng:NextNumber()&lt;.25 then branch="Heavy" end
+		-- The directional grammar: the stick picks the route, so the bot sets it
+		-- explicitly (an approach held by accident must not pick a launcher).
+		local roll=self.rng:NextNumber()
+		if a.airborne then
+			if (a.airCombo or 0)&gt;=2 and roll&lt;.4 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+			if (a.airCombo or 0)&gt;=1 then
+				if roll&lt;.22 then a.move=-toward
+				elseif roll&lt;.42 then a.move=toward
+				elseif roll&lt;.54 then a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
+				else a.move=Vector3.zero end
+			else a.move=Vector3.zero end
+			c:request(a,"Attack");return
+		end
 		-- Neji: end a string with Vacuum Palm.
-		if a.fighterId=="GentleFist" and not a.airborne then
-			if a.combo&gt;=2 and self.rng:NextNumber()&lt;.3 then
-				local palm=slotOf(a,"VacuumPalm")
-				if palm and c:request(a,palm,target.root.Position) then return end
-			end
-			if branch=="Tool" and self.rng:NextNumber()&lt;.6 then branch="Attack" end
+		if a.fighterId=="GentleFist" and a.combo&gt;=2 and roll&lt;.18 then
+			local palm=slotOf(a,"VacuumPalm")
+			if palm and c:request(a,palm,target.root.Position) then return end
 		end
-		-- Character branches: the stick picks an alternative inside the string.
-		if branch=="Attack" and not a.airborne then
-			local roll=self.rng:NextNumber()
-			if minato and roll&lt;.28 then a.move=tangent*(if roll&lt;.14 then 1 else -1)
-			elseif minato and roll&lt;.36 then a.move=-toward
-			elseif not minato and roll&lt;.22 then a.move=-toward
-			elseif not minato and roll&lt;.34 and a.combo&gt;=2 then a.move=tangent end
+		local nearWall=fromCenter.Magnitude&gt;Config.ArenaRadius-22
+		if a.combo&gt;=2 then
+			if roll&lt;.3 then a.move=toward;c:request(a,"Attack");return end -- launcher
+			if roll&lt;.46 then a.move=-toward;c:request(a,"Attack");return end -- low route
+			if roll&lt;.56 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+		elseif a.combo==1 and roll&lt;.2 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+		if roll&lt;.7 and roll&gt;=.56 then a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1);c:request(a,"Attack");return end
+		if roll&gt;=.92 then
+			-- Tool inside the string; away + tool hops out behind it.
+			a.move=if nearWall or self.rng:NextNumber()&lt;.5 then Vector3.zero else -toward
+			c:request(a,"Tool",target.root.Position);return
 		end
-		c:request(a,branch);return
+		a.move=Vector3.zero;c:request(a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
-	if distance&gt;7 and distance&lt;30 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09) and target.state~="Guarding" then
+	if distance&gt;7 and distance&lt;46 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then 1.8 else 1) and target.state~="Guarding" then
+		-- A tool master sometimes throws the geometry instead (side + tool).
+		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()&lt;.4 then
+			a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
+		end
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
@@ -1774,6 +1946,12 @@ function AI:update(now)
 			elseif spec.Id=="NeedleFan" then use=distance&gt;8 and distance&lt;36
 			elseif spec.Id=="MirageCast" then use=distance&gt;10 and distance&lt;21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()&lt;0.18) end
 			if spec.Id=="FireBloom" then use=distance&gt;6 and distance&lt;46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()&lt;0.32) end
+			if spec.Id=="WireTrap" then use=distance&gt;7 and distance&lt;28 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.4 end
+			if spec.Id=="Chidori" then use=distance&gt;4 and distance&lt;16 and (target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound" or self.rng:NextNumber()&lt;.06) end
+			if spec.Id=="FireBloom" and a.wireVictim and a.wireVictim.reaction=="Bound" then use=true end
+			if spec.Id=="SandCoffin" then use=distance&gt;7 and distance&lt;28 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.45 end
+			if spec.Id=="SandShuriken" then use=distance&gt;9 and distance&lt;34 and self.rng:NextNumber()&lt;.5 end
+			if spec.Id=="DesertWave" then use=distance&lt;8 and (target.state=="Startup" or target.state=="Rush" or target.state=="Active" or self.rng:NextNumber()&lt;.25) end
 			if spec.Id=="VacuumPalm" then use=distance&gt;7 and distance&lt;24 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.45 end
 			if spec.Id=="SixtyFourPalms" then use=distance&lt;4.6 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery" or target.state=="TechniqueChannel") end
 			if spec.Id=="Rotation" then use=false end
@@ -1787,12 +1965,20 @@ function AI:update(now)
 	if whiff and distance&lt;10 then a.move=toward;a.sprinting=true;c:request(a,"Attack");return end
 	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
 	if calm then return end
-	if distance&lt;8 and self.rng:NextNumber()&lt;tune.Aggression then
+	local reach=(a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.range or 6)+1.5
+	if distance&lt;math.max(8,reach) and self.rng:NextNumber()&lt;tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance&lt;5 and self.rng:NextNumber()&lt;.12 then "Grab" elseif self.rng:NextNumber()&lt;.16 then "Heavy" else "Attack")
+	end
+	-- Out-ranged (sand lashes): close the gap instead of waiting at its edge.
+	local theirs=(target.def.AttackProfile and target.def.AttackProfile.Light1 and target.def.AttackProfile.Light1.range or 6)
+	if theirs&gt;reach and distance&gt;reach-1 and distance&lt;theirs+3 and target.state~="Startup" then
+		a.move=toward;a.sprinting=true
+		if distance&gt;Config.Rush.MinRange+.5 and self.rng:NextNumber()&lt;.3 and c:request(a,"Pursuit") then return end
+		if self.rng:NextNumber()&lt;.2 then c:request(a,"Dodge");return end
 	end
 	if distance&gt;6 and distance&lt;17 and self.rng:NextNumber()&lt;0.1 then c:request(a,"Jump") end
 	-- Chakra dash in from mid range when the opponent is not attacking.
-	if not calm and distance&gt;11 and distance&lt;30 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()&lt;.1 then
+	if not calm and distance&gt;11 and distance&lt;44 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()&lt;.1 then
 		if c:request(a,"Pursuit") then return end
 	end
 	-- Sidestep cover when the direct route is obstructed.
@@ -1965,7 +2151,7 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=if p.rasengan then "Rasengan" else p.name
    -- A Flow strike (chained on the beat) lands a little harder.
    local flow=if p.flow then require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Flow.Damage else 1
-   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow,false,true)
+   local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow*(p.spec.damageScale or 1),false,true)
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
@@ -2040,7 +2226,7 @@ local Config=require(Shared.Config)
 -- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
-local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true}
+local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
 function Brawler.free(a,now)
  return a.reaction==nil or now&gt;=(a.reactionUntil or 0)
 end
@@ -2078,7 +2264,7 @@ function Brawler.start(c,a,name)
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
-		spec.chainTool=profile.chainTool;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
  a.queuedLight=nil
@@ -2109,7 +2295,11 @@ function Brawler.start(c,a,name)
  if a.locked and delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+delta.Unit) end
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
- if name=="Air1" or name=="Air2" or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if spec.air or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ -- Lateral routes leave an afterimage where the body was (a flash for Minato).
+ if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
+  c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})
+ end
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
  return true
@@ -2117,6 +2307,8 @@ end
 -- Movement intent relative to the fighter's facing, read when a press lands:
 -- this is what turns one string into a small move graph per character.
 function Brawler.intent(a)
+ -- A buffered press replays the direction it was pressed with.
+ if a.intentOverride then return a.intentOverride[1],a.intentOverride[2] end
  local m=Vector3.new(a.move.X,0,a.move.Z)
  if m.Magnitude&lt;.4 then return "neutral",0 end
  local l=a.root.CFrame:VectorToObjectSpace(m.Unit)
@@ -2183,7 +2375,9 @@ function Brawler.request(c,a,action)
  end
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now&gt;=(a.chainAt or 0)
+ local close=a.target and (a.target.root.Position-a.root.Position).Magnitude&lt;5.5
  local canDash=(a.state=="Dodging" and c.now&gt;=a.untilTime-.23) or (a.state=="Rush" and c.now&gt;=a.untilTime-.15)
+  or (a.state=="Pursuit" and close and c.now-(a.pursuitStarted or 0)&gt;=.12)
   or (a.state=="Neutral" and (a.rushArriveUntil or 0)&gt;c.now)
  -- Rhythm: a chained press made on the beat (around the moment the chain
  -- opens, not mashed early during the swing) becomes a Flow strike.
@@ -2212,7 +2406,10 @@ function Brawler.request(c,a,action)
     -- made a few frames early must not be eaten. It only fires if the chain
     -- opens (the swing landed cleanly); after a whiff it simply expires, so no
     -- phantom combo runs through a recovery the player must respect.
-    a.buffered={action=action,at=c.now,expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
+    -- The stick is read at the press, not when the buffer fires: a route
+    -- pressed early (toward + strike) must not turn neutral on release.
+    local dir,sideSign=Brawler.intent(a)
+    a.buffered={action=action,at=c.now,intent={dir,sideSign},expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
     return true,"Buffered"
    end
    return false,"Committed"
@@ -2229,27 +2426,64 @@ function Brawler.request(c,a,action)
   if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
  end
  if action=="Heavy" then
-  if a.airborne then return Brawler.start(c,a,"Slam") end
+  if a.airborne then
+   -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
+   -- that ends in a heel drop driving the body into the floor.
+   if (a.lionUntil or 0)&gt;c.now and a.target and a.target.health&gt;0 then
+    a.lionUntil=0
+    -- The flip over the body: the heel comes down from above it.
+    local b=a.target
+    local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+    look=if look.Magnitude&gt;.1 then look.Unit else a.root.CFrame.LookVector
+    c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+    a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+    a.airborne=true
+    local ok=Brawler.start(c,a,"Slam")
+    if a.pending then a.pending.spec.damage=17;a.pending.spec.impulse=Vector3.new(0,-90,8);a.attackVariant="LionBarrage" end
+    c:cue(a,"LION COMBO",.9);Brawler.event(c,a,"LionCombo")
+    return ok
+   end
+   return Brawler.start(c,a,"Slam")
+  end
   local heavyGraph=MoveGraphs[a.fighterId] or {}
   if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
-  if canChain and a.combo&gt;=2 then a.combo=0;return Brawler.start(c,a,"Launcher") end
-  return Brawler.start(c,a,"Heavy")
+  if canChain and a.combo&gt;=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
+  return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
+ local graph=MoveGraphs[a.fighterId] or {}
+ local routes=graph.routes or {}
  if a.airborne then
+  -- Air grammar: after an air hit the stick picks the follow-up.
+  if canChain and (a.airCombo or 0)&gt;=1 and c.now-(a.lastAirAttack or 0)&lt;=.8 then
+   local dir,sideSign=Brawler.intent(a)
+   local route=if dir=="forward" then routes.airUp elseif dir=="back" then routes.airDown elseif dir=="side" then routes.airSide else nil
+   if route then
+    a.angleSide=sideSign;a.airCombo=0;a.lastAirAttack=c.now
+    Brawler.event(c,a,"Route");return Brawler.start(c,a,route)
+   end
+  end
   a.airCombo=if c.now-(a.lastAirAttack or 0)&gt;.8 then 1 else (a.airCombo or 0)%2+1
   a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
  end
- local graph=MoveGraphs[a.fighterId] or {}
  -- A successful Read (Itachi) pays off with the graph's counter on the next press.
  if action=="Attack" and graph.readCounter and (a.counterUntil or 0)&gt;c.now and not canChain then
   a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
  end
- -- Character move graphs: inside a confirmed string the stick picks a branch.
- if action=="Attack" and canChain and graph.stringBranches then
+ -- Directional combo grammar: inside a confirmed string the stick picks the
+ -- route. Toward the opponent launches, away goes low, sideways turns the
+ -- angle; each fighter answers with its own move.
+ if action=="Attack" and canChain then
   local dir,sideSign=Brawler.intent(a)
-  local branch=graph.stringBranches[dir]
-  if branch and branch.kind=="move" then a.angleSide=sideSign;return Brawler.start(c,a,branch.name) end
-  if branch and branch.kind=="disengage" then return Brawler.disengage(c,a,branch.projectile) end
+  local route=nil
+  if dir=="forward" and a.combo&gt;=2 then route=routes.up
+  elseif dir=="back" and a.combo&gt;=2 then route=routes.down
+  elseif dir=="side" and a.combo&gt;=1 then route=routes.side end
+  if route and Attacks[route] then
+   a.angleSide=sideSign;a.queuedLight=nil
+   if not Attacks[route].chain then a.combo=0 end
+   Brawler.event(c,a,"Route");Brawler.event(c,a,if dir=="forward" then "RouteUp" elseif dir=="back" then "RouteDown" else "RouteSide")
+   return Brawler.start(c,a,route)
+  end
  end
  -- The ground light step is resolved once per accepted press, so a buffered
  -- chain cannot advance the combo counter twice.
@@ -2265,11 +2499,56 @@ function Brawler.request(c,a,action)
  end
  return Brawler.start(c,a,if canDash then "DashAttack" else name)
 end
+-- What a fighter's own version of a route adds on contact.
+function Brawler.routePayoff(c,a,b,p)
+ local graph=MoveGraphs[a.fighterId]
+ local kind=graph and graph.onRoute and graph.onRoute[p.name]
+ if not kind or b.health&lt;=0 then return end
+ local Techniques=require(script.Parent.Techniques)
+ if kind=="bodySeal" then
+  -- Minato: the rising kick leaves a short seal on the body: 2 follows it up.
+  local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+  entry.expires=c.now+1.8
+  c:cue(a,"SEALED • 2 TO FOLLOW UP",.8)
+ elseif kind=="floorSeal" then
+  -- Minato: the sweep plants a marked kunai where the opponent falls.
+  local floor=Vector3.new(b.root.Position.X,c.match.origin.Y,b.root.Position.Z)
+  Techniques.plant(c,a,floor,Vector3.yAxis)
+ elseif kind=="coverBlades" then
+  -- Itachi: two shuriken follow the body up, keeping it in the air.
+  c:schedule(c.now+.2,function()
+   if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" then return end
+   c:beginThrow(a,{kind="Shuriken",release=.06,count=2,interval=.08,fire=function(index,target)
+    local spread=a.root.CFrame.RightVector*(if index==1 then -.6 else .6)
+    c:projectile(a,target+spread,92,30,1.5,"shuriken")
+   end})
+  end)
+ elseif kind=="shadowLeaf" then
+  -- Sasuke: Shadow of the Dancing Leaf. He shoots up after the rising body
+  -- (a free chase); a heavy up there is the Lion Combo.
+  a.lionUntil=c.now+2.1
+  c:schedule(c.now+.12,function()
+   if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+   a.chakra+=Config.PursuitCost
+   local from=a.root.Position
+   if c:request(a,"Pursuit") then
+    -- The shadow sticks to the rising body up to its apex, then hangs there.
+    a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
+    c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = LION COMBO",1)
+    Brawler.event(c,a,"ShadowLeaf")
+   else a.chakra-=Config.PursuitCost end
+  end)
+ elseif kind=="tenketsu" then
+  -- Neji: the low route strikes a second chakra point.
+  Brawler.gentleFist(c,a,b,false)
+ end
+end
 function Brawler.stopStyle(p)
  if p.name=="Slam" then return "slam" end
  if p.name=="Launcher" or p.name=="ThrowUp" then return "launcher" end
  if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" then return "finisher" end
- if p.name=="Air1" or p.name=="Air2" then return "air" end
+ if p.spec and p.spec.air then return "air" end
  return "light"
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
@@ -2432,6 +2711,9 @@ function Brawler.hit(c,a,p)
   return true
  end
  local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
+ -- What the body took: the client answers a head snap, a fold, a swept base.
+ b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
+ Brawler.routePayoff(c,a,b,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
@@ -2451,7 +2733,11 @@ function Brawler.hit(c,a,p)
  end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
- if p.name=="Throw" or p.name=="ThrowUp" then Brawler.event(c,a,"ThrowHit") end
+ if p.name=="Throw" or p.name=="ThrowUp" then
+  Brawler.event(c,a,"ThrowHit")
+  -- Projection -&gt; pursuit: the thrown body can be chased to where it lands.
+  if p.name=="Throw" then a.pursuitUntil=math.max(a.pursuitUntil or 0,c.now+.9);c:cue(a,"THROWN • E TO CHASE",.8) end
+ end
  Brawler.event(c,a,"Hit");return true
 end
 function Brawler.step(c,a,dt)
@@ -2468,6 +2754,11 @@ function Brawler.step(c,a,dt)
  end
  if a.reaction then
   if a.reaction=="Grabbed" then return true end
+  -- Bound in sand: held in place until the burial or a substitution.
+  if a.reaction=="Bound" and c.now&lt;a.reactionUntil then
+   a.hum:Move(Vector3.zero);a.root.AssemblyLinearVelocity=Vector3.zero
+   return true
+  end
   if c.now&gt;=a.reactionUntil then
    if a.reaction=="WallSplat" and a.airborne and a.root.Position.Y&gt;c.match.origin.Y+5 then
     -- Released high on the wall: drop to the floor, then wake up.
@@ -2493,7 +2784,17 @@ function Brawler.step(c,a,dt)
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
     if hit then
+     if hit.Normal.Y&gt;.5 and velocity.Y&lt;0 and a.reaction=="Spiked" and not a.groundBounced then
+      -- Ground bounce: the spike drives the body into the floor and it pops
+      -- back up once, low, for a pick-up.
+      a.groundBounced=true;a.reaction="Juggled";a.reactionUntil=c.now+.62
+      velocity=Vector3.new(velocity.X*.3,30,velocity.Z*.3)
+      c:pushImpact(a.root.Position-Vector3.new(0,2.6,0),"groundbounce",true,{victim=a.id})
+      Brawler.event(c,a,"GroundBounce")
+      a.reactionVelocity=velocity;return true
+     end
      if hit.Normal.Y&gt;.5 and velocity.Y&lt;0 then
+      if a.reaction=="Spiked" then a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionUntil=c.now+.6;a.invulnerableUntil=c.now+.85 end
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
@@ -2520,7 +2821,10 @@ function Brawler.step(c,a,dt)
   end
  end
 	if a.buffered and c.now&lt;=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now&gt;=a.chainAt then
-  local action,at=a.buffered.action,a.buffered.at;a.buffered=nil;a.pressAt=at;Brawler.request(c,a,action)
+  local action,at,intent=a.buffered.action,a.buffered.at,a.buffered.intent;a.buffered=nil;a.pressAt=at
+  a.intentOverride=intent
+  Brawler.request(c,a,action)
+  a.intentOverride=nil
  end
  return false
 end
@@ -2553,7 +2857,7 @@ end
 -- approximation of the animated hand/mouth so the projectile's first frame is
 -- where the throwing arm actually is, not the middle of the chest.
 local LAUNCH={
-	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},
+	Kunai={side=1.15,up=.95,forward=1.1},MarkedKunai={side=1.15,up=1.05,forward=1.1},Palm={side=.2,up=.9,forward=1.9},Ground={side=0,up=-2.2,forward=2.2},
 	Shuriken={side=-1.1,up=.9,forward=1.2},Fireball={side=0,up=2.1,forward=2.6},Wind={side=.6,up=1,forward=2.2},
 }
 function Combat.launchPoint(a,kind)
@@ -2570,7 +2874,8 @@ function Combat:add(id,model,hum,root,joints,definition)
 		locomotion=Vector3.zero,sprinting=false,airborne=false,airDodgeUsed=false,landUntil=0,
 		pursuitUntil=0,travelRemaining=0,travelDirection=Vector3.zero,chainOpen=false,hitConfirmed=false,airHold=0,
 		subCharges=Config.Substitution.Charges,subCooldown=0,subRegenAt=math.huge,lastHurt=-10,neutralToolAt=0,wall=nil,wallNext=0,
-		comboHits=0,comboDamage=0,anchors={} }
+		comboHits=0,comboDamage=0,anchors={},
+		shieldCharges=def.SandShield and def.SandShield.Charges or 0,shieldRegenAt=0 }
 	table.insert(self.actors,a)
 	Defense.init(a)
 	-- The client motion engine owns every pose. Server Animator tracks (Roblox
@@ -2677,12 +2982,16 @@ end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 end
+-- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
+local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)&gt;self.now then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
-	local delta=attacker.root.Position-victim.root.Position
+	-- A blade is judged from where it came from (a redirected shuriken reaches
+	-- the flank even when the thrower stands in front).
+	local delta=(self.hitOrigin or attacker.root.Position)-victim.root.Position
 	local frontal=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;0.15
 	-- Byakugan: the guard covers every side but a narrow blind spot behind.
 	if victim.def.Byakugan and delta.Magnitude&gt;=0.1 then
@@ -2701,6 +3010,26 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
 		self:setState(victim,"Neutral",0)
 		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
+		return false
+	end
+	-- Gaara's sand shield stops the hit by itself while it has charges.
+	local shield=victim.def.SandShield
+	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
+	if shield and (victim.shieldCharges or 0)&gt;0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
+		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil&lt;=self.now then
+		local breaking=heavy or amount&gt;=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
+		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
+		victim.shieldRegenAt=self.now+shield.Regen
+		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
+		-- (light, light, third hit) is how the shield is cracked.
+		attacker.hitConfirmed=true
+		local face=if delta.Magnitude&gt;.1 then delta.Unit else victim.root.CFrame.LookVector
+		self:pushImpact(victim.root.Position+face*1.6,"sandshield",breaking,{owner=victim.id,direction=face})
+		Brawler.event(self,victim,"SandShield")
+		if breaking then
+			self:setState(victim,"Stunned",.5)
+			self:cue(victim,"SAND SHIELD BROKEN",.8);self:cue(attacker,"SAND SHIELD BROKEN",.8)
+		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
 	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
@@ -3096,7 +3425,9 @@ function Combat:request(a,action,aim,clientTime)
 		if a.pursuitUntil&lt;=self.now or a.target.health&lt;=0 then return self:rush(a) end
 		if a.chakra&lt;Config.PursuitCost then return false,"Need chakra" end
 		if (a.target.root.Position-a.root.Position).Magnitude&gt;Config.PursuitRange then return false,"Too far" end
-		local launchCancel=a.attackName=="Launcher" and a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		-- Any launcher that connected may be cancelled into the chase.
+		local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+			and (a.attackName=="Launcher" or (a.pending~=nil and a.pending.kind=="Brawl" and a.pending.spec.reaction=="Launched"))
 		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
 		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
 		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
@@ -3122,20 +3453,42 @@ function Combat:request(a,action,aim,clientTime)
 		-- the throw that cancels a confirmed string stays free.
 		if not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
 		if not chainCancel then a.chakra-=Config.ToolCost end
+		-- Stick away + tool inside a string: hop out of it behind the throw.
+		local disengage=(MoveGraphs[a.fighterId] or {}).disengage
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
+			a.neutralToolAt=self.now+.5
+			return Brawler.disengage(self,a,disengage)
+		end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
 		if a.wall then Motor.detach(a,self.now,false) end
-		local minato=(a.def.Tool or "Kunai")=="Kunai"
-		a.neutralToolAt=self.now+(if chainCancel then .42 elseif minato then .55 else .75)
-		local range=if chainCancel then 20 else 44
-		-- Minato: one fast kunai from the right hand. Itachi: a precise left-hand
-		-- pair of shuriken. Both keep running while the arm throws.
-		self:beginThrow(a,{kind=if minato then "Kunai" else "Shuriken",release=if minato then .1 else .13,
-			count=if minato then 1 else 2,interval=.08,aim=aim,
-			fire=function(index,target)
-				local spread=if minato then Vector3.zero else a.root.CFrame.RightVector*(if index==1 then -.9 else .9)
-				self:projectile(a,target+spread,if minato then 96 else 84,range,if minato then 3 else 2,if minato then "kunai" else "shuriken")
+		if a.def.Tool=="Sand" then
+			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
+			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
+				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
 			end})
-		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if minato then "KUNAI" else "SHURIKEN"))
+			self:cue(a,"SAND BULLET",.5)
+			return true
+		end
+		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
+		local blade=mastery.Kind=="kunai"
+		a.neutralToolAt=self.now+(if chainCancel then .42 else mastery.Recover)
+		local range=if chainCancel then 20 else 62
+		-- Shuriken Geometry (mastery): side + tool throws one blade wide and a
+		-- second that strikes it beside the opponent; both fly into the flank.
+		local dir,sideSign=Brawler.intent(a)
+		if mastery.Geometry and dir=="side" and not chainCancel and a.target and a.target.health&gt;0 then
+			return self:shurikenGeometry(a,sideSign)
+		end
+		-- In the air a master fans several blades down at the opponent.
+		local count=if a.airborne and mastery.AirSpread then mastery.AirSpread else mastery.Count
+		self:beginThrow(a,{kind=if blade then "Kunai" else "Shuriken",release=if blade then .1 else .13,
+			count=count,interval=if count&gt;2 then .05 else .08,aim=aim,
+			fire=function(index,target)
+				local spread=Vector3.zero
+				if count&gt;1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count&gt;2 then 1.6 else 1.8)) end
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken")
+			end})
+		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -&gt; technique: Minato may spend a confirmed string on Rasengan with
@@ -3159,9 +3512,33 @@ function Combat:request(a,action,aim,clientTime)
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
 	end
+	-- Dragon Flame: with the wire still holding the body, the fire runs along
+	-- it at once (the wire throw's recovery is cancelled, the signs are short).
+	a.wireCancel=nil
+	local wired=a.wireVictim and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
+	if cancelSpec and cancelSpec.Id=="FireBloom" and wired and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
+		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
+		a.state="Neutral";a.untilTime=self.now;a.pending=nil
+		a.wireCancel=true
+	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now&gt;a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
+	if action=="Dodge" and a.def.SandFlicker and not a.airborne then
+		-- Gaara's dodge: a sand body-flicker, an instant reposition.
+		if a.chakra&lt;Config.DodgeCost then return false,"Need chakra" end
+		if a.dodgeUntil&gt;self.now then return false,"Cooldown" end
+		a.chakra-=Config.DodgeCost;a.dodgeUntil=self.now+Config.DodgeCooldown
+		local direction=if a.move.Magnitude&gt;.1 then a.move.Unit else -a.root.CFrame.LookVector
+		local from=a.root.Position
+		Motor.travel(a,self,direction,a.def.SandFlicker.Distance)
+		a.warpSerial=(a.warpSerial or 0)+1
+		a.invulnerableUntil=self.now+.24;Defense.guard(a,false,self.now);Defense.dodge(a,self.now)
+		self:setState(a,"Recovery",.14)
+		self:pushImpact(from,"sandflicker",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
+		Brawler.event(self,a,"Dodge")
+		return true
+	end
 	if action=="Dodge" then
 		if a.chakra&lt;Config.DodgeCost then return false,"Need chakra" end
 		if a.airborne and a.airDodgeUsed then return false,"Air dodge used" end
@@ -3185,6 +3562,8 @@ function Combat:request(a,action,aim,clientTime)
 	local technique=Techniques[spec.Id]
 	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
 	a.stringCancel=nil
+	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
+	a.wireCancel=nil
 	-- Context: the same Rasengan is a different tool after a teleport (instant
 	-- thrust) and in the air (a plunge that ends the air phase).
 	local variant=nil
@@ -3233,7 +3612,7 @@ function Combat:updateActor(a,dt)
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
 	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
-	if a.freeSince and now-a.freeSince&gt;=Config.ComboScaling.Reset and (a.comboHits&gt;0 or (a.wallSplats or 0)&gt;0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false end
+	if a.freeSince and now-a.freeSince&gt;=Config.ComboScaling.Reset and (a.comboHits&gt;0 or (a.wallSplats or 0)&gt;0) then a.comboHits=0;a.comboDamage=0;a.wallSplats=0;a.splatPins=0;a.wallBounced=false;a.groundBounced=false end
 	-- Substitution charges come back one at a time.
 	if a.subCharges&lt;Config.Substitution.Charges and now&gt;=a.subRegenAt then
 		a.subCharges+=1
@@ -3249,7 +3628,16 @@ function Combat:updateActor(a,dt)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)&gt;now then self:stepRotation(a) end
+	if a.def.SandShield and a.shieldCharges&lt;a.def.SandShield.Charges and now&gt;=(a.shieldRegenAt or 0) then
+		a.shieldCharges+=1
+		local rate=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.ShieldRegen or 1) else 1
+		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
+	end
 	a.speedScale=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1
+	-- The curse mark burns the body that carries it (never to a KO).
+	if (a.awakenUntil or 0)&gt;now and a.def.Awakening.HealthDrain and a.health&gt;1 then
+		a.health=math.max(1,a.health-a.def.Awakening.HealthDrain*dt);a.hum.Health=math.max(1,a.health)
+	end
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)&gt;now or (a.flurryUntil or 0)&gt;now then a.move=Vector3.zero end
 	if now&lt;(a.hitstopUntil or 0) then
@@ -3320,6 +3708,18 @@ function Combat:updateActor(a,dt)
 	else a.hum.AutoRotate=not a.locked end
 	if a.state=="Dodging" then
 		Evade.step(a,self,Motor.travel)
+	elseif a.state=="Pursuit" and (a.shadowUntil or 0)&gt;now then
+		-- Shadow of the Dancing Leaf: glued just behind and below the rising
+		-- body, closing the gap in proportion to it (no overshoot, no bobbing).
+		local b=a.target
+		local back=a.root.Position-b.root.Position;back=Vector3.new(back.X,0,back.Z)
+		back=if back.Magnitude&gt;.1 then back.Unit else -b.root.CFrame.LookVector
+		local point=b.root.Position+back*2.1-Vector3.new(0,1.1,0)
+		local offset=point-a.root.Position
+		a.airborne=true
+		a.aimIntent={target=point,speed=math.clamp(offset.Magnitude*16,0,140),acceleration=3200}
+		local flat=Vector3.new(-back.X,0,-back.Z)
+		a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
 	elseif a.state=="Pursuit" then
 		-- Reach a rising victim in three dimensions, but kinetically: the chase
 		-- keeps a continuous velocity instead of being teleported frame by frame.
@@ -3370,7 +3770,7 @@ function Combat:updateActor(a,dt)
     a.root.AssemblyLinearVelocity=Vector3.zero
    end
   end
-	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and (a.attackName=="Air1" or a.attackName=="Air2") then
+	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.pending.spec.air and not a.pending.spec.orbit then
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude&lt;10 and self:lineOfSight(a,a.target) then
 		 local horizontal=Vector3.new(delta.X,0,delta.Z)
@@ -3400,8 +3800,10 @@ function Combat:updateActor(a,dt)
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
-    -- AngleStep: swing around the opponent's guard while cutting.
-    Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit)
+    -- Lateral routes: swing around the opponent's guard while striking (an
+    -- air switch vaults all the way to the other side).
+    if spec.air then Motor.flight(a,self,tangent*(a.angleSide or 1)*dt*spec.orbit)
+    else Motor.travel(a,self,tangent*(a.angleSide or 1),dt*spec.orbit) end
    elseif a.fighterId=="Flashstep" and spec.angle then
     Motor.travel(a,self,tangent*(if spec.angle&lt;0 then -1 else 1),dt*(if a.airborne then 9 else 7))
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
@@ -3426,7 +3828,7 @@ function Combat:updateActor(a,dt)
 	if Vector3.new(p.X-self.match.origin.X,0,p.Z-self.match.origin.Z).Magnitude&gt;Config.ArenaRadius or p.Y&lt;self.match.origin.Y-3 then self:relocate(a,p) end
 	World.pose(a,now,dt)
 end
-local IMPACT_STYLE={kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst"}
+local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
 -- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
 -- opponent inside it is thrown out once. Repelling a strike opens a counter.
 function Combat:stepRotation(a)
@@ -3503,12 +3905,18 @@ function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	self.damageTag=p.kind
+	self.hitOrigin=position-p.direction*4
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
-		if p.kind=="palm" then
+		if p.kind=="sandwave" then
+			Techniques.bindInSand(self,p.a,target)
+		elseif p.kind=="wire" then
+			Techniques.wireBind(self,p.a,target)
+		elseif p.kind=="palm" then
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
@@ -3545,8 +3953,59 @@ function Combat:projectileSurface(p,hit)
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
 	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+	local mastery=p.a.def.ToolMastery
+	local target=p.a.target
+	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)&lt;.7
+		and target and target.health&gt;0 and (target.root.Position-hit.Position).Magnitude&lt;36 then
+		local from=hit.Position+hit.Normal*.8
+		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
+		if not clear or clear.Instance:IsDescendantOf(target.model) then
+			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
+			bounce.bounced=true
+			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+			Brawler.event(self,p.a,"Ricochet")
+		end
+	end
+end
+-- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second
+-- thrown to strike it beside them; the collision sends both into the flank.
+function Combat:shurikenGeometry(a,sideSign)
+	local b=a.target
+	local start=Combat.launchPoint(a,"Shuriken")
+	local toward=Vector3.new(b.root.Position.X-start.X,0,b.root.Position.Z-start.Z)
+	if toward.Magnitude&lt;.1 then toward=a.root.CFrame.LookVector end
+	local forward=toward.Unit
+	local right=forward:Cross(Vector3.yAxis).Unit*-(sideSign~=0 and sideSign or 1)
+	-- The meeting point: beside the opponent and a little past them.
+	local meet=b.root.Position+right*-6+forward*1.5
+	meet=Vector3.new(meet.X,start.Y,meet.Z)
+	local flight=(meet-start).Magnitude
+	local arrive=flight/70
+	a.neutralToolAt=self.now+.8
+	self:beginThrow(a,{kind="Shuriken",release=.12,count=2,interval=.1,fire=function(index)
+		local from=Combat.launchPoint(a,"Shuriken")
+		local gap=(meet-from).Magnitude
+		-- The second blade is thrown later and faster: both reach the point together.
+		local speed=if index==1 then 70 else math.max(70,gap/math.max(.08,arrive-.1))
+		local p=self:projectile(a,meet,speed,gap,0,"shuriken",nil,{origin=from})
+		p.geometry=index==1 and {meet=meet}
+	end})
+	self:cue(a,"SHURIKEN GEOMETRY",.7)
+	Brawler.event(self,a,"Geometry")
+	return true
 end
 function Combat:projectileExpire(p)
+	if p.geometry and p.a.target and p.a.target.health&gt;0 then
+		local b=p.a.target
+		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
+		for k=1,2 do
+			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
+			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position})
+			redirected.bounced=true
+		end
+		Brawler.event(self,p.a,"GeometryHit")
+		return
+	end
 	if p.kind=="fireball" then
 		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		self:fireExplosion(p,p.position,false)
@@ -3676,7 +4135,8 @@ function Combat:clear(preserveAnimations)
 		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
-		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil
+		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
+		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
@@ -3722,7 +4182,8 @@ function DevHooks.install(matches)
 		return {state=a.state,health=a.health,chakra=math.floor(a.chakra),position=a.root.Position,reaction=a.reaction,attackName=a.attackName,
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
-			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant}
+			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,
+			chainOpen=a.chainOpen and now&gt;=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind}
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
@@ -3902,6 +4363,16 @@ function Elements.phoenix(c,a,pending,now)
 			c:projectile(a,aim,spec.Speed or 68,spec.Range,spec.Damage,"phoenix",nil,{origin=origin,radius=.9,growth=.35})
 		end)
 	end
+	-- Sasuke hides two shuriken inside the flames.
+	if spec.HiddenBlades then
+		for k=1,2 do
+			c:schedule(now+.14+k*.07,function()
+				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
+				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
+				c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+			end)
+		end
+	end
 	c:cue(a,"KATON • PHOENIX FLOWER")
 end
 function Elements.wind(c,a,pending)
@@ -3984,7 +4455,7 @@ function Matches:start(player,playerId,botId,training)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
 	self:destroy(s); s.epoch+=1
-	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*240,0,0)
+	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*520,0,0)
 	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	World.arena(s.folder,s.origin)
@@ -3993,8 +4464,8 @@ function Matches:start(player,playerId,botId,training)
 		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
 		return s.combat:add(id,model,hum,root,joints,def)
 	end
-	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,14),s.origin+Vector3.new(0,3,-14))
-	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-14),s.origin+Vector3.new(0,3,14))
+	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance))
+	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance))
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
@@ -4041,8 +4512,9 @@ function Matches:nextRound(player,s)
 		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
 		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
+		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
-	c:relocate(s.human,s.origin+Vector3.new(0,3,14));c:relocate(s.bot,s.origin+Vector3.new(0,3,-14))
+	c:relocate(s.human,s.origin+Vector3.new(0,3,Config.StartDistance));c:relocate(s.bot,s.origin+Vector3.new(0,3,-Config.StartDistance))
 	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
 	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
 	s.introUntil=c.now+1.8
@@ -4076,7 +4548,7 @@ function Matches:snapshot(player,s)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
@@ -4090,6 +4562,7 @@ function Matches:snapshot(player,s)
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
+			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",
 			awaken=math.max(0,(a.awakenUntil or 0)-now),
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
@@ -4727,7 +5200,7 @@ function QA.run(matches)
   assert(key~=nil,"No gamepad mapping "..name)
   assert(string.match(key.Name,"^Button") or string.match(key.Name,"^DPad"),"Not a controller key for "..name)
  end
- assert(#Tutorial.Steps==18)
+ assert(#Tutorial.Steps==20)
  local c,a,b=pair("Flashstep","Mirage");local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai=AI.new(c,b,23)
  Tutorial.new(s);Tutorial.update(s,c.now,.02)
  a.root.CFrame+=Vector3.new(4,0,0);Tutorial.update(s,c.now+.02,.02)
@@ -5593,7 +6066,7 @@ local Elements=require(script.Parent.Elements)
 -- seal closest to the opponent wins, and a kunai in flight always does.
 local MAX_PLANTED=2
 local BODY_SEAL=5
-Techniques.RANGE=60
+Techniques.RANGE=90
 local function syncAnchor(a)
 	-- a.anchor mirrors the newest planted seal for HUD, AI and tooling.
 	a.anchor=nil
@@ -5879,7 +6352,136 @@ Techniques.Quickstep={
 		c:cue(a,if moved&gt;3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
-Techniques.FireBloom={check=function() return true end,execute=Elements.fire}
+-- Great Fireball; on an opponent held by Sasuke's wire it becomes the Dragon
+-- Flame: the fire runs along the wire and cannot miss.
+Techniques.FireBloom={check=function() return true end,execute=function(c,a,pending,now)
+	local b=a.wireVictim
+	if b and b.reaction=="Bound" and b.boundBy==a and b.health&gt;0 then
+		a.wireVictim=nil;b.boundBy=nil
+		c.damageTag="Dragon Flame"
+		local hit=c:damage(a,b,pending.spec.Damage,true,false)
+		c.damageTag=nil
+		if c.match.phase~="Duel" then return end
+		c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=a.root.Position})
+		if hit then
+			local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
+			away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
+			local Brawler=require(script.Parent.Brawler)
+			Brawler.react(c,b,"Knockdown",away*30+Vector3.new(0,22,0),.8,a)
+		end
+		c:cue(a,"KATON • DRAGON FLAME",1)
+		return
+	end
+	Elements.fire(c,a,pending,now)
+end}
+-- Wire Trap: a shuriken trailing ninja wire; a body it reaches is bound.
+Techniques.WireTrap={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7})
+		c:cue(a,"WIRE TRAP",.5)
+	end,
+}
+function Techniques.wireBind(c,owner,victim)
+	if victim.health&lt;=0 then return end
+	local Brawler=require(script.Parent.Brawler)
+	Brawler.react(c,victim,"Bound",Vector3.zero,1.0,owner)
+	victim.boundBy=owner;owner.wireVictim=victim
+	c:cue(owner,"WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	Brawler.event(c,owner,"WireBind")
+end
+-- Chidori: the charge is the channel (slowed, interruptible); the release is
+-- a straight lightning thrust that ends the fight's momentum either way.
+Techniques.Chidori={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		a.stringCancel=nil
+		Brawler.start(c,a,"ChidoriThrust")
+		if a.pending then a.pending.spec.damage=pending.spec.Damage end
+		c:pushImpact(a.root.Position,"chidori",true,{owner=a.id})
+		c:cue(a,"CHIDORI",.8)
+	end,
+}
+-- Gaara ----------------------------------------------------------------
+-- Sand Coffin: a wave of sand runs along the ground; a body it reaches is bound
+-- (held where it stands) and buried a beat later unless it substitutes out.
+function Techniques.bindInSand(c,owner,victim)
+	if victim.health&lt;=0 or victim.invulnerableUntil&gt;c.now then return end
+	local Brawler=require(script.Parent.Brawler)
+	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
+	victim.boundBy=owner
+	c:cue(owner,"SAND COFFIN • BOUND",.8);c:cue(victim,"BOUND • X TO ESCAPE",.9)
+	local spec
+	for _,t in owner.def.Techniques do if t.Id=="SandCoffin" then spec=t end end
+	c:schedule(c.now+1.05,function()
+		if victim.reaction~="Bound" or victim.boundBy~=owner or owner.health&lt;=0 or victim.health&lt;=0 then return end
+		victim.boundBy=nil
+		c.damageTag="Sand Burial"
+		c:damage(owner,victim,(spec and spec.Damage) or 18,false,false)
+		c.damageTag=nil
+		if c.match.phase~="Duel" or victim.health&lt;=0 then return end
+		Brawler.react(c,victim,"Knockdown",Vector3.new(0,16,0),.7,owner)
+		c:pushImpact(victim.root.Position,"sandburial",true,{owner=owner.id})
+		c:cue(owner,"SAND BURIAL",.8)
+	end)
+end
+Techniques.SandCoffin={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+		local origin=c.launchPoint(a,"Ground")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		c:projectile(a,origin+flat.Unit*pending.spec.Range+Vector3.new(0,2,0),pending.spec.Speed or 46,pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
+		c:cue(a,"SAND COFFIN",.6)
+	end,
+}
+Techniques.SandShuriken={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local direction=pending.aim-a.root.Position
+		if direction.Magnitude&lt;.1 then direction=a.root.CFrame.LookVector end
+		local origin=c.launchPoint(a,"Palm")
+		for _,angle in {-.25,-.15,-.05,.05,.15,.25} do
+			local d=CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(direction.Unit)
+			c:projectile(a,origin+d*pending.spec.Range,80,pending.spec.Range,pending.spec.Damage,"sand",nil,{origin=origin,radius=.5})
+		end
+	end,
+}
+-- Desert Wave: a wall of sand rises in front of him and throws close
+-- attackers away; blades and fire in it are swallowed.
+Techniques.DesertWave={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		local reach=pending.spec.Range
+		local look=a.root.CFrame.LookVector
+		for i=#c.projectiles,1,-1 do
+			local p=c.projectiles[i]
+			local d=p.position-a.root.Position
+			if p.a~=a and d.Magnitude&lt;=reach and look:Dot(d.Unit)&gt;.2 then
+				table.remove(c.projectiles,i)
+				c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
+			end
+		end
+		local b=a.target
+		if b and b.health&gt;0 then
+			local d=b.root.Position-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			if flat.Magnitude&lt;=reach and (flat.Magnitude&lt;2 or look:Dot(flat.Unit)&gt;.25) then
+				c.damageTag="Desert Wave"
+				local hit=c:damage(a,b,pending.spec.Damage,false,false)
+				c.damageTag=nil
+				if c.match.phase~="Duel" then return end
+				if hit then Brawler.react(c,b,"Knockback",(if flat.Magnitude&gt;.1 then flat.Unit else look)*48+Vector3.new(0,16,0),.55,a) end
+			end
+		end
+		c:pushImpact(a.root.Position+look*4,"sandwall",true,{owner=a.id,direction=look})
+		c:cue(a,"DESERT WAVE",.6)
+	end,
+}
 -- Neji -----------------------------------------------------------------
 Techniques.ROTATION_REACH=7
 Techniques.Rotation={
@@ -5986,7 +6588,7 @@ Tutorial.Steps={
  {title="Directional dash",pad="Left stick + B / Circle",key="Direction + Q",event="Dodge"},
  {title="Run up the wall, then rebound",pad="Push LS into wall, then A",key="Move into wall, then SPACE",kind="Wall"},
  {title="Land three light strikes",pad="X / Square three times",key="LMB three times",kind="Combo"},
- {title="Branch into a launcher",pad="X, X, then Y / Triangle",key="LMB, LMB, RMB",event="LaunchHit"},
+ {title="Branch into a launcher",pad="X, X, then push toward + X (or Y)",key="LMB, LMB, then W + LMB (or RMB)",event="LaunchHit"},
  {title="Chase the launched target",pad="A / Cross after launch",key="E or SPACE after launch",kind="Chase"},
  {title="Land two aerial strikes",pad="X / Square twice in air",key="LMB twice in air",kind="AirCombo"},
  {title="Finish downward",pad="Y / Triangle in air",key="RMB in air",event="SlamHit"},
@@ -5996,6 +6598,8 @@ Tutorial.Steps={
  {title="Grab, then throw",pad="LT / L2, then X (Y throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
  {title="Perform a character technique",pad="Hold RB / R1 + A",key="1",kind="Technique"},
  {title="Interrupt the telegraphed technique",pad="X / Square during hand signs",key="LMB during hand signs",kind="Interrupt"},
+ {title="Go low: two hits, then away + strike",pad="X, X, then pull back + X",key="LMB, LMB, then S + LMB",event="RouteDown"},
+ {title="Turn the angle: one hit, then sideways + strike",pad="X, then left or right + X",key="LMB, then A or D + LMB",event="RouteSide"},
  {title="Win the practice duel",pad="Use your complete kit",key="Use your complete kit",kind="Win"},
 }
 function Tutorial.new(s)
@@ -6032,7 +6636,7 @@ function Tutorial.update(s,now,dt)
  if t.entered==0 then Tutorial.enter(s,now) end
  local spec=Tutorial.Steps[t.index]
  b.move=Vector3.zero;b.sprinting=false
- if t.index==18 then s.ai:update(now);return end
+ if spec.kind=="Win" then s.ai:update(now);return end
  local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
  local function event(name) return (a.events and a.events[name] or 0)&gt;(t.baseline[name] or 0) end
  local done=spec.event and event(spec.event)
@@ -6241,7 +6845,9 @@ local PALETTE={
 	roof=rgb(222,164,58),roofDark=rgb(176,120,38),trim=rgb(70,62,56),wood=rgb(120,84,54),woodDark=rgb(84,58,38),
 	leaf=rgb(70,112,58),leafDark=rgb(52,90,48),bark=rgb(96,70,50),
 }
-World.WALL_RADIUS=66.5
+-- The stadium is large next to a 12-year-old: crossing it is a sprint, the
+-- wall is a destination, not the edge of every exchange.
+World.WALL_RADIUS=103
 local function deco(parent,name,size,cf,color,material,shape)
 	local p=part(parent,name,size,cf,color,material)
 	p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
@@ -6330,20 +6936,20 @@ function World.arena(parent, origin)
 	local decor=Instance.new("Folder");decor.Name="Decor";decor.Parent=folder
 	local C=PALETTE
 	local R=World.WALL_RADIUS
-	local height=46
+	local height=62
 	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
-	disc(decor,"Earth",41,.03,origin,C.earth,Enum.Material.Ground)
-	for k=0,9 do
-		local a=k/10*math.pi*2+.3
-		local r=31+((k*37)%5)*3.3
-		disc(decor,"Earth patch",10+((k*53)%4)*3,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
+	disc(decor,"Earth",64,.03,origin,C.earth,Enum.Material.Ground)
+	for k=0,13 do
+		local a=k/14*math.pi*2+.3
+		local r=48+((k*37)%5)*5
+		disc(decor,"Earth patch",14+((k*53)%4)*4,.035,origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r),if k%3==0 then C.earthDark else C.earth,Enum.Material.Ground)
 	end
 	-- Worn grass islands: clusters of overlapping small patches, never one
 	-- perfect circle, so the field reads as trampled ground.
-	for k=0,7 do
-		local a=k/8*math.pi*2+1.1
-		local r=15+((k*29)%4)*5
+	for k=0,11 do
+		local a=k/12*math.pi*2+1.1
+		local r=22+((k*29)%4)*8
 		local center=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
 		for j=0,4 do
 			local b=j*1.7+k
@@ -6352,7 +6958,7 @@ function World.arena(parent, origin)
 		end
 	end
 	-- The tall panelled wall. Each segment is a wall-run surface.
-	local segments=56
+	local segments=84
 	local width=2*math.pi*(R+1)/segments+.3
 	for k=0,segments-1 do
 		local a=k/segments*math.pi*2
@@ -6369,20 +6975,20 @@ function World.arena(parent, origin)
 		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
 	end
 	-- Tournament banners hang down the wall between the stands and the field.
-	for k=0,11 do
-		local a=k/12*math.pi*2+math.pi/12
+	for k=0,15 do
+		local a=k/16*math.pi*2+math.pi/16
 		local dir=Vector3.new(math.sin(a),0,math.cos(a))
-		local at=origin+dir*(R-.15)+Vector3.new(0,height-11,0)
-		local look=CFrame.lookAt(at,origin+Vector3.new(0,height-11,0))
-		local cloth=deco(decor,"Wall banner",Vector3.new(5.5,15,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.Fabric)
-		deco(decor,"Banner rod",Vector3.new(6.4,.35,.35),look*CFrame.new(0,7.6,0),rgb(70,52,36),Enum.Material.Wood)
+		local at=origin+dir*(R-.15)+Vector3.new(0,height-13,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,height-13,0))
+		local cloth=deco(decor,"Wall banner",Vector3.new(6.5,18,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.Fabric)
+		deco(decor,"Banner rod",Vector3.new(7.4,.35,.35),look*CFrame.new(0,9.1,0),rgb(70,52,36),Enum.Material.Wood)
 		local gui=label(cloth,Enum.NormalId.Front,if k%3==0 then "火" elseif k%3==1 then "忍" else "試",if k%2==0 then rgb(232,226,210) else rgb(170,40,36))
 		-- Match the cloth's proportions so the character is not squashed.
 		gui.CanvasSize=Vector2.new(220,600)
 	end
 	-- Bushes along the foot of the wall.
-	for k=0,63 do
-		local a=k/64*math.pi*2+((k*17)%5)*.01
+	for k=0,95 do
+		local a=k/96*math.pi*2+((k*17)%5)*.01
 		local r=R-1.6-((k*29)%3)*.6
 		local size=3.4+((k*41)%4)*.7
 		deco(decor,"Bush",Vector3.one*size,CFrame.new(origin+Vector3.new(math.sin(a)*r,size*.32,math.cos(a)*r)),if k%3==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
@@ -6392,7 +6998,7 @@ function World.arena(parent, origin)
 	local top=height
 	for tier=1,4 do
 		local radius=R+3+tier*3.4
-		local steps=math.floor(radius*2*math.pi/6.5)
+		local steps=math.floor(radius*2*math.pi/7.2)
 		for k=0,steps-1 do
 			local a=k/steps*math.pi*2
 			local at=origin+Vector3.new(math.sin(a)*radius,top+tier*2.1-.6,math.cos(a)*radius)
@@ -6406,8 +7012,8 @@ function World.arena(parent, origin)
 		end
 	end
 	-- Pavilions on the stands; the Kage box is the large two-storey one (north).
-	for k=0,9 do
-		local a=k/10*math.pi*2+math.pi/10
+	for k=0,13 do
+		local a=k/14*math.pi*2+math.pi/14
 		local at=origin+Vector3.new(math.sin(a)*(R+20),top+5,math.cos(a)*(R+20))
 		pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
 	end
@@ -6420,7 +7026,7 @@ function World.arena(parent, origin)
 	label(plaque,Enum.NormalId.Front,"火",rgb(190,40,36))
 	box.Transparency=0
 	-- Participants' balcony on the east wall, and the arena gate to the south.
-	local east=CFrame.lookAt(origin+Vector3.new(R-1.2,24,0),origin+Vector3.new(0,24,0))
+	local east=CFrame.lookAt(origin+Vector3.new(R-1.2,32,0),origin+Vector3.new(0,32,0))
 	deco(decor,"Participants balcony",Vector3.new(16,1,4),east,C.woodDark,Enum.Material.Wood)
 	deco(decor,"Balcony rail",Vector3.new(16,1.6,.3),east*CFrame.new(0,1.3,-1.9),C.wood,Enum.Material.Wood)
 	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
@@ -6436,29 +7042,32 @@ function World.arena(parent, origin)
 	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
 	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
 	-- Field trees: line of sight and something to fight around, as in the finals.
-	for _,spot in {{.55,52,24,7},{2.4,49,20,6},{3.9,54,26,7.5},{5.3,50.5,22,6.5}} do
+	for _,spot in {{.55,80,30,8.5},{1.6,74,26,7.5},{2.4,78,28,8},{3.3,70,24,7},{3.9,82,32,9},{5.3,76,28,8},{6.0,64,22,6.5}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
-	-- Two weathered boulders for low cover.
-	for _,spot in {{1.5,28},{4.6,24.5}} do
-		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2,math.cos(spot[1])*spot[2])
-		part(folder,"Cover",Vector3.new(7,4,4),CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
-		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4),CFrame.new(at+Vector3.new(-.5,2.2,0))*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
+	-- Weathered boulders for low cover (they stop blades and fire), spread so
+	-- every approach has something to run around.
+	for _,spot in {{1.5,30,1},{4.6,26,1},{.2,52,1.4},{2.9,48,1.25},{3.6,40,.9},{5.7,46,1.3},{1.05,62,1.1}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2*spot[3],math.cos(spot[1])*spot[2])
+		local k=spot[3]
+		part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
+		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
+		deco(decor,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
-	for k=0,35 do
-		local a=k/36*math.pi*2+.07
-		local r=R+44+((k*53)%5)*6
+	for k=0,47 do
+		local a=k/48*math.pi*2+.07
+		local r=R+42+((k*53)%5)*6
 		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
-		local h=38+((k*31)%4)*6
+		local h=50+((k*31)%4)*7
 		deco(decor,"Forest trunk",Vector3.new(3,h,3),CFrame.new(at+Vector3.new(0,h/2,0)),C.bark,Enum.Material.Wood)
-		deco(decor,"Forest crown",Vector3.one*(22+((k*13)%4)*4),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
+		deco(decor,"Forest crown",Vector3.one*(26+((k*13)%4)*5),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
 	-- A few leaves drifting over the field.
-	local sky=deco(decor,"Leaf source",Vector3.new(116,1,116),CFrame.new(origin+Vector3.new(0,48,0)),C.leaf,Enum.Material.SmoothPlastic)
+	local sky=deco(decor,"Leaf source",Vector3.new(190,1,190),CFrame.new(origin+Vector3.new(0,64,0)),C.leaf,Enum.Material.SmoothPlastic)
 	sky.Transparency=1
 	local leaves=Instance.new("ParticleEmitter");leaves.Name="Leaves"
-	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=4;leaves.Lifetime=NumberRange.new(9,13)
+	leaves.Texture="rbxasset://textures/particles/sparkles_main.dds";leaves.Rate=7;leaves.Lifetime=NumberRange.new(9,13)
 	leaves.Speed=NumberRange.new(2,4);leaves.EmissionDirection=Enum.NormalId.Bottom;leaves.SpreadAngle=Vector2.new(30,30)
 	leaves.Color=ColorSequence.new(rgb(120,160,80));leaves.LightEmission=.1;leaves.Size=NumberSequence.new(.35)
 	leaves.Rotation=NumberRange.new(0,360);leaves.RotSpeed=NumberRange.new(-90,90);leaves.Acceleration=Vector3.new(1.2,-.6,.4)
@@ -6767,6 +7376,138 @@ local function dressNeji(model,def)
 	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.88,.5,.88),CFrame.new(0,0,0),bandage)
 	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(48,52,70))
 end
+-- Sasuke at the Chunin Exam (12): dark blue high-collared shirt with the
+-- Uchiha fan on the back, light shorts, white arm warmers, the Leaf headband,
+-- black hair swept back into spikes, a two-tomoe Sharingan. The cursed seal
+-- marks are there but hidden until he awakens it.
+local function dressSasuke(model,def)
+	local hair=rgb(24,26,40)
+	local hairShade=rgb(36,40,62)
+	local shirt=rgb(34,40,72)
+	local shorts=rgb(222,216,204)
+	local warmer=rgb(236,236,232)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(200,20,30),hair)
+	for _,p in model:GetChildren() do if p.Name=="Iris" then p.Material=Enum.Material.Neon end end
+	for _,side in {-1,1} do
+		wear(model,"Head","Pupil",Vector3.new(.045,.045,.02),CFrame.new(side*.3,.07,-.842),rgb(12,8,10))
+		for k=0,1 do
+			local a=math.rad(90+k*180)
+			wear(model,"Head","Tomoe",Vector3.new(.034,.034,.02),CFrame.new(side*.3+math.cos(a)*.05,.07+math.sin(a)*.05,-.842),rgb(12,8,10))
+		end
+	end
+	hairCap(model,hair)
+	-- Swept back: long spikes pointing back and up behind the crown, two long
+	-- bangs framing the face, a short fringe over the headband.
+	local back={
+		{Vector3.new(0,.62,.5),Vector3.new(0,.55,1),1.05,.62,.4},
+		{Vector3.new(-.45,.5,.5),Vector3.new(-.45,.5,1),.95,.52,.36},
+		{Vector3.new(.45,.5,.5),Vector3.new(.45,.5,1),.95,.52,.36},
+		{Vector3.new(0,.25,.66),Vector3.new(0,.25,1),.9,.6,.38},
+		{Vector3.new(-.5,.12,.6),Vector3.new(-.55,.15,1),.8,.46,.32},
+		{Vector3.new(.5,.12,.6),Vector3.new(.55,.15,1),.8,.46,.32},
+		{Vector3.new(0,.8,.2),Vector3.new(0,.9,.7),.7,.5,.32},
+		{Vector3.new(-.3,-.1,.68),Vector3.new(-.2,-.2,1),.7,.44,.3},
+		{Vector3.new(.3,-.1,.68),Vector3.new(.2,-.2,1),.7,.44,.3},
+	}
+	for index,s in back do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	for _,x in {-.34,0,.34} do spike(model,Vector3.new(x,.66,-.55),Vector3.new(x*.3,-.8,-.5),.46,.4,.22,hair) end
+	for _,side in {-1,1} do
+		wear(model,"Head","Bang",Vector3.new(.2,1.2,.36),CFrame.new(side*.78,-.2,-.44)*A(R(2),0,R(side*6)),hair)
+		wear(model,"Head","SideHair",Vector3.new(.16,.85,.85),CFrame.new(side*.8,.05,.28),hair)
+	end
+	headband(model,false)
+	-- The cursed seal (hidden): three black flame marks on the left of the neck.
+	for k=0,2 do
+		local mark=wear(model,"Head","CurseMark",Vector3.new(.05,.22,.14),CFrame.new(-.78,-.42+k*.18,.08-k*.12)*A(R(20*k),0,R(10)),rgb(12,10,14))
+		if mark then mark.Transparency=1 end
+	end
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"} do
+		local part=model:FindFirstChild(name);if part then part.Color=shirt end
+	end
+	wear(model,"UpperTorso","HighCollar",Vector3.new(1.5,.62,1.16),CFrame.new(0,.86,.04),shirt)
+	crest(model,"UpperTorso",CFrame.new(0,.1,.53)*A(0,R(180),0),1.25)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.3,0),rgb(30,30,36))
+	for _,side in {"Left","Right"} do
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=warmer end
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.86,.42,.86),CFrame.new(0,.3,0),shirt)
+		local legTop=model:FindFirstChild(side.."UpperLeg");if legTop then legTop.Color=shorts end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.84,.42,.84),CFrame.new(0,-.28,0),rgb(40,46,70))
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(36,40,62) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"RightUpperLeg","ThighWrap",Vector3.new(.9,.38,.9),CFrame.new(0,-.1,0),warmer)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.1,0),rgb(40,46,70))
+	wear(model,"LowerTorso","ToolPouch",Vector3.new(.66,.4,.3),CFrame.new(0,.1,.62),rgb(70,64,58))
+end
+-- Gaara at the Chunin Exam (12): spiky red hair, 愛 on the forehead, dark rings
+-- round pale eyes, a dark one-piece with the white sash that carries the sand
+-- gourd on his back.
+local function dressGaara(model,def)
+	local hair=rgb(170,44,36)
+	local hairShade=rgb(140,32,28)
+	local suit=rgb(70,44,50)
+	local suitDark=rgb(46,30,36)
+	local sash=rgb(232,226,212)
+	local gourd=rgb(206,170,118)
+	local gourdDark=rgb(170,134,90)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(120,190,170),skin)
+	-- No eyebrows; the sleepless dark rings around the eyes.
+	for _,p in model:GetChildren() do
+		if p.Name=="Brow" then p.Transparency=1 end
+		if p.Name=="Eye" then p.Color=rgb(236,240,232) end
+	end
+	for _,side in {-1,1} do
+		wear(model,"Head","EyeRing",Vector3.new(.4,.27,.03),CFrame.new(side*.3,.08,-.79),rgb(34,26,30))
+	end
+	-- 愛 above the left eye, in red.
+	local mark=wear(model,"Head","LoveMark",Vector3.new(.3,.3,.02),CFrame.new(-.36,.42,-.8),rgb(176,30,34))
+	if mark then
+		local gui=Instance.new("SurfaceGui");gui.Face=Enum.NormalId.Front;gui.CanvasSize=Vector2.new(60,60);gui.LightInfluence=1;gui.Parent=mark
+		local t=Instance.new("TextLabel");t.Size=UDim2.fromScale(1,1);t.BackgroundTransparency=1;t.Text="愛";t.TextScaled=true
+		t.TextColor3=rgb(176,30,34);t.Font=Enum.Font.GothamBold;t.Parent=gui
+		mark.Transparency=1
+	end
+	hairCap(model,hair)
+	local spikes={
+		{Vector3.new(0,.8,.1),Vector3.new(0,1,.3),.7,.5,.34},
+		{Vector3.new(-.42,.7,.1),Vector3.new(-.6,.8,.3),.65,.46,.32},
+		{Vector3.new(.42,.7,.1),Vector3.new(.6,.8,.3),.65,.46,.32},
+		{Vector3.new(0,.5,.55),Vector3.new(0,.3,1),.7,.5,.34},
+		{Vector3.new(-.5,.4,.5),Vector3.new(-.6,.2,1),.6,.42,.3},
+		{Vector3.new(.5,.4,.5),Vector3.new(.6,.2,1),.6,.42,.3},
+		{Vector3.new(-.72,.45,-.05),Vector3.new(-1,.4,.1),.48,.38,.26},
+		{Vector3.new(.72,.45,-.05),Vector3.new(1,.4,.1),.48,.38,.26},
+	}
+	for index,s in spikes do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	-- Short messy fringe; no headband (he wears it on the sash).
+	for _,x in {-.42,-.14,.14,.42} do spike(model,Vector3.new(x,.62,-.56),Vector3.new(x*.5,-.7,-.6),.44,.34,.2,hair) end
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=suit end
+	end
+	for _,side in {"Left","Right"} do
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=suitDark end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=suitDark end
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,34,40) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.3,.34,1.06),CFrame.new(0,.82,.02),suitDark)
+	-- The sash across the chest (right shoulder to left hip) with the headband plate.
+	wear(model,"UpperTorso","Sash",Vector3.new(.34,2.2,1.12),CFrame.new(0,0,0)*CFrame.Angles(0,0,math.rad(-38)),sash)
+	wear(model,"UpperTorso","SashPlate",Vector3.new(.5,.3,.06),CFrame.new(-.2,.1,-.58)*CFrame.Angles(0,0,math.rad(-38)),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.3,0),suitDark)
+	-- The gourd: two stacked bellies and a cork, strapped across the back.
+	local belly=wear(model,"UpperTorso","Gourd",Vector3.new(1.9,1.9,1.5),CFrame.new(.1,-.4,1.25),gourd,Enum.Material.Sand)
+	if belly then belly.Shape=Enum.PartType.Ball end
+	local top=wear(model,"UpperTorso","GourdTop",Vector3.new(1.3,1.3,1.1),CFrame.new(.3,.75,1.2),gourd,Enum.Material.Sand)
+	if top then top.Shape=Enum.PartType.Ball end
+	cyl(wear(model,"UpperTorso","GourdNeck",Vector3.new(.4,.55,.55),CFrame.new(.42,1.42,1.18)*CFrame.Angles(0,0,math.rad(90)),gourdDark,Enum.Material.Wood))
+	wear(model,"UpperTorso","GourdBand",Vector3.new(1.95,.16,1.55),CFrame.new(.1,.2,1.2),rgb(120,92,62),Enum.Material.Fabric)
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -6778,7 +7519,8 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def) end
+	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
+	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -6864,7 +7606,7 @@ local IMPULSE={
  whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -6885,7 +7627,7 @@ function Camera:update(data,dt)
 		camera.CameraType=Enum.CameraType.Scriptable
 		-- Slow establishing orbit over the training ground behind the menu.
 		local t=os.clock()*.06
-		camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(t)*58,26,math.cos(t)*58),Vector3.new(0,6,0)); return
+		camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(t)*88,38,math.cos(t)*88),Vector3.new(0,8,0)); return
 	end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local root=character and character:FindFirstChild("HumanoidRootPart")
@@ -6940,7 +7682,8 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local targetFocus=a:Lerp(target,if separation&gt;26 then .5 else .42)+Vector3.new(0,frame.lift,0)
+	local bias=if separation&lt;=26 then .42 else math.max(.3,.42-(separation-26)*.004)
+	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Lead a little where the player is going so a run is framed ahead of it.
 	local moving=presentation and presentation:visualVelocity("human")
 	if moving then
@@ -6956,9 +7699,10 @@ function Camera:update(data,dt)
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
-	local wantDistance=math.clamp(frame.distance+math.max(0,separation-7)*.68+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,52)
+	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
+	local wantDistance=math.clamp(frame.distance+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28+math.max(0,separation-10)*.1
+	local height=frame.height+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -7082,7 +7826,7 @@ local SOUND={
 	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -7090,6 +7834,8 @@ FX.DELAY=.06
 local STEEL=Color3.fromRGB(64,68,76)
 local STEEL_EDGE=Color3.fromRGB(150,158,170)
 local MINATO=Color3.fromRGB(255,214,92)
+local LION=Color3.fromRGB(150,180,255)
+local CURSE=Color3.fromRGB(120,60,200)
 local MINATO_CORE=Color3.fromRGB(255,248,214)
 
 local function new(class,props,parent)
@@ -7276,7 +8022,7 @@ function FX:reset()
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
-local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,
+local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
 	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
@@ -7315,8 +8061,19 @@ function FX:sync(data)
 			local root=model.PrimaryPart
 			if p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
-			elseif p.kind=="shuriken" then
+			elseif p.kind=="shuriken" or p.kind=="wire" then
 				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
+			end
+			if p.kind=="wire" then
+				-- Ninja wire: a thin line from the thrower's hand to the blade.
+				local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
+				local hand=owner and owner:FindFirstChild("RightHand")
+				if hand then
+					local a0=new("Attachment",{Name="WireStart"},hand)
+					local a1=new("Attachment",{Name="WireEnd"},root)
+					new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.06,Width1=.06,Color=ColorSequence.new(Color3.fromRGB(210,214,220)),LightEmission=.3,FaceCamera=true,Segments=2},root)
+					Debris:AddItem(a0,1.2)
+				end
 			end
 			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true}
 			self.projectiles[p.id]=entry
@@ -7327,7 +8084,7 @@ function FX:sync(data)
 				sound(root,SOUND.whoosh,.25,.7)
 			elseif p.kind=="palm" then
 				sound(root,SOUND.whoosh,.45,.6)
-			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" then
+			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
 		end
@@ -7371,7 +8128,7 @@ function FX:stepProjectiles(dt)
 			-- Point first, with a slow roll so the blade catches the light.
 			entry.spin+=dt*14
 			cf=look*CFrame.Angles(0,0,entry.spin)
-		elseif p.kind=="shuriken" then
+		elseif p.kind=="shuriken" or p.kind=="wire" then
 			entry.spin+=dt*42
 			cf=look*CFrame.Angles(0,entry.spin,0)*CFrame.Angles(0,0,math.rad(8))
 		elseif p.kind=="fireball" or p.kind=="phoenix" then
@@ -7406,6 +8163,15 @@ local function flash(parent,position,color,from,to,time,transparency)
 	tween(ball,time,{Size=Vector3.one*to,Transparency=1})
 	Debris:AddItem(ball,time+.05)
 	return ball
+end
+-- The floor under a point, ignoring bodies and effects: marks laid on the
+-- ground (scorch, trigrams, burning lanes) must never land on a fighter.
+local function floorUnder(fx,position,up,depth)
+	local params=RaycastParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+	local exclude={fx.folder}
+	if fx.fighters then table.insert(exclude,fx.fighters) end
+	params.FilterDescendantsInstances=exclude
+	return workspace:Raycast(position+Vector3.new(0,up,0),Vector3.new(0,-depth,0),params)
 end
 local function shockRing(parent,position,color,from,to,time,normal)
 	local up=normal or Vector3.yAxis
@@ -7508,7 +8274,7 @@ function FX:impact(impact,folder)
 		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
-		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(150,40,60),.22,.55)
+		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.22,.55)
 		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),8,1.4)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
@@ -7585,7 +8351,7 @@ function FX:impact(impact,folder)
 		shockRing(self.folder,position,Color3.fromRGB(200,226,255),1,6+math.min(count,4)*1.5,.18)
 	elseif style=="awaken" then
 		local model=modelFor(folder,impact.owner)
-		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then CURSE else Color3.fromRGB(230,40,50)
 		if model then self:ghost(model,tone,.35,.4) end
 		flash(self.folder,position,tone,2,14,.35,.2)
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),tone,3,24,.45)
@@ -7612,11 +8378,24 @@ function FX:impact(impact,folder)
 	elseif style=="ember" then
 		flash(self.folder,position,Color3.fromRGB(255,170,80),.8,4.5,.18,.2)
 		sparks(self.folder,position,Color3.fromRGB(255,170,80),10,14)
+	elseif style=="afterimage" then
+		-- A lateral route: the body leaves a fading copy where it stood.
+		local model=modelFor(folder,impact.owner)
+		if model then self:ghost(model,if impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.3,.45) end
+		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(196,186,166),5,1)
+	elseif style=="chidori" then
+		flash(self.folder,position,Color3.fromRGB(170,200,255),1,6,.18,.25)
+		sparks(self.folder,position,Color3.fromRGB(200,225,255),24,30)
+	elseif style=="groundbounce" then
+		-- A spiked body hits the floor and pops back up: dust ring and cracks.
+		smokePuff(self.folder,position,Color3.fromRGB(176,160,130),16,2.2)
+		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
+		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
 	end
 end
 -- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
 function FX:trigram(position)
-	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-10,0))
+	local floor=floorUnder(self,position,2,10)
 	local at=if floor then floor.Position+Vector3.new(0,.05,0) else position-Vector3.new(0,2.9,0)
 	local glyph=new("Model",{Name="Trigrams"},self.folder)
 	local base=CFrame.new(at)*CFrame.Angles(0,0,math.pi/2)
@@ -7675,7 +8454,7 @@ function FX:explosion(position,normal)
 	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=9,Range=40,Shadows=false},holder)
 	tween(light,.7,{Brightness=0})
 	-- Scorched ground under the blast.
-	local floor=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-12,0))
+	local floor=floorUnder(self,position,2,12)
 	if floor then
 		local scorch=block(self.folder,Vector3.new(.05,9,9),CFrame.new(floor.Position+floor.Normal*.04)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(24,18,16),Enum.Material.Slate)
 		scorch.Shape=Enum.PartType.Cylinder;scorch.Transparency=.25
@@ -7807,7 +8586,7 @@ function FX:hazardsStep(data)
 		live[key]=true
 		local entry=self.hazards[key]
 		if not entry then
-			local floor=workspace:Raycast(h.position+Vector3.new(0,3,0),Vector3.new(0,-14,0))
+			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
 			local holder=anchorPart(self.folder,at);holder.Transparency=1;holder.Size=Vector3.new(h.radius*1.6,.2,h.radius*1.6)
 			local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=60,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(3,7),
@@ -7874,7 +8653,7 @@ function FX:fighter(model,actor,dt)
 		aura={}
 		self.auras[model]=aura
 		local minato=actor.fighterId=="Flashstep"
-		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(170,30,48)
+		local color=if minato then MINATO elseif actor.fighterId=="GentleFist" then HYUGA elseif actor.fighterId=="Lion" then LION else Color3.fromRGB(170,30,48)
 		local veins={}
 		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
 		aura.veins=veins
@@ -7884,7 +8663,10 @@ function FX:fighter(model,actor,dt)
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
 		aura.irises=irises
 		local head=model:FindFirstChild("Head")
-		if head and actor.fighterId=="Mirage" then
+		local marks={}
+		for _,p in model:GetChildren() do if p.Name=="CurseMark" then table.insert(marks,p) end end
+		aura.marks=marks
+		if head and (actor.fighterId=="Mirage" or actor.fighterId=="Lion") then
 			aura.eyeLight=new("PointLight",{Color=Color3.fromRGB(255,40,40),Brightness=0,Range=5,Shadows=false},head)
 		end
 	end
@@ -7894,9 +8676,9 @@ function FX:fighter(model,actor,dt)
 	aura.trail.Enabled=fast==true and (actor.health or 1)&gt;0
 	-- Itachi's Sharingan is always awake; it flares while he reads, casts,
 	-- counters, or during the intro.
-	if actor.fighterId=="Mirage" and aura.irises then
+	if (actor.fighterId=="Mirage" or actor.fighterId=="Lion") and aura.irises then
 		local lit=(actor.read or 0)&gt;0 or (actor.counter or 0)&gt;0 or actor.castId=="MirageCast" or actor.castId=="Read" or actor.castId=="FireBloom"
-			or actor.castId=="PhoenixFlower" or (actor.intro or 0)&gt;0
+			or actor.castId=="PhoenixFlower" or actor.castId=="Chidori" or (actor.intro or 0)&gt;0 or (actor.awaken or 0)&gt;0
 		for _,iris in aura.irises do
 			iris.Material=Enum.Material.Neon
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
@@ -7907,7 +8689,7 @@ function FX:fighter(model,actor,dt)
 	local awake=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
 	if awake and not aura.mantle then
 		local torso=model:FindFirstChild("UpperTorso") or root
-		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA else Color3.fromRGB(230,40,50)
+		local tone=if actor.fighterId=="Flashstep" then MINATO elseif actor.fighterId=="GentleFist" then HYUGA elseif actor.fighterId=="Lion" then CURSE else Color3.fromRGB(230,40,50)
 		local at=new("Attachment",{Name="AwakenMantle"},torso)
 		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=55,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(30,30),
 			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(tone),LightEmission=1,LightInfluence=0,
@@ -7919,6 +8701,47 @@ function FX:fighter(model,actor,dt)
 		Debris:AddItem(aura.mantle.attachment,1)
 		aura.mantle=nil
 	end
+	for _,mark in aura.marks or {} do mark.Transparency=if awake then 0 else 1 end
+	-- Bound: wire coiled around the chest and arms while the bind holds.
+	local bound=actor.bound==true and (actor.health or 1)&gt;0
+	if bound and not aura.binding then
+		local torso=model:FindFirstChild("UpperTorso") or root
+		local holder=new("Model",{Name="Binding"},self.folder)
+		local coils={}
+		for k=0,2 do
+			local coil=block(holder,Vector3.new(.08,2.9,2.9),torso.CFrame*CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(196,200,208),Enum.Material.Metal)
+			coil.Shape=Enum.PartType.Cylinder;coil.Transparency=.15
+			table.insert(coils,{part=coil,offset=CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2)})
+		end
+		aura.binding={holder=holder,coils=coils,torso=torso}
+		sound(torso,SOUND.whoosh,.4,2)
+	elseif not bound and aura.binding then
+		aura.binding.holder:Destroy()
+		aura.binding=nil
+	end
+	if aura.binding then
+		for _,c in aura.binding.coils do c.part.CFrame=aura.binding.torso.CFrame*c.offset end
+	end
+	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
+	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
+		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
+	if chidori and not aura.chidori and (actor.health or 1)&gt;0 then
+		local hand=model:FindFirstChild("RightHand") or root
+		local at=new("Attachment",{Name="Chidori"},hand)
+		local e=new("ParticleEmitter",{Texture=TEX.spark,Rate=220,Lifetime=NumberRange.new(.05,.14),Speed=NumberRange.new(6,16),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(Color3.fromRGB(190,220,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.1},{1,0}}),Transparency=num({{0,0},{1,1}}),
+			Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400)},at)
+		local core=new("ParticleEmitter",{Texture=TEX.glow,Rate=40,Lifetime=NumberRange.new(.08,.12),Speed=NumberRange.new(0,0),
+			Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.4},{1,1.0}}),Transparency=num({{0,.2},{1,1}})},at)
+		local light=new("PointLight",{Color=Color3.fromRGB(150,190,255),Brightness=1.6,Range=8,Shadows=false},at)
+		aura.chidori={attachment=at,emitter=e,core=core,light=light}
+		sound(hand,SOUND.whoosh,.5,2.6)
+	elseif not chidori and aura.chidori then
+		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
+		Debris:AddItem(aura.chidori.attachment,.4)
+		aura.chidori=nil
+	end
+	if aura.chidori then aura.chidori.light.Brightness=1.2+math.random()*1.4 end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
 		local focused=(actor.intro or 0)&gt;0 or actor.castId~=nil or (actor.counter or 0)&gt;0 or actor.rotation==true
@@ -8060,6 +8883,7 @@ function FX:ambient(dt)
 	end
 end
 function FX:update(data,dt,folder)
+	self.fighters=folder
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
 		self:stepProjectiles(dt)
@@ -8634,7 +9458,7 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	local playable={"Flashstep","Mirage","GentleFist"}
+	local playable={"Flashstep","Mirage","GentleFist","Lion"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -8660,12 +9484,16 @@ function UI.new(parent,send)
 	end
 	-- Matchup panel.
 	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.matchupNote=text(shell,"",UDim2.fromOffset(0,414),UDim2.fromOffset(900,40),14,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	text(shell,"YOU",UDim2.fromOffset(0,456),UDim2.fromOffset(200,20),14,palette.muted)
-	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,456),UDim2.fromOffset(300,20),14,palette.muted)
+	self.matchupNote=text(shell,"",UDim2.fromOffset(0,410),UDim2.fromOffset(900,34),13,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	-- The selected fighter's reading of the shared combo grammar.
+	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
+	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(300,18),14,palette.muted)
+	-- Fighter buttons share each half of the panel, however many are playable.
+	local stride=math.floor(430/#playable)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*145,480),UDim2.fromOffset(138,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*145,480),UDim2.fromOffset(138,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.player=id; self:refreshSelection() end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.bot=id; self:refreshSelection() end)
 	end
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
 	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
@@ -8746,6 +9574,7 @@ function UI.new(parent,send)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
 	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(.5,-640,1,-48),UDim2.fromOffset(1280,18),11,Color3.fromRGB(196,176,130),BODY_FONT,Enum.TextXAlignment.Center)
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -8803,6 +9632,7 @@ function UI:refreshSelection()
 	local p,o=Fighters[self.player],Fighters[self.bot]
 	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
 	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
+	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
@@ -8927,8 +9757,11 @@ function UI:render(data)
 		elseif (h.counter or 0)&gt;0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
-		elseif h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE") else ""
+		elseif h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
+		elseif (h.combo or 0)&gt;=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then (if pad then "↑ LAUNCH  ·  ↓ SWEEP  ·  ← → ANGLE" else "W LAUNCH  ·  S SWEEP  ·  A/D ANGLE")
+		else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
+	self.grammar.Text=if pad then Controls.GrammarPad else Controls.Grammar
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
@@ -9339,9 +10172,13 @@ local STANCE={
 STANCE.GentleFist={root={y=-.62,pitch=6,yaw=38},torso={pitch=4,yaw=-14},head={pitch=-2,yaw=-22},
 	la={raise=80,out=-6,twist=-40,elbow=26,wrist=-46},ra={raise=56,out=-30,twist=40,elbow=96,wrist=-36},
 	rf={x=.32,z=.92,yaw=64},lf={x=-.18,z=-.95,yaw=-6},breath=.8,tempo=5.5}
+-- Sasuke: low and forward, lead hand out, rear hand by the chin, coiled to kick.
+STANCE.Lion={root={y=-.5,pitch=10,yaw=30},torso={pitch=6,yaw=-14},head={pitch=-6,yaw=-14},
+	la={raise=66,out=6,twist=10,elbow=64,wrist=0},ra={raise=52,out=-16,twist=24,elbow=118,wrist=0},
+	rf={x=.26,z=.84,yaw=38},lf={x=-.1,z=-.76,yaw=-6},breath=1.3,tempo=7}
 local function stance(id) return STANCE[id] or STANCE.Flashstep end
--- Gait families: springy (Minato) or controlled (Itachi, Neji).
-local SPRINGY={Flashstep=true}
+-- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
+local SPRINGY={Flashstep=true,Lion=true}
 local function springy(id) return SPRINGY[id]==true or (id~="Mirage" and id~="GentleFist" and STANCE[id]==nil) end
 
 -- ---------------------------------------------------------- attack clips
@@ -9355,7 +10192,7 @@ local function m(over) return merge(M,over) end
 local function i(over) return merge(I,over) end
 local N=STANCE.GentleFist
 local function n(over) return merge(N,over) end
-local CLIPS={Flashstep={},Mirage={},GentleFist={}}
+local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={}}
 -- Minato --------------------------------------------------------------
 CLIPS.Flashstep.Light1={ -- reverse-grip kunai: cross-body load, outward slash
 	K(0,m({root={y=-.55,yaw=10,pitch=12},torso={yaw=-28,pitch=8},ra={raise=72,out=-42,twist=38,elbow=112,wrist=-30},la={raise=40,out=12,elbow=70},lf={z=-.95}})),
@@ -9639,7 +10476,177 @@ local function runningClips(f,base)
 		K(3,base),
 	}
 end
-runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N)
+runningClips("Flashstep",M);runningClips("Mirage",I);runningClips("GentleFist",N);runningClips("Lion",STANCE.Lion)
+-- Directional routes ------------------------------------------------------
+-- The same grammar, three bodies. Low route: Minato drops into a spinning leg
+-- sweep (a marked kunai left behind), Itachi reaps with the extended leg, Neji
+-- turns a full rotation low with a palm on the ground. Lateral route: Minato's
+-- AngleStep, Itachi's feint step (an afterimage stays), Neji's circular step.
+CLIPS.Flashstep.Sweep={
+	K(0,m({root={y=-1.05,pitch=22,yaw=-20},torso={pitch=10,yaw=-10},ra={raise=44,out=30,twist=30,elbow=96,wrist=-20},la={raise=26,out=24,elbow=30},lf={x=.5,z=-.25},rf={z=.75}})),
+	K(1,m({root={y=-1.45,pitch=30,yaw=84},torso={pitch=14,yaw=8},head={yaw=-58},la={raise=18,out=46,elbow=6,wrist=-30},ra={raise=60,out=40,twist=20,elbow=84},rl={lift=16,out=78,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=84}}),"out"),
+	K(2,m({root={y=-1.4,pitch=28,yaw=160},torso={pitch=12,yaw=10},head={yaw=-70},la={raise=14,out=50,elbow=8},ra={raise=56,out=44,elbow=86},rl={lift=14,out=76,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=160}})),
+	K(2.5,m({root={y=-1.1,pitch=20,yaw=250},torso={pitch=8},head={yaw=-40},rl={lift=36,out=40,knee=50},lf={x=.5,z=0,yaw=250}})),
+	K(2.8,m({root={y=-.7,pitch=12,yaw=330},lf={x=.3,z=-.4,yaw=330},rf={x=.1,z=.6,yaw=330}})),
+	K(3,merge(M,{root={yaw=M.root.yaw+360}})),
+}
+CLIPS.GentleFist.Sweep={
+	K(0,n({root={y=-1.15,pitch=26,yaw=10},torso={pitch=14,yaw=-10},la={raise=30,out=24,elbow=20,wrist=-40},ra={raise=60,out=-20,twist=40,elbow=96},lf={x=.5,z=-.2},rf={z=.8}})),
+	K(1,n({root={y=-1.55,pitch=32,yaw=100},torso={pitch=16,yaw=10},head={yaw=-70},la={raise=26,out=40,elbow=8,wrist=-50},ra={raise=40,out=30,twist=60,elbow=20,wrist=-50},rl={lift=12,out=80,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=100}}),"out"),
+	K(2,n({root={y=-1.5,pitch=30,yaw=190},torso={pitch=14,yaw=12},head={yaw=-70},la={raise=24,out=42,elbow=8},ra={raise=40,out=36,twist=60,elbow=20},rl={lift=12,out=80,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=190}})),
+	K(2.5,n({root={y=-1.2,pitch=24,yaw=280},torso={pitch=10},rl={lift=30,out=50,knee=40},lf={x=.5,z=0,yaw=280}})),
+	K(3,merge(N,{root={yaw=N.root.yaw+360}})),
+}
+CLIPS.Mirage.FeintStep={ -- slips to the flank (an afterimage stays) and palms the ribs
+	K(0,i({root={y=-.5,yaw=-40,roll=8},torso={yaw=-16},ra={raise=30,out=20,twist=40,elbow=110},la={raise=56,out=-20,elbow=100},lf={x=-.5,z=-.2},rf={x=.4,z=.6}})),
+	K(1,i({root={y=-.5,z=-.3,yaw=36,pitch=12,roll=-10},torso={yaw=-28,pitch=6},head={yaw=-20},ra={raise=90,out=-4,twist=72,elbow=2,wrist=-60},la={raise=30,out=30,elbow=70},lf={x=.3,z=-.8},rf={x=.6,z=.7}}),"out"),
+	K(2,i({root={y=-.5,z=-.32,yaw=40,pitch=12,roll=-8},torso={yaw=-30,pitch=6},ra={raise=88,out=-4,twist=72,elbow=6,wrist=-58},la={raise=30,out=30,elbow=70},lf={x=.3,z=-.8},rf={x=.6,z=.7}})),
+	K(3,I),
+}
+CLIPS.GentleFist.CircleStep={ -- a circular step around the guard, palm into the flank
+	K(0,n({root={y=-.7,yaw=70,roll=6},torso={yaw=-10},la={raise=60,out=-10,twist=-60,elbow=100,wrist=-40},ra={raise=50,out=-20,twist=40,elbow=96},lf={x=-.3,z=-.4},rf={x=.4,z=.8}})),
+	K(1,n({root={y=-.62,z=-.3,yaw=0,pitch=8,roll=-6},torso={yaw=-30,pitch=4},head={yaw=-6},la=PALM_L,ra={raise=40,out=-20,twist=40,elbow=100},lf={x=.2,z=-1.0},rf={x=.6,z=.6}}),"out"),
+	K(2,n({root={y=-.62,z=-.32,yaw=-4,pitch=8,roll=-6},torso={yaw=-32,pitch=4},la=PALM_L,ra={raise=40,out=-20,twist=40,elbow=100},lf={x=.2,z=-1.0},rf={x=.6,z=.6}})),
+	K(3,N),
+}
+-- Air routes: drive (push kick / side kick / twin palm), spike (axe kick /
+-- hammer drop / descending palm) and switch (vault into a spinning strike).
+CLIPS.Flashstep.AirDrive={
+	K(0,merge(AIR_M,{root={pitch=-6},torso={pitch=-8},rl={lift=104,knee=124,ankle=-10},ll={lift=30,knee=60},ra={raise=40,out=40,elbow=60},la={raise=60,out=10,elbow=90}})),
+	K(1,merge(AIR_M,{root={pitch=-22},torso={pitch=-10,yaw=-10},head={pitch=12},rl={lift=96,out=0,knee=2,ankle=-30},ll={lift=-10,knee=70},ra={raise=-20,out=50,elbow=30},la={raise=70,out=-10,elbow=100}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=-20},torso={pitch=-10,yaw=-12},rl={lift=92,knee=6,ankle=-28},ll={lift=-10,knee=70},ra={raise=-20,out=50,elbow=30},la={raise=70,out=-10,elbow=100}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.AirSpike={
+	K(0,merge(AIR_M,{root={pitch=-18},torso={pitch=-10},rl={lift=165,out=4,knee=4,ankle=-30},ll={lift=10,knee=40},ra={raise=40,out=50,elbow=40},la={raise=40,out=50,elbow=40}})),
+	K(1,merge(AIR_M,{root={pitch=24},torso={pitch=24},head={pitch=-10},rl={lift=20,out=4,knee=6,ankle=-10},ll={lift=-10,knee=60},ra={raise=20,out=50,elbow=30},la={raise=20,out=50,elbow=30}}),"out"),
+	K(2,merge(AIR_M,{root={pitch=26},torso={pitch=26},rl={lift=14,out=4,knee=8},ll={lift=-10,knee=60},ra={raise=20,out=50,elbow=30},la={raise=20,out=50,elbow=30}})),
+	K(3,AIR_M),
+}
+CLIPS.Flashstep.AirSwitch={
+	K(0,merge(AIR_M,{root={yaw=-60,roll=10},torso={yaw=-20},rl={lift=90,knee=130},ll={lift=80,knee=120},ra={raise=60,out=20,elbow=110},la={raise=60,out=20,elbow=110}})),
+	K(1,merge(AIR_M,{root={yaw=70,roll=-16,pitch=8},torso={yaw=20},head={yaw=-40},rl={lift=80,out=70,twist=-30,knee=6,ankle=-20},ll={lift=30,knee=80},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30}}),"out"),
+	K(2,merge(AIR_M,{root={yaw=84,roll=-14,pitch=8},torso={yaw=22},rl={lift=76,out=70,twist=-30,knee=10,ankle=-20},ll={lift=30,knee=80},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30}})),
+	K(3,AIR_M),
+}
+CLIPS.Mirage.AirDrive={
+	K(0,merge(AIR_I,{root={yaw=-70},torso={yaw=-10},rl={lift=80,out=10,twist=-20,knee=120},ra={raise=50,out=-6,elbow=118},la={raise=54,out=-6,elbow=120}})),
+	K(1,merge(AIR_I,{root={yaw=-84,roll=26},torso={roll=-16},head={yaw=60,roll=-18},rl={lift=86,out=72,knee=0,ankle=12},ll={lift=20,knee=70},ra={raise=50,out=-6,elbow=120},la={raise=30,out=30,elbow=80}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=-84,roll=24},torso={roll=-14},head={yaw=60,roll=-16},rl={lift=82,out=70,knee=6,ankle=10},ll={lift=20,knee=70},ra={raise=50,out=-6,elbow=120},la={raise=30,out=30,elbow=80}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.AirSpike={
+	K(0,merge(AIR_I,{root={pitch=-10},torso={pitch=-16,yaw=-10},ra={raise=170,out=10,elbow=60},la={raise=140,out=-10,elbow=90},rl={lift=60,knee=110},ll={lift=40,knee=90}})),
+	K(1,merge(AIR_I,{root={pitch=24},torso={pitch=36,yaw=6},head={pitch=10},ra={raise=50,out=-14,elbow=10,wrist=-20},la={raise=30,out=30,elbow=60},rl={lift=40,knee=70},ll={lift=20,knee=50}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=26},torso={pitch=38,yaw=6},ra={raise=44,out=-14,elbow=12},la={raise=30,out=30,elbow=60},rl={lift=40,knee=70},ll={lift=20,knee=50}})),
+	K(3,AIR_I),
+}
+CLIPS.Mirage.AirSwitch={
+	K(0,merge(AIR_I,{root={yaw=50,roll=-10},torso={yaw=16},ll={lift=90,knee=130},rl={lift=70,knee=110},ra={raise=50,out=20,elbow=110},la={raise=50,out=20,elbow=110}})),
+	K(1,merge(AIR_I,{root={yaw=-60,roll=14},torso={yaw=-16},head={yaw=40},ll={lift=86,out=64,twist=-24,knee=10,ankle=-20},rl={lift=24,knee=70},ra={raise=30,out=70,elbow=24},la={raise=24,out=60,elbow=30}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=-70,roll=12},torso={yaw=-18},ll={lift=82,out=64,twist=-24,knee=14,ankle=-20},rl={lift=24,knee=70},ra={raise=30,out=70,elbow=24},la={raise=24,out=60,elbow=30}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirDrive={
+	K(0,merge(AIR_I,{root={pitch=-6},torso={pitch=-4},ra={raise=20,out=6,twist=50,elbow=120,wrist=-20},la={raise=20,out=6,twist=-50,elbow=120,wrist=-20},rl={lift=60,knee=100},ll={lift=40,knee=80}})),
+	K(1,merge(AIR_I,{root={pitch=10},torso={pitch=10},ra={raise=92,out=-8,twist=72,elbow=2,wrist=-64},la={raise=92,out=-8,twist=-72,elbow=2,wrist=-64},rl={lift=20,knee=60},ll={lift=50,knee=90}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=10},torso={pitch=10},ra={raise=90,out=-8,twist=72,elbow=6,wrist=-62},la={raise=90,out=-8,twist=-72,elbow=6,wrist=-62},rl={lift=20,knee=60},ll={lift=50,knee=90}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirSpike={
+	K(0,merge(AIR_I,{root={pitch=-12},torso={pitch=-14},la={raise=170,out=6,twist=-60,elbow=20,wrist=-40},ra={raise=60,out=-20,elbow=96},rl={lift=70,knee=110},ll={lift=50,knee=100}})),
+	K(1,merge(AIR_I,{root={pitch=30},torso={pitch=34},head={pitch=6},la={raise=40,out=-4,twist=-72,elbow=2,wrist=-64},ra={raise=30,out=30,elbow=60},rl={lift=30,knee=70},ll={lift=10,knee=50}}),"out"),
+	K(2,merge(AIR_I,{root={pitch=32},torso={pitch=36},la={raise=36,out=-4,twist=-72,elbow=6,wrist=-62},ra={raise=30,out=30,elbow=60},rl={lift=30,knee=70},ll={lift=10,knee=50}})),
+	K(3,AIR_I),
+}
+CLIPS.GentleFist.AirSwitch={
+	K(0,merge(AIR_I,{root={yaw=-60},torso={yaw=-20},la={raise=60,out=30,twist=-60,elbow=90},ra={raise=60,out=30,twist=60,elbow=90},rl={lift=70,knee=110},ll={lift=60,knee=100}})),
+	K(1,merge(AIR_I,{root={yaw=60,roll=-10},torso={yaw=10},la={raise=90,out=60,twist=-72,elbow=4,wrist=-60},ra={raise=90,out=50,twist=72,elbow=4,wrist=-60},rl={lift=50,knee=90},ll={lift=40,knee=70}}),"out"),
+	K(2,merge(AIR_I,{root={yaw=70,roll=-10},torso={yaw=12},la={raise=88,out=60,twist=-72,elbow=8},ra={raise=88,out=50,twist=72,elbow=8},rl={lift=50,knee=90},ll={lift=40,knee=70}})),
+	K(3,AIR_I),
+}
+-- Sasuke ----------------------------------------------------------------
+-- Aggressive Uchiha taijutsu: a jab, a roundhouse to the body, a spinning
+-- heel kick; an acrobatic rising kick he follows into the air; a vault over
+-- the opponent into a back kick; the Lion Combo heel drop; the Chidori thrust.
+local S=STANCE.Lion
+local function sk(over) return merge(S,over) end
+local AIR_S={root={pitch=8},torso={pitch=6},head={pitch=-6},ra={raise=50,out=24,elbow=96},la={raise=56,out=16,elbow=86},rl={lift=62,knee=100,ankle=-10},ll={lift=36,knee=76,ankle=-10}}
+CLIPS.Lion.Light1={ -- lead-hand jab
+	K(0,sk({torso={yaw=12},la={raise=56,out=6,twist=20,elbow=112}})),
+	K(1,sk({root={z=-.32,yaw=-6,pitch=8},torso={yaw=-18},la={raise=92,out=-4,twist=-14,elbow=4,wrist=0},ra={raise=50,out=-16,elbow=118}}),"out"),
+	K(2,sk({root={z=-.32,yaw=-6,pitch=8},torso={yaw=-20},la={raise=90,out=-4,twist=-14,elbow=8},ra={raise=50,out=-16,elbow=118}})),
+	K(3,S),
+}
+CLIPS.Lion.Light2={ -- rear-leg roundhouse to the ribs
+	K(0,sk({root={y=-.55,yaw=-24,pitch=6},torso={yaw=-16},ra={raise=50,out=-10,elbow=110},la={raise=60,out=10,elbow=90},rl={lift=62,out=22,knee=112,ankle=-10},lf={yaw=-24}})),
+	K(1,sk({root={y=-.4,yaw=70,pitch=-4,roll=-18},torso={yaw=10,roll=-18},head={yaw=-40,roll=12},ra={raise=20,out=70,elbow=20},la={raise=40,out=50,elbow=40},rl={lift=76,out=62,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
+	K(2,sk({root={y=-.42,yaw=80,pitch=-4,roll=-16},torso={yaw=12,roll=-16},ra={raise=20,out=70,elbow=24},la={raise=40,out=50,elbow=40},rl={lift=72,out=64,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
+	K(2.6,sk({root={y=-.5,yaw=50},rl={lift=40,out=20,knee=70},lf={yaw=30}})),
+	K(3,S),
+}
+CLIPS.Lion.Light3={ -- spinning heel kick: the turning strike that sends the body away
+	K(0,sk({root={y=-.62,yaw=-20,pitch=6},torso={yaw=-20},ra={raise=40,out=30,elbow=90},la={raise=40,out=30,elbow=90}})),
+	K(.5,sk({root={y=-.45,yaw=90,pitch=0,roll=8},torso={yaw=-10},head={yaw=-60},ra={raise=30,out=60,elbow=50},la={raise=30,out=60,elbow=50},rl={lift=40,out=30,knee=90},lf={yaw=90,x=.4,z=0}})),
+	K(1,sk({root={y=-.25,yaw=196,pitch=-8,roll=16},torso={yaw=16,roll=12},head={yaw=50},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30},rl={lift=94,out=52,twist=20,knee=6,ankle=-20},lf={yaw=196,x=.4,z=0}}),"out"),
+	K(2,sk({root={y=-.28,yaw=214,pitch=-6,roll=14},torso={yaw=18,roll=10},ra={raise=20,out=80,elbow=24},la={raise=30,out=70,elbow=30},rl={lift=88,out=54,twist=20,knee=10,ankle=-20},lf={yaw=214,x=.4,z=0}})),
+	K(2.5,sk({root={y=-.45,yaw=290},rl={lift=40,out=20,knee=70},lf={yaw=290,x=.3,z=0}})),
+	K(3,merge(S,{root={yaw=S.root.yaw+360}})),
+}
+CLIPS.Lion.Heavy={ -- driving front kick off the rear leg
+	K(0,sk({root={y=-.75,z=.25,pitch=12},torso={pitch=8},ra={raise=40,out=20,elbow=100},la={raise=60,out=10,elbow=90},lf={z=-1.0}})),
+	K(1,sk({root={y=-.3,z=-.6,pitch=-14},torso={pitch=-6,yaw=-8},head={pitch=10},ra={raise=-20,out=40,elbow=40},la={raise=70,out=-10,elbow=100},rl={lift=96,out=4,knee=4,ankle=-30},lf={z=-1.2,toe=-10}}),"out"),
+	K(2,sk({root={y=-.32,z=-.62,pitch=-12},torso={pitch=-6,yaw=-8},ra={raise=-20,out=40,elbow=40},la={raise=70,out=-10,elbow=100},rl={lift=92,knee=8,ankle=-28},lf={z=-1.2}})),
+	K(3,S),
+}
+CLIPS.Lion.LionKick={ -- deep crouch, then a rising flip kick straight up under the chin
+	K(0,sk({root={y=-1.05,pitch=22},torso={pitch=14},ra={raise=30,out=40,elbow=80},la={raise=30,out=40,elbow=80},lf={z=-.4},rf={z=.5}})),
+	K(1,sk({root={y=.45,pitch=-46},torso={pitch=-14},head={pitch=-20},ra={raise=-40,out=44,elbow=20},la={raise=-36,out=44,elbow=20},rl={lift=168,out=4,knee=2,ankle=-30},ll={lift=24,knee=70}}),"out"),
+	K(2,sk({root={y=.5,pitch=-56},torso={pitch=-16},head={pitch=-20},ra={raise=-44,out=44,elbow=20},la={raise=-40,out=44,elbow=20},rl={lift=160,out=4,knee=8,ankle=-28},ll={lift=30,knee=80}})),
+	K(3,S),
+}
+CLIPS.Lion.DashAttack={ -- flying knee, hands pulling the head down onto it
+	K(0,sk({root={y=-.6,pitch=20},ra={raise=30,out=30,elbow=90},la={raise=30,out=30,elbow=90},lf={z=-1.0},rf={z=1.1}})),
+	K(1,sk({root={y=-.1,z=-.8,pitch=6},torso={pitch=10},rl={lift=112,knee=142,ankle=-20},ra={raise=84,out=-10,elbow=60},la={raise=84,out=-10,elbow=60},lf={z=-1.3,toe=-30}}),"out"),
+	K(2,sk({root={y=-.12,z=-.82,pitch=6},torso={pitch=10},rl={lift=108,knee=140},ra={raise=80,out=-10,elbow=64},la={raise=80,out=-10,elbow=64},lf={z=-1.3,toe=-24}})),
+	K(3,S),
+}
+CLIPS.Lion.Sweep={ -- both hands on the floor, a full low spin that reaps the legs
+	K(0,sk({root={y=-1.15,pitch=30,yaw=0},torso={pitch=16,yaw=-10},ra={raise=20,out=20,elbow=20,wrist=-40},la={raise=24,out=16,elbow=20,wrist=-40},lf={x=.5,z=-.2},rf={z=.8}})),
+	K(1,sk({root={y=-1.55,pitch=34,yaw=96},torso={pitch=18,yaw=10},head={yaw=-70},ra={raise=16,out=40,elbow=8,wrist=-50},la={raise=20,out=30,elbow=8,wrist=-50},rl={lift=12,out=82,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=96}}),"out"),
+	K(2,sk({root={y=-1.5,pitch=32,yaw=186},torso={pitch=16,yaw=12},head={yaw=-70},ra={raise=16,out=40,elbow=8},la={raise=20,out=30,elbow=8},rl={lift=12,out=82,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=186}})),
+	K(2.5,sk({root={y=-1.15,pitch=24,yaw=276},torso={pitch=10},rl={lift=34,out=48,knee=40},lf={x=.5,z=0,yaw=276}})),
+	K(3,merge(S,{root={yaw=S.root.yaw+360}})),
+}
+CLIPS.Lion.VaultKick={ -- over the opponent's shoulder, a back kick from the other side
+	K(0,sk({root={y=-.8,pitch=16},torso={pitch=10},ra={raise=80,out=10,elbow=40},la={raise=80,out=10,elbow=40},lf={z=-.6},rf={z=.6}})),
+	K(1,sk({root={y=.55,pitch=36,yaw=-20},torso={pitch=20},head={pitch=-30,yaw=30},ra={raise=60,out=30,elbow=30},la={raise=50,out=40,elbow=40},rl={lift=-62,out=6,knee=4,ankle=20},ll={lift=60,knee=110}}),"out"),
+	K(2,sk({root={y=.45,pitch=34,yaw=-22},torso={pitch=18},head={pitch=-28,yaw=30},ra={raise=60,out=30,elbow=30},la={raise=50,out=40,elbow=40},rl={lift=-58,out=6,knee=8,ankle=20},ll={lift=56,knee=106}})),
+	K(3,S),
+}
+CLIPS.Lion.LionBarrage={ -- Lion Combo: the heel raised overhead, then driven through the body to the floor
+	K(0,merge(AIR_S,{root={pitch=-22,yaw=30},torso={pitch=-14,yaw=10},rl={lift=172,out=6,knee=2,ankle=-30},ll={lift=10,knee=50},ra={raise=30,out=60,elbow=30},la={raise=30,out=60,elbow=30}})),
+	K(1,merge(AIR_S,{root={pitch=30,yaw=0},torso={pitch=30},head={pitch=-12},rl={lift=12,out=6,knee=6,ankle=-10},ll={lift=-14,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}}),"out"),
+	K(2,merge(AIR_S,{root={pitch=32},torso={pitch=32},rl={lift=8,knee=8},ll={lift=-14,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}})),
+	K(3,sk({root={y=-1.0,pitch=26},torso={pitch=22},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Lion.ChidoriThrust={ -- the lightning hand driven straight through, the whole body behind it
+	K(0,sk({root={y=-.95,z=.25,pitch=24,yaw=20},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})),
+	K(1,sk({root={y=-.7,z=-1.25,pitch=28,yaw=-12},torso={pitch=12,yaw=-14},head={pitch=-16},ra={raise=94,out=-4,twist=-20,elbow=2,wrist=-10},la={raise=40,out=-20,twist=30,elbow=100},lf={z=-1.85},rf={z=1.55,y=.2,toe=-24}}),"out"),
+	K(2,sk({root={y=-.7,z=-1.28,pitch=28,yaw=-14},torso={pitch=12,yaw=-16},ra={raise=92,out=-4,twist=-20,elbow=4},la={raise=40,out=-20,twist=30,elbow=100},lf={z=-1.85},rf={z=1.55,y=.2,toe=-24}})),
+	K(3,S),
+}
+CLIPS.Lion.Riposte=CLIPS.Lion.Light1
+-- Spins are authored with their exact angles (no exaggeration), each key
+-- under half a turn from the next so the body turns the right way round.
+for _,clip in {CLIPS.Flashstep.Sweep,CLIPS.GentleFist.Sweep,CLIPS.Lion.Sweep,CLIPS.Lion.Light3} do
+	for _,key in clip do
+		if key.pose~=M and key.pose~=I and key.pose~=N and key.pose~=S then key.pose.keep=true end
+	end
+end
+-- Anything Sasuke does not author (air strings, throws, knee) borrows Minato's
+-- springier clips.
+setmetatable(CLIPS.Lion,{__index=CLIPS.Flashstep})
 -- Riposte: each fighter's shortest strike, thrown straight out of the guard.
 CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
 CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
@@ -9647,15 +10654,15 @@ CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
-local AIRBORNE={Air1=true,Air2=true,Slam=true,RasenganDrop=true,WallDive=true,FlyingKick=true}
+local AIRBORNE={Air1=true,Air2=true,Slam=true,RasenganDrop=true,WallDive=true,FlyingKick=true,AirDrive=true,AirSpike=true,AirSwitch=true,LionBarrage=true}
 local done={}
-for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist,Lion=CLIPS.Lion} do
 	local base=stance(fighterId)
 	for name,keys in route do
 		if not AIRBORNE[name] and type(keys)=="table" then
 			for _,key in keys do
 				local pose=key.pose
-				if type(pose)=="table" and pose~=base and not done[pose] and pose~=M and pose~=I and pose~=N then
+				if type(pose)=="table" and pose~=base and not done[pose] and pose~=M and pose~=I and pose~=N and pose~=STANCE.Lion and not pose.keep then
 					done[pose]=true
 					for _,part in {"root","torso"} do
 						local p,b=pose[part],base[part] or {}
@@ -9731,7 +10738,7 @@ local function followPose(p2,base)
 	return out
 end
 local chained={}
-for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist} do
+for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist=CLIPS.GentleFist,Lion=CLIPS.Lion} do
 	local base=stance(fighterId)
 	for name,keys in route do
 		if not AIRBORNE[name] and type(keys)=="table" and not chained[keys] and #keys&gt;=3 then
@@ -9768,7 +10775,7 @@ end
 -- the server's active window.
 local LEAD=.03
 local function timing(name,fighterId)
-	local spec=Attacks[name] or (if name=="RasenganDrop" then Attacks.Slam else Attacks.DashAttack)
+	local spec=Attacks[name] or (if name=="RasenganDrop" or name=="LionBarrage" then Attacks.Slam else Attacks.DashAttack)
 	local fighter=Fighters[fighterId]
 	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
 	local startup=spec.startup*(profile and profile.startup or 1)
@@ -9936,6 +10943,15 @@ local function castSpec(actor)
 		return merge(base,{root={y=-.75,pitch=20,roll=12},torso={roll=-8}})
 	elseif id=="MarkedBlade" then
 		return nil
+	elseif id=="WireTrap" then
+		if state=="TechniqueChannel" then return merge(base,{torso={yaw=20},ra={raise=40,out=-30,twist=30,elbow=110},la={raise=40,out=-30,twist=30,elbow=110}}) end
+		return merge(base,{torso={yaw=-24,pitch=6},ra={raise=88,out=40,elbow=8,wrist=24},la={raise=30,out=20,elbow=70}})
+	elseif id=="Chidori" then
+		-- The charge: low, the lightning hand down and back, the other gripping
+		-- its wrist; the thrust itself is the ChidoriThrust strike.
+		local shake=math.sin(t*90)*2
+		return merge(base,{root={y=-.95,pitch=24,yaw=20+shake},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},
+			la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})
 	end
 	return sealPose(base,t,false)
 end
@@ -9961,6 +10977,7 @@ local GAIT={
 	Flashstep={stride=1.12,cadence=.98,arm=50,lean=5,bob=1.15,guard=0},
 	Mirage={stride=1.0,cadence=.94,arm=24,lean=-1,bob=.7,guard=.35},
 	GentleFist={stride=.84,cadence=1.12,arm=16,lean=0,bob=.55,guard=.8},
+	Lion={stride=1.08,cadence=1.02,arm=44,lean=6,bob=1.05,guard=.15},
 }
 local function gaitOf(id) return GAIT[id] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
@@ -10227,6 +11244,11 @@ end
 
 -- ------------------------------------------------------------ reactions
 local reactionDuration={HitStun=.24,GuardStun=.42,Knockback=.36,Launched=.5,Juggled=.42,WallSplat=.42,Grabbed=.3}
+-- The blow lands within two or three frames, then the body recovers: the
+-- reaction peaks at once instead of easing in after the hit.
+local function snapEnvelope(elapsed,hold)
+	return math.clamp(elapsed/.035,0,1)*(1-smooth(math.clamp((elapsed-.035)/hold,0,1)))
+end
 local function reactionTargets(actor,feet)
 	local kind=actor.reaction or "HitStun"
 	local elapsed=actor.reactionElapsed or 0
@@ -10236,16 +11258,53 @@ local function reactionTargets(actor,feet)
 	local from=math.cos(angle) -- +1: hit from the front
 	local side=math.sin(angle) -- +1: hit from the fighter's right
 	local behind=math.max(0,-from)
+	local zone=actor.hitZone or "body"
+	local hitKind=actor.hitKind or "strike"
+	local twist=actor.hitTwist or 1
 	if kind=="Launched" or kind=="Juggled" then
-		-- Folded around the blow, limbs trailing as the body is carried up.
+		-- A launcher hits the chin: the head snaps back and the body arches
+		-- before it folds around the blow and is carried up, limbs trailing.
 		local fold=smooth(math.clamp(elapsed/.2,0,1))
-		return build({root={pitch=-18*fold,roll=side*10*fold},torso={pitch=-26*fold,yaw=side*16},head={pitch=-22*fold},
-			ra={raise=-40*fold,out=40*fold,elbow=30},la={raise=-36*fold,out=38*fold,elbow=26},
+		local whip=if zone=="chin" or hitKind=="launch" then 1-smooth(math.clamp(elapsed/.16,0,1)) else 0
+		return build({root={pitch=-18*fold-14*whip,roll=side*10*fold},torso={pitch=-26*fold-22*whip,yaw=side*16},head={pitch=-22*fold-34*whip},
+			ra={raise=-40*fold+20*whip,out=40*fold,elbow=30},la={raise=-36*fold+16*whip,out=38*fold,elbow=26},
 			rl={lift=34*fold,knee=60*fold},ll={lift=-6,knee=34*fold}}),RATE.recoil
+	end
+	if kind=="Bound" then
+		-- Bound by wire or sand: arms pinned to the body, a stiff struggle.
+		local struggle=math.sin(elapsed*26)*4
+		return build({root={y=-.15,yaw=struggle*.5},torso={pitch=-4,roll=struggle*.6},head={pitch=-10,yaw=struggle},
+			ra={raise=-4,out=-2,twist=-10,elbow=14},la={raise=-4,out=-2,twist=-10,elbow=14},
+			rf={x=-.18,z=.05},lf={x=.18,z=-.05}}),RATE.defense
+	end
+	if kind=="Spiked" then
+		-- Driven down: folded forward, arms trailing above, legs whipped behind.
+		local drive=smooth(math.clamp(elapsed/.08,0,1))
+		return build({root={pitch=48*drive},torso={pitch=30*drive},head={pitch=-26*drive},
+			ra={raise=150*drive,out=30,elbow=30},la={raise=140*drive,out=34,elbow=26},
+			rl={lift=-34*drive,knee=70*drive},ll={lift=-20*drive,knee=50*drive}}),RATE.recoil*1.2
+	end
+	if kind=="Knockdown" then
+		-- Falling: the body turns toward the floor during the flight so the
+		-- landing meets the lying pose. A sweep takes the legs first (they fly
+		-- up, the back drops at once); a heavy blow spins the body as it goes.
+		if hitKind=="sweep" then
+			local fall=smooth(math.clamp(elapsed/.16,0,1))
+			return build({root={y=-.5*fall,pitch=-72*fall,roll=side*8*fall},torso={pitch=-8*fall},head={pitch=20*fall},
+				ra={raise=74*fall,out=50,elbow=36},la={raise=66*fall,out=54,elbow=30},
+				rl={lift=66*fall,knee=26},ll={lift=44*fall,knee=46}}),RATE.recoil*1.3
+		end
+		local fall=smooth(math.clamp(elapsed/.34,0,1))
+		local spin=if hitKind=="heavy" or hitKind=="kick" then twist*46*fall else 0
+		return build({root={pitch=-58*fall-10*t,yaw=spin,roll=side*16*fall},torso={pitch=-16*fall,yaw=spin*.3},head={pitch=16*fall-18*t},
+			ra={raise=50+30*t,out=58,elbow=34},la={raise=44+26*t,out=54,elbow=30},
+			rl={lift=40*fall,knee=56*fall},ll={lift=18*fall,knee=40*fall}}),RATE.recoil
 	end
 	if kind=="Knockback" then
 		local lift=smooth(math.clamp(elapsed/.12,0,1))
-		return build({root={pitch=-22*strong*t-8,roll=side*14*t},torso={pitch=-20*t*strong,yaw=side*24*t},head={pitch=-24*t},
+		-- A kick turns the body with it; the head whips the other way.
+		local turn=if hitKind=="kick" then twist*30*t else 0
+		return build({root={pitch=-22*strong*t-8,roll=side*14*t,yaw=turn},torso={pitch=-20*t*strong,yaw=side*24*t+turn*.4},head={pitch=-24*t,yaw=-turn*.6},
 			ra={raise=60*t*strong,out=46*t,elbow=24},la={raise=54*t*strong,out=42*t,elbow=22},
 			rl={lift=30*lift,knee=50*lift},ll={lift=-10*lift,knee=30*lift}}),RATE.recoil
 	end
@@ -10257,16 +11316,35 @@ local function reactionTargets(actor,feet)
 		return build({root={y=-.3,pitch=10},torso={pitch=14},head={pitch=18},ra={raise=30,out=24,elbow=60},la={raise=30,out=24,elbow=60},rf={z=.3,toe=-30},lf={z=.2,toe=-30}}),RATE.defense
 	end
 	if kind=="WallSplat" then
-		local splat=smooth(math.clamp(elapsed/.08,0,1))
-		return build({root={pitch=-18*splat},torso={pitch=-22*splat},head={pitch=-20*splat},ra={raise=30,out=70*splat,elbow=40},la={raise=30,out=70*splat,elbow=40},
-			rl={lift=20,knee=30},ll={lift=10,knee=26}}),RATE.defense
+		-- The back meets the wall: the body compresses (knees, chest folding in,
+		-- head whipping back into the stone), then spreads flat against it.
+		local splat=smooth(math.clamp((elapsed-.05)/.08,0,1))
+		local crush=math.clamp(elapsed/.03,0,1)*(1-splat)
+		return build({root={y=-.35*crush,pitch=-18*splat+10*crush},torso={pitch=-22*splat+20*crush},head={pitch=-20*splat-30*crush},
+			ra={raise=30+30*crush,out=70*splat,elbow=40+40*crush},la={raise=30+30*crush,out=70*splat,elbow=40+40*crush},
+			rl={lift=20+30*crush,knee=30+50*crush},ll={lift=10+24*crush,knee=26+40*crush}}),RATE.recoil*1.4
 	end
-	-- Grounded body hit: the torso and head answer the blow, knees give.
-	local pitch=-18*t*strong+behind*34*t*strong
-	return build({root={y=-.3-.25*t*strong,z=from*.35*t,pitch=-6*t*strong+behind*14*t,yaw=-side*10*t,roll=-side*8*t},
-		torso={pitch=pitch,yaw=-side*24*t,roll=-side*12*t},head={pitch=-16*t*strong+behind*26*t,yaw=-side*14*t},
-		ra={raise=30*t*strong,out=34*t,elbow=40},la={raise=26*t*strong,out=30*t,elbow=36},
-		rf=feet and feet.rf or {z=.25},lf=feet and feet.lf or {z=-.35}}),RATE.recoil
+	-- Standing hits answer where the blow landed. The head snaps away from a
+	-- strike to the face, the body folds around one to the ribs, a low kick
+	-- buckles the knee on its side; from behind the body arches instead.
+	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
+	local s=strong
+	local spec
+	if zone=="head" then
+		spec={root={y=-.2*snap,z=.25*snap,yaw=twist*8*snap,roll=-twist*5*snap},torso={pitch=-8*snap,yaw=twist*16*snap,roll=-twist*6*snap},
+			head={pitch=-16*snap*s,yaw=twist*40*snap,roll=twist*14*snap},
+			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
+	elseif zone=="legs" then
+		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
+			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
+	else
+		local fold=(1-behind)*26*snap*s
+		spec={root={y=-.35*snap*s,z=from*.4*snap,pitch=6*snap*s,yaw=twist*10*snap},torso={pitch=fold-behind*26*snap,yaw=twist*20*snap,roll=-side*10*snap},
+			head={pitch=12*snap*(1-behind)-behind*28*snap,yaw=-side*12*snap},
+			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
+	end
+	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}
+	return build(spec),RATE.recoil*1.5
 end
 -- Lying on the floor after a knockdown, then a quick, readable get-up.
 local function groundTargets(actor)
@@ -10347,7 +11425,7 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Lion={},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -10372,9 +11450,9 @@ local function weaponsFor(char,fighterId)
 	if items then return items end
 	items={}
 	weapons[char]=items
-	local minato=fighterId~="Mirage"
+	local minato=fighterId=="Flashstep" or (fighterId~="Mirage" and fighterId~="GentleFist" and fighterId~="Lion")
 	local palms=fighterId=="GentleFist"
-	local hand=char:FindFirstChild(if minato then "RightHand" else "LeftHand")
+	local hand=char:FindFirstChild(if fighterId=="Mirage" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
@@ -10403,7 +11481,7 @@ end
 function Motion.weapon(char,actor)
 	local items=weaponsFor(char,actor.fighterId)
 	if not items then return end
-	local minato=actor.fighterId~="Mirage"
+	local minato=actor.fighterId=="Flashstep" or (actor.fighterId~="Mirage" and actor.fighterId~="GentleFist" and actor.fighterId~="Lion")
 	local name=actor.attackName
 	local spec=name and Attacks[name]
 	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
@@ -10423,6 +11501,8 @@ function Motion.weapon(char,actor)
 		setVisible(items.melee,meleeOut and not holding)
 		setVisible(items.throw,holding and throwKind=="Kunai")
 		setVisible(items.marked,holding and throwKind=="MarkedKunai")
+	elseif actor.fighterId=="Lion" then
+		setVisible(items.shuriken,(holding and throwKind=="Shuriken") or (actor.castId=="WireTrap" and actor.state=="TechniqueChannel"))
 	else
 		setVisible(items.shuriken,(meleeOut and (name=="Light2")) or (holding and throwKind=="Shuriken") or castFan)
 		if items.melee then setVisible(items.melee,meleeOut and name=="Light2") end
@@ -10528,6 +11608,9 @@ function Motion.present(char,actor,clock,dt)
 		local spec
 		if subject.fighterId=="Mirage" then
 			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
+		elseif subject.fighterId=="Lion" then
+			-- Hands in the pockets, chin up: unimpressed until the fight starts.
+			spec=merge(base,{root={y=-.08,pitch=-2,yaw=10},torso={pitch=-4,yaw=-6},head={pitch=-8,yaw=-10},ra={raise=-6,out=14,twist=-30,elbow=60,wrist=0},la={raise=-6,out=14,twist=-30,elbow=60,wrist=0},rf={x=.1,z=.2},lf={x=-.1,z=-.2}})
 		elseif subject.fighterId=="GentleFist" then
 			-- Byakugan: two fingers raised to the eyes, then the stance.
 			spec=merge(base,{root={y=-.4,yaw=30},head={pitch=0,yaw=-18},ra={raise=128,out=-30,twist=20,elbow=146,wrist=0},la={raise=40,out=10,elbow=40}})
@@ -10570,7 +11653,7 @@ function Motion.present(char,actor,clock,dt)
 	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
 	-- The base the body returns to: gait on the ground, air pose in the air.
 	local base,baseRate
-	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
+	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
 	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
 	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
 	elseif footwork then
@@ -10592,7 +11675,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if swinging then
-		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" then subject.attackVariant else subject.attackName
+		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		-- (Clone: blend may hand back a cached clip pose, which must not change.)
 		local final=table.clone(blend(base,targets,weight))

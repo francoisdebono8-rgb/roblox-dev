@@ -1352,6 +1352,13 @@ local function reactionTargets(actor,feet)
 			ra={raise=-40*fold+20*whip,out=40*fold,elbow=30},la={raise=-36*fold+16*whip,out=38*fold,elbow=26},
 			rl={lift=34*fold,knee=60*fold},ll={lift=-6,knee=34*fold}}),RATE.recoil
 	end
+	if kind=="Bound" then
+		-- Bound by wire or sand: arms pinned to the body, a stiff struggle.
+		local struggle=math.sin(elapsed*26)*4
+		return build({root={y=-.15,yaw=struggle*.5},torso={pitch=-4,roll=struggle*.6},head={pitch=-10,yaw=struggle},
+			ra={raise=-4,out=-2,twist=-10,elbow=14},la={raise=-4,out=-2,twist=-10,elbow=14},
+			rf={x=-.18,z=.05},lf={x=.18,z=-.05}}),RATE.defense
+	end
 	if kind=="Spiked" then
 		-- Driven down: folded forward, arms trailing above, legs whipped behind.
 		local drive=smooth(math.clamp(elapsed/.08,0,1))

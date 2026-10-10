@@ -622,6 +622,72 @@ local function dressSasuke(model,def)
 	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.1,0),rgb(40,46,70))
 	wear(model,"LowerTorso","ToolPouch",Vector3.new(.66,.4,.3),CFrame.new(0,.1,.62),rgb(70,64,58))
 end
+-- Gaara at the Chunin Exam (12): spiky red hair, 愛 on the forehead, dark rings
+-- round pale eyes, a dark one-piece with the white sash that carries the sand
+-- gourd on his back.
+local function dressGaara(model,def)
+	local hair=rgb(170,44,36)
+	local hairShade=rgb(140,32,28)
+	local suit=rgb(70,44,50)
+	local suitDark=rgb(46,30,36)
+	local sash=rgb(232,226,212)
+	local gourd=rgb(206,170,118)
+	local gourdDark=rgb(170,134,90)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(120,190,170),skin)
+	-- No eyebrows; the sleepless dark rings around the eyes.
+	for _,p in model:GetChildren() do
+		if p.Name=="Brow" then p.Transparency=1 end
+		if p.Name=="Eye" then p.Color=rgb(236,240,232) end
+	end
+	for _,side in {-1,1} do
+		wear(model,"Head","EyeRing",Vector3.new(.4,.27,.03),CFrame.new(side*.3,.08,-.79),rgb(34,26,30))
+	end
+	-- 愛 above the left eye, in red.
+	local mark=wear(model,"Head","LoveMark",Vector3.new(.3,.3,.02),CFrame.new(-.36,.42,-.8),rgb(176,30,34))
+	if mark then
+		local gui=Instance.new("SurfaceGui");gui.Face=Enum.NormalId.Front;gui.CanvasSize=Vector2.new(60,60);gui.LightInfluence=1;gui.Parent=mark
+		local t=Instance.new("TextLabel");t.Size=UDim2.fromScale(1,1);t.BackgroundTransparency=1;t.Text="愛";t.TextScaled=true
+		t.TextColor3=rgb(176,30,34);t.Font=Enum.Font.GothamBold;t.Parent=gui
+		mark.Transparency=1
+	end
+	hairCap(model,hair)
+	local spikes={
+		{Vector3.new(0,.8,.1),Vector3.new(0,1,.3),.7,.5,.34},
+		{Vector3.new(-.42,.7,.1),Vector3.new(-.6,.8,.3),.65,.46,.32},
+		{Vector3.new(.42,.7,.1),Vector3.new(.6,.8,.3),.65,.46,.32},
+		{Vector3.new(0,.5,.55),Vector3.new(0,.3,1),.7,.5,.34},
+		{Vector3.new(-.5,.4,.5),Vector3.new(-.6,.2,1),.6,.42,.3},
+		{Vector3.new(.5,.4,.5),Vector3.new(.6,.2,1),.6,.42,.3},
+		{Vector3.new(-.72,.45,-.05),Vector3.new(-1,.4,.1),.48,.38,.26},
+		{Vector3.new(.72,.45,-.05),Vector3.new(1,.4,.1),.48,.38,.26},
+	}
+	for index,s in spikes do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	-- Short messy fringe; no headband (he wears it on the sash).
+	for _,x in {-.42,-.14,.14,.42} do spike(model,Vector3.new(x,.62,-.56),Vector3.new(x*.5,-.7,-.6),.44,.34,.2,hair) end
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=suit end
+	end
+	for _,side in {"Left","Right"} do
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=suitDark end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=suitDark end
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,34,40) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.3,.34,1.06),CFrame.new(0,.82,.02),suitDark)
+	-- The sash across the chest (right shoulder to left hip) with the headband plate.
+	wear(model,"UpperTorso","Sash",Vector3.new(.34,2.2,1.12),CFrame.new(0,0,0)*CFrame.Angles(0,0,math.rad(-38)),sash)
+	wear(model,"UpperTorso","SashPlate",Vector3.new(.5,.3,.06),CFrame.new(-.2,.1,-.58)*CFrame.Angles(0,0,math.rad(-38)),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.3,0),suitDark)
+	-- The gourd: two stacked bellies and a cork, strapped across the back.
+	local belly=wear(model,"UpperTorso","Gourd",Vector3.new(1.9,1.9,1.5),CFrame.new(.1,-.4,1.25),gourd,Enum.Material.Sand)
+	if belly then belly.Shape=Enum.PartType.Ball end
+	local top=wear(model,"UpperTorso","GourdTop",Vector3.new(1.3,1.3,1.1),CFrame.new(.3,.75,1.2),gourd,Enum.Material.Sand)
+	if top then top.Shape=Enum.PartType.Ball end
+	cyl(wear(model,"UpperTorso","GourdNeck",Vector3.new(.4,.55,.55),CFrame.new(.42,1.42,1.18)*CFrame.Angles(0,0,math.rad(90)),gourdDark,Enum.Material.Wood))
+	wear(model,"UpperTorso","GourdBand",Vector3.new(1.95,.16,1.55),CFrame.new(.1,.2,1.2),rgb(120,92,62),Enum.Material.Fabric)
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -634,7 +700,7 @@ function World.dress(model,def)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
-	elseif def.Name=="Sasuke" then dressSasuke(model,def) end
+	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

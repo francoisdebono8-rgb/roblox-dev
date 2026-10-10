@@ -9,7 +9,7 @@ Tutorial.Steps={
  {title="Directional dash",pad="Left stick + B / Circle",key="Direction + Q",event="Dodge"},
  {title="Run up the wall, then rebound",pad="Push LS into wall, then A",key="Move into wall, then SPACE",kind="Wall"},
  {title="Land three light strikes",pad="X / Square three times",key="LMB three times",kind="Combo"},
- {title="Branch into a launcher",pad="X, X, then Y / Triangle",key="LMB, LMB, RMB",event="LaunchHit"},
+ {title="Branch into a launcher",pad="X, X, then push toward + X (or Y)",key="LMB, LMB, then W + LMB (or RMB)",event="LaunchHit"},
  {title="Chase the launched target",pad="A / Cross after launch",key="E or SPACE after launch",kind="Chase"},
  {title="Land two aerial strikes",pad="X / Square twice in air",key="LMB twice in air",kind="AirCombo"},
  {title="Finish downward",pad="Y / Triangle in air",key="RMB in air",event="SlamHit"},
@@ -19,6 +19,8 @@ Tutorial.Steps={
  {title="Grab, then throw",pad="LT / L2, then X (Y throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
  {title="Perform a character technique",pad="Hold RB / R1 + A",key="1",kind="Technique"},
  {title="Interrupt the telegraphed technique",pad="X / Square during hand signs",key="LMB during hand signs",kind="Interrupt"},
+ {title="Go low: two hits, then away + strike",pad="X, X, then pull back + X",key="LMB, LMB, then S + LMB",event="RouteDown"},
+ {title="Turn the angle: one hit, then sideways + strike",pad="X, then left or right + X",key="LMB, then A or D + LMB",event="RouteSide"},
  {title="Win the practice duel",pad="Use your complete kit",key="Use your complete kit",kind="Win"},
 }
 function Tutorial.new(s)
@@ -55,7 +57,7 @@ function Tutorial.update(s,now,dt)
  if t.entered==0 then Tutorial.enter(s,now) end
  local spec=Tutorial.Steps[t.index]
  b.move=Vector3.zero;b.sprinting=false
- if t.index==18 then s.ai:update(now);return end
+ if spec.kind=="Win" then s.ai:update(now);return end
  local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
  local function event(name) return (a.events and a.events[name] or 0)>(t.baseline[name] or 0) end
  local done=spec.event and event(spec.event)

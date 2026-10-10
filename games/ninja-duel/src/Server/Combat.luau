@@ -675,6 +675,15 @@ function Combat:request(a,action,aim,clientTime)
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
 	end
+	-- Dragon Flame: with the wire still holding the body, the fire runs along
+	-- it at once (the wire throw's recovery is cancelled, the signs are short).
+	a.wireCancel=nil
+	local wired=a.wireVictim and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
+	if cancelSpec and cancelSpec.Id=="FireBloom" and wired and (a.state=="TechniqueRecovery" or a.state=="Neutral" or a.state=="Recovery")
+		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+		a.state="Neutral";a.untilTime=self.now;a.pending=nil
+		a.wireCancel=true
+	end
 	local chain=action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>a.chainAt
 	if not chain and not Rules.canAct(a,self.now) then return false,"Committed" end
 	if action=="Guard" then Brawler.event(self,a,"Guard");Defense.guard(a,true,self.now);self:setState(a,"Guarding",0);return true end
@@ -716,6 +725,8 @@ function Combat:request(a,action,aim,clientTime)
 	local technique=Techniques[spec.Id]
 	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
 	a.stringCancel=nil
+	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
+	a.wireCancel=nil
 	-- Context: the same Rasengan is a different tool after a teleport (instant
 	-- thrust) and in the air (a plunge that ends the air phase).
 	local variant=nil

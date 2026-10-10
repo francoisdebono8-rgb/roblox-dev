@@ -903,23 +903,46 @@ function FX:fighter(model,actor,dt)
 		aura.mantle=nil
 	end
 	for _,mark in aura.marks or {} do mark.Transparency=if awake then 0 else 1 end
+	-- Bound: wire coiled around the chest and arms while the bind holds.
+	local bound=actor.bound==true and (actor.health or 1)>0
+	if bound and not aura.binding then
+		local torso=model:FindFirstChild("UpperTorso") or root
+		local holder=new("Model",{Name="Binding"},self.folder)
+		local coils={}
+		for k=0,2 do
+			local coil=block(holder,Vector3.new(.08,2.9,2.9),torso.CFrame*CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(196,200,208),Enum.Material.Metal)
+			coil.Shape=Enum.PartType.Cylinder;coil.Transparency=.15
+			table.insert(coils,{part=coil,offset=CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2)})
+		end
+		aura.binding={holder=holder,coils=coils,torso=torso}
+		sound(torso,SOUND.whoosh,.4,2)
+	elseif not bound and aura.binding then
+		aura.binding.holder:Destroy()
+		aura.binding=nil
+	end
+	if aura.binding then
+		for _,c in aura.binding.coils do c.part.CFrame=aura.binding.torso.CFrame*c.offset end
+	end
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
 	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
 		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
 	if chidori and not aura.chidori and (actor.health or 1)>0 then
 		local hand=model:FindFirstChild("RightHand") or root
 		local at=new("Attachment",{Name="Chidori"},hand)
-		local e=new("ParticleEmitter",{Texture=TEX.spark,Rate=160,Lifetime=NumberRange.new(.06,.16),Speed=NumberRange.new(8,18),SpreadAngle=Vector2.new(180,180),
-			Color=ColorSequence.new(Color3.fromRGB(200,225,255)),LightEmission=1,LightInfluence=0,Size=num({{0,.7},{1,0}}),Transparency=num({{0,0},{1,1}})},at)
-		local light=new("PointLight",{Color=Color3.fromRGB(150,190,255),Brightness=4,Range=14,Shadows=false},at)
-		aura.chidori={attachment=at,emitter=e,light=light}
+		local e=new("ParticleEmitter",{Texture=TEX.spark,Rate=220,Lifetime=NumberRange.new(.05,.14),Speed=NumberRange.new(6,16),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(Color3.fromRGB(190,220,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.1},{1,0}}),Transparency=num({{0,0},{1,1}}),
+			Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400)},at)
+		local core=new("ParticleEmitter",{Texture=TEX.glow,Rate=40,Lifetime=NumberRange.new(.08,.12),Speed=NumberRange.new(0,0),
+			Color=ColorSequence.new(Color3.fromRGB(220,236,255)),LightEmission=1,LightInfluence=0,Size=num({{0,1.4},{1,1.0}}),Transparency=num({{0,.2},{1,1}})},at)
+		local light=new("PointLight",{Color=Color3.fromRGB(150,190,255),Brightness=1.6,Range=8,Shadows=false},at)
+		aura.chidori={attachment=at,emitter=e,core=core,light=light}
 		sound(hand,SOUND.whoosh,.5,2.6)
 	elseif not chidori and aura.chidori then
-		aura.chidori.emitter.Enabled=false
+		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
 		Debris:AddItem(aura.chidori.attachment,.4)
 		aura.chidori=nil
 	end
-	if aura.chidori then aura.chidori.light.Brightness=3+math.random()*3 end
+	if aura.chidori then aura.chidori.light.Brightness=1.2+math.random()*1.4 end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
 		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true

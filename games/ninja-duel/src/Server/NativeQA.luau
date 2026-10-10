@@ -313,7 +313,7 @@ function QA.run(matches)
   assert(key~=nil,"No gamepad mapping "..name)
   assert(string.match(key.Name,"^Button") or string.match(key.Name,"^DPad"),"Not a controller key for "..name)
  end
- assert(#Tutorial.Steps==18)
+ assert(#Tutorial.Steps==20)
  local c,a,b=pair("Flashstep","Mirage");local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai=AI.new(c,b,23)
  Tutorial.new(s);Tutorial.update(s,c.now,.02)
  a.root.CFrame+=Vector3.new(4,0,0);Tutorial.update(s,c.now+.02,.02)

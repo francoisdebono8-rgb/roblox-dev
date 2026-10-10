@@ -263,7 +263,7 @@ function Brawler.request(c,a,action)
   if route and Attacks[route] then
    a.angleSide=sideSign;a.queuedLight=nil
    if not Attacks[route].chain then a.combo=0 end
-   Brawler.event(c,a,"Route")
+   Brawler.event(c,a,"Route");Brawler.event(c,a,if dir=="forward" then "RouteUp" elseif dir=="back" then "RouteDown" else "RouteSide")
    return Brawler.start(c,a,route)
   end
  end
@@ -515,7 +515,11 @@ function Brawler.hit(c,a,p)
  end
  if p.name=="Air1" or p.name=="Air2" then Brawler.event(c,a,"AirHit") end
  if p.name=="Slam" then Brawler.event(c,a,"SlamHit");a.airHold=0 end
- if p.name=="Throw" or p.name=="ThrowUp" then Brawler.event(c,a,"ThrowHit") end
+ if p.name=="Throw" or p.name=="ThrowUp" then
+  Brawler.event(c,a,"ThrowHit")
+  -- Projection -> pursuit: the thrown body can be chased to where it lands.
+  if p.name=="Throw" then a.pursuitUntil=math.max(a.pursuitUntil or 0,c.now+.9);c:cue(a,"THROWN • E TO CHASE",.8) end
+ end
  Brawler.event(c,a,"Hit");return true
 end
 function Brawler.step(c,a,dt)
