@@ -32,7 +32,7 @@ def sources(parent, directory):
         if source.stem == 'NativeQA' and not args.qa: continue
         cls = 'Script' if source.name.endswith('.server.luau') else 'LocalScript' if source.name.endswith('.client.luau') else 'ModuleScript'
         name = source.name.split('.')[0]
-        item(parent, cls, name, [('Source','ProtectedString',source.read_text())])
+        item(parent, cls, name, [('Source','ProtectedString',source.read_text(encoding='utf-8'))])
 
 workspace = item(xml,'Workspace','Workspace', [('Gravity','float',140),('FallenPartsDestroyHeight','float',-100)])
 # Only the QA build sets the explicit Studio-only test attribute.
@@ -54,7 +54,7 @@ fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').
 item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
 for vendor in ('bangla','place1','velmora'):
-    item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text())])
+    item(licenses,'StringValue',vendor,[('Value','string',(ROOT/'vendor'/vendor/'LICENSE').read_text(encoding='utf-8'))])
 server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
 starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','float',8),('CameraMaxZoomDistance','float',32)])
@@ -70,23 +70,31 @@ name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel.rbxlx'
 output=ROOT/'dist'/name
 ET.indent(xml)
 ET.ElementTree(xml).write(output,encoding='utf-8',xml_declaration=True)
-expected = [p.read_text() for p in (ROOT/'src').rglob('*.luau') if args.qa or p.stem!='NativeQA']
+expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if args.qa or p.stem!='NativeQA']
 if args.qa:
-    main_source=(ROOT/'src/Server/Main.server.luau').read_text()
+    main_source=(ROOT/'src/Server/Main.server.luau').read_text(encoding='utf-8')
     expected[expected.index(main_source)]='workspace:SetAttribute("NinjaDuelQA",true)\n'+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
 assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewed files'
 external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
 for asset_file in asset_files:
-    external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text())))
+    external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
 import subprocess,sys
 # Automated gate: every headless spec must pass on the exact sources built here.
 TEST_RUNNERS=[('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau')]
 def run_automated():
     tool={}
+    import os
+    # Tool locations: explicit env (LUAU / LUNE), a shared tools folder
+    # (NINJA_DUEL_TOOLS, macOS /private/tmp default, Windows %LOCALAPPDATA%), then PATH.
+    folders=[os.environ.get('NINJA_DUEL_TOOLS',''),'/private/tmp/ninja-duel-tools',os.path.join(os.environ.get('LOCALAPPDATA',''),'ninja-duel-tools')]
     for probe in ('luau','lune'):
-        for candidate in ('/private/tmp/ninja-duel-tools/'+probe,probe):
-            if shutil.which(candidate) or Path(candidate).exists():
+        candidates=[os.environ.get(probe.upper(),'')]
+        for folder in folders:
+            if folder: candidates+=[os.path.join(folder,probe),os.path.join(folder,probe+'.exe')]
+        candidates.append(probe)
+        for candidate in candidates:
+            if candidate and (shutil.which(candidate) or Path(candidate).is_file()):
                 tool[probe]=candidate
                 break
     results={}
@@ -94,7 +102,7 @@ def run_automated():
         return {'status':'SKIPPED','reason':'luau/lune not available in this environment','suites':{}}
     for engine,spec in TEST_RUNNERS:
         command=[tool[engine],'run',spec] if engine=='lune' else [tool[engine],spec]
-        proc=subprocess.run(command,cwd=ROOT,capture_output=True,text=True)
+        proc=subprocess.run(command,cwd=ROOT,capture_output=True,text=True,encoding='utf-8',errors='replace')
         tail=(proc.stdout or '').strip().splitlines()
         results[spec]={'exit':proc.returncode,'summary':tail[-1] if tail else ''}
     failed=[spec for spec,data in results.items() if data['exit']!=0]

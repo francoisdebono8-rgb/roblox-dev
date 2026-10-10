@@ -8,6 +8,7 @@ local Combat=require(script.Parent.Combat)
 local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
+local Techniques=require(script.Parent.Techniques)
 local Matches={}; Matches.__index=Matches
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
@@ -66,10 +67,11 @@ function Matches:start(player,playerId,botId,training)
 	return true
 end
 function Matches:snapshot(player,s)
+	local now=s.combat.now
 	local function data(a)
 		local ready={}
 		for i,spec in a.def.Techniques do
-			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-s.combat.now),condition=not spec.Requires or (spec.Requires=="Anchor" and a.anchor~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
+			ready[i]={id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=math.max(0,(a.cooldowns[spec.Id] or 0)-now),condition=not spec.Requires or (spec.Requires=="Anchor" and Techniques.sealOf(s.combat,a,now)~=nil) or (spec.Requires=="Target" and s.combat:targetValid(a,a.target,spec.Range,0.35))}
 		end
 		return {id=a.id,fighterId=a.fighterId,fighter=a.def.Name,health=a.health,maxHealth=a.def.Health,chakra=a.chakra,maxChakra=a.def.Chakra or Config.Chakra,stamina=a.stamina or 100,state=a.state,
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
@@ -78,9 +80,33 @@ function Matches:snapshot(player,s)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity}
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			-- Presentation timing for throws, casts, teleports and variants:
+			-- elapsed values are measured on the server clock the client shares.
+			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
+			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
+			castId=a.castId,castElapsed=now-(a.castStarted or now),
+			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
+			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector}
 	end
-	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=s.combat.impacts,impactSerial=s.combat.impactSerial or 0})
+	-- Live projectiles: straight constant-speed flights the client reproduces
+	-- exactly on the shared server clock, so blades and fire never stutter.
+	local projectiles={}
+	for _,p in s.combat.projectiles do
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth})
+	end
+	local hazards={}
+	for _,h in s.combat.hazards do
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id})
+	end
+	-- Only contacts the client has not been sent yet; remotes are ordered and
+	-- reliable, and the client still filters by serial.
+	local feed={}
+	local sent=if s.impactEpoch==s.epoch then (s.sentImpact or 0) else 0
+	for _,impact in s.combat.impacts do if impact.serial>sent then table.insert(feed,impact) end end
+	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
+	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+		projectiles=projectiles,hazards=hazards,serverNow=now})
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -135,8 +161,11 @@ function Matches:update(dt,now)
 				if s.tutorial then Tutorial.update(s,now,dt) else s.ai:update(now) end
 			end
 		end
-		if s.combat and now>=(s.nextSnapshot or 0) then
-			s.nextSnapshot=now+Config.SnapshotInterval; self:snapshot(player,s)
+		-- Regular cadence, plus an immediate packet when a contact, throw or
+		-- teleport happened so presentation never waits a full interval.
+		local urgent=s.combat and s.combat.urgent and now>=(s.lastUrgent or 0)+.03
+		if s.combat and (now>=(s.nextSnapshot or 0) or urgent) then
+			s.nextSnapshot=now+Config.SnapshotInterval; s.combat.urgent=false; s.lastUrgent=now; self:snapshot(player,s)
 		end
 	end
 end

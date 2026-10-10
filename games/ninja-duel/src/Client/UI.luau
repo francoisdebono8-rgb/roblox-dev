@@ -137,6 +137,10 @@ function UI:render(data)
 	self.cue.Text=""
 	self.channel.Text=""
 	for i,tech in h.techniques do
+		-- Each slot owns its own widgets; `ui` was an undefined global, so every
+		-- render used to throw here and the rest of the HUD never refreshed.
+		local ui=self.techniqueButtons[i]
+		ui.box.Visible=true
 		ui.title.Text=(if pad then ({"RB+A","RB+X","RB+Y","RB+B","\u{2191}"})[i] else string.format("%d",i)).."  "..tech.name
 		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "Needs setup" elseif h.chakra<tech.cost then "Need chakra" else tech.cost.." chakra"
 		ui.box.BackgroundColor3=if tech.remaining==0 and tech.condition and h.chakra>=tech.cost then Color3.fromRGB(30,57,69) else palette.panel

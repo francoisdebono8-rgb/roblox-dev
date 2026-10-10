@@ -58,7 +58,7 @@ function Tutorial.update(s,now,dt)
  elseif spec.kind=="Combo" then done=(a.events and a.events.Hit or 0)-(t.baseline.Hit or 0)>=3
  elseif spec.kind=="Chase" then done=event("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude<7
  elseif spec.kind=="AirCombo" then done=(a.events and a.events.AirHit or 0)-(t.baseline.AirHit or 0)>=2
- elseif spec.kind=="Technique" then done=event("Technique") and a.state=="TechniqueRecovery"
+ elseif spec.kind=="Technique" then done=event("TechniqueResolved") or (event("Technique") and a.state=="TechniqueRecovery")
  elseif spec.kind=="Evade" then done=event("Dodge") and (event("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)>.46 and a.health==t.health))
  elseif spec.kind=="Interrupt" then done=event("Interrupt") end
  if done and not t.completedAt then t.completedAt=now end
@@ -68,7 +68,7 @@ function Tutorial.update(s,now,dt)
   b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
  end
  if t.index==17 and now>=t.attackAt then
-  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,if b.fighterId=="Mirage" then "Technique4" else "Technique1",a.root.Position);t.attackAt=now+1.4
+  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,if b.fighterId=="Mirage" then "Technique4" else "Technique5",a.root.Position);t.attackAt=now+1.4
  end
  -- Failed launch/juggle exercises reset quickly without skipping their objectives.
  if (t.index==9 or t.index==10 or t.index==11) and now-t.entered>3 then Tutorial.enter(s,now) end

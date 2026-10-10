@@ -48,6 +48,8 @@ function Brawler.start(c,a,name)
 	end
  a.buffered=nil
  a.queuedLight=nil
+ a.attackVariant=nil
+ a.attackSerial=(a.attackSerial or 0)+1
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
  local slamWindow=0
  if name=="Slam" then
@@ -81,6 +83,22 @@ function Brawler.request(c,a,action)
  local pending=a.pending
  local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
  local canDash=a.state=="Dodging" and c.now>=a.untilTime-.23
+ -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
+ -- so the teleport flows straight into an attack from the new angle.
+ local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now and a.pending==nil
+ if canFlash then
+  a.flashUntil=0;a.state="Neutral";a.untilTime=c.now
+  local gap=(a.target.root.Position-a.root.Position).Magnitude
+  if action=="Heavy" then
+   if a.airborne then return Brawler.start(c,a,"Slam") end
+   return Brawler.start(c,a,"Launcher")
+  end
+  if action=="Attack" then
+   if a.airborne then a.airCombo=1;a.lastAirAttack=c.now;return Brawler.start(c,a,"Air1") end
+   a.combo=1;a.lastAttack=c.now
+   return Brawler.start(c,a,if gap>5.5 then "DashAttack" else "Light1")
+  end
+ end
   if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
    if pending and pending.kind=="Brawl" and a.hitConfirmed then
     -- Buffer the follow-up, but only behind a swing that actually connected.

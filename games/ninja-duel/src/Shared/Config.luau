@@ -11,7 +11,7 @@ return {
 	Substitution = {Cost = 22, Charges = 2, Cooldown = 5, Window = 0.42, Distance = 8},
 	Wall = {Detect = 3.4, Clearance = 1.7, RiseSpeed = 23, SideSpeed = 30, MaxTime = 1.65,
 		ReboundUp = 61, ReboundAway = 29, ReattachDelay = 0.4},
-	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.1,
+	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
 	Movement = { SprintSpeed = 46, GroundAcceleration = 420, GroundDeceleration = 480, TurnAcceleration = 620, AirAcceleration = 76,
 		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,

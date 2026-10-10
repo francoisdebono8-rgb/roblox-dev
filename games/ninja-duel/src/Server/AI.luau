@@ -1,4 +1,5 @@
 local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+local Techniques=require(script.Parent.Techniques)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -58,6 +59,19 @@ function AI:update(now)
 		end
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()<.4 then "Heavy" else "Attack");return end
+	-- Flying Thunder God arrival: strike from the new angle immediately.
+	if (a.flashUntil or 0)>now then
+		c:request(a,if self.rng:NextNumber()<.3 then "Heavy" else "Attack");return
+	end
+	-- A marked kunai that is about to pass the opponent is a teleport cue.
+	if minato and a.state=="Neutral" then
+		local seal=Techniques.sealOf(c,a,now)
+		if seal and (seal-target.root.Position).Magnitude<7 and c:markedInFlight(a) then
+			for slot,spec in a.def.Techniques do
+				if spec.Id=="Flashstep" and c:request(a,"Technique"..slot) then return end
+			end
+		end
+	end
 	if a.pursuitUntil>now and distance>8 and distance<Config.PursuitRange and self.rng:NextNumber()<0.58 then
 		c:request(a,"Pursuit"); return
 	end
@@ -75,13 +89,13 @@ function AI:update(now)
 	if self.rng:NextNumber()<tune.Technique then
 		for slot,spec in a.def.Techniques do
 			local use=false; local aim=target.root.Position
-			if spec.Id=="MarkedBlade" then use=not a.anchor and distance>9; aim=position+target.hum.MoveDirection*2-Vector3.new(0,3,0)
-			elseif spec.Id=="Flashstep" then use=a.anchor~=nil and distance>10
+			if spec.Id=="MarkedBlade" then use=not a.anchor and not c:markedInFlight(a) and distance>8; aim=position+target.hum.MoveDirection*3
+			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance>14 or (seal-target.root.Position).Magnitude<7)
 			elseif spec.Id=="BurstStrike" then use=distance<7 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery")
 			elseif spec.Id=="Read" then use=distance<8 and danger and reacted
-			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<27
+			elseif spec.Id=="NeedleFan" then use=distance>8 and distance<36
 			elseif spec.Id=="MirageCast" then use=distance>10 and distance<21 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.18) end
-			if spec.Id=="FireBloom" then use=distance<15 and (target.state=="Recovery" or target.state=="Guarding" or self.rng:NextNumber()<0.28) end
+			if spec.Id=="FireBloom" then use=distance>6 and distance<46 and c:lineOfSight(a,target) and (target.state=="Recovery" or target.state=="TechniqueChannel" or self.rng:NextNumber()<0.32) end
 			if spec.Id=="WindCut" then use=distance>8 and distance<28 end
 			if spec.Id=="Quickstep" then use=distance>9 and distance<20 and self.rng:NextNumber()<0.25 end
 			if use and c:request(a,"Technique"..slot,aim) then return end
