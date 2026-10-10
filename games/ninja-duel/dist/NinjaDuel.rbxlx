@@ -1436,7 +1436,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9381da8c47052d999429b524c3cdf36f3e8ff6458f52119fabe5a12107aa1382</string>
+          <string name="Value">a6e99a1706e198a818145f1dd1b707744c54a0a8b5782f37c90df2c8bf3f2c14</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -6643,6 +6643,8 @@ local SOUND={
 	heavy="rbxassetid://9117969717",
 	boom="rbxasset://sounds/impact_explosion_03.mp3",
 	land="rbxasset://sounds/action_jump_land.mp3",
+	jump="rbxasset://sounds/action_jump.mp3",
+	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
@@ -7096,6 +7098,7 @@ function FX:impact(impact,folder)
 		end
 	elseif style=="landing" then
 		smokePuff(self.folder,position-Vector3.new(0,2.7,0),Color3.fromRGB(190,178,150),6,1.1)
+		sound(anchorPart(self.folder,position),SOUND.land,.35,1.05)
 	elseif style=="slam" then
 		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(176,160,130),22,2.6)
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(255,214,160),3,22,.32)
@@ -7359,6 +7362,9 @@ function FX:seal(owner,actor,folder)
 		end
 	end
 end
+-- Built-in Roblox sounds (shipped with every client, Mac and PC).
+function FX:jumpSound(position) sound(anchorPart(self.folder,position),SOUND.jump,.28,1.1) end
+function FX:getUpSound(position) sound(anchorPart(self.folder,position),SOUND.getUp,.25,1.15) end
 function FX:hazardsStep(data)
 	local live={}
 	for _,h in data.hazards or {} do
@@ -8065,6 +8071,9 @@ function Presentation:update(data,dt)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see
    -- Presentation:smoothStep, run just before each frame is rendered).
+   -- Take-off and get-up sounds, from the state change itself.
+   if previous and not previous.airborne and actor.airborne and root and root.AssemblyLinearVelocity.Y&gt;15 and not actor.reaction then self.fx:jumpSound(root.Position) end
+   if previous and previous.reaction=="Wakeup" and actor.reaction~="Wakeup" and root then self.fx:getUpSound(root.Position) end
    if previous and previous.airborne and not actor.airborne then
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
@@ -8106,7 +8115,7 @@ function Presentation:update(data,dt)
    self.presented=self.presented or {}
    self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
-    impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
+    impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end
  end
  self.fx:update(data,dt,folder)
@@ -9861,22 +9870,35 @@ local function guardTargets(fighterId,impact)
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
 end
-local function dodgeTargets(char,actor)
+-- A dash is pushed off a leg: for its first few frames the body drops and
+-- the pushing leg drives against the ground, then the glide takes over.
+local DASH_PUSH=.08
+local function dodgeTargets(char,actor,t)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local direction=planar(actor.velocity)
 	local localMotion=if root and direction.Magnitude&gt;.1 then root.CFrame:VectorToObjectSpace(direction) else Vector3.new(1,0,0)
 	local forward=math.clamp(-localMotion.Z/14,-1,1)
 	local side=math.clamp(localMotion.X/14,-1,1)
+	local push=1-smooth(math.clamp((t or 1)/DASH_PUSH,0,1))
+	local glide,load
 	if math.abs(side)&gt;math.abs(forward)*.8 then
 		local s=if side&lt;0 then -1 else 1
-		return build({root={y=-.9,roll=s*26,pitch=10},torso={roll=s*12},head={roll=-s*10},ra={raise=50,out=40,elbow=60},la={raise=50,out=40,elbow=60},
-			rf={x=s*.6,z=.1},lf={x=s*.6,z=-.1}}),RATE.defense
+		glide={root={y=-.9,roll=s*26,pitch=10},torso={roll=s*12},head={roll=-s*10},ra={raise=50,out=40,elbow=60},la={raise=50,out=40,elbow=60},
+			rf={x=s*.6,z=.1},lf={x=s*.6,z=-.1}}
+		-- The far leg pushes: it is extended away from the dash.
+		load={root={y=-1.2,roll=-s*8,pitch=8},torso={roll=-s*6},ra={raise=40,out=30,elbow=70},la={raise=40,out=30,elbow=70},
+			rf=if s&gt;0 then {x=.2,z=0} else {x=-.9,z=0,toe=-25},lf=if s&gt;0 then {x=.9,z=0,toe=-25} else {x=-.2,z=0}}
 	elseif forward&gt;=0 then
-		return build({root={y=-1.0,pitch=38},torso={pitch=10},head={pitch=-30},ra={raise=-40,out=20,elbow=20},la={raise=-40,out=20,elbow=20},
-			lf={z=-1.2},rf={z=1.2,y=.2,toe=-20}}),RATE.defense
+		glide={root={y=-1.0,pitch=38},torso={pitch=10},head={pitch=-30},ra={raise=-40,out=20,elbow=20},la={raise=-40,out=20,elbow=20},
+			lf={z=-1.2},rf={z=1.2,y=.2,toe=-20}}
+		load={root={y=-1.2,pitch=22},torso={pitch=14},head={pitch=-18},ra={raise=20,out=24,elbow=60},la={raise=30,out=24,elbow=70},lf={z=-.5},rf={z=1.5,toe=-30}}
+	else
+		glide={root={y=-.8,pitch=-14,z=.3},torso={pitch=-10},head={pitch=6},ra={raise=70,out=20,elbow=70},la={raise=70,out=20,elbow=70},
+			lf={z=-.4},rf={z=1.1}}
+		load={root={y=-1.1,pitch=-4},torso={pitch=0},ra={raise=70,out=20,elbow=80},la={raise=70,out=20,elbow=80},lf={z=-1.3,toe=-25},rf={z=.3}}
 	end
-	return build({root={y=-.8,pitch=-14,z=.3},torso={pitch=-10},head={pitch=6},ra={raise=70,out=20,elbow=70},la={raise=70,out=20,elbow=70},
-		lf={z=-.4},rf={z=1.1}}),RATE.defense
+	if push&lt;=0 then return build(glide),RATE.defense end
+	return blend(build(glide),build(load),push),RATE.defense*1.4
 end
 local function landTargets(fighterId,strength)
 	local base=stance(fighterId)
@@ -10013,7 +10035,9 @@ end
 function Motion.defense(char,actor,dt)
 	local targets,rate
 	if actor.state=="Dodging" then
-		targets,rate=dodgeTargets(char,actor)
+		local s=stateOf(char)
+		if s.lastDefenseState~="Dodging" then s.dashAt=elapsedTime end
+		targets,rate=dodgeTargets(char,actor,elapsedTime-(s.dashAt or elapsedTime))
 	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
 		targets,rate=groundTargets(actor)
 	elseif actor.reaction then
@@ -10029,6 +10053,7 @@ function Motion.defense(char,actor,dt)
 	else
 		return
 	end
+	stateOf(char).lastDefenseState=actor.state
 	apply(char,targets,rate,dt)
 end
 function Motion.recoil(char,elapsed,reaction,heavy,dt)

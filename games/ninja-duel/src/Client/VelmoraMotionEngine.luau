@@ -1220,22 +1220,35 @@ local function guardTargets(fighterId,impact)
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
 end
-local function dodgeTargets(char,actor)
+-- A dash is pushed off a leg: for its first few frames the body drops and
+-- the pushing leg drives against the ground, then the glide takes over.
+local DASH_PUSH=.08
+local function dodgeTargets(char,actor,t)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local direction=planar(actor.velocity)
 	local localMotion=if root and direction.Magnitude>.1 then root.CFrame:VectorToObjectSpace(direction) else Vector3.new(1,0,0)
 	local forward=math.clamp(-localMotion.Z/14,-1,1)
 	local side=math.clamp(localMotion.X/14,-1,1)
+	local push=1-smooth(math.clamp((t or 1)/DASH_PUSH,0,1))
+	local glide,load
 	if math.abs(side)>math.abs(forward)*.8 then
 		local s=if side<0 then -1 else 1
-		return build({root={y=-.9,roll=s*26,pitch=10},torso={roll=s*12},head={roll=-s*10},ra={raise=50,out=40,elbow=60},la={raise=50,out=40,elbow=60},
-			rf={x=s*.6,z=.1},lf={x=s*.6,z=-.1}}),RATE.defense
+		glide={root={y=-.9,roll=s*26,pitch=10},torso={roll=s*12},head={roll=-s*10},ra={raise=50,out=40,elbow=60},la={raise=50,out=40,elbow=60},
+			rf={x=s*.6,z=.1},lf={x=s*.6,z=-.1}}
+		-- The far leg pushes: it is extended away from the dash.
+		load={root={y=-1.2,roll=-s*8,pitch=8},torso={roll=-s*6},ra={raise=40,out=30,elbow=70},la={raise=40,out=30,elbow=70},
+			rf=if s>0 then {x=.2,z=0} else {x=-.9,z=0,toe=-25},lf=if s>0 then {x=.9,z=0,toe=-25} else {x=-.2,z=0}}
 	elseif forward>=0 then
-		return build({root={y=-1.0,pitch=38},torso={pitch=10},head={pitch=-30},ra={raise=-40,out=20,elbow=20},la={raise=-40,out=20,elbow=20},
-			lf={z=-1.2},rf={z=1.2,y=.2,toe=-20}}),RATE.defense
+		glide={root={y=-1.0,pitch=38},torso={pitch=10},head={pitch=-30},ra={raise=-40,out=20,elbow=20},la={raise=-40,out=20,elbow=20},
+			lf={z=-1.2},rf={z=1.2,y=.2,toe=-20}}
+		load={root={y=-1.2,pitch=22},torso={pitch=14},head={pitch=-18},ra={raise=20,out=24,elbow=60},la={raise=30,out=24,elbow=70},lf={z=-.5},rf={z=1.5,toe=-30}}
+	else
+		glide={root={y=-.8,pitch=-14,z=.3},torso={pitch=-10},head={pitch=6},ra={raise=70,out=20,elbow=70},la={raise=70,out=20,elbow=70},
+			lf={z=-.4},rf={z=1.1}}
+		load={root={y=-1.1,pitch=-4},torso={pitch=0},ra={raise=70,out=20,elbow=80},la={raise=70,out=20,elbow=80},lf={z=-1.3,toe=-25},rf={z=.3}}
 	end
-	return build({root={y=-.8,pitch=-14,z=.3},torso={pitch=-10},head={pitch=6},ra={raise=70,out=20,elbow=70},la={raise=70,out=20,elbow=70},
-		lf={z=-.4},rf={z=1.1}}),RATE.defense
+	if push<=0 then return build(glide),RATE.defense end
+	return blend(build(glide),build(load),push),RATE.defense*1.4
 end
 local function landTargets(fighterId,strength)
 	local base=stance(fighterId)
@@ -1372,7 +1385,9 @@ end
 function Motion.defense(char,actor,dt)
 	local targets,rate
 	if actor.state=="Dodging" then
-		targets,rate=dodgeTargets(char,actor)
+		local s=stateOf(char)
+		if s.lastDefenseState~="Dodging" then s.dashAt=elapsedTime end
+		targets,rate=dodgeTargets(char,actor,elapsedTime-(s.dashAt or elapsedTime))
 	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
 		targets,rate=groundTargets(actor)
 	elseif actor.reaction then
@@ -1388,6 +1403,7 @@ function Motion.defense(char,actor,dt)
 	else
 		return
 	end
+	stateOf(char).lastDefenseState=actor.state
 	apply(char,targets,rate,dt)
 end
 function Motion.recoil(char,elapsed,reaction,heavy,dt)

@@ -23,6 +23,8 @@ local SOUND={
 	heavy="rbxassetid://9117969717",
 	boom="rbxasset://sounds/impact_explosion_03.mp3",
 	land="rbxasset://sounds/action_jump_land.mp3",
+	jump="rbxasset://sounds/action_jump.mp3",
+	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
@@ -476,6 +478,7 @@ function FX:impact(impact,folder)
 		end
 	elseif style=="landing" then
 		smokePuff(self.folder,position-Vector3.new(0,2.7,0),Color3.fromRGB(190,178,150),6,1.1)
+		sound(anchorPart(self.folder,position),SOUND.land,.35,1.05)
 	elseif style=="slam" then
 		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(176,160,130),22,2.6)
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(255,214,160),3,22,.32)
@@ -739,6 +742,9 @@ function FX:seal(owner,actor,folder)
 		end
 	end
 end
+-- Built-in Roblox sounds (shipped with every client, Mac and PC).
+function FX:jumpSound(position) sound(anchorPart(self.folder,position),SOUND.jump,.28,1.1) end
+function FX:getUpSound(position) sound(anchorPart(self.folder,position),SOUND.getUp,.25,1.15) end
 function FX:hazardsStep(data)
 	local live={}
 	for _,h in data.hazards or {} do

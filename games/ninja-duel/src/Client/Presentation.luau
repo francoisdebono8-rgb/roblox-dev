@@ -195,6 +195,9 @@ function Presentation:update(data,dt)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see
    -- Presentation:smoothStep, run just before each frame is rendered).
+   -- Take-off and get-up sounds, from the state change itself.
+   if previous and not previous.airborne and actor.airborne and root and root.AssemblyLinearVelocity.Y>15 and not actor.reaction then self.fx:jumpSound(root.Position) end
+   if previous and previous.reaction=="Wakeup" and actor.reaction~="Wakeup" and root then self.fx:getUpSound(root.Position) end
    if previous and previous.airborne and not actor.airborne then
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
@@ -236,7 +239,7 @@ function Presentation:update(data,dt)
    self.presented=self.presented or {}
    self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
-    impactSerial=actor.impactSerial or 0,airborne=actor.airborne}
+    impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end
  end
  self.fx:update(data,dt,folder)
