@@ -71,6 +71,76 @@ For example, standard kunai/shuriken can remain broadly available while:
 
 Claude should use Codex-prepared generic infrastructure for these interactions, then determine the actual timings, animation language, usability and character-specific expression through Studio testing.
 
+## Movement-source doctrine — mandatory for character work
+
+For every fighter, actively research and catalogue movements from material that already represents that character or a very close version of them.
+
+Preferred source order:
+1. canon anime/manga scenes of the character at or near the target age,
+2. official Naruto games, especially moves that preserve the character's identity,
+3. films/OVA/specials where useful,
+4. high-quality fan-made fights and fan animations,
+5. carefully selected What-If / AI choreography only when it adds a useful movement idea not already represented elsewhere.
+
+Do not use a random cool martial-arts move merely because it looks good. First ask whether the movement belongs to the character's physical language, weapons, chakra nature, tactical personality and age.
+
+For every candidate movement, record:
+
+`movement -> source -> approximate character age/version -> lore fit -> gameplay role -> reusable combat brick -> characters that could share the brick -> character-specific expression -> implementation risk`
+
+Use four lore-fit labels:
+- **CANON-YOUNG** — directly shown/established at the target age or very close.
+- **PLAUSIBLE-YOUNG** — not directly shown then, but clearly consistent with known skillset and age.
+- **GAMEPLAY-LIBERTY** — deliberate liberty we accept because it strongly improves the fighter while preserving identity.
+- **REJECT/ADULT-ONLY** — would make the fighter feel like a miniature adult/endgame version or violate the intended power band.
+
+Examples of the process:
+- Sasuke aerial kick chain from young-era material -> extract `launcher -> aerial pursuit -> rotational kickdown` -> reuse the state chain, but animate it differently for Lee or Minato.
+- Itachi projectile redirection -> extract `projectile A changes projectile B trajectory` -> generic projectile-interaction brick -> Itachi gets the highest precision/mastery.
+- Neji palm redirection -> extract `deflect limb -> step outside line -> precise counter` -> generic redirect-counter brick -> Neji expresses it through Gentle Fist and tenketsu pressure.
+- Minato angle change after marked tool -> extract `prepared spatial anchor -> instant side switch -> short punish` -> shared anchor-transition concept, but FTG expression remains unique to Minato.
+- Shisui Body Flicker feint -> extract `visible trajectory continues while true body exits line` -> afterimage/decoy transition brick -> unique Shisui movement language.
+
+The goal is not to copy a whole combo frame-for-frame. The goal is to mine authentic movement language, then turn it into gameplay systems Claude can recombine.
+
+## Inspiration conversion pipeline — mandatory
+
+For any movement found in anime, game or fan-made material, process it through this exact pipeline:
+
+`source movement -> identify why it reads well -> classify combat state(s) -> extract reusable brick -> check lore fit -> prototype in Studio -> adapt to character body language -> keep/reject`
+
+A movement is not ready to enter a moveset until all of these are known:
+- starting state,
+- contact type,
+- body mechanics,
+- target reaction,
+- resulting state,
+- cancel/transition opportunity,
+- camera requirement if any,
+- wall/air compatibility,
+- input complexity,
+- character-specific reason for using it.
+
+This prevents the roster from becoming a collection of disconnected flashy animations.
+
+## Character movement bank
+
+Every implemented or planned fighter should eventually have a movement bank with at least:
+- 5–10 grounded strikes,
+- 3–6 kicks or lower-body attacks where appropriate,
+- 2+ directional/angle-change attacks,
+- 2+ launcher or anti-air options where appropriate,
+- 2+ aerial follow-ups,
+- 1–3 throws/projections or character-equivalent control moves,
+- 2+ defensive/counter motions,
+- 2+ wall/environment interactions,
+- projectile/tool transitions if relevant,
+- awakening-specific motion variants.
+
+These are not all separate buttons. Many are branches, contextual transitions or different expressions of the same input grammar.
+
+The movement bank is a source pool for Claude, not a requirement to expose everything at once.
+
 ## Read these before major future combat work
 
 - `design_research/README.md`
@@ -80,6 +150,7 @@ Claude should use Codex-prepared generic infrastructure for these interactions, 
 - `design_research/02_character_architecture/AWAKENING_DESIGN.md`
 - `design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md`
 - `design_research/04_research/RESEARCH_BACKLOG.md`
+- `design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md`
 - `design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md`
 
 ## Design doctrine
@@ -94,6 +165,7 @@ Claude should use Codex-prepared generic infrastructure for these interactions, 
 - Spectacle should be controllable rather than cinematic-only.
 - Awakenings should alter rules/options rather than only stats.
 - Every fighter must answer: why is this child considered an abnormal prodigy?
+- Character movement should be sourced from that character's own Naruto material whenever possible before inventing from scratch.
 
 ## Reusable combat stack
 
@@ -121,7 +193,8 @@ Before implementing a new character, define:
 - ninja-tool mastery,
 - 3+ signature state conversions,
 - defensive identity,
-- awakening rule change.
+- awakening rule change,
+- a researched movement bank sourced from Naruto media/fan material and filtered by the lore-fit labels above.
 
 Then map those onto the shared combat grammar and existing Codex-prepared reusable systems where appropriate.
 
@@ -131,9 +204,14 @@ Do not begin with a list of jutsu.
 
 When outside research is performed, store useful conclusions under `design_research/04_research/` using:
 
-`source -> principle observed -> Ninja Duel adaptation -> affected characters -> prototype idea -> risk`
+`source -> exact movement/sequence -> age/version -> lore fit -> principle observed -> reusable brick -> Ninja Duel adaptation -> affected characters -> prototype idea -> risk`
 
 Research by topic:
+- character-specific anime/manga fights,
+- character-specific official game movesets,
+- young-version choreography,
+- fan-made young-prodigy fights,
+- fan brackets/What-If fights involving the intended roster,
 - locomotion,
 - taijutsu,
 - combo architecture,
@@ -144,10 +222,9 @@ Research by topic:
 - elemental/nature interactions,
 - awakenings,
 - large roster design,
-- specific Naruto age/lore feats,
-- fan choreography.
+- specific Naruto age/lore feats.
 
-The purpose is to convert inspiration into reusable implementation knowledge.
+The purpose is to convert character-authentic inspiration into reusable implementation knowledge without flattening everyone into the same fighter.
 
 ## Freedom
 
