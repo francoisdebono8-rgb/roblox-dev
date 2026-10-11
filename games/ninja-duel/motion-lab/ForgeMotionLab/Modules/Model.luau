@@ -107,7 +107,7 @@ function M.validateGraph(presets)
  return true
 end
 function M.validateAssets(p,assets)
- for id,v in p.motionVariants or {} do if assets[id] or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
+ for id,v in p.motionVariants or {} do if (assets[id] and(not assets[id].variantDefinition or assets[id].variantDefinition.sourceAsset~=v.sourceAsset)) or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
  for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] and not (p.motionVariants and p.motionVariants[block.asset]) then return false,"Unknown motion block: "..block.asset end end end
  for _,id in p.locomotionSet do if not assets[id] and not (p.motionVariants and p.motionVariants[id]) then return false,"Unknown locomotion block: "..id end end
  return true

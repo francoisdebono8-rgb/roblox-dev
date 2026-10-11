@@ -1,5 +1,6 @@
 local M=require(script.Parent.Model)
 local B=require(script.Parent.BilateralLibrary)
+local Reference=require(script.Parent.ReferenceMotionLibrary)
 local L={}
 L.Families={"Locomotion","Punches","Kicks","Knees","Elbows","Launchers","Dodges","Counters","Reactions","Transitions","Aerial","Wall","Grabs","Projectiles"}
 L.Blocks={
@@ -28,6 +29,7 @@ function L.new()
   lib.presets[p.id]=p;table.insert(lib.order,p.id)
  end
  B.populate(lib)
+ Reference.populate(lib)
  return lib
 end
 function L.propose(preset)

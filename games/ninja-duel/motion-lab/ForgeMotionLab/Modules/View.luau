@@ -32,6 +32,7 @@ function View.mount(widget,plugin)
   bottom.Position=UDim2.new(0,8,1,-th-28);bottom.Size=UDim2.new(1,-16,0,th)
   divider.Position=UDim2.new(0,8,1,-th-34)
  end
+ local search="";local category="All";local page=1;local sideFilter="All";local familyFilter="All";local collection="All"
  local resizeStart=0;local timeline
  ui:dragInput(divider,function()resizeStart=bottom.AbsoluteSize.Y end,function(delta)savedHeight=math.clamp(resizeStart-delta.Y,180,300);layout()end,function()if timeline then timeline:refresh()end end)
  local title=ui:label(center,"Run",{Position=UDim2.fromOffset(12,7),Size=UDim2.new(1,-104,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
@@ -78,14 +79,25 @@ function View.mount(widget,plugin)
   if id=="duplicate"then c:duplicate()elseif id=="delete"then c.store:delete(c.preset.id);c:new(nil)else local selected=game:GetService("Selection"):Get()[1];assert(selected,"Select a Motion Lab export");c:import(selected)end
  end)end)
  local new=ui:button(header,"New profile",{Position=UDim2.fromOffset(112,44),Size=UDim2.fromOffset(84,24)})
- ui:connect(new.Activated,function()local items={{id="blank",name="Blank profile"}};for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end;pick(new,items,function(id)c:new(if id=="blank"then nil else id)end)end)
+ ui:connect(new.Activated,function()
+  local items={{id="blank",name="Blank profile"},{id="reference",name="Combat reference study (neutral DNA)"}}
+  for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end
+  pick(new,items,function(id)
+   c:new(if id=="blank"or id=="reference"then nil else id)
+   if id=="reference"then
+    c.preset.name="Combat reference study";c.clip="ref_jab_L_Base";c.tab="Motions"
+    collection="Reference";category="All";familyFilter="All";sideFilter="All";page=1
+    c.selectedKey="Contact";c.selectedPart="LeftArm";c.mirror=false;c.playing=true;c.loop=true;c.speed=1
+    inspectorTab="Pose"
+   end
+  end)
+ end)
  for i,spec in {{"↶",function()c:undo()end},{"↷",function()c:redo()end},{"Pin A",function()c:pinCompare()end},{"Clear A/B",function()c.compare=nil end},{"Mirror",function()c.mirror=not c.mirror end}}do local x=if i<3 then 202+(i-1)*28 else 266+(i-3)*72;local b=ui:button(header,spec[1],{Position=UDim2.fromOffset(x,44),Size=UDim2.fromOffset(if i<3 then 24 else 66,24)},function()action(spec[2])end);ui:tip(b,({"Undo profile / variant edit","Redo last edit","Freeze current motion as reference A","Return to one rig","Mirror preview; source data is unchanged"})[i])end
  local create=ui:button(header,"Create Variant",{Position=UDim2.new(1,-128,0,44),Size=UDim2.fromOffset(116,24)},function()action(function()c:createVariant();inspectorTab="Pose";editPose=true end,"Variant created · select a channel or key")end,true)
  ui:tip(create,"Add non-destructive pose/timing corrections to the selected motion.")
  local function scope(key,parent)
   if scopes[key]then scopes[key]:dispose()end;parent:ClearAllChildren();scopes[key]=UI.new(widget);return scopes[key]
  end
- local search="";local category="All";local page=1;local sideFilter="All";local familyFilter="All";local collection="All"
  local categories={{"All","All"},{"Locomotion","Move"},{"Punches","Punch"},{"Kicks","Kick"},{"Knees","Knee"},{"Elbows","Elbow"},{"Palm","Palm"},{"Dodges","Dodge"},{"Aerial","Air"},{"Wall","Wall"},{"Reactions","React"},{"Other","Other"}}
  refreshLibrary=function()
   local u=scope("library",left);thumbnailRigs={}
@@ -103,7 +115,7 @@ function View.mount(widget,plugin)
    u:connect(side.Activated,function()local choices={};for _,name in {"All","Left","Right","Neutral"}do table.insert(choices,{id=name,name=name})end;pick(side,choices,function(id)sideFilter=id;page=1 end)end)
    local source=u:button(left,collection.." ▾",{Name="CollectionFilter",Position=UDim2.new(.64,1,0,y),Size=UDim2.new(.36,-7,0,23),TextSize=10})
    u:tip(source,"Source collection: "..collection)
-   u:connect(source.Activated,function()pick(source,{{id="All",name="All sources"},{id="Common",name="Common bilateral"},{id="Legacy",name="Legacy / Ninja Duel"}},function(id)collection=id;if id=="Legacy"then familyFilter="All";sideFilter="All"end;page=1 end)end)
+   u:connect(source.Activated,function()pick(source,{{id="All",name="All sources"},{id="Reference",name="Combat references"},{id="Common",name="Common bilateral"},{id="Legacy",name="Legacy / Ninja Duel"}},function(id)collection=id;if id=="Legacy"then familyFilter="All";sideFilter="All"end;page=1 end)end)
    y+=26
    local family=u:button(left,(if familyFilter=="All"then "Family"else familyFilter).." ▾",{Name="FamilyFilter",Position=UDim2.fromOffset(6,y),Size=UDim2.new(.42,-7,0,23),TextSize=10})
    u:tip(family,"Family: "..familyFilter)
@@ -116,17 +128,17 @@ function View.mount(widget,plugin)
   end
   local rows={}
   if isMotion then
-   local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do table.insert(ids,id)end
+   local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do if not table.find(ids,id)then table.insert(ids,id)end end
    for _,id in ids do local a=c:asset(id);local other=not table.find({"Locomotion","Punches","Kicks","Knees","Elbows","Dodges","Aerial","Wall","Reactions"},a.category)
     local match=category=="All"or a.category==category or(category=="Palm"and(a.family=="Palm"or a.grammar:find("Palm")))or(category=="Other"and other)
-    match=match and(sideFilter=="All"or a.side==sideFilter)and(familyFilter=="All"or a.family==familyFilter)and(collection=="All"or(collection=="Common")== (a.sourceType=="common-authored"or(a.variant and a.authoredClip~=nil)))
-    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.variant then "Variant · "..c.preset.name else (a.family or a.category).." · "..(a.side or c.preset.name),asset=a})end
+    match=match and(sideFilter=="All"or a.side==sideFilter)and(familyFilter=="All"or a.family==familyFilter)and(collection=="All"or(collection=="Reference"and a.referenceBacked)or(collection=="Common"and not a.referenceBacked and(a.sourceType=="common-authored"or(a.variant and a.authoredClip~=nil)))or(collection=="Legacy"and not a.referenceBacked and not a.authoredClip))
+    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.referenceBacked then a.metadata.combatRole.." · "..a.stance elseif a.variant then "Variant · "..c.preset.name else (a.family or a.category).." · "..(a.side or c.preset.name),asset=a})end
    end
   else
    for _,id in c.library.order do local p=c.library.presets[id];local custom=c.store.custom[id]~=nil;if (c.tab=="Custom")==custom and(search==""or p.name:lower():find(search,1,true))then table.insert(rows,{id=id,name=p.name,desc=if custom then "Saved profile + variants"elseif p.metadata.sourceType=="ninja-duel"then "Ninja Duel · authored"else "Starting expression",profile=p})end end
   end
   if isMotion then table.sort(rows,function(a,b)
-   local x,y=a.asset,b.asset;local commonX=x.authoredClip~=nil;local commonY=y.authoredClip~=nil
+   local x,y=a.asset,b.asset;if (x.referenceBacked==true)~=(y.referenceBacked==true)then return x.referenceBacked==true end;local commonX=x.authoredClip~=nil;local commonY=y.authoredClip~=nil
    if commonX~=commonY then return commonX end
    local kx=(x.family or x.category).." / "..(x.variantName or "").." / "..(x.side or "")..x.id
    local ky=(y.family or y.category).." / "..(y.variantName or "").." / "..(y.side or "")..y.id;return kx<ky
@@ -135,7 +147,7 @@ function View.mount(widget,plugin)
   local scroll=u:scroll(left,{Name="MotionCards",Position=UDim2.fromOffset(6,y),Size=UDim2.new(1,-12,1,-y-66)})
   for index=(page-1)*8+1,math.min(page*8,#rows)do local row=rows[index];local i=index-(page-1)*8
    local card=u:button(scroll,"",{Position=UDim2.fromOffset(0,(i-1)*68),Size=UDim2.new(1,-4,0,62)},function()action(function()
-    if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact"else c:load(row.id);inspectorTab="Mix"end
+    if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact";c.selectedPart=if row.asset.attackingLimb=="LeftLeg"then "LeftLeg"elseif row.asset.attackingLimb=="RightLeg"then "RightLeg"elseif row.asset.attackingLimb=="LeftArm"then "LeftArm"else "RightArm" else c:load(row.id);inspectorTab="Mix"end
    end)end,isMotion and c.clip==row.id)
    local thumb=u:make("ViewportFrame",card,{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(44,54),BackgroundTransparency=1,Ambient=Color3.fromRGB(170,182,201),LightColor=Color3.new(1,1,1),BorderSizePixel=0})
    local tw=Instance.new("WorldModel");tw.Parent=thumb;local tr=Rig.new(tw);local tc=Instance.new("Camera");tc.CFrame=CFrame.lookAt(Vector3.new(5,4,-8),Vector3.new(0,2.6,0));tc.FieldOfView=40;tc.Parent=thumb;thumb.CurrentCamera=tc
@@ -181,7 +193,7 @@ function View.mount(widget,plugin)
    u:input(scroll,game:GetService("HttpService"):JSONEncode(c.preset.characterRules),{Position=UDim2.fromOffset(0,294),Size=UDim2.new(1,-8,0,74),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top},function(text)action(function()
     local rules=game:GetService("HttpService"):JSONDecode(text);local candidate=M.copy(c.preset);candidate.characterRules=rules;local valid,why=M.validate(candidate,c.library.presets);assert(valid,why);c:edit(function(p)p.characterRules=rules end)
    end,"Expression rules updated")end)
-   u:label(scroll,"Motion mechanics (read-only source)",{Position=UDim2.fromOffset(0,654),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
+   u:label(scroll,"Combat role / support / references",{Position=UDim2.fromOffset(0,654),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
    u:input(scroll,game:GetService("HttpService"):JSONEncode(motionMeta),{Name="MotionMetadata",Position=UDim2.fromOffset(0,682),Size=UDim2.new(1,-8,0,170),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
    for i,key in {"idle","walk","run","dash","jump","land","wall"} do
     local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();timeline:refresh()end)

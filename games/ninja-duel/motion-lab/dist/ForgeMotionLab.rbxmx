@@ -335,19 +335,19 @@ function C:addClip(id)
  self:edit(function(p)table.insert(p.sequences[1].orderedClips,{asset=id,duration=math.clamp(asset.duration,.12,5),blend=.1,transition="blend"})end);self.selectedBlock=#self:sequence().orderedClips;self.sequenceMode=true
 end
 function C:asset(id) return Edit.asset(self.preset,id or self.clip,self.library) end
-function C:variant() return self.preset.motionVariants and self.preset.motionVariants[self.clip] end
+function C:variant() return Edit.variant(self.preset,self:asset()) end
 function C:createVariant()
- local source=self:asset();assert(not source.variant,"Select a source motion to create a variant")
+ local source=self:asset();assert(not source.variant or source.referenceBacked,"Select a source motion to create a variant")
  self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=source.authoredClip or self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
  local contact,recovery=.42,.7;if clip and clip.timing then contact=clip.timing.startup/clip.duration;recovery=(clip.timing.startup+clip.timing.active)/clip.duration end
  self:edit(function(p)
-  p.motionVariants=p.motionVariants or {};local v=Edit.create(id,source.name.."_A",source,duration,contact,recovery)
-  if source.authoredClip then
+  p.motionVariants=p.motionVariants or {};local v=if source.referenceBacked then M.copy(assert(self:variant()))else Edit.create(id,source.name.."_A",source,duration,contact,recovery);v.id=id;v.name=source.name.."_A"
+  if source.authoredClip and not source.referenceBacked then
    for _,key in source.authoredClip.keys do if key.phase=="Anticipation"then v.poseOverrides[2].time=key.at;v.poseOverrides[2].sourceTime=key.at end end
   end
   p.motionVariants[id]=v
  end)
- self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart=if source.attackingLimb=="LeftArm"then "LeftArm"elseif source.attackingLimb=="LeftLeg"then "LeftLeg"elseif source.attackingLimb=="RightLeg"then "RightLeg"else "RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
+ self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart=if source.attackingLimb=="LeftArm"then "LeftArm"elseif source.attackingLimb=="LeftLeg"then "LeftLeg"elseif source.attackingLimb=="RightLeg"then "RightLeg"else "RightArm";self.playing=false;self.time=Edit.phase(self:variant(),"Contact").time*duration
  return id
 end
 function C:switchSide()
@@ -360,7 +360,8 @@ function C:compareLegacy()
 end
 function C:variantEdit(fn,record)
  assert(self:variant(),"Create a variant before editing")
- local at=self.time;self:edit(function(p)fn(p.motionVariants[self.clip])end,record);self.time=at
+ local template=M.copy(self:variant());local at=self.time
+ self:edit(function(p)p.motionVariants=p.motionVariants or {};p.motionVariants[self.clip]=p.motionVariants[self.clip]or template;fn(p.motionVariants[self.clip])end,record);self.time=at
 end
 function C:selectKey(id,part)
  local v=assert(self:variant(),"Select a variant");local key=assert(Edit.key(v,id),"Missing key")
@@ -371,9 +372,12 @@ function C:setPose(field,value,record)
  self:variantEdit(function(variant)local key=assert(Edit.key(variant,self.selectedKey));key.parts[part]=key.parts[part] or {};key.parts[part][field]=value end,record)
 end
 function C:assignVariant(slot)
- assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or p.motionVariants[self.clip].sourceAsset]=self.clip end)
+ local variant=assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or variant.sourceAsset]=self.clip end)
 end
-function C:save() self.store:save(self.preset);self.dirty=false end
+function C:save()
+ if self:asset().variantDefinition and not(self.preset.motionVariants and self.preset.motionVariants[self.clip])then self:variantEdit(function()end)end
+ self.store:save(self.preset);self.dirty=false
+end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
 function C:export(parent)
  local bundle=Adapter.bundle(self.preset,self.library,self.clip);local payload=Adapter.serialize(bundle);assert(#payload&lt;=2000000,"Export too large")
@@ -426,8 +430,8 @@ function Panel.mount(u,scroll,c,tab,action,state,menu)
  if tab=="Pose" then
   local key=E.key(v,c.selectedKey or "Contact");if not key then c.selectedKey="Contact";key=E.key(v,"Contact")end
   local part=c.selectedPart or "RightArm";c.selectedPart=part
-  local select=u:button(scroll,(key.semantic or "Extra pose").." ▾",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.55,-4,0,26)})
-  u:connect(select.Activated,function()local items={};for _,k in v.poseOverrides do table.insert(items,{id=k.id,name=(k.semantic or "Extra pose")..string.format("  %.3fs",k.time*S.duration(c.preset,c:asset(),c.library))})end;menu(select,items,function(id)action(function()c:selectKey(id)end)end)end)
+  local select=u:button(scroll,(key.semantic or key.id).." ▾",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.55,-4,0,26)})
+  u:connect(select.Activated,function()local items={};for _,k in v.poseOverrides do table.insert(items,{id=k.id,name=(k.semantic or k.id)..string.format("  %.3fs",k.time*S.duration(c.preset,c:asset(),c.library))})end;menu(select,items,function(id)action(function()c:selectKey(id)end)end)end)
   local partButton=u:button(scroll,part.." ▾",{Position=UDim2.new(.55,2,0,60),Size=UDim2.new(.45,-6,0,26)})
   u:connect(partButton.Activated,function()local choices={};for _,name in E.Parts do table.insert(choices,{id=name,name=name})end;menu(partButton,choices,function(id)action(function()c:selectKey(key.id,id)end)end)end)
   heading("Pose deltas · "..part,98)
@@ -467,14 +471,17 @@ function Panel.mount(u,scroll,c,tab,action,state,menu)
    u:input(scroll,string.format("%.3f",value),{Name="Timing_"..label,Position=UDim2.new(1,-86,0,y),Size=UDim2.fromOffset(82,26)},function(text)action(function()local n=tonumber(text);assert(n and n==n,"Enter a finite number");fn(n)end)end)
   end
   number("Duration (s)",v.timing.duration,126,function(n)assert(n&gt;=.12 and n&lt;=30,"Duration: 0.12–30s");c:variantEdit(function(x)x.timing.duration=n end)end)
-  local markers=E.markers(v)
-  for i,label in {"Anticipation","Contact","Recovery start"}do local marker=markers[i+1];number(label.." (s)",marker.time*v.timing.duration,160+(i-1)*32,function(n)c:variantEdit(function(x)local current=E.key(x,marker.id);E.moveKeys(x,{[marker.id]=true},n/x.timing.duration-current.time)end);c:selectKey(marker.id)end)end
-  number("Contact hold (norm)",v.timing.hold,258,function(n)assert(n&gt;=0 and n&lt;=.3,"Hold: 0–0.3 normalized");c:variantEdit(function(x)x.timing.hold=n end)end)
-  number("Playback speed",v.timing.playbackSpeed,290,function(n)assert(n&gt;=.25 and n&lt;=3,"Speed: 0.25–3");c:variantEdit(function(x)x.timing.playbackSpeed=n end)end)
-  local ease=u:button(scroll,"Easing · "..v.timing.easing.." ▾",{Position=UDim2.fromOffset(0,324),Size=UDim2.new(1,-4,0,26)})
+    local y=160
+  local phases=if v.phaseSchema=="combat-six"then {"Anticipation","Acceleration","Contact","FollowThrough"}else {"Anticipation","Contact","FollowThrough"}
+  for _,phase in phases do local marker=E.phase(v,phase);local label=if phase=="FollowThrough"and v.phaseSchema~="combat-six"then "Recovery start"else phase
+   number(label.." (s)",marker.time*v.timing.duration,y,function(n)c:variantEdit(function(x)local current=E.key(x,marker.id);E.moveKeys(x,{[marker.id]=true},n/x.timing.duration-current.time)end);c:selectKey(marker.id)end);y+=32
+  end
+  number("Contact hold (norm)",v.timing.hold,y+2,function(n)assert(n&gt;=0 and n&lt;=.3,"Hold: 0–0.3 normalized");c:variantEdit(function(x)x.timing.hold=n end)end)
+  number("Playback speed",v.timing.playbackSpeed,y+34,function(n)assert(n&gt;=.25 and n&lt;=3,"Speed: 0.25–3");c:variantEdit(function(x)x.timing.playbackSpeed=n end)end)
+  local ease=u:button(scroll,"Easing · "..v.timing.easing.." ▾",{Position=UDim2.fromOffset(0,y+68),Size=UDim2.new(1,-4,0,26)})
   u:connect(ease.Activated,function()local choices={};for _,name in E.Easing do table.insert(choices,{id=name,name=name})end;menu(ease,choices,function(id)action(function()c:variantEdit(function(x)x.timing.easing=id end)end)end)end)
-  heading("Exaggerate · whole motion",366)
-  local y=396
+  heading("Exaggerate · whole motion",y+110)
+  y+=140
   for _,row in E.Modifiers do u:slider(scroll,row[2],0,3,v.motionModifiers[row[1]],y,function(n)c:variantEdit(function(x)x.motionModifiers[row[1]]=n end,false);state()end,function()c:checkpoint()end);y+=46 end
   heading("Root trajectory",y+8);y+=38
   for _,row in {{"forward","Forward travel",-10,10},{"lateral","Lateral travel",-10,10},{"lift","Vertical lift",-10,10},{"turn","Turn / yaw",-360,360},{"startX","Start X",-10,10},{"startY","Start Y",-10,10},{"startZ","Start Z",-10,10},{"endX","End X",-10,10},{"endY","End Y",-10,10},{"endZ","End Z",-10,10}}do
@@ -491,6 +498,7 @@ return Panel
           <string name="Name">Library</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
 local B=require(script.Parent.BilateralLibrary)
+local Reference=require(script.Parent.ReferenceMotionLibrary)
 local L={}
 L.Families={"Locomotion","Punches","Kicks","Knees","Elbows","Launchers","Dodges","Counters","Reactions","Transitions","Aerial","Wall","Grabs","Projectiles"}
 L.Blocks={
@@ -519,6 +527,7 @@ function L.new()
   lib.presets[p.id]=p;table.insert(lib.order,p.id)
  end
  B.populate(lib)
+ Reference.populate(lib)
  return lib
 end
 function L.propose(preset)
@@ -646,7 +655,7 @@ function M.validateGraph(presets)
  return true
 end
 function M.validateAssets(p,assets)
- for id,v in p.motionVariants or {} do if assets[id] or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
+ for id,v in p.motionVariants or {} do if (assets[id] and(not assets[id].variantDefinition or assets[id].variantDefinition.sourceAsset~=v.sourceAsset)) or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
  for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] and not (p.motionVariants and p.motionVariants[block.asset]) then return false,"Unknown motion block: "..block.asset end end end
  for _,id in p.locomotionSet do if not assets[id] and not (p.motionVariants and p.motionVariants[id]) then return false,"Unknown locomotion block: "..id end end
  return true
@@ -677,12 +686,17 @@ for _,p in {"LeftLeg","RightLeg"}do E.Controls[p]={{"lift","Hip raise",-150,150}
 for _,p in {"LeftFoot","RightFoot"}do E.Controls[p]={pos[1],pos[2],pos[3],{"yaw","Foot yaw",-180,180},{"toe","Toe pitch",-100,100}}end
 E.Modifiers={{"amplitude","Amplitude"},{"hipRotation","Hip rotation"},{"torsoFollow","Torso follow"},{"limbExtension","Limb extension"},{"rootTravel","Root travel"},{"impactLean","Impact lean"},{"anticipation","Anticipation"},{"followThrough","Follow-through"},{"recoveryTightness","Recovery tightness"}}
 E.Semantics={"Start","Anticipation","Contact","FollowThrough","Recovery"}
+E.CombatSemantics={"Ready","Anticipation","Acceleration","Contact","FollowThrough","Recovery"}
 E.Easing={"linear","smooth","in","out"}
 function E.create(id,name,asset,duration,contact,recovery)
  contact=math.clamp(contact or .42,.12,.85);recovery=math.clamp(recovery or .7,contact+.04,.95)
- local times={0,contact*.5,contact,recovery,1};local keys={};for i,s in E.Semantics do table.insert(keys,{id=s,time=times[i],semantic=s,sourceTime=times[i],parts={}})end
+ local combat=asset.combatPhases~=nil
+ local semantics=if combat then E.CombatSemantics else E.Semantics
+ local times=if combat then {0,contact*.35,contact*.7,contact,recovery,1}else {0,contact*.5,contact,recovery,1}
+ if combat then for i,name in semantics do times[i]=asset.combatPhases[name] or times[i]end end
+ local keys={};for i,name in semantics do table.insert(keys,{id=name,time=times[i],semantic=name,sourceTime=times[i],parts={}})end
  local modifiers={};for _,row in E.Modifiers do modifiers[row[1]]=1 end
- return {id=id,name=name,sourceAsset=asset.id,sourceGrammar=asset.grammar,sourceDuration=duration,poseOverrides=keys,motionModifiers=modifiers,timing={duration=duration,playbackSpeed=1,easing="linear",hold=0},rootPath={forward=0,lateral=0,lift=0,turn=0,startX=0,startY=0,startZ=0,endX=0,endY=0,endZ=0},channels={},enabled=true}
+ return {phaseSchema=if combat then "combat-six"else nil,id=id,name=name,sourceAsset=asset.id,sourceGrammar=asset.grammar,sourceDuration=duration,poseOverrides=keys,motionModifiers=modifiers,timing={duration=duration,playbackSpeed=1,easing="linear",hold=0},rootPath={forward=0,lateral=0,lift=0,turn=0,startX=0,startY=0,startZ=0,endX=0,endY=0,endZ=0},channels={},enabled=true}
 end
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)&lt;1e8 end
 local function id(s)return type(s)=="string" and #s&gt;0 and #s&lt;=100 and s:match("^[%w_.:%-]+$")~=nil end
@@ -694,40 +708,49 @@ function E.validate(v)
  for _,key in {"forward","lateral","lift","turn","startX","startY","startZ","endX","endY","endZ"}do local n=v.rootPath[key];if not finite(n) or math.abs(n)&gt;(if key=="turn" then 360 else 10) then return false,"Invalid root path"end end
  for part,channel in v.channels do if not table.find(E.Parts,part) or type(channel)~="table" or type(channel.muted)~="boolean" or type(channel.locked)~="boolean" then return false,"Invalid channel"end end
  if type(v.poseOverrides)~="table" or #v.poseOverrides&lt;5 or #v.poseOverrides&gt;64 then return false,"Pose key budget"end
- local last=-1;local semantics={};local ids={};local lastSource=-1
+ if v.phaseSchema~=nil and v.phaseSchema~="combat-six"then return false,"Unknown phase schema"end
+ local expected=if v.phaseSchema=="combat-six"then E.CombatSemantics else E.Semantics
+ local last=-1;local semantics={};local ids={};local lastSource=-1;local lastAnchor=-1
  for _,key in v.poseOverrides do
   if type(key)~="table" or not id(key.id) or ids[key.id] or not finite(key.time) or key.time&lt;0 or key.time&gt;1 or key.time-last&lt;.001 or type(key.parts)~="table" then return false,"Invalid pose key"end
   ids[key.id]=true;last=key.time
-  if key.semantic then local index=table.find(E.Semantics,key.semantic);if not index or semantics[key.semantic] or index~=1+#semantics then return false,"Semantic order"end;table.insert(semantics,key.semantic);semantics[key.semantic]=true;if not finite(key.sourceTime) or key.sourceTime&lt;0 or key.sourceTime&gt;1 or key.sourceTime&lt;=lastSource then return false,"Invalid source marker"end;lastSource=key.sourceTime end
+  if key.semantic then local index=table.find(expected,key.semantic);if not index or semantics[key.semantic] or index~=1+#semantics then return false,"Semantic order"end;table.insert(semantics,key.semantic);semantics[key.semantic]=true;if not finite(key.sourceTime) or key.sourceTime&lt;0 or key.sourceTime&gt;1 or key.sourceTime&lt;=lastSource then return false,"Invalid source marker"end;lastSource=key.sourceTime end
+  if key.sourceTime~=nil then if not finite(key.sourceTime)or key.sourceTime&lt;0 or key.sourceTime&gt;1 or key.sourceTime&lt;=lastAnchor then return false,"Invalid source anchor"end;lastAnchor=key.sourceTime end
   for part,fields in key.parts do
    if not E.Controls[part] or type(fields)~="table" then return false,"Invalid pose part"end
    for field,n in fields do local control=nil;for _,row in E.Controls[part]do if row[1]==field then control=row end end;if not control or not finite(n) or n&lt;control[3] or n&gt;control[4] then return false,"Invalid pose channel"end end
   end
  end
- if #semantics~=5 or v.poseOverrides[1].semantic~="Start" or v.poseOverrides[1].time~=0 or v.poseOverrides[#v.poseOverrides].semantic~="Recovery" or v.poseOverrides[#v.poseOverrides].time~=1 then return false,"Missing semantic boundaries"end
+ if #semantics~=#expected or v.poseOverrides[1].semantic~=expected[1] or v.poseOverrides[1].time~=0 or v.poseOverrides[#v.poseOverrides].semantic~="Recovery" or v.poseOverrides[#v.poseOverrides].time~=1 then return false,"Missing semantic boundaries"end
  return true
 end
 function E.asset(p,id,lib)
  local v=p.motionVariants and p.motionVariants[id]
  if not v then return lib.assets[id]end
  local base=assert(lib.assets[v.sourceAsset],"Missing variant source")
- local asset=copy(base);asset.id=v.id;asset.name=v.name;asset.duration=v.timing.duration;asset.variant=true;asset.sourceType="variant";return asset
+ local registered=lib.assets[id];local asset=copy(if registered and registered.variantDefinition then registered else base);asset.hidden=false;asset.id=v.id;asset.name=v.name;asset.duration=v.timing.duration;asset.variant=true;asset.sourceType="variant";asset.metadata=copy(v.metadata or base.metadata);asset.variantDefinition=nil;return asset
 end
-function E.variant(p,asset)return p.motionVariants and p.motionVariants[asset.id]end
+function E.variant(p,asset)return (p.motionVariants and p.motionVariants[asset.id])or asset.variantDefinition end
+function E.phase(v,name)
+ for _,k in v.poseOverrides do if k.semantic==name or(name=="Ready"and k.semantic=="Start")then return k end end
+end
+function E.boundary(key)return key.semantic=="Start"or key.semantic=="Ready"or key.semantic=="Recovery"end
 function E.key(v,id)for i,k in v.poseOverrides do if k.id==id then return k,i end end end
 function E.markers(v)local keys={};for _,k in v.poseOverrides do if k.semantic then table.insert(keys,k)end end;return keys end
 local function ease(t,kind)return if kind=="linear" then t elseif kind=="in" then t^3 elseif kind=="out" then 1-(1-t)^3 else t*t*(3-2*t)end
 function E.warp(v,t)
- local markers=E.markers(v);local contact=markers[3].time;local hold=math.min(v.timing.hold,markers[4].time-contact-.002)
- if t&gt;=contact and t&lt;=contact+hold then return markers[3].sourceTime end
- for i=1,4 do local a,b=markers[i],markers[i+1];local start=a.time+(if i==3 then hold else 0)
+ local markers=E.markers(v)
+ if v.phaseSchema=="combat-six"then markers={};for _,key in v.poseOverrides do if key.sourceTime~=nil then table.insert(markers,key)end end end
+ local contactKey=E.phase(v,"Contact");local follow=E.phase(v,"FollowThrough");local contact=contactKey.time;local hold=math.min(v.timing.hold,follow.time-contact-.002)
+ if t&gt;=contact and t&lt;=contact+hold then return contactKey.sourceTime end
+ for i=1,#markers-1 do local a,b=markers[i],markers[i+1];local start=a.time+(if a==contactKey then hold else 0)
   if t&lt;=b.time then local u=ease(math.clamp((t-start)/math.max(.001,b.time-start),0,1),v.timing.easing);return a.sourceTime+(b.sourceTime-a.sourceTime)*u end
  end;return 1
 end
 function E.moveKeys(v,ids,delta)
  local low=-1;local high=1
  for i,key in v.poseOverrides do if ids[key.id] then
-  if key.semantic=="Start" or key.semantic=="Recovery" then return 0 end
+  if E.boundary(key)then return 0 end
   local j=i-1;while j&gt;=1 and ids[v.poseOverrides[j].id]do j-=1 end;low=math.max(low,(v.poseOverrides[j] and v.poseOverrides[j].time or 0)+.002-key.time)
   j=i+1;while j&lt;=#v.poseOverrides and ids[v.poseOverrides[j].id]do j+=1 end;high=math.min(high,(v.poseOverrides[j] and v.poseOverrides[j].time or 1)-.002-key.time)
  end end
@@ -751,8 +774,8 @@ local function deltas(v,part,t)
 end
 function E.apply(v,base,t)
  if not v.enabled then return base end
- local p=copy(base);local m=v.motionModifiers;local pulse=math.sin(math.pi*t)^2;local markers=E.markers(v);local contact=markers[3].time
- local phaseScale=if t&lt;contact then m.anticipation elseif t&lt;markers[4].time then m.followThrough else m.recoveryTightness
+ local p=copy(base);local m=v.motionModifiers;local pulse=math.sin(math.pi*t)^2;local contact=E.phase(v,"Contact").time
+ local phaseScale=if t&lt;contact then m.anticipation elseif t&lt;E.phase(v,"FollowThrough").time then m.followThrough else m.recoveryTightness
  -- Exaggerate around existing stance-neutral axes, then apply sparse key deltas.
  for part,a in p do if type(a)=="table" then for field,n in a do if type(n)=="number" and not table.find({"x","y","z"},field)then a[field]=n*m.amplitude*(1+(phaseScale-1)*pulse)end end end end
  p.root=p.root or {};p.torso=p.torso or {}
@@ -846,20 +869,20 @@ function A.ninjaDefinitions(preset,lib,selected)
  end
  local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
  local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
- local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
+ local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},motionMetadata={},generated=true,automaticApply=false}
  local exportIds=A.exportIds(preset,lib,selected)
  for _,assetId in exportIds do
   local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=actual.authoredClip or preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
   if actual.authoredClip then local scale=Sampler.duration(preset,actual,lib)/actual.authoredClip.duration;timing={startup=timing.startup*scale,active=timing.active*scale,recovery=timing.recovery*scale}end
   local variant=Edit.variant(preset,actual)
-  if variant then local markers=Edit.markers(variant);local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then markers[3].time else markers[3].sourceTime;local recovery=if variant.enabled then markers[4].time else markers[4].sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
+  if variant then local contactKey=Edit.phase(variant,"Contact");local followKey=Edit.phase(variant,"FollowThrough");local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then contactKey.time else contactKey.sourceTime;local recovery=if variant.enabled then followKey.time else followKey.sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
   local duration=timing.startup+timing.active+timing.recovery;local keys={}
   local samples={}
   if actual.authoredClip and not variant then
    for _,key in actual.authoredClip.keys do samples[key.at]=true end
   else for i=0,24 do samples[i/24]=true end end
-  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.markers(variant)[3].time;samples[contact+math.min(variant.timing.hold,Edit.markers(variant)[4].time-contact-.002)]=true end
+  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.phase(variant,"Contact").time;samples[contact+math.min(variant.timing.hold,Edit.phase(variant,"FollowThrough").time-contact-.002)]=true end
   local times={};for t in samples do table.insert(times,t)end;table.sort(times)
   for _,t in times do
    local elapsed=t*duration
@@ -870,6 +893,11 @@ function A.ninjaDefinitions(preset,lib,selected)
   end
   local exportName=if asset.variant then asset.id else asset.grammar
   out.clips[exportName]=keys;out.timings[exportName]=M.copy(timing)
+  if actual.referenceBacked then
+   local metadata=M.copy(actual.metadata);metadata.phaseMarkers={}
+   if variant then for _,key in variant.poseOverrides do if key.sourceTime~=nil then metadata.phaseMarkers[key.semantic or key.id]={normalized=key.time,seconds=key.time*duration,sourceTime=key.sourceTime}end end end
+   out.motionMetadata[exportName]=metadata
+  end
  end
  return out
 end
@@ -1018,6 +1046,317 @@ return Solver
       </Item>
       <Item class="ModuleScript" referent="FML13">
         <Properties>
+          <string name="Name">ReferenceMotionLibrary</string>
+          <ProtectedString name="Source">-- Coach-reference adaptations, not mocap or experimentally measured joint angles.
+-- Immutable sources + copy-on-edit Motion Variants. No runtime combat integration.
+local M=require(script.Parent.Model)
+local E=require(script.Parent.MotionEdit)
+local Solver=require(script.Parent.PoseSolver)
+local R={Revision=1}
+R.Sources={
+ boxing="https://www.englandboxing.org/wp-content/uploads/2022/03/EB_Boxing-Coaching-Handbook-Part-1_v8-002.pdf",
+ chain="https://www.mdpi.com/2076-3417/15/7/4008",
+ combinations="https://clok.uclan.ac.uk/id/eprint/3757/1/piorkowski-et-al-2011-punch-kinematics.pdf",
+ roundhouse="https://8limbsus.com/muay-thai-thailand/golden-kick-how-to-improve-your-thai-kick",
+ knee="https://8limbsus.com/muay-thai-thailand/learning-the-details-of-the-vertical-knee-from-the-legend-chamuakpet-hapalang",
+ teep="https://evolve-university.com/blog/5-effective-ways-to-use-the-teep-in-muay-thai-and-how-to-land-them/",
+ backkick="https://research.kukkiwon.or.kr/homepage/boardMedia/11621",
+ sidekick="https://elasticsteel.com/blogs/kicking-corrections-and-tips/what-does-your-side-kick-look-like",
+ elbow="https://evolve-university.com/blog/beginners-guide-to-elbows-in-mma/",
+ sweep="https://evolve-university.com/blog/heres-how-to-utilize-the-catch-and-sweep-in-muay-thai/",
+}
+local function arm(r,o,e,t)return {raise=r,out=o,elbow=e,twist=t or 0,wrist=0,wroll=0}end
+local function other(s)return if s=="Left"then "Right"else "Left"end
+local function sign(s)return if s=="Left"then -1 else 1 end
+local function foot(s)return if s=="Left"then "lf"else "rf"end
+local function leg(s)return if s=="Left"then "ll"else "rl"end
+local function hand(s)return if s=="Left"then "la"else "ra"end
+local function suffix(s)return if s=="Left"then "L"else "R"end
+local function convert(p,s)if p[foot(s)]then p[leg(s)]=Solver.freeLeg(p,sign(s));p[foot(s)]=nil end end
+function R.guard(lead)
+ local left=lead=="Left";local yaw=if left then 12 else -12
+ return {root={x=0,y=-.45,z=0,pitch=2,yaw=yaw,roll=0},torso={pitch=1,yaw=-yaw*.5,roll=0},head={pitch=-2,yaw=-yaw*.5,roll=0},
+ la=arm(if left then 65 else 55,8,if left then 100 else 125),ra=arm(if left then 55 else 65,8,if left then 125 else 100),
+ lf={x=-.02,y=0,z=if left then -.28 else .28,yaw=if left then 0 else -18,toe=0},rf={x=.02,y=0,z=if left then .28 else -.28,yaw=if left then 18 else 0,toe=0}}
+end
+-- Per-technique pose stages: load, hip drive, acceleration, contact, carry,
+-- rechamber, guard. Shoulder/hip/torso curves deliberately differ in shape.
+-- Arm triples: shoulder elevation, lateral angle, elbow flexion.
+-- Leg triples: hip flexion, lateral angle, knee flexion. No universal kick chamber.
+R.Specs={
+ {id="jab",name="Jab",category="Punches",role="opener",range="mid",duration=.52,contact=.40,follow=.53,lead="striker",hip={0,5,9,12,13,4},torso={0,0,3,7,8,2},arms={{64,8,105},{69,5,87},{83,1,48},{91,-3,12},{86,-1,22},{66,8,105}},weight="Small lead-foot pressure; rear hand stays on chin; no drawn-back fist",carry="Short extension then immediate lead-hand return",next={"cross","lowkick","hook"},tactic="StepIn",legacy="jab",refs={"boxing","chain"}},
+ {id="cross",name="Cross",category="Punches",role="pressure",range="mid",duration=.65,contact=.43,follow=.59,lead="opposite",hip={-3,15,29,43,46,10},torso={0,2,8,16,19,4},arms={{54,7,125},{60,5,117},{80,-4,62},{97,-10,10},{94,-14,23},{60,8,124}},weight="Rear ball pivots; rear knee drives pelvis into a braced lead leg",carry="Shoulder follows pelvis; do not overthrow centre; rear fist returns to chin",next={"hook","roundhouse","frontkick"},tactic="ShortCounter",legacy="cross",refs={"boxing","chain"}},
+ {id="hook",name="Hook",category="Punches",role="counter",range="close",duration=.67,contact=.43,follow=.56,lead="Left",hip={-5,12,26,38,44,8},torso={-2,0,8,22,26,4},arms={{65,8,104},{72,7,96},{82,-16,88},{87,-47,90},{80,-63,96},{65,8,109}},weight="Lead hook releases lead heel and settles towards rear leg; rear hook reverses the brace",carry="Compact transverse arc from guard; elbow near shoulder height; opposite hand guards",next={"cross","uppercut","frontkick"},tactic="ShortRange",legacy="hook",refs={"boxing","chain"}},
+ {id="uppercut",name="Uppercut",category="Punches",role="launcher",range="close",duration=.73,contact=.46,follow=.60,lead="Left",hip={-4,8,20,29,30,8},torso={-2,0,5,12,13,2},arms={{44,7,126},{48,3,124},{78,-5,101},{116,-8,83},{121,-7,79},{63,8,122}},weight="Knees dip under guard; support-leg extension lifts hips before fist travels up the centre",carry="Short bent-arm upward path; no overhead windmill; knees soften on return",next={"hook","cross","aerial"},tactic="BodyCounter",legacy="uppercut",refs={"boxing","chain"}},
+ {id="frontkick",name="Front kick / teep",category="Kicks",role="spacing",range="long",duration=.86,contact=.45,follow=.58,lead="Left",hip={0,2,4,8,8,2},torso={0,0,-1,-4,-5,0},legs={{44,4,104},{66,3,111},{80,2,60},{91,2,12},{86,3,27},{63,3,113}},weight="Weight settles over standing foot before knee lift; hip drives straight teep with upright guard",carry="Linear foot thrust; rechamber before replanting; no falling forward",next={"jab","cross","forwardknee"},tactic="StopTeep",legacy="frontkick",refs={"teep"}},
+ {id="sidekick",name="Side kick",category="Kicks",role="knockback",range="long",duration=1.02,contact=.48,follow=.62,lead="striker",hip={8,38,66,86,89,42},torso={0,-6,-13,-18,-18,-8},legs={{31,12,108},{35,38,112},{30,66,58},{15,82,12},{13,85,23},{32,48,117}},weight="Standing heel turns towards target; chamber folds knee before lateral heel thrust",carry="Heel-led side extension; torso counterbalances; knee rechambers before returning to stance",next={"cross","jab","pursuit"},tactic="LongSpacing",legacy="sidekick",refs={"sidekick"}},
+ {id="roundhouse",name="Roundhouse",category="Kicks",role="pressure",range="long",duration=.93,contact=.47,follow=.63,lead="opposite",hip={-4,19,53,91,108,38},torso={0,-2,-7,-16,-21,-7},legs={{13,5,32},{38,12,34},{59,39,25},{29,76,16},{17,87,27},{43,17,69}},weight="Rear shin rises on a compact forward path; support ball pivots with pelvis, then hip sends shin through arc",carry="Continuous shin swing, not side-kick chamber; counterbalancing arm and controlled recoil",next={"cross","hook","forwardknee"},tactic="QuickReturn",legacy="roundhouse",refs={"roundhouse"}},
+ {id="lowkick",name="Low kick",category="Kicks",role="pressure",range="mid",duration=.76,contact=.44,follow=.60,lead="opposite",hip={-3,12,34,63,76,22},torso={0,-1,-4,-10,-13,-4},legs={{15,8,40},{35,12,35},{44,18,27},{50,20,16},{43,25,30},{35,6,88}},weight="Standing ball pivots; hip drives shin across thigh line while head remains guarded",carry="Low shin arc and short recoil; do not drop into a spinning crouch",next={"cross","hook","frontkick"},tactic="InsideLow",legacy="roundhouse",refs={"roundhouse","sweep"}},
+ {id="backkick",name="Back kick",category="Kicks",role="counter",range="long",duration=1.12,contact=.52,follow=.64,lead="opposite",hip={32,92,146,174,179,85},torso={0,-12,-30,-43,-44,-15},legs={{17,5,107},{15,3,119},{-31,2,65},{-78,2,12},{-72,2,26},{-15,4,113}},weight="Guarded check over shoulder; half-turn puts standing heel towards target; heel thrusts behind hips",carry="Linear heel thrust, not circular spin; rechamber, unwind and recover front-facing guard",next={"jab","pursuit","frontkick"},tactic="CheckBack",legacy="sidekick",refs={"backkick","sidekick"}},
+ {id="sweep",name="Sweep / ankle reap",category="Kicks",role="sweep",range="close",duration=.88,contact=.48,follow=.64,lead="opposite",hip={-3,9,22,38,48,13},torso={0,0,-3,-6,-9,-2},legs={{32,7,82},{28,22,70},{18,34,48},{3,48,14},{-3,60,19},{26,14,92}},weight="Frame/catch first off-balances opponent; planted leg braces as reaping foot crosses ankle line",carry="Low reap below knee after posture break; replant before pursuit",next={"pursuit","jab"},tactic="OutsideReap",legacy="sweep",refs={"sweep"}},
+ {id="risingknee",name="Rising knee",category="Knees",role="pressure",range="close",duration=.77,contact=.45,follow=.58,lead="Left",hip={0,3,7,12,13,3},torso={0,0,0,-3,-3,0},legs={{43,3,134},{68,2,140},{92,2,145},{119,2,145},{116,2,141},{65,3,130}},weight="Standing leg drives upward; knee rises vertically through centre, heel folded towards seat",carry="Hip lifts before knee; upright frame keeps balance; compact vertical return",next={"horizontalelbow","cross","frontkick"},tactic="ShortClinch",legacy="risingknee",refs={"knee"}},
+ {id="forwardknee",name="Forward knee",category="Knees",role="pressure",range="close",duration=.82,contact=.46,follow=.60,lead="Left",hip={-1,5,11,20,22,6},torso={0,0,-1,-6,-7,-2},legs={{34,4,130},{56,3,139},{76,3,144},{95,3,146},{90,3,140},{52,4,128}},weight="Standing foot braces; hip advances into folded knee, with guarded upper body rather than isolated leg lift",carry="Forward hip projection; rearward torso counterbalance; retract folded knee before planting",next={"horizontalelbow","hook","frontkick"},tactic="StepIn",legacy="knee",refs={"knee"}},
+ {id="horizontalelbow",name="Horizontal elbow",category="Elbows",role="counter",range="close",duration=.66,contact=.43,follow=.57,lead="Left",hip={-3,11,24,36,43,9},torso={0,1,7,18,24,4},arms={{67,6,134},{74,2,143},{86,-17,145},{91,-51,146},{84,-70,146},{65,7,125}},weight="Ball pivot and hip rotation deliver short elbow arc; free hand protects chin/frames opponent",carry="Folded fist stays near shoulder; recover both hands without opening chin",next={"forwardknee","hook","cross"},tactic="ShortCounter",legacy="elbow",refs={"elbow","boxing"}},
+}
+local phases={"Ready","Anticipation","HipDrive","Acceleration","Contact","FollowThrough","Rechamber","Recovery"}
+local function setFacing(p)
+ p.head.yaw=math.clamp(-(p.root.yaw+p.torso.yaw),-75,75);p.head.pitch=-2-(p.root.pitch+p.torso.pitch)*.4
+end
+-- Place pelvis above the actual supporting ankle after rotation. This is
+-- a balance trajectory, not moving the planted foot to chase the body.
+local function balance(p,support)
+ local s=sign(support);local f=p[foot(support)]
+ local r=p.root
+ -- Centre of the pelvis, not merely the lateral hip joint, is over the
+ -- support. IK accommodates the hip offset while the torso counterbalances.
+ r.x=.5*s+f.x-s*.08;r.z=f.z-.08
+end
+function R.strike(def,side,kind,forcedLead)
+ local lead=forcedLead or(if def.lead=="striker"then side elseif def.lead=="opposite"then other(side)else def.lead)
+ local rear=side~=lead;local turn=-sign(side);local support=other(side);local isLeg=def.legs~=nil
+ local ready=R.guard(lead);local poses={M.copy(ready)}
+ local times={0,.13,.25,.34,def.contact,def.follow,.82,1}
+ for stage=1,6 do
+  local p=M.copy(ready);p.root.yaw+=turn*def.hip[stage];p.torso.yaw+=turn*def.torso[stage]
+  p.root.y-=if stage==1 then .035 elseif stage==2 then .065 elseif stage==3 then .03 else 0
+  if isLeg then
+   convert(p,side);local row=def.legs[stage];p[leg(side)]={lift=row[1],out=row[2],knee=row[3],twist=0,ankle=if def.id=="frontkick"or def.id=="sidekick"or def.id=="backkick"then -12 else 6}
+   p[foot(support)].yaw=ready[foot(support)].yaw+turn*def.hip[stage];p[foot(support)].toe=if stage==2 or stage==3 then 4 else 0
+   p.root.pitch=if def.id=="backkick"then (if stage&gt;=3 and stage&lt;=5 then 24 else 7)elseif def.id=="sidekick"then -3 else -2
+   p.root.roll=if def.id=="sidekick"then -sign(side)*(if stage&gt;=3 and stage&lt;=5 then 12 else 4)else -sign(side)*3
+   p[hand(support)]=arm(69,8,123);p[hand(side)]=arm(61,10,119)
+   if def.id=="roundhouse"or def.id=="lowkick"then p[hand(side)]=arm(if stage&gt;=3 and stage&lt;=5 then 35 else 62,if stage&gt;=3 and stage&lt;=5 then 30 else 10,85)end
+   if def.id=="sweep"then p[hand(support)]=arm(86,-10,60);p[hand(side)]=arm(73,4,85)end
+   if def.category=="Knees"then p.la=arm(85,5,106);p.ra=arm(85,5,106)end
+   -- A Thai shin kick first extends the standing leg as the free shin
+   -- leaves the floor, then settles into the rotating strike. Staying in the
+   -- deep boxing crouch while straightening that leg would pierce the floor.
+   if def.id=="roundhouse"or def.id=="lowkick"then p.root.y=({-.06,-.12,-.22,-.28,-.32,-.45})[stage]end
+   balance(p,support)
+   if def.id=="frontkick"or def.id=="forwardknee"then p.root.z-=({0,0,.06,.20,.23,.025})[stage]end
+  else
+   local row=def.arms[stage];p[hand(side)]=arm(row[1],row[2],row[3],if stage&gt;=3 and stage&lt;=5 then 14 else 0)
+   p[hand(support)]=arm(67,6,125)
+   local loadSide=if def.id=="hook"and not rear then lead else other(lead)
+   local destination=if def.id=="hook"and not rear then other(lead)else lead
+   p.root.x=sign(if stage&lt;=2 then loadSide else destination)*(if stage==1 then .09 elseif stage&lt;=5 then .12 else .035)
+   p.root.z=if stage&lt;=2 then .025 elseif stage&lt;=5 then -.085 else 0
+   local pivot=if rear then side elseif def.id=="jab"then other(side)else side
+   p[foot(pivot)].yaw=ready[foot(pivot)].yaw+turn*def.hip[stage]
+   p[foot(pivot)].toe=if stage&gt;=2 and stage&lt;=5 then (if def.id=="jab"then 4 else 11)else 0
+   if def.id=="uppercut"then p.root.y=({-.60,-.64,-.54,-.34,-.35,-.48})[stage];p.torso.pitch=({3,4,0,-7,-6,1})[stage]end
+  end
+  setFacing(p);table.insert(poses,p)
+ end
+ table.insert(poses,M.copy(ready))
+ if isLeg then for _,p in poses do convert(p,side)end end
+ -- Tactical variants change the load/trajectory/brace, rather than uniformly
+ -- scaling every joint. Ninja is a restrained presentation adaptation only.
+ local duration=def.duration
+ if kind==def.tactic then
+  if kind=="StepIn"or kind=="LongSpacing"then
+   local travel=if kind=="LongSpacing"then .24 else .18
+   for i,p in poses do
+    if isLeg then
+     local dz=if i==1 then 0 else -travel;p[foot(support)].z+=dz;p[foot(support)].y=if i==2 then .065 else 0
+     if i&gt;1 and i&lt;8 then balance(p,support)else p.root.z+=dz end
+    else
+     local dz=-travel*math.min(1,times[i]/.34);p.root.z+=dz;p[foot(lead)].z+=if i==1 then 0 else -travel
+     p[foot(lead)].y=if i==2 then .06 else 0
+     p[foot(other(lead))].z+=if i&gt;=7 then -travel else 0
+    end
+   end
+   duration+=.08
+  elseif kind=="InsideLow"then
+   for i=2,7 do local p=poses[i];p.root.yaw=ready.root.yaw+turn*def.hip[i-1]*.58;p[leg(side)].out=-def.legs[i-1][2]*.48;if i&gt;=5 then p[leg(side)].lift+=6 end;p[foot(support)].yaw=ready[foot(support)].yaw+turn*def.hip[i-1]*.58;balance(p,support);setFacing(p)end
+  elseif kind=="OutsideReap"then
+   for i=2,7 do local p=poses[i];p[leg(side)].out+=12;p[hand(support)]=arm(82,-24,76);p.torso.roll=-sign(side)*4;balance(p,support);setFacing(p)end
+  elseif kind=="StopTeep"then
+   for i=2,7 do local p=poses[i];p.root.pitch=-6;p[leg(side)].lift+=if i==5 or i==6 then -12 else 0;p[hand(side)]=arm(69,6,123);balance(p,support);setFacing(p)end
+  elseif kind=="BodyCounter"then
+   for i=2,7 do local p=poses[i];p.root.y-=.10;p[hand(side)].raise-=if i==5 or i==6 then 16 else 0;p[hand(support)].raise=73;setFacing(p)end
+  elseif kind=="CheckBack"then
+   poses[2].head.yaw=-turn*65;poses[2].root.yaw=ready.root.yaw+turn*48;balance(poses[2],support)
+   poses[3][leg(side)].knee=133;poses[3][hand(support)]=arm(75,5,128)
+  elseif kind=="ShortClinch"then
+   for i=2,7 do local p=poses[i];p[leg(side)].lift-=12;p.la=arm(102,-8,92);p.ra=arm(102,-8,92);p.torso.pitch=4;balance(p,support);setFacing(p)end
+  elseif kind=="ShortRange"or kind=="ShortCounter"then
+   for i=2,7 do local p=poses[i];p.root.x*=.65;p.root.z*=.5;p.root.yaw=ready.root.yaw+turn*def.hip[i-1]*.8;p.torso.yaw=ready.torso.yaw+turn*def.torso[i-1]*.8
+    p[hand(side)].elbow=math.min(148,p[hand(side)].elbow+12);p[hand(support)].raise=74;setFacing(p)
+   end
+  elseif kind=="QuickReturn"then
+   poses[6][leg(side)].knee=53;poses[6][leg(side)].lift=40;poses[6][leg(side)].out=42;poses[6].root.yaw=ready.root.yaw+turn*82;poses[6][foot(support)].yaw=poses[6].root.yaw;balance(poses[6],support)
+   times[6]=def.contact+.09;times[7]=.73;duration-=.07
+  end
+ elseif kind=="Ninja"then
+  -- Preserve support foot/chamber. Increase readable striking silhouette,
+  -- shoulder participation and carry, never add a purposeless full rotation.
+  for _,i in {4,5,6}do local p=poses[i];p.torso.yaw+=turn*3
+   if isLeg then p[leg(side)].lift+=if def.id=="lowkick"or def.id=="sweep"then 2 elseif def.id=="backkick"then -5 else 5
+   else p[hand(side)].raise+=4;p[hand(side)].elbow=math.max(8,p[hand(side)].elbow-3)end
+   setFacing(p)
+  end
+  duration*=.93
+ end
+ local plant=nil;local transfer=nil
+ if isLeg and kind==def.tactic and(kind=="StepIn"or kind=="LongSpacing")then
+  -- Step the future support foot while the striking foot still carries weight.
+  local step=poses[2];step.root=M.copy(ready.root);step.root.x=sign(side)*.20
+  step[leg(side)]=nil;step[foot(side)]=M.copy(ready[foot(side)]);convert(step,side)
+  plant=M.copy(step);plant[foot(support)].y=0;balance(plant,support)
+  plant[leg(side)]=nil;plant[foot(side)]=M.copy(ready[foot(side)]);convert(plant,side)
+  transfer=M.copy(plant);transfer.root.x=(step.root.x+plant.root.x)*.5;transfer.root.z=(step.root.z+plant.root.z)*.5;transfer[foot(support)].y=step[foot(support)].y*.5
+  transfer[leg(side)]=nil;transfer[foot(side)]=M.copy(ready[foot(side)]);convert(transfer,side)
+ end
+ local keys={};for i,p in poses do table.insert(keys,{at=times[i],phase=phases[i],pose=p,ease=if i==5 then "out"else "smooth"})end
+ if plant then table.insert(keys,{at=.165,phase="WeightTransfer",pose=transfer,ease="smooth"});table.insert(keys,{at=.20,phase="PlantSupport",pose=plant,ease="smooth"});table.sort(keys,function(a,b)return a.at&lt;b.at end)end
+ local phaseTimes={Ready=0,Anticipation=times[2],Acceleration=times[4],Contact=times[5],FollowThrough=times[6],Recovery=1}
+ return {duration=duration,keys=keys,timing={startup=duration*times[5],active=duration*(times[6]-times[5]),recovery=duration*(1-times[6])}},phaseTimes,lead
+end
+local function publish(lib,id,name,category,family,side,kind,clip,phaseTimes,metadata,legacy)
+ -- Report authored joint deltas, including tactical adjustments. Never label
+ -- these as experimentally measured human biomechanics.
+ local first=clip.keys[1].pose
+ metadata.hipRotation={description="Support → pelvis; see editable keys",reference="Authored R15 degrees relative to Ready, not human measurements"}
+ metadata.torsoRotation={description="Torso follows pelvis; target-aware guarded head"}
+ for _,key in clip.keys do
+  if key.phase=="HipDrive"or key.phase=="HipDrive1"then
+   metadata.hipRotation.driveDegrees=key.pose.root.yaw-first.root.yaw
+   metadata.torsoRotation.driveDegrees=key.pose.torso.yaw-first.torso.yaw
+  elseif key.phase=="Contact"or key.phase=="Contact1"then
+   metadata.hipRotation.contactDegrees=key.pose.root.yaw-first.root.yaw
+   metadata.torsoRotation.contactDegrees=key.pose.torso.yaw-first.torso.yaw
+  end
+ end
+ local sourceId=id.."_source"
+ local a={id=sourceId,name=name,grammar=sourceId,category=category,family=family,side=side,variantName=kind,attackingLimb=metadata.attackingLimb,supportLimb=metadata.supportFoot,stance=metadata.leadSide.."Lead",bodyMechanics={"stance","support","weight-transfer","hips","torso","striking-limb","contact","follow-through","recovery"},compatibleTransitions={},independentlyEditable=true,mirrorSource=false,sourceType="reference",referenceBacked=true,hidden=true,tags={"Reference",family,side,kind,metadata.combatRole},compatibleBodyLayers=M.copy(M.Layers),duration=clip.duration,contactMarkers=metadata.contacts or {{at=phaseTimes.Contact,name="contact"}},rootPolicy="presentation",styleTags={kind},authoredClip=clip,combatPhases=phaseTimes,legacyAsset=legacy,metadata=metadata}
+ lib.assets[sourceId]=a
+ local visible=M.copy(a);visible.id=id;visible.grammar=id;visible.hidden=false;visible.variant=true
+ visible.variantDefinition=E.create(id,name,a,clip.duration,phaseTimes.Contact,phaseTimes.FollowThrough)
+ visible.variantDefinition.metadata=M.copy(metadata)
+ -- Non-boundary source keys remain selectable for hip drive and rechamber,
+ -- as do subsequent contacts within complete combination phrases.
+ local v=visible.variantDefinition
+ for i,k in clip.keys do local exists=false;for _,key in v.poseOverrides do if math.abs(key.time-k.at)&lt;.002 then exists=true end end
+  if not exists then table.insert(v.poseOverrides,{id=(k.phase or "Pose").."_"..i,time=k.at,sourceTime=k.at,parts={}})end
+ end
+ table.sort(v.poseOverrides,function(x,y)return x.time&lt;y.time end)
+ lib.assets[id]=visible;table.insert(lib.assetOrder,id);return visible
+end
+local function meta(def,side,lead,kind)
+ local refs={};for _,id in def.refs do table.insert(refs,R.Sources[id])end
+ return {combatRole=def.role,range=def.range,leadSide=lead,supportFoot=other(side).."Foot",weightShift=def.weight,
+ hipRotation={description="Support pivot drives pelvis",driveDegrees=-sign(side)*def.hip[2],contactDegrees=-sign(side)*def.hip[4],reference="Authored R15 deltas, not measured human angles"},torsoRotation={description="Torso follows hip drive; head tracks target",driveDegrees=-sign(side)*def.torso[2],contactDegrees=-sign(side)*def.torso[4]},
+ contactPhase="Contact",followThrough=def.carry,recovery="Rechamber / hand return, settle feet, recover usable guard",validFollowups=M.copy(def.next),
+ contactSurface=if def.id=="roundhouse"or def.id=="lowkick"then "shin"elseif def.id=="sidekick"or def.id=="backkick"then "heel"elseif def.id=="sweep"then "ankle/calf reap"elseif def.category=="Knees"then "knee"elseif def.category=="Elbows"then "elbow"elseif def.id=="frontkick"then "ball/sole"else "knuckles",
+ attackingLimb=side..(if def.legs then "Leg"else "Arm"),stance=lead.."Lead",references=refs,referenceStatus="Coach-text informed R15 adaptation; not mocap",variantMechanic=kind,
+ constraints=if def.id=="sweep"then "Requires caught/off-balanced opponent; preview shows frame and reap only"else "Presentation only; author must validate target contact and rig proportions"}
+end
+R.Routes={
+ {id="jab_cross",name="Jab → Cross",from="jab",to="cross",flow="Lead jab returns as rear ball drives cross; lead brace remains planted"},
+ {id="cross_hook",name="Cross → Hook",from="cross",to="hook",flow="Rear cross loads lead brace; lead hook releases that heel and returns weight rearward"},
+ {id="jab_lowkick",name="Jab → Low kick",from="jab",to="lowkick",flow="Jab retracts under guard; settle onto lead support before rear shin swings"},
+ {id="cross_roundhouse",name="Cross → Roundhouse",from="cross",to="roundhouse",flow="Cross finishes on lead brace; shift back over rear support before lead-leg kick"},
+ {id="dodge_cross",name="Dodge left → Cross",from="dodge",to="cross",flow="Guarded lateral knee bend loads rear leg; push into cross without standing upright first"},
+ {id="dodge_hook",name="Dodge right → Hook",from="dodge",to="hook",reverse=true,flow="Outside slip stays behind guard; inside foot pressure feeds compact lead hook"},
+ {id="sweep_pursuit",name="Sweep → Pursuit",from="sweep",to="pursuit",flow="Reaping foot replants; pelvis settles before alternating chase steps"},
+ {id="launcher_aerial",name="Launcher → Aerial follow-up",from="launcher",to="aerial",flow="Uppercut settles into knee load; support push-off precedes airborne strike",gameAdaptation=true},
+}
+function R.aux(kind,side,lead)
+ local d=R.Specs[if kind=="launcher"then 4 else 2];local clip,pt=R.strike(d,side,"Base",lead)
+ if kind=="launcher"then
+  clip.keys[3].pose.root.y=-.69;clip.keys[5].pose[hand(side)].raise=127
+ elseif kind=="dodge"then
+  local g=R.guard(lead);for i,k in clip.keys do local p=M.copy(g);local q=({0,.3,.65,1,1,.7,.25,0})[i]
+   p.root.x=sign(side)*.21*q;p.root.y-=.22*q;p.root.roll=-sign(side)*8*q;p.torso.roll=sign(side)*4*q;p.head.yaw=-p.root.yaw-p.torso.yaw;k.pose=p
+  end;clip.duration=.58
+ elseif kind=="pursuit"then
+  local g=R.guard(lead);for i,k in clip.keys do local p=M.copy(g);local t=k.at
+   p.root.z=-.65*t;p.root.pitch=8
+   p[foot(side)].z-=.65*math.min(1,t/.43);p[foot(other(side))].z-=.65*math.clamp((t-.43)/.57,0,1)
+   p[foot(side)].y=if i==2 or i==3 then .09 else 0;p[foot(other(side))].y=if i==6 or i==7 then .09 else 0;k.pose=p
+  end;clip.duration=.74
+ elseif kind=="aerial"then
+  -- Ground load -&gt; push-off -&gt; tucked airborne strike -&gt; landing guard.
+  for i,k in clip.keys do local p=k.pose;convert(p,"Left");convert(p,"Right")
+   if i&gt;=3 and i&lt;=6 then p.root.y=({.12,.65,.95,.72})[i-2];p.ll={lift=30,out=5,knee=73,ankle=-12};p.rl={lift=48,out=5,knee=99,ankle=-12}end
+   if i==2 then p.root.y=-.66 end;if i==7 then p.root.y=-.65 end
+  end;clip.duration=1.12
+ end
+ clip.timing={startup=clip.duration*pt.Contact,active=clip.duration*(pt.FollowThrough-pt.Contact),recovery=clip.duration*(1-pt.FollowThrough)}
+ return clip,pt
+end
+local function composite(clips)
+ local out={duration=0,keys={}};local contacts={};local offset=0;local previous=nil
+ for index,clip in clips do
+  local first=if index==1 then 1 else 2;local last=if index==#clips then #clip.keys else 6
+  local startTime=clip.keys[first].at;local shifted=M.copy(clip.keys)
+  if previous then
+   -- Time to transfer between outgoing carry and receiving load.
+   -- Grounded punch phrases keep IK; only legs actually lifted use FK.
+   offset+=.20
+  end
+  for i=first,last do local k=shifted[i];local seconds=offset+(k.at-startTime)*clip.duration
+   table.insert(out.keys,{at=seconds,pose=k.pose,ease=k.ease,phase=k.phase..index})
+   if k.phase=="Contact"then table.insert(contacts,{at=seconds,name="contact"..index})end
+  end
+  previous=out.keys[#out.keys].pose;offset=out.keys[#out.keys].at
+ end
+ out.duration=offset;local pt={Ready=0,Anticipation=out.keys[2].at/offset,Acceleration=out.keys[4].at/offset,Contact=contacts[1].at/offset,FollowThrough=0,Recovery=1}
+ local free={};for _,k in out.keys do for _,s in {"Left","Right"}do if k.pose[leg(s)]then free[s]=true end end end
+ for _,k in out.keys do k.at/=offset;for s in free do convert(k.pose,s)end;if k.phase=="FollowThrough"..#clips then pt.FollowThrough=k.at end end
+ for _,c in contacts do c.at/=offset end
+ out.timing={startup=offset*pt.Contact,active=offset*(pt.FollowThrough-pt.Contact),recovery=offset*(1-pt.FollowThrough)}
+ return out,pt,contacts
+end
+function R.populate(lib)
+ local definitions={};for _,def in R.Specs do definitions[def.id]=def
+  for _,kind in {"Base",def.tactic,"Ninja"}do for _,s in {"Left","Right"}do
+   local clip,pt,lead=R.strike(def,s,kind);local id="ref_"..def.id.."_"..suffix(s).."_"..kind
+   local previous="common_"..def.id.."_"..suffix(s).."_Standard"
+   local a=publish(lib,id,def.name.." · "..suffix(s).." · "..kind,def.category,def.name,s,kind,clip,pt,meta(def,s,lead,kind),if lib.assets[previous]then previous else def.legacy)
+   a.counterpart="ref_"..def.id.."_"..suffix(other(s)).."_"..kind
+  end end
+ end
+ for _,kind in {"dodge","pursuit","launcher","aerial"}do for _,s in {"Left","Right"}do
+  local lead=if kind=="launcher"then "Left"else s;local clip,pt=R.aux(kind,s,lead);local md=meta(definitions.uppercut,s,lead,"Game adaptation")
+  md.combatRole=if kind=="dodge"then "counter"elseif kind=="launcher"then "launcher"else "pursuit"
+  md.weightShift=if kind=="dodge"then "Knee-supported outside slip with hands protecting chin"elseif kind=="pursuit"then "Replant then alternating guarded forward steps"else "Guarded knee load and support extension; game-directed trajectory"
+  md.constraints=if kind=="launcher"or kind=="aerial"then "Game presentation adaptation, not a claim that a real strike launches bodies"else "Solo presentation, no opponent simulation"
+  md.supportFoot=if kind=="aerial"then "BothFeet → Airborne → BothFeet"elseif kind=="pursuit"then "AlternatingFeet"else "BothFeet"
+  local a=publish(lib,"ref_"..kind.."_"..suffix(s).."_Base",kind.." · "..suffix(s),if kind=="dodge"then "Dodges"elseif kind=="aerial"then "Aerial"elseif kind=="launcher"then "Launchers"else "Transitions",kind,s,"Base",clip,pt,md,if kind=="aerial"then "air1"elseif kind=="pursuit"then "pursue"else kind)
+  a.counterpart="ref_"..kind.."_"..suffix(other(s)).."_Base"
+ end end
+ for _,route in R.Routes do for _,s in {"Left","Right"}do
+  local lead=s;local fromSide=if route.from=="cross"or route.from=="sweep"then other(s)elseif route.reverse then other(s)else s
+  local toSide=if route.to=="cross"or route.to=="lowkick"then other(s)else s
+  local from,fp;if definitions[route.from]then from,fp=R.strike(definitions[route.from],fromSide,"Base",lead)else from,fp=R.aux(route.from,fromSide,lead)end
+  local to,tp;if definitions[route.to]then to,tp=R.strike(definitions[route.to],toSide,"Base",lead)else to,tp=R.aux(route.to,toSide,lead)end
+  -- Bridge alone exposes the carry → receiving load, without a neutral reset.
+  local a,b=M.copy(from.keys[6].pose),M.copy(to.keys[2].pose)
+  for _,s in {"Left","Right"}do if a[leg(s)]or b[leg(s)]then convert(a,s);convert(b,s)end end
+  local bridge={duration=.20,keys={{at=0,pose=a,phase="Ready",ease="smooth"},{at=1,pose=b,phase="Recovery",ease="smooth"}},timing={startup=.09,active=.03,recovery=.08}}
+  local bp={Ready=0,Anticipation=.12,Acceleration=.28,Contact=.45,FollowThrough=.65,Recovery=1}
+  local md=meta(definitions[route.from]or definitions.uppercut,fromSide,lead,"Weight bridge");md.combatRole=if route.gameAdaptation then "pursuit"else "pressure";md.weightShift=route.flow;md.validFollowups={route.to};md.transition={from=route.from,to=route.to,receivingSide=toSide,gameAdaptation=route.gameAdaptation or false};md.references={R.Sources.combinations,R.Sources.boxing};md.supportFoot="Transfer: "..other(fromSide).."Foot → "..other(toSide).."Foot";md.followThrough="Retract outgoing limb while transferring pressure";md.recovery="Receiving load for "..route.to
+  local name=if route.from=="dodge"then "Dodge "..fromSide:lower().." → "..(if route.to=="cross"then "Cross "else "Hook ")..suffix(toSide)elseif s=="Left"then route.name else route.name.." · opposite stance";local id="ref_bridge_"..route.id.."_"..suffix(s)
+  local published=publish(lib,id,name.." · transfer","Transitions",route.name,s,"Bridge",bridge,bp,md,"land");published.counterpart="ref_bridge_"..route.id.."_"..suffix(other(s))
+  local phrase,pp,contacts=composite({from,to});local pm=M.copy(md);pm.contacts=contacts;pm.variantMechanic="Connected phrase";pm.followThrough=route.flow;pm.recovery="Final strike recovers guard; no idle reset between strikes"
+  local phraseId="ref_phrase_"..route.id.."_"..suffix(s)
+  local ph=publish(lib,phraseId,name.." · full route","Transitions",route.name,s,"Phrase",phrase,pp,pm,"jab");ph.counterpart="ref_phrase_"..route.id.."_"..suffix(other(s))
+ end end
+ for _,s in {"Left","Right"}do
+  local jab=R.strike(definitions.jab,s,"Base",s);local cross=R.strike(definitions.cross,other(s),"Base",s);local hook=R.strike(definitions.hook,s,"Base",s)
+  local clip,pt,contacts=composite({jab,cross,hook});local md=meta(definitions.jab,s,s,"Connected phrase");md.contacts=contacts;md.weightShift="Lead jab pressure → rear cross drive/front brace → lead hook release/rear load";md.references={R.Sources.boxing,R.Sources.combinations};md.validFollowups={"cross","uppercut"}
+  local id="ref_phrase_jab_cross_hook_"..suffix(s);local a=publish(lib,id,"Jab → Cross → Hook · "..suffix(s),"Transitions","Jab → Cross → Hook",s,"Phrase",clip,pt,md,"jab");a.counterpart="ref_phrase_jab_cross_hook_"..suffix(other(s))
+ end
+ for _,id in lib.assetOrder do local a=lib.assets[id];if a.referenceBacked then lib.assets[a.variantDefinition.sourceAsset].counterpart=a.counterpart end end
+end
+return R
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="FML14">
+        <Properties>
           <string name="Name">Rig</string>
           <ProtectedString name="Source">-- Preview scaffold reuses Ninja Duel's R15 dimensions and joint spacing.
 -- Explicit CFrame hierarchy also works in edit-mode ViewportFrames without physics.
@@ -1062,7 +1401,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML14">
+      <Item class="ModuleScript" referent="FML15">
         <Properties>
           <string name="Name">Sampler</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
@@ -1276,7 +1615,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML15">
+      <Item class="ModuleScript" referent="FML16">
         <Properties>
           <string name="Name">Store</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
@@ -1328,7 +1667,7 @@ return Store
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML16">
+      <Item class="ModuleScript" referent="FML17">
         <Properties>
           <string name="Name">Timeline</string>
           <ProtectedString name="Source">-- Full-width channel timeline. Data gestures use one undo checkpoint per drag.
@@ -1387,7 +1726,7 @@ function T:refresh()
  else
   local keys=if variant then variant.poseOverrides else {}
   if not variant then
-   local authored=c.preset.clips[c:asset().grammar];local contact=.42;local recovery=.7;if authored and authored.timing then contact=authored.timing.startup/authored.duration;recovery=(authored.timing.startup+authored.timing.active)/authored.duration end
+   local authored=c:asset().authoredClip or c.preset.clips[c:asset().grammar];local contact=.42;local recovery=.7;if authored and authored.timing then contact=authored.timing.startup/authored.duration;recovery=(authored.timing.startup+authored.timing.active)/authored.duration end
    keys=E.create("preview","Preview",c:asset(),total,contact,recovery).poseOverrides
   end
   for i,part in E.Parts do local y=28+(i-1)*24
@@ -1398,7 +1737,7 @@ function T:refresh()
     local selected=(c.selectedKey==key.id and c.selectedPart==part) or self.selection[key.id]
     local has=next(key.parts[part] or {})~=nil
     local diamond=u:button(area,"",{Name="PoseKey_"..part.."_"..key.id,Position=UDim2.fromOffset(labelWidth+key.time*width-5,y+7),Size=UDim2.fromOffset(10,10),Rotation=45,ZIndex=5,BackgroundTransparency=if has or selected then 0 else .6},nil,selected)
-    u:tip(diamond,(key.semantic or "Extra pose").." · "..part..string.format(" · %.3fs",key.time*total))
+    u:tip(diamond,(key.semantic or key.id).." · "..part..string.format(" · %.3fs",key.time*total))
     local origin=0;local previous=0;local ids={}
     u:dragInput(diamond,function()
      if not variant then self.changed("Create a variant to edit keys",false);return end
@@ -1432,12 +1771,12 @@ function T:refresh()
    u:tip(name,"Sequence name; following fields are duration and transition blend in seconds.")
   end
  elseif variant then
-  u:button(parent,"Delete key",{Position=UDim2.new(1,-104,1,-30),Size=UDim2.fromOffset(92,24)},function()action(function()c:variantEdit(function(v)local k,i=E.key(v,c.selectedKey);assert(k and not k.semantic,"Keep the five semantic keys");table.remove(v.poseOverrides,i)end);c:selectKey("Contact")end,"Extra key removed")end)
+  u:button(parent,"Delete key",{Position=UDim2.new(1,-104,1,-30),Size=UDim2.fromOffset(92,24)},function()action(function()c:variantEdit(function(v)local k,i=E.key(v,c.selectedKey);assert(k and not k.semantic,"Keep the required phase keys");table.remove(v.poseOverrides,i)end);c:selectKey("Contact")end,"Extra key removed")end)
   local stretch=u:input(parent,"1.2",{Position=UDim2.new(1,-244,1,-30),Size=UDim2.fromOffset(45,24)})
   u:button(parent,"Stretch",{Position=UDim2.new(1,-193,1,-30),Size=UDim2.fromOffset(76,24)},function()action(function()local factor=tonumber(stretch.Text);assert(factor and factor&gt;=.25 and factor&lt;=3,"Stretch: 0.25–3");c:variantEdit(function(v)
    local anchor=1;for _,key in v.poseOverrides do if self.selection[key.id]then anchor=math.min(anchor,key.time)end end
    assert(anchor&lt;1,"Use Multi to select keys first")
-   local targets={};for _,key in v.poseOverrides do if self.selection[key.id] then assert(not key.semantic or (key.semantic~="Start" and key.semantic~="Recovery"),"Keep boundary keys fixed");targets[key.id]=anchor+(key.time-anchor)*factor end end
+   local targets={};for _,key in v.poseOverrides do if self.selection[key.id] then assert(not key.semantic or (not E.boundary(key)),"Keep boundary keys fixed");targets[key.id]=anchor+(key.time-anchor)*factor end end
    local previous=-1;for _,key in v.poseOverrides do local t=targets[key.id] or key.time;assert(t-previous&gt;=.002 and t&lt;=1,"Stretch would cross another key");previous=t end
    for _,key in v.poseOverrides do key.time=targets[key.id] or key.time end
   end)end,"Selected key timing stretched")end)
@@ -1446,13 +1785,13 @@ function T:refresh()
 end
 function T:update(time,total)
  if self.playhead then self.playhead.Position=UDim2.fromOffset(146+math.clamp(time/math.max(.1,total),0,1)*self.width,0)end
- if self.detail then local c=self.c;local v=c:variant();local key=v and E.key(v,c.selectedKey);self.detail.Text=string.format("%.3f / %.3fs",time,total)..(if key then "   · "..(key.semantic or "Extra pose").." / "..(c.selectedPart or "Root") else "   · Drag ruler to scrub / diamonds to retime")end
+ if self.detail then local c=self.c;local v=c:variant();local key=v and E.key(v,c.selectedKey);self.detail.Text=string.format("%.3f / %.3fs",time,total)..(if key then "   · "..(key.semantic or key.id).." / "..(c.selectedPart or "Root") else "   · Drag ruler to scrub / diamonds to retime")end
 end
 return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML17">
+      <Item class="ModuleScript" referent="FML18">
         <Properties>
           <string name="Name">UI</string>
           <ProtectedString name="Source">-- Visual thesis: a focused motion bench; browser, R15 canvas, contextual inspector, full-width dope sheet.
@@ -1536,7 +1875,7 @@ return UI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML18">
+      <Item class="ModuleScript" referent="FML19">
         <Properties>
           <string name="Name">View</string>
           <ProtectedString name="Source">-- One authoring workflow: browse -&gt; variant -&gt; pose/timing -&gt; compare -&gt; save/export.
@@ -1573,6 +1912,7 @@ function View.mount(widget,plugin)
   bottom.Position=UDim2.new(0,8,1,-th-28);bottom.Size=UDim2.new(1,-16,0,th)
   divider.Position=UDim2.new(0,8,1,-th-34)
  end
+ local search="";local category="All";local page=1;local sideFilter="All";local familyFilter="All";local collection="All"
  local resizeStart=0;local timeline
  ui:dragInput(divider,function()resizeStart=bottom.AbsoluteSize.Y end,function(delta)savedHeight=math.clamp(resizeStart-delta.Y,180,300);layout()end,function()if timeline then timeline:refresh()end end)
  local title=ui:label(center,"Run",{Position=UDim2.fromOffset(12,7),Size=UDim2.new(1,-104,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
@@ -1619,14 +1959,25 @@ function View.mount(widget,plugin)
   if id=="duplicate"then c:duplicate()elseif id=="delete"then c.store:delete(c.preset.id);c:new(nil)else local selected=game:GetService("Selection"):Get()[1];assert(selected,"Select a Motion Lab export");c:import(selected)end
  end)end)
  local new=ui:button(header,"New profile",{Position=UDim2.fromOffset(112,44),Size=UDim2.fromOffset(84,24)})
- ui:connect(new.Activated,function()local items={{id="blank",name="Blank profile"}};for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end;pick(new,items,function(id)c:new(if id=="blank"then nil else id)end)end)
+ ui:connect(new.Activated,function()
+  local items={{id="blank",name="Blank profile"},{id="reference",name="Combat reference study (neutral DNA)"}}
+  for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end
+  pick(new,items,function(id)
+   c:new(if id=="blank"or id=="reference"then nil else id)
+   if id=="reference"then
+    c.preset.name="Combat reference study";c.clip="ref_jab_L_Base";c.tab="Motions"
+    collection="Reference";category="All";familyFilter="All";sideFilter="All";page=1
+    c.selectedKey="Contact";c.selectedPart="LeftArm";c.mirror=false;c.playing=true;c.loop=true;c.speed=1
+    inspectorTab="Pose"
+   end
+  end)
+ end)
  for i,spec in {{"↶",function()c:undo()end},{"↷",function()c:redo()end},{"Pin A",function()c:pinCompare()end},{"Clear A/B",function()c.compare=nil end},{"Mirror",function()c.mirror=not c.mirror end}}do local x=if i&lt;3 then 202+(i-1)*28 else 266+(i-3)*72;local b=ui:button(header,spec[1],{Position=UDim2.fromOffset(x,44),Size=UDim2.fromOffset(if i&lt;3 then 24 else 66,24)},function()action(spec[2])end);ui:tip(b,({"Undo profile / variant edit","Redo last edit","Freeze current motion as reference A","Return to one rig","Mirror preview; source data is unchanged"})[i])end
  local create=ui:button(header,"Create Variant",{Position=UDim2.new(1,-128,0,44),Size=UDim2.fromOffset(116,24)},function()action(function()c:createVariant();inspectorTab="Pose";editPose=true end,"Variant created · select a channel or key")end,true)
  ui:tip(create,"Add non-destructive pose/timing corrections to the selected motion.")
  local function scope(key,parent)
   if scopes[key]then scopes[key]:dispose()end;parent:ClearAllChildren();scopes[key]=UI.new(widget);return scopes[key]
  end
- local search="";local category="All";local page=1;local sideFilter="All";local familyFilter="All";local collection="All"
  local categories={{"All","All"},{"Locomotion","Move"},{"Punches","Punch"},{"Kicks","Kick"},{"Knees","Knee"},{"Elbows","Elbow"},{"Palm","Palm"},{"Dodges","Dodge"},{"Aerial","Air"},{"Wall","Wall"},{"Reactions","React"},{"Other","Other"}}
  refreshLibrary=function()
   local u=scope("library",left);thumbnailRigs={}
@@ -1644,7 +1995,7 @@ function View.mount(widget,plugin)
    u:connect(side.Activated,function()local choices={};for _,name in {"All","Left","Right","Neutral"}do table.insert(choices,{id=name,name=name})end;pick(side,choices,function(id)sideFilter=id;page=1 end)end)
    local source=u:button(left,collection.." ▾",{Name="CollectionFilter",Position=UDim2.new(.64,1,0,y),Size=UDim2.new(.36,-7,0,23),TextSize=10})
    u:tip(source,"Source collection: "..collection)
-   u:connect(source.Activated,function()pick(source,{{id="All",name="All sources"},{id="Common",name="Common bilateral"},{id="Legacy",name="Legacy / Ninja Duel"}},function(id)collection=id;if id=="Legacy"then familyFilter="All";sideFilter="All"end;page=1 end)end)
+   u:connect(source.Activated,function()pick(source,{{id="All",name="All sources"},{id="Reference",name="Combat references"},{id="Common",name="Common bilateral"},{id="Legacy",name="Legacy / Ninja Duel"}},function(id)collection=id;if id=="Legacy"then familyFilter="All";sideFilter="All"end;page=1 end)end)
    y+=26
    local family=u:button(left,(if familyFilter=="All"then "Family"else familyFilter).." ▾",{Name="FamilyFilter",Position=UDim2.fromOffset(6,y),Size=UDim2.new(.42,-7,0,23),TextSize=10})
    u:tip(family,"Family: "..familyFilter)
@@ -1657,17 +2008,17 @@ function View.mount(widget,plugin)
   end
   local rows={}
   if isMotion then
-   local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do table.insert(ids,id)end
+   local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do if not table.find(ids,id)then table.insert(ids,id)end end
    for _,id in ids do local a=c:asset(id);local other=not table.find({"Locomotion","Punches","Kicks","Knees","Elbows","Dodges","Aerial","Wall","Reactions"},a.category)
     local match=category=="All"or a.category==category or(category=="Palm"and(a.family=="Palm"or a.grammar:find("Palm")))or(category=="Other"and other)
-    match=match and(sideFilter=="All"or a.side==sideFilter)and(familyFilter=="All"or a.family==familyFilter)and(collection=="All"or(collection=="Common")== (a.sourceType=="common-authored"or(a.variant and a.authoredClip~=nil)))
-    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.variant then "Variant · "..c.preset.name else (a.family or a.category).." · "..(a.side or c.preset.name),asset=a})end
+    match=match and(sideFilter=="All"or a.side==sideFilter)and(familyFilter=="All"or a.family==familyFilter)and(collection=="All"or(collection=="Reference"and a.referenceBacked)or(collection=="Common"and not a.referenceBacked and(a.sourceType=="common-authored"or(a.variant and a.authoredClip~=nil)))or(collection=="Legacy"and not a.referenceBacked and not a.authoredClip))
+    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.referenceBacked then a.metadata.combatRole.." · "..a.stance elseif a.variant then "Variant · "..c.preset.name else (a.family or a.category).." · "..(a.side or c.preset.name),asset=a})end
    end
   else
    for _,id in c.library.order do local p=c.library.presets[id];local custom=c.store.custom[id]~=nil;if (c.tab=="Custom")==custom and(search==""or p.name:lower():find(search,1,true))then table.insert(rows,{id=id,name=p.name,desc=if custom then "Saved profile + variants"elseif p.metadata.sourceType=="ninja-duel"then "Ninja Duel · authored"else "Starting expression",profile=p})end end
   end
   if isMotion then table.sort(rows,function(a,b)
-   local x,y=a.asset,b.asset;local commonX=x.authoredClip~=nil;local commonY=y.authoredClip~=nil
+   local x,y=a.asset,b.asset;if (x.referenceBacked==true)~=(y.referenceBacked==true)then return x.referenceBacked==true end;local commonX=x.authoredClip~=nil;local commonY=y.authoredClip~=nil
    if commonX~=commonY then return commonX end
    local kx=(x.family or x.category).." / "..(x.variantName or "").." / "..(x.side or "")..x.id
    local ky=(y.family or y.category).." / "..(y.variantName or "").." / "..(y.side or "")..y.id;return kx&lt;ky
@@ -1676,7 +2027,7 @@ function View.mount(widget,plugin)
   local scroll=u:scroll(left,{Name="MotionCards",Position=UDim2.fromOffset(6,y),Size=UDim2.new(1,-12,1,-y-66)})
   for index=(page-1)*8+1,math.min(page*8,#rows)do local row=rows[index];local i=index-(page-1)*8
    local card=u:button(scroll,"",{Position=UDim2.fromOffset(0,(i-1)*68),Size=UDim2.new(1,-4,0,62)},function()action(function()
-    if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact"else c:load(row.id);inspectorTab="Mix"end
+    if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact";c.selectedPart=if row.asset.attackingLimb=="LeftLeg"then "LeftLeg"elseif row.asset.attackingLimb=="RightLeg"then "RightLeg"elseif row.asset.attackingLimb=="LeftArm"then "LeftArm"else "RightArm" else c:load(row.id);inspectorTab="Mix"end
    end)end,isMotion and c.clip==row.id)
    local thumb=u:make("ViewportFrame",card,{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(44,54),BackgroundTransparency=1,Ambient=Color3.fromRGB(170,182,201),LightColor=Color3.new(1,1,1),BorderSizePixel=0})
    local tw=Instance.new("WorldModel");tw.Parent=thumb;local tr=Rig.new(tw);local tc=Instance.new("Camera");tc.CFrame=CFrame.lookAt(Vector3.new(5,4,-8),Vector3.new(0,2.6,0));tc.FieldOfView=40;tc.Parent=thumb;thumb.CurrentCamera=tc
@@ -1722,7 +2073,7 @@ function View.mount(widget,plugin)
    u:input(scroll,game:GetService("HttpService"):JSONEncode(c.preset.characterRules),{Position=UDim2.fromOffset(0,294),Size=UDim2.new(1,-8,0,74),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top},function(text)action(function()
     local rules=game:GetService("HttpService"):JSONDecode(text);local candidate=M.copy(c.preset);candidate.characterRules=rules;local valid,why=M.validate(candidate,c.library.presets);assert(valid,why);c:edit(function(p)p.characterRules=rules end)
    end,"Expression rules updated")end)
-   u:label(scroll,"Motion mechanics (read-only source)",{Position=UDim2.fromOffset(0,654),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
+   u:label(scroll,"Combat role / support / references",{Position=UDim2.fromOffset(0,654),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
    u:input(scroll,game:GetService("HttpService"):JSONEncode(motionMeta),{Name="MotionMetadata",Position=UDim2.fromOffset(0,682),Size=UDim2.new(1,-8,0,170),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
    for i,key in {"idle","walk","run","dash","jump","land","wall"} do
     local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();timeline:refresh()end)
@@ -1802,7 +2153,7 @@ local toolbar=plugin:CreateToolbar("Forge Motion Lab")
 local button=toolbar:CreateButton("Motion Lab","Create, edit and mix R15 motion variants","","Motion Lab")
 button.ClickableWhenViewportHidden=true
 local widget=plugin:CreateDockWidgetPluginGuiAsync("ForgeMotionLab_v1",DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float,false,false,1180,780,780,600))
-widget.Title="Forge Motion Lab · Bilateral"
+widget.Title="Forge Motion Lab · Combat references"
 local dispose,controller=require(script.Parent.Modules.View).mount(widget,plugin)
 button.Click:Connect(function()widget.Enabled=not widget.Enabled end)
 widget:GetPropertyChangedSignal("Enabled"):Connect(function()button:SetActive(widget.Enabled)end)

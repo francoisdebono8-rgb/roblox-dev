@@ -54,7 +54,7 @@ function T:refresh()
  else
   local keys=if variant then variant.poseOverrides else {}
   if not variant then
-   local authored=c.preset.clips[c:asset().grammar];local contact=.42;local recovery=.7;if authored and authored.timing then contact=authored.timing.startup/authored.duration;recovery=(authored.timing.startup+authored.timing.active)/authored.duration end
+   local authored=c:asset().authoredClip or c.preset.clips[c:asset().grammar];local contact=.42;local recovery=.7;if authored and authored.timing then contact=authored.timing.startup/authored.duration;recovery=(authored.timing.startup+authored.timing.active)/authored.duration end
    keys=E.create("preview","Preview",c:asset(),total,contact,recovery).poseOverrides
   end
   for i,part in E.Parts do local y=28+(i-1)*24
@@ -65,7 +65,7 @@ function T:refresh()
     local selected=(c.selectedKey==key.id and c.selectedPart==part) or self.selection[key.id]
     local has=next(key.parts[part] or {})~=nil
     local diamond=u:button(area,"",{Name="PoseKey_"..part.."_"..key.id,Position=UDim2.fromOffset(labelWidth+key.time*width-5,y+7),Size=UDim2.fromOffset(10,10),Rotation=45,ZIndex=5,BackgroundTransparency=if has or selected then 0 else .6},nil,selected)
-    u:tip(diamond,(key.semantic or "Extra pose").." · "..part..string.format(" · %.3fs",key.time*total))
+    u:tip(diamond,(key.semantic or key.id).." · "..part..string.format(" · %.3fs",key.time*total))
     local origin=0;local previous=0;local ids={}
     u:dragInput(diamond,function()
      if not variant then self.changed("Create a variant to edit keys",false);return end
@@ -99,12 +99,12 @@ function T:refresh()
    u:tip(name,"Sequence name; following fields are duration and transition blend in seconds.")
   end
  elseif variant then
-  u:button(parent,"Delete key",{Position=UDim2.new(1,-104,1,-30),Size=UDim2.fromOffset(92,24)},function()action(function()c:variantEdit(function(v)local k,i=E.key(v,c.selectedKey);assert(k and not k.semantic,"Keep the five semantic keys");table.remove(v.poseOverrides,i)end);c:selectKey("Contact")end,"Extra key removed")end)
+  u:button(parent,"Delete key",{Position=UDim2.new(1,-104,1,-30),Size=UDim2.fromOffset(92,24)},function()action(function()c:variantEdit(function(v)local k,i=E.key(v,c.selectedKey);assert(k and not k.semantic,"Keep the required phase keys");table.remove(v.poseOverrides,i)end);c:selectKey("Contact")end,"Extra key removed")end)
   local stretch=u:input(parent,"1.2",{Position=UDim2.new(1,-244,1,-30),Size=UDim2.fromOffset(45,24)})
   u:button(parent,"Stretch",{Position=UDim2.new(1,-193,1,-30),Size=UDim2.fromOffset(76,24)},function()action(function()local factor=tonumber(stretch.Text);assert(factor and factor>=.25 and factor<=3,"Stretch: 0.25–3");c:variantEdit(function(v)
    local anchor=1;for _,key in v.poseOverrides do if self.selection[key.id]then anchor=math.min(anchor,key.time)end end
    assert(anchor<1,"Use Multi to select keys first")
-   local targets={};for _,key in v.poseOverrides do if self.selection[key.id] then assert(not key.semantic or (key.semantic~="Start" and key.semantic~="Recovery"),"Keep boundary keys fixed");targets[key.id]=anchor+(key.time-anchor)*factor end end
+   local targets={};for _,key in v.poseOverrides do if self.selection[key.id] then assert(not key.semantic or (not E.boundary(key)),"Keep boundary keys fixed");targets[key.id]=anchor+(key.time-anchor)*factor end end
    local previous=-1;for _,key in v.poseOverrides do local t=targets[key.id] or key.time;assert(t-previous>=.002 and t<=1,"Stretch would cross another key");previous=t end
    for _,key in v.poseOverrides do key.time=targets[key.id] or key.time end
   end)end,"Selected key timing stretched")end)
@@ -113,6 +113,6 @@ function T:refresh()
 end
 function T:update(time,total)
  if self.playhead then self.playhead.Position=UDim2.fromOffset(146+math.clamp(time/math.max(.1,total),0,1)*self.width,0)end
- if self.detail then local c=self.c;local v=c:variant();local key=v and E.key(v,c.selectedKey);self.detail.Text=string.format("%.3f / %.3fs",time,total)..(if key then "   · "..(key.semantic or "Extra pose").." / "..(c.selectedPart or "Root") else "   · Drag ruler to scrub / diamonds to retime")end
+ if self.detail then local c=self.c;local v=c:variant();local key=v and E.key(v,c.selectedKey);self.detail.Text=string.format("%.3f / %.3fs",time,total)..(if key then "   · "..(key.semantic or key.id).." / "..(c.selectedPart or "Root") else "   · Drag ruler to scrub / diamonds to retime")end
 end
 return T

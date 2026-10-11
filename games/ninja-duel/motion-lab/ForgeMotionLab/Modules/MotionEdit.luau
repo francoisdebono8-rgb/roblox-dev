@@ -12,12 +12,17 @@ for _,p in {"LeftLeg","RightLeg"}do E.Controls[p]={{"lift","Hip raise",-150,150}
 for _,p in {"LeftFoot","RightFoot"}do E.Controls[p]={pos[1],pos[2],pos[3],{"yaw","Foot yaw",-180,180},{"toe","Toe pitch",-100,100}}end
 E.Modifiers={{"amplitude","Amplitude"},{"hipRotation","Hip rotation"},{"torsoFollow","Torso follow"},{"limbExtension","Limb extension"},{"rootTravel","Root travel"},{"impactLean","Impact lean"},{"anticipation","Anticipation"},{"followThrough","Follow-through"},{"recoveryTightness","Recovery tightness"}}
 E.Semantics={"Start","Anticipation","Contact","FollowThrough","Recovery"}
+E.CombatSemantics={"Ready","Anticipation","Acceleration","Contact","FollowThrough","Recovery"}
 E.Easing={"linear","smooth","in","out"}
 function E.create(id,name,asset,duration,contact,recovery)
  contact=math.clamp(contact or .42,.12,.85);recovery=math.clamp(recovery or .7,contact+.04,.95)
- local times={0,contact*.5,contact,recovery,1};local keys={};for i,s in E.Semantics do table.insert(keys,{id=s,time=times[i],semantic=s,sourceTime=times[i],parts={}})end
+ local combat=asset.combatPhases~=nil
+ local semantics=if combat then E.CombatSemantics else E.Semantics
+ local times=if combat then {0,contact*.35,contact*.7,contact,recovery,1}else {0,contact*.5,contact,recovery,1}
+ if combat then for i,name in semantics do times[i]=asset.combatPhases[name] or times[i]end end
+ local keys={};for i,name in semantics do table.insert(keys,{id=name,time=times[i],semantic=name,sourceTime=times[i],parts={}})end
  local modifiers={};for _,row in E.Modifiers do modifiers[row[1]]=1 end
- return {id=id,name=name,sourceAsset=asset.id,sourceGrammar=asset.grammar,sourceDuration=duration,poseOverrides=keys,motionModifiers=modifiers,timing={duration=duration,playbackSpeed=1,easing="linear",hold=0},rootPath={forward=0,lateral=0,lift=0,turn=0,startX=0,startY=0,startZ=0,endX=0,endY=0,endZ=0},channels={},enabled=true}
+ return {phaseSchema=if combat then "combat-six"else nil,id=id,name=name,sourceAsset=asset.id,sourceGrammar=asset.grammar,sourceDuration=duration,poseOverrides=keys,motionModifiers=modifiers,timing={duration=duration,playbackSpeed=1,easing="linear",hold=0},rootPath={forward=0,lateral=0,lift=0,turn=0,startX=0,startY=0,startZ=0,endX=0,endY=0,endZ=0},channels={},enabled=true}
 end
 local function finite(n) return type(n)=="number" and n==n and math.abs(n)<1e8 end
 local function id(s)return type(s)=="string" and #s>0 and #s<=100 and s:match("^[%w_.:%-]+$")~=nil end
@@ -29,40 +34,49 @@ function E.validate(v)
  for _,key in {"forward","lateral","lift","turn","startX","startY","startZ","endX","endY","endZ"}do local n=v.rootPath[key];if not finite(n) or math.abs(n)>(if key=="turn" then 360 else 10) then return false,"Invalid root path"end end
  for part,channel in v.channels do if not table.find(E.Parts,part) or type(channel)~="table" or type(channel.muted)~="boolean" or type(channel.locked)~="boolean" then return false,"Invalid channel"end end
  if type(v.poseOverrides)~="table" or #v.poseOverrides<5 or #v.poseOverrides>64 then return false,"Pose key budget"end
- local last=-1;local semantics={};local ids={};local lastSource=-1
+ if v.phaseSchema~=nil and v.phaseSchema~="combat-six"then return false,"Unknown phase schema"end
+ local expected=if v.phaseSchema=="combat-six"then E.CombatSemantics else E.Semantics
+ local last=-1;local semantics={};local ids={};local lastSource=-1;local lastAnchor=-1
  for _,key in v.poseOverrides do
   if type(key)~="table" or not id(key.id) or ids[key.id] or not finite(key.time) or key.time<0 or key.time>1 or key.time-last<.001 or type(key.parts)~="table" then return false,"Invalid pose key"end
   ids[key.id]=true;last=key.time
-  if key.semantic then local index=table.find(E.Semantics,key.semantic);if not index or semantics[key.semantic] or index~=1+#semantics then return false,"Semantic order"end;table.insert(semantics,key.semantic);semantics[key.semantic]=true;if not finite(key.sourceTime) or key.sourceTime<0 or key.sourceTime>1 or key.sourceTime<=lastSource then return false,"Invalid source marker"end;lastSource=key.sourceTime end
+  if key.semantic then local index=table.find(expected,key.semantic);if not index or semantics[key.semantic] or index~=1+#semantics then return false,"Semantic order"end;table.insert(semantics,key.semantic);semantics[key.semantic]=true;if not finite(key.sourceTime) or key.sourceTime<0 or key.sourceTime>1 or key.sourceTime<=lastSource then return false,"Invalid source marker"end;lastSource=key.sourceTime end
+  if key.sourceTime~=nil then if not finite(key.sourceTime)or key.sourceTime<0 or key.sourceTime>1 or key.sourceTime<=lastAnchor then return false,"Invalid source anchor"end;lastAnchor=key.sourceTime end
   for part,fields in key.parts do
    if not E.Controls[part] or type(fields)~="table" then return false,"Invalid pose part"end
    for field,n in fields do local control=nil;for _,row in E.Controls[part]do if row[1]==field then control=row end end;if not control or not finite(n) or n<control[3] or n>control[4] then return false,"Invalid pose channel"end end
   end
  end
- if #semantics~=5 or v.poseOverrides[1].semantic~="Start" or v.poseOverrides[1].time~=0 or v.poseOverrides[#v.poseOverrides].semantic~="Recovery" or v.poseOverrides[#v.poseOverrides].time~=1 then return false,"Missing semantic boundaries"end
+ if #semantics~=#expected or v.poseOverrides[1].semantic~=expected[1] or v.poseOverrides[1].time~=0 or v.poseOverrides[#v.poseOverrides].semantic~="Recovery" or v.poseOverrides[#v.poseOverrides].time~=1 then return false,"Missing semantic boundaries"end
  return true
 end
 function E.asset(p,id,lib)
  local v=p.motionVariants and p.motionVariants[id]
  if not v then return lib.assets[id]end
  local base=assert(lib.assets[v.sourceAsset],"Missing variant source")
- local asset=copy(base);asset.id=v.id;asset.name=v.name;asset.duration=v.timing.duration;asset.variant=true;asset.sourceType="variant";return asset
+ local registered=lib.assets[id];local asset=copy(if registered and registered.variantDefinition then registered else base);asset.hidden=false;asset.id=v.id;asset.name=v.name;asset.duration=v.timing.duration;asset.variant=true;asset.sourceType="variant";asset.metadata=copy(v.metadata or base.metadata);asset.variantDefinition=nil;return asset
 end
-function E.variant(p,asset)return p.motionVariants and p.motionVariants[asset.id]end
+function E.variant(p,asset)return (p.motionVariants and p.motionVariants[asset.id])or asset.variantDefinition end
+function E.phase(v,name)
+ for _,k in v.poseOverrides do if k.semantic==name or(name=="Ready"and k.semantic=="Start")then return k end end
+end
+function E.boundary(key)return key.semantic=="Start"or key.semantic=="Ready"or key.semantic=="Recovery"end
 function E.key(v,id)for i,k in v.poseOverrides do if k.id==id then return k,i end end end
 function E.markers(v)local keys={};for _,k in v.poseOverrides do if k.semantic then table.insert(keys,k)end end;return keys end
 local function ease(t,kind)return if kind=="linear" then t elseif kind=="in" then t^3 elseif kind=="out" then 1-(1-t)^3 else t*t*(3-2*t)end
 function E.warp(v,t)
- local markers=E.markers(v);local contact=markers[3].time;local hold=math.min(v.timing.hold,markers[4].time-contact-.002)
- if t>=contact and t<=contact+hold then return markers[3].sourceTime end
- for i=1,4 do local a,b=markers[i],markers[i+1];local start=a.time+(if i==3 then hold else 0)
+ local markers=E.markers(v)
+ if v.phaseSchema=="combat-six"then markers={};for _,key in v.poseOverrides do if key.sourceTime~=nil then table.insert(markers,key)end end end
+ local contactKey=E.phase(v,"Contact");local follow=E.phase(v,"FollowThrough");local contact=contactKey.time;local hold=math.min(v.timing.hold,follow.time-contact-.002)
+ if t>=contact and t<=contact+hold then return contactKey.sourceTime end
+ for i=1,#markers-1 do local a,b=markers[i],markers[i+1];local start=a.time+(if a==contactKey then hold else 0)
   if t<=b.time then local u=ease(math.clamp((t-start)/math.max(.001,b.time-start),0,1),v.timing.easing);return a.sourceTime+(b.sourceTime-a.sourceTime)*u end
  end;return 1
 end
 function E.moveKeys(v,ids,delta)
  local low=-1;local high=1
  for i,key in v.poseOverrides do if ids[key.id] then
-  if key.semantic=="Start" or key.semantic=="Recovery" then return 0 end
+  if E.boundary(key)then return 0 end
   local j=i-1;while j>=1 and ids[v.poseOverrides[j].id]do j-=1 end;low=math.max(low,(v.poseOverrides[j] and v.poseOverrides[j].time or 0)+.002-key.time)
   j=i+1;while j<=#v.poseOverrides and ids[v.poseOverrides[j].id]do j+=1 end;high=math.min(high,(v.poseOverrides[j] and v.poseOverrides[j].time or 1)-.002-key.time)
  end end
@@ -86,8 +100,8 @@ local function deltas(v,part,t)
 end
 function E.apply(v,base,t)
  if not v.enabled then return base end
- local p=copy(base);local m=v.motionModifiers;local pulse=math.sin(math.pi*t)^2;local markers=E.markers(v);local contact=markers[3].time
- local phaseScale=if t<contact then m.anticipation elseif t<markers[4].time then m.followThrough else m.recoveryTightness
+ local p=copy(base);local m=v.motionModifiers;local pulse=math.sin(math.pi*t)^2;local contact=E.phase(v,"Contact").time
+ local phaseScale=if t<contact then m.anticipation elseif t<E.phase(v,"FollowThrough").time then m.followThrough else m.recoveryTightness
  -- Exaggerate around existing stance-neutral axes, then apply sparse key deltas.
  for part,a in p do if type(a)=="table" then for field,n in a do if type(n)=="number" and not table.find({"x","y","z"},field)then a[field]=n*m.amplitude*(1+(phaseScale-1)*pulse)end end end end
  p.root=p.root or {};p.torso=p.torso or {}

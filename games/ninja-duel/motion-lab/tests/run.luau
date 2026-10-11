@@ -108,4 +108,5 @@ test("template DNA is not applied twice when mixing the same template",function(
 end)
 require("./variants")(load,test,lib)
 require("./bilateral")(load,test,lib)
+require("./references")(load,test,lib)
 print("Forge Motion Lab: "..count.." PASS")

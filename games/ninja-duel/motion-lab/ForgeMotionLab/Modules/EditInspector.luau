@@ -16,8 +16,8 @@ function Panel.mount(u,scroll,c,tab,action,state,menu)
  if tab=="Pose" then
   local key=E.key(v,c.selectedKey or "Contact");if not key then c.selectedKey="Contact";key=E.key(v,"Contact")end
   local part=c.selectedPart or "RightArm";c.selectedPart=part
-  local select=u:button(scroll,(key.semantic or "Extra pose").." ▾",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.55,-4,0,26)})
-  u:connect(select.Activated,function()local items={};for _,k in v.poseOverrides do table.insert(items,{id=k.id,name=(k.semantic or "Extra pose")..string.format("  %.3fs",k.time*S.duration(c.preset,c:asset(),c.library))})end;menu(select,items,function(id)action(function()c:selectKey(id)end)end)end)
+  local select=u:button(scroll,(key.semantic or key.id).." ▾",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.55,-4,0,26)})
+  u:connect(select.Activated,function()local items={};for _,k in v.poseOverrides do table.insert(items,{id=k.id,name=(k.semantic or k.id)..string.format("  %.3fs",k.time*S.duration(c.preset,c:asset(),c.library))})end;menu(select,items,function(id)action(function()c:selectKey(id)end)end)end)
   local partButton=u:button(scroll,part.." ▾",{Position=UDim2.new(.55,2,0,60),Size=UDim2.new(.45,-6,0,26)})
   u:connect(partButton.Activated,function()local choices={};for _,name in E.Parts do table.insert(choices,{id=name,name=name})end;menu(partButton,choices,function(id)action(function()c:selectKey(key.id,id)end)end)end)
   heading("Pose deltas · "..part,98)
@@ -57,14 +57,17 @@ function Panel.mount(u,scroll,c,tab,action,state,menu)
    u:input(scroll,string.format("%.3f",value),{Name="Timing_"..label,Position=UDim2.new(1,-86,0,y),Size=UDim2.fromOffset(82,26)},function(text)action(function()local n=tonumber(text);assert(n and n==n,"Enter a finite number");fn(n)end)end)
   end
   number("Duration (s)",v.timing.duration,126,function(n)assert(n>=.12 and n<=30,"Duration: 0.12–30s");c:variantEdit(function(x)x.timing.duration=n end)end)
-  local markers=E.markers(v)
-  for i,label in {"Anticipation","Contact","Recovery start"}do local marker=markers[i+1];number(label.." (s)",marker.time*v.timing.duration,160+(i-1)*32,function(n)c:variantEdit(function(x)local current=E.key(x,marker.id);E.moveKeys(x,{[marker.id]=true},n/x.timing.duration-current.time)end);c:selectKey(marker.id)end)end
-  number("Contact hold (norm)",v.timing.hold,258,function(n)assert(n>=0 and n<=.3,"Hold: 0–0.3 normalized");c:variantEdit(function(x)x.timing.hold=n end)end)
-  number("Playback speed",v.timing.playbackSpeed,290,function(n)assert(n>=.25 and n<=3,"Speed: 0.25–3");c:variantEdit(function(x)x.timing.playbackSpeed=n end)end)
-  local ease=u:button(scroll,"Easing · "..v.timing.easing.." ▾",{Position=UDim2.fromOffset(0,324),Size=UDim2.new(1,-4,0,26)})
+    local y=160
+  local phases=if v.phaseSchema=="combat-six"then {"Anticipation","Acceleration","Contact","FollowThrough"}else {"Anticipation","Contact","FollowThrough"}
+  for _,phase in phases do local marker=E.phase(v,phase);local label=if phase=="FollowThrough"and v.phaseSchema~="combat-six"then "Recovery start"else phase
+   number(label.." (s)",marker.time*v.timing.duration,y,function(n)c:variantEdit(function(x)local current=E.key(x,marker.id);E.moveKeys(x,{[marker.id]=true},n/x.timing.duration-current.time)end);c:selectKey(marker.id)end);y+=32
+  end
+  number("Contact hold (norm)",v.timing.hold,y+2,function(n)assert(n>=0 and n<=.3,"Hold: 0–0.3 normalized");c:variantEdit(function(x)x.timing.hold=n end)end)
+  number("Playback speed",v.timing.playbackSpeed,y+34,function(n)assert(n>=.25 and n<=3,"Speed: 0.25–3");c:variantEdit(function(x)x.timing.playbackSpeed=n end)end)
+  local ease=u:button(scroll,"Easing · "..v.timing.easing.." ▾",{Position=UDim2.fromOffset(0,y+68),Size=UDim2.new(1,-4,0,26)})
   u:connect(ease.Activated,function()local choices={};for _,name in E.Easing do table.insert(choices,{id=name,name=name})end;menu(ease,choices,function(id)action(function()c:variantEdit(function(x)x.timing.easing=id end)end)end)end)
-  heading("Exaggerate · whole motion",366)
-  local y=396
+  heading("Exaggerate · whole motion",y+110)
+  y+=140
   for _,row in E.Modifiers do u:slider(scroll,row[2],0,3,v.motionModifiers[row[1]],y,function(n)c:variantEdit(function(x)x.motionModifiers[row[1]]=n end,false);state()end,function()c:checkpoint()end);y+=46 end
   heading("Root trajectory",y+8);y+=38
   for _,row in {{"forward","Forward travel",-10,10},{"lateral","Lateral travel",-10,10},{"lift","Vertical lift",-10,10},{"turn","Turn / yaw",-360,360},{"startX","Start X",-10,10},{"startY","Start Y",-10,10},{"startZ","Start Z",-10,10},{"endX","End X",-10,10},{"endY","End Y",-10,10},{"endZ","End Z",-10,10}}do

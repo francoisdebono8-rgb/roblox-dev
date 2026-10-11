@@ -11,7 +11,7 @@ local function equalPose(a,b)
 end
 test("182 independent common clips, bilateral families and complete mechanics metadata",function()
  local count=0
- for _,id in lib.assetOrder do local a=lib.assets[id];if not a.authoredClip then continue end;count+=1
+ for _,id in lib.assetOrder do local a=lib.assets[id];if not a.authoredClip or a.referenceBacked then continue end;count+=1
   assert(a.independentlyEditable and a.mirrorSource==false and a.family and a.variantName and a.side and a.attackingLimb and a.supportLimb and a.stance)
   assert(#a.bodyMechanics>0 and a.legacyAsset and lib.assets[a.legacyAsset]);if a.side~="Neutral"then assert(lib.assets[a.counterpart].counterpart==a.id)end
   local p=M.new("validate","Validate");p.clips[a.grammar]=M.copy(a.authoredClip);assert(M.validate(p))

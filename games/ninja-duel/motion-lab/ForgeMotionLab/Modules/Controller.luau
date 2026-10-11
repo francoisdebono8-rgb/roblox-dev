@@ -40,19 +40,19 @@ function C:addClip(id)
  self:edit(function(p)table.insert(p.sequences[1].orderedClips,{asset=id,duration=math.clamp(asset.duration,.12,5),blend=.1,transition="blend"})end);self.selectedBlock=#self:sequence().orderedClips;self.sequenceMode=true
 end
 function C:asset(id) return Edit.asset(self.preset,id or self.clip,self.library) end
-function C:variant() return self.preset.motionVariants and self.preset.motionVariants[self.clip] end
+function C:variant() return Edit.variant(self.preset,self:asset()) end
 function C:createVariant()
- local source=self:asset();assert(not source.variant,"Select a source motion to create a variant")
+ local source=self:asset();assert(not source.variant or source.referenceBacked,"Select a source motion to create a variant")
  self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=source.authoredClip or self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
  local contact,recovery=.42,.7;if clip and clip.timing then contact=clip.timing.startup/clip.duration;recovery=(clip.timing.startup+clip.timing.active)/clip.duration end
  self:edit(function(p)
-  p.motionVariants=p.motionVariants or {};local v=Edit.create(id,source.name.."_A",source,duration,contact,recovery)
-  if source.authoredClip then
+  p.motionVariants=p.motionVariants or {};local v=if source.referenceBacked then M.copy(assert(self:variant()))else Edit.create(id,source.name.."_A",source,duration,contact,recovery);v.id=id;v.name=source.name.."_A"
+  if source.authoredClip and not source.referenceBacked then
    for _,key in source.authoredClip.keys do if key.phase=="Anticipation"then v.poseOverrides[2].time=key.at;v.poseOverrides[2].sourceTime=key.at end end
   end
   p.motionVariants[id]=v
  end)
- self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart=if source.attackingLimb=="LeftArm"then "LeftArm"elseif source.attackingLimb=="LeftLeg"then "LeftLeg"elseif source.attackingLimb=="RightLeg"then "RightLeg"else "RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
+ self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart=if source.attackingLimb=="LeftArm"then "LeftArm"elseif source.attackingLimb=="LeftLeg"then "LeftLeg"elseif source.attackingLimb=="RightLeg"then "RightLeg"else "RightArm";self.playing=false;self.time=Edit.phase(self:variant(),"Contact").time*duration
  return id
 end
 function C:switchSide()
@@ -65,7 +65,8 @@ function C:compareLegacy()
 end
 function C:variantEdit(fn,record)
  assert(self:variant(),"Create a variant before editing")
- local at=self.time;self:edit(function(p)fn(p.motionVariants[self.clip])end,record);self.time=at
+ local template=M.copy(self:variant());local at=self.time
+ self:edit(function(p)p.motionVariants=p.motionVariants or {};p.motionVariants[self.clip]=p.motionVariants[self.clip]or template;fn(p.motionVariants[self.clip])end,record);self.time=at
 end
 function C:selectKey(id,part)
  local v=assert(self:variant(),"Select a variant");local key=assert(Edit.key(v,id),"Missing key")
@@ -76,9 +77,12 @@ function C:setPose(field,value,record)
  self:variantEdit(function(variant)local key=assert(Edit.key(variant,self.selectedKey));key.parts[part]=key.parts[part] or {};key.parts[part][field]=value end,record)
 end
 function C:assignVariant(slot)
- assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or p.motionVariants[self.clip].sourceAsset]=self.clip end)
+ local variant=assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or variant.sourceAsset]=self.clip end)
 end
-function C:save() self.store:save(self.preset);self.dirty=false end
+function C:save()
+ if self:asset().variantDefinition and not(self.preset.motionVariants and self.preset.motionVariants[self.clip])then self:variantEdit(function()end)end
+ self.store:save(self.preset);self.dirty=false
+end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
 function C:export(parent)
  local bundle=Adapter.bundle(self.preset,self.library,self.clip);local payload=Adapter.serialize(bundle);assert(#payload<=2000000,"Export too large")

@@ -65,20 +65,20 @@ function A.ninjaDefinitions(preset,lib,selected)
  end
  local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
  local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
- local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
+ local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},motionMetadata={},generated=true,automaticApply=false}
  local exportIds=A.exportIds(preset,lib,selected)
  for _,assetId in exportIds do
   local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=actual.authoredClip or preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
   if actual.authoredClip then local scale=Sampler.duration(preset,actual,lib)/actual.authoredClip.duration;timing={startup=timing.startup*scale,active=timing.active*scale,recovery=timing.recovery*scale}end
   local variant=Edit.variant(preset,actual)
-  if variant then local markers=Edit.markers(variant);local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then markers[3].time else markers[3].sourceTime;local recovery=if variant.enabled then markers[4].time else markers[4].sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
+  if variant then local contactKey=Edit.phase(variant,"Contact");local followKey=Edit.phase(variant,"FollowThrough");local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then contactKey.time else contactKey.sourceTime;local recovery=if variant.enabled then followKey.time else followKey.sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
   local duration=timing.startup+timing.active+timing.recovery;local keys={}
   local samples={}
   if actual.authoredClip and not variant then
    for _,key in actual.authoredClip.keys do samples[key.at]=true end
   else for i=0,24 do samples[i/24]=true end end
-  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.markers(variant)[3].time;samples[contact+math.min(variant.timing.hold,Edit.markers(variant)[4].time-contact-.002)]=true end
+  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.phase(variant,"Contact").time;samples[contact+math.min(variant.timing.hold,Edit.phase(variant,"FollowThrough").time-contact-.002)]=true end
   local times={};for t in samples do table.insert(times,t)end;table.sort(times)
   for _,t in times do
    local elapsed=t*duration
@@ -89,6 +89,11 @@ function A.ninjaDefinitions(preset,lib,selected)
   end
   local exportName=if asset.variant then asset.id else asset.grammar
   out.clips[exportName]=keys;out.timings[exportName]=M.copy(timing)
+  if actual.referenceBacked then
+   local metadata=M.copy(actual.metadata);metadata.phaseMarkers={}
+   if variant then for _,key in variant.poseOverrides do if key.sourceTime~=nil then metadata.phaseMarkers[key.semantic or key.id]={normalized=key.time,seconds=key.time*duration,sourceTime=key.sourceTime}end end end
+   out.motionMetadata[exportName]=metadata
+  end
  end
  return out
 end

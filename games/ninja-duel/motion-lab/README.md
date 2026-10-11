@@ -1,4 +1,4 @@
-# Forge Motion Lab 0.3 — UI+ / motion variants
+# Forge Motion Lab 0.5 — bases de combat référencées
 
 Plugin local R15 : browser avec miniatures de poses, preview et comparaison A/B,
 Body Mixer, DNA, variantes éditables, timeline par canaux, export inert.
@@ -14,6 +14,40 @@ la version précédente sont conservés dans la même clé de settings.
 Alternative : insérer `motion-lab/dist/ForgeMotionLab.rbxm` dans une place en édition,
 sélectionner le Model ForgeMotionLab, **Save as Local Plugin**, puis retirer ce Model
 avant de sauver une place de jeu. Éviter deux copies installées simultanément.
+
+
+## Comparer les nouvelles bases de combat
+
+1. Après installation/rechargement, **New profile → Combat reference study (neutral DNA)**.
+   Cela sélectionne **Motions → Combat references**, sans toucher aux personnages du jeu.
+2. Filtrer **Family**, puis **Left / Right** : Base, variante tactique et Ninja.
+   **L/R** choisit la version avec sa stance et ses appuis ; **Mirror** reste un outil de preview.
+3. Sélectionner une frappe, **Old/new** : A = ancienne version commune, B = nouvelle.
+   **Pin A** permet aussi de comparer Base / variante tactique / Ninja.
+4. Les variantes sont déjà éditables : sélectionner **Ready, Anticipation, Acceleration,
+   Contact, FollowThrough, Recovery**, ou HipDrive/Rechamber dans **Pose**.
+   Les parties du corps, deltas, timing, amplitude, root path et hold sont conservés.
+   **Create Variant** produit une autre copie nommable ; **Save** garde le profil local.
+5. Famille de transition : **Bridge** montre le transfert seul ; **Phrase** joue la route
+   complète avec plusieurs contacts. `Contact2`, `Contact3` et les phases intermédiaires
+   sont sélectionnables/retimables dans la liste de clés. Jab → Cross → Hook existe aussi.
+6. **Export** conserve les variantes et produit les poses modifiées via NinjaDuelAdapter.
+   `ninjaDuel.motionMetadata` inclut fonction, stance, références et temps édités.
+   L'export est inert : Claude choisit son intégration dans le jeu.
+
+**120 nouvelles Motion Variants** : 78 attaques (13 familles × 2 côtés × 3 formes),
+8 briques dodge/pursuit/launcher/aerial, 16 transferts et 18 phrases complètes.
+Jab/cross distinguent avant/arrière en orthodoxe/southpaw. Hook, uppercut, knees et
+elbows incluent les différences avant/arrière dans une garde à pied gauche avancé.
+Les anciennes 182 briques restent accessibles sous **Common bilateral**, sans mutation
+ni perte des presets précédents. Le nouveau six-phase schema coexiste avec leurs cinq phases.
+
+Les sources et limites sont dans [COMBAT_REFERENCES.md](COMBAT_REFERENCES.md).
+Ce sont des adaptations R15 keyframées, avec IK/FK et interpolation procédurale,
+sans motion capture, simulation de pression au sol ou adversaire physique. Le sweep
+suppose un adversaire déjà déséquilibré ; launcher/aerial sont des adaptations de jeu.
+Le DNA/mixer et les edits extrêmes peuvent dégrader les appuis : juger la base en profil
+neutre, puis spécialiser. Aucun rendu Studio ni feel humain n'est déclaré validé.
 
 ## Tester une correction de mouvement en cinq minutes
 
@@ -41,8 +75,8 @@ simulés. Le générateur utilise des données et du DNA, sans identité hardcod
 ## Timeline / controls
 
 - Règle : cliquer/glisser pour scrubbing continu ; playhead synchronisé au R15.
-- Diamants et marqueurs : sélectionner et glisser pour retimer. Les cinq clés
-  Start / Anticipation / Contact / FollowThrough / Recovery restent ordonnées.
+- Diamants et marqueurs : sélectionner et glisser pour retimer. Les clés de phase restent ordonnées : six pour les références de combat, cinq
+  (Start / Anticipation / Contact / FollowThrough / Recovery) pour les anciennes variantes.
 - `+ Key` à la tête de lecture insère une clé héritant des corrections interpolées.
   `Delete key` retire une clé additionnelle ; les frontières sont conservées.
 - `Multi` : sélectionner plusieurs temps de clés ; glisser déplace le groupe ;
@@ -109,7 +143,7 @@ remappe les profils sources et ne lit jamais du Luau arbitraire.
 package le binaire. Lune/luau-compile : `/private/tmp/ninja-duel-tools`, ou variables
 `NINJA_DUEL_TOOLS`, `LUNE`, `LUAU_COMPILE`.
 
-24 cas de données/controller, puis smoke sur le **binaire exact** : anciens workflows,
+41 cas de données/controller/variantes/appuis/références, puis smoke sur le **binaire exact** : anciens workflows,
 édition de poses/amplitude/timing, marker/block drags, ghosts, save/import/export,
 layout minimum, thème et libération des connexions. Instances/schema Roblox réels,
 événements/layout Studio simulés : ce n'est pas une certification du rendu natif.
@@ -119,7 +153,7 @@ Références de workflow étudiées : [Roblox Animation Editor](https://create.r
 [Blender Dope Sheet](https://docs.blender.org/manual/en/5.4/editors/dope_sheet/introduction.html),
 [Blender channels](https://docs.blender.org/manual/en/latest/editors/graph_editor/channels/introduction.html).
 
-### Bibliothèque commune bilatérale — 0.4.0
+### Archive de comparaison — bibliothèque bilatérale 0.4.0
 
 182 nouveaux assets, indépendants des movesets du jeu : 126 frappes (21 familles × 3 variantes × 2 côtés), 32 états/déplacements, 24 ponts de transition. Aucun ancien asset supprimé. Les quatre profils Ninja Duel importés et quatre profils de départ restent inchangés.
 
