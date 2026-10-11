@@ -24,7 +24,8 @@ local propertySignals={}
 r.implementMethod("Instance","GetPropertyChangedSignal",function(i,key)
  propertySignals[i]=propertySignals[i] or {};propertySignals[i][key]=propertySignals[i][key] or signal();return propertySignals[i][key]
 end)
-r.implementMethod("DockWidgetPluginGui","GetRelativeMousePosition",function()return r.Vector2.zero end)
+local mouse=r.Vector2.zero
+r.implementMethod("DockWidgetPluginGui","GetRelativeMousePosition",function()return mouse end)
 local absoluteSize=function(i)
  if i:IsA("DockWidgetPluginGui") then return r.Vector2.new(i:GetAttribute("TestWidth") or 1180,i:GetAttribute("TestHeight") or 780)end
  if not i.Parent or not i.Parent:IsA("GuiBase2d")then return r.Vector2.zero end
@@ -61,7 +62,7 @@ local function click(text)button(text).Activated:Fire()end
 local function tick(n)for _=1,n or 3 do render:Fire(1/30)end end
 tick(20);assert(#widget:GetDescendants()>200)
 local viewport
-for _,o in widget:GetDescendants()do if o.ClassName=="ViewportFrame"then viewport=o end end
+for _,o in widget:GetDescendants()do if o.ClassName=="ViewportFrame" and o.Name=="MainPreview"then viewport=o end end
 assert(viewport and viewport:FindFirstChildWhichIsA("WorldModel"))
 click("DNA");click("Generate movement set");assert(#c:sequence().orderedClips==3)
 click("Pin A");local pinned=c.compare.id;click("Mirror");assert(c.mirror)
@@ -70,9 +71,35 @@ click("Save");assert(c.store.custom[c.preset.id])
 click("Export");assert(selection[1]:IsA("ModuleScript"));local json=selection[1].MotionLabJSON.Value;assert(serde.decode("json",json).ninjaDuel.clips.Light1)
 click("Import selected export");assert(c.dirty and c.compare.id==pinned);click("Save")
 click("Advanced");click("idle");assert(c.clip=="idle");tick()
-click("Library");click("+ Idle");assert(c.sequenceMode);tick()
+click("Motions");c.clip="idle";click("+ Block");assert(c.sequenceMode);tick()
+-- New editor exercised from exact packaged source, with simulated mouse drags.
+click("Create Variant");local variantId=c.clip;assert(c:variant() and c.compare and not c.sequenceMode)
+local function object(name)
+ for _,o in widget:GetDescendants()do if o.Name==name then return o end end;error("Missing UI object: "..name)
+end
+local function inputNamed(name,text)local field=object(name);field.Text=text;field.FocusLost:Fire()end
+local function inputLabel(label,text)
+ for _,o in widget:GetDescendants()do if o:IsA("TextLabel") and o.Text==label then
+  local field=o.Parent:FindFirstChildWhichIsA("TextBox");assert(field,"Missing slider value");field.Text=text;field.FocusLost:Fire();return
+ end end;error("Missing slider: "..label)
+end
+inputLabel("Shoulder raise","35");assert(c:variant().poseOverrides[3].parts.RightArm.raise==35)
+tick();click("↶");assert(not c:variant().poseOverrides[3].parts.RightArm);click("↷");assert(c:variant().poseOverrides[3].parts.RightArm.raise==35)
+click("Motion");inputNamed("VariantName","Idle_Wide");inputNamed("Timing_Duration (s)","1.2");inputLabel("Amplitude","1.4");inputLabel("Forward travel","1.5")
+assert(c:variant().name=="Idle_Wide" and c:variant().timing.duration==1.2 and c:variant().motionModifiers.amplitude==1.4);tick()
+click("Ghosts");tick();assert(viewport:FindFirstChildWhichIsA("WorldModel"):FindFirstChild("RootTrajectory"))
+local function dragObject(name,dx)
+ local target=object(name);local changed=signal();local input={UserInputType=r.Enum.UserInputType.MouseButton1,UserInputState=r.Enum.UserInputState.Begin,Changed=changed}
+ mouse=r.Vector2.zero;target.InputBegan:Fire(input);mouse=r.Vector2.new(dx,0);tick(1);input.UserInputState=r.Enum.UserInputState.End;changed:Fire();mouse=r.Vector2.zero
+end
+local before=c:variant().poseOverrides[3].time;dragObject("Marker_Contact",20);assert(c:variant().poseOverrides[3].time>before)
+click("Pose");click("RightArm ▾");click("RightLeg");inputLabel("Hip raise","25");assert(c:variant().poseOverrides[3].parts.RightLeg.lift==25);tick()
+click("Save");click("Export");local data=serde.decode("json",selection[1].MotionLabJSON.Value);assert(data.ninjaDuel.clips[variantId] and data.preset.motionVariants[variantId].name=="Idle_Wide")
+click("Import selected export");local imported=c.preset.motionVariants[variantId];assert(imported and imported.poseOverrides[3].parts.RightLeg.lift==25);click("Save")
+-- Restore the saved variant from the custom library and then add it to a phrase.
+c.clip=variantId;click("+ Block");assert(c.sequenceMode);dragObject("BlockResize_"..c.selectedBlock,30);tick();click("Edit motion");assert(not c.sequenceMode)
 click("New profile");click("Gaara starting profile");assert(c.preset.name=="Gaara study" and c.preset.motionDNA.amplitude==.35);tick()
-click("Clear A/B");assert(c.compare==nil)
+click("Clear A/B");assert(c.compare==nil);click("Ghosts ✓");tick()
 widget:SetAttribute("TestWidth",780);widget:SetAttribute("TestHeight",600)
 local host=widget:GetChildren()[1];host:GetPropertyChangedSignal("AbsoluteSize"):Fire()
 widget.AbsoluteSize=r.Vector2.new(780,600)
@@ -88,5 +115,5 @@ for _,o in viewport:GetDescendants()do if o:IsA("Motor6D")then motorCount+=1;ass
 assert(motorCount==15)
 dispose()
 for _,s in signals do for _,pair in s.callbacks do assert(not pair.c.Connected,"Leaked UI connection")end end
-print("PASS exact binary UI mount, preview, DNA, A/B, sequence, save/import/export, 780 layout, theme and teardown (simulated Studio events)")
+print("PASS exact binary UI: legacy workflows + variant pose/timing/amplitude, marker/block drags, ghosts, edited export/import, 780 layout and teardown (simulated Studio events)")
 print("Registered and released UI connections: "..totalCallbacks)

@@ -12,7 +12,7 @@ end
 local function armCF(side,a)
 	a=a or {}
 	local shoulder=ANG(rad(a.raise or 0),0,0)*ANG(0,0,rad((a.out or 0)*side))*ANG(0,rad((a.twist or 0)*side),0)
-	return shoulder,ANG(rad(a.elbow or 0),0,0),ANG(rad(a.wrist or 0),0,rad((a.wroll or 0)*side))
+	return shoulder,ANG(rad(a.elbow or 0),rad((a.elbowTwist or 0)*side),0),ANG(rad(a.wrist or 0),0,rad((a.wroll or 0)*side))
 end
 local function legFK(side,l)
 	l=l or {}
@@ -76,5 +76,18 @@ local function build(spec)
 	return out
 end
 
+-- Preserve the solved stance when a correction switches between planted IK and FK.
+function Solver.freeLeg(spec,side)
+ local pose=build(spec);local prefix=if side==1 then "Right" else "Left"
+ local _,_,_,r11,r12,r13,_,r22,_,_,r32=pose[prefix.."Hip"]:GetComponents()
+ local knee=select(1,pose[prefix.."Knee"]:ToEulerAnglesXYZ());local ankle=select(1,pose[prefix.."Ankle"]:ToEulerAnglesXYZ())
+ return {lift=math.deg(math.atan2(r32,r22)),out=math.deg(math.asin(math.clamp(-r12,-1,1)))*side,twist=math.deg(math.atan2(r13,r11))*side,knee=-math.deg(knee),ankle=math.deg(ankle)}
+end
+function Solver.footTarget(spec,side)
+ local pose=build(spec);local prefix=if side==1 then "Right" else "Left"
+ local hip=pose.Root*CF(.5*side,-.55,0)*pose[prefix.."Hip"]
+ local ankle=hip*Vector3.new(0,-L1,0)+(hip.Rotation*pose[prefix.."Knee"])*Vector3.new(0,-L2,0)
+ return {x=ankle.X-.5*side,y=ankle.Y-ANKLE_Y,z=ankle.Z,yaw=0,toe=0}
+end
 Solver.build=build
 return Solver

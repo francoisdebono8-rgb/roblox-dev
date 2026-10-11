@@ -2,6 +2,8 @@ local M=require(script.Parent.Model)
 local Library=require(script.Parent.Library)
 local Adapter=require(script.Parent.NinjaDuelAdapter)
 local Store=require(script.Parent.Store)
+local Edit=require(script.Parent.MotionEdit)
+local Sampler=require(script.Parent.Sampler)
 local C={};C.__index=C
 function C.create(plugin)
  local lib=Library.new();Adapter.import(require(script.Parent.NinjaSources),lib)
@@ -14,17 +16,19 @@ end
 function C:newId() self.counter+=1;return "custom_"..game:GetService("HttpService"):GenerateGUID(false):gsub("%-","") end
 function C:checkpoint() table.insert(self.history,M.copy(self.preset));if #self.history>40 then table.remove(self.history,1) end;self.future={} end
 function C:edit(fn,record) if record~=false then self:checkpoint() end;fn(self.preset);self.dirty=true;self.time=0 end
+function C:repairSelection() if not self:asset() then self.clip="run";self.selectedKey=nil end end
 function C:undo()
- if #self.history==0 then return end;table.insert(self.future,M.copy(self.preset));self.preset=table.remove(self.history);self.dirty=true;self.time=0
+ if #self.history==0 then return end;table.insert(self.future,M.copy(self.preset));self.preset=table.remove(self.history);self.dirty=true;self.time=0;self:repairSelection()
 end
 function C:redo()
- if #self.future==0 then return end;table.insert(self.history,M.copy(self.preset));self.preset=table.remove(self.future);self.dirty=true;self.time=0
+ if #self.future==0 then return end;table.insert(self.history,M.copy(self.preset));self.preset=table.remove(self.future);self.dirty=true;self.time=0;self:repairSelection()
 end
 function C:load(id)
- self:checkpoint();self.preset=M.copy(assert(self.library.presets[id],"Missing profile"));if not self.store.custom[id] then self.preset.id=self:newId();self.preset.name=self.preset.name.." study" end
+ self:checkpoint();self.preset=M.copy(assert(self.library.presets[id],"Missing profile"));self.clip="run";self.sequenceMode=false;self.selectedKey=nil;if not self.store.custom[id] then self.preset.id=self:newId();self.preset.name=self.preset.name.." study" end
  if #self.preset.sequences==0 then self.preset.sequences={{id="sequence1",name="Opening phrase",orderedClips={}}} end;self.dirty=self.store.custom[id]==nil;self.time=0
 end
 function C:new(template)
+ self.clip="run";self.sequenceMode=false;self.selectedKey=nil
  self:checkpoint();self.preset=if template then M.copy(self.library.presets[template]) else M.new("new","Untitled motion")
  self.preset.id=self:newId();self.preset.name=if template then self.preset.name.." study" else "Untitled motion";self.preset=Library.propose(self.preset);self.dirty=true;self.time=0
 end
@@ -32,8 +36,33 @@ function C:duplicate() self:checkpoint();self.preset.id=self:newId();self.preset
 function C:generate() self:edit(function(p) local generated=Library.propose(p);p.locomotionSet=generated.locomotionSet;p.sequences=generated.sequences;p.metadata.generated=true end) end
 function C:sequence() return self.preset.sequences[1] end
 function C:addClip(id)
- local asset=assert(self.library.assets[id],"Unknown block");assert(#self:sequence().orderedClips<24,"Maximum 24 blocks")
+ local asset=assert(Edit.asset(self.preset,id,self.library),"Unknown block");assert(#self:sequence().orderedClips<24,"Maximum 24 blocks")
  self:edit(function(p)table.insert(p.sequences[1].orderedClips,{asset=id,duration=math.clamp(asset.duration,.12,5),blend=.1,transition="blend"})end);self.selectedBlock=#self:sequence().orderedClips;self.sequenceMode=true
+end
+function C:asset(id) return Edit.asset(self.preset,id or self.clip,self.library) end
+function C:variant() return self.preset.motionVariants and self.preset.motionVariants[self.clip] end
+function C:createVariant()
+ local source=self:asset();assert(not source.variant,"Select a source motion to create a variant")
+ self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
+ local contact,recovery=.42,.7;if clip and clip.timing then contact=clip.timing.startup/clip.duration;recovery=(clip.timing.startup+clip.timing.active)/clip.duration end
+ self:edit(function(p)p.motionVariants=p.motionVariants or {};p.motionVariants[id]=Edit.create(id,source.name.."_A",source,duration,contact,recovery)end)
+ self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart="RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
+ return id
+end
+function C:variantEdit(fn,record)
+ assert(self:variant(),"Create a variant before editing")
+ local at=self.time;self:edit(function(p)fn(p.motionVariants[self.clip])end,record);self.time=at
+end
+function C:selectKey(id,part)
+ local v=assert(self:variant(),"Select a variant");local key=assert(Edit.key(v,id),"Missing key")
+ self.selectedKey=id;self.selectedPart=part or self.selectedPart or "Root";self.playing=false;self.sequenceMode=false;self.time=key.time*Sampler.duration(self.preset,self:asset(),self.library)
+end
+function C:setPose(field,value,record)
+ local part=self.selectedPart or "Root";local control=nil;for _,row in Edit.Controls[part] or {} do if row[1]==field then control=row end end;assert(control and M.finite(value) and value>=control[3] and value<=control[4],"Invalid pose value");local v=assert(self:variant());assert(not(v.channels[part] and v.channels[part].locked),"Channel is locked")
+ self:variantEdit(function(variant)local key=assert(Edit.key(variant,self.selectedKey));key.parts[part]=key.parts[part] or {};key.parts[part][field]=value end,record)
+end
+function C:assignVariant(slot)
+ assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or p.motionVariants[self.clip].sourceAsset]=self.clip end)
 end
 function C:save() self.store:save(self.preset);self.dirty=false end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
@@ -61,6 +90,6 @@ function C:import(instance)
  end
  remap(p)
  for oldId,source in sources do source.id=ids[oldId];remap(source);source.metadata.imported=true;self.library.presets[source.id]=source;table.insert(self.library.order,source.id) end
- self:checkpoint();p.id=self:newId();self.preset=p;self.dirty=true;self.time=0
+ self:checkpoint();p.id=self:newId();self.preset=p;self.clip="run";self.selectedKey=nil;self.sequenceMode=false;self.dirty=true;self.time=0
 end
 return C

@@ -1,6 +1,7 @@
 -- Adapter-owned character IDs. Core mixer/generator does not know Naruto names.
 local M=require(script.Parent.Model)
 local Sampler=require(script.Parent.Sampler)
+local Edit=require(script.Parent.MotionEdit)
 local A={Format="NinjaDuel.MotionDefinitions.v1"}
 function A.import(data,lib)
  local index=0
@@ -51,16 +52,23 @@ function A.ninjaDefinitions(preset,lib)
  local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
  local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
  local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
- for _,assetId in lib.assetOrder do
-  local asset=lib.assets[assetId];local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
+ local exportIds=table.clone(lib.assetOrder);for id in preset.motionVariants or {} do table.insert(exportIds,id)end;table.sort(exportIds)
+ for _,assetId in exportIds do
+  local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
+  local variant=Edit.variant(preset,actual)
+  if variant then local markers=Edit.markers(variant);local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then markers[3].time else markers[3].sourceTime;local recovery=if variant.enabled then markers[4].time else markers[4].sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
   local duration=timing.startup+timing.active+timing.recovery;local keys={}
-  for i=0,24 do
-   local t=i/24;local elapsed=t*duration
+  local samples={};for i=0,24 do samples[i/24]=true end
+  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.markers(variant)[3].time;samples[contact+math.min(variant.timing.hold,Edit.markers(variant)[4].time-contact-.002)]=true end
+  local times={};for t in samples do table.insert(times,t)end;table.sort(times)
+  for _,t in times do
+   local elapsed=t*duration
    local phase=if elapsed<=timing.startup then elapsed/timing.startup elseif elapsed<=timing.startup+timing.active then 1+(elapsed-timing.startup)/timing.active else 2+(elapsed-timing.startup-timing.active)/timing.recovery
    table.insert(keys,{at=phase,ease="linear",pose=Sampler.mixedAnatomy(preset,asset,t,lib)})
   end
-  out.clips[asset.grammar]=keys;out.timings[asset.grammar]=M.copy(timing)
+  local exportName=if asset.variant then asset.id else asset.grammar
+  out.clips[exportName]=keys;out.timings[exportName]=M.copy(timing)
  end
  return out
 end

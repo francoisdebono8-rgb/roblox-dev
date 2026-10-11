@@ -1,5 +1,6 @@
 local M=require(script.Parent.Model)
 local Solver=require(script.Parent.PoseSolver)
+local Edit=require(script.Parent.MotionEdit)
 local S={}
 S.Joints={Root={"Root"},Legs={"RightHip","RightKnee","RightAnkle","LeftHip","LeftKnee","LeftAnkle"},Hips={"Root"},Torso={"Waist"},LeftArm={"Left","LeftElbow","LeftWrist"},RightArm={"Right","RightElbow","RightWrist"},Head={"Neck"},Weapon={"Weapon"}}
 local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
@@ -84,12 +85,12 @@ function S.mirror(pose)
  return p
 end
 function S.duration(preset,asset,lib)
- local selected=S.resolveAsset(preset,asset,lib);local clip=preset.clips[selected.grammar]
+ local selected=S.resolveAsset(preset,asset,lib);local variant=Edit.variant(preset,selected);if variant then return if variant.enabled then variant.timing.duration/variant.timing.playbackSpeed else variant.sourceDuration end;local clip=preset.clips[selected.grammar]
  return (if clip then clip.duration else selected.duration)/preset.motionDNA.cadence/(if selected.category=="Locomotion" then preset.motionDNA.strideFrequency*(preset.gait.cadence or 1) else 1)
 end
 function S.resolveAsset(preset,asset,lib)
  local id=preset.locomotionSet[asset.id]
- return if id and lib and lib.assets[id] then lib.assets[id] else asset
+ return if id and lib then Edit.asset(preset,id,lib) or asset else asset
 end
 function S.anatomy(preset,asset,t,mirror)
  local clip=preset.clips[asset.grammar];local pose=if clip then keysAt(clip.keys,t) else procedural(preset,asset,t)
@@ -106,13 +107,22 @@ local function shaped(preset,dna,reference)
 end
 local function own(preset,asset,t,mirror,lib,dna,reference)
  preset=shaped(preset,dna,reference)
- local anatomy=S.anatomy(preset,S.resolveAsset(preset,asset,lib),t,mirror)
+ local selected=S.resolveAsset(preset,asset,lib)
+ local anatomy=if Edit.variant(preset,selected) then S.mixedAnatomy(preset,selected,t,lib) else S.anatomy(preset,selected,t,false)
+ if mirror then anatomy=S.mirror(anatomy)end
  local pose=Solver.build(anatomy);local weapon=anatomy.weapon or {}
  pose.Weapon=CFrame.new(weapon.x or 0,weapon.y or 0,weapon.z or 0)*CFrame.Angles(math.rad(weapon.pitch or 0),math.rad(weapon.yaw or 0),math.rad(weapon.roll or 0))
  return pose
 end
 function S.sample(preset,asset,t,lib,mirror)
- t=math.clamp(t,0,1);local output=own(preset,asset,t,mirror,lib);local poseCache={}
+ t=math.clamp(t,0,1)
+ local actual=S.resolveAsset(preset,asset,lib)
+ if Edit.variant(preset,actual) then
+  local anatomy=S.mixedAnatomy(preset,actual,t,lib);if mirror then anatomy=S.mirror(anatomy)end
+  local output=Solver.build(anatomy);local w=anatomy.weapon or {};output.Weapon=CFrame.new(w.x or 0,w.y or 0,w.z or 0)*CFrame.Angles(math.rad(w.pitch or 0),math.rad(w.yaw or 0),math.rad(w.roll or 0));output.weaponHand=if mirror then "LeftHand" else "RightHand"
+  output.motion=Vector3.new(output.Root.Position.X,0,output.Root.Position.Z);output.Root=CFrame.new(0,output.Root.Position.Y,0)*output.Root.Rotation;return output
+ end
+ local output=own(preset,asset,t,mirror,lib);local poseCache={}
  local function sourcePose(id,layer,seen,depth)
   assert(depth<9 and not seen[id],"Body source cycle");seen[id]=true
   local p=assert(lib.presets[id],"Missing motion source");if not poseCache[id] then poseCache[id]=own(p,asset,t,mirror,lib,preset.motionDNA,preset.metadata.dnaReference) end;local poses=table.clone(poseCache[id]);local spec=p.bodyLayers[layer]
@@ -137,9 +147,14 @@ function S.sample(preset,asset,t,lib,mirror)
  return output
 end
 function S.mixedAnatomy(preset,asset,t,lib)
+ local actual=S.resolveAsset(preset,asset,lib);local v=Edit.variant(preset,actual)
+ if v then
+  local proxy=table.clone(preset);proxy.locomotionSet=table.clone(preset.locomotionSet);proxy.locomotionSet[v.sourceAsset]=nil
+  return Edit.apply(v,S.mixedAnatomy(proxy,lib.assets[v.sourceAsset],if v.enabled then Edit.warp(v,t) else t,lib),t)
+ end
  local fields={Legs={"rf","lf","rl","ll"},Torso={"torso"},LeftArm={"la"},RightArm={"ra"},Head={"head"},Weapon={"weapon"}}
  local function resolve(p,layer,depth)
-  assert(depth<9,"Source depth");local expressive=if p==preset then p else shaped(p,preset.motionDNA,preset.metadata.dnaReference);local result=S.anatomy(expressive,S.resolveAsset(p,asset,lib),t,false);local spec=p.bodyLayers[layer]
+  assert(depth<9,"Source depth");local expressive=if p==preset then p else shaped(p,preset.motionDNA,preset.metadata.dnaReference);local selected=S.resolveAsset(p,asset,lib);local result=if Edit.variant(expressive,selected) then S.mixedAnatomy(expressive,selected,t,lib) else S.anatomy(expressive,selected,t,false);local spec=p.bodyLayers[layer]
   if spec.enabled and spec.source~="base" then
    local other=resolve(assert(lib.presets[spec.source]),layer,depth+1)
    if layer=="Root" or layer=="Hips" then
@@ -178,10 +193,10 @@ function S.sequence(preset,sequence,time,lib,mirror)
  for index,block in sequence.orderedClips do
   local duration=block.duration/preset.motionDNA.recoverySpeed
   if time<cursor+duration or index==#sequence.orderedClips then
-   local t=math.clamp((time-cursor)/duration,0,1);local asset=assert(lib.assets[block.asset],"Missing clip")
+   local t=math.clamp((time-cursor)/duration,0,1);local asset=assert(Edit.asset(preset,block.asset,lib),"Missing clip")
    local pose=S.sample(preset,asset,t,lib,mirror)
    if index>1 and block.transition=="blend" and block.blend>0 and time-cursor<block.blend then
-    local prev=sequence.orderedClips[index-1];local from=S.sample(preset,lib.assets[prev.asset],1,lib,mirror);local u=smooth((time-cursor)/block.blend)
+    local prev=sequence.orderedClips[index-1];local from=S.sample(preset,Edit.asset(preset,prev.asset,lib),1,lib,mirror);local u=smooth((time-cursor)/block.blend)
     for key,value in pose do if typeof(value)=="CFrame" and from[key] then pose[key]=from[key]:Lerp(value,u) elseif key=="motion" then pose.motion=from.motion:Lerp(value,u) end end
    end
    return pose,index,t

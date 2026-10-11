@@ -106,4 +106,5 @@ test("template DNA is not applied twice when mixing the same template",function(
  assert((original.Right.UpVector-same.Right.UpVector).Magnitude<.0001)
  p.motionDNA.amplitude=.7;local changed=Sampler.sample(p,lib.assets.jab,.4,lib);assert((original.Right.UpVector-changed.Right.UpVector).Magnitude>.01)
 end)
+require("./variants")(load,test,lib)
 print("Forge Motion Lab: "..count.." PASS")

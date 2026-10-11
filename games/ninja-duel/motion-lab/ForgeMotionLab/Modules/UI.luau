@@ -1,4 +1,4 @@
--- Visual thesis: a quiet slate motion workspace with a large lit R15 canvas.
+-- Visual thesis: a focused motion bench; browser, R15 canvas, contextual inspector, full-width dope sheet.
 -- Content: source collection, live body, contextual mixer/DNA, editable phrase.
 -- Interaction: fast preview, restrained hover, selected blocks and immediate sliders.
 local UI={}
@@ -19,6 +19,24 @@ function UI.new(widget)
   local t=self:make("TextLabel",parent,{Text=text,BackgroundTransparency=1,TextSize=14,Font=Enum.Font.BuilderSans,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd})
   self:paint(t,"TextColor3",role or "text");for k,v in props or {} do t[k]=v end;return t
  end
+ function self:tip(obj,text)
+  local tip=nil
+  self:connect(obj.MouseEnter,function()
+   if tip then tip:Destroy()end
+   tip=self:label(widget,text,{Name="Tooltip",Position=UDim2.fromOffset(math.clamp(obj.AbsolutePosition.X-widget.AbsolutePosition.X,8,math.max(8,widget.AbsoluteSize.X-270)),math.min(widget.AbsoluteSize.Y-52,obj.AbsolutePosition.Y-widget.AbsolutePosition.Y+obj.AbsoluteSize.Y+5)),Size=UDim2.fromOffset(260,44),BackgroundTransparency=0,TextWrapped=true,TextSize=11,ZIndex=100})
+   self:paint(tip,"BackgroundColor3","hover")
+  end)
+  self:connect(obj.MouseLeave,function()if tip then tip:Destroy();tip=nil end end)
+ end
+ function self:dragInput(obj,begin,move,finish)
+  self:connect(obj.InputBegan,function(input)if input.UserInputType~=Enum.UserInputType.MouseButton1 then return end
+   local start=widget:GetRelativeMousePosition();if begin then begin(start)end
+   self.drag=function()move(widget:GetRelativeMousePosition()-start)end;self.dragOwner=obj
+   local conn;conn=self:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End then
+    if self.drag then self.drag()end;self.drag=nil;self.dragOwner=nil;conn:Disconnect();if finish then finish()end
+   end end)
+  end)
+ end
  function self:button(parent,text,props,fn,primary)
   local b=self:make("TextButton",parent,{Text=text,TextSize=13,Font=Enum.Font.BuilderSansMedium,BorderSizePixel=0,AutoButtonColor=false})
   self:paint(b,"BackgroundColor3",primary and "accent" or "panel");self:paint(b,"TextColor3",primary and "onAccent" or "text")
@@ -36,12 +54,12 @@ function UI.new(widget)
   self:paint(s,"ScrollBarImageColor3","line");for k,v in props or {} do s[k]=v end;return s
  end
  function self:slider(parent,label,min,max,value,y,callback,onBegin)
-  local row=self:frame(parent,{Size=UDim2.new(1,-8,0,58),Position=UDim2.fromOffset(0,y),BackgroundTransparency=1})
+  local row=self:frame(parent,{Size=UDim2.new(1,-8,0,44),Position=UDim2.fromOffset(0,y),BackgroundTransparency=1})
   self:label(row,label,{Size=UDim2.new(1,-62,0,22),TextSize=13})
   local box=self:input(row,string.format("%.2f",value),{Position=UDim2.new(1,-60,0,0),Size=UDim2.fromOffset(58,22)})
-  local track=self:frame(row,{Position=UDim2.fromOffset(0,34),Size=UDim2.new(1,0,0,5)},"line")
+  local track=self:frame(row,{Position=UDim2.fromOffset(0,29),Size=UDim2.new(1,0,0,5)},"line")
   local fill=self:frame(track,{Size=UDim2.fromScale((value-min)/(max-min),1)},"accent")
-  local hit=self:make("TextButton",row,{Position=UDim2.fromOffset(0,26),Size=UDim2.new(1,0,0,24),Text="",BackgroundTransparency=1,AutoButtonColor=false})
+  local hit=self:make("TextButton",row,{Position=UDim2.fromOffset(0,23),Size=UDim2.new(1,0,0,24),Text="",BackgroundTransparency=1,AutoButtonColor=false})
   local drag=false
   local function update(v) value=math.clamp(v,min,max);fill.Size=UDim2.fromScale((value-min)/(max-min),1);box.Text=string.format("%.2f",value);callback(value) end
   local function mouse()
@@ -52,7 +70,7 @@ function UI.new(widget)
   self:connect(box.FocusLost,function()local n=tonumber(box.Text);if n and n==n then if onBegin then onBegin() end;update(n)else box.Text=string.format("%.2f",value)end end)
   return row
  end
- function self:dispose() for _,c in self.connections do c:Disconnect() end;self.connections={};self.styles={} end
+ function self:dispose() for _,child in widget:GetChildren()do if child.Name=="Tooltip"then child:Destroy()end end;for _,c in self.connections do c:Disconnect() end;self.connections={};self.styles={} end
  self:connect(studio.ThemeChanged,function()self.colors=palette();for obj,roles in self.styles do if obj.Parent then for property,role in roles do obj[property]=self.colors[role] end end end end)
  self:connect(game:GetService("RunService").RenderStepped,function() if self.drag and self.dragOwner.Parent and widget.Enabled then self.drag() end end)
  return self

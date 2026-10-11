@@ -1,3 +1,4 @@
+local Edit=require(script.Parent.MotionEdit)
 local M={Version=1,Layers={"Root","Legs","Hips","Torso","LeftArm","RightArm","Head","Weapon"}}
 M.DNA={
  {"cadence","Cadence",.5,2,1,"Rhythm"},{"amplitude","Amplitude",.2,1.8,1,"Rhythm"},{"apparentWeight","Apparent weight",0,1,.5,"Rhythm"},{"recoverySpeed","Recovery speed",.5,2,1,"Rhythm"},
@@ -79,6 +80,10 @@ function M.validate(p,known)
    for key,value in values do if not table.find({"bodyScale","rootLift","rootTravel","lateralTravel"},key) or not M.finite(value) or math.abs(value)>5 then return false,"Invalid expression value" end end
   end
  end
+ if p.motionVariants~=nil then
+  if type(p.motionVariants)~="table" then return false,"Invalid variants" end
+  local count=0;for id,v in p.motionVariants do count+=1;if count>64 or type(v)~="table" or id~=v.id then return false,"Variant budget/identity" end;local ok,why=Edit.validate(v);if not ok then return false,why end end
+ end
  return true
 end
 function M.validateGraph(presets)
@@ -102,8 +107,9 @@ function M.validateGraph(presets)
  return true
 end
 function M.validateAssets(p,assets)
- for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] then return false,"Unknown motion block: "..block.asset end end end
- for _,id in p.locomotionSet do if not assets[id] then return false,"Unknown locomotion block: "..id end end
+ for id,v in p.motionVariants or {} do if assets[id] or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
+ for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] and not (p.motionVariants and p.motionVariants[block.asset]) then return false,"Unknown motion block: "..block.asset end end end
+ for _,id in p.locomotionSet do if not assets[id] and not (p.motionVariants and p.motionVariants[id]) then return false,"Unknown locomotion block: "..id end end
  return true
 end
 function M.duration(sequence) local n=0;for _,clip in sequence.orderedClips do n+=clip.duration end;return n end

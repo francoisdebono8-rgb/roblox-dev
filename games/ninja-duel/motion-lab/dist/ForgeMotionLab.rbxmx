@@ -15,6 +15,8 @@
 local Library=require(script.Parent.Library)
 local Adapter=require(script.Parent.NinjaDuelAdapter)
 local Store=require(script.Parent.Store)
+local Edit=require(script.Parent.MotionEdit)
+local Sampler=require(script.Parent.Sampler)
 local C={};C.__index=C
 function C.create(plugin)
  local lib=Library.new();Adapter.import(require(script.Parent.NinjaSources),lib)
@@ -27,17 +29,19 @@ end
 function C:newId() self.counter+=1;return "custom_"..game:GetService("HttpService"):GenerateGUID(false):gsub("%-","") end
 function C:checkpoint() table.insert(self.history,M.copy(self.preset));if #self.history&gt;40 then table.remove(self.history,1) end;self.future={} end
 function C:edit(fn,record) if record~=false then self:checkpoint() end;fn(self.preset);self.dirty=true;self.time=0 end
+function C:repairSelection() if not self:asset() then self.clip="run";self.selectedKey=nil end end
 function C:undo()
- if #self.history==0 then return end;table.insert(self.future,M.copy(self.preset));self.preset=table.remove(self.history);self.dirty=true;self.time=0
+ if #self.history==0 then return end;table.insert(self.future,M.copy(self.preset));self.preset=table.remove(self.history);self.dirty=true;self.time=0;self:repairSelection()
 end
 function C:redo()
- if #self.future==0 then return end;table.insert(self.history,M.copy(self.preset));self.preset=table.remove(self.future);self.dirty=true;self.time=0
+ if #self.future==0 then return end;table.insert(self.history,M.copy(self.preset));self.preset=table.remove(self.future);self.dirty=true;self.time=0;self:repairSelection()
 end
 function C:load(id)
- self:checkpoint();self.preset=M.copy(assert(self.library.presets[id],"Missing profile"));if not self.store.custom[id] then self.preset.id=self:newId();self.preset.name=self.preset.name.." study" end
+ self:checkpoint();self.preset=M.copy(assert(self.library.presets[id],"Missing profile"));self.clip="run";self.sequenceMode=false;self.selectedKey=nil;if not self.store.custom[id] then self.preset.id=self:newId();self.preset.name=self.preset.name.." study" end
  if #self.preset.sequences==0 then self.preset.sequences={{id="sequence1",name="Opening phrase",orderedClips={}}} end;self.dirty=self.store.custom[id]==nil;self.time=0
 end
 function C:new(template)
+ self.clip="run";self.sequenceMode=false;self.selectedKey=nil
  self:checkpoint();self.preset=if template then M.copy(self.library.presets[template]) else M.new("new","Untitled motion")
  self.preset.id=self:newId();self.preset.name=if template then self.preset.name.." study" else "Untitled motion";self.preset=Library.propose(self.preset);self.dirty=true;self.time=0
 end
@@ -45,8 +49,33 @@ function C:duplicate() self:checkpoint();self.preset.id=self:newId();self.preset
 function C:generate() self:edit(function(p) local generated=Library.propose(p);p.locomotionSet=generated.locomotionSet;p.sequences=generated.sequences;p.metadata.generated=true end) end
 function C:sequence() return self.preset.sequences[1] end
 function C:addClip(id)
- local asset=assert(self.library.assets[id],"Unknown block");assert(#self:sequence().orderedClips&lt;24,"Maximum 24 blocks")
+ local asset=assert(Edit.asset(self.preset,id,self.library),"Unknown block");assert(#self:sequence().orderedClips&lt;24,"Maximum 24 blocks")
  self:edit(function(p)table.insert(p.sequences[1].orderedClips,{asset=id,duration=math.clamp(asset.duration,.12,5),blend=.1,transition="blend"})end);self.selectedBlock=#self:sequence().orderedClips;self.sequenceMode=true
+end
+function C:asset(id) return Edit.asset(self.preset,id or self.clip,self.library) end
+function C:variant() return self.preset.motionVariants and self.preset.motionVariants[self.clip] end
+function C:createVariant()
+ local source=self:asset();assert(not source.variant,"Select a source motion to create a variant")
+ self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
+ local contact,recovery=.42,.7;if clip and clip.timing then contact=clip.timing.startup/clip.duration;recovery=(clip.timing.startup+clip.timing.active)/clip.duration end
+ self:edit(function(p)p.motionVariants=p.motionVariants or {};p.motionVariants[id]=Edit.create(id,source.name.."_A",source,duration,contact,recovery)end)
+ self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart="RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
+ return id
+end
+function C:variantEdit(fn,record)
+ assert(self:variant(),"Create a variant before editing")
+ local at=self.time;self:edit(function(p)fn(p.motionVariants[self.clip])end,record);self.time=at
+end
+function C:selectKey(id,part)
+ local v=assert(self:variant(),"Select a variant");local key=assert(Edit.key(v,id),"Missing key")
+ self.selectedKey=id;self.selectedPart=part or self.selectedPart or "Root";self.playing=false;self.sequenceMode=false;self.time=key.time*Sampler.duration(self.preset,self:asset(),self.library)
+end
+function C:setPose(field,value,record)
+ local part=self.selectedPart or "Root";local control=nil;for _,row in Edit.Controls[part] or {} do if row[1]==field then control=row end end;assert(control and M.finite(value) and value&gt;=control[3] and value&lt;=control[4],"Invalid pose value");local v=assert(self:variant());assert(not(v.channels[part] and v.channels[part].locked),"Channel is locked")
+ self:variantEdit(function(variant)local key=assert(Edit.key(variant,self.selectedKey));key.parts[part]=key.parts[part] or {};key.parts[part][field]=value end,record)
+end
+function C:assignVariant(slot)
+ assert(self:variant(),"Select a variant");self:edit(function(p)p.locomotionSet[slot or p.motionVariants[self.clip].sourceAsset]=self.clip end)
 end
 function C:save() self.store:save(self.preset);self.dirty=false end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
@@ -74,13 +103,93 @@ function C:import(instance)
  end
  remap(p)
  for oldId,source in sources do source.id=ids[oldId];remap(source);source.metadata.imported=true;self.library.presets[source.id]=source;table.insert(self.library.order,source.id) end
- self:checkpoint();p.id=self:newId();self.preset=p;self.dirty=true;self.time=0
+ self:checkpoint();p.id=self:newId();self.preset=p;self.clip="run";self.selectedKey=nil;self.sequenceMode=false;self.dirty=true;self.time=0
 end
 return C
 </ProtectedString>
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="FML5">
+        <Properties>
+          <string name="Name">EditInspector</string>
+          <ProtectedString name="Source">local E=require(script.Parent.MotionEdit)
+local S=require(script.Parent.Sampler)
+local Panel={}
+function Panel.mount(u,scroll,c,tab,action,state,menu)
+ local v=c:variant()
+ local function heading(text,y)u:label(scroll,text,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-4,0,24),Font=Enum.Font.BuilderSansBold,TextSize=14})end
+ if not v then
+  heading("Create a motion variant",0)
+  u:label(scroll,"Keep the original intact. Add pose corrections, timing and travel to a named variant.",{Position=UDim2.fromOffset(0,30),Size=UDim2.new(1,-4,0,66),TextWrapped=true,TextSize=12},"muted")
+  u:button(scroll,"Create Variant",{Position=UDim2.fromOffset(0,108),Size=UDim2.new(1,-4,0,32)},function()action(function()c:createVariant()end,"Variant created · source pinned as A")end,true)
+  return
+ end
+ u:input(scroll,v.name,{Name="VariantName",Size=UDim2.new(1,-4,0,28)},function(text)action(function()assert(#text&gt;0 and #text&lt;=80,"Name: 1–80 characters");c:variantEdit(function(x)x.name=text end)end,"Variant renamed")end)
+ u:label(scroll,"Source · "..c.library.assets[v.sourceAsset].name,{Position=UDim2.fromOffset(0,32),Size=UDim2.new(1,-4,0,20),TextSize=11},"muted")
+ if tab=="Pose" then
+  local key=E.key(v,c.selectedKey or "Contact");if not key then c.selectedKey="Contact";key=E.key(v,"Contact")end
+  local part=c.selectedPart or "RightArm";c.selectedPart=part
+  local select=u:button(scroll,(key.semantic or "Extra pose").." ▾",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.55,-4,0,26)})
+  u:connect(select.Activated,function()local items={};for _,k in v.poseOverrides do table.insert(items,{id=k.id,name=(k.semantic or "Extra pose")..string.format("  %.3fs",k.time*S.duration(c.preset,c:asset(),c.library))})end;menu(select,items,function(id)action(function()c:selectKey(id)end)end)end)
+  local partButton=u:button(scroll,part.." ▾",{Position=UDim2.new(.55,2,0,60),Size=UDim2.new(.45,-6,0,26)})
+  u:connect(partButton.Activated,function()local choices={};for _,name in E.Parts do table.insert(choices,{id=name,name=name})end;menu(partButton,choices,function(id)action(function()c:selectKey(key.id,id)end)end)end)
+  heading("Pose deltas · "..part,98)
+  u:label(scroll,"Degrees / studs relative to the mixed base.",{Position=UDim2.fromOffset(0,122),Size=UDim2.new(1,-4,0,20),TextSize=11},"muted")
+  local controls=E.Controls[part];local y=148;local controlRows={}
+  for _,row in controls do
+   local value=(key.parts[part] or {})[row[1]] or 0
+   controlRows[row[1]]=u:slider(scroll,row[2],row[3],row[4],value,y,function(n)local ok,err=pcall(function()c:setPose(row[1],n,false)end);state(ok and nil or tostring(err))end,function()c:checkpoint()end)
+   y+=46
+  end
+  heading("Fine nudge",y+4)
+  local selectedField=controls[1][1];local fieldButton=u:button(scroll,controls[1][2].." ▾",{Position=UDim2.fromOffset(0,y+34),Size=UDim2.new(1,-86,0,26)})
+  u:connect(fieldButton.Activated,function()local choices={};for _,row in controls do table.insert(choices,{id=row[1],name=row[2]})end;menu(fieldButton,choices,function(id)selectedField=id;fieldButton.Text=id.." ▾"end)end)
+  local function nudge(sign,quiet)
+   local function apply()
+    local current=E.key(c:variant(),c.selectedKey);local value=(current.parts[part] or {})[selectedField] or 0;local control
+    for _,row in controls do if row[1]==selectedField then control=row end end
+    c:setPose(selectedField,math.clamp(value+sign*(if table.find({"x","y","z"},selectedField)then .05 else 1),control[3],control[4]))
+   end
+   if quiet then local ok,err=pcall(apply);state(ok and nil or tostring(err));if ok then
+    local current=E.key(c:variant(),c.selectedKey);local field=controlRows[selectedField]:FindFirstChildWhichIsA("TextBox");field.Text=string.format("%.2f",current.parts[part][selectedField])
+   end else action(apply)end
+  end
+  u:button(scroll,"−",{Position=UDim2.new(1,-78,0,y+34),Size=UDim2.fromOffset(34,26)},function()nudge(-1)end)
+  u:button(scroll,"+",{Position=UDim2.new(1,-38,0,y+34),Size=UDim2.fromOffset(34,26)},function()nudge(1)end)
+  -- Keyboard nudges are scoped to this focused editor; they never bind gameplay keys.
+  local keyboard=u:input(scroll,"",{Name="NudgeKeys",Position=UDim2.fromOffset(0,y+68),Size=UDim2.new(1,-4,0,26),PlaceholderText="Focus here: ↑ / ↓ to nudge"})
+  u:connect(keyboard.InputBegan,function(input)if input.KeyCode==Enum.KeyCode.Up then nudge(1,true)elseif input.KeyCode==Enum.KeyCode.Down then nudge(-1,true)end end)
+  u:button(scroll,"Reset this part",{Position=UDim2.fromOffset(0,y+104),Size=UDim2.new(1,-4,0,28)},function()action(function()c:variantEdit(function(x)local k=E.key(x,c.selectedKey);assert(not(x.channels[part] and x.channels[part].locked),"Channel locked");k.parts[part]=nil end)end,"Pose corrections reset")end)
+  u:label(scroll,"Leg edits use FK; foot edits use planted-foot IK. Hips share the anatomical root rotation.",{Position=UDim2.fromOffset(0,y+140),Size=UDim2.new(1,-4,0,58),TextWrapped=true,TextSize=11},"muted")
+ else
+  u:button(scroll,v.enabled and "Edits enabled ✓" or "Edits bypassed",{Position=UDim2.fromOffset(0,60),Size=UDim2.new(.6,-4,0,26)},function()action(function()c:variantEdit(function(x)x.enabled=not x.enabled end)end)end,v.enabled)
+  u:button(scroll,"Assign",{Position=UDim2.new(.6,4,0,60),Size=UDim2.new(.4,-8,0,26)},function()action(function()c:assignVariant()end,"Assigned to source slot in this profile")end)
+  heading("Timing",98)
+  local function number(label,value,y,fn)
+   u:label(scroll,label,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-90,0,26),TextSize=12})
+   u:input(scroll,string.format("%.3f",value),{Name="Timing_"..label,Position=UDim2.new(1,-86,0,y),Size=UDim2.fromOffset(82,26)},function(text)action(function()local n=tonumber(text);assert(n and n==n,"Enter a finite number");fn(n)end)end)
+  end
+  number("Duration (s)",v.timing.duration,126,function(n)assert(n&gt;=.12 and n&lt;=30,"Duration: 0.12–30s");c:variantEdit(function(x)x.timing.duration=n end)end)
+  local markers=E.markers(v)
+  for i,label in {"Anticipation","Contact","Recovery start"}do local marker=markers[i+1];number(label.." (s)",marker.time*v.timing.duration,160+(i-1)*32,function(n)c:variantEdit(function(x)local current=E.key(x,marker.id);E.moveKeys(x,{[marker.id]=true},n/x.timing.duration-current.time)end);c:selectKey(marker.id)end)end
+  number("Contact hold (norm)",v.timing.hold,258,function(n)assert(n&gt;=0 and n&lt;=.3,"Hold: 0–0.3 normalized");c:variantEdit(function(x)x.timing.hold=n end)end)
+  number("Playback speed",v.timing.playbackSpeed,290,function(n)assert(n&gt;=.25 and n&lt;=3,"Speed: 0.25–3");c:variantEdit(function(x)x.timing.playbackSpeed=n end)end)
+  local ease=u:button(scroll,"Easing · "..v.timing.easing.." ▾",{Position=UDim2.fromOffset(0,324),Size=UDim2.new(1,-4,0,26)})
+  u:connect(ease.Activated,function()local choices={};for _,name in E.Easing do table.insert(choices,{id=name,name=name})end;menu(ease,choices,function(id)action(function()c:variantEdit(function(x)x.timing.easing=id end)end)end)end)
+  heading("Exaggerate · whole motion",366)
+  local y=396
+  for _,row in E.Modifiers do u:slider(scroll,row[2],0,3,v.motionModifiers[row[1]],y,function(n)c:variantEdit(function(x)x.motionModifiers[row[1]]=n end,false);state()end,function()c:checkpoint()end);y+=46 end
+  heading("Root trajectory",y+8);y+=38
+  for _,row in {{"forward","Forward travel",-10,10},{"lateral","Lateral travel",-10,10},{"lift","Vertical lift",-10,10},{"turn","Turn / yaw",-360,360},{"startX","Start X",-10,10},{"startY","Start Y",-10,10},{"startZ","Start Z",-10,10},{"endX","End X",-10,10},{"endY","End Y",-10,10},{"endZ","End Z",-10,10}}do
+   u:slider(scroll,row[2],row[3],row[4],v.rootPath[row[1]],y,function(n)c:variantEdit(function(x)x.rootPath[row[1]]=n end,false);state()end,function()c:checkpoint()end);y+=46
+  end
+ end
+end
+return Panel
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="FML6">
         <Properties>
           <string name="Name">Library</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
@@ -126,10 +235,11 @@ return L
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML6">
+      <Item class="ModuleScript" referent="FML7">
         <Properties>
           <string name="Name">Model</string>
-          <ProtectedString name="Source">local M={Version=1,Layers={"Root","Legs","Hips","Torso","LeftArm","RightArm","Head","Weapon"}}
+          <ProtectedString name="Source">local Edit=require(script.Parent.MotionEdit)
+local M={Version=1,Layers={"Root","Legs","Hips","Torso","LeftArm","RightArm","Head","Weapon"}}
 M.DNA={
  {"cadence","Cadence",.5,2,1,"Rhythm"},{"amplitude","Amplitude",.2,1.8,1,"Rhythm"},{"apparentWeight","Apparent weight",0,1,.5,"Rhythm"},{"recoverySpeed","Recovery speed",.5,2,1,"Rhythm"},
  {"groundedness","Groundedness",0,1,.7,"Body"},{"centerHeight","Centre height",-.8,.35,0,"Body"},{"hipInvolvement","Hip involvement",0,1.5,1,"Body"},{"upperActivity","Upper activity",0,1.6,1,"Body"},{"lowerActivity","Lower activity",0,1.6,1,"Body"},{"asymmetry","Asymmetry",-1,1,0,"Body"},{"looseness","Looseness",0,1,.5,"Body"},
@@ -210,6 +320,10 @@ function M.validate(p,known)
    for key,value in values do if not table.find({"bodyScale","rootLift","rootTravel","lateralTravel"},key) or not M.finite(value) or math.abs(value)&gt;5 then return false,"Invalid expression value" end end
   end
  end
+ if p.motionVariants~=nil then
+  if type(p.motionVariants)~="table" then return false,"Invalid variants" end
+  local count=0;for id,v in p.motionVariants do count+=1;if count&gt;64 or type(v)~="table" or id~=v.id then return false,"Variant budget/identity" end;local ok,why=Edit.validate(v);if not ok then return false,why end end
+ end
  return true
 end
 function M.validateGraph(presets)
@@ -233,8 +347,9 @@ function M.validateGraph(presets)
  return true
 end
 function M.validateAssets(p,assets)
- for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] then return false,"Unknown motion block: "..block.asset end end end
- for _,id in p.locomotionSet do if not assets[id] then return false,"Unknown locomotion block: "..id end end
+ for id,v in p.motionVariants or {} do if assets[id] or not assets[v.sourceAsset] or assets[v.sourceAsset].grammar~=v.sourceGrammar then return false,"Invalid variant source: "..v.sourceAsset end end
+ for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] and not (p.motionVariants and p.motionVariants[block.asset]) then return false,"Unknown motion block: "..block.asset end end end
+ for _,id in p.locomotionSet do if not assets[id] and not (p.motionVariants and p.motionVariants[id]) then return false,"Unknown locomotion block: "..id end end
  return true
 end
 function M.duration(sequence) local n=0;for _,clip in sequence.orderedClips do n+=clip.duration end;return n end
@@ -246,12 +361,129 @@ return M
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML7">
+      <Item class="ModuleScript" referent="FML8">
+        <Properties>
+          <string name="Name">MotionEdit</string>
+          <ProtectedString name="Source">-- Data-only, additive edits in the existing anatomical representation. No game hooks.
+local Solver=require(script.Parent.PoseSolver)
+local E={}
+local function copy(v) if type(v)~="table" then return v end;local o={};for k,x in v do o[k]=copy(x)end;return o end
+E.Parts={"Root","Hips","Torso","Head","LeftArm","RightArm","LeftLeg","RightLeg","LeftFoot","RightFoot","Weapon"}
+E.Map={Root="root",Hips="root",Torso="torso",Head="head",LeftArm="la",RightArm="ra",LeftLeg="ll",RightLeg="rl",LeftFoot="lf",RightFoot="rf",Weapon="weapon"}
+local rot={{"pitch","Pitch",-180,180},{"yaw","Yaw",-180,180},{"roll","Roll",-180,180}}
+local pos={{"x","X",-5,5},{"y","Y",-5,5},{"z","Z",-5,5}}
+E.Controls={Root={pos[1],pos[2],pos[3],rot[1],rot[2],rot[3]},Hips=rot,Torso=rot,Head=rot,Weapon={pos[1],pos[2],pos[3],rot[1],rot[2],rot[3]}}
+for _,p in {"LeftArm","RightArm"}do E.Controls[p]={{"raise","Shoulder raise",-150,150},{"out","Shoulder out",-150,150},{"twist","Shoulder rotation",-180,180},{"elbow","Elbow bend",-150,150},{"elbowTwist","Elbow rotation",-180,180},{"wrist","Wrist bend",-120,120},{"wroll","Wrist roll",-120,120}}end
+for _,p in {"LeftLeg","RightLeg"}do E.Controls[p]={{"lift","Hip raise",-150,150},{"out","Hip out",-120,120},{"twist","Hip rotation",-180,180},{"knee","Knee bend",-150,150},{"ankle","Ankle bend",-100,100}}end
+for _,p in {"LeftFoot","RightFoot"}do E.Controls[p]={pos[1],pos[2],pos[3],{"yaw","Foot yaw",-180,180},{"toe","Toe pitch",-100,100}}end
+E.Modifiers={{"amplitude","Amplitude"},{"hipRotation","Hip rotation"},{"torsoFollow","Torso follow"},{"limbExtension","Limb extension"},{"rootTravel","Root travel"},{"impactLean","Impact lean"},{"anticipation","Anticipation"},{"followThrough","Follow-through"},{"recoveryTightness","Recovery tightness"}}
+E.Semantics={"Start","Anticipation","Contact","FollowThrough","Recovery"}
+E.Easing={"linear","smooth","in","out"}
+function E.create(id,name,asset,duration,contact,recovery)
+ contact=math.clamp(contact or .42,.12,.85);recovery=math.clamp(recovery or .7,contact+.04,.95)
+ local times={0,contact*.5,contact,recovery,1};local keys={};for i,s in E.Semantics do table.insert(keys,{id=s,time=times[i],semantic=s,sourceTime=times[i],parts={}})end
+ local modifiers={};for _,row in E.Modifiers do modifiers[row[1]]=1 end
+ return {id=id,name=name,sourceAsset=asset.id,sourceGrammar=asset.grammar,sourceDuration=duration,poseOverrides=keys,motionModifiers=modifiers,timing={duration=duration,playbackSpeed=1,easing="linear",hold=0},rootPath={forward=0,lateral=0,lift=0,turn=0,startX=0,startY=0,startZ=0,endX=0,endY=0,endZ=0},channels={},enabled=true}
+end
+local function finite(n) return type(n)=="number" and n==n and math.abs(n)&lt;1e8 end
+local function id(s)return type(s)=="string" and #s&gt;0 and #s&lt;=100 and s:match("^[%w_.:%-]+$")~=nil end
+function E.validate(v)
+ if type(v)~="table" or not id(v.id) or not id(v.sourceAsset) or not id(v.sourceGrammar) or type(v.name)~="string" or #v.name&lt;1 or #v.name&gt;80 or type(v.enabled)~="boolean" or not finite(v.sourceDuration) or v.sourceDuration&lt;=0 or v.sourceDuration&gt;30 then return false,"Invalid variant header"end
+ local t=v.timing;if type(t)~="table" or not finite(t.duration) or t.duration&lt;.12 or t.duration&gt;30 or not finite(t.playbackSpeed) or t.playbackSpeed&lt;.25 or t.playbackSpeed&gt;3 or not table.find(E.Easing,t.easing) or not finite(t.hold) or t.hold&lt;0 or t.hold&gt;.3 then return false,"Invalid variant timing"end
+ if type(v.motionModifiers)~="table" or type(v.rootPath)~="table" or type(v.channels)~="table" then return false,"Missing variant controls"end
+ for _,row in E.Modifiers do local n=v.motionModifiers[row[1]];if not finite(n) or n&lt;0 or n&gt;3 then return false,"Invalid motion modifier"end end
+ for _,key in {"forward","lateral","lift","turn","startX","startY","startZ","endX","endY","endZ"}do local n=v.rootPath[key];if not finite(n) or math.abs(n)&gt;(if key=="turn" then 360 else 10) then return false,"Invalid root path"end end
+ for part,channel in v.channels do if not table.find(E.Parts,part) or type(channel)~="table" or type(channel.muted)~="boolean" or type(channel.locked)~="boolean" then return false,"Invalid channel"end end
+ if type(v.poseOverrides)~="table" or #v.poseOverrides&lt;5 or #v.poseOverrides&gt;64 then return false,"Pose key budget"end
+ local last=-1;local semantics={};local ids={};local lastSource=-1
+ for _,key in v.poseOverrides do
+  if type(key)~="table" or not id(key.id) or ids[key.id] or not finite(key.time) or key.time&lt;0 or key.time&gt;1 or key.time-last&lt;.001 or type(key.parts)~="table" then return false,"Invalid pose key"end
+  ids[key.id]=true;last=key.time
+  if key.semantic then local index=table.find(E.Semantics,key.semantic);if not index or semantics[key.semantic] or index~=1+#semantics then return false,"Semantic order"end;table.insert(semantics,key.semantic);semantics[key.semantic]=true;if not finite(key.sourceTime) or key.sourceTime&lt;0 or key.sourceTime&gt;1 or key.sourceTime&lt;=lastSource then return false,"Invalid source marker"end;lastSource=key.sourceTime end
+  for part,fields in key.parts do
+   if not E.Controls[part] or type(fields)~="table" then return false,"Invalid pose part"end
+   for field,n in fields do local control=nil;for _,row in E.Controls[part]do if row[1]==field then control=row end end;if not control or not finite(n) or n&lt;control[3] or n&gt;control[4] then return false,"Invalid pose channel"end end
+  end
+ end
+ if #semantics~=5 or v.poseOverrides[1].semantic~="Start" or v.poseOverrides[1].time~=0 or v.poseOverrides[#v.poseOverrides].semantic~="Recovery" or v.poseOverrides[#v.poseOverrides].time~=1 then return false,"Missing semantic boundaries"end
+ return true
+end
+function E.asset(p,id,lib)
+ local v=p.motionVariants and p.motionVariants[id]
+ if not v then return lib.assets[id]end
+ local base=assert(lib.assets[v.sourceAsset],"Missing variant source")
+ local asset=copy(base);asset.id=v.id;asset.name=v.name;asset.duration=v.timing.duration;asset.variant=true;asset.sourceType="variant";return asset
+end
+function E.variant(p,asset)return p.motionVariants and p.motionVariants[asset.id]end
+function E.key(v,id)for i,k in v.poseOverrides do if k.id==id then return k,i end end end
+function E.markers(v)local keys={};for _,k in v.poseOverrides do if k.semantic then table.insert(keys,k)end end;return keys end
+local function ease(t,kind)return if kind=="linear" then t elseif kind=="in" then t^3 elseif kind=="out" then 1-(1-t)^3 else t*t*(3-2*t)end
+function E.warp(v,t)
+ local markers=E.markers(v);local contact=markers[3].time;local hold=math.min(v.timing.hold,markers[4].time-contact-.002)
+ if t&gt;=contact and t&lt;=contact+hold then return markers[3].sourceTime end
+ for i=1,4 do local a,b=markers[i],markers[i+1];local start=a.time+(if i==3 then hold else 0)
+  if t&lt;=b.time then local u=ease(math.clamp((t-start)/math.max(.001,b.time-start),0,1),v.timing.easing);return a.sourceTime+(b.sourceTime-a.sourceTime)*u end
+ end;return 1
+end
+function E.moveKeys(v,ids,delta)
+ local low=-1;local high=1
+ for i,key in v.poseOverrides do if ids[key.id] then
+  if key.semantic=="Start" or key.semantic=="Recovery" then return 0 end
+  local j=i-1;while j&gt;=1 and ids[v.poseOverrides[j].id]do j-=1 end;low=math.max(low,(v.poseOverrides[j] and v.poseOverrides[j].time or 0)+.002-key.time)
+  j=i+1;while j&lt;=#v.poseOverrides and ids[v.poseOverrides[j].id]do j+=1 end;high=math.min(high,(v.poseOverrides[j] and v.poseOverrides[j].time or 1)-.002-key.time)
+ end end
+ delta=math.clamp(delta,low,high);for _,key in v.poseOverrides do if ids[key.id]then key.time+=delta end end;return delta
+end
+function E.addKey(v,id,t)
+ assert(#v.poseOverrides&lt;64,"Maximum 64 keys");for _,k in v.poseOverrides do assert(math.abs(k.time-t)&gt;=.002,"A key already exists here")end
+ assert(t&gt;.002 and t&lt;.998,"Keep Start/Recovery boundaries");local a,b=v.poseOverrides[1],v.poseOverrides[#v.poseOverrides]
+ for i=1,#v.poseOverrides-1 do if t&lt;=v.poseOverrides[i+1].time then a,b=v.poseOverrides[i],v.poseOverrides[i+1];break end end
+ local u=ease((t-a.time)/(b.time-a.time),v.timing.easing);local parts={}
+ for _,part in E.Parts do for _,row in E.Controls[part]do local field=row[1];local x=(a.parts[part] or {})[field] or 0;local y=(b.parts[part] or {})[field] or 0;local n=x+(y-x)*u;if math.abs(n)&gt;.000001 then parts[part]=parts[part] or {};parts[part][field]=n end end end
+ table.insert(v.poseOverrides,{id=id,time=t,parts=parts});table.sort(v.poseOverrides,function(a,b)return a.time&lt;b.time end)
+end
+local function deltas(v,part,t)
+ -- Empty semantic keys deliberately mean zero delta, so corrections return to base.
+ local keys=v.poseOverrides;local a,b=keys[1],keys[#keys]
+ for i=1,#keys-1 do if t&lt;=keys[i+1].time then a,b=keys[i],keys[i+1];break end end
+ local u=ease(math.clamp((t-a.time)/math.max(.001,b.time-a.time),0,1),v.timing.easing);local out={}
+ for _,row in E.Controls[part]do local field=row[1];local x=(a.parts[part] or {})[field] or 0;local y=(b.parts[part] or {})[field] or 0;out[field]=x+(y-x)*u end
+ return out
+end
+function E.apply(v,base,t)
+ if not v.enabled then return base end
+ local p=copy(base);local m=v.motionModifiers;local pulse=math.sin(math.pi*t)^2;local markers=E.markers(v);local contact=markers[3].time
+ local phaseScale=if t&lt;contact then m.anticipation elseif t&lt;markers[4].time then m.followThrough else m.recoveryTightness
+ -- Exaggerate around existing stance-neutral axes, then apply sparse key deltas.
+ for part,a in p do if type(a)=="table" then for field,n in a do if type(n)=="number" and not table.find({"x","y","z"},field)then a[field]=n*m.amplitude*(1+(phaseScale-1)*pulse)end end end end
+ p.root=p.root or {};p.torso=p.torso or {}
+ p.root.yaw=(p.root.yaw or 0)*m.hipRotation;p.torso.yaw=(p.torso.yaw or 0)*m.torsoFollow;p.torso.pitch=(p.torso.pitch or 0)*m.torsoFollow
+ p.root.x=(p.root.x or 0)*m.rootTravel;p.root.z=(p.root.z or 0)*m.rootTravel;p.root.pitch=(p.root.pitch or 0)+(m.impactLean-1)*20*pulse
+ for _,arm in {"ra","la"}do if p[arm]then p[arm].elbow=math.clamp((p[arm].elbow or 0)-(m.limbExtension-1)*60*pulse,0,160)end end
+ for _,leg in {"rl","ll"}do if p[leg]then p[leg].knee=math.clamp((p[leg].knee or 0)-(m.limbExtension-1)*60*pulse,0,160)end end
+ for _,part in E.Parts do if not (v.channels[part] and v.channels[part].muted) then
+  local d=deltas(v,part,t);local target=E.Map[part];local nonzero=false;for _,n in d do if math.abs(n)&gt;.00001 then nonzero=true end end
+  if nonzero then
+   if part=="RightLeg"then p.rl=p.rl or Solver.freeLeg(p,1);p.rf=nil elseif part=="LeftLeg"then p.ll=p.ll or Solver.freeLeg(p,-1);p.lf=nil elseif part=="RightFoot"then p.rf=p.rf or Solver.footTarget(p,1);p.rl=nil elseif part=="LeftFoot"then p.lf=p.lf or Solver.footTarget(p,-1);p.ll=nil end
+   p[target]=p[target] or {};for field,n in d do p[target][field]=(p[target][field] or 0)+n end
+  end
+ end end
+ local r=v.rootPath;local root=p.root;root.x=(root.x or 0)+r.lateral*pulse+r.startX*(1-t)+r.endX*t;root.z=(root.z or 0)-r.forward*pulse+r.startZ*(1-t)+r.endZ*t;root.y=(root.y or 0)+r.lift*pulse+r.startY*(1-t)+r.endY*t;root.yaw=(root.yaw or 0)+r.turn*pulse
+ for _,part in {"ra","la"}do if p[part] then p[part].elbow=math.clamp(p[part].elbow or 0,0,160)end end
+ for _,part in {"rl","ll"}do if p[part] then p[part].knee=math.clamp(p[part].knee or 0,0,160)end end
+ return p
+end
+return E
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="FML9">
         <Properties>
           <string name="Name">NinjaDuelAdapter</string>
           <ProtectedString name="Source">-- Adapter-owned character IDs. Core mixer/generator does not know Naruto names.
 local M=require(script.Parent.Model)
 local Sampler=require(script.Parent.Sampler)
+local Edit=require(script.Parent.MotionEdit)
 local A={Format="NinjaDuel.MotionDefinitions.v1"}
 function A.import(data,lib)
  local index=0
@@ -302,16 +534,23 @@ function A.ninjaDefinitions(preset,lib)
  local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
  local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
  local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
- for _,assetId in lib.assetOrder do
-  local asset=lib.assets[assetId];local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
+ local exportIds=table.clone(lib.assetOrder);for id in preset.motionVariants or {} do table.insert(exportIds,id)end;table.sort(exportIds)
+ for _,assetId in exportIds do
+  local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
+  local variant=Edit.variant(preset,actual)
+  if variant then local markers=Edit.markers(variant);local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then markers[3].time else markers[3].sourceTime;local recovery=if variant.enabled then markers[4].time else markers[4].sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
   local duration=timing.startup+timing.active+timing.recovery;local keys={}
-  for i=0,24 do
-   local t=i/24;local elapsed=t*duration
+  local samples={};for i=0,24 do samples[i/24]=true end
+  if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.markers(variant)[3].time;samples[contact+math.min(variant.timing.hold,Edit.markers(variant)[4].time-contact-.002)]=true end
+  local times={};for t in samples do table.insert(times,t)end;table.sort(times)
+  for _,t in times do
+   local elapsed=t*duration
    local phase=if elapsed&lt;=timing.startup then elapsed/timing.startup elseif elapsed&lt;=timing.startup+timing.active then 1+(elapsed-timing.startup)/timing.active else 2+(elapsed-timing.startup-timing.active)/timing.recovery
    table.insert(keys,{at=phase,ease="linear",pose=Sampler.mixedAnatomy(preset,asset,t,lib)})
   end
-  out.clips[asset.grammar]=keys;out.timings[asset.grammar]=M.copy(timing)
+  local exportName=if asset.variant then asset.id else asset.grammar
+  out.clips[exportName]=keys;out.timings[exportName]=M.copy(timing)
  end
  return out
 end
@@ -346,7 +585,7 @@ return A
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML8">
+      <Item class="ModuleScript" referent="FML10">
         <Properties>
           <string name="Name">NinjaSources</string>
           <ProtectedString name="Source">-- Generated from current Ninja Duel definitions; data only.
@@ -356,7 +595,7 @@ return game:GetService("HttpService"):JSONDecode([==[
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML9">
+      <Item class="ModuleScript" referent="FML11">
         <Properties>
           <string name="Name">PoseSolver</string>
           <ProtectedString name="Source">-- R15 anatomical solver reused from Ninja Duel / VelmoraMotionEngine (MIT ancestry).
@@ -373,7 +612,7 @@ end
 local function armCF(side,a)
 	a=a or {}
 	local shoulder=ANG(rad(a.raise or 0),0,0)*ANG(0,0,rad((a.out or 0)*side))*ANG(0,rad((a.twist or 0)*side),0)
-	return shoulder,ANG(rad(a.elbow or 0),0,0),ANG(rad(a.wrist or 0),0,rad((a.wroll or 0)*side))
+	return shoulder,ANG(rad(a.elbow or 0),rad((a.elbowTwist or 0)*side),0),ANG(rad(a.wrist or 0),0,rad((a.wroll or 0)*side))
 end
 local function legFK(side,l)
 	l=l or {}
@@ -437,12 +676,25 @@ local function build(spec)
 	return out
 end
 
+-- Preserve the solved stance when a correction switches between planted IK and FK.
+function Solver.freeLeg(spec,side)
+ local pose=build(spec);local prefix=if side==1 then "Right" else "Left"
+ local _,_,_,r11,r12,r13,_,r22,_,_,r32=pose[prefix.."Hip"]:GetComponents()
+ local knee=select(1,pose[prefix.."Knee"]:ToEulerAnglesXYZ());local ankle=select(1,pose[prefix.."Ankle"]:ToEulerAnglesXYZ())
+ return {lift=math.deg(math.atan2(r32,r22)),out=math.deg(math.asin(math.clamp(-r12,-1,1)))*side,twist=math.deg(math.atan2(r13,r11))*side,knee=-math.deg(knee),ankle=math.deg(ankle)}
+end
+function Solver.footTarget(spec,side)
+ local pose=build(spec);local prefix=if side==1 then "Right" else "Left"
+ local hip=pose.Root*CF(.5*side,-.55,0)*pose[prefix.."Hip"]
+ local ankle=hip*Vector3.new(0,-L1,0)+(hip.Rotation*pose[prefix.."Knee"])*Vector3.new(0,-L2,0)
+ return {x=ankle.X-.5*side,y=ankle.Y-ANKLE_Y,z=ankle.Z,yaw=0,toe=0}
+end
 Solver.build=build
 return Solver
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML10">
+      <Item class="ModuleScript" referent="FML12">
         <Properties>
           <string name="Name">Rig</string>
           <ProtectedString name="Source">-- Preview scaffold reuses Ninja Duel's R15 dimensions and joint spacing.
@@ -488,11 +740,12 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML11">
+      <Item class="ModuleScript" referent="FML13">
         <Properties>
           <string name="Name">Sampler</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
 local Solver=require(script.Parent.PoseSolver)
+local Edit=require(script.Parent.MotionEdit)
 local S={}
 S.Joints={Root={"Root"},Legs={"RightHip","RightKnee","RightAnkle","LeftHip","LeftKnee","LeftAnkle"},Hips={"Root"},Torso={"Waist"},LeftArm={"Left","LeftElbow","LeftWrist"},RightArm={"Right","RightElbow","RightWrist"},Head={"Neck"},Weapon={"Weapon"}}
 local function smooth(t) t=math.clamp(t,0,1);return t*t*(3-2*t) end
@@ -577,12 +830,12 @@ function S.mirror(pose)
  return p
 end
 function S.duration(preset,asset,lib)
- local selected=S.resolveAsset(preset,asset,lib);local clip=preset.clips[selected.grammar]
+ local selected=S.resolveAsset(preset,asset,lib);local variant=Edit.variant(preset,selected);if variant then return if variant.enabled then variant.timing.duration/variant.timing.playbackSpeed else variant.sourceDuration end;local clip=preset.clips[selected.grammar]
  return (if clip then clip.duration else selected.duration)/preset.motionDNA.cadence/(if selected.category=="Locomotion" then preset.motionDNA.strideFrequency*(preset.gait.cadence or 1) else 1)
 end
 function S.resolveAsset(preset,asset,lib)
  local id=preset.locomotionSet[asset.id]
- return if id and lib and lib.assets[id] then lib.assets[id] else asset
+ return if id and lib then Edit.asset(preset,id,lib) or asset else asset
 end
 function S.anatomy(preset,asset,t,mirror)
  local clip=preset.clips[asset.grammar];local pose=if clip then keysAt(clip.keys,t) else procedural(preset,asset,t)
@@ -599,13 +852,22 @@ local function shaped(preset,dna,reference)
 end
 local function own(preset,asset,t,mirror,lib,dna,reference)
  preset=shaped(preset,dna,reference)
- local anatomy=S.anatomy(preset,S.resolveAsset(preset,asset,lib),t,mirror)
+ local selected=S.resolveAsset(preset,asset,lib)
+ local anatomy=if Edit.variant(preset,selected) then S.mixedAnatomy(preset,selected,t,lib) else S.anatomy(preset,selected,t,false)
+ if mirror then anatomy=S.mirror(anatomy)end
  local pose=Solver.build(anatomy);local weapon=anatomy.weapon or {}
  pose.Weapon=CFrame.new(weapon.x or 0,weapon.y or 0,weapon.z or 0)*CFrame.Angles(math.rad(weapon.pitch or 0),math.rad(weapon.yaw or 0),math.rad(weapon.roll or 0))
  return pose
 end
 function S.sample(preset,asset,t,lib,mirror)
- t=math.clamp(t,0,1);local output=own(preset,asset,t,mirror,lib);local poseCache={}
+ t=math.clamp(t,0,1)
+ local actual=S.resolveAsset(preset,asset,lib)
+ if Edit.variant(preset,actual) then
+  local anatomy=S.mixedAnatomy(preset,actual,t,lib);if mirror then anatomy=S.mirror(anatomy)end
+  local output=Solver.build(anatomy);local w=anatomy.weapon or {};output.Weapon=CFrame.new(w.x or 0,w.y or 0,w.z or 0)*CFrame.Angles(math.rad(w.pitch or 0),math.rad(w.yaw or 0),math.rad(w.roll or 0));output.weaponHand=if mirror then "LeftHand" else "RightHand"
+  output.motion=Vector3.new(output.Root.Position.X,0,output.Root.Position.Z);output.Root=CFrame.new(0,output.Root.Position.Y,0)*output.Root.Rotation;return output
+ end
+ local output=own(preset,asset,t,mirror,lib);local poseCache={}
  local function sourcePose(id,layer,seen,depth)
   assert(depth&lt;9 and not seen[id],"Body source cycle");seen[id]=true
   local p=assert(lib.presets[id],"Missing motion source");if not poseCache[id] then poseCache[id]=own(p,asset,t,mirror,lib,preset.motionDNA,preset.metadata.dnaReference) end;local poses=table.clone(poseCache[id]);local spec=p.bodyLayers[layer]
@@ -630,9 +892,14 @@ function S.sample(preset,asset,t,lib,mirror)
  return output
 end
 function S.mixedAnatomy(preset,asset,t,lib)
+ local actual=S.resolveAsset(preset,asset,lib);local v=Edit.variant(preset,actual)
+ if v then
+  local proxy=table.clone(preset);proxy.locomotionSet=table.clone(preset.locomotionSet);proxy.locomotionSet[v.sourceAsset]=nil
+  return Edit.apply(v,S.mixedAnatomy(proxy,lib.assets[v.sourceAsset],if v.enabled then Edit.warp(v,t) else t,lib),t)
+ end
  local fields={Legs={"rf","lf","rl","ll"},Torso={"torso"},LeftArm={"la"},RightArm={"ra"},Head={"head"},Weapon={"weapon"}}
  local function resolve(p,layer,depth)
-  assert(depth&lt;9,"Source depth");local expressive=if p==preset then p else shaped(p,preset.motionDNA,preset.metadata.dnaReference);local result=S.anatomy(expressive,S.resolveAsset(p,asset,lib),t,false);local spec=p.bodyLayers[layer]
+  assert(depth&lt;9,"Source depth");local expressive=if p==preset then p else shaped(p,preset.motionDNA,preset.metadata.dnaReference);local selected=S.resolveAsset(p,asset,lib);local result=if Edit.variant(expressive,selected) then S.mixedAnatomy(expressive,selected,t,lib) else S.anatomy(expressive,selected,t,false);local spec=p.bodyLayers[layer]
   if spec.enabled and spec.source~="base" then
    local other=resolve(assert(lib.presets[spec.source]),layer,depth+1)
    if layer=="Root" or layer=="Hips" then
@@ -671,10 +938,10 @@ function S.sequence(preset,sequence,time,lib,mirror)
  for index,block in sequence.orderedClips do
   local duration=block.duration/preset.motionDNA.recoverySpeed
   if time&lt;cursor+duration or index==#sequence.orderedClips then
-   local t=math.clamp((time-cursor)/duration,0,1);local asset=assert(lib.assets[block.asset],"Missing clip")
+   local t=math.clamp((time-cursor)/duration,0,1);local asset=assert(Edit.asset(preset,block.asset,lib),"Missing clip")
    local pose=S.sample(preset,asset,t,lib,mirror)
    if index&gt;1 and block.transition=="blend" and block.blend&gt;0 and time-cursor&lt;block.blend then
-    local prev=sequence.orderedClips[index-1];local from=S.sample(preset,lib.assets[prev.asset],1,lib,mirror);local u=smooth((time-cursor)/block.blend)
+    local prev=sequence.orderedClips[index-1];local from=S.sample(preset,Edit.asset(preset,prev.asset,lib),1,lib,mirror);local u=smooth((time-cursor)/block.blend)
     for key,value in pose do if typeof(value)=="CFrame" and from[key] then pose[key]=from[key]:Lerp(value,u) elseif key=="motion" then pose.motion=from.motion:Lerp(value,u) end end
    end
    return pose,index,t
@@ -687,7 +954,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML12">
+      <Item class="ModuleScript" referent="FML14">
         <Properties>
           <string name="Name">Store</string>
           <ProtectedString name="Source">local M=require(script.Parent.Model)
@@ -739,10 +1006,134 @@ return Store
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML13">
+      <Item class="ModuleScript" referent="FML15">
+        <Properties>
+          <string name="Name">Timeline</string>
+          <ProtectedString name="Source">-- Full-width channel timeline. Data gestures use one undo checkpoint per drag.
+local UI=require(script.Parent.UI)
+local E=require(script.Parent.MotionEdit)
+local M=require(script.Parent.Model)
+local S=require(script.Parent.Sampler)
+local T={};T.__index=T
+function T.new(widget,parent,c,changed)
+ return setmetatable({widget=widget,parent=parent,c=c,changed=changed,zoom=1,multi=false,selection={},connections={}},T)
+end
+function T:dispose()if self.ui then self.ui:dispose()end end
+function T:refresh()
+ local c=self.c;local parent=self.parent;self:dispose();parent:ClearAllChildren();local u=UI.new(self.widget);self.ui=u
+ local variant=c:variant();local seq=c:sequence();local sequenceMode=c.sequenceMode
+ local function action(fn,msg)local ok,err=pcall(fn);self.changed(ok and msg or tostring(err),true)end
+ u:label(parent,sequenceMode and "SEQUENCE" or "POSE CHANNELS",{Position=UDim2.fromOffset(12,4),Size=UDim2.fromOffset(145,28),TextSize=11,Font=Enum.Font.BuilderSansBold},"accent")
+ u:button(parent,sequenceMode and "Edit motion" or "Sequence",{Position=UDim2.fromOffset(154,6),Size=UDim2.fromOffset(94,24)},function()c.sequenceMode=not c.sequenceMode;c.time=0;self.changed(nil,true)end)
+ u:button(parent,"+ Block",{Position=UDim2.fromOffset(256,6),Size=UDim2.fromOffset(72,24)},function()action(function()c:addClip(c.clip)end,"Block added")end)
+ u:button(parent,"+ Key",{Position=UDim2.fromOffset(336,6),Size=UDim2.fromOffset(62,24)},function()action(function()
+  assert(variant,"Create a variant first");local id=c:newId();c:variantEdit(function(v)E.addKey(v,id,c.time/S.duration(c.preset,c:asset(),c.library))end);c:selectKey(id)
+ end,"Pose key added")end)
+ u:button(parent,self.multi and "Multi ✓" or "Multi",{Position=UDim2.fromOffset(406,6),Size=UDim2.fromOffset(68,24)},function()self.multi=not self.multi;self.selection={};self:refresh()end,self.multi)
+ local zoom=u:button(parent,"−",{Position=UDim2.new(1,-122,0,6),Size=UDim2.fromOffset(26,24)},function()self.zoom=math.max(1,self.zoom/1.5);self:refresh()end)
+ u:tip(zoom,"Zoom out. Horizontal scrollbar appears when zoomed.")
+ u:button(parent,"+",{Position=UDim2.new(1,-90,0,6),Size=UDim2.fromOffset(26,24)},function()self.zoom=math.min(8,self.zoom*1.5);self:refresh()end)
+ u:button(parent,"Fit",{Position=UDim2.new(1,-58,0,6),Size=UDim2.fromOffset(46,24)},function()self.zoom=1;self:refresh()end)
+ local total=math.max(.1,if sequenceMode then M.duration(seq)/c.preset.motionDNA.recoverySpeed else S.duration(c.preset,c:asset(),c.library))
+ local labelWidth=146;local width=math.max(360,parent.AbsoluteSize.X-labelWidth-38)*self.zoom;self.width=width;self.total=total
+ local rows=if sequenceMode then 2 else #E.Parts
+ local area=u:make("ScrollingFrame",parent,{Name="TimelineCanvas",Position=UDim2.fromOffset(10,38),Size=UDim2.new(1,-20,1,-76),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=5,CanvasSize=UDim2.fromOffset(labelWidth+width+18,38+rows*24),ScrollingDirection=Enum.ScrollingDirection.XY})
+ self.area=area
+ for i=0,10 do local x=labelWidth+width*i/10;u:frame(area,{Position=UDim2.fromOffset(x,24),Size=UDim2.fromOffset(1,rows*24+10)},"line");u:label(area,string.format("%.2f",total*i/10),{Position=UDim2.fromOffset(x-12,0),Size=UDim2.fromOffset(42,18),TextSize=10},"muted")end
+ local scrub=u:make("TextButton",area,{Name="TimeRuler",Position=UDim2.fromOffset(labelWidth,0),Size=UDim2.fromOffset(width,22),Text="",BackgroundTransparency=1,ZIndex=3})
+ local startTime=0
+ u:dragInput(scrub,function()local mouse=self.widget:GetRelativeMousePosition();local x=mouse.X-(scrub.AbsolutePosition.X-self.widget.AbsolutePosition.X);startTime=math.clamp(x/width,0,1)*total;c.time=startTime;c.playing=false end,function(delta)c.time=math.clamp(startTime+delta.X/width*total,0,total)end,function()self.changed(nil,false)end)
+ if sequenceMode then
+  u:label(area,"Motion blocks",{Position=UDim2.fromOffset(2,31),Size=UDim2.fromOffset(136,25),TextSize=12},"muted")
+  local cursor=0
+  for i,block in seq.orderedClips do
+   local asset=c:asset(block.asset);local bWidth=block.duration/c.preset.motionDNA.recoverySpeed/total*width;local start=cursor/total*width
+   local b=u:button(area,asset.name,{Name="SequenceBlock_"..i,Position=UDim2.fromOffset(labelWidth+start,29),Size=UDim2.fromOffset(math.max(14,bWidth-3),42),TextSize=12},nil,i==c.selectedBlock)
+   u:tip(b,"Drag to reorder; drag the right edge to change duration.")
+   local original;local target=i
+   u:dragInput(b,function()original=self.widget:GetRelativeMousePosition().X;c.selectedBlock=i;c:checkpoint()end,function(delta)
+    b.Position=UDim2.fromOffset(labelWidth+math.clamp(start+delta.X,0,width-bWidth),29)
+    local centre=(start+delta.X+bWidth*.5)/width*total;local sum=0;target=#seq.orderedClips
+    for index,other in seq.orderedClips do sum+=other.duration/c.preset.motionDNA.recoverySpeed;if centre&lt;=sum then target=index;break end end
+   end,function()action(function()if target~=i then c:edit(function(p)M.reorder(p.sequences[1],i,target)end,false);c.selectedBlock=target end end,"Block selected")end)
+   local edge=u:button(b,"",{Name="BlockResize_"..i,Position=UDim2.new(1,-7,0,0),Size=UDim2.new(0,7,1,0),ZIndex=5},nil,true)
+   local length=block.duration
+   u:dragInput(edge,function()length=block.duration;c:checkpoint()end,function(delta)c:edit(function(p)p.sequences[1].orderedClips[i].duration=math.clamp(length+delta.X/width*total*c.preset.motionDNA.recoverySpeed,.12,5)end,false)end,function()self.changed("Block retimed",true)end)
+   cursor+=block.duration/c.preset.motionDNA.recoverySpeed
+  end
+  if #seq.orderedClips==0 then u:label(area,"Add motions from the browser to build a phrase.",{Position=UDim2.fromOffset(labelWidth+8,30),Size=UDim2.fromOffset(width-16,36),TextSize=12},"muted")end
+ else
+  local keys=if variant then variant.poseOverrides else {}
+  if not variant then
+   local authored=c.preset.clips[c:asset().grammar];local contact=.42;local recovery=.7;if authored and authored.timing then contact=authored.timing.startup/authored.duration;recovery=(authored.timing.startup+authored.timing.active)/authored.duration end
+   keys=E.create("preview","Preview",c:asset(),total,contact,recovery).poseOverrides
+  end
+  for i,part in E.Parts do local y=28+(i-1)*24
+   local channel=variant and variant.channels[part] or {};local label=u:button(area,part,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(94,22),TextSize=11},function()if variant then c:selectKey(c.selectedKey or "Contact",part);self.changed(nil,true,"Pose")end end,part==c.selectedPart)
+   u:tip(label,"Select this body channel. Corrections are additive to the source pose.")
+   for j,flag in {"muted","locked"}do local b=u:button(area,flag=="muted" and "M" or "L",{Position=UDim2.fromOffset(96+(j-1)*22,y),Size=UDim2.fromOffset(20,22),TextSize=10},function()action(function()c:variantEdit(function(v)v.channels[part]=v.channels[part] or {muted=false,locked=false};v.channels[part][flag]=not v.channels[part][flag]end)end)end,channel[flag]);u:tip(b,flag=="muted" and "Mute pose corrections on this channel" or "Lock this channel against edits")end
+   for _,key in keys do
+    local selected=(c.selectedKey==key.id and c.selectedPart==part) or self.selection[key.id]
+    local has=next(key.parts[part] or {})~=nil
+    local diamond=u:button(area,"",{Name="PoseKey_"..part.."_"..key.id,Position=UDim2.fromOffset(labelWidth+key.time*width-5,y+7),Size=UDim2.fromOffset(10,10),Rotation=45,ZIndex=5,BackgroundTransparency=if has or selected then 0 else .6},nil,selected)
+    u:tip(diamond,(key.semantic or "Extra pose").." · "..part..string.format(" · %.3fs",key.time*total))
+    local origin=0;local previous=0;local ids={}
+    u:dragInput(diamond,function()
+     if not variant then self.changed("Create a variant to edit keys",false);return end
+     c:selectKey(key.id,part);if self.multi then self.selection[key.id]=not self.selection[key.id]else self.selection={[key.id]=true}end
+     ids=table.clone(self.selection);if not next(ids)then ids[key.id]=true end;origin=key.time;previous=0;c:checkpoint()
+    end,function(delta)
+     if not variant then return end
+     local requested=delta.X/width;local moved=0;c:variantEdit(function(v)moved=E.moveKeys(v,ids,requested-previous)end,false);previous+=moved
+     local now=E.key(c:variant(),key.id);diamond.Position=UDim2.fromOffset(labelWidth+now.time*width-5,y+7);c.time=now.time*total
+    end,function()if variant then self.changed("Key selected / retimed",true,"Pose")end end)
+   end
+  end
+  -- Names stay separate from the channel diamonds, and are draggable semantic markers.
+  for _,key in keys do if key.semantic then
+   local marker=u:button(area,key.semantic,{Name="Marker_"..key.id,Position=UDim2.fromOffset(labelWidth+key.time*width-32,17),Size=UDim2.fromOffset(64,12),TextSize=9,ZIndex=6},nil,key.id==c.selectedKey)
+   local previous=0
+   u:dragInput(marker,function()if variant then c:selectKey(key.id);c:checkpoint();previous=0 end end,function(delta)if variant then local moved=0;c:variantEdit(function(v)moved=E.moveKeys(v,{[key.id]=true},delta.X/width-previous)end,false);previous+=moved;local now=E.key(c:variant(),key.id);marker.Position=UDim2.fromOffset(labelWidth+now.time*width-32,17);c.time=now.time*total end end,function()if variant then self.changed("Semantic marker retimed",true,"Motion")end end)
+  end end
+ end
+ self.playhead=u:frame(area,{Name="Playhead",Position=UDim2.fromOffset(labelWidth,0),Size=UDim2.fromOffset(2,rows*24+35),ZIndex=7,Active=false},"accent")
+ local detail=u:label(parent,"",{Position=UDim2.new(0,12,1,-30),Size=UDim2.new(1,-270,0,24),TextSize=11},"muted");self.detail=detail
+ if sequenceMode then
+  local selected=seq.orderedClips[c.selectedBlock]
+  self.detail.Size=UDim2.fromOffset(152,24)
+  local name=u:input(parent,seq.name,{Name="SequenceName",Position=UDim2.new(0,172,1,-30),Size=UDim2.fromOffset(138,24)},function(text)action(function()assert(#text&gt;0 and #text&lt;=64,"Name: 1–64 characters");c:edit(function(p)p.sequences[1].name=text end)end)end)
+  if selected then
+   u:input(parent,string.format("%.3f",selected.duration),{Name="BlockDuration",Position=UDim2.new(0,318,1,-30),Size=UDim2.fromOffset(62,24)},function(text)action(function()local n=tonumber(text);assert(n and n&gt;=.12 and n&lt;=5,"Block duration: 0.12–5s");c:edit(function(p)p.sequences[1].orderedClips[c.selectedBlock].duration=n end)end)end)
+   u:input(parent,string.format("%.3f",selected.blend),{Name="BlockBlend",Position=UDim2.new(0,388,1,-30),Size=UDim2.fromOffset(62,24)},function(text)action(function()local n=tonumber(text);assert(n and n&gt;=0 and n&lt;=.5,"Blend: 0–0.5s");c:edit(function(p)p.sequences[1].orderedClips[c.selectedBlock].blend=n end)end)end)
+   u:button(parent,selected.transition=="blend" and "Blend" or "Cut",{Position=UDim2.new(0,458,1,-30),Size=UDim2.fromOffset(56,24)},function()action(function()c:edit(function(p)local b=p.sequences[1].orderedClips[c.selectedBlock];b.transition=if b.transition=="blend"then "cut"else "blend"end)end)end)
+   u:button(parent,"Remove block",{Position=UDim2.new(0,522,1,-30),Size=UDim2.fromOffset(98,24)},function()action(function()c:edit(function(p)table.remove(p.sequences[1].orderedClips,c.selectedBlock)end);c.selectedBlock=math.max(1,c.selectedBlock-1)end)end)
+   u:tip(name,"Sequence name; following fields are duration and transition blend in seconds.")
+  end
+ elseif variant then
+  u:button(parent,"Delete key",{Position=UDim2.new(1,-104,1,-30),Size=UDim2.fromOffset(92,24)},function()action(function()c:variantEdit(function(v)local k,i=E.key(v,c.selectedKey);assert(k and not k.semantic,"Keep the five semantic keys");table.remove(v.poseOverrides,i)end);c:selectKey("Contact")end,"Extra key removed")end)
+  local stretch=u:input(parent,"1.2",{Position=UDim2.new(1,-244,1,-30),Size=UDim2.fromOffset(45,24)})
+  u:button(parent,"Stretch",{Position=UDim2.new(1,-193,1,-30),Size=UDim2.fromOffset(76,24)},function()action(function()local factor=tonumber(stretch.Text);assert(factor and factor&gt;=.25 and factor&lt;=3,"Stretch: 0.25–3");c:variantEdit(function(v)
+   local anchor=1;for _,key in v.poseOverrides do if self.selection[key.id]then anchor=math.min(anchor,key.time)end end
+   assert(anchor&lt;1,"Use Multi to select keys first")
+   local targets={};for _,key in v.poseOverrides do if self.selection[key.id] then assert(not key.semantic or (key.semantic~="Start" and key.semantic~="Recovery"),"Keep boundary keys fixed");targets[key.id]=anchor+(key.time-anchor)*factor end end
+   local previous=-1;for _,key in v.poseOverrides do local t=targets[key.id] or key.time;assert(t-previous&gt;=.002 and t&lt;=1,"Stretch would cross another key");previous=t end
+   for _,key in v.poseOverrides do key.time=targets[key.id] or key.time end
+  end)end,"Selected key timing stretched")end)
+ end
+ self:update(c.time,total)
+end
+function T:update(time,total)
+ if self.playhead then self.playhead.Position=UDim2.fromOffset(146+math.clamp(time/math.max(.1,total),0,1)*self.width,0)end
+ if self.detail then local c=self.c;local v=c:variant();local key=v and E.key(v,c.selectedKey);self.detail.Text=string.format("%.3f / %.3fs",time,total)..(if key then "   · "..(key.semantic or "Extra pose").." / "..(c.selectedPart or "Root") else "   · Drag ruler to scrub / diamonds to retime")end
+end
+return T
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="FML16">
         <Properties>
           <string name="Name">UI</string>
-          <ProtectedString name="Source">-- Visual thesis: a quiet slate motion workspace with a large lit R15 canvas.
+          <ProtectedString name="Source">-- Visual thesis: a focused motion bench; browser, R15 canvas, contextual inspector, full-width dope sheet.
 -- Content: source collection, live body, contextual mixer/DNA, editable phrase.
 -- Interaction: fast preview, restrained hover, selected blocks and immediate sliders.
 local UI={}
@@ -763,6 +1154,24 @@ function UI.new(widget)
   local t=self:make("TextLabel",parent,{Text=text,BackgroundTransparency=1,TextSize=14,Font=Enum.Font.BuilderSans,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd})
   self:paint(t,"TextColor3",role or "text");for k,v in props or {} do t[k]=v end;return t
  end
+ function self:tip(obj,text)
+  local tip=nil
+  self:connect(obj.MouseEnter,function()
+   if tip then tip:Destroy()end
+   tip=self:label(widget,text,{Name="Tooltip",Position=UDim2.fromOffset(math.clamp(obj.AbsolutePosition.X-widget.AbsolutePosition.X,8,math.max(8,widget.AbsoluteSize.X-270)),math.min(widget.AbsoluteSize.Y-52,obj.AbsolutePosition.Y-widget.AbsolutePosition.Y+obj.AbsoluteSize.Y+5)),Size=UDim2.fromOffset(260,44),BackgroundTransparency=0,TextWrapped=true,TextSize=11,ZIndex=100})
+   self:paint(tip,"BackgroundColor3","hover")
+  end)
+  self:connect(obj.MouseLeave,function()if tip then tip:Destroy();tip=nil end end)
+ end
+ function self:dragInput(obj,begin,move,finish)
+  self:connect(obj.InputBegan,function(input)if input.UserInputType~=Enum.UserInputType.MouseButton1 then return end
+   local start=widget:GetRelativeMousePosition();if begin then begin(start)end
+   self.drag=function()move(widget:GetRelativeMousePosition()-start)end;self.dragOwner=obj
+   local conn;conn=self:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End then
+    if self.drag then self.drag()end;self.drag=nil;self.dragOwner=nil;conn:Disconnect();if finish then finish()end
+   end end)
+  end)
+ end
  function self:button(parent,text,props,fn,primary)
   local b=self:make("TextButton",parent,{Text=text,TextSize=13,Font=Enum.Font.BuilderSansMedium,BorderSizePixel=0,AutoButtonColor=false})
   self:paint(b,"BackgroundColor3",primary and "accent" or "panel");self:paint(b,"TextColor3",primary and "onAccent" or "text")
@@ -780,12 +1189,12 @@ function UI.new(widget)
   self:paint(s,"ScrollBarImageColor3","line");for k,v in props or {} do s[k]=v end;return s
  end
  function self:slider(parent,label,min,max,value,y,callback,onBegin)
-  local row=self:frame(parent,{Size=UDim2.new(1,-8,0,58),Position=UDim2.fromOffset(0,y),BackgroundTransparency=1})
+  local row=self:frame(parent,{Size=UDim2.new(1,-8,0,44),Position=UDim2.fromOffset(0,y),BackgroundTransparency=1})
   self:label(row,label,{Size=UDim2.new(1,-62,0,22),TextSize=13})
   local box=self:input(row,string.format("%.2f",value),{Position=UDim2.new(1,-60,0,0),Size=UDim2.fromOffset(58,22)})
-  local track=self:frame(row,{Position=UDim2.fromOffset(0,34),Size=UDim2.new(1,0,0,5)},"line")
+  local track=self:frame(row,{Position=UDim2.fromOffset(0,29),Size=UDim2.new(1,0,0,5)},"line")
   local fill=self:frame(track,{Size=UDim2.fromScale((value-min)/(max-min),1)},"accent")
-  local hit=self:make("TextButton",row,{Position=UDim2.fromOffset(0,26),Size=UDim2.new(1,0,0,24),Text="",BackgroundTransparency=1,AutoButtonColor=false})
+  local hit=self:make("TextButton",row,{Position=UDim2.fromOffset(0,23),Size=UDim2.new(1,0,0,24),Text="",BackgroundTransparency=1,AutoButtonColor=false})
   local drag=false
   local function update(v) value=math.clamp(v,min,max);fill.Size=UDim2.fromScale((value-min)/(max-min),1);box.Text=string.format("%.2f",value);callback(value) end
   local function mouse()
@@ -796,7 +1205,7 @@ function UI.new(widget)
   self:connect(box.FocusLost,function()local n=tonumber(box.Text);if n and n==n then if onBegin then onBegin() end;update(n)else box.Text=string.format("%.2f",value)end end)
   return row
  end
- function self:dispose() for _,c in self.connections do c:Disconnect() end;self.connections={};self.styles={} end
+ function self:dispose() for _,child in widget:GetChildren()do if child.Name=="Tooltip"then child:Destroy()end end;for _,c in self.connections do c:Disconnect() end;self.connections={};self.styles={} end
  self:connect(studio.ThemeChanged,function()self.colors=palette();for obj,roles in self.styles do if obj.Parent then for property,role in roles do obj[property]=self.colors[role] end end end end)
  self:connect(game:GetService("RunService").RenderStepped,function() if self.drag and self.dragOwner.Parent and widget.Enabled then self.drag() end end)
  return self
@@ -805,113 +1214,160 @@ return UI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="FML14">
+      <Item class="ModuleScript" referent="FML17">
         <Properties>
           <string name="Name">View</string>
-          <ProtectedString name="Source">local UI=require(script.Parent.UI)
+          <ProtectedString name="Source">-- One authoring workflow: browse -&gt; variant -&gt; pose/timing -&gt; compare -&gt; save/export.
+local UI=require(script.Parent.UI)
 local M=require(script.Parent.Model)
+local E=require(script.Parent.MotionEdit)
 local Library=require(script.Parent.Library)
-local Sampler=require(script.Parent.Sampler)
+local S=require(script.Parent.Sampler)
 local Rig=require(script.Parent.Rig)
 local Controller=require(script.Parent.Controller)
+local Timeline=require(script.Parent.Timeline)
+local EditInspector=require(script.Parent.EditInspector)
 local View={}
 function View.mount(widget,plugin)
- local c=Controller.create(plugin);local ui=UI.new(widget);local scopes={};local alive=true
- local root=ui:frame(widget,{Size=UDim2.fromScale(1,1),ClipsDescendants=true})
- local header=ui:frame(root,{Size=UDim2.new(1,0,0,104)})
- ui:label(header,"Forge Motion Lab",{Position=UDim2.fromOffset(18,8),Size=UDim2.fromOffset(220,32),TextSize=20,Font=Enum.Font.BuilderSansBold})
- ui:label(header,"Motion creation · R15",{Position=UDim2.fromOffset(18,40),Size=UDim2.fromOffset(200,18),TextSize=12},"muted")
- local nameBox=ui:input(header,c.preset.name,{Position=UDim2.fromOffset(246,14),Size=UDim2.new(1,-538,0,30)},function(text)if #text&gt;0 and #text&lt;=80 then c:edit(function(p)p.name=text end)end end)
- local status=ui:label(root,"Ready",{Position=UDim2.new(0,16,1,-27),Size=UDim2.new(1,-32,0,22),TextSize=12},"muted")
- local dirty=ui:label(header,"Unsaved mix",{Position=UDim2.fromOffset(246,47),Size=UDim2.new(1,-540,0,18),TextSize=12},"muted")
- local left=ui:frame(root,{Position=UDim2.fromOffset(12,108),Size=UDim2.new(0,210,1,-312)})
- local right=ui:frame(root,{Position=UDim2.new(1,-292,0,108),Size=UDim2.new(0,280,1,-312)})
- local center=ui:frame(root,{Position=UDim2.fromOffset(234,108),Size=UDim2.new(1,-538,1,-312)},"canvas")
- local bottom=ui:frame(root,{Position=UDim2.new(0,12,1,-192),Size=UDim2.new(1,-24,0,158)})
- local timeReadout=ui:label(center,"0.00s",{Position=UDim2.new(1,-100,0,44),Size=UDim2.fromOffset(86,18),TextXAlignment=Enum.TextXAlignment.Right,TextSize=11},"muted")
- local title=ui:label(center,"Run",{Position=UDim2.fromOffset(14,12),Size=UDim2.new(1,-110,0,24),TextSize=17,Font=Enum.Font.BuilderSansBold})
- local subtitle=ui:label(center,"Live R15 preview",{Position=UDim2.fromOffset(14,38),Size=UDim2.new(1,-28,0,18),TextSize=12},"muted")
- local viewport=ui:make("ViewportFrame",center,{Position=UDim2.fromOffset(0,65),Size=UDim2.new(1,0,1,-110),BackgroundTransparency=1,Ambient=Color3.fromRGB(165,174,192),LightColor=Color3.fromRGB(233,240,255),LightDirection=Vector3.new(-1,-1,-.5),BorderSizePixel=0})
+ local c=Controller.create(plugin);local ui=UI.new(widget);local scopes={};local alive=true;local inspectorTab="Mix"
+ local root=ui:frame(widget,{Name="MotionWorkspace",Size=UDim2.fromScale(1,1),ClipsDescendants=true})
+ local header=ui:frame(root,{Size=UDim2.new(1,0,0,78)},"panel")
+ ui:label(header,"FORGE  /  MOTION LAB",{Position=UDim2.fromOffset(12,8),Size=UDim2.fromOffset(182,24),TextSize=13,Font=Enum.Font.BuilderSansBold})
+ local nameBox=ui:input(header,c.preset.name,{Position=UDim2.fromOffset(196,7),Size=UDim2.new(1,-478,0,28)},function(text)if #text&gt;0 and #text&lt;=80 then c:edit(function(p)p.name=text end)end end)
+ local dirty=ui:label(header,"Unsaved",{Position=UDim2.fromOffset(12,46),Size=UDim2.fromOffset(100,20),TextSize=11},"muted")
+ local status=ui:label(root,"Ready",{Position=UDim2.new(0,12,1,-24),Size=UDim2.new(1,-24,0,20),TextSize=11},"muted")
+ local left=ui:frame(root,{Name="MotionBrowser"},"panel")
+ local right=ui:frame(root,{Name="ContextInspector"},"panel")
+ local center=ui:frame(root,{Name="MotionCanvas"},"canvas")
+ local bottom=ui:frame(root,{Name="MotionTimeline"},"panel")
+ local divider=ui:frame(root,{Size=UDim2.new(1,-16,0,4),Active=true},"line")
+ local timelineHeight=236;local savedHeight=nil
+ local function layout()
+  local width=root.AbsoluteSize.X;local height=root.AbsoluteSize.Y;local lw=if width&lt;1000 then 188 else 250;local rw=if width&lt;1000 then 238 else 286
+  local th=math.clamp(savedHeight or (if height&lt;680 then 192 else timelineHeight),180,math.min(300,math.max(180,height-360)))
+  left.Position=UDim2.fromOffset(8,86);left.Size=UDim2.new(0,lw,1,-th-122)
+  right.Position=UDim2.new(1,-rw-8,0,86);right.Size=UDim2.new(0,rw,1,-th-122)
+  center.Position=UDim2.fromOffset(lw+16,86);center.Size=UDim2.new(1,-lw-rw-32,1,-th-122)
+  bottom.Position=UDim2.new(0,8,1,-th-28);bottom.Size=UDim2.new(1,-16,0,th)
+  divider.Position=UDim2.new(0,8,1,-th-34)
+ end
+ local resizeStart=0;local timeline
+ ui:dragInput(divider,function()resizeStart=bottom.AbsoluteSize.Y end,function(delta)savedHeight=math.clamp(resizeStart-delta.Y,180,300);layout()end,function()if timeline then timeline:refresh()end end)
+ local title=ui:label(center,"Run",{Position=UDim2.fromOffset(12,7),Size=UDim2.new(1,-104,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
+ local timeReadout=ui:label(center,"0.00s",{Position=UDim2.new(1,-98,0,10),Size=UDim2.fromOffset(86,18),TextSize=11,TextXAlignment=Enum.TextXAlignment.Right},"muted")
+ local subtitle=ui:label(center,"Live R15 preview",{Position=UDim2.fromOffset(12,33),Size=UDim2.new(1,-24,0,18),TextSize=11},"muted")
+ local viewport=ui:make("ViewportFrame",center,{Name="MainPreview",Position=UDim2.fromOffset(0,56),Size=UDim2.new(1,0,1,-140),BackgroundTransparency=1,Ambient=Color3.fromRGB(165,174,192),LightColor=Color3.fromRGB(233,240,255),LightDirection=Vector3.new(-1,-1,-.5),BorderSizePixel=0})
  local world=Instance.new("WorldModel");world.Parent=viewport
  local camera=Instance.new("Camera");camera.FieldOfView=38;camera.Parent=viewport;viewport.CurrentCamera=camera
  local rig=Rig.new(world);local rigB=Rig.new(world,Color3.fromRGB(225,180,115));rigB.model.Parent=nil
+ local ghostPrev=Rig.new(nil,Color3.fromRGB(99,164,217));local ghostNext=Rig.new(nil,Color3.fromRGB(174,195,129))
+ for _,ghost in {ghostPrev,ghostNext}do for name,part in ghost.parts do part.Transparency=if name=="HumanoidRootPart"then 1 else .82 end end
  local grid=Instance.new("Folder");grid.Name="Grid";grid.Parent=world
- for i=-8,8 do for _,axis in {"x","z"} do local p=Instance.new("Part");p.Size=if axis=="x" then Vector3.new(16,.015,.025) else Vector3.new(.025,.015,16);p.CFrame=CFrame.new(if axis=="x" then Vector3.new(0,-.02,i) else Vector3.new(i,-.02,0));p.Anchored=true;p.CanCollide=false;p.Color=Color3.fromRGB(68,87,111);p.Transparency=if i==0 then .2 else .65;p.Parent=grid end end
- local showGrid=true;local showRoot=true;local mode="front";local yaw=math.pi;local pitch=.16;local distance=12;local drag=nil;local last=nil
+ for i=-8,8 do for _,axis in {"x","z"}do local part=Instance.new("Part");part.Size=if axis=="x"then Vector3.new(16,.015,.025)else Vector3.new(.025,.015,16);part.CFrame=CFrame.new(if axis=="x"then Vector3.new(0,-.02,i)else Vector3.new(i,-.02,0));part.Anchored=true;part.CanCollide=false;part.Color=Color3.fromRGB(68,87,111);part.Transparency=if i==0 then .2 else .7;part.Parent=grid end end
+ local path=Instance.new("Folder");path.Name="RootTrajectory";path.Parent=world
+ local showGrid=true;local showRoot=true;local ghosts=false;local editPose=false;local mode="front";local yaw=math.pi;local pitch=.16;local distance=12;local orbit=false;local last=nil
  local function updateCamera()camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(yaw)*distance,2.2+math.sin(pitch)*distance,math.cos(yaw)*distance),Vector3.new(0,2.2,0))end;updateCamera()
- local refresh,refreshLibrary,refreshInspector,refreshTimeline
- local function state()nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "Unsaved changes" else "Saved preset";title.Text=if c.sequenceMode then c:sequence().name else Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).name;subtitle.Text=if c.compare then "A: pinned reference    B: current edit" else "Live R15 · "..(if c.preset.clips[Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).grammar] then "authored clip / editable mix" else "procedural starting motion")end
+ local refresh,refreshLibrary,refreshInspector;local thumbnailRigs={};local pathDirty=true
+ local function state(message)
+  if message then status.Text=message end
+  nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "● Unsaved" else "✓ Saved"
+  local actual=S.resolveAsset(c.preset,c:asset(),c.library)
+  title.Text=if c.sequenceMode then c:sequence().name else actual.name
+  subtitle.Text=if c.compare then "A · original       B · current variant / mix" elseif c:variant() then "Editable variant · "..(c.selectedPart or "RightArm") elseif c.preset.clips[actual.grammar]then "Authored anatomy · "..c.preset.name else "Procedural starting block · "..c.preset.name
+  pathDirty=true
+ end
  local function action(fn,message)
-  local ok,err=pcall(fn);status.Text=if ok then message or "Updated" else tostring(err):gsub("^.-:%d+: ","");state();if ok and refresh then refresh() end
+  local ok,err=pcall(fn);state(if ok then message or "Updated" else tostring(err):gsub("^.-:%d+: ",""));if ok and refresh then refresh()end
  end
  local popup=nil;local popupUI=nil
  local function closeMenu()if popupUI then popupUI:dispose();popupUI=nil end;if popup then popup:Destroy();popup=nil end end
  local function menu(anchor,items,chosen)
   closeMenu();popupUI=UI.new(widget)
-  popup=ui:frame(root,{Size=UDim2.fromOffset(math.max(180,anchor.AbsoluteSize.X),math.min(320,#items*30+8)),Position=UDim2.fromOffset(math.clamp(anchor.AbsolutePosition.X-root.AbsolutePosition.X,8,root.AbsoluteSize.X-210),math.min(root.AbsoluteSize.Y-330,anchor.AbsolutePosition.Y-root.AbsolutePosition.Y+anchor.AbsoluteSize.Y+4)),ZIndex=50},"hover")
-  local scroll=ui:scroll(popup,{Size=UDim2.new(1,-8,1,-8),Position=UDim2.fromOffset(4,4),ZIndex=51})
-  for i,item in items do popupUI:button(scroll,item.name,{Position=UDim2.fromOffset(0,(i-1)*30),Size=UDim2.new(1,-4,0,28),ZIndex=52},function()closeMenu();chosen(item.id)end)end
+  local height=math.min(320,#items*28+8);local x=math.clamp(anchor.AbsolutePosition.X-widget.AbsolutePosition.X,8,math.max(8,root.AbsoluteSize.X-218));local y=math.clamp(anchor.AbsolutePosition.Y-widget.AbsolutePosition.Y+anchor.AbsoluteSize.Y+4,8,math.max(8,root.AbsoluteSize.Y-height-28))
+  popup=popupUI:frame(root,{Size=UDim2.fromOffset(210,height),Position=UDim2.fromOffset(x,y),ZIndex=50},"hover")
+  local scroll=popupUI:scroll(popup,{Size=UDim2.new(1,-8,1,-8),Position=UDim2.fromOffset(4,4),ZIndex=51})
+  for i,item in items do popupUI:button(scroll,item.name,{Position=UDim2.fromOffset(0,(i-1)*28),Size=UDim2.new(1,-4,0,26),ZIndex=52},function()closeMenu();chosen(item.id)end)end
  end
  local function pick(anchor,items,fn)menu(anchor,items,function(id)action(function()fn(id)end)end)end
- local save=ui:button(header,"Save",{Position=UDim2.new(1,-282,0,14),Size=UDim2.fromOffset(72,30)},function()action(function()c:save()end,"Preset saved locally")end,true)
- ui:button(header,"Export",{Position=UDim2.new(1,-200,0,14),Size=UDim2.fromOffset(82,30)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Export in Edit mode");local module=c:export(game:GetService("ServerStorage"));game:GetService("Selection"):Set({module})end,"Config exported to ServerStorage · no gameplay changes")end)
- ui:button(header,"Attach R15",{Position=UDim2.new(1,-108,0,14),Size=UDim2.fromOffset(94,30)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Apply in Edit mode");local selected=game:GetService("Selection"):Get()[1];assert(selected and selected:IsA("Model") and selected:FindFirstChild("Humanoid") and selected.Humanoid.RigType==Enum.HumanoidRigType.R15,"Select an R15 Model first");c:export(selected)end,"Profile attached to R15 · animations untouched")end)
- local new=ui:button(header,"New profile",{Position=UDim2.fromOffset(18,72),Size=UDim2.fromOffset(94,28)})
- ui:connect(new.Activated,function()local items={{id="blank",name="Blank profile"}};for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end;pick(new,items,function(id)c:new(if id=="blank" then nil else id)end)end)
- ui:button(header,"Duplicate",{Position=UDim2.fromOffset(120,72),Size=UDim2.fromOffset(80,28)},function()action(function()c:duplicate()end)end)
- local deleting=false
- ui:button(header,"Delete",{Position=UDim2.fromOffset(208,72),Size=UDim2.fromOffset(64,28)},function()if not deleting then deleting=true;status.Text="Click Delete again to remove this custom preset";return end;deleting=false;action(function()c.store:delete(c.preset.id);c:new(nil)end,"Preset removed")end)
- ui:button(header,"↶",{Position=UDim2.fromOffset(286,72),Size=UDim2.fromOffset(30,28)},function()action(function()c:undo()end)end)
- ui:button(header,"↷",{Position=UDim2.fromOffset(320,72),Size=UDim2.fromOffset(30,28)},function()action(function()c:redo()end)end)
- ui:button(header,"Pin A",{Position=UDim2.fromOffset(366,72),Size=UDim2.fromOffset(66,28)},function()action(function()c:pinCompare();rigB.model.Parent=world end,"A pinned; edit B to compare")end)
- ui:button(header,"Clear A/B",{Position=UDim2.fromOffset(440,72),Size=UDim2.fromOffset(78,28)},function()action(function()c.compare=nil;rigB.model.Parent=nil end)end)
- ui:button(header,"Mirror",{Position=UDim2.fromOffset(534,72),Size=UDim2.fromOffset(70,28)},function()action(function()c.mirror=not c.mirror end,c.mirror and "Mirror off" or "Mirror on")end)
+ ui:button(header,"Save",{Position=UDim2.new(1,-274,0,7),Size=UDim2.fromOffset(64,28)},function()action(function()c:save()end,"Profile + variants saved locally")end,true)
+ ui:button(header,"Export",{Position=UDim2.new(1,-204,0,7),Size=UDim2.fromOffset(68,28)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Export in Edit mode");local module=c:export(game:GetService("ServerStorage"));game:GetService("Selection"):Set({module})end,"Edited poses exported · inert data in ServerStorage")end)
+ ui:button(header,"Attach R15",{Position=UDim2.new(1,-130,0,7),Size=UDim2.fromOffset(90,28)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Attach in Edit mode");local selected=game:GetService("Selection"):Get()[1];assert(selected and selected:IsA("Model")and selected:FindFirstChild("Humanoid")and selected.Humanoid.RigType==Enum.HumanoidRigType.R15,"Select an R15 Model first");c:export(selected)end,"Data attached to R15")end)
+ local more=ui:button(header,"⋯",{Position=UDim2.new(1,-34,0,7),Size=UDim2.fromOffset(26,28)})
+ ui:connect(more.Activated,function()pick(more,{{id="duplicate",name="Duplicate profile"},{id="delete",name="Delete saved profile"},{id="import",name="Import selected export"}},function(id)
+  if id=="duplicate"then c:duplicate()elseif id=="delete"then c.store:delete(c.preset.id);c:new(nil)else local selected=game:GetService("Selection"):Get()[1];assert(selected,"Select a Motion Lab export");c:import(selected)end
+ end)end)
+ local new=ui:button(header,"New profile",{Position=UDim2.fromOffset(112,44),Size=UDim2.fromOffset(84,24)})
+ ui:connect(new.Activated,function()local items={{id="blank",name="Blank profile"}};for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end;pick(new,items,function(id)c:new(if id=="blank"then nil else id)end)end)
+ for i,spec in {{"↶",function()c:undo()end},{"↷",function()c:redo()end},{"Pin A",function()c:pinCompare()end},{"Clear A/B",function()c.compare=nil end},{"Mirror",function()c.mirror=not c.mirror end}}do local x=if i&lt;3 then 202+(i-1)*28 else 266+(i-3)*72;local b=ui:button(header,spec[1],{Position=UDim2.fromOffset(x,44),Size=UDim2.fromOffset(if i&lt;3 then 24 else 66,24)},function()action(spec[2])end);ui:tip(b,({"Undo profile / variant edit","Redo last edit","Freeze current motion as reference A","Return to one rig","Mirror preview; source data is unchanged"})[i])end
+ local create=ui:button(header,"Create Variant",{Position=UDim2.new(1,-128,0,44),Size=UDim2.fromOffset(116,24)},function()action(function()c:createVariant();inspectorTab="Pose";editPose=true end,"Variant created · select a channel or key")end,true)
+ ui:tip(create,"Add non-destructive pose/timing corrections to the selected motion.")
  local function scope(key,parent)
-  if scopes[key] then scopes[key]:dispose() end;parent:ClearAllChildren();scopes[key]=UI.new(widget);return scopes[key]
+  if scopes[key]then scopes[key]:dispose()end;parent:ClearAllChildren();scopes[key]=UI.new(widget);return scopes[key]
  end
- local search="";local category="All"
+ local search="";local category="All";local page=1
+ local categories={{"All","All"},{"Locomotion","Move"},{"Punches","Punch"},{"Kicks","Kick"},{"Knees","Knee"},{"Elbows","Elbow"},{"Palm","Palm"},{"Dodges","Dodge"},{"Aerial","Air"},{"Wall","Wall"},{"Reactions","React"},{"Other","Other"}}
  refreshLibrary=function()
-  local u=scope("library",left);u:label(left,"Sources",{Position=UDim2.fromOffset(12,10),Size=UDim2.new(1,-24,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
-  for i,tab in {"Characters","Library","Custom"} do u:button(left,tab,{Position=UDim2.new((i-1)/3,8,0,42),Size=UDim2.new(1/3,-10,0,27)},function()c.tab=tab;search="";refreshLibrary()end,c.tab==tab)end
-  local field=u:input(left,search,{Position=UDim2.fromOffset(10,78),Size=UDim2.new(1,-20,0,30),PlaceholderText="Search sources"})
-  u:connect(field.FocusLost,function()search=field.Text:lower();refreshLibrary()end)
-  local y=116
-  if c.tab=="Library" then local filter=u:button(left,category.." ▾",{Position=UDim2.fromOffset(10,y),Size=UDim2.new(1,-20,0,28)})
-   u:connect(filter.Activated,function()local items={{id="All",name="All families"}};for _,family in Library.Families do table.insert(items,{id=family,name=family})end;pick(filter,items,function(id)category=id end)end);y+=36 end
-  local scroll=u:scroll(left,{Position=UDim2.fromOffset(8,y),Size=UDim2.new(1,-16,1,-y-42)})
-  local rows={}
-  if c.tab=="Library" then for _,id in c.library.assetOrder do local a=c.library.assets[id];if (category=="All" or a.category==category) and (search=="" or a.name:lower():find(search,1,true)) then table.insert(rows,{id=id,name=a.name,desc=a.category})end end
-  else for _,id in c.library.order do local p=c.library.presets[id];local custom=c.store.custom[id]~=nil;if (c.tab=="Custom")==custom and (search=="" or p.name:lower():find(search,1,true)) then table.insert(rows,{id=id,name=p.name,desc=if p.metadata.sourceType=="ninja-duel" then "Authored · Ninja Duel" elseif custom then "Saved motion profile" else "Generated starting profile"})end end end
-  for i,row in rows do
-   local b=u:button(scroll,"",{Position=UDim2.fromOffset(0,(i-1)*62),Size=UDim2.new(1,-6,0,56)},function()action(function()if c.tab=="Library" then c.clip=row.id;c.sequenceMode=false;c.time=0 else c:load(row.id)end end)end)
-   u:label(b,row.name,{Position=UDim2.fromOffset(10,6),Size=UDim2.new(1,-20,0,24),Font=Enum.Font.BuilderSansMedium})
-   u:label(b,row.desc,{Position=UDim2.fromOffset(10,30),Size=UDim2.new(1,-20,0,18),TextSize=11},"muted")
-   if c.tab=="Library" and c.clip==row.id then u:frame(b,{Size=UDim2.new(0,3,1,-10),Position=UDim2.fromOffset(0,5)},"accent")end
+  local u=scope("library",left);thumbnailRigs={}
+  u:label(left,"MOTION BROWSER",{Position=UDim2.fromOffset(10,6),Size=UDim2.new(1,-20,0,22),TextSize=11,Font=Enum.Font.BuilderSansBold},"muted")
+  local field=u:input(left,search,{Position=UDim2.fromOffset(8,32),Size=UDim2.new(1,-16,0,28),PlaceholderText="Search name / tags"})
+  u:connect(field.FocusLost,function()search=field.Text:lower();page=1;refreshLibrary()end)
+  for i,tab in {"Characters","Motions","Custom"}do u:button(left,tab,{Position=UDim2.new((i-1)/3,6,0,66),Size=UDim2.new(1/3,-8,0,25),TextSize=11},function()c.tab=tab;page=1;search="";refreshLibrary()end,c.tab==tab or (c.tab=="Library"and tab=="Motions"))end
+  local isMotion=c.tab=="Motions"or c.tab=="Library";local y=100
+  if isMotion then
+   for i,cat in categories do u:button(left,cat[2],{Position=UDim2.new(((i-1)%4)/4,6,0,y+math.floor((i-1)/4)*24),Size=UDim2.new(1/4,-8,0,21),TextSize=10},function()category=cat[1];page=1;refreshLibrary()end,category==cat[1])end;y+=78
   end
-  if #rows==0 then u:label(scroll,if c.tab=="Custom" then "No saved profiles yet.\nSave a mix to keep it here." else "No matching sources.",{Size=UDim2.new(1,-10,0,80),TextWrapped=true,TextSize=13},"muted")end
-  u:button(left,"Import selected export",{Position=UDim2.new(0,10,1,-34),Size=UDim2.new(1,-20,0,26)},function()action(function()local item=game:GetService("Selection"):Get()[1];assert(item,"Select an exported ModuleScript or JSON value");c:import(item)end,"Imported safely from JSON")end)
+  local rows={}
+  if isMotion then
+   local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do table.insert(ids,id)end
+   for _,id in ids do local a=c:asset(id);local other=not table.find({"Locomotion","Punches","Kicks","Knees","Elbows","Dodges","Aerial","Wall","Reactions"},a.category)
+    local match=category=="All"or a.category==category or(category=="Palm"and a.grammar:find("Palm"))or(category=="Other"and other)
+    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.variant then "Variant · "..c.preset.name else a.category.." · "..c.preset.name,asset=a})end
+   end
+  else
+   for _,id in c.library.order do local p=c.library.presets[id];local custom=c.store.custom[id]~=nil;if (c.tab=="Custom")==custom and(search==""or p.name:lower():find(search,1,true))then table.insert(rows,{id=id,name=p.name,desc=if custom then "Saved profile + variants"elseif p.metadata.sourceType=="ninja-duel"then "Ninja Duel · authored"else "Starting expression",profile=p})end end
+  end
+  local pages=math.max(1,math.ceil(#rows/8));page=math.clamp(page,1,pages)
+  local scroll=u:scroll(left,{Position=UDim2.fromOffset(6,y),Size=UDim2.new(1,-12,1,-y-66)})
+  for index=(page-1)*8+1,math.min(page*8,#rows)do local row=rows[index];local i=index-(page-1)*8
+   local card=u:button(scroll,"",{Position=UDim2.fromOffset(0,(i-1)*68),Size=UDim2.new(1,-4,0,62)},function()action(function()
+    if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact"else c:load(row.id);inspectorTab="Mix"end
+   end)end,isMotion and c.clip==row.id)
+   local thumb=u:make("ViewportFrame",card,{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(44,54),BackgroundTransparency=1,Ambient=Color3.fromRGB(170,182,201),LightColor=Color3.new(1,1,1),BorderSizePixel=0})
+   local tw=Instance.new("WorldModel");tw.Parent=thumb;local tr=Rig.new(tw);local tc=Instance.new("Camera");tc.CFrame=CFrame.lookAt(Vector3.new(5,4,-8),Vector3.new(0,2.6,0));tc.FieldOfView=40;tc.Parent=thumb;thumb.CurrentCamera=tc
+   local profile=row.profile or c.preset;local asset=row.asset or c.library.assets.jab;local ok,pose=pcall(S.sample,profile,asset,.42,c.library);if ok then Rig.apply(tr,pose,Vector3.new(0,3,0),false,false)end;table.insert(thumbnailRigs,tr)
+   u:label(card,row.name,{Position=UDim2.fromOffset(54,5),Size=UDim2.new(1,-84,0,22),TextSize=12,Font=Enum.Font.BuilderSansBold})
+   u:label(card,row.desc,{Position=UDim2.fromOffset(54,29),Size=UDim2.new(1,-62,0,18),TextSize=10},"muted")
+   if isMotion then local add=u:button(card,"+",{Position=UDim2.new(1,-27,0,6),Size=UDim2.fromOffset(22,22)},function()action(function()c:addClip(row.id)end,"Added to sequence")end);u:tip(add,"Add "..row.name.." to the sequence")end
+  end
+  if #rows==0 then u:label(scroll,"No matching motions / saved profiles.",{Size=UDim2.new(1,-8,0,70),TextWrapped=true,TextSize=12},"muted")end
+  u:button(left,"‹",{Position=UDim2.new(0,8,1,-60),Size=UDim2.fromOffset(28,22)},function()page=math.max(1,page-1);refreshLibrary()end)
+  u:label(left,page.." / "..pages,{Position=UDim2.new(0,46,1,-60),Size=UDim2.new(1,-92,0,22),TextSize=11,TextXAlignment=Enum.TextXAlignment.Center},"muted")
+  u:button(left,"›",{Position=UDim2.new(1,-36,1,-60),Size=UDim2.fromOffset(28,22)},function()page=math.min(pages,page+1);refreshLibrary()end)
+  u:button(left,"Import selected export",{Position=UDim2.new(0,8,1,-30),Size=UDim2.new(1,-16,0,24),TextSize=11},function()action(function()local selected=game:GetService("Selection"):Get()[1];assert(selected,"Select an exported ModuleScript or JSON value");c:import(selected)end,"Imported from validated JSON")end)
  end
- local inspectorTab="Mixer"
  refreshInspector=function()
   local u=scope("inspector",right)
-  for i,tab in {"Mixer","DNA","Advanced"} do u:button(right,tab,{Position=UDim2.new((i-1)/3,8,0,10),Size=UDim2.new(1/3,-12,0,30)},function()inspectorTab=tab;refreshInspector()end,inspectorTab==tab)end
-  local scroll=u:scroll(right,{Position=UDim2.fromOffset(12,52),Size=UDim2.new(1,-24,1,-64)})
-  if inspectorTab=="Mixer" then
-   u:label(scroll,"Body Mixer",{Size=UDim2.new(1,0,0,28),TextSize=17,Font=Enum.Font.BuilderSansBold})
-   u:label(scroll,"Choose an expression for each layer.",{Position=UDim2.fromOffset(0,28),Size=UDim2.new(1,0,0,22),TextSize=12},"muted")
-   for i,layer in M.Layers do local y=60+(i-1)*124;local spec=c.preset.bodyLayers[layer]
-    local label=layer:gsub("Arm"," arm");u:label(scroll,label,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-56,0,22),Font=Enum.Font.BuilderSansMedium})
-    u:button(scroll,spec.enabled and "On" or "Off",{Position=UDim2.new(1,-48,0,y),Size=UDim2.fromOffset(42,22)},function()action(function()c:edit(function(p)p.bodyLayers[layer].enabled=not spec.enabled end)end)end,spec.enabled)
-    local source=if spec.source=="base" then "Own profile" else c.library.presets[spec.source].name
-    local pickButton=u:button(scroll,source.." ▾",{Position=UDim2.fromOffset(0,y+27),Size=UDim2.new(1,-6,0,28)})
-    u:connect(pickButton.Activated,function()local choices={{id="base",name="Own profile"}};for _,id in c.library.order do if id~=c.preset.id then table.insert(choices,{id=id,name=c.library.presets[id].name})end end;pick(pickButton,choices,function(id)c:edit(function(p)p.bodyLayers[layer].source=id end)end)end)
-    u:slider(scroll,"Blend",0,1,spec.strength,y+58,function(value)c:edit(function(p)p.bodyLayers[layer].strength=value end,false);state()end,function()c:checkpoint()end)
+  for i,tab in {"Mix","DNA","Pose","Motion","Advanced"}do local b=u:button(right,tab,{Position=UDim2.new((i-1)/5,4,0,6),Size=UDim2.new(1/5,-5,0,27),TextSize=10},function()inspectorTab=tab;refreshInspector()end,inspectorTab==tab);u:tip(b,tab.." · contextual motion controls")end
+  local scroll=u:scroll(right,{Position=UDim2.fromOffset(10,42),Size=UDim2.new(1,-20,1,-52)})
+  if inspectorTab=="Pose"or inspectorTab=="Motion"then
+   EditInspector.mount(u,scroll,c,inspectorTab,action,state,menu)
+  elseif inspectorTab=="Mix"then
+   u:label(scroll,"Body Mixer",{Size=UDim2.new(1,0,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
+   u:label(scroll,"Layer sources → one expression",{Position=UDim2.fromOffset(0,24),Size=UDim2.new(1,-4,0,20),TextSize=11},"muted")
+   for i,layer in M.Layers do local y=52+(i-1)*94;local spec=c.preset.bodyLayers[layer]
+    u:label(scroll,layer,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-44,0,20),Font=Enum.Font.BuilderSansMedium,TextSize=12})
+    u:button(scroll,spec.enabled and "On"or "Off",{Position=UDim2.new(1,-38,0,y),Size=UDim2.fromOffset(34,20),TextSize=10},function()action(function()c:edit(function(p)p.bodyLayers[layer].enabled=not spec.enabled end)end)end,spec.enabled)
+    local source=if spec.source=="base"then "Own profile"else c.library.presets[spec.source].name
+    local select=u:button(scroll,source.." ▾",{Position=UDim2.fromOffset(0,y+23),Size=UDim2.new(1,-4,0,24),TextSize=11})
+    u:connect(select.Activated,function()local choices={{id="base",name="Own profile"}};for _,id in c.library.order do if id~=c.preset.id then table.insert(choices,{id=id,name=c.library.presets[id].name})end end;pick(select,choices,function(id)c:edit(function(p)p.bodyLayers[layer].source=id end)end)end)
+    u:slider(scroll,"Blend",0,1,spec.strength,y+49,function(n)c:edit(function(p)p.bodyLayers[layer].strength=n end,false);state()end,function()c:checkpoint()end)
    end
-  elseif inspectorTab=="DNA" then
+  elseif inspectorTab=="DNA"then
    u:button(scroll,"Generate movement set",{Size=UDim2.new(1,-4,0,32)},function()action(function()c:generate()end,"Suggested route generated; every block remains editable")end,true)
    local y=44;local group=nil
    for _,row in M.DNA do if group~=row[6] then group=row[6];u:label(scroll,group,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-6,0,24),Font=Enum.Font.BuilderSansBold});y+=30 end
-    u:slider(scroll,row[2],row[3],row[4],c.preset.motionDNA[row[1]],y,function(value)c:edit(function(p)p.motionDNA[row[1]]=value end,false);state()end,function()c:checkpoint()end);y+=62 end
+    u:slider(scroll,row[2],row[3],row[4],c.preset.motionDNA[row[1]],y,function(value)c:edit(function(p)p.motionDNA[row[1]]=value end,false);state()end,function()c:checkpoint()end);y+=46 end
+
   else
    local text="Profile ID\n"..c.preset.id.."\n\nSource\n"..c.preset.metadata.sourceType.."\n\nRig\nR15 · anatomical joint controls\n\nExport\nNinjaDuel.MotionDefinitions.v1\nData only. No automatic apply.\n\nCharacter expression\n"..game:GetService("HttpService"):JSONEncode(c.preset.characterRules)
    u:label(scroll,text,{Size=UDim2.new(1,-8,0,260),TextSize=13,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
@@ -920,93 +1376,68 @@ function View.mount(widget,plugin)
     local rules=game:GetService("HttpService"):JSONDecode(text);local candidate=M.copy(c.preset);candidate.characterRules=rules;local valid,why=M.validate(candidate,c.library.presets);assert(valid,why);c:edit(function(p)p.characterRules=rules end)
    end,"Expression rules updated")end)
    for i,key in {"idle","walk","run","dash","jump","land","wall"} do
-    local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();refreshTimeline()end)
-    local id=c.preset.locomotionSet[key] or key;local button=u:button(scroll,(c.library.assets[id] and c.library.assets[id].name or id).." ▾",{Position=UDim2.fromOffset(70,y),Size=UDim2.new(1,-78,0,28)})
-    u:connect(button.Activated,function()local items={};for _,assetId in c.library.assetOrder do table.insert(items,{id=assetId,name=c.library.assets[assetId].name})end;pick(button,items,function(chosen)c:edit(function(p)p.locomotionSet[key]=chosen end)end)end)
+    local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();timeline:refresh()end)
+    local id=c.preset.locomotionSet[key] or key;local button=u:button(scroll,(c:asset(id) and c:asset(id).name or id).." ▾",{Position=UDim2.fromOffset(70,y),Size=UDim2.new(1,-78,0,28)})
+    u:connect(button.Activated,function()local items={};for _,assetId in c.library.assetOrder do table.insert(items,{id=assetId,name=c.library.assets[assetId].name})end;for assetId,v in c.preset.motionVariants or {}do table.insert(items,{id=assetId,name=v.name})end;pick(button,items,function(chosen)c:edit(function(p)p.locomotionSet[key]=chosen end)end)end)
    end
   end
  end
- refreshTimeline=function()
-  local u=scope("timeline",bottom);local seq=c:sequence()
-  u:label(bottom,"Sequence",{Position=UDim2.fromOffset(12,8),Size=UDim2.fromOffset(90,24),Font=Enum.Font.BuilderSansBold,TextSize=15})
-  u:input(bottom,seq.name,{Position=UDim2.fromOffset(106,8),Size=UDim2.fromOffset(180,26)},function(text)if #text&gt;0 and #text&lt;=64 then c:edit(function(p)p.sequences[1].name=text end);state()end end)
-  u:button(bottom,"+ "..c.library.assets[c.clip].name,{Position=UDim2.fromOffset(300,8),Size=UDim2.fromOffset(120,26)},function()action(function()c:addClip(c.clip)end)end)
-  u:button(bottom,"Preview phrase",{Position=UDim2.fromOffset(432,8),Size=UDim2.fromOffset(116,26)},function()c.sequenceMode=true;c.time=0;state()end)
-  local line=u:make("ScrollingFrame",bottom,{Position=UDim2.fromOffset(12,44),Size=UDim2.new(1,-24,0,62),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,CanvasSize=UDim2.fromOffset(#seq.orderedClips*112,0),ScrollingDirection=Enum.ScrollingDirection.X})
-  for i,block in seq.orderedClips do
-   local asset=c.library.assets[block.asset];local b=u:button(line,asset.name.."\n"..string.format("%.2fs",block.duration),{Position=UDim2.fromOffset((i-1)*112,0),Size=UDim2.fromOffset(106,54),TextWrapped=true},function()c.selectedBlock=i;task.defer(function()if alive then refreshTimeline()end end)end,c.selectedBlock==i)
-   local start=nil
-   u:connect(b.InputBegan,function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then start=widget:GetRelativeMousePosition().X;u:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End and start then local dx=widget:GetRelativeMousePosition().X-start;start=nil;local target=math.clamp(i+math.floor(dx/112+.5),1,#seq.orderedClips);if target~=i then action(function()c:edit(function(p)M.reorder(p.sequences[1],i,target)end);c.selectedBlock=target end,"Blocks reordered")end end end)end end)
-  end
-  if #seq.orderedClips==0 then u:label(line,"Choose a library block, then add it here.",{Size=UDim2.new(1,-12,0,44),TextSize=13},"muted")end
-  local scrub=u:make("TextButton",bottom,{Position=UDim2.fromOffset(12,105),Size=UDim2.new(1,-24,0,8),Text="",BackgroundTransparency=.65,AutoButtonColor=false,BorderSizePixel=0})
-  u:paint(scrub,"BackgroundColor3","line")
-  u:connect(scrub.InputBegan,function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then
-   local mouse=widget:GetRelativeMousePosition();local relative=mouse.X-(scrub.AbsolutePosition.X-widget.AbsolutePosition.X)
-   c.sequenceMode=true;c.playing=false;c.time=math.clamp(relative/math.max(1,scrub.AbsoluteSize.X),0,1)*M.duration(seq)/c.preset.motionDNA.recoverySpeed;state()
-  end end)
-  local selected=seq.orderedClips[c.selectedBlock]
-  if selected then
-   u:label(bottom,"Duration",{Position=UDim2.fromOffset(12,115),Size=UDim2.fromOffset(56,26),TextSize=12},"muted")
-   u:input(bottom,tostring(selected.duration),{Position=UDim2.fromOffset(72,115),Size=UDim2.fromOffset(60,26)},function(text)local n=tonumber(text);if n and n&gt;=.12 and n&lt;=5 then action(function()c:edit(function(p)p.sequences[1].orderedClips[c.selectedBlock].duration=n end)end)else status.Text="Duration: 0.12–5 seconds"end end)
-   u:label(bottom,"Blend",{Position=UDim2.fromOffset(144,115),Size=UDim2.fromOffset(42,26),TextSize=12},"muted")
-   u:input(bottom,tostring(selected.blend),{Position=UDim2.fromOffset(190,115),Size=UDim2.fromOffset(60,26)},function(text)local n=tonumber(text);if n and n&gt;=0 and n&lt;=.5 then action(function()c:edit(function(p)p.sequences[1].orderedClips[c.selectedBlock].blend=n end)end)end end)
-   u:button(bottom,selected.transition=="cut" and "Cut" or "Blend",{Position=UDim2.fromOffset(266,115),Size=UDim2.fromOffset(62,26)},function()action(function()c:edit(function(p)local b=p.sequences[1].orderedClips[c.selectedBlock];b.transition=if b.transition=="cut" then "blend" else "cut" end)end)end)
-   u:button(bottom,"Remove block",{Position=UDim2.fromOffset(340,115),Size=UDim2.fromOffset(108,26)},function()action(function()c:edit(function(p)table.remove(p.sequences[1].orderedClips,c.selectedBlock)end);c.selectedBlock=math.max(1,c.selectedBlock-1)end)end)
-  end
- end
- refresh=function()refreshLibrary();refreshInspector();refreshTimeline();state()end
- local controls=ui:frame(center,{Position=UDim2.new(0,0,1,-39),Size=UDim2.new(1,0,0,39)})
- local function layout()
-  local narrow=root.AbsoluteSize.X&lt;1000;local lw=if narrow then 180 else 210;local rw=if narrow then 240 else 280
-  left.Size=UDim2.new(0,lw,1,-312);right.Position=UDim2.new(1,-rw-12,0,108);right.Size=UDim2.new(0,rw,1,-312)
-  center.Position=UDim2.fromOffset(lw+24,108);center.Size=UDim2.new(1,-lw-rw-48,1,-312)
- end
- ui:connect(root:GetPropertyChangedSignal("AbsoluteSize"),layout);layout()
- local play;play=ui:button(controls,"Pause",{Position=UDim2.new(0,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.playing=not c.playing;play.Text=if c.playing then "Pause" else "Play" end)
- local loop;loop=ui:button(controls,"Loop ✓",{Position=UDim2.new(1/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.loop=not c.loop;loop.Text=if c.loop then "Loop ✓" else "Once" end)
- local speed=ui:button(controls,"1×",{Position=UDim2.new(2/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)})
- ui:connect(speed.Activated,function()pick(speed,{{id="0.5",name="0.5×"},{id="1",name="1×"},{id="1.5",name="1.5×"},{id="2",name="2×"}},function(id)c.speed=tonumber(id);speed.Text=id.."×"end)end)
- local cameraButton=ui:button(center,"Front ▾",{Position=UDim2.new(1,-94,0,14),Size=UDim2.fromOffset(80,28)})
- ui:connect(cameraButton.Activated,function()pick(cameraButton,{{id="front",name="Front"},{id="side",name="Side"},{id="free",name="Free orbit"}},function(id)mode=id;cameraButton.Text=id.." ▾";if id=="front" then yaw=math.pi;pitch=.16 elseif id=="side" then yaw=math.pi/2;pitch=.16 end;updateCamera()end)end)
- local gridButton;gridButton=ui:button(controls,"Grid ✓",{Position=UDim2.new(3/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()showGrid=not showGrid;grid.Parent=if showGrid then world else nil;gridButton.Text=if showGrid then "Grid ✓" else "Grid" end)
- local rootButton;rootButton=ui:button(controls,"Root ✓",{Position=UDim2.new(4/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()showRoot=not showRoot;rootButton.Text=if showRoot then "Root ✓" else "Root" end)
- ui:button(controls,"Reset",{Position=UDim2.new(5/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.time=0 end)
- ui:connect(viewport.InputBegan,function(input)if mode=="free" and (input.UserInputType==Enum.UserInputType.MouseButton2 or input.UserInputType==Enum.UserInputType.MouseButton1) then drag=true;last=widget:GetRelativeMousePosition();ui:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End then drag=nil end end)end end)
- ui:connect(viewport.InputChanged,function(input)if input.UserInputType==Enum.UserInputType.MouseWheel then distance=math.clamp(distance-input.Position.Z,7,22);updateCamera()end end)
+ local function changed(message,rebuild,tab)if tab then inspectorTab=tab;editPose=tab=="Pose"end;state(message);if rebuild and refresh then refresh()end end
+ timeline=Timeline.new(widget,bottom,c,changed)
+ refresh=function()layout();state();refreshLibrary();refreshInspector();timeline:refresh()end
+ ui:connect(root:GetPropertyChangedSignal("AbsoluteSize"),function()layout();timeline:refresh()end);ui:connect(bottom:GetPropertyChangedSignal("AbsoluteSize"),function()timeline:refresh()end);layout()
+ local controls=ui:frame(center,{Position=UDim2.new(0,6,1,-78),Size=UDim2.new(1,-12,0,72),BackgroundTransparency=1})
+ local play;play=ui:button(controls,"Pause",{Size=UDim2.new(1/4,-4,0,24)},function()c.playing=not c.playing;play.Text=if c.playing then "Pause"else "Play"end,true)
+ local loop;loop=ui:button(controls,"Loop",{Position=UDim2.new(1/4,0,0,0),Size=UDim2.new(1/4,-4,0,24)},function()c.loop=not c.loop;loop.Text=if c.loop then "Loop"else "Once"end)
+ local speed=ui:button(controls,"1×",{Position=UDim2.new(2/4,0,0,0),Size=UDim2.new(1/4,-4,0,24)})
+ ui:connect(speed.Activated,function()pick(speed,{{id=".25",name="0.25×"},{id=".5",name="0.5×"},{id="1",name="1×"},{id="1.5",name="1.5×"},{id="2",name="2×"}},function(id)c.speed=tonumber(id);speed.Text=id.."×"end)end)
+ local angle=ui:button(controls,"Front",{Position=UDim2.new(3/4,0,0,0),Size=UDim2.new(1/4,0,0,24)})
+ ui:connect(angle.Activated,function()pick(angle,{{id="front",name="Front"},{id="side",name="Side"},{id="free",name="Free orbit"}},function(id)mode=id;angle.Text=if id=="free"then "Free"else id:gsub("^%l",string.upper);yaw=if id=="side"then math.pi/2 else math.pi;updateCamera()end)end)
+ local gridButton;gridButton=ui:button(controls,"Grid ✓",{Position=UDim2.fromOffset(0,27),Size=UDim2.new(1/4,-4,0,22),TextSize=11},function()showGrid=not showGrid;grid.Parent=if showGrid then world else nil;gridButton.Text=showGrid and "Grid ✓"or "Grid"end)
+ local rootButton;rootButton=ui:button(controls,"Root ✓",{Position=UDim2.new(1/4,0,0,27),Size=UDim2.new(1/4,-4,0,22),TextSize=11},function()showRoot=not showRoot;path.Parent=if showRoot then world else nil;rootButton.Text=showRoot and "Root ✓"or "Root"end)
+ ui:tip(rootButton,"Show root movement + sampled trajectory. Motion tab edits travel and offsets.")
+ local ghostButton;ghostButton=ui:button(controls,"Ghosts",{Position=UDim2.new(2/4,0,0,27),Size=UDim2.new(1/4,-4,0,22),TextSize=11},function()ghosts=not ghosts;ghostButton.Text=ghosts and "Ghosts ✓"or "Ghosts"end)
+ local poseButton;poseButton=ui:button(controls,"Edit Pose",{Position=UDim2.new(3/4,0,0,27),Size=UDim2.new(1/4,0,0,22),TextSize=11},function()action(function()if not c:variant()then c:createVariant()end;editPose=not editPose;inspectorTab=if editPose then "Pose"else "Motion"end)end)
+ ui:tip(poseButton,"Creates a variant if needed. Choose a body part, then use sliders or focused arrow nudges.")
+ local partSelect=ui:button(controls,"Body part ▾",{Position=UDim2.fromOffset(0,52),Size=UDim2.new(.6,-4,0,20),TextSize=10})
+ ui:connect(partSelect.Activated,function()local items={};for _,part in E.Parts do table.insert(items,{id=part,name=part})end;pick(partSelect,items,function(id)assert(c:variant(),"Create a variant first");c:selectKey(c.selectedKey or "Contact",id);inspectorTab="Pose";editPose=true end)end)
+ ui:button(controls,"Reset time",{Position=UDim2.new(.6,0,0,52),Size=UDim2.new(.4,0,0,20),TextSize=10},function()c.time=0 end)
+ ui:connect(viewport.InputBegan,function(input)if mode=="free"and(input.UserInputType==Enum.UserInputType.MouseButton2 or input.UserInputType==Enum.UserInputType.MouseButton1)then orbit=true;last=widget:GetRelativeMousePosition();local conn;conn=ui:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End then orbit=false;conn:Disconnect()end end)end end)
+ ui:connect(viewport.InputChanged,function(input)if input.UserInputType==Enum.UserInputType.MouseWheel then distance=math.clamp(distance-input.Position.Z,7,30);updateCamera()end end)
  local debt=0
  ui:connect(game:GetService("RunService").RenderStepped,function(dt)
   if not alive or not widget.Enabled then return end
-  play.Text=if c.playing then "Pause" else "Play"
-  if drag then local now=widget:GetRelativeMousePosition();local diff=now-last;last=now;yaw-=diff.X*.009;pitch=math.clamp(pitch+diff.Y*.006,-.15,.8);updateCamera()end
+  play.Text=if c.playing then "Pause"else "Play";poseButton.Text=editPose and "Pose ✓"or "Edit Pose"
+  if orbit then local now=widget:GetRelativeMousePosition();local diff=now-last;last=now;yaw-=diff.X*.009;pitch=math.clamp(pitch+diff.Y*.006,-.15,.8);updateCamera()end
   debt+=dt;if debt&lt;1/30 then return end;local tick=math.min(debt,.1);debt=0
-  local total=if c.sequenceMode then M.duration(c:sequence())/c.preset.motionDNA.recoverySpeed else Sampler.duration(c.preset,c.library.assets[c.clip],c.library)
-  total=math.max(total,.1)
-  if c.playing then c.time+=tick*c.speed;if c.time&gt;=total then if c.loop then c.time%=total else c.time=total;c.playing=false;play.Text="Play" end end end
-  timeReadout.Text=string.format("%.2f / %.2fs",c.time,total)
-  local function pose(p,reference)
-   local lib=if reference then c.compareLibrary else c.library
-   local sequenceMode=if reference then c.compareSequenceMode else c.sequenceMode
-   local clip=if reference then c.compareClip else c.clip
-   if sequenceMode then
-    local seq=p.sequences[1] or {orderedClips={}};local duration=math.max(.1,M.duration(seq)/p.motionDNA.recoverySpeed)
-    local current=Sampler.sequence(p,seq,(c.time/total)*duration,lib,c.mirror)
-    if c.loop and c.time&gt;total-.08 then return Sampler.blendPose(current,Sampler.sequence(p,seq,0,lib,c.mirror),math.clamp((c.time-total+.08)/.08,0,1))end
-    return current
-   end
-   local current=Sampler.sample(p,lib.assets[clip],math.clamp(c.time/total,0,1),lib,c.mirror)
-   if c.loop and c.time&gt;total-.08 then return Sampler.blendPose(current,Sampler.sample(p,lib.assets[clip],0,lib,c.mirror),math.clamp((c.time-total+.08)/.08,0,1))end
-   return current
+  local total=math.max(.1,if c.sequenceMode then M.duration(c:sequence())/c.preset.motionDNA.recoverySpeed else S.duration(c.preset,c:asset(),c.library))
+  if c.playing then c.time+=tick*c.speed;if c.time&gt;=total then if c.loop then c.time%=total else c.time=total;c.playing=false end end end;c.time=math.clamp(c.time,0,total)
+  timeReadout.Text=string.format("%.2f / %.2fs",c.time,total);partSelect.Text=(c.selectedPart or "Body part").." ▾";timeline:update(c.time,total)
+  local function pose(p,reference,t)
+   local lib=if reference then c.compareLibrary else c.library;local seqMode=if reference then c.compareSequenceMode else c.sequenceMode;local clip=if reference then c.compareClip else c.clip
+   if seqMode then local seq=p.sequences[1]or {orderedClips={}};local duration=math.max(.1,M.duration(seq)/p.motionDNA.recoverySpeed);return S.sequence(p,seq,t*duration,lib,c.mirror)end
+   return S.sample(p,E.asset(p,clip,lib),t,lib,c.mirror)
   end
   local ok,err=pcall(function()
-   local current=pose(c.preset)
-   if c.compare then Rig.apply(rig,pose(c.compare,true),Vector3.new(-2.5,3,0),showRoot,c.compare.bodyLayers.Weapon.enabled);Rig.apply(rigB,current,Vector3.new(2.5,3,0),showRoot,c.preset.bodyLayers.Weapon.enabled)
-   else Rig.apply(rig,current,Vector3.new(0,3,0),showRoot,c.preset.bodyLayers.Weapon.enabled)end
+   local t=c.time/total;local current=pose(c.preset,false,t)
+   if c.loop and c.playing and c.time&gt;total-.08 then current=S.blendPose(current,pose(c.preset,false,0),math.clamp((c.time-total+.08)/.08,0,1))end
+   local origin=Vector3.new(if c.compare then 2.5 else 0,3,0)
+   if c.compare then rigB.model.Parent=world;Rig.apply(rig,pose(c.compare,true,t),Vector3.new(-2.5,3,0),showRoot,c.compare.bodyLayers.Weapon.enabled);Rig.apply(rigB,current,origin,showRoot,c.preset.bodyLayers.Weapon.enabled)else rigB.model.Parent=nil;Rig.apply(rig,current,origin,showRoot,c.preset.bodyLayers.Weapon.enabled)end
+   local v=c:variant();if ghosts and v and not c.sequenceMode then
+    local keys=v.poseOverrides;local before,after=keys[1].time,keys[#keys].time;for _,key in keys do if key.time&lt;t-.001 then before=key.time elseif key.time&gt;t+.001 then after=key.time;break end end
+    ghostPrev.model.Parent=world;ghostNext.model.Parent=world;Rig.apply(ghostPrev,pose(c.preset,false,before),origin,showRoot,false);Rig.apply(ghostNext,pose(c.preset,false,after),origin,showRoot,false)
+   else ghostPrev.model.Parent=nil;ghostNext.model.Parent=nil end
+   if pathDirty then
+    path:ClearAllChildren();pathDirty=false
+    if not c.sequenceMode then local previous=nil;for i=0,24 do local anatomy=S.mixedAnatomy(c.preset,c:asset(),i/24,c.library);if c.mirror then anatomy=S.mirror(anatomy)end;local r=anatomy.root or {};local point=origin+Vector3.new(r.x or 0,(r.y or 0)-2.65,r.z or 0)
+     if previous and(point-previous).Magnitude&gt;.001 then local segment=Instance.new("Part");segment.Name="RootPathSegment";segment.Anchored=true;segment.CanCollide=false;segment.CanQuery=false;segment.CanTouch=false;segment.Size=Vector3.new(.035,.035,(point-previous).Magnitude);segment.CFrame=CFrame.lookAt((point+previous)/2,point);segment.Color=Color3.fromRGB(104,181,230);segment.Parent=path end;previous=point
+    end end
+   end
   end)
-  if not ok then c.playing=false;status.Text="Preview: "..tostring(err) end
+  if not ok then c.playing=false;status.Text="Preview: "..tostring(err)end
  end)
- refresh();status.Text=c.store.notice or "Minato lower body + Itachi upper body · save to keep this mix"
- return function()alive=false;closeMenu();for _,scope in scopes do scope:dispose()end;ui:dispose();rig.model:Destroy();rigB.model:Destroy();world:Destroy();grid:Destroy();root:Destroy()end,c
+ refresh();status.Text=c.store.notice or "Browse → Create Variant → select Contact → Pose / Motion → Save + Export"
+ return function()alive=false;closeMenu();timeline:dispose();for _,s in scopes do s:dispose()end;ui:dispose();for _,r in {rig,rigB,ghostPrev,ghostNext}do r.model:Destroy()end;path:Destroy();grid:Destroy();world:Destroy();root:Destroy()end,c
 end
 return View
 </ProtectedString>
@@ -1019,10 +1450,10 @@ return View
         <ProtectedString name="Source">-- Local Studio plugin only; importing the model into a place cannot start it.
 if not plugin then return end
 local toolbar=plugin:CreateToolbar("Forge Motion Lab")
-local button=toolbar:CreateButton("Motion Lab","Create, mix and preview R15 motion profiles","","Motion Lab")
+local button=toolbar:CreateButton("Motion Lab","Create, edit and mix R15 motion variants","","Motion Lab")
 button.ClickableWhenViewportHidden=true
 local widget=plugin:CreateDockWidgetPluginGuiAsync("ForgeMotionLab_v1",DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float,false,false,1180,780,780,600))
-widget.Title="Forge Motion Lab"
+widget.Title="Forge Motion Lab · UI+"
 local dispose,controller=require(script.Parent.Modules.View).mount(widget,plugin)
 button.Click:Connect(function()widget.Enabled=not widget.Enabled end)
 widget:GetPropertyChangedSignal("Enabled"):Connect(function()button:SetActive(widget.Enabled)end)
