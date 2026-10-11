@@ -31,17 +31,38 @@ The build manifest records automated and native status separately (`automatedQA`
 | **F** | Guard (hold) |
 | **V** | Grab |
 | **R** | Kunai / shuriken |
-| **E** | Chase during the launch window |
+| **E** | Chase during the launch window; chakra dash outside it |
 | **X** | Substitution (accessible, but never next to the movement keys) |
 | **G / C** | Feint / wall detach |
 | **CTRL / SHIFT** | Sprint / lock-on |
-| **1–5** | Jutsu |
+| **1–5 / T** | Jutsu / awakening |
 | Mouse move / wheel | Free-look when unlocked; camera distance |
 | **ESC** | Skip tutorial |
 
 Every key is declared once in `src/Shared/Controls.luau`, which also feeds the on-screen help and the tutorial copy. A key can never drive two actions; `tests/Regression.spec.luau` enforces that.
 
 Ground-to-air route: **light → light → heavy launcher → chase → air light → air light → heavy slam**. A third grounded light chooses Bangla's finisher instead. Whiffs retain recovery; substitution spends charge/chakra; knockdown has a protected wakeup.
+
+PS5 uses **□ light, △ heavy, ○ dodge / hit escape / wall-tech, × jump / chase**, **L1 guard**, **L2 grab / throw break**, **R2 tool**, **L3 sprint**, **R3 lock**. Hold **R1 + × / □ / △ / ○** for jutsu **1 / 2 / 3 / 4**; **D-pad ↑** is jutsu 5, **←** chakra dash / chase, **→** deliberate substitution, **↓** awakening. **R1 + L2** feints; **R1 + L1** detaches from a wall. Stick directions for combo branches are relative to the fighter's facing, not the screen: push toward / away / sideways relative to the opponent. Releasing × after a jutsu does not cut a jump.
+
+Existing routes (unchanged):
+
+| Context | Input (keyboard / PS5) | Existing result |
+|---|---|---|
+| Neutral | LMB / □ | Light1 → Light2 → Light3 on clean hits, neutral direction |
+| Two clean ground hits | Toward + LMB / □ | Launcher (Sasuke: LionKick + automatic shadow follow-up) |
+| Two clean ground hits | Away + LMB / □ | Sweep |
+| One clean ground hit | Side + LMB / □ | Minato AngleStep, Itachi FeintStep, Neji CircleStep, Sasuke VaultKick |
+| One clean hit | RMB / △ | Minato/Sasuke KneeStrike, Itachi CounterPalm, Neji PalmThrust |
+| Two clean hits | RMB / △ | Character launcher |
+| Launch window | E or SPACE / × or D-pad ← | Pursuit |
+| Air hit confirmed | Toward / away / side + LMB / □ | AirDrive / AirSpike / AirSwitch |
+| Airborne | RMB / △ | Slam (Sasuke after shadow follow-up: Lion Combo) |
+| Clean string | Away + R / R2 | Hop out behind the character's projectile |
+| Grab holding victim | LMB / □ or RMB / △ | Throw or upward throw |
+| Wall-run / wall splat | LMB or RMB / □ or △; Q / ○ while pinned | Existing wall dive / follow-up; timed wall-tech |
+
+These are **hit-confirmed** branches; blocked or missed lights do not open a string. Early attack presses already use the server's buffer. This input pass retains its timings and captures the movement direction together with each action, including buffered branches. Character-specific jutsu cancels and Read/Rotation counters retain their existing rules.
 
 ## Build and tests
 

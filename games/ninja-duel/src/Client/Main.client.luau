@@ -14,11 +14,15 @@ camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
-	if current.phase=="Duel" and action~="Move" then payload.clientTime=workspace:GetServerTimeNow() end
+	if current.phase=="Duel" and action~="Move" then
+  payload.clientTime=workspace:GetServerTimeNow()
+  -- Sample intent at the press, not at the previous 80 ms movement tick.
+  if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
+ end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
-		local gamepad=game:GetService("UserInputService"):GetLastInputType().Name:match("Gamepad")~=nil
+		local gamepad=input and input.pad
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
 		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -35,6 +39,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
 	if data.epoch~=current.epoch then camera.locked=true end
+	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 end)
 local nextMove=0

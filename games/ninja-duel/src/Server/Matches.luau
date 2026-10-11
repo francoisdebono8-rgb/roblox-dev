@@ -209,12 +209,20 @@ function Matches:request(player,payload)
 		end
 		return
 	end
-	local aim=nil
+	-- An action carries the same validated movement intent as Move. This keeps
+ -- directional routes/dodges atomic with the button press, without granting
+ -- the client authority over a route, state, cooldown or hit.
+ if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>.01) then return end
+ local aim=nil
 	if payload.aim~=nil then
 		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude>150 then return end
 		aim=payload.aim
 	end
-	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
+	if payload.direction~=nil and not (s.autopilot or s.scripted or s.finishing) then
+  s.human.move=payload.direction;s.human.lastMove=clock
+  if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
+ end
+ local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)

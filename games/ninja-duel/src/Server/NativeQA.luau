@@ -378,7 +378,7 @@ function QA.run(matches)
 		assert(keyboard.Grab==Enum.KeyCode.V and keyboard.Guard==Enum.KeyCode.F)
 		local seen={}
 		for action,key in keyboard do
-			assert(seen[key.Name]==nil,"key "..key.Name.." drives both "..seen[key.Name].." and "..action)
+			assert(seen[key.Name]==nil,"key "..key.Name.." drives both "..tostring(seen[key.Name]).." and "..action)
 			seen[key.Name]=action
 		end
 	end)
@@ -405,6 +405,45 @@ function QA.run(matches)
 		assert(s.phase=="Duel" and s.human.def.Name=="Itachi")
 		matches:selection(player)
 	end)
+	test("input remote carries the press direction and rejects invalid vectors",function()
+  matches:start(player,"Flashstep","Mirage")
+  local s=matches.sessions[player];s.introUntil=nil;s.botFrozen=true
+  local a,c=s.human,s.combat
+  a.root.Anchored=true;s.bot.root.Anchored=true
+  local anti=require(script.Parent.VelmoraAntiCheat)
+  local function press(direction)
+   anti.clear(a)
+   matches:request(player,{action="Dodge",epoch=s.epoch,direction=direction,clientTime=workspace:GetServerTimeNow()})
+  end
+  for _,direction in {Vector3.new(0/0,0,0),Vector3.new(2,0,0),Vector3.new(0,1,0)} do
+   press(direction);assert(a.state=="Neutral" and a.move==Vector3.zero,"invalid action intent was accepted")
+  end
+  press(Vector3.xAxis)
+  assert(a.state=="Dodging" and a.dodgeDirection.X>.9,"dodge used stale movement")
+  print("[NinjaDuelInputQA] PASS atomic direction + validation")
+  matches:selection(player)
+ end)
+ test("input PS5 chords and existing buffered routes remain available",function()
+  assert(Controls.Gamepad.Light==Enum.KeyCode.ButtonX and Controls.Gamepad.Heavy==Enum.KeyCode.ButtonY)
+  assert(Controls.Gamepad.Substitute==Enum.KeyCode.DPadRight)
+  assert(Controls.TechniquePad[1]=="R1 + ×" and Controls.TechniquePad[2]=="R1 + □")
+  for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
+   local c,a,b=pair(id,"Flashstep")
+   local function confirm()
+    assert(c:request(a,"Attack"))
+    for _=1,60 do step(c,.02);if a.state=="Recovery" and a.chainOpen then return end end
+    error(id..": no chain window")
+   end
+   confirm();assert(c:request(a,"Attack"));step(c,.02)
+   a.move=a.root.CFrame.LookVector
+   assert(c:request(a,"Attack"));assert(a.buffered and a.buffered.intent[1]=="forward")
+   a.move=Vector3.zero
+   local route=if id=="Lion" then "LionKick" else "Launcher"
+   for _=1,60 do step(c,.02);if a.attackName==route then break end end
+   assert(a.attackName==route,id..": the existing buffer lost its direction")
+  end
+  print("[NinjaDuelInputQA] PASS PS5 mapping + four fighter buffered routes")
+ end)
 	 test("R15 procedural combat motion is local and donor clips are optional",function()
   local c,a,b=pair("Flashstep","Mirage")
 	  local client=game:GetService("StarterPlayer").StarterPlayerScripts.NinjaDuelClient

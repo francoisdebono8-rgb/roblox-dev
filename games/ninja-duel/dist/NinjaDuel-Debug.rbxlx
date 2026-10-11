@@ -246,8 +246,8 @@ return {
           <string name="Name">Controls</string>
           <ProtectedString name="Source">-- Semantic bindings shared by client, HUD and QA.
 -- Keyboard is grouped around WASD so combat never needs a reach across the board;
--- the face buttons keep the existing gamepad layout and RB remains the jutsu modifier.
-return {
+-- PS5: the face buttons keep the existing layout; R1 modifies jutsu.
+local Controls = {
 	Keyboard = {
 		-- Home row first: the actions used constantly sit under the left hand and
 		-- the mouse, and substitution stays deliberately out of the way on X.
@@ -282,6 +282,7 @@ return {
 		Technique5 = Enum.KeyCode.DPadUp,
 		Awaken = Enum.KeyCode.DPadDown,
 		Rush = Enum.KeyCode.DPadLeft,
+		Substitute = Enum.KeyCode.DPadRight,
 		Skip = Enum.KeyCode.ButtonSelect,
 	},
 	-- Human-readable key names so HUD and tutorial copy cannot drift from bindings.
@@ -294,10 +295,33 @@ return {
 	Hint = "LMB light \u{00B7} RMB heavy",
 	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
 	-- The directional combo grammar, shared by every fighter.
-	Grammar = "STRINGS  2 hits + W (toward) = launcher  ·  2 hits + S (away) = low sweep  ·  A/D = side route  ·  after an air hit: W drive · S spike · A/D switch  ·  S + R in a string = hop out",
-	GrammarPad = "STRINGS  2 hits + ↑ (toward) = launcher  ·  2 hits + ↓ (away) = low sweep  ·  ← → = side route  ·  after an air hit: ↑ drive · ↓ spike · ← → switch  ·  ↓ + RT in a string = hop out",
-	HelpPad = "LS move / sprint   RS camera / lock   X light   Y heavy   B dodge   A jump / chase   LB guard   LT grab   RT tool   RB + face jutsu   D-pad: up jutsu 5 · left chakra dash · down awaken",
+	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
+	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   L1 guard   L2 grab   R2 tool   R1 + face: jutsu   D-pad ← rush · → escape · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Sprint="L3",Lock="R3",Pursuit="×",Substitute="D-pad →",Feint="R1 + L2",WallDetach="R1 + L1"},
+	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
 }
+
+function Controls.comboHelp(graph,pad)
+ local light=if pad then "□" else "LMB"
+ local tool=if pad then "R2" else "R"
+ local routes=graph.routes or {}
+ local parts={"CLEAN HITS"}
+ if routes.up then table.insert(parts,"2 hits → toward + "..light..": launch") end
+ if routes.down then table.insert(parts,"2 hits → away + "..light..": sweep") end
+ if routes.side then table.insert(parts,"1 hit → side + "..light..": angle") end
+ local air={}
+ if routes.airUp then table.insert(air,"toward: drive") end
+ if routes.airDown then table.insert(air,"away: spike") end
+ if routes.airSide then table.insert(air,"side: switch") end
+ if #air&gt;0 then table.insert(parts,"Air hit + "..light.." → "..table.concat(air," / ")) end
+ if graph.disengage then table.insert(parts,"away + "..tool.." in string: retreat") end
+ return table.concat(parts,"  ·  ")
+end
+function Controls.isGamepad(kind)
+ return kind~=nil and kind.Name:match("^Gamepad")~=nil
+end
+return Controls
 </ProtectedString>
         </Properties>
       </Item>
@@ -1583,7 +1607,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">921b36a0541c8a37b29c33511abd14fa7a2793d511ff2add8c37c798ca51627c</string>
+          <string name="Value">f91245df873d03ee2c59edb43a153637e32f89aa5c34d4ff2db22f4a7d6309ec</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -4720,12 +4744,20 @@ function Matches:request(player,payload)
 		end
 		return
 	end
-	local aim=nil
+	-- An action carries the same validated movement intent as Move. This keeps
+ -- directional routes/dodges atomic with the button press, without granting
+ -- the client authority over a route, state, cooldown or hit.
+ if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;.01) then return end
+ local aim=nil
 	if payload.aim~=nil then
 		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude&gt;150 then return end
 		aim=payload.aim
 	end
-	local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
+	if payload.direction~=nil and not (s.autopilot or s.scripted or s.finishing) then
+  s.human.move=payload.direction;s.human.lastMove=clock
+  if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
+ end
+ local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end
 function Matches:update(dt,now)
@@ -6241,25 +6273,25 @@ return Techniques
 local Brawler=require(script.Parent.Brawler)
 local Tutorial={}
 Tutorial.Steps={
- {title="Move",pad="Left stick",key="W A S D",kind="Move"},
- {title="Sprint",pad="Click LS, then move",key="Hold CTRL + move",kind="Sprint"},
- {title="Jump and land",pad="A / Cross",key="SPACE",kind="Land"},
- {title="Unlock, then lock the target",pad="Click RS twice",key="SHIFT twice",kind="Lock"},
- {title="Directional dash",pad="Left stick + B / Circle",key="Direction + Q",event="Dodge"},
- {title="Run up the wall, then rebound",pad="Push LS into wall, then A",key="Move into wall, then SPACE",kind="Wall"},
- {title="Land three light strikes",pad="X / Square three times",key="LMB three times",kind="Combo"},
- {title="Branch into a launcher",pad="X, X, then push toward + X (or Y)",key="LMB, LMB, then W + LMB (or RMB)",event="LaunchHit"},
- {title="Chase the launched target",pad="A / Cross after launch",key="E or SPACE after launch",kind="Chase"},
- {title="Land two aerial strikes",pad="X / Square twice in air",key="LMB twice in air",kind="AirCombo"},
- {title="Finish downward",pad="Y / Triangle in air",key="RMB in air",event="SlamHit"},
- {title="Guard the incoming strike",pad="Hold LB / L1",key="Hold F",event="GuardHit"},
- {title="Dodge the incoming strike",pad="B / Circle during windup",key="Q during windup",kind="Evade"},
- {title="Escape after being hit",pad="B / Circle just after contact",key="X just after contact",event="Substitute"},
- {title="Grab, then throw",pad="LT / L2, then X (Y throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
- {title="Perform a character technique",pad="Hold RB / R1 + A",key="1",kind="Technique"},
- {title="Interrupt the telegraphed technique",pad="X / Square during hand signs",key="LMB during hand signs",kind="Interrupt"},
- {title="Go low: two hits, then away + strike",pad="X, X, then pull back + X",key="LMB, LMB, then S + LMB",event="RouteDown"},
- {title="Turn the angle: one hit, then sideways + strike",pad="X, then left or right + X",key="LMB, then A or D + LMB",event="RouteSide"},
+ {title="Move",pad="L stick",key="W A S D",kind="Move"},
+ {title="Sprint",pad="L3, then move",key="Hold CTRL + move",kind="Sprint"},
+ {title="Jump and land",pad="×",key="SPACE",kind="Land"},
+ {title="Unlock, then lock the target",pad="R3 twice",key="SHIFT twice",kind="Lock"},
+ {title="Directional dash",pad="L stick + ○",key="Direction + Q",event="Dodge"},
+ {title="Run up the wall, then rebound",pad="Push L stick into wall, then ×",key="Move into wall, then SPACE",kind="Wall"},
+ {title="Land three light strikes",pad="□ three times",key="LMB three times",kind="Combo"},
+ {title="Branch into a launcher",pad="□, □, then toward + □ (or △)",key="LMB, LMB, then toward + LMB (or RMB)",event="LaunchHit"},
+ {title="Chase the launched target",pad="× after launch",key="E or SPACE after launch",kind="Chase"},
+ {title="Land two aerial strikes",pad="□ twice in air",key="LMB twice in air",kind="AirCombo"},
+ {title="Finish downward",pad="△ in air",key="RMB in air",event="SlamHit"},
+ {title="Guard the incoming strike",pad="Hold L1",key="Hold F",event="GuardHit"},
+ {title="Dodge the incoming strike",pad="○ during windup",key="Q during windup",kind="Evade"},
+ {title="Escape after being hit",pad="○ just after contact",key="X just after contact",event="Substitute"},
+ {title="Grab, then throw",pad="L2, then □ (△ throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
+ {title="Perform a character technique",pad="Hold R1 + ×",key="1",kind="Technique"},
+ {title="Interrupt the telegraphed technique",pad="□ during hand signs",key="LMB during hand signs",kind="Interrupt"},
+ {title="Go low: two hits, then away + strike",pad="□, □, then away + □",key="LMB, LMB, then away + LMB",event="RouteDown"},
+ {title="Turn the angle: one hit, then sideways + strike",pad="□, then sideways + □",key="LMB, then sideways + LMB",event="RouteSide"},
  {title="Win the practice duel",pad="Use your complete kit",key="Use your complete kit",kind="Win"},
 }
 function Tutorial.new(s)
@@ -8608,81 +8640,137 @@ return FX
 local UIS=game:GetService("UserInputService")
 local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local Input={};Input.__index=Input
--- One binding per semantic action, keyboard and gamepad declared together. The
--- keyboard side keeps combat on the WASD home row; the gamepad side is unchanged.
-local KEYBOARD, GAMEPAD = Controls.Keyboard, Controls.Gamepad
-local function key(keyCode) return {keyCode} end
+local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
+local function key(code) return {code} end
 local function both(action) return {KEYBOARD[action],GAMEPAD[action]} end
+local function padObject(object)
+ return Controls.isGamepad(object.UserInputType) or object.KeyCode.Name:match("^Button")~=nil
+  or object.KeyCode.Name:match("^DPad")~=nil or object.KeyCode.Name:match("^Thumbstick")~=nil
+end
+local function released(state) return state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
-  sprinting=false,modifier=false,camera=camera,pad=false},Input)
+  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
  local function bind(name,keys,callback)
-  local list={}
-  for _,input in keys do if input then table.insert(list,input) end end
+  local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
-   if UIS:GetFocusedTextBox() then return Enum.ContextActionResult.Pass end
-   if getState().phase~="Duel" then return Enum.ContextActionResult.Pass end
+   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then return Enum.ContextActionResult.Pass end
+   local stick=object.KeyCode==Enum.KeyCode.Thumbstick1 or object.KeyCode==Enum.KeyCode.Thumbstick2
+   if not released(state) and (not stick or object.Position.Magnitude&gt;.15) then self.pad=padObject(object) end
    callback(state,object)
    return Enum.ContextActionResult.Sink
   end,false,3000,table.unpack(list))
  end
  local function begin(state) return state==Enum.UserInputState.Begin end
- for _,input in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
-  bind(input.Name,key(input),function(state) self.keys[input.Name]=begin(state) end)
+ -- Schmitt thresholds: an analog trigger crossing its press threshold emits
+ -- once. Change events while it is held never become repeated attacks.
+ local function pressed(state,object)
+  local code=object.KeyCode
+  local id=if object.UserInputType==Enum.UserInputType.MouseButton1 or object.UserInputType==Enum.UserInputType.MouseButton2 then object.UserInputType.Name else code.Name
+  if code==GAMEPAD.Grab or code==GAMEPAD.Tool then
+   if released(state) or object.Position.Z&lt;=.25 then self.held[id]=nil;return false end
+   if object.Position.Z&gt;=.55 and not self.held[id] then self.held[id]=true;return true end
+   return false
+  end
+  if released(state) then self.held[id]=nil;return false end
+  if begin(state) and not self.held[id] then self.held[id]=true;return true end
+  return false
+ end
+ for _,code in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
+  bind(code.Name,key(code),function(state)
+   if begin(state) then self.keys[code.Name]=true elseif released(state) then self.keys[code.Name]=nil end
+  end)
  end
  bind("MoveStick",key(Enum.KeyCode.Thumbstick1),function(state,obj)
-  self.stick=if state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
+  self.stick=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
  end)
  bind("LookStick",key(Enum.KeyCode.Thumbstick2),function(state,obj)
-  self.look=if state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
+  self.look=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
   camera.look=self.look
  end)
- -- Gamepad modifier only: RB + face button selects a technique.
- bind("Modifier",key(GAMEPAD.Modifier),function(state) self.modifier=begin(state) end)
- local function face(state,normal,slot)
-  if begin(state) then send(if self.modifier then "Technique"..slot else normal) end
- end
- bind("Light",both("Light"),function(state) face(state,"Attack",2) end)
- bind("Heavy",both("Heavy"),function(state) face(state,"Heavy",3) end)
- bind("Dodge",both("Dodge"),function(state) face(state,"Dodge",4) end)
- bind("Jump",both("Jump"),function(state)
-  if begin(state) then
-   local human=getState().human
-   -- The contextual chase stays on jump: A on a controller, SPACE on the keyboard.
-   face(state,if human and human.pursuit&gt;0 then "Pursuit" else "Jump",1)
-  elseif state==Enum.UserInputState.End then send("JumpOff") end
+ bind("Modifier",key(GAMEPAD.Modifier),function(state)
+  if begin(state) then self.modifier=true elseif released(state) then self.modifier=false end
  end)
- bind("Guard",both("Guard"),function(state) send(if begin(state) then "Guard" else "GuardOff") end)
- bind("Tool",both("Tool"),function(state) if begin(state) then send("Tool") end end)
- bind("Grab",both("Grab"),function(state) if begin(state) then send(if self.modifier then "Feint" else "Grab") end end)
- bind("Lock",both("Lock"),function(state) if begin(state) then toggleLock() end end)
- bind("Sprint",both("Sprint"),function(state,object)
-  if object and object.KeyCode==GAMEPAD.Sprint then
-   if begin(state) then self.sprinting=not self.sprinting end
-  else self.sprinting=begin(state) end
- end)
- -- Keyboard-only actions.
- bind("Substitute",key(KEYBOARD.Substitute),function(state) if begin(state) then send("Substitute") end end)
- bind("WallDetach",key(KEYBOARD.WallDetach),function(state) if begin(state) then send("WallDetach") end end)
- bind("FeintKey",key(KEYBOARD.Feint),function(state) if begin(state) then send("Feint") end end)
- bind("PursuitKey",key(KEYBOARD.Pursuit),function(state) if begin(state) then send("Pursuit") end end)
- bind("Technique5",both("Technique5"),function(state) if begin(state) then send("Technique5") end end)
- bind("Awaken",both("Awaken"),function(state) if begin(state) then send("Awaken") end end)
- bind("RushPad",key(GAMEPAD.Rush),function(state) if begin(state) then send("Pursuit") end end)
- bind("Skip",both("Skip"),function(state) if begin(state) and getState().tutorial then send("TutorialSkip") end end)
- for index,input in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
-  bind("Technique"..index,key(input),function(state) if begin(state) then send("Technique"..index) end end)
+ local function face(state,object,normal,slot)
+  if pressed(state,object) then
+   local modified=padObject(object) and self.modifier
+   send(if modified then "Technique"..slot else normal)
+   return not modified
+  end
+  return false
  end
- UIS.WindowFocusReleased:Connect(function() self:reset();send("GuardOff");send("Move",Vector3.zero) end)
+ bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
+ bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",3) end)
+ bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",4) end)
+ bind("Jump",both("Jump"),function(state,obj)
+  local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
+  if released(state) then
+   if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
+   pressed(state,obj)
+  else
+   local h=getState().human;local action=if h and h.pursuit&gt;0 then "Pursuit" else "Jump"
+   if face(state,obj,action,1) and action=="Jump" then self.jumps[id]=true end
+  end
+ end)
+ bind("Guard",both("Guard"),function(state,obj)
+  local id=obj.KeyCode.Name
+  if released(state) then
+   if self.guards[id] then
+    self.guards[id]=nil
+    if next(self.guards)==nil then send("GuardOff") end
+   end
+   pressed(state,obj)
+  elseif pressed(state,obj) then
+   if padObject(obj) and self.modifier then send("WallDetach")
+   else
+    local already=next(self.guards)~=nil;self.guards[id]=true
+    if not already then send("Guard") end
+   end
+  end
+ end)
+ bind("Tool",both("Tool"),function(state,obj) if pressed(state,obj) then send("Tool") end end)
+ bind("Grab",both("Grab"),function(state,obj)
+  if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
+ end)
+ bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
+ bind("Sprint",both("Sprint"),function(state,obj)
+  if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
+  elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
+ end)
+ for _,action in {"Substitute","WallDetach","Feint","Pursuit"} do
+  bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
+ end
+ for _,action in {"Technique5","Awaken"} do
+  bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
+ end
+ bind("RushPad",key(GAMEPAD.Rush),function(state,obj) if pressed(state,obj) then send("Pursuit") end end)
+ bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
+ bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
+ for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
+  bind("Technique"..index,key(code),function(state,obj) if pressed(state,obj) then send("Technique"..index) end end)
+ end
+ local function blur()
+  local jumping=next(self.jumps)~=nil
+  self:reset();send("GuardOff");if jumping then send("JumpOff") end;send("Move",Vector3.zero)
+ end
+ UIS.WindowFocusReleased:Connect(blur)
+ UIS.TextBoxFocused:Connect(blur)
+ UIS.GamepadDisconnected:Connect(function() if self.pad then blur();self.pad=false end end)
+ UIS.LastInputTypeChanged:Connect(function(kind)
+  -- Moving the cursor while using the pad must not erase the PS5 prompts.
+  if kind~=Enum.UserInputType.MouseMovement then self.pad=Controls.isGamepad(kind) end
+ end)
  return self
 end
 function Input:reset()
- table.clear(self.keys);self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
+ table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
+ self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
 end
 function Input:direction(camera)
- local stick=if self.stick.Magnitude&gt;.15 then self.stick else Vector2.zero
- local x=stick.X+(if self.keys.D then 1 else 0)-(if self.keys.A then 1 else 0)
- local z=stick.Y+(if self.keys.W then 1 else 0)-(if self.keys.S then 1 else 0)
+ -- The current device owns movement; a resting controller cannot steer WASD.
+ local stick=if self.pad and self.stick.Magnitude&gt;.15 then self.stick else Vector2.zero
+ local x=stick.X+(if self.keys.D and not self.pad then 1 else 0)-(if self.keys.A and not self.pad then 1 else 0)
+ local z=stick.Y+(if self.keys.W and not self.pad then 1 else 0)-(if self.keys.S and not self.pad then 1 else 0)
  local look=camera.CFrame.LookVector*Vector3.new(1,0,1)
  if look.Magnitude&lt;.01 then look=-Vector3.zAxis end
  local right=Vector3.new(-look.Unit.Z,0,look.Unit.X)
@@ -8712,11 +8800,15 @@ camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
 	local payload={action=action,epoch=current.epoch}
-	if current.phase=="Duel" and action~="Move" then payload.clientTime=workspace:GetServerTimeNow() end
+	if current.phase=="Duel" and action~="Move" then
+  payload.clientTime=workspace:GetServerTimeNow()
+  -- Sample intent at the press, not at the previous 80 ms movement tick.
+  if input then payload.direction=input:direction(workspace.CurrentCamera);payload.sprint=input.sprinting end
+ end
 	if action=="Move" then payload.direction=extra; payload.locked=camera.locked; payload.sprint=input and input.sprinting or false
 	elseif type(extra)=="table" then for k,v in extra do payload[k]=v end
 	elseif action=="Tool" or string.match(action,"^Technique") then
-		local gamepad=game:GetService("UserInputService"):GetLastInputType().Name:match("Gamepad")~=nil
+		local gamepad=input and input.pad
 		local hit=if gamepad and current.bot then current.bot.position else mouse.Hit.Position
 		if gamepad and action=="Technique1" and current.human and current.human.fighterId=="Flashstep" then hit-=Vector3.new(0,2.8,0) end
 		local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -8733,6 +8825,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch&lt;(current.epoch or 0) then return end
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
 	if data.epoch~=current.epoch then camera.locked=true end
+	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 end)
 local nextMove=0
@@ -9085,6 +9178,7 @@ return Presentation
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
+local MoveGraphs=require(Shared.MoveGraphs)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -9260,9 +9354,9 @@ function UI.new(parent,send)
 	for i=1,5 do
 		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
 		corner(box,8)
-		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(40,30),26,palette.gold,TITLE_FONT)
-		local title=text(box,"",UDim2.fromOffset(40,8),UDim2.fromOffset(126,22),18,palette.paper,TITLE_FONT)
-		local status=text(box,"",UDim2.fromOffset(40,32),UDim2.fromOffset(126,18),11,palette.muted)
+		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(154,18),14,palette.gold,TITLE_FONT)
+		local title=text(box,"",UDim2.fromOffset(8,22),UDim2.fromOffset(154,20),18,palette.paper,TITLE_FONT)
+		local status=text(box,"",UDim2.fromOffset(8,43),UDim2.fromOffset(154,12),11,palette.muted)
 		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
@@ -9338,11 +9432,11 @@ local function subtitle(actor)
 	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
 function UI:render(data)
-	local pad=UIS:GetLastInputType().Name:match("Gamepad")~=nil
+	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "View / touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)&gt;0
 	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
@@ -9432,7 +9526,7 @@ function UI:render(data)
 	for i,tech in h.techniques do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
-		ui.key.Text=if pad then ({"A","X","Y","B","\u{2191}"})[i] else string.format("%d",i)
+		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost
 		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
@@ -9446,16 +9540,18 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
-	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
-		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
-		elseif (h.counter or 0)&gt;0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
+		elseif (h.counter or 0)&gt;0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
-		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
-		elseif h.pursuit&gt;0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
-		elseif (h.combo or 0)&gt;=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then (if pad then "↑ LAUNCH  ·  ↓ SWEEP  ·  ← → ANGLE" else "W LAUNCH  ·  S SWEEP  ·  A/D ANGLE")
+		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
+		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
+		elseif h.reaction=="Grabbed" then (if pad then "L2 — THROW BREAK" else "V — THROW BREAK")
+		elseif h.pursuit&gt;0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
+		elseif (h.combo or 0)&gt;=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
-	self.grammar.Text=if pad then Controls.GrammarPad else Controls.Grammar
+	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)&gt;1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
