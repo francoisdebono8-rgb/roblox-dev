@@ -1,14 +1,14 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "949381cc21ed4a82f1917566bc2574fe1fd86b3513a41ab07c651003ec9332d4",
+  "sha256": "c4dfa6942cd0531bd02c3e56a5c5008cbf26fd94f5900305fd6875ba54d91c42",
   "sources": {
     "src/Client/Camera.luau": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d",
     "src/Client/Effects.luau": "271e9147b30c8287acc3e86b9d349220ddec6215a6f5cb6ba5265307dc134649",
     "src/Client/Input.luau": "44c5629585fb7fb405294ef832535f1b583aae3af4d68c523b51227b0ac08012",
     "src/Client/Main.client.luau": "693a459a4a85b1537ad4865ec8261cf15c34245986d540b17b1f198027c5a1d7",
     "src/Client/Presentation.luau": "217a7be9674e34f5ad81c03871e3de47cb204f4f729496641a40422f7375cd21",
-    "src/Client/UI.luau": "6e9f870e1e94fc1065bea74477c2c88ec8b9eed36c8c02da0cc4bf02c2136686",
+    "src/Client/UI.luau": "ed3d59d2abd707340b21a30f7d4781f04c45bf299db42f0e49f5519422bc969b",
     "src/Client/VelmoraHitFeedback.luau": "4e40625c9c844d9dec776ce8b4d69aab5fc1318c5667df8ec5164eebf1a6e0dd",
     "src/Client/VelmoraMotionEngine.luau": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d",
     "src/Server/AI.luau": "27bee5ce469cc21d8204825c6676499d072da5c20171311ca707d18be6af5d82",
@@ -43,7 +43,7 @@
     "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
   },
   "sourceEquality": "PASS",
-  "buildFingerprint": "b6b7834f50be7aa8906c08bdb15b44cd2f2a4210d0cbe4f4bbe463581e9a83e1",
+  "buildFingerprint": "cd37617704776b6690637ccdd695286a342bf26f2604146e17fa61cc4cb5318d",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -147,7 +147,8 @@
       "AI interrupts after reaction delay via shared combat API ServerScriptService.NinjaDuelServer.NativeQA:302: AI never interrupted across seeded decisions",
       "contacts are reported once with a hit position and a style ServerScriptService.NinjaDuelServer.NativeQA:353: out-of-range swing reported a contact"
     ],
-    "scopeNote": "General gameplay failures recorded; combat/movement/movesets not changed by this input task."
+    "scopeNote": "General gameplay failures recorded; combat/movement/movesets not changed by this input task.",
+    "sourceContinuity": "All gameplay and native test modules unchanged since the recorded run; only input HUD card vertical placement adjusted."
   },
   "visualAcceptance": "PENDING",
   "controllerFeel": "PENDING",
@@ -170,8 +171,10 @@
       "checks": [
         "atomic direction + validation",
         "PS5 mapping + four fighter buffered routes"
-      ]
+      ],
+      "sourceContinuity": "PASS: tested input/remote/binding modules unchanged; only UI card vertical spacing adjusted after screenshot review."
     },
-    "hardwareFeel": "PENDING"
+    "hardwareFeel": "PENDING",
+    "promptObservation": "PS5 glyphs and full R1 chords observed in native Studio during user playtest. Card spacing adjusted from bottom -96 to -122 to avoid combo help overlap."
   }
 }
