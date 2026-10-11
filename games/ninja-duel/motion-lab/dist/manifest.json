@@ -1,0 +1,24 @@
+{
+  "plugin": "Forge Motion Lab",
+  "version": "0.1.0",
+  "artifact": "ForgeMotionLab.rbxm",
+  "sha256": "fe2d7c85523079a49f6310d649d771a7849f46c1168289fc8eb7fdc2053d82d5",
+  "sources": {
+    "ForgeMotionLab/Main.plugin.luau": "a8dd9e803944d7ce3f697390550eff8d48639f11275a6701df77d06a32396449",
+    "ForgeMotionLab/Modules/Controller.luau": "19a589764241a9719ca025688c0070cf84da46d55e9c9396f329efa0832ff238",
+    "ForgeMotionLab/Modules/Library.luau": "d74025f2ad2e4f331973a338579516fd019ed5129404b77d8ff35e3abf226eda",
+    "ForgeMotionLab/Modules/Model.luau": "28923793d3a43565f474e9e0b33ae35ce5180b92c6845720b29e80683ceda9cb",
+    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "49963072fa893aa121f080037be2e95d757d4e928a219a54d89ffcb9153fa85f",
+    "ForgeMotionLab/Modules/NinjaSources.luau": "0d292c0c80fd86dbb15daf2acbfb88b2111ce8b233ee037154d58d61d1ddad8c",
+    "ForgeMotionLab/Modules/PoseSolver.luau": "5a08b3c83ab35fea8096bfb6d7fc5a053839128177154ecba2ca91d2bdb666a4",
+    "ForgeMotionLab/Modules/Rig.luau": "fe51e96e18c746c362b9b334080096e278a1795ca24afb9b2a7aa36c322e69eb",
+    "ForgeMotionLab/Modules/Sampler.luau": "de41df579462124ce050f1fe5a38d7fcca64c119c97c25c1fe4b2dc58476a5a1",
+    "ForgeMotionLab/Modules/Store.luau": "b5ad752e2038ad0038b74f2bed36133b70c6e6ce380419b9c212e59a55932da1",
+    "ForgeMotionLab/Modules/UI.luau": "c3630400cd9ad763248cbaa04cfecb11c9c41ce4cd853059ce617de910b40a68",
+    "ForgeMotionLab/Modules/View.luau": "6cb7504af176046319accddd4aca74be1d372e4a993bc4f8b59ad8e2c06e909d"
+  },
+  "automatedTests": "PASS",
+  "native": "PENDING",
+  "visualReview": "USER_PENDING",
+  "published": false
+}
