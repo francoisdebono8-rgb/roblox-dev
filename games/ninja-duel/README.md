@@ -112,3 +112,5 @@ Record native errors and the first unpleasant control or unconvincing exchange. 
 ## Studio dev / QA tooling
 
 [F6, diagnostics, scénarios, CLI, online OFF et catalogue optionnel](DEVTOOLS.md). Cette couche entoure le gameplay existant ; les propositions de `lab/` ne sont pas chargées par le jeu.
+
+[Progression/collection optionnelles, profils DEV, simulations et interfaces pour Claude](progression/README.md). Aucun effet sur le combat ni vente Robux.

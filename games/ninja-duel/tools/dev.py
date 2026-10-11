@@ -22,7 +22,7 @@ def verify():
     for p in sorted((ROOT/"src").rglob("*.luau")):
         proc=subprocess.run([compiler,str(p)],capture_output=True,text=True)
         if proc.returncode: raise SystemExit(f"Syntax failure {p}\n{proc.stderr}")
-    validate_catalogue();run(sys.executable,"tests/BuildTools.spec.py");run("bash","tests/run.sh")
+    validate_catalogue();run(sys.executable,"tests/BuildTools.spec.py");run(sys.executable,"tests/ProgressionTools.spec.py");run("bash","tests/run.sh")
 def validate_catalogue():
     data=json.loads((ROOT/"lab/combat-library.json").read_text());ids=set();archetypes=set(data["archetypes"])
     for e in data["entries"]:

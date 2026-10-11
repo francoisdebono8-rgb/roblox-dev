@@ -1750,7 +1750,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND16">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">60797092e198821dfd756e84ee8502fdba42407fbf5afedc98dcb062b3d552fe</string>
+          <string name="Value">83b0530dc8f44338273ce45020079f9f68a4b59042e60cfffe8cd4e0784e3d56</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND17">
@@ -3000,6 +3000,184 @@ return Brawler
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND28">
+        <Properties>
+          <string name="Name">CharacterProgression</string>
+          <ProtectedString name="Source">local S=require(script.Parent.ProfileSchema)
+local P={}
+function P.rank(cfg,xp)
+ local rank=cfg.Ranks[1];for _,r in cfg.Ranks do if xp&gt;=r.xp then rank=r end end;return rank.id
+end
+function P.level(cfg,xp) return math.min(cfg.MaxLevel,1+math.floor(xp/cfg.XPPerLevel)) end
+function P.project(cfg,id,ch,normalized)
+ local def=cfg.Characters[id];assert(def,"Unknown character")
+ local out={level=P.level(cfg,ch.xp),rank=P.rank(cfg,ch.xp),stats={},applicationEnabled=false}
+ for name,tune in def.stats do
+  out.stats[name]=if normalized then tune.base else math.min(tune.cap,tune.base+tune.growth*(out.level-1))
+ end
+ return out -- data preview ONLY; never written into Fighters/Combat actors.
+end
+function P.xp(profile,cfg,id,amount)
+ assert(profile.collection[id] and cfg.Characters[id],"Character not owned")
+ assert(S.integer(amount,cfg.MaxAmount),"Invalid XP")
+ local ch=profile.characters[id];assert(ch.xp+amount&lt;=cfg.MaxAmount and ch.stats.xpEarned+amount&lt;=cfg.MaxAmount,"XP cap")
+ ch.xp+=amount;ch.stats.xpEarned+=amount;return P.project(cfg,id,ch,false)
+end
+function P.setRank(profile,cfg,id,rank)
+ assert(profile.collection[id],"Character not owned")
+ for _,r in cfg.Ranks do if r.id==rank then profile.characters[id].xp=r.xp;return P.project(cfg,id,profile.characters[id],false) end end
+ error("Unknown rank")
+end
+function P.claim(profile,cfg,id,rewardId)
+ assert(profile.collection[id] and cfg.Characters[id],"Character not owned")
+ local ch=profile.characters[id];local reward
+ for _,r in cfg.Characters[id].rewards do if r.id==rewardId then reward=r end end
+ assert(reward,"Unknown mastery reward")
+ if ch.claimed[rewardId] then return {alreadyClaimed=true} end
+ local required;for _,rank in cfg.Ranks do if rank.id==reward.rank then required=rank.xp end end
+ assert(required and ch.xp&gt;=required,"Mastery rank not reached")
+ -- Caller applies this inside a transaction; partial grants never escape it.
+ for _,grant in reward.grants do
+  if grant.kind=="currency" then
+   assert(cfg.Currencies[grant.id] and S.integer(grant.amount,cfg.MaxAmount),"Invalid reward currency")
+   assert(profile.currencies[grant.id]+grant.amount&lt;=cfg.MaxAmount,"Currency cap");profile.currencies[grant.id]+=grant.amount
+  else
+   local field=({variant="variants",technique="techniques",awakening="awakenings",cosmetic="cosmetics"})[grant.kind]
+   assert(field and S.id(grant.id),"Unknown reward kind");ch[field][grant.id]=true
+  end
+ end
+ ch.claimed[rewardId]=true;return {reward=rewardId}
+end
+return P
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND29">
+        <Properties>
+          <string name="Name">CollectionEconomy</string>
+          <ProtectedString name="Source">-- Server-owned collection/inventory operations; no marketplace or receipts.
+local S=require(script.Parent.ProfileSchema)
+local Progression=require(script.Parent.CharacterProgression)
+local E={}
+function E.currency(profile,cfg,id,amount)
+ assert(cfg.Currencies[id] and type(amount)=="number" and amount%1==0 and math.abs(amount)&lt;=cfg.MaxAmount,"Invalid currency delta")
+ local value=profile.currencies[id]+amount;assert(S.integer(value,cfg.MaxAmount),"Insufficient currency / cap")
+ profile.currencies[id]=value;return value
+end
+function E.unlock(profile,cfg,id)
+ assert(cfg.Characters[id],"Unknown character")
+ local owned=profile.collection[id]==true;profile.collection[id]=true;profile.characters[id]=profile.characters[id] or S.character()
+ return {character=id,alreadyOwned=owned}
+end
+function E.revoke(profile,cfg,id)
+ assert(cfg.Characters[id] and profile.collection[id],"Not owned")
+ local fallback;local ids={};for name in profile.collection do if name~=id then table.insert(ids,name) end end;table.sort(ids);fallback=ids[1]
+ assert(fallback,"Cannot remove final character")
+ profile.collection[id]=nil;if profile.selected==id then profile.selected=fallback end
+ return {removed=id} -- preserve mastery/cosmetics for future reacquisition.
+end
+function E.fragments(profile,cfg,id,n)
+ local def=cfg.Characters[id];assert(def and S.integer(n,cfg.MaxAmount),"Invalid fragments")
+ local value=(profile.fragments[id] or 0)+n;assert(value&lt;=cfg.MaxAmount,"Fragment cap")
+ local unlocked=false
+ if not profile.collection[id] and value&gt;=def.unlockFragments then value-=def.unlockFragments;E.unlock(profile,cfg,id);unlocked=true end
+ profile.fragments[id]=value;return {unlocked=unlocked,character=id,remaining=value}
+end
+local function rng(nextNumber)
+ local n=nextNumber();assert(type(n)=="number" and n==n and n&gt;=0 and n&lt;1,"RNG must be in [0,1)");return n
+end
+function E.validatePack(cfg,pack)
+ assert(pack and cfg.Currencies[pack.currency] and S.integer(pack.cost,cfg.MaxAmount) and S.integer(pack.slots,20) and pack.slots&gt;0,"Invalid pack cost/slots")
+ assert(type(pack.entries)=="table" and #pack.entries&gt;0 and #pack.entries&lt;=256,"Invalid pack entries")
+ local total=0
+ for _,row in pack.entries do
+  assert(cfg.Characters[row.character] and cfg.Rarities[row.rarity] and type(row.weight)=="number" and row.weight&gt;0 and row.weight&lt;1e9 and S.integer(row.fragments,cfg.MaxAmount) and row.fragments&gt;0,"Invalid drop")
+  total+=row.weight
+ end
+ local function eligible(rule)
+  assert(rule and cfg.Rarities[rule.minRarity],"Unknown guarantee rarity")
+  for _,row in pack.entries do if cfg.Rarities[row.rarity]&gt;=cfg.Rarities[rule.minRarity] then return end end
+  error("Impossible guarantee")
+ end
+ if pack.guarantee then eligible(pack.guarantee) end
+ if pack.pity then assert(S.integer(pack.pity.after,10000) and pack.pity.after&gt;0,"Invalid pity");eligible(pack.pity) end
+ local dup=pack.duplicate
+ assert(dup and (dup.mode=="fragments" or dup.mode=="currency") and S.integer(dup.amount,cfg.MaxAmount),"Invalid duplicate policy")
+ if dup.mode=="currency" then assert(cfg.Currencies[dup.currency],"Unknown duplicate currency") end
+ return total
+end
+local function draw(cfg,pack,nextNumber,minRarity)
+ local pool={};local total=0
+ for _,row in pack.entries do if not minRarity or cfg.Rarities[row.rarity]&gt;=cfg.Rarities[minRarity] then table.insert(pool,row);total+=row.weight end end
+ assert(total&gt;0,"Empty draw pool")
+ local roll=rng(nextNumber)*total;local at=0
+ for _,row in pool do at+=row.weight;if roll&lt;at then return row end end
+ return pool[#pool]
+end
+function E.pack(profile,cfg,id,nextNumber)
+ local pack=cfg.Packs[id];E.validatePack(cfg,pack)
+ E.currency(profile,cfg,pack.currency,-pack.cost)
+ local minimum=pack.guarantee and pack.guarantee.minRarity
+ local misses=profile.pity[id] or 0;local forced=pack.pity and misses+1&gt;=pack.pity.after
+ if forced and (not minimum or cfg.Rarities[pack.pity.minRarity]&gt;cfg.Rarities[minimum]) then minimum=pack.pity.minRarity end
+ local qualified=false;local drops={}
+ for slot=1,pack.slots do
+  local row=draw(cfg,pack,nextNumber,if slot==pack.slots then minimum else nil)
+  if pack.pity and cfg.Rarities[row.rarity]&gt;=cfg.Rarities[pack.pity.minRarity] then qualified=true end
+  local duplicate=profile.collection[row.character]==true;local result
+  if duplicate and pack.duplicate.mode=="currency" then E.currency(profile,cfg,pack.duplicate.currency,pack.duplicate.amount);result={unlocked=false}
+  else result=E.fragments(profile,cfg,row.character,if duplicate then pack.duplicate.amount else row.fragments) end
+  table.insert(drops,{character=row.character,rarity=row.rarity,duplicate=duplicate,fragments=if duplicate and pack.duplicate.mode=="currency" then 0 else (if duplicate then pack.duplicate.amount else row.fragments),unlocked=result.unlocked})
+  profile.stats.drops+=1;if duplicate then profile.stats.duplicates+=1 end
+ end
+ profile.pity[id]=if qualified or not pack.pity then 0 else misses+1
+ profile.stats.packs+=1
+ return {pack=id,drops=drops,pityForced=forced==true,cost=pack.cost}
+end
+-- Monotonic reward stream prevents re-grants without an evicting receipt cache.
+function E.reward(profile,cfg,stream,sequence,grants)
+ assert(S.id(stream) and S.integer(sequence,cfg.MaxAmount) and sequence&gt;0,"Invalid reward sequence")
+ local previous=profile.rewardStreams[stream] or 0
+ if sequence&lt;=previous then return {alreadyApplied=true} end
+ assert(sequence==previous+1,"Reward stream gap")
+ for _,g in grants do
+  if g.kind=="currency" then assert(S.integer(g.amount,cfg.MaxAmount));E.currency(profile,cfg,g.id,g.amount)
+  elseif g.kind=="fragments" then E.fragments(profile,cfg,g.id,g.amount)
+  elseif g.kind=="character" then E.unlock(profile,cfg,g.id)
+  else error("Unknown grant") end
+ end
+ profile.rewardStreams[stream]=sequence;return {applied=true}
+end
+-- Pure copy/validate/commit operation. RNG is evaluated once here, never in a
+-- DataStore transform. Caller owns and persists the returned profile atomically.
+function E.apply(profile,cfg,sequence,kind,args,nextNumber)
+ assert(S.integer(sequence,cfg.MaxAmount) and sequence&gt;0,"Invalid command sequence")
+ if sequence==profile.commandSequence and profile.lastCommand and profile.lastCommand.kind==kind then return S.copy(profile),S.copy(profile.lastCommand.result),true end
+ assert(sequence==profile.commandSequence+1,"Stale/gapped command")
+ local p=S.copy(profile);local result
+ if kind=="unlock" then result=E.unlock(p,cfg,args.character)
+ elseif kind=="revoke" then result=E.revoke(p,cfg,args.character)
+ elseif kind=="currency" then result={balance=E.currency(p,cfg,args.currency,args.amount)}
+ elseif kind=="xp" then result=Progression.xp(p,cfg,args.character,args.amount)
+ elseif kind=="rank" then result=Progression.setRank(p,cfg,args.character,args.rank)
+ elseif kind=="mastery" then result=Progression.claim(p,cfg,args.character,args.reward)
+ elseif kind=="pack" then result=E.pack(p,cfg,args.pack,nextNumber)
+ elseif kind=="reward" then result=E.reward(p,cfg,args.stream,args.rewardSequence,args.grants)
+ elseif kind=="matchResult" then
+  assert(type(args.won)=="boolean","Invalid result")
+  result=Progression.xp(p,cfg,args.character,args.xp)
+  local stats=p.characters[args.character].stats;stats.matches+=1
+  if args.won then stats.wins+=1 else stats.losses+=1 end
+  p.stats.matches+=1
+ elseif kind=="select" then assert(p.collection[args.character] and cfg.Characters[args.character],"Character locked");p.selected=args.character;result={selected=p.selected}
+ else error("Unknown operation") end
+ p.commandSequence=sequence;p.lastCommand={sequence=sequence,kind=kind,result=S.copy(result)}
+ local valid,reason=S.validate(p,cfg);assert(valid,reason);return p,result,false
+end
+return E
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -4315,7 +4493,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -4341,6 +4519,7 @@ function DevHooks.install(matches)
  end
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
+ local developmentProfiles=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
 	-- errors and camera framing so a playtest can be inspected from tooling.
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
@@ -4385,6 +4564,10 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="profiles" then
+   developmentProfiles=developmentProfiles or require(script.Parent.DevelopmentProfiles).new(require(script.Parent.ProgressionConfig))
+   return developmentProfiles:run(arg1,arg2)
+  end
   if op=="tool" then return run(player,arg1,arg2) end
   clientLog=player and logs[player] or {}
 		if op=="start" then
@@ -4472,7 +4655,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Instance-level instrumentation, installed only when Studio profiling starts.
@@ -4582,7 +4765,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Roblox truncates long Output lines. One bounded JSON row per metric/event.
@@ -4613,7 +4796,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups only; they call the live engine, never a second simulator.
@@ -4680,7 +4863,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio-only command dispatcher. Shared by the overlay and the command bar.
@@ -4731,7 +4914,99 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">DevelopmentDataStore</string>
+          <ProtectedString name="Source">-- Optional REAL adapter, restricted to Studio + fixed development namespace.
+-- Creation itself is gated; default tools use memory and never touch this adapter.
+local Adapter={};Adapter.__index=Adapter
+function Adapter.new(cfg)
+ if not game:GetService("RunService"):IsStudio() or cfg.DevDataStoreEnabled~=true then return nil,"Development DataStore disabled" end
+ if cfg.StoreName~="NinjaDuel_DEV_Progression" or cfg.StoreScope~="development_v1" then return nil,"Development namespace required" end
+ local store=game:GetService("DataStoreService"):GetDataStore(cfg.StoreName,cfg.StoreScope)
+ return setmetatable({store=store},Adapter)
+end
+local function keyValid(key) return type(key)=="string" and #key&lt;=50 and key:match("^p_dev_[%w_%-]+$")~=nil end
+function Adapter:update(key,transform)
+ assert(keyValid(key),"Development key required")
+ return self.store:UpdateAsync(key,transform)
+end
+function Adapter:read(key)
+ assert(keyValid(key),"Development key required")
+ local options=Instance.new("DataStoreGetOptions");options.UseCache=false
+ return self.store:GetAsync(key,options)
+end
+return Adapter
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
+        <Properties>
+          <string name="Name">DevelopmentProfileStore</string>
+          <ProtectedString name="Source">-- Deterministic UpdateAsync stand-in. Copies emulate serialization boundaries.
+local S=require(script.Parent.ProfileSchema)
+local Store={};Store.__index=Store
+function Store.new(data) return setmetatable({data=S.copy(data or {}),failBefore=0,failAfter=0,repeatTransform=false,calls=0},Store) end
+function Store:update(key,transform)
+ self.calls+=1
+ if self.failBefore&gt;0 then self.failBefore-=1;error("Simulated store unavailable") end
+ local old=S.copy(self.data[key]);local value=transform(old)
+ if self.repeatTransform then value=transform(S.copy(self.data[key])) end
+ if value==nil then return nil end
+ assert(S.serializable(value),"Invalid serialized record")
+ self.data[key]=S.copy(value)
+ if self.failAfter&gt;0 then self.failAfter-=1;error("Simulated ambiguous commit") end
+ return S.copy(value)
+end
+function Store:read(key)
+ if self.failBefore&gt;0 then self.failBefore-=1;error("Simulated read unavailable") end
+ return S.copy(self.data[key])
+end
+return Store
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND38">
+        <Properties>
+          <string name="Name">DevelopmentProfiles</string>
+          <ProtectedString name="Source">-- Internal facade. Profiles ALWAYS dev_*; default store stays in memory.
+-- No client remote or live PlayerAdded binding; bindable is Studio-only.
+local S=require(script.Parent.ProfileSchema)
+local Repo=require(script.Parent.ProfileRepository)
+local Memory=require(script.Parent.DevelopmentProfileStore)
+local RNG=require(script.Parent.ProgressionRandom)
+local Tools={};Tools.__index=Tools
+function Tools.new(cfg,store,options)
+ local actual=store or Memory.new()
+ return setmetatable({cfg=cfg,store=actual,repo=Repo.new(actual,cfg,options),rng=RNG.new(12345)},Tools)
+end
+function Tools:handle(id)
+ if not S.devId(id) then return nil,"Development ID required" end
+ return self.repo.handles[id] or self.repo:load(id)
+end
+function Tools:run(op,arg)
+ arg=arg or {};if type(arg)~="table" or not S.serializable(arg) then return {ok=false,error="Invalid arguments"} end
+ if op=="simulate" then
+  local ok,value=pcall(function() return require(script.Parent.PackSimulation).run(self.cfg,arg,task and task.wait) end)
+  return if ok then {ok=true,report=value} else {ok=false,error=tostring(value)}
+ end
+ local kinds={give="unlock",remove="revoke",xp="xp",rank="rank",currency="currency",pack="pack",mastery="mastery",select="select"}
+ if not kinds[op] and not ({verify=true,dump=true,save=true,reset=true})[op] then return {ok=false,error="Unknown dev profile operation"} end
+ local id=arg.profile or "dev_studio"
+ if op=="verify" then local record,err=self.repo:verify(id);return {ok=record~=nil,record=record,error=err} end
+ local h,reason=self:handle(id);if not h then return {ok=false,error=reason} end
+ if op=="dump" then local p,state=self.repo:view(h);return {ok=true,profile=p,state=state,revision=h.revision,leaseUntil=h.leaseUntil} end
+ if op=="save" then local ok,err=self.repo:save(h,arg.release==true);return {ok=ok,error=not ok and err or nil} end
+ if op=="reset" then local ok,err=self.repo:resetTest(h);return {ok=ok,error=not ok and err or nil} end
+ local kind=kinds[op]
+ local ok,value,replayed=self.repo:apply(h,arg.sequence or h.data.commandSequence+1,kind,arg,function() return self.rng:next() end)
+ return {ok=ok,result=ok and value or nil,error=not ok and value or nil,replayed=replayed==true}
+end
+return Tools
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -4773,7 +5048,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -4845,7 +5120,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND36">
+      <Item class="Script" referent="ND41">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4874,7 +5149,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5130,7 +5405,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -5352,7 +5627,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">OnlineHost</string>
           <ProtectedString name="Source">-- Optional lobby / matchmaking lifecycle. No Instances, listeners or boot call.
@@ -5398,7 +5673,7 @@ return Host
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">OnlineMatch</string>
           <ProtectedString name="Source">-- Two-player adapter around the SAME Combat instance, without any AI.
@@ -5445,7 +5720,7 @@ return Match
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">OnlineQueue</string>
           <ProtectedString name="Source">-- FIFO queue: server-owned Player identities, no client-supplied opponent.
@@ -5468,7 +5743,7 @@ return Queue
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">OnlineReplication</string>
           <ProtectedString name="Source">-- Recipient-specific reliable snapshot envelope. Independent impact cursors.
@@ -5493,7 +5768,7 @@ return Replication
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">OnlineValidation</string>
           <ProtectedString name="Source">-- Produces a fresh allowlisted intent; clients cannot write combat state.
@@ -5527,7 +5802,71 @@ return Validation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND49">
+        <Properties>
+          <string name="Name">PackSimulation</string>
+          <ProtectedString name="Source">-- Internal deterministic economy simulation. No purchases or profile writes.
+local S=require(script.Parent.ProfileSchema)
+local E=require(script.Parent.CollectionEconomy)
+local RNG=require(script.Parent.ProgressionRandom)
+local Definitions=require(script.Parent.ProgressionDefinitions)
+local Sim={}
+function Sim.run(cfg,options,yieldProfile)
+ options=options or {};Definitions.validate(cfg)
+ local profiles=options.profiles or 100;local packs=options.packs or 100;local seed=options.seed or 42;local packId=options.pack or "Training"
+ assert(S.integer(profiles,10000) and profiles&gt;0 and S.integer(packs,100000) and packs&gt;0 and profiles*packs&lt;=1000000,"Simulation budget max 1,000,000 packs")
+ local pack=cfg.Packs[packId];local totalWeight=E.validatePack(cfg,pack);local random=RNG.new(seed)
+ assert(pack.cost*packs&lt;=cfg.MaxAmount and profiles*packs*pack.slots&lt;=1000000,"Simulation currency/drop budget exceeded")
+ local ids={};local dist={};for id in cfg.Characters do table.insert(ids,id);dist[id]={draws=0,unlockedProfiles=0,unlockPacksTotal=0} end;table.sort(ids)
+ local milestones={1,5,10,25,50,100,packs};local history={};for _,n in milestones do if n&lt;=packs then history[tostring(n)]=0 end end
+ local duplicates,drops,ownedTotal,complete,totalCompletePacks,firstUnlocks,firstUnlockPacks,stranded=0,0,0,0,0,0,0,0
+ local finalCurrencies={};for id in cfg.Currencies do finalCurrencies[id]=0 end
+ for i=1,profiles do
+  local p=S.new("dev_sim_"..i,cfg);p.currencies[pack.currency]=pack.cost*packs
+  local at={[cfg.Starter]=0};local first=nil;local completed=nil
+  for n=1,packs do
+   local result=E.pack(p,cfg,packId,function() return random:next() end)
+   for _,drop in result.drops do
+    dist[drop.character].draws+=1;drops+=1
+    if drop.duplicate then duplicates+=1 end
+    if drop.unlocked then at[drop.character]=n;first=first or n end
+   end
+   local owned=0;for _ in p.collection do owned+=1 end
+   if owned==#ids then completed=completed or n end
+   if history[tostring(n)] then history[tostring(n)]+=owned end
+  end
+  local owned=0;for id in p.collection do owned+=1;stranded+=p.fragments[id] or 0 end;ownedTotal+=owned
+  for id,n in at do dist[id].unlockedProfiles+=1;dist[id].unlockPacksTotal+=n end
+  if first then firstUnlocks+=1;firstUnlockPacks+=first end
+  if completed then complete+=1;totalCompletePacks+=completed end
+  for id,balance in p.currencies do finalCurrencies[id]+=balance end
+  if yieldProfile and i%10==0 then yieldProfile() end
+ end
+ for id,row in dist do
+  local baseline=0;for _,e in pack.entries do if e.character==id then baseline+=e.weight/totalWeight end end
+  row.baselineProbability=baseline;row.frequency=row.draws/drops;row.unlockRate=row.unlockedProfiles/profiles
+  row.censoredProfiles=profiles-row.unlockedProfiles;row.averagePacksToUnlockAmongSuccesses=if row.unlockedProfiles&gt;0 then row.unlockPacksTotal/row.unlockedProfiles else nil
+  row.starter=id==cfg.Starter
+ end
+ for n,value in history do history[n]=value/profiles end
+ for id,value in finalCurrencies do finalCurrencies[id]=value/profiles end
+ local warnings={"Fixture balance only; no approved commercial economy.","Unlock-time averages exclude censored profiles; use unlockRate/censoredProfiles as well."}
+ if complete&lt;profiles then table.insert(warnings,"Incomplete collections remain at the simulation horizon.") end
+ if stranded&gt;0 then table.insert(warnings,"Owned-character fragments accumulate: a sink/crafting policy is not defined.") end
+ if pack.pity or pack.guarantee then table.insert(warnings,"Guarantees/pity alter raw-weight probabilities; baselineProbability is not an effective rate.") end
+ return {fixtureOnly=true,seed=seed,pack=packId,profiles=profiles,packsPerProfile=packs,openings=profiles*packs,drops=drops,distribution=dist,
+  duplicateRate=duplicates/drops,averageOwned=ownedTotal/profiles,rosterSize=#ids,collectionTrajectory=history,
+  completedProfiles=complete,completionRate=complete/profiles,censoredCompletionProfiles=profiles-complete,
+  averagePacksToCompleteAmongSuccesses=if complete&gt;0 then totalCompletePacks/complete else nil,
+  averagePacksToFirstUnlockAmongSuccesses=if firstUnlocks&gt;0 then firstUnlockPacks/firstUnlocks else nil,
+  firstUnlockCensoredProfiles=profiles-firstUnlocks,averageCost=pack.cost*packs,averageFinalCurrencies=finalCurrencies,
+  averageStrandedOwnedFragments=stranded/profiles,warnings=warnings}
+end
+return Sim
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -5789,7 +6128,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6264,7 +6603,390 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND52">
+        <Properties>
+          <string name="Name">ProfileRepository</string>
+          <ProtectedString name="Source">-- Single-key development profile persistence. No player listeners/timers.
+-- Exclusive leased writer, fenced revisions, serial per-handle saves and fixed
+-- idempotent write packets. Failing reads NEVER create a writable default.
+local S=require(script.Parent.ProfileSchema)
+local Economy=require(script.Parent.CollectionEconomy)
+local Repo={};Repo.__index=Repo
+function Repo.new(store,cfg,options)
+ require(script.Parent.ProgressionDefinitions).validate(cfg)
+ options=options or {};assert(store and type(store.update)=="function" and type(store.read)=="function","Store adapter required")
+ local owner=options.owner or game:GetService("HttpService"):GenerateGUID(false)
+ assert(S.id(owner),"Owner token required")
+ return setmetatable({store=store,cfg=cfg,owner=owner,clock=options.clock or os.time,sleep=options.sleep or task.wait,handles={},loading={}},Repo)
+end
+function Repo:_update(key,transform)
+ local reason
+ for attempt=1,self.cfg.MaxRetries do
+  local ok,result=pcall(function() return self.store:update(key,transform) end)
+  if ok then return true,result end;reason=tostring(result)
+  if attempt&lt;self.cfg.MaxRetries then self.sleep(math.min(2,.2*2^(attempt-1))) end
+ end
+ return false,reason
+end
+local function envelope(raw,cfg)
+ if raw==nil then return nil end
+ assert(S.serializable(raw) and raw.envelopeVersion==1 and S.integer(raw.revision,cfg.MaxAmount),"Corrupt/future envelope")
+ if raw.lease then assert(type(raw.lease)=="table" and S.id(raw.lease.owner) and type(raw.lease.expires)=="number" and raw.lease.expires==raw.lease.expires and math.abs(raw.lease.expires)&lt;1e12,"Invalid lease") end
+ local p,reason=S.migrate(raw.profile,cfg);assert(p,reason)
+ local result=S.copy(raw);result.profile=p;return result
+end
+function Repo:load(id)
+ if not S.devId(id) or not id:match("^dev_[%w_%-]+$") then return nil,"Development ID required" end
+ if self.loading[id] then return nil,"Load busy" end
+ if self.handles[id] then return nil,"Already loaded" end
+ self.loading[id]=true;local reason
+ local ok,value=self:_update("p_"..id,function(raw)
+  local current=envelope(raw,self.cfg);local now=self.clock()
+  if current and current.profile.id~=id then reason="Identity mismatch";return nil end
+  if current and current.lease and current.lease.owner~=self.owner and current.lease.expires&gt;now then reason="Session locked";return nil end
+  current=current or {envelopeVersion=1,revision=0,profile=S.new(id,self.cfg)}
+  current.revision+=1;current.lease={owner=self.owner,expires=now+self.cfg.LeaseSeconds};return current
+ end)
+ self.loading[id]=nil
+ if not ok or not value then return nil,reason or value or "Load failed" end
+ local h={id=id,data=S.copy(value.profile),revision=value.revision,leaseUntil=value.lease.expires,state="Ready",busy=false,writeNumber=0,lastSave=self.clock()}
+ self.handles[id]=h;return h
+end
+function Repo:ready(h)
+ if self.handles[h.id]~=h or h.state~="Ready" or h.busy then return false,"Profile not ready / busy" end
+ if self.clock()&gt;=h.leaseUntil then h.state="Lost";return false,"Lease expired" end
+ return true
+end
+function Repo:view(h) return S.copy(h.data),h.state end
+function Repo:apply(h,sequence,kind,args,nextNumber)
+ local ready,reason=self:ready(h);if not ready then return false,reason end
+ local ok,data,result,replay=pcall(Economy.apply,h.data,self.cfg,sequence,kind,args,nextNumber)
+ if not ok then return false,tostring(data) end
+ h.data=data;return true,S.copy(result),replay
+end
+function Repo:resetTest(h)
+ local ready,reason=self:ready(h);if not ready then return false,reason end
+ local p=S.new(h.id,self.cfg);p.commandSequence=h.data.commandSequence+1;p.lastCommand={sequence=p.commandSequence,kind="reset",result={reset=true}}
+ h.data=p;return true
+end
+function Repo:save(h,release)
+ if self.handles[h.id]~=h or h.busy or h.state=="Closed" or h.state=="Lost" then return false,"Profile unavailable / busy" end
+ if self.clock()&gt;=h.leaseUntil then h.state="Lost";return false,"Lease expired" end
+ h.busy=true
+ if not h.pending then
+  local valid,reason=S.validate(h.data,self.cfg);if not valid then h.busy=false;return false,reason end
+  h.writeNumber+=1
+  h.pending={token=self.owner..":"..h.writeNumber,revision=h.revision,data=S.copy(h.data),release=release==true}
+ end
+ local packet=h.pending;local reason
+ local ok,value=self:_update("p_"..h.id,function(raw)
+  local current=envelope(raw,self.cfg);local now=self.clock()
+  -- An ambiguous successful write is retried with the SAME snapshot/token.
+  if current and current.lastWrite==packet.token and current.revision==packet.revision+1 then return current end
+  if not current or current.profile.id~=h.id or current.revision~=packet.revision or not current.lease or current.lease.owner~=self.owner or current.lease.expires&lt;=now then reason="Writer fence / lease lost";return nil end
+  current.profile=S.copy(packet.data);current.revision+=1;current.lastWrite=packet.token
+  current.lease=if packet.release then nil else {owner=self.owner,expires=now+self.cfg.LeaseSeconds}
+  return current
+ end)
+ h.busy=false
+ if not ok then h.state="SaveUncertain";return false,value end
+ if not value then h.state="Lost";return false,reason or "Save rejected" end
+ h.pending=nil;h.revision=value.revision;h.lastSave=self.clock()
+ if packet.release then h.state="Closed";self.handles[h.id]=nil
+ else
+  if not value.lease or value.lease.owner~=self.owner or value.lease.expires&lt;=self.clock() then h.state="Lost";return false,"Lease lost after commit" end
+  h.leaseUntil=value.lease.expires;h.state="Ready"
+ end
+ if release and not packet.release then return self:save(h,true) end
+ return true
+end
+function Repo:verify(id)
+ if not S.devId(id) then return nil,"Development ID required" end
+ local ok,value=pcall(function() return self.store:read("p_"..id) end)
+ if not ok then return nil,tostring(value) end
+ if value==nil then return nil,"Missing saved profile" end
+ local valid,record=pcall(envelope,value,self.cfg)
+ if not valid then return nil,tostring(record) end
+ if record.profile.id~=id then return nil,"Identity mismatch" end
+ return record
+end
+-- Explicit host scheduling; never installed into the current runtime.
+function Repo:pulse()
+ local failures={}
+ for id,h in self.handles do
+  if not h.busy and (h.state=="SaveUncertain" or self.clock()-h.lastSave&gt;=self.cfg.SaveInterval) then
+   local ok,reason=self:save(h);if not ok then failures[id]=reason end
+  end
+ end
+ return failures
+end
+function Repo:closeAll()
+ local failures={};for id,h in self.handles do local ok,reason=self:save(h,true);if not ok then failures[id]=reason end end;return failures
+end
+return Repo
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND53">
+        <Properties>
+          <string name="Name">ProfileSchema</string>
+          <ProtectedString name="Source">-- JSON-safe versioned profile. Never silently repairs corrupt/future saves.
+local S={}
+function S.copy(v)
+ if type(v)~="table" then return v end
+ local out={};for k,item in v do out[k]=S.copy(item) end;return out
+end
+function S.integer(n,max) return type(n)=="number" and n==n and n&gt;=0 and n%1==0 and n&lt;=(max or 1000000000) end
+function S.id(v) return type(v)=="string" and #v&gt;0 and #v&lt;=64 and v:match("^[%w_.:%-]+$")~=nil end
+function S.devId(v) return S.id(v) and #v&lt;=32 and v:match("^dev_[%w_%-]+$")~=nil end
+function S.character()
+ return {xp=0,claimed={},variants={},techniques={},awakenings={},cosmetics={},stats={matches=0,wins=0,losses=0,xpEarned=0}}
+end
+function S.new(id,cfg)
+ assert(S.devId(id),"Development profile ID must start dev_")
+ local currencies={};for name,spec in cfg.Currencies do currencies[name]=spec.initial or 0 end
+ return {schemaVersion=cfg.SchemaVersion,id=id,starter=cfg.Starter,selected=cfg.Starter,
+  collection={[cfg.Starter]=true},characters={[cfg.Starter]=S.character()},fragments={},currencies=currencies,pity={},
+  commandSequence=0,rewardStreams={},stats={packs=0,drops=0,duplicates=0,matches=0},lastCommand=nil}
+end
+local function map(t,valueCheck,limit)
+ if type(t)~="table" then return false end;local n=0
+ for k,v in t do n+=1;if n&gt;(limit or 256) or not S.id(k) or not valueCheck(v) then return false end end
+ return true
+end
+local function flags(t) return map(t,function(v) return v==true end,1024) end
+local function statistics(t,required,cfg)
+ if not map(t,function(n) return S.integer(n,cfg.MaxAmount) end) then return false end
+ for _,key in required do if not S.integer(t[key],cfg.MaxAmount) then return false end end
+ return true
+end
+function S.serializable(value)
+ local seen={};local nodes=0;local bytes=0
+ local function walk(v,depth)
+  nodes+=1;if nodes&gt;20000 or depth&gt;16 then return false end
+  if type(v)=="number" then return v==v and math.abs(v)&lt;math.huge
+  elseif type(v)=="boolean" or v==nil then return true
+  elseif type(v)=="string" then bytes+=#v;return #v&lt;=2048 and bytes&lt;1000000
+  elseif type(v)=="table" then
+   if seen[v] then return false end;seen[v]=true
+   local numeric=false;local text=false;local count=0
+   for k,item in v do
+    count+=1;if type(k)=="number" then numeric=true;if not S.integer(k,20000) or k&lt;1 then return false end
+    elseif type(k)=="string" then text=true else return false end
+    if not walk(k,depth+1) or not walk(item,depth+1) then return false end
+   end
+   if numeric and (text or count~=#v) then return false end
+   seen[v]=nil;return true
+  end
+  return false
+ end
+ return walk(value,0)
+end
+function S.validate(p,cfg)
+ if not S.serializable(p) then return false,"Unsafe serialized data" end
+ if type(p)~="table" or p.schemaVersion~=cfg.SchemaVersion or not S.devId(p.id) or not S.id(p.starter) or not S.id(p.selected) then return false,"Profile header/version" end
+ if not flags(p.collection) or not p.collection[p.selected] or next(p.collection)==nil then return false,"Collection/selection" end
+ if not map(p.currencies,function(n) return S.integer(n,cfg.MaxAmount) end) or not map(p.fragments,function(n) return S.integer(n,cfg.MaxAmount) end) then return false,"Balances/fragments" end
+ for id in cfg.Currencies do if p.currencies[id]==nil then return false,"Missing currency" end end
+ if not map(p.pity,function(n) return S.integer(n,cfg.MaxAmount) end) or not map(p.rewardStreams,function(n) return S.integer(n,cfg.MaxAmount) end,64) then return false,"Counters" end
+ if not S.integer(p.commandSequence,cfg.MaxAmount) or not statistics(p.stats,{"packs","drops","duplicates","matches"},cfg) then return false,"Statistics" end
+ if not map(p.characters,function(ch)
+  return type(ch)=="table" and S.integer(ch.xp,cfg.MaxAmount) and flags(ch.claimed) and flags(ch.variants) and flags(ch.techniques) and flags(ch.awakenings) and flags(ch.cosmetics)
+   and statistics(ch.stats,{"matches","wins","losses","xpEarned"},cfg)
+ end) then return false,"Character progression" end
+ for id in p.collection do if not p.characters[id] then return false,"Owned character missing record" end end
+ if p.lastCommand~=nil then
+  local last=p.lastCommand
+  if type(last)~="table" or not S.integer(last.sequence,cfg.MaxAmount) or last.sequence~=p.commandSequence or not S.id(last.kind) then return false,"Command ledger" end
+ end
+ return true
+end
+-- v1: characterXP map instead of full character mastery records.
+function S.migrate(raw,cfg)
+ if not S.serializable(raw) or type(raw)~="table" or not S.integer(raw.schemaVersion,cfg.SchemaVersion) then return nil,"Unknown/future schema" end
+ local p=S.copy(raw)
+ if p.schemaVersion==1 then
+  p.characters=p.characters or {}
+  if type(p.characterXP)~="table" or type(p.collection)~="table" or type(p.characters)~="table" or type(p.currencies)~="table" then return nil,"Invalid v1 save" end
+  for id,xp in p.characterXP do
+   if not S.integer(xp,cfg.MaxAmount) then return nil,"Invalid legacy XP" end
+   local ch=S.character();ch.xp=xp;ch.stats.xpEarned=xp;p.characters[id]=ch
+  end
+  for id in p.collection do p.characters[id]=p.characters[id] or S.character() end
+  p.characterXP=nil;p.rewardStreams=p.rewardStreams or {};p.commandSequence=p.commandSequence or 0;p.stats=p.stats or {packs=0,drops=0,duplicates=0,matches=0};p.pity=p.pity or {}
+  for id,spec in cfg.Currencies do if p.currencies[id]==nil then p.currencies[id]=spec.initial end end
+  p.schemaVersion=2
+ end
+ local ok,reason=S.validate(p,cfg);if not ok then return nil,reason end
+ return p
+end
+return S
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND54">
+        <Properties>
+          <string name="Name">ProgressionConfig</string>
+          <ProtectedString name="Source">-- Development fixture only: no approved progression/economy balance.
+-- No bootstrap imports this module. Combat never reads these values.
+local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local C={Enabled=false,CombatEffectsEnabled=false,MonetizationEnabled=false,DevDataStoreEnabled=false,
+ SchemaVersion=2,Starter="Flashstep",MaxLevel=50,XPPerLevel=100,MaxAmount=1000000000,
+ LeaseSeconds=120,SaveInterval=30,MaxRetries=3,StoreName="NinjaDuel_DEV_Progression",StoreScope="development_v1",
+ Currencies={Coins={premium=false,initial=0},Premium={premium=true,initial=0},MasteryTokens={premium=false,initial=0}},
+ Rarities={Common=1,Rare=2,Epic=3,Legendary=4},Regions={EU=true,NA=true,AS=true},Characters={},
+ Ranks={{id="Novice",xp=0},{id="Adept",xp=500},{id="Expert",xp=1500},{id="Master",xp=3000}},Packs={}}
+-- Deliberately modest sample caps retain the speed bands of active identities.
+local sample={Flashstep={growth=.08,cap=21},Mirage={growth=.03,cap=18.6},GentleFist={growth=.025,cap=18},Lion={growth=.03,cap=19},Sand={growth=.02,cap=16}}
+for id,f in Fighters do
+ local speed=sample[id] or {growth=0,cap=f.Speed}
+ C.Characters[id]={name=f.Name,rarity=if id=="Flashstep" then "Legendary" elseif id=="Mirage" then "Epic" elseif id=="Sand" then "Common" else "Rare",
+  unlockFragments=50,stats={Speed={base=f.Speed,growth=speed.growth,cap=math.max(f.Speed,speed.cap)},Health={base=f.Health,growth=0,cap=f.Health}},
+  rewards={{id=id..":adept",rank="Adept",grants={{kind="variant",id=id..":optional-route"}}},
+   {id=id..":expert",rank="Expert",grants={{kind="awakening",id=id..":awakening-option"}}},
+   {id=id..":master",rank="Master",grants={{kind="cosmetic",id=id..":mastery-aura"},{kind="currency",id="MasteryTokens",amount=10}}}}}
+end
+local entries={};local ids={};for id in C.Characters do table.insert(ids,id) end;table.sort(ids)
+for _,id in ids do local ch=C.Characters[id];table.insert(entries,{character=id,rarity=ch.rarity,weight=if ch.rarity=="Legendary" then 5 elseif ch.rarity=="Epic" then 15 elseif ch.rarity=="Rare" then 25 else 30,fragments=10}) end
+C.Packs.Training={currency="Coins",cost=100,slots=1,entries=entries,duplicate={mode="fragments",amount=10},pity={after=20,minRarity="Epic"}}
+return C
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND55">
+        <Properties>
+          <string name="Name">ProgressionDefinitions</string>
+          <ProtectedString name="Source">-- Validate optional configuration before any profile is created or simulated.
+local S=require(script.Parent.ProfileSchema)
+local Economy=require(script.Parent.CollectionEconomy)
+local D={}
+function D.validate(cfg)
+ assert(cfg.SchemaVersion==2 and cfg.Characters[cfg.Starter],"Unknown schema / starter")
+ assert(S.integer(cfg.MaxAmount,1000000000000) and cfg.MaxAmount&gt;0 and S.integer(cfg.MaxLevel,10000) and cfg.MaxLevel&gt;0 and S.integer(cfg.XPPerLevel,cfg.MaxAmount) and cfg.XPPerLevel&gt;0,"Invalid progression limits")
+ assert(S.integer(cfg.LeaseSeconds,3600) and cfg.LeaseSeconds&gt;=30 and S.integer(cfg.SaveInterval,3600) and cfg.SaveInterval&gt;0 and cfg.SaveInterval&lt;cfg.LeaseSeconds/2 and S.integer(cfg.MaxRetries,5) and cfg.MaxRetries&gt;0,"Invalid save cadence")
+ local regions=0
+ for id,enabled in cfg.Regions do regions+=1;assert(regions&lt;=32 and S.id(id) and enabled==true,"Invalid region") end
+ assert(regions&gt;0,"Regions required")
+ local tiers={};local rarityCount=0
+ for id,tier in cfg.Rarities do
+  rarityCount+=1;assert(rarityCount&lt;=32 and S.id(id) and S.integer(tier,32) and tier&gt;0 and not tiers[tier],"Invalid rarity tier");tiers[tier]=true
+ end
+ assert(rarityCount&gt;0,"Rarities required")
+ local ranks={};local previous=-1
+ for _,rank in cfg.Ranks do assert(S.id(rank.id) and not ranks[rank.id] and S.integer(rank.xp,cfg.MaxAmount) and rank.xp&gt;previous,"Invalid ranks");ranks[rank.id]=true;previous=rank.xp end
+ assert(#cfg.Ranks&gt;0 and cfg.Ranks[1].xp==0,"Initial rank required")
+ local currencies=0
+ for id,c in cfg.Currencies do currencies+=1;assert(currencies&lt;=16 and S.id(id) and type(c.premium)=="boolean" and S.integer(c.initial,cfg.MaxAmount),"Invalid currency") end
+ local count=0
+ for id,ch in cfg.Characters do
+  count+=1;assert(count&lt;=256 and S.id(id) and S.integer(ch.unlockFragments,cfg.MaxAmount) and ch.unlockFragments&gt;0 and cfg.Rarities[ch.rarity],"Invalid character")
+  local stats=0
+  for name,t in ch.stats do stats+=1;assert(stats&lt;=32 and S.id(name) and type(t.base)=="number" and type(t.growth)=="number" and type(t.cap)=="number" and t.base&gt;=0 and t.base&lt;1e9 and t.growth&gt;=0 and t.growth&lt;1e9 and t.cap&gt;=t.base and t.cap&lt;1e9,"Invalid identity stat cap") end
+  local rewards={}
+  for _,reward in ch.rewards do
+   assert(S.id(reward.id) and not rewards[reward.id] and ranks[reward.rank],"Invalid mastery reward");rewards[reward.id]=true
+   for _,g in reward.grants do
+    assert(S.id(g.id),"Invalid grant ID")
+    if g.kind=="currency" then assert(cfg.Currencies[g.id] and S.integer(g.amount,cfg.MaxAmount),"Invalid currency reward")
+    else assert(({variant=true,technique=true,awakening=true,cosmetic=true})[g.kind],"Invalid mastery reward kind") end
+   end
+  end
+ end
+ for id,pack in cfg.Packs do assert(S.id(id),"Invalid pack ID");Economy.validatePack(cfg,pack) end
+ return true
+end
+return D
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND56">
+        <Properties>
+          <string name="Name">ProgressionLobby</string>
+          <ProtectedString name="Source">-- Optional future online lobby adapter. No listeners, networking or combat.
+local Roster=require(script.Parent.ProgressionRoster)
+local Queue=require(script.Parent.OnlineQueue)
+local Lobby={};Lobby.__index=Lobby
+function Lobby.new(cfg,lookup)
+ if cfg.Enabled~=true then return nil,"Progression online disabled" end
+ assert(type(lookup)=="function","Server-owned profile lookup required")
+ return setmetatable({cfg=cfg,lookup=lookup,queues={},queued={}},Lobby)
+end
+function Lobby:join(player,mode,region,id)
+ if not self.cfg.Regions[region] then return false,"Unknown configured region" end
+ if self.queued[player] then return false,"Already queued" end
+ local profile,ready=self.lookup(player);if not ready then return false,"Profile unavailable" end
+ if mode~="Ranked" and mode~="ProgressionBattles" then return false,"Unknown matchmaking mode" end
+ local plan,reason=Roster.select(self.cfg,profile,mode,id);if not plan then return false,reason end
+ local ok,key=pcall(Roster.queueKey,mode,region);if not ok then return false,"Invalid region" end
+ self.queues[key]=self.queues[key] or Queue.new(32)
+ local joined,err=self.queues[key]:join(player,id);if not joined then return false,err end
+ self.queued[player]={key=key,mode=mode,character=id};return true,plan
+end
+function Lobby:leave(player)
+ local entry=self.queued[player]
+ if entry then
+  local queue=self.queues[entry.key];queue:leave(player);self.queued[player]=nil
+  if #queue.entries==0 then self.queues[entry.key]=nil end
+ end
+end
+function Lobby:pair(key)
+ local queue=self.queues[key];if not queue then return nil end
+ -- Revalidate ownership/loading at dequeue, never trust the entry snapshot.
+ for _,entry in table.clone(queue.entries) do
+  local p,ready=self.lookup(entry.player);local queued=self.queued[entry.player]
+  if not ready or not queued or not Roster.select(self.cfg,p,queued.mode,entry.fighter) then self:leave(entry.player) end
+ end
+ local a,b=queue:pair();if #queue.entries==0 then self.queues[key]=nil end;if not a then return nil end
+ local mode=self.queued[a.player].mode;self.queued[a.player]=nil;self.queued[b.player]=nil
+ return {mode=mode,a=a,b=b,combatApplicationEnabled=false}
+end
+return Lobby
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND57">
+        <Properties>
+          <string name="Name">ProgressionRandom</string>
+          <ProtectedString name="Source">-- Deterministic simulation generator; not a commercial/randomness service.
+local R={};R.__index=R
+function R.new(seed)
+ assert(type(seed)=="number" and seed%1==0 and seed&gt;0 and seed&lt;2147483647,"Seed out of range")
+ return setmetatable({state=seed},R)
+end
+function R:next() self.state=(self.state*16807)%2147483647;return self.state/2147483647 end
+return R
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND58">
+        <Properties>
+          <string name="Name">ProgressionRoster</string>
+          <ProtectedString name="Source">-- Future policy boundary only. Never gates local selection or applies stats.
+local S=require(script.Parent.ProfileSchema)
+local P=require(script.Parent.CharacterProgression)
+local R={Modes={Local=true,Ranked=true,ProgressionBattles=true}}
+function R.list(cfg,profile,mode)
+ assert(R.Modes[mode],"Unknown experience mode")
+ local ids={};for id in cfg.Characters do if mode=="Local" or (profile and profile.collection[id]) then table.insert(ids,id) end end
+ table.sort(ids);return ids
+end
+function R.select(cfg,profile,mode,id)
+ if not R.Modes[mode] or not cfg.Characters[id] then return nil,"Unknown mode / character" end
+ if mode~="Local" and (not profile or not profile.collection[id]) then return nil,"Character locked" end
+ local ch=profile and profile.characters[id] or S.character()
+ return {mode=mode,character=id,normalized=mode=="Ranked",combatApplicationEnabled=false,
+  base=P.project(cfg,id,ch,true),potential=P.project(cfg,id,ch,mode~="ProgressionBattles")}
+end
+-- Separate queues prevent normalized ranked and progression battles mixing.
+function R.queueKey(mode,region)
+ assert(mode=="Ranked" or mode=="ProgressionBattles","Online mode required")
+ assert(S.id(region),"Region label required");return mode..":"..region
+end
+return R
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -6785,7 +7507,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -6885,7 +7607,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -6913,7 +7635,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -6975,7 +7697,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -7026,7 +7748,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -7750,21 +8472,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND52">
+  <Item class="StarterPlayer" referent="ND65">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND53">
+    <Item class="StarterPlayerScripts" referent="ND66">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND54">
+      <Item class="Folder" referent="ND67">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND55">
+        <Item class="ModuleScript" referent="ND68">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -8005,7 +8727,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND56">
+        <Item class="ModuleScript" referent="ND69">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio-only overlay and bounded observation of the live client. F6 opens it.
@@ -8117,7 +8839,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND57">
+        <Item class="ModuleScript" referent="ND70">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments; never creates collision Parts or changes queries.
@@ -8154,7 +8876,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND58">
+        <Item class="ModuleScript" referent="ND71">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -9267,7 +9989,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND59">
+        <Item class="ModuleScript" referent="ND72">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -9415,7 +10137,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND60">
+        <Item class="LocalScript" referent="ND73">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -9483,7 +10205,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND61">
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -9736,7 +10458,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND62">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
@@ -10136,7 +10858,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND63">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -10269,7 +10991,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND64">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -12082,7 +12804,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND65">
+  <Item class="Lighting" referent="ND78">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -12100,7 +12822,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND66">
+  <Item class="SoundService" referent="ND79">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

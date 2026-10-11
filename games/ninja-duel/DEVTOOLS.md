@@ -91,3 +91,7 @@ Map : spawn des deux corps ; floor/wall/plafond réels ; tag NinjaWall cohérent
 Online futur : deux clients propriétaires distincts ; serveur décide dégâts/état ; directions/aim/time validés ; anti-spam/replay ; impacts livrés aux deux ; disconnect/KO/cleanup ; queue leave/rejoin ; perte/latence/jitter ; aucun canal dev en production ; pas de partage d’état avec le mode local.
 
 Sortie commerciale : identité/contenus et droits vérifiés ; permissions des assets dans l’expérience finale ; appareils cibles et réseau réel testés ; tutoriel ; résultat/rematch ; aucun build QA publié ; télémétrie de production choisie séparément ; rollback de version disponible. Ces listes sont des gates à remplir, pas une validation acquise par cette passe.
+
+## Progression et collection, préparation isolée
+
+Voir [le guide Claude](progression/README.md) : commandes `profiles` via le bindable serveur Studio, CLI avec sandbox DEV persistante, simulateur de packs et benchmark de profils. Aucun nouveau canal client ni branchement au combat. Le backend Roblox réel reste OFF.

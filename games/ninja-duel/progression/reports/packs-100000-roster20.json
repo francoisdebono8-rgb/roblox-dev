@@ -1,0 +1,264 @@
+{
+  "ok": true,
+  "report": {
+    "averageCost": 10000,
+    "averageFinalCurrencies": {
+      "Coins": 0,
+      "MasteryTokens": 0,
+      "Premium": 0
+    },
+    "averageOwned": 10.185,
+    "averagePacksToFirstUnlockAmongSuccesses": 27.847,
+    "averageStrandedOwnedFragments": 265.66,
+    "censoredCompletionProfiles": 1000,
+    "collectionTrajectory": {
+      "1": 1,
+      "10": 1.011,
+      "100": 10.185,
+      "25": 1.44,
+      "5": 1,
+      "50": 3.816
+    },
+    "completedProfiles": 0,
+    "completionRate": 0,
+    "distribution": {
+      "Fixture006": {
+        "averagePacksToUnlockAmongSuccesses": 73.95755968169762,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 623,
+        "draws": 4000,
+        "frequency": 0.04,
+        "starter": false,
+        "unlockPacksTotal": 27882,
+        "unlockRate": 0.377,
+        "unlockedProfiles": 377
+      },
+      "Fixture007": {
+        "averagePacksToUnlockAmongSuccesses": 74.24863387978142,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 634,
+        "draws": 3945,
+        "frequency": 0.03945,
+        "starter": false,
+        "unlockPacksTotal": 27175,
+        "unlockRate": 0.366,
+        "unlockedProfiles": 366
+      },
+      "Fixture008": {
+        "averagePacksToUnlockAmongSuccesses": 75.68449197860963,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 626,
+        "draws": 3992,
+        "frequency": 0.03992,
+        "starter": false,
+        "unlockPacksTotal": 28306,
+        "unlockRate": 0.374,
+        "unlockedProfiles": 374
+      },
+      "Fixture009": {
+        "averagePacksToUnlockAmongSuccesses": 74.72162162162162,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 630,
+        "draws": 3996,
+        "frequency": 0.03996,
+        "starter": false,
+        "unlockPacksTotal": 27647,
+        "unlockRate": 0.37,
+        "unlockedProfiles": 370
+      },
+      "Fixture010": {
+        "averagePacksToUnlockAmongSuccesses": 75.13333333333334,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 625,
+        "draws": 4027,
+        "frequency": 0.04027,
+        "starter": false,
+        "unlockPacksTotal": 28175,
+        "unlockRate": 0.375,
+        "unlockedProfiles": 375
+      },
+      "Fixture011": {
+        "averagePacksToUnlockAmongSuccesses": 72.81818181818181,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 648,
+        "draws": 3942,
+        "frequency": 0.03942,
+        "starter": false,
+        "unlockPacksTotal": 25632,
+        "unlockRate": 0.352,
+        "unlockedProfiles": 352
+      },
+      "Fixture012": {
+        "averagePacksToUnlockAmongSuccesses": 72.61944444444444,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 640,
+        "draws": 4014,
+        "frequency": 0.04014,
+        "starter": false,
+        "unlockPacksTotal": 26143,
+        "unlockRate": 0.36,
+        "unlockedProfiles": 360
+      },
+      "Fixture013": {
+        "averagePacksToUnlockAmongSuccesses": 74.06267806267806,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 649,
+        "draws": 3910,
+        "frequency": 0.0391,
+        "starter": false,
+        "unlockPacksTotal": 25996,
+        "unlockRate": 0.351,
+        "unlockedProfiles": 351
+      },
+      "Fixture014": {
+        "averagePacksToUnlockAmongSuccesses": 72.3529411764706,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 626,
+        "draws": 4064,
+        "frequency": 0.04064,
+        "starter": false,
+        "unlockPacksTotal": 27060,
+        "unlockRate": 0.374,
+        "unlockedProfiles": 374
+      },
+      "Fixture015": {
+        "averagePacksToUnlockAmongSuccesses": 72.66161616161617,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 604,
+        "draws": 4116,
+        "frequency": 0.04116,
+        "starter": false,
+        "unlockPacksTotal": 28774,
+        "unlockRate": 0.396,
+        "unlockedProfiles": 396
+      },
+      "Fixture016": {
+        "averagePacksToUnlockAmongSuccesses": 73.97900262467192,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 619,
+        "draws": 3983,
+        "frequency": 0.03983,
+        "starter": false,
+        "unlockPacksTotal": 28186,
+        "unlockRate": 0.381,
+        "unlockedProfiles": 381
+      },
+      "Fixture017": {
+        "averagePacksToUnlockAmongSuccesses": 73.34426229508196,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 634,
+        "draws": 3968,
+        "frequency": 0.03968,
+        "starter": false,
+        "unlockPacksTotal": 26844,
+        "unlockRate": 0.366,
+        "unlockedProfiles": 366
+      },
+      "Fixture018": {
+        "averagePacksToUnlockAmongSuccesses": 73.73020527859238,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 659,
+        "draws": 3862,
+        "frequency": 0.03862,
+        "starter": false,
+        "unlockPacksTotal": 25142,
+        "unlockRate": 0.341,
+        "unlockedProfiles": 341
+      },
+      "Fixture019": {
+        "averagePacksToUnlockAmongSuccesses": 72.36079545454545,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 648,
+        "draws": 3966,
+        "frequency": 0.03966,
+        "starter": false,
+        "unlockPacksTotal": 25471,
+        "unlockRate": 0.352,
+        "unlockedProfiles": 352
+      },
+      "Fixture020": {
+        "averagePacksToUnlockAmongSuccesses": 72.34435261707989,
+        "baselineProbability": 0.04,
+        "censoredProfiles": 637,
+        "draws": 3991,
+        "frequency": 0.03991,
+        "starter": false,
+        "unlockPacksTotal": 26261,
+        "unlockRate": 0.363,
+        "unlockedProfiles": 363
+      },
+      "Flashstep": {
+        "averagePacksToUnlockAmongSuccesses": 0,
+        "baselineProbability": 0.02,
+        "censoredProfiles": 0,
+        "draws": 2018,
+        "frequency": 0.02018,
+        "starter": true,
+        "unlockPacksTotal": 0,
+        "unlockRate": 1,
+        "unlockedProfiles": 1000
+      },
+      "GentleFist": {
+        "averagePacksToUnlockAmongSuccesses": 48.804060913705584,
+        "baselineProbability": 0.1,
+        "censoredProfiles": 15,
+        "draws": 10076,
+        "frequency": 0.10076,
+        "starter": false,
+        "unlockPacksTotal": 48072,
+        "unlockRate": 0.985,
+        "unlockedProfiles": 985
+      },
+      "Lion": {
+        "averagePacksToUnlockAmongSuccesses": 47.46530612244898,
+        "baselineProbability": 0.1,
+        "censoredProfiles": 20,
+        "draws": 10153,
+        "frequency": 0.10153,
+        "starter": false,
+        "unlockPacksTotal": 46516,
+        "unlockRate": 0.98,
+        "unlockedProfiles": 980
+      },
+      "Mirage": {
+        "averagePacksToUnlockAmongSuccesses": 64.79338842975207,
+        "baselineProbability": 0.06,
+        "censoredProfiles": 274,
+        "draws": 6039,
+        "frequency": 0.06039,
+        "starter": false,
+        "unlockPacksTotal": 47040,
+        "unlockRate": 0.726,
+        "unlockedProfiles": 726
+      },
+      "Sand": {
+        "averagePacksToUnlockAmongSuccesses": 41.27610441767068,
+        "baselineProbability": 0.12,
+        "censoredProfiles": 4,
+        "draws": 11938,
+        "frequency": 0.11938,
+        "starter": false,
+        "unlockPacksTotal": 41111,
+        "unlockRate": 0.996,
+        "unlockedProfiles": 996
+      }
+    },
+    "drops": 100000,
+    "duplicateRate": 0.26566,
+    "firstUnlockCensoredProfiles": 0,
+    "fixtureOnly": true,
+    "openings": 100000,
+    "pack": "Training",
+    "packsPerProfile": 100,
+    "profiles": 1000,
+    "rosterSize": 20,
+    "seed": 42,
+    "warnings": [
+      "Fixture balance only; no approved commercial economy.",
+      "Unlock-time averages exclude censored profiles; use unlockRate/censoredProfiles as well.",
+      "Incomplete collections remain at the simulation horizon.",
+      "Owned-character fragments accumulate: a sink/crafting policy is not defined.",
+      "Guarantees/pity alter raw-weight probabilities; baselineProbability is not an effective rate."
+    ]
+  }
+}

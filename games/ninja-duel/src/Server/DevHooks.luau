@@ -21,6 +21,7 @@ function DevHooks.install(matches)
  end
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
+ local developmentProfiles=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
 	-- errors and camera framing so a playtest can be inspected from tooling.
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
@@ -65,6 +66,10 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="profiles" then
+   developmentProfiles=developmentProfiles or require(script.Parent.DevelopmentProfiles).new(require(script.Parent.ProgressionConfig))
+   return developmentProfiles:run(arg1,arg2)
+  end
   if op=="tool" then return run(player,arg1,arg2) end
   clientLog=player and logs[player] or {}
 		if op=="start" then

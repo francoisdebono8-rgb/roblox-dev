@@ -1,11 +1,11 @@
 {
   "version": "0.13.0-arena-combo",
-  "gitRevision": "ad8247c4105258589cb7bfd8f7080299950466af",
-  "gitBranch": "codex/ninja-devtools-online",
+  "gitRevision": "33028b26041570940cfcaf9c1f66cd3f93d8e5aa",
+  "gitBranch": "codex/ninja-progression-foundations",
   "sourceDirty": true,
-  "builtAtUTC": "2026-10-11T00:59:52.097269+00:00",
+  "builtAtUTC": "2026-10-11T01:27:07.385316+00:00",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "f84c6cf2559db079227f62706b5cc0734560ec8d3945021172ec60cd74bd840d",
+  "sha256": "400d8c8bbf69e8a0e2426cbdbb3c3e692a4c2352250d6b06b5e003086780edad",
   "sources": {
     "src/Client/Camera.luau": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d",
     "src/Client/DevClient.luau": "9617db51a25f9d5e26045236ffda1d3d811a9e46a88315d4ebdf5b949a96c10b",
@@ -22,12 +22,17 @@
     "src/Server/BanglaCombat.luau": "9ad3bb538983b372955bb6f9ccca86783da2f2a49426f551462222f96a7937cd",
     "src/Server/BanglaEvade.luau": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe",
     "src/Server/Brawler.luau": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740",
+    "src/Server/CharacterProgression.luau": "b6211ba84e9ca26260168447da4f0cb59b75f6bc2f90ae59b49c56a0f7abed77",
+    "src/Server/CollectionEconomy.luau": "4b4f5809b4f2d53e636e39d4f5135e12e6812a15e8a9a4148bdb1b9717596f7a",
     "src/Server/Combat.luau": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0",
-    "src/Server/DevHooks.luau": "bfb098e0a3478d364e77399d6c0effc3d83cd5fce1c59b10051cf4f8a6648a27",
+    "src/Server/DevHooks.luau": "0c63bfbe32adc2735d7932c6e9fa91dfebe37c83b5c29498939ed819e0f081ce",
     "src/Server/DevProfiler.luau": "3755ba26a67851fdb7a1d2f4036dc441fa6f1a4eab27211c223242770aab8559",
     "src/Server/DevReport.luau": "03ad5466dae6d3fe1af281142fb6bf479db921e0c92bcdb56360631959cf322e",
     "src/Server/DevScenarios.luau": "0429284ea0445aa2e2553d09a1dba804406ade10db38026e8f76eee64d95e1cc",
     "src/Server/DevTools.luau": "f6b6257474600eeef8cf4da7aa808a42672971e858f497523005559fb664f9c6",
+    "src/Server/DevelopmentDataStore.luau": "036f474333b05ee5d5e3e2c806e5b79d4724c0436146075a1adc9a4f335a4f20",
+    "src/Server/DevelopmentProfileStore.luau": "d9cd5d4924d0f9c8de1035ca5226c6ddc9218c5900e3232934987b4b049bdbc1",
+    "src/Server/DevelopmentProfiles.luau": "f63c478ef20c830958477cb712b3cbcc0e16ac23fc4234f4cf77f9c507890bf9",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333",
     "src/Server/Main.server.luau": "0d0f0e726b569bad859f0e8bc7e41186c5592d906a7444fe39990aa80d661aa9",
@@ -38,8 +43,16 @@
     "src/Server/OnlineQueue.luau": "16b4f786b98387b0814b5b57ea5395f6eeb71694c46329a34f191248a08c7ab6",
     "src/Server/OnlineReplication.luau": "368d93f8c129e3708fe31b562bbb8a9aff9b84ea0e228f93d2c637678de0528b",
     "src/Server/OnlineValidation.luau": "ab870288468212fa7599c015472e929644908978477e23f0f6f5b151f9fcbec2",
+    "src/Server/PackSimulation.luau": "1dd9f1cb7fb00dfe37c8796e80cc5e3b96cca87445fb40bb57b895e65ae00f90",
     "src/Server/Place1Movement.luau": "af18c94b37f114da55c36677727869ca59ac3537080111f1d48d57847b4f3323",
     "src/Server/Place1Parkour.luau": "faf01c5fae7baafad38b98492497f93f99fb761bc1a00ba2b554390ee97d600a",
+    "src/Server/ProfileRepository.luau": "8c0ac9abfb32230411e7554c09bdf741643854b861c849eb9c0c7b21253f8c13",
+    "src/Server/ProfileSchema.luau": "0e1a06dd215253f7c67c13d39819fc7d8182f2bffb5c9d82acf3b4f0d4a258e0",
+    "src/Server/ProgressionConfig.luau": "0daa693c68e7033a19dfece0eca06e2f3a1fc620fe1d2c7a84c0a25ce31cbc8a",
+    "src/Server/ProgressionDefinitions.luau": "ca91a3fc92ec723efe98ba184635b478a7561f26e47c3fc7c526e7eec18fa35d",
+    "src/Server/ProgressionLobby.luau": "3afbb9566b952cb50c1674926d097317fcd32bd598759dee1bdb6f6c90963e53",
+    "src/Server/ProgressionRandom.luau": "00b39d81f50d90de4bdc5875fcce47945c6a8f9e816833d06ade6532f6e4d9e3",
+    "src/Server/ProgressionRoster.luau": "229ce310b9d528d63c2b024714ed51fdbc5e5d440d171cee0a371786bca54d71",
     "src/Server/Techniques.luau": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1",
     "src/Server/Tutorial.luau": "7801a75372ebc1a4b1940bd7dbafc3e6ba6e19ba20a3a29d2e66fec9332e09de",
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
@@ -60,7 +73,7 @@
     "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
   },
   "sourceEquality": "PASS",
-  "buildFingerprint": "60797092e198821dfd756e84ee8502fdba42407fbf5afedc98dcb062b3d552fe",
+  "buildFingerprint": "83b0530dc8f44338273ce45020079f9f68a4b59042e60cfffe8cd4e0784e3d56",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -89,6 +102,14 @@
     "status": "PASS",
     "failed": [],
     "suites": {
+      "tests/Progression.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel progression/economy: 15 PASS (isolated data, no combat modifiers)"
+      },
+      "tests/ProfileRepository.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel profile persistence: 12 PASS (fault-injected memory adapter; real backend OFF)"
+      },
       "tests/DevInfra.spec.luau": {
         "exit": 0,
         "summary": "NinjaDuel dev infrastructure: 8 PASS"
@@ -158,30 +179,5 @@
   "nativeQA": "PENDING",
   "visualAcceptance": "PENDING",
   "controllerFeel": "PENDING",
-  "animationPermission": "PENDING",
-  "nativeToolingQA": {
-    "status": "PASS",
-    "scope": "Studio devtools smoke, not general gameplay or controller feel",
-    "pass": 12,
-    "fail": 0,
-    "testedBuildFingerprint": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9",
-    "testedArtifactSHA256": "c19fd03addef4769bcf3e8634dda75e9a6997f14e0a372a3ef7ae7ca18beff5e",
-    "commonRuntimeSourcesIdentical": true,
-    "report": "reports/native-devtools.json",
-    "log": "0.742.0.7421053_20261011T005656Z_Studio_440db_last.log"
-  },
-  "toolingVisualSmoke": {
-    "status": "PASS",
-    "buildFingerprint": "bd189a8ad3c2d17986987d550dd710a44e0fb24a48b1928c2977daaecd9c6cb9",
-    "checks": [
-      "F6 opens overlay",
-      "all four character choices and scenario/profiling/volume buttons visible",
-      "reset button RPC returns reset: OK and resumes duel"
-    ],
-    "limitations": [
-      "PS5 hardware navigation not validated",
-      "volumes overlay not visually validated",
-      "reopening F6 may be needed after a snapshot changes selection focus"
-    ]
-  }
+  "animationPermission": "PENDING"
 }
