@@ -1750,7 +1750,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND16">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">83b0530dc8f44338273ce45020079f9f68a4b59042e60cfffe8cd4e0784e3d56</string>
+          <string name="Value">c1b9d4947f5a1757fb54e79d3047a1cbe84f5f6ea023d5c67dad76d1e5de19f0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND17">
@@ -3001,6 +3001,657 @@ return Brawler
       </Item>
       <Item class="ModuleScript" referent="ND28">
         <Properties>
+          <string name="Name">ChakraConfig</string>
+          <ProtectedString name="Source">-- Proposal fixtures ONLY. No active character, weapon or combat reads this data.
+local C={Enabled=false,MaxObjects=32,MaxSurfaces=16,MaxEvents=128,MaxLife=30,MaxSpeed=180,MaxChakra=1000,
+ Triggers={Infuse=true,ProjectileClash=true,SurfaceHit=true,Contact=true},
+ Tags={tool=true,projectile=true,metal=true,blade=true,wire=true,actor=true,solid=true,wall=true,floor=true,anchorCompatible=true,burnable=true,conductive=true,chakra=true,reinforced=true,wind=true,fire=true,lightning=true,marked=true,seal=true,spatialAnchor=true,embedded=true,conductiveWire=true,weaponExpert=true,sealExpert=true,ignited=true},
+ Natures={Wind={tag="wind"},Fire={tag="fire"},Lightning={tag="lightning"}},
+ Properties={Marked={tag="marked",requires={"tool"}},Seal={tag="seal",requires={"tool"}}},
+ Masteries={Basic={tags={},levels={Wind=0,Seal=0}},WeaponExpert={tags={"weaponExpert"},levels={Wind=3,Seal=0}},SealExpert={tags={"sealExpert"},levels={Wind=0,Seal=3}}},
+ MasterySkills={Wind=true,Seal=true},CharacterMastery={},Objects={},Surfaces={},Infusions={},Rules={}}
+C.Objects.Kunai={toolType="Kunai",tags={"tool","projectile","metal","blade"},canLaunch=true,infusions={Reinforce=true,Wind=true,Fire=true,Lightning=true},stats={speed=42,stability=1,impact=1,cut=1},caps={speed=90,stability=2,impact=2,cut=2},radius=.35,visual="kunai"}
+C.Objects.Shuriken={toolType="Shuriken",tags={"tool","projectile","metal","blade"},canLaunch=true,infusions={Reinforce=true,Wind=true,Fire=true,Lightning=true},stats={speed=36,stability=1,impact=1,cut=1},caps={speed=80,stability=2,impact=2,cut=2},radius=.5,visual="shuriken"}
+C.Objects.Wire={toolType="Wire",tags={"tool","wire","metal"},canLaunch=false,infusions={Reinforce=true,Lightning=true},stats={stability=1,impact=1},caps={stability=2,impact=2},radius=.2,visual="wire"}
+C.Objects.Target={toolType="Target",tags={"actor","conductive"},canLaunch=false,infusions={},stats={},caps={},radius=1,visual="target"}
+C.Surfaces.Wall={tags={"solid","wall","anchorCompatible","conductive"},normal={x=-1,y=0,z=0},radius=8}
+C.Surfaces.Floor={tags={"solid","floor","anchorCompatible"},normal={x=0,y=1,z=0},radius=8}
+C.Surfaces.Wood={tags={"solid","wall","burnable"},normal={x=-1,y=0,z=0},radius=8}
+C.Infusions.Reinforce={tags={"chakra","reinforced"},cost=2}
+C.Infusions.Wind={nature="Wind",tags={"chakra"},cost=3}
+C.Infusions.Fire={nature="Fire",tags={"chakra"},cost=3}
+C.Infusions.Lightning={nature="Lightning",tags={"chakra"},cost=3}
+C.Rules={
+ {id="reinforced-tool",enabled=false,priority=20,trigger="Infuse",when={source={all={"tool","projectile","reinforced"}}},effects={{kind="scaleStat",stat="speed",factor=1.12},{kind="scaleStat",stat="stability",factor=1.2},{kind="scaleStat",stat="impact",factor=1.15}}},
+ {id="wind-kunai",enabled=false,priority=30,trigger="Infuse",when={source={all={"projectile","wind"}},toolType="Kunai"},effects={{kind="scaleStat",stat="speed",factor=1.25,mastery="Wind",perLevel=.03,maxFactor=1.4},{kind="scaleStat",stat="cut",factor=1.2}}},
+ {id="metal-conduction",enabled=false,priority=20,trigger="Infuse",when={source={all={"metal","lightning"}}},effects={{kind="tag",tag="conductive",target="source"}}},
+ {id="wire-property",enabled=false,priority=25,trigger="Infuse",when={source={all={"wire","lightning"}}},effects={{kind="tag",tag="conductiveWire",target="source"},{kind="signal",name="trap-property-ready"}}},
+ {id="contact-conduction",enabled=false,priority=20,trigger="Contact",when={source={all={"metal","lightning"}},target={all={"actor","conductive"}}},effects={{kind="signal",name="conduction-contact"}}},
+ {id="redirect-projectile",enabled=false,priority=40,group="clash-motion",trigger="ProjectileClash",when={source={all={"projectile"}},target={all={"projectile"}},context={all={"wind"}}},effects={{kind="redirect",target="target",speedScale=.85}}},
+ {id="deflect-projectile",enabled=false,priority=10,group="clash-motion",trigger="ProjectileClash",when={source={all={"projectile"}},target={all={"projectile"}}},effects={{kind="reflect",target="target",speedScale=.75}}},
+ {id="surface-embed",enabled=false,priority=100,trigger="SurfaceHit",when={source={all={"projectile","metal"}},surface={all={"solid","anchorCompatible"}}},effects={{kind="embed",target="source"}}},
+ {id="seal-anchor",enabled=false,priority=90,trigger="SurfaceHit",cost=3,when={source={all={"tool","marked","seal"}},surface={all={"anchorCompatible"}}},effects={{kind="anchor",target="source"},{kind="signal",name="spatial-point-created"}}},
+ {id="fire-surface",enabled=false,priority=30,trigger="SurfaceHit",when={source={all={"projectile","fire"}},surface={all={"burnable"}}},effects={{kind="tag",target="surface",tag="ignited"},{kind="signal",name="surface-ignition-request"}}},
+}
+return C
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND29">
+        <Properties>
+          <string name="Name">ChakraDev</string>
+          <ProtectedString name="Source">-- Server-internal tool facade. Studio bindable or offline CLI, no client Remote.
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local Lab=require(script.Parent.ChakraLab)
+local Dev={};Dev.__index=Dev
+function Dev.new(cfg,studio)
+ if studio then assert(game:GetService("RunService"):IsStudio(),"Studio only") end
+ return setmetatable({cfg=cfg,lab=Lab.new(cfg),studio=studio==true,view=nil,connection=nil,running=false,log=false,accumulator=0,lastPrinted=0},Dev)
+end
+function Dev:draw()
+ if self.view then self.view:update({objects=self.lab.engine.objects,surfaces=self.lab.engine.surfaces}) end
+ if self.log then
+  for _,event in self.lab.engine.events do if event.sequence&gt;self.lastPrinted then
+   print("[NinjaDuelChakra] "..game:GetService("HttpService"):JSONEncode(event));self.lastPrinted=event.sequence
+  end end
+ end
+end
+function Dev:stop()
+ if self.connection then self.connection:Disconnect();self.connection=nil end;self.running=false;self.accumulator=0
+end
+function Dev:destroy()
+ self:stop();if self.view then self.view:destroy();self.view=nil end;self.lab:reset(true)
+end
+function Dev:_run(op,arg)
+ local e=self.lab.engine
+ if op=="qa" then assert(self.studio,"Native QA is Studio only");return require(script.Parent.ChakraStudioQA).run()
+ elseif op=="spawn" then return e:spawn(arg.id,arg.tool or "Kunai",arg)
+ elseif op=="surface" then return e:surface(arg.id,arg.kind or "Wall",arg.position or V.new(8,3,0),arg.normal)
+ elseif op=="nature" then return e:infuse(arg.id,arg.nature or "None")
+ elseif op=="property" then return e:property(arg.id,arg.property,arg.enabled)
+ elseif op=="launch" then return e:launch(arg.id,arg.direction or V.new(1,0,0),arg.speed)
+ elseif op=="collision" then return self.lab:forceClash(arg.source,arg.target,arg.direction,arg.normal)
+ elseif op=="embed" then return self.lab:embed(arg.id,arg.surface)
+ elseif op=="trigger" then return e:trigger(arg)
+ elseif op=="toggle" then e:toggle(arg.rule,arg.enabled);return {rule=arg.rule,enabled=arg.enabled}
+ elseif op=="inspect" then return e:inspect(arg.id)
+ elseif op=="report" then return self.lab:report()
+ elseif op=="compare" then return Lab.compare(self.cfg,arg.tool or "Kunai",arg.infusions or {"None","Reinforce","Wind"},arg.masteries or {"Basic","WeaponExpert"})
+ elseif op=="demo" then self:stop();self.lastPrinted=0;if self.view then self.view:reset() end;return self.lab:demo(arg.name,arg.mastery)
+ elseif op=="step" then return self.lab:run(arg.seconds or 1)
+ elseif op=="reset" then self:stop();self.lab:reset(arg.clearRules==true);self.lastPrinted=0;if self.view then self.view:reset() end;return self.lab:report()
+ elseif op=="stop" then self:stop();return {running=false}
+ elseif op=="close" then self:destroy();return {closed=true}
+ elseif op=="log" then assert(self.studio and type(arg.enabled)=="boolean","Studio boolean log switch");self.log=arg.enabled;return {enabled=self.log}
+ elseif op=="show" then
+  assert(self.studio,"Studio view only");if self.view then self.view:destroy();self.view=nil end
+  if arg.enabled~=false then
+   assert(not arg.origin or V.valid(arg.origin),"Invalid lab origin")
+   self.view=require(script.Parent.ChakraStudioView).new(self.cfg,arg.origin and Vector3.new(arg.origin.x,arg.origin.y,arg.origin.z))
+  end
+  return {visible=self.view~=nil,folder="Workspace.NinjaDuelChakraLab",cameraChanged=false}
+ elseif op=="play" then
+  assert(self.studio,"Realtime lab is Studio only");self:stop();self.running=true
+  self.connection=game:GetService("RunService").Heartbeat:Connect(function(dt)
+   self.accumulator+=dt;local limit=8/60
+   if self.accumulator&gt;limit then self.lab.discardedSeconds+=self.accumulator-limit;self.accumulator=limit end
+   local ok,err=pcall(function()
+    while self.accumulator&gt;=1/60 do self.lab:step(1/60);self.accumulator-=1/60 end;self:draw()
+   end)
+   if not ok then self:stop();warn("[NinjaDuelChakra] lab stopped: "..tostring(err)) end
+  end)
+  return {running=true}
+ end
+ error("Unknown interaction operation")
+end
+function Dev:run(op,arg)
+ arg=arg or {};if type(arg)~="table" or not S.serializable(arg) then return {ok=false,error="Invalid dev arguments"} end
+ local ok,value=pcall(self._run,self,op,arg)
+ if ok then
+  local drawn,err=pcall(self.draw,self);if not drawn then self:stop();return {ok=false,error="Lab view: "..tostring(err)} end
+ end
+ if ok and type(value)=="table" and value.ok==false then return value end
+ return if ok then {ok=true,result=value} else {ok=false,error=tostring(value)}
+end
+return Dev
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND30">
+        <Properties>
+          <string name="Name">ChakraInputPlan</string>
+          <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
+-- context MUST be resolved by a future host (technique/loadout/mastery/geometry),
+-- never accepted as authoritative client data. Hold qualification belongs to Claude.
+local S=require(script.Parent.ProfileSchema)
+local P={Modes={AutoTechnique=true,Modifier=true,Contextual=true,Loadout=true,HoldRelease=true,CompatibleAuto=true}}
+function P.build(cfg,mode,intent,context)
+ assert(P.Modes[mode] and S.serializable(intent) and S.serializable(context),"Invalid input proposal")
+ assert(type(intent)=="table" and type(context)=="table" and S.id(intent.action) and cfg.Objects[context.tool],"Action/tool required")
+ assert(intent.modified==nil or type(intent.modified)=="boolean","Invalid modifier")
+ assert(intent.released==nil or type(intent.released)=="boolean","Invalid release")
+ local candidate="None"
+ if mode=="AutoTechnique" then candidate=context.techniqueInfusion or "None"
+ elseif mode=="Modifier" and intent.modified then candidate=context.selectedInfusion or "None"
+ elseif mode=="Contextual" and context.compatible==true then candidate=context.contextInfusion or "None"
+ elseif mode=="Loadout" then candidate=(context.loadout or {})[context.tool] or "None"
+ elseif mode=="HoldRelease" and intent.released and context.holdQualified==true then candidate=context.selectedInfusion or "None"
+ elseif mode=="CompatibleAuto" and context.compatible==true and context.availableProperty then candidate=context.propertyInfusion or "None" end
+ assert(candidate=="None" or cfg.Infusions[candidate],"Unknown proposed infusion")
+ local compatible=candidate=="None" or cfg.Objects[context.tool].infusions[candidate]==true
+ return {action=intent.action,mode=mode,candidate=candidate,compatible=compatible,infusion=if compatible then candidate else "None",requiresServerValidation=true,gameplayIntegration=false}
+end
+return P
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND31">
+        <Properties>
+          <string name="Name">ChakraInteractions</string>
+          <ProtectedString name="Source">-- Optional server-owned domain. Pure data, bounded state, atomic rule resolution.
+-- No active fighter/weapon, remote, timer, damage, animation or camera reference.
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local Rules=require(script.Parent.ChakraRules)
+local E={};E.__index=E
+local function size(t) local n=0;for _ in t do n+=1 end;return n end
+local function tagMap(list) local t={};for _,tag in list do t[tag]=true end;return t end
+local function tags(cfg,o)
+ local out=tagMap(cfg.Objects[o.kind].tags)
+ for id in o.properties do out[cfg.Properties[id].tag]=true end
+ if o.infusion then
+  local infusion=cfg.Infusions[o.infusion];for _,tag in infusion.tags do out[tag]=true end
+  if infusion.nature then out[cfg.Natures[infusion.nature].tag]=true end
+ end
+ for tag in o.infusionResults do out[tag]=true end
+ for tag in o.interactionResults do out[tag]=true end
+ return out
+end
+function E.new(cfg)
+ Rules.validate(cfg);if cfg.Enabled~=true then return nil,"Chakra interactions disabled" end
+ return setmetatable({cfg=S.copy(cfg),objects={},surfaces={},switches={},events={},serial=0,time=0,counters={triggers=0,rules=0,rejected=0,expired=0}},E)
+end
+function E:record(row)
+ self.serial+=1;row.sequence=self.serial;row.time=self.time;table.insert(self.events,row)
+ if #self.events&gt;self.cfg.MaxEvents then table.remove(self.events,1) end
+end
+function E:spawn(id,kind,spec)
+ spec=spec or {};assert(S.id(id) and not self.objects[id] and size(self.objects)&lt;self.cfg.MaxObjects,"Object ID/budget")
+ assert(S.serializable(spec),"Unsafe object data")
+ local def=assert(self.cfg.Objects[kind],"Unknown tool")
+ local mastery=spec.mastery or (spec.character and self.cfg.CharacterMastery[spec.character]) or "Basic"
+ assert(self.cfg.Masteries[mastery] and (not spec.owner or S.id(spec.owner)) and (not spec.character or S.id(spec.character)),"Invalid server identity/mastery")
+ local position=spec.position or V.new();assert(V.valid(position),"Invalid position")
+ local chakra=spec.chakra or 100;assert(S.integer(chakra,self.cfg.MaxChakra),"Invalid development chakra")
+ local o={id=id,kind=kind,toolType=def.toolType,owner=spec.owner,character=spec.character,mastery=mastery,position=S.copy(position),velocity=V.new(),chakra=chakra,
+  properties={},infusionResults={},interactionResults={},stats=S.copy(def.stats),tags={},launched=false,embedded=false,age=0,radius=def.radius}
+ o.tags=tags(self.cfg,o);self.objects[id]=o;return S.copy(o)
+end
+function E:surface(id,kind,position,normal)
+ local def=assert(self.cfg.Surfaces[kind],"Unknown surface")
+ assert(S.id(id) and not self.surfaces[id] and size(self.surfaces)&lt;self.cfg.MaxSurfaces,"Surface ID/budget")
+ normal=normal or def.normal;assert(V.valid(position) and V.valid(normal),"Invalid surface geometry")
+ self.surfaces[id]={id=id,kind=kind,position=S.copy(position),normal=V.unit(normal),tags=tagMap(def.tags),radius=def.radius}
+ return S.copy(self.surfaces[id])
+end
+function E:toggle(ruleId,enabled)
+ assert(type(enabled)=="boolean","Boolean switch required")
+ local found=false;for _,rule in self.cfg.Rules do found=found or rule.id==ruleId end;assert(found,"Unknown rule")
+ self.switches[ruleId]=enabled
+end
+function E:_trigger(arg)
+ assert(S.serializable(arg) and self.cfg.Triggers[arg.trigger],"Invalid trigger data")
+ local source=S.copy(assert(self.objects[arg.source],"Unknown source"));local target=arg.target and S.copy(assert(self.objects[arg.target],"Unknown target"))
+ assert(not target or target.id~=source.id,"Self collision refused")
+ local surface=arg.surface and S.copy(assert(self.surfaces[arg.surface],"Unknown surface"))
+ if arg.trigger=="ProjectileClash" then assert(target and source.tags.projectile and target.tags.projectile and source.launched and target.launched and not source.embedded and not target.embedded,"Two moving projectiles required") end
+ if arg.trigger=="SurfaceHit" then assert(surface and V.valid(arg.position) and V.valid(arg.normal),"Surface contact geometry required") end
+ for _,key in {"position","normal","direction"} do if arg[key] then assert(V.valid(arg[key]),"Invalid contact vector") end end
+ local context={tags={}};for _,tag in arg.tags or {} do assert(self.cfg.Tags[tag],"Unknown context tag");context.tags[tag]=true end
+ if arg.trigger=="Infuse" then source.stats=S.copy(self.cfg.Objects[source.kind].stats);source.infusionResults={} end
+ source.tags=tags(self.cfg,source)
+ local selected,trace=Rules.plan(self.cfg,{trigger=arg.trigger,source=source,target=target,surface=surface,context=context,mastery=self.cfg.Masteries[source.mastery]},self.switches)
+ local cost=0;for _,rule in selected do cost+=rule.cost or 0 end;assert(source.chakra&gt;=cost,"Insufficient chakra for rules")
+ local applied={};local results={};local signals={}
+ for _,rule in selected do
+  table.insert(applied,rule.id)
+  for _,effect in rule.effects do
+   local result=S.copy(effect);result.rule=rule.id
+   local receiver=if effect.target=="target" then target elseif effect.target=="surface" then surface else source
+   assert(receiver,"Missing result receiver")
+   if effect.kind=="scaleStat" then
+    local value=assert(source.stats[effect.stat],"Stat not supported by tool")
+    local mastery=self.cfg.Masteries[source.mastery];local factor=effect.factor+(effect.perLevel or 0)*(effect.mastery and mastery.levels[effect.mastery] or 0)
+    factor=math.min(effect.maxFactor or 4,factor);local cap=self.cfg.Objects[source.kind].caps[effect.stat]
+    source.stats[effect.stat]=math.min(cap,value*factor);result.value=source.stats[effect.stat]
+   elseif effect.kind=="tag" then
+    if receiver==surface then surface.tags[effect.tag]=true
+    else local field=if arg.trigger=="Infuse" then "infusionResults" else "interactionResults";receiver[field][effect.tag]=true end
+   elseif effect.kind=="signal" then table.insert(signals,{rule=rule.id,name=effect.name,source=source.id,target=target and target.id,surface=surface and surface.id})
+   elseif effect.kind=="redirect" or effect.kind=="reflect" then
+    assert(receiver.launched and not receiver.embedded,"Result requires moving projectile")
+    local velocity=receiver.velocity
+    if effect.kind=="reflect" then assert(arg.normal,"Reflection normal required");velocity=V.reflect(velocity,arg.normal)
+    else assert(arg.direction,"Redirection direction required");velocity=V.mul(V.unit(arg.direction),V.length(velocity)) end
+    local speed=math.min(self.cfg.MaxSpeed,V.length(velocity)*effect.speedScale);receiver.velocity=V.mul(V.unit(velocity),speed);result.velocity=S.copy(receiver.velocity)
+   elseif effect.kind=="embed" then
+    assert(surface and arg.position,"Embed contact required");receiver.position=S.copy(arg.position);receiver.velocity=V.new();receiver.embedded=true;receiver.launched=false;receiver.interactionResults.embedded=true
+   elseif effect.kind=="anchor" then
+    assert(surface and arg.position,"Anchor surface required");receiver.anchor={position=S.copy(arg.position),normal=V.unit(arg.normal),surface=surface.id,rule=rule.id};receiver.interactionResults.spatialAnchor=true
+   end
+   table.insert(results,result)
+  end
+ end
+ source.chakra-=cost
+ if arg.trigger=="Infuse" and source.launched and source.stats.speed then source.velocity=V.mul(V.unit(source.velocity),source.stats.speed) end
+ source.tags=tags(self.cfg,source);if target then target.tags=tags(self.cfg,target) end
+ assert(S.serializable(source) and (not target or S.serializable(target)) and (not surface or S.serializable(surface)),"Unsafe result")
+ self.objects[source.id]=source;if target then self.objects[target.id]=target end;if surface then self.surfaces[surface.id]=surface end
+ local row={trigger=arg.trigger,source=source.id,target=target and target.id,surface=surface and surface.id,applied=applied,trace=trace,cost=cost,signals=signals}
+ self:record(row);self.counters.rules+=#applied
+ return {ok=true,source=S.copy(source),target=S.copy(target),surface=S.copy(surface),effects=results,signals=signals,trace=trace}
+end
+function E:trigger(arg)
+ local started=os.clock();self.counters.triggers+=1
+ local ok,result=pcall(self._trigger,self,arg)
+ if not ok then self.counters.rejected+=1;self:record({trigger=type(arg)=="table" and tostring(arg.trigger):sub(1,40) or "invalid",error=tostring(result):sub(1,200)});return {ok=false,error=tostring(result)} end
+ result.resolveMilliseconds=(os.clock()-started)*1000;return result
+end
+local function change(self,id,fn)
+ local previous=assert(self.objects[id],"Unknown object");local o=S.copy(previous);fn(o);self.objects[id]=o
+ local result=self:trigger({trigger="Infuse",source=id})
+ if not result.ok then self.objects[id]=previous end
+ return result
+end
+function E:infuse(id,infusion)
+ return change(self,id,function(o)
+  if infusion=="None" then o.infusion=nil;return end
+  local def=assert(self.cfg.Infusions[infusion],"Unknown infusion");assert(self.cfg.Objects[o.kind].infusions[infusion],"Tool incompatible with infusion")
+  assert(o.chakra&gt;=def.cost,"Insufficient infusion chakra");o.chakra-=def.cost;o.infusion=infusion
+ end)
+end
+function E:property(id,property,enabled)
+ assert(type(enabled)=="boolean","Property switch required")
+ return change(self,id,function(o)
+  local def=assert(self.cfg.Properties[property],"Unknown property");for _,tag in def.requires do assert(o.tags[tag],"Property incompatible with object") end
+  o.properties[property]=if enabled then true else nil
+ end)
+end
+function E:launch(id,direction,speed)
+ local o=assert(self.objects[id],"Unknown object");assert(self.cfg.Objects[o.kind].canLaunch and not o.embedded,"Tool cannot launch")
+ assert(V.valid(direction),"Invalid direction");direction=V.unit(direction);speed=speed or o.stats.speed
+ assert(type(speed)=="number" and speed&gt;0 and speed&lt;=self.cfg.MaxSpeed,"Invalid launch speed")
+ o.velocity=V.mul(direction,speed);o.launched=true;return S.copy(o)
+end
+function E:advance(dt)
+ assert(type(dt)=="number" and dt&gt;0 and dt&lt;=.1,"Step must be 0..0.1 seconds")
+ self.time+=dt;local expired={}
+ for id,o in self.objects do
+  o.age+=dt;if o.age&gt;=self.cfg.MaxLife then table.insert(expired,id);self.objects[id]=nil;self.counters.expired+=1
+  elseif o.launched then o.position=V.add(o.position,V.mul(o.velocity,dt)) end
+ end
+ return expired
+end
+function E:inspect(id) return S.copy(id and assert(self.objects[id],"Unknown object") or {objects=self.objects,surfaces=self.surfaces,switches=self.switches,events=self.events,counters=self.counters,time=self.time}) end
+function E:reset()
+ self.objects={};self.surfaces={};self.events={};self.serial=0;self.time=0;self.counters={triggers=0,rules=0,rejected=0,expired=0}
+ -- Explicit switches survive reset so an A/B run retains the chosen configuration.
+end
+return E
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND32">
+        <Properties>
+          <string name="Name">ChakraLab</string>
+          <ProtectedString name="Source">-- Explicit experimental sandbox: kinematic proxies, never the live projectiles.
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local Engine=require(script.Parent.ChakraInteractions)
+local Lab={};Lab.__index=Lab
+function Lab.new(cfg)
+ local copy=S.copy(cfg);copy.Enabled=true
+ return setmetatable({engine=assert(Engine.new(copy)),contacts={},steps=0,discardedSeconds=0},Lab)
+end
+local demos={
+ kunai_wind={rules={"wind-kunai"}},kunai_seal={rules={"surface-embed","seal-anchor"}},
+ redirection={rules={"wind-kunai","redirect-projectile","deflect-projectile"}},wire_property={rules={"wire-property","metal-conduction"}},
+ projectile_surface={rules={"surface-embed"}},fire_surface={rules={"fire-surface"}},
+}
+function Lab:reset(clearRules)
+ self.engine:reset();if clearRules then self.engine.switches={} end;self.contacts={};self.steps=0;self.discardedSeconds=0
+end
+function Lab:demo(name,mastery)
+ local def=assert(demos[name],"Unknown chakra demo");self:reset(false)
+ local e=self.engine;for _,id in def.rules do if e.switches[id]==nil then e:toggle(id,true) end end
+ local kind=if name=="wire_property" then "Wire" else "Kunai"
+ e:spawn("a",kind,{position=V.new(-10,3,0),mastery=mastery or "Basic"})
+ if name=="kunai_wind" then assert(e:infuse("a","Wind").ok);e:launch("a",V.new(1,0,0))
+ elseif name=="kunai_seal" then
+  assert(e:property("a","Marked",true).ok);assert(e:property("a","Seal",true).ok)
+  e:surface("wall","Wall",V.new(8,3,0));e:launch("a",V.new(1,0,0))
+ elseif name=="redirection" then
+  assert(e:infuse("a","Wind").ok);e:spawn("b","Shuriken",{position=V.new(10,3,0)});e:launch("a",V.new(1,0,0));e:launch("b",V.new(-1,0,0))
+ elseif name=="wire_property" then assert(e:infuse("a","Lightning").ok)
+ elseif name=="projectile_surface" then
+  e:surface("floor","Floor",V.new(0,0,0));e.objects.a.position=V.new(0,9,0);e:launch("a",V.new(0,-1,0))
+ elseif name=="fire_surface" then
+  assert(e:infuse("a","Fire").ok);e:surface("wood","Wood",V.new(8,3,0));e:launch("a",V.new(1,0,0))
+ end
+ return e:inspect()
+end
+function Lab:forceClash(a,b,direction,normal)
+ local e=self.engine;local source=assert(e.objects[a],"Unknown source")
+ local tagList={};for _,nature in e.cfg.Natures do if source.tags[nature.tag] then table.insert(tagList,nature.tag) end end
+ return e:trigger({trigger="ProjectileClash",source=a,target=b,direction=direction or V.new(0,1,0),normal=normal or V.new(1,0,0),tags=tagList})
+end
+function Lab:embed(id,surface)
+ local s=assert(self.engine.surfaces[surface],"Unknown surface")
+ return self.engine:trigger({trigger="SurfaceHit",source=id,surface=surface,position=s.position,normal=s.normal})
+end
+function Lab:step(dt)
+ local e=self.engine;local before=S.copy(e.objects);local candidates={};local ids={}
+ for id,o in before do if o.launched then table.insert(ids,id) end end;table.sort(ids)
+ local overlapping={}
+ for i,id in ids do
+  local a=before[id];local da=V.mul(a.velocity,dt)
+  for j=i+1,#ids do
+   local b=before[ids[j]];local key=id..":"..b.id;local radius=a.radius+b.radius
+   local touching=V.length(V.sub(a.position,b.position))&lt;=radius+.01
+   if touching then overlapping[key]=true end
+   if not (touching and self.contacts[key]) then
+    local t=V.sweep(a.position,da,b.position,V.mul(b.velocity,dt),radius)
+    if t then table.insert(candidates,{t=t,source=id,target=b.id,key=key}) end
+   end
+  end
+  for surfaceId,s in e.surfaces do
+   local signed=V.dot(V.sub(a.position,s.position),s.normal)-a.radius;local travel=V.dot(da,s.normal)
+   if signed&gt;=0 and travel&lt;0 and signed+travel&lt;=0 then
+    local t=-signed/travel;local center=V.add(a.position,V.mul(da,t));local hit=V.sub(center,V.mul(s.normal,a.radius))
+    if V.length(V.sub(hit,s.position))&lt;=s.radius then table.insert(candidates,{t=t,source=id,surface=surfaceId,hit=hit,key=id..":"..surfaceId}) end
+   end
+  end
+ end
+ table.sort(candidates,function(a,b) return if a.t==b.t then a.key&lt;b.key else a.t&lt;b.t end)
+ e:advance(dt);self.steps+=1;local handled={}
+ for _,hit in candidates do
+  local a=e.objects[hit.source];local b=hit.target and e.objects[hit.target]
+  if a and not handled[a.id] and (not hit.target or b and not handled[b.id]) then
+   local oldA=S.copy(a.position);local oldB=b and S.copy(b.position)
+   a.position=V.add(before[a.id].position,V.mul(before[a.id].velocity,dt*hit.t))
+   local result
+   if b then
+    b.position=V.add(before[b.id].position,V.mul(before[b.id].velocity,dt*hit.t))
+    local normal=V.sub(a.position,b.position);if V.length(normal)&lt;1e-8 then normal=V.sub(a.velocity,b.velocity) end
+    if V.length(normal)&lt;1e-8 then normal=V.new(1,0,0) end
+    result=self:forceClash(a.id,b.id,a.velocity,normal);overlapping[hit.key]=true
+   else result=e:trigger({trigger="SurfaceHit",source=a.id,surface=hit.surface,position=hit.hit,normal=e.surfaces[hit.surface].normal}) end
+   if result.ok then
+    for _,id in {a.id,b and b.id} do
+     local o=e.objects[id];handled[id]=true;if o.launched then o.position=V.add(o.position,V.mul(o.velocity,dt*(1-hit.t))) end
+    end
+   else a.position=oldA;if b then b.position=oldB end end
+  end
+ end
+ self.contacts=overlapping
+end
+function Lab:run(seconds)
+ assert(type(seconds)=="number" and seconds&gt;0 and seconds&lt;=30,"Run budget 0..30 seconds")
+ local remaining=seconds;while remaining&gt;1e-8 do local dt=math.min(1/60,remaining);self:step(dt);remaining-=dt end
+ return self:report()
+end
+function Lab:report()
+ local report=self.engine:inspect();report.lab={kinematicProxies=true,steps=self.steps,discardedSeconds=self.discardedSeconds};return report
+end
+-- Compare in independent sandboxes; never mutates the current run or config.
+function Lab.compare(cfg,kind,infusions,masteries)
+ assert(cfg.Objects[kind] and #infusions&gt;0 and #infusions&lt;=8 and #masteries&gt;0 and #masteries&lt;=8,"Comparison budget")
+ local rows={}
+ for _,mastery in masteries do for _,infusion in infusions do
+  local lab=Lab.new(cfg);for _,rule in cfg.Rules do if rule.trigger=="Infuse" then lab.engine:toggle(rule.id,true) end end
+  lab.engine:spawn("preview",kind,{mastery=mastery});local ok,result=pcall(lab.engine.infuse,lab.engine,"preview",infusion);if not ok then result={ok=false,error=tostring(result)} end
+  table.insert(rows,{tool=kind,infusion=infusion,mastery=mastery,result=result})
+ end end
+ return rows
+end
+Lab.demos=demos
+return Lab
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND33">
+        <Properties>
+          <string name="Name">ChakraRules</string>
+          <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local R={}
+local kinds={scaleStat=true,tag=true,signal=true,redirect=true,reflect=true,embed=true,anchor=true}
+local scopes={source=true,target=true,surface=true,context=true,mastery=true}
+local function number(n,max) return type(n)=="number" and n==n and n&gt;=0 and n&lt;=(max or 1000) end
+local function tags(cfg,list)
+ assert(type(list)=="table" and #list&lt;=64,"Tag list required")
+ for _,tag in list do assert(cfg.Tags[tag]==true,"Unknown tag: "..tostring(tag)) end
+end
+function R.validate(cfg)
+ assert(S.serializable(cfg) and type(cfg.Enabled)=="boolean","Unsafe interaction config")
+ for _,key in {"MaxObjects","MaxSurfaces","MaxEvents","MaxLife","MaxSpeed","MaxChakra"} do assert(S.integer(cfg[key],1000) and cfg[key]&gt;0,"Invalid limit") end
+ assert(cfg.MaxObjects&lt;=64 and cfg.MaxSurfaces&lt;=32 and cfg.MaxEvents&lt;=256 and cfg.MaxSpeed&lt;=1000,"Lab budget exceeded")
+ for id,value in cfg.Tags do assert(S.id(id) and value==true,"Invalid tag") end
+ for id,nature in cfg.Natures do assert(S.id(id) and cfg.Tags[nature.tag],"Invalid nature") end
+ for id,property in cfg.Properties do assert(S.id(id) and cfg.Tags[property.tag],"Invalid property");tags(cfg,property.requires) end
+ for id,enabled in cfg.MasterySkills do assert(S.id(id) and enabled==true,"Invalid mastery skill") end
+ for id,mastery in cfg.Masteries do
+  assert(S.id(id),"Invalid mastery");tags(cfg,mastery.tags)
+  for name,level in mastery.levels do assert(cfg.MasterySkills[name] and S.integer(level,100),"Invalid mastery level") end
+ end
+ assert(cfg.Masteries.Basic,"Basic mastery required")
+ for character,mastery in cfg.CharacterMastery do assert(S.id(character) and cfg.Masteries[mastery],"Invalid character mastery mapping") end
+ for id,def in cfg.Objects do
+  assert(S.id(id) and S.id(def.toolType) and type(def.canLaunch)=="boolean" and number(def.radius,3) and def.radius&gt;0,"Invalid tool");tags(cfg,def.tags)
+  assert(({kunai=true,shuriken=true,wire=true,target=true})[def.visual],"Unknown lab visual")
+  for infusion,enabled in def.infusions do assert(cfg.Infusions[infusion] and enabled==true,"Invalid tool infusion") end
+  for stat,n in def.stats do assert(S.id(stat) and number(n,cfg.MaxSpeed) and number(def.caps[stat],cfg.MaxSpeed) and def.caps[stat]&gt;=n,"Invalid stat cap") end
+ end
+ for id,def in cfg.Surfaces do assert(S.id(id) and V.valid(def.normal) and V.length(def.normal)&gt;0 and number(def.radius,30) and def.radius&gt;0,"Invalid surface");tags(cfg,def.tags) end
+ for id,def in cfg.Infusions do assert(S.id(id) and number(def.cost,cfg.MaxChakra) and (not def.nature or cfg.Natures[def.nature]),"Invalid infusion");tags(cfg,def.tags) end
+ local ids={}
+ for _,rule in cfg.Rules do
+  assert(S.id(rule.id) and not ids[rule.id] and cfg.Triggers[rule.trigger] and type(rule.enabled)=="boolean" and S.integer(rule.priority,1000),"Invalid interaction rule");ids[rule.id]=true
+  assert(not rule.group or S.id(rule.group),"Invalid exclusive group")
+  assert(not rule.cost or number(rule.cost,cfg.MaxChakra),"Invalid rule cost")
+  for scope,filter in rule.when do
+   if scope=="toolType" then assert(S.id(filter),"Invalid tool type")
+   elseif scope=="minMastery" then for name,level in filter do assert(cfg.MasterySkills[name] and S.integer(level,100),"Invalid mastery threshold") end
+   else assert(scopes[scope],"Unknown condition scope");for op,list in filter do assert(op=="all" or op=="any" or op=="none","Unknown tag filter");tags(cfg,list) end end
+  end
+  assert(#rule.effects&gt;0 and #rule.effects&lt;=16,"Invalid result count")
+  for _,effect in rule.effects do
+   assert(kinds[effect.kind],"Unknown result kind")
+   if effect.kind=="scaleStat" then
+    assert(S.id(effect.stat) and number(effect.factor,4) and effect.factor&gt;0,"Invalid stat result")
+    assert(not effect.mastery or cfg.MasterySkills[effect.mastery],"Invalid scaling mastery")
+    assert(not effect.perLevel or number(effect.perLevel,1),"Invalid mastery factor")
+    assert(not effect.maxFactor or number(effect.maxFactor,4) and effect.maxFactor&gt;0,"Invalid max factor")
+   elseif effect.kind=="signal" then assert(S.id(effect.name),"Invalid signal")
+   else
+    assert(effect.target=="source" or effect.target=="target" or (effect.kind=="tag" and effect.target=="surface"),"Invalid result target")
+    if effect.kind=="tag" then assert(cfg.Tags[effect.tag],"Invalid result tag") end
+    if effect.kind=="reflect" or effect.kind=="redirect" then assert(number(effect.speedScale,2) and effect.speedScale&gt;0,"Invalid velocity scale") end
+   end
+  end
+ end
+ return true
+end
+local function filter(tagsValue,spec)
+ tagsValue=tagsValue or {}
+ for _,tag in spec.all or {} do if not tagsValue[tag] then return false,"missing "..tag end end
+ if spec.any and #spec.any&gt;0 then local found=false;for _,tag in spec.any do found=found or tagsValue[tag]==true end;if not found then return false,"missing any tag" end end
+ for _,tag in spec.none or {} do if tagsValue[tag] then return false,"excluded "..tag end end
+ return true
+end
+function R.match(rule,event)
+ for _,scope in {"source","target","surface","context","mastery"} do
+  local spec=rule.when[scope]
+  if spec then local ok,why=filter(event[scope] and event[scope].tags,spec);if not ok then return false,scope..": "..why end end
+ end
+ if rule.when.toolType and event.source.toolType~=rule.when.toolType then return false,"toolType" end
+ for name,min in rule.when.minMastery or {} do if (event.mastery.levels[name] or 0)&lt;min then return false,"mastery "..name end end
+ return true
+end
+function R.plan(cfg,event,switches)
+ assert(cfg.Triggers[event.trigger],"Unknown trigger")
+ local ordered={};for _,rule in cfg.Rules do if rule.trigger==event.trigger then table.insert(ordered,rule) end end
+ table.sort(ordered,function(a,b) return if a.priority==b.priority then a.id&lt;b.id else a.priority&gt;b.priority end)
+ local selected={};local trace={};local used={}
+ for _,rule in ordered do
+  local enabled=rule.enabled;if switches[rule.id]~=nil then enabled=switches[rule.id] end
+  local matched,why=R.match(rule,event);local status
+  if not enabled then status="disabled" elseif not matched then status=why elseif rule.group and used[rule.group] then status="exclusive-group" else status="selected";table.insert(selected,rule);if rule.group then used[rule.group]=true end end
+  table.insert(trace,{rule=rule.id,status=status})
+ end
+ return selected,trace
+end
+return R
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND34">
+        <Properties>
+          <string name="Name">ChakraStudioQA</string>
+          <ProtectedString name="Source">-- Explicit smoke test on the main built place. Never called by bootstrap.
+local QA={}
+function QA.run()
+ assert(game:GetService("RunService"):IsStudio(),"Studio only")
+ local cfg=require(script.Parent.ChakraConfig)
+ local Dev=require(script.Parent.ChakraDev)
+ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+ local fighters=require(Shared.Fighters);local before={};for id,f in fighters do before[id]={speed=f.Speed,health=f.Health} end
+ local camera=workspace.CurrentCamera;local cf=camera and camera.CFrame
+ local tool=Dev.new(cfg,true);local passed=0
+ local ok,err=pcall(function()
+  for _,name in {"kunai_wind","kunai_seal","redirection","wire_property","projectile_surface","fire_surface"} do
+   local demo=tool:run("demo",{name=name});assert(demo.ok,demo.error)
+   local shown=tool:run("show",{enabled=true});assert(shown.ok,shown.error)
+   local result=tool:run("step",{seconds=1});assert(result.ok,result.error)
+   local report=result.result;local a=report.objects.a;assert(a and #report.events&gt;0)
+   if name=="kunai_wind" then assert(a.stats.speed&gt;42)
+   elseif name=="kunai_seal" then assert(a.embedded and a.anchor)
+   elseif name=="redirection" then assert(report.objects.b.velocity.x&gt;0)
+   elseif name=="wire_property" then assert(a.tags.conductiveWire)
+   elseif name=="projectile_surface" then assert(a.embedded)
+   elseif name=="fire_surface" then assert(report.surfaces.wood.tags.ignited) end
+   local model=tool.view.objects.a.model;assert((model:GetPivot().Position-(tool.view.origin+Vector3.new(a.position.x,a.position.y,a.position.z))).Magnitude&lt;.01)
+   for _,part in tool.view.folder:GetDescendants() do if part:IsA("BasePart") then assert(part.Anchored and not part.CanCollide and not part.CanQuery and not part.CanTouch) end end
+   passed+=1
+  end
+  tool:run("play");assert(tool.connection and tool.running);tool:stop();assert(not tool.connection)
+  local folder=tool.view.folder;tool:destroy();assert(folder.Parent==nil)
+  for id,f in fighters do assert(f.Speed==before[id].speed and f.Health==before[id].health) end
+  assert(workspace.CurrentCamera==camera and (not camera or camera.CFrame==cf) and cfg.Enabled==false)
+  passed+=1
+ end)
+ tool:destroy()
+ local result={ok=ok,passed=passed,expected=7,build=Shared.BuildFingerprint.Value,gameplayIntegration=false,error=not ok and tostring(err) or nil}
+ print("[NinjaDuelChakraQA] RESULT "..game:GetService("HttpService"):JSONEncode(result))
+ assert(ok,err);return result
+end
+return QA
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND35">
+        <Properties>
+          <string name="Name">ChakraStudioView</string>
+          <ProtectedString name="Source">-- Optional Studio proxy renderer. Only draws its own folder; no camera/UI changes.
+local S=require(script.Parent.ProfileSchema)
+local View={};View.__index=View
+local function vector(v) return Vector3.new(v.x,v.y,v.z) end
+local colors={wind=Color3.fromRGB(120,255,200),fire=Color3.fromRGB(255,125,70),lightning=Color3.fromRGB(120,175,255),spatialAnchor=Color3.fromRGB(225,125,255)}
+local function part(parent,name,size,cf,color)
+ local p=Instance.new("Part");p.Name=name;p.Anchored=true;p.CanCollide=false;p.CanTouch=false;p.CanQuery=false;p.Size=size;p.CFrame=cf;p.Color=color;p.Material=Enum.Material.Neon;p.Parent=parent;return p
+end
+function View.new(cfg,origin)
+ assert(game:GetService("RunService"):IsStudio(),"Studio only")
+ local folder=Instance.new("Folder");folder.Name="NinjaDuelChakraLab";folder.Parent=workspace
+ return setmetatable({cfg=cfg,folder=folder,origin=origin or Vector3.new(0,250,500),objects={},surfaces={}},View)
+end
+function View:reset()
+ self.folder:ClearAllChildren();self.objects={};self.surfaces={}
+end
+function View:destroy() self.folder:Destroy() end
+function View:object(o)
+ local model=Instance.new("Model");model.Name=o.id.."_"..o.kind;model.Parent=self.folder
+ local color=Color3.fromRGB(195,200,215)
+ local root=part(model,"Root",Vector3.new(.14,.14,2),CFrame.new(),color);root.Transparency=1;model.PrimaryPart=root
+ local shape=self.cfg.Objects[o.kind].visual
+ if shape=="kunai" then
+  part(model,"Blade",Vector3.new(.35,.15,1.25),CFrame.new(0,0,-.55),color)
+  part(model,"Grip",Vector3.new(.18,.18,.65),CFrame.new(0,0,.4),color)
+  local ring=part(model,"Ring",Vector3.new(.35,.12,.35),CFrame.new(0,0,.95),color);ring.Shape=Enum.PartType.Ball
+ elseif shape=="shuriken" then
+  for i=0,3 do part(model,"Blade"..i,Vector3.new(.2,.08,1.2),CFrame.Angles(0,math.pi*i/2,0)*CFrame.new(0,0,-.35),color) end
+ elseif shape=="wire" then part(model,"Wire",Vector3.new(12,.06,.06),CFrame.new(),color)
+ else part(model,"Target",Vector3.new(2,3,2),CFrame.new(),color) end
+ local gui=Instance.new("BillboardGui");gui.Name="Tags";gui.Adornee=root;gui.Size=UDim2.fromOffset(420,64);gui.StudsOffset=Vector3.new(0,2,0);gui.AlwaysOnTop=true;gui.Parent=root
+ local label=Instance.new("TextLabel");label.Size=UDim2.fromScale(1,1);label.BackgroundTransparency=.3;label.BackgroundColor3=Color3.new(0,0,0);label.TextColor3=Color3.new(1,1,1);label.TextSize=14;label.TextWrapped=true;label.Parent=gui
+ self.objects[o.id]={model=model,label=label}
+ return self.objects[o.id]
+end
+function View:update(report)
+ for id,entry in self.objects do if not report.objects[id] then entry.model:Destroy();self.objects[id]=nil end end
+ for id,o in report.objects do
+  local entry=self.objects[id] or self:object(o);local p=self.origin+vector(o.position)
+  local direction=if vector(o.velocity).Magnitude&gt;.01 then vector(o.velocity).Unit elseif o.anchor then -vector(o.anchor.normal) else Vector3.new(1,0,0)
+  local up=if math.abs(direction.Y)&gt;.95 then Vector3.zAxis else Vector3.yAxis
+  entry.model:PivotTo(CFrame.lookAt(p,p+direction,up))
+  local color=Color3.fromRGB(195,200,215);for _,tag in {"wind","fire","lightning","spatialAnchor"} do if o.tags[tag] then color=colors[tag] end end
+  for _,child in entry.model:GetChildren() do if child:IsA("BasePart") then child.Color=color end end
+  local active={};for tag in o.tags do table.insert(active,tag) end;table.sort(active)
+  entry.label.Text=id.." / "..o.kind.." / "..o.mastery.."\n"..table.concat(active," · ")
+ end
+ for id,s in report.surfaces do
+  if not self.surfaces[id] then
+   local p=self.origin+vector(s.position);local n=vector(s.normal);local up=if math.abs(n.Y)&gt;.95 then Vector3.zAxis else Vector3.yAxis
+   local surface=part(self.folder,id,Vector3.new(s.radius*2,s.radius*2,.15),CFrame.lookAt(p,p+n,up),Color3.fromRGB(85,100,130));surface.Transparency=.6
+   self.surfaces[id]=surface
+  end
+  if s.tags.ignited then self.surfaces[id].Color=colors.fire end
+ end
+end
+return View
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">ChakraVectors</string>
+          <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
+local V={}
+function V.valid(v) return type(v)=="table" and type(v.x)=="number" and type(v.y)=="number" and type(v.z)=="number" and v.x==v.x and v.y==v.y and v.z==v.z and math.max(math.abs(v.x),math.abs(v.y),math.abs(v.z))&lt;=100000 end
+function V.new(x,y,z) return {x=x or 0,y=y or 0,z=z or 0} end
+function V.add(a,b) return V.new(a.x+b.x,a.y+b.y,a.z+b.z) end
+function V.sub(a,b) return V.new(a.x-b.x,a.y-b.y,a.z-b.z) end
+function V.mul(a,n) return V.new(a.x*n,a.y*n,a.z*n) end
+function V.dot(a,b) return a.x*b.x+a.y*b.y+a.z*b.z end
+function V.length(a) return math.sqrt(V.dot(a,a)) end
+function V.unit(a) local length=V.length(a);assert(length&gt;1e-8,"Zero direction");return V.mul(a,1/length) end
+function V.reflect(a,n) n=V.unit(n);return V.sub(a,V.mul(n,2*V.dot(a,n))) end
+-- Swept relative spheres catch fast projectiles that cross between ticks.
+function V.sweep(a,da,b,db,radius)
+ local p=V.sub(a,b);local d=V.sub(da,db);local c=V.dot(p,p)-radius*radius
+ if c&lt;=0 then return 0 end
+ local aa=V.dot(d,d);if aa&lt;1e-10 then return nil end
+ local bb=2*V.dot(p,d);local disc=bb*bb-4*aa*c;if disc&lt;0 then return nil end
+ local t=(-bb-math.sqrt(disc))/(2*aa);return if t&gt;=0 and t&lt;=1 then t else nil
+end
+return V
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
+        <Properties>
           <string name="Name">CharacterProgression</string>
           <ProtectedString name="Source">local S=require(script.Parent.ProfileSchema)
 local P={}
@@ -3051,7 +3702,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">CollectionEconomy</string>
           <ProtectedString name="Source">-- Server-owned collection/inventory operations; no marketplace or receipts.
@@ -3177,7 +3828,7 @@ return E
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -4493,7 +5144,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -4520,6 +5171,7 @@ function DevHooks.install(matches)
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
  local developmentProfiles=nil
+ local chakraDev=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
 	-- errors and camera framing so a playtest can be inspected from tooling.
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
@@ -4564,6 +5216,10 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="interactions" then
+   chakraDev=chakraDev or require(script.Parent.ChakraDev).new(require(script.Parent.ChakraConfig),true)
+   return chakraDev:run(arg1,arg2)
+  end
   if op=="profiles" then
    developmentProfiles=developmentProfiles or require(script.Parent.DevelopmentProfiles).new(require(script.Parent.ProgressionConfig))
    return developmentProfiles:run(arg1,arg2)
@@ -4655,7 +5311,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Instance-level instrumentation, installed only when Studio profiling starts.
@@ -4765,7 +5421,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Roblox truncates long Output lines. One bounded JSON row per metric/event.
@@ -4796,7 +5452,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups only; they call the live engine, never a second simulator.
@@ -4863,7 +5519,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio-only command dispatcher. Shared by the overlay and the command bar.
@@ -4914,7 +5570,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">DevelopmentDataStore</string>
           <ProtectedString name="Source">-- Optional REAL adapter, restricted to Studio + fixed development namespace.
@@ -4940,7 +5596,7 @@ return Adapter
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">DevelopmentProfileStore</string>
           <ProtectedString name="Source">-- Deterministic UpdateAsync stand-in. Copies emulate serialization boundaries.
@@ -4966,7 +5622,7 @@ return Store
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">DevelopmentProfiles</string>
           <ProtectedString name="Source">-- Internal facade. Profiles ALWAYS dev_*; default store stays in memory.
@@ -5006,7 +5662,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -5048,7 +5704,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -5120,7 +5776,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND41">
+      <Item class="Script" referent="ND50">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5149,7 +5805,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5405,7 +6061,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -5627,7 +6283,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">OnlineHost</string>
           <ProtectedString name="Source">-- Optional lobby / matchmaking lifecycle. No Instances, listeners or boot call.
@@ -5673,7 +6329,7 @@ return Host
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">OnlineMatch</string>
           <ProtectedString name="Source">-- Two-player adapter around the SAME Combat instance, without any AI.
@@ -5720,7 +6376,7 @@ return Match
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">OnlineQueue</string>
           <ProtectedString name="Source">-- FIFO queue: server-owned Player identities, no client-supplied opponent.
@@ -5743,7 +6399,7 @@ return Queue
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">OnlineReplication</string>
           <ProtectedString name="Source">-- Recipient-specific reliable snapshot envelope. Independent impact cursors.
@@ -5768,7 +6424,7 @@ return Replication
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">OnlineValidation</string>
           <ProtectedString name="Source">-- Produces a fresh allowlisted intent; clients cannot write combat state.
@@ -5802,7 +6458,7 @@ return Validation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">PackSimulation</string>
           <ProtectedString name="Source">-- Internal deterministic economy simulation. No purchases or profile writes.
@@ -5866,7 +6522,7 @@ return Sim
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -6128,7 +6784,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6603,7 +7259,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Single-key development profile persistence. No player listeners/timers.
@@ -6727,7 +7383,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- JSON-safe versioned profile. Never silently repairs corrupt/future saves.
@@ -6824,7 +7480,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">ProgressionConfig</string>
           <ProtectedString name="Source">-- Development fixture only: no approved progression/economy balance.
@@ -6853,7 +7509,7 @@ return C
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">ProgressionDefinitions</string>
           <ProtectedString name="Source">-- Validate optional configuration before any profile is created or simulated.
@@ -6899,7 +7555,7 @@ return D
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">ProgressionLobby</string>
           <ProtectedString name="Source">-- Optional future online lobby adapter. No listeners, networking or combat.
@@ -6944,7 +7600,7 @@ return Lobby
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">ProgressionRandom</string>
           <ProtectedString name="Source">-- Deterministic simulation generator; not a commercial/randomness service.
@@ -6958,7 +7614,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">ProgressionRoster</string>
           <ProtectedString name="Source">-- Future policy boundary only. Never gates local selection or applies stats.
@@ -6986,7 +7642,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -7507,7 +8163,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -7607,7 +8263,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -7635,7 +8291,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -7697,7 +8353,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -7748,7 +8404,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -8472,21 +9128,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND65">
+  <Item class="StarterPlayer" referent="ND74">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND66">
+    <Item class="StarterPlayerScripts" referent="ND75">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND67">
+      <Item class="Folder" referent="ND76">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND68">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -8727,7 +9383,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND69">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio-only overlay and bounded observation of the live client. F6 opens it.
@@ -8839,7 +9495,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND70">
+        <Item class="ModuleScript" referent="ND79">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments; never creates collision Parts or changes queries.
@@ -8876,7 +9532,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND71">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -9989,7 +10645,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND72">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -10137,7 +10793,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND73">
+        <Item class="LocalScript" referent="ND82">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -10205,7 +10861,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -10458,7 +11114,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND75">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
@@ -10858,7 +11514,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -10991,7 +11647,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -12804,7 +13460,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND78">
+  <Item class="Lighting" referent="ND87">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -12822,7 +13478,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND79">
+  <Item class="SoundService" referent="ND88">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

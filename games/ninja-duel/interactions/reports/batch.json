@@ -1,0 +1,559 @@
+{
+  "ok": true,
+  "operations": [
+    {
+      "op": "toggle",
+      "result": {
+        "enabled": true,
+        "rule": "wind-kunai"
+      }
+    },
+    {
+      "op": "spawn",
+      "result": {
+        "age": 0,
+        "chakra": 100,
+        "embedded": false,
+        "id": "kunai1",
+        "infusionResults": {},
+        "interactionResults": {},
+        "kind": "Kunai",
+        "launched": false,
+        "mastery": "WeaponExpert",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "properties": {},
+        "radius": 0.35,
+        "stats": {
+          "cut": 1,
+          "impact": 1,
+          "speed": 42,
+          "stability": 1
+        },
+        "tags": {
+          "blade": true,
+          "metal": true,
+          "projectile": true,
+          "tool": true
+        },
+        "toolType": "Kunai",
+        "velocity": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "op": "nature",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.25,
+            "kind": "scaleStat",
+            "mastery": "Wind",
+            "maxFactor": 1.4,
+            "perLevel": 0.03,
+            "rule": "wind-kunai",
+            "stat": "speed",
+            "value": 56.28
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "wind-kunai",
+            "stat": "cut",
+            "value": 1.2
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.1141249667853117,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 97,
+          "embedded": false,
+          "id": "kunai1",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "WeaponExpert",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 56.28,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "disabled"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "disabled"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "disabled"
+          }
+        ]
+      }
+    },
+    {
+      "op": "property",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.25,
+            "kind": "scaleStat",
+            "mastery": "Wind",
+            "maxFactor": 1.4,
+            "perLevel": 0.03,
+            "rule": "wind-kunai",
+            "stat": "speed",
+            "value": 56.28
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "wind-kunai",
+            "stat": "cut",
+            "value": 1.2
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.10145828127861023,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 97,
+          "embedded": false,
+          "id": "kunai1",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "WeaponExpert",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {
+            "Marked": true
+          },
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 56.28,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "marked": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "disabled"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "disabled"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "disabled"
+          }
+        ]
+      }
+    },
+    {
+      "op": "launch",
+      "result": {
+        "age": 0,
+        "chakra": 97,
+        "embedded": false,
+        "id": "kunai1",
+        "infusion": "Wind",
+        "infusionResults": {},
+        "interactionResults": {},
+        "kind": "Kunai",
+        "launched": true,
+        "mastery": "WeaponExpert",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "properties": {
+          "Marked": true
+        },
+        "radius": 0.35,
+        "stats": {
+          "cut": 1.2,
+          "impact": 1,
+          "speed": 56.28,
+          "stability": 1
+        },
+        "tags": {
+          "blade": true,
+          "chakra": true,
+          "marked": true,
+          "metal": true,
+          "projectile": true,
+          "tool": true,
+          "wind": true
+        },
+        "toolType": "Kunai",
+        "velocity": {
+          "x": 56.28,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "op": "step",
+      "result": {
+        "counters": {
+          "expired": 0,
+          "rejected": 0,
+          "rules": 2,
+          "triggers": 2
+        },
+        "events": [
+          {
+            "applied": [
+              "wind-kunai"
+            ],
+            "cost": 0,
+            "sequence": 1,
+            "signals": {},
+            "source": "kunai1",
+            "time": 0,
+            "trace": [
+              {
+                "rule": "wind-kunai",
+                "status": "selected"
+              },
+              {
+                "rule": "wire-property",
+                "status": "disabled"
+              },
+              {
+                "rule": "metal-conduction",
+                "status": "disabled"
+              },
+              {
+                "rule": "reinforced-tool",
+                "status": "disabled"
+              }
+            ],
+            "trigger": "Infuse"
+          },
+          {
+            "applied": [
+              "wind-kunai"
+            ],
+            "cost": 0,
+            "sequence": 2,
+            "signals": {},
+            "source": "kunai1",
+            "time": 0,
+            "trace": [
+              {
+                "rule": "wind-kunai",
+                "status": "selected"
+              },
+              {
+                "rule": "wire-property",
+                "status": "disabled"
+              },
+              {
+                "rule": "metal-conduction",
+                "status": "disabled"
+              },
+              {
+                "rule": "reinforced-tool",
+                "status": "disabled"
+              }
+            ],
+            "trigger": "Infuse"
+          }
+        ],
+        "lab": {
+          "discardedSeconds": 0,
+          "kinematicProxies": true,
+          "steps": 30
+        },
+        "objects": {
+          "kunai1": {
+            "age": 0.49999999999999994,
+            "chakra": 97,
+            "embedded": false,
+            "id": "kunai1",
+            "infusion": "Wind",
+            "infusionResults": {},
+            "interactionResults": {},
+            "kind": "Kunai",
+            "launched": true,
+            "mastery": "WeaponExpert",
+            "position": {
+              "x": 28.13999999999999,
+              "y": 0,
+              "z": 0
+            },
+            "properties": {
+              "Marked": true
+            },
+            "radius": 0.35,
+            "stats": {
+              "cut": 1.2,
+              "impact": 1,
+              "speed": 56.28,
+              "stability": 1
+            },
+            "tags": {
+              "blade": true,
+              "chakra": true,
+              "marked": true,
+              "metal": true,
+              "projectile": true,
+              "tool": true,
+              "wind": true
+            },
+            "toolType": "Kunai",
+            "velocity": {
+              "x": 56.28,
+              "y": 0,
+              "z": 0
+            }
+          }
+        },
+        "surfaces": {},
+        "switches": {
+          "wind-kunai": true
+        },
+        "time": 0.49999999999999994
+      }
+    },
+    {
+      "op": "inspect",
+      "result": {
+        "age": 0.49999999999999994,
+        "chakra": 97,
+        "embedded": false,
+        "id": "kunai1",
+        "infusion": "Wind",
+        "infusionResults": {},
+        "interactionResults": {},
+        "kind": "Kunai",
+        "launched": true,
+        "mastery": "WeaponExpert",
+        "position": {
+          "x": 28.13999999999999,
+          "y": 0,
+          "z": 0
+        },
+        "properties": {
+          "Marked": true
+        },
+        "radius": 0.35,
+        "stats": {
+          "cut": 1.2,
+          "impact": 1,
+          "speed": 56.28,
+          "stability": 1
+        },
+        "tags": {
+          "blade": true,
+          "chakra": true,
+          "marked": true,
+          "metal": true,
+          "projectile": true,
+          "tool": true,
+          "wind": true
+        },
+        "toolType": "Kunai",
+        "velocity": {
+          "x": 56.28,
+          "y": 0,
+          "z": 0
+        }
+      }
+    }
+  ],
+  "report": {
+    "counters": {
+      "expired": 0,
+      "rejected": 0,
+      "rules": 2,
+      "triggers": 2
+    },
+    "events": [
+      {
+        "applied": [
+          "wind-kunai"
+        ],
+        "cost": 0,
+        "sequence": 1,
+        "signals": {},
+        "source": "kunai1",
+        "time": 0,
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "disabled"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "disabled"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "disabled"
+          }
+        ],
+        "trigger": "Infuse"
+      },
+      {
+        "applied": [
+          "wind-kunai"
+        ],
+        "cost": 0,
+        "sequence": 2,
+        "signals": {},
+        "source": "kunai1",
+        "time": 0,
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "disabled"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "disabled"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "disabled"
+          }
+        ],
+        "trigger": "Infuse"
+      }
+    ],
+    "lab": {
+      "discardedSeconds": 0,
+      "kinematicProxies": true,
+      "steps": 30
+    },
+    "objects": {
+      "kunai1": {
+        "age": 0.49999999999999994,
+        "chakra": 97,
+        "embedded": false,
+        "id": "kunai1",
+        "infusion": "Wind",
+        "infusionResults": {},
+        "interactionResults": {},
+        "kind": "Kunai",
+        "launched": true,
+        "mastery": "WeaponExpert",
+        "position": {
+          "x": 28.13999999999999,
+          "y": 0,
+          "z": 0
+        },
+        "properties": {
+          "Marked": true
+        },
+        "radius": 0.35,
+        "stats": {
+          "cut": 1.2,
+          "impact": 1,
+          "speed": 56.28,
+          "stability": 1
+        },
+        "tags": {
+          "blade": true,
+          "chakra": true,
+          "marked": true,
+          "metal": true,
+          "projectile": true,
+          "tool": true,
+          "wind": true
+        },
+        "toolType": "Kunai",
+        "velocity": {
+          "x": 56.28,
+          "y": 0,
+          "z": 0
+        }
+      }
+    },
+    "surfaces": {},
+    "switches": {
+      "wind-kunai": true
+    },
+    "time": 0.49999999999999994
+  }
+}

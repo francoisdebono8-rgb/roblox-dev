@@ -1,0 +1,86 @@
+{
+  "baseline": "29a9ec1",
+  "allUnchanged": true,
+  "files": [
+    {
+      "path": "src/Shared/Config.luau",
+      "unchanged": true,
+      "sha256": "aea9d1a50389ba7e759db789f4a26f6951554d5e84ad1de7c90d03713424dc2c"
+    },
+    {
+      "path": "src/Shared/Fighters.luau",
+      "unchanged": true,
+      "sha256": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5"
+    },
+    {
+      "path": "src/Shared/Attacks.luau",
+      "unchanged": true,
+      "sha256": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7"
+    },
+    {
+      "path": "src/Shared/MoveGraphs.luau",
+      "unchanged": true,
+      "sha256": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b"
+    },
+    {
+      "path": "src/Server/Combat.luau",
+      "unchanged": true,
+      "sha256": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0"
+    },
+    {
+      "path": "src/Server/Brawler.luau",
+      "unchanged": true,
+      "sha256": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740"
+    },
+    {
+      "path": "src/Server/Motor.luau",
+      "unchanged": true,
+      "sha256": "51706bfd90b0ec44c445f7f3d22ddd9b82d42f2bbb73987c913ba8105ff72228"
+    },
+    {
+      "path": "src/Server/Matches.luau",
+      "unchanged": true,
+      "sha256": "5e0fe92894643274347930e25813205c249f88dd6de89851386ea8ee0cdae0d6"
+    },
+    {
+      "path": "src/Server/Techniques.luau",
+      "unchanged": true,
+      "sha256": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1"
+    },
+    {
+      "path": "src/Server/AI.luau",
+      "unchanged": true,
+      "sha256": "27bee5ce469cc21d8204825c6676499d072da5c20171311ca707d18be6af5d82"
+    },
+    {
+      "path": "src/Server/World.luau",
+      "unchanged": true,
+      "sha256": "04cb4eeeb04fd9936cde9a990e06fa0c48ff8a4164e9fd198e7de31382b2be3d"
+    },
+    {
+      "path": "src/Client/Camera.luau",
+      "unchanged": true,
+      "sha256": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d"
+    },
+    {
+      "path": "src/Client/VelmoraMotionEngine.luau",
+      "unchanged": true,
+      "sha256": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d"
+    },
+    {
+      "path": "src/Client/Presentation.luau",
+      "unchanged": true,
+      "sha256": "217a7be9674e34f5ad81c03871e3de47cb204f4f729496641a40422f7375cd21"
+    },
+    {
+      "path": "src/Client/UI.luau",
+      "unchanged": true,
+      "sha256": "ed3d59d2abd707340b21a30f7d4781f04c45bf299db42f0e49f5519422bc969b"
+    },
+    {
+      "path": "src/Client/Input.luau",
+      "unchanged": true,
+      "sha256": "44c5629585fb7fb405294ef832535f1b583aae3af4d68c523b51227b0ac08012"
+    }
+  ]
+}

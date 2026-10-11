@@ -22,6 +22,7 @@ function DevHooks.install(matches)
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
  local developmentProfiles=nil
+ local chakraDev=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
 	-- errors and camera framing so a playtest can be inspected from tooling.
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
@@ -66,6 +67,10 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="interactions" then
+   chakraDev=chakraDev or require(script.Parent.ChakraDev).new(require(script.Parent.ChakraConfig),true)
+   return chakraDev:run(arg1,arg2)
+  end
   if op=="profiles" then
    developmentProfiles=developmentProfiles or require(script.Parent.DevelopmentProfiles).new(require(script.Parent.ProgressionConfig))
    return developmentProfiles:run(arg1,arg2)

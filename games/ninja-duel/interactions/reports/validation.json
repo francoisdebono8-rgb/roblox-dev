@@ -1,0 +1,57 @@
+{
+  "baseline": "29a9ec101f22105f682a24484547a5de86ba2197",
+  "status": "PASS_OFFLINE",
+  "luauTests": 206,
+  "pythonToolingTests": 10,
+  "newInteractionLuauTests": 19,
+  "existingSourceFiles": 66,
+  "existingSourceChanges": [
+    "games/ninja-duel/src/Server/DevHooks.luau"
+  ],
+  "coreGameplayFilesUnchanged": 16,
+  "defaultEnabled": false,
+  "activeCombatIntegration": false,
+  "activeInputBindingsChanged": false,
+  "cameraChanged": false,
+  "masteryMappingsTested": 32,
+  "examplesTested": [
+    "kunai_wind",
+    "kunai_seal",
+    "redirection",
+    "wire_property",
+    "projectile_surface",
+    "fire_surface"
+  ],
+  "artifacts": [
+    {
+      "artifact": "NinjaDuel.rbxlx",
+      "sha256": "796d6b3fc223e0dd9f4c72bb4075dca7dad84aa181e1a18e2b35fb2dfa5488ea",
+      "buildFingerprint": "c1b9d4947f5a1757fb54e79d3047a1cbe84f5f6ea023d5c67dad76d1e5de19f0",
+      "automatedQA": "PASS",
+      "tests": 206
+    },
+    {
+      "artifact": "NinjaDuel-QA.rbxlx",
+      "sha256": "8ba1641382537c656790f87f2a4c4d2d07faebf1c40b9c9444f2e44632bce03b",
+      "buildFingerprint": "5ef0f0a3a9eeba90990359d33ffea1a11e121e5ac6d7351598d1e3f16dc2abc9",
+      "automatedQA": "PASS",
+      "tests": 206
+    },
+    {
+      "artifact": "NinjaDuel-DevQA.rbxlx",
+      "sha256": "c88a368e9ee29c462a68d4e611628b7959b6dcc86697eb088753d053e02cafef",
+      "buildFingerprint": "67c7d2dfc1c8813bc57670cf87c2f1d4bb709e6f6e9204f7598079195cde44eb",
+      "automatedQA": "PASS",
+      "tests": 206
+    }
+  ],
+  "nativeStudioQA": "PENDING",
+  "nativeBlocker": "UI selection remains attached to an older Studio instance; probe confirms ChakraDev absent there. New build opening created another Studio instance but its command context was not reachable. No native PASS claimed.",
+  "nativeSmokeCommand": "game.ServerStorage.NinjaDuelDev:Invoke(\"interactions\",\"qa\")",
+  "remainingForClaude": [
+    "choose interaction and input option",
+    "adapt current projectile/tool to rule data and server context",
+    "connect existing animations/timings/FX and validate human feel",
+    "validate ownership/resources/geometry/rate/replay before live integration"
+  ]
+}

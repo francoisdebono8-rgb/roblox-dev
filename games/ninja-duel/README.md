@@ -114,3 +114,5 @@ Record native errors and the first unpleasant control or unconvincing exchange. 
 [F6, diagnostics, scénarios, CLI, online OFF et catalogue optionnel](DEVTOOLS.md). Cette couche entoure le gameplay existant ; les propositions de `lab/` ne sont pas chargées par le jeu.
 
 [Progression/collection optionnelles, profils DEV, simulations et interfaces pour Claude](progression/README.md). Aucun effet sur le combat ni vente Robux.
+
+[Fondation chakra × outils, labo Studio optionnel et propositions d’input](interactions/README.md). Codex prépare les règles ; Claude teste/adapte le feel. Aucun moveset actif modifié.

@@ -95,3 +95,7 @@ Sortie commerciale : identité/contenus et droits vérifiés ; permissions des a
 ## Progression et collection, préparation isolée
 
 Voir [le guide Claude](progression/README.md) : commandes `profiles` via le bindable serveur Studio, CLI avec sandbox DEV persistante, simulateur de packs et benchmark de profils. Aucun nouveau canal client ni branchement au combat. Le backend Roblox réel reste OFF.
+
+## Chakra × outils, labo optionnel
+
+[Guide Claude et commandes `interactions`](interactions/README.md) : six exemples OFF, tags/règles tracés, variantes et proxy renderer Studio isolé. [Six options d’input](interactions/INPUT_OPTIONS.md), sans binding actuel. `interactions qa` appelle un smoke natif explicite ; aucun test ni labo au bootstrap.

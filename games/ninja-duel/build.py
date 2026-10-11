@@ -92,7 +92,7 @@ external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980
 for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
 # Automated gate: every headless spec must pass on the exact sources built here.
-TEST_RUNNERS=[('lune','tests/Progression.spec.luau'),('lune','tests/ProfileRepository.spec.luau'),('lune','tests/DevInfra.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau')]
+TEST_RUNNERS=[('lune','tests/Chakra.spec.luau'),('lune','tests/Progression.spec.luau'),('lune','tests/ProfileRepository.spec.luau'),('lune','tests/DevInfra.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau')]
 def run_automated():
     tool={}
     import os

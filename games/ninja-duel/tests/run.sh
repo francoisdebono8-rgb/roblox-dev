@@ -26,6 +26,7 @@ run() {
     printf '%s\n' "$output" | grep -E '^(FAIL|.*Error)' | head -5
   fi
 }
+run Chakra     "$LUNE" run tests/Chakra.spec.luau
 run Progression "$LUNE" run tests/Progression.spec.luau
 run Profiles    "$LUNE" run tests/ProfileRepository.spec.luau
 run DevInfra   "$LUNE" run tests/DevInfra.spec.luau

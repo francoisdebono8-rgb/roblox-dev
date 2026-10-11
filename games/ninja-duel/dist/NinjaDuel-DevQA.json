@@ -1,11 +1,11 @@
 {
   "version": "0.13.0-arena-combo",
-  "gitRevision": "33028b26041570940cfcaf9c1f66cd3f93d8e5aa",
-  "gitBranch": "codex/ninja-progression-foundations",
+  "gitRevision": "29a9ec101f22105f682a24484547a5de86ba2197",
+  "gitBranch": "codex/ninja-chakra-interactions",
   "sourceDirty": true,
-  "builtAtUTC": "2026-10-11T01:27:22.416726+00:00",
+  "builtAtUTC": "2026-10-11T02:01:21.707691+00:00",
   "artifact": "NinjaDuel-DevQA.rbxlx",
-  "sha256": "427a6123f0b3999210aec79d5a49ad82d54d543944955c66b453790703a22267",
+  "sha256": "c88a368e9ee29c462a68d4e611628b7959b6dcc86697eb088753d053e02cafef",
   "sources": {
     "src/Client/Camera.luau": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d",
     "src/Client/DevClient.luau": "9617db51a25f9d5e26045236ffda1d3d811a9e46a88315d4ebdf5b949a96c10b",
@@ -22,10 +22,19 @@
     "src/Server/BanglaCombat.luau": "9ad3bb538983b372955bb6f9ccca86783da2f2a49426f551462222f96a7937cd",
     "src/Server/BanglaEvade.luau": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe",
     "src/Server/Brawler.luau": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740",
+    "src/Server/ChakraConfig.luau": "9493de4b51b8f16cb7560c44cc2e3421dcb8a166512a7a7c659b5d0058c5fb2a",
+    "src/Server/ChakraDev.luau": "9ffafebde935c1750795d551b4239c2aa355503d103bfe394fe33c7b68227efa",
+    "src/Server/ChakraInputPlan.luau": "74f3cce888e6723e7c1c72ddfc6e8b41d44898e24c56c74abd457082369e00c1",
+    "src/Server/ChakraInteractions.luau": "1dd07583b61e0d0fbc66252f5ccc138ff5dd247b4817af628c53e3790dfadb26",
+    "src/Server/ChakraLab.luau": "e369409416db0f92ae9d1897f8611f6abb6dfc204afcee515d301de7bdad41c8",
+    "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
+    "src/Server/ChakraStudioQA.luau": "4f7c2dd4166cc7c44faa25adc6bb1fdca1584fbe418b9dcd19a75c35653a8028",
+    "src/Server/ChakraStudioView.luau": "b81ace7bbc4e1727e2407f4d1f21d83c744f3ed62e352706e42b27f8140233d1",
+    "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
     "src/Server/CharacterProgression.luau": "b6211ba84e9ca26260168447da4f0cb59b75f6bc2f90ae59b49c56a0f7abed77",
     "src/Server/CollectionEconomy.luau": "4b4f5809b4f2d53e636e39d4f5135e12e6812a15e8a9a4148bdb1b9717596f7a",
     "src/Server/Combat.luau": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0",
-    "src/Server/DevHooks.luau": "0c63bfbe32adc2735d7932c6e9fa91dfebe37c83b5c29498939ed819e0f081ce",
+    "src/Server/DevHooks.luau": "20ea3505629618089d7543addaccf094fb3aca0b493b2eb3076de8543aa09574",
     "src/Server/DevProfiler.luau": "3755ba26a67851fdb7a1d2f4036dc441fa6f1a4eab27211c223242770aab8559",
     "src/Server/DevQA.luau": "7b5e214033860752061b234d321753e23cd120962195073c1fd6e6e5fd0c8838",
     "src/Server/DevReport.luau": "03ad5466dae6d3fe1af281142fb6bf479db921e0c92bcdb56360631959cf322e",
@@ -74,7 +83,7 @@
     "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
   },
   "sourceEquality": "PASS",
-  "buildFingerprint": "09164492b450138881a889ce9349c4297bf2b53cb933f3529d72cbf0f90612cb",
+  "buildFingerprint": "67c7d2dfc1c8813bc57670cf87c2f1d4bb709e6f6e9204f7598079195cde44eb",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -103,6 +112,10 @@
     "status": "PASS",
     "failed": [],
     "suites": {
+      "tests/Chakra.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel chakra interactions: 19 PASS (optional data/kinematic lab; no gameplay integration)"
+      },
       "tests/Progression.spec.luau": {
         "exit": 0,
         "summary": "NinjaDuel progression/economy: 15 PASS (isolated data, no combat modifiers)"

@@ -1,0 +1,1824 @@
+{
+  "comparison": [
+    {
+      "infusion": "None",
+      "mastery": "Basic",
+      "result": {
+        "effects": {},
+        "ok": true,
+        "resolveMilliseconds": 0.08625001646578312,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 100,
+          "embedded": false,
+          "id": "preview",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 42,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "source: missing wind"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "source: missing reinforced"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    },
+    {
+      "infusion": "Reinforce",
+      "mastery": "Basic",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.12,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "speed",
+            "value": 47.040000000000006
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "stability",
+            "value": 1.2
+          },
+          {
+            "factor": 1.15,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "impact",
+            "value": 1.15
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.09616662282496691,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 98,
+          "embedded": false,
+          "id": "preview",
+          "infusion": "Reinforce",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1.15,
+            "speed": 47.040000000000006,
+            "stability": 1.2
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "reinforced": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "source: missing wind"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "selected"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    },
+    {
+      "infusion": "Wind",
+      "mastery": "Basic",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.25,
+            "kind": "scaleStat",
+            "mastery": "Wind",
+            "maxFactor": 1.4,
+            "perLevel": 0.03,
+            "rule": "wind-kunai",
+            "stat": "speed",
+            "value": 52.5
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "wind-kunai",
+            "stat": "cut",
+            "value": 1.2
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.11120829731225967,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 97,
+          "embedded": false,
+          "id": "preview",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 52.5,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "source: missing reinforced"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    },
+    {
+      "infusion": "None",
+      "mastery": "WeaponExpert",
+      "result": {
+        "effects": {},
+        "ok": true,
+        "resolveMilliseconds": 0.10462501086294651,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 100,
+          "embedded": false,
+          "id": "preview",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "WeaponExpert",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 42,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "source: missing wind"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "source: missing reinforced"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    },
+    {
+      "infusion": "Reinforce",
+      "mastery": "WeaponExpert",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.12,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "speed",
+            "value": 47.040000000000006
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "stability",
+            "value": 1.2
+          },
+          {
+            "factor": 1.15,
+            "kind": "scaleStat",
+            "rule": "reinforced-tool",
+            "stat": "impact",
+            "value": 1.15
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.10604166891425848,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 98,
+          "embedded": false,
+          "id": "preview",
+          "infusion": "Reinforce",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "WeaponExpert",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1.15,
+            "speed": 47.040000000000006,
+            "stability": 1.2
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "reinforced": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "source: missing wind"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "selected"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    },
+    {
+      "infusion": "Wind",
+      "mastery": "WeaponExpert",
+      "result": {
+        "effects": [
+          {
+            "factor": 1.25,
+            "kind": "scaleStat",
+            "mastery": "Wind",
+            "maxFactor": 1.4,
+            "perLevel": 0.03,
+            "rule": "wind-kunai",
+            "stat": "speed",
+            "value": 56.28
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "rule": "wind-kunai",
+            "stat": "cut",
+            "value": 1.2
+          }
+        ],
+        "ok": true,
+        "resolveMilliseconds": 0.09912496898323298,
+        "signals": {},
+        "source": {
+          "age": 0,
+          "chakra": 97,
+          "embedded": false,
+          "id": "preview",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "WeaponExpert",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 56.28,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "trace": [
+          {
+            "rule": "wind-kunai",
+            "status": "selected"
+          },
+          {
+            "rule": "wire-property",
+            "status": "source: missing wire"
+          },
+          {
+            "rule": "metal-conduction",
+            "status": "source: missing lightning"
+          },
+          {
+            "rule": "reinforced-tool",
+            "status": "source: missing reinforced"
+          }
+        ]
+      },
+      "tool": "Kunai"
+    }
+  ],
+  "configSnapshot": {
+    "CharacterMastery": {},
+    "Enabled": false,
+    "Infusions": {
+      "Fire": {
+        "cost": 3,
+        "nature": "Fire",
+        "tags": [
+          "chakra"
+        ]
+      },
+      "Lightning": {
+        "cost": 3,
+        "nature": "Lightning",
+        "tags": [
+          "chakra"
+        ]
+      },
+      "Reinforce": {
+        "cost": 2,
+        "tags": [
+          "chakra",
+          "reinforced"
+        ]
+      },
+      "Wind": {
+        "cost": 3,
+        "nature": "Wind",
+        "tags": [
+          "chakra"
+        ]
+      }
+    },
+    "Masteries": {
+      "Basic": {
+        "levels": {
+          "Seal": 0,
+          "Wind": 0
+        },
+        "tags": {}
+      },
+      "SealExpert": {
+        "levels": {
+          "Seal": 3,
+          "Wind": 0
+        },
+        "tags": [
+          "sealExpert"
+        ]
+      },
+      "WeaponExpert": {
+        "levels": {
+          "Seal": 0,
+          "Wind": 3
+        },
+        "tags": [
+          "weaponExpert"
+        ]
+      }
+    },
+    "MasterySkills": {
+      "Seal": true,
+      "Wind": true
+    },
+    "MaxChakra": 1000,
+    "MaxEvents": 128,
+    "MaxLife": 30,
+    "MaxObjects": 32,
+    "MaxSpeed": 180,
+    "MaxSurfaces": 16,
+    "Natures": {
+      "Fire": {
+        "tag": "fire"
+      },
+      "Lightning": {
+        "tag": "lightning"
+      },
+      "Wind": {
+        "tag": "wind"
+      }
+    },
+    "Objects": {
+      "Kunai": {
+        "canLaunch": true,
+        "caps": {
+          "cut": 2,
+          "impact": 2,
+          "speed": 90,
+          "stability": 2
+        },
+        "infusions": {
+          "Fire": true,
+          "Lightning": true,
+          "Reinforce": true,
+          "Wind": true
+        },
+        "radius": 0.35,
+        "stats": {
+          "cut": 1,
+          "impact": 1,
+          "speed": 42,
+          "stability": 1
+        },
+        "tags": [
+          "tool",
+          "projectile",
+          "metal",
+          "blade"
+        ],
+        "toolType": "Kunai",
+        "visual": "kunai"
+      },
+      "Shuriken": {
+        "canLaunch": true,
+        "caps": {
+          "cut": 2,
+          "impact": 2,
+          "speed": 80,
+          "stability": 2
+        },
+        "infusions": {
+          "Fire": true,
+          "Lightning": true,
+          "Reinforce": true,
+          "Wind": true
+        },
+        "radius": 0.5,
+        "stats": {
+          "cut": 1,
+          "impact": 1,
+          "speed": 36,
+          "stability": 1
+        },
+        "tags": [
+          "tool",
+          "projectile",
+          "metal",
+          "blade"
+        ],
+        "toolType": "Shuriken",
+        "visual": "shuriken"
+      },
+      "Target": {
+        "canLaunch": false,
+        "caps": {},
+        "infusions": {},
+        "radius": 1,
+        "stats": {},
+        "tags": [
+          "actor",
+          "conductive"
+        ],
+        "toolType": "Target",
+        "visual": "target"
+      },
+      "Wire": {
+        "canLaunch": false,
+        "caps": {
+          "impact": 2,
+          "stability": 2
+        },
+        "infusions": {
+          "Lightning": true,
+          "Reinforce": true
+        },
+        "radius": 0.2,
+        "stats": {
+          "impact": 1,
+          "stability": 1
+        },
+        "tags": [
+          "tool",
+          "wire",
+          "metal"
+        ],
+        "toolType": "Wire",
+        "visual": "wire"
+      }
+    },
+    "Properties": {
+      "Marked": {
+        "requires": [
+          "tool"
+        ],
+        "tag": "marked"
+      },
+      "Seal": {
+        "requires": [
+          "tool"
+        ],
+        "tag": "seal"
+      }
+    },
+    "Rules": [
+      {
+        "effects": [
+          {
+            "factor": 1.12,
+            "kind": "scaleStat",
+            "stat": "speed"
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "stat": "stability"
+          },
+          {
+            "factor": 1.15,
+            "kind": "scaleStat",
+            "stat": "impact"
+          }
+        ],
+        "enabled": false,
+        "id": "reinforced-tool",
+        "priority": 20,
+        "trigger": "Infuse",
+        "when": {
+          "source": {
+            "all": [
+              "tool",
+              "projectile",
+              "reinforced"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "factor": 1.25,
+            "kind": "scaleStat",
+            "mastery": "Wind",
+            "maxFactor": 1.4,
+            "perLevel": 0.03,
+            "stat": "speed"
+          },
+          {
+            "factor": 1.2,
+            "kind": "scaleStat",
+            "stat": "cut"
+          }
+        ],
+        "enabled": false,
+        "id": "wind-kunai",
+        "priority": 30,
+        "trigger": "Infuse",
+        "when": {
+          "source": {
+            "all": [
+              "projectile",
+              "wind"
+            ]
+          },
+          "toolType": "Kunai"
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "tag",
+            "tag": "conductive",
+            "target": "source"
+          }
+        ],
+        "enabled": false,
+        "id": "metal-conduction",
+        "priority": 20,
+        "trigger": "Infuse",
+        "when": {
+          "source": {
+            "all": [
+              "metal",
+              "lightning"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "tag",
+            "tag": "conductiveWire",
+            "target": "source"
+          },
+          {
+            "kind": "signal",
+            "name": "trap-property-ready"
+          }
+        ],
+        "enabled": false,
+        "id": "wire-property",
+        "priority": 25,
+        "trigger": "Infuse",
+        "when": {
+          "source": {
+            "all": [
+              "wire",
+              "lightning"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "signal",
+            "name": "conduction-contact"
+          }
+        ],
+        "enabled": false,
+        "id": "contact-conduction",
+        "priority": 20,
+        "trigger": "Contact",
+        "when": {
+          "source": {
+            "all": [
+              "metal",
+              "lightning"
+            ]
+          },
+          "target": {
+            "all": [
+              "actor",
+              "conductive"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "redirect",
+            "speedScale": 0.85,
+            "target": "target"
+          }
+        ],
+        "enabled": false,
+        "group": "clash-motion",
+        "id": "redirect-projectile",
+        "priority": 40,
+        "trigger": "ProjectileClash",
+        "when": {
+          "context": {
+            "all": [
+              "wind"
+            ]
+          },
+          "source": {
+            "all": [
+              "projectile"
+            ]
+          },
+          "target": {
+            "all": [
+              "projectile"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "reflect",
+            "speedScale": 0.75,
+            "target": "target"
+          }
+        ],
+        "enabled": false,
+        "group": "clash-motion",
+        "id": "deflect-projectile",
+        "priority": 10,
+        "trigger": "ProjectileClash",
+        "when": {
+          "source": {
+            "all": [
+              "projectile"
+            ]
+          },
+          "target": {
+            "all": [
+              "projectile"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "embed",
+            "target": "source"
+          }
+        ],
+        "enabled": false,
+        "id": "surface-embed",
+        "priority": 100,
+        "trigger": "SurfaceHit",
+        "when": {
+          "source": {
+            "all": [
+              "projectile",
+              "metal"
+            ]
+          },
+          "surface": {
+            "all": [
+              "solid",
+              "anchorCompatible"
+            ]
+          }
+        }
+      },
+      {
+        "cost": 3,
+        "effects": [
+          {
+            "kind": "anchor",
+            "target": "source"
+          },
+          {
+            "kind": "signal",
+            "name": "spatial-point-created"
+          }
+        ],
+        "enabled": false,
+        "id": "seal-anchor",
+        "priority": 90,
+        "trigger": "SurfaceHit",
+        "when": {
+          "source": {
+            "all": [
+              "tool",
+              "marked",
+              "seal"
+            ]
+          },
+          "surface": {
+            "all": [
+              "anchorCompatible"
+            ]
+          }
+        }
+      },
+      {
+        "effects": [
+          {
+            "kind": "tag",
+            "tag": "ignited",
+            "target": "surface"
+          },
+          {
+            "kind": "signal",
+            "name": "surface-ignition-request"
+          }
+        ],
+        "enabled": false,
+        "id": "fire-surface",
+        "priority": 30,
+        "trigger": "SurfaceHit",
+        "when": {
+          "source": {
+            "all": [
+              "projectile",
+              "fire"
+            ]
+          },
+          "surface": {
+            "all": [
+              "burnable"
+            ]
+          }
+        }
+      }
+    ],
+    "Surfaces": {
+      "Floor": {
+        "normal": {
+          "x": 0,
+          "y": 1,
+          "z": 0
+        },
+        "radius": 8,
+        "tags": [
+          "solid",
+          "floor",
+          "anchorCompatible"
+        ]
+      },
+      "Wall": {
+        "normal": {
+          "x": -1,
+          "y": 0,
+          "z": 0
+        },
+        "radius": 8,
+        "tags": [
+          "solid",
+          "wall",
+          "anchorCompatible",
+          "conductive"
+        ]
+      },
+      "Wood": {
+        "normal": {
+          "x": -1,
+          "y": 0,
+          "z": 0
+        },
+        "radius": 8,
+        "tags": [
+          "solid",
+          "wall",
+          "burnable"
+        ]
+      }
+    },
+    "Tags": {
+      "actor": true,
+      "anchorCompatible": true,
+      "blade": true,
+      "burnable": true,
+      "chakra": true,
+      "conductive": true,
+      "conductiveWire": true,
+      "embedded": true,
+      "fire": true,
+      "floor": true,
+      "ignited": true,
+      "lightning": true,
+      "marked": true,
+      "metal": true,
+      "projectile": true,
+      "reinforced": true,
+      "seal": true,
+      "sealExpert": true,
+      "solid": true,
+      "spatialAnchor": true,
+      "tool": true,
+      "wall": true,
+      "weaponExpert": true,
+      "wind": true,
+      "wire": true
+    },
+    "Triggers": {
+      "Contact": true,
+      "Infuse": true,
+      "ProjectileClash": true,
+      "SurfaceHit": true
+    }
+  },
+  "fixtureOnly": true,
+  "gameplayIntegration": false,
+  "ok": true,
+  "reports": {
+    "fire_surface": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 1,
+        "triggers": 2
+      },
+      "events": [
+        {
+          "applied": {},
+          "cost": 0,
+          "sequence": 1,
+          "signals": {},
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "disabled"
+            },
+            {
+              "rule": "wire-property",
+              "status": "disabled"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "disabled"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        },
+        {
+          "applied": [
+            "fire-surface"
+          ],
+          "cost": 0,
+          "sequence": 2,
+          "signals": [
+            {
+              "name": "surface-ignition-request",
+              "rule": "fire-surface",
+              "source": "a",
+              "surface": "wood"
+            }
+          ],
+          "source": "a",
+          "surface": "wood",
+          "time": 0.4333333333333333,
+          "trace": [
+            {
+              "rule": "surface-embed",
+              "status": "disabled"
+            },
+            {
+              "rule": "seal-anchor",
+              "status": "disabled"
+            },
+            {
+              "rule": "fire-surface",
+              "status": "selected"
+            }
+          ],
+          "trigger": "SurfaceHit"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "chakra": 97,
+          "embedded": false,
+          "id": "a",
+          "infusion": "Fire",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": true,
+          "mastery": "Basic",
+          "position": {
+            "x": 31.999999999999922,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 42,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "fire": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 42,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {
+        "wood": {
+          "id": "wood",
+          "kind": "Wood",
+          "normal": {
+            "x": -1,
+            "y": 0,
+            "z": 0
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "z": 0
+          },
+          "radius": 8,
+          "tags": {
+            "burnable": true,
+            "ignited": true,
+            "solid": true,
+            "wall": true
+          }
+        }
+      },
+      "switches": {
+        "fire-surface": true
+      },
+      "time": 1
+    },
+    "kunai_seal": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 2,
+        "triggers": 3
+      },
+      "events": [
+        {
+          "applied": {},
+          "cost": 0,
+          "sequence": 1,
+          "signals": {},
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "disabled"
+            },
+            {
+              "rule": "wire-property",
+              "status": "disabled"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "disabled"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        },
+        {
+          "applied": {},
+          "cost": 0,
+          "sequence": 2,
+          "signals": {},
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "disabled"
+            },
+            {
+              "rule": "wire-property",
+              "status": "disabled"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "disabled"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        },
+        {
+          "applied": [
+            "surface-embed",
+            "seal-anchor"
+          ],
+          "cost": 3,
+          "sequence": 3,
+          "signals": [
+            {
+              "name": "spatial-point-created",
+              "rule": "seal-anchor",
+              "source": "a",
+              "surface": "wall"
+            }
+          ],
+          "source": "a",
+          "surface": "wall",
+          "time": 0.4333333333333333,
+          "trace": [
+            {
+              "rule": "surface-embed",
+              "status": "selected"
+            },
+            {
+              "rule": "seal-anchor",
+              "status": "selected"
+            },
+            {
+              "rule": "fire-surface",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "SurfaceHit"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "anchor": {
+            "normal": {
+              "x": -1,
+              "y": 0,
+              "z": 0
+            },
+            "position": {
+              "x": 8,
+              "y": 3,
+              "z": 0
+            },
+            "rule": "seal-anchor",
+            "surface": "wall"
+          },
+          "chakra": 97,
+          "embedded": true,
+          "id": "a",
+          "infusionResults": {},
+          "interactionResults": {
+            "embedded": true,
+            "spatialAnchor": true
+          },
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": 8,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {
+            "Marked": true,
+            "Seal": true
+          },
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 42,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "embedded": true,
+            "marked": true,
+            "metal": true,
+            "projectile": true,
+            "seal": true,
+            "spatialAnchor": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {
+        "wall": {
+          "id": "wall",
+          "kind": "Wall",
+          "normal": {
+            "x": -1,
+            "y": 0,
+            "z": 0
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "z": 0
+          },
+          "radius": 8,
+          "tags": {
+            "anchorCompatible": true,
+            "conductive": true,
+            "solid": true,
+            "wall": true
+          }
+        }
+      },
+      "switches": {
+        "seal-anchor": true,
+        "surface-embed": true
+      },
+      "time": 1
+    },
+    "kunai_wind": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 1,
+        "triggers": 1
+      },
+      "events": [
+        {
+          "applied": [
+            "wind-kunai"
+          ],
+          "cost": 0,
+          "sequence": 1,
+          "signals": {},
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "selected"
+            },
+            {
+              "rule": "wire-property",
+              "status": "disabled"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "disabled"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "chakra": 97,
+          "embedded": false,
+          "id": "a",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": true,
+          "mastery": "Basic",
+          "position": {
+            "x": 42.49999999999993,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 52.5,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 52.5,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {},
+      "switches": {
+        "wind-kunai": true
+      },
+      "time": 1
+    },
+    "projectile_surface": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 1,
+        "triggers": 1
+      },
+      "events": [
+        {
+          "applied": [
+            "surface-embed"
+          ],
+          "cost": 0,
+          "sequence": 1,
+          "signals": {},
+          "source": "a",
+          "surface": "floor",
+          "time": 0.21666666666666665,
+          "trace": [
+            {
+              "rule": "surface-embed",
+              "status": "selected"
+            },
+            {
+              "rule": "seal-anchor",
+              "status": "disabled"
+            },
+            {
+              "rule": "fire-surface",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "SurfaceHit"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "chakra": 100,
+          "embedded": true,
+          "id": "a",
+          "infusionResults": {},
+          "interactionResults": {
+            "embedded": true
+          },
+          "kind": "Kunai",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 42,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "embedded": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {
+        "floor": {
+          "id": "floor",
+          "kind": "Floor",
+          "normal": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "radius": 8,
+          "tags": {
+            "anchorCompatible": true,
+            "floor": true,
+            "solid": true
+          }
+        }
+      },
+      "switches": {
+        "surface-embed": true
+      },
+      "time": 1
+    },
+    "redirection": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 2,
+        "triggers": 2
+      },
+      "events": [
+        {
+          "applied": [
+            "wind-kunai"
+          ],
+          "cost": 0,
+          "sequence": 1,
+          "signals": {},
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "selected"
+            },
+            {
+              "rule": "wire-property",
+              "status": "disabled"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "disabled"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        },
+        {
+          "applied": [
+            "redirect-projectile"
+          ],
+          "cost": 0,
+          "sequence": 2,
+          "signals": {},
+          "source": "a",
+          "target": "b",
+          "time": 0.21666666666666665,
+          "trace": [
+            {
+              "rule": "redirect-projectile",
+              "status": "selected"
+            },
+            {
+              "rule": "deflect-projectile",
+              "status": "exclusive-group"
+            }
+          ],
+          "trigger": "ProjectileClash"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "chakra": 97,
+          "embedded": false,
+          "id": "a",
+          "infusion": "Wind",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Kunai",
+          "launched": true,
+          "mastery": "Basic",
+          "position": {
+            "x": 42.49999999999993,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.35,
+          "stats": {
+            "cut": 1.2,
+            "impact": 1,
+            "speed": 52.5,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "chakra": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true,
+            "wind": true
+          },
+          "toolType": "Kunai",
+          "velocity": {
+            "x": 52.5,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "b": {
+          "age": 1,
+          "chakra": 100,
+          "embedded": false,
+          "id": "b",
+          "infusionResults": {},
+          "interactionResults": {},
+          "kind": "Shuriken",
+          "launched": true,
+          "mastery": "Basic",
+          "position": {
+            "x": 26.188813559322018,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.5,
+          "stats": {
+            "cut": 1,
+            "impact": 1,
+            "speed": 36,
+            "stability": 1
+          },
+          "tags": {
+            "blade": true,
+            "metal": true,
+            "projectile": true,
+            "tool": true
+          },
+          "toolType": "Shuriken",
+          "velocity": {
+            "x": 30.599999999999998,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {},
+      "switches": {
+        "deflect-projectile": true,
+        "redirect-projectile": true,
+        "wind-kunai": true
+      },
+      "time": 1
+    },
+    "wire_property": {
+      "counters": {
+        "expired": 0,
+        "rejected": 0,
+        "rules": 2,
+        "triggers": 1
+      },
+      "events": [
+        {
+          "applied": [
+            "wire-property",
+            "metal-conduction"
+          ],
+          "cost": 0,
+          "sequence": 1,
+          "signals": [
+            {
+              "name": "trap-property-ready",
+              "rule": "wire-property",
+              "source": "a"
+            }
+          ],
+          "source": "a",
+          "time": 0,
+          "trace": [
+            {
+              "rule": "wind-kunai",
+              "status": "disabled"
+            },
+            {
+              "rule": "wire-property",
+              "status": "selected"
+            },
+            {
+              "rule": "metal-conduction",
+              "status": "selected"
+            },
+            {
+              "rule": "reinforced-tool",
+              "status": "disabled"
+            }
+          ],
+          "trigger": "Infuse"
+        }
+      ],
+      "lab": {
+        "discardedSeconds": 0,
+        "kinematicProxies": true,
+        "steps": 60
+      },
+      "objects": {
+        "a": {
+          "age": 1,
+          "chakra": 97,
+          "embedded": false,
+          "id": "a",
+          "infusion": "Lightning",
+          "infusionResults": {
+            "conductive": true,
+            "conductiveWire": true
+          },
+          "interactionResults": {},
+          "kind": "Wire",
+          "launched": false,
+          "mastery": "Basic",
+          "position": {
+            "x": -10,
+            "y": 3,
+            "z": 0
+          },
+          "properties": {},
+          "radius": 0.2,
+          "stats": {
+            "impact": 1,
+            "stability": 1
+          },
+          "tags": {
+            "chakra": true,
+            "conductive": true,
+            "conductiveWire": true,
+            "lightning": true,
+            "metal": true,
+            "tool": true,
+            "wire": true
+          },
+          "toolType": "Wire",
+          "velocity": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        }
+      },
+      "surfaces": {},
+      "switches": {
+        "metal-conduction": true,
+        "wire-property": true
+      },
+      "time": 1
+    }
+  }
+}
