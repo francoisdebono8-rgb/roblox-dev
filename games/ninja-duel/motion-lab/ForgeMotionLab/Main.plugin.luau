@@ -1,5 +1,7 @@
+-- Local Studio plugin only; importing the model into a place cannot start it.
+if not plugin then return end
 local toolbar=plugin:CreateToolbar("Forge Motion Lab")
-local button=toolbar:CreateButton("Motion Lab","Create, mix and preview R15 motion profiles","")
+local button=toolbar:CreateButton("Motion Lab","Create, mix and preview R15 motion profiles","","Motion Lab")
 button.ClickableWhenViewportHidden=true
 local widget=plugin:CreateDockWidgetPluginGuiAsync("ForgeMotionLab_v1",DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float,false,false,1180,780,780,600))
 widget.Title="Forge Motion Lab"

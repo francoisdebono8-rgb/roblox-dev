@@ -9,6 +9,7 @@ def tool(name):
  if not Path(p).exists():p=shutil.which(name)
  if not p:raise SystemExit('Missing '+name)
  return p
+subprocess.run([tool('lune'),'run','motion-lab/tools/extract_ninja.luau'],cwd=GAME,check=True)
 sources=sorted((ROOT/'ForgeMotionLab').rglob('*.luau'))
 for p in sources:subprocess.run([tool('luau-compile'),str(p)],stdout=subprocess.DEVNULL,check=True)
 subprocess.run([tool('lune'),'run','motion-lab/tests/run.luau'],cwd=GAME,check=True)
@@ -26,6 +27,9 @@ ET.indent(xml);raw=ET.tostring(xml,encoding='utf-8',xml_declaration=True)
 with tempfile.TemporaryDirectory() as tmp:
  tmp=Path(tmp);source=tmp/'plugin.rbxmx';source.write_bytes(raw);binary=tmp/'plugin.rbxm'
  subprocess.run([tool('lune'),'run',str(ROOT/'tools/package.luau'),str(source),str(binary)],cwd=GAME,check=True)
+ subprocess.run([tool('lune'),'run','motion-lab/tests/ui_smoke.luau',str(binary)],cwd=GAME,check=True)
  (ROOT/'dist/ForgeMotionLab.rbxmx').write_bytes(raw);(ROOT/'dist/ForgeMotionLab.rbxm').write_bytes(binary.read_bytes())
-manifest={'plugin':'Forge Motion Lab','version':'0.1.0','artifact':'ForgeMotionLab.rbxm','sha256':hashlib.sha256(binary.read_bytes()).hexdigest() if binary.exists() else hashlib.sha256((ROOT/'dist/ForgeMotionLab.rbxm').read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},'automatedTests':'PASS','native':'PENDING','visualReview':'USER_PENDING','published':False}
+manifest={'plugin':'Forge Motion Lab','version':(ROOT/'VERSION').read_text().strip(),'artifact':'ForgeMotionLab.rbxm','sha256':hashlib.sha256((ROOT/'dist/ForgeMotionLab.rbxm').read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},'automatedTests':'PASS (14 rules/controller cases)','exactBinaryUiSmoke':'PASS (simulated Studio events; native instance schemas)','native':'NOT_RUN','visualReview':'USER_PENDING','published':False}
+manifest['sourceSnapshot']={str(p.relative_to(GAME)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [GAME/'src/Client/VelmoraMotionEngine.luau',GAME/'src/Shared/Fighters.luau',GAME/'src/Shared/Attacks.luau']}
+manifest['sourceCommit']=subprocess.check_output(['git','rev-parse','HEAD:games/ninja-duel/src'],cwd=GAME,text=True).strip()
 (ROOT/'dist/manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(ROOT/'dist/ForgeMotionLab.rbxm')

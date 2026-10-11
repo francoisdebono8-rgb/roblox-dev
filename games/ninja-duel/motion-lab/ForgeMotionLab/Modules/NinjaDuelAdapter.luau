@@ -1,20 +1,22 @@
 -- Adapter-owned character IDs. Core mixer/generator does not know Naruto names.
 local M=require(script.Parent.Model)
+local Sampler=require(script.Parent.Sampler)
 local A={Format="NinjaDuel.MotionDefinitions.v1"}
 function A.import(data,lib)
+ local index=0
  for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
   local def=data.fighters[id];if not def or not data.stances[id] then continue end
-  local p=M.new(id,def.name);p.metadata={sourceType="ninja-duel",description="Authored Ninja Duel motion",characterSource=id};p.stance=M.copy(data.stances[id]);p.gait=M.copy(data.gaits[id]);p.clips={}
+  local p=M.new(id,def.name);p.metadata={sourceType="ninja-duel",description="Authored Ninja Duel motion",characterSource=id};p.stance=M.copy(data.stances[id]);p.stance.weapon={roll=if id=="Flashstep" then -35 elseif id=="Mirage" then 15 else 0};p.gait=M.copy(data.gaits[id]);p.clips={}
   for name,keys in data.clips[id] do
    local a=data.attacks[name] or data.attacks.DashAttack;local scale=def.attackProfile and def.attackProfile[name] or {}
-   local startup=a.startup*(scale.startup or 1);local active=a.active*(scale.active or 1);local recovery=a.recovery*(scale.recovery or 1);local duration=startup+active+recovery
+   local startup=a.startup*(scale.startup or 1);local active=a.active*(scale.active or 1);local recovery=a.recovery*(scale.recovery or 1);local exact=data.timings and data.timings[id] and data.timings[id][name];if exact then startup,active,recovery=exact.startup,exact.active,exact.recovery end;local duration=startup+active+recovery
    local normalized={};for _,key in keys do
     local t=if key.at<=1 then key.at*startup elseif key.at<=2 then startup+(key.at-1)*active else startup+active+(key.at-2)*recovery
     table.insert(normalized,{at=math.clamp(t/duration,0,1),pose=M.copy(key.pose),ease=key.ease})
    end
-   p.clips[name]={duration=duration,keys=normalized,gameTimeline=M.copy(keys)}
+   p.clips[name]={duration=duration,keys=normalized,timing={startup=startup,active=active,recovery=recovery},gameTimeline=M.copy(keys)}
   end
-  lib.presets[id]=p;table.insert(lib.order,1,id)
+  lib.presets[id]=p;index+=1;table.insert(lib.order,index,id)
  end
  return lib
 end
@@ -30,14 +32,31 @@ function A.toLuau(value,depth)
  local rows={};for _,key in keys do table.insert(rows,"["..A.toLuau(key,depth+1).."]="..A.toLuau(value[key],depth+1)) end
  return "{"..table.concat(rows,",").."}"
 end
+function A.ninjaDefinitions(preset,lib)
+ -- Same anatomy and 0..3 phase convention as VelmoraMotionEngine CLIPS.
+ -- Export is deliberately inert; Claude chooses whether/where to use these tables.
+ local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=M.copy(preset.gait),clips={},timings={},generated=true,automaticApply=false}
+ for _,assetId in lib.assetOrder do
+  local asset=lib.assets[assetId];local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
+  local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
+  local duration=timing.startup+timing.active+timing.recovery;local keys={}
+  for i=0,24 do
+   local t=i/24;local elapsed=t*duration
+   local phase=if elapsed<=timing.startup then elapsed/timing.startup elseif elapsed<=timing.startup+timing.active then 1+(elapsed-timing.startup)/timing.active else 2+(elapsed-timing.startup-timing.active)/timing.recovery
+   table.insert(keys,{at=phase,ease="linear",pose=Sampler.mixedAnatomy(preset,asset,t,lib)})
+  end
+  out.clips[asset.grammar]=keys;out.timings[asset.grammar]=M.copy(timing)
+ end
+ return out
+end
 function A.bundle(preset,lib)
- local ok,why=M.validate(preset,lib.presets);assert(ok,why)
+ local graph=M.copy(lib.presets);graph[preset.id]=preset;local ok,why=M.validateGraph(graph);assert(ok,why)
  local required={};local function gather(p,depth)
   assert(depth<9,"Source depth");for _,layer in p.bodyLayers do
    if layer.source~="base" and not required[layer.source] then local source=assert(lib.presets[layer.source],"Missing source");required[source.id]=M.copy(source);gather(source,depth+1) end
   end
  end;gather(preset,0)
- return {format=A.Format,version=1,baseRig="R15",preset=M.copy(preset),sources=required,assets=M.copy(lib.assets),automaticApply=false}
+ return {format=A.Format,version=1,baseRig="R15",preset=M.copy(preset),sources=required,assets=M.copy(lib.assets),ninjaDuel=A.ninjaDefinitions(preset,lib),automaticApply=false}
 end
 function A.export(preset,lib,parent)
  local bundle=A.bundle(preset,lib)

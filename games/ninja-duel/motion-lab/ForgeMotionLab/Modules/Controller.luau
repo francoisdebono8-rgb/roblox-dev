@@ -3,7 +3,7 @@ local Library=require(script.Parent.Library)
 local Adapter=require(script.Parent.NinjaDuelAdapter)
 local Store=require(script.Parent.Store)
 local C={};C.__index=C
-function C.new(plugin)
+function C.create(plugin)
  local lib=Library.new();Adapter.import(require(script.Parent.NinjaSources),lib)
  local self=setmetatable({library=lib,store=Store.new(plugin,lib),history={},future={},counter=0,dirty=false,clip="run",tab="Characters",playing=true,loop=true,speed=1,time=0,sequenceMode=false,mirror=false,compare=nil,selectedBlock=1},C)
  self.preset=M.copy(lib.presets.Flashstep);self.preset.id=self:newId();self.preset.name="Minato × Itachi"
@@ -22,7 +22,7 @@ function C:redo()
 end
 function C:load(id)
  self:checkpoint();self.preset=M.copy(assert(self.library.presets[id],"Missing profile"));if not self.store.custom[id] then self.preset.id=self:newId();self.preset.name=self.preset.name.." study" end
- if #self.preset.sequences==0 then self.preset.sequences={{id="sequence1",name="Opening phrase",orderedClips={}}} end;self.dirty=false;self.time=0
+ if #self.preset.sequences==0 then self.preset.sequences={{id="sequence1",name="Opening phrase",orderedClips={}}} end;self.dirty=self.store.custom[id]==nil;self.time=0
 end
 function C:new(template)
  self:checkpoint();self.preset=if template then M.copy(self.library.presets[template]) else M.new("new","Untitled motion")
@@ -36,7 +36,7 @@ function C:addClip(id)
  self:edit(function(p)table.insert(p.sequences[1].orderedClips,{asset=id,duration=math.clamp(asset.duration,.12,5),blend=.1,transition="blend"})end);self.selectedBlock=#self:sequence().orderedClips;self.sequenceMode=true
 end
 function C:save() self.store:save(self.preset);self.dirty=false end
-function C:pinCompare() self.compare=M.copy(self.preset) end
+function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
 function C:export(parent)
  local history=game:GetService("ChangeHistoryService");local recording=history:TryBeginRecording("ForgeMotionLabExport","Export Motion Lab profile")
  assert(recording,"Finish the current Studio operation first")
@@ -52,7 +52,13 @@ function C:export(parent)
 end
 function C:import(instance)
  local p,sources=Adapter.read(instance,self.library)
- for id,source in sources do self.library.presets[id]=source;if not table.find(self.library.order,id) then table.insert(self.library.order,id) end end
+ -- Always remap imported snapshots: no bundled/live source is overwritten.
+ local ids={};for id in sources do ids[id]=self:newId() end
+ local function remap(profile)
+  for _,layer in profile.bodyLayers do if ids[layer.source] then layer.source=ids[layer.source] end end
+ end
+ remap(p)
+ for oldId,source in sources do source.id=ids[oldId];remap(source);source.metadata.imported=true;self.library.presets[source.id]=source;table.insert(self.library.order,source.id) end
  self:checkpoint();p.id=self:newId();self.preset=p;self.dirty=true;self.time=0
 end
 return C

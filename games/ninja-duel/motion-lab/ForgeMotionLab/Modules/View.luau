@@ -6,7 +6,7 @@ local Rig=require(script.Parent.Rig)
 local Controller=require(script.Parent.Controller)
 local View={}
 function View.mount(widget,plugin)
- local c=Controller.new(plugin);local ui=UI.new(widget);local scopes={};local alive=true
+ local c=Controller.create(plugin);local ui=UI.new(widget);local scopes={};local alive=true
  local root=ui:frame(widget,{Size=UDim2.fromScale(1,1),ClipsDescendants=true})
  local header=ui:frame(root,{Size=UDim2.new(1,0,0,104)})
  ui:label(header,"Forge Motion Lab",{Position=UDim2.fromOffset(18,8),Size=UDim2.fromOffset(220,32),TextSize=20,Font=Enum.Font.BuilderSansBold})
@@ -18,7 +18,8 @@ function View.mount(widget,plugin)
  local right=ui:frame(root,{Position=UDim2.new(1,-292,0,108),Size=UDim2.new(0,280,1,-312)})
  local center=ui:frame(root,{Position=UDim2.fromOffset(234,108),Size=UDim2.new(1,-538,1,-312)},"canvas")
  local bottom=ui:frame(root,{Position=UDim2.new(0,12,1,-192),Size=UDim2.new(1,-24,0,158)})
- local title=ui:label(center,"Run",{Position=UDim2.fromOffset(14,12),Size=UDim2.new(1,-28,0,24),TextSize=17,Font=Enum.Font.BuilderSansBold})
+ local timeReadout=ui:label(center,"0.00s",{Position=UDim2.new(1,-100,0,44),Size=UDim2.fromOffset(86,18),TextXAlignment=Enum.TextXAlignment.Right,TextSize=11},"muted")
+ local title=ui:label(center,"Run",{Position=UDim2.fromOffset(14,12),Size=UDim2.new(1,-110,0,24),TextSize=17,Font=Enum.Font.BuilderSansBold})
  local subtitle=ui:label(center,"Live R15 preview",{Position=UDim2.fromOffset(14,38),Size=UDim2.new(1,-28,0,18),TextSize=12},"muted")
  local viewport=ui:make("ViewportFrame",center,{Position=UDim2.fromOffset(0,65),Size=UDim2.new(1,0,1,-110),BackgroundTransparency=1,Ambient=Color3.fromRGB(165,174,192),LightColor=Color3.fromRGB(233,240,255),LightDirection=Vector3.new(-1,-1,-.5),BorderSizePixel=0})
  local world=Instance.new("WorldModel");world.Parent=viewport
@@ -29,21 +30,22 @@ function View.mount(widget,plugin)
  local showGrid=true;local showRoot=true;local mode="front";local yaw=math.pi;local pitch=.16;local distance=12;local drag=nil;local last=nil
  local function updateCamera()camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(yaw)*distance,2.2+math.sin(pitch)*distance,math.cos(yaw)*distance),Vector3.new(0,2.2,0))end;updateCamera()
  local refresh,refreshLibrary,refreshInspector,refreshTimeline
- local function state()nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "Unsaved changes" else "Saved preset";title.Text=if c.sequenceMode then c:sequence().name else c.library.assets[c.clip].name;subtitle.Text=if c.compare then "A: pinned reference    B: current edit" else "Live R15 · "..(if c.preset.metadata.sourceType=="ninja-duel" then "authored source" else "procedural profile")end
+ local function state()nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "Unsaved changes" else "Saved preset";title.Text=if c.sequenceMode then c:sequence().name else Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).name;subtitle.Text=if c.compare then "A: pinned reference    B: current edit" else "Live R15 · "..(if c.preset.metadata.sourceType=="ninja-duel" then "authored source" else "procedural profile")end
  local function action(fn,message)
   local ok,err=pcall(fn);status.Text=if ok then message or "Updated" else tostring(err):gsub("^.-:%d+: ","");state();if ok and refresh then refresh() end
  end
- local popup=nil
+ local popup=nil;local popupUI=nil
+ local function closeMenu()if popupUI then popupUI:dispose();popupUI=nil end;if popup then popup:Destroy();popup=nil end end
  local function menu(anchor,items,chosen)
-  if popup then popup:Destroy();popup=nil end
+  closeMenu();popupUI=UI.new(widget)
   popup=ui:frame(root,{Size=UDim2.fromOffset(math.max(180,anchor.AbsoluteSize.X),math.min(320,#items*30+8)),Position=UDim2.fromOffset(math.clamp(anchor.AbsolutePosition.X-root.AbsolutePosition.X,8,root.AbsoluteSize.X-210),math.min(root.AbsoluteSize.Y-330,anchor.AbsolutePosition.Y-root.AbsolutePosition.Y+anchor.AbsoluteSize.Y+4)),ZIndex=50},"hover")
   local scroll=ui:scroll(popup,{Size=UDim2.new(1,-8,1,-8),Position=UDim2.fromOffset(4,4),ZIndex=51})
-  for i,item in items do ui:button(scroll,item.name,{Position=UDim2.fromOffset(0,(i-1)*30),Size=UDim2.new(1,-4,0,28),ZIndex=52},function()popup:Destroy();popup=nil;chosen(item.id)end)end
+  for i,item in items do popupUI:button(scroll,item.name,{Position=UDim2.fromOffset(0,(i-1)*30),Size=UDim2.new(1,-4,0,28),ZIndex=52},function()closeMenu();chosen(item.id)end)end
  end
  local function pick(anchor,items,fn)menu(anchor,items,function(id)action(function()fn(id)end)end)end
  local save=ui:button(header,"Save",{Position=UDim2.new(1,-282,0,14),Size=UDim2.fromOffset(72,30)},function()action(function()c:save()end,"Preset saved locally")end,true)
  ui:button(header,"Export",{Position=UDim2.new(1,-200,0,14),Size=UDim2.fromOffset(82,30)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Export in Edit mode");local module=c:export(game:GetService("ServerStorage"));game:GetService("Selection"):Set({module})end,"Config exported to ServerStorage · no gameplay changes")end)
- ui:button(header,"Apply R15",{Position=UDim2.new(1,-108,0,14),Size=UDim2.fromOffset(94,30)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Apply in Edit mode");local selected=game:GetService("Selection"):Get()[1];assert(selected and selected:IsA("Model") and selected:FindFirstChild("Humanoid") and selected.Humanoid.RigType==Enum.HumanoidRigType.R15,"Select an R15 Model first");c:export(selected)end,"Profile attached to R15 · animations untouched")end)
+ ui:button(header,"Attach R15",{Position=UDim2.new(1,-108,0,14),Size=UDim2.fromOffset(94,30)},function()action(function()assert(not game:GetService("RunService"):IsRunning(),"Apply in Edit mode");local selected=game:GetService("Selection"):Get()[1];assert(selected and selected:IsA("Model") and selected:FindFirstChild("Humanoid") and selected.Humanoid.RigType==Enum.HumanoidRigType.R15,"Select an R15 Model first");c:export(selected)end,"Profile attached to R15 · animations untouched")end)
  local new=ui:button(header,"New profile",{Position=UDim2.fromOffset(18,72),Size=UDim2.fromOffset(94,28)})
  ui:connect(new.Activated,function()local items={{id="blank",name="Blank profile"}};for _,t in Library.Templates do table.insert(items,{id=t.id,name=t.name.." starting profile"})end;pick(new,items,function(id)c:new(if id=="blank" then nil else id)end)end)
  ui:button(header,"Duplicate",{Position=UDim2.fromOffset(120,72),Size=UDim2.fromOffset(80,28)},function()action(function()c:duplicate()end)end)
@@ -60,7 +62,7 @@ function View.mount(widget,plugin)
  local search="";local category="All"
  refreshLibrary=function()
   local u=scope("library",left);u:label(left,"Sources",{Position=UDim2.fromOffset(12,10),Size=UDim2.new(1,-24,0,24),TextSize=16,Font=Enum.Font.BuilderSansBold})
-  for i,tab in {"Characters","Library","Custom"} do u:button(left,tab,{Position=UDim2.fromOffset(8+(i-1)*65,42),Size=UDim2.fromOffset(63,27)},function()c.tab=tab;search="";refreshLibrary()end,c.tab==tab)end
+  for i,tab in {"Characters","Library","Custom"} do u:button(left,tab,{Position=UDim2.new((i-1)/3,8,0,42),Size=UDim2.new(1/3,-10,0,27)},function()c.tab=tab;search="";refreshLibrary()end,c.tab==tab)end
   local field=u:input(left,search,{Position=UDim2.fromOffset(10,78),Size=UDim2.new(1,-20,0,30),PlaceholderText="Search sources"})
   u:connect(field.FocusLost,function()search=field.Text:lower();refreshLibrary()end)
   local y=116
@@ -82,7 +84,7 @@ function View.mount(widget,plugin)
  local inspectorTab="Mixer"
  refreshInspector=function()
   local u=scope("inspector",right)
-  for i,tab in {"Mixer","DNA","Advanced"} do u:button(right,tab,{Position=UDim2.fromOffset(8+(i-1)*87,10),Size=UDim2.fromOffset(83,30)},function()inspectorTab=tab;refreshInspector()end,inspectorTab==tab)end
+  for i,tab in {"Mixer","DNA","Advanced"} do u:button(right,tab,{Position=UDim2.new((i-1)/3,8,0,10),Size=UDim2.new(1/3,-12,0,30)},function()inspectorTab=tab;refreshInspector()end,inspectorTab==tab)end
   local scroll=u:scroll(right,{Position=UDim2.fromOffset(12,52),Size=UDim2.new(1,-24,1,-64)})
   if inspectorTab=="Mixer" then
    u:label(scroll,"Body Mixer",{Size=UDim2.new(1,0,0,28),TextSize=17,Font=Enum.Font.BuilderSansBold})
@@ -103,8 +105,12 @@ function View.mount(widget,plugin)
   else
    local text="Profile ID\n"..c.preset.id.."\n\nSource\n"..c.preset.metadata.sourceType.."\n\nRig\nR15 · anatomical joint controls\n\nExport\nNinjaDuel.MotionDefinitions.v1\nData only. No automatic apply.\n\nCharacter expression\n"..game:GetService("HttpService"):JSONEncode(c.preset.characterRules)
    u:label(scroll,text,{Size=UDim2.new(1,-8,0,260),TextSize=13,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
+   u:label(scroll,"Character rules (JSON)",{Position=UDim2.fromOffset(0,266),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
+   u:input(scroll,game:GetService("HttpService"):JSONEncode(c.preset.characterRules),{Position=UDim2.fromOffset(0,294),Size=UDim2.new(1,-8,0,74),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top},function(text)action(function()
+    local rules=game:GetService("HttpService"):JSONDecode(text);local candidate=M.copy(c.preset);candidate.characterRules=rules;local valid,why=M.validate(candidate,c.library.presets);assert(valid,why);c:edit(function(p)p.characterRules=rules end)
+   end,"Expression rules updated")end)
    for i,key in {"idle","walk","run","dash","jump","land","wall"} do
-    local y=270+(i-1)*38;u:label(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,30)})
+    local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();refreshTimeline()end)
     local id=c.preset.locomotionSet[key] or key;local button=u:button(scroll,(c.library.assets[id] and c.library.assets[id].name or id).." ▾",{Position=UDim2.fromOffset(70,y),Size=UDim2.new(1,-78,0,28)})
     u:connect(button.Activated,function()local items={};for _,assetId in c.library.assetOrder do table.insert(items,{id=assetId,name=c.library.assets[assetId].name})end;pick(button,items,function(chosen)c:edit(function(p)p.locomotionSet[key]=chosen end)end)end)
    end
@@ -118,11 +124,17 @@ function View.mount(widget,plugin)
   u:button(bottom,"Preview phrase",{Position=UDim2.fromOffset(432,8),Size=UDim2.fromOffset(116,26)},function()c.sequenceMode=true;c.time=0;state()end)
   local line=u:make("ScrollingFrame",bottom,{Position=UDim2.fromOffset(12,44),Size=UDim2.new(1,-24,0,62),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=3,CanvasSize=UDim2.fromOffset(#seq.orderedClips*112,0),ScrollingDirection=Enum.ScrollingDirection.X})
   for i,block in seq.orderedClips do
-   local asset=c.library.assets[block.asset];local b=u:button(line,asset.name.."\n"..string.format("%.2fs",block.duration),{Position=UDim2.fromOffset((i-1)*112,0),Size=UDim2.fromOffset(106,54),TextWrapped=true},function()c.selectedBlock=i;refreshTimeline()end,c.selectedBlock==i)
+   local asset=c.library.assets[block.asset];local b=u:button(line,asset.name.."\n"..string.format("%.2fs",block.duration),{Position=UDim2.fromOffset((i-1)*112,0),Size=UDim2.fromOffset(106,54),TextWrapped=true},function()c.selectedBlock=i;task.defer(function()if alive then refreshTimeline()end end)end,c.selectedBlock==i)
    local start=nil
    u:connect(b.InputBegan,function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then start=widget:GetRelativeMousePosition().X;u:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End and start then local dx=widget:GetRelativeMousePosition().X-start;start=nil;local target=math.clamp(i+math.floor(dx/112+.5),1,#seq.orderedClips);if target~=i then action(function()c:edit(function(p)M.reorder(p.sequences[1],i,target)end);c.selectedBlock=target end,"Blocks reordered")end end end)end end)
   end
   if #seq.orderedClips==0 then u:label(line,"Choose a library block, then add it here.",{Size=UDim2.new(1,-12,0,44),TextSize=13},"muted")end
+  local scrub=u:make("TextButton",bottom,{Position=UDim2.fromOffset(12,105),Size=UDim2.new(1,-24,0,8),Text="",BackgroundTransparency=.65,AutoButtonColor=false,BorderSizePixel=0})
+  u:paint(scrub,"BackgroundColor3","line")
+  u:connect(scrub.InputBegan,function(input)if input.UserInputType==Enum.UserInputType.MouseButton1 then
+   local mouse=widget:GetRelativeMousePosition();local relative=mouse.X-(scrub.AbsolutePosition.X-widget.AbsolutePosition.X)
+   c.sequenceMode=true;c.playing=false;c.time=math.clamp(relative/math.max(1,scrub.AbsoluteSize.X),0,1)*M.duration(seq)/c.preset.motionDNA.recoverySpeed;state()
+  end end)
   local selected=seq.orderedClips[c.selectedBlock]
   if selected then
    u:label(bottom,"Duration",{Position=UDim2.fromOffset(12,115),Size=UDim2.fromOffset(56,26),TextSize=12},"muted")
@@ -135,14 +147,21 @@ function View.mount(widget,plugin)
  end
  refresh=function()refreshLibrary();refreshInspector();refreshTimeline();state()end
  local controls=ui:frame(center,{Position=UDim2.new(0,0,1,-39),Size=UDim2.new(1,0,0,39)})
- local play;play=ui:button(controls,"Pause",{Position=UDim2.fromOffset(8,6),Size=UDim2.fromOffset(62,28)},function()c.playing=not c.playing;play.Text=if c.playing then "Pause" else "Play" end)
- local loop;loop=ui:button(controls,"Loop",{Position=UDim2.fromOffset(76,6),Size=UDim2.fromOffset(52,28)},function()c.loop=not c.loop;loop.Text=if c.loop then "Loop ✓" else "Once" end)
- local speed=ui:button(controls,"1×",{Position=UDim2.fromOffset(134,6),Size=UDim2.fromOffset(52,28)})
+ local function layout()
+  local narrow=root.AbsoluteSize.X<1000;local lw=if narrow then 180 else 210;local rw=if narrow then 240 else 280
+  left.Size=UDim2.new(0,lw,1,-312);right.Position=UDim2.new(1,-rw-12,0,108);right.Size=UDim2.new(0,rw,1,-312)
+  center.Position=UDim2.fromOffset(lw+24,108);center.Size=UDim2.new(1,-lw-rw-48,1,-312)
+ end
+ ui:connect(root:GetPropertyChangedSignal("AbsoluteSize"),layout);layout()
+ local play;play=ui:button(controls,"Pause",{Position=UDim2.new(0,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.playing=not c.playing;play.Text=if c.playing then "Pause" else "Play" end)
+ local loop;loop=ui:button(controls,"Loop ✓",{Position=UDim2.new(1/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.loop=not c.loop;loop.Text=if c.loop then "Loop ✓" else "Once" end)
+ local speed=ui:button(controls,"1×",{Position=UDim2.new(2/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)})
  ui:connect(speed.Activated,function()pick(speed,{{id="0.5",name="0.5×"},{id="1",name="1×"},{id="1.5",name="1.5×"},{id="2",name="2×"}},function(id)c.speed=tonumber(id);speed.Text=id.."×"end)end)
  local cameraButton=ui:button(center,"Front ▾",{Position=UDim2.new(1,-94,0,14),Size=UDim2.fromOffset(80,28)})
  ui:connect(cameraButton.Activated,function()pick(cameraButton,{{id="front",name="Front"},{id="side",name="Side"},{id="free",name="Free orbit"}},function(id)mode=id;cameraButton.Text=id.." ▾";if id=="front" then yaw=math.pi;pitch=.16 elseif id=="side" then yaw=math.pi/2;pitch=.16 end;updateCamera()end)end)
- local gridButton=ui:button(controls,"Grid",{Position=UDim2.fromOffset(192,6),Size=UDim2.fromOffset(50,28)},function()showGrid=not showGrid;grid.Parent=if showGrid then world else nil end)
- ui:button(controls,"Root",{Position=UDim2.fromOffset(248,6),Size=UDim2.fromOffset(50,28)},function()showRoot=not showRoot end)
+ local gridButton;gridButton=ui:button(controls,"Grid ✓",{Position=UDim2.new(3/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()showGrid=not showGrid;grid.Parent=if showGrid then world else nil;gridButton.Text=if showGrid then "Grid ✓" else "Grid" end)
+ local rootButton;rootButton=ui:button(controls,"Root ✓",{Position=UDim2.new(4/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()showRoot=not showRoot;rootButton.Text=if showRoot then "Root ✓" else "Root" end)
+ ui:button(controls,"Reset",{Position=UDim2.new(5/6,5,0,6),Size=UDim2.new(1/6,-7,0,28)},function()c.time=0 end)
  ui:connect(viewport.InputBegan,function(input)if mode=="free" and (input.UserInputType==Enum.UserInputType.MouseButton2 or input.UserInputType==Enum.UserInputType.MouseButton1) then drag=true;last=widget:GetRelativeMousePosition();ui:connect(input.Changed,function()if input.UserInputState==Enum.UserInputState.End then drag=nil end end)end end)
  ui:connect(viewport.InputChanged,function(input)if input.UserInputType==Enum.UserInputType.MouseWheel then distance=math.clamp(distance-input.Position.Z,7,22);updateCamera()end end)
  local debt=0
@@ -150,21 +169,28 @@ function View.mount(widget,plugin)
   if not alive or not widget.Enabled then return end
   if drag then local now=widget:GetRelativeMousePosition();local diff=now-last;last=now;yaw-=diff.X*.009;pitch=math.clamp(pitch+diff.Y*.006,-.15,.8);updateCamera()end
   debt+=dt;if debt<1/30 then return end;local tick=math.min(debt,.1);debt=0
-  local total=if c.sequenceMode then M.duration(c:sequence())/c.preset.motionDNA.recoverySpeed else c.library.assets[c.clip].duration
+  local total=if c.sequenceMode then M.duration(c:sequence())/c.preset.motionDNA.recoverySpeed else Sampler.duration(c.preset,c.library.assets[c.clip],c.library)
   total=math.max(total,.1)
   if c.playing then c.time+=tick*c.speed;if c.time>=total then if c.loop then c.time%=total else c.time=total;c.playing=false;play.Text="Play" end end end
-  local function pose(p)
-   if c.sequenceMode then return Sampler.sequence(p,c:sequence(),c.time,c.library,c.mirror) end
-   return Sampler.sample(p,c.library.assets[c.clip],math.clamp(c.time/total,0,1),c.library,c.mirror)
+  timeReadout.Text=string.format("%.2f / %.2fs",c.time,total)
+  local function pose(p,reference)
+   local lib=if reference then c.compareLibrary else c.library
+   local sequenceMode=if reference then c.compareSequenceMode else c.sequenceMode
+   local clip=if reference then c.compareClip else c.clip
+   if sequenceMode then
+    local seq=p.sequences[1] or {orderedClips={}};local duration=math.max(.1,M.duration(seq)/p.motionDNA.recoverySpeed)
+    return Sampler.sequence(p,seq,(c.time/total)*duration,lib,c.mirror)
+   end
+   return Sampler.sample(p,lib.assets[clip],math.clamp(c.time/total,0,1),lib,c.mirror)
   end
   local ok,err=pcall(function()
    local current=pose(c.preset)
-   if c.compare then Rig.apply(rig,pose(c.compare),Vector3.new(-2.5,3,0),showRoot,c.compare.bodyLayers.Weapon.enabled);Rig.apply(rigB,current,Vector3.new(2.5,3,0),showRoot,c.preset.bodyLayers.Weapon.enabled)
+   if c.compare then Rig.apply(rig,pose(c.compare,true),Vector3.new(-2.5,3,0),showRoot,c.compare.bodyLayers.Weapon.enabled);Rig.apply(rigB,current,Vector3.new(2.5,3,0),showRoot,c.preset.bodyLayers.Weapon.enabled)
    else Rig.apply(rig,current,Vector3.new(0,3,0),showRoot,c.preset.bodyLayers.Weapon.enabled)end
   end)
   if not ok then c.playing=false;status.Text="Preview: "..tostring(err) end
  end)
  refresh();status.Text=c.store.notice or "Minato lower body + Itachi upper body · save to keep this mix"
- return function()alive=false;for _,scope in scopes do scope:dispose()end;ui:dispose();rig.model:Destroy();rigB.model:Destroy();world:Destroy();grid:Destroy();root:Destroy()end,c
+ return function()alive=false;closeMenu();for _,scope in scopes do scope:dispose()end;ui:dispose();rig.model:Destroy();rigB.model:Destroy();world:Destroy();grid:Destroy();root:Destroy()end,c
 end
 return View
