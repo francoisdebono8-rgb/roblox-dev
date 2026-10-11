@@ -8,6 +8,17 @@ local DevHooks={}
 function DevHooks.install(matches)
 	if not RunService:IsStudio() then return end
 	local AI=require(script.Parent.AI)
+ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+ local Rules=require(Shared.Rules)
+ local Metrics=require(Shared.DevMetrics)
+ local tools=require(script.Parent.DevTools).new(matches)
+ local buckets={};local logs={}
+ local control=Instance.new("RemoteFunction");control.Name="DevControl";control.Parent=Shared
+ local function allowed(player,kind,rate,burst)
+  buckets[player]=buckets[player] or {}
+  local bucket=buckets[player][kind] or {tokens=burst,time=os.clock()};buckets[player][kind]=bucket
+  return Rules.consumeToken(bucket,os.clock(),rate,burst)
+ end
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
@@ -15,11 +26,31 @@ function DevHooks.install(matches)
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
 	local clientLog={}
 	local clientInfo={}
-	logRemote.OnServerEvent:Connect(function(_,kind,payload)
-		if kind=="log" and type(payload)=="string" then
-			table.insert(clientLog,payload);while #clientLog>60 do table.remove(clientLog,1) end
-		elseif kind=="info" and type(payload)=="table" then clientInfo=payload end
-	end)
+ logRemote.OnServerEvent:Connect(function(player,kind,payload)
+  if not allowed(player,"telemetry",5,10) then return end
+  if kind=="log" and type(payload)=="string" then
+   logs[player]=logs[player] or {};local entries=logs[player]
+   table.insert(entries,payload:sub(1,400));if #entries>60 then table.remove(entries,1) end
+  elseif (kind=="info" or kind=="report") and type(payload)=="table" and Metrics.validPayload(payload) and Metrics.estimate(payload)<60000 then
+   if kind=="report" then tools.reports[player]=payload else clientInfo=payload end
+  end
+ end)
+ local function run(player,op,arg)
+  if not player then return {ok=false,error="No player"} end
+  local result=tools:run(player,op,arg)
+  if op=="profile" and result.ok then logRemote:FireClient(player,"profile",result.enabled) end
+  if op=="report" and result.ok then
+   tools.reports[player]=nil;logRemote:FireClient(player,"report");task.wait(.3)
+   result=tools:run(player,op,arg)
+   require(script.Parent.DevReport).print(result)
+  end
+  return result
+ end
+ control.OnServerInvoke=function(player,op,arg)
+  if not allowed(player,"control",2,4) then return {ok=false,error="Dev command rate limit"} end
+  return run(player,op,arg)
+ end
+ Players.PlayerRemoving:Connect(function(player) tools:remove(player);buckets[player]=nil;logs[player]=nil end)
 	local function session()
 		local player=Players:GetPlayers()[1]
 		return player,player and matches.sessions[player]
@@ -34,6 +65,8 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="tool" then return run(player,arg1,arg2) end
+  clientLog=player and logs[player] or {}
 		if op=="start" then
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end
@@ -109,6 +142,7 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+  tools.profiler:watch()
 		local _,s=session()
 		if autopilot and s and s.phase=="Duel" and autopilot.actor==s.human then autopilot:update(s.combat.now)
 		elseif autopilot and s and s.combat and autopilot.actor~=s.human then autopilot=AI.new(s.combat,s.human,99) end

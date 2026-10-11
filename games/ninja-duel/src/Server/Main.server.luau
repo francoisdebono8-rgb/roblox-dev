@@ -16,5 +16,8 @@ require(script.Parent.DevHooks).install(matches)
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
 end
+if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDevQA")==true then
+ task.spawn(function() require(script.Parent.DevQA).run(matches) end)
+end
 print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value)
 print("[NinjaDuel] Ready — select a fighter and start the duel")

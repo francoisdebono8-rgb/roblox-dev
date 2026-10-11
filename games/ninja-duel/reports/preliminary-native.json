@@ -1,0 +1,52 @@
+{
+  "status": "PARTIAL_OUTPUT_TRUNCATED",
+  "buildFingerprint": "24d3b7b9bfe3a5af9546ca7fbbf97b842d0c6105f48db00101ca31ec0283dece",
+  "log": "0.742.0.7421053_20261011T004638Z_Studio_b19d8_last.log",
+  "metrics": {
+    "client.presentation.impacts.ms": {
+      "p50": 0.007958384230732918,
+      "count": 346,
+      "max": 3.3811250468716025,
+      "window": 240,
+      "mean": 0.1591976188295494,
+      "p95": 1.0710415663197637
+    },
+    "client.snapshot.age.ms": {
+      "p50": 36.296844482421875,
+      "count": 301,
+      "max": 146.15297317504883,
+      "window": 240,
+      "mean": 35.34090716973492,
+      "p95": 42.28401184082031
+    },
+    "client.presentation.update.ms": {
+      "p50": 0.36308332346379757,
+      "count": 1150,
+      "max": 7.442541653290391,
+      "window": 240,
+      "mean": 0.9780705439777154,
+      "p95": 2.4962916504591703
+    },
+    "client.camera.ms": {
+      "p50": 0.05662499461323023,
+      "count": 1150,
+      "max": 0.3527917433530092,
+      "window": 240,
+      "mean": 0.0576659819394674,
+      "p95": 0.11154171079397202
+    },
+    "client.hud.ms": {
+      "p50": 0.17770833801478148,
+      "count": 346,
+      "max": 1.3229167088866234,
+      "window": 240,
+      "mean": 0.16208622716313412,
+      "p95": 0.35120826214551926
+    }
+  },
+  "nativeDevQA": {
+    "pass": 12,
+    "failures": []
+  },
+  "note": "Only complete metric objects before the Studio truncation. No server metrics or frame-time metrics available; no bottleneck inference permitted."
+}

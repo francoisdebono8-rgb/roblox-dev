@@ -1,0 +1,57 @@
+local H=require("./Harness")
+local Queue=H.load("Server/OnlineQueue")
+local Host=H.load("Server/OnlineHost")
+local Match=H.load("Server/OnlineMatch")
+local Replication=H.load("Server/OnlineReplication")
+local passed=0
+local function test(name,fn) local ok,err=pcall(fn);assert(ok,name..": "..tostring(err));passed+=1;print("PASS "..name) end
+local function fixture()
+ local c,a,b=H.duel("Flashstep","Mirage");local p={UserId=1};local q={UserId=2}
+ return Match.new(8,c,{p,q},{a,b}),p,q,a,b
+end
+local function payload(seq,action) return {version=1,epoch=8,sequence=seq,action=action or "Attack",clientTime=1800000000} end
+test("disabled host has no listeners, factory calls or side effects",function()
+ local called=false;assert(Host.new(H.load("Shared/OnlineProtocol"),function() called=true end)==nil);assert(not called)
+end)
+test("FIFO deduplicates, caps capacity, leaves and pairs distinct players",function()
+ local q=Queue.new(2);local a,b,c={},{},{}
+ assert(q:join(a,"Flashstep"));assert(not q:join(a,"Mirage"));assert(q:join(b,"Mirage"));assert(not q:join(c,"Flashstep"))
+ q:leave(a);assert(q:join(c,"Flashstep"));local x,y=q:pair();assert(x.player==b and y.player==c and #q.entries==0)
+end)
+test("server owns participants/state; fresh intents reject spoof/replay",function()
+ local m,p,q,a,b=fixture()
+ assert(not m:request({},payload(1),1800000000,0))
+ local data=payload(1,"Move");data.direction=H.V.xAxis;data.health=999;data.actor=q;data.position=H.V.new(99,99,99)
+ local health=a.health;assert(m:request(p,data,1800000000,0));assert(a.move==H.V.xAxis and a.health==health and b.move~=H.V.xAxis)
+ assert(not m:request(p,data,1800000000,.1))
+ local bad=payload(2);bad.epoch=7;assert(not m:request(p,bad,1800000000,.2))
+ bad=payload(2);bad.direction=H.V.new(5,0,0);assert(not m:request(p,bad,1800000000,.3))
+ bad=payload(2);bad.clientTime=0/0;assert(not m:request(p,bad,1800000000,.4))
+ bad=payload(2);bad.aim=a.root.Position+H.V.xAxis*500;assert(not m:request(p,bad,1800000000,.5))
+ assert(m.sequence[p]==1)
+end)
+test("both real actors use existing combat, not client damage",function()
+ local m,p,q,a,b=fixture();assert(m:request(p,payload(1),1800000000,0));H.step(m.combat,.5);assert(b.health<b.def.Health)
+ a.invulnerableUntil=0;H.step(m.combat,.5);assert(m:request(q,payload(1),1800000000,1))
+ H.step(m.combat,.5);assert(a.health<a.def.Health)
+end)
+test("each recipient receives all impacts; retries do not lose events",function()
+ local m,p,q=fixture();m.combat:pushImpact(H.V.zero,"light",false)
+ local r=Replication.new(m);local serialize=function(a) return {id=a.id,health=a.health,position=a.root.Position} end
+ local first=r:packet(p,serialize);assert(#first.impacts==1 and #r:packet(p,serialize).impacts==1)
+ assert(r:sent(p,first));assert(#r:packet(p,serialize).impacts==0 and #r:packet(q,serialize).impacts==1)
+ assert(not r:sent(p,first));assert(r:packet({},serialize)==nil);assert(first.actors[1].ownerUserId==1)
+end)
+test("lobby validates fighters, recovers factory failure, disconnect cleans both",function()
+ local calls=0;local host=Host.new({Enabled=true},function(x,y,epoch)
+  calls+=1;if calls==1 then error("fixture fail") end
+  local c,a,b=H.duel(x.fighter,y.fighter);local m=Match.new(epoch,c,{x.player,y.player},{a,b})
+  function m:cleanup() self.combat:clear();self.cleaned=true end;return m
+ end)
+ local p={UserId=1};local q={UserId=2};assert(not host:join(p,"bogus"));assert(host:join(p,"Flashstep") and host:join(q,"Mirage"))
+ assert(host:pair()==nil and #host.queue.entries==2)
+ local m=host:pair();assert(m and not host:join(p,"Flashstep"));host:remove(p)
+ assert(m.phase=="Result" and m.winner==q and m.cleaned and host.byPlayer[q]==nil)
+ assert(not m:request(q,{version=1,epoch=m.epoch,sequence=1,action="Attack",clientTime=1800000000},1800000000,0))
+end)
+print("NinjaDuel isolated online foundations: "..passed.." PASS (not a two-client Studio validation)")

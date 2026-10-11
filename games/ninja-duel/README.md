@@ -108,3 +108,7 @@ The native suite lives in `dist/NinjaDuel-QA.rbxlx`: open it in Studio, press **
 15. Replay the complete interactive tutorial, including its reset/skip paths.
 
 Record native errors and the first unpleasant control or unconvincing exchange. Source/import notices and exact components: `THIRD_PARTY.md`. Pre-migration snapshot: Git commit `d61c09b`; mission head: `2bac931`.
+
+## Studio dev / QA tooling
+
+[F6, diagnostics, scénarios, CLI, online OFF et catalogue optionnel](DEVTOOLS.md). Cette couche entoure le gameplay existant ; les propositions de `lab/` ne sont pas chargées par le jeu.

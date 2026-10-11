@@ -6,10 +6,16 @@ import json
 import re
 import xml.etree.ElementTree as ET
 import shutil
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
-parser.add_argument('--qa', action='store_true')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('--qa', action='store_true')
+group.add_argument('--dev-qa', action='store_true')
 args = parser.parse_args()
 xml = ET.Element('roblox', version='4')
 serial = 0
@@ -27,9 +33,15 @@ def item(parent, cls, name, properties=None):
         else: prop.text = str(value)
     return node
 
+def included(source):
+    if source.stem == 'NativeQA': return args.qa
+    if source.stem == 'DevQA': return args.dev_qa
+    return True
+
+reviewed_sources = sorted(p for p in (ROOT/'src').rglob('*.luau') if included(p))
 def sources(parent, directory):
     for source in sorted(directory.glob('*.luau')):
-        if source.stem == 'NativeQA' and not args.qa: continue
+        if not included(source): continue
         cls = 'Script' if source.name.endswith('.server.luau') else 'LocalScript' if source.name.endswith('.client.luau') else 'ModuleScript'
         name = source.name.split('.')[0]
         item(parent, cls, name, [('Source','ProtectedString',source.read_text(encoding='utf-8'))])
@@ -50,7 +62,7 @@ for asset_file in asset_files:
     for ref in donor_xml.iter('Ref'):
         if ref.text in references: ref.text=references[ref.text]
     for node in donor_xml.findall('Item'): shared.append(node)
-fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA')+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
+fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in reviewed_sources)+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
 item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
 for vendor in ('bangla','place1','velmora'):
@@ -61,27 +73,26 @@ starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','flo
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
 item(xml,'Lighting','Lighting', [('Technology','token',3),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
 item(xml,'SoundService','SoundService')
-if args.qa:
+if args.qa or args.dev_qa:
     for props in server.iter('Properties'):
         if props.findtext("string[@name='Name']") == 'Main':
             source = props.find("ProtectedString[@name='Source']")
-            source.text = 'workspace:SetAttribute("NinjaDuelQA",true)\n'+source.text
-name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel.rbxlx'
+            source.text = f'workspace:SetAttribute("{"NinjaDuelDevQA" if args.dev_qa else "NinjaDuelQA"}",true)\n'+source.text
+name='NinjaDuel-DevQA.rbxlx' if args.dev_qa else 'NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel.rbxlx'
 output=ROOT/'dist'/name
 ET.indent(xml)
-ET.ElementTree(xml).write(output,encoding='utf-8',xml_declaration=True)
-expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if args.qa or p.stem!='NativeQA']
-if args.qa:
+artifact_bytes=ET.tostring(xml,encoding='utf-8',xml_declaration=True)
+expected = [p.read_text(encoding='utf-8') for p in reviewed_sources]
+if args.qa or args.dev_qa:
     main_source=(ROOT/'src/Server/Main.server.luau').read_text(encoding='utf-8')
-    expected[expected.index(main_source)]='workspace:SetAttribute("NinjaDuelQA",true)\n'+main_source
+    expected[expected.index(main_source)]=f'workspace:SetAttribute("{"NinjaDuelDevQA" if args.dev_qa else "NinjaDuelQA"}",true)\n'+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
 assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewed files'
 external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
 for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
-import subprocess,sys
 # Automated gate: every headless spec must pass on the exact sources built here.
-TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau')]
+TEST_RUNNERS=[('lune','tests/DevInfra.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau')]
 def run_automated():
     tool={}
     import os
@@ -104,21 +115,45 @@ def run_automated():
         command=[tool[engine],'run',spec] if engine=='lune' else [tool[engine],spec]
         proc=subprocess.run(command,cwd=ROOT,capture_output=True,text=True,encoding='utf-8',errors='replace')
         tail=(proc.stdout or '').strip().splitlines()
-        results[spec]={'exit':proc.returncode,'summary':tail[-1] if tail else ''}
+        summary=tail[-1] if tail else ''
+        valid=proc.returncode==0 and re.search(r'\d+ PASS',summary) is not None
+        results[spec]={'exit':proc.returncode if valid else (proc.returncode or 1),'summary':summary}
     failed=[spec for spec,data in results.items() if data['exit']!=0]
     return {'status':'PASS' if not failed else 'FAIL','failed':failed,'suites':results}
+import os
+compiler=os.environ.get('LUAU_COMPILE') or shutil.which('luau-compile')
+if not compiler:
+    for folder in (os.environ.get('NINJA_DUEL_TOOLS',''),'/private/tmp/ninja-duel-tools'):
+        candidate=Path(folder)/'luau-compile'
+        if folder and candidate.is_file(): compiler=str(candidate);break
+if not compiler: sys.exit("luau-compile required; configure LUAU_COMPILE / NINJA_DUEL_TOOLS / PATH")
+if compiler:
+    for source in reviewed_sources:
+        proc=subprocess.run([compiler,str(source)],capture_output=True,text=True)
+        if proc.returncode: sys.exit(f'Luau syntax failed: {source}\n{proc.stderr}')
 automated=run_automated()
 print('Automated suites:',automated['status'])
 for spec,data in automated['suites'].items():
     print('  ',spec,data['exit'],data['summary'])
-if automated['status']=='FAIL':
-    sys.exit('Automated suites failed: '+', '.join(automated['failed']))
+if automated['status']!='PASS':
+    sys.exit('Automated suites failed: '+', '.join(automated.get('failed',[]))+' '+automated.get('reason',''))
 
-manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+version=re.search(r'Version\s*=\s*"([^"]+)"',(ROOT/'src/Shared/Config.luau').read_text()).group(1)
+def git_value(*command):
+    proc=subprocess.run(['git',*command],cwd=ROOT,capture_output=True,text=True)
+    return proc.stdout.strip() if proc.returncode==0 else None
+manifest={'version':version,'gitRevision':git_value('rev-parse','HEAD'),'gitBranch':git_value('branch','--show-current'),'sourceDirty':bool(git_value('status','--porcelain','--','src','build.py','lab','tools','tests')),'builtAtUTC':datetime.now(timezone.utc).isoformat(),'artifact':name,'sha256':hashlib.sha256(artifact_bytes).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in reviewed_sources},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are
  # only moved off PENDING by an actual Studio run on this exact artifact.
  'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'controllerFeel':'PENDING', 'animationPermission':'PENDING'}
-output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
+# Publish only after source equality and tests succeed. A failed test cannot
+# overwrite the last usable place. Each file is replaced atomically.
+output.parent.mkdir(parents=True,exist_ok=True)
+for target,content in ((output,artifact_bytes),(output.with_suffix('.json'),(json.dumps(manifest,indent=2)+'\n').encode())):
+    with tempfile.NamedTemporaryFile(dir=output.parent,delete=False) as stage:
+        stage.write(content); stage_path=Path(stage.name)
+    try: stage_path.replace(target)
+    finally: stage_path.unlink(missing_ok=True)
 print(output)
 print(manifest['sha256'])

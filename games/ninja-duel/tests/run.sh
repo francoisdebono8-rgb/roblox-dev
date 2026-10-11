@@ -18,7 +18,7 @@ status=0
 run() {
   local label=$1; shift
   local output
-  if output=$("$@" 2>&1); then
+  if output=$("$@" 2>&1) && [[ "$(printf '%s\n' "$output" | tail -1)" =~ [0-9]+[[:space:]]PASS ]]; then
     printf '%-12s PASS  %s\n' "$label" "$(printf '%s\n' "$output" | tail -1)"
   else
     status=1
@@ -26,6 +26,8 @@ run() {
     printf '%s\n' "$output" | grep -E '^(FAIL|.*Error)' | head -5
   fi
 }
+run DevInfra   "$LUNE" run tests/DevInfra.spec.luau
+run Online     "$LUNE" run tests/Online.spec.luau
 run Rules      "$LUAU" tests/Rules.spec.luau
 run Input      "$LUNE" run tests/Input.spec.luau
 run Combat     "$LUNE" run tests/Combat.spec.luau

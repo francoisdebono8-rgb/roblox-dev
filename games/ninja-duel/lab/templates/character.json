@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_not_runtime",
+  "registration": "manual_review_by_Claude",
+  "numericFieldsPolicy": "null signifie à décider, jamais une valeur injectée automatiquement",
+  "id": "NEW_CHARACTER",
+  "archetypes": [],
+  "existingSchema": "src/Shared/Fighters.luau",
+  "definition": {
+    "Name": "À définir",
+    "Health": null,
+    "Chakra": null,
+    "Speed": null,
+    "CombatStyle": null,
+    "AttackProfile": {},
+    "Techniques": [],
+    "Awakening": null
+  },
+  "integrationFiles": [
+    "Shared/Fighters",
+    "Shared/MoveGraphs",
+    "Client/UI selection if exposed"
+  ],
+  "checks": [
+    "ID unique",
+    "pas de copie de techniques avec handlers absents",
+    "routes toutes résolues",
+    "différence corporelle validée humainement"
+  ]
+}

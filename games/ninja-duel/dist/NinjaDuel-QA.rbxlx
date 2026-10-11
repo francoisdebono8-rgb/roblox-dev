@@ -327,6 +327,138 @@ return Controls
       </Item>
       <Item class="ModuleScript" referent="ND9">
         <Properties>
+          <string name="Name">DevCommands</string>
+          <ProtectedString name="Source">-- Studio tooling boundary. Reject arbitrary keys/types before dispatch.
+local Commands={}
+Commands.ops={reset=true,character=true,scenario=true,["repeat"]=true,profile=true,report=true,dummy=true,refill=true,awaken=true,ko=true}
+function Commands.validate(op,arg)
+ if type(op)~="string" or not Commands.ops[op] then return false end
+ if arg==nil then return true,{} end
+ if type(arg)~="table" then return false end
+ local out={};local n=0
+ for k,v in arg do
+  n+=1;if n&gt;5 then return false end
+  if k=="first" or k=="second" or k=="name" then
+   if type(v)~="string" or #v&gt;32 then return false end
+  elseif k=="actor" then if v~="human" and v~="bot" then return false end
+  elseif k=="enabled" then if type(v)~="boolean" then return false end
+  else return false end
+  out[k]=v
+ end
+ return true,out
+end
+return Commands
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND10">
+        <Properties>
+          <string name="Name">DevMetrics</string>
+          <ProtectedString name="Source">-- Bounded, opt-in measurements. No instances, remotes or gameplay policy.
+local MAX_LABELS=128
+local Metrics={};Metrics.__index=Metrics
+function Metrics.new(clock)
+ return setmetatable({clock=clock or os.clock,enabled=false,stats={},counters={},events={},restores={},started=0},Metrics)
+end
+function Metrics:start()
+ self.stats={};self.counters={};self.events={};self.labels=0;self.started=self.clock();self.ended=nil;self.enabled=true
+end
+function Metrics:sample(name,value)
+ if not self.enabled or type(value)~="number" or value~=value or math.abs(value)==math.huge then return end
+ local s=self.stats[name]
+ if not s then
+  if self.labels&gt;=MAX_LABELS then return end;self.labels+=1
+  s={n=0,sum=0,max=0,values={},next=1};self.stats[name]=s end
+ s.n+=1;s.sum+=value;s.max=math.max(s.max,value)
+ s.values[s.next]=value;s.next=s.next%240+1
+end
+function Metrics:count(name,n)
+ if not self.enabled then return end
+ if self.counters[name]==nil then if self.labels&gt;=MAX_LABELS then name="overflow" else self.labels+=1 end end
+ self.counters[name]=(self.counters[name] or 0)+(n or 1)
+end
+function Metrics:event(kind,context)
+ if not self.enabled then return end
+ table.insert(self.events,{at=self.clock()-self.started,kind=kind,context=context})
+ if #self.events&gt;80 then table.remove(self.events,1) end
+end
+function Metrics:wrap(object,key,label,after,before)
+ local original=object[key];local own=rawget(object,key)
+ assert(type(original)=="function","No method "..key)
+ local wrapper=function(...)
+  if not self.enabled then return original(...) end
+  if before then before(...) end
+  local at=self.clock()
+  if debug.profilebegin then debug.profilebegin("NinjaDuel/"..label) end
+  local result=table.pack(pcall(original,...))
+  if debug.profileend then debug.profileend() end
+  self:sample(label..".ms",(self.clock()-at)*1000);self:count(label..".calls")
+  if not result[1] then self:event("script-error",{scope=label,error=tostring(result[2])});error(result[2],0) end
+  if after then after(...) end
+  return table.unpack(result,2,result.n)
+ end
+ object[key]=wrapper
+ self:addRestore(object,function() if rawget(object,key)==wrapper then object[key]=own end end)
+end
+function Metrics:addRestore(object,fn) table.insert(self.restores,{object=object,fn=fn}) end
+function Metrics:restoreObject(object)
+ for i=#self.restores,1,-1 do
+  local entry=self.restores[i]
+  if entry.object==object then entry.fn();table.remove(self.restores,i) end
+ end
+end
+function Metrics:stop()
+ if self.enabled then self.ended=self.clock() end
+ self.enabled=false
+ for i=#self.restores,1,-1 do self.restores[i].fn() end
+ self.restores={}
+end
+function Metrics:report()
+ local out={seconds=math.max(0,(self.ended or self.clock())-self.started),enabled=self.enabled,stats={},counters=table.clone(self.counters),events=table.clone(self.events)}
+ for name,s in self.stats do
+  local sorted=table.clone(s.values);table.sort(sorted)
+  out.stats[name]={count=s.n,mean=s.sum/s.n,max=s.max,p50=sorted[math.max(1,math.ceil(#sorted*.5))],p95=sorted[math.max(1,math.ceil(#sorted*.95))],window=#sorted}
+ end
+ return out
+end
+-- An estimate of application payload size, NOT wire bytes or Roblox bandwidth.
+function Metrics.estimate(value,depth,budget)
+ depth=depth or 0;budget=budget or {left=2048}
+ if depth&gt;8 or budget.left&lt;=0 then return 0 end
+ budget.left-=1
+ local kind=typeof(value)
+ if kind=="number" then return 8 elseif kind=="boolean" then return 1 elseif kind=="Vector3" then return 12
+ elseif kind=="CFrame" then return 48 elseif kind=="string" then return #value+2 elseif kind=="table" then
+  local size=2;for k,v in value do size+=Metrics.estimate(k,depth+1,budget)+Metrics.estimate(v,depth+1,budget);if budget.left&lt;=0 then break end end
+  return size
+ end
+ return 0
+end
+-- Telemetry stays small even for malformed clients in multi-client Studio tests.
+function Metrics.validPayload(value)
+ local budget=2048
+ local function visit(v,depth)
+  budget-=1;if budget&lt;0 or depth&gt;8 then return false end
+  local t=type(v)
+  if t=="number" then return v==v and math.abs(v)&lt;math.huge
+  elseif t=="boolean" then return true
+  elseif t=="string" then return #v&lt;=512
+  elseif t=="table" then
+   for k,item in v do
+    if (type(k)~="string" and type(k)~="number") or not visit(k,depth+1) or not visit(item,depth+1) then return false end
+   end
+   return true
+  end
+  return false
+ end
+ return visit(value,0)
+end
+return Metrics
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND11">
+        <Properties>
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">return {
 	Flashstep = {
@@ -486,7 +618,7 @@ return Controls
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND10">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -566,7 +698,18 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND13">
+        <Properties>
+          <string name="Name">OnlineProtocol</string>
+          <ProtectedString name="Source">-- Optional future 1v1 boundary. NOT imported by either active bootstrap.
+local P={Enabled=false,Version=1,SnapshotHz=12,QueueLimit=32}
+P.actions={Move=true,Attack=true,Heavy=true,Jump=true,Dash=true,Guard=true,GuardOff=true,Substitute=true,Grab=true,Tool=true,Pursuit=true,Dodge=true,JumpOff=true,Feint=true,Awaken=true,WallDetach=true}
+for i=1,5 do P.actions["Technique"..i]=true end
+return table.freeze(P)
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND14">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -608,7 +751,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND15">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1604,17 +1747,17 @@ return table.freeze({
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND13">
+      <Item class="StringValue" referent="ND16">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">cd37617704776b6690637ccdd695286a342bf26f2604146e17fa61cc4cb5318d</string>
+          <string name="Value">0c10df280bbc6515e3b14f6290022f85d192657ad1885d1a5d2507e0535fb49d</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND14">
+      <Item class="Folder" referent="ND17">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND15">
+        <Item class="StringValue" referent="ND18">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -1641,7 +1784,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND16">
+        <Item class="StringValue" referent="ND19">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -1668,7 +1811,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND17">
+        <Item class="StringValue" referent="ND20">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -1698,15 +1841,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND18">
+  <Item class="ServerScriptService" referent="ND21">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND19">
+    <Item class="Folder" referent="ND22">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -2013,7 +2156,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -2119,7 +2262,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -2201,7 +2344,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -2237,7 +2380,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -2856,7 +2999,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -4172,7 +4315,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -4185,6 +4328,17 @@ local DevHooks={}
 function DevHooks.install(matches)
 	if not RunService:IsStudio() then return end
 	local AI=require(script.Parent.AI)
+ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+ local Rules=require(Shared.Rules)
+ local Metrics=require(Shared.DevMetrics)
+ local tools=require(script.Parent.DevTools).new(matches)
+ local buckets={};local logs={}
+ local control=Instance.new("RemoteFunction");control.Name="DevControl";control.Parent=Shared
+ local function allowed(player,kind,rate,burst)
+  buckets[player]=buckets[player] or {}
+  local bucket=buckets[player][kind] or {tokens=burst,time=os.clock()};buckets[player][kind]=bucket
+  return Rules.consumeToken(bucket,os.clock(),rate,burst)
+ end
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
 	-- Client diagnostics (Studio only): the local client forwards its warnings,
@@ -4192,11 +4346,31 @@ function DevHooks.install(matches)
 	local logRemote=Instance.new("RemoteEvent");logRemote.Name="NinjaDuelDevLog";logRemote.Parent=game:GetService("ReplicatedStorage")
 	local clientLog={}
 	local clientInfo={}
-	logRemote.OnServerEvent:Connect(function(_,kind,payload)
-		if kind=="log" and type(payload)=="string" then
-			table.insert(clientLog,payload);while #clientLog&gt;60 do table.remove(clientLog,1) end
-		elseif kind=="info" and type(payload)=="table" then clientInfo=payload end
-	end)
+ logRemote.OnServerEvent:Connect(function(player,kind,payload)
+  if not allowed(player,"telemetry",5,10) then return end
+  if kind=="log" and type(payload)=="string" then
+   logs[player]=logs[player] or {};local entries=logs[player]
+   table.insert(entries,payload:sub(1,400));if #entries&gt;60 then table.remove(entries,1) end
+  elseif (kind=="info" or kind=="report") and type(payload)=="table" and Metrics.validPayload(payload) and Metrics.estimate(payload)&lt;60000 then
+   if kind=="report" then tools.reports[player]=payload else clientInfo=payload end
+  end
+ end)
+ local function run(player,op,arg)
+  if not player then return {ok=false,error="No player"} end
+  local result=tools:run(player,op,arg)
+  if op=="profile" and result.ok then logRemote:FireClient(player,"profile",result.enabled) end
+  if op=="report" and result.ok then
+   tools.reports[player]=nil;logRemote:FireClient(player,"report");task.wait(.3)
+   result=tools:run(player,op,arg)
+   require(script.Parent.DevReport).print(result)
+  end
+  return result
+ end
+ control.OnServerInvoke=function(player,op,arg)
+  if not allowed(player,"control",2,4) then return {ok=false,error="Dev command rate limit"} end
+  return run(player,op,arg)
+ end
+ Players.PlayerRemoving:Connect(function(player) tools:remove(player);buckets[player]=nil;logs[player]=nil end)
 	local function session()
 		local player=Players:GetPlayers()[1]
 		return player,player and matches.sessions[player]
@@ -4211,6 +4385,8 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+  if op=="tool" then return run(player,arg1,arg2) end
+  clientLog=player and logs[player] or {}
 		if op=="start" then
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end
@@ -4286,6 +4462,7 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+  tools.profiler:watch()
 		local _,s=session()
 		if autopilot and s and s.phase=="Duel" and autopilot.actor==s.human then autopilot:update(s.combat.now)
 		elseif autopilot and s and s.combat and autopilot.actor~=s.human then autopilot=AI.new(s.combat,s.human,99) end
@@ -4295,7 +4472,266 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND30">
+        <Properties>
+          <string name="Name">DevProfiler</string>
+          <ProtectedString name="Source">-- Instance-level instrumentation, installed only when Studio profiling starts.
+-- Never changes positions, states, packet content, tick rate or network ownership.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Metrics=require(Shared.DevMetrics)
+local Profiler={};Profiler.__index=Profiler
+local TRANSIENT={Startup=true,Active=true,Recovery=true,TechniqueChannel=true,TechniqueActive=true,TechniqueRecovery=true,Pursuit=true,Rush=true,Dodging=true,Stunned=true}
+function Profiler.new(matches)
+ return setmetatable({matches=matches,metrics=Metrics.new(),attached=setmetatable({}, {__mode="k"}),tracks=setmetatable({}, {__mode="k"}),lastWatch=0,lastSend={},lastEvents=setmetatable({}, {__mode="k"}),lastCommand=nil},Profiler)
+end
+function Profiler:attach(c)
+ if self.attached[c] then return end
+ self.attached[c]=true
+ local m=self.metrics
+ for _,key in {"updateActor","updateProjectiles","updateHazards","runScheduled","separate"} do
+  m:wrap(c,key,"server."..key)
+ end
+ m:wrap(c,"update","server.combat",function(_,dt)
+  m:sample("server.dt.ms",dt*1000)
+  m:sample("server.projectiles",#c.projectiles);m:sample("server.impacts.retained",#c.impacts)
+  m:sample("server.scheduled",c.scheduled and #c.scheduled or 0)
+ end)
+ m:wrap(c,"pushImpact","server.pushImpact")
+ m:wrap(c,"relocate","server.relocate",function(_,a)
+  m:event("intentional-relocation",{actor=a.id,state=a.state,attack=a.attackName,command=self.lastCommand})
+ end)
+ local separate=c.separate
+ -- Observe actual separation correction around the existing implementation.
+ c.separate=function(selfCombat,...)
+  local a,b=selfCombat.actors[1],selfCombat.actors[2]
+  local pa,pb=a and a.root.Position,b and b.root.Position
+  local result=table.pack(separate(selfCombat,...))
+  if m.enabled and a and b then
+   local correction=(a.root.Position-pa).Magnitude+(b.root.Position-pb).Magnitude
+   m:sample("server.separation.studs",correction)
+   if correction&gt;.001 then m:count("server.separation.corrections") end
+  end
+  return table.unpack(result,1,result.n)
+ end
+ local observer=c.separate
+ m:addRestore(c,function() if c.separate==observer then c.separate=separate end end)
+end
+function Profiler:start()
+ self.metrics:stop();self.metrics:start();self.attached=setmetatable({}, {__mode="k"});self.tracks=setmetatable({}, {__mode="k"});self.lastSend={};self.lastEvents=setmetatable({}, {__mode="k"})
+ local m=self.metrics
+ m:wrap(self.matches,"destroy","server.destroy",nil,function(_,s)
+  if s.combat then m:restoreObject(s.combat);self.attached[s.combat]=nil end
+ end)
+ m:wrap(self.matches,"update","server.matches",function(_,dt)
+  m:sample("server.heartbeat.ms",dt*1000)
+  if dt&gt;.05 then m:event("heartbeat-spike",{ms=dt*1000}) end
+ end)
+ m:wrap(self.matches,"request","server.request",function(_,player,payload)
+  if type(payload)=="table" and type(payload.action)=="string" and #payload.action&lt;=24 then
+   m:count("input."..payload.action)
+   if payload.action~="Move" then
+    local s=self.matches.sessions[player];local a=s and s.human
+    m:event("input-intent",{userId=player.UserId,action=payload.action,epoch=type(payload.epoch)=="number" and payload.epoch==payload.epoch and math.abs(payload.epoch)&lt;1e6 and payload.epoch or nil,state=a and a.state,
+     direction=typeof(payload.direction)=="Vector3" and tostring(payload.direction) or nil,attack=a and a.attackName})
+   end
+  end
+ end)
+ m:wrap(self.matches,"send","server.snapshot",function(_,player,payload)
+  local now=os.clock();local last=self.lastSend[player];self.lastSend[player]=now
+  if last then m:sample("server.snapshot.gap.ms",(now-last)*1000) end
+  m:sample("server.snapshot.estimatedBytes",Metrics.estimate(payload))
+ end)
+ for _,s in self.matches.sessions do if s.combat then self:attach(s.combat) end end
+end
+function Profiler:watch()
+ local m=self.metrics;if not m.enabled then return end
+ local now=os.clock();if now-self.lastWatch&lt;.1 then return end;self.lastWatch=now
+ for _,s in self.matches.sessions do
+  local c=s.combat
+  if c then
+   self:attach(c)
+   for _,a in c.actors do
+    local previous=self.tracks[a]
+    local position=a.root.Position
+    if previous then
+     local elapsed=now-previous.at;local delta=(position-previous.position).Magnitude
+     m:sample("server.root.sampleDelta.studs",delta)
+     if delta&gt;math.max(8,elapsed*160) then m:event("server-position-jump",{actor=a.id,state=a.state,attack=a.attackName,studs=delta,warp=a.warpSerial or 0,previousWarp=previous.warp,command=self.lastCommand}) end
+     if previous.state~=a.state or previous.reaction~=a.reaction then m:event("state",{actor=a.id,from=previous.state,state=a.state,reaction=a.reaction,attack=a.attackName}) end
+    end
+    self.tracks[a]={at=now,position=position,state=a.state,reaction=a.reaction,warp=a.warpSerial or 0}
+    if TRANSIENT[a.state] and c.now-(a.untilTime or c.now)&gt;.6 then m:count("watchdog.overdueState");m:event("overdue-state",{actor=a.id,state=a.state,overdue=c.now-a.untilTime}) end
+    if (a.airHold or 0)-c.now&gt;3 then m:count("watchdog.longAirHold") end
+    local events=a.events or {};local old=self.lastEvents[a] or {}
+    for name,n in events do if n&gt;(old[name] or 0) then m:count("event."..name,n-(old[name] or 0)) end end
+    self.lastEvents[a]=table.clone(events)
+   end
+  end
+ end
+end
+function Profiler:command(op)
+ self.lastCommand=op;self.metrics:event("qa-command",{op=op})
+end
+function Profiler:stop() self.metrics:stop() end
+function Profiler:report()
+ local report=self.metrics:report();report.build=Shared.BuildFingerprint.Value
+ report.units="*.ms = milliseconds; *.studs = studs; estimatedBytes = estimate, not wire bytes"
+ return report
+end
+return Profiler
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND31">
+        <Properties>
+          <string name="Name">DevReport</string>
+          <ProtectedString name="Source">-- Roblox truncates long Output lines. One bounded JSON row per metric/event.
+local Report={}
+function Report.print(report)
+ local http=game:GetService("HttpService")
+ local id=report.server.build:sub(1,12).."-"..tostring(math.floor(os.clock()*1000));local rows=0
+ local function emit(row)
+  row.id=id;row.build=report.server.build
+  print("[NinjaDuelPerf] "..http:JSONEncode(row))
+ end
+ emit({kind="begin",clientPresent=report.client~=nil})
+ for _,side in {"server","client"} do
+  local data=report[side]
+  if data then
+   emit({kind="meta",side=side,enabled=data.enabled,seconds=data.seconds});rows+=1
+   for name,value in data.stats do emit({kind="metric",side=side,name=name,value=value});rows+=1 end
+   for name,value in data.counters do emit({kind="counter",side=side,name=name,value=value});rows+=1 end
+   for _,value in data.events do
+    local event=table.clone(value);if event.context and event.context.error then event.context=table.clone(event.context);event.context.error=tostring(event.context.error):sub(1,300) end
+    emit({kind="event",side=side,value=event});rows+=1
+   end
+  end
+ end
+ emit({kind="end",rows=rows})
+end
+return Report
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND32">
+        <Properties>
+          <string name="Name">DevScenarios</string>
+          <ProtectedString name="Source">-- Explicit QA setups only; they call the live engine, never a second simulator.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Fighters=require(Shared.Fighters)
+local Brawler=require(script.Parent.Brawler)
+local World=require(script.Parent.World)
+local Scenarios={}
+Scenarios.names={"neutral","launcher","air","wall","substitution","grab","whiff","projectile","ko"}
+function Scenarios.reset(matches,player,first,second,dummy)
+ local old=matches.sessions[player]
+ first=first or (old and old.playerId) or "Flashstep";second=second or (old and old.botId) or "Mirage"
+ if not Fighters[first] or not Fighters[second] then return false,"Unknown fighter" end
+ matches:start(player,first,second)
+ local s=matches.sessions[player];s.introUntil=nil;s.botFrozen=dummy~=false
+ local c=s.combat
+ c:relocate(s.human,s.origin+Vector3.new(0,3,3));c:relocate(s.bot,s.origin+Vector3.new(0,3,-3))
+ s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
+ s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
+ matches:snapshot(player,s)
+ return true,s
+end
+function Scenarios.refill(s,actor)
+ for _,a in (if actor then {actor} else {s.human,s.bot}) do
+  a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={};a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
+ end
+end
+function Scenarios.setup(matches,player,name,first,second)
+ local known=false;for _,value in Scenarios.names do if value==name then known=true end end
+ if not known then return false,"Unknown scenario" end
+ local ok,s=Scenarios.reset(matches,player,first,second,true);if not ok then return ok,s end
+ local c,a,b=s.combat,s.human,s.bot
+ if name=="launcher" then
+  Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2,a);a.pursuitUntil=c.now+Config.PursuitWindow
+ elseif name=="air" then
+  for _,x in {a,b} do c:relocate(x,x.root.Position+Vector3.new(0,13,0));x.airborne=true end
+  a.airHold=c.now+2;Brawler.react(c,b,"Juggled",Vector3.zero,2,a)
+ elseif name=="wall" then
+  local hit=workspace:Raycast(s.origin+Vector3.new(World.WALL_RADIUS-12,12,0),Vector3.xAxis*24,c:rayParams(true))
+  if not hit or not hit.Instance:GetAttribute("NinjaWall") then return false,"No wall surface on probe ray" end
+  c:relocate(b,hit.Position+hit.Normal*2.1);c:relocate(a,b.root.Position+hit.Normal*5)
+  a.root.CFrame=CFrame.lookAt(a.root.Position,Vector3.new(b.root.Position.X,a.root.Position.Y,b.root.Position.Z))
+  Brawler.react(c,b,"WallSplat",Vector3.zero,.42,a);b.splatAt=c.now;b.splatNormal=hit.Normal
+  a.pursuitUntil=c.now+.72
+ elseif name=="substitution" then
+  a.lastHurt=c.now;Brawler.react(c,a,"HitStun",Vector3.zero,.45,b)
+  local accepted,reason=c:request(a,"Substitute");if not accepted then return false,reason end
+ elseif name=="grab" then
+  c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.4)
+  local accepted,reason=c:request(a,"Grab");if not accepted then return false,reason end
+ elseif name=="whiff" then
+  c:relocate(b,s.origin+Vector3.new(0,3,-22));c:request(a,"Heavy")
+ elseif name=="projectile" then
+  c:relocate(b,s.origin+Vector3.new(0,3,-24));c:request(a,"Tool",b.root.Position)
+ elseif name=="ko" then
+  b.rotationUntil=0;b.shieldCharges=0;b.invulnerableUntil=0;b.readUntil=0
+  c:damage(a,b,b.health+200,false,false)
+ end
+ matches:snapshot(player,s)
+ return true,{scenario=name,epoch=s.epoch,first=s.playerId,second=s.botId}
+end
+return Scenarios
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND33">
+        <Properties>
+          <string name="Name">DevTools</string>
+          <ProtectedString name="Source">-- Studio-only command dispatcher. Shared by the overlay and the command bar.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Commands=require(Shared.DevCommands)
+local Scenarios=require(script.Parent.DevScenarios)
+local Profiler=require(script.Parent.DevProfiler)
+local Tools={};Tools.__index=Tools
+function Tools.new(matches)
+ return setmetatable({matches=matches,profiler=Profiler.new(matches),last={},reports={},dummy={}},Tools)
+end
+function Tools:run(player,op,arg)
+ local valid,clean=Commands.validate(op,arg)
+ if not valid then return {ok=false,error="Invalid command"} end
+ local matches=self.matches;local s=matches.sessions[player];arg=clean
+ self.profiler:command(op)
+ if op=="reset" or op=="character" then
+  local first=arg.first or (s and s.playerId);local second=arg.second or (s and s.botId)
+  local ok,value=Scenarios.reset(matches,player,first,second,self.dummy[player]~=false)
+  return {ok=ok,epoch=ok and value.epoch or nil,error=not ok and value or nil}
+ elseif op=="scenario" or op=="repeat" then
+  local name=if op=="repeat" then self.last[player] or "neutral" else arg.name
+  local ok,value=Scenarios.setup(matches,player,name,arg.first,arg.second)
+  if ok then self.last[player]=name;self.dummy[player]=true end
+  return {ok=ok,scenario=ok and value or nil,error=not ok and value or nil}
+ elseif op=="profile" then
+  if arg.enabled then self.profiler:start() else self.profiler:stop() end
+  return {ok=true,enabled=self.profiler.metrics.enabled}
+ elseif op=="report" then
+  return {ok=true,server=self.profiler:report(),client=self.reports[player]}
+ end
+ if not s or not s.combat or s.phase~="Duel" then return {ok=false,error="No active duel"} end
+ local c=s.combat;local a=if arg.actor=="bot" then s.bot else s.human
+ if op=="dummy" then self.dummy[player]=arg.enabled==true;s.botFrozen=self.dummy[player];if s.botFrozen then s.bot.move=Vector3.zero end
+ elseif op=="refill" then Scenarios.refill(s)
+ elseif op=="awaken" then
+  Scenarios.refill(s,a);a.awakened=false;a.health=a.def.Health*.3;a.hum.Health=a.health
+  local ok,reason=c:request(a,"Awaken");return {ok=ok,error=not ok and reason or nil}
+ elseif op=="ko" then
+  a.invulnerableUntil=0;a.rotationUntil=0;a.readUntil=0;a.guardHeld=false;a.shieldCharges=0;a.comboHits=0
+  c:damage(a.target,a,a.health+200,false,false)
+ else return {ok=false,error="Unknown command"} end
+ matches:snapshot(player,s)
+ return {ok=true,epoch=s.epoch,dummy=s.botFrozen}
+end
+function Tools:remove(player) self.last[player]=nil;self.reports[player]=nil;self.dummy[player]=nil;self.profiler.lastSend[player]=nil end
+return Tools
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -4337,7 +4773,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -4409,7 +4845,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND29">
+      <Item class="Script" referent="ND36">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelQA",true)
@@ -4431,12 +4867,15 @@ require(script.Parent.DevHooks).install(matches)
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
 end
+if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDevQA")==true then
+ task.spawn(function() require(script.Parent.DevQA).run(matches) end)
+end
 print("[NinjaDuel] BUILD "..Shared.BuildFingerprint.Value)
 print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4692,7 +5131,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -4914,7 +5353,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -5387,7 +5826,182 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND40">
+        <Properties>
+          <string name="Name">OnlineHost</string>
+          <ProtectedString name="Source">-- Optional lobby / matchmaking lifecycle. No Instances, listeners or boot call.
+-- createPair(entryA,entryB,epoch) is a future server arena adapter returning a
+-- validated OnlineMatch. Local Matches and its client are not compatible adapters.
+local Protocol=require(game:GetService("ReplicatedStorage").NinjaDuel.OnlineProtocol)
+local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local Queue=require(script.Parent.OnlineQueue)
+local Host={};Host.__index=Host
+function Host.new(config,createPair)
+ if not config or config.Enabled~=true then return nil,"Online disabled" end
+ assert(type(createPair)=="function","A server-owned two-player arena factory is required")
+ return setmetatable({queue=Queue.new(Protocol.QueueLimit),createPair=createPair,matches={},byPlayer={},epoch=0},Host)
+end
+function Host:join(player,fighter)
+ if self.byPlayer[player] then return false,"Already in match" end
+ if type(fighter)~="string" or not Fighters[fighter] then return false,"Unknown fighter" end
+ return self.queue:join(player,fighter)
+end
+function Host:pair()
+ local a,b=self.queue:pair();if not a then return nil end
+ self.epoch+=1
+ local ok,match=pcall(function()
+  local result=self.createPair(a,b,self.epoch)
+  assert(result and result.byPlayer[a.player] and result.byPlayer[b.player],"Factory returned wrong participants")
+  return result
+ end)
+ if not ok or not match then self.queue:join(a.player,a.fighter);self.queue:join(b.player,b.fighter);return nil,"Arena factory failed" end
+ self.matches[match]=true;self.byPlayer[a.player]=match;self.byPlayer[b.player]=match;return match
+end
+function Host:remove(player)
+ self.queue:leave(player);local match=self.byPlayer[player]
+ if match then match:disconnect(player);self:release(match) end
+end
+function Host:release(match)
+ if not self.matches[match] then return end
+ self.matches[match]=nil
+ for _,p in match.players do self.byPlayer[p]=nil end
+ -- Arena ownership stays with the supplied factory; host announces termination.
+ if match.cleanup then match:cleanup() end
+end
+return Host
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND41">
+        <Properties>
+          <string name="Name">OnlineMatch</string>
+          <ProtectedString name="Source">-- Two-player adapter around the SAME Combat instance, without any AI.
+-- The future host supplies server-created actors, finish handling and cleanup.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Rules=require(Shared.Rules)
+local Config=require(Shared.Config)
+local Validation=require(script.Parent.OnlineValidation)
+local Match={};Match.__index=Match
+function Match.new(epoch,combat,players,actors)
+ assert(#players==2 and players[1]~=players[2] and #actors==2 and actors[1]~=actors[2],"Two distinct players/actors required")
+ assert(combat.actors[1]==actors[1] and combat.actors[2]==actors[2],"Actors must belong to combat")
+ local self=setmetatable({epoch=epoch,combat=combat,players=players,actors=actors,phase="Duel",byPlayer={},sequence={},buckets={}},Match)
+ for i,p in players do self.byPlayer[p]=actors[i];self.buckets[p]={tokens=Config.RequestBurst,time=os.clock()};actors[i].target=actors[3-i] end
+ return self
+end
+function Match:request(player,payload,serverNow,clock)
+ local bucket=self.buckets[player]
+ if not bucket or not Rules.consumeToken(bucket,clock,Config.RequestRate,Config.RequestBurst) then return false,"Rate limit / participant" end
+ local clean,reason=Validation.intent(self,player,payload,serverNow);if not clean then return false,reason end
+ self.sequence[player]=clean.sequence
+ local actor=self.byPlayer[player]
+ if clean.direction then actor.move=clean.direction;actor.lastMove=clock end
+ if clean.sprint~=nil then actor.sprinting=clean.sprint end
+ if clean.locked~=nil then actor.locked=clean.locked end
+ if clean.action=="Move" then return true end
+ -- The engine still validates state, resources, hitboxes and target.
+ return self.combat:request(actor,clean.action,clean.aim,clean.clientTime)
+end
+function Match:finish(winner,reason)
+ if self.phase~="Duel" then return end
+ self.phase="Result";self.winner=winner;self.reason=reason
+end
+function Match:disconnect(player)
+ if not self.byPlayer[player] then return false end
+ self:finish(if self.players[1]==player then self.players[2] else self.players[1],"disconnect");return true
+end
+function Match:update(dt,now)
+ if self.phase~="Duel" then return end
+ for _,a in self.actors do if os.clock()-(a.lastMove or 0)&gt;.4 then a.move=Vector3.zero end end
+ self.combat:update(math.min(dt,.1),now)
+end
+return Match
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND42">
+        <Properties>
+          <string name="Name">OnlineQueue</string>
+          <ProtectedString name="Source">-- FIFO queue: server-owned Player identities, no client-supplied opponent.
+local Queue={};Queue.__index=Queue
+function Queue.new(limit) return setmetatable({limit=limit or 32,entries={},members={}},Queue) end
+function Queue:join(player,fighter)
+ if self.members[player] then return false,"Already queued" end
+ if #self.entries&gt;=self.limit then return false,"Queue full" end
+ local entry={player=player,fighter=fighter};self.members[player]=entry;table.insert(self.entries,entry);return true
+end
+function Queue:leave(player)
+ self.members[player]=nil
+ for i=#self.entries,1,-1 do if self.entries[i].player==player then table.remove(self.entries,i) end end
+end
+function Queue:pair()
+ if #self.entries&lt;2 then return nil end
+ local a=table.remove(self.entries,1);local b=table.remove(self.entries,1);self.members[a.player]=nil;self.members[b.player]=nil;return a,b
+end
+return Queue
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND43">
+        <Properties>
+          <string name="Name">OnlineReplication</string>
+          <ProtectedString name="Source">-- Recipient-specific reliable snapshot envelope. Independent impact cursors.
+-- Explicit send acknowledgement: building a packet must not lose impacts.
+local Protocol=require(game:GetService("ReplicatedStorage").NinjaDuel.OnlineProtocol)
+local Replication={};Replication.__index=Replication
+function Replication.new(match) return setmetatable({match=match,cursors={},serials={}},Replication) end
+function Replication:packet(player,serializeActor)
+ local m=self.match;if not m.byPlayer[player] then return nil end
+ local cursor=self.cursors[player] or 0;local feed={}
+ for _,impact in m.combat.impacts do if impact.serial&gt;cursor then table.insert(feed,table.clone(impact)) end end
+ local actors={};for i,a in m.actors do actors[i]=serializeActor(a);actors[i].ownerUserId=m.players[i].UserId end
+ return {version=Protocol.Version,epoch=m.epoch,sequence=(self.serials[player] or 0)+1,serverNow=m.combat.now,
+  phase=m.phase,selfActor=m.byPlayer[player].id,actors=actors,impacts=feed,impactSerial=m.combat.impactSerial or 0,winner=m.winner and m.winner.UserId,reason=m.reason}
+end
+function Replication:sent(player,packet)
+ if packet.epoch~=self.match.epoch or not self.match.byPlayer[player] then return false end
+ if packet.selfActor~=self.match.byPlayer[player].id or packet.sequence~=(self.serials[player] or 0)+1 then return false end
+ self.serials[player]=packet.sequence;self.cursors[player]=packet.impactSerial;return true
+end
+return Replication
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND44">
+        <Properties>
+          <string name="Name">OnlineValidation</string>
+          <ProtectedString name="Source">-- Produces a fresh allowlisted intent; clients cannot write combat state.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Protocol=require(Shared.OnlineProtocol)
+local Rules=require(Shared.Rules)
+local Validation={}
+local function vector(v) return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z) end
+function Validation.intent(match,player,payload,now)
+ if match.phase~="Duel" or not match.byPlayer[player] then return nil,"Not a participant" end
+ if type(payload)~="table" or payload.version~=Protocol.Version or payload.epoch~=match.epoch then return nil,"Stale protocol/epoch" end
+ if type(payload.action)~="string" or not Protocol.actions[payload.action] then return nil,"Unknown action" end
+ if not Rules.finite(payload.sequence) or payload.sequence%1~=0 or payload.sequence&lt;=0 or payload.sequence&lt;=(match.sequence[player] or 0) then return nil,"Stale sequence" end
+ if type(payload.clientTime)~="number" or payload.clientTime~=payload.clientTime or math.abs(payload.clientTime)==math.huge or math.abs(payload.clientTime-now)&gt;1 then return nil,"Stale clock" end
+ local clean={action=payload.action,clientTime=payload.clientTime,sequence=payload.sequence}
+ if payload.direction~=nil then
+  if not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;.01 then return nil,"Invalid direction" end
+  clean.direction=payload.direction
+ elseif payload.action=="Move" then return nil,"Missing direction" end
+ for _,key in {"sprint","locked"} do
+  if payload[key]~=nil then if type(payload[key])~="boolean" then return nil,"Invalid flag" end;clean[key]=payload[key] end
+ end
+ if payload.aim~=nil then
+  local actor=match.byPlayer[player]
+  if not vector(payload.aim) or (payload.aim-actor.root.Position).Magnitude&gt;140 then return nil,"Invalid aim" end
+  clean.aim=payload.aim
+ end
+ return clean
+end
+return Validation
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -5649,7 +6263,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6124,7 +6738,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -6645,7 +7259,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -6745,7 +7359,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -6773,7 +7387,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -6835,7 +7449,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -6886,7 +7500,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -7610,21 +8224,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND41">
+  <Item class="StarterPlayer" referent="ND53">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND42">
+    <Item class="StarterPlayerScripts" referent="ND54">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND43">
+      <Item class="Folder" referent="ND55">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND44">
+        <Item class="ModuleScript" referent="ND56">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -7865,7 +8479,156 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND45">
+        <Item class="ModuleScript" referent="ND57">
+          <Properties>
+            <string name="Name">DevClient</string>
+            <ProtectedString name="Source">-- Studio-only overlay and bounded observation of the live client. F6 opens it.
+local Dev={}
+function Dev.install(ctx)
+ local rs=game:GetService("RunService");if not rs:IsStudio() then return nil end
+ local Metrics=require(game:GetService("ReplicatedStorage").NinjaDuel.DevMetrics)
+ local volumes=require(script.Parent.DevVolumes).new(ctx.player)
+ local m=Metrics.new();local self={panelOpen=false,metrics=m};local track={};local lastPacket=nil;local epoch=nil
+ local log,control;local busy=false;local profile=false
+ local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelDevPanel";gui.ResetOnSpawn=false;gui.DisplayOrder=100;gui.Enabled=false;gui.Parent=ctx.player:WaitForChild("PlayerGui")
+ local frame=Instance.new("Frame");frame.Size=UDim2.fromOffset(360,530);frame.Position=UDim2.new(0,16,0,16);frame.BackgroundColor3=Color3.fromRGB(20,24,30);frame.Parent=gui
+ local title=Instance.new("TextLabel");title.Size=UDim2.new(1,-16,0,40);title.Position=UDim2.fromOffset(8,4);title.BackgroundTransparency=1;title.TextColor3=Color3.new(1,1,1);title.TextSize=16;title.Text="DEV / F6 — Studio uniquement";title.Parent=frame
+ local status=title:Clone();status.Position=UDim2.fromOffset(8,478);status.Size=UDim2.new(1,-16,0,46);status.TextSize=13;status.TextWrapped=true;status.Text="Mesures OFF · aucun scénario actif";status.Parent=frame
+ local firstButton;local selectedBefore
+ local function run(op,arg)
+  if busy or not control then return end;busy=true
+  task.spawn(function()
+   local ok,result=pcall(function() return control:InvokeServer(op,arg or {}) end)
+   status.Text=if ok and result.ok then op.." : OK" else tostring(ok and result.error or result)
+   busy=false
+  end)
+ end
+ local index=0
+ local function button(text,callback)
+  local b=Instance.new("TextButton");local row=math.floor(index/2);local col=index%2;index+=1
+  b.Position=UDim2.fromOffset(8+col*174,48+row*32);b.Size=UDim2.fromOffset(168,28);b.BackgroundColor3=Color3.fromRGB(43,51,65);b.TextColor3=Color3.new(1,1,1);b.TextSize=13;b.Text=text;b.Parent=frame;b.Activated:Connect(callback);firstButton=firstButton or b
+ end
+ local ids={"Flashstep","Mirage","GentleFist","Lion"};local names={"Minato","Itachi","Neji","Sasuke"}
+ -- IDs come from the active data, with no registration of new movesets.
+ local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+ local active={};for id,def in Fighters do if def.Name=="Neji" then ids[3]=id elseif def.Name=="Sasuke" then ids[4]=id end;active[id]=true end
+ for i,id in ids do
+  if active[id] then button("Joueur : "..names[i],function() run("character",{first=id}) end);button("Adversaire : "..names[i],function() run("character",{second=id}) end) end
+ end
+ button("Reset immédiat",function() run("reset") end);button("Chakra / sub pleins",function() run("refill") end)
+ button("Éveil joueur",function() run("awaken") end);button("KO adversaire",function() run("ko",{actor="bot"}) end)
+ button("Dummy",function() run("dummy",{enabled=true}) end);button("IA",function() run("dummy",{enabled=false}) end)
+ for _,name in {"neutral","launcher","air","wall","substitution","grab","whiff","projectile"} do button("Situation : "..name,function() run("scenario",{name=name}) end) end
+ button("Répéter situation",function() run("repeat") end)
+ button("Mesures ON / OFF",function() profile=not profile;run("profile",{enabled=profile}) end)
+ button("Rapport → Output",function() run("report") end)
+ button("Volumes ON / OFF",function() volumes:set(not volumes.enabled);status.Text="Volumes : racines bleues / hitboxes rouges" end)
+ function self:toggle()
+  self.panelOpen=not self.panelOpen;gui.Enabled=self.panelOpen
+  local gs=game:GetService("GuiService")
+  if self.panelOpen then selectedBefore=gs.SelectedObject;ctx.input:reset();ctx.send("GuardOff");ctx.send("Move",Vector3.zero);gs.SelectedObject=firstButton
+  else gs.SelectedObject=if selectedBefore and selectedBefore.Parent then selectedBefore else nil end
+ end
+ game:GetService("UserInputService").InputBegan:Connect(function(key,processed)
+  if not processed and key.KeyCode==Enum.KeyCode.F6 then self:toggle() end
+ end)
+ local function setProfile(enabled)
+  m:stop();track={};lastPacket=nil
+  if not enabled then return end
+  m:start()
+  for _,key in {"smoothStep","update","impacts"} do m:wrap(ctx.presentation,key,"client.presentation."..key) end
+  m:wrap(ctx.camera,"update","client.camera");m:wrap(ctx.ui,"render","client.hud")
+  m:wrap(ctx.presentation.fx,"update","client.fx")
+ end
+ rs:BindToRenderStep("NinjaDuelDevMeasure",Enum.RenderPriority.Camera.Value+1,function(dt)
+  volumes:update()
+  if not m.enabled then return end
+  local data=ctx.state();if data.phase~="Duel" or dt&lt;=0 then return end
+  m:sample("client.frame.ms",dt*1000)
+  if dt&gt;.05 then m:event("frame-spike",{ms=dt*1000,state=data.human.state}) end
+  if epoch~=data.epoch then track={};epoch=data.epoch;m:event("epoch",{epoch=epoch}) end
+  if data~=lastPacket then
+   local at=os.clock();if lastPacket then m:sample("client.snapshot.gap.ms",(at-self.packetAt)*1000) end
+   self.packetAt=at;lastPacket=data
+   if data.serverNow then m:sample("client.snapshot.age.ms",math.max(0,workspace:GetServerTimeNow()-data.serverNow)*1000) end
+  end
+  for _,key in {"human","bot"} do
+   local actor=data[key];local st=ctx.presentation.smooth[key];local draw=ctx.presentation:visualRoot(key)
+   if actor and st and st.replicatedCF and draw then
+    m:sample("client."..key..".presentationGap.studs",(draw-st.replicatedCF.Position).Magnitude)
+    local old=track[key];local delta=old and (draw-old.p).Magnitude or 0
+    m:sample("client."..key..".frameTravel.studs",delta)
+    if old and delta&gt;math.max(6,dt*160) then m:event("visual-position-jump",{actor=key,state=actor.state,reaction=actor.reaction,attack=actor.attackName,studs=delta,warp=actor.warpSerial,previousWarp=old.warp,ms=dt*1000}) end
+    track[key]={p=draw,warp=actor.warpSerial}
+   end
+  end
+ end)
+ task.spawn(function()
+  -- The server creates this channel at ReplicatedStorage root, never in Shared.
+  log=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelDevLog",10)
+  control=game:GetService("ReplicatedStorage").NinjaDuel:WaitForChild("DevControl",10)
+  if not log then return end
+  local warnings={time=0,count=0}
+  game:GetService("LogService").MessageOut:Connect(function(message,kind)
+   if kind~=Enum.MessageType.MessageError and kind~=Enum.MessageType.MessageWarning then return end
+   local now=os.clock();if now-warnings.time&gt;1 then warnings.time=now;warnings.count=0 end
+   if warnings.count&gt;=4 then return end;warnings.count+=1;log:FireServer("log",message:sub(1,400))
+  end)
+  log.OnClientEvent:Connect(function(kind,enabled)
+   if kind=="profile" then profile=enabled==true;setProfile(profile);status.Text="Mesures "..(profile and "ON" or "OFF")
+   elseif kind=="report" then local report=m:report();report.build=game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value;log:FireServer("report",report)
+   elseif kind=="probe" then log:FireServer("info",{probe=m:report()})
+   elseif kind=="info" then
+    local cam=workspace.CurrentCamera;local uiObjects={};local hud=ctx.player.PlayerGui:FindFirstChild("NinjaDuelHUD")
+    if hud then for _,g in hud:GetDescendants() do if g:IsA("GuiObject") and #uiObjects&lt;40 then table.insert(uiObjects,{name=g.Name,visible=g.Visible,position=tostring(g.AbsolutePosition),size=tostring(g.AbsoluteSize)}) end end end
+    log:FireServer("info",{camera=tostring(cam.CFrame),fov=cam.FieldOfView,mode=ctx.camera.mode,gui=uiObjects})
+   end
+  end)
+ end)
+ return self
+end
+return Dev
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND58">
+          <Properties>
+            <string name="Name">DevVolumes</string>
+            <ProtectedString name="Source">-- Read-only Studio adornments; never creates collision Parts or changes queries.
+local Volumes={};Volumes.__index=Volumes
+function Volumes.new(player) return setmetatable({player=player,enabled=false,boxes={},last=0},Volumes) end
+function Volumes:clear()
+ for _,box in self.boxes do box:Destroy() end;self.boxes={}
+end
+function Volumes:set(enabled) self.enabled=enabled;if not enabled then self:clear() end end
+function Volumes:update()
+ if not self.enabled or os.clock()-self.last&lt;.1 then return end;self.last=os.clock()
+ local model=self.player.Character;local folder=model and model.Parent;local effects=folder and folder:FindFirstChild("Effects")
+ local wanted={}
+ if effects then
+  for _,part in effects:GetChildren() do
+   if part:IsA("BasePart") and part.Name=="BanglaHitbox" then wanted[part]=Color3.fromRGB(255,100,85) end
+  end
+ end
+ for _,fighter in {model,folder and folder:FindFirstChild("AIFighter")} do
+  local root=fighter and fighter:FindFirstChild("HumanoidRootPart");if root then wanted[root]=Color3.fromRGB(70,170,255) end
+ end
+ for part,box in self.boxes do if not wanted[part] or not part.Parent then box:Destroy();self.boxes[part]=nil end end
+ local count=0
+ for part,color in wanted do
+  count+=1;if count&gt;40 then break end
+  local box=self.boxes[part]
+  if not box then
+   box=Instance.new("BoxHandleAdornment");box.Name="DevObservedVolume";box.Adornee=part;box.AlwaysOnTop=true;box.ZIndex=4;box.Transparency=.7;box.Parent=self.player.PlayerGui;self.boxes[part]=box
+  end
+  box.Size=part.Size;box.Color3=color
+ end
+end
+return Volumes
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND59">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -8978,7 +9741,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND46">
+        <Item class="ModuleScript" referent="ND60">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -9126,7 +9889,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND47">
+        <Item class="LocalScript" referent="ND61">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -9140,7 +9903,7 @@ local Input=require(script.Parent.Input)
 local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
-local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
+local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input; local dev
 camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
@@ -9162,7 +9925,7 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+input=Input.new(send,function() return if dev and dev.panelOpen then {phase="DevPanel"} else current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -9181,88 +9944,20 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	presentation:update(current,dt)
 	camera:update(current,dt)
 	if current.phase=="Duel" and os.clock()&gt;=nextMove then
-		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
+		nextMove=os.clock()+0.08; send("Move",if dev and dev.panelOpen then Vector3.zero else input:direction(workspace.CurrentCamera))
 	end
 end)
--- Studio-only diagnostics channel (created by the server's DevHooks).
+-- Tooling is inert outside Studio; gameplay modules remain unchanged.
 if RunService:IsStudio() then
-	task.spawn(function()
-		local log=shared:WaitForChild("NinjaDuelDevLog",10) or game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelDevLog",10)
-		if not log then return end
-		game:GetService("LogService").MessageOut:Connect(function(message,kind)
-			if kind==Enum.MessageType.MessageError or kind==Enum.MessageType.MessageWarning then log:FireServer("log",string.sub(message,1,400)) end
-		end)
-		-- Smoothness probe: per rendered frame, the apparent acceleration of each
-		-- fighter's head (what the eye follows) and root. A visual jump shows up
-		-- as an acceleration spike.
-		local probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0}
-		local track={}
-		local trace={}
-		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
-			if current.phase~="Duel" or dt&lt;=0 then return end
-			local folder=player.Character and player.Character.Parent
-			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
-				for _,partName in {"Head","HumanoidRootPart"} do
-					local part=model and model:FindFirstChild(partName)
-					if part then
-						local key=model.Name..partName
-						local st=track[key] or {}
-						local p=part.Position
-						if model==player.Character and #trace&lt;90 and partName=="Head" then
-							local vr=presentation:visualRoot("human")
-							local root=model:FindFirstChild("HumanoidRootPart")
-							local lt=model:FindFirstChild("LowerTorso")
-							local joint=lt and lt:FindFirstChild("Root") or (root and root:FindFirstChild("Root"))
-							table.insert(trace,string.format("H%.2f off%.2f lt%.2f tf%.2f",(p-(st.p or p)).Magnitude,vr and root and (vr-root.Position).Magnitude or -1,
-								lt and root and (lt.Position-root.Position).Magnitude or -1,joint and joint.Transform.Position.Magnitude or -1))
-						end
-						if st.p then
-							local v=(p-st.p)/dt
-							if st.v then
-								local acc=(v-st.v).Magnitude/dt
-								local head=partName=="Head"
-								if head then probe.frames+=1 end
-								if acc&gt;900 and v.Magnitude&lt;150 then
-									if head then probe.headSpikes+=1 else probe.rootSpikes+=1 end
-								end
-								if head then probe.headMax=math.max(probe.headMax,acc) else probe.rootMax=math.max(probe.rootMax,acc) end
-							end
-							st.v=v
-						end
-						st.p=p;track[key]=st
-					end
-				end
-			end
-		end)
-		log.OnClientEvent:Connect(function(kind)
-			if kind=="probe" then
-				local out=table.clone(probe);out.trace=table.concat(trace," ")
-				log:FireServer("info",{probe=out})
-				probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0};trace={}
-				return
-			end
-			if kind=="info" then
-				local cam=workspace.CurrentCamera
-				local gui={}
-				local hud=player.PlayerGui:FindFirstChild("NinjaDuelHUD")
-				if hud then
-					for _,g in hud:GetDescendants() do
-						if g:IsA("GuiObject") and #gui&lt;40 and (g.Parent==hud or (g.Parent and g.Parent.Parent==hud)) then
-							table.insert(gui,string.format("%s vis=%s pos=%s size=%s",g:GetFullName():sub(-40),tostring(g.Visible),tostring(g.AbsolutePosition),tostring(g.AbsoluteSize)))
-						end
-					end
-				end
-				log:FireServer("info",{presented=presentation.presented,camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
-			end
-		end)
-	end)
+ dev=require(script.Parent.DevClient).install({player=player,input=input,presentation=presentation,camera=camera,ui=ui,
+  state=function() return current end,send=send})
 end
 send("Ready")
 print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND48">
+        <Item class="ModuleScript" referent="ND62">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -9515,7 +10210,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND49">
+        <Item class="ModuleScript" referent="ND63">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
@@ -9915,7 +10610,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND50">
+        <Item class="ModuleScript" referent="ND64">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -10048,7 +10743,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND51">
+        <Item class="ModuleScript" referent="ND65">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -11861,7 +12556,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND52">
+  <Item class="Lighting" referent="ND66">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -11879,7 +12574,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND53">
+  <Item class="SoundService" referent="ND67">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

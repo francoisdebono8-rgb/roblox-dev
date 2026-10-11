@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "proposalOnly": true,
+  "tags": {
+    "space": [
+      "ground",
+      "air",
+      "wall"
+    ],
+    "intent": [
+      "pressure",
+      "disengage",
+      "chase",
+      "counter",
+      "feint"
+    ],
+    "contact": [
+      "strike",
+      "grab",
+      "projectile"
+    ],
+    "transition": [
+      "launch",
+      "spike",
+      "splat",
+      "rebound",
+      "teleport"
+    ],
+    "archetype": [
+      "rapide_precis",
+      "taijutsu",
+      "zoner",
+      "projectile_master",
+      "grappler",
+      "acrobatique",
+      "defensif_counter",
+      "teleportation",
+      "controle_zone",
+      "rushdown"
+    ]
+  },
+  "note": "Taxonomie de catalogue uniquement ; aucun tag injecté dans les acteurs du jeu."
+}

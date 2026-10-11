@@ -9,7 +9,7 @@ local Input=require(script.Parent.Input)
 local Camera=require(script.Parent.Camera)
 local Presentation=require(script.Parent.Presentation)
 local presentation=Presentation.new()
-local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
+local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input; local dev
 camera.presentation=presentation
 local mouse=player:GetMouse()
 local function send(action,extra)
@@ -31,7 +31,7 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+input=Input.new(send,function() return if dev and dev.panelOpen then {phase="DevPanel"} else current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -50,81 +50,13 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	presentation:update(current,dt)
 	camera:update(current,dt)
 	if current.phase=="Duel" and os.clock()>=nextMove then
-		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
+		nextMove=os.clock()+0.08; send("Move",if dev and dev.panelOpen then Vector3.zero else input:direction(workspace.CurrentCamera))
 	end
 end)
--- Studio-only diagnostics channel (created by the server's DevHooks).
+-- Tooling is inert outside Studio; gameplay modules remain unchanged.
 if RunService:IsStudio() then
-	task.spawn(function()
-		local log=shared:WaitForChild("NinjaDuelDevLog",10) or game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelDevLog",10)
-		if not log then return end
-		game:GetService("LogService").MessageOut:Connect(function(message,kind)
-			if kind==Enum.MessageType.MessageError or kind==Enum.MessageType.MessageWarning then log:FireServer("log",string.sub(message,1,400)) end
-		end)
-		-- Smoothness probe: per rendered frame, the apparent acceleration of each
-		-- fighter's head (what the eye follows) and root. A visual jump shows up
-		-- as an acceleration spike.
-		local probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0}
-		local track={}
-		local trace={}
-		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
-			if current.phase~="Duel" or dt<=0 then return end
-			local folder=player.Character and player.Character.Parent
-			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
-				for _,partName in {"Head","HumanoidRootPart"} do
-					local part=model and model:FindFirstChild(partName)
-					if part then
-						local key=model.Name..partName
-						local st=track[key] or {}
-						local p=part.Position
-						if model==player.Character and #trace<90 and partName=="Head" then
-							local vr=presentation:visualRoot("human")
-							local root=model:FindFirstChild("HumanoidRootPart")
-							local lt=model:FindFirstChild("LowerTorso")
-							local joint=lt and lt:FindFirstChild("Root") or (root and root:FindFirstChild("Root"))
-							table.insert(trace,string.format("H%.2f off%.2f lt%.2f tf%.2f",(p-(st.p or p)).Magnitude,vr and root and (vr-root.Position).Magnitude or -1,
-								lt and root and (lt.Position-root.Position).Magnitude or -1,joint and joint.Transform.Position.Magnitude or -1))
-						end
-						if st.p then
-							local v=(p-st.p)/dt
-							if st.v then
-								local acc=(v-st.v).Magnitude/dt
-								local head=partName=="Head"
-								if head then probe.frames+=1 end
-								if acc>900 and v.Magnitude<150 then
-									if head then probe.headSpikes+=1 else probe.rootSpikes+=1 end
-								end
-								if head then probe.headMax=math.max(probe.headMax,acc) else probe.rootMax=math.max(probe.rootMax,acc) end
-							end
-							st.v=v
-						end
-						st.p=p;track[key]=st
-					end
-				end
-			end
-		end)
-		log.OnClientEvent:Connect(function(kind)
-			if kind=="probe" then
-				local out=table.clone(probe);out.trace=table.concat(trace," ")
-				log:FireServer("info",{probe=out})
-				probe={frames=0,headSpikes=0,rootSpikes=0,headMax=0,rootMax=0};trace={}
-				return
-			end
-			if kind=="info" then
-				local cam=workspace.CurrentCamera
-				local gui={}
-				local hud=player.PlayerGui:FindFirstChild("NinjaDuelHUD")
-				if hud then
-					for _,g in hud:GetDescendants() do
-						if g:IsA("GuiObject") and #gui<40 and (g.Parent==hud or (g.Parent and g.Parent.Parent==hud)) then
-							table.insert(gui,string.format("%s vis=%s pos=%s size=%s",g:GetFullName():sub(-40),tostring(g.Visible),tostring(g.AbsolutePosition),tostring(g.AbsoluteSize)))
-						end
-					end
-				end
-				log:FireServer("info",{presented=presentation.presented,camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
-			end
-		end)
-	end)
+ dev=require(script.Parent.DevClient).install({player=player,input=input,presentation=presentation,camera=camera,ui=ui,
+  state=function() return current end,send=send})
 end
 send("Ready")
 print("[NinjaDuel] Client ready")
