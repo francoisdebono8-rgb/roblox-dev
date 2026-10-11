@@ -11,7 +11,7 @@ an external Git worktree on `codex/kimi-motion-quality`, based on
 
 Another committed mission: `./games/ninja-duel/tools/run-kimi-motion.sh games/ninja-duel/OTHER.md`.
 Its branch is derived from the file name. Optional `KIMI_MOTION_BRANCH=codex/kimi-my-pass`.
-The default `kimi --auto -p` executes the supplied mission without routine prompts;
+The default `kimi -p` (prompt mode is already autonomous in CLI 2.1.1) executes the supplied mission without routine prompts;
 it is restricted by the explicit mission, but is an autonomous agent, not a filesystem sandbox.
 
 Commit a new mission on the base branch before launching. Existing dedicated worktrees

@@ -30,7 +30,7 @@ branch=${KIMI_MOTION_BRANCH:-codex/kimi-$slug}
 [[ "$branch" == codex/kimi-* ]] || { printf 'Kimi branch must start with codex/kimi-.\n' >&2; exit 1; }
 git check-ref-format --branch "$branch" >/dev/null
 common=$(git -C "$repo" rev-parse --path-format=absolute --git-common-dir)
-repo_id=$(printf '%s' "$common" | shasum -a 256 | cut -c1-12)
+repo_id=$(python3 -c 'import hashlib,sys;print(hashlib.sha256(sys.argv[1].encode()).hexdigest()[:12])' "$common")
 checkout="$HOME/.local/share/kimi-motion/worktrees/$repo_id/${branch#codex/}"
 export KIMI_CODE_HOME="${KIMI_CODE_HOME:-$HOME/.kimi-code}"
 python3 - "$KIMI_CODE_HOME" "$repo" "$checkout" <<'PY'
@@ -71,4 +71,4 @@ if [[ ${KIMI_MOTION_INTERACTIVE:-0} == 1 ]]; then
   printf 'Interactive mode: paste the mission path and execute it after /login, if needed.\n'
   exec kimi
 fi
-exec kimi --auto -p "$prompt"
+exec kimi -p "$prompt"
