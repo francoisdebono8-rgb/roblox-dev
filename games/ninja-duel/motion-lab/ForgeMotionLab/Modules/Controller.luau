@@ -43,11 +43,25 @@ function C:asset(id) return Edit.asset(self.preset,id or self.clip,self.library)
 function C:variant() return self.preset.motionVariants and self.preset.motionVariants[self.clip] end
 function C:createVariant()
  local source=self:asset();assert(not source.variant,"Select a source motion to create a variant")
- self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
+ self.sequenceMode=false;self:pinCompare();local id=self:newId();local clip=source.authoredClip or self.preset.clips[source.grammar];local duration=Sampler.duration(self.preset,source,self.library)
  local contact,recovery=.42,.7;if clip and clip.timing then contact=clip.timing.startup/clip.duration;recovery=(clip.timing.startup+clip.timing.active)/clip.duration end
- self:edit(function(p)p.motionVariants=p.motionVariants or {};p.motionVariants[id]=Edit.create(id,source.name.."_A",source,duration,contact,recovery)end)
- self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart="RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
+ self:edit(function(p)
+  p.motionVariants=p.motionVariants or {};local v=Edit.create(id,source.name.."_A",source,duration,contact,recovery)
+  if source.authoredClip then
+   for _,key in source.authoredClip.keys do if key.phase=="Anticipation"then v.poseOverrides[2].time=key.at;v.poseOverrides[2].sourceTime=key.at end end
+  end
+  p.motionVariants[id]=v
+ end)
+ self.clip=id;self.sequenceMode=false;self.selectedKey="Contact";self.selectedPart=if source.attackingLimb=="LeftArm"then "LeftArm"elseif source.attackingLimb=="LeftLeg"then "LeftLeg"elseif source.attackingLimb=="RightLeg"then "RightLeg"else "RightArm";self.playing=false;self.time=self:variant().poseOverrides[3].time*duration
  return id
+end
+function C:switchSide()
+ local source=self:asset();assert(source.counterpart and self.library.assets[source.counterpart],"No opposite-side asset")
+ self.clip=source.counterpart;self.sequenceMode=false;self.time=0;self.mirror=false;self.selectedKey=nil
+end
+function C:compareLegacy()
+ local source=self:asset();assert(source.legacyAsset and self.library.assets[source.legacyAsset],"No legacy comparison")
+ local selected=self.clip;self.clip=source.legacyAsset;self:pinCompare();self.clip=selected;self.sequenceMode=false;self.time=0;self.mirror=false
 end
 function C:variantEdit(fn,record)
  assert(self:variant(),"Create a variant before editing")
@@ -67,7 +81,7 @@ end
 function C:save() self.store:save(self.preset);self.dirty=false end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
 function C:export(parent)
- local bundle=Adapter.bundle(self.preset,self.library);local payload=Adapter.serialize(bundle);assert(#payload<=2000000,"Export too large")
+ local bundle=Adapter.bundle(self.preset,self.library,self.clip);local payload=Adapter.serialize(bundle);assert(#payload<=2000000,"Export too large")
  local history=game:GetService("ChangeHistoryService");local recording=history:TryBeginRecording("ForgeMotionLabExport","Export Motion Lab profile")
  assert(recording,"Finish the current Studio operation first")
  local module

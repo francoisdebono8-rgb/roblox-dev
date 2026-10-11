@@ -54,7 +54,7 @@ function View.mount(widget,plugin)
   nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "● Unsaved" else "✓ Saved"
   local actual=S.resolveAsset(c.preset,c:asset(),c.library)
   title.Text=if c.sequenceMode then c:sequence().name else actual.name
-  subtitle.Text=if c.compare then "A · original       B · current variant / mix" elseif c:variant() then "Editable variant · "..(c.selectedPart or "RightArm") elseif c.preset.clips[actual.grammar]then "Authored anatomy · "..c.preset.name else "Procedural starting block · "..c.preset.name
+  subtitle.Text=if c.compare then "A · "..(if c.compareSequenceMode then "pinned phrase"else E.asset(c.compare,c.compareClip,c.compareLibrary).name).."    /    B · current" elseif c:variant() then "Editable variant · "..(c.selectedPart or "RightArm") elseif actual.authoredClip then "Common · "..actual.side.." · "..actual.attackingLimb.." / brace "..actual.supportLimb elseif c.preset.clips[actual.grammar]then "Authored anatomy · "..c.preset.name else "Procedural starting block · "..c.preset.name
   pathDirty=true
  end
  local function action(fn,message)
@@ -85,7 +85,7 @@ function View.mount(widget,plugin)
  local function scope(key,parent)
   if scopes[key]then scopes[key]:dispose()end;parent:ClearAllChildren();scopes[key]=UI.new(widget);return scopes[key]
  end
- local search="";local category="All";local page=1
+ local search="";local category="All";local page=1;local sideFilter="All";local familyFilter="All";local collection="All"
  local categories={{"All","All"},{"Locomotion","Move"},{"Punches","Punch"},{"Kicks","Kick"},{"Knees","Knee"},{"Elbows","Elbow"},{"Palm","Palm"},{"Dodges","Dodge"},{"Aerial","Air"},{"Wall","Wall"},{"Reactions","React"},{"Other","Other"}}
  refreshLibrary=function()
   local u=scope("library",left);thumbnailRigs={}
@@ -95,20 +95,44 @@ function View.mount(widget,plugin)
   for i,tab in {"Characters","Motions","Custom"}do u:button(left,tab,{Position=UDim2.new((i-1)/3,6,0,66),Size=UDim2.new(1/3,-8,0,25),TextSize=11},function()c.tab=tab;page=1;search="";refreshLibrary()end,c.tab==tab or (c.tab=="Library"and tab=="Motions"))end
   local isMotion=c.tab=="Motions"or c.tab=="Library";local y=100
   if isMotion then
-   for i,cat in categories do u:button(left,cat[2],{Position=UDim2.new(((i-1)%4)/4,6,0,y+math.floor((i-1)/4)*24),Size=UDim2.new(1/4,-8,0,21),TextSize=10},function()category=cat[1];page=1;refreshLibrary()end,category==cat[1])end;y+=78
+   local group=u:button(left,category.." ▾",{Name="CategoryFilter",Position=UDim2.fromOffset(6,y),Size=UDim2.new(.34,-7,0,23),TextSize=10})
+   u:tip(group,"Category: "..category)
+   u:connect(group.Activated,function()local choices={};for _,cat in categories do table.insert(choices,{id=cat[1],name=cat[1]})end;pick(group,choices,function(id)category=id;page=1 end)end)
+   local side=u:button(left,sideFilter.." ▾",{Name="SideFilter",Position=UDim2.new(.34,1,0,y),Size=UDim2.new(.3,-5,0,23),TextSize=10})
+   u:tip(side,"Side: "..sideFilter)
+   u:connect(side.Activated,function()local choices={};for _,name in {"All","Left","Right","Neutral"}do table.insert(choices,{id=name,name=name})end;pick(side,choices,function(id)sideFilter=id;page=1 end)end)
+   local source=u:button(left,collection.." ▾",{Name="CollectionFilter",Position=UDim2.new(.64,1,0,y),Size=UDim2.new(.36,-7,0,23),TextSize=10})
+   u:tip(source,"Source collection: "..collection)
+   u:connect(source.Activated,function()pick(source,{{id="All",name="All sources"},{id="Common",name="Common bilateral"},{id="Legacy",name="Legacy / Ninja Duel"}},function(id)collection=id;if id=="Legacy"then familyFilter="All";sideFilter="All"end;page=1 end)end)
+   y+=26
+   local family=u:button(left,(if familyFilter=="All"then "Family"else familyFilter).." ▾",{Name="FamilyFilter",Position=UDim2.fromOffset(6,y),Size=UDim2.new(.42,-7,0,23),TextSize=10})
+   u:tip(family,"Family: "..familyFilter)
+   u:connect(family.Activated,function()local seen={};local choices={{id="All",name="All families"}};for _,a in c.library.assets do if a.family and not seen[a.family]then seen[a.family]=true;table.insert(choices,{id=a.family,name=a.family})end end;table.sort(choices,function(a,b)return a.id<b.id end);pick(family,choices,function(id)familyFilter=id;page=1 end)end)
+   local switch=u:button(left,"L/R",{Name="SwitchSide",Position=UDim2.new(.42,1,0,y),Size=UDim2.new(.24,-5,0,23),TextSize=10},function()action(function()c:switchSide()end,"Independent opposite side selected")end)
+   u:tip(switch,"Switch Left / Right independent asset; Pin A first to compare sides")
+   local compare=u:button(left,"Old/new",{Name="CompareLegacy",Position=UDim2.new(.66,1,0,y),Size=UDim2.new(.34,-7,0,23),TextSize=10},function()action(function()c:compareLegacy()end,"A: legacy · B: common motion")end)
+   u:tip(compare,"Compare old motion with selected common motion / edited variant")
+   y+=26
   end
   local rows={}
   if isMotion then
    local ids=table.clone(c.library.assetOrder);for id in c.preset.motionVariants or {}do table.insert(ids,id)end
    for _,id in ids do local a=c:asset(id);local other=not table.find({"Locomotion","Punches","Kicks","Knees","Elbows","Dodges","Aerial","Wall","Reactions"},a.category)
-    local match=category=="All"or a.category==category or(category=="Palm"and a.grammar:find("Palm"))or(category=="Other"and other)
-    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.variant then "Variant · "..c.preset.name else a.category.." · "..c.preset.name,asset=a})end
+    local match=category=="All"or a.category==category or(category=="Palm"and(a.family=="Palm"or a.grammar:find("Palm")))or(category=="Other"and other)
+    match=match and(sideFilter=="All"or a.side==sideFilter)and(familyFilter=="All"or a.family==familyFilter)and(collection=="All"or(collection=="Common")== (a.sourceType=="common-authored"or(a.variant and a.authoredClip~=nil)))
+    local tags=table.concat(a.tags or {}," · ");if match and(search==""or(a.name.." "..tags):lower():find(search,1,true))then table.insert(rows,{id=id,name=a.name,desc=if a.variant then "Variant · "..c.preset.name else (a.family or a.category).." · "..(a.side or c.preset.name),asset=a})end
    end
   else
    for _,id in c.library.order do local p=c.library.presets[id];local custom=c.store.custom[id]~=nil;if (c.tab=="Custom")==custom and(search==""or p.name:lower():find(search,1,true))then table.insert(rows,{id=id,name=p.name,desc=if custom then "Saved profile + variants"elseif p.metadata.sourceType=="ninja-duel"then "Ninja Duel · authored"else "Starting expression",profile=p})end end
   end
+  if isMotion then table.sort(rows,function(a,b)
+   local x,y=a.asset,b.asset;local commonX=x.authoredClip~=nil;local commonY=y.authoredClip~=nil
+   if commonX~=commonY then return commonX end
+   local kx=(x.family or x.category).." / "..(x.variantName or "").." / "..(x.side or "")..x.id
+   local ky=(y.family or y.category).." / "..(y.variantName or "").." / "..(y.side or "")..y.id;return kx<ky
+  end)end
   local pages=math.max(1,math.ceil(#rows/8));page=math.clamp(page,1,pages)
-  local scroll=u:scroll(left,{Position=UDim2.fromOffset(6,y),Size=UDim2.new(1,-12,1,-y-66)})
+  local scroll=u:scroll(left,{Name="MotionCards",Position=UDim2.fromOffset(6,y),Size=UDim2.new(1,-12,1,-y-66)})
   for index=(page-1)*8+1,math.min(page*8,#rows)do local row=rows[index];local i=index-(page-1)*8
    local card=u:button(scroll,"",{Position=UDim2.fromOffset(0,(i-1)*68),Size=UDim2.new(1,-4,0,62)},function()action(function()
     if isMotion then c.clip=row.id;c.sequenceMode=false;c.time=0;inspectorTab=if c:variant()then "Pose"else "Motion";c.selectedKey="Contact"else c:load(row.id);inspectorTab="Mix"end
@@ -116,8 +140,8 @@ function View.mount(widget,plugin)
    local thumb=u:make("ViewportFrame",card,{Position=UDim2.fromOffset(4,4),Size=UDim2.fromOffset(44,54),BackgroundTransparency=1,Ambient=Color3.fromRGB(170,182,201),LightColor=Color3.new(1,1,1),BorderSizePixel=0})
    local tw=Instance.new("WorldModel");tw.Parent=thumb;local tr=Rig.new(tw);local tc=Instance.new("Camera");tc.CFrame=CFrame.lookAt(Vector3.new(5,4,-8),Vector3.new(0,2.6,0));tc.FieldOfView=40;tc.Parent=thumb;thumb.CurrentCamera=tc
    local profile=row.profile or c.preset;local asset=row.asset or c.library.assets.jab;local ok,pose=pcall(S.sample,profile,asset,.42,c.library);if ok then Rig.apply(tr,pose,Vector3.new(0,3,0),false,false)end;table.insert(thumbnailRigs,tr)
-   u:label(card,row.name,{Position=UDim2.fromOffset(54,5),Size=UDim2.new(1,-84,0,22),TextSize=12,Font=Enum.Font.BuilderSansBold})
-   u:label(card,row.desc,{Position=UDim2.fromOffset(54,29),Size=UDim2.new(1,-62,0,18),TextSize=10},"muted")
+   u:label(card,row.name,{Position=UDim2.fromOffset(54,5),Size=UDim2.new(1,-84,0,34),TextWrapped=true,TextSize=11,Font=Enum.Font.BuilderSansBold})
+   u:label(card,row.desc,{Position=UDim2.fromOffset(54,41),Size=UDim2.new(1,-62,0,16),TextSize=10},"muted")
    if isMotion then local add=u:button(card,"+",{Position=UDim2.new(1,-27,0,6),Size=UDim2.fromOffset(22,22)},function()action(function()c:addClip(row.id)end,"Added to sequence")end);u:tip(add,"Add "..row.name.." to the sequence")end
   end
   if #rows==0 then u:label(scroll,"No matching motions / saved profiles.",{Size=UDim2.new(1,-8,0,70),TextWrapped=true,TextSize=12},"muted")end
@@ -150,12 +174,15 @@ function View.mount(widget,plugin)
     u:slider(scroll,row[2],row[3],row[4],c.preset.motionDNA[row[1]],y,function(value)c:edit(function(p)p.motionDNA[row[1]]=value end,false);state()end,function()c:checkpoint()end);y+=46 end
 
   else
+   local selected=c:asset();local motionMeta=selected.authoredClip and {side=selected.side,attackingLimb=selected.attackingLimb,supportLimb=selected.supportLimb,stance=selected.stance,family=selected.family,variant=selected.variantName,bodyMechanics=selected.bodyMechanics,compatibleTransitions=selected.compatibleTransitions,mirrorSource=selected.mirrorSource,independentlyEditable=selected.independentlyEditable,detail=selected.metadata} or {}
    local text="Profile ID\n"..c.preset.id.."\n\nSource\n"..c.preset.metadata.sourceType.."\n\nRig\nR15 · anatomical joint controls\n\nExport\nNinjaDuel.MotionDefinitions.v1\nData only. No automatic apply.\n\nCharacter expression\n"..game:GetService("HttpService"):JSONEncode(c.preset.characterRules)
    u:label(scroll,text,{Size=UDim2.new(1,-8,0,260),TextSize=13,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
    u:label(scroll,"Character rules (JSON)",{Position=UDim2.fromOffset(0,266),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
    u:input(scroll,game:GetService("HttpService"):JSONEncode(c.preset.characterRules),{Position=UDim2.fromOffset(0,294),Size=UDim2.new(1,-8,0,74),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top},function(text)action(function()
     local rules=game:GetService("HttpService"):JSONDecode(text);local candidate=M.copy(c.preset);candidate.characterRules=rules;local valid,why=M.validate(candidate,c.library.presets);assert(valid,why);c:edit(function(p)p.characterRules=rules end)
    end,"Expression rules updated")end)
+   u:label(scroll,"Motion mechanics (read-only source)",{Position=UDim2.fromOffset(0,654),Size=UDim2.new(1,-8,0,24),Font=Enum.Font.BuilderSansMedium})
+   u:input(scroll,game:GetService("HttpService"):JSONEncode(motionMeta),{Name="MotionMetadata",Position=UDim2.fromOffset(0,682),Size=UDim2.new(1,-8,0,170),MultiLine=true,TextWrapped=true,TextYAlignment=Enum.TextYAlignment.Top})
    for i,key in {"idle","walk","run","dash","jump","land","wall"} do
     local y=382+(i-1)*38;u:button(scroll,key,{Position=UDim2.fromOffset(0,y),Size=UDim2.fromOffset(60,28)},function()c.clip=if key=="wall" then "wallrun" else key;c.sequenceMode=false;c.time=0;state();timeline:refresh()end)
     local id=c.preset.locomotionSet[key] or key;local button=u:button(scroll,(c:asset(id) and c:asset(id).name or id).." ▾",{Position=UDim2.fromOffset(70,y),Size=UDim2.new(1,-78,0,28)})

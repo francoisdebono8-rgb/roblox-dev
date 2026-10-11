@@ -41,7 +41,21 @@ function A.toLuau(value,depth)
  local rows={};for _,key in keys do table.insert(rows,"["..A.toLuau(key,depth+1).."]="..A.toLuau(value[key],depth+1)) end
  return "{"..table.concat(rows,",").."}"
 end
-function A.ninjaDefinitions(preset,lib)
+-- Preserve legacy exports; materialize only selected/referenced common clips.
+-- A growing catalogue must not overflow Studio's 2 MB JSON import budget.
+function A.exportIds(preset,lib,selected)
+ local ids={};for _,id in lib.assetOrder do if not lib.assets[id].authoredClip then ids[id]=true end end
+ local function include(id)
+  if not id or ids[id]then return end;local a=Edit.asset(preset,id,lib);if not a then return end;ids[id]=true
+  local v=Edit.variant(preset,a);if v then include(v.sourceAsset)end
+  if a.metadata then include(a.metadata.fromAsset);include(a.metadata.toAsset)end
+ end
+ include(selected);for _,id in preset.locomotionSet do include(id)end
+ for _,seq in preset.sequences do for _,block in seq.orderedClips do include(block.asset)end end
+ for id in preset.motionVariants or {}do include(id)end
+ local result={};for id in ids do table.insert(result,id)end;table.sort(result);return result
+end
+function A.ninjaDefinitions(preset,lib,selected)
  -- Same anatomy and 0..3 phase convention as VelmoraMotionEngine CLIPS.
  -- Export is deliberately inert; Claude chooses whether/where to use these tables.
  local function layerGait(p,layer,depth)
@@ -52,34 +66,43 @@ function A.ninjaDefinitions(preset,lib)
  local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
  local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
  local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
- local exportIds=table.clone(lib.assetOrder);for id in preset.motionVariants or {} do table.insert(exportIds,id)end;table.sort(exportIds)
+ local exportIds=A.exportIds(preset,lib,selected)
  for _,assetId in exportIds do
-  local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
+  local asset=Edit.asset(preset,assetId,lib);local actual=Sampler.resolveAsset(preset,asset,lib);local authored=actual.authoredClip or preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
+  if actual.authoredClip then local scale=Sampler.duration(preset,actual,lib)/actual.authoredClip.duration;timing={startup=timing.startup*scale,active=timing.active*scale,recovery=timing.recovery*scale}end
   local variant=Edit.variant(preset,actual)
   if variant then local markers=Edit.markers(variant);local length=Sampler.duration(preset,actual,lib);local contact=if variant.enabled then markers[3].time else markers[3].sourceTime;local recovery=if variant.enabled then markers[4].time else markers[4].sourceTime;timing={startup=contact*length,active=(recovery-contact)*length,recovery=(1-recovery)*length} end
   local duration=timing.startup+timing.active+timing.recovery;local keys={}
-  local samples={};for i=0,24 do samples[i/24]=true end
+  local samples={}
+  if actual.authoredClip and not variant then
+   for _,key in actual.authoredClip.keys do samples[key.at]=true end
+  else for i=0,24 do samples[i/24]=true end end
   if variant then for _,key in variant.poseOverrides do samples[key.time]=true end;local contact=Edit.markers(variant)[3].time;samples[contact+math.min(variant.timing.hold,Edit.markers(variant)[4].time-contact-.002)]=true end
   local times={};for t in samples do table.insert(times,t)end;table.sort(times)
   for _,t in times do
    local elapsed=t*duration
    local phase=if elapsed<=timing.startup then elapsed/timing.startup elseif elapsed<=timing.startup+timing.active then 1+(elapsed-timing.startup)/timing.active else 2+(elapsed-timing.startup-timing.active)/timing.recovery
-   table.insert(keys,{at=phase,ease="linear",pose=Sampler.mixedAnatomy(preset,asset,t,lib)})
+   local easing="linear"
+   if actual.authoredClip and not variant then for _,key in actual.authoredClip.keys do if key.at==t then easing=key.ease or "smooth";break end end end
+   table.insert(keys,{at=phase,ease=easing,pose=Sampler.mixedAnatomy(preset,asset,t,lib)})
   end
   local exportName=if asset.variant then asset.id else asset.grammar
   out.clips[exportName]=keys;out.timings[exportName]=M.copy(timing)
  end
  return out
 end
-function A.bundle(preset,lib)
+function A.bundle(preset,lib,selected)
  local graph=M.copy(lib.presets);graph[preset.id]=preset;local ok,why=M.validateGraph(graph);assert(ok,why)
  local required={};local function gather(p,depth)
   assert(depth<9,"Source depth");for _,layer in p.bodyLayers do
    if layer.source~="base" and not required[layer.source] then local source=assert(lib.presets[layer.source],"Missing source");required[source.id]=M.copy(source);gather(source,depth+1) end
   end
  end;gather(preset,0)
- return {format=A.Format,version=1,baseRig="R15",preset=M.copy(preset),sources=required,assets=M.copy(lib.assets),ninjaDuel=A.ninjaDefinitions(preset,lib),automaticApply=false}
+ local assets={}
+ local function collect(p,clip)for _,id in A.exportIds(p,lib,clip)do if lib.assets[id]then assets[id]=M.copy(lib.assets[id])end end end
+ collect(preset,selected);for _,p in required do collect(p,nil)end
+ return {format=A.Format,version=1,baseRig="R15",preset=M.copy(preset),sources=required,assets=assets,ninjaDuel=A.ninjaDefinitions(preset,lib,selected),automaticApply=false}
 end
 function A.export(preset,lib,parent,prepared)
  local bundle=prepared or A.bundle(preset,lib)

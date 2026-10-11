@@ -1,4 +1,5 @@
 local M=require(script.Parent.Model)
+local B=require(script.Parent.BilateralLibrary)
 local L={}
 L.Families={"Locomotion","Punches","Kicks","Knees","Elbows","Launchers","Dodges","Counters","Reactions","Transitions","Aerial","Wall","Grabs","Projectiles"}
 L.Blocks={
@@ -26,6 +27,7 @@ function L.new()
   p.stance=M.copy(template.stance);p.stance.weapon={roll=template.dna.asymmetry and 45 or 0};p.characterRules=M.copy(template.rules);p.metadata.description=template.note;p.metadata.sourceType="generated";p.metadata.startingProfile=true;p.metadata.dnaReference=M.copy(p.motionDNA)
   lib.presets[p.id]=p;table.insert(lib.order,p.id)
  end
+ B.populate(lib)
  return lib
 end
 function L.propose(preset)

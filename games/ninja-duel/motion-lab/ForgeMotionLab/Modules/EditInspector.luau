@@ -2,16 +2,17 @@ local E=require(script.Parent.MotionEdit)
 local S=require(script.Parent.Sampler)
 local Panel={}
 function Panel.mount(u,scroll,c,tab,action,state,menu)
- local v=c:variant()
+ local v=c:variant();local asset=c:asset()
  local function heading(text,y)u:label(scroll,text,{Position=UDim2.fromOffset(0,y),Size=UDim2.new(1,-4,0,24),Font=Enum.Font.BuilderSansBold,TextSize=14})end
  if not v then
   heading("Create a motion variant",0)
-  u:label(scroll,"Keep the original intact. Add pose corrections, timing and travel to a named variant.",{Position=UDim2.fromOffset(0,30),Size=UDim2.new(1,-4,0,66),TextWrapped=true,TextSize=12},"muted")
+  u:label(scroll,(if asset.authoredClip then asset.side.." · Attack: "..asset.attackingLimb.."\nBrace: "..asset.supportLimb.." · "..asset.stance.."\nCreate an editable copy; source stays intact."else "Keep the original intact. Add pose corrections, timing and travel to a named variant."),{Position=UDim2.fromOffset(0,30),Size=UDim2.new(1,-4,0,66),TextWrapped=true,TextSize=12},"muted")
   u:button(scroll,"Create Variant",{Position=UDim2.fromOffset(0,108),Size=UDim2.new(1,-4,0,32)},function()action(function()c:createVariant()end,"Variant created · source pinned as A")end,true)
   return
  end
  u:input(scroll,v.name,{Name="VariantName",Size=UDim2.new(1,-4,0,28)},function(text)action(function()assert(#text>0 and #text<=80,"Name: 1–80 characters");c:variantEdit(function(x)x.name=text end)end,"Variant renamed")end)
- u:label(scroll,"Source · "..c.library.assets[v.sourceAsset].name,{Position=UDim2.fromOffset(0,32),Size=UDim2.new(1,-4,0,20),TextSize=11},"muted")
+ local source=u:label(scroll,(if asset.authoredClip then asset.attackingLimb.." · brace "..asset.supportLimb else "Source · "..c.library.assets[v.sourceAsset].name),{Position=UDim2.fromOffset(0,32),Size=UDim2.new(1,-4,0,20),TextSize=11},"muted")
+ u:tip(source,c.library.assets[v.sourceAsset].name.." · "..(asset.attackingLimb or "Mixed body").." / support "..(asset.supportLimb or "profile").." · "..(asset.stance or "profile"))
  if tab=="Pose" then
   local key=E.key(v,c.selectedKey or "Contact");if not key then c.selectedKey="Contact";key=E.key(v,"Contact")end
   local part=c.selectedPart or "RightArm";c.selectedPart=part

@@ -85,7 +85,7 @@ function S.mirror(pose)
  return p
 end
 function S.duration(preset,asset,lib)
- local selected=S.resolveAsset(preset,asset,lib);local variant=Edit.variant(preset,selected);if variant then return if variant.enabled then variant.timing.duration/variant.timing.playbackSpeed else variant.sourceDuration end;local clip=preset.clips[selected.grammar]
+ local selected=S.resolveAsset(preset,asset,lib);local variant=Edit.variant(preset,selected);if variant then return if variant.enabled then variant.timing.duration/variant.timing.playbackSpeed else variant.sourceDuration end;local clip=selected.authoredClip or preset.clips[selected.grammar]
  return (if clip then clip.duration else selected.duration)/preset.motionDNA.cadence/(if selected.category=="Locomotion" then preset.motionDNA.strideFrequency*(preset.gait.cadence or 1) else 1)
 end
 function S.resolveAsset(preset,asset,lib)
@@ -93,7 +93,7 @@ function S.resolveAsset(preset,asset,lib)
  return if id and lib then Edit.asset(preset,id,lib) or asset else asset
 end
 function S.anatomy(preset,asset,t,mirror)
- local clip=preset.clips[asset.grammar];local pose=if clip then keysAt(clip.keys,t) else procedural(preset,asset,t)
+ local clip=asset.authoredClip or preset.clips[asset.grammar];local pose=if clip then keysAt(clip.keys,t) else procedural(preset,asset,t)
  pose.weapon=pose.weapon or preset.stance.weapon;pose=dnaPose(preset,pose,t,asset);return if mirror then S.mirror(pose) else pose
 end
 local additive={apparentWeight=true,groundedness=true,centerHeight=true,forwardPressure=true,lateralBias=true,asymmetry=true,guardOpenness=true,precision=true,acrobatics=true,aggression=true,looseness=true,headTracking=true}

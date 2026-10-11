@@ -118,3 +118,23 @@ layout minimum, thème et libération des connexions. Instances/schema Roblox r�
 Références de workflow étudiées : [Roblox Animation Editor](https://create.roblox.com/docs/animation/editor),
 [Blender Dope Sheet](https://docs.blender.org/manual/en/5.4/editors/dope_sheet/introduction.html),
 [Blender channels](https://docs.blender.org/manual/en/latest/editors/graph_editor/channels/introduction.html).
+
+### Bibliothèque commune bilatérale — 0.4.0
+
+182 nouveaux assets, indépendants des movesets du jeu : 126 frappes (21 familles × 3 variantes × 2 côtés), 32 états/déplacements, 24 ponts de transition. Aucun ancien asset supprimé. Les quatre profils Ninja Duel importés et quatre profils de départ restent inchangés.
+
+- Punches : Jab, Cross, Hook, Uppercut, Backfist, Palm.
+- Kicks : Front kick, Side kick, Roundhouse, Low kick, High kick, Back kick, Spinning kick, Axe kick, Sweep.
+- Knees : Front, Rising, Jumping. Elbows : Horizontal, Downward, Spinning.
+- Bilatéral aussi : strafe, lateral run, diagonal, pivot, stop, dodge, pursuit, recovery, lateral step, side counter, wall exit, launcher drive, landing brace.
+- Neutres : idle neutral/combat, walk forward/backward, run, sprint.
+
+Chaque famille offensive a Standard + deux variantes adaptées parmi Compact/Fast/Heavy/Long/Rotational/Stepping. Les variantes changent chambre, garde, profondeur d'appui, rotation, silhouette au contact, parcours des pieds et recovery ; pas seulement la vitesse. Les frappes partent d'une garde LeftLead commune : côté droit chargé à l'arrière, côté gauche plus direct. Les déplacements latéraux démarrent avec le pied du côté du déplacement. Les coups de jambe gardent une jambe d'appui IK et une jambe attaquante FK (deux FK pendant le jumping knee). Les tours complets utilisent un yaw continu et un spotting de tête borné.
+
+**Tester/comparer** : redémarrer Studio après `python3 games/ninja-duel/motion-lab/install.py`, Plugins → Forge Motion Lab → Motion Lab. New profile → Blank profile donne une expression commune neutre. Motions → source Common → Family (ex. Roundhouse), sélectionner un clip. `Old/new` fige le bloc historique correspondant en A ; B joue le nouveau. `Pin A`, puis `L/R` compare les deux côtés indépendants. Filtres catégorie/côté/source/famille ; les variantes sont regroupées par famille, variante, côté. `Mirror` reste un simple miroir de preview : utiliser `L/R` pour les assets réellement préparés.
+
+`Create Variant` → Pose : éditer membre, garde, bassin, torse, tête, pied d'appui (yaw/toe), center-height (Root Y), ainsi que chaque phase. Motion : amplitude, hip rotation, torso follow, extension, anticipation/follow-through, durée/contact/recovery, trajet du root. Ajouter des clés à la timeline pour éditer HipDrive ou Rechamber. Save conserve les corrections ; Export passe par NinjaDuelAdapter et produit des données inertes. Les exports conservent les clips historiques et n'ajoutent que les nouveaux clips sélectionnés/référencés, leurs sources et les extrémités des ponts, pour ne pas copier tout le catalogue à chaque export.
+
+Les 24 ponts couvrent jab→cross/hook, cross→kick, punch→knee, kick→punch/knee, sweep→follow-up, dodge→counter, pivot→strike, launcher→aerial pursuit, landing→attack, attack→guard. Advanced indique `fromAsset`, `toAsset`, phases d'entrée/sortie et changement de stance. Un pont commence au FollowThrough sortant et finit à l'Anticipation entrante (le root sortant est recentré) : c'est une brique à raccorder avec les blends existants, pas une nouvelle règle de cancel/combat.
+
+**Limites** : clips synthétiques anatomiques, pas de mocap ni contact physique avec un adversaire. Pas de résolution automatique du sol/mur ni contrainte de pied/COG à chaque frame ; les supports sont préparés aux clés et interpolés, le solver reste approximatif entre elles. Les courbes extrêmes/DNA/mix peuvent nécessiter des corrections artistiques. Les ponts sont des propositions de transfert de poids, sans garantie de raccord automatique à n'importe quel clip. Les boucles de preview recentrent leur root ; `Once` permet de lire toute la réception. Validation visuelle laissée à François : compilation, continuité des clés, schémas R15 et événements UI simulés ne prouvent pas le feel.

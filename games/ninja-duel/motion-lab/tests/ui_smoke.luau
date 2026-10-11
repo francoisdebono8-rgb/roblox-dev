@@ -100,6 +100,21 @@ click("Import selected export");local imported=c.preset.motionVariants[variantId
 c.clip=variantId;click("+ Block");assert(c.sequenceMode);dragObject("BlockResize_"..c.selectedBlock,30);tick();click("Edit motion");assert(not c.sequenceMode)
 click("New profile");click("Gaara starting profile");assert(c.preset.name=="Gaara study" and c.preset.motionDNA.amplitude==.35);tick()
 click("Clear A/B");assert(c.compare==nil);click("Ghosts ✓");tick()
+-- Bilateral browser/independent sides and edited common export on exact binary.
+click("New profile");click("Blank profile");click("Motions")
+object("CollectionFilter").Activated:Fire();click("Common bilateral")
+object("FamilyFilter").Activated:Fire();click("Roundhouse")
+local function selectMotion(text)
+ for _,o in widget:GetDescendants()do if o:IsA("TextLabel")and o.Text==text then o.Parent.Activated:Fire();return end end;error("Missing motion card: "..text)
+end
+selectMotion("Roundhouse · L · Rotational");assert(c.clip=="common_roundhouse_L_Rotational");tick()
+object("CompareLegacy").Activated:Fire();assert(c.compareClip=="roundhouse");tick()
+object("SwitchSide").Activated:Fire();assert(c.clip=="common_roundhouse_R_Rotational");tick()
+object("SideFilter").Activated:Fire();click("Right");assert(object("SideFilter").Text=="Right ▾")
+click("Create Variant");local bilateralId=c.clip;assert(c.selectedPart=="RightLeg" and c:variant());inputLabel("Hip raise","18");tick()
+click("Motion");inputNamed("Timing_Contact (s)","0.55");inputLabel("Hip rotation","1.15");tick();click("Save");click("Export")
+local bilateral=serde.decode("json",selection[1].MotionLabJSON.Value);assert(bilateral.preset.motionVariants[bilateralId].poseOverrides[3].parts.RightLeg.lift==18 and bilateral.ninjaDuel.clips[bilateralId] and bilateral.assets.common_roundhouse_R_Rotational)
+click("Import selected export");assert(c.preset.motionVariants[bilateralId]);click("Clear A/B");tick()
 widget:SetAttribute("TestWidth",780);widget:SetAttribute("TestHeight",600)
 local host=widget:GetChildren()[1];host:GetPropertyChangedSignal("AbsoluteSize"):Fire()
 widget.AbsoluteSize=r.Vector2.new(780,600)
@@ -107,6 +122,7 @@ local function reflow(parent)
  for _,child in parent:GetChildren()do if child:IsA("GuiObject")then child.AbsoluteSize=absoluteSize(child);child.AbsolutePosition=absolutePosition(child);reflow(child)end end
 end
 host.AbsoluteSize=absoluteSize(host);host:GetPropertyChangedSignal("AbsoluteSize"):Fire();reflow(widget)
+assert(object("MotionCards").AbsoluteSize.Y>=62,"Collapsed motion browser at minimum size")
 local rootButton=button("Root ✓");assert(rootButton.AbsolutePosition.X+rootButton.AbsoluteSize.X<=widget.AbsoluteSize.X)
 dark=false;studio.ThemeChanged:Fire();tick()
 for _,o in widget:GetDescendants()do if o:IsA("TextLabel")then assert(not o.Text:match("^Preview:"),o.Text)end end
@@ -115,5 +131,5 @@ for _,o in viewport:GetDescendants()do if o:IsA("Motor6D")then motorCount+=1;ass
 assert(motorCount==15)
 dispose()
 for _,s in signals do for _,pair in s.callbacks do assert(not pair.c.Connected,"Leaked UI connection")end end
-print("PASS exact binary UI: legacy workflows + variant pose/timing/amplitude, marker/block drags, ghosts, edited export/import, 780 layout and teardown (simulated Studio events)")
+print("PASS exact binary UI: legacy workflows + variant pose/timing/amplitude, marker/block drags, ghosts, edited export/import, bilateral filters / L-R / legacy comparison / edited export, 780 layout and teardown (simulated Studio events)")
 print("Registered and released UI connections: "..totalCallbacks)
