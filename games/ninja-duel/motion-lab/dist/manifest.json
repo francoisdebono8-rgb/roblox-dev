@@ -1,23 +1,23 @@
 {
   "plugin": "Forge Motion Lab",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "artifact": "ForgeMotionLab.rbxm",
-  "sha256": "7d59206b057b0649a1a26fdf3e90bbda29b8cd27a84e1bcee77c03d4a7c16fc5",
+  "sha256": "326ea377cbbc8e0ac73a1f51a6fdc2a5d0e034e0260228de019bda779eeb819b",
   "sources": {
     "ForgeMotionLab/Main.plugin.luau": "29f40087d6083a6163810d20296fe397239428b4fb9a49a6ee4b496dd974525b",
-    "ForgeMotionLab/Modules/Controller.luau": "175814ef08e0b9965e1cbd82b2218b000def06ab5304a31a8ccb3421dcf5ef44",
-    "ForgeMotionLab/Modules/Library.luau": "df384376293abec8b507e559f276083f1738fed3c1580ed20facf97bc55a6cf2",
-    "ForgeMotionLab/Modules/Model.luau": "fb376dd68d66ad07a3e1d281b2652406a6a276a7288c21b38df2969b5df621c2",
-    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "2d4b33b4e246b1da059d220c31752e38566196110a9877818ca57464cf83d1ab",
+    "ForgeMotionLab/Modules/Controller.luau": "2d54e256953e8deb33169c9333c9fc783712cc96c5388eecc315be23298249a0",
+    "ForgeMotionLab/Modules/Library.luau": "76d32a978547c3cec312846a00d06a6a0483ce1ad02bc3af8ba3ccd24abc9e33",
+    "ForgeMotionLab/Modules/Model.luau": "704be1a5656b548ef0d8b0504944d5da740c101a2ff59abf08ecc3e2ca08c3f9",
+    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "213c2f9f408acd085df3b0e8dfe89d2195b67eccfac9484e8b60792b81997872",
     "ForgeMotionLab/Modules/NinjaSources.luau": "4b75904c5e0230b36ac83975c8acb967fdb2b64908644f49b7aaee85ac90d605",
     "ForgeMotionLab/Modules/PoseSolver.luau": "5a08b3c83ab35fea8096bfb6d7fc5a053839128177154ecba2ca91d2bdb666a4",
-    "ForgeMotionLab/Modules/Rig.luau": "fe51e96e18c746c362b9b334080096e278a1795ca24afb9b2a7aa36c322e69eb",
-    "ForgeMotionLab/Modules/Sampler.luau": "4291bed66e3bbb13fc92e12c44ce57f9d964e8f5707584acbde6683682cd0972",
-    "ForgeMotionLab/Modules/Store.luau": "ffb863d89a5da28b604a04bb172a26e8e998c396d16c1861b14bf444d77c2470",
+    "ForgeMotionLab/Modules/Rig.luau": "15908c1c285a6159bd58fed36f7234d9c0e4d446b7f016e8a40e37009c9a98d0",
+    "ForgeMotionLab/Modules/Sampler.luau": "19e8574c6c37f7ca96cc72dfe3ba70b78324c1f051527f6e23bb0ada6ec82de8",
+    "ForgeMotionLab/Modules/Store.luau": "d14375e25b5e6e8f2448dc7b471ef675a326f65073e077274188ca67ae910ae7",
     "ForgeMotionLab/Modules/UI.luau": "c3630400cd9ad763248cbaa04cfecb11c9c41ce4cd853059ce617de910b40a68",
-    "ForgeMotionLab/Modules/View.luau": "396cfff6d28e88ccb512a702598adfa000d3f7fdff8df31eb73d013438e46ae3"
+    "ForgeMotionLab/Modules/View.luau": "d1c325a8898be6733fc6f1d4f266b1a9c6bee794d55587e0c84661c667f9ea02"
   },
-  "automatedTests": "PASS (14 rules/controller cases)",
+  "automatedTests": "PASS (15 rules/controller cases)",
   "exactBinaryUiSmoke": "PASS (simulated Studio events; native instance schemas)",
   "native": "NOT_RUN",
   "visualReview": "USER_PENDING",
@@ -27,5 +27,5 @@
     "src/Shared/Fighters.luau": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5",
     "src/Shared/Attacks.luau": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7"
   },
-  "sourceCommit": "a0711891d9ae5c3b90c2e94e38224db72b77a2e8"
+  "sourceTree": "a0711891d9ae5c3b90c2e94e38224db72b77a2e8"
 }

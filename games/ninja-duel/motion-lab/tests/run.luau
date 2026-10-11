@@ -60,7 +60,7 @@ test("mixed profiles survive JSON import and settings restart with source snapsh
  local c=C.create(plugin);local source=M.copy(c.library.presets.Mirage);source.id="external_upper";source.name="External upper body";c.library.presets[source.id]=source
  c.preset.bodyLayers.Torso.source=source.id
  local bundle=A.bundle(c.preset,c.library);local json=A.serialize(bundle)
- local fake={IsA=function(_,name)return name=="StringValue"end,Value=json}
+ local fake={FindFirstChild=function()return nil end,IsA=function(_,name)return name=="StringValue"end,Value=json}
  local original=c.library.presets.Mirage.name;c:import(fake);assert(c.library.presets.Mirage.name==original)
  c:save();local id=c.preset.id;local torso=c.preset.bodyLayers.Torso.source
  local reopened=C.create(plugin);assert(reopened.store.custom[id] and reopened.store.custom[torso]);assert(reopened.library.presets[torso].name==source.name)
@@ -99,5 +99,11 @@ test("DNA shapes selected source layers without mutating source profiles",functi
  local original=Sampler.sample(p,lib.assets.jab,.4,lib);local sourceDNA=lib.presets.Mirage.motionDNA.upperActivity
  p.motionDNA.upperActivity=.5;local tuned=Sampler.sample(p,lib.assets.jab,.4,lib)
  assert((original.Right.UpVector-tuned.Right.UpVector).Magnitude>.1 and lib.presets.Mirage.motionDNA.upperActivity==sourceDNA)
+end)
+test("template DNA is not applied twice when mixing the same template",function()
+ local p=M.copy(lib.presets.gaara);p.id="gaara_mix";local original=Sampler.sample(p,lib.assets.jab,.4,lib)
+ p.bodyLayers.RightArm.source="gaara";local same=Sampler.sample(p,lib.assets.jab,.4,lib)
+ assert((original.Right.UpVector-same.Right.UpVector).Magnitude<.0001)
+ p.motionDNA.amplitude=.7;local changed=Sampler.sample(p,lib.assets.jab,.4,lib);assert((original.Right.UpVector-changed.Right.UpVector).Magnitude>.01)
 end)
 print("Forge Motion Lab: "..count.." PASS")

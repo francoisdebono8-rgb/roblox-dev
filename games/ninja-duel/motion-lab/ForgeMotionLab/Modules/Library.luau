@@ -23,7 +23,7 @@ function L.new()
  end
  for _,template in L.Templates do
   local p=M.new(template.id,template.name);for k,v in template.dna do p.motionDNA[k]=v end
-  p.stance=M.copy(template.stance);p.stance.weapon={roll=template.dna.asymmetry and 45 or 0};p.characterRules=M.copy(template.rules);p.metadata.description=template.note;p.metadata.sourceType="generated";p.metadata.startingProfile=true
+  p.stance=M.copy(template.stance);p.stance.weapon={roll=template.dna.asymmetry and 45 or 0};p.characterRules=M.copy(template.rules);p.metadata.description=template.note;p.metadata.sourceType="generated";p.metadata.startingProfile=true;p.metadata.dnaReference=M.copy(p.motionDNA)
   lib.presets[p.id]=p;table.insert(lib.order,p.id)
  end
  return lib

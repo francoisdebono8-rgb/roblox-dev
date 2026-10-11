@@ -23,7 +23,7 @@ function M.safe(value)
 end
 function M.defaults() local d={};for _,row in M.DNA do d[row[1]]=row[5] end;return d end
 function M.new(id,name)
- local p={schemaVersion=1,id=id,name=name,baseRig="R15",bodyLayers={},motionDNA=M.defaults(),locomotionSet={},sequences={},characterRules={},blendValues={},metadata={sourceType="generated"},stance={weapon={roll=0}},gait={stride=1,cadence=1,arm=35,bob=1,guard=.2},clips={}}
+ local p={schemaVersion=1,id=id,name=name,baseRig="R15",bodyLayers={},motionDNA=M.defaults(),locomotionSet={},sequences={},characterRules={},blendValues={},metadata={sourceType="generated",dnaReference=M.defaults()},stance={weapon={roll=0}},gait={stride=1,cadence=1,arm=35,bob=1,guard=.2},clips={}}
  for _,layer in M.Layers do p.bodyLayers[layer]={source="base",strength=1,enabled=true} end
  return p
 end
@@ -46,6 +46,10 @@ function M.validate(p,known)
  end
  for _,key in {"stance","gait","clips","characterRules","locomotionSet","metadata"} do if type(p[key])~="table" then return false,"Missing "..key end end
  if type(p.metadata.sourceType)~="string" or #p.metadata.sourceType>100 then return false,"Invalid source metadata" end
+ if p.metadata.dnaReference then
+  if type(p.metadata.dnaReference)~="table" then return false,"Invalid DNA reference" end
+  for _,row in M.DNA do local v=p.metadata.dnaReference[row[1]];if not M.finite(v) or v<row[3] or v>row[4] then return false,"Invalid DNA reference" end end
+ end
  local function anatomy(pose)
   if type(pose)~="table" then return false end
   for key,part in pose do
@@ -95,6 +99,11 @@ function M.validateGraph(presets)
   visiting[id]=nil;if height>8 then return nil,"Body source depth" end;heights[id]=height;return height
  end
  for id in presets do local height,why=visit(id);if not height then return false,why end end
+ return true
+end
+function M.validateAssets(p,assets)
+ for _,seq in p.sequences do for _,block in seq.orderedClips do if not assets[block.asset] then return false,"Unknown motion block: "..block.asset end end end
+ for _,id in p.locomotionSet do if not assets[id] then return false,"Unknown locomotion block: "..id end end
  return true
 end
 function M.duration(sequence) local n=0;for _,clip in sequence.orderedClips do n+=clip.duration end;return n end

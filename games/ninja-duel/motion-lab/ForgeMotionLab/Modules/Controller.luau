@@ -38,14 +38,16 @@ end
 function C:save() self.store:save(self.preset);self.dirty=false end
 function C:pinCompare() self.compare=M.copy(self.preset);self.compareLibrary={presets=M.copy(self.library.presets),assets=self.library.assets};self.compareSequenceMode=self.sequenceMode;self.compareClip=self.clip end
 function C:export(parent)
+ local bundle=Adapter.bundle(self.preset,self.library);local payload=Adapter.serialize(bundle);assert(#payload<=2000000,"Export too large")
  local history=game:GetService("ChangeHistoryService");local recording=history:TryBeginRecording("ForgeMotionLabExport","Export Motion Lab profile")
  assert(recording,"Finish the current Studio operation first")
  local module
  local ok,result=pcall(function()
   local folder=parent:FindFirstChild("ForgeMotionLabExports");if not folder then folder=Instance.new("Folder");folder.Name="ForgeMotionLabExports";folder.Parent=parent end
-  module=Adapter.export(self.preset,self.library,folder)
-  local json=Instance.new("StringValue");json.Name=module.Name.."_JSON";json.Value=Adapter.serialize(Adapter.bundle(self.preset,self.library));json.Parent=folder
-  module:SetAttribute("ForgeMotionLabJSON",json.Value);return module
+  assert(folder:IsA("Folder"),"ForgeMotionLabExports name occupied by another instance")
+  module=Adapter.export(self.preset,self.library,folder,bundle)
+  local json=Instance.new("StringValue");json.Name="MotionLabJSON";json.Value=payload;json.Parent=module
+  module:SetAttribute("ForgeMotionLabFormat",Adapter.Format);return module
  end)
  history:FinishRecording(recording,if ok then Enum.FinishRecordingOperation.Commit else Enum.FinishRecordingOperation.Cancel)
  assert(ok,result);return result

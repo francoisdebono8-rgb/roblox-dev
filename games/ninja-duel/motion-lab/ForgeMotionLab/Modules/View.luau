@@ -30,7 +30,7 @@ function View.mount(widget,plugin)
  local showGrid=true;local showRoot=true;local mode="front";local yaw=math.pi;local pitch=.16;local distance=12;local drag=nil;local last=nil
  local function updateCamera()camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(yaw)*distance,2.2+math.sin(pitch)*distance,math.cos(yaw)*distance),Vector3.new(0,2.2,0))end;updateCamera()
  local refresh,refreshLibrary,refreshInspector,refreshTimeline
- local function state()nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "Unsaved changes" else "Saved preset";title.Text=if c.sequenceMode then c:sequence().name else Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).name;subtitle.Text=if c.compare then "A: pinned reference    B: current edit" else "Live R15 · "..(if c.preset.metadata.sourceType=="ninja-duel" then "authored source" else "procedural profile")end
+ local function state()nameBox.Text=c.preset.name;dirty.Text=if c.dirty then "Unsaved changes" else "Saved preset";title.Text=if c.sequenceMode then c:sequence().name else Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).name;subtitle.Text=if c.compare then "A: pinned reference    B: current edit" else "Live R15 · "..(if c.preset.clips[Sampler.resolveAsset(c.preset,c.library.assets[c.clip],c.library).grammar] then "authored clip / editable mix" else "procedural starting motion")end
  local function action(fn,message)
   local ok,err=pcall(fn);status.Text=if ok then message or "Updated" else tostring(err):gsub("^.-:%d+: ","");state();if ok and refresh then refresh() end
  end
@@ -167,6 +167,7 @@ function View.mount(widget,plugin)
  local debt=0
  ui:connect(game:GetService("RunService").RenderStepped,function(dt)
   if not alive or not widget.Enabled then return end
+  play.Text=if c.playing then "Pause" else "Play"
   if drag then local now=widget:GetRelativeMousePosition();local diff=now-last;last=now;yaw-=diff.X*.009;pitch=math.clamp(pitch+diff.Y*.006,-.15,.8);updateCamera()end
   debt+=dt;if debt<1/30 then return end;local tick=math.min(debt,.1);debt=0
   local total=if c.sequenceMode then M.duration(c:sequence())/c.preset.motionDNA.recoverySpeed else Sampler.duration(c.preset,c.library.assets[c.clip],c.library)
@@ -179,9 +180,13 @@ function View.mount(widget,plugin)
    local clip=if reference then c.compareClip else c.clip
    if sequenceMode then
     local seq=p.sequences[1] or {orderedClips={}};local duration=math.max(.1,M.duration(seq)/p.motionDNA.recoverySpeed)
-    return Sampler.sequence(p,seq,(c.time/total)*duration,lib,c.mirror)
+    local current=Sampler.sequence(p,seq,(c.time/total)*duration,lib,c.mirror)
+    if c.loop and c.time>total-.08 then return Sampler.blendPose(current,Sampler.sequence(p,seq,0,lib,c.mirror),math.clamp((c.time-total+.08)/.08,0,1))end
+    return current
    end
-   return Sampler.sample(p,lib.assets[clip],math.clamp(c.time/total,0,1),lib,c.mirror)
+   local current=Sampler.sample(p,lib.assets[clip],math.clamp(c.time/total,0,1),lib,c.mirror)
+   if c.loop and c.time>total-.08 then return Sampler.blendPose(current,Sampler.sample(p,lib.assets[clip],0,lib,c.mirror),math.clamp((c.time-total+.08)/.08,0,1))end
+   return current
   end
   local ok,err=pcall(function()
    local current=pose(c.preset)

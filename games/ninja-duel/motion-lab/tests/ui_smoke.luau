@@ -67,7 +67,7 @@ click("DNA");click("Generate movement set");assert(#c:sequence().orderedClips==3
 click("Pin A");local pinned=c.compare.id;click("Mirror");assert(c.mirror)
 click("Pause");assert(not c.playing);click("Play");tick()
 click("Save");assert(c.store.custom[c.preset.id])
-click("Export");assert(selection[1]:IsA("ModuleScript"));local json=selection[1]:GetAttribute("ForgeMotionLabJSON");assert(serde.decode("json",json).ninjaDuel.clips.Light1)
+click("Export");assert(selection[1]:IsA("ModuleScript"));local json=selection[1].MotionLabJSON.Value;assert(serde.decode("json",json).ninjaDuel.clips.Light1)
 click("Import selected export");assert(c.dirty and c.compare.id==pinned);click("Save")
 click("Advanced");click("idle");assert(c.clip=="idle");tick()
 click("Library");click("+ Idle");assert(c.sequenceMode);tick()

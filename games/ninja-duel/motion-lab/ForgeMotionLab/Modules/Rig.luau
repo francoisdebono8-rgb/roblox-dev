@@ -35,6 +35,6 @@ end
 function R.apply(rig,pose,origin,showRoot,showWeapon)
  rig.root.CFrame=CFrame.new(origin+(if showRoot then pose.motion or Vector3.zero else Vector3.zero))
  for _,key in rig.order do local m=rig.joints[key];local transform=pose[key] or CFrame.identity;m.Transform=transform;m.Part1.CFrame=m.Part0.CFrame*m.C0*transform*m.C1:Inverse() end
- rig.weapon.CFrame=rig.parts.RightHand.CFrame*CFrame.new(0,-.1,-.55)*(pose.Weapon or CFrame.identity);rig.weapon.Transparency=if showWeapon then 0 else 1
+ rig.weapon.CFrame=rig.parts[pose.weaponHand or "RightHand"].CFrame*CFrame.new(0,-.1,-.55)*(pose.Weapon or CFrame.identity);rig.weapon.Transparency=if showWeapon then 0 else 1
 end
 return R

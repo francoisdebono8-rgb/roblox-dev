@@ -18,6 +18,14 @@ function A.import(data,lib)
   end
   lib.presets[id]=p;index+=1;table.insert(lib.order,index,id)
  end
+ local mapped={};for _,asset in lib.assets do mapped[asset.grammar]=true end
+ local names={};for _,profile in lib.presets do for name in profile.clips do if not mapped[name] then mapped[name]=true;table.insert(names,name)end end end;table.sort(names)
+ for _,name in names do
+  local category=if name:match("^Air") then "Aerial" elseif name:match("^Wall") then "Wall" elseif name:find("Sweep") or name:find("Kick") then "Kicks" elseif name:match("^Throw") then "Grabs" elseif name:find("Step") then "Transitions" elseif name=="Riposte" then "Counters" else "Punches"
+  local id="ninja_"..name;local duration=.65;for _,p in lib.presets do if p.clips[name] then duration=p.clips[name].duration;break end end
+  lib.assets[id]={id=id,name=name:gsub("(%l)(%u)","%1 %2"),category=category,grammar=name,tags={category,"NinjaDuel"},compatibleBodyLayers=M.copy(M.Layers),defaultSpeed=1,duration=duration,contactMarkers={},rootPolicy="presentation",styleTags={"authored"},sourceType="ninja-duel",proceduralDefinition={kind=name}}
+  table.insert(lib.assetOrder,id)
+ end
  return lib
 end
 function A.serialize(bundle)
@@ -35,7 +43,14 @@ end
 function A.ninjaDefinitions(preset,lib)
  -- Same anatomy and 0..3 phase convention as VelmoraMotionEngine CLIPS.
  -- Export is deliberately inert; Claude chooses whether/where to use these tables.
- local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=M.copy(preset.gait),clips={},timings={},generated=true,automaticApply=false}
+ local function layerGait(p,layer,depth)
+  assert(depth<9,"Source depth");local result=M.copy(p.gait);local spec=p.bodyLayers[layer]
+  if spec.enabled and spec.source~="base" then local other=layerGait(lib.presets[spec.source],layer,depth+1);for key,value in other do result[key]=(result[key] or value)+(value-(result[key] or value))*spec.strength end end
+  return result
+ end
+ local lower=layerGait(preset,"Legs",0);local upperLeft=layerGait(preset,"LeftArm",0);local upperRight=layerGait(preset,"RightArm",0);local hips=layerGait(preset,"Hips",0)
+ local gait=M.copy(preset.gait);gait.stride=(lower.stride or 1)*preset.motionDNA.stepLength*preset.motionDNA.lowerActivity;gait.cadence=(lower.cadence or 1)*preset.motionDNA.cadence*preset.motionDNA.strideFrequency;gait.arm=((upperLeft.arm or 35)+(upperRight.arm or 35))*.5*preset.motionDNA.upperActivity;gait.bob=hips.bob or 1
+ local out={id=preset.id,stance=Sampler.mixedAnatomy(preset,lib.assets.idle,0,lib),gait=gait,clips={},timings={},generated=true,automaticApply=false}
  for _,assetId in lib.assetOrder do
   local asset=lib.assets[assetId];local actual=Sampler.resolveAsset(preset,asset,lib);local authored=preset.clips[actual.grammar]
   local timing=if authored and authored.timing then authored.timing else {startup=asset.duration*.32,active=asset.duration*.2,recovery=asset.duration*.48}
@@ -58,20 +73,22 @@ function A.bundle(preset,lib)
  end;gather(preset,0)
  return {format=A.Format,version=1,baseRig="R15",preset=M.copy(preset),sources=required,assets=M.copy(lib.assets),ninjaDuel=A.ninjaDefinitions(preset,lib),automaticApply=false}
 end
-function A.export(preset,lib,parent)
- local bundle=A.bundle(preset,lib)
+function A.export(preset,lib,parent,prepared)
+ local bundle=prepared or A.bundle(preset,lib)
  local module=Instance.new("ModuleScript");module.Name=preset.name:gsub("[^%w_]","_").."_MotionProfile"
+ local name=module.Name;local suffix=1;while parent:FindFirstChild(module.Name) do suffix+=1;module.Name=name.."_"..suffix end
  module.Source="-- Forge Motion Lab: data only; no automatic gameplay integration.\nreturn "..A.toLuau(bundle)
  module.Parent=parent;return module,bundle
 end
 function A.read(instance,lib)
  -- JSON only; never evaluates a selected ModuleScript or foreign Source.
- local value=if instance:IsA("StringValue") then instance.Value else instance:GetAttribute("ForgeMotionLabJSON")
+ local json=instance:FindFirstChild("MotionLabJSON")
+ local value=if instance:IsA("StringValue") then instance.Value elseif json and json:IsA("StringValue") then json.Value else instance:GetAttribute("ForgeMotionLabJSON")
  assert(type(value)=="string" and #value<=2000000,"Select a Motion Lab JSON export")
  local data=game:GetService("HttpService"):JSONDecode(value);assert(M.safe(data) and data.format==A.Format and data.version==1,"Invalid export format")
  local all=M.copy(lib.presets);for id,p in data.sources or {} do all[id]=p end;all[data.preset.id]=data.preset
  local ok,why=M.validateGraph(all);assert(ok,why)
- for _,clip in data.preset.sequences do for _,block in clip.orderedClips do assert(lib.assets[block.asset],"Unknown motion block") end end
+ for _,p in all do local valid,reason=M.validateAssets(p,lib.assets);assert(valid,reason) end
  return M.copy(data.preset),M.copy(data.sources or {})
 end
 return A

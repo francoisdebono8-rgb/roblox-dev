@@ -12,12 +12,14 @@ function Store.new(plugin,library)
   local graph=M.copy(library.presets);for id,p in data.presets do if self.builtins[id] then self.writable=false;self.notice="Saved library collides with bundled sources; data preserved.";return self end;graph[id]=p end
   local valid,why=M.validateGraph(graph)
   if not valid then self.writable=false;self.notice=why..". Existing settings preserved.";return self end
+  for _,p in data.presets do local good,reason=M.validateAssets(p,library.assets);if not good then self.writable=false;self.notice=reason..". Saved data preserved.";return self end end
   self.custom=M.copy(data.presets);for id,p in self.custom do library.presets[id]=M.copy(p);table.insert(library.order,id) end
  end
  return self
 end
 function Store:save(preset)
  assert(self.writable,self.notice)
+ local valid,reason=M.validateAssets(preset,self.library.assets);assert(valid,reason)
  local all=M.copy(self.library.presets);all[preset.id]=preset;local ok,why=M.validateGraph(all);assert(ok,why)
  assert(not self.builtins[preset.id],"Duplicate a bundled profile before saving")
  local nextCustom=M.copy(self.custom);nextCustom[preset.id]=M.copy(preset)
