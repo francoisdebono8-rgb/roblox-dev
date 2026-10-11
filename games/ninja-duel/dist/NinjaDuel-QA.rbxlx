@@ -1607,7 +1607,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6f74175d049e8d7654df56da6e9986414d627b72692caf2c4340dbfaad9f10e7</string>
+          <string name="Value">86329a5fa6fc73765443a7c18f093f4ec60626150735528730538e3498fdd8d7</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -9826,7 +9826,7 @@ function UI.new(parent,send)
 	self.comboTheirs=counter("right")
 	self.techniqueButtons={}
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
+		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-122),UDim2.fromOffset(170,58),palette.ink,.2)
 		corner(box,8)
 		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(154,18),14,palette.gold,TITLE_FONT)
 		local title=text(box,"",UDim2.fromOffset(8,22),UDim2.fromOffset(154,20),18,palette.paper,TITLE_FONT)
