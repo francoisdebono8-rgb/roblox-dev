@@ -511,3 +511,34 @@ Forge Motion Lab is successful when Claude can:
 9. refine the result later without being trapped by the plugin's first choices.
 
 The plugin should accelerate creation; it must never become a creative cage.
+
+---
+
+# 11. Execution mode — code first, minimal visual interruption
+
+This mission must be executed primarily through code and repository work.
+
+The user does **not** want Codex repeatedly opening Roblox Studio, taking over the screen, running long visual inspection loops, or stopping to show intermediate UI states.
+
+During implementation:
+- prefer editing code, configs, tests and plugin assets directly,
+- keep Roblox Studio interaction to the strict minimum required to avoid obvious breakage,
+- do not perform repeated visual QA passes during V1/V2/final unless a technical blocker makes them necessary,
+- do not pause after each visual milestone for user approval,
+- do not occupy the user's full screen with Studio for long periods,
+- do not spend time polishing by visual iteration beyond what can reasonably be inferred from the existing mockup/spec,
+- use automated/static checks where possible,
+- preserve the ability to test later in Studio.
+
+The expected workflow is:
+
+`Codex builds mostly in code -> Codex performs only minimal sanity checks -> Codex commits -> user opens/tests the plugin -> user reports what is wrong -> ChatGPT/Claude prepares the targeted correction.`
+
+The user's manual review is the main visual QA gate for this task.
+
+At the end, report clearly:
+- final commit SHA,
+- files created/changed,
+- what is definitely implemented,
+- what remains mocked/approximate,
+- exact steps for the user to open and test Forge Motion Lab in Studio.
