@@ -2,81 +2,137 @@ local CAS=game:GetService("ContextActionService")
 local UIS=game:GetService("UserInputService")
 local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local Input={};Input.__index=Input
--- One binding per semantic action, keyboard and gamepad declared together. The
--- keyboard side keeps combat on the WASD home row; the gamepad side is unchanged.
-local KEYBOARD, GAMEPAD = Controls.Keyboard, Controls.Gamepad
-local function key(keyCode) return {keyCode} end
+local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
+local function key(code) return {code} end
 local function both(action) return {KEYBOARD[action],GAMEPAD[action]} end
+local function padObject(object)
+ return Controls.isGamepad(object.UserInputType) or object.KeyCode.Name:match("^Button")~=nil
+  or object.KeyCode.Name:match("^DPad")~=nil or object.KeyCode.Name:match("^Thumbstick")~=nil
+end
+local function released(state) return state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
-  sprinting=false,modifier=false,camera=camera,pad=false},Input)
+  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
  local function bind(name,keys,callback)
-  local list={}
-  for _,input in keys do if input then table.insert(list,input) end end
+  local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
-   if UIS:GetFocusedTextBox() then return Enum.ContextActionResult.Pass end
-   if getState().phase~="Duel" then return Enum.ContextActionResult.Pass end
+   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then return Enum.ContextActionResult.Pass end
+   local stick=object.KeyCode==Enum.KeyCode.Thumbstick1 or object.KeyCode==Enum.KeyCode.Thumbstick2
+   if not released(state) and (not stick or object.Position.Magnitude>.15) then self.pad=padObject(object) end
    callback(state,object)
    return Enum.ContextActionResult.Sink
   end,false,3000,table.unpack(list))
  end
  local function begin(state) return state==Enum.UserInputState.Begin end
- for _,input in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
-  bind(input.Name,key(input),function(state) self.keys[input.Name]=begin(state) end)
+ -- Schmitt thresholds: an analog trigger crossing its press threshold emits
+ -- once. Change events while it is held never become repeated attacks.
+ local function pressed(state,object)
+  local code=object.KeyCode
+  local id=if object.UserInputType==Enum.UserInputType.MouseButton1 or object.UserInputType==Enum.UserInputType.MouseButton2 then object.UserInputType.Name else code.Name
+  if code==GAMEPAD.Grab or code==GAMEPAD.Tool then
+   if released(state) or object.Position.Z<=.25 then self.held[id]=nil;return false end
+   if object.Position.Z>=.55 and not self.held[id] then self.held[id]=true;return true end
+   return false
+  end
+  if released(state) then self.held[id]=nil;return false end
+  if begin(state) and not self.held[id] then self.held[id]=true;return true end
+  return false
+ end
+ for _,code in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
+  bind(code.Name,key(code),function(state)
+   if begin(state) then self.keys[code.Name]=true elseif released(state) then self.keys[code.Name]=nil end
+  end)
  end
  bind("MoveStick",key(Enum.KeyCode.Thumbstick1),function(state,obj)
-  self.stick=if state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
+  self.stick=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
  end)
  bind("LookStick",key(Enum.KeyCode.Thumbstick2),function(state,obj)
-  self.look=if state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
+  self.look=if released(state) then Vector2.zero else Vector2.new(obj.Position.X,obj.Position.Y)
   camera.look=self.look
  end)
- -- Gamepad modifier only: RB + face button selects a technique.
- bind("Modifier",key(GAMEPAD.Modifier),function(state) self.modifier=begin(state) end)
- local function face(state,normal,slot)
-  if begin(state) then send(if self.modifier then "Technique"..slot else normal) end
- end
- bind("Light",both("Light"),function(state) face(state,"Attack",2) end)
- bind("Heavy",both("Heavy"),function(state) face(state,"Heavy",3) end)
- bind("Dodge",both("Dodge"),function(state) face(state,"Dodge",4) end)
- bind("Jump",both("Jump"),function(state)
-  if begin(state) then
-   local human=getState().human
-   -- The contextual chase stays on jump: A on a controller, SPACE on the keyboard.
-   face(state,if human and human.pursuit>0 then "Pursuit" else "Jump",1)
-  elseif state==Enum.UserInputState.End then send("JumpOff") end
+ bind("Modifier",key(GAMEPAD.Modifier),function(state)
+  if begin(state) then self.modifier=true elseif released(state) then self.modifier=false end
  end)
- bind("Guard",both("Guard"),function(state) send(if begin(state) then "Guard" else "GuardOff") end)
- bind("Tool",both("Tool"),function(state) if begin(state) then send("Tool") end end)
- bind("Grab",both("Grab"),function(state) if begin(state) then send(if self.modifier then "Feint" else "Grab") end end)
- bind("Lock",both("Lock"),function(state) if begin(state) then toggleLock() end end)
- bind("Sprint",both("Sprint"),function(state,object)
-  if object and object.KeyCode==GAMEPAD.Sprint then
-   if begin(state) then self.sprinting=not self.sprinting end
-  else self.sprinting=begin(state) end
- end)
- -- Keyboard-only actions.
- bind("Substitute",key(KEYBOARD.Substitute),function(state) if begin(state) then send("Substitute") end end)
- bind("WallDetach",key(KEYBOARD.WallDetach),function(state) if begin(state) then send("WallDetach") end end)
- bind("FeintKey",key(KEYBOARD.Feint),function(state) if begin(state) then send("Feint") end end)
- bind("PursuitKey",key(KEYBOARD.Pursuit),function(state) if begin(state) then send("Pursuit") end end)
- bind("Technique5",both("Technique5"),function(state) if begin(state) then send("Technique5") end end)
- bind("Awaken",both("Awaken"),function(state) if begin(state) then send("Awaken") end end)
- bind("RushPad",key(GAMEPAD.Rush),function(state) if begin(state) then send("Pursuit") end end)
- bind("Skip",both("Skip"),function(state) if begin(state) and getState().tutorial then send("TutorialSkip") end end)
- for index,input in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
-  bind("Technique"..index,key(input),function(state) if begin(state) then send("Technique"..index) end end)
+ local function face(state,object,normal,slot)
+  if pressed(state,object) then
+   local modified=padObject(object) and self.modifier
+   send(if modified then "Technique"..slot else normal)
+   return not modified
+  end
+  return false
  end
- UIS.WindowFocusReleased:Connect(function() self:reset();send("GuardOff");send("Move",Vector3.zero) end)
+ bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
+ bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",3) end)
+ bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",4) end)
+ bind("Jump",both("Jump"),function(state,obj)
+  local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
+  if released(state) then
+   if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
+   pressed(state,obj)
+  else
+   local h=getState().human;local action=if h and h.pursuit>0 then "Pursuit" else "Jump"
+   if face(state,obj,action,1) and action=="Jump" then self.jumps[id]=true end
+  end
+ end)
+ bind("Guard",both("Guard"),function(state,obj)
+  local id=obj.KeyCode.Name
+  if released(state) then
+   if self.guards[id] then
+    self.guards[id]=nil
+    if next(self.guards)==nil then send("GuardOff") end
+   end
+   pressed(state,obj)
+  elseif pressed(state,obj) then
+   if padObject(obj) and self.modifier then send("WallDetach")
+   else
+    local already=next(self.guards)~=nil;self.guards[id]=true
+    if not already then send("Guard") end
+   end
+  end
+ end)
+ bind("Tool",both("Tool"),function(state,obj) if pressed(state,obj) then send("Tool") end end)
+ bind("Grab",both("Grab"),function(state,obj)
+  if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
+ end)
+ bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
+ bind("Sprint",both("Sprint"),function(state,obj)
+  if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
+  elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
+ end)
+ for _,action in {"Substitute","WallDetach","Feint","Pursuit"} do
+  bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
+ end
+ for _,action in {"Technique5","Awaken"} do
+  bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
+ end
+ bind("RushPad",key(GAMEPAD.Rush),function(state,obj) if pressed(state,obj) then send("Pursuit") end end)
+ bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
+ bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
+ for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
+  bind("Technique"..index,key(code),function(state,obj) if pressed(state,obj) then send("Technique"..index) end end)
+ end
+ local function blur()
+  local jumping=next(self.jumps)~=nil
+  self:reset();send("GuardOff");if jumping then send("JumpOff") end;send("Move",Vector3.zero)
+ end
+ UIS.WindowFocusReleased:Connect(blur)
+ UIS.TextBoxFocused:Connect(blur)
+ UIS.GamepadDisconnected:Connect(function() if self.pad then blur();self.pad=false end end)
+ UIS.LastInputTypeChanged:Connect(function(kind)
+  -- Moving the cursor while using the pad must not erase the PS5 prompts.
+  if kind~=Enum.UserInputType.MouseMovement then self.pad=Controls.isGamepad(kind) end
+ end)
  return self
 end
 function Input:reset()
- table.clear(self.keys);self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
+ table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
+ self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
 end
 function Input:direction(camera)
- local stick=if self.stick.Magnitude>.15 then self.stick else Vector2.zero
- local x=stick.X+(if self.keys.D then 1 else 0)-(if self.keys.A then 1 else 0)
- local z=stick.Y+(if self.keys.W then 1 else 0)-(if self.keys.S then 1 else 0)
+ -- The current device owns movement; a resting controller cannot steer WASD.
+ local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
+ local x=stick.X+(if self.keys.D and not self.pad then 1 else 0)-(if self.keys.A and not self.pad then 1 else 0)
+ local z=stick.Y+(if self.keys.W and not self.pad then 1 else 0)-(if self.keys.S and not self.pad then 1 else 0)
  local look=camera.CFrame.LookVector*Vector3.new(1,0,1)
  if look.Magnitude<.01 then look=-Vector3.zAxis end
  local right=Vector3.new(-look.Unit.Z,0,look.Unit.X)

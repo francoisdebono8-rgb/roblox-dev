@@ -59,6 +59,7 @@ local bindings={}
 local inputServices={
  ContextActionService={BindActionAtPriority=function(_,name,callback,_,_,...) bindings[name]={callback=callback,keys={...}} end},
  UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},
+  TextBoxFocused={Connect=function() end},GamepadDisconnected={Connect=function() end},LastInputTypeChanged={Connect=function() end},
   InputChanged={Connect=function() end},GetLastInputType=function() return roblox.Enum.UserInputType.Keyboard end,
   IsMouseButtonPressed=function() return false end},
 }
@@ -222,32 +223,32 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
   local isMouse=key:match("^Mouse")
   local code=if isMouse then roblox.Enum.UserInputType[key] else roblox.Enum.KeyCode[key]
   return bindings["Ninja"..name].callback("Ninja"..name,mode or roblox.Enum.UserInputState.Begin,
-   {KeyCode=code,UserInputType=if isMouse then code else roblox.Enum.UserInputType.Keyboard,Position=position or V.zero})
+   {KeyCode=code,UserInputType=if isMouse then code else roblox.Enum.UserInputType.Keyboard,Position=position or (if key=="ButtonL2" or key=="ButtonR2" then V.new(0,0,1) else V.zero)})
  end
  press("Light","ButtonX");assert(sent[#sent]=="Attack")
  press("Heavy","ButtonY");assert(sent[#sent]=="Heavy")
  press("Modifier","ButtonR1");press("Jump","ButtonA");assert(sent[#sent]=="Technique1")
- press("Light","ButtonX");assert(sent[#sent]=="Technique2")
- press("Heavy","ButtonY");assert(sent[#sent]=="Technique3")
+ press("Light","ButtonX",roblox.Enum.UserInputState.End);press("Light","ButtonX");assert(sent[#sent]=="Technique2")
+ press("Heavy","ButtonY",roblox.Enum.UserInputState.End);press("Heavy","ButtonY");assert(sent[#sent]=="Technique3")
  press("Dodge","ButtonB");assert(sent[#sent]=="Technique4")
  press("Technique5","DPadUp");assert(sent[#sent]=="Technique5")
  press("Modifier","ButtonR1",roblox.Enum.UserInputState.End)
- state.human.pursuit=1;press("Jump","ButtonA");assert(sent[#sent]=="Pursuit")
+ state.human.pursuit=1;press("Jump","ButtonA",roblox.Enum.UserInputState.End);press("Jump","ButtonA");assert(sent[#sent]=="Pursuit")
  press("Grab","ButtonL2");assert(sent[#sent]=="Grab")
  press("Guard","ButtonL1");assert(sent[#sent]=="Guard")
  press("Guard","ButtonL1",roblox.Enum.UserInputState.End);assert(sent[#sent]=="GuardOff")
  press("Tool","ButtonR2");assert(sent[#sent]=="Tool")
  press("Sprint","ButtonL3");assert(input.sprinting)
  -- Keyboard side of the remap: the physical keys must reach the same semantics.
- press("Dodge","Space");assert(sent[#sent]=="Dodge","SPACE is not dodge")
+ press("Dodge","Q");assert(sent[#sent]=="Dodge","Q is not dodge")
  press("Guard","F");assert(sent[#sent]=="Guard","F is not guard")
  press("Guard","F",roblox.Enum.UserInputState.End);assert(sent[#sent]=="GuardOff")
- press("Grab","Q");assert(sent[#sent]=="Grab","Q is not grab")
+ press("Grab","V");assert(sent[#sent]=="Grab","V is not grab")
  press("Tool","R");assert(sent[#sent]=="Tool","R is not tool")
  press("PursuitKey","E");assert(sent[#sent]=="Pursuit","E is not pursuit")
- press("Substitute","X");assert(sent[#sent]=="Substitute","X is not substitution")
+ press("SubstituteKey","X");assert(sent[#sent]=="Substitute","X is not substitution")
  state.human.pursuit=0
- press("Jump","V");assert(sent[#sent]=="Jump","V is not jump")
+ press("Jump","Space");assert(sent[#sent]=="Jump","SPACE is not jump")
  press("Heavy","MouseButton2");assert(sent[#sent]=="Heavy","RMB is not heavy")
  press("Light","MouseButton1");assert(sent[#sent]=="Attack","LMB is not light")
  press("MoveStick","Thumbstick1",roblox.Enum.UserInputState.Change,V.new(0,1,0))

@@ -3,6 +3,7 @@
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
+local MoveGraphs=require(Shared.MoveGraphs)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -178,9 +179,9 @@ function UI.new(parent,send)
 	for i=1,5 do
 		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-96),UDim2.fromOffset(170,58),palette.ink,.2)
 		corner(box,8)
-		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(40,30),26,palette.gold,TITLE_FONT)
-		local title=text(box,"",UDim2.fromOffset(40,8),UDim2.fromOffset(126,22),18,palette.paper,TITLE_FONT)
-		local status=text(box,"",UDim2.fromOffset(40,32),UDim2.fromOffset(126,18),11,palette.muted)
+		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(154,18),14,palette.gold,TITLE_FONT)
+		local title=text(box,"",UDim2.fromOffset(8,22),UDim2.fromOffset(154,20),18,palette.paper,TITLE_FONT)
+		local status=text(box,"",UDim2.fromOffset(8,43),UDim2.fromOffset(154,12),11,palette.muted)
 		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
@@ -256,11 +257,11 @@ local function subtitle(actor)
 	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
 function UI:render(data)
-	local pad=UIS:GetLastInputType().Name:match("Gamepad")~=nil
+	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
-		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "View / touchpad to skip" else "ESC to skip")
+		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
 	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
@@ -350,7 +351,7 @@ function UI:render(data)
 	for i,tech in h.techniques do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
-		ui.key.Text=if pad then ({"A","X","Y","B","\u{2191}"})[i] else string.format("%d",i)
+		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost
 		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
@@ -364,16 +365,18 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
-	self.hint.Text=if techOpen then (if pad then "B — WALL TECH" else "Q — WALL TECH")
-		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "A — PURSUE  •  Y — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
-		elseif (h.counter or 0)>0 then (if pad then "X — COUNTER" else "LMB — COUNTER")
+	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
+		elseif (h.counter or 0)>0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
-		elseif h.reaction=="Grabbed" then (if pad then "LT — THROW BREAK" else "V — THROW BREAK")
-		elseif h.pursuit>0 then (if pad then "A — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
-		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then (if pad then "↑ LAUNCH  ·  ↓ SWEEP  ·  ← → ANGLE" else "W LAUNCH  ·  S SWEEP  ·  A/D ANGLE")
+		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
+		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
+		elseif h.reaction=="Grabbed" then (if pad then "L2 — THROW BREAK" else "V — THROW BREAK")
+		elseif h.pursuit>0 then (if pad then "× — CHASE" else Controls.KeyLabel.Pursuit.." / SPACE — CHASE")
+		elseif (h.combo or 0)>=2 and h.state=="Recovery" and not h.airborne and (h.comboHits or 0)==0 and b.reaction then Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 		else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
-	self.grammar.Text=if pad then Controls.GrammarPad else Controls.Grammar
+	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")

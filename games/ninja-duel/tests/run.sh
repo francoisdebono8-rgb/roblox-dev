@@ -27,6 +27,7 @@ run() {
   fi
 }
 run Rules      "$LUAU" tests/Rules.spec.luau
+run Input      "$LUNE" run tests/Input.spec.luau
 run Combat     "$LUNE" run tests/Combat.spec.luau
 run Sequences  "$LUNE" run tests/Sequences.spec.luau
 run Regression "$LUNE" run tests/Regression.spec.luau
