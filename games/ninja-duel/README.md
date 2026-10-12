@@ -4,7 +4,7 @@ Version `0.13.0-arena-combo` — see `ARENA_COMBO_REPORT.md` (large stadium, dir
 
 Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
 
-The build manifest records automated and native status separately (`automatedQA`, `nativeQA`, `visualAcceptance`, `controllerFeel`). Controller feel and native Studio behaviour remain human gates; open the exact normal artifact above for the final pass. Pass history and open items: `STABILITY_PASS.md` (0.6.0 bugs), `FLUIDITY_PASS.md` (0.6.1 feel), `ANIMATION_PASS.md` (0.7.0 body animation, reactions, impact).
+The build manifest records automated and native status separately (`automatedQA`, `nativeQA`, `visualAcceptance`, `controllerFeel`). Controller feel and native Studio behaviour remain human gates; open the exact normal artifact above for the final pass. Pass history and open items: `docs/reports/STABILITY_PASS.md` (0.6.0 bugs), `docs/reports/FLUIDITY_PASS.md` (0.6.1 feel), `docs/reports/ANIMATION_PASS.md` (0.7.0 body animation, reactions, impact).
 
 | Controller | Action |
 |---|---|

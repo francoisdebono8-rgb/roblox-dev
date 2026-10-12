@@ -10,7 +10,7 @@ These are repository QA tools, never commercial plugin contents.
 
 Remove the temporary `ForgeCatalogGate.rbxm` from the local plugin folder after the run. Keep the production plugins installed. The runner uses a dedicated temporary settings key and restores its old value; it must not run in a user's working project. A failed test may leave disposable fixtures in the isolated QA place.
 
-See `docs/forge-v1-release-checklist.md` for the required GUI/media/publication gate. Engine assertions do not replace production UI clicks.
+See `docs/forge/forge-v1-release-checklist.md` for the required GUI/media/publication gate. Engine assertions do not replace production UI clicks.
 
 ## Forge Studio 0.2.5
 
@@ -21,4 +21,4 @@ See `docs/forge-v1-release-checklist.md` for the required GUI/media/publication 
   --since <UTC-ISO> --output <new-file>` extracts product QA lines only and requires
   the exact candidate hash in the executed log. It never infers GUI success.
 
-Current coordinator status: `docs/forge-studio-0.2.5-status.md`.
+Current coordinator status: `docs/forge/forge-studio-0.2.5-status.md`.

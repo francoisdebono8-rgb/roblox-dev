@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--rojo", default="rojo")
 args = parser.parse_args()
 for title, version in (("PresetForge", "2.1.0"), ("JointForge", "1.0.0"), ("CurveForge", "1.0.0")):
-    product = ROOT / "products" / title.lower()
+    product = ROOT / "plugins" / title.lower()
     source = product / title
     expected = {"Main": source / "Main.plugin.luau"}
     expected.update({p.stem: p for p in (source / "Modules").glob("*.luau")})

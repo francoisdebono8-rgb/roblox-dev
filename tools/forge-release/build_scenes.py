@@ -52,7 +52,7 @@ def clean(node, counter):
 
 for product, map_name in {"presetforge":"DodgeballArena", "jointforge":"TheDepths", "curveforge":"RavenRock"}.items():
     source = args.source / f"src/ServerStorage/Maps/{map_name}.rbxmx"
-    dest = ROOT / f"products/{product}/release/scene"
+    dest = ROOT / f"plugins/{product}/release/scene"
     dest.mkdir(parents=True, exist_ok=True)
     document = ET.Element("roblox", version="4")
     counts = {"removed": 0}

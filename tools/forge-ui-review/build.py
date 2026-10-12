@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix="forge-ui-review-") as tmp:
     tree = {"$className": "Model", "Runner": {"$path": str(HERE / "Harness.plugin.luau")}}
     digests = {}
     for name, issue in PRODUCTS.items():
-        product = ROOT / "products" / name.lower()
+        product = ROOT / "plugins" / name.lower()
         output = product / "ui" / f"{name}-v1.1.0-ui{issue}.rbxm"
         output.parent.mkdir(parents=True, exist_ok=True)
         subprocess.run([args.rojo, "build", str(product / "release.project.json"), "-o", str(output)], check=True)

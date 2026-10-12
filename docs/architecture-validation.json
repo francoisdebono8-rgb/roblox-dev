@@ -1,0 +1,691 @@
+{
+  "date": "2026-10-11",
+  "rojo": "7.6.1",
+  "runtime_sources_and_roblox_artifacts": "all original Lua/Luau and Roblox artifact hashes unchanged",
+  "headless_ninja_duel": {
+    "status": "PASS",
+    "assertions": 64,
+    "suites": 6
+  },
+  "packaging_unit_tests": {
+    "status": "PASS",
+    "tests": 7
+  },
+  "architecture_unit_tests": {
+    "status": "PASS",
+    "tests": 7
+  },
+  "five_candidate_freeze": "PASS before and after; native not asserted",
+  "markdown_links": {
+    "previously_valid_preserved": 390,
+    "new_broken": 0
+  },
+  "project_builds": [
+    {
+      "before": "experiences/forge-playground/default.project.json",
+      "after": "plugins/forge-playground/default.project.json",
+      "status": "PASS",
+      "before_after_sha256": "3b712f062ad648e2e630ab044608d1ed2f89f510026dcf7252b78df2b2d233ec"
+    },
+    {
+      "before": "products/accessforge/release.project.json",
+      "after": "plugins/accessforge/release.project.json",
+      "status": "PASS",
+      "before_after_sha256": "839798041fdc1884df19e8cabccf7e1f698c0087d6f1e3bc8c9ec5bd25b1089d"
+    },
+    {
+      "before": "products/accessforge/release/publication.project.json",
+      "after": "plugins/accessforge/release/publication.project.json",
+      "status": "PASS",
+      "before_after_sha256": "01c29691042a5c7427b75fcc5a60b39b11ebff324aeeca331b043ed86f5a5ef1"
+    },
+    {
+      "before": "products/accessforge/release/scene/build.project.json",
+      "after": "plugins/accessforge/release/scene/build.project.json",
+      "status": "PASS",
+      "before_after_sha256": "4da822e8d486d6987e58628129a1388de4c23457cc3b8f9e5d23f45bf0705802"
+    },
+    {
+      "before": "products/accessforge/tests/place.project.json",
+      "after": "plugins/accessforge/tests/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "6fd13d444d17907ecd7fd39092dedaaaacbf5bc0050efa1cc75e0e7c71753e39"
+    },
+    {
+      "before": "products/accessforge/tests/runner.project.json",
+      "after": "plugins/accessforge/tests/runner.project.json",
+      "status": "PASS",
+      "before_after_sha256": "d6f3e7f68fdd774ac7940fb74c3c88a8ff0cbce48a634264bfe98cd8fd98ccf3"
+    },
+    {
+      "before": "products/curveforge/demo/fixtures.project.json",
+      "after": "plugins/curveforge/demo/fixtures.project.json",
+      "status": "PASS",
+      "before_after_sha256": "edef03996d7b635d88716a9bbbe41b2f3cefe1abc59255e77a9ed4d9b8271c46"
+    },
+    {
+      "before": "products/curveforge/release.project.json",
+      "after": "plugins/curveforge/release.project.json",
+      "status": "PASS",
+      "before_after_sha256": "510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d"
+    },
+    {
+      "before": "products/curveforge/release/publication.project.json",
+      "after": "plugins/curveforge/release/publication.project.json",
+      "status": "PASS",
+      "before_after_sha256": "2917c710dcdf47c41efc16ab8c20cdefb731f5c278a52660c76130832dd7eac4"
+    },
+    {
+      "before": "products/curveforge/release/scene/scene.project.json",
+      "after": "plugins/curveforge/release/scene/scene.project.json",
+      "status": "PASS",
+      "before_after_sha256": "cc5f8b7461856b37994b144876506ca0c09e482f3185bb2b792b5b171129723b"
+    },
+    {
+      "before": "products/curveforge/tests/place.project.json",
+      "after": "plugins/curveforge/tests/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "98f6fcb76520d04c1a7f51ea2525774329588b1aaf00b31328bd3b8268236eb4"
+    },
+    {
+      "before": "products/curveforge/tests/plugin.project.json",
+      "after": "plugins/curveforge/tests/plugin.project.json",
+      "status": "PASS",
+      "before_after_sha256": "2617dc82300a4c294fe695043b5353f9d1fcdad754d1182792eebad4b68c04d1"
+    },
+    {
+      "before": "products/jointforge/publish/place.project.json",
+      "after": "plugins/jointforge/publish/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "944dcc95f93ada58aaf1337443794d4f16feea68cd1e268809b9b5e0d983d81f"
+    },
+    {
+      "before": "products/jointforge/release.project.json",
+      "after": "plugins/jointforge/release.project.json",
+      "status": "PASS",
+      "before_after_sha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216"
+    },
+    {
+      "before": "products/jointforge/release/scene/scene.project.json",
+      "after": "plugins/jointforge/release/scene/scene.project.json",
+      "status": "PASS",
+      "before_after_sha256": "4d6aacf4801b46e786040e1c307f4eec610e8ab8dbce2c7be8540b88125be1a4"
+    },
+    {
+      "before": "products/jointforge/tests/place.project.json",
+      "after": "plugins/jointforge/tests/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "d041ae4adb2aca0b1b9ab7983b9aee2543f50969f9eb9bd32d48740428334d57"
+    },
+    {
+      "before": "products/jointforge/tests/plugin.project.json",
+      "after": "plugins/jointforge/tests/plugin.project.json",
+      "status": "PASS",
+      "before_after_sha256": "0e9b9a97a2078e032f0144a354dad91f46de3d85c7155ea0460530f5f5d61e87"
+    },
+    {
+      "before": "products/presetforge/demo/PresetForge-Demo.project.json",
+      "after": "plugins/presetforge/demo/PresetForge-Demo.project.json",
+      "status": "PASS",
+      "before_after_sha256": "f52795b75bcd4757a13dbb9e3853b84620480ea664b3f7c406cfbd4ffb976d36"
+    },
+    {
+      "before": "products/presetforge/release.project.json",
+      "after": "plugins/presetforge/release.project.json",
+      "status": "PASS",
+      "before_after_sha256": "a9726d442d8376a658cdb042da2212cced695ab2b7e6a96c4b8a08e71d881a63"
+    },
+    {
+      "before": "products/presetforge/release/publication.project.json",
+      "after": "plugins/presetforge/release/publication.project.json",
+      "status": "PASS",
+      "before_after_sha256": "490ee3e8803ada35f12cee41f02d7ed82a368daf912a4322b5d54ed58a2385bc"
+    },
+    {
+      "before": "products/presetforge/release/scene/scene.project.json",
+      "after": "plugins/presetforge/release/scene/scene.project.json",
+      "status": "PASS",
+      "before_after_sha256": "8aff5727863d19405474834c16578bd216bda52ea32e8707b4556a7ed4b07831"
+    },
+    {
+      "before": "products/presetforge/tests/arena-gate.project.json",
+      "after": "plugins/presetforge/tests/arena-gate.project.json",
+      "status": "PASS",
+      "before_after_sha256": "3632951276494a4700d33aaf83090331da1c0670157af3b52e4519de7a9946b5"
+    },
+    {
+      "before": "products/presetforge/tests/default.project.json",
+      "after": "plugins/presetforge/tests/default.project.json",
+      "status": "PASS",
+      "before_after_sha256": "6b5ef53c11994c39fe74ce695c0be0066e4bb71f01caa6673fe2bb96551e1429"
+    },
+    {
+      "before": "products/presetforge/tests/final-gate.project.json",
+      "after": "plugins/presetforge/tests/final-gate.project.json",
+      "status": "PASS",
+      "before_after_sha256": "a06252b117ee408055681ff797ace185ef1f1fabe50cdcdd350b27f68b6a962c"
+    },
+    {
+      "before": "products/presetforge/tests/plugin.project.json",
+      "after": "plugins/presetforge/tests/plugin.project.json",
+      "status": "PASS",
+      "before_after_sha256": "d67f499a9a02c9ce9d034e1571724c06bb9235629f1bd666d327bfe872efd5b3"
+    },
+    {
+      "before": "products/schemaforge/release.project.json",
+      "after": "plugins/schemaforge/release.project.json",
+      "status": "PASS",
+      "before_after_sha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe"
+    },
+    {
+      "before": "products/schemaforge/release/publication.project.json",
+      "after": "plugins/schemaforge/release/publication.project.json",
+      "status": "PASS",
+      "before_after_sha256": "6476ee5d82fb6f2aed0497c65beda8ccbf88dc0b12be6c0c1ca3dbbcc4a91e86"
+    },
+    {
+      "before": "products/schemaforge/release/scene/build.project.json",
+      "after": "plugins/schemaforge/release/scene/build.project.json",
+      "status": "PASS",
+      "before_after_sha256": "7f11828a913da9f031308837fa6111dfa8215355c6724aa09accd1425d04d761"
+    },
+    {
+      "before": "products/schemaforge/release/scene/inspect.project.json",
+      "after": "plugins/schemaforge/release/scene/inspect.project.json",
+      "status": "PASS",
+      "before_after_sha256": "e17680ce905af5150d322a6f014541c853bc5f7e4c69c315238e53f8726c4d59"
+    },
+    {
+      "before": "products/schemaforge/tests/final-gate.project.json",
+      "after": "plugins/schemaforge/tests/final-gate.project.json",
+      "status": "PASS",
+      "before_after_sha256": "0e9e9f9cbcacf21e8bbf82804267cd13cbc011ed05308fb003d9744a1a3fe43d"
+    },
+    {
+      "before": "products/schemaforge/tests/place.project.json",
+      "after": "plugins/schemaforge/tests/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "d188f4900b6af294ed82b9b45849752df7a69ab7c8c03e81034f73b5eb5ba0ad"
+    },
+    {
+      "before": "products/schemaforge/tests/runner.project.json",
+      "after": "plugins/schemaforge/tests/runner.project.json",
+      "status": "PASS",
+      "before_after_sha256": "6c048851c4ca8534a7ff2b556a292ae7c2afc8c8352baeca95bcf02cad916210"
+    },
+    {
+      "before": "tools/forge-release/gate.project.json",
+      "after": "tools/forge-release/gate.project.json",
+      "status": "PASS",
+      "before_after_sha256": "276bb00b02f39fcf5f00f639137f6fcc5d9800ffa790ba098c1f4253b4422127"
+    },
+    {
+      "before": "tools/forge-release/place.project.json",
+      "after": "tools/forge-release/place.project.json",
+      "status": "PASS",
+      "before_after_sha256": "07557d047f81b40d0d54b63d7eb3e1edbef778120b1678a1afcc8b56bb8a76b7"
+    }
+  ],
+  "builders": [
+    {
+      "before": "experiences/forge-playground/tools/build.py",
+      "after": "plugins/forge-playground/tools/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "/private/tmp/forge-repo-refactor/snapshot/experiences/forge-playground/dist/Forge-Playground-v0.1.0.rbxl",
+      "after_final_line": "/private/tmp/forge-repo-refactor/after-workspace/plugins/forge-playground/dist/Forge-Playground-v0.1.0.rbxl"
+    },
+    {
+      "before": "games/ninja-duel/build.py",
+      "after": "games/ninja-duel/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "042fe767d233843a09289e0014906f22aea4771e8c3318186b3000e635ae2942",
+      "after_final_line": "042fe767d233843a09289e0014906f22aea4771e8c3318186b3000e635ae2942"
+    },
+    {
+      "before": "products/accessforge/tests/build_technical_gate.py",
+      "after": "plugins/accessforge/tests/build_technical_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/accessforge/ui/forge-0.2.5/build.py",
+      "after": "plugins/accessforge/ui/forge-0.2.5/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "}",
+      "after_final_line": "}"
+    },
+    {
+      "before": "products/curveforge/tests/build_technical_gate.py",
+      "after": "plugins/curveforge/tests/build_technical_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/curveforge/tools/build_demo.py",
+      "after": "plugins/curveforge/tools/build_demo.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "Original fixtures ready. Generated-output scenarios require the Studio Setup run.",
+      "after_final_line": "Original fixtures ready. Generated-output scenarios require the Studio Setup run."
+    },
+    {
+      "before": "products/curveforge/ui/forge-0.2.5/build.py",
+      "after": "plugins/curveforge/ui/forge-0.2.5/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "}",
+      "after_final_line": "}"
+    },
+    {
+      "before": "products/jointforge/tests/build_technical_gate.py",
+      "after": "plugins/jointforge/tests/build_technical_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/jointforge/tools/build_demo.py",
+      "after": "plugins/jointforge/tools/build_demo.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "JointForge-Demo.rbxlx",
+      "after_final_line": "JointForge-Demo.rbxlx"
+    },
+    {
+      "before": "products/jointforge/ui/forge-0.2.5/build.py",
+      "after": "plugins/jointforge/ui/forge-0.2.5/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "}",
+      "after_final_line": "}"
+    },
+    {
+      "before": "products/presetforge/tests/build_final_gate.py",
+      "after": "plugins/presetforge/tests/build_final_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "ValueError: Final binary sources differ; rebuild the release first: PresetForge/Modules/ApplyService, PresetForge/Modules/AttributeCodec, PresetForge/Modules/CaptureService, PresetForge/Modules/Constants, PresetForge/Modules/Controller, PresetForge/Modules/DataGuard, PresetForge/Modules/ExecutionPlan, PresetForge/Modules/PresetSerializer, PresetForge/Modules/PresetStore, PresetForge/Modules/PresetValidator, PresetForge/Modules/PreviewService, PresetForge/Modules/ProjectStore, PresetForge/Modules/RecipeRepository, PresetForge/Modules/Schema, PresetForge/Modules/StringCodec, PresetForge/Modules/TargetResolver, PresetForge/Modules/UIFactory, PresetForge/Modules/ValueCodec",
+      "after_final_line": "ValueError: Final binary sources differ; rebuild the release first: PresetForge/Modules/ApplyService, PresetForge/Modules/AttributeCodec, PresetForge/Modules/CaptureService, PresetForge/Modules/Constants, PresetForge/Modules/Controller, PresetForge/Modules/DataGuard, PresetForge/Modules/ExecutionPlan, PresetForge/Modules/PresetSerializer, PresetForge/Modules/PresetStore, PresetForge/Modules/PresetValidator, PresetForge/Modules/PreviewService, PresetForge/Modules/ProjectStore, PresetForge/Modules/RecipeRepository, PresetForge/Modules/Schema, PresetForge/Modules/StringCodec, PresetForge/Modules/TargetResolver, PresetForge/Modules/UIFactory, PresetForge/Modules/ValueCodec"
+    },
+    {
+      "before": "products/presetforge/tests/build_technical_gate.py",
+      "after": "plugins/presetforge/tests/build_technical_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/presetforge/ui/build_demo.py",
+      "after": "plugins/presetforge/ui/build_demo.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "Built project to products__presetforge__ui__build_demo.py-QA.rbxl",
+      "after_final_line": "Built project to products__presetforge__ui__build_demo.py-QA.rbxl"
+    },
+    {
+      "before": "products/presetforge/ui/build_gate.py",
+      "after": "plugins/presetforge/ui/build_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/presetforge/ui/forge-0.2.5/build_candidate.py",
+      "after": "plugins/presetforge/ui/forge-0.2.5/build_candidate.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "}",
+      "after_final_line": "}"
+    },
+    {
+      "before": "products/schemaforge/tests/build_final_gate.py",
+      "after": "plugins/schemaforge/tests/build_final_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "ValueError: Expected the five canonical production sources",
+      "after_final_line": "ValueError: Expected the five canonical production sources"
+    },
+    {
+      "before": "products/schemaforge/tests/build_technical_gate.py",
+      "after": "plugins/schemaforge/tests/build_technical_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/schemaforge/ui/build_gate.py",
+      "after": "plugins/schemaforge/ui/build_gate.py",
+      "before_exit": 1,
+      "after_exit": 1,
+      "before_final_line": "AssertionError",
+      "after_final_line": "AssertionError"
+    },
+    {
+      "before": "products/schemaforge/ui/forge-0.2.5/build.py",
+      "after": "plugins/schemaforge/ui/forge-0.2.5/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "[SchemaForge025Summary][SUMMARY] 6 PASS / 0 FAIL",
+      "after_final_line": "[SchemaForge025Summary][SUMMARY] 6 PASS / 0 FAIL"
+    },
+    {
+      "before": "tools/forge-release/build_gate.py",
+      "after": "tools/forge-release/build_gate.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "QA only: exact commercial code, entry scripts disabled to avoid duplicate toolbars",
+      "after_final_line": "QA only: exact commercial code, entry scripts disabled to avoid duplicate toolbars"
+    },
+    {
+      "before": "tools/forge-ui-review/build.py",
+      "after": "tools/forge-ui-review/build.py",
+      "before_exit": 0,
+      "after_exit": 0,
+      "before_final_line": "}",
+      "after_final_line": "}"
+    }
+  ],
+  "place_builds": {
+    "ninja_duel_normal_and_qa": "PASS before and after",
+    "playground_normal_and_qa": "PASS before and after"
+  },
+  "not_executed": [
+    "Native Studio QA",
+    "Publication",
+    "build_scenes.py: pinned external donor checkout unavailable"
+  ],
+  "historical_failures": "Five V2 technical gates plus two V1 final gates and two older UI gates fail before and after against current UI sources. No new failure introduced.",
+  "local_changes": "Existing modified artifacts and all pre-existing untracked work preserved, excluded from refactor commit.",
+  "move_audit": [
+    {
+      "before": "docs/studio-features-opportunity-mine.md",
+      "after": "docs/forge/studio-features-opportunity-mine.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation"
+      ]
+    },
+    {
+      "before": "docs/forge-commercial-launch-status.md",
+      "after": "docs/forge/forge-commercial-launch-status.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "products/accessforge",
+        "products/curveforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge"
+      ]
+    },
+    {
+      "before": "docs/market-research-next-products.md",
+      "after": "docs/forge/market-research-next-products.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": []
+    },
+    {
+      "before": "docs/forge-catalog-release-status.md",
+      "after": "docs/forge/forge-catalog-release-status.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "repository instructions/README"
+      ]
+    },
+    {
+      "before": "docs/forge-v1-release-checklist.md",
+      "after": "docs/forge/forge-v1-release-checklist.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "tools/forge-release"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/ANIMATION_TODO.md",
+      "after": "games/ninja-duel/docs/current/ANIMATION_TODO.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/FULL_DUEL_PLAN.md",
+      "after": "games/ninja-duel/docs/archive/FULL_DUEL_PLAN.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel missions"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/ANIMATION_PASS.md",
+      "after": "games/ninja-duel/docs/reports/ANIMATION_PASS.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/STABILITY_PASS.md",
+      "after": "games/ninja-duel/docs/reports/STABILITY_PASS.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel"
+      ]
+    },
+    {
+      "before": "docs/forge-catalog-native-run.txt",
+      "after": "docs/forge/forge-catalog-native-run.txt",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "products/curveforge",
+        "products/jointforge",
+        "tools/forge-release"
+      ]
+    },
+    {
+      "before": "docs/forge-studio-0.2.5-status.md",
+      "after": "docs/forge/forge-studio-0.2.5-status.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "tools/forge-release"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/FLUIDITY_PASS.md",
+      "after": "games/ninja-duel/docs/reports/FLUIDITY_PASS.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel"
+      ]
+    },
+    {
+      "before": "docs/m1-monetization-v1-spec.md",
+      "after": "docs/forge/m1-monetization-v1-spec.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": []
+    },
+    {
+      "before": "games/ninja-duel/PHASE6_PLAN.md",
+      "after": "games/ninja-duel/docs/archive/PHASE6_PLAN.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel",
+        "Ninja Duel missions"
+      ]
+    },
+    {
+      "before": "missions/ninja-duel-v0/BRIEF.md",
+      "after": "games/ninja-duel/docs/archive/BRIEF.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel missions"
+      ]
+    },
+    {
+      "before": "docs/forge-catalog-gui-run.txt",
+      "after": "docs/forge/forge-catalog-gui-run.txt",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "products/curveforge",
+        "tools/forge-release"
+      ]
+    },
+    {
+      "before": "games/ninja-duel/V02_REPORT.md",
+      "after": "games/ninja-duel/docs/reports/V02_REPORT.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": []
+    },
+    {
+      "before": "docs/product-ideas-backlog.md",
+      "after": "docs/forge/product-ideas-backlog.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": []
+    },
+    {
+      "before": "docs/forge-product-factory.md",
+      "after": "docs/forge/forge-product-factory.md",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "repository instructions/README"
+      ]
+    },
+    {
+      "before": "experiences/forge-playground",
+      "after": "plugins/forge-playground",
+      "file_count": 34,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Forge Playground",
+        "Ninja Duel",
+        "documentation",
+        "products/accessforge",
+        "products/brickkit-monetization",
+        "products/curveforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge",
+        "repository instructions/README"
+      ]
+    },
+    {
+      "before": "missions/ninja-duel-v0",
+      "after": "games/ninja-duel/docs/missions",
+      "file_count": 17,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel",
+        "Ninja Duel missions"
+      ]
+    },
+    {
+      "before": "docs/forge-studio-ui",
+      "after": "docs/forge/forge-studio-ui",
+      "file_count": 25,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Forge Playground",
+        "Ninja Duel",
+        "documentation",
+        "products/accessforge",
+        "products/curveforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge",
+        "repository instructions/README"
+      ]
+    },
+    {
+      "before": "docs/.gitkeep",
+      "after": "docs/forge/.gitkeep",
+      "file_count": 1,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": []
+    },
+    {
+      "before": "docs/outreach",
+      "after": "docs/forge/outreach",
+      "file_count": 4,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Ninja Duel",
+        "documentation",
+        "products/accessforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge",
+        "repository instructions/README"
+      ]
+    },
+    {
+      "before": "products",
+      "after": "plugins",
+      "file_count": 604,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "Forge Playground",
+        "Ninja Duel",
+        "Ninja Duel missions",
+        "documentation",
+        "products/accessforge",
+        "products/brickkit-monetization",
+        "products/curveforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge",
+        "repository instructions/README",
+        "tools/forge-release",
+        "tools/forge-ui-review"
+      ]
+    },
+    {
+      "before": "docs/v2",
+      "after": "docs/forge/v2",
+      "file_count": 6,
+      "reference_search": "full old path and filename in repository text before movement",
+      "referencing_scopes": [
+        "documentation",
+        "products/accessforge",
+        "products/curveforge",
+        "products/jointforge",
+        "products/presetforge",
+        "products/schemaforge",
+        "repository instructions/README"
+      ]
+    }
+  ]
+}

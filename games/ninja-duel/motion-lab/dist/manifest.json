@@ -1,0 +1,36 @@
+{
+  "plugin": "Forge Motion Lab",
+  "version": "0.5.0",
+  "artifact": "ForgeMotionLab.rbxm",
+  "sha256": "c351215be2fef60661ede2df8951d4c81929ed3fed8d053a9a8915fa5d0e8ca0",
+  "sources": {
+    "ForgeMotionLab/Main.plugin.luau": "ead17b1b3733d9b0c4c40ae121cf8395f201586be7c8d90736f215cabaf0047a",
+    "ForgeMotionLab/Modules/BilateralLibrary.luau": "0c89767ee0587efd9ef7d2672d9aaa8664a48d07c3ea0bb49847ba51f7c2b8f3",
+    "ForgeMotionLab/Modules/Controller.luau": "a6e1321bafa7e1e141e9d39adde7dea46062e88a86a1e35202a09f9b734f68c0",
+    "ForgeMotionLab/Modules/EditInspector.luau": "7f457b07a01713a41d09e9fc94e990646ead9238ebb38ac92915f52fe17a2a19",
+    "ForgeMotionLab/Modules/Library.luau": "2fe766f8a32578ae965f6c8ba974d383036a1749948869ff055c280fad2edd89",
+    "ForgeMotionLab/Modules/Model.luau": "dc69e449fbc969c0316b7d309d5e439965f00f496ef65826937100ba1776af05",
+    "ForgeMotionLab/Modules/MotionEdit.luau": "5dd7ac066d7936543666ea034819198254c2e54ba916d73e513a053d2cc99c64",
+    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "8e415bdb141101e6e0ec481a63887e96f5c70782049a871e4d8342d87d19e054",
+    "ForgeMotionLab/Modules/NinjaSources.luau": "4b75904c5e0230b36ac83975c8acb967fdb2b64908644f49b7aaee85ac90d605",
+    "ForgeMotionLab/Modules/PoseSolver.luau": "499ae649d0a0379c82692c6242e86cf40fad340a83e13ad5a833b4fcd2704594",
+    "ForgeMotionLab/Modules/ReferenceMotionLibrary.luau": "8d362f560132ae36f3f1131c3e0bd4d1feee15bb956d284be616c081e97b19cd",
+    "ForgeMotionLab/Modules/Rig.luau": "15908c1c285a6159bd58fed36f7234d9c0e4d446b7f016e8a40e37009c9a98d0",
+    "ForgeMotionLab/Modules/Sampler.luau": "deec01a10a2269ffdd4e760d8c76cc2935f6923b761e99745b23a98ecd4e6a40",
+    "ForgeMotionLab/Modules/Store.luau": "d14375e25b5e6e8f2448dc7b471ef675a326f65073e077274188ca67ae910ae7",
+    "ForgeMotionLab/Modules/Timeline.luau": "7bf32ec1b9d27e7ca5fbd86b466f31d6a895958d0ba0afd913711f8fc5554a89",
+    "ForgeMotionLab/Modules/UI.luau": "b2a4572202c2cc6a7c130e0a2495d146f513ac7d0eec9c2e4612aa36249b0c46",
+    "ForgeMotionLab/Modules/View.luau": "c3e47516735cd3eca157896fe67468104c75723852bf55eeea62f074436919e7"
+  },
+  "automatedTests": "PASS (41 rules/controller/variant/bilateral/reference cases)",
+  "exactBinaryUiSmoke": "PASS (legacy + variants + bilateral/reference filters + six phases + sides/compare/edit/export; simulated Studio events; native instance schemas)",
+  "native": "NOT_RUN",
+  "visualReview": "USER_PENDING",
+  "published": false,
+  "sourceSnapshot": {
+    "src/Client/VelmoraMotionEngine.luau": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d",
+    "src/Shared/Fighters.luau": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5",
+    "src/Shared/Attacks.luau": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7"
+  },
+  "sourceTree": "a0711891d9ae5c3b90c2e94e38224db72b77a2e8"
+}

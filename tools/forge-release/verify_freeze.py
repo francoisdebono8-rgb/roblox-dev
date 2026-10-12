@@ -58,7 +58,7 @@ def inspect_model(model, expected):
 
 
 def verify(rojo, title):
-    product = ROOT / "products" / title.lower()
+    product = ROOT / "plugins" / title.lower()
     source = product / title
     artifact = product / "ui" / "forge-0.2.5" / f"{title}-ForgeStudio-0.2.5.rbxm"
     assert artifact.is_file(), f"Candidate missing: {artifact.relative_to(ROOT)}"

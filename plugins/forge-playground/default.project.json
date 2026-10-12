@@ -1,0 +1,96 @@
+{
+  "name": "Forge-Playground-v0.1.0",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "$properties": { "FilteringEnabled": true, "StreamingEnabled": false },
+      "Arrival": {
+        "$className": "SpawnLocation",
+        "$properties": { "Anchored": true, "Neutral": true, "Enabled": true, "Size": [16, 1, 16], "Position": [0, 0, 0], "Transparency": 1 }
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": { "Brightness": 2, "ClockTime": 14, "GlobalShadows": true, "Ambient": [0.4, 0.4, 0.4], "OutdoorAmbient": [0.55, 0.55, 0.55] }
+    },
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "ForgePlayground": {
+        "$className": "Folder",
+        "Catalog": { "$path": "src/Catalog.luau" },
+        "Request": { "$className": "RemoteFunction" }
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "Playground": { "$path": "src/Server.server.luau" }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "Playground": {
+        "$className": "Folder",
+        "World": { "$path": "src/World.luau" },
+        "Session": { "$path": "src/Session.luau" },
+        "Protocol": { "$path": "src/Protocol.luau" },
+        "Visuals": { "$path": "src/Visuals.luau" },
+        "Stations": {
+          "$className": "Folder",
+          "access": { "$path": "src/stations/Access.luau" },
+          "curve": { "$path": "src/stations/Curve.luau" },
+          "joint": { "$path": "src/stations/Joint.luau" },
+          "schema": { "$path": "src/stations/Schema.luau" },
+          "preset": { "$path": "src/stations/Preset.luau" },
+          "PlaygroundApplyAdapter": { "$path": "src/stations/PlaygroundApplyAdapter.luau" }
+        },
+        "ProductModules": {
+          "$className": "Folder",
+          "Curve": {
+            "$className": "Folder",
+            "Curve": { "$path": "../curveforge/CurveForge/Modules/Curve.luau" },
+            "Engine": { "$path": "../curveforge/CurveForge/Modules/Engine.luau" },
+            "Settings": { "$path": "../curveforge/CurveForge/Modules/Settings.luau" }
+          },
+          "Access": {
+            "$className": "Folder",
+            "Geometry": { "$path": "../accessforge/AccessForge/Modules/Geometry.luau" },
+            "Settings": { "$path": "../accessforge/AccessForge/Modules/Settings.luau" }
+          },
+          "Schema": {
+            "$className": "Folder",
+            "Schema": { "$path": "../schemaforge/SchemaForge/Modules/Schema.luau" },
+            "Engine": { "$path": "../schemaforge/SchemaForge/Modules/Engine.luau" }
+          },
+          "Joint": {
+            "$className": "Folder",
+            "Schema": { "$path": "../jointforge/JointForge/Modules/Schema.luau" },
+            "Graph": { "$path": "../jointforge/JointForge/Modules/Graph.luau" },
+            "Planner": { "$path": "../jointforge/JointForge/Modules/Planner.luau" }
+          },
+          "Preset": {
+            "$className": "Folder",
+            "CaptureService": { "$path": "../presetforge/PresetForge/Modules/CaptureService.luau" },
+            "PreviewService": { "$path": "../presetforge/PresetForge/Modules/PreviewService.luau" },
+            "TargetResolver": { "$path": "../presetforge/PresetForge/Modules/TargetResolver.luau" },
+            "ExecutionPlan": { "$path": "../presetforge/PresetForge/Modules/ExecutionPlan.luau" },
+            "DataGuard": { "$path": "../presetforge/PresetForge/Modules/DataGuard.luau" },
+            "Schema": { "$path": "../presetforge/PresetForge/Modules/Schema.luau" },
+            "Constants": { "$path": "../presetforge/PresetForge/Modules/Constants.luau" },
+            "PresetSerializer": { "$path": "../presetforge/PresetForge/Modules/PresetSerializer.luau" },
+            "PresetValidator": { "$path": "../presetforge/PresetForge/Modules/PresetValidator.luau" },
+            "ValueCodec": { "$path": "../presetforge/PresetForge/Modules/ValueCodec.luau" },
+            "AttributeCodec": { "$path": "../presetforge/PresetForge/Modules/AttributeCodec.luau" },
+            "StringCodec": { "$path": "../presetforge/PresetForge/Modules/StringCodec.luau" }
+          }
+        }
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "Playground": { "$path": "src/Client.client.luau" }
+      }
+    }
+  }
+}

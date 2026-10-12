@@ -17,7 +17,7 @@ for line in args.log.read_text(errors="replace").splitlines():
     if match and match[1] >= args.since:
         lines.append(f"{match[1]} {match[2]}")
 assert lines and (args.gui or any("[ForgeCatalogGate] Finished" in line for line in lines)), "Incomplete run"
-target = ROOT / ("docs/forge-catalog-gui-run.txt" if args.gui else "docs/forge-catalog-native-run.txt")
+target = ROOT / ("docs/forge/forge-catalog-gui-run.txt" if args.gui else "docs/forge/forge-catalog-native-run.txt")
 context = "actual GUI actions with Command Bar assertions; partial coverage, see release status" if args.gui else "final binary modules via isolated QA plugin"
 target.write_text(f"Studio 0.740.19.7400931, edit mode; {context}.\n" + "\n".join(lines) + "\n")
 print(f"Saved {len(lines)} actual result lines to {target.name}")

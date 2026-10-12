@@ -6,11 +6,11 @@
 - Ne jamais ajouter de secrets, de code obfusqué ou de dépendances douteuses.
 - Chaque produit doit être simple à installer, documenté et testable.
 - Ne pas construire de framework générique avant qu'un produit réel ne l'exige.
-- Réutiliser `shared/` uniquement lorsqu'au moins deux produits ont réellement besoin du même composant.
+- Réutiliser `shared` uniquement lorsqu'au moins deux produits ont réellement besoin du même composant.
 
 ## Forge product factory
 
-When the user asks to **create a product from A to Z**, **create the next Forge product**, **publish a product**, or **promote/announce it**, treat `docs/forge-product-factory.md` as the default operating procedure.
+When the user asks to **create a product from A to Z**, **create the next Forge product**, **publish a product**, or **promote/announce it**, treat `docs/forge/forge-product-factory.md` as the default operating procedure.
 
 The intended end state is that Codex handles:
 - demand mining and competitor validation;
@@ -34,7 +34,7 @@ The V1 catalogue is complete at five canonical products: PresetForge, JointForge
 Unless the user explicitly asks to reopen catalogue expansion, **do not create Product 6**.
 
 For current improvement work, follow:
-- `docs/v2/forge-v2-roadmap.md`
+- `docs/forge/v2/forge-v2-roadmap.md`
 - GitHub issue #15: Forge V2 — catalogue audit, design system & relaunch
 
 V2 priorities:
@@ -48,7 +48,7 @@ V2 priorities:
 
 ## Hard gate: Forge Studio visual UI programme
 
-The future high-polish Forge Studio UI work is documented in `docs/forge-studio-ui/`.
+The future high-polish Forge Studio UI work is documented in `docs/forge/forge-studio-ui`.
 
 **Do not implement that visual refactor until the functional V2 programme is complete for all five products and the user explicitly opens the UI programme.**
 
@@ -59,15 +59,15 @@ While any product still has unfinished functional V2 work:
 - do not delay a functional V2 release for the later visual refactor.
 
 When the user explicitly starts the later UI programme, the agent MUST use:
-- `docs/forge-studio-ui/VISUAL_DIRECTION.md`
-- `docs/forge-studio-ui/SHARED_SYSTEM.md`
-- `docs/forge-studio-ui/PRODUCT_AUDITS.md`
-- `docs/forge-studio-ui/PRODUCT_STRUCTURES.md`
-- `docs/forge-studio-ui/QUALITY_GATES.md`
-- `docs/forge-studio-ui/WORK_ORDER_TEMPLATE.md`
-- `docs/forge-studio-ui/forge-ui-spec.json`
+- `docs/forge/forge-studio-ui/VISUAL_DIRECTION.md`
+- `docs/forge/forge-studio-ui/SHARED_SYSTEM.md`
+- `docs/forge/forge-studio-ui/PRODUCT_AUDITS.md`
+- `docs/forge/forge-studio-ui/PRODUCT_STRUCTURES.md`
+- `docs/forge/forge-studio-ui/QUALITY_GATES.md`
+- `docs/forge/forge-studio-ui/WORK_ORDER_TEMPLATE.md`
+- `docs/forge/forge-studio-ui/forge-ui-spec.json`
 
-A future Forge Studio UI task is **not complete** until its applicable quality gates are recorded PASS on the exact final artifact. "Looks cleaner", successful compilation, or functional reachability alone is insufficient. Real native screenshots at the required widths/themes and the product's functional regression gate are required.\n\nFor implementation interpretation, `docs/forge-studio-ui/CODEX_EXECUTION_RULES.md` is mandatory. It explicitly forbids cosmetic-only reskins, requires approved mockup-to-real-function mapping, before/after screenshot comparison, structural recomposition where documented, and continued iteration if the result still reads as an internal developer utility.
+A future Forge Studio UI task is **not complete** until its applicable quality gates are recorded PASS on the exact final artifact. "Looks cleaner", successful compilation, or functional reachability alone is insufficient. Real native screenshots at the required widths/themes and the product's functional regression gate are required.\n\nFor implementation interpretation, `docs/forge/forge-studio-ui/CODEX_EXECUTION_RULES.md` is mandatory. It explicitly forbids cosmetic-only reskins, requires approved mockup-to-real-function mapping, before/after screenshot comparison, structural recomposition where documented, and continued iteration if the result still reads as an internal developer utility.
 
 
 ## Current phase — Forge Studio UI programme ACTIVE
@@ -84,7 +84,7 @@ Current sequencing:
 During this phase:
 - preserve the finished technical engines and safety semantics;
 - recompose product Views around the documented real workflows;
-- use `docs/forge-studio-ui/` as the mandatory implementation contract;
+- use `docs/forge/forge-studio-ui` as the mandatory implementation contract;
 - capture baseline and final **internal QA** screenshots required by the quality gates;
 - do not treat a recolor/card/radius pass as completion;
 - do not introduce a generic Forge workflow framework;
@@ -95,3 +95,15 @@ During this phase:
 Internal QA screenshots are allowed and required for the UI quality gate. Commercial screenshots, listing work, publication and promotion are a later handoff after the five UI passes are complete.
 
 A product UI pass closes only when the applicable `QUALITY_GATES.md` checks and its full technical/native regression gate pass on the exact final artifact.
+
+
+## Frontières d’architecture
+
+- `games/ninja-duel/` contient uniquement Ninja Duel et son laboratoire.
+- Ninja Duel ne doit importer ni embarquer de code de `plugins/`, directement ou via `shared/`.
+- `plugins/*` (y compris Forge Playground) ne doit importer ni embarquer de code de Ninja Duel ou Motion Lab.
+- Motion Lab reste exclusivement sous `games/ninja-duel/motion-lab/`. Son adapter peut dépendre de Ninja Duel ; le runtime Ninja Duel ne dépend jamais de Motion Lab.
+- `shared/` reste réservé aux composants dont l’usage transversal est démontré. Ne pas déplacer un composant sur la seule base de son âge.
+- Les documents Forge sont sous `docs/forge/`. Missions, rapports, briefs archivés et suivi courant Ninja Duel sont sous `games/ninja-duel/docs/{missions,reports,archive,current}/`.
+- Avant tout déplacement/suppression, rechercher les références et identifier tous les consommateurs. Conserver et signaler les usages ambigus. Aucune suppression sans preuve.
+- Vérifier les frontières avec `python3 tools/check_architecture.py`, puis les builds/tests des consommateurs concernés. Les imports calculés nécessitent une revue humaine.
