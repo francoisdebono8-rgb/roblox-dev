@@ -1,8 +1,8 @@
-# Ninja Duel — Velmora first playable fight
+# Ninja Duel — tournoi de jeunes prodiges
 
-Version `0.13.0-arena-combo` — see `ARENA_COMBO_REPORT.md` (large stadium, directional combo grammar, hit reactions by zone, shared ninja tools with mastery, Sasuke as fourth fighter), `ROADMAP_WEEK.md` (finishing plan) and `FIGHTER_TEMPLATE.md` (adding a prodigy). Before: `FINAL_45MIN_REPORT.md` (smooth motion and camera, taijutsu routes, battle wear, arena) and `PUBLIC_BUILD.md`. Before: `FINAL_TODAY_REPORT.md` (Neji Hyuga as third fighter, smooth bodies and planted feet, rhythm, more taijutsu). Before: `PHASE4_REPORT.md` (combo scaling, recharging substitution, wall combat loop, clashes, multi-seal Flying Thunder God, context Rasengan, Itachi's Sharingan and Phoenix Flower). Previous: `PHASE3_REPORT.md`, `VISION_GAP.md`, `CLAUDE_PASS_REPORT.md`.
+Entrée unique pour une nouvelle session : [CLAUDE_START_HERE.md](CLAUDE_START_HERE.md). État et priorités : [CURRENT_STATE](docs/active/CURRENT_STATE.md) et [MASTER_BACKLOG](docs/active/MASTER_BACKLOG.md).
 
-Open `dist/NinjaDuel.rbxlx` in Roblox Studio and **Test**. Select Minato or Itachi, then **Duel** or **Interactive Tutorial**. Velmora's position-history hit validation, parry/guard stamina, perfect dodge, additive R15 attack motion and hit feedback now run inside the principal combat runtime. Ninja Duel retains its proven R15 fighters, Minato/Itachi kits, launch/pursuit/aerial route, grab/throw, wall movement, camera, AI, substitution and full controller mapping. No donor installer or parallel combat/input controller runs.
+Version technique `0.13.0-arena-combo`. Ouvrir `dist/NinjaDuel.rbxlx` dans Roblox Studio puis Test. Sélectionner Minato, Itachi, Neji ou Sasuke, puis Duel ou Interactive Tutorial. Gaara reste serveur/tests et n’est pas sélectionnable dans le menu actuel. Match joueur contre IA ; validation native finale distincte des tests automatiques.
 
 The build manifest records automated and native status separately (`automatedQA`, `nativeQA`, `visualAcceptance`, `controllerFeel`). Controller feel and native Studio behaviour remain human gates; open the exact normal artifact above for the final pass. Pass history and open items: `docs/reports/STABILITY_PASS.md` (0.6.0 bugs), `docs/reports/FLUIDITY_PASS.md` (0.6.1 feel), `docs/reports/ANIMATION_PASS.md` (0.7.0 body animation, reactions, impact).
 
@@ -45,7 +45,7 @@ Ground-to-air route: **light → light → heavy launcher → chase → air ligh
 
 ## Build and tests
 
-From the repository root (or `games/ninja-duel`):
+Depuis la racine du repository :
 
 ```
 python3 games/ninja-duel/build.py          # normal place  -> dist/NinjaDuel.rbxlx
@@ -59,39 +59,26 @@ games/ninja-duel/tests/run.sh              # every headless suite
 |---|---|
 | `tests/Rules.spec.luau` | pure policy: states, costs, cooldowns, token bucket |
 | `tests/Combat.spec.luau` | combat, donour migrations, controller callbacks, choreography |
-| `tests/Sequences.spec.luau` | the 14-step acceptance route for both fighters, camera, AI, joints |
+| `tests/Sequences.spec.luau` | routes de séquences, camera, AI et joints ; matrice quatre personnages dans Preparation |
 | `tests/Regression.spec.luau` | the bugs fixed in this pass, plus a randomised soak |
 | `tests/Feedback.spec.luau` | contact feed and impact hierarchy |
 | `tests/Animation.spec.luau` | stances, directional locomotion, hit reactions, knockdown/KO, weapons, and a full-fight no-snap contract |
+
+Suites supplémentaires enregistrées dans `tests/run.sh` : Branches, Phase4, Neji, Systems, Tools, Sasuke, Gaara (serveur caché), Preparation. Total actuel : 14 suites /139 cas. L’isolation normal/debug/QA ajoute 4 tests Python.
 
 The headless suites share `tests/Harness.luau`, a stubbed Roblox environment. They prove timing and state, not Studio physics, rendering or controller feel.
 
 The native suite lives in `dist/NinjaDuel-QA.rbxlx`: open it in Studio, press **Test**, and read `[NinjaDuelQA] START 0.7.0-animation` followed by one `PASS`/`FAIL` line per case and the totals. `nativeQA` stays `PENDING` in the manifest until that run is recorded on the exact artifact.
 
-## Normal-place acceptance route
+## Acceptation native du normal
 
-1. Open the rebuilt **normal** place and Test.
-2. Select Minato against Itachi.
-3. Move, orbit, sprint and stop for 20 seconds.
-4. Jump, steer in air, approach a ledge and traverse/rebound from a wall.
-5. Lock Itachi and circle him.
-6. Land the three-light chain; check that contacts and misses are clear.
-7. Use two lights then heavy to launch intentionally.
-8. Press chase during the launch window.
-9. Land two air strikes then heavy slam; check landing and wakeup.
-10. Block an incoming strike, then evade in a chosen direction.
-11. Spend substitution immediately after being hit.
-12. Use Minato's kunai, marked anchor, teleport, entry and Wind.
-13. Rematch, return to selection and play Itachi.
-14. Test shuriken, Fire, timed Read and deception.
-15. Replay the complete interactive tutorial, including its reset/skip paths.
+Suivre la [matrice quatre personnages](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) : Minato, Itachi, Neji et Sasuke face à chaque IA (16 matchups). Course huit directions/orbite/sprint/stop, jump/air/ledge/wall, lock/free/swap/verticalité ; contact/whiff/light branches/heavy launcher/chase/airslam/throw ; guard/parry/dodge/substitution/counter/clash ; outils et chaque conversion de kit, ressources/awake ; KO/reset/rematch/menu/tutoriel et manette.
 
-Record native errors and the first unpleasant control or unconvincing exchange. Source/import notices and exact components: `THIRD_PARTY.md`. Pre-migration snapshot: Git commit `d61c09b`; mission head: `2bac931`.
-
+Noter artefact/hash/HEAD, erreurs et premier échange corporel ou contrôle non convaincant. Les vieux PASS et leurs bases sont dans reports/archive ; l’état présent est CURRENT_STATE. Notices/imports : `THIRD_PARTY.md`.
 
 ## Préparation technique Claude — quatre personnages
 
-Voir [la matrice](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) et [le handoff](docs/current/CLAUDE_TECHNICAL_HANDOFF.md).
+Depuis `games/ninja-duel` pour les commandes ci-dessous. Voir [la matrice](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) et [le handoff](docs/current/CLAUDE_TECHNICAL_HANDOFF.md).
 
 - `python3 build.py --debug` crée `dist/NinjaDuel-Debug.rbxlx` pour l’inspecteur Studio en lecture seule (F8).
 - `python3 build.py` exclut DevHooks, CombatInspector, CombatDebug et NativeQA du build normal.

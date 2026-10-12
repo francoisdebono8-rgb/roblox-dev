@@ -1,6 +1,6 @@
 # Handoff technique Claude — quatre personnages
 
-La mission artistique reste [CLAUDE_FINAL_PASS.md](../../CLAUDE_FINAL_PASS.md). Cette préparation ne change aucun mouvement artistique, réglage de dégâts/timing, kit, caméra ou choix de game feel.
+L’entrée actuelle est [CLAUDE_START_HERE](../../CLAUDE_START_HERE.md). Le [brief artistique intégral](../archive/missions/CLAUDE_FINAL_PASS.md) est une source du backlog, pas une mission autonome. Cette préparation ne change aucun mouvement artistique, réglage de dégâts/timing, kit, caméra ou choix de game feel.
 
 ## Démarrer en cinq minutes
 
@@ -10,7 +10,7 @@ Depuis `games/ninja-duel` :
 python3 build.py --debug
 ```
 
-Ouvrir **`dist/NinjaDuel-Debug.rbxlx`**, puis Play. Choisir Minato, Itachi, Neji ou Sasuke dans le menu existant ; le panneau de lecture seule apparaît pendant le duel. **F8** le masque. Gaara reste disponible et ses tests sont préservés.
+Ouvrir **`dist/NinjaDuel-Debug.rbxlx`**, puis Play. Choisir Minato, Itachi, Neji ou Sasuke dans le menu existant ; le panneau de lecture seule apparaît pendant le duel. **F8** le masque. Gaara reste dans le code serveur et les tests, mais n’est pas sélectionnable dans le menu à quatre personnages.
 
 Le Command Bar **côté serveur** peut aussi piloter les interfaces existantes :
 

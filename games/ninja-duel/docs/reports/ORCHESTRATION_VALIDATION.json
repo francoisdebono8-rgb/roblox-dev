@@ -1,0 +1,772 @@
+{
+  "date": "2026-10-12",
+  "base": "bd3c483947bbf33dcc76282cf727d808c786141d",
+  "branch": "codex/ninja-claude-technical-prep",
+  "intentionalGameplayChanges": false,
+  "existingSourceAndArtifactEquality": "PASS",
+  "protectedFiles": {
+    "games/ninja-duel/assets/BanglaAssets.rbxmx": {
+      "before": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983",
+      "after": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
+    },
+    "games/ninja-duel/build.py": {
+      "before": "6a70044079107f10786e226cd66918d9ec6b5e61b59d5e24ef022b4bbc8a5e4e",
+      "after": "6a70044079107f10786e226cd66918d9ec6b5e61b59d5e24ef022b4bbc8a5e4e"
+    },
+    "games/ninja-duel/dist/NinjaDuel-Debug.rbxlx": {
+      "before": "6507777c122b64fa78752f079db2644bfd4b35988d52622d0ccc768f0ecc7c50",
+      "after": "6507777c122b64fa78752f079db2644bfd4b35988d52622d0ccc768f0ecc7c50"
+    },
+    "games/ninja-duel/dist/NinjaDuel-QA.rbxlx": {
+      "before": "e1df1611d76d21ed02501d294485202a30e9e22282a62ba555246a88880c5370",
+      "after": "e1df1611d76d21ed02501d294485202a30e9e22282a62ba555246a88880c5370"
+    },
+    "games/ninja-duel/dist/NinjaDuel.rbxlx": {
+      "before": "aec17a19c4e1a39d699fa78b90aa4b0ef56db1ad1f7d8097653c25ee31f2c1dd",
+      "after": "aec17a19c4e1a39d699fa78b90aa4b0ef56db1ad1f7d8097653c25ee31f2c1dd"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Main.plugin.luau": {
+      "before": "ead17b1b3733d9b0c4c40ae121cf8395f201586be7c8d90736f215cabaf0047a",
+      "after": "ead17b1b3733d9b0c4c40ae121cf8395f201586be7c8d90736f215cabaf0047a"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/BilateralLibrary.luau": {
+      "before": "0c89767ee0587efd9ef7d2672d9aaa8664a48d07c3ea0bb49847ba51f7c2b8f3",
+      "after": "0c89767ee0587efd9ef7d2672d9aaa8664a48d07c3ea0bb49847ba51f7c2b8f3"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Controller.luau": {
+      "before": "a6e1321bafa7e1e141e9d39adde7dea46062e88a86a1e35202a09f9b734f68c0",
+      "after": "a6e1321bafa7e1e141e9d39adde7dea46062e88a86a1e35202a09f9b734f68c0"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/EditInspector.luau": {
+      "before": "7f457b07a01713a41d09e9fc94e990646ead9238ebb38ac92915f52fe17a2a19",
+      "after": "7f457b07a01713a41d09e9fc94e990646ead9238ebb38ac92915f52fe17a2a19"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Library.luau": {
+      "before": "2fe766f8a32578ae965f6c8ba974d383036a1749948869ff055c280fad2edd89",
+      "after": "2fe766f8a32578ae965f6c8ba974d383036a1749948869ff055c280fad2edd89"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Model.luau": {
+      "before": "dc69e449fbc969c0316b7d309d5e439965f00f496ef65826937100ba1776af05",
+      "after": "dc69e449fbc969c0316b7d309d5e439965f00f496ef65826937100ba1776af05"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/MotionEdit.luau": {
+      "before": "5dd7ac066d7936543666ea034819198254c2e54ba916d73e513a053d2cc99c64",
+      "after": "5dd7ac066d7936543666ea034819198254c2e54ba916d73e513a053d2cc99c64"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/NinjaDuelAdapter.luau": {
+      "before": "e0db7ead97819480dd7064b911385f234628dbe588c25e22e76bc442c05e2f06",
+      "after": "e0db7ead97819480dd7064b911385f234628dbe588c25e22e76bc442c05e2f06"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/NinjaSources.luau": {
+      "before": "1e41fc9b69cc38f44257fa4ed338b84525b57310af6d1d1c02b378425bc536b9",
+      "after": "1e41fc9b69cc38f44257fa4ed338b84525b57310af6d1d1c02b378425bc536b9"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/PoseSolver.luau": {
+      "before": "499ae649d0a0379c82692c6242e86cf40fad340a83e13ad5a833b4fcd2704594",
+      "after": "499ae649d0a0379c82692c6242e86cf40fad340a83e13ad5a833b4fcd2704594"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/ReferenceMotionLibrary.luau": {
+      "before": "8d362f560132ae36f3f1131c3e0bd4d1feee15bb956d284be616c081e97b19cd",
+      "after": "8d362f560132ae36f3f1131c3e0bd4d1feee15bb956d284be616c081e97b19cd"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Rig.luau": {
+      "before": "15908c1c285a6159bd58fed36f7234d9c0e4d446b7f016e8a40e37009c9a98d0",
+      "after": "15908c1c285a6159bd58fed36f7234d9c0e4d446b7f016e8a40e37009c9a98d0"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Sampler.luau": {
+      "before": "deec01a10a2269ffdd4e760d8c76cc2935f6923b761e99745b23a98ecd4e6a40",
+      "after": "deec01a10a2269ffdd4e760d8c76cc2935f6923b761e99745b23a98ecd4e6a40"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Store.luau": {
+      "before": "d14375e25b5e6e8f2448dc7b471ef675a326f65073e077274188ca67ae910ae7",
+      "after": "d14375e25b5e6e8f2448dc7b471ef675a326f65073e077274188ca67ae910ae7"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/Timeline.luau": {
+      "before": "7bf32ec1b9d27e7ca5fbd86b466f31d6a895958d0ba0afd913711f8fc5554a89",
+      "after": "7bf32ec1b9d27e7ca5fbd86b466f31d6a895958d0ba0afd913711f8fc5554a89"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/UI.luau": {
+      "before": "b2a4572202c2cc6a7c130e0a2495d146f513ac7d0eec9c2e4612aa36249b0c46",
+      "after": "b2a4572202c2cc6a7c130e0a2495d146f513ac7d0eec9c2e4612aa36249b0c46"
+    },
+    "games/ninja-duel/motion-lab/ForgeMotionLab/Modules/View.luau": {
+      "before": "c3e47516735cd3eca157896fe67468104c75723852bf55eeea62f074436919e7",
+      "after": "c3e47516735cd3eca157896fe67468104c75723852bf55eeea62f074436919e7"
+    },
+    "games/ninja-duel/motion-lab/build.py": {
+      "before": "b3dba9bfc7664262a322287cf5b2e1a7c8c5f0a9db7a0409bc7449bb16a1437b",
+      "after": "b3dba9bfc7664262a322287cf5b2e1a7c8c5f0a9db7a0409bc7449bb16a1437b"
+    },
+    "games/ninja-duel/motion-lab/dist/ForgeMotionLab.rbxm": {
+      "before": "52e5fee2c21976be5312f6c90a4696e54a2d67413caaf5ba242dd6e98e3307a9",
+      "after": "52e5fee2c21976be5312f6c90a4696e54a2d67413caaf5ba242dd6e98e3307a9"
+    },
+    "games/ninja-duel/motion-lab/dist/ForgeMotionLab.rbxmx": {
+      "before": "364f361101d530a71e66a38567e86d90c4b709a823efef1d8d6a37978cd7130d",
+      "after": "364f361101d530a71e66a38567e86d90c4b709a823efef1d8d6a37978cd7130d"
+    },
+    "games/ninja-duel/motion-lab/install.py": {
+      "before": "6de4a9bf15d24889198b393bef8c09d666b16036dce291b4719bd4cf1fef75e1",
+      "after": "6de4a9bf15d24889198b393bef8c09d666b16036dce291b4719bd4cf1fef75e1"
+    },
+    "games/ninja-duel/motion-lab/tests/bilateral.luau": {
+      "before": "e2224c214d037cb1ec7693510837e35dca3039497d473f2e19524bec8f38826f",
+      "after": "e2224c214d037cb1ec7693510837e35dca3039497d473f2e19524bec8f38826f"
+    },
+    "games/ninja-duel/motion-lab/tests/compatibility.luau": {
+      "before": "2bf2f690b00990e8a854bdaf60eb2a9b55992db27041fae61e43e1d6312ed0a2",
+      "after": "2bf2f690b00990e8a854bdaf60eb2a9b55992db27041fae61e43e1d6312ed0a2"
+    },
+    "games/ninja-duel/motion-lab/tests/references.luau": {
+      "before": "d856360e57a9fbe61ca1f633776e1a72ead21b9a7f3874a64eaedfca502b7954",
+      "after": "d856360e57a9fbe61ca1f633776e1a72ead21b9a7f3874a64eaedfca502b7954"
+    },
+    "games/ninja-duel/motion-lab/tests/run.luau": {
+      "before": "5787a566b2f8e568699dd8e7b6f16e0c806a544bb45c0768ae6aa7b31dc3ba17",
+      "after": "5787a566b2f8e568699dd8e7b6f16e0c806a544bb45c0768ae6aa7b31dc3ba17"
+    },
+    "games/ninja-duel/motion-lab/tests/ui_smoke.luau": {
+      "before": "6141bce50078a1657e43c4b1dc4e34c0c3b893dbe29f4f7e876a2dbb3e193a92",
+      "after": "6141bce50078a1657e43c4b1dc4e34c0c3b893dbe29f4f7e876a2dbb3e193a92"
+    },
+    "games/ninja-duel/motion-lab/tests/variants.luau": {
+      "before": "c793e76247539a23d2c95be64dd46efc74273f6b9732b0c9cec38264aaafc14f",
+      "after": "c793e76247539a23d2c95be64dd46efc74273f6b9732b0c9cec38264aaafc14f"
+    },
+    "games/ninja-duel/motion-lab/tools/extract_ninja.luau": {
+      "before": "5a455378c76c1682302c58b182ee7850b3b7375d47a7385a2b4b551b95439909",
+      "after": "5a455378c76c1682302c58b182ee7850b3b7375d47a7385a2b4b551b95439909"
+    },
+    "games/ninja-duel/motion-lab/tools/package.luau": {
+      "before": "27df1f97a4180d5b0e4bef62d573e667a25f69b737271f5be0a392345c4fbe4a",
+      "after": "27df1f97a4180d5b0e4bef62d573e667a25f69b737271f5be0a392345c4fbe4a"
+    },
+    "games/ninja-duel/src/Client/Camera.luau": {
+      "before": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d",
+      "after": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d"
+    },
+    "games/ninja-duel/src/Client/CombatDebug.client.luau": {
+      "before": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
+      "after": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab"
+    },
+    "games/ninja-duel/src/Client/Effects.luau": {
+      "before": "271e9147b30c8287acc3e86b9d349220ddec6215a6f5cb6ba5265307dc134649",
+      "after": "271e9147b30c8287acc3e86b9d349220ddec6215a6f5cb6ba5265307dc134649"
+    },
+    "games/ninja-duel/src/Client/Input.luau": {
+      "before": "36c891849b4697f1e11c11fad9f6d830774be1e73d4c2218858415b87e65cef3",
+      "after": "36c891849b4697f1e11c11fad9f6d830774be1e73d4c2218858415b87e65cef3"
+    },
+    "games/ninja-duel/src/Client/Main.client.luau": {
+      "before": "5ef56ea64e85e0b4d5e50dd5f464cce1b25ebb7c70baf3edfb9fe74bfdbc1d65",
+      "after": "5ef56ea64e85e0b4d5e50dd5f464cce1b25ebb7c70baf3edfb9fe74bfdbc1d65"
+    },
+    "games/ninja-duel/src/Client/Presentation.luau": {
+      "before": "217a7be9674e34f5ad81c03871e3de47cb204f4f729496641a40422f7375cd21",
+      "after": "217a7be9674e34f5ad81c03871e3de47cb204f4f729496641a40422f7375cd21"
+    },
+    "games/ninja-duel/src/Client/UI.luau": {
+      "before": "f0564be68dcd09157de694ae4bf1e05b3ba1f139feb6f3735bd69bc6ced9626e",
+      "after": "f0564be68dcd09157de694ae4bf1e05b3ba1f139feb6f3735bd69bc6ced9626e"
+    },
+    "games/ninja-duel/src/Client/VelmoraHitFeedback.luau": {
+      "before": "4e40625c9c844d9dec776ce8b4d69aab5fc1318c5667df8ec5164eebf1a6e0dd",
+      "after": "4e40625c9c844d9dec776ce8b4d69aab5fc1318c5667df8ec5164eebf1a6e0dd"
+    },
+    "games/ninja-duel/src/Client/VelmoraMotionEngine.luau": {
+      "before": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d",
+      "after": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d"
+    },
+    "games/ninja-duel/src/Server/AI.luau": {
+      "before": "27bee5ce469cc21d8204825c6676499d072da5c20171311ca707d18be6af5d82",
+      "after": "27bee5ce469cc21d8204825c6676499d072da5c20171311ca707d18be6af5d82"
+    },
+    "games/ninja-duel/src/Server/Animation.luau": {
+      "before": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
+      "after": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89"
+    },
+    "games/ninja-duel/src/Server/BanglaCombat.luau": {
+      "before": "9ad3bb538983b372955bb6f9ccca86783da2f2a49426f551462222f96a7937cd",
+      "after": "9ad3bb538983b372955bb6f9ccca86783da2f2a49426f551462222f96a7937cd"
+    },
+    "games/ninja-duel/src/Server/BanglaEvade.luau": {
+      "before": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe",
+      "after": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe"
+    },
+    "games/ninja-duel/src/Server/Brawler.luau": {
+      "before": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740",
+      "after": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740"
+    },
+    "games/ninja-duel/src/Server/Combat.luau": {
+      "before": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0",
+      "after": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0"
+    },
+    "games/ninja-duel/src/Server/CombatInspector.luau": {
+      "before": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
+      "after": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b"
+    },
+    "games/ninja-duel/src/Server/DevHooks.luau": {
+      "before": "6bc4721b200d9ffdc6f1ca9c9fe02c5c91d65d718b081e357a30749d8745635d",
+      "after": "6bc4721b200d9ffdc6f1ca9c9fe02c5c91d65d718b081e357a30749d8745635d"
+    },
+    "games/ninja-duel/src/Server/DonorAnimations.luau": {
+      "before": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
+      "after": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32"
+    },
+    "games/ninja-duel/src/Server/Elements.luau": {
+      "before": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333",
+      "after": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333"
+    },
+    "games/ninja-duel/src/Server/Main.server.luau": {
+      "before": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
+      "after": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b"
+    },
+    "games/ninja-duel/src/Server/Matches.luau": {
+      "before": "0b9d3e572c43bad340bbb526079c1ee9eba72df700078fa7112a6d896dc95ea7",
+      "after": "0b9d3e572c43bad340bbb526079c1ee9eba72df700078fa7112a6d896dc95ea7"
+    },
+    "games/ninja-duel/src/Server/Motor.luau": {
+      "before": "51706bfd90b0ec44c445f7f3d22ddd9b82d42f2bbb73987c913ba8105ff72228",
+      "after": "51706bfd90b0ec44c445f7f3d22ddd9b82d42f2bbb73987c913ba8105ff72228"
+    },
+    "games/ninja-duel/src/Server/NativeQA.luau": {
+      "before": "939dacbb873ff0fea19f569bb56b6c4afaf9f0479163b60bbfa129d4af8b6656",
+      "after": "939dacbb873ff0fea19f569bb56b6c4afaf9f0479163b60bbfa129d4af8b6656"
+    },
+    "games/ninja-duel/src/Server/Place1Movement.luau": {
+      "before": "af18c94b37f114da55c36677727869ca59ac3537080111f1d48d57847b4f3323",
+      "after": "af18c94b37f114da55c36677727869ca59ac3537080111f1d48d57847b4f3323"
+    },
+    "games/ninja-duel/src/Server/Place1Parkour.luau": {
+      "before": "faf01c5fae7baafad38b98492497f93f99fb761bc1a00ba2b554390ee97d600a",
+      "after": "faf01c5fae7baafad38b98492497f93f99fb761bc1a00ba2b554390ee97d600a"
+    },
+    "games/ninja-duel/src/Server/Techniques.luau": {
+      "before": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1",
+      "after": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1"
+    },
+    "games/ninja-duel/src/Server/Tutorial.luau": {
+      "before": "1ec42ee3a85d01456c8c490e584d12039487d7221b985253dccf4b630352b189",
+      "after": "1ec42ee3a85d01456c8c490e584d12039487d7221b985253dccf4b630352b189"
+    },
+    "games/ninja-duel/src/Server/VelmoraAntiCheat.luau": {
+      "before": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
+      "after": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87"
+    },
+    "games/ninja-duel/src/Server/VelmoraDefense.luau": {
+      "before": "34615bef57877ee34726ad762bd9e3a4b9d21e3738cae5c19a1f4a42f290a063",
+      "after": "34615bef57877ee34726ad762bd9e3a4b9d21e3738cae5c19a1f4a42f290a063"
+    },
+    "games/ninja-duel/src/Server/VelmoraHitDetection.luau": {
+      "before": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb",
+      "after": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb"
+    },
+    "games/ninja-duel/src/Server/World.luau": {
+      "before": "04cb4eeeb04fd9936cde9a990e06fa0c48ff8a4164e9fd198e7de31382b2be3d",
+      "after": "04cb4eeeb04fd9936cde9a990e06fa0c48ff8a4164e9fd198e7de31382b2be3d"
+    },
+    "games/ninja-duel/src/Shared/AnimationBindings.luau": {
+      "before": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
+      "after": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42"
+    },
+    "games/ninja-duel/src/Shared/Attacks.luau": {
+      "before": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7",
+      "after": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7"
+    },
+    "games/ninja-duel/src/Shared/BanglaCombo.luau": {
+      "before": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
+      "after": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083"
+    },
+    "games/ninja-duel/src/Shared/Config.luau": {
+      "before": "aea9d1a50389ba7e759db789f4a26f6951554d5e84ad1de7c90d03713424dc2c",
+      "after": "aea9d1a50389ba7e759db789f4a26f6951554d5e84ad1de7c90d03713424dc2c"
+    },
+    "games/ninja-duel/src/Shared/Controls.luau": {
+      "before": "d92df72a0c558251dc39c805bd22f50a1abd4672ddd74273db9bd7fbbb4f6058",
+      "after": "d92df72a0c558251dc39c805bd22f50a1abd4672ddd74273db9bd7fbbb4f6058"
+    },
+    "games/ninja-duel/src/Shared/Fighters.luau": {
+      "before": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5",
+      "after": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5"
+    },
+    "games/ninja-duel/src/Shared/MoveGraphs.luau": {
+      "before": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b",
+      "after": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b"
+    },
+    "games/ninja-duel/src/Shared/Rules.luau": {
+      "before": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1",
+      "after": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1"
+    },
+    "games/ninja-duel/src/Shared/VelmoraCombatConfig.luau": {
+      "before": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371",
+      "after": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
+    },
+    "games/ninja-duel/tests/Animation.spec.luau": {
+      "before": "934e575291c1f573ccf5b271d981e9b824e8d77e6db66e87c3deefa72cb4d441",
+      "after": "934e575291c1f573ccf5b271d981e9b824e8d77e6db66e87c3deefa72cb4d441"
+    },
+    "games/ninja-duel/tests/Balance.sim.luau": {
+      "before": "beb1dd44240da820d7e4a4a0eb62d59818464b02a08dc4dbd29854949ea9bc44",
+      "after": "beb1dd44240da820d7e4a4a0eb62d59818464b02a08dc4dbd29854949ea9bc44"
+    },
+    "games/ninja-duel/tests/Balance.why.luau": {
+      "before": "fe1163a91bf20dc3a0d52b0bce373eec5243c71b6f87347db6c3125122fecc22",
+      "after": "fe1163a91bf20dc3a0d52b0bce373eec5243c71b6f87347db6c3125122fecc22"
+    },
+    "games/ninja-duel/tests/Branches.spec.luau": {
+      "before": "2fdf4b271d0f6e15d514ffbdf2702ccd810cd752fa5f97d97fe6e050857a3e1a",
+      "after": "2fdf4b271d0f6e15d514ffbdf2702ccd810cd752fa5f97d97fe6e050857a3e1a"
+    },
+    "games/ninja-duel/tests/Combat.spec.luau": {
+      "before": "8fb01d23f2185e27d2aa672adf73fccd88a05e368ec325418359354d2f337df5",
+      "after": "8fb01d23f2185e27d2aa672adf73fccd88a05e368ec325418359354d2f337df5"
+    },
+    "games/ninja-duel/tests/Feedback.spec.luau": {
+      "before": "7388ea21bc0afc2a1d517469029015ec5214653a6c19af2807e138342150f7c8",
+      "after": "7388ea21bc0afc2a1d517469029015ec5214653a6c19af2807e138342150f7c8"
+    },
+    "games/ninja-duel/tests/Gaara.spec.luau": {
+      "before": "509bb4a068c03f156444bd798c68cbda647c302e2ac9743e0e1bb7ace0ed8c60",
+      "after": "509bb4a068c03f156444bd798c68cbda647c302e2ac9743e0e1bb7ace0ed8c60"
+    },
+    "games/ninja-duel/tests/Harness.luau": {
+      "before": "1627adcc81193b7cbbd98ff59e61976fe03e346e1b91a95c8b801ee3aa060e51",
+      "after": "1627adcc81193b7cbbd98ff59e61976fe03e346e1b91a95c8b801ee3aa060e51"
+    },
+    "games/ninja-duel/tests/Neji.spec.luau": {
+      "before": "0f505f7d01a051f994142f57dd3a210fdab5c20848477b6a7a191135527e84dc",
+      "after": "0f505f7d01a051f994142f57dd3a210fdab5c20848477b6a7a191135527e84dc"
+    },
+    "games/ninja-duel/tests/Phase4.spec.luau": {
+      "before": "c3b32afdf5d36a11ff57c686bdbc520fe5fbe055266e92322708a0a29cf19def",
+      "after": "c3b32afdf5d36a11ff57c686bdbc520fe5fbe055266e92322708a0a29cf19def"
+    },
+    "games/ninja-duel/tests/Preparation.spec.luau": {
+      "before": "e7258a3c899d356fd07df7ef53e217d96445f5476f5db4b522e442fda24d80e6",
+      "after": "e7258a3c899d356fd07df7ef53e217d96445f5476f5db4b522e442fda24d80e6"
+    },
+    "games/ninja-duel/tests/Regression.spec.luau": {
+      "before": "6ecacb54a205cd3970d3dbbde5bd63ee21b759dc597a1384a8c66e10f6c7019f",
+      "after": "6ecacb54a205cd3970d3dbbde5bd63ee21b759dc597a1384a8c66e10f6c7019f"
+    },
+    "games/ninja-duel/tests/Rules.spec.luau": {
+      "before": "b9e719bb6f6ec7d0adc7214f7545f6c6f026febaf8c661633578ae0698073819",
+      "after": "b9e719bb6f6ec7d0adc7214f7545f6c6f026febaf8c661633578ae0698073819"
+    },
+    "games/ninja-duel/tests/Sasuke.spec.luau": {
+      "before": "938bffddc533eedd175957025d0e1c1752975802c6c4569187053c7eecb6b56e",
+      "after": "938bffddc533eedd175957025d0e1c1752975802c6c4569187053c7eecb6b56e"
+    },
+    "games/ninja-duel/tests/Sequences.spec.luau": {
+      "before": "5ee4e86b10ce8586b79fbdccfad126b08955901112ae00555f84f273e72bb05d",
+      "after": "5ee4e86b10ce8586b79fbdccfad126b08955901112ae00555f84f273e72bb05d"
+    },
+    "games/ninja-duel/tests/Systems.spec.luau": {
+      "before": "1c4b088c4c30320725d0e6e556f4d3ba4a9f9159b9ae38855e13bd80e1d278c6",
+      "after": "1c4b088c4c30320725d0e6e556f4d3ba4a9f9159b9ae38855e13bd80e1d278c6"
+    },
+    "games/ninja-duel/tests/Tools.spec.luau": {
+      "before": "72db8e4f242bcab5ae91673cdcb8887ef083603a30a409b6f996779b4c5a070a",
+      "after": "72db8e4f242bcab5ae91673cdcb8887ef083603a30a409b6f996779b4c5a070a"
+    },
+    "games/ninja-duel/tests/run.sh": {
+      "before": "a5b95acc37467a4c0bdf109d9ac3e8f51c70582b996ea7548b9fde697e23e9d2",
+      "after": "a5b95acc37467a4c0bdf109d9ac3e8f51c70582b996ea7548b9fde697e23e9d2"
+    },
+    "games/ninja-duel/tests/test_build_isolation.py": {
+      "before": "221fab15f6464cdf722f679dde73af40a6764215056f05f4e6b4d28abd6f95ac",
+      "after": "221fab15f6464cdf722f679dde73af40a6764215056f05f4e6b4d28abd6f95ac"
+    },
+    "games/ninja-duel/tools/combat_inventory.luau": {
+      "before": "e34f2642ff3d3dafcba5bcbed2e60747c6388cadcfce587dc47b3f085ec24f96",
+      "after": "e34f2642ff3d3dafcba5bcbed2e60747c6388cadcfce587dc47b3f085ec24f96"
+    },
+    "games/ninja-duel/vendor/bangla/original/PunchMoves.lua": {
+      "before": "5d2eeee8a7d8a3e08d65a261ba9264fa667051a909affd8c093cb68e26e1ef4a",
+      "after": "5d2eeee8a7d8a3e08d65a261ba9264fa667051a909affd8c093cb68e26e1ef4a"
+    },
+    "games/ninja-duel/vendor/bangla/original/StarterCombat.lua": {
+      "before": "febe0dc3d955258a69a623728979c574f9126c97b3d0cb6e4ce29dc655bc7caa",
+      "after": "febe0dc3d955258a69a623728979c574f9126c97b3d0cb6e4ce29dc655bc7caa"
+    },
+    "games/ninja-duel/vendor/bangla/original/WalkRunHandler.lua": {
+      "before": "bd13c622eea3bd8d528c1485cfcc336adad079e4f6532685fd3e4e5597d2d4ec",
+      "after": "bd13c622eea3bd8d528c1485cfcc336adad079e4f6532685fd3e4e5597d2d4ec"
+    },
+    "games/ninja-duel/vendor/place1/original/FirstPersonMovementController.client.lua": {
+      "before": "1866259fd5e0b2402105bf22a6753e78dc6f231d147a9f0f9ff43f66e991b8aa",
+      "after": "1866259fd5e0b2402105bf22a6753e78dc6f231d147a9f0f9ff43f66e991b8aa"
+    },
+    "games/ninja-duel/vendor/place1/original/ParkourTraversalController.client.lua": {
+      "before": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d",
+      "after": "1ac37006dbd3ffdb13a156afe12296b8dbd0ca4865ad79188c2dffb7b533351d"
+    }
+  },
+  "artifacts": {
+    "games/ninja-duel/dist/NinjaDuel.rbxlx": {
+      "before": "aec17a19c4e1a39d699fa78b90aa4b0ef56db1ad1f7d8097653c25ee31f2c1dd",
+      "after": "aec17a19c4e1a39d699fa78b90aa4b0ef56db1ad1f7d8097653c25ee31f2c1dd"
+    },
+    "games/ninja-duel/dist/NinjaDuel-Debug.rbxlx": {
+      "before": "6507777c122b64fa78752f079db2644bfd4b35988d52622d0ccc768f0ecc7c50",
+      "after": "6507777c122b64fa78752f079db2644bfd4b35988d52622d0ccc768f0ecc7c50"
+    },
+    "games/ninja-duel/dist/NinjaDuel-QA.rbxlx": {
+      "before": "e1df1611d76d21ed02501d294485202a30e9e22282a62ba555246a88880c5370",
+      "after": "e1df1611d76d21ed02501d294485202a30e9e22282a62ba555246a88880c5370"
+    },
+    "games/ninja-duel/motion-lab/dist/ForgeMotionLab.rbxm": {
+      "before": "52e5fee2c21976be5312f6c90a4696e54a2d67413caaf5ba242dd6e98e3307a9",
+      "after": "52e5fee2c21976be5312f6c90a4696e54a2d67413caaf5ba242dd6e98e3307a9"
+    },
+    "games/ninja-duel/motion-lab/dist/ForgeMotionLab.rbxmx": {
+      "before": "364f361101d530a71e66a38567e86d90c4b709a823efef1d8d6a37978cd7130d",
+      "after": "364f361101d530a71e66a38567e86d90c4b709a823efef1d8d6a37978cd7130d"
+    }
+  },
+  "before": {
+    "ninjaSuites": {
+      "status": "PASS",
+      "suites": 14,
+      "cases": 139
+    },
+    "isolationTests": {
+      "status": "PASS",
+      "cases": 4
+    },
+    "gameBuilds": {
+      "normal": "PASS",
+      "debug": "PASS",
+      "qa": "PASS"
+    },
+    "motionLab": {
+      "tests": "PASS",
+      "cases": 45,
+      "binaryUi": "PASS_SIMULATED_STUDIO_EVENTS"
+    },
+    "architecture": "PASS"
+  },
+  "after": {
+    "ninjaSuites": {
+      "status": "PASS",
+      "suites": 14,
+      "cases": 139
+    },
+    "isolationTests": {
+      "status": "PASS",
+      "cases": 4
+    },
+    "gameBuilds": {
+      "normal": "PASS",
+      "debug": "PASS",
+      "qa": "PASS"
+    },
+    "motionLab": {
+      "tests": "PASS",
+      "cases": 45,
+      "binaryUi": "PASS_SIMULATED_STUDIO_EVENTS"
+    },
+    "architecture": {
+      "status": "PASS",
+      "files": 302,
+      "checkerTests": 9
+    },
+    "forgePackagingTests": {
+      "status": "PASS",
+      "cases": 7
+    },
+    "forgeFiveCandidateFreeze": [
+      {
+        "product": "SchemaForge",
+        "packaging": "PASS",
+        "catalogueRelease": "Forge Studio 0.2.5",
+        "artifact": "plugins/schemaforge/ui/forge-0.2.5/SchemaForge-ForgeStudio-0.2.5.rbxm",
+        "sha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe",
+        "sourceCount": 6,
+        "sources": {
+          "Main": "d96d65ffacced827592b689934fefe918476016352e06963777d45876fe2aebf",
+          "Modules/AuditSummary": "200b4d7edd415a02e54b22052ceba26359fdbe74631294ceddf2e72edc7e4d4f",
+          "Modules/Engine": "7fea604f4c06d12fbf55441c4c8101d871b1ce12035c70eb6811c271ef4544b4",
+          "Modules/Schema": "be67585389f64e78489573d0c13efa7ddf528580aade68b2c927a053da525523",
+          "Modules/Store": "eceb065aad8be3a072d56d7cb54d548e20c00672ebf302b44737bdcdfd73ec76",
+          "Modules/View": "cc6efe792e123c9498d980321d1858e17c5b2cf53bd60d0441ad26288b164d90"
+        },
+        "nativeGate": "NOT ASSERTED BY THIS CHECK"
+      },
+      {
+        "product": "PresetForge",
+        "packaging": "PASS",
+        "catalogueRelease": "Forge Studio 0.2.5",
+        "artifact": "plugins/presetforge/ui/forge-0.2.5/PresetForge-ForgeStudio-0.2.5.rbxm",
+        "sha256": "a9726d442d8376a658cdb042da2212cced695ab2b7e6a96c4b8a08e71d881a63",
+        "sourceCount": 20,
+        "sources": {
+          "Main": "8404416b1c2fbf657ec93606c7f5ec11264422538825e4f426f732b7b7343698",
+          "Modules/ApplyService": "57fb78a6e55b43103868a70fa9b456e583c4fd103abb71e5f44a86df256709e7",
+          "Modules/AttributeCodec": "6bfe8ced3e77c0b431898e9d29223afb5fa57ca00a74fe2ac9ae2f546d2b87fc",
+          "Modules/CaptureService": "f2fd1ade53a3d81574f29ca02ab77f848b4b6d1d690ccd46d6b28bfec132cdcd",
+          "Modules/Constants": "efc9a87ffa5051a4949350d61b7a55feca320e44df9d943a8b8cc46ed130881f",
+          "Modules/Controller": "9349f710b7e5d1461bdf7277dd495049f50cbd87d11a19d72e4baa964adf81cd",
+          "Modules/DataGuard": "7395d989d8c01dede390ef6bc32fee6eefb76e954a69f55f3b1bc361146c35e2",
+          "Modules/ExecutionPlan": "8c0edef7f93fee9d9298df57aa22f91d8739f1716f6cab2c81d5fdd2e87e63c5",
+          "Modules/PresetSerializer": "69945e9533352a7f9c9ec5f6588f3f0731cf561b71204f474340810da2dc25e2",
+          "Modules/PresetStore": "471117f8315d69142b8d509adcd69a64d053a447fe7ddba995ad780b327a9910",
+          "Modules/PresetValidator": "8f2d0880e29b11b82e3e708f195aea2a7cca9bbb3285c86f59c81b93c1d79fd8",
+          "Modules/PreviewService": "53ce3795b5764c82520a8417ea0b7d8ffb98d8dfc569808f72dc34bbf51da20b",
+          "Modules/ProjectStore": "4be9bc04d4e6f7af05e63e2c165873a7b13dbd8b18d69347876fe6bfbaa2047d",
+          "Modules/RecipeRepository": "125d58b891962b1fb7d083110fee750490ed80c41a7d2a60aa4559371904c01b",
+          "Modules/Schema": "62dc47a2f221cd0e455b2db5956cec5721ffee9a3fc55c48885fce5ebb32c8b9",
+          "Modules/SelectionNavigator": "6eccaa5b3aa78d7cf727293b94dadf8ad49f77f25238ef5fea264a9799778442",
+          "Modules/StringCodec": "832ab263d6ed86b8e3848eb8b9788e0110a04d12f7926ef0781f5081eaea1820",
+          "Modules/TargetResolver": "eb011bcafa00c530c36cab929ea54deebd8c9abee39950858df18aab66f56c3c",
+          "Modules/UIFactory": "b323a82629b3b88e9ed44eab9265955c70d8617639861d932c5f7b91d8077888",
+          "Modules/ValueCodec": "57d4c67ab4abb2d1bb3c7e5914ce540016067afb73ee94c73ebd64896c74c5fe"
+        },
+        "nativeGate": "NOT ASSERTED BY THIS CHECK"
+      },
+      {
+        "product": "CurveForge",
+        "packaging": "PASS",
+        "catalogueRelease": "Forge Studio 0.2.5",
+        "artifact": "plugins/curveforge/ui/forge-0.2.5/CurveForge-ForgeStudio-0.2.5.rbxm",
+        "sha256": "510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d",
+        "sourceCount": 8,
+        "sources": {
+          "Main": "f402db3b3a348c379bb705239f42656602afbcace85c28ccfe4e3b987e6b5af2",
+          "Modules/ContextPreview": "82238c3f5150bb4f128f1723e24fe21fb0cbe8438c41067975b75a9d50a33828",
+          "Modules/Curve": "c36bf9211a6efca8be50116bcd9ccd2f117bf2111b0eb74547407d074d6e3163",
+          "Modules/Engine": "fe1f05916ec82c25d7a306e802e6dcd252611c97666d64fc168fdb42d9c006cb",
+          "Modules/ForgeMark": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+          "Modules/Settings": "e5364d260b1fd879ee2efba5d1c933bb6c142de89e7c62f60b0fd53ed2d826a8",
+          "Modules/StudioUI": "76c6a1501ec9a4c3e4808b5033c6224fc576f96538c7058c1752e5ae10a38588",
+          "Modules/View": "55359668cb05ba41a590a9abde2969a727c21c3332dfcbdf975b7bcab77f161f"
+        },
+        "nativeGate": "NOT ASSERTED BY THIS CHECK"
+      },
+      {
+        "product": "AccessForge",
+        "packaging": "PASS",
+        "catalogueRelease": "Forge Studio 0.2.5",
+        "artifact": "plugins/accessforge/ui/forge-0.2.5/AccessForge-ForgeStudio-0.2.5.rbxm",
+        "sha256": "839798041fdc1884df19e8cabccf7e1f698c0087d6f1e3bc8c9ec5bd25b1089d",
+        "sourceCount": 8,
+        "sources": {
+          "Main": "5cee2702b465986f64654105d29127f2caa0793e38d18c412259448339e13b0e",
+          "Modules/Engine": "56a48176aacb1aeaa9ca3dd0cdf8e70671e4d3b6398a8f0d1accbee5f37c27c4",
+          "Modules/ForgeMark": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+          "Modules/Geometry": "0a0e4c4d2e72f41c3368f05f39cbb3c4dc3665b9a550327c1bb53e7ceb458737",
+          "Modules/Preview": "c79255d2fc09b3c4fd23be16f97a8141755b94462659449ff8da9500830f46b2",
+          "Modules/Settings": "66607f2c50b352768b8dc2ee6509d926dd6af5959d26f4d142b10fa96e12c3b7",
+          "Modules/StudioUI": "4390f9c24b680115482d5d42c9b2b177c1010d2102c30367d5b0bf719b2ce728",
+          "Modules/View": "cd2a85ceeb77a18226639704028ff88482a09e4a91fb7e5b2bb77e4d05f1ee4e"
+        },
+        "nativeGate": "NOT ASSERTED BY THIS CHECK"
+      },
+      {
+        "product": "JointForge",
+        "packaging": "PASS",
+        "catalogueRelease": "Forge Studio 0.2.5",
+        "artifact": "plugins/jointforge/ui/forge-0.2.5/JointForge-ForgeStudio-0.2.5.rbxm",
+        "sha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216",
+        "sourceCount": 9,
+        "sources": {
+          "Main": "783605cb37fba9707e26c32de29d9869e154558da73bc750b6d9a58ceb914104",
+          "Modules/ForgeMark": "015d6862c1c3c5e7e3364ae5f9ba450ad93eff793f43678e1f350e9695e70b5e",
+          "Modules/Graph": "b02d0158a85f5d9a4fe6aceef4280605a9385d15a5e1d9b2242a663bc1fb8cd9",
+          "Modules/Inspection": "63dcd3291d74de85fee27a0965e5ea05799ba9c159a2e35d1d5cd8c3752f3e14",
+          "Modules/Planner": "9dfe7d77a4d442c0faf1d6812e700a2d80f3f17d39e9c7418f2d4403ca82d16b",
+          "Modules/Schema": "32225d12b64bdb85efcedec3bad00224be6507c8dff82eda3c8634f38ecd9518",
+          "Modules/StudioUI": "9dddfb14a6a0308bedbb9ad486b8892914664f1263c1b91da788df643a979c5c",
+          "Modules/Transaction": "2e55e72375a71ea7de65956946742104eec19bc2402c04cecf8b2a78b222177f",
+          "Modules/View": "07e0d85cd556e5667ab77ae571991ac6e5b4f0936ac9cc8eb5c39a7301e2c1b6"
+        },
+        "nativeGate": "NOT ASSERTED BY THIS CHECK"
+      }
+    ],
+    "allRojoProjects": {
+      "plugins/accessforge/release/publication.project.json": {
+        "exit": 0,
+        "sha256": "01c29691042a5c7427b75fcc5a60b39b11ebff324aeeca331b043ed86f5a5ef1",
+        "errors": ""
+      },
+      "plugins/accessforge/release/scene/build.project.json": {
+        "exit": 0,
+        "sha256": "4da822e8d486d6987e58628129a1388de4c23457cc3b8f9e5d23f45bf0705802",
+        "errors": ""
+      },
+      "plugins/accessforge/release.project.json": {
+        "exit": 0,
+        "sha256": "839798041fdc1884df19e8cabccf7e1f698c0087d6f1e3bc8c9ec5bd25b1089d",
+        "errors": ""
+      },
+      "plugins/accessforge/tests/place.project.json": {
+        "exit": 0,
+        "sha256": "6fd13d444d17907ecd7fd39092dedaaaacbf5bc0050efa1cc75e0e7c71753e39",
+        "errors": ""
+      },
+      "plugins/accessforge/tests/runner.project.json": {
+        "exit": 0,
+        "sha256": "d6f3e7f68fdd774ac7940fb74c3c88a8ff0cbce48a634264bfe98cd8fd98ccf3",
+        "errors": ""
+      },
+      "plugins/curveforge/demo/fixtures.project.json": {
+        "exit": 0,
+        "sha256": "edef03996d7b635d88716a9bbbe41b2f3cefe1abc59255e77a9ed4d9b8271c46",
+        "errors": ""
+      },
+      "plugins/curveforge/release/publication.project.json": {
+        "exit": 0,
+        "sha256": "2917c710dcdf47c41efc16ab8c20cdefb731f5c278a52660c76130832dd7eac4",
+        "errors": ""
+      },
+      "plugins/curveforge/release/scene/scene.project.json": {
+        "exit": 0,
+        "sha256": "cc5f8b7461856b37994b144876506ca0c09e482f3185bb2b792b5b171129723b",
+        "errors": ""
+      },
+      "plugins/curveforge/release.project.json": {
+        "exit": 0,
+        "sha256": "510b7dc3af0dfed72bdc97f7ebe83ce2bdacfc960ffac38dd9ab9735e78cdc7d",
+        "errors": ""
+      },
+      "plugins/curveforge/tests/place.project.json": {
+        "exit": 0,
+        "sha256": "98f6fcb76520d04c1a7f51ea2525774329588b1aaf00b31328bd3b8268236eb4",
+        "errors": ""
+      },
+      "plugins/curveforge/tests/plugin.project.json": {
+        "exit": 0,
+        "sha256": "2617dc82300a4c294fe695043b5353f9d1fcdad754d1182792eebad4b68c04d1",
+        "errors": ""
+      },
+      "plugins/forge-playground/default.project.json": {
+        "exit": 0,
+        "sha256": "3b712f062ad648e2e630ab044608d1ed2f89f510026dcf7252b78df2b2d233ec",
+        "errors": ""
+      },
+      "plugins/jointforge/release/scene/scene.project.json": {
+        "exit": 0,
+        "sha256": "4d6aacf4801b46e786040e1c307f4eec610e8ab8dbce2c7be8540b88125be1a4",
+        "errors": ""
+      },
+      "plugins/jointforge/release.project.json": {
+        "exit": 0,
+        "sha256": "e74b3f4d94de155faa634a0986dcea30efee105a1c009b8db7c9a324e36a2216",
+        "errors": ""
+      },
+      "plugins/jointforge/tests/place.project.json": {
+        "exit": 0,
+        "sha256": "d041ae4adb2aca0b1b9ab7983b9aee2543f50969f9eb9bd32d48740428334d57",
+        "errors": ""
+      },
+      "plugins/jointforge/tests/plugin.project.json": {
+        "exit": 0,
+        "sha256": "0e9b9a97a2078e032f0144a354dad91f46de3d85c7155ea0460530f5f5d61e87",
+        "errors": ""
+      },
+      "plugins/presetforge/demo/PresetForge-Demo.project.json": {
+        "exit": 0,
+        "sha256": "f52795b75bcd4757a13dbb9e3853b84620480ea664b3f7c406cfbd4ffb976d36",
+        "errors": ""
+      },
+      "plugins/presetforge/release/publication.project.json": {
+        "exit": 0,
+        "sha256": "490ee3e8803ada35f12cee41f02d7ed82a368daf912a4322b5d54ed58a2385bc",
+        "errors": ""
+      },
+      "plugins/presetforge/release/scene/scene.project.json": {
+        "exit": 0,
+        "sha256": "8aff5727863d19405474834c16578bd216bda52ea32e8707b4556a7ed4b07831",
+        "errors": ""
+      },
+      "plugins/presetforge/release.project.json": {
+        "exit": 0,
+        "sha256": "a9726d442d8376a658cdb042da2212cced695ab2b7e6a96c4b8a08e71d881a63",
+        "errors": ""
+      },
+      "plugins/presetforge/tests/arena-gate.project.json": {
+        "exit": 0,
+        "sha256": "3632951276494a4700d33aaf83090331da1c0670157af3b52e4519de7a9946b5",
+        "errors": ""
+      },
+      "plugins/presetforge/tests/default.project.json": {
+        "exit": 0,
+        "sha256": "6b5ef53c11994c39fe74ce695c0be0066e4bb71f01caa6673fe2bb96551e1429",
+        "errors": ""
+      },
+      "plugins/presetforge/tests/final-gate.project.json": {
+        "exit": 0,
+        "sha256": "a06252b117ee408055681ff797ace185ef1f1fabe50cdcdd350b27f68b6a962c",
+        "errors": ""
+      },
+      "plugins/presetforge/tests/plugin.project.json": {
+        "exit": 0,
+        "sha256": "d67f499a9a02c9ce9d034e1571724c06bb9235629f1bd666d327bfe872efd5b3",
+        "errors": ""
+      },
+      "plugins/schemaforge/release/publication.project.json": {
+        "exit": 0,
+        "sha256": "6476ee5d82fb6f2aed0497c65beda8ccbf88dc0b12be6c0c1ca3dbbcc4a91e86",
+        "errors": ""
+      },
+      "plugins/schemaforge/release/scene/build.project.json": {
+        "exit": 0,
+        "sha256": "7f11828a913da9f031308837fa6111dfa8215355c6724aa09accd1425d04d761",
+        "errors": ""
+      },
+      "plugins/schemaforge/release/scene/inspect.project.json": {
+        "exit": 0,
+        "sha256": "e17680ce905af5150d322a6f014541c853bc5f7e4c69c315238e53f8726c4d59",
+        "errors": ""
+      },
+      "plugins/schemaforge/release.project.json": {
+        "exit": 0,
+        "sha256": "1e86dd4e581bdffbae2a55635b95ab41bfa4d41359826935c74ef59bbf9575fe",
+        "errors": ""
+      },
+      "plugins/schemaforge/tests/final-gate.project.json": {
+        "exit": 0,
+        "sha256": "0e9e9f9cbcacf21e8bbf82804267cd13cbc011ed05308fb003d9744a1a3fe43d",
+        "errors": ""
+      },
+      "plugins/schemaforge/tests/place.project.json": {
+        "exit": 0,
+        "sha256": "d188f4900b6af294ed82b9b45849752df7a69ab7c8c03e81034f73b5eb5ba0ad",
+        "errors": ""
+      },
+      "plugins/schemaforge/tests/runner.project.json": {
+        "exit": 0,
+        "sha256": "6c048851c4ca8534a7ff2b556a292ae7c2afc8c8352baeca95bcf02cad916210",
+        "errors": ""
+      },
+      "tools/forge-release/gate.project.json": {
+        "exit": 0,
+        "sha256": "276bb00b02f39fcf5f00f639137f6fcc5d9800ffa790ba098c1f4253b4422127",
+        "errors": ""
+      },
+      "tools/forge-release/place.project.json": {
+        "exit": 0,
+        "sha256": "07557d047f81b40d0d54b63d7eb3e1edbef778120b1678a1afcc8b56bb8a76b7",
+        "errors": ""
+      }
+    },
+    "documentChecks": {
+      "status": "PASS",
+      "backlogItems": 73,
+      "sources": 59,
+      "sections": 909,
+      "negativeCases": 4
+    }
+  },
+  "nativeFinalGame": "PENDING",
+  "nativeFinalLab": "PENDING",
+  "visualAndControllerFeel": "PENDING",
+  "pluginCodeChanges": [],
+  "sharedCodeChanges": [],
+  "notes": [
+    "Motion Lab manifest sourceTree refreshed to the unchanged src tree of the preparatory base; binary/source hashes remain identical.",
+    "No native, publication or installation action performed.",
+    "Rojo initial retry lacked PATH binary; final invocation used verified local Rojo and all 33 projects passed.",
+    "Document checker initial implementation was repaired before final PASS; no architecture boundary relaxation needed."
+  ]
+}

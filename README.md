@@ -21,10 +21,12 @@ Cinq produits publies cote Studio. Prix, medias et distribution web de SchemaFor
 
 - [Ninja Duel](games/ninja-duel/README.md) : runtime, assets, vendor, build et tests autonomes.
 - [Documentation Ninja Duel](games/ninja-duel/docs/README.md) : missions, rapports, archive et suivi courant.
-- `games/ninja-duel/motion-lab/` : emplacement réservé à Motion Lab (absent de ce checkout) ; adapter vers Ninja Duel autorisé, dépendance inverse interdite.
+- `games/ninja-duel/motion-lab` : emplacement réservé à Motion Lab (absent de ce checkout) ; adapter vers Ninja Duel autorisé, dépendance inverse interdite.
 - `plugins/*/` : tous les anciens produits Forge/BrickKit, y compris les candidats non publiés.
 - [Forge Playground](plugins/forge-playground/README.md) : expérience de démonstration qui réutilise explicitement des moteurs Forge.
 - [Documentation Forge](docs/forge/README.md) : catalogue, commercial, branding et programme Studio UI.
-- `tools/` : outils de développement/QA ; `shared/` : composants réellement transversaux (actuellement un emplacement vide).
+- `tools` : outils de développement/QA ; `shared` : composants réellement transversaux (actuellement un emplacement vide).
 
 Les règles et commandes de validation sont dans [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+Pour reprendre Ninja Duel sans historique de chat : [CLAUDE_START_HERE](games/ninja-duel/CLAUDE_START_HERE.md), état et backlog cumulatifs sous `games/ninja-duel/docs/active`.

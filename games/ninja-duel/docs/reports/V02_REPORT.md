@@ -1,6 +1,6 @@
 # Ninja Duel V0.2 — état du prototype
 
-V0.2 répond à `games/ninja-duel/docs/missions/COMBAT_FEEL_V02.md` par une refonte du déplacement et de la mêlée, sans élargir le roster. La place jouable est `../../dist/NinjaDuel.rbxlx`; `../../dist/NinjaDuel-QA.rbxlx` ajoute les seuls tests Studio natifs. Les manifestes JSON adjacents donnent les SHA-256 et contrôlent que chaque source embarquée correspond à `../../src`.
+V0.2 répond à `games/ninja-duel/docs/archive/missions/legacy-v0/COMBAT_FEEL_V02.md` par une refonte du déplacement et de la mêlée, sans élargir le roster. La place jouable est `../../dist/NinjaDuel.rbxlx`; `../../dist/NinjaDuel-QA.rbxlx` ajoute les seuls tests Studio natifs. Les manifestes JSON adjacents donnent les SHA-256 et contrôlent que chaque source embarquée correspond à `../../src`.
 
 ## Changements de la phase 2
 

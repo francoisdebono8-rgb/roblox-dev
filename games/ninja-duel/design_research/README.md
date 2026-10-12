@@ -1,5 +1,7 @@
 # Ninja Duel — Design Research Library
 
+Reprise actuelle : [CLAUDE_START_HERE](../CLAUDE_START_HERE.md). Ces sources riches restent intégrales ; leurs propositions ne remplacent pas les décisions et le backlog actifs. [Registre de revue](../docs/research/SOURCE_REGISTER.md).
+
 This folder is the long-term gameplay design library for the 32-character target roster.
 
 Purpose: give future Claude passes a prepared catalogue of reusable combat ideas so time is spent implementing and testing rather than inventing every system from zero.

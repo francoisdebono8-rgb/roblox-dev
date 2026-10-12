@@ -1,0 +1,714 @@
+[
+  {
+    "before": "games/ninja-duel/CLAUDE_FINAL_PASS.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_FINAL_PASS.md",
+    "referencing_files": {
+      "games/ninja-duel/CLAUDE_PASS_REPORT.md": [
+        4
+      ],
+      "games/ninja-duel/docs/current/CLAUDE_TECHNICAL_HANDOFF.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "c9894bf8219337cba5ce71355bea3839986b1c2a5ccb04fa3048c2dfd95c7c19",
+    "final_sha256": "8f415382a99d5afe343a2fb79b77ffde2ae417b4cadea1c30fdf45f28297dedc",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -3 +3 @@\n",
+      "-Technical preparation handoff: [docs/current/CLAUDE_TECHNICAL_HANDOFF.md](docs/current/CLAUDE_TECHNICAL_HANDOFF.md). Read the four-character matrix, state/tool contracts and exact motion mapping before artistic iteration. The technical pass did not approve visual/game-feel gates.",
+      "+Technical preparation handoff: [docs/current/CLAUDE_TECHNICAL_HANDOFF.md](../../current/CLAUDE_TECHNICAL_HANDOFF.md). Read the four-character matrix, state/tool contracts and exact motion mapping before artistic iteration. The technical pass did not approve visual/game-feel gates."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "38aa192eabadb90e5bf8514609f6cc4cd8a4e645b8e0696bab1a468098cbe551",
+    "final_sha256": "0b5df495296edbc2361ef19f8572f5627c109f7b0a3bc1b81adcce652a37c796",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -455 +455 @@\n",
+      "-`games/ninja-duel/VISION_GAP.md`",
+      "+`games/ninja-duel/docs/reports/VISION_GAP.md`",
+      "@@ -556,3 +556,3 @@\n",
+      "-11. include `VISION_GAP.md`.",
+      "-",
+      "-The user should be able to pull/download the repository, open `dist/NinjaDuel.rbxlx` on the Mac, press Play, and test your exact final state without manual reconstruction.",
+      "+11. include `../../reports/VISION_GAP.md`.",
+      "+",
+      "+The user should be able to pull/download the repository, open `../../../dist/NinjaDuel.rbxlx` on the Mac, press Play, and test your exact final state without manual reconstruction."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "53b4bb1b4da766602d1959acc4b534d09e559d436024510dec1ec641302c9df4",
+    "final_sha256": "53b4bb1b4da766602d1959acc4b534d09e559d436024510dec1ec641302c9df4",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md",
+    "referencing_files": {
+      "games/ninja-duel/PHASE4_REPORT.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "64906ca7afe8dc0aae3933bd9c11be799c99d894e5de67a38700725e21634405",
+    "final_sha256": "64906ca7afe8dc0aae3933bd9c11be799c99d894e5de67a38700725e21634405",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_DESIGN_LIBRARY_WORKFLOW.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_DESIGN_LIBRARY_WORKFLOW.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "5459e6cd7468ee001e33edf829e851c45ac833b11b82093a8e83eb0362a95771",
+    "final_sha256": "231e82e9c925cf920152b329bd45ebee87fee6c18c6871fa4378047d64a757fa",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -146,9 +146,9 @@\n",
+      "-- `design_research/README.md`",
+      "-- `design_research/01_combat_grammar/COMBAT_VERBS_AND_STATES.md`",
+      "-- `design_research/01_combat_grammar/COMBO_BUILDING_BLOCKS.md`",
+      "-- `design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md`",
+      "-- `design_research/02_character_architecture/AWAKENING_DESIGN.md`",
+      "-- `design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md`",
+      "-- `design_research/04_research/RESEARCH_BACKLOG.md`",
+      "-- `design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md`",
+      "-- `design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md`",
+      "+- `../../../design_research/README.md`",
+      "+- `../../../design_research/01_combat_grammar/COMBAT_VERBS_AND_STATES.md`",
+      "+- `../../../design_research/01_combat_grammar/COMBO_BUILDING_BLOCKS.md`",
+      "+- `../../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md`",
+      "+- `../../../design_research/02_character_architecture/AWAKENING_DESIGN.md`",
+      "+- `../../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md`",
+      "+- `../../../design_research/04_research/RESEARCH_BACKLOG.md`",
+      "+- `../../../design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md`",
+      "+- `../../../design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md`",
+      "@@ -205 +205 @@\n",
+      "-When outside research is performed, store useful conclusions under `design_research/04_research/` using:",
+      "+When outside research is performed, store useful conclusions under `../../../design_research/04_research` using:"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_FINAL_TODAY_POLISH.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_FINAL_TODAY_POLISH.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "2187784ecc037fa9daab8ce7e3920f1ac36fa2c44b6e5c00931fec5b120e45c9",
+    "final_sha256": "2187784ecc037fa9daab8ce7e3920f1ac36fa2c44b6e5c00931fec5b120e45c9",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md",
+    "referencing_files": {
+      "games/ninja-duel/ARENA_COMBO_REPORT.md": [
+        4
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "30abdfec0ccc4990edfa78015067689866260859831e72de245758a6b2ed29e8",
+    "final_sha256": "30abdfec0ccc4990edfa78015067689866260859831e72de245758a6b2ed29e8",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_PASS_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/CLAUDE_PASS_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "2e0b70bd02bfd940d6a4fe4741ceae5911734ab65d58c58f0a78654171140ef6",
+    "final_sha256": "5e868727aa136a12b045d2943a63db8fd46df860a862d0c51e792ddf745fbe5e",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -4 +4 @@\n",
+      "-partial delivery of `CLAUDE_FINAL_PASS.md`. What landed and what did not is listed below.",
+      "+partial delivery of `../archive/missions/CLAUDE_FINAL_PASS.md`. What landed and what did not is listed below.",
+      "@@ -8 +8 @@\n",
+      "-`games/ninja-duel/dist/NinjaDuel.rbxlx` → Roblox Studio → **Test**. The QA place is `dist/NinjaDuel-QA.rbxlx`.",
+      "+`games/ninja-duel/dist/NinjaDuel.rbxlx` → Roblox Studio → **Test**. The QA place is `../../dist/NinjaDuel-QA.rbxlx`.",
+      "@@ -65 +65 @@\n",
+      "-- `build.py` finds `luau`/`lune` on Windows and reads sources as UTF-8.",
+      "+- `../../build.py` finds `luau`/`lune` on Windows and reads sources as UTF-8.",
+      "@@ -71 +71 @@\n",
+      "-- Headless suites: 64/64 PASS on the exact sources built into `dist/` (`build.py`).",
+      "+- Headless suites: 64/64 PASS on the exact sources built into `../../dist` (`../../build.py`)."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md",
+    "after": "games/ninja-duel/docs/archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "517cebdd85f91c8ce79e36fe3e7e4b40562f544bff198eb2261f1c082b153611",
+    "final_sha256": "aa48ae41faa982f5bdd7a27bfce6bc375a3c791c13af55e2b48fcf60a8a38013",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -94,2 +94,2 @@\n",
+      "-4. record the public/shareable Roblox experience link or exact Experience/Place identifier in `PUBLIC_BUILD.md`;",
+      "-5. if publishing is blocked by account/auth/permissions, do not waste the pass fighting it: document the exact blocker in `PUBLIC_BUILD.md` and still leave the rebuilt `.rbxlx` ready.",
+      "+4. record the public/shareable Roblox experience link or exact Experience/Place identifier in `../../tools/PUBLIC_BUILD.md`;",
+      "+5. if publishing is blocked by account/auth/permissions, do not waste the pass fighting it: document the exact blocker in `../../tools/PUBLIC_BUILD.md` and still leave the rebuilt `.rbxlx` ready."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/PHASE3_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/PHASE3_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "e896b63f039cdb9242f1d95acffbaa9fd2675b2e03f483538e693bcc14633de0",
+    "final_sha256": "f509753b715db7d5ea933cc4c05d324f6e945677bb3a5a5f10fa22706fe3edf7",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -41 +41 @@\n",
+      "-- **Move graphs and cancel rules** (`src/Shared/MoveGraphs.luau`): character branches are data;",
+      "+- **Move graphs and cancel rules** (`../../src/Shared/MoveGraphs.luau`): character branches are data;"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/PHASE4_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/PHASE4_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/FINAL_TODAY_REPORT.md": [
+        36
+      ],
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "510d50e550df62c51ea593b970190dad1007ccc5b49d614449d645a5b533b6b7",
+    "final_sha256": "2342669ed10e3989e480ea0d3a554fdf4a9d6a2ad0f91ee9c0ca5d3195ab6cb3",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -3 +3 @@\n",
+      "-Branch `claude/minato-itachi-final`, continuing from the phase 3 build. Mission: `CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md`.",
+      "+Branch `claude/minato-itachi-final`, continuing from the phase 3 build. Mission: `../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md`.",
+      "@@ -78 +78 @@\n",
+      "-- Headless suites **89 / 89 PASS** (new `tests/Phase4.spec.luau`, 16 cases: scaling and combo limit,",
+      "+- Headless suites **89 / 89 PASS** (new `../../tests/Phase4.spec.luau`, 16 cases: scaling and combo limit,"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/FINAL_TODAY_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/FINAL_TODAY_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "47e3f40f6c32ab30d1cf29a1d713b733e0889da1899d0ea8f89713c1d31ac3a9",
+    "final_sha256": "3c026c8e8dbb31d2b3d706ad19f98944e5cd640a952338a30fa9843c5ba7a118",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -40 +40 @@\n",
+      "-- Headless suites **99 / 99 PASS** (`tests/run.sh`; new `Neji.spec.luau` 8 cases, `Phase4.spec.luau` 18 cases).",
+      "+- Headless suites **99 / 99 PASS** (`../../tests/run.sh`; new `Neji.spec.luau` 8 cases, `Phase4.spec.luau` 18 cases)."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/FINAL_45MIN_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/FINAL_45MIN_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "8763c9c61c60c860aea107df719fc2656ff38a453159f268dbbfb30cb43adc7f",
+    "final_sha256": "87ef5c3438cd25a26809260dd5d38a66a85f70d09d412a96a6388646b96e9a02",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -41 +41 @@\n",
+      "-- Not published to a Roblox Experience (see `PUBLIC_BUILD.md`: Studio menu action on the owner's account).",
+      "+- Not published to a Roblox Experience (see `../tools/PUBLIC_BUILD.md`: Studio menu action on the owner's account)."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/ARENA_COMBO_REPORT.md",
+    "after": "games/ninja-duel/docs/reports/ARENA_COMBO_REPORT.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "1f92edcdd96b000d3c3a200a11acba26cf4b17e591a8c7099b8f6d62a317e94d",
+    "final_sha256": "d28bf9bff2000df1809bba5805828578c3dda1db8ccd2a52ad851b2d532760cc",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -4 +4 @@\n",
+      "-Mission: `CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md`. Roster source: `ROSTER_MOVESETS_10_PRODIGIES.md`.",
+      "+Mission: `../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md`. Roster source: `../characters/ROSTER_MOVESETS_10_PRODIGIES.md`."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/VISION_GAP.md",
+    "after": "games/ninja-duel/docs/reports/VISION_GAP.md",
+    "referencing_files": {
+      "games/ninja-duel/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md": [
+        455,
+        556
+      ],
+      "games/ninja-duel/PHASE3_REPORT.md": [
+        4,
+        67
+      ],
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "fdb1dfdc849c3904a6f8d78ad07eb339297dd827220235234a020056194b4237",
+    "final_sha256": "57fb76e948409e02b3f52e28dc7b91e5a9106a7290978e1b728aad35b09cfae3",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -92 +92 @@\n",
+      "-  now live in `src/Shared/MoveGraphs.luau` (data per fighter) with code hooks only where behaviour is",
+      "+  now live in `../../src/Shared/MoveGraphs.luau` (data per fighter) with code hooks only where behaviour is"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/ROADMAP_WEEK.md",
+    "after": "games/ninja-duel/docs/archive/plans/ROADMAP_WEEK.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "5bb8efb321c45a0389d78b86cb51f174b97c0b147cd791ab9af5e43359ffc195",
+    "final_sha256": "a60461a220b03904973d3ee616818083c540e8f0c0b5ef51fcd7ee32a196e921",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -17 +17 @@\n",
+      "-lash nerf — re-run `tests/Balance.sim.luau` and target 40–60 %), then add `\"Sand\"` to `playable`.",
+      "+lash nerf — re-run `../../../tests/Balance.sim.luau` and target 40–60 %), then add `\"Sand\"` to `playable`.",
+      "@@ -43,2 +43,2 @@\n",
+      "-Bug bash with `sweep.lua`; rebuild `dist` and the QA artifact; publish from your Studio session",
+      "-(`PUBLIC_BUILD.md`; publishing is your action on your account).",
+      "+Bug bash with `sweep.lua`; rebuild `../../../dist` and the QA artifact; publish from your Studio session",
+      "+(`../../tools/PUBLIC_BUILD.md`; publishing is your action on your account).",
+      "@@ -48 +48 @@\n",
+      "-Shisui (afterimage choice), Orochimaru (unnatural reach). Each follows `FIGHTER_TEMPLATE.md`: data, move",
+      "+Shisui (afterimage choice), Orochimaru (unnatural reach). Each follows `../../characters/FIGHTER_TEMPLATE.md`: data, move"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/FIGHTER_TEMPLATE.md",
+    "after": "games/ninja-duel/docs/characters/FIGHTER_TEMPLATE.md",
+    "referencing_files": {
+      "games/ninja-duel/README.md": [
+        3
+      ],
+      "games/ninja-duel/ROADMAP_WEEK.md": [
+        48
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "d93780af16fe560413962ceac45d3bac993743e146769d5d2188502e8bfa5482",
+    "final_sha256": "61d20ebec8ab0672263d7ef76c68a88632791a9546fd271422f492635509ff10",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -1,0 +2,2 @@\n",
+      "+",
+      "+Source historique conservée ; périmètre actuel : [CORE_ROSTER](CORE_ROSTER.md). Vérifier les chemins et outils anciens avant usage ; ne pas lancer une extension de roster implicitement.",
+      "@@ -9 +11 @@\n",
+      "-| Identity & stats | `src/Shared/Fighters.luau` | `Name`, `FullName`, `Age`, `Title`, `Color`, `Description`, `Routes` (one line shown on select), health/chakra/speed scales, `PreferredRange` (AI spacing) |",
+      "+| Identity & stats | `../../src/Shared/Fighters.luau` | `Name`, `FullName`, `Age`, `Title`, `Color`, `Description`, `Routes` (one line shown on select), health/chakra/speed scales, `PreferredRange` (AI spacing) |",
+      "@@ -11,2 +13,2 @@\n",
+      "-| Combo grammar | `src/Shared/MoveGraphs.luau` | `routes = {up, down, side, airUp, airDown, airSide}` → attack names; `heavyAfterOne`; `disengage` (tool kind); `onRoute[name]` payoff kind; `stringCancels` (jutsu allowed out of a clean string); `blockCancels`; `readCounter` |",
+      "-| New strikes | `src/Shared/Attacks.luau` | `move(startup, active, recovery, damage, travel, reaction, impulse, stun)` + motion entry + `ZONE` / `KIND` (drives the victim's reaction) + hitbox fields; `orbit` for side-switching routes; `chain=true` if the string continues |",
+      "+| Combo grammar | `../../src/Shared/MoveGraphs.luau` | `routes = {up, down, side, airUp, airDown, airSide}` → attack names; `heavyAfterOne`; `disengage` (tool kind); `onRoute[name]` payoff kind; `stringCancels` (jutsu allowed out of a clean string); `blockCancels`; `readCounter` |",
+      "+| New strikes | `../../src/Shared/Attacks.luau` | `move(startup, active, recovery, damage, travel, reaction, impulse, stun)` + motion entry + `ZONE` / `KIND` (drives the victim's reaction) + hitbox fields; `orbit` for side-switching routes; `chain=true` if the string continues |",
+      "@@ -15 +17 @@\n",
+      "-| Techniques | `Fighters.<id>.Techniques` + `src/Server/Techniques.luau` | up to five specs (`Cost`, `Channel`, `Active`, `Recovery`, `Cooldown`, `Range`, …); an `execute(c, a, pending)` per `Id` (reuse an existing Id to reuse its implementation) |",
+      "+| Techniques | `Fighters.<id>.Techniques` + `../../src/Server/Techniques.luau` | up to five specs (`Cost`, `Channel`, `Active`, `Recovery`, `Cooldown`, `Range`, …); an `execute(c, a, pending)` per `Id` (reuse an existing Id to reuse its implementation) |",
+      "@@ -18 +20 @@\n",
+      "-| Body: stance & gait | `src/Client/VelmoraMotionEngine.luau` | `STANCE.<id>`, `GAIT.<id>` (stride, cadence, arm swing, lean, bob, guard), `SPRINGY` |",
+      "+| Body: stance & gait | `../../src/Client/VelmoraMotionEngine.luau` | `STANCE.<id>`, `GAIT.<id>` (stride, cadence, arm swing, lean, bob, guard), `SPRINGY` |",
+      "@@ -21,6 +23,6 @@\n",
+      "-| Costume | `src/Server/World.luau` | `dress<Name>(model, def)` with `wear`, `spike`, `hairCap`, `headband`, `face`, `crest`; hidden parts toggled by effects (Byakugan veins, curse marks) |",
+      "-| Effects | `src/Client/Effects.luau` | colour tone, signature visuals in `FX:fighter`, impact styles in `FX:impact`, projectile builders in `BUILD` |",
+      "-| Camera | `src/Client/Camera.luau` | `IMPULSE[style]` for any new impact style |",
+      "-| UI | `src/Client/UI.luau` | add the id to `playable` |",
+      "-| AI | `src/Server/AI.luau` | one `use=` rule per technique id; anything special in the string block |",
+      "-| Tests | `tests/<Name>.spec.luau` | one test per signature move + an AI duel against every fighter; register in `tests/run.sh` and `build.py` |",
+      "+| Costume | `../../src/Server/World.luau` | `dress<Name>(model, def)` with `wear`, `spike`, `hairCap`, `headband`, `face`, `crest`; hidden parts toggled by effects (Byakugan veins, curse marks) |",
+      "+| Effects | `../../src/Client/Effects.luau` | colour tone, signature visuals in `FX:fighter`, impact styles in `FX:impact`, projectile builders in `BUILD` |",
+      "+| Camera | `../../src/Client/Camera.luau` | `IMPULSE[style]` for any new impact style |",
+      "+| UI | `../../src/Client/UI.luau` | add the id to `playable` |",
+      "+| AI | `../../src/Server/AI.luau` | one `use=` rule per technique id; anything special in the string block |",
+      "+| Tests | `tests/<Name>.spec.luau` | one test per signature move + an AI duel against every fighter; register in `../../tests/run.sh` and `../../build.py` |"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/ROSTER_MOVESETS_10_PRODIGIES.md",
+    "after": "games/ninja-duel/docs/characters/ROSTER_MOVESETS_10_PRODIGIES.md",
+    "referencing_files": {
+      "games/ninja-duel/ARENA_COMBO_REPORT.md": [
+        4
+      ],
+      "games/ninja-duel/FIGHTER_TEMPLATE.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "aed1744b2b45c9d0fa28d1eff1a94f8dd654c476f8724bd5553a444bc401bea2",
+    "final_sha256": "aed1744b2b45c9d0fa28d1eff1a94f8dd654c476f8724bd5553a444bc401bea2",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/PUBLIC_BUILD.md",
+    "after": "games/ninja-duel/docs/tools/PUBLIC_BUILD.md",
+    "referencing_files": {
+      "games/ninja-duel/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md": [
+        94,
+        95
+      ],
+      "games/ninja-duel/FINAL_45MIN_REPORT.md": [
+        41
+      ],
+      "games/ninja-duel/README.md": [
+        3
+      ],
+      "games/ninja-duel/ROADMAP_WEEK.md": [
+        44
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "3fc6c42db10b668f63586331e1a268c69ecfc10680b3ca7a3a5c696fef5350d2",
+    "final_sha256": "3fc6c42db10b668f63586331e1a268c69ecfc10680b3ca7a3a5c696fef5350d2",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/CODEX_MAINTENANCE_TASKS.md",
+    "after": "games/ninja-duel/docs/tools/MAINTENANCE_BACKLOG_SOURCE.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "79ee0d907bb3d6fe922de1a4c669aa1f10dff90ca58f82289851da3fbdc09d6d",
+    "final_sha256": "5d59ccc2eab13d822367641b04274b22f0859634db8b71298b7b3308e871fd0a",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -19 +19 @@\n",
+      "-   - create or improve a single command/script that runs automated tests, rebuilds `dist/NinjaDuel.rbxlx` and reports success/failure clearly;",
+      "+   - create or improve a single command/script that runs automated tests, rebuilds `../../dist/NinjaDuel.rbxlx` and reports success/failure clearly;"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/FORGE_MOTION_LAB_CODEX_BRIEF.md",
+    "after": "games/ninja-duel/docs/archive/missions/FORGE_MOTION_LAB_CODEX_BRIEF.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "07b825eb8d996cde9b4346aa395852a3dbd46cb947ae82ed961c09c292124ce9",
+    "final_sha256": "07b825eb8d996cde9b4346aa395852a3dbd46cb947ae82ed961c09c292124ce9",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/FOUNDATION_01_RESEARCH_AND_TARGET.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "c8bfb5bcbe82ace8d642c8ed0842ce83ec70d5a9363176d99e717df287769c1d",
+    "final_sha256": "c8bfb5bcbe82ace8d642c8ed0842ce83ec70d5a9363176d99e717df287769c1d",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/CHARACTER_REFERENCE.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/CHARACTER_REFERENCE.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/COMBAT_FEEL_V02.md": [
+        135
+      ],
+      "games/ninja-duel/docs/missions/PHASES.md": [
+        36
+      ],
+      "games/ninja-duel/docs/missions/PHASE_5_FULL_DUEL.md": [
+        13,
+        218
+      ],
+      "games/ninja-duel/docs/missions/codex-support/IMPLEMENTATION_PLAYBOOK.md": [
+        4
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "a788f8512dcdc34f8829096b37fd8028907d0ee561c4ac00a5c801c54fcb1ecc",
+    "final_sha256": "a788f8512dcdc34f8829096b37fd8028907d0ee561c4ac00a5c801c54fcb1ecc",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/PHASES.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/PHASES.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/PHASES.md": [
+        55
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "41069036c6d79e79f9bd1a92fc089e99afd9989bb3f6f9bf8abc1db1bab84b1c",
+    "final_sha256": "fdf33a59226a9958280b6f3b5c6813de9f025e5269545fe48fc412a0fbf00f0e",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -6 +6 @@\n",
+      "-**Fichier :** `../archive/BRIEF.md`",
+      "+**Fichier :** `../../BRIEF.md`",
+      "@@ -55 +55 @@\n",
+      "-> Lis `games/ninja-duel/docs/missions/PHASES.md`. Considère-le comme l'index officiel de la mission. Lis d'abord PHASE 1 pour conserver la vision globale, puis réalise PHASE 2 en t'appuyant sur PHASE 3 pour les personnages et PHASE 4 pour les besoins techniques. Inspecte et réutilise ce qui fonctionne déjà dans le prototype. Ne cherche pas à ajouter du contenu tant que le déplacement et le combat de base ne sont pas réellement agréables. Pose à François uniquement les questions importantes/difficilement réversibles prévues dans les documents.",
+      "+> Lis `games/ninja-duel/docs/archive/missions/legacy-v0/PHASES.md`. Considère-le comme l'index officiel de la mission. Lis d'abord PHASE 1 pour conserver la vision globale, puis réalise PHASE 2 en t'appuyant sur PHASE 3 pour les personnages et PHASE 4 pour les besoins techniques. Inspecte et réutilise ce qui fonctionne déjà dans le prototype. Ne cherche pas à ajouter du contenu tant que le déplacement et le combat de base ne sont pas réellement agréables. Pose à François uniquement les questions importantes/difficilement réversibles prévues dans les documents."
+    ]
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/PHASE_6_PLAYABLE_DUEL.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/PHASE_6_PLAYABLE_DUEL.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "fae723ff5efe95fc25d708a6aaf3a72d731f23f40fa43117056b6c7969a3a513",
+    "final_sha256": "fae723ff5efe95fc25d708a6aaf3a72d731f23f40fa43117056b6c7969a3a513",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/PHASE_6B_EXTERNAL_BASE_MIGRATION.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/PHASE_6B_EXTERNAL_BASE_MIGRATION.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "2590ff05d884f36ce62d2f967c783868d89c0a9694781b4846b91ae4fcad5021",
+    "final_sha256": "2590ff05d884f36ce62d2f967c783868d89c0a9694781b4846b91ae4fcad5021",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/VELMORA_ADAPT_FIRST_PLAYABLE_FIGHT.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/VELMORA_ADAPT_FIRST_PLAYABLE_FIGHT.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "7c436872fa9e491fce0f9d7cbcda5a70d31234843753bfa2bab83625f6466970",
+    "final_sha256": "7c436872fa9e491fce0f9d7cbcda5a70d31234843753bfa2bab83625f6466970",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/COMBAT_FEEL_V02.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/COMBAT_FEEL_V02.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/PHASES.md": [
+        15
+      ],
+      "games/ninja-duel/docs/missions/PHASE_5_FULL_DUEL.md": [
+        12
+      ],
+      "games/ninja-duel/docs/missions/codex-support/IMPLEMENTATION_PLAYBOOK.md": [
+        4
+      ],
+      "games/ninja-duel/docs/reports/V02_REPORT.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "eb8663b2d2c99b581b4a9b1f67286256061775951dbd7a1f03fceded8207e6fd",
+    "final_sha256": "eb8663b2d2c99b581b4a9b1f67286256061775951dbd7a1f03fceded8207e6fd",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/NEXT_3_MAJOR_WORKS_02.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/NEXT_3_MAJOR_WORKS_02.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "eb69d5ee5079efa8e9054b63e8dd82818003ba9e6a084fec036e6e591d110519",
+    "final_sha256": "eb69d5ee5079efa8e9054b63e8dd82818003ba9e6a084fec036e6e591d110519",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/PHASE_5_FULL_DUEL.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/PHASE_5_FULL_DUEL.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "d46e605223de46d1a2bc055177de8a1f35c8299e4666f28f438f5c73de51e307",
+    "final_sha256": "9ae9ccf38fca03ce4c0eda44b17a72dbde21e6707d09fecf2b8bbc8418f218e8",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -12,3 +12,3 @@\n",
+      "-- `games/ninja-duel/docs/missions/COMBAT_FEEL_V02.md`",
+      "-- `games/ninja-duel/docs/missions/CHARACTER_REFERENCE.md`",
+      "-- `games/ninja-duel/docs/missions/codex-support/IMPLEMENTATION_PLAYBOOK.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/COMBAT_FEEL_V02.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/CHARACTER_REFERENCE.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/codex-support/IMPLEMENTATION_PLAYBOOK.md`"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/codex-support/IMPLEMENTATION_PLAYBOOK.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/codex-support/IMPLEMENTATION_PLAYBOOK.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/PHASES.md": [
+        45
+      ],
+      "games/ninja-duel/docs/missions/PHASE_5_FULL_DUEL.md": [
+        14
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "7cce55c7cb38bc4c3efaf5b354bd5f4b564c51f465448e954571c27fff8ded07",
+    "final_sha256": "7cce55c7cb38bc4c3efaf5b354bd5f4b564c51f465448e954571c27fff8ded07",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/TECHNICAL_REFERENCE_MAP.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/TECHNICAL_REFERENCE_MAP.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md": [
+        319
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md": [
+        7
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md": [
+        3
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_ARCHITECTURE.md": [
+        3
+      ],
+      "games/ninja-duel/docs/missions/foundation/GAMEPLAY_BIBLE_DRAFT.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "9689839c92c1dc0bca07d5bffdaae0424a0b50f810ddbc62eb293991e626a13e",
+    "final_sha256": "9689839c92c1dc0bca07d5bffdaae0424a0b50f810ddbc62eb293991e626a13e",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/HUMAN_ACCEPTANCE_MATRIX.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/HUMAN_ACCEPTANCE_MATRIX.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md": [
+        347
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md": [
+        9
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md": [
+        3
+      ],
+      "games/ninja-duel/docs/missions/foundation/GAMEPLAY_BIBLE_DRAFT.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "7a3c288e7b53f210eafad849993f892c91f790372713b06f7f07e3b18e671df6",
+    "final_sha256": "7a3c288e7b53f210eafad849993f892c91f790372713b06f7f07e3b18e671df6",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/FOUNDATION_ARCHITECTURE.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/FOUNDATION_ARCHITECTURE.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md": [
+        333
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md": [
+        8
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md": [
+        3
+      ],
+      "games/ninja-duel/docs/missions/foundation/GAMEPLAY_BIBLE_DRAFT.md": [
+        69
+      ],
+      "games/ninja-duel/docs/missions/foundation/TECHNICAL_REFERENCE_MAP.md": [
+        75
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "d3eb695b3b9fed054e4def0335874a30fb27e99bcdf4105647a5d8612af149f4",
+    "final_sha256": "d3eb695b3b9fed054e4def0335874a30fb27e99bcdf4105647a5d8612af149f4",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/GAMEPLAY_BIBLE_DRAFT.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/GAMEPLAY_BIBLE_DRAFT.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md": [
+        292
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md": [
+        6
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md": [
+        3
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "fa0e46ec6e16ec10ee432684a0f4f1d3409a035b08e0e80ed2db1c3c1fa2ebd2",
+    "final_sha256": "fa0e46ec6e16ec10ee432684a0f4f1d3409a035b08e0e80ed2db1c3c1fa2ebd2",
+    "reference_only_diff": []
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/FOUNDATION_02_EXECUTE.md",
+    "referencing_files": {},
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "d4b9772e893fc7218c818299a92b04f56985fa81b83b1a2c72fbb6d300961254",
+    "final_sha256": "a5ae86d5ae0abb44156bb6dde22e163d79c1e34e0b6bdb1b9967da99e70d3fae",
+    "reference_only_diff": [
+      "--- \n",
+      "+++ \n",
+      "@@ -6,5 +6,5 @@\n",
+      "-- `games/ninja-duel/docs/missions/foundation/GAMEPLAY_BIBLE_DRAFT.md`",
+      "-- `games/ninja-duel/docs/missions/foundation/TECHNICAL_REFERENCE_MAP.md`",
+      "-- `games/ninja-duel/docs/missions/foundation/FOUNDATION_ARCHITECTURE.md`",
+      "-- `games/ninja-duel/docs/missions/foundation/HUMAN_ACCEPTANCE_MATRIX.md`",
+      "-- `games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/foundation/GAMEPLAY_BIBLE_DRAFT.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/foundation/TECHNICAL_REFERENCE_MAP.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/foundation/FOUNDATION_ARCHITECTURE.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/foundation/HUMAN_ACCEPTANCE_MATRIX.md`",
+      "+- `games/ninja-duel/docs/archive/missions/legacy-v0/foundation/FOUNDATION_02_PLAN.md`"
+    ]
+  },
+  {
+    "before": "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_PLAN.md",
+    "after": "games/ninja-duel/docs/archive/missions/legacy-v0/foundation/FOUNDATION_02_PLAN.md",
+    "referencing_files": {
+      "games/ninja-duel/docs/missions/FOUNDATION_01_RESEARCH_AND_TARGET.md": [
+        360,
+        427
+      ],
+      "games/ninja-duel/docs/missions/foundation/FOUNDATION_02_EXECUTE.md": [
+        10
+      ]
+    },
+    "consumers": "Ninja Duel documentation; no runtime/build/shared module moved",
+    "original_sha256": "8a844525187f8e66f7ce020daee6220b861bd5fa2d416a02cd4ec89fb8e76de9",
+    "final_sha256": "8a844525187f8e66f7ce020daee6220b861bd5fa2d416a02cd4ec89fb8e76de9",
+    "reference_only_diff": []
+  }
+]

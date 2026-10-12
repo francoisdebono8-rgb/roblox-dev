@@ -99,11 +99,15 @@ A product UI pass closes only when the applicable `QUALITY_GATES.md` checks and 
 
 ## Frontières d’architecture
 
-- `games/ninja-duel/` contient uniquement Ninja Duel et son laboratoire.
-- Ninja Duel ne doit importer ni embarquer de code de `plugins/`, directement ou via `shared/`.
+- `games/ninja-duel` contient uniquement Ninja Duel et son laboratoire.
+- Ninja Duel ne doit importer ni embarquer de code de `plugins`, directement ou via `shared`.
 - `plugins/*` (y compris Forge Playground) ne doit importer ni embarquer de code de Ninja Duel ou Motion Lab.
-- Motion Lab reste exclusivement sous `games/ninja-duel/motion-lab/`. Son adapter peut dépendre de Ninja Duel ; le runtime Ninja Duel ne dépend jamais de Motion Lab.
-- `shared/` reste réservé aux composants dont l’usage transversal est démontré. Ne pas déplacer un composant sur la seule base de son âge.
-- Les documents Forge sont sous `docs/forge/`. Missions, rapports, briefs archivés et suivi courant Ninja Duel sont sous `games/ninja-duel/docs/{missions,reports,archive,current}/`.
+- Motion Lab reste exclusivement sous `games/ninja-duel/motion-lab`. Son adapter peut dépendre de Ninja Duel ; le runtime Ninja Duel ne dépend jamais de Motion Lab.
+- `shared` reste réservé aux composants dont l’usage transversal est démontré. Ne pas déplacer un composant sur la seule base de son âge.
+- Les documents Forge sont sous `docs/forge`. Missions, rapports, briefs archivés et suivi courant Ninja Duel sont sous `games/ninja-duel/docs/{active,combat,movement,characters,systems,research,tools,reports,archive,current}/`.
 - Avant tout déplacement/suppression, rechercher les références et identifier tous les consommateurs. Conserver et signaler les usages ambigus. Aucune suppression sans preuve.
 - Vérifier les frontières avec `python3 tools/check_architecture.py`, puis les builds/tests des consommateurs concernés. Les imports calculés nécessitent une revue humaine.
+
+## Reprise persistante Ninja Duel
+
+Pour Ninja Duel, commencer par `games/ninja-duel/CLAUDE_START_HERE.md`, puis suivre la lecture et les règles de `docs/active/EXECUTION_RULES.md`. Le backlog est cumulatif ; conserver les détails archivés et leurs liens vers les IDs. La dernière mission historique n’est pas un ordre autonome. Toute session actualise état, preuves et journal ; distinguer tests techniques et acceptation Studio/humaine. Cette règle ne modifie pas les programmes Forge.
