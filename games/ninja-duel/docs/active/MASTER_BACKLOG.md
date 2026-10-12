@@ -839,7 +839,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Revoir références jeux/vidéo fournies
 - sources: [SOURCE_REGISTER](../research/SOURCE_REGISTER.md); [MOVEMENT_SOURCE_PIPELINE](../../design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md); [CLAUDE_DESIGN_LIBRARY_WORKFLOW](../archive/missions/CLAUDE_DESIGN_LIBRARY_WORKFLOW.md)
 - validation: Consulter sources, noter observations vérifiées/timecodes vs hypothèses, transférer exigences utiles IDs
-- evidence: Voie Shinobi/Shinobi Way, Ninja Fighting Arena, vidéo uomkLDU10Lo : PROVIDED_NOT_REVIEWED
+- evidence: Voie Shinobi/Shinobi Way, Ninja Fighting Arena, vidéo uomkLDU10Lo et descriptions utilisateur Combat Showcase / R15 Movement System : PROVIDED_NOT_REVIEWED ; liens de téléchargement inaccessibles via outil web, détails dans SOURCE_REGISTER
 - outcome: PENDING
 
 ## LAB-001 — Lab/adapters sans dépendance runtime
