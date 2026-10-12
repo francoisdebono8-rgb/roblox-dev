@@ -162,6 +162,209 @@ Do not create unescapable endless combos. Preserve counterplay and clear recover
 
 ---
 
+# 5B. Additional combat references — study the fight between combos, not only the combos
+
+The user explicitly wants this pass to absorb lessons from these references as well as Ninja Storm:
+
+- Roblox experience shown by the user: **[UPD 1] Voie Shinobi / Shinobi Way**;
+- Roblox experience shown by the user: **Naruto — Arène de combat Shinobi ultime / Naruto Ninja Fighting Arena**;
+- provided combat-system + weapons video: `https://youtu.be/uomkLDU10Lo?is=CrkR68i87Xife6tv`.
+
+Do not copy assets, code, exact move lists or UI. **Play/inspect the experiences where accessible and study the supplied video yourself before deciding what to implement.** Extract the combat principles, interaction density and weapon/tool ideas that are useful for Ninja Duel.
+
+The important realization is that our project has spent a lot of effort on what happens **after a clean hit starts a combo**, but a convincing ninja fighting game also needs the moments before, between and after those strings to be interesting.
+
+The target exchange is closer to:
+
+`run → slow/read → feint → tool/projectile → dodge/deflect → angle change → clash → short strike → counter → pursuit → conversion → disengage/reposition`
+
+not merely:
+
+`approach → M1 string → ability → cooldown`.
+
+## Build a richer universal combat language without creating a second combat engine
+
+Reuse the current combat grammar and foundations. Add or deepen only the common layers that materially improve the playable Minato/Itachi slice and that can later be bent by other characters.
+
+### A. Defense must be as expressive as offense
+
+Evaluate and improve the current defensive loop around a compact shared language such as:
+
+`guard → timed deflect/parry → dodge/perfect dodge → counter → substitution/kawarimi escape`
+
+These do not need five unrelated buttons. Prefer context, timing and existing inputs where possible.
+
+Desired outcomes:
+
+- normal guard mitigates/absorbs appropriately;
+- well-timed defense can redirect momentum or create a small punish window;
+- dodge changes angle rather than merely adding invulnerability;
+- substitution/kawarimi is an expensive escape/reset, not free spam;
+- defense transitions naturally back into movement, tools or attacks.
+
+The opponent must remain involved during pressure instead of simply waiting for a combo to finish.
+
+### B. Weapons are combat states, not isolated ability buttons
+
+Weapons/tools should alter the fighter's available body language and routes instead of behaving like detached specials.
+
+Examples of the intended principle:
+
+`punch → kunai draw/slash → kick → throw kunai → pursue`
+
+or, for an appropriate sword user later:
+
+`draw → slash → thrust → parry/clash → body strike → disengage`.
+
+For this vertical slice, prioritize what matters to Minato and Itachi:
+
+- kunai handling in-hand as well as throwing;
+- shuriken integration into pressure/spacing;
+- believable draw, grip, release, recovery and transitions;
+- tools usable while moving and as bridges between ranges.
+
+Do not turn the game into a weapon inventory simulator and do not overload the input map.
+
+### C. Shared ninja tools should become a system
+
+Build on the existing philosophy that common tools are shared while character mastery changes their interpretation.
+
+Useful common families include, where they genuinely improve this slice:
+
+- kunai;
+- shuriken;
+- explosive tags;
+- smoke;
+- wire;
+- persistent embedded/projectile points.
+
+Character interpretation matters more than quantity:
+
+- **Minato:** marked kunai, spatial preparation, FTG destinations and angle changes;
+- **Itachi:** shuriken geometry, forcing reactions, deception and delayed/redirected pressure;
+- later Sasuke/Kakashi/etc. can reuse the same infrastructure differently.
+
+Preserve the systemic idea:
+
+`Object + Chakra Property/Nature + Trigger/Context → Result`
+
+Examples for future-compatible infrastructure: marked kunai → FTG destination, wind + blade/projectile → cutting/velocity bias, lightning + metal/wire → conductive interaction, fire + projectile → ignition/area pressure.
+
+Do not implement every combination now. Make the slice prove that the grammar can support them.
+
+### D. Clashes and contested contact
+
+The combat should not always resolve as "whoever touched first gets a full string".
+
+Where technically and visually appropriate, support contested moments such as:
+
+- strike vs strike;
+- weapon/tool vs weapon/tool;
+- attack vs well-timed guard/parry;
+- projectile vs projectile;
+- strong technique vs compatible response.
+
+Possible outcomes include:
+
+`clash → recoil`
+
+`clash → deflection`
+
+`clash → small positional advantage`
+
+`clash → both reset/reposition`
+
+Keep clashes readable and deterministic enough for gameplay. They are not an excuse for random cinematic interruptions.
+
+### E. More meaningful body/combat states
+
+The existing contact → state change → transition philosophy should become more visible.
+
+Evaluate whether the combat needs stronger support for states such as:
+
+- neutral;
+- guarded;
+- staggered;
+- off-balance;
+- guard-open;
+- launched;
+- falling;
+- wall-splat;
+- grounded;
+- recovering;
+- grabbed;
+- weapon-clash.
+
+Not every state needs a new subsystem. Prefer a small reusable state vocabulary that moves can convert between.
+
+The important design rule is:
+
+**a move is valuable because of the state/position it creates, not because it is another animation in a list.**
+
+### F. Grabs, catches and physical conversions
+
+The current game should feel capable of real physical exchanges, not only strike strings.
+
+Test/add a restrained set of useful conversions where they fit the existing controls and character identities:
+
+- short grab/throw;
+- wrist/arm catch into counter;
+- caught kick into sweep/counter;
+- wall conversion;
+- aerial intercept/slam.
+
+Do not create canned ten-second grab cinematics. These should be short combat verbs with clear counterplay and transitions.
+
+### G. Arena and movement are combat verbs
+
+Keep integrating walls, height, distance and obstacles into the exchange.
+
+The desired range flow is:
+
+`long-range probing → run/reposition → tools → mid-range decision → taijutsu → wall/air conversion → recovery/reset`.
+
+The arena should create reasons to sprint, flank, pursue, wall-run and choose angles instead of causing both players to circle at the center.
+
+### H. Preserve simplicity at the input level
+
+Do **not** solve this by adding a button for every mechanic.
+
+Depth should come from:
+
+- context;
+- direction;
+- timing;
+- current state;
+- held/equipped tool;
+- air/wall situation;
+- character-specific interpretation.
+
+The long-term philosophy remains:
+
+**Storm gives actions; Ninja Duel should increasingly give systems the player combines.**
+
+For each fighter, aim for a small number of understandable combat verbs that can produce many routes rather than 20 disconnected techniques.
+
+### I. Character identity through the same systems
+
+The universal layers must not make Minato and Itachi play alike.
+
+**Minato:** speed, preparation, marked kunai, spatial network, angle changes, precision punish, rapid pursuit.
+
+**Itachi:** calm control, shuriken geometry, fire, deception, substitution/read-based defense, forcing predictable responses and punishing them.
+
+When both use the same common mechanic, their conversion should still communicate who they are.
+
+### J. Scope discipline
+
+This is an enrichment of the existing final-pass mission, **not permission to restart architecture or build a giant generic framework before improving the game**.
+
+Implement the highest-value pieces that make the Minato vs Itachi fight visibly richer now. Reuse existing systems. Prototype in Studio, keep what improves the fight, reject what adds complexity without fun/readability.
+
+A successful 30-second fight should contain interesting decisions even during seconds where nobody is trapped in a full combo.
+
+---
+
 # 6. Real Minato kunai
 
 This is non-negotiable.
@@ -383,21 +586,27 @@ At minimum validate full routes for both characters.
 - run/strafe/jump/wall movement;
 - melee string;
 - launcher/chase/aerial route;
-- kunai throw;
+- kunai in-hand/throw transitions;
 - marked kunai teleport;
 - immediate follow-up after teleport;
-- jutsu;
-- defense/recovery.
+- tool → movement → melee conversion;
+- defense/deflect/dodge/recovery;
+- at least one contested/clash or counter situation where supported;
+- jutsu.
 
 ## Itachi
 
 - movement;
 - melee string;
 - launcher/aerial route;
-- shuriken;
+- shuriken integrated into neutral/pressure rather than only isolated use;
 - fireball;
 - mirage/deception tools;
-- defense/recovery.
+- defense/deflect/dodge/recovery;
+- at least one counter/forced-reaction route;
+- disengage/reposition.
+
+Also validate at least several **neutral-to-combat exchanges** where the interesting gameplay happens before a full combo starts: spacing, approach, tool use, dodge/deflect, counter, pursuit and reset.
 
 Play multiple full fights.
 
@@ -410,15 +619,17 @@ Do not call the pass finished until the visual result is meaningfully better tha
 # 16. Priorities if tradeoffs are required
 
 1. Combat bugs / jump / aerial combo reliability
-2. Animation quality
-3. Real Minato kunai
-4. Real Itachi shuriken
-5. Fireball and major jutsu presentation
-6. Minato teleport/aura identity
-7. Ninja Storm-inspired combat flow
-8. Camera
-9. Arena / Naruto atmosphere
-10. General polish
+2. Animation and body-motion quality
+3. Make neutral/defense/counterplay interesting between combos
+4. Real Minato kunai + marked-kunai combat integration
+5. Real Itachi shuriken + tool-pressure integration
+6. Highest-value clash/grab/state/weapon interactions that improve the current slice
+7. Fireball and major jutsu presentation
+8. Minato teleport/aura identity and Itachi deception identity
+9. Ninja Storm + supplied-reference combat flow
+10. Camera
+11. Arena / Naruto atmosphere
+12. General polish
 
 Prioritize what the player can **see and feel** over speculative refactors.
 
@@ -459,9 +670,12 @@ We should visibly see:
 - fighters running and turning naturally;
 - arms and legs driving attacks;
 - convincing melee strings;
+- meaningful neutral/spacing/defensive decisions between strings;
+- tools/weapons bridging range and melee instead of behaving like detached cooldown abilities;
+- at least some contested contact/counterplay rather than every first touch becoming a guaranteed sequence;
 - launchers and aerial pursuit that do not bug;
-- a real kunai leaving Minato's hand;
-- real Itachi shuriken;
+- a real kunai leaving Minato's hand and feeding his spatial game;
+- real Itachi shuriken feeding his pressure/control game;
 - Minato teleporting around a fight in a readable way;
 - a convincing traveling fire technique;
 - proper impacts and reactions;
@@ -471,7 +685,7 @@ We should visibly see:
 
 Before: **Roblox combat prototype.**
 
-After: **first convincing Minato vs Itachi Naruto-like vertical slice.**
+After: **first convincing Minato vs Itachi Naruto-like vertical slice with a real combat language between the combos.**
 
 ---
 
