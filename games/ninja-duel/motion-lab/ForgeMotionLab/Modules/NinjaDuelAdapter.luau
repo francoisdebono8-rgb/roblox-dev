@@ -8,7 +8,18 @@ function A.import(data,lib)
  for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
   local def=data.fighters[id];if not def or not data.stances[id] then continue end
   local p=M.new(id,def.name);p.metadata={sourceType="ninja-duel",description="Authored Ninja Duel motion",characterSource=id};p.stance=M.copy(data.stances[id]);p.stance.weapon={roll=if id=="Flashstep" then -35 elseif id=="Mirage" then 15 else 0};p.gait=M.copy(data.gaits[id]);p.clips={}
-  for name,keys in data.clips[id] do
+  -- Preserve renderer inheritance explicitly; legacy imports without metadata
+  -- retain their previous direct-clip behavior. Source keyframes stay single-copy.
+  local effective={};local origins={}
+  local function gather(sourceId,seen)
+   assert(not seen[sourceId],"Cyclic clip inheritance");seen[sourceId]=true
+   local parent=data.clipInheritance and data.clipInheritance[sourceId]
+   if parent then gather(parent,seen) end
+   for name,keys in data.clips[sourceId] or {} do effective[name]=keys;origins[name]=sourceId end
+  end
+  gather(id,{})
+  p.metadata.motionClipSources=origins
+  for name,keys in effective do
    local a=data.attacks[name] or data.attacks.DashAttack;local scale=def.attackProfile and def.attackProfile[name] or {}
    local startup=a.startup*(scale.startup or 1);local active=a.active*(scale.active or 1);local recovery=a.recovery*(scale.recovery or 1);local exact=data.timings and data.timings[id] and data.timings[id][name];if exact then startup,active,recovery=exact.startup,exact.active,exact.recovery end;local duration=startup+active+recovery
    local normalized={};for _,key in keys do

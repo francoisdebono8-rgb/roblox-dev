@@ -1,0 +1,1920 @@
+{
+  "characters": {
+    "Flashstep": {
+      "awakening": "YELLOW FLASH",
+      "heavyAfterOne": "KneeStrike",
+      "name": "Minato",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "AngleStep",
+        "up": "Launcher"
+      },
+      "techniques": [
+        {
+          "id": "MarkedBlade",
+          "name": "Marked Kunai",
+          "throw": "MarkedKunai"
+        },
+        {
+          "id": "Flashstep",
+          "name": "Flying Thunder God",
+          "requires": "Anchor"
+        },
+        {
+          "id": "BurstStrike",
+          "name": "Rasengan"
+        },
+        {
+          "id": "Quickstep",
+          "name": "Quickstep"
+        },
+        {
+          "id": "WindCut",
+          "name": "Wind Cut"
+        }
+      ],
+      "tool": "Kunai",
+      "toolMastery": {
+        "Count": 1,
+        "Damage": 3,
+        "Kind": "kunai",
+        "Recover": 0.55,
+        "Speed": 96
+      }
+    },
+    "GentleFist": {
+      "awakening": "BYAKUGAN FULL FIELD",
+      "counter": "PalmThrust",
+      "heavyAfterOne": "PalmThrust",
+      "name": "Neji",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "CircleStep",
+        "up": "Launcher"
+      },
+      "techniques": [
+        {
+          "id": "Rotation",
+          "name": "Rotation"
+        },
+        {
+          "id": "VacuumPalm",
+          "name": "Vacuum Palm"
+        },
+        {
+          "id": "SixtyFourPalms",
+          "name": "64 Palms"
+        }
+      ],
+      "tool": "Kunai",
+      "toolMastery": {
+        "Count": 1,
+        "Damage": 3,
+        "Kind": "kunai",
+        "Recover": 0.85,
+        "Speed": 86
+      }
+    },
+    "Lion": {
+      "awakening": "CURSE MARK",
+      "heavyAfterOne": "KneeStrike",
+      "name": "Sasuke",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "VaultKick",
+        "up": "LionKick"
+      },
+      "techniques": [
+        {
+          "id": "FireBloom",
+          "name": "Great Fireball"
+        },
+        {
+          "id": "PhoenixFlower",
+          "name": "Phoenix Flower"
+        },
+        {
+          "id": "WireTrap",
+          "name": "Wire Trap"
+        },
+        {
+          "id": "Chidori",
+          "name": "Chidori"
+        }
+      ],
+      "tool": "Shuriken",
+      "toolMastery": {
+        "Count": 2,
+        "Damage": 2,
+        "Kind": "shuriken",
+        "Recover": 0.6,
+        "Speed": 92
+      }
+    },
+    "Mirage": {
+      "awakening": "SHARINGAN FOCUS",
+      "counter": "CounterPalm",
+      "heavyAfterOne": "CounterPalm",
+      "name": "Itachi",
+      "routes": {
+        "airDown": "AirSpike",
+        "airSide": "AirSwitch",
+        "airUp": "AirDrive",
+        "down": "Sweep",
+        "side": "FeintStep",
+        "up": "Launcher"
+      },
+      "techniques": [
+        {
+          "id": "Read",
+          "name": "Sharingan Read"
+        },
+        {
+          "id": "NeedleFan",
+          "name": "Shadow Shuriken"
+        },
+        {
+          "id": "MirageCast",
+          "name": "Genjutsu: Mirage",
+          "requires": "Target"
+        },
+        {
+          "id": "FireBloom",
+          "name": "Great Fireball"
+        },
+        {
+          "id": "PhoenixFlower",
+          "name": "Phoenix Flower"
+        }
+      ],
+      "tool": "Shuriken",
+      "toolMastery": {
+        "AirSpread": 3,
+        "Count": 2,
+        "Damage": 2,
+        "Geometry": true,
+        "Kind": "shuriken",
+        "Recover": 0.75,
+        "Ricochet": true,
+        "Speed": 84
+      }
+    }
+  },
+  "format": "NinjaDuel.CombatInventory.v1",
+  "mapping": [
+    {
+      "action": "Air1",
+      "aliases": [
+        "Air1"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Air1",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "Air1",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Air1",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.18,
+        "startup": 0.064
+      }
+    },
+    {
+      "action": "Air2",
+      "aliases": [
+        "Air2"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Air2",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "Air2",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Air2",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.19,
+        "startup": 0.07379999999999999
+      }
+    },
+    {
+      "action": "AirDrive",
+      "aliases": [
+        "AirDrive"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "AirDrive",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "AirDrive",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.AirDrive",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.22,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "AirSpike",
+      "aliases": [
+        "AirSpike"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "AirSpike",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSpike",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.AirSpike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "AirSwitch",
+      "aliases": [
+        "AirSwitch"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "AirSwitch",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSwitch",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.AirSwitch",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "AngleStep",
+      "aliases": [
+        "AngleStep"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "AngleStep",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "AngleStep",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.AngleStep",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.2,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "DashAttack",
+      "aliases": [
+        "DashAttack"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "DashAttack",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "DashAttack",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.DashAttack",
+      "timing": {
+        "active": 0.15,
+        "recovery": 0.27,
+        "startup": 0.05460000000000001
+      }
+    },
+    {
+      "action": "Grab",
+      "aliases": [
+        "Grab"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Grab",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "Grab",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Grab",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.5,
+        "startup": 0.18
+      }
+    },
+    {
+      "action": "Heavy",
+      "aliases": [
+        "Heavy"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Heavy",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Heavy",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Heavy",
+      "timing": {
+        "active": 0.17,
+        "recovery": 0.52,
+        "startup": 0.3
+      }
+    },
+    {
+      "action": "KneeStrike",
+      "aliases": [
+        "KneeStrike"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "KneeStrike",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "KneeStrike",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.KneeStrike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.3,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "Launcher",
+      "aliases": [
+        "Launcher"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Launcher",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Launcher",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Launcher",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.28,
+        "startup": 0.12240000000000001
+      }
+    },
+    {
+      "action": "Light1",
+      "aliases": [
+        "Light1"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Light1",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Light1",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Light1",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.25200000000000006,
+        "startup": 0.07379999999999999
+      }
+    },
+    {
+      "action": "Light2",
+      "aliases": [
+        "Light2",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Light2",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Light2",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Light2",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24300000000000002,
+        "startup": 0.084
+      }
+    },
+    {
+      "action": "Light3",
+      "aliases": [
+        "Light3"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Light3",
+      "fighterId": "Flashstep",
+      "keyCount": 7,
+      "motionLabGrammar": "Light3",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Light3",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2112,
+        "startup": 0.09839999999999999
+      }
+    },
+    {
+      "action": "Rasengan",
+      "aliases": [
+        "Rasengan"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Rasengan",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Rasengan",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Rasengan",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.48,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "RasenganDrop",
+      "aliases": [
+        "RasenganDrop"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "RasenganDrop",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "RasenganDrop",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.RasenganDrop",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.38,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "Riposte",
+      "aliases": [
+        "Light2",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Riposte",
+      "fighterId": "Flashstep",
+      "keyCount": 6,
+      "motionLabGrammar": "Riposte",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Riposte",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.26,
+        "startup": 0.05
+      }
+    },
+    {
+      "action": "Slam",
+      "aliases": [
+        "Slam"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Slam",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "Slam",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Slam",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.3268,
+        "startup": 0.11699999999999999
+      }
+    },
+    {
+      "action": "Sweep",
+      "aliases": [
+        "Sweep"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Sweep",
+      "fighterId": "Flashstep",
+      "keyCount": 8,
+      "motionLabGrammar": "Sweep",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Sweep",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "Throw",
+      "aliases": [
+        "Throw"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "Throw",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "Throw",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.Throw",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "ThrowUp",
+      "aliases": [
+        "ThrowUp"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "ThrowUp",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "ThrowUp",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.ThrowUp",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.3,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "WallDive",
+      "aliases": [
+        "WallDive"
+      ],
+      "automaticApply": false,
+      "character": "Minato",
+      "clip": "WallDive",
+      "fighterId": "Flashstep",
+      "keyCount": 4,
+      "motionLabGrammar": "WallDive",
+      "motionLabPreset": "Flashstep",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Flashstep.WallDive",
+      "timing": {
+        "active": 0.3,
+        "recovery": 0.32,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "Air1",
+      "aliases": [
+        "Air1"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Air1",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "Air1",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Air1",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.18,
+        "startup": 0.0784
+      }
+    },
+    {
+      "action": "Air2",
+      "aliases": [
+        "Air2"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Air2",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "Air2",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Air2",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.19,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "AirDrive",
+      "aliases": [
+        "AirDrive"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "AirDrive",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "AirDrive",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.AirDrive",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.22,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "AirSpike",
+      "aliases": [
+        "AirSpike"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "AirSpike",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSpike",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.AirSpike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "AirSwitch",
+      "aliases": [
+        "AirSwitch"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "AirSwitch",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSwitch",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.AirSwitch",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "CounterPalm",
+      "aliases": [
+        "CounterPalm",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "CounterPalm",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "CounterPalm",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.CounterPalm",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.3,
+        "startup": 0.05
+      }
+    },
+    {
+      "action": "DashAttack",
+      "aliases": [
+        "DashAttack"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "DashAttack",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "DashAttack",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.DashAttack",
+      "timing": {
+        "active": 0.15,
+        "recovery": 0.27,
+        "startup": 0.0665
+      }
+    },
+    {
+      "action": "FeintStep",
+      "aliases": [
+        "FeintStep"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "FeintStep",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "FeintStep",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.FeintStep",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.22,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "Grab",
+      "aliases": [
+        "Grab"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Grab",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "Grab",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Grab",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.5,
+        "startup": 0.18
+      }
+    },
+    {
+      "action": "Heavy",
+      "aliases": [
+        "Heavy"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Heavy",
+      "fighterId": "Mirage",
+      "keyCount": 7,
+      "motionLabGrammar": "Heavy",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Heavy",
+      "timing": {
+        "active": 0.17,
+        "recovery": 0.5304,
+        "startup": 0.294
+      }
+    },
+    {
+      "action": "Launcher",
+      "aliases": [
+        "Launcher"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Launcher",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "Launcher",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Launcher",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.28,
+        "startup": 0.17
+      }
+    },
+    {
+      "action": "Light1",
+      "aliases": [
+        "Light1"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Light1",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "Light1",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Light1",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.25200000000000006,
+        "startup": 0.08639999999999999
+      }
+    },
+    {
+      "action": "Light2",
+      "aliases": [
+        "Light2"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Light2",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "Light2",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Light2",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.2376,
+        "startup": 0.098
+      }
+    },
+    {
+      "action": "Light3",
+      "aliases": [
+        "Light3"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Light3",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "Light3",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Light3",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.24,
+        "startup": 0.1224
+      }
+    },
+    {
+      "action": "Riposte",
+      "aliases": [
+        "CounterPalm",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Riposte",
+      "fighterId": "Mirage",
+      "keyCount": 6,
+      "motionLabGrammar": "Riposte",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Riposte",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.26,
+        "startup": 0.05
+      }
+    },
+    {
+      "action": "Slam",
+      "aliases": [
+        "Slam"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Slam",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "Slam",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Slam",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.38,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "Sweep",
+      "aliases": [
+        "Sweep"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Sweep",
+      "fighterId": "Mirage",
+      "keyCount": 7,
+      "motionLabGrammar": "Sweep",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Sweep",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "Throw",
+      "aliases": [
+        "Throw"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "Throw",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "Throw",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.Throw",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "ThrowUp",
+      "aliases": [
+        "ThrowUp"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "ThrowUp",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "ThrowUp",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.ThrowUp",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.3,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "WallDive",
+      "aliases": [
+        "WallDive"
+      ],
+      "automaticApply": false,
+      "character": "Itachi",
+      "clip": "WallDive",
+      "fighterId": "Mirage",
+      "keyCount": 4,
+      "motionLabGrammar": "WallDive",
+      "motionLabPreset": "Mirage",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Mirage.WallDive",
+      "timing": {
+        "active": 0.3,
+        "recovery": 0.32,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "Air1",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Air1",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "Air1",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Air1",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.18,
+        "startup": 0.0768
+      }
+    },
+    {
+      "action": "Air2",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Air2",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "Air2",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Air2",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.19,
+        "startup": 0.0882
+      }
+    },
+    {
+      "action": "AirDrive",
+      "aliases": [
+        "AirDrive"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "AirDrive",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "AirDrive",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.AirDrive",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.22,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "AirSpike",
+      "aliases": [
+        "AirSpike"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "AirSpike",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSpike",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.AirSpike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "AirSwitch",
+      "aliases": [
+        "AirSwitch"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "AirSwitch",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSwitch",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.AirSwitch",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "CircleStep",
+      "aliases": [
+        "CircleStep"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "CircleStep",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "CircleStep",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.CircleStep",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.22,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "DashAttack",
+      "aliases": [
+        "DashAttack"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "DashAttack",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "DashAttack",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.DashAttack",
+      "timing": {
+        "active": 0.15,
+        "recovery": 0.27,
+        "startup": 0.0658
+      }
+    },
+    {
+      "action": "Grab",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Grab",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "Grab",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Grab",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.5,
+        "startup": 0.18
+      }
+    },
+    {
+      "action": "Heavy",
+      "aliases": [
+        "Heavy"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Heavy",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Heavy",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Heavy",
+      "timing": {
+        "active": 0.17,
+        "recovery": 0.52,
+        "startup": 0.306
+      }
+    },
+    {
+      "action": "Launcher",
+      "aliases": [
+        "Launcher"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Launcher",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Launcher",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Launcher",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.28,
+        "startup": 0.1666
+      }
+    },
+    {
+      "action": "Light1",
+      "aliases": [
+        "Light1",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Light1",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Light1",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Light1",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.25200000000000006,
+        "startup": 0.0828
+      }
+    },
+    {
+      "action": "Light2",
+      "aliases": [
+        "Light2"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Light2",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Light2",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Light2",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24300000000000002,
+        "startup": 0.094
+      }
+    },
+    {
+      "action": "Light3",
+      "aliases": [
+        "Light3"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Light3",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Light3",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Light3",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2304,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "PalmThrust",
+      "aliases": [
+        "PalmThrust"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "PalmThrust",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "PalmThrust",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.PalmThrust",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.34,
+        "startup": 0.11
+      }
+    },
+    {
+      "action": "Riposte",
+      "aliases": [
+        "Light1",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Riposte",
+      "fighterId": "GentleFist",
+      "keyCount": 6,
+      "motionLabGrammar": "Riposte",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Riposte",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.26,
+        "startup": 0.05
+      }
+    },
+    {
+      "action": "Slam",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Slam",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "Slam",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Slam",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.38,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "Sweep",
+      "aliases": [
+        "Sweep"
+      ],
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Sweep",
+      "fighterId": "GentleFist",
+      "keyCount": 7,
+      "motionLabGrammar": "Sweep",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "GentleFist",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Sweep",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "Throw",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "Throw",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "Throw",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.Throw",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "ThrowUp",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "ThrowUp",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "ThrowUp",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.ThrowUp",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.3,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "WallDive",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Neji",
+      "clip": "WallDive",
+      "fighterId": "GentleFist",
+      "keyCount": 4,
+      "motionLabGrammar": "WallDive",
+      "motionLabPreset": "GentleFist",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Mirage",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.GentleFist.WallDive",
+      "timing": {
+        "active": 0.3,
+        "recovery": 0.32,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "Air1",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Air1",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "Air1",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Air1",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.18,
+        "startup": 0.0736
+      }
+    },
+    {
+      "action": "Air2",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Air2",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "Air2",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Air2",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.19,
+        "startup": 0.0828
+      }
+    },
+    {
+      "action": "AirDrive",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "AirDrive",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "AirDrive",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.AirDrive",
+      "timing": {
+        "active": 0.13,
+        "recovery": 0.22,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "AirSpike",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "AirSpike",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSpike",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.AirSpike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24,
+        "startup": 0.09
+      }
+    },
+    {
+      "action": "AirSwitch",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "AirSwitch",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "AirSwitch",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.AirSwitch",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.2,
+        "startup": 0.1
+      }
+    },
+    {
+      "action": "DashAttack",
+      "aliases": [
+        "DashAttack"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "DashAttack",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "DashAttack",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.DashAttack",
+      "timing": {
+        "active": 0.15,
+        "recovery": 0.27,
+        "startup": 0.07
+      }
+    },
+    {
+      "action": "Grab",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Grab",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "Grab",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Grab",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.5,
+        "startup": 0.18
+      }
+    },
+    {
+      "action": "Heavy",
+      "aliases": [
+        "Heavy"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Heavy",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "Heavy",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Heavy",
+      "timing": {
+        "active": 0.17,
+        "recovery": 0.52,
+        "startup": 0.3
+      }
+    },
+    {
+      "action": "KneeStrike",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "KneeStrike",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "KneeStrike",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.KneeStrike",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.3,
+        "startup": 0.08
+      }
+    },
+    {
+      "action": "Launcher",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Launcher",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "Launcher",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Launcher",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.28,
+        "startup": 0.17
+      }
+    },
+    {
+      "action": "Light1",
+      "aliases": [
+        "Light1",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Light1",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "Light1",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Light1",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.266,
+        "startup": 0.081
+      }
+    },
+    {
+      "action": "Light2",
+      "aliases": [
+        "Light2"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Light2",
+      "fighterId": "Lion",
+      "keyCount": 7,
+      "motionLabGrammar": "Light2",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Light2",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.27,
+        "startup": 0.095
+      }
+    },
+    {
+      "action": "Light3",
+      "aliases": [
+        "Light3"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Light3",
+      "fighterId": "Lion",
+      "keyCount": 7,
+      "motionLabGrammar": "Light3",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Light3",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.24,
+        "startup": 0.126
+      }
+    },
+    {
+      "action": "LionBarrage",
+      "aliases": [
+        "LionBarrage"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "LionBarrage",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "LionBarrage",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.LionBarrage",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.38,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "LionKick",
+      "aliases": [
+        "LionKick"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "LionKick",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "LionKick",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.LionKick",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.28,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "Riposte",
+      "aliases": [
+        "Light1",
+        "Riposte"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Riposte",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "Riposte",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Riposte",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.26,
+        "startup": 0.05
+      }
+    },
+    {
+      "action": "Slam",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Slam",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "Slam",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Slam",
+      "timing": {
+        "active": 0.2,
+        "recovery": 0.38,
+        "startup": 0.15
+      }
+    },
+    {
+      "action": "Sweep",
+      "aliases": [
+        "Sweep"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Sweep",
+      "fighterId": "Lion",
+      "keyCount": 7,
+      "motionLabGrammar": "Sweep",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Sweep",
+      "timing": {
+        "active": 0.14,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "Throw",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "Throw",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "Throw",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.Throw",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.34,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "ThrowUp",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "ThrowUp",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "ThrowUp",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.ThrowUp",
+      "timing": {
+        "active": 0.1,
+        "recovery": 0.3,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "VaultKick",
+      "aliases": [
+        "VaultKick"
+      ],
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "VaultKick",
+      "fighterId": "Lion",
+      "keyCount": 6,
+      "motionLabGrammar": "VaultKick",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Lion",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.VaultKick",
+      "timing": {
+        "active": 0.12,
+        "recovery": 0.24,
+        "startup": 0.12
+      }
+    },
+    {
+      "action": "WallDive",
+      "aliases": {},
+      "automaticApply": false,
+      "character": "Sasuke",
+      "clip": "WallDive",
+      "fighterId": "Lion",
+      "keyCount": 4,
+      "motionLabGrammar": "WallDive",
+      "motionLabPreset": "Lion",
+      "notes": "Resolved renderer clip; this is not a recommendation to assign a new bilateral/reference variant.",
+      "origin": "Flashstep",
+      "runtimePath": "src/Client/VelmoraMotionEngine.luau: CLIPS.Lion.WallDive",
+      "timing": {
+        "active": 0.3,
+        "recovery": 0.32,
+        "startup": 0.1
+      }
+    }
+  ],
+  "notes": [
+    "Motion Lab exports are data-only and automaticApply=false.",
+    "Cast/throw/reaction/locomotion overlays are separate renderer branches, not necessarily CLIPS entries.",
+    "Timing here is presentation timing; authoritative tuned pending.spec is visible in the debug inspector.",
+    "Bilateral/reference library assets are candidates for manual artistic assignment, not currently applied to attacks."
+  ],
+  "throwOverlays": [
+    "Kunai",
+    "MarkedKunai",
+    "Shuriken"
+  ]
+}

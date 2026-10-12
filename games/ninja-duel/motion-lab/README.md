@@ -172,3 +172,9 @@ Chaque famille offensive a Standard + deux variantes adaptées parmi Compact/Fas
 Les 24 ponts couvrent jab→cross/hook, cross→kick, punch→knee, kick→punch/knee, sweep→follow-up, dodge→counter, pivot→strike, launcher→aerial pursuit, landing→attack, attack→guard. Advanced indique `fromAsset`, `toAsset`, phases d'entrée/sortie et changement de stance. Un pont commence au FollowThrough sortant et finit à l'Anticipation entrante (le root sortant est recentré) : c'est une brique à raccorder avec les blends existants, pas une nouvelle règle de cancel/combat.
 
 **Limites** : clips synthétiques anatomiques, pas de mocap ni contact physique avec un adversaire. Pas de résolution automatique du sol/mur ni contrainte de pied/COG à chaque frame ; les supports sont préparés aux clés et interpolés, le solver reste approximatif entre elles. Les courbes extrêmes/DNA/mix peuvent nécessiter des corrections artistiques. Les ponts sont des propositions de transfert de poids, sans garantie de raccord automatique à n'importe quel clip. Les boucles de preview recentrent leur root ; `Once` permet de lire toute la réception. Validation visuelle laissée à François : compilation, continuité des clés, schémas R15 et événements UI simulés ne prouvent pas le feel.
+
+
+## Contrat Ninja Duel et préparation Claude
+
+Voir [la matrice des quatre personnages](../docs/FOUR_CHARACTER_COMBAT_MATRIX.md), [les hooks](../docs/current/COMBAT_CONTRACTS.md) et [le mapping actuel](../docs/current/MOTION_ATTACK_MAPPING.md).
+L’extraction conserve désormais les héritages de clips Neji→Itachi et Sasuke→Minato avec leurs timings de présentation propres. `metadata.motionClipSources` les rend inspectables. Les nouveaux tests de compatibilité couvrent les quatre profils, L/R, roundtrip inert et indépendance des edits. Aucun clip artistique du runtime n’a été remplacé.

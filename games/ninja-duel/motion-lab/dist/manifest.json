@@ -2,7 +2,7 @@
   "plugin": "Forge Motion Lab",
   "version": "0.5.0",
   "artifact": "ForgeMotionLab.rbxm",
-  "sha256": "c351215be2fef60661ede2df8951d4c81929ed3fed8d053a9a8915fa5d0e8ca0",
+  "sha256": "52e5fee2c21976be5312f6c90a4696e54a2d67413caaf5ba242dd6e98e3307a9",
   "sources": {
     "ForgeMotionLab/Main.plugin.luau": "ead17b1b3733d9b0c4c40ae121cf8395f201586be7c8d90736f215cabaf0047a",
     "ForgeMotionLab/Modules/BilateralLibrary.luau": "0c89767ee0587efd9ef7d2672d9aaa8664a48d07c3ea0bb49847ba51f7c2b8f3",
@@ -11,8 +11,8 @@
     "ForgeMotionLab/Modules/Library.luau": "2fe766f8a32578ae965f6c8ba974d383036a1749948869ff055c280fad2edd89",
     "ForgeMotionLab/Modules/Model.luau": "dc69e449fbc969c0316b7d309d5e439965f00f496ef65826937100ba1776af05",
     "ForgeMotionLab/Modules/MotionEdit.luau": "5dd7ac066d7936543666ea034819198254c2e54ba916d73e513a053d2cc99c64",
-    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "8e415bdb141101e6e0ec481a63887e96f5c70782049a871e4d8342d87d19e054",
-    "ForgeMotionLab/Modules/NinjaSources.luau": "4b75904c5e0230b36ac83975c8acb967fdb2b64908644f49b7aaee85ac90d605",
+    "ForgeMotionLab/Modules/NinjaDuelAdapter.luau": "e0db7ead97819480dd7064b911385f234628dbe588c25e22e76bc442c05e2f06",
+    "ForgeMotionLab/Modules/NinjaSources.luau": "1e41fc9b69cc38f44257fa4ed338b84525b57310af6d1d1c02b378425bc536b9",
     "ForgeMotionLab/Modules/PoseSolver.luau": "499ae649d0a0379c82692c6242e86cf40fad340a83e13ad5a833b4fcd2704594",
     "ForgeMotionLab/Modules/ReferenceMotionLibrary.luau": "8d362f560132ae36f3f1131c3e0bd4d1feee15bb956d284be616c081e97b19cd",
     "ForgeMotionLab/Modules/Rig.luau": "15908c1c285a6159bd58fed36f7234d9c0e4d446b7f016e8a40e37009c9a98d0",
@@ -22,7 +22,7 @@
     "ForgeMotionLab/Modules/UI.luau": "b2a4572202c2cc6a7c130e0a2495d146f513ac7d0eec9c2e4612aa36249b0c46",
     "ForgeMotionLab/Modules/View.luau": "c3e47516735cd3eca157896fe67468104c75723852bf55eeea62f074436919e7"
   },
-  "automatedTests": "PASS (41 rules/controller/variant/bilateral/reference cases)",
+  "automatedTests": "PASS (45 rules/controller/variant/bilateral/reference/adapter cases)",
   "exactBinaryUiSmoke": "PASS (legacy + variants + bilateral/reference filters + six phases + sides/compare/edit/export; simulated Studio events; native instance schemas)",
   "native": "NOT_RUN",
   "visualReview": "USER_PENDING",

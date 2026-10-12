@@ -1,5 +1,7 @@
 # Claude Mission — Four-Character Final Combat Pass
 
+Technical preparation handoff: [docs/current/CLAUDE_TECHNICAL_HANDOFF.md](docs/current/CLAUDE_TECHNICAL_HANDOFF.md). Read the four-character matrix, state/tool contracts and exact motion mapping before artistic iteration. The technical pass did not approve visual/game-feel gates.
+
 ## Operating mode
 
 You are taking over an already-advanced Roblox combat project. The user should not have to prepare files, install Git manually, move folders, or explain the repository structure to you.

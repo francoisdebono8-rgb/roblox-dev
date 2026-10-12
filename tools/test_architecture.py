@@ -33,6 +33,12 @@ class BoundaryTests(unittest.TestCase):
     def test_rojo_cannot_embed_other_workspace(self):
         self.assertTrue(self.audit({'plugins/forge/release.project.json': '{"tree":{"$path":"../../games/ninja-duel/src"}}', 'games/ninja-duel/src/main.luau': 'return {}'}))
 
+    def test_assertion_about_excluded_motion_lab_is_not_an_import(self):
+        self.assertFalse(self.audit({'games/ninja-duel/tests/check.py': "assert 'motion-lab' not in path"}))
+
+    def test_pathlib_cannot_hide_motion_lab_runtime_dependency(self):
+        self.assertTrue(self.audit({'games/ninja-duel/src/check.py': "path = ROOT / 'motion-lab' / 'code.luau'"}))
+
     def test_playground_can_import_plugin(self):
         self.assertFalse(self.audit({'plugins/forge-playground/default.project.json': '{"tree":{"$path":"../forge/Engine.luau"}}', 'plugins/forge/Engine.luau': 'return {}'}))
 

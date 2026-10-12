@@ -10,7 +10,11 @@ import shutil
 ROOT = Path(__file__).resolve().parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--qa', action='store_true')
+parser.add_argument('--debug', action='store_true', help='Separate Studio-only inspector place; no automatic native QA')
 args = parser.parse_args()
+DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau'}
+def included(p):
+    return (args.qa or p.stem!='NativeQA') and (args.qa or args.debug or p.name not in DEBUG_SOURCES)
 xml = ET.Element('roblox', version='4')
 serial = 0
 
@@ -29,7 +33,7 @@ def item(parent, cls, name, properties=None):
 
 def sources(parent, directory):
     for source in sorted(directory.glob('*.luau')):
-        if source.stem == 'NativeQA' and not args.qa: continue
+        if not included(source): continue
         cls = 'Script' if source.name.endswith('.server.luau') else 'LocalScript' if source.name.endswith('.client.luau') else 'ModuleScript'
         name = source.name.split('.')[0]
         item(parent, cls, name, [('Source','ProtectedString',source.read_text(encoding='utf-8'))])
@@ -50,7 +54,7 @@ for asset_file in asset_files:
     for ref in donor_xml.iter('Ref'):
         if ref.text in references: ref.text=references[ref.text]
     for node in donor_xml.findall('Item'): shared.append(node)
-fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA')+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
+fingerprint=hashlib.sha256(b''.join(p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p))+b''.join(p.read_bytes() for p in asset_files)).hexdigest()
 item(shared,'StringValue','BuildFingerprint',[('Value','string',fingerprint)])
 licenses=item(shared,'Folder','ThirdPartyLicenses')
 for vendor in ('bangla','place1','velmora'):
@@ -61,19 +65,21 @@ starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','flo
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
 item(xml,'Lighting','Lighting', [('Technology','token',3),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
 item(xml,'SoundService','SoundService')
-if args.qa:
+if args.qa or args.debug:
+    prefix='workspace:SetAttribute("NinjaDuelDebug",true)\n'
+    if args.qa: prefix+='workspace:SetAttribute("NinjaDuelQA",true)\n'
     for props in server.iter('Properties'):
         if props.findtext("string[@name='Name']") == 'Main':
             source = props.find("ProtectedString[@name='Source']")
-            source.text = 'workspace:SetAttribute("NinjaDuelQA",true)\n'+source.text
-name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel.rbxlx'
+            source.text = prefix+source.text
+name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel-Debug.rbxlx' if args.debug else 'NinjaDuel.rbxlx'
 output=ROOT/'dist'/name
 ET.indent(xml)
 ET.ElementTree(xml).write(output,encoding='utf-8',xml_declaration=True)
-expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if args.qa or p.stem!='NativeQA']
-if args.qa:
+expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if included(p)]
+if args.qa or args.debug:
     main_source=(ROOT/'src/Server/Main.server.luau').read_text(encoding='utf-8')
-    expected[expected.index(main_source)]='workspace:SetAttribute("NinjaDuelQA",true)\n'+main_source
+    expected[expected.index(main_source)]=prefix+main_source
 embedded=[p.findtext("ProtectedString[@name='Source']") for p in xml.iter('Properties') if p.find("ProtectedString[@name='Source']") is not None]
 assert sorted(embedded)==sorted(expected), 'Embedded sources differ from reviewed files'
 external_ids={18342131933,18342045122,18341956985,18341905406,5835032207,8595980577,9117969717,656117400,656118852,656121766,656117878,656115606,656114359}
@@ -81,7 +87,7 @@ for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
 import subprocess,sys
 # Automated gate: every headless spec must pass on the exact sources built here.
-TEST_RUNNERS=[('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau')]
+TEST_RUNNERS=[('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau'),('lune','tests/Preparation.spec.luau')]
 def run_automated():
     tool={}
     import os
@@ -114,7 +120,7 @@ for spec,data in automated['suites'].items():
 if automated['status']=='FAIL':
     sys.exit('Automated suites failed: '+', '.join(automated['failed']))
 
-manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if args.qa or p.stem!='NativeQA'},'sourceEquality':'PASS','buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':args.debug or args.qa,'buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are
  # only moved off PENDING by an actual Studio run on this exact artifact.

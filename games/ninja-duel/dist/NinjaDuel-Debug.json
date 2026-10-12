@@ -1,0 +1,139 @@
+{
+  "version": "0.13.0-arena-combo",
+  "artifact": "NinjaDuel-Debug.rbxlx",
+  "sha256": "6507777c122b64fa78752f079db2644bfd4b35988d52622d0ccc768f0ecc7c50",
+  "sources": {
+    "src/Client/Camera.luau": "eeb3b05958de3bc8b6ec6ac9ad4616c67203c9fd33de8e4b709286a18ccf034d",
+    "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
+    "src/Client/Effects.luau": "271e9147b30c8287acc3e86b9d349220ddec6215a6f5cb6ba5265307dc134649",
+    "src/Client/Input.luau": "36c891849b4697f1e11c11fad9f6d830774be1e73d4c2218858415b87e65cef3",
+    "src/Client/Main.client.luau": "5ef56ea64e85e0b4d5e50dd5f464cce1b25ebb7c70baf3edfb9fe74bfdbc1d65",
+    "src/Client/Presentation.luau": "217a7be9674e34f5ad81c03871e3de47cb204f4f729496641a40422f7375cd21",
+    "src/Client/UI.luau": "f0564be68dcd09157de694ae4bf1e05b3ba1f139feb6f3735bd69bc6ced9626e",
+    "src/Client/VelmoraHitFeedback.luau": "4e40625c9c844d9dec776ce8b4d69aab5fc1318c5667df8ec5164eebf1a6e0dd",
+    "src/Client/VelmoraMotionEngine.luau": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d",
+    "src/Server/AI.luau": "27bee5ce469cc21d8204825c6676499d072da5c20171311ca707d18be6af5d82",
+    "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
+    "src/Server/BanglaCombat.luau": "9ad3bb538983b372955bb6f9ccca86783da2f2a49426f551462222f96a7937cd",
+    "src/Server/BanglaEvade.luau": "3915cc036ee9f644ac02a3557613e34106a516da2583ba268ace96c8e89316fe",
+    "src/Server/Brawler.luau": "1317cab552ed6dcb40416fdc8d9716f5040f2c861f2fd859dbef196901156740",
+    "src/Server/Combat.luau": "62780eb17174ada51b09cd774e4ca9aa75d639cebb03f9404c9c56a2bae132d0",
+    "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
+    "src/Server/DevHooks.luau": "6bc4721b200d9ffdc6f1ca9c9fe02c5c91d65d718b081e357a30749d8745635d",
+    "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
+    "src/Server/Elements.luau": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333",
+    "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
+    "src/Server/Matches.luau": "0b9d3e572c43bad340bbb526079c1ee9eba72df700078fa7112a6d896dc95ea7",
+    "src/Server/Motor.luau": "51706bfd90b0ec44c445f7f3d22ddd9b82d42f2bbb73987c913ba8105ff72228",
+    "src/Server/Place1Movement.luau": "af18c94b37f114da55c36677727869ca59ac3537080111f1d48d57847b4f3323",
+    "src/Server/Place1Parkour.luau": "faf01c5fae7baafad38b98492497f93f99fb761bc1a00ba2b554390ee97d600a",
+    "src/Server/Techniques.luau": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1",
+    "src/Server/Tutorial.luau": "1ec42ee3a85d01456c8c490e584d12039487d7221b985253dccf4b630352b189",
+    "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
+    "src/Server/VelmoraDefense.luau": "34615bef57877ee34726ad762bd9e3a4b9d21e3738cae5c19a1f4a42f290a063",
+    "src/Server/VelmoraHitDetection.luau": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb",
+    "src/Server/World.luau": "04cb4eeeb04fd9936cde9a990e06fa0c48ff8a4164e9fd198e7de31382b2be3d",
+    "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
+    "src/Shared/Attacks.luau": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7",
+    "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
+    "src/Shared/Config.luau": "aea9d1a50389ba7e759db789f4a26f6951554d5e84ad1de7c90d03713424dc2c",
+    "src/Shared/Controls.luau": "d92df72a0c558251dc39c805bd22f50a1abd4672ddd74273db9bd7fbbb4f6058",
+    "src/Shared/Fighters.luau": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5",
+    "src/Shared/MoveGraphs.luau": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b",
+    "src/Shared/Rules.luau": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1",
+    "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
+  },
+  "sourceEquality": "PASS",
+  "debugOnly": true,
+  "buildFingerprint": "921b36a0541c8a37b29c33511abd14fa7a2793d511ff2add8c37c798ca51627c",
+  "donorAssets": {
+    "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
+  },
+  "externalAssets": [
+    298984512,
+    656114359,
+    656115606,
+    656117400,
+    656117878,
+    656118852,
+    656121766,
+    5835032207,
+    8030746658,
+    8030760338,
+    8271975883,
+    8595980577,
+    8618373035,
+    8708744804,
+    9117969717,
+    18341905406,
+    18341956985,
+    18342045122,
+    18342131933
+  ],
+  "automatedQA": {
+    "status": "PASS",
+    "failed": [],
+    "suites": {
+      "tests/Rules.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel pure policy: 7 PASS"
+      },
+      "tests/Combat.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel headless combat/migration: 17 PASS (geometry adapter; native QA still required)"
+      },
+      "tests/Sequences.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel sequence replay: 15 PASS (headless geometry adapter; native QA still required)"
+      },
+      "tests/Regression.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel regressions: 12 PASS"
+      },
+      "tests/Feedback.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel feedback policy: 5 PASS"
+      },
+      "tests/Animation.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel animation presentation: 10 PASS"
+      },
+      "tests/Branches.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel move graphs: 13 PASS"
+      },
+      "tests/Phase4.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel phase 4 depth: 19 PASS"
+      },
+      "tests/Neji.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Neji prototype: 8 PASS"
+      },
+      "tests/Systems.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel final systems: 5 PASS"
+      },
+      "tests/Tools.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel shared tools: 4 PASS"
+      },
+      "tests/Sasuke.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Sasuke prototype: 7 PASS"
+      },
+      "tests/Gaara.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Gaara prototype: 10 PASS"
+      },
+      "tests/Preparation.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel technical preparation: 7 PASS"
+      }
+    }
+  },
+  "nativeQA": "PENDING",
+  "visualAcceptance": "PENDING",
+  "controllerFeel": "PENDING",
+  "animationPermission": "PENDING"
+}

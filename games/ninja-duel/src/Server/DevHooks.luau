@@ -6,7 +6,11 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local DevHooks={}
 function DevHooks.install(matches)
-	if not RunService:IsStudio() then return end
+	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
+	local Inspector=require(script.Parent.CombatInspector)
+	local debugRemote=Instance.new("RemoteEvent");debugRemote.Name="NinjaDuelCombatDebug";debugRemote.Parent=game:GetService("ReplicatedStorage")
+	local traces=setmetatable({},{__mode="k"})
+	local nextDebug=0
 	local AI=require(script.Parent.AI)
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
@@ -34,7 +38,9 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
-		if op=="start" then
+		if op=="contracts" then
+			return table.clone(Inspector.ToolHooks)
+		elseif op=="start" then
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end
 			return matches:start(player,arg1 or "Flashstep",arg2 or "Mirage",arg3==true)
@@ -101,6 +107,12 @@ function DevHooks.install(matches)
 			local out=c.damageLog
 			if arg1 then c.damageLog={} end
 			return out
+		elseif op=="inspect" then
+			return Inspector.snapshot(s)
+		elseif op=="trace" then
+			local trace=traces[s];local entries={}
+			if trace then for _,entry in trace.entries do table.insert(entries,table.clone(entry)) end end
+			return entries
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
@@ -109,6 +121,16 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+		if workspace:GetAttribute("NinjaDuelDebugEnabled")~=false then
+			for viewer,session in matches.sessions do
+				if session.combat then
+					local snapshot=Inspector.snapshot(session);local trace=traces[session] or {};traces[session]=trace
+					Inspector.record(trace,snapshot,80)
+					if os.clock()>=nextDebug then debugRemote:FireClient(viewer,snapshot) end
+				end
+			end
+			if os.clock()>=nextDebug then nextDebug=os.clock()+.1 end
+		end
 		local _,s=session()
 		if autopilot and s and s.phase=="Duel" and autopilot.actor==s.human then autopilot:update(s.combat.now)
 		elseif autopilot and s and s.combat and autopilot.actor~=s.human then autopilot=AI.new(s.combat,s.human,99) end

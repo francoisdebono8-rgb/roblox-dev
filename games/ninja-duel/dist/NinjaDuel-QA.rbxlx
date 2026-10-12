@@ -1583,7 +1583,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">93e92bd91b11c6667fedb10549225c5c01cf69371c4bf8806e45f7f8837bb225</string>
+          <string name="Value">034bf3f24b171384966dc372a48eaada88bd46b323466cb98db331e610da0cf0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -4150,6 +4150,76 @@ return Combat
       </Item>
       <Item class="ModuleScript" referent="ND26">
         <Properties>
+          <string name="Name">CombatInspector</string>
+          <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
+-- State, reaction and locomotion are independent axes in the existing engine.
+local Inspector={}
+-- Discoverable hooks into the existing common engine, not a second tool system.
+Inspector.ToolHooks={
+ holdEquip="Combat.beginThrow(actor, spec); no persistent inventory/equip state",
+ release="Combat.stepThrow(actor): spec.fire(index, aim) on the authored release frame",
+ spawn="Combat.projectile(actor, aim, speed, range, damage, kind, onSurface?, opts?)",
+ impact="Combat.projectileHit(projectile, target, position, normal)",
+ surface="Combat.projectileSurface(projectile, raycastResult); projectile.onSurface(position, normal, victim?)",
+ embedded="Techniques.plant / actor.anchors for Minato seals; ordinary blade stick is a presentation impact",
+ recall="Combat.markedInFlight reads a travelling seal; no generic weapon recall mechanic",
+ cleanup="Combat.removeProjectile / updateProjectiles / Combat.clear / Techniques.expireSeals",
+ conversion="Existing ToolMastery, MoveGraphs, onSurface callbacks and Techniques.wireBind; preserve character identity",
+}
+local function remaining(value,now) return math.max(0,(value or 0)-now) end
+local function counts(source)
+ local result={};for key,value in source or {} do if type(value)=="number" then result[key]=value end end;return result
+end
+function Inspector.actor(c,a)
+ local now=c.now;local pending=a.pending;local spec=pending and pending.spec
+ local attack=if pending then pending.name or (spec and spec.Id) else nil
+ local phase=if a.state=="Startup" or a.state=="TechniqueChannel" then "startup" elseif a.state=="Active" or a.state=="TechniqueActive" then "active" elseif a.state=="Recovery" or a.state=="TechniqueRecovery" then "recovery" else "none"
+ local durations=if spec then {startup=spec.startup or spec.Channel or 0,active=spec.active or spec.Active or 0,recovery=spec.recovery or spec.Recovery or 0} else nil
+ local velocity=a.root.AssemblyLinearVelocity
+ local terrain=if a.wall then "wall" elseif a.airborne then (if velocity.Y&lt;-.1 then "falling" else "air") else "ground"
+ local movement=if a.wall then "wall" elseif a.reaction then "reaction:"..a.reaction elseif a.state=="Pursuit" or a.state=="Rush" or a.state=="Dodging" then a.state elseif a.airborne then "air" elseif (a.locomotion or Vector3.zero).Magnitude&gt;.1 then (if a.sprinting then "sprint" else "locomotion") else "idle"
+ local projectiles={}
+ for _,p in c.projectiles do if p.a==a then table.insert(projectiles,{id=p.id,kind=p.kind,remaining=p.remaining,age=now-p.born}) end end
+ local anchors={}
+ for _,anchor in a.anchors or {} do table.insert(anchors,{id=anchor.id,body=anchor.actor and anchor.actor.id,remaining=remaining(anchor.expires,now)}) end
+ return {id=a.id,fighterId=a.fighterId,name=a.def.Name,state=a.state,reaction=a.reaction or "none",reactionRemaining=remaining(a.reactionUntil,now),
+  move=attack or "none",attackVariant=a.attackVariant or "none",phase=phase,phaseRemaining=remaining(a.untilTime,now),durations=durations,
+  elapsed=if pending then math.max(0,now-(if pending.kind=="Brawl" then a.attackStarted or now else a.castStarted or now)) else 0,
+  combo=a.combo or 0,comboRoute=attack or a.attackName or "none",comboHits=a.comboHits or 0,hitConfirmed=a.hitConfirmed==true,chainOpen=a.chainOpen==true and now&gt;=(a.chainAt or math.huge),
+  buffered=a.buffered and a.buffered.action or "none",target=a.target and a.target.id or "none",locked=a.locked==true,terrain=terrain,movement=movement,
+  cue=if (a.cueUntil or 0)&gt;now then a.cue or "" else "",guard=a.guardHeld==true,stamina=a.stamina or 0,parryCooldown=remaining(a.parryReadyAt,now),dodge=remaining(a.dodgeUntil,now),invulnerability=remaining(a.invulnerableUntil,now),
+  counter=remaining(a.counterUntil,now),riposte=remaining(a.riposteUntil,now),read=remaining(a.readUntil,now),
+  grabbedBy=a.grabbedBy and a.grabbedBy.id or "none",grabVictim=a.grabVictim and a.grabVictim.id or "none",
+  throw=if a.throwing then {kind=a.throwing.kind,fired=a.throwing.fired,count=a.throwing.count,releaseIn=remaining(a.throwing.nextRelease,now)} else nil,
+  projectiles=projectiles,anchors=anchors,wireVictim=a.wireVictim and a.wireVictim.id or "none",bound=a.reaction=="Bound",
+  awakening=remaining(a.awakenUntil,now),events=counts(a.events),health=a.health,chakra=a.chakra,
+  -- Clashes are events followed by Recovery, not a persistent WeaponClash state.
+  clashes=(a.events or {}).Clash or 0,weaponClashState="not a persistent state"}
+end
+function Inspector.snapshot(s)
+ local rows={};for _,a in s.combat.actors do table.insert(rows,Inspector.actor(s.combat,a)) end
+ local impacts={}
+ for _,impact in s.combat.impacts or {} do table.insert(impacts,{id=impact.id or impact.serial,style=impact.style,kind=impact.kind,owner=impact.owner,victim=impact.victim}) end
+ return {phase=s.phase,epoch=s.epoch,now=s.combat.now,actors=rows,projectileCount=#s.combat.projectiles,hazardCount=#s.combat.hazards,impacts=impacts}
+end
+function Inspector.record(trace,snapshot,limit)
+ -- Compare projections, never hold references to mutable actors or pending moves.
+ trace.last=trace.last or {};trace.entries=trace.entries or {}
+ for _,a in snapshot.actors do
+  local key=table.concat({a.state,a.reaction,a.move,a.attackVariant,a.terrain,tostring(a.combo),tostring(a.clashes),a.throw and a.throw.kind or "none"},"|")
+  if trace.last[a.id]~=key then
+   trace.last[a.id]=key
+   table.insert(trace.entries,{at=snapshot.now,id=a.id,fighter=a.fighterId,state=a.state,reaction=a.reaction,move=a.move,variant=a.attackVariant,terrain=a.terrain,combo=a.combo,clashes=a.clashes})
+  end
+ end
+ while #trace.entries&gt;(limit or 80) do table.remove(trace.entries,1) end
+end
+return Inspector
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND27">
+        <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
 -- tool (or the command bar) start duels, drive either fighter through the real
@@ -4159,7 +4229,11 @@ local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local DevHooks={}
 function DevHooks.install(matches)
-	if not RunService:IsStudio() then return end
+	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
+	local Inspector=require(script.Parent.CombatInspector)
+	local debugRemote=Instance.new("RemoteEvent");debugRemote.Name="NinjaDuelCombatDebug";debugRemote.Parent=game:GetService("ReplicatedStorage")
+	local traces=setmetatable({},{__mode="k"})
+	local nextDebug=0
 	local AI=require(script.Parent.AI)
 	local hook=Instance.new("BindableFunction");hook.Name="NinjaDuelDev";hook.Parent=game:GetService("ServerStorage")
 	local autopilot=nil
@@ -4187,7 +4261,9 @@ function DevHooks.install(matches)
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
-		if op=="start" then
+		if op=="contracts" then
+			return table.clone(Inspector.ToolHooks)
+		elseif op=="start" then
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end
 			return matches:start(player,arg1 or "Flashstep",arg2 or "Mirage",arg3==true)
@@ -4254,6 +4330,12 @@ function DevHooks.install(matches)
 			local out=c.damageLog
 			if arg1 then c.damageLog={} end
 			return out
+		elseif op=="inspect" then
+			return Inspector.snapshot(s)
+		elseif op=="trace" then
+			local trace=traces[s];local entries={}
+			if trace then for _,entry in trace.entries do table.insert(entries,table.clone(entry)) end end
+			return entries
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
@@ -4262,6 +4344,16 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+		if workspace:GetAttribute("NinjaDuelDebugEnabled")~=false then
+			for viewer,session in matches.sessions do
+				if session.combat then
+					local snapshot=Inspector.snapshot(session);local trace=traces[session] or {};traces[session]=trace
+					Inspector.record(trace,snapshot,80)
+					if os.clock()&gt;=nextDebug then debugRemote:FireClient(viewer,snapshot) end
+				end
+			end
+			if os.clock()&gt;=nextDebug then nextDebug=os.clock()+.1 end
+		end
 		local _,s=session()
 		if autopilot and s and s.phase=="Duel" and autopilot.actor==s.human then autopilot:update(s.combat.now)
 		elseif autopilot and s and s.combat and autopilot.actor~=s.human then autopilot=AI.new(s.combat,s.human,99) end
@@ -4271,7 +4363,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -4313,7 +4405,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -4385,10 +4477,11 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND29">
+      <Item class="Script" referent="ND30">
         <Properties>
           <string name="Name">Main</string>
-          <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelQA",true)
+          <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
+workspace:SetAttribute("NinjaDuelQA",true)
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
@@ -4402,7 +4495,9 @@ Players.PlayerRemoving:Connect(function(player) matches:remove(player) end)
 for _,player in Players:GetPlayers() do matches:selection(player) end
 RunService.Heartbeat:Connect(function(dt) matches:update(dt,workspace:GetServerTimeNow()) end)
 -- Studio-only playtest hooks (no effect in a live server).
-require(script.Parent.DevHooks).install(matches)
+if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDebug")==true then
+	require(script.Parent.DevHooks).install(matches)
+end
 -- Available only in the separately built native QA place; never in the playable artifact.
 if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelQA")==true then
 	task.spawn(function() require(script.Parent.NativeQA).run(matches) end)
@@ -4412,7 +4507,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4660,7 +4755,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -4882,7 +4977,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -5316,7 +5411,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -5578,7 +5673,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6053,7 +6148,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -6574,7 +6669,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -6674,7 +6769,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -6702,7 +6797,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -6764,7 +6859,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -6815,7 +6910,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -7539,21 +7634,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND41">
+  <Item class="StarterPlayer" referent="ND42">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND42">
+    <Item class="StarterPlayerScripts" referent="ND43">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND43">
+      <Item class="Folder" referent="ND44">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND44">
+        <Item class="ModuleScript" referent="ND45">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -7794,7 +7889,41 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND45">
+        <Item class="LocalScript" referent="ND46">
+          <Properties>
+            <string name="Name">CombatDebug</string>
+            <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
+local RunService=game:GetService("RunService")
+if not RunService:IsStudio() then return end
+local Players=game:GetService("Players")
+local remote=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelCombatDebug",10)
+if not remote then return end
+local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelCombatInspector";gui.ResetOnSpawn=false;gui.DisplayOrder=100
+local panel=Instance.new("TextLabel");panel.Size=UDim2.fromOffset(590,340);panel.Position=UDim2.fromOffset(12,12)
+panel.BackgroundColor3=Color3.fromRGB(18,20,28);panel.BackgroundTransparency=.15;panel.TextColor3=Color3.fromRGB(220,237,245)
+panel.Font=Enum.Font.Code;panel.TextSize=13;panel.TextXAlignment=Enum.TextXAlignment.Left;panel.TextYAlignment=Enum.TextYAlignment.Top
+panel.Text="Ninja Duel debug — waiting for a duel (F8: hide/show)";panel.Parent=gui;gui.Parent=Players.LocalPlayer:WaitForChild("PlayerGui")
+game:GetService("UserInputService").InputBegan:Connect(function(input,processed)
+ if not processed and input.KeyCode==Enum.KeyCode.F8 then gui.Enabled=not gui.Enabled end
+end)
+remote.OnClientEvent:Connect(function(data)
+ local lines={"NINJA DUEL — READ-ONLY DEBUG  /  F8 hide/show",string.format("%s  t=%.2f  projectiles=%d hazards=%d",data.phase,data.now,data.projectileCount,data.hazardCount)}
+ for _,a in data.actors do
+  local tools={};for _,p in a.projectiles do table.insert(tools,p.kind.."#"..p.id) end
+  table.insert(lines,string.format("\n%s [%s]  HP %.0f  chakra %.0f",a.name,a.fighterId,a.health,a.chakra))
+  table.insert(lines,string.format("%s / %s  move=%s variant=%s",a.state,a.reaction,a.move,a.attackVariant))
+  table.insert(lines,string.format("phase=%s %.3fs  combo=%d hits=%d chain=%s",a.phase,a.phaseRemaining,a.combo,a.comboHits,tostring(a.chainOpen)))
+  table.insert(lines,string.format("%s / %s  lock=%s target=%s",a.terrain,a.movement,tostring(a.locked),a.target))
+  table.insert(lines,string.format("guard=%s stam=%.0f parryCD=%.2f dodge=%.2f counter=%.2f",tostring(a.guard),a.stamina,a.parryCooldown,a.dodge,a.counter))
+  table.insert(lines,string.format("grab=%s bound=%s throw=%s tools=%s",a.grabbedBy,tostring(a.bound),a.throw and a.throw.kind or "none",table.concat(tools,",")))
+  table.insert(lines,string.format("clashes=%d riposte=%.2f awaken=%.2f",a.clashes,a.riposte,a.awakening))
+ end
+ panel.Text=table.concat(lines,"\n")
+end)
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND47">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -8907,7 +9036,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND46">
+        <Item class="ModuleScript" referent="ND48">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -8999,7 +9128,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND47">
+        <Item class="LocalScript" referent="ND49">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -9130,7 +9259,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND48">
+        <Item class="ModuleScript" referent="ND50">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -9383,7 +9512,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND49">
+        <Item class="ModuleScript" referent="ND51">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
@@ -9780,7 +9909,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND50">
+        <Item class="ModuleScript" referent="ND52">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -9913,7 +10042,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND51">
+        <Item class="ModuleScript" referent="ND53">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -11726,7 +11855,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND52">
+  <Item class="Lighting" referent="ND54">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -11744,7 +11873,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND53">
+  <Item class="SoundService" referent="ND55">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

@@ -62,10 +62,15 @@ def references(path, root):
                         namespaces.add('motion-lab')
         if path.suffix == '.py':
             # Also cover pathlib expressions such as ROOT / 'plugins'.
-            for node in ast.walk(ast.parse(text)):
+            tree = ast.parse(text)
+            parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
+            for node in ast.walk(tree):
                 if isinstance(node, ast.Constant) and isinstance(node.value, str):
                     exact = {'plugins': 'plugins', 'products': 'plugins', 'ninja-duel': 'ninja-duel', 'motion-lab': 'motion-lab'}
-                    if node.value in exact:
+                    parent = parents.get(node)
+                    path_component = isinstance(parent, ast.BinOp) and isinstance(parent.op, ast.Div)
+                    path_call = isinstance(parent, ast.Call) and isinstance(parent.func, ast.Attribute) and parent.func.attr in ('join', 'joinpath')
+                    if node.value in exact and (path_component or path_call):
                         namespaces.add(exact[node.value])
         for token in re.findall(r'[\'"]([^\'"\n]+)[\'"]', text):
             for prefix, destination in (('plugins/', 'plugins'), ('products/', 'plugins'), ('games/ninja-duel/motion-lab/', 'motion-lab'), ('games/ninja-duel/', 'ninja-duel')):

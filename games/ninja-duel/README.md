@@ -87,3 +87,17 @@ The native suite lives in `dist/NinjaDuel-QA.rbxlx`: open it in Studio, press **
 15. Replay the complete interactive tutorial, including its reset/skip paths.
 
 Record native errors and the first unpleasant control or unconvincing exchange. Source/import notices and exact components: `THIRD_PARTY.md`. Pre-migration snapshot: Git commit `d61c09b`; mission head: `2bac931`.
+
+
+## Préparation technique Claude — quatre personnages
+
+Voir [la matrice](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) et [le handoff](docs/current/CLAUDE_TECHNICAL_HANDOFF.md).
+
+- `python3 build.py --debug` crée `dist/NinjaDuel-Debug.rbxlx` pour l’inspecteur Studio en lecture seule (F8).
+- `python3 build.py` exclut DevHooks, CombatInspector, CombatDebug et NativeQA du build normal.
+- `python3 build.py --qa` reste le build séparé de régression native ; il inclut aussi les diagnostics.
+- `lune run tools/combat_inventory.luau` régénère le mapping des actions depuis le renderer actuel.
+- `python3 -m unittest discover -s tests -p 'test_build_isolation.py'` vérifie les trois artefacts après leur build.
+- `python3 motion-lab/build.py` extrait, teste et package Motion Lab ; aucune installation/publication automatique.
+
+L’inspecteur ne crée pas de nouvel état de combat et ne modifie ni mouvements, dégâts, timings de combat, caméra, animations ou direction artistique.
