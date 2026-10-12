@@ -10,6 +10,7 @@ python3 games/ninja-duel/build.py --qa
 python3 -m unittest discover -s games/ninja-duel/tests -p test_build_isolation.py
 python3 tools/check_architecture.py
 python3 games/ninja-duel/tools/check_project_docs.py
+python3 games/ninja-duel/tools/check_project_docs.py --self-test
 python3 games/ninja-duel/motion-lab/build.py
 ```
 
@@ -32,3 +33,5 @@ La disponibilité réelle d’un hook/provider de contrôle Studio dépend de la
 Codex prépare preuves, outils, contrats, recherche et scaffolding utile. Claude conserve le jugement natif sur feel, techniques, corps et intégration. [Structure du projet](../tools/PROJECT_STRUCTURE.md) ; [handoff technique détaillé](../current/CLAUDE_TECHNICAL_HANDOFF.md).
 
 Modifications sûres dans cette préparation : documentation, registres et outils de lecture/validation sans mutation du combat. Pour une implémentation approuvée, privilégier une correction ciblée ; préserver les moteurs/contrats existants, validation serveur, source mapping/héritages, profils Lab et exports inertes. Ne remplacer ni moteur de combat ni pipeline d’animation à cause d’une ancienne mission. Ne retuner dégâts/costs/timings/camera pendant une passe documentaire.
+
+`check_project_docs.py --self-test` simule une reprise sur une autre branche et cinq régressions : branche de travail figée, fichier actif absent, ticket sans provenance, lien local cassé, ID dupliqué. Il ne modifie aucun fichier. Le contrôle documentaire normal applique aussi les règles de reprise durable et de provenance.

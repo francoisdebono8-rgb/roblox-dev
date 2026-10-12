@@ -2,7 +2,13 @@
 
 Snapshot 2026-10-12. Chaque bloc est un record Markdown stable, filtrable par ses champs. P0 = reprise/sûreté, P1 = cœur du duel et qualité, P2 = profondeur/profilage, P3 = futur conditionnel. `CORE4` = Minato/Itachi/Neji/Sasuke ; `ALL` = transversal. Ce tableau est cumulatif ; tous ses tickets ouverts ne sont pas un plan approuvé.
 
-Statuts : OPEN/PARTIAL/IN_PROGRESS/DONE/BLOCKED/DEFERRED/REJECTED. Résultat IMPROVED : DONE + outcome IMPROVED + justification/proof. Une clôture technique ne clôt pas l’item visuel adjacent. Chaque exigence détaillée conserve sa source ; consulter [couverture](../reports/SOURCE_COVERAGE.md), specs et documents complets avant exécution. Les idées research restent candidates tant que non validées. Dependencies désigne les prérequis pour clôturer le critère, pas une interdiction d’auditer en parallèle.
+Statuts : OPEN/PARTIAL/IN_PROGRESS/DONE/BLOCKED/DEFERRED/REJECTED. Résultat IMPROVED : DONE + outcome IMPROVED + justification/proof. Une clôture technique ne clôt pas l’item visuel adjacent. Chaque ticket référence au moins une source documentaire liée ou une `justification` explicite non vide ; NONE/TBD ne constituent pas une provenance. Chaque exigence détaillée conserve sa source ; consulter [couverture](../reports/SOURCE_COVERAGE.md), specs et documents complets avant exécution. Les idées research restent candidates tant que non validées. Dependencies désigne les prérequis pour clôturer le critère, pas une interdiction d’auditer en parallèle.
+
+Convention DONE : un ticket clôt son critère, pas une feature entière par déduction. `outcome: VERIFIED_TECHNICAL` = DONE technique ; `VERIFIED_NATIVE` = critère natif Studio prouvé ; `VERIFIED_HUMAN` = critère accepté visuellement/humainement. Evidence distingue TECHNICAL / NATIVE_STUDIO / HUMAN_VISUAL : PASS, PENDING, FAIL ou NOT_APPLICABLE justifié, avec artefact et preuve. IMPROVED documente les mêmes dimensions. Les DONE existants VERIFIED_TECHNICAL ne valent pas acceptation Studio/humaine.
+
+Une feature technique peut donc avoir un ticket DONE et un ticket visuel PARTIAL/OPEN : COM-001 → COM-002/003/004/005 ; DEF-001/004 → DEF-002/003/005 ; CHR-*-001 → CHR-*-002 et CHR-CORE-001/002 ; LAB-001 → LAB-002/003 ; QA-002/003 → QA-001/005. Ne pas cacher ces suites lorsque les tests passent. Si tous les critères restent dans le même ticket, conserver PARTIAL jusqu’à leur validation.
+
+Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y compris DONE/DEFERRED/REJECTED. Enrichir l’ID existant et ajouter la source ; scinder en sous-ID lié au parent seulement si son périmètre devient trop large. Deux formulations ou deux dates ne justifient jamais deux tickets de même intention.
 
 ## DOC-001 — Entrée unique et orchestration cumulative traçable
 
