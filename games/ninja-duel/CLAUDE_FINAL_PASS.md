@@ -1,4 +1,4 @@
-# Claude Mission — Minato vs Itachi Final Combat Pass
+# Claude Mission — Four-Character Final Combat Pass
 
 ## Operating mode
 
@@ -22,7 +22,14 @@ Push working checkpoints and the final state to GitHub.
 
 # Goal
 
-Take the existing project from a technically solid prototype to the first genuinely convincing **Naruto-like Minato vs Itachi combat slice**.
+Take the existing project from a technically solid prototype to the first genuinely convincing **Naruto-like four-character combat slice** built around the current playable roster:
+
+- **Minato**
+- **Itachi**
+- **Neji**
+- **Sasuke**
+
+Do not treat Minato and Itachi as the only real fighters anymore. All shared-system, movement, combo, neutral, defensive and tool decisions must be judged against the four-character roster. Character-specific sections for Minato or Itachi remain valid where they concern their unique systems, but the project-level target is now the full four-character core.
 
 The result must be visibly different when launched. We are no longer optimizing primarily for clean architecture. We are optimizing for **combat quality, animation quality, Naruto fantasy, responsiveness, spectacle, readability and fun** while preserving the strong systems already built.
 
@@ -44,7 +51,7 @@ Before major changes:
 - inspect all relevant client/server/shared code;
 - understand combat, movement, camera, AI, networking, abilities, projectiles, animation/presentation, arena and build pipeline;
 - launch the current `.rbxlx` in Roblox Studio;
-- play both fighters and reproduce the important combat routes yourself.
+- play **all four current fighters** and reproduce their important combat routes yourself.
 
 Preserve the good work already present: interpolation, server combat authority, hit detection improvements, procedural body presentation, current combos, AI, arena, QA and build pipeline unless a real defect requires changing them.
 
@@ -96,6 +103,8 @@ Focus on anticipation, weight transfer, foot placement, torso rotation, arm/leg 
 
 The result should no longer read as "a Roblox mannequin with joints being rotated".
 
+Shared movement quality must improve without flattening character identity. Neji must not move like Minato, Sasuke must not feel like Itachi, and shared attacks should be adapted through stance, rhythm, angle, recovery and conversion rather than copied unchanged.
+
 ---
 
 # 4. Fix the remaining jump / combo / state bugs
@@ -109,7 +118,7 @@ Aggressively test and repair:
 - slam;
 - dash attack;
 - wall interaction;
-- attack immediately after teleport;
+- attack immediately after teleport where relevant;
 - hitstun and knockdown;
 - recovery/cancel windows;
 - repeated combo inputs;
@@ -184,7 +193,7 @@ not merely:
 
 ## Build a richer universal combat language without creating a second combat engine
 
-Reuse the current combat grammar and foundations. Add or deepen only the common layers that materially improve the playable Minato/Itachi slice and that can later be bent by other characters.
+Reuse the current combat grammar and foundations. Add or deepen only the common layers that materially improve the playable **Minato / Itachi / Neji / Sasuke** core and that can later be bent by more characters.
 
 ### A. Defense must be as expressive as offense
 
@@ -216,10 +225,12 @@ or, for an appropriate sword user later:
 
 `draw → slash → thrust → parry/clash → body strike → disengage`.
 
-For this vertical slice, prioritize what matters to Minato and Itachi:
+For this vertical slice, prioritize what matters to the four current fighters:
 
-- kunai handling in-hand as well as throwing;
-- shuriken integration into pressure/spacing;
+- Minato: kunai handling in-hand as well as throwing, marked destinations and immediate angle conversion;
+- Itachi: shuriken integration into pressure/spacing and deceptive trajectories;
+- Neji: close-range hand control, precise palm contact, deflection/counter transitions and minimal dependency on weapons;
+- Sasuke: shuriken/kunai routes, wire-compatible pressure where supported, fire integration and more aggressive tool-to-taijutsu conversion;
 - believable draw, grip, release, recovery and transitions;
 - tools usable while moving and as bridges between ranges.
 
@@ -242,7 +253,8 @@ Character interpretation matters more than quantity:
 
 - **Minato:** marked kunai, spatial preparation, FTG destinations and angle changes;
 - **Itachi:** shuriken geometry, forcing reactions, deception and delayed/redirected pressure;
-- later Sasuke/Kakashi/etc. can reuse the same infrastructure differently.
+- **Neji:** standard tools remain secondary; his mastery comes from perception, precision, parries/deflections and close-range chakra-point style conversion;
+- **Sasuke:** aggressive shuriken/kunai usage, wire/fire routes and forward-pressure conversions.
 
 Preserve the systemic idea:
 
@@ -250,7 +262,7 @@ Preserve the systemic idea:
 
 Examples for future-compatible infrastructure: marked kunai → FTG destination, wind + blade/projectile → cutting/velocity bias, lightning + metal/wire → conductive interaction, fire + projectile → ignition/area pressure.
 
-Do not implement every combination now. Make the slice prove that the grammar can support them.
+Do not implement every combination now. Make the four-character slice prove that the grammar can support them.
 
 ### D. Clashes and contested contact
 
@@ -347,19 +359,23 @@ For each fighter, aim for a small number of understandable combat verbs that can
 
 ### I. Character identity through the same systems
 
-The universal layers must not make Minato and Itachi play alike.
+The universal layers must not make the four fighters converge toward the same playstyle.
 
 **Minato:** speed, preparation, marked kunai, spatial network, angle changes, precision punish, rapid pursuit.
 
 **Itachi:** calm control, shuriken geometry, fire, deception, substitution/read-based defense, forcing predictable responses and punishing them.
 
-When both use the same common mechanic, their conversion should still communicate who they are.
+**Neji:** compact precision, Gentle Fist logic, circular footwork, deflection/counterplay, close-range chakra-control identity, little wasted motion.
+
+**Sasuke:** aggressive Uchiha pressure, acrobatic taijutsu, shuriken/kunai tools, fire, early Sharingan-style reads, forward-driving transitions.
+
+When several fighters use the same common mechanic, their timing, stance, route and conversion should still communicate who they are.
 
 ### J. Scope discipline
 
 This is an enrichment of the existing final-pass mission, **not permission to restart architecture or build a giant generic framework before improving the game**.
 
-Implement the highest-value pieces that make the Minato vs Itachi fight visibly richer now. Reuse existing systems. Prototype in Studio, keep what improves the fight, reject what adds complexity without fun/readability.
+Implement the highest-value pieces that make the **four-character core** visibly richer now. Reuse existing systems. Prototype in Studio, keep what improves the fights, reject what adds complexity without fun/readability.
 
 A successful 30-second fight should contain interesting decisions even during seconds where nobody is trapped in a full combo.
 
@@ -430,6 +446,8 @@ It should not look like an orange sphere, flat image, or temporary debug effect.
 
 It should begin to evoke an actual Katon-style anime technique.
 
+This system should support both Itachi and Sasuke without making their fire usage identical.
+
 ---
 
 # 9. Minato must have a stronger visual identity
@@ -476,6 +494,41 @@ He should create moments where an opponent is unsure whether engaging immediatel
 
 ---
 
+# 10B. Neji must validate the precision/counter side of the combat engine
+
+Neji is not a side prototype anymore. Treat him as one of the four current playable fighters.
+
+He should communicate:
+
+- Gentle Fist precision;
+- circular movement and controlled angles;
+- short, efficient palm strikes;
+- perception/read-based defense;
+- deflection/counter identity;
+- chakra-point disruption style through states and consequences rather than oversized VFX.
+
+His gameplay is an important test: if the engine only feels good with teleports, projectiles and flashy effects, the underlying taijutsu system is not good enough.
+
+---
+
+# 10C. Sasuke must validate aggressive mixed-range Uchiha combat
+
+Sasuke is one of the four current playable fighters and should not be deferred as future content.
+
+He should communicate:
+
+- aggressive forward pressure;
+- acrobatic taijutsu;
+- sharp kicks and angle changes;
+- shuriken/kunai integration;
+- fire as a route/space-control tool rather than an isolated cooldown;
+- early Sharingan-style reads where already supported;
+- a more impulsive and attacking rhythm than Itachi.
+
+Shared Uchiha systems must not make Sasuke feel like a younger recolor of Itachi.
+
+---
+
 # 11. Camera pass
 
 The camera needs to feel appropriate for a fast Naruto-like duel.
@@ -497,7 +550,7 @@ It must preserve orientation and readability during rapid movement.
 
 Use stronger camera treatment only for meaningful moments. Avoid constant shake or excessive FOV pumping.
 
-The player should be able to understand a Minato teleport instead of losing track of the fight.
+The camera must remain readable not only for Minato teleport routes but also for Neji close-range circular exchanges and Sasuke's faster mixed-range pressure.
 
 ---
 
@@ -573,13 +626,15 @@ Tune the things that make the game feel responsive rather than merely functional
 
 Fast attacks should feel fast. Heavy attacks should feel heavy.
 
+The shared game-feel layer should support four different rhythms rather than one universal timing profile.
+
 ---
 
 # 15. Testing requirements
 
 Run automated tests after relevant code changes, but also perform real Studio testing repeatedly.
 
-At minimum validate full routes for both characters.
+At minimum validate full routes for **all four current characters**.
 
 ## Minato
 
@@ -606,7 +661,31 @@ At minimum validate full routes for both characters.
 - at least one counter/forced-reaction route;
 - disengage/reposition.
 
-Also validate at least several **neutral-to-combat exchanges** where the interesting gameplay happens before a full combo starts: spacing, approach, tool use, dodge/deflect, counter, pursuit and reset.
+## Neji
+
+- movement/stance/circular repositioning;
+- compact melee route;
+- palm-strike transitions;
+- launcher or appropriate vertical conversion if supported;
+- deflect/counter flow;
+- close-range pressure without relying on projectiles;
+- at least one state-change route that reads as Gentle Fist/chakra-point style combat;
+- recovery and defensive reset.
+
+## Sasuke
+
+- movement and aggressive approach;
+- melee string with distinct kicks/body rhythm;
+- launcher/chase/aerial route;
+- shuriken/kunai integration;
+- fire integration into an actual route;
+- defensive/read response where supported;
+- tool → taijutsu or taijutsu → tool conversion;
+- disengage/re-entry.
+
+Also validate several **neutral-to-combat exchanges with different matchups**, not only Minato vs Itachi. At minimum test examples involving Neji and Sasuke so the shared system is not accidentally tuned around two characters.
+
+The interesting gameplay should happen before a full combo starts: spacing, approach, tool use, dodge/deflect, counter, pursuit and reset.
 
 Play multiple full fights.
 
@@ -618,18 +697,19 @@ Do not call the pass finished until the visual result is meaningfully better tha
 
 # 16. Priorities if tradeoffs are required
 
-1. Combat bugs / jump / aerial combo reliability
+1. Combat bugs / jump / aerial combo reliability across the four-character core
 2. Animation and body-motion quality
 3. Make neutral/defense/counterplay interesting between combos
-4. Real Minato kunai + marked-kunai combat integration
-5. Real Itachi shuriken + tool-pressure integration
-6. Highest-value clash/grab/state/weapon interactions that improve the current slice
-7. Fireball and major jutsu presentation
-8. Minato teleport/aura identity and Itachi deception identity
-9. Ninja Storm + supplied-reference combat flow
-10. Camera
-11. Arena / Naruto atmosphere
-12. General polish
+4. Make Minato, Itachi, Neji and Sasuke visibly and mechanically distinct
+5. Real Minato kunai + marked-kunai combat integration
+6. Real Itachi/Sasuke projectile-tool integration where appropriate
+7. Highest-value clash/grab/state/weapon interactions that improve the current fights
+8. Fireball and major jutsu presentation
+9. Neji precision/counter identity and Sasuke aggressive mixed-range identity
+10. Ninja Storm + supplied-reference combat flow
+11. Camera
+12. Arena / Naruto atmosphere
+13. General polish
 
 Prioritize what the player can **see and feel** over speculative refactors.
 
@@ -644,6 +724,8 @@ The project already has substantial systems for:
 - networking;
 - Minato;
 - Itachi;
+- Neji;
+- Sasuke;
 - AI;
 - camera;
 - arena;
@@ -663,7 +745,7 @@ Do not spend the mission creating a new generic combat framework.
 
 The target is not simply "all tests pass".
 
-The target is that a 20–30 second clip of the duel begins to look like an actual game somebody would want to try.
+The target is that a 20–30 second clip involving **any of the four current fighters** begins to look like an actual game somebody would want to try.
 
 We should visibly see:
 
@@ -674,10 +756,10 @@ We should visibly see:
 - tools/weapons bridging range and melee instead of behaving like detached cooldown abilities;
 - at least some contested contact/counterplay rather than every first touch becoming a guaranteed sequence;
 - launchers and aerial pursuit that do not bug;
-- a real kunai leaving Minato's hand and feeding his spatial game;
-- real Itachi shuriken feeding his pressure/control game;
-- Minato teleporting around a fight in a readable way;
-- a convincing traveling fire technique;
+- Minato's kunai feeding his spatial game;
+- Itachi's shuriken feeding his pressure/control game;
+- Neji's body mechanics and precision carrying his identity without needing huge VFX;
+- Sasuke mixing aggressive taijutsu, tools and fire without feeling like Itachi;
 - proper impacts and reactions;
 - better camera framing;
 - a more Naruto-like arena and atmosphere;
@@ -685,7 +767,7 @@ We should visibly see:
 
 Before: **Roblox combat prototype.**
 
-After: **first convincing Minato vs Itachi Naruto-like vertical slice with a real combat language between the combos.**
+After: **first convincing four-character Naruto-like vertical slice with a real combat language between the combos.**
 
 ---
 
