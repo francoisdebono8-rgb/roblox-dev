@@ -27,6 +27,45 @@ Use a finite set of families, then combine 1–3 per character.
 19. Wall specialist
 20. Adaptive/generalist
 
+## User-selected priority roster pool — 2026-10-13
+
+The user explicitly named the following **25 characters** as the current preferred roster pool. Treat this as the authoritative priority pool for future roster research/design unless the user changes it. This does **not** mean all 25 must be implemented now; CORE4 remains Minato / Itachi / Neji / Sasuke, and expansion should remain staged.
+
+1. Sasuke
+2. Neji
+3. Gaara
+4. Itachi
+5. Minato
+6. Kakashi
+7. Shisui
+8. Naruto
+9. Rock Lee
+10. Orochimaru
+11. Nagato
+12. Killer Bee
+13. Obito
+14. Kimimaro
+15. Haku
+16. Shikamaru
+17. Kisame
+18. Sasori
+19. Kabuto
+20. Tobirama
+21. Hiruzen
+22. Deidara
+23. Darui
+24. Yagura
+25. Konan
+
+Interpretation rules:
+- preserve the project’s young-prodigy framing where possible;
+- where strict canon age/power availability conflicts with the game concept, research and label each kit as `CANON_YOUNG`, `PLAUSIBLE_YOUNG`, `GAMEPLAY_LIBERTY`, or `REJECT_ADULT_ONLY` at the move/ability level rather than rejecting an entire character by default;
+- do not flatten characters into adult/final-form miniature versions;
+- each approved fighter must have a distinct neutral, movement identity, taijutsu silhouette, tool/weapon relationship, conversions and awakening logic;
+- new characters should bend shared systems rather than create isolated engines.
+
+The remaining ~7 slots toward a 32-fighter target are intentionally open. Do not fill them automatically; use future user direction plus mechanical-gap/lore research.
+
 ## Current 10 anchors
 
 ### Minato
@@ -69,33 +108,44 @@ Question: how do I create multiple believable positions at once?
 Families: pure taijutsu + aerial + rushdown.
 Question: can the combat engine feel amazing with almost no ninjutsu?
 
-## Candidate expansion slots
+## Priority expansion identities to research from the user-selected pool
 
-Do not lock these yet; use internet/lore research before final roster choice.
+These are not full movesets yet. They are the mechanical questions Claude/research should answer before implementation.
+
+- **Nagato** — gravity/repulsion-attraction, control and costly high-impact conversions; avoid giving a young version every late-series Path ability by default.
+- **Killer Bee** — multi-weapon rhythm, unusual sword geometry, acrobatic pressure and jinchuriki escalation.
+- **Obito** — evasive/phasing mind games, angle control and fire/tool pressure; youth framing must avoid defaulting to late-war god-kit.
+- **Kimimaro** — body weapon, armor, bone range/terrain and committed close pressure.
+- **Haku** — speed lanes, senbon precision, ice-mirror spatial network and aerial/angle control.
+- **Shikamaru** — shadow constraint, trap/prediction, low-mobility high-IQ space control.
+- **Kisame** — heavy weapon pressure, water-space control, chakra drain/resource denial.
+- **Sasori** — puppet remote-body control, poison/setup and multi-position pressure; age framing to research carefully.
+- **Kabuto** — medical precision, deception, adaptive utility and opportunistic counters; avoid adult sage-mode default.
+- **Tobirama** — water mastery, tactical speed/spatial tools and precision; distinguish clearly from Minato.
+- **Hiruzen** — broad elemental/tool mastery and adaptable fundamentals; youth version should feel gifted rather than “all jutsu old Hokage”.
+- **Deidara** — aerial zoning, explosive setup, remote pressure and terrain denial.
+- **Darui** — calm weapon/lightning/water mix, black-lightning pressure, efficient mid-range transitions.
+- **Yagura** — staff/club-style weapon identity, water/reflective defense possibilities and jinchuriki escalation if age framing supports it.
+- **Konan** — paper-body geometry, ranged shaping, traps and mobility; distinguish from generic projectile zoning.
+
+## Candidate expansion slots not currently in the user-selected priority pool
+
+Keep these as secondary research candidates only. Do not promote above the 25 named characters without user direction or a clear mechanical-gap reason.
 
 Potential directions worth exploring:
-- Killer Bee — weapon rhythm / acrobatic multi-blade / jinchuriki awakening.
-- Haku — speed lanes / ice mirrors / projectile geometry.
-- Kimimaro — body weapon / armor / bone terrain.
 - Temari — long-range wind zoning / space denial.
 - Kankuro — puppet trap/control, if age framing fits.
 - Tenten — true tool specialist, projectile inventory, wire/weapon transitions.
-- Deidara — aerial zoning / explosive setup if age/lore framing works.
-- Sasori — puppet control / poison / remote body, age framing to research.
-- Kabuto — adaptive medical precision / deception.
 - Yamato/Tenzo — wood terrain manipulation if age framing works.
 - Hashirama young — terrain/summon/regen identity.
 - Madara young — weapon/Sharingan/fire pressure.
-- Tobirama young — water/teleport prototype identity.
 - Might Guy young — taijutsu/pressure/gates counterpart to Lee.
 - Hinata young — defensive Gentle Fist variant, contrasted with Neji.
 - Kiba — partner-assisted rushdown / tracking.
 - Shino — swarm zoning/resource pressure.
 - Choji — expansion/heavy grappler.
-- Shikamaru — trap/constraint/prediction.
 - Ino — risky control/setup.
 - Zabuza young — mist/weapon/ambush if timeline permits.
-- Nagato young — gravity/paths only if age/power framing is sensible.
 
 ## Differentiation checklist
 
