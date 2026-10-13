@@ -12,6 +12,7 @@
 | [CLAUDE_USAGE_GUIDE.md](../../design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
 | [README.md](../../design_research/README.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
 | [FREE_R15_COMBAT_MOVEMENT_RESOURCES.md](FREE_R15_COMBAT_MOVEMENT_RESOURCES.md) | WEB_SWEEP_2026-10-13 ; catalogue gratuit Creator Store/GitHub/DevForum/YouTube à auditer, avec priorités, licences connues, risques et procédure Studio. Claude doit sélectionner/adopter/rejeter, pas importer en bloc. | RES-003, MOV-001..005, COM-001..007, DEF-001..005, CAM-002, LAB-002, NET-001 |
+| [VISUAL_TECHNICAL_BENCHMARK_V1.md](VISUAL_TECHNICAL_BENCHMARK_V1.md) | ACTIVE_REFERENCE_2026-10-13 ; benchmark visuel/technique à transformer en captures/timecodes : liberté Naruto RP/free-roam adaptée au 1v1, Storm pour continuité/verticalité, Shinobi Striker pour armes/outils/chakra/poursuite. Ne constitue pas une autorisation de copier assets/code. | RES-001, RES-003, MOV-001..005, COM-002..006, DEF-002..005, TOOL-002/005/006, SYS-001/002, ARENA-001/003, CAM-001/002, LAB-002 |
 | [Vidéo fournie](https://youtu.be/uomkLDU10Lo?is=CrkR68i87Xife6tv) | PROVIDED_NOT_REVIEWED : pas visionnée dans ce refactor | RES-003, COM-002, MOV-001 |
 | [UPD1] Voie Shinobi / Shinobi Way | PROVIDED_NOT_REVIEWED ; nom utilisateur, identité/lien/versions à vérifier | RES-003 |
 | Naruto Arène de combat Shinobi ultime / Naruto Ninja Fighting Arena | PROVIDED_NOT_REVIEWED ; nom utilisateur, identité/lien/versions à vérifier | RES-003 |
@@ -39,3 +40,13 @@ Ces noms/vidéo sont conservés depuis [la mission finale complète](../archive/
 - Travail lié : RES-003 ; MOV-001/002/003/004/005 (course multidirectionnelle, appuis, course latérale, continuité, saut/traversal) ; CAM-002 si les observations montrent une contribution caméra à la vitesse perçue. Comparer course/sprint, impulsion, momentum horizontal, contrôle aérien et réception avec les exigences actives.
 
 Pour les deux : obtenir la vidéo originale et une source de modèle inspectable, documenter timecodes/rig/inputs/contacts/appuis/trajectoires et limites, distinguer observation de promesse, vérifier licence et dépendances avant toute réutilisation. Ne pas assimiler les deux liens de movement à un même système sans preuve. Ces références enrichissent les IDs existants ; elles n’autorisent aucune intégration runtime, animation ou caméra dans cette capture.
+
+## Benchmark visuel/technique ajouté — 2026-10-13
+
+Le benchmark actif rassemble :
+- Shinobi Life 2 / Shindo-style free-roam pour la liberté de déplacement, wall/tree traversal et fantasy shinobi hors combat ;
+- Shinobi Way / Shinobi Rising / Naruto Roblox arenas pour immédiateté, taijutsu, air, outils et lisibilité Roblox ;
+- Storm 4 pour continuité, counters/cancels et combat mural ;
+- Shinobi Striker comme référence technique principale pour armes, ninja tools, routes qui ferment/ouvrent la distance, intégration taijutsu+arme, propriétés élémentaires/chakra et profondeur par timing.
+
+La cible utilisateur est explicitement : **liberté d’un bon Naruto RP/free-roam, mais condensée et disciplinée dans un 1v1 lisible**. Claude doit construire une petite golden library de captures/timecodes dans les catégories traversal, run/sprint, jump/landing, wall, taijutsu, air, defense, weapon/tool et camera, puis comparer Ninja Duel à ces références en Studio.
