@@ -11,6 +11,7 @@
 | [RESEARCH_BACKLOG.md](../../design_research/04_research/RESEARCH_BACKLOG.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
 | [CLAUDE_USAGE_GUIDE.md](../../design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
 | [README.md](../../design_research/README.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
+| [FREE_R15_COMBAT_MOVEMENT_RESOURCES.md](FREE_R15_COMBAT_MOVEMENT_RESOURCES.md) | WEB_SWEEP_2026-10-13 ; catalogue gratuit Creator Store/GitHub/DevForum/YouTube à auditer, avec priorités, licences connues, risques et procédure Studio. Claude doit sélectionner/adopter/rejeter, pas importer en bloc. | RES-003, MOV-001..005, COM-001..007, DEF-001..005, CAM-002, LAB-002, NET-001 |
 | [Vidéo fournie](https://youtu.be/uomkLDU10Lo?is=CrkR68i87Xife6tv) | PROVIDED_NOT_REVIEWED : pas visionnée dans ce refactor | RES-003, COM-002, MOV-001 |
 | [UPD1] Voie Shinobi / Shinobi Way | PROVIDED_NOT_REVIEWED ; nom utilisateur, identité/lien/versions à vérifier | RES-003 |
 | Naruto Arène de combat Shinobi ultime / Naruto Ninja Fighting Arena | PROVIDED_NOT_REVIEWED ; nom utilisateur, identité/lien/versions à vérifier | RES-003 |
