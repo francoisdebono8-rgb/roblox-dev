@@ -50,3 +50,17 @@ Création de [GOLDEN_VISUAL_SET_READY](../research/GOLDEN_VISUAL_SET_READY.md) �
 ## 2026-10-13 — philosophie moveset complète
 
 À la demande de l’utilisateur, le template historique fighter a été transformé en base de conception complète plutôt qu’en simple table de points de branchement. La philosophie est cumulative : shared grammar + character interpretation, profondeur par contexte/timing/position, chakra systémique, outils intégrés au combat, defense/substitution/pursuit réelles, awakenings qui changent les règles, et skill ceiling explicitement décrit. Cette passe ne crée aucun nouveau fighter et ne change aucun runtime ; elle donne à Claude la grille avec laquelle réviser CORE4 et concevoir les futurs prodiges lorsqu’ils seront autorisés.
+
+## 2026-10-14 — session Claude : plan global approuvé
+
+Base : `3b50d8eccbaebcc982af5476ff56d279353b3cb0` (`codex/ninja-claude-technical-prep`). Branche de travail : `claude/ninja-duel-2026-10-14`. Environnement : Windows 11, Python 3.13, outils `ninja-duel-tools` locaux, Roblox Studio installé.
+
+Diagnostic de reprise : seule branche autoritative pour le jeu = la préparation (ancêtre `claude/minato-itachi-final` inclus). Conflit non signalé jusqu’ici : chaîne Codex du 11 octobre non fusionnée et absente des docs actifs (`92cd73b`, `ad8247c`, `33028b2`, `29a9ec1`, `7091585`, ≈2 200 lignes runtime), partie de `4df212c`. Le vérificateur documentaire échouait sur HEAD : `d72709f` (FIGHTER_TEMPLATE) et `16e3a00` (pool de 25 personnages) avaient modifié des sources couvertes sans rafraîchir SOURCE_COVERAGE.
+
+Plan approuvé par l’utilisateur (« oui », 2026-10-14), une seule approbation globale : 0 base/hygiène (branche, coverage, portabilité Windows OPS-002, reprise du seul correctif d’entrées → DEC-011) ; 1 baseline Studio QA-001/QA-004/QA-005 ; 2 mouvement/caméra MOV-001/002/003/005 + CAM-002, priorité sensation de vitesse course/sprint et sauts ninja, golden visual set et tri RES-003 des ressources R15 ; 3 contact/défense/outils COM-003, COM-005, DEF-003, TOOL-005 ; 4 identités CORE4 via FIGHTER_TEMPLATE (CHR-MIN/ITA/NEJ/SAS, CHR-CORE-001/002, labels lore) ; 5 arène/présentation ARENA-001/003, CAM-001, FX-001/002, UX-001 ; 6 validation, état, backlog, journal ; push seulement avec accord. Hors plan : NET-001, MOV-006, PROG-001, CHR-EXT-001/002, REL-001, TOOL-004, UX-002, ARC-002.
+
+### Bloc 0 — base et hygiène (DONE)
+
+- `b085d97` : builders jeu et Lab écrivent LF/UTF-8 avec clés POSIX ; checkers en UTF-8 et liens normalisés (MAX_PATH Windows). Rebuild Windows identique octet par octet aux artefacts commités (`aec17a19…`, `6507777c…`, `e1df1611…`, Lab inchangé). Coverage FIGHTER_TEMPLATE (22 sections) et ROSTER_ARCHETYPES_32 (18 sections) rafraîchie vers des IDs existants, aucun ID créé.
+- `2de7b03`, `5db5199` : cherry-pick de `92cd73b`/`ad8247c` (DEC-011). Conflits limités à `build.py` (union des runners Input + Preparation) et `dist/` (reconstruit).
+- Preuves TECHNICAL : `tests/run.sh` 15 suites / 153 cas PASS ; builds normal `193c1cbf4d2ed2d296440b899ab6613455429a093a44188c5a4eccc8b39b5b83`, debug `36714b81318b4b5ffbec35a0d50a86fd245da5e254382e213d5b501d1bbc0c5d`, QA `c9724f7b4fc013dea07f73bf083eec03ab6f790a8b46c29b89443faca18bb7b6` ; isolation 4 OK ; architecture PASS ; docs + self-test PASS ; Lab 45 PASS + smoke UI simulé (binaire inchangé, seul `sourceTree` du manifest suit le nouveau `src`). NATIVE_STUDIO et HUMAN_VISUAL : PENDING (bloc 1).

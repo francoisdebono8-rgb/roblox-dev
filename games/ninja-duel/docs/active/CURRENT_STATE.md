@@ -1,17 +1,18 @@
-# État vérifié — 2026-10-12
+# État vérifié — 2026-10-14
 
-Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275` (Claude quatre personnages) et Motion Lab `89a54f9`, plus préparation/debug. Ce document décrit cette base et le refactor documentaire ; vérifier `git rev-parse HEAD` et le journal pour les suites. La branche de reprise est `codex/ninja-claude-technical-prep` ; `main` distant n’est pas cette base.
+Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275` (Claude quatre personnages) et Motion Lab `89a54f9`, plus préparation/debug. Session Claude du 2026-10-14 : branche de travail `claude/ninja-duel-2026-10-14` issue de `3b50d8e` (`codex/ninja-claude-technical-prep`), avec le correctif d’entrées clavier/PS5 Codex repris (DEC-011). Vérifier `git rev-parse HEAD` et le [journal](SINCE_LAST_CLAUDE.md) pour les suites ; `main` distant n’est pas cette base.
 
 | Domaine | État | Preuve / limite |
 |---|---|---|
 | Menu et quatre kits | WORKING technique | `src/Client/UI.luau` : Flashstep, Mirage, GentleFist, Lion ; suites Neji/Sasuke/Tools/Preparation. Gaara serveur et 10 tests, non sélectionnable |
-| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 14 suites, 139 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
+| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 15 suites, 153 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
 | Projectiles, maîtrise, marques FTG, fil/feu, Geometry | WORKING technique | Tools, Phase4, Systems, Sasuke ; ne signifie pas inventaire générique ni collision universelle entre outils |
 | Chakra et Awake | PARTIAL | Coûts, charge, fenêtres/règles existent ; ambition d’infusion/interactions et revue lore pas achevées |
 | Locomotion, contact et identité corporelle | PARTIAL | Animation/Preparation + clips/IK/interpolation existent ; course latérale, appuis, transitions et timing d’impact à revoir visuellement |
 | Caméra, arène et présentation | PARTIAL | Stade, hauteur/murs, fade/lock, réactions par zones et usure existent ; confort à haute vitesse, audio et tournoi humain non acceptés |
 | Match | WORKING joueur contre IA | Matches/AI : rounds, tutoriel, sélection. Aucun PvP général à deux joueurs ni prediction client validés |
-| Jeu normal/debug/QA | WORKING build | Trois builds sourceEquality PASS ; 4 tests d’isolation. Le normal exclut DevHooks, CombatInspector, CombatDebug, NativeQA |
+| Entrées clavier/PS5 | WORKING technique / PENDING manette réelle | `92cd73b`/`ad8247c` repris : callbacks clavier/PS5, prompts séparés de l’aide combo, validation remote ; Input.spec 14 cas. Aucun test matériel manette encore |
+| Jeu normal/debug/QA | WORKING build | Trois builds sourceEquality PASS ; 4 tests d’isolation. Le normal exclut DevHooks, CombatInspector, CombatDebug, NativeQA. Builds reproductibles octet par octet sous Windows depuis `b085d97` |
 | Diagnostic opt-in | WORKING technique | inspect/trace/contracts + overlay Studio F8, lecture seule ; voir COMBAT_CONTRACTS et handoff |
 | Motion Lab | WORKING automatique / PARTIAL natif | 45 cas + smoke du binaire avec événements Studio simulés ; 182 briques anciennes +120 variantes référencées ; export inert, héritage de clips préservé |
 | Validation native de l’artefact final | NOT_STARTED dans ce refactor | QA-001 OPEN ; les 16 matchups historiques ne sont pas une preuve sur ce HEAD |

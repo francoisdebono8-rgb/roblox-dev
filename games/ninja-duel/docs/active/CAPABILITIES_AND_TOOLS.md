@@ -14,7 +14,9 @@ python3 games/ninja-duel/tools/check_project_docs.py --self-test
 python3 games/ninja-duel/motion-lab/build.py
 ```
 
-Les builds du jeu exécutent les 14 suites et vérifient leurs sources embarquées. Lire les manifests : un résultat SKIPPED faute d’outil n’est pas PASS. Motion Lab construit le binaire, teste 45 cas et simule ses événements UI ; une simulation n’est pas Studio réel.
+Les builds du jeu exécutent les 15 suites et vérifient leurs sources embarquées. Lire les manifests : un résultat SKIPPED faute d’outil n’est pas PASS. Motion Lab construit le binaire, teste 45 cas et simule ses événements UI ; une simulation n’est pas Studio réel.
+
+Windows (vérifié 2026-10-14) : cloner avec `core.longpaths=true` et `core.autocrlf=false` (sinon hashes sources/coverage faux). Exporter `NINJA_DUEL_TOOLS`, `LUAU`, `LUNE` et `LUAU_COMPILE` vers les `.exe` locaux, puis lancer `python` au lieu de `python3`. Les builders écrivent désormais LF/UTF-8 : un rebuild Windows reproduit octet par octet les artefacts macOS. Roblox Studio installe aussi `StudioMCP.exe` (serveur MCP officiel) ; sa disponibilité dans une session reste à vérifier, sinon piloter Studio par captures d’écran.
 
 | Capacité | Où / contrat | Limite |
 |---|---|---|
@@ -26,7 +28,7 @@ Les builds du jeu exécutent les 14 suites et vérifient leurs sources embarqué
 | Contrats combat | [COMBAT_CONTRACTS](../current/COMBAT_CONTRACTS.md) | Phases, états, cancellation, outils/hooks : préciser les frontières avant modification |
 | Laboratoire | [README Lab](../../motion-lab/README.md), `motion-lab/build.py` | Preview, A/B, L/R, mixer/DNA, variantes, séquences, export JSON/poses inert |
 | Adapter | `motion-lab/ForgeMotionLab/Modules/NinjaDuelAdapter.luau` | Intégration manuelle choisie par Claude ; aucune dépendance runtime vers Lab |
-| Simulation de balance | `tests/Balance.sim.luau` | Non incluse dans les 14 suites ; ne pas annoncer exécution sans commande/preuve |
+| Simulation de balance | `tests/Balance.sim.luau` | Non incluse dans les 15 suites ; ne pas annoncer exécution sans commande/preuve |
 
 La disponibilité réelle d’un hook/provider de contrôle Studio dépend de la session et de l’environnement. Une UI visible ne constitue pas une exécution de protocole. Ni replay.sh ni sweep.lua mentionnés dans de vieux briefs ne sont garantis : vérifier leur existence avant usage. La publication demande accès/permission et autorisation correspondant au plan, pas des suppositions tirées d’archives.
 

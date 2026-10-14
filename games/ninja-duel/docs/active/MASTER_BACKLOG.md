@@ -45,8 +45,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - character: ALL
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
-- validation: 14 suites /139 cas passent sur sources actuelles
-- evidence: tests/run.sh : 139 PASS ; ne valide pas feel
+- validation: 15 suites /153 cas passent sur sources actuelles
+- evidence: tests/run.sh : 153 PASS (2026-10-14, Input.spec ajouté par DEC-011) ; ne valide pas feel
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -85,7 +85,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Contrôles natifs Mac/PC/manette puis périmètre mobile
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
 - validation: Chaque action accessible sans conflit, lock/camera confortable ; plateformes testées explicites
-- evidence: Mapping centralisé Controls ; ergonomie humaine non validée
+- evidence: Mapping centralisé Controls ; correctif clavier/PS5 `2de7b03`/`5db5199` + Input.spec 14 PASS (TECHNICAL) ; NATIVE_STUDIO et manette réelle PENDING ; ergonomie humaine non validée
 - outcome: PENDING
 
 ## MOV-001 — Course huit directions et conscience partielle de la cible
@@ -605,7 +605,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Conserver ~32 archétypes et dix blueprints riches
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
 - validation: Scope approuvé, architecture kit, source/lore/validation spécifique ; pas produire32 kits maintenant
-- evidence: ROSTER_ARCHETYPES_32 et ROSTER_MOVESETS_10_PRODIGIES conservés
+- evidence: ROSTER_ARCHETYPES_32 (pool prioritaire de 25 personnages choisi par l’utilisateur le 2026-10-13, `16e3a00`) et ROSTER_MOVESETS_10_PRODIGIES conservés ; aucune activation
 - outcome: PENDING
 
 ## ARENA-001 — Échelle utile et exploitation murs/cover
@@ -904,7 +904,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Traçabilité manifest source commit/date
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
 - validation: HEAD, hash artifact, source/timestamp reproductibles, aucun faux native PASS
-- evidence: Hashes/fingerprint déjà présents ; source commit/date non systématiques
+- evidence: Hashes/fingerprint déjà présents ; builders LF/UTF-8 et clés POSIX depuis `b085d97` (rebuild Windows identique octet par octet) ; source commit/date non systématiques
 - outcome: PENDING
 
 ## OPS-003 — Mesures performance et continuité

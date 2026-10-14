@@ -85,7 +85,7 @@ games/ninja-duel/tests/run.sh              # every headless suite
 | `tests/Feedback.spec.luau` | contact feed and impact hierarchy |
 | `tests/Animation.spec.luau` | stances, directional locomotion, hit reactions, knockdown/KO, weapons, and a full-fight no-snap contract |
 
-Suites supplémentaires enregistrées dans `tests/run.sh` : Branches, Phase4, Neji, Systems, Tools, Sasuke, Gaara (serveur caché), Preparation. Total actuel : 14 suites /139 cas. L’isolation normal/debug/QA ajoute 4 tests Python.
+Suites supplémentaires enregistrées dans `tests/run.sh` : Input (clavier/PS5), Branches, Phase4, Neji, Systems, Tools, Sasuke, Gaara (serveur caché), Preparation. Total actuel : 15 suites /153 cas. L’isolation normal/debug/QA ajoute 4 tests Python.
 
 The headless suites share `tests/Harness.luau`, a stubbed Roblox environment. They prove timing and state, not Studio physics, rendering or controller feel.
 
