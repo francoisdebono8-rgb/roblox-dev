@@ -267,6 +267,27 @@ Les 37 documents déplacés gardent leur contenu détaillé. Les seules adaptati
 ## [FIGHTER_TEMPLATE.md](../characters/FIGHTER_TEMPLATE.md)
 
 - L1 — Adding a prodigy — fighter template → OPS-001, OPS-002, OPS-003, ARC-002, CHR-EXT-002
+- L5 — Philosophie obligatoire → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, COM-002, SYS-003
+- L21 — Fiche moveset complète → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
+- L25 — 1. Identité → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L37 — 2. Mouvement → MOV-001, MOV-002, MOV-003, MOV-005, CHR-CORE-001
+- L53 — 3. Neutral / entrée en combat → COM-005, TOOL-005, CHR-CORE-001
+- L63 — 4. Taijutsu et combos → COM-002, COM-004, COM-005, CHR-CORE-001
+- L79 — 5. Armes et ninja tools → TOOL-002, TOOL-005, DEF-005
+- L95 — 6. Jutsus / techniques → CHR-CORE-002, SYS-001
+- L112 — 7. Garde / défense → DEF-001, DEF-003
+- L123 — 8. Esquive et substitution → DEF-002
+- L137 — 9. Rush / poursuite → COM-004, MOV-005
+- L148 — 10. Chakra → SYS-001
+- L159 — 11. Infusion / interactions de chakra → TOOL-006, SYS-001, SYS-002
+- L178 — 12. Éveil → SYS-003
+- L194 — 13. États et réactions → COM-007, FX-002
+- L212 — 14. Gameplay loop → CHR-CORE-001, COM-005
+- L223 — 15. Skill ceiling → CHR-CORE-001, BAL-001
+- L232 — 16. Signature irremplaçable → CHR-CORE-001, CHR-EXT-002
+- L239 — Exigence de différenciation → CHR-CORE-001, CHR-EXT-002
+- L257 — Mapping technique actuel → ARC-002, OPS-001
+- L280 — Validation Studio obligatoire → QA-001, CHR-CORE-001
 
 ## [ROSTER_MOVESETS_10_PRODIGIES.md](../characters/ROSTER_MOVESETS_10_PRODIGIES.md)
 
@@ -876,20 +897,22 @@ Les 37 documents déplacés gardent leur contenu détaillé. Les seules adaptati
 
 - L1 — Roster Architecture — Target 32 Fighters → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
 - L5 — Mechanical family library → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L30 — Current 10 anchors → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L32 — Minato → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003
-- L36 — Itachi → CHR-ITA-001, CHR-ITA-002
-- L40 — Neji → CHR-NEJ-001, CHR-NEJ-002
-- L44 — Sasuke → CHR-SAS-001, CHR-SAS-002
-- L48 — Naruto → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L52 — Gaara → CHR-EXT-001
-- L56 — Kakashi → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L60 — Orochimaru → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L64 — Shisui → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L68 — Rock Lee → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L72 — Candidate expansion slots → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L100 — Differentiation checklist → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L116 — Shared-system economy → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L30 — User-selected priority roster pool — 2026-10-13 → CHR-EXT-002, CHR-EXT-001
+- L69 — Current 10 anchors → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L71 — Minato → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003
+- L75 — Itachi → CHR-ITA-001, CHR-ITA-002
+- L79 — Neji → CHR-NEJ-001, CHR-NEJ-002
+- L83 — Sasuke → CHR-SAS-001, CHR-SAS-002
+- L87 — Naruto → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L91 — Gaara → CHR-EXT-001
+- L95 — Kakashi → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L99 — Orochimaru → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L103 — Shisui → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L107 — Rock Lee → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L111 — Priority expansion identities to research from the user-selected pool → CHR-EXT-002, CHR-CORE-002
+- L131 — Candidate expansion slots not currently in the user-selected priority pool → CHR-EXT-002
+- L150 — Differentiation checklist → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L166 — Shared-system economy → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
 
 ## [AWAKENING_DESIGN.md](../../design_research/02_character_architecture/AWAKENING_DESIGN.md)
 

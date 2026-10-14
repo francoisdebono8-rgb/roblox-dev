@@ -3294,7 +3294,7 @@
   {
     "before": "games/ninja-duel/FIGHTER_TEMPLATE.md",
     "source": "games/ninja-duel/docs/characters/FIGHTER_TEMPLATE.md",
-    "sha256": "61d20ebec8ab0672263d7ef76c68a88632791a9546fd271422f492635509ff10",
+    "sha256": "4b370b324b4b29f3696a3e33b160e5173d77085aa5e9bad7c57ce060e0c0453b",
     "sections": [
       {
         "heading": "Adding a prodigy — fighter template",
@@ -3305,6 +3305,209 @@
           "OPS-003",
           "ARC-002",
           "CHR-EXT-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Philosophie obligatoire",
+        "line": 5,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002",
+          "COM-002",
+          "SYS-003"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Fiche moveset complète",
+        "line": 21,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "1. Identité",
+        "line": 25,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002",
+          "CHR-MIN-002",
+          "CHR-ITA-002",
+          "CHR-NEJ-002",
+          "CHR-SAS-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "2. Mouvement",
+        "line": 37,
+        "backlog_ids": [
+          "MOV-001",
+          "MOV-002",
+          "MOV-003",
+          "MOV-005",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "3. Neutral / entrée en combat",
+        "line": 53,
+        "backlog_ids": [
+          "COM-005",
+          "TOOL-005",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "4. Taijutsu et combos",
+        "line": 63,
+        "backlog_ids": [
+          "COM-002",
+          "COM-004",
+          "COM-005",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "5. Armes et ninja tools",
+        "line": 79,
+        "backlog_ids": [
+          "TOOL-002",
+          "TOOL-005",
+          "DEF-005"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "6. Jutsus / techniques",
+        "line": 95,
+        "backlog_ids": [
+          "CHR-CORE-002",
+          "SYS-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "7. Garde / défense",
+        "line": 112,
+        "backlog_ids": [
+          "DEF-001",
+          "DEF-003"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "8. Esquive et substitution",
+        "line": 123,
+        "backlog_ids": [
+          "DEF-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "9. Rush / poursuite",
+        "line": 137,
+        "backlog_ids": [
+          "COM-004",
+          "MOV-005"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "10. Chakra",
+        "line": 148,
+        "backlog_ids": [
+          "SYS-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "11. Infusion / interactions de chakra",
+        "line": 159,
+        "backlog_ids": [
+          "TOOL-006",
+          "SYS-001",
+          "SYS-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "12. Éveil",
+        "line": 178,
+        "backlog_ids": [
+          "SYS-003"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "13. États et réactions",
+        "line": 194,
+        "backlog_ids": [
+          "COM-007",
+          "FX-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "14. Gameplay loop",
+        "line": 212,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "COM-005"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "15. Skill ceiling",
+        "line": 223,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "BAL-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "16. Signature irremplaçable",
+        "line": 232,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-EXT-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Exigence de différenciation",
+        "line": 239,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-EXT-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Mapping technique actuel",
+        "line": 257,
+        "backlog_ids": [
+          "ARC-002",
+          "OPS-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Validation Studio obligatoire",
+        "line": 280,
+        "backlog_ids": [
+          "QA-001",
+          "CHR-CORE-001"
         ],
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       }
@@ -11570,7 +11773,7 @@
   {
     "before": "games/ninja-duel/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md",
     "source": "games/ninja-duel/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md",
-    "sha256": "d5a1ad14e3e31321ef33bd951582c8ca726bf1cc7efb5e5baaaeb64fd90c5b0e",
+    "sha256": "56d216905f88acb866d9d22029f0f659d4213bda4ea654810166ad582477867d",
     "sections": [
       {
         "heading": "Roster Architecture — Target 32 Fighters",
@@ -11597,8 +11800,17 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
-        "heading": "Current 10 anchors",
+        "heading": "User-selected priority roster pool — 2026-10-13",
         "line": 30,
+        "backlog_ids": [
+          "CHR-EXT-002",
+          "CHR-EXT-001"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Current 10 anchors",
+        "line": 69,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11612,7 +11824,7 @@
       },
       {
         "heading": "Minato",
-        "line": 32,
+        "line": 71,
         "backlog_ids": [
           "CHR-MIN-001",
           "CHR-MIN-002",
@@ -11622,7 +11834,7 @@
       },
       {
         "heading": "Itachi",
-        "line": 36,
+        "line": 75,
         "backlog_ids": [
           "CHR-ITA-001",
           "CHR-ITA-002"
@@ -11631,7 +11843,7 @@
       },
       {
         "heading": "Neji",
-        "line": 40,
+        "line": 79,
         "backlog_ids": [
           "CHR-NEJ-001",
           "CHR-NEJ-002"
@@ -11640,7 +11852,7 @@
       },
       {
         "heading": "Sasuke",
-        "line": 44,
+        "line": 83,
         "backlog_ids": [
           "CHR-SAS-001",
           "CHR-SAS-002"
@@ -11649,7 +11861,7 @@
       },
       {
         "heading": "Naruto",
-        "line": 48,
+        "line": 87,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11663,7 +11875,7 @@
       },
       {
         "heading": "Gaara",
-        "line": 52,
+        "line": 91,
         "backlog_ids": [
           "CHR-EXT-001"
         ],
@@ -11671,7 +11883,7 @@
       },
       {
         "heading": "Kakashi",
-        "line": 56,
+        "line": 95,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11685,7 +11897,7 @@
       },
       {
         "heading": "Orochimaru",
-        "line": 60,
+        "line": 99,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11699,7 +11911,7 @@
       },
       {
         "heading": "Shisui",
-        "line": 64,
+        "line": 103,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11713,7 +11925,7 @@
       },
       {
         "heading": "Rock Lee",
-        "line": 68,
+        "line": 107,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11726,22 +11938,25 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
-        "heading": "Candidate expansion slots",
-        "line": 72,
+        "heading": "Priority expansion identities to research from the user-selected pool",
+        "line": 111,
         "backlog_ids": [
-          "CHR-CORE-001",
-          "CHR-CORE-002",
           "CHR-EXT-002",
-          "CHR-MIN-002",
-          "CHR-ITA-002",
-          "CHR-NEJ-002",
-          "CHR-SAS-002"
+          "CHR-CORE-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Candidate expansion slots not currently in the user-selected priority pool",
+        "line": 131,
+        "backlog_ids": [
+          "CHR-EXT-002"
         ],
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
         "heading": "Differentiation checklist",
-        "line": 100,
+        "line": 150,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -11755,7 +11970,7 @@
       },
       {
         "heading": "Shared-system economy",
-        "line": 116,
+        "line": 166,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",

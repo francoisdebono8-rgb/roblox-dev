@@ -2,6 +2,7 @@
 """Check the persistent Ninja Duel documentation contract; never touches runtime."""
 from pathlib import Path
 import argparse
+import os
 import hashlib
 import json
 import re
@@ -43,12 +44,12 @@ def check(game=GAME):
         if not (active / (name + '.md')).is_file():
             errors.append('Missing active document: ' + name)
     start = game / 'CLAUDE_START_HERE.md'
-    if not start.is_file() or 'Do not depend on prior chat history. The repository is the source of truth.' not in start.read_text():
+    if not start.is_file() or 'Do not depend on prior chat history. The repository is the source of truth.' not in start.read_text(encoding='utf-8'):
         errors.append('Missing START or source-of-truth rule')
     if start.is_file():
-        errors.extend(check_start_policy(start.read_text()))
+        errors.extend(check_start_policy(start.read_text(encoding='utf-8')))
     backlog = active / 'MASTER_BACKLOG.md'
-    text = backlog.read_text() if backlog.is_file() else ''
+    text = backlog.read_text(encoding='utf-8') if backlog.is_file() else ''
     records = {}
     for match in re.finditer(r'^## (' + ID + r') — ([^\n]+)\n(.*?)(?=^## |\Z)', text, re.M | re.S):
         key, title, body = match.groups()
@@ -111,16 +112,17 @@ def check(game=GAME):
         if not doc.exists():
             errors.append('Missing navigation document: ' + str(doc.relative_to(game)))
             continue
-        content = re.sub(r'```.*?```', '', doc.read_text(), flags=re.S)
+        content = re.sub(r'```.*?```', '', doc.read_text(encoding='utf-8'), flags=re.S)
         for target in re.findall(r'\]\(([^)]+)\)', content):
             target = target.strip().strip('<>').split('#', 1)[0]
             if not target or re.match(r'[a-zA-Z][a-zA-Z0-9+.-]*:', target):
                 continue
-            if not (doc.parent / unquote(target)).exists():
+            # normpath folds '..' so deep checkouts stay under the Windows path limit.
+            if not Path(os.path.normpath(doc.parent / unquote(target))).exists():
                 errors.append(str(doc.relative_to(game)) + ': missing link ' + target)
     coverage_path = game / 'docs/reports/SOURCE_COVERAGE.json'
     try:
-        coverage = json.loads(coverage_path.read_text())
+        coverage = json.loads(coverage_path.read_text(encoding='utf-8'))
         for entry in coverage:
             # Repository-relative paths, inferred from the actual game root.
             source = entry['source']
@@ -134,7 +136,7 @@ def check(game=GAME):
                 continue
             if hashlib.sha256(path.read_bytes()).hexdigest() != entry['sha256']:
                 errors.append('Refresh coverage hash/sections: ' + source)
-            headings = [(i, line.lstrip('# ').strip()) for i, line in enumerate(path.read_text().splitlines(), 1)
+            headings = [(i, line.lstrip('# ').strip()) for i, line in enumerate(path.read_text(encoding='utf-8').splitlines(), 1)
                         if re.match(r'^#{1,6} ', line)]
             indexed = [(s['line'], s['heading']) for s in entry['sections']]
             if headings and headings != indexed:
@@ -156,7 +158,7 @@ def self_test(game=GAME):
         raise AssertionError(errors)
     start = game / 'CLAUDE_START_HERE.md'
     backlog = game / 'docs/active/MASTER_BACKLOG.md'
-    start_text, backlog_text = start.read_text(), backlog.read_text()
+    start_text, backlog_text = start.read_text(encoding='utf-8'), backlog.read_text(encoding='utf-8')
     original_read, original_is_file = Path.read_text, Path.is_file
     first = re.search(r'^## ' + ID + r' — [^\n]+\n.*?(?=^## |\Z)',
                       backlog_text, re.M | re.S).group()

@@ -21,7 +21,7 @@ def item(parent,cls,name,source=None):
  if source is not None:ET.SubElement(props,'ProtectedString',name='Source').text=source
  return node
 root=item(xml,'Model','ForgeMotionLab');mods=item(root,'Folder','Modules')
-for p in sources:item(root if p.name=='Main.plugin.luau' else mods,'Script' if p.name=='Main.plugin.luau' else 'ModuleScript','Main' if p.name=='Main.plugin.luau' else p.stem,p.read_text())
+for p in sources:item(root if p.name=='Main.plugin.luau' else mods,'Script' if p.name=='Main.plugin.luau' else 'ModuleScript','Main' if p.name=='Main.plugin.luau' else p.stem,p.read_text(encoding='utf-8'))
 ET.indent(xml);raw=ET.tostring(xml,encoding='utf-8',xml_declaration=True)
 (ROOT/'dist').mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory() as tmp:
@@ -29,7 +29,7 @@ with tempfile.TemporaryDirectory() as tmp:
  subprocess.run([tool('lune'),'run',str(ROOT/'tools/package.luau'),str(source),str(binary)],cwd=GAME,check=True)
  subprocess.run([tool('lune'),'run','motion-lab/tests/ui_smoke.luau',str(binary)],cwd=GAME,check=True)
  (ROOT/'dist/ForgeMotionLab.rbxmx').write_bytes(raw);(ROOT/'dist/ForgeMotionLab.rbxm').write_bytes(binary.read_bytes())
-manifest={'plugin':'Forge Motion Lab','version':(ROOT/'VERSION').read_text().strip(),'artifact':'ForgeMotionLab.rbxm','sha256':hashlib.sha256((ROOT/'dist/ForgeMotionLab.rbxm').read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},'automatedTests':'PASS (45 rules/controller/variant/bilateral/reference/adapter cases)','exactBinaryUiSmoke':'PASS (legacy + variants + bilateral/reference filters + six phases + sides/compare/edit/export; simulated Studio events; native instance schemas)','native':'NOT_RUN','visualReview':'USER_PENDING','published':False}
-manifest['sourceSnapshot']={str(p.relative_to(GAME)):hashlib.sha256(p.read_bytes()).hexdigest() for p in [GAME/'src/Client/VelmoraMotionEngine.luau',GAME/'src/Shared/Fighters.luau',GAME/'src/Shared/Attacks.luau']}
+manifest={'plugin':'Forge Motion Lab','version':(ROOT/'VERSION').read_text(encoding='utf-8').strip(),'artifact':'ForgeMotionLab.rbxm','sha256':hashlib.sha256((ROOT/'dist/ForgeMotionLab.rbxm').read_bytes()).hexdigest(),'sources':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sources},'automatedTests':'PASS (45 rules/controller/variant/bilateral/reference/adapter cases)','exactBinaryUiSmoke':'PASS (legacy + variants + bilateral/reference filters + six phases + sides/compare/edit/export; simulated Studio events; native instance schemas)','native':'NOT_RUN','visualReview':'USER_PENDING','published':False}
+manifest['sourceSnapshot']={p.relative_to(GAME).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in [GAME/'src/Client/VelmoraMotionEngine.luau',GAME/'src/Shared/Fighters.luau',GAME/'src/Shared/Attacks.luau']}
 manifest['sourceTree']=subprocess.check_output(['git','rev-parse','HEAD:games/ninja-duel/src'],cwd=GAME,text=True).strip()
-(ROOT/'dist/manifest.json').write_text(json.dumps(manifest,indent=2)+'\n');print(ROOT/'dist/ForgeMotionLab.rbxm')
+(ROOT/'dist/manifest.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n');print(ROOT/'dist/ForgeMotionLab.rbxm')

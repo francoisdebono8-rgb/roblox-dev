@@ -75,7 +75,8 @@ if args.qa or args.debug:
 name='NinjaDuel-QA.rbxlx' if args.qa else 'NinjaDuel-Debug.rbxlx' if args.debug else 'NinjaDuel.rbxlx'
 output=ROOT/'dist'/name
 ET.indent(xml)
-ET.ElementTree(xml).write(output,encoding='utf-8',xml_declaration=True)
+# Binary handle: identical LF bytes on macOS and Windows (text mode would emit CRLF).
+with open(output,'wb') as handle: ET.ElementTree(xml).write(handle,encoding='utf-8',xml_declaration=True)
 expected = [p.read_text(encoding='utf-8') for p in (ROOT/'src').rglob('*.luau') if included(p)]
 if args.qa or args.debug:
     main_source=(ROOT/'src/Server/Main.server.luau').read_text(encoding='utf-8')
@@ -120,11 +121,11 @@ for spec,data in automated['suites'].items():
 if automated['status']=='FAIL':
     sys.exit('Automated suites failed: '+', '.join(automated['failed']))
 
-manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':args.debug or args.qa,'buildFingerprint':fingerprint,'donorAssets':{str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
+manifest={'version':'0.13.0-arena-combo','artifact':name,'sha256':hashlib.sha256(output.read_bytes()).hexdigest(),'sources':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted((ROOT/'src').rglob('*.luau')) if included(p)},'sourceEquality':'PASS','debugOnly':args.debug or args.qa,'buildFingerprint':fingerprint,'donorAssets':{p.relative_to(ROOT).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in asset_files},'externalAssets':sorted(external_ids),
  'automatedQA':automated,
  # Native (Roblox Studio) and human-feel gates are recorded separately and are
  # only moved off PENDING by an actual Studio run on this exact artifact.
  'nativeQA':'PENDING', 'visualAcceptance':'PENDING', 'controllerFeel':'PENDING', 'animationPermission':'PENDING'}
-output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n')
+output.with_suffix('.json').write_text(json.dumps(manifest,indent=2)+'\n',encoding='utf-8',newline='\n')
 print(output)
 print(manifest['sha256'])

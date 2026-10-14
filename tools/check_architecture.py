@@ -27,7 +27,7 @@ def owner(path, root):
 
 
 def references(path, root):
-    text = path.read_text()
+    text = path.read_text(encoding='utf-8')
     targets = set()
     namespaces = set()
     if path.name.endswith('.project.json'):
