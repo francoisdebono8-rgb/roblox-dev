@@ -1,0 +1,50 @@
+PASS rarities probability config
+PASS mutations probability config
+PASS nonnegative economy and insufficient funds
+PASS double sell and locked/displayed protection
+PASS merge consumes once and preserves first mutation
+PASS merge locked displayed duplicates and wrong rarity rejected
+PASS cooldown and hammer limit
+PASS upgrade maximum
+PASS zone unlock only once per tier
+PASS prestige resets documented fields only
+PASS receipt idempotency
+PASS load round trip and old schema migration
+PASS corrupt input sanitation and duplicate IDs
+PASS offline cap and clock reversal
+PASS pass benefit applied once
+PASS nil product IDs safe and coin pack capped
+PASS rack capacity and no merge of rack weapons
+PASS inventory cap
+PASS manual heat gate and perfect timing use server time
+PASS manual input required and auto receives standard quality
+PASS materials charged once, locked materials and bad keys rejected
+PASS modular fields migrate and survive merge and reload
+PASS collection unlocks durable milestones without repeated rewards
+PASS starter gift waits for space, locks Rare or Epic, grants once
+ALL 24 CORE TESTS PASSED
+seed 1 | 10m | coins 1861 | zone 1 | forged 63 | prestige 0
+seed 1 | 30m | coins 46232 | zone 3 | forged 206 | prestige 0
+seed 1 | 60m | coins 13959 | zone 2 | forged 417 | prestige 1
+seed 1 MILESTONES zone2=11.4m zone3=27.3m prestige=44.0m
+seed 2 | 10m | coins 576 | zone 2 | forged 63 | prestige 0
+seed 2 | 30m | coins 48615 | zone 3 | forged 207 | prestige 0
+seed 2 | 60m | coins 14748 | zone 2 | forged 419 | prestige 1
+seed 2 MILESTONES zone2=9.9m zone3=26.3m prestige=43.8m
+seed 3 | 10m | coins 1796 | zone 1 | forged 63 | prestige 0
+seed 3 | 30m | coins 1488 | zone 3 | forged 204 | prestige 0
+seed 3 | 60m | coins 2910 | zone 2 | forged 417 | prestige 1
+seed 3 MILESTONES zone2=12.5m zone3=29.9m prestige=49.1m
+seed 4 | 10m | coins 2211 | zone 1 | forged 63 | prestige 0
+seed 4 | 30m | coins 30842 | zone 3 | forged 206 | prestige 0
+seed 4 | 60m | coins 7734 | zone 2 | forged 418 | prestige 1
+seed 4 MILESTONES zone2=10.8m zone3=26.9m prestige=45.3m
+seed 5 | 10m | coins 2044 | zone 1 | forged 63 | prestige 0
+seed 5 | 30m | coins 27711 | zone 3 | forged 206 | prestige 0
+seed 5 | 60m | coins 6596 | zone 2 | forged 418 | prestige 1
+seed 5 MILESTONES zone2=11.4m zone3=26.9m prestige=46.3m
+PASS persistence: exclusive lease, snapshot, outage, release/rejoin, stale owner, expiry recovery, retry
+PASS receipts: durable-before-ACK, failed save retry, duplicate delivery, unknown product, missing player, busy and memory sessions
+/Users/francoisdebono/Documents/ChatGPT/wft-v0/games/weapon-forge-tycoon/dist/ForgeAndFlex.rbxlx: c8f21ebcfc65995d1046590b46309f5c124a76a3e67809174bc85363c9663495
+/Users/francoisdebono/Documents/ChatGPT/wft-v0/games/weapon-forge-tycoon/dist/ForgeAndFlex-QA.rbxlx: 3479bc1912df69b5423a0592fa241786b43c87077d868306e66416202a93c6bd
+PASS compile, core, simulations, persistence, receipts, builds, release/QA source parity

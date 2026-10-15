@@ -1,6 +1,8 @@
 local Shared=game.ReplicatedStorage.WFT
 local C=require(Shared.Config)
 local W=require(Shared.WeaponModel)
+local E=require(Shared.Economy)
+local B=require(Shared.Collection)
 local P={Plots={}}
 local stone=Color3.fromRGB(103,108,115)
 local wood=Color3.fromRGB(89,56,40)
@@ -49,23 +51,36 @@ function P.init()
   local horn=Instance.new('WedgePart'); horn.Size=Vector3.new(2,1,2); horn.CFrame=base*CFrame.new(-7,2,-6)*CFrame.Angles(0,0,math.pi); horn.Color=anvil.Color; horn.Anchored=true; horn.Parent=m
   local prompt=Instance.new('ProximityPrompt'); prompt.Name='ForgePrompt'; prompt.ActionText='Forge a weapon'; prompt.ObjectText='Your anvil'; prompt.KeyboardKeyCode=Enum.KeyCode.E; prompt.GamepadKeyCode=Enum.KeyCode.ButtonX; prompt.HoldDuration=0; prompt.Parent=anvil
   local racks=Instance.new('Folder'); racks.Name='DisplayedWeapons'; racks.Parent=m
-  for slot=1,6 do
-   local dx=(slot-3.5)*5.6
-   part(m,'Display plinth '..slot,Vector3.new(4,.7,3),base*CFrame.new(dx,.35,-18),wood,Enum.Material.Wood)
-  end
   local sell=part(m,'Sell counter',Vector3.new(6,2,3),base*CFrame.new(13,1,-7),wood,Enum.Material.Wood)
-  label(sell,'SELL / KEEP / DISPLAY')
+  label(sell,'ARMORY')
   local sellPrompt=Instance.new('ProximityPrompt'); sellPrompt.Name='InventoryPrompt'; sellPrompt.ActionText='Manage weapons'; sellPrompt.ObjectText='Sell • Keep • Display'; sellPrompt.Parent=sell
   local up=part(m,'Upgrade bench',Vector3.new(6,2,3),base*CFrame.new(13,1,1),stone)
-  label(up,'UPGRADE YOUR FORGE')
+  label(up,'UPGRADES')
   local upgradePrompt=Instance.new('ProximityPrompt'); upgradePrompt.Name='UpgradePrompt'; upgradePrompt.ActionText='Upgrade forge'; upgradePrompt.Parent=up
   for zone=2,3 do
-   local gate=part(m,'Zone gate '..zone,Vector3.new(8,5,1),base*CFrame.new(zone==2 and -11 or 10,2.5,18),Color3.fromRGB(55,49,47),Enum.Material.Metal)
+   local gate=part(m,'Zone gate '..zone,Vector3.new(8,5,1),base*CFrame.new(zone==2 and 0 or 17,5,-23),Color3.fromRGB(55,49,47),Enum.Material.Metal)
+   gate.Transparency=.92; gate.CanCollide=false
+   local gateColor=Color3.fromRGB(unpack(C.Zones[zone].Color))
+   for _,side in ipairs({-1,1}) do part(m,'Gateway pillar',Vector3.new(1.3,10,1.5),gate.CFrame*CFrame.new(side*4,0,0),stone,Enum.Material.Basalt) end
+   part(m,'Gateway crown',Vector3.new(10,1.4,2),gate.CFrame*CFrame.new(0,5,0),gateColor,Enum.Material.Neon)
    local gatePrompt=Instance.new('ProximityPrompt'); gatePrompt.Name='UpgradePrompt'; gatePrompt.ActionText='View next forge'; gatePrompt.Parent=gate
    label(gate,C.Zones[zone].Name..'\n'..C.Zones[zone].Cost..' coins')
   end
   for _,pos in ipairs({Vector3.new(-18,1,0),Vector3.new(-16,1,7)}) do
    part(m,'Supply crate',Vector3.new(3,2,3),base*CFrame.new(pos),wood,Enum.Material.WoodPlanks)
+  end
+  -- Composition: forge left, hero vitrine right, next-zone vista behind.
+  part(m,'Armory backboard',Vector3.new(12,7,1),base*CFrame.new(12,3.5,-14),wood,Enum.Material.WoodPlanks)
+  part(m,'Armory crown',Vector3.new(14,.6,2),base*CFrame.new(12,7,-14),Color3.fromRGB(194,136,61),Enum.Material.Metal)
+  part(m,'Quench vat',Vector3.new(3,2.5,3),base*CFrame.new(-9,1.25,-4),stone,Enum.Material.Metal)
+  part(m,'Quench water',Vector3.new(2.6,.15,2.6),base*CFrame.new(-9,2.5,-4),Color3.fromRGB(80,160,186),Enum.Material.Glass)
+  for j=1,4 do
+   part(m,'Supply ingot',Vector3.new(1.7,.45,.8),base*CFrame.new(-16,1+j*.42,-1),Color3.fromRGB(157,170,179),Enum.Material.Metal)
+  end
+  for _,dx in ipairs({-20,20}) do
+   local lamp=part(m,'Workshop lantern',Vector3.new(.8,1.3,.8),base*CFrame.new(dx,5,-4),Color3.fromRGB(255,192,92),Enum.Material.Neon)
+   local light=Instance.new('PointLight'); light.Range=10; light.Brightness=.6; light.Color=lamp.Color; light.Parent=lamp
+   part(m,'Lantern post',Vector3.new(.4,4,.4),base*CFrame.new(dx,2,-4),wood,Enum.Material.Wood)
   end
   local spawn=Instance.new('SpawnLocation'); spawn.Name='Workshop spawn'; spawn.Size=Vector3.new(4,.2,4); spawn.CFrame=base*CFrame.new(-4,.15,3); spawn.Transparency=1; spawn.CanCollide=false; spawn.Anchored=true; spawn.Neutral=true; spawn.Duration=0; spawn.Parent=m
   P.Plots[i]={Spawn=spawn,Model=m,Base=base,Owner=owner,Forge=forge,Heat=heat,Light=light,Racks=racks,Anvil=anvil,Zone=0,Signature=''}
@@ -92,9 +107,13 @@ function P.update(player,d)
   local color=Color3.fromRGB(unpack(C.Zones[d.Zone].Color)); p.Heat.Color=color; p.Light.Color=color
   p.Forge.Material=d.Zone==1 and Enum.Material.Brick or Enum.Material.Basalt
   if d.Zone==2 then
+   part(details,'Foundry back wall',Vector3.new(35,9,2),p.Base*CFrame.new(-2,4.5,-20),Color3.fromRGB(37,35,43),Enum.Material.Basalt)
+   part(details,'Lava basin',Vector3.new(11,.2,8),p.Base*CFrame.new(-12,.1,-12),color,Enum.Material.Neon)
    for j=1,5 do part(details,'Magma channel',Vector3.new(.8,.08,15),p.Base*CFrame.new(-18+j*2,.05,-9),color,Enum.Material.Neon) end
    for _,x in ipairs({-18,-8}) do part(details,'Foundry exhaust',Vector3.new(2,9,2),p.Base*CFrame.new(x,4.5,-15),stone,Enum.Material.DiamondPlate) end
   elseif d.Zone==3 then
+   for _,x in ipairs({-20,-3}) do part(details,'Arcane spire',Vector3.new(2,13,2),p.Base*CFrame.new(x,6.5,-16),Color3.fromRGB(59,55,88),Enum.Material.Marble); part(details,'Spire crown',Vector3.new(2.3,3,2.3),p.Base*CFrame.new(x,14,-16)*CFrame.Angles(0,0,.2),color,Enum.Material.Neon) end
+   part(details,'Floating energy bridge',Vector3.new(20,1.3,3),p.Base*CFrame.new(-11.5,12,-16),color,Enum.Material.Neon)
    for j=1,5 do
     local crystal=part(details,'Arcane crystal',Vector3.new(1.2,3+j*.3,1.2),p.Base*CFrame.new(-19+j*2,2,-12)*CFrame.Angles(0,0,(j-3)*.12),color,Enum.Material.Neon)
     crystal.Shape=Enum.PartType.Cylinder
@@ -102,22 +121,81 @@ function P.update(player,d)
    part(details,'Runic arch',Vector3.new(14,1,2),p.Base*CFrame.new(-12,8,-10),color,Enum.Material.Slate)
   end
  end
- local signature=''
+  local buildSignature=d.Zone..':'..d.Upgrades.Speed..':'..d.Upgrades.Luck..':'..E.slots(d)..':'..tostring(B.rewards(d).Skin)..tostring(B.rewards(d).Master)
+ if p.BuildSignature~=buildSignature then
+  p.BuildSignature=buildSignature
+  local old=p.Model:FindFirstChild('PhysicalUpgrades'); if old then old:Destroy() end
+  local f=Instance.new('Folder'); f.Name='PhysicalUpgrades'; f.Parent=p.Model
+  local color=Color3.fromRGB(unpack(C.Zones[d.Zone].Color))
+  local dark=Color3.fromRGB(43,45,55)
+  if d.Upgrades.Speed>=5 or d.Zone>=2 then
+   part(f,'Second burner',Vector3.new(4,5,5),p.Base*CFrame.new(-17,2.5,-12),dark,Enum.Material.DiamondPlate)
+   part(f,'Second fire mouth',Vector3.new(2.5,2,.2),p.Base*CFrame.new(-17,2.3,-9.4),color,Enum.Material.Neon)
+   part(f,'Steam stack',Vector3.new(1.4,9,1.4),p.Base*CFrame.new(-17,7,-13),dark,Enum.Material.Metal)
+  end
+  if d.Upgrades.Speed>=10 then
+   for _,x in ipairs({-16,-8}) do part(f,'Reinforced forge column',Vector3.new(1,9,1),p.Base*CFrame.new(x,4.5,-11),dark,Enum.Material.DiamondPlate) end
+   part(f,'Reinforced forge bridge',Vector3.new(10,1.3,2),p.Base*CFrame.new(-12,9,-11),dark,Enum.Material.DiamondPlate)
+  end
+  for j=1,math.min(d.Upgrades.Luck,6) do
+   part(f,'Luck charm',Vector3.new(.5,.8,.25),p.Base*CFrame.new(-15+j,6.5,-9)*CFrame.Angles(0,0,math.pi/4),Color3.fromRGB(159,233,211),Enum.Material.Neon)
+  end
+  for slot=1,E.slots(d) do
+   local x=slot==1 and 11 or 5.5+(slot-2)%3*4.5
+   local z=slot==1 and -3 or -10-math.floor((slot-2)/3)*4
+   part(f,'Display plinth '..slot,Vector3.new(slot==1 and 5 or 3.5,slot==1 and 1.8 or .8,3),p.Base*CFrame.new(x,slot==1 and .9 or .4,z),dark,Enum.Material.Marble)
+   part(f,'Rarity rail '..slot,Vector3.new(slot==1 and 5.1 or 3.6,.15,3.1),p.Base*CFrame.new(x,slot==1 and 1.7 or .7,z),color,Enum.Material.Neon)
+  end
+  if B.rewards(d).Master then
+   local aura=part(f,'Master forge aura',Vector3.new(10,.2,10),p.Base*CFrame.new(-12,6,-12),Color3.fromRGB(181,136,255),Enum.Material.Neon); aura.CanCollide=false; aura.Transparency=.45
+   local sparkles=Instance.new('Sparkles'); sparkles.SparkleColor=aura.Color; sparkles.Parent=aura
+  end
+  if B.rewards(d).Skin then part(f,'Collector forge crest',Vector3.new(5,1.2,.3),p.Base*CFrame.new(-12,5.8,-9.3),Color3.fromRGB(122,230,209),Enum.Material.Neon) end
+ end
+ local signature=buildSignature
  for _,w in ipairs(d.Inventory) do if w.Displayed then signature..=w.Id end end
  if signature~=p.Signature then
   p.Signature=signature; p.Racks:ClearAllChildren(); local slot=0
-  for _,w in ipairs(d.Inventory) do if w.Displayed then
+  local display={}; for _,w in ipairs(d.Inventory) do if w.Displayed then table.insert(display,w) end end
+  table.sort(display,function(a,b) return E.value(d,a)>E.value(d,b) end)
+  for _,w in ipairs(display) do
    slot+=1
-   local model=W.build(w,p.Racks,p.Base*CFrame.new((slot-3.5)*5.6,3.3,-18),.8)
+   local x=slot==1 and 11 or 5.5+(slot-2)%3*4.5
+   local z=slot==1 and -3 or -10-math.floor((slot-2)/3)*4
+   local model=W.build(w,p.Racks,p.Base*CFrame.new(x,slot==1 and 4.8 or 3.1,z)*CFrame.Angles(0,0,math.rad(-12)),slot==1 and 1.1 or .65)
    local anchor=model:FindFirstChildWhichIsA('BasePart')
+   anchor:SetAttribute('OwnerId',player.UserId); anchor:SetAttribute('WeaponId',w.Id)
+   local inspect=Instance.new('ProximityPrompt'); inspect.Name='InspectPrompt'; inspect.ActionText='Inspect weapon'; inspect.ObjectText=player.DisplayName..'’s armory'; inspect.MaxActivationDistance=12; inspect.RequiresLineOfSight=false; inspect.Parent=anchor
    label(anchor,C.Weapons[w.Blueprint].Name..'\n'..C.Rarities[w.Rarity].Name..(w.Mutation>1 and ' • '..C.Mutations[w.Mutation].Name or ''),Color3.fromRGB(unpack(C.Rarities[w.Rarity].Color)))
-  end end
+  end
+ end
+ local equipped=E.equipped(d)
+ local character=player.Character
+ if character and character:GetAttribute('ShownWeapon')~=(d.Equipped or '') then
+  character:SetAttribute('ShownWeapon',d.Equipped or '')
+  local old=character:FindFirstChild('EquippedForgeWeapon'); if old then old:Destroy() end
+  local torso=character:FindFirstChild('UpperTorso') or character:FindFirstChild('Torso')
+  if equipped and torso then
+   local model=W.build(equipped,character,torso.CFrame*CFrame.new(.8,0,.65)*CFrame.Angles(0,0,-.5),.6); model.Name='EquippedForgeWeapon'
+   for _,part in ipairs(model:GetDescendants()) do if part:IsA('BasePart') then part.Anchored=false; part.Massless=true; local weld=Instance.new('WeldConstraint'); weld.Part0=torso; weld.Part1=part; weld.Parent=part end end
+  end
  end
  local accent=p.Model:FindFirstChild('Founder accent')
  if d.Owned.Starter and not accent then part(p.Model,'Founder accent',Vector3.new(7,.25,5),p.Base*CFrame.new(-12,5.15,-12),Color3.fromRGB(235,188,85),Enum.Material.Metal) end
- p.Owner.Text=player.DisplayName..'’s '..C.Zones[d.Zone].Name..(d.Prestige>0 and ' ★'..d.Prestige or '')
+ p.Owner.Text=(B.rewards(d).Master and 'MASTER • ' or B.rewards(d).Title and 'COLLECTOR • ' or '')..player.DisplayName..'’s '..C.Zones[d.Zone].Name..(d.Prestige>0 and ' ★'..d.Prestige or '')
 end
 function P.release(player)
- local p=P.Plots[player:GetAttribute('Plot') or 0]; if p then p.Player=nil; p.Owner.Text='Unclaimed workshop'; p.Racks:ClearAllChildren(); p.Signature=''; p.Zone=0; local accent=p.Model:FindFirstChild('Founder accent'); if accent then accent:Destroy() end; local details=p.Model:FindFirstChild('ZoneDetails'); if details then details:Destroy() end end
+ local p=P.Plots[player:GetAttribute('Plot') or 0]; if p then p.Player=nil; p.Owner.Text='Unclaimed workshop'; p.Racks:ClearAllChildren(); p.Signature=''; p.Zone=0; p.BuildSignature=nil; local upgrades=p.Model:FindFirstChild('PhysicalUpgrades'); if upgrades then upgrades:Destroy() end; local equipped=E.equipped(d)
+ local character=player.Character
+ if character and character:GetAttribute('ShownWeapon')~=(d.Equipped or '') then
+  character:SetAttribute('ShownWeapon',d.Equipped or '')
+  local old=character:FindFirstChild('EquippedForgeWeapon'); if old then old:Destroy() end
+  local torso=character:FindFirstChild('UpperTorso') or character:FindFirstChild('Torso')
+  if equipped and torso then
+   local model=W.build(equipped,character,torso.CFrame*CFrame.new(.8,0,.65)*CFrame.Angles(0,0,-.5),.6); model.Name='EquippedForgeWeapon'
+   for _,part in ipairs(model:GetDescendants()) do if part:IsA('BasePart') then part.Anchored=false; part.Massless=true; local weld=Instance.new('WeldConstraint'); weld.Part0=torso; weld.Part1=part; weld.Parent=part end end
+  end
+ end
+ local accent=p.Model:FindFirstChild('Founder accent'); if accent then accent:Destroy() end; local details=p.Model:FindFirstChild('ZoneDetails'); if details then details:Destroy() end end
 end
 return P

@@ -18,19 +18,13 @@ function F.begin(anvil,duration,hit)
  Tween:Create(ingot,TweenInfo.new(duration/4),{Color=Color3.fromRGB(255,158,66)}):Play()
  local handle=part(model,'Hammer haft',Vector3.new(.22,2,.22),base*CFrame.new(0,2.5,0),Color3.fromRGB(92,57,34),Enum.Material.Wood)
  local head=part(model,'Hammer face',Vector3.new(1.4,.7,.7),base*CFrame.new(0,1.5,0),Color3.fromRGB(159,165,170))
- task.spawn(function()
-  for _=1,3 do
-   task.wait(duration/4)
-   if gen~=F.Generation then return end
-   Tween:Create(head,TweenInfo.new(.12),{CFrame=base*CFrame.new(0,.6,0)}):Play()
-   Tween:Create(handle,TweenInfo.new(.12),{CFrame=base*CFrame.new(0,1.6,0)}):Play()
-   hit(false)
-   task.wait(.12)
-   if gen~=F.Generation then return end
-   Tween:Create(head,TweenInfo.new(.18),{CFrame=base*CFrame.new(0,1.5,0)}):Play()
-   Tween:Create(handle,TweenInfo.new(.18),{CFrame=base*CFrame.new(0,2.5,0)}):Play()
-  end
- end)
+ F.Head=head; F.Handle=handle; F.Base=base
+end
+function F.strike()
+ if not F.Head or not F.Head.Parent then return end
+ local head,handle,base=F.Head,F.Handle,F.Base
+ Tween:Create(head,TweenInfo.new(.1,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,0,true),{CFrame=base*CFrame.new(0,.6,0)}):Play()
+ Tween:Create(handle,TweenInfo.new(.1,Enum.EasingStyle.Quad,Enum.EasingDirection.Out,0,true),{CFrame=base*CFrame.new(0,1.6,0)}):Play()
 end
 function F.reveal(anvil,w)
  F.clear(); if not anvil then return end

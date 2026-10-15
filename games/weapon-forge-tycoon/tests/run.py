@@ -12,7 +12,7 @@ for path in sorted((root/'src').rglob('*.luau')):
 for name in ('core.luau','simulate.luau'):
  subprocess.run([luau,str(root/'tests'/name)],check=True)
 env={**os.environ,'LUAU':str(luau)}
-for name in ('persistence.py','receipts.py'):
+for name in ('persistence.py','receipts.py','market.py'):
  subprocess.run([sys.executable,str(root/'tests'/name)],env=env,check=True)
 for qa in (False,True): subprocess.run([sys.executable,str(root/'build.py')]+(['--qa'] if qa else []),check=True)
 def scripts(path):

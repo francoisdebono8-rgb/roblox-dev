@@ -1,45 +1,52 @@
-# Forge & Flex ⚒️ Weapon Tycoon
+# Forge & Flex — Weapon Forge Tycoon
 
-A standalone Roblox incremental game. Forge → sell / display / keep → quick merge → upgrades → Magma / Arcane → prestige. No combat, trading, external assets, packages or cross-project dependencies.
+Standalone six-player Roblox game: collect one material → heat → three hammer strikes → reveal → sell NPC / keep / equip / display / merge / list → upgrade → new resource zones → prestige. No combat, pets, external assets or cross-project imports.
 
-## Open / build
+## Open and build
 
-Open `dist/ForgeAndFlex.rbxlx` in Roblox Studio and press Play. The world is constructed on the server at runtime, so the edit viewport starts empty. An unpublished Studio place uses unsaved local profiles; the Settings menu identifies this mode and purchases are disabled. The release artifact never permits this fallback on a live server.
+Open `dist/ForgeAndFlex.rbxlx` in Roblox Studio and press Play. The world is built at runtime; the edit viewport initially contains no map. An unpublished Studio place uses unsaved local profiles and disables purchases. Publish only the release file, never `ForgeAndFlex-QA.rbxlx`.
 
 ```sh
 python3 games/weapon-forge-tycoon/build.py
 python3 games/weapon-forge-tycoon/build.py --qa
-LUAU=/path/to/luau python3 games/weapon-forge-tycoon/tests/run.py
+LUAU=/path/to/official/luau python3 games/weapon-forge-tycoon/tests/run.py
 ```
 
-Python 3 standard library builds the place; official Luau CLI runs tests. `--qa` adds native assertions and forces memory-only profiles in Studio. **Publish the release artifact only.** Never publish a QA file. Source files are authoritative; rebuild after edits. `dist/build.json` identifies the exact release hash.
+Python standard library builds the place. Official Luau CLI compiles all source and exercises the production game transitions. Build manifests contain artifact and source SHA-256 fingerprints. QA and release gameplay sources are checked for parity; QA alone adds fixtures/native assertions.
 
-## Controls
+## Play
 
-Mouse/touch: orange forge button; tap during heating for up to three acceleration hits. Walk to your anvil and use E / controller X. Controller R2 for forge/hammer, Y for inventory, B to close panels; selectable buttons support Roblox UI navigation. Sell and upgrade benches also open the respective menus. Inventory cards open Sell / Display / Lock actions. A locked weapon cannot be sold or merged. Displayed weapons cannot be sold or merged. Store a displayed weapon to free its slot.
+Four Iron units let the first forge start immediately. Return to your anvil for the contextual orange action or E / controller X. Heat, then tap three strikes; three timely gold hits improve value and luck. A late hit has no penalty. Each started forge consumes one selected material; incomplete jobs do not survive reconnect. Auto Forge uses stock and stops when it runs out or inventory fills.
 
-Quick Merge previews exactly three inputs and the result before confirmation. The first input supplies the blueprint and mutation; rarity increases by one. Auto Merge uses the same rules, consumes the lowest eligible rarity first, and honors the configured maximum **input** rarity. It may consume mutations: lock anything you want to keep. Auto Forge stops on a full inventory.
+Walk to Village Mine for Iron/Steel, Magma Quarry for Obsidian/Emberstone, Arcane Ruins for Arcane Crystal. Hold a deposit prompt to collect a batch. Server verifies distance, unlocked zone, stock cap and a per-player/per-material cooldown. Equip one stored weapon: Mining Power reduces that cooldown; Forge Luck slightly changes rare weights. Axes/hammers favor mining, katana/Arcane rolls favor luck. These are the only two weapon properties.
 
-## Layout
+Inventory cards use 3D models. Equipped, displayed or locked weapons cannot be sold, merged or listed. Displayed weapons must be stored before equipping. Merge previews three equal-rarity weapons and deterministically raises rarity by one, retaining the first weapon's parts/material/mutation; paid provenance propagates from any input. Auto Merge uses the same eligibility rules and configured maximum input rarity.
 
-- `src/Shared/Config.luau`: single economy, rarity, mutation, weapon, sound and monetization configuration. No hidden balance constants in UI.
-- `Economy`, `Profile`, `Actions`: portable pure game transitions and profile migration; same modules run in Studio and CLI tests.
-- `WeaponModel`: nine original primitive silhouettes, reused for Viewports and public racks.
-- `src/Server`: profile lease / persistence, plots, purchase receipts, analytics and remote dispatch.
-- `src/Client`: responsive menus, local forge animation, bounded VFX and input.
+The Book has Weapons, Materials, Rarities, Mutations and Special Variants. Each records first discovery, best found value/roll and source. Missing entries use silhouettes. Permanent completion rewards: 10% small luck, 25% rack slot, 50% forge cosmetic, 75% Collector title, 100% Master aura. Selling/merging/prestige never remove discoveries or best rolls. Legacy discoveries without a surviving item honestly show that another roll is needed to record metadata.
 
-The builder translates portable sibling module requires into Roblox Instance paths. No plugin code is embedded.
+Prestige resets Coins, material stock, zones and main upgrades. Weapons, escrow listings, sales history, collection, settings, purchases and cosmetics remain. Keep at most 30 inventory weapons before resetting the capacity upgrade. Production/luck/speed bonuses diminish and are capped; each prestige costs 12% of the base amount more than the previous one. Starting Steel increases modestly. See the economy report for assumptions and measured simulations.
 
-## Persistence and purchases
+## Player market — actual scope
 
-One `WeaponForgeTycoon_v1` DataStore record per user stores profile plus a 180-second session lease. `UpdateAsync` acquires and renews the unique lease; a second server cannot load an unexpired session. Autosave every 30 seconds, leave and shutdown save. Four retry attempts with capped backoff. After prolonged failed renewal, the session closes instead of continuing to mutate an uncertain profile. Future schema versions are rejected. Unfinished forge jobs are not serialized.
+This is **server-local discovery with persistent escrow/settlement**, not a global auction house. Offers are visible in their hosting server. Three free listing slots, +2 optional pass, chosen integer Coins price, 8% rounded-up tax, 24-hour expiry, cancellation, filters, three sorts, exact-price purchase confirmation and last 20 purchases/sales. Cards show model/name/rarity/mutation/material/properties/base value/seller/price/expiry. An inspected public armory weapon links to its owner's offers.
 
-Developer product grant and receipt marker are saved together. `PurchaseGranted` is returned only after the profile transaction succeeds. A failed acknowledgement can retry without granting again. Receipt markers are retained permanently; do not prune them casually. Before very large purchase histories approach DataStore record limits, migrate archival storage transactionally.
+Seller disconnect does not remove offers from that running server. Proceeds reconcile when the seller returns. If the hosting server ends, escrow survives; offers are republished when the seller joins a new server. No global offline search is claimed. At the currency cap, excess proceeds remain in a saved wallet until there is room.
 
-All game actions are server-authoritative, rate limited and non-yielding. No client value/rarity/price is accepted. Public rack models are anchored and non-collidable. Coins, inventory and settings changes never trust client snapshots.
+Persistence protocol:
+1. Save seller profile with weapon removed from inventory and held in listing escrow.
+2. Publish immutable listing record through `UpdateAsync`.
+3. Save buyer's exact Coins reservation and pending transaction before deciding a sale.
+4. Conditionally commit the listing once. This single record is the authoritative sale decision.
+5. Idempotently deliver to buyer and settle seller escrow/net proceeds in their own profile saves.
 
-## Product choices
+Roblox has no atomic transaction spanning arbitrary user keys. This is recoverable settlement, not a claim of cross-key atomic visibility. Uncertain saves block economic actions until retry/reconciliation; reconnect resumes from the saved pending operation. Cancellation/expiry return items once, or retain cancelled escrow safely until inventory space exists. A store adapter/discovery boundary allows a later global catalogue without replacing settlement.
 
-First craft always uses Iron Saber so even a Common sale buys the first 20-coin speed upgrade. Rarity and mutation still roll normally. Prestige resets **weapons too**, explicitly warned twice, while preserving collection discoveries, purchases, settings, lifetime stats and stars. Starter Pack is a one-time pass. No optional boosts, daily system or leaderboard in V0. Two shop tabs suffice without empty tabs. Landscape sensor is the intended mobile orientation; portrait is not a launch target.
+Coin Packs/Starter Coins cannot directly pay other players: market uses the earned portion of Coins. Paid item provenance propagates through boosts, equipped paid-luck weapons and merges. Both participants are checked through PolicyService. Resource boosts conservatively mark subsequent production paid until prestige; eligibility is fail-closed. Configure real IDs only after policy and live receipt QA.
 
-Audio hooks intentionally have nil IDs: silent operation is expected until licensed, reviewed audio is configured. No fictitious audio or commerce IDs. See `SETUP_MONETIZATION.md`, `PUBLISH_CHECKLIST.md`, `THUMBNAIL_BRIEF.md` and `QA_REPORT.md` before release.
+## Persistence, boundaries and launch
+
+`WeaponForgeTycoon_v1`: versioned profile, exclusive 180-second lease, autosave/leave/shutdown saves, retry/backoff, stale-owner rejection, future-schema rejection. Existing store identity is preserved. `WeaponForgeMarket_v1`: immutable listing identity and sale/cancellation decision. Never manually delete committed listing records while pending deliveries might reference them.
+
+Receipt grant and marker share a durable profile save; ACK only after success, retries grant once. Nil IDs render unavailable instead of prompting fictitious products. Audio IDs are intentionally unconfigured; the game is silent until licensed audio is supplied.
+
+Only `games/weapon-forge-tycoon/` belongs to this product. See `QA_REPORT.md`, `ECONOMY_REPORT.md`, `SETUP_MONETIZATION.md`, `PUBLISH_CHECKLIST.md` and `docs/FINAL_REFERENCE_AUDIT.md` for evidence and remaining release gates. A passing build alone is not commercial playtest approval.

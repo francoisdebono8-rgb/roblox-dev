@@ -1,0 +1,73 @@
+PASS rarities probability config
+PASS mutations probability config
+PASS nonnegative economy and insufficient funds
+PASS double sell and locked/displayed protection
+PASS merge consumes once and preserves first mutation
+PASS merge locked displayed duplicates and wrong rarity rejected
+PASS cooldown and hammer limit
+PASS upgrade maximum
+PASS zone unlock only once per tier
+PASS prestige resets documented fields only
+PASS receipt idempotency
+PASS load round trip and old schema migration
+PASS corrupt input sanitation and duplicate IDs
+PASS offline cap and clock reversal
+PASS pass benefit applied once
+PASS nil product IDs safe and coin pack capped
+PASS rack capacity and no merge of rack weapons
+PASS inventory cap
+PASS manual heat gate and perfect timing use server time
+PASS manual input required and auto receives standard quality
+PASS material stock consumed once, locked materials and bad keys rejected
+PASS modular fields migrate and survive merge and reload
+PASS collection unlocks durable milestones without repeated rewards
+PASS starter gift waits for space, locks Rare or Epic, grants once
+PASS equipped weapon is unique and protected from sell merge display
+PASS collection zone gate stock cap and two economic properties
+PASS coin packs do not fund direct player payments and boost receipts extend once
+PASS book preserves first found best roll and all five permanent milestones
+PASS prestige long-term bonuses and cost cannot inflate exponentially
+ALL 29 CORE TESTS PASSED
+seed 1 | 10m | coins 1034 | zone 1 | forged 45 | prestige 0
+seed 1 | 30m | coins 19159 | zone 2 | forged 130 | prestige 0
+seed 1 | 60m | coins 6929 | zone 2 | forged 258 | prestige 1
+seed 1 | 180m | coins 5777 | zone 2 | forged 761 | prestige 4
+seed 1 | 600m | coins 734 | zone 1 | forged 2531 | prestige 15
+seed 1 MILESTONES zone2=15.1m zone3=31.0m prestige=47.9m
+seed 2 | 10m | coins 1745 | zone 1 | forged 45 | prestige 0
+seed 2 | 30m | coins 24688 | zone 2 | forged 128 | prestige 0
+seed 2 | 60m | coins 5241 | zone 2 | forged 254 | prestige 1
+seed 2 | 180m | coins 78489 | zone 3 | forged 763 | prestige 4
+seed 2 | 600m | coins 475 | zone 1 | forged 2528 | prestige 16
+seed 2 MILESTONES zone2=12.9m zone3=30.2m prestige=46.8m
+seed 3 | 10m | coins 964 | zone 1 | forged 45 | prestige 0
+seed 3 | 30m | coins 18190 | zone 2 | forged 131 | prestige 0
+seed 3 | 60m | coins 1432 | zone 1 | forged 256 | prestige 1
+seed 3 | 180m | coins 1298 | zone 1 | forged 765 | prestige 4
+seed 3 | 600m | coins 12709 | zone 2 | forged 2538 | prestige 15
+seed 3 MILESTONES zone2=16.8m zone3=35.5m prestige=52.8m
+seed 4 | 10m | coins 1254 | zone 1 | forged 45 | prestige 0
+seed 4 | 30m | coins 23548 | zone 2 | forged 130 | prestige 0
+seed 4 | 60m | coins 638 | zone 2 | forged 256 | prestige 1
+seed 4 | 180m | coins 11123 | zone 2 | forged 761 | prestige 4
+seed 4 | 600m | coins 100338 | zone 3 | forged 2527 | prestige 15
+seed 4 MILESTONES zone2=14.0m zone3=30.6m prestige=49.6m
+seed 5 | 10m | coins 1164 | zone 1 | forged 45 | prestige 0
+seed 5 | 30m | coins 21344 | zone 2 | forged 130 | prestige 0
+seed 5 | 60m | coins 2187 | zone 1 | forged 257 | prestige 1
+seed 5 | 180m | coins 1631 | zone 1 | forged 764 | prestige 4
+seed 5 | 600m | coins 96 | zone 1 | forged 2531 | prestige 15
+seed 5 MILESTONES zone2=15.5m zone3=32.1m prestige=49.6m
+PASS persistence: exclusive lease, snapshot, outage, release/rejoin, stale owner, expiry recovery, retry
+PASS receipts: durable-before-ACK, failed save retry, duplicate delivery, unknown product, missing player, busy and memory sessions
+PASS market: escrow, self-buy, full inventory, insufficient earned funds, exact tax, transfer, double buyer, offline seller, durable payout
+PASS market: equipped/displayed/locked, invalid prices, paid item policy
+PASS market: cancellation, stale/deleted offers, expiration, no repeated return
+PASS market: buyer disconnect/reload at every debit/commit/delivery save boundary, idempotent recovery
+PASS market: lost commit response recovers sale instead of refunding a committed purchase
+PASS market: concurrent stale offer loses conditional commit and receives exact refund
+PASS market: interrupted publication restores escrow without duplicate inventory item
+PASS market Roblox adapter: unpublished Studio starts without a DataStore request; native QA shares the runtime instance
+/Users/francoisdebono/Documents/ChatGPT/wft-v0/games/weapon-forge-tycoon/dist/ForgeAndFlex.rbxlx: 68072e05cd902d7635074c4cffbe14a34ef77cb5d676f150483ccbf70dcb16e4
+/Users/francoisdebono/Documents/ChatGPT/wft-v0/games/weapon-forge-tycoon/dist/ForgeAndFlex-QA.rbxlx: f380b0e3885e4232ad358ac8d63fe40c77ee31cbd888a003a9af45da3077bd89
+PASS compile, core, simulations, persistence, receipts, builds, release/QA source parity

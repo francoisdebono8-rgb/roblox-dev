@@ -10,7 +10,7 @@ function M.init(Data,push)
  MPS.ProcessReceipt=function(receipt)
   local player=Players:GetPlayerByUserId(receipt.PlayerId)
   local s=player and Data.Sessions[player]
-  if not s or s.Busy or s.Closing or s.Memory or pending[player] then return Enum.ProductPurchaseDecision.NotProcessedYet end
+  if not s or s.Busy or s.MarketBusy or s.MarketWorking or s.Closing or s.Memory or pending[player] then return Enum.ProductPurchaseDecision.NotProcessedYet end
   local key
   for k,p in pairs(C.Monetization) do if p.Kind=='Product' and p.Id and p.Id==receipt.ProductId then key=k end end
   if not key then return Enum.ProductPurchaseDecision.NotProcessedYet end
@@ -35,7 +35,7 @@ function M.refresh(player,Data,push)
    local ok,owned=pcall(MPS.UserOwnsGamePassAsync,MPS,player.UserId,p.Id)
    local s=Data.Sessions[player]
    if ok and owned and s and not s.Closing then
-    while s.Busy do task.wait(0.1) end
+    while s.Busy or s.MarketBusy or s.MarketWorking do task.wait(0.1) end
     A.pass(s.Data,key,os.time()); push(player,'pass')
    end
   end
