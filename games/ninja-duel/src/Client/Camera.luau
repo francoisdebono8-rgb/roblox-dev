@@ -21,7 +21,10 @@ local function mode(h,b)
  if h.state=="Pursuit" or b.state=="Pursuit" then return "Pursuit" end
  if h.wall or b.wall or h.reaction=="WallSplat" or b.reaction=="WallSplat" then return "Wall" end
  if h.reaction=="Launched" or b.reaction=="Launched" then return "Launcher" end
- if h.airborne or b.airborne then return "AirCombo" end
+ -- Air combo framing is for fighting in the air, not for every jump: an
+ -- ordinary ninja jump keeps the ground rig and its vertical tracking.
+ local function airFight(x) return x.airborne and (x.attackName~=nil or x.reaction~=nil) end
+ if airFight(h) or airFight(b) then return "AirCombo" end
  return "Ground"
 end
 local function wrap(angle)
@@ -76,7 +79,7 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
-	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil end
+	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
 	if self.lastHealth and data.human.health<self.lastHealth then
 		local damage=self.lastHealth-data.human.health
@@ -126,11 +129,20 @@ function Camera:update(data,dt)
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local bias=if separation<=26 then .42 else math.max(.3,.42-(separation-26)*.004)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
+	-- Sprint feel: only the player's own sprint (never the opponent's) eases
+	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
+	-- the floor streams past without the camera falling behind the body.
+	local sprintTarget=if data.human.sprinting and (data.human.speed or 0)>24 then 1 else 0
+	local sprint=self.sprint or 0
+	sprint+=(sprintTarget-sprint)*(1-math.exp(-dt*(if sprintTarget>sprint then 6 else 3)))
+	if sprintTarget==1 and not self.wasSprinting then self.fovKick=math.max(self.fovKick or 0,2.5) end
+	self.sprint=sprint;self.wasSprinting=sprintTarget==1
 	-- Lead a little where the player is going so a run is framed ahead of it.
 	local moving=presentation and presentation:visualVelocity("human")
 	if moving then
 		local lead=Vector3.new(moving.X,0,moving.Z)*.11
-		if lead.Magnitude>2.6 then lead=lead.Unit*2.6 end
+		local leadCap=2.6+sprint*2.4
+		if lead.Magnitude>leadCap then lead=lead.Unit*leadCap end
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
@@ -142,9 +154,9 @@ function Camera:update(data,dt)
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
 	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
-	local wantDistance=math.clamp(frame.distance+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
+	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -157,8 +169,8 @@ function Camera:update(data,dt)
 		self.focus=focus
 	end
 	self.fovKick*=math.exp(-dt*9)
-	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
-	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,3)+self.fovKick
+	local speed=data.human.speed or 0
+	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,2)+sprint*5+self.fovKick
 	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam then 8 else 5)))
 	-- Keep the lens out of walls and cover; effects and fighters never block it.
 	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude

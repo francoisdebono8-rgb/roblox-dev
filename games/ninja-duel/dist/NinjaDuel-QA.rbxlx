@@ -233,7 +233,11 @@ return {
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
 	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
-		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
+		-- Ninja jump at Gravity 140, gravity integrated once: ~12 studs apex and
+		-- ~0.83 s of flight at scale 1 (JumpScale stretches it per fighter).
+		-- HardLandVelocity sits above every fighter's own jump landing (~67 max),
+		-- so only a real drop (~25 studs) lands heavy.
+		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34 },
@@ -1607,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">86329a5fa6fc73765443a7c18f093f4ec60626150735528730538e3498fdd8d7</string>
+          <string name="Value">d239c5525621fc7156a91779d0336a1608d9d3283d5396cbb8cf2a5e82270fc0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -3838,7 +3842,9 @@ function Combat:updateActor(a,dt)
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
 		a.landedAtSerial=a.model:GetAttribute("MovementLandedAt")
-		if a.landedAtSerial then self:pushImpact(a.root.Position,"landing",false) end
+		-- Only a real drop shakes the lens and throws debris; a ninja jump lands
+		-- light (Motor still leaves its small dust ring).
+		if a.landedAtSerial and a.model:GetAttribute("MovementHardLanding")==true then self:pushImpact(a.root.Position,"landing",false) end
 	end
 	if a.aimIntent then
 		-- Chase, slam drift and any other aimed motion outrank the hover window;
@@ -4664,7 +4670,7 @@ function Matches:snapshot(player,s)
 			techniques=ready,position=a.root.Position,channel=if a.state=="TechniqueChannel" then math.max(0,a.untilTime-s.combat.now) else 0,
 			anchor=a.anchor and a.anchor.position,illusion=math.max(0,a.illusionUntil-s.combat.now),decoy=a.decoyPosition,
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
-			speed=a.locomotion.Magnitude,airborne=a.airborne,
+			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,wall=a.wall~=nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
@@ -4962,9 +4968,12 @@ function Motor.step(a,c,dt,now)
 	if grounded and a.airborne and now&gt;(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y&lt;=5 then
 		a.airborne=false; a.airDodgeUsed=false; a.airHold=0
 		local falling=a.fallSpeed or 0;a.fallSpeed=0
-		a.landUntil=now+(if falling&gt;profile.HardLandVelocity then profile.HardLandRecovery else profile.SoftLandRecovery)
+		-- Only a real drop costs speed. A standard or sprint jump lands below
+		-- HardLandVelocity and keeps its momentum straight into the next step.
+		local hard=falling&gt;profile.HardLandVelocity
+		a.landUntil=if hard then now+profile.HardLandRecovery else nil
 		a.model:SetAttribute("MovementLandedAt",now)
-		a.model:SetAttribute("MovementHardLanding",falling&gt;profile.HardLandVelocity)
+		a.model:SetAttribute("MovementHardLanding",hard)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
@@ -4974,12 +4983,22 @@ function Motor.step(a,c,dt,now)
  local sprinting=movement.step(dt,grounded)
  -- Gravity fallback for server-owned actors with no client simulation. Real
  -- physics owns a falling root; this only pulls back a body that has stalled in
- -- the air, which is what used to leave a fighter hovering after a slam.
+ -- the air, which is what used to leave a fighter hovering after a slam. When
+ -- the solver already moved the root since the last step, applying it too would
+ -- integrate gravity twice: a rocket hop, a crash landing, half the air time.
+ local airY=a.root.Position.Y
  if not grounded and a.reaction==nil and not a.wall then
   local velocity=a.root.AssemblyLinearVelocity
-  local fall=math.min(70,velocity.Y-140*dt)
-  a.root.CFrame=CFrame.new(c:clamp(a.root.Position+Vector3.new(0,fall*dt,0)))*a.root.CFrame.Rotation
-  a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,fall,velocity.Z)
+  -- First airborne step only records: the solver gets one frame to show it is live.
+  local stalled=a.fallbackAirY~=nil and math.abs(airY-a.fallbackAirY)&lt;math.max(.005,math.abs(a.fallbackAirVY or 0)*dt*.25)
+  if stalled then
+   local fall=math.min(70,velocity.Y-Config.Movement.FallbackGravity*dt)
+   a.root.CFrame=CFrame.new(c:clamp(a.root.Position+Vector3.new(0,fall*dt,0)))*a.root.CFrame.Rotation
+   a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,fall,velocity.Z)
+  end
+  a.fallbackAirY=a.root.Position.Y;a.fallbackAirVY=a.root.AssemblyLinearVelocity.Y
+ else
+  a.fallbackAirY=nil;a.fallbackAirVY=nil
  end
  local locomotion=a.locomotion
  local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
@@ -5617,6 +5636,9 @@ local function requestGroundJump()
 		root.AssemblyLinearVelocity = Vector3.new(boosted.X, currentVelocity.Y, boosted.Z)
 		lastGroundHorizontalVelocity = boosted
 	end
+	-- The Humanoid applies its own JumpPower when it enters Jumping; keep it equal
+	-- to the authored takeoff speed so the two never disagree.
+	humanoid.JumpPower = JUMP_VERTICAL_SPEED
 	humanoid.Jump = true
 	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	local takeoffVelocity = root.AssemblyLinearVelocity
@@ -6182,6 +6204,7 @@ local function attemptWallHop(forcedNormal: Vector3?)
 
 	wallHopCount += 1
 	lastWallHopAt = now
+	currentHumanoid.JumpPower = WALL_HOP_UP_SPEED
 	currentHumanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	currentRoot.AssemblyLinearVelocity = away * WALL_HOP_AWAY_SPEED
 		+ tangentCarry * 0.55
@@ -7745,7 +7768,10 @@ local function mode(h,b)
  if h.state=="Pursuit" or b.state=="Pursuit" then return "Pursuit" end
  if h.wall or b.wall or h.reaction=="WallSplat" or b.reaction=="WallSplat" then return "Wall" end
  if h.reaction=="Launched" or b.reaction=="Launched" then return "Launcher" end
- if h.airborne or b.airborne then return "AirCombo" end
+ -- Air combo framing is for fighting in the air, not for every jump: an
+ -- ordinary ninja jump keeps the ground rig and its vertical tracking.
+ local function airFight(x) return x.airborne and (x.attackName~=nil or x.reaction~=nil) end
+ if airFight(h) or airFight(b) then return "AirCombo" end
  return "Ground"
 end
 local function wrap(angle)
@@ -7800,7 +7826,7 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
-	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil end
+	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
 	if self.lastHealth and data.human.health&lt;self.lastHealth then
 		local damage=self.lastHealth-data.human.health
@@ -7850,11 +7876,20 @@ function Camera:update(data,dt)
 	-- Focus: between the fighters, biased towards the player, raised for air.
 	local bias=if separation&lt;=26 then .42 else math.max(.3,.42-(separation-26)*.004)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
+	-- Sprint feel: only the player's own sprint (never the opponent's) eases
+	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
+	-- the floor streams past without the camera falling behind the body.
+	local sprintTarget=if data.human.sprinting and (data.human.speed or 0)&gt;24 then 1 else 0
+	local sprint=self.sprint or 0
+	sprint+=(sprintTarget-sprint)*(1-math.exp(-dt*(if sprintTarget&gt;sprint then 6 else 3)))
+	if sprintTarget==1 and not self.wasSprinting then self.fovKick=math.max(self.fovKick or 0,2.5) end
+	self.sprint=sprint;self.wasSprinting=sprintTarget==1
 	-- Lead a little where the player is going so a run is framed ahead of it.
 	local moving=presentation and presentation:visualVelocity("human")
 	if moving then
 		local lead=Vector3.new(moving.X,0,moving.Z)*.11
-		if lead.Magnitude&gt;2.6 then lead=lead.Unit*2.6 end
+		local leadCap=2.6+sprint*2.4
+		if lead.Magnitude&gt;leadCap then lead=lead.Unit*leadCap end
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
@@ -7866,9 +7901,9 @@ function Camera:update(data,dt)
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
 	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
-	local wantDistance=math.clamp(frame.distance+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
-	local height=frame.height+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
+	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
@@ -7881,8 +7916,8 @@ function Camera:update(data,dt)
 		self.focus=focus
 	end
 	self.fovKick*=math.exp(-dt*9)
-	local speed=math.max(data.human.speed or 0,data.bot.speed or 0)
-	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,3)+self.fovKick
+	local speed=data.human.speed or 0
+	local targetFov=frame.fov+math.clamp(separation*.08,0,5)+math.clamp(speed*.05,0,2)+sprint*5+self.fovKick
 	camera.FieldOfView+=(targetFov-camera.FieldOfView)*(1-math.exp(-dt*(if pursuit or slam then 8 else 5)))
 	-- Keep the lens out of walls and cover; effects and fighters never block it.
 	local ray=RaycastParams.new(); ray.FilterType=Enum.RaycastFilterType.Exclude
@@ -11315,7 +11350,9 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local runDip=0
 	if running then
 		local gait=s.gait or GAIT.Flashstep
-		local cadence=math.clamp(speed/7.2,1.7,3.1)*gait.cadence
+		-- A sprint drives the legs faster as well as longer: above run speed the
+		-- cadence keeps rising (3.8 cap) so a sprint reads fast before the floor does.
+		local cadence=math.clamp(speed/7.2,1.7,3.8)*gait.cadence
 		local stanceLen=math.clamp((.9+speed*.028)*gait.stride,.9,1.95)
 		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
 		if not s.runPhase then
@@ -11486,6 +11523,20 @@ local function airTargets(char,actor,fighterId)
 			rl={lift=62,knee=100,ankle=-10},ll={lift=40,knee=84,ankle=-10}}
 	end
 	if not minato then spec.ra.out=(spec.ra.out or 0)*.6;spec.la.out=(spec.la.out or 0)*.6 end
+	-- Momentum: a running or sprint jump travels. The chest leads, the arms
+	-- sweep back like the ninja run and the legs stay split in a stride instead
+	-- of a standing hop's tuck, so the arc reads as distance, not a bounce.
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local flatV=planar(actor.velocity or Vector3.zero)
+	local forward=if root and flatV.Magnitude&gt;1 then -root.CFrame:VectorToObjectSpace(flatV).Unit.Z else 0
+	local travel=math.clamp((flatV.Magnitude-14)/30,0,1)*math.max(0,forward)
+	if travel&gt;0 then
+		spec.root.pitch+=14*travel;spec.torso.pitch+=10*travel;spec.head.pitch-=12*travel
+		spec.ra.raise+=(-52-spec.ra.raise)*travel;spec.ra.elbow+=(16-spec.ra.elbow)*travel
+		spec.la.raise+=(-52-spec.la.raise)*travel;spec.la.elbow+=(16-spec.la.elbow)*travel
+		spec.rl.lift+=(68-spec.rl.lift)*travel;spec.rl.knee+=(70-spec.rl.knee)*travel
+		spec.ll.lift+=(-26-spec.ll.lift)*travel;spec.ll.knee+=(34-spec.ll.knee)*travel
+	end
 	return build(spec),RATE.air
 end
 -- Running up a wall with chakra: the body stands out from the surface, feet on

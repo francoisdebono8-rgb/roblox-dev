@@ -977,7 +977,9 @@ function Combat:updateActor(a,dt)
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
 		a.landedAtSerial=a.model:GetAttribute("MovementLandedAt")
-		if a.landedAtSerial then self:pushImpact(a.root.Position,"landing",false) end
+		-- Only a real drop shakes the lens and throws debris; a ninja jump lands
+		-- light (Motor still leaves its small dust ring).
+		if a.landedAtSerial and a.model:GetAttribute("MovementHardLanding")==true then self:pushImpact(a.root.Position,"landing",false) end
 	end
 	if a.aimIntent then
 		-- Chase, slam drift and any other aimed motion outrank the hover window;

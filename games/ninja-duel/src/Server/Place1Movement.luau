@@ -130,6 +130,9 @@ local function requestGroundJump()
 		root.AssemblyLinearVelocity = Vector3.new(boosted.X, currentVelocity.Y, boosted.Z)
 		lastGroundHorizontalVelocity = boosted
 	end
+	-- The Humanoid applies its own JumpPower when it enters Jumping; keep it equal
+	-- to the authored takeoff speed so the two never disagree.
+	humanoid.JumpPower = JUMP_VERTICAL_SPEED
 	humanoid.Jump = true
 	humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	local takeoffVelocity = root.AssemblyLinearVelocity

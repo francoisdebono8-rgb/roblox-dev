@@ -45,8 +45,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - character: ALL
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
-- validation: 15 suites /153 cas passent sur sources actuelles
-- evidence: tests/run.sh : 153 PASS (2026-10-14, Input.spec ajouté par DEC-011) ; ne valide pas feel
+- validation: 15 suites /155 cas passent sur sources actuelles
+- evidence: tests/run.sh : 155 PASS (2026-10-14 : Input.spec ajouté par DEC-011, +2 cas saut/atterrissage dans Regression) ; ne valide pas feel
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -111,7 +111,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Appuis, cadence et transfert de poids crédibles
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
 - validation: Longueur/fréquence du pas liées vitesse, bonne jambe pousse, pied pose stable, centre de gravité, dash impulsé ; comparaison native avant/après
-- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle
+- evidence: Animation/renderer/IK existent ; 2026-10-14 cadence de foulée plafonnée à 3,8 (au lieu de 3,1) au-delà de la vitesse de course pour que le sprint se lise aussi par les jambes. TECHNICAL PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## MOV-003 — Vraie course latérale et changement de direction
@@ -142,7 +142,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## MOV-005 — Transitions air, landing et mur cohérentes
 
-- status: PARTIAL
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: QA-001, RES-001
 - subsystem: movement
@@ -150,7 +150,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Transitions air, landing et mur cohérentes
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
 - validation: Impulsion, ascension/apogée/chute, appui mur, rebond, poursuite, récupération et corps lisibles sans snap ; comparaison native avant/après
-- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle
+- evidence: 2026-10-14 bloc 2 : cause racine — le fallback de gravité de Motor.step s’appliquait à chaque frame aérienne en plus du solveur Studio (gravité ×2, déplacement ×2, vol ≈0,5 s) et HardLandVelocity 56 < vitesse d’atterrissage d’un saut (≈72) rendait chaque saut lourd (vitesse bridée à 14, secousse caméra). Corrigé : fallback seulement sur corps bloqué ; JumpVelocity 72→58 et Humanoid.JumpPower aligné (≈12 studs, ≈0,83 s à l’échelle 1) ; HardLandVelocity 56→84 ; atterrissage léger sans bridage ni impact caméra ; pose aérienne d’élan. TECHNICAL PASS (Regression +2 cas, qui échouent sur l’ancien code) ; NATIVE_STUDIO PENDING ; HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient
@@ -662,7 +662,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## CAM-002 — Confort haute vitesse et verticalité
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: QA-001
 - subsystem: camera
@@ -670,7 +670,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Confort haute vitesse et verticalité
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Quatre personnages, caméra en poursuite et manette, ne masque pas appuis/contact ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: 2026-10-14 : FOV de vitesse piloté par le seul sprint du joueur (+5° borné, kick +2,5 au départ), boom −1,5 / hauteur −0,6, lead jusqu’à 5 studs ; un saut ordinaire garde le cadrage Ground (AirCombo réservé au combat aérien) ; plus de secousse sur atterrissage léger. TECHNICAL compile + suites PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## FX-001 — Audio d’impact et feedback

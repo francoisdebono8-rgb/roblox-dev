@@ -28,7 +28,7 @@
   "visualReview": "USER_PENDING",
   "published": false,
   "sourceSnapshot": {
-    "src/Client/VelmoraMotionEngine.luau": "f87578e240932a5fe85edd481acc590d57e6854b03b243edb7dfc4b9e182ec9d",
+    "src/Client/VelmoraMotionEngine.luau": "da0418b0e0594a65a1b11ebea458e94c242a5f0845e98454ae7863a7dbde5c49",
     "src/Shared/Fighters.luau": "77c7cf941e11c1c8fbd04e9c96fde7d3d8ec2615df743f55c367f5c9d35220e5",
     "src/Shared/Attacks.luau": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7"
   },

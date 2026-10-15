@@ -1133,7 +1133,9 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local runDip=0
 	if running then
 		local gait=s.gait or GAIT.Flashstep
-		local cadence=math.clamp(speed/7.2,1.7,3.1)*gait.cadence
+		-- A sprint drives the legs faster as well as longer: above run speed the
+		-- cadence keeps rising (3.8 cap) so a sprint reads fast before the floor does.
+		local cadence=math.clamp(speed/7.2,1.7,3.8)*gait.cadence
 		local stanceLen=math.clamp((.9+speed*.028)*gait.stride,.9,1.95)
 		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
 		if not s.runPhase then
@@ -1304,6 +1306,20 @@ local function airTargets(char,actor,fighterId)
 			rl={lift=62,knee=100,ankle=-10},ll={lift=40,knee=84,ankle=-10}}
 	end
 	if not minato then spec.ra.out=(spec.ra.out or 0)*.6;spec.la.out=(spec.la.out or 0)*.6 end
+	-- Momentum: a running or sprint jump travels. The chest leads, the arms
+	-- sweep back like the ninja run and the legs stay split in a stride instead
+	-- of a standing hop's tuck, so the arc reads as distance, not a bounce.
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local flatV=planar(actor.velocity or Vector3.zero)
+	local forward=if root and flatV.Magnitude>1 then -root.CFrame:VectorToObjectSpace(flatV).Unit.Z else 0
+	local travel=math.clamp((flatV.Magnitude-14)/30,0,1)*math.max(0,forward)
+	if travel>0 then
+		spec.root.pitch+=14*travel;spec.torso.pitch+=10*travel;spec.head.pitch-=12*travel
+		spec.ra.raise+=(-52-spec.ra.raise)*travel;spec.ra.elbow+=(16-spec.ra.elbow)*travel
+		spec.la.raise+=(-52-spec.la.raise)*travel;spec.la.elbow+=(16-spec.la.elbow)*travel
+		spec.rl.lift+=(68-spec.rl.lift)*travel;spec.rl.knee+=(70-spec.rl.knee)*travel
+		spec.ll.lift+=(-26-spec.ll.lift)*travel;spec.ll.knee+=(34-spec.ll.knee)*travel
+	end
 	return build(spec),RATE.air
 end
 -- Running up a wall with chakra: the body stands out from the surface, feet on

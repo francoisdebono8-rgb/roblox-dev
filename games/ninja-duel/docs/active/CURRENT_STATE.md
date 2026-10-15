@@ -5,10 +5,11 @@ Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275
 | Domaine | État | Preuve / limite |
 |---|---|---|
 | Menu et quatre kits | WORKING technique | `src/Client/UI.luau` : Flashstep, Mirage, GentleFist, Lion ; suites Neji/Sasuke/Tools/Preparation. Gaara serveur et 10 tests, non sélectionnable |
-| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 15 suites, 153 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
+| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 15 suites, 155 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
 | Projectiles, maîtrise, marques FTG, fil/feu, Geometry | WORKING technique | Tools, Phase4, Systems, Sasuke ; ne signifie pas inventaire générique ni collision universelle entre outils |
 | Chakra et Awake | PARTIAL | Coûts, charge, fenêtres/règles existent ; ambition d’infusion/interactions et revue lore pas achevées |
 | Locomotion, contact et identité corporelle | PARTIAL | Animation/Preparation + clips/IK/interpolation existent ; course latérale, appuis, transitions et timing d’impact à revoir visuellement |
+| Saut, atterrissage et sensation de sprint | IN_PROGRESS technique / PENDING natif | 2026-10-14 : gravité intégrée une seule fois (fallback réservé au corps bloqué), saut ≈12 studs / ≈0,83 s, atterrissage lourd seulement au-delà de 84 studs/s, caméra de sprint et cadence 3,8. Regression 14 cas PASS ; aucune mesure Studio encore |
 | Caméra, arène et présentation | PARTIAL | Stade, hauteur/murs, fade/lock, réactions par zones et usure existent ; confort à haute vitesse, audio et tournoi humain non acceptés |
 | Match | WORKING joueur contre IA | Matches/AI : rounds, tutoriel, sélection. Aucun PvP général à deux joueurs ni prediction client validés |
 | Entrées clavier/PS5 | WORKING technique / PENDING manette réelle | `92cd73b`/`ad8247c` repris : callbacks clavier/PS5, prompts séparés de l’aide combo, validation remote ; Input.spec 14 cas. Aucun test matériel manette encore |

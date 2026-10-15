@@ -38,7 +38,11 @@ return {
 	RequestRate = 24, RequestBurst = 32, SnapshotInterval = 0.066,
 	Movement = { SprintSpeed = 45, GroundAcceleration = 170, GroundDeceleration = 290, TurnAcceleration = 360, AirAcceleration = 76,
 		BurstAcceleration = 520, BurstWindow = 0.16,
-		JumpVelocity = 72, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 56,
+		-- Ninja jump at Gravity 140, gravity integrated once: ~12 studs apex and
+		-- ~0.83 s of flight at scale 1 (JumpScale stretches it per fighter).
+		-- HardLandVelocity sits above every fighter's own jump landing (~67 max),
+		-- so only a real drop (~25 studs) lands heavy.
+		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34 },

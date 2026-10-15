@@ -433,6 +433,7 @@ local function attemptWallHop(forcedNormal: Vector3?)
 
 	wallHopCount += 1
 	lastWallHopAt = now
+	currentHumanoid.JumpPower = WALL_HOP_UP_SPEED
 	currentHumanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 	currentRoot.AssemblyLinearVelocity = away * WALL_HOP_AWAY_SPEED
 		+ tangentCarry * 0.55

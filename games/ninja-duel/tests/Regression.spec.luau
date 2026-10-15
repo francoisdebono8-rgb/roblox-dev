@@ -299,4 +299,51 @@ test("kinetic chase and slam never teleport the root",function()
  end
  assert(maxStep<5,"slam teleported "..string.format("%.1f",maxStep).." studs in one frame")
 end)
+-- Jumps and landings (2026-10-14). The harness has no solver, so `fall` drops a
+-- fighter from a height either on the Motor fallback alone (stalled body) or
+-- with an emulated live solver that integrates gravity itself, as Studio does.
+local function fall(height,solver)
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b,30)
+ c:relocate(a,c.match.origin+V.new(0,3+height,15))
+ a.airborne=true
+ local g=c.match.origin.Y
+ local t=0
+ while a.airborne and t<3 do
+  if solver then
+   local v=a.root.AssemblyLinearVelocity
+   local vy=v.Y-140*.01
+   local y=math.max(g+3,a.root.Position.Y+vy*.01)
+   a.root.CFrame=H.C.new(V.new(a.root.Position.X,y,a.root.Position.Z))*a.root.CFrame.Rotation
+   a.root.AssemblyLinearVelocity=V.new(v.X,if y<=g+3 then 0 else vy,v.Z)
+  end
+  c:update(.01,c.now+.01);t+=.01
+ end
+ return t,a
+end
+test("a live solver's gravity is integrated once, not doubled by the stall fallback",function()
+ -- The fallback meant for a body stuck in the air ran on every airborne frame,
+ -- on top of Studio physics: a rocket hop, a crash landing, half the air time.
+ local live=fall(12,true)
+ local stalled=fall(12,false)
+ -- 9.5 studs to the landing probe at g=140 takes ~0.37 s; doubled it is ~0.26 s.
+ assert(live>.33,string.format("live solver fall took %.2f s: gravity applied twice",live))
+ assert(math.abs(live-stalled)<.08,string.format("live %.2f s vs stalled %.2f s",live,stalled))
+end)
+test("a jump-height landing is light and keeps its speed; only a real drop lands heavy",function()
+ local _,a=fall(12,true)
+ assert(a.model:GetAttribute("MovementHardLanding")==false,"a jump-height landing was heavy")
+ assert(a.landUntil==nil,"a light landing still clamps the run speed")
+ local _,d=fall(40,true)
+ assert(d.model:GetAttribute("MovementHardLanding")==true,"a 40-stud drop landed light")
+ assert(d.landUntil~=nil,"a heavy landing lost its recovery")
+ -- Every fighter's own jump lands below the heavy threshold.
+ local Config=H.load("Shared/Config")
+ for id,def in H.fighters do
+  if type(def)=="table" and def.Speed then
+   local v=Config.Movement.JumpVelocity*(def.JumpScale or 1)
+   assert(v<Config.Movement.HardLandVelocity,id.." jump would land heavy")
+  end
+ end
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

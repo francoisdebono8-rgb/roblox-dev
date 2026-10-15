@@ -170,9 +170,12 @@ function Motor.step(a,c,dt,now)
 	if grounded and a.airborne and now>(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y<=5 then
 		a.airborne=false; a.airDodgeUsed=false; a.airHold=0
 		local falling=a.fallSpeed or 0;a.fallSpeed=0
-		a.landUntil=now+(if falling>profile.HardLandVelocity then profile.HardLandRecovery else profile.SoftLandRecovery)
+		-- Only a real drop costs speed. A standard or sprint jump lands below
+		-- HardLandVelocity and keeps its momentum straight into the next step.
+		local hard=falling>profile.HardLandVelocity
+		a.landUntil=if hard then now+profile.HardLandRecovery else nil
 		a.model:SetAttribute("MovementLandedAt",now)
-		a.model:SetAttribute("MovementHardLanding",falling>profile.HardLandVelocity)
+		a.model:SetAttribute("MovementHardLanding",hard)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
 	if not grounded then a.airborne=true end
@@ -182,12 +185,22 @@ function Motor.step(a,c,dt,now)
  local sprinting=movement.step(dt,grounded)
  -- Gravity fallback for server-owned actors with no client simulation. Real
  -- physics owns a falling root; this only pulls back a body that has stalled in
- -- the air, which is what used to leave a fighter hovering after a slam.
+ -- the air, which is what used to leave a fighter hovering after a slam. When
+ -- the solver already moved the root since the last step, applying it too would
+ -- integrate gravity twice: a rocket hop, a crash landing, half the air time.
+ local airY=a.root.Position.Y
  if not grounded and a.reaction==nil and not a.wall then
   local velocity=a.root.AssemblyLinearVelocity
-  local fall=math.min(70,velocity.Y-140*dt)
-  a.root.CFrame=CFrame.new(c:clamp(a.root.Position+Vector3.new(0,fall*dt,0)))*a.root.CFrame.Rotation
-  a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,fall,velocity.Z)
+  -- First airborne step only records: the solver gets one frame to show it is live.
+  local stalled=a.fallbackAirY~=nil and math.abs(airY-a.fallbackAirY)<math.max(.005,math.abs(a.fallbackAirVY or 0)*dt*.25)
+  if stalled then
+   local fall=math.min(70,velocity.Y-Config.Movement.FallbackGravity*dt)
+   a.root.CFrame=CFrame.new(c:clamp(a.root.Position+Vector3.new(0,fall*dt,0)))*a.root.CFrame.Rotation
+   a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,fall,velocity.Z)
+  end
+  a.fallbackAirY=a.root.Position.Y;a.fallbackAirVY=a.root.AssemblyLinearVelocity.Y
+ else
+  a.fallbackAirY=nil;a.fallbackAirVY=nil
  end
  local locomotion=a.locomotion
  local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
