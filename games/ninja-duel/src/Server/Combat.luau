@@ -354,6 +354,20 @@ end
 -- far) turns the body into the run, three-quarters toward the opponent, so a
 -- fighter never slides around a point like a mannequin. The turn is
 -- progressive; guarding always squares up.
+-- Turn the root toward a flat direction at a bounded angular speed (deg/s).
+-- Instant lookAt writes read as the body teleporting its facing (measured up
+-- to 175 degrees in one frame) and drag the planted feet with them.
+function Combat:turnToward(a,direction,dt,rate)
+	local want=Vector3.new(direction.X,0,direction.Z)
+	if want.Magnitude<.01 then return end
+	want=want.Unit
+	local current=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	current=if current.Magnitude>.01 then current.Unit else want
+	local angle=math.atan2(current:Cross(want).Y,current:Dot(want))
+	local step=math.clamp(angle,-math.rad(rate)*dt,math.rad(rate)*dt)
+	local look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(current)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+end
 function Combat:faceLocked(a,dt)
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude<.1 then return end
@@ -981,7 +995,9 @@ function Combat:updateActor(a,dt)
  if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
   local delta=a.target.root.Position-a.root.Position
   local flat=Vector3.new(delta.X,0,delta.Z)
-  if flat.Magnitude>2 and flat.Magnitude<9 then
+  -- A locked strike starting up to 11 studs out turns into the opponent here
+  -- (Brawler.start no longer snaps the body round in one frame).
+  if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
@@ -994,7 +1010,7 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+   self:turnToward(a,flat,dt,1080)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then

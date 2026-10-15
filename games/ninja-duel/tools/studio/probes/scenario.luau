@@ -1,5 +1,5 @@
 -- Server: clean scenario (single placement before the probe window). SCEN = "rush" | "atk"
-local SCEN="jump"
+local SCEN="dodge"
 local dev=game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev",10)
 local s=dev:Invoke("state")
 if type(s)~="table" or s.phase~="Duel" then dev:Invoke("start","Flashstep","Mirage") end
@@ -13,6 +13,7 @@ task.spawn(function()
  for i=1,5 do
   dev:Invoke("refill")
   if SCEN=="jump" then dev:Invoke("act","human","Jump");task.wait(1.4);continue end
+  if SCEN=="dodge" then for _,d in {Vector3.new(1,0,0),Vector3.new(-1,0,0)} do dev:Invoke("move","human",d,.4);dev:Invoke("act","human","Dodge");task.wait(.95);dev:Invoke("move","human",Vector3.zero) end continue end
   dev:Invoke("act","human",if SCEN=="rush" then "Pursuit" else "Attack")
   task.wait(1)
   dev:Invoke("move","human",Vector3.new(0,0,1),1);task.wait(if SCEN=="rush" then 1.1 else .5)

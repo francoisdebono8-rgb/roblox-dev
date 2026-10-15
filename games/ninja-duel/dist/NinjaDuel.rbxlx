@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">c80ced0ecde896ef605c8b6ee219d80ed2e469531826b153bfec0eeed641ab3e</string>
+          <string name="Value">5c90ae19b23091e19ccaf577ea2bbfa5bd47f82d12c99c413d3e451469039626</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1795,7 +1795,8 @@ function AI:update(now)
 	local position=if fooled then a.decoyPosition else target.root.Position
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance&gt;0.1 then delta.Unit else Vector3.zAxis
-	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+	-- Facing is Combat:faceLocked's job (the bot is locked like the player): a
+	-- lookAt snap on every 0.18 s decision made the body pivot in visible jerks.
 	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
 	-- Rhythm: press for a while, then probe at range (spacing, reading), and
@@ -2227,12 +2228,16 @@ function Evade.step(a,c,travel)
  if elapsedTime&lt;evadeDuration then
   local t=math.clamp(elapsedTime/evadeDuration,0,1)
   -- Fast launch, soft brake: distance stays deterministic without the donor's
-  -- moving-origin snap near the end of the evade.
-  local eased=1-(1-t)^3
+  -- moving-origin snap near the end of the evade. Quadratic, not cubic: the
+  -- cubic left at 3x the mean speed (~2 studs in the first frame), which read
+  -- as a pop in Studio; same distance and duration.
+  local eased=1-(1-t)^2
   local position=e.startPosition:Lerp(targetPosition,eased)
   local delta=position-rootPart.Position
   travel(a,c,delta,delta.Magnitude)
-  if e.direction.Magnitude&gt;.1 then rootPart.CFrame=CFrame.lookAt(rootPart.Position,rootPart.Position+e.direction) end
+  -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
+  local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
+  if e.direction.Magnitude&gt;.1 then c:turnToward(a,e.direction,dt,900) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else a.evade=nil end
 end
@@ -2328,8 +2333,8 @@ function Brawler.start(c,a,name)
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and (flat:Dot(delta.Unit)&gt;.55 or a.locked) then flat=delta.Unit end
- -- Locked on, a strike started mid-run snaps the body to the opponent.
- if a.locked and delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+delta.Unit) end
+ -- Locked on, a strike started mid-run turns into the opponent during its
+ -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
  if spec.air or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
@@ -3228,6 +3233,20 @@ end
 -- far) turns the body into the run, three-quarters toward the opponent, so a
 -- fighter never slides around a point like a mannequin. The turn is
 -- progressive; guarding always squares up.
+-- Turn the root toward a flat direction at a bounded angular speed (deg/s).
+-- Instant lookAt writes read as the body teleporting its facing (measured up
+-- to 175 degrees in one frame) and drag the planted feet with them.
+function Combat:turnToward(a,direction,dt,rate)
+	local want=Vector3.new(direction.X,0,direction.Z)
+	if want.Magnitude&lt;.01 then return end
+	want=want.Unit
+	local current=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+	current=if current.Magnitude&gt;.01 then current.Unit else want
+	local angle=math.atan2(current:Cross(want).Y,current:Dot(want))
+	local step=math.clamp(angle,-math.rad(rate)*dt,math.rad(rate)*dt)
+	local look=CFrame.fromAxisAngle(Vector3.yAxis,step):VectorToWorldSpace(current)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+end
 function Combat:faceLocked(a,dt)
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude&lt;.1 then return end
@@ -3855,7 +3874,9 @@ function Combat:updateActor(a,dt)
  if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
   local delta=a.target.root.Position-a.root.Position
   local flat=Vector3.new(delta.X,0,delta.Z)
-  if flat.Magnitude&gt;2 and flat.Magnitude&lt;9 then
+  -- A locked strike starting up to 11 studs out turns into the opponent here
+  -- (Brawler.start no longer snaps the body round in one frame).
+  if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
@@ -3868,7 +3889,7 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+   self:turnToward(a,flat,dt,1080)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
@@ -4413,7 +4434,7 @@ function Matches:start(player,playerId,botId,training)
 	end
 	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance))
 	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance))
-	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true
+	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
 	s.finishing=false

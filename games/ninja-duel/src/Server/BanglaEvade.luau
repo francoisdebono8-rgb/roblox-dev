@@ -18,12 +18,16 @@ function Evade.step(a,c,travel)
  if elapsedTime<evadeDuration then
   local t=math.clamp(elapsedTime/evadeDuration,0,1)
   -- Fast launch, soft brake: distance stays deterministic without the donor's
-  -- moving-origin snap near the end of the evade.
-  local eased=1-(1-t)^3
+  -- moving-origin snap near the end of the evade. Quadratic, not cubic: the
+  -- cubic left at 3x the mean speed (~2 studs in the first frame), which read
+  -- as a pop in Studio; same distance and duration.
+  local eased=1-(1-t)^2
   local position=e.startPosition:Lerp(targetPosition,eased)
   local delta=position-rootPart.Position
   travel(a,c,delta,delta.Magnitude)
-  if e.direction.Magnitude>.1 then rootPart.CFrame=CFrame.lookAt(rootPart.Position,rootPart.Position+e.direction) end
+  -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
+  local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
+  if e.direction.Magnitude>.1 then c:turnToward(a,e.direction,dt,900) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else a.evade=nil end
 end

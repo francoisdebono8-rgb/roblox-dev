@@ -80,7 +80,8 @@ function AI:update(now)
 	local position=if fooled then a.decoyPosition else target.root.Position
 	local delta=position-a.root.Position; delta=Vector3.new(delta.X,0,delta.Z)
 	local distance=delta.Magnitude; local toward=if distance>0.1 then delta.Unit else Vector3.zAxis
-	if a.state~="Dodging" and not a.wall then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+toward) end
+	-- Facing is Combat:faceLocked's job (the bot is locked like the player): a
+	-- lookAt snap on every 0.18 s decision made the body pivot in visible jerks.
 	local tangent=Vector3.new(-toward.Z,0,toward.X);local minato=a.def.Name=="Minato"
 	local desired=a.def.PreferredRange or 7
 	-- Rhythm: press for a while, then probe at range (spacing, reading), and
