@@ -436,4 +436,19 @@ test("a pad player reads pad buttons in on-screen cues",function()
   assert(UI.padCue(cue)==want,cue.." -> "..UI.padCue(cue))
  end
 end)
+test("aimed motion leaves a root the live solver already moved (no double integration)",function()
+ -- Rush / chase / shadow-leaf set a velocity AND moved the root by hand; with
+ -- Studio physics live that doubled their speed and made them advance in jerks.
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b,30)
+ local Motor=H.load("Server/Motor")
+ local aim={target=b.root.Position,speed=90,acceleration=2600}
+ Motor.move(a,c,aim,.01)
+ c.now+=.01
+ local v=a.root.AssemblyLinearVelocity
+ local solved=a.root.Position+V.new(v.X,0,v.Z)*.01
+ a.root.CFrame=H.C.new(solved)*a.root.CFrame.Rotation
+ Motor.move(a,c,aim,.01)
+ assert((a.root.Position-solved).Magnitude<1e-6,"Motor.move moved again a root the solver had already moved")
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

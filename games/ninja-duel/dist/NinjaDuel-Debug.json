@@ -1,9 +1,9 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "e422a5aa98203b4a54fffd1ebda61863eca30e209537a437343c0252c3c7fa19",
+  "sha256": "15cbe8d514e747e0314bce13b184d3b6c0901ae7a8b5089d1fef1043b06bec0e",
   "sources": {
-    "src/Client/Camera.luau": "bcb60a47cf19bd2bf143876328eb4f3343a9887d21270f8d461c8181665e1b88",
+    "src/Client/Camera.luau": "6f7d118c1bdec8a4f917733be8aafbc82be76e7f5967e55181c9bfb0aca176bb",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
     "src/Client/Effects.luau": "14edabc480176642ec0be67a30e4469f40aa35fdbed06be655a967e2b392b938",
     "src/Client/Input.luau": "44c5629585fb7fb405294ef832535f1b583aae3af4d68c523b51227b0ac08012",
@@ -24,7 +24,7 @@
     "src/Server/Elements.luau": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
     "src/Server/Matches.luau": "e7500986be64c5def29e186efd4d9cf26df714511f96d9e8cf98b4cb6b8a5f3e",
-    "src/Server/Motor.luau": "b4aadc766d6cab994eafcef186d9f8194f03e59fdca72bee307f50e10ad241b2",
+    "src/Server/Motor.luau": "1eed0b730ed39d291c306fc8d02cebc0b7e5bed1450354d113596b8d69a0b9d2",
     "src/Server/Place1Movement.luau": "db654671d91a984b045f0c73c3d8cbe5cda3c4a2e89a6a8b414cc769ce4035e0",
     "src/Server/Place1Parkour.luau": "38f68d55f0484df41e1649e828df3e8a7bbfaa98fc2b8cc6d5e3b49eecb21af5",
     "src/Server/Techniques.luau": "7cf6833643e5e2e09cad5c7a1f5dd4d3384c251e087c906430f1c54b738c30c1",
@@ -45,7 +45,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "76971742d960f4966c499bbdcc7e90d04c61dcc98919c5daa274895a046ba92f",
+  "buildFingerprint": "45f43962ca6509ed0d2ed33839d6d79f46a41fcd5e5c85669fc41c7a3e0dbc07",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -92,7 +92,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 21 PASS"
+        "summary": "NinjaDuel regressions: 22 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,

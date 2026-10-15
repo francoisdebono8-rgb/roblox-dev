@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a7efe6e61f3e1bd9c6e7faee15e39af6e8bd179165f101e7a7de316e065bec2d</string>
+          <string name="Value">b116461775faddfef40ba93a180882ba22b246021e0ccf67132fbc43b1cb71c1</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -4965,6 +4965,21 @@ function Motor.move(a,c,aim,dt)
 		approach(velocity.X,desired.X,accel*dt),
 		approach(velocity.Y,desired.Y,accel*dt),
 		approach(velocity.Z,desired.Z,accel*dt))
+	local floor=c.match and c.match.origin.Y+3 or -math.huge
+	-- With Studio physics live, the velocity set last frame has already moved the
+	-- root; integrating it by hand as well doubled rush/chase speed and made them
+	-- advance in visible jerks (measured natively). Hand integration is kept for a
+	-- body nothing else steps (headless harness, a stalled root).
+	local here=a.root.Position
+	local last=a.kineticLast
+	local live=last~=nil and c.now-last.at&lt;.1 and (here-last.position).Magnitude&gt;math.max(.01,last.speed*dt*.25)
+	if live then
+		local vy=if here.Y+target.Y*dt&lt;floor then 0 else target.Y
+		a.root.AssemblyLinearVelocity=Vector3.new(target.X,vy,target.Z)
+		a.fallSpeed=if vy&lt;0 then math.max(a.fallSpeed or 0,-vy) else 0
+		a.kineticLast={at=c.now,position=here,speed=target.Magnitude}
+		return Vector3.new(target.X*dt,0,target.Z*dt).Magnitude
+	end
 	-- Integrate the horizontal part by hand: server-owned actors must move even
 	-- when no physics solver is stepping them. Vertical follows the same velocity
 	-- unless the floor stops it, which also keeps grounded actors on the ground.
@@ -4974,7 +4989,6 @@ function Motor.move(a,c,aim,dt)
 		local hit=workspace:Raycast(a.root.Position,deltaPos,paramsFor(a,c))
 		if hit then advance=deltaPos.Unit*math.max(0,hit.Distance-1.9) end
 	end
-	local floor=c.match and c.match.origin.Y+3 or -math.huge
 	local nextY=a.root.Position.Y+target.Y*dt
 	local blockedFloor=nextY&lt;floor
 	local y=if blockedFloor then floor else nextY
@@ -4982,6 +4996,7 @@ function Motor.move(a,c,aim,dt)
 	a.root.CFrame=CFrame.new(nextPosition)*a.root.CFrame.Rotation
 	a.root.AssemblyLinearVelocity=Vector3.new(target.X,if blockedFloor then 0 else target.Y,target.Z)
 	a.fallSpeed=if target.Y&lt;0 then math.max(a.fallSpeed or 0,-target.Y) else 0
+	a.kineticLast={at=c.now,position=nextPosition,speed=target.Magnitude}
 	return advance.Magnitude
 end
 -- Vertical partner of Motor.move, used by the slam plunge.
@@ -8011,7 +8026,15 @@ function Camera:update(data,dt)
 	local cf=CFrame.lookAt(desired,focus)
 	-- Shake is an offset on top of the smoothed rig (applied last, never fed
 	-- back into the follow), so it is neither damped away nor left behind.
-	local shake=if os.clock()&lt;self.shakeUntil then CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0) else CFrame.identity
+	-- A continuous, decaying oscillation (~7-10 Hz) rather than a fresh random
+	-- offset every frame: random per-frame offsets read as the whole image
+	-- jumping (measured natively), an oscillation reads as an impact.
+	local shake=CFrame.identity
+	local clock=os.clock()
+	if clock&lt;self.shakeUntil then
+		local amp=self.shakeSize*math.clamp((self.shakeUntil-clock)/.18,0,1)
+		shake=CFrame.new(math.sin(clock*47)*amp,math.sin(clock*61+1.3)*amp*.8,0)
+	end
 	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.

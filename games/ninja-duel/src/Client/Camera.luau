@@ -219,7 +219,15 @@ function Camera:update(data,dt)
 	local cf=CFrame.lookAt(desired,focus)
 	-- Shake is an offset on top of the smoothed rig (applied last, never fed
 	-- back into the follow), so it is neither damped away nor left behind.
-	local shake=if os.clock()<self.shakeUntil then CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0) else CFrame.identity
+	-- A continuous, decaying oscillation (~7-10 Hz) rather than a fresh random
+	-- offset every frame: random per-frame offsets read as the whole image
+	-- jumping (measured natively), an oscillation reads as an impact.
+	local shake=CFrame.identity
+	local clock=os.clock()
+	if clock<self.shakeUntil then
+		local amp=self.shakeSize*math.clamp((self.shakeUntil-clock)/.18,0,1)
+		shake=CFrame.new(math.sin(clock*47)*amp,math.sin(clock*61+1.3)*amp*.8,0)
+	end
 	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
