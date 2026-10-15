@@ -70,11 +70,19 @@ function Feedback.burst(position,color,damage,blocked)
 	Debris:AddItem(anchor,.55)
 end
 -- One contact, one coherent reaction. Only the layers the style warrants.
+-- Moves that are not a body contact (a dodge, a substitution, a wall tech, a
+-- spin) sound like air, never like a punch; flow rides on its "light" entry.
+local AIR_CUE={whiff=true,dodge=true,substitute=true,walltech=true,rotation=true,deflect=true}
+-- Real contacts without a look of their own keep the generic hit layer.
+local CONTACT_FALLBACK={fire=true,fireball=true,chidori=true,groundbounce=true,sandhit=true,sandburst=true,sandburial=true,sandshield=true}
 function Feedback.impact(style,position)
-	local spec=look[style] or look.light
+	-- Only styles with a contact look get shards and a hit sound. Casts, chases,
+	-- fades, sticks and afterimages have their own effects (FX:impact).
+	local spec=look[style] or (CONTACT_FALLBACK[style] and look.light)
+	if not spec then return end
 	local anchor=anchorAt(position)
-	local cue=(if style=="light" then "light" elseif style=="whiff" then "whiff" else "heavy")
-	playSound(anchor,AUDIO[cue],spec.pitch,spec.volume)
+	local cue=(if style=="light" then "light" elseif AIR_CUE[style] then "whiff" else "heavy")
+	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch,spec.volume) end
 	local light=Instance.new("PointLight")
 	light.Color=spec.color;light.Brightness=(if style=="parry" or style=="slam" then 8 else 4)
 	light.Range=spec.range;light.Parent=anchor

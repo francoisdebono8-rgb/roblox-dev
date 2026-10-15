@@ -821,6 +821,13 @@ function FX:wear(model,actor,aura)
 	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
 	local level=if ratio<=.25 then 3 elseif ratio<=.5 then 2 elseif ratio<=.75 then 1 else 0
 	aura.wear=aura.wear or 0
+	-- A new round restores health on the same bodies: the wear starts over
+	-- instead of opening round two fully worn (and unable to build again).
+	if aura.wear>0 and level==0 and ratio>=.99 then
+		for _,p in model:GetDescendants() do if p.Name=="BattleWear" then p:Destroy() end end
+		for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+		aura.cloth=nil;aura.wear=0
+	end
 	while aura.wear<level do
 		aura.wear+=1
 		for _,spec in WEAR[aura.wear] do
@@ -836,6 +843,7 @@ function FX:wear(model,actor,aura)
 			-- Low health: cloth looks dusty and darker.
 			for _,p in model:GetChildren() do
 				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency<1 and p.Material~=Enum.Material.Neon then
+					aura.cloth=aura.cloth or {};aura.cloth[p]=aura.cloth[p] or p.Color
 					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
 				end
 			end

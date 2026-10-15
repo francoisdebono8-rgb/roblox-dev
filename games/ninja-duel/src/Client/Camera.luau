@@ -45,10 +45,18 @@ function Camera.new()
  end)
  return self
 end
+-- Locked, yaw is an offset from "behind the player"; unlocked it is an
+-- absolute heading. Convert on toggle so the lens stays where it is instead of
+-- swinging to world north (and dragging the movement axes with it).
+function Camera:setLocked(locked)
+ if locked==self.locked then return end
+ if locked then self.yaw=0 else self.yaw=self.boomAngle or self.yaw end
+ self.locked=locked
+end
 -- Impact-driven impulse. Small events must not make the camera twitch: only a
 -- finisher, launcher, parry, slam, teleport or big jutsu earns a reaction.
 local IMPULSE={
- whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
+ whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
  slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
@@ -79,14 +87,18 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
-	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false end
+	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false;self.lastImpactSerial=data.human.impactSerial or 0 end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
-	if self.lastHealth and data.human.health<self.lastHealth then
+	-- Only a new contact counts: a health drain (curse mark) carries a stale
+	-- impactHeavy and must not shake the lens every snapshot.
+	local serial=data.human.impactSerial or 0
+	if self.lastHealth and data.human.health<self.lastHealth and serial~=self.lastImpactSerial then
 		local damage=self.lastHealth-data.human.health
 		if data.human.impactHeavy or damage>=12 then
-			self.shakeSize=math.max(self.shakeSize or 0,.2);self.fovKick=math.max(self.fovKick or 0,2);self.shakeUntil=os.clock()+.12
+			self.shakeSize=math.max(self.shakeSize or 0,.2);self.fovKick=math.max(self.fovKick or 0,2);self.shakeUntil=math.max(self.shakeUntil or 0,os.clock()+.12)
 		end
 	end
+	self.lastImpactSerial=serial
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
 	-- Frame the bodies where they are drawn (smoothed), not the stepping roots.
@@ -205,9 +217,9 @@ function Camera:update(data,dt)
 		if check then desired=check.Position+check.Normal*1.2 end
 	end
 	local cf=CFrame.lookAt(desired,focus)
-	if os.clock()<self.shakeUntil then
-		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
-	end
+	-- Shake is an offset on top of the smoothed rig (applied last, never fed
+	-- back into the follow), so it is neither damped away nor left behind.
+	local shake=if os.clock()<self.shakeUntil then CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0) else CFrame.identity
 	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
@@ -232,16 +244,18 @@ function Camera:update(data,dt)
 		look=(look-Vector3.yAxis*math.tan(math.rad(12))).Unit
 		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
-	if film then camera.CFrame=cf;return end
-	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
+	if film then camera.CFrame=cf;self.rigCF=nil;return end
+	if fresh or not self.rigCF then self.rigCF=cf; self.lastEpoch=data.epoch
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
-		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
-		local move=nextCF.Position-camera.CFrame.Position
+		local base=self.rigCF
+		local nextCF=base:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
+		local move=nextCF.Position-base.Position
 		local limit=math.max(3.5,520*dt)
-		if move.Magnitude>limit then nextCF=CFrame.new(camera.CFrame.Position+move.Unit*limit)*nextCF.Rotation end
-		camera.CFrame=nextCF
+		if move.Magnitude>limit then nextCF=CFrame.new(base.Position+move.Unit*limit)*nextCF.Rotation end
+		self.rigCF=nextCF
 	end
+	camera.CFrame=self.rigCF*shake
 end
 return Camera

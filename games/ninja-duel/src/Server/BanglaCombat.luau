@@ -8,7 +8,6 @@ local Debris=game:GetService('Debris')
 local assets=game:GetService('ReplicatedStorage').NinjaDuel:WaitForChild('BanglaAssets')
 local Combo=require(game:GetService('ReplicatedStorage').NinjaDuel.BanglaCombo)
 local Bangla={}
-local weaponSounds={['Light Melee']='rbxassetid://8595980577',['Heavy Melee']='rbxassetid://9117969717'}
 local function sound(parent,id)
  local s=Instance.new('Sound');s.SoundId=id;s.Volume=.5;s.Parent=parent
  s:Play();Debris:AddItem(s,1.5)
@@ -56,8 +55,8 @@ function Bangla.tryHit(c,a,p)
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
    if success then
-    local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
-    sound(target.root,weaponSounds[weaponType])
+    -- Contact audio comes from the client's impact feed (VelmoraHitFeedback);
+    -- a replicated server Sound here doubled every hit, out of sync.
     local vfx=if donor.action=='MegaPunch' then 'ComboPunch' else 'BasicPunch'
     local basicPunch=assets.VFX[vfx].Attachment:Clone()
     basicPunch.Parent=target.root

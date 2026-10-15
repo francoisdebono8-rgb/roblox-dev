@@ -5,7 +5,7 @@ Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275
 | Domaine | État | Preuve / limite |
 |---|---|---|
 | Menu et quatre kits | WORKING technique | `src/Client/UI.luau` : Flashstep, Mirage, GentleFist, Lion ; suites Neji/Sasuke/Tools/Preparation. Gaara serveur et 10 tests, non sélectionnable |
-| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 15 suites, 155 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
+| Grammaire, défense, air/mur, grabs | WORKING technique / PARTIAL feel | 15 suites, 161 cas ; scripts Combat/Brawler/MoveGraphs/VelmoraDefense/Place1Parkour. Les motions existent, qualité finale à juger en Studio |
 | Projectiles, maîtrise, marques FTG, fil/feu, Geometry | WORKING technique | Tools, Phase4, Systems, Sasuke ; ne signifie pas inventaire générique ni collision universelle entre outils |
 | Chakra et Awake | PARTIAL | Coûts, charge, fenêtres/règles existent ; ambition d’infusion/interactions et revue lore pas achevées |
 | Locomotion, contact et identité corporelle | PARTIAL | Animation/Preparation + clips/IK/interpolation existent ; course latérale, appuis, transitions et timing d’impact à revoir visuellement |
@@ -20,6 +20,6 @@ Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275
 | Smoke/tags dédiés, infusion générique, League/Path | NOT_STARTED | La fumée de substitution et les explosions jutsu ne constituent pas ces systèmes |
 | PvP, prediction, nouveau roster public | NOT_STARTED | Backlog DEFERRED ; pas de moteur réseau à reconstruire implicitement |
 | Publication publique | NOT_STARTED vérifiable | Aucun PlaceID/version publique vérifiés ici ; permission/authentification actuelles non établies |
-| Défauts confirmés nouveaux | BROKEN : aucun confirmé par les tests exécutés | Ne pas convertir une suspicion visuelle ou un vieux rapport en bug actuel sans reproduction |
+| Défauts confirmés nouveaux | 2026-10-16 : 11 défauts de logique confirmés par lecture de code puis corrigés avec tests (slam qui flotte, fuite de chaîne, garde tenue, parade de projectile, garde brisée, lancer en garde, verrouillage caméra, drain maudit, audio doublé, usure, recul répété) ; 1 à mesurer (mouvement visé intégré deux fois, COM-004) | Ne pas convertir une suspicion visuelle ou un vieux rapport en bug actuel sans reproduction |
 
 Les états WORKING sont limités au type de preuve indiqué. Les sources de détail restent dans [l’inventaire](../current/COMBAT_INVENTORY.json), [la matrice](../FOUR_CHARACTER_COMBAT_MATRIX.md), [les contrats](../current/COMBAT_CONTRACTS.md) et [la validation préparatoire](../current/TECHNICAL_PREPARATION_VALIDATION.json). Les valeurs/timings effectifs sont dans le code ; ils ne sont pas à retuner durant ce refactor.

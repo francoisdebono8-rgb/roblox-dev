@@ -144,6 +144,10 @@ function Combat:cue(a,message,duration)
 end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
+	-- Chain and cancel windows belong to the attack recovery that computes them
+	-- right after this call; any other state change must not inherit stale ones
+	-- (a substitution or awaken recovery used to open a string-cancel).
+	a.chainOpen=false; a.recoveryCancelAt=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
@@ -195,12 +199,16 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
-	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
+	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal,readEligible)
+	-- A guard break keeps its full stun through the melee reaction that follows.
+	if outcome=="GuardBreak" then victim.stunFloorUntil=victim.untilTime end
 	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
 	if outcome=="Parried" then
-		Brawler.event(self,victim,"Parry");Brawler.event(self,attacker,"Parried")
-		victim.impactStyle="parry";victim.impactAt=self.now
-		self:pushImpact(victim.root.Position,"parry",false)
+		Brawler.event(self,victim,"Parry")
+		if readEligible then Brawler.event(self,attacker,"Parried") end
+		local style=if readEligible then "parry" else "deflect"
+		victim.impactStyle=style;victim.impactAt=self.now
+		self:pushImpact(victim.root.Position,style,false)
 		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
 		return false
 	end
@@ -215,6 +223,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
 			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
+			if interrupted then victim.stunFloorUntil=victim.untilTime end
 			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
@@ -623,6 +632,8 @@ function Combat:request(a,action,aim,clientTime)
 			return Brawler.disengage(self,a,disengage)
 		end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
+		-- Throwing lowers the guard: a blade never leaves a fully blocking body.
+		if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
 		if a.wall then Motor.detach(a,self.now,false) end
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
@@ -743,6 +754,8 @@ function Combat:request(a,action,aim,clientTime)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
+		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
 		a.castId=spec.Id;a.castStarted=self.now
 		local pending={kind="Technique",spec=spec,implementation=technique,aim=aim}
@@ -857,6 +870,13 @@ function Combat:updateActor(a,dt)
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
  if a.state~="Dodging" then a.evade=nil end
 	self:stepThrow(a)
+	-- A guard key still held through a hit, a recovery or a throw comes back up
+	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
+	-- alone, so it never grants a fresh parry window.
+	if a.guardWanted and a.state=="Neutral" and not a.guardHeld and not a.throwing and not a.reaction
+		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
+		a.guardHeld=true;self:setState(a,"Guarding",0)
+	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
 		a.hop.remaining-=step
@@ -923,7 +943,9 @@ function Combat:updateActor(a,dt)
   local delta=a.target.root.Position-a.root.Position
   local horizontal=Vector3.new(delta.X,0,delta.Z)
   if horizontal.Magnitude>2.7 then
-   Motor.move(a,self,{target=a.root.Position+horizontal-horizontal.Unit*2.7,speed=42,acceleration=220},dt)
+   -- Horizontal only: an aimed move toward a point at the same height braked
+   -- the plunge (vertical velocity pulled toward 0) and moved it twice.
+   Motor.travel(a,self,horizontal,math.min(horizontal.Magnitude-2.7,42*dt))
   end
   if a.airborne then
    local landed=Motor.descend(a,self,118,dt)
@@ -985,6 +1007,9 @@ function Combat:updateActor(a,dt)
 		-- Chase, slam drift and any other aimed motion outrank the hover window;
 		-- hovering exists to hold a fighter still, never to cancel their movement.
 		Motor.step(a,self,dt,now)
+	elseif a.state=="Active" and a.attackName=="Slam" and a.airborne then
+		-- The slam branch above already drove this frame's plunge; holding the
+		-- body here would zero it every frame (a ~5 studs/s float, not a dive).
 	elseif now<(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end
@@ -1069,9 +1094,14 @@ end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
+	-- The entry still finishes the blade on the client; it only reads as a body
+	-- hit once the defence has resolved. A blade that was evaded, parried or
+	-- absorbed ends silently ("spent"): the defence pushed its own effect.
+	local entry=self.impacts[#self.impacts]
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end

@@ -13,7 +13,9 @@ function Defense.dodge(a,now)
 	a.dodgeStartedAt=now
 	a.invulnerableUntil=math.max(a.invulnerableUntil,now+Tune.DodgeIFrames)
 end
-function Defense.resolve(c,attacker,victim,amount,frontal)
+-- `melee`: the blow came from the attacker's own body. Only then can a parry
+-- stun them; a parried blade, flame or hazard is simply negated.
+function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
@@ -34,6 +36,7 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	local since=c.now-victim.guardPressedAt
 	if since<=(if eye then eye.ParryWindow else Tune.ParryWindow) and c.now>=victim.parryReadyAt and victim.stamina>=Tune.ParryCost then
 		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
+		if not melee then c:cue(victim,'DEFLECTED');return 'Parried',0 end
 		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
 		if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PARRY • COUNTER')
 		else c:cue(victim,'PARRY • PUNISH') end

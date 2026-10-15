@@ -222,6 +222,9 @@ function Matches:request(player,payload)
   s.human.move=payload.direction;s.human.lastMove=clock
   if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
  end
+ -- The held guard key is an intent that outlives a refused press (Combat
+ -- re-raises it once free). Only the player sends it; the AI guards per tick.
+ if action=="Guard" then s.human.guardWanted=true elseif action=="GuardOff" then s.human.guardWanted=false end
  local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end

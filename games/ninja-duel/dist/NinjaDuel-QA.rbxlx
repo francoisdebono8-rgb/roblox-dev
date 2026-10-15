@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d239c5525621fc7156a91779d0336a1608d9d3283d5396cbb8cf2a5e82270fc0</string>
+          <string name="Value">bb71b7580ec241a936f79a83d36140d721cc52501b89a2753f78feaebc01398f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -2136,7 +2136,6 @@ local Debris=game:GetService('Debris')
 local assets=game:GetService('ReplicatedStorage').NinjaDuel:WaitForChild('BanglaAssets')
 local Combo=require(game:GetService('ReplicatedStorage').NinjaDuel.BanglaCombo)
 local Bangla={}
-local weaponSounds={['Light Melee']='rbxassetid://8595980577',['Heavy Melee']='rbxassetid://9117969717'}
 local function sound(parent,id)
  local s=Instance.new('Sound');s.SoundId=id;s.Volume=.5;s.Parent=parent
  s:Play();Debris:AddItem(s,1.5)
@@ -2184,8 +2183,8 @@ function Bangla.tryHit(c,a,p)
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
    if success then
-    local weaponType=if donor.action=='MegaPunch' then 'Heavy Melee' else 'Light Melee'
-    sound(target.root,weaponSounds[weaponType])
+    -- Contact audio comes from the client's impact feed (VelmoraHitFeedback);
+    -- a replicated server Sound here doubled every hit, out of sync.
     local vfx=if donor.action=='MegaPunch' then 'ComboPunch' else 'BasicPunch'
     local basicPunch=assets.VFX[vfx].Attachment:Clone()
     basicPunch.Parent=target.root
@@ -2270,6 +2269,10 @@ end
 function Brawler.react(c,a,kind,velocity,duration,source)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
+ -- A guard break or channel interrupt already set a longer stun: the melee
+ -- reaction that follows keeps it instead of shortening it to the move's own.
+ duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
+ a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
 	 a.reactionSource=source
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
@@ -2300,12 +2303,18 @@ function Brawler.start(c,a,name)
  a.hitBlocked=false
  a.attackSerial=(a.attackSerial or 0)+1
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
+ -- The swing must reach the client as fast as the contact it leads to.
+ c.urgent=true
  local slamWindow=0
  if name=="Slam" then
   -- Size the descent so the active window provably ends on or near the floor.
   local drop=math.max(6,a.root.Position.Y-(c.match.origin.Y+3.4))
-  -- 118 studs/s is the plunge speed the slam uses at runtime.
-  slamWindow=math.clamp(drop/118,.28,1.1)
+  -- The plunge starts from rest and accelerates at 320 studs/s² up to 118
+  -- (Motor.descend): time that fall, not an instant 118, or the window ends in
+  -- mid-air and the recovery hovers there.
+  local reach=118*118/(2*320)
+  local fall=if drop&lt;=reach then math.sqrt(2*drop/320) else 118/320+(drop-reach)/118
+  slamWindow=math.clamp(fall+.04,.28,1.1)
  elseif name=="WallDive" then
   -- The dive lasts as long as the flight to the opponent (92 studs/s).
   local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -2372,7 +2381,7 @@ function Brawler.request(c,a,action)
   Brawler.releaseGrab(g);Brawler.releaseGrab(a)
   local away=a.root.Position-g.root.Position;away=Vector3.new(away.X,0,away.Z)
   away=if away.Magnitude&gt;.05 then away.Unit else -a.root.CFrame.LookVector
-  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
+  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
   a.hop={direction=away,remaining=3.5,speed=30};g.hop={direction=-away,remaining=3.5,speed=30}
   c:pushImpact(a.root.Position:Lerp(g.root.Position,.5),"clash",true,{direction=away})
   Brawler.event(c,a,"ThrowBreak");c:cue(a,"THROW BREAK",.7);c:cue(g,"THROW BROKEN",.7)
@@ -3009,6 +3018,10 @@ function Combat:cue(a,message,duration)
 end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
+	-- Chain and cancel windows belong to the attack recovery that computes them
+	-- right after this call; any other state change must not inherit stale ones
+	-- (a substitution or awaken recovery used to open a string-cancel).
+	a.chainOpen=false; a.recoveryCancelAt=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
@@ -3060,12 +3073,16 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
-	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal)
+	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal,readEligible)
+	-- A guard break keeps its full stun through the melee reaction that follows.
+	if outcome=="GuardBreak" then victim.stunFloorUntil=victim.untilTime end
 	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
 	if outcome=="Parried" then
-		Brawler.event(self,victim,"Parry");Brawler.event(self,attacker,"Parried")
-		victim.impactStyle="parry";victim.impactAt=self.now
-		self:pushImpact(victim.root.Position,"parry",false)
+		Brawler.event(self,victim,"Parry")
+		if readEligible then Brawler.event(self,attacker,"Parried") end
+		local style=if readEligible then "parry" else "deflect"
+		victim.impactStyle=style;victim.impactAt=self.now
+		self:pushImpact(victim.root.Position,style,false)
 		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
 		return false
 	end
@@ -3080,6 +3097,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
 			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
+			if interrupted then victim.stunFloorUntil=victim.untilTime end
 			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
@@ -3488,6 +3506,8 @@ function Combat:request(a,action,aim,clientTime)
 			return Brawler.disengage(self,a,disengage)
 		end
 		if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
+		-- Throwing lowers the guard: a blade never leaves a fully blocking body.
+		if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
 		if a.wall then Motor.detach(a,self.now,false) end
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
@@ -3608,6 +3628,8 @@ function Combat:request(a,action,aim,clientTime)
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
 		Brawler.event(self,a,"Technique"); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
+		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
 		a.castId=spec.Id;a.castStarted=self.now
 		local pending={kind="Technique",spec=spec,implementation=technique,aim=aim}
@@ -3722,6 +3744,13 @@ function Combat:updateActor(a,dt)
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
  if a.state~="Dodging" then a.evade=nil end
 	self:stepThrow(a)
+	-- A guard key still held through a hit, a recovery or a throw comes back up
+	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
+	-- alone, so it never grants a fresh parry window.
+	if a.guardWanted and a.state=="Neutral" and not a.guardHeld and not a.throwing and not a.reaction
+		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
+		a.guardHeld=true;self:setState(a,"Guarding",0)
+	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
 		a.hop.remaining-=step
@@ -3788,7 +3817,9 @@ function Combat:updateActor(a,dt)
   local delta=a.target.root.Position-a.root.Position
   local horizontal=Vector3.new(delta.X,0,delta.Z)
   if horizontal.Magnitude&gt;2.7 then
-   Motor.move(a,self,{target=a.root.Position+horizontal-horizontal.Unit*2.7,speed=42,acceleration=220},dt)
+   -- Horizontal only: an aimed move toward a point at the same height braked
+   -- the plunge (vertical velocity pulled toward 0) and moved it twice.
+   Motor.travel(a,self,horizontal,math.min(horizontal.Magnitude-2.7,42*dt))
   end
   if a.airborne then
    local landed=Motor.descend(a,self,118,dt)
@@ -3850,6 +3881,9 @@ function Combat:updateActor(a,dt)
 		-- Chase, slam drift and any other aimed motion outrank the hover window;
 		-- hovering exists to hold a fighter still, never to cancel their movement.
 		Motor.step(a,self,dt,now)
+	elseif a.state=="Active" and a.attackName=="Slam" and a.airborne then
+		-- The slam branch above already drove this frame's plunge; holding the
+		-- body here would zero it every frame (a ~5 studs/s float, not a dive).
 	elseif now&lt;(a.airHold or 0) and a.airborne then
 		a.root.AssemblyLinearVelocity=Vector3.zero; a.hum:Move(Vector3.zero)
 	else Motor.step(a,self,dt,now) end
@@ -3934,9 +3968,14 @@ end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
+	-- The entry still finishes the blade on the client; it only reads as a body
+	-- hit once the defence has resolved. A blade that was evaded, parried or
+	-- absorbed ends silently ("spent"): the defence pushed its own effect.
+	local entry=self.impacts[#self.impacts]
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
@@ -4764,6 +4803,9 @@ function Matches:request(player,payload)
   s.human.move=payload.direction;s.human.lastMove=clock
   if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
  end
+ -- The held guard key is an intent that outlives a refused press (Combat
+ -- re-raises it once free). Only the player sends it; the AI guards per tick.
+ if action=="Guard" then s.human.guardWanted=true elseif action=="GuardOff" then s.human.guardWanted=false end
  local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
 end
@@ -6909,7 +6951,9 @@ function Defense.dodge(a,now)
 	a.dodgeStartedAt=now
 	a.invulnerableUntil=math.max(a.invulnerableUntil,now+Tune.DodgeIFrames)
 end
-function Defense.resolve(c,attacker,victim,amount,frontal)
+-- `melee`: the blow came from the attacker's own body. Only then can a parry
+-- stun them; a parried blade, flame or hazard is simply negated.
+function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
@@ -6930,6 +6974,7 @@ function Defense.resolve(c,attacker,victim,amount,frontal)
 	local since=c.now-victim.guardPressedAt
 	if since&lt;=(if eye then eye.ParryWindow else Tune.ParryWindow) and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
 		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
+		if not melee then c:cue(victim,'DEFLECTED');return 'Parried',0 end
 		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
 		if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PARRY • COUNTER')
 		else c:cue(victim,'PARRY • PUNISH') end
@@ -7792,10 +7837,18 @@ function Camera.new()
  end)
  return self
 end
+-- Locked, yaw is an offset from "behind the player"; unlocked it is an
+-- absolute heading. Convert on toggle so the lens stays where it is instead of
+-- swinging to world north (and dragging the movement axes with it).
+function Camera:setLocked(locked)
+ if locked==self.locked then return end
+ if locked then self.yaw=0 else self.yaw=self.boomAngle or self.yaw end
+ self.locked=locked
+end
 -- Impact-driven impulse. Small events must not make the camera twitch: only a
 -- finisher, launcher, parry, slam, teleport or big jutsu earns a reaction.
 local IMPULSE={
- whiff={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
+ whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
  slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
@@ -7826,14 +7879,18 @@ function Camera:update(data,dt)
 	if not root then return end
 	camera.CameraType=Enum.CameraType.Scriptable
 	local fresh=self.lastEpoch~=data.epoch
-	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false end
+	if fresh then self.lastHealth=data.human.health; self.lastEnemyHealth=data.bot.health;self.yaw=0;self.pitch=.22;self.focus=nil;self.boomAngle=nil;self.distance=nil;self.sprint=0;self.wasSprinting=false;self.lastImpactSerial=data.human.impactSerial or 0 end
 	-- Fallback only: the impact-style impulse above owns normal reactions.
-	if self.lastHealth and data.human.health&lt;self.lastHealth then
+	-- Only a new contact counts: a health drain (curse mark) carries a stale
+	-- impactHeavy and must not shake the lens every snapshot.
+	local serial=data.human.impactSerial or 0
+	if self.lastHealth and data.human.health&lt;self.lastHealth and serial~=self.lastImpactSerial then
 		local damage=self.lastHealth-data.human.health
 		if data.human.impactHeavy or damage&gt;=12 then
-			self.shakeSize=math.max(self.shakeSize or 0,.2);self.fovKick=math.max(self.fovKick or 0,2);self.shakeUntil=os.clock()+.12
+			self.shakeSize=math.max(self.shakeSize or 0,.2);self.fovKick=math.max(self.fovKick or 0,2);self.shakeUntil=math.max(self.shakeUntil or 0,os.clock()+.12)
 		end
 	end
+	self.lastImpactSerial=serial
 	self.lastHealth=data.human.health
 	self.lastEnemyHealth=data.bot.health
 	-- Frame the bodies where they are drawn (smoothed), not the stepping roots.
@@ -7952,9 +8009,9 @@ function Camera:update(data,dt)
 		if check then desired=check.Position+check.Normal*1.2 end
 	end
 	local cf=CFrame.lookAt(desired,focus)
-	if os.clock()&lt;self.shakeUntil then
-		cf*=CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0)
-	end
+	-- Shake is an offset on top of the smoothed rig (applied last, never fed
+	-- back into the follow), so it is neither damped away nor left behind.
+	local shake=if os.clock()&lt;self.shakeUntil then CFrame.new(self.rng:NextNumber(-1,1)*self.shakeSize,self.rng:NextNumber(-1,1)*self.shakeSize,0) else CFrame.identity
 	-- Studio capture aid: on high-DPI Windows the Studio window only shows the
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
@@ -7979,17 +8036,19 @@ function Camera:update(data,dt)
 		look=(look-Vector3.yAxis*math.tan(math.rad(12))).Unit
 		cf=CFrame.lookAt(cf.Position,cf.Position+look)
 	end
-	if film then camera.CFrame=cf;return end
-	if fresh then camera.CFrame=cf; self.lastEpoch=data.epoch
+	if film then camera.CFrame=cf;self.rigCF=nil;return end
+	if fresh or not self.rigCF then self.rigCF=cf; self.lastEpoch=data.epoch
 	else
 		-- Follow tightly enough for teleports, but never jump more than a few
 		-- studs in one frame.
-		local nextCF=camera.CFrame:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
-		local move=nextCF.Position-camera.CFrame.Position
+		local base=self.rigCF
+		local nextCF=base:Lerp(cf,1-math.exp(-dt*(if aerial or pursuit or slam then 15 else 11)))
+		local move=nextCF.Position-base.Position
 		local limit=math.max(3.5,520*dt)
-		if move.Magnitude&gt;limit then nextCF=CFrame.new(camera.CFrame.Position+move.Unit*limit)*nextCF.Rotation end
-		camera.CFrame=nextCF
+		if move.Magnitude&gt;limit then nextCF=CFrame.new(base.Position+move.Unit*limit)*nextCF.Rotation end
+		self.rigCF=nextCF
 	end
+	camera.CFrame=self.rigCF*shake
 end
 return Camera
 </ProtectedString>
@@ -8855,6 +8914,13 @@ function FX:wear(model,actor,aura)
 	local ratio=(actor.health or 1)/math.max(1,actor.maxHealth or 1)
 	local level=if ratio&lt;=.25 then 3 elseif ratio&lt;=.5 then 2 elseif ratio&lt;=.75 then 1 else 0
 	aura.wear=aura.wear or 0
+	-- A new round restores health on the same bodies: the wear starts over
+	-- instead of opening round two fully worn (and unable to build again).
+	if aura.wear&gt;0 and level==0 and ratio&gt;=.99 then
+		for _,p in model:GetDescendants() do if p.Name=="BattleWear" then p:Destroy() end end
+		for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+		aura.cloth=nil;aura.wear=0
+	end
 	while aura.wear&lt;level do
 		aura.wear+=1
 		for _,spec in WEAR[aura.wear] do
@@ -8870,6 +8936,7 @@ function FX:wear(model,actor,aura)
 			-- Low health: cloth looks dusty and darker.
 			for _,p in model:GetChildren() do
 				if p:IsA("BasePart") and p.Name~="HumanoidRootPart" and p.Name~="BattleWear" and p.Transparency&lt;1 and p.Material~=Enum.Material.Neon then
+					aura.cloth=aura.cloth or {};aura.cloth[p]=aura.cloth[p] or p.Color
 					p.Color=p.Color:Lerp(Color3.fromRGB(110,92,74),.14)
 				end
 			end
@@ -9326,7 +9393,7 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+input=Input.new(send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -9581,9 +9648,12 @@ local function clockFor(self,key,actor,now)
  if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
   clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=now
  end
- if actor.reaction~=clock.reaction then
+ -- A fresh contact restarts the recoil even when it repeats the same reaction
+ -- kind (Light1 -&gt; Light2 are both HitStun), so every hit reads as a hit.
+ if actor.reaction~=clock.reaction or (actor.reaction and (actor.impactSerial or 0)~=clock.impactSerial) then
   clock.reaction=actor.reaction;clock.reactionAt=now
  end
+ clock.impactSerial=actor.impactSerial or 0
  clock.attackElapsed=if actor.attackName then now-clock.attackAt else 0
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
@@ -9633,7 +9703,9 @@ function Presentation:update(data,dt)
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
    end
-   if previous and actor.health&lt;previous.health and actor.impactSerial==(previous.impactSerial or -1) then
+   -- Health lost without a new contact (burn, sand): a slow drain such as the
+   -- curse mark (~0.1 HP per snapshot) is not a hit and spawns nothing.
+   if previous and actor.health&lt;=previous.health-1 and actor.impactSerial==(previous.impactSerial or -1) then
     local damage=previous.health-actor.health
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
    end
@@ -10154,11 +10226,19 @@ function Feedback.burst(position,color,damage,blocked)
 	Debris:AddItem(anchor,.55)
 end
 -- One contact, one coherent reaction. Only the layers the style warrants.
+-- Moves that are not a body contact (a dodge, a substitution, a wall tech, a
+-- spin) sound like air, never like a punch; flow rides on its "light" entry.
+local AIR_CUE={whiff=true,dodge=true,substitute=true,walltech=true,rotation=true,deflect=true}
+-- Real contacts without a look of their own keep the generic hit layer.
+local CONTACT_FALLBACK={fire=true,fireball=true,chidori=true,groundbounce=true,sandhit=true,sandburst=true,sandburial=true,sandshield=true}
 function Feedback.impact(style,position)
-	local spec=look[style] or look.light
+	-- Only styles with a contact look get shards and a hit sound. Casts, chases,
+	-- fades, sticks and afterimages have their own effects (FX:impact).
+	local spec=look[style] or (CONTACT_FALLBACK[style] and look.light)
+	if not spec then return end
 	local anchor=anchorAt(position)
-	local cue=(if style=="light" then "light" elseif style=="whiff" then "whiff" else "heavy")
-	playSound(anchor,AUDIO[cue],spec.pitch,spec.volume)
+	local cue=(if style=="light" then "light" elseif AIR_CUE[style] then "whiff" else "heavy")
+	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch,spec.volume) end
 	local light=Instance.new("PointLight")
 	light.Color=spec.color;light.Brightness=(if style=="parry" or style=="slam" then 8 else 4)
 	light.Range=spec.range;light.Parent=anchor

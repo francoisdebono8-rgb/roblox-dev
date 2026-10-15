@@ -31,7 +31,7 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera.locked=not camera.locked;send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+input=Input.new(send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()

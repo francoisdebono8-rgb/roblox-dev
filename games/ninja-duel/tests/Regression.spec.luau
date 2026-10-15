@@ -346,4 +346,80 @@ test("a jump-height landing is light and keeps its speed; only a real drop lands
   end
  end
 end)
+-- Combat / defence audit (2026-10-16). Each case fails on the previous code.
+local function slamFrom(height,targetGap)
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b)
+ c:relocate(a,c.match.origin+V.new(0,3+height,1))
+ c:relocate(b,c.match.origin+V.new(0,3,-targetGap))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ a.airborne=true;a.hitConfirmed=true;a.attackName="Air2";a.state="Recovery";a.chainOpen=true;a.chainAt=0
+ assert(c:request(a,"Heavy") and a.attackName=="Slam","slam refused")
+ local t=0
+ while a.airborne and t<3 do H.step(c,.01);t+=.01 end
+ return t,a
+end
+test("a whiffed slam dives instead of floating on its hover window",function()
+ -- The hover branch ran after the plunge and zeroed its velocity every frame.
+ local t=slamFrom(23,30)
+ assert(t<.75,string.format("a whiffed slam took %.2f s to come down 23 studs",t))
+end)
+test("a recovery's chain window does not leak into later recoveries",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ engage(c,a,b)
+ assert(c:request(a,"Attack"))
+ local opened=false
+ for _=1,120 do H.step(c,.01);opened=opened or a.chainOpen;if opened and a.state=="Neutral" then break end end
+ assert(opened,"fixture: the light never opened its chain")
+ assert(a.state=="Neutral" and not a.chainOpen,"the chain stayed open after the recovery ended")
+ -- A non-attack recovery (substitution, awaken, wall tech) starts closed.
+ a.chainOpen=true;a.chainAt=0
+ c:setState(a,"Recovery",.14)
+ assert(not a.chainOpen and a.recoveryCancelAt==nil,"setState inherited a stale chain/cancel window")
+end)
+test("a guard key held through a hit comes back up without a free parry",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b)
+ b.guardWanted=true -- set by Matches for the player's held key
+ b.reaction="HitStun";b.reactionUntil=c.now+.2;b.state="Neutral"
+ local pressed=b.guardPressedAt
+ for _=1,40 do H.step(c,.01) end
+ assert(b.state=="Guarding" and b.guardHeld,"the held guard was never raised again")
+ assert(b.guardPressedAt==pressed,"the automatic raise opened a parry window")
+ b.guardWanted=false;assert(c:request(b,"GuardOff"));H.step(c,.05)
+ assert(b.state~="Guarding","guard stayed up after release")
+end)
+test("parrying a blade negates it without stunning the distant thrower",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b,30)
+ assert(c:request(b,"Guard"))
+ local hp=b.health
+ assert(c:damage(a,b,3,false,false)==false,"a timed guard did not stop the blade")
+ assert(b.health==hp and a.state~="Stunned","a parried blade stunned the thrower "..a.state)
+ local c2,x,y=H.duel("Flashstep","Mirage")
+ engage(c2,x,y)
+ assert(c2:request(y,"Guard"))
+ c2:damage(x,y,3,false,true)
+ assert(x.state=="Stunned","a parried melee strike no longer stuns the striker")
+end)
+test("a guard break keeps its full stun through the melee reaction",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b)
+ assert(c:request(b,"Guard"))
+ H.step(c,.3) -- past the parry window
+ b.stamina=1
+ local hp=b.health
+ assert(c:request(a,"Attack"))
+ for _=1,60 do H.step(c,.01);if b.health<hp then break end end
+ assert(b.health<hp,"fixture: the light never landed")
+ local left=math.max(b.reactionUntil or 0,if b.state=="Stunned" then b.untilTime else 0)-c.now
+ assert(left>.5,string.format("guard break stun cut to %.2f s",left))
+end)
+test("throwing from a raised guard lowers it",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b,20)
+ assert(c:request(a,"Guard"));H.step(c,.05)
+ assert(c:request(a,"Tool"),"tool refused from guard")
+ assert(a.state~="Guarding" and not a.guardHeld,"a blade was thrown from a full guard")
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

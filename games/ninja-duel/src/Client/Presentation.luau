@@ -150,9 +150,12 @@ local function clockFor(self,key,actor,now)
  if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
   clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=now
  end
- if actor.reaction~=clock.reaction then
+ -- A fresh contact restarts the recoil even when it repeats the same reaction
+ -- kind (Light1 -> Light2 are both HitStun), so every hit reads as a hit.
+ if actor.reaction~=clock.reaction or (actor.reaction and (actor.impactSerial or 0)~=clock.impactSerial) then
   clock.reaction=actor.reaction;clock.reactionAt=now
  end
+ clock.impactSerial=actor.impactSerial or 0
  clock.attackElapsed=if actor.attackName then now-clock.attackAt else 0
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
@@ -202,7 +205,9 @@ function Presentation:update(data,dt)
     -- Landing compression lasts a few frames; a soft landing barely shows.
     self.landingUntil=now+(if actor.landStrong then .22 else .1)
    end
-   if previous and actor.health<previous.health and actor.impactSerial==(previous.impactSerial or -1) then
+   -- Health lost without a new contact (burn, sand): a slow drain such as the
+   -- curse mark (~0.1 HP per snapshot) is not a hit and spawns nothing.
+   if previous and actor.health<=previous.health-1 and actor.impactSerial==(previous.impactSerial or -1) then
     local damage=previous.health-actor.health
     if root then Feedback.burst(root.Position,if actor.cue=="GUARDED" then Color3.fromRGB(255,235,160) else Color3.fromRGB(255,91,74),damage,actor.cue=="GUARDED") end
    end

@@ -45,8 +45,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - character: ALL
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
-- validation: 15 suites /155 cas passent sur sources actuelles
-- evidence: tests/run.sh : 155 PASS (2026-10-14 : Input.spec ajouté par DEC-011, +2 cas saut/atterrissage dans Regression) ; ne valide pas feel
+- validation: 15 suites /161 cas passent sur sources actuelles
+- evidence: tests/run.sh : 161 PASS (2026-10-16 : Input.spec par DEC-011, +2 cas saut/atterrissage, +6 cas audit combat/défense dans Regression) ; ne valide pas feel
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -202,7 +202,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Synchroniser corps, contact, cible et réaction
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Moment d’impact coïncide visuellement avec hitbox/réaction ; zone touchée cohérente ; VFX ne masque pas défaut ; preuve native
-- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; qualité et variété restent ouvertes
+- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : le recul redémarre à chaque nouveau contact même si le type de réaction se répète (Light1→Light2, Air1→Air2) et le début de frappe part en snapshot urgent (plus d’impact qui précède l’animation). Constat non corrigé : un coup qui ne pose que Stunned (kunai, shuriken, hazard) n’a pas de pose de recul. TECHNICAL compile + suites PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## COM-004 — Conversions air/mur et branches libres
@@ -215,7 +215,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Conversions air/mur et branches libres
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Réaction→poursuite→conversion, drive/spike/side switch/wallpin/bounce/tech ; choisir poursuivre ou sortir ; whiff puni ; preuve native
-- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; qualité et variété restent ouvertes
+- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : slam/RasenganDrop raté ne flotte plus (hover qui annulait la plongée, fenêtre active calculée sans l’accélération, dérive horizontale qui freinait la chute). À MESURER en Studio avant correction : Motor.move intègre la position à la main ET pose la vélocité (Rush, Pursuit, ShadowLeaf, WallDive) — même classe que le double fallback de gravité, vitesse effective possiblement ×2 ; protocole : chronométrer un Rush contre gap/90. TECHNICAL PASS (Regression) ; NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## COM-005 — Transitions, cancels et décisions entre combos
@@ -228,7 +228,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Transitions, cancels et décisions entre combos
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Feinte/outil/esquive/angle/clash/counter/disengage ; fenêtres lisibles, pas autoroutes ni infinites ni recovery gratuite ; preuve native
-- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; qualité et variété restent ouvertes
+- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus hors de la récupération d’attaque (Combat:setState, Brawler.react, throw-break) — une substitution, un éveil ou un wall tech n’ouvrent plus de string-cancel ni de tool gratuit. TECHNICAL PASS (Regression, échoue sur l’ancien code) ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## COM-006 — Grabs et micro-conflits physiques
@@ -267,7 +267,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Guard, parry, dodge, riposte techniques
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Coûts/fenêtres/récupérations et décisions serveur bornés
-- evidence: Rules/Combat/Phase4/Regression PASS
+- evidence: Rules/Combat/Phase4/Regression PASS ; 2026-10-16 audit : garde brisée et interruption gardent leur étourdissement complet (0,65 / 0,42 s) à travers la réaction de mêlée ; la touche de garde maintenue est relevée dès que le joueur est libre, sans nouvelle fenêtre de parade. Constats non corrigés : le gap anti-cheat Dodge (0,42 s) dépasse la fenêtre de wall tech (≈0,29 s) ; la fenêtre de perfect dodge d’Itachi éveillé ne peut dépasser les i-frames
 - outcome: VERIFIED_TECHNICAL
 
 ## DEF-002 — Substitution à ressources et contre-jeu
@@ -293,7 +293,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Déviation/parade corporelle lisible
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Arme ou membre agit visiblement ; récupération et riposte perceptibles
-- evidence: Défense technique existe ; expressivité non acceptée
+- evidence: Défense technique existe ; 2026-10-16 : une parade contre lame, flamme, hazard ou Rotation ne fait plus qu’annuler le coup (« deflect ») au lieu d’étourdir le lanceur à distance ; seul un coup de corps reste puni. TECHNICAL PASS (Regression) ; expressivité NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## DEF-004 — Clash de frappes technique
@@ -384,7 +384,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Continuité outil ↔ corps à corps
 - sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md)
 - validation: Draw/grip/release, throw pendant run/air/dodge, retour contact et conversion distincts par personnage
-- evidence: Tools et routes existent ; transitions corporelles à juger
+- evidence: Tools et routes existent ; 2026-10-16 : un lancer (outil ou kunai marqué) depuis la garde la baisse — plus de lancer en garde pleine ni de « fausse garde » ; la garde revient après le lancer si la touche est tenue. TECHNICAL PASS ; transitions corporelles NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## TOOL-006 — Prototype ciblé objet + chakra + déclencheur → résultat
@@ -657,7 +657,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Continuité camera et swap
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Lock/free, fade, zoom, sideswap, téléport/throw/air/wall sans snap gênant ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; 2026-10-16 : basculer le verrouillage convertit le yaw (plus de bascule vers le nord du monde ni de décalage au re-verrouillage) ; la secousse s’applique après le lissage (avant : ~17 % survivait et restait incrustée) ; plus de secousse pendant le drain de la marque maudite. TECHNICAL compile PASS ; NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## CAM-002 — Confort haute vitesse et verticalité
@@ -683,7 +683,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Audio d’impact et feedback
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Contacts, parry/tool/wall/steps lisibles, pas effets pour cacher corps insuffisant ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; 2026-10-16 : un seul son par contact (le son serveur répliqué est retiré) ; seuls les styles de contact jouent un son de coup — cast, chase, fade, stick, afterimage n’en jouent plus, dodge/substitution/wall tech sonnent « air » ; une lame esquivée/parée/absorbée finit en silence. TECHNICAL compile + suites PASS ; écoute NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## FX-002 — Réactions par zones et usure corporelle
@@ -696,7 +696,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Réactions par zones et usure corporelle
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Hit bodyzone, déséquilibre, réception, knockdown/KO et recovery, usure non gênante ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; 2026-10-16 : l’usure se réinitialise quand un nouveau round rend la vie pleine (avant : round 2 démarrait usé au maximum, sans progression possible) ; le drain de la marque maudite ne crée plus de burst « -0 » à chaque snapshot. TECHNICAL compile PASS ; NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## UX-001 — Grammaire simple, tutoriel et choix contextuels

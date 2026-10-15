@@ -24,6 +24,10 @@ end
 function Brawler.react(c,a,kind,velocity,duration,source)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
+ -- A guard break or channel interrupt already set a longer stun: the melee
+ -- reaction that follows keeps it instead of shortening it to the move's own.
+ duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
+ a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
 	 a.reactionSource=source
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
@@ -54,12 +58,18 @@ function Brawler.start(c,a,name)
  a.hitBlocked=false
  a.attackSerial=(a.attackSerial or 0)+1
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
+ -- The swing must reach the client as fast as the contact it leads to.
+ c.urgent=true
  local slamWindow=0
  if name=="Slam" then
   -- Size the descent so the active window provably ends on or near the floor.
   local drop=math.max(6,a.root.Position.Y-(c.match.origin.Y+3.4))
-  -- 118 studs/s is the plunge speed the slam uses at runtime.
-  slamWindow=math.clamp(drop/118,.28,1.1)
+  -- The plunge starts from rest and accelerates at 320 studs/s² up to 118
+  -- (Motor.descend): time that fall, not an instant 118, or the window ends in
+  -- mid-air and the recovery hovers there.
+  local reach=118*118/(2*320)
+  local fall=if drop<=reach then math.sqrt(2*drop/320) else 118/320+(drop-reach)/118
+  slamWindow=math.clamp(fall+.04,.28,1.1)
  elseif name=="WallDive" then
   -- The dive lasts as long as the flight to the opponent (92 studs/s).
   local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -126,7 +136,7 @@ function Brawler.request(c,a,action)
   Brawler.releaseGrab(g);Brawler.releaseGrab(a)
   local away=a.root.Position-g.root.Position;away=Vector3.new(away.X,0,away.Z)
   away=if away.Magnitude>.05 then away.Unit else -a.root.CFrame.LookVector
-  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
+  for _,x in {a,g} do Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.state="Recovery";x.untilTime=c.now+.22;x.recoveryCancelAt=c.now+.12 end
   a.hop={direction=away,remaining=3.5,speed=30};g.hop={direction=-away,remaining=3.5,speed=30}
   c:pushImpact(a.root.Position:Lerp(g.root.Position,.5),"clash",true,{direction=away})
   Brawler.event(c,a,"ThrowBreak");c:cue(a,"THROW BREAK",.7);c:cue(g,"THROW BROKEN",.7)
