@@ -16,9 +16,9 @@ Base technique : `bd3c483947bbf33dcc76282cf727d808c786141d`, assemblant `4bb3275
 | Jeu normal/debug/QA | WORKING build | Trois builds sourceEquality PASS ; 4 tests d’isolation. Le normal exclut DevHooks, CombatInspector, CombatDebug, NativeQA. Builds reproductibles octet par octet sous Windows depuis `b085d97` |
 | Diagnostic opt-in | WORKING technique | inspect/trace/contracts + overlay Studio F8, lecture seule ; voir COMBAT_CONTRACTS et handoff |
 | Motion Lab | WORKING automatique / PARTIAL natif | 45 cas + smoke du binaire avec événements Studio simulés ; 182 briques anciennes +120 variantes référencées ; export inert, héritage de clips préservé |
-| Validation native de l’artefact final | BLOCKED (2026-10-16) | QA-001 : aucun pilotage Studio dans la session (option MCP de Studio désactivée) ; checklist humaine dans le journal ; les 16 matchups historiques ne sont pas une preuve sur ce HEAD |
+| Validation native de l’artefact final | IN_PROGRESS (2026-10-16) | Studio piloté par MCP (tools/studio) : mesures natives sauts/sprint/rush/caméra/rotations/flashs sur les artefacts debug exacts ; 16 matchups, manette et acceptation humaine restent à faire |
 | Smoke/tags dédiés, infusion générique, League/Path | NOT_STARTED | La fumée de substitution et les explosions jutsu ne constituent pas ces systèmes |
-| PvP, prediction, nouveau roster public | NOT_STARTED | Backlog DEFERRED ; pas de moteur réseau à reconstruire implicitement |
+| PvP, prediction, nouveau roster public | NOT_STARTED, périmètre ouvert (DEC-012, 2026-10-16) | Mission convergence : vrai 1v1 en ligne, progression par points de compétence et budgets classés, vague de 8 archétypes ; fondations Codex non fusionnées à auditer d’abord |
 | Publication publique | NOT_STARTED vérifiable | Aucun PlaceID/version publique vérifiés ici ; permission/authentification actuelles non établies |
 | Défauts confirmés nouveaux | 2026-10-16 : 11 défauts de logique confirmés par lecture de code puis corrigés avec tests (slam qui flotte, fuite de chaîne, garde tenue, parade de projectile, garde brisée, lancer en garde, verrouillage caméra, drain maudit, audio doublé, usure, recul répété) ; 1 à mesurer (mouvement visé intégré deux fois, COM-004) | Ne pas convertir une suspicion visuelle ou un vieux rapport en bug actuel sans reproduction |
 

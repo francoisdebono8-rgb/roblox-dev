@@ -29,6 +29,7 @@ Windows (vérifié 2026-10-14) : cloner avec `core.longpaths=true` et `core.auto
 | Laboratoire | [README Lab](../../motion-lab/README.md), `motion-lab/build.py` | Preview, A/B, L/R, mixer/DNA, variantes, séquences, export JSON/poses inert |
 | Adapter | `motion-lab/ForgeMotionLab/Modules/NinjaDuelAdapter.luau` | Intégration manuelle choisie par Claude ; aucune dépendance runtime vers Lab |
 | Simulation de balance | `tests/Balance.sim.luau` | Non incluse dans les 15 suites ; ne pas annoncer exécution sans commande/preuve |
+| QA native par MCP Studio | [tools/studio](../../tools/studio/README.md) : pont persistant, ouverture de place + Play, sondes Luau (sauts, sprint, sauts d’image, rotations, flashs, fluidité Codex), captures | Exige « Enable Studio as MCP server » (réglage utilisateur) et Studio au premier plan ; mesures sur l’artefact debug exact ; ne remplace pas l’acceptation humaine |
 
 La disponibilité réelle d’un hook/provider de contrôle Studio dépend de la session et de l’environnement. Une UI visible ne constitue pas une exécution de protocole. Ni replay.sh ni sweep.lua mentionnés dans de vieux briefs ne sont garantis : vérifier leur existence avant usage. La publication demande accès/permission et autorisation correspondant au plan, pas des suppositions tirées d’archives.
 

@@ -25,15 +25,15 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## QA-001 — Baseline Studio du HEAD actuel, 16 matchups et manette
 
-- status: BLOCKED
+- status: IN_PROGRESS
 - priority: P0
 - dependencies: QA-002, QA-003
 - subsystem: qa
 - character: CORE4
 - summary: Baseline Studio du HEAD actuel, 16 matchups et manette
-- sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
+- sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Artefact exact/hashes ; quatre joueurs × quatre IA ; contrôles, transitions, camera, reset/rematch ; résultat natif distinct du feel
-- evidence: 2026-10-16 : cause — la session Claude n’a aucun pilotage de Studio (pas d’outil de contrôle d’écran ; StudioMCP.exe n’expose aucun outil tant que « Enable Studio as MCP server » est désactivé dans Studio). Condition de sortie : activer cette option (Claude exécute alors NativeQA, le mode Play et les mesures) ou faire tester à la main la checklist du journal 2026-10-16. Artefacts à valider : NinjaDuel `232601a4…`, QA `f26a0bdd…`. Native final PENDING ; anciens reports non transférables
+- evidence: 2026-10-16 : Studio piloté par le serveur MCP officiel (réglage Assistant-ExternalMCPEnabled activé avec accord utilisateur ; pont et sondes dans tools/studio). Mesures natives sur les artefacts debug exacts (sauts, sprint, rush, caméra, sauts d’image, rotations, flashs) consignées dans tools/studio/README.md et le journal. Restent : 16 matchups, manette réelle, acceptation humaine
 - outcome: PENDING
 
 ## QA-002 — Contrats headless existants
@@ -96,7 +96,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: movement
 - character: CORE4
 - summary: Course huit directions et conscience partielle de la cible
-- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
+- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Avant/arrière/strafe/diagonale/orbite/sprint/poursuite/reentrée ; tête/torse visent sans obliger hanches à glisser ; comparaison native avant/après
 - evidence: Animation/renderer/IK existent, aucune acceptation native actuelle
 - outcome: PENDING
@@ -109,7 +109,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: movement
 - character: CORE4
 - summary: Appuis, cadence et transfert de poids crédibles
-- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
+- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Longueur/fréquence du pas liées vitesse, bonne jambe pousse, pied pose stable, centre de gravité, dash impulsé ; comparaison native avant/après
 - evidence: Animation/renderer/IK existent ; 2026-10-14 cadence de foulée plafonnée à 3,8 (au lieu de 3,1) au-delà de la vitesse de course pour que le sprint se lise aussi par les jambes. TECHNICAL PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -122,7 +122,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: movement
 - character: CORE4
 - summary: Vraie course latérale et changement de direction
-- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
+- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Observer chaque direction et retournement, sans moonwalk/pivot mécanique ni glissade latérale ; comparaison native avant/après
 - evidence: Animation/renderer/IK existent, aucune acceptation native actuelle
 - outcome: PENDING
@@ -135,7 +135,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: movement
 - character: CORE4
 - summary: Continuité biomécanique des actions
-- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
+- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Pied→hanche→torse→épaule→membre, anticipation/contact/followthrough/recovery ; aucun cut/run→attaque→run ; comparaison native avant/après
 - evidence: Animation/renderer/IK existent, aucune acceptation native actuelle
 - outcome: PENDING
@@ -148,22 +148,22 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: movement
 - character: CORE4
 - summary: Transitions air, landing et mur cohérentes
-- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md)
+- sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Impulsion, ascension/apogée/chute, appui mur, rebond, poursuite, récupération et corps lisibles sans snap ; comparaison native avant/après
-- evidence: 2026-10-14 bloc 2 : cause racine — le fallback de gravité de Motor.step s’appliquait à chaque frame aérienne en plus du solveur Studio (gravité ×2, déplacement ×2, vol ≈0,5 s) et HardLandVelocity 56 < vitesse d’atterrissage d’un saut (≈72) rendait chaque saut lourd (vitesse bridée à 14, secousse caméra). Corrigé : fallback seulement sur corps bloqué ; JumpVelocity 72→58 et Humanoid.JumpPower aligné (≈12 studs, ≈0,83 s à l’échelle 1) ; HardLandVelocity 56→84 ; atterrissage léger sans bridage ni impact caméra ; pose aérienne d’élan. TECHNICAL PASS (Regression +2 cas, qui échouent sur l’ancien code) ; NATIVE_STUDIO PENDING ; HUMAN_VISUAL PENDING
+- evidence: 2026-10-16 NATIVE_STUDIO (debug, mesuré) : saut debout 19,6 studs/0,53 s → 16,4/0,94 s ; saut en course vitesse à l’atterrissage 36→14 avant, 36→19 après ; saut sprint 69→20 avant, 69→50 après. TECHNICAL PASS (Regression). HUMAN_VISUAL PENDING : la mission du 2026-10-16 demande en plus anticipation, silhouette et réentrée en combat
 - outcome: PENDING
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient
 
-- status: DEFERRED
+- status: OPEN
 - priority: P2
 - dependencies: NET-001
 - subsystem: network
 - character: ALL
 - summary: Évaluer prediction si preuves de latence la justifient
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Mesure avant/après réseau réelle, autorité/hit validation conservées ; activation après décision PvP
-- evidence: Pas de prediction générale ; ne pas repartir sur ancien moteur rollback
+- evidence: 2026-10-16 DEC-012 : prédiction « là où c’est approprié » demandée par la mission ; à décider après mesures 0 / ~60 / ~100–120 ms et gigue sur le PvP réel (NET-001)
 - outcome: PENDING
 
 ## COM-001 — Grammaire directionnelle et routes techniques existantes
@@ -187,7 +187,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Taijutsu riche et expressif
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Jab/cross/hook/uppercut/elbow/knee/kicks/sweep/spin/projection, formes adaptées au jeune personnage ; pas ajouter un bouton par brique ; preuve native
 - evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; qualité et variété restent ouvertes
 - outcome: PENDING
@@ -200,7 +200,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Synchroniser corps, contact, cible et réaction
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Moment d’impact coïncide visuellement avec hitbox/réaction ; zone touchée cohérente ; VFX ne masque pas défaut ; preuve native
 - evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : le recul redémarre à chaque nouveau contact même si le type de réaction se répète (Light1→Light2, Air1→Air2) et le début de frappe part en snapshot urgent (plus d’impact qui précède l’animation). Constat non corrigé : un coup qui ne pose que Stunned (kunai, shuriken, hazard) n’a pas de pose de recul. TECHNICAL compile + suites PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -213,9 +213,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Conversions air/mur et branches libres
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Réaction→poursuite→conversion, drive/spike/side switch/wallpin/bounce/tech ; choisir poursuivre ou sortir ; whiff puni ; preuve native
-- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : slam/RasenganDrop raté ne flotte plus (hover qui annulait la plongée, fenêtre active calculée sans l’accélération, dérive horizontale qui freinait la chute). À MESURER en Studio avant correction : Motor.move intègre la position à la main ET pose la vélocité (Rush, Pursuit, ShadowLeaf, WallDive) — même classe que le double fallback de gravité, vitesse effective possiblement ×2 ; protocole : chronométrer un Rush contre gap/90. TECHNICAL PASS (Regression) ; NATIVE_STUDIO PENDING
+- evidence: 2026-10-16 NATIVE_STUDIO : Motor.move intégré une seule fois quand le solveur Studio est actif (f895158) — rush scripté : sauts du corps 1,1 % jusqu’à 3–4 studs → 0,4 % ; Regression +1. Restent : à-coups de l’IA en l’air pendant ses techniques aériennes, rotations instantanées (AI.luau facing, lock au départ d’une frappe) — mesurés, non corrigés
 - outcome: PENDING
 
 ## COM-005 — Transitions, cancels et décisions entre combos
@@ -226,9 +226,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Transitions, cancels et décisions entre combos
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Feinte/outil/esquive/angle/clash/counter/disengage ; fenêtres lisibles, pas autoroutes ni infinites ni recovery gratuite ; preuve native
-- evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus hors de la récupération d’attaque (Combat:setState, Brawler.react, throw-break) — une substitution, un éveil ou un wall tech n’ouvrent plus de string-cancel ni de tool gratuit. TECHNICAL PASS (Regression, échoue sur l’ancien code) ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
+- evidence: Mécanismes partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus (f93d866). Mission 2026-10-16 : construire une vraie couche de neutral (approche, retraite, repositionnement latéral, feinte, sonde, outil, pression projectile, garde, parade, esquive, perfect dodge, contre, substitution, clash, reset) avec des phases et des échanges courts
 - outcome: PENDING
 
 ## COM-006 — Grabs et micro-conflits physiques
@@ -291,7 +291,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: defense
 - character: CORE4
 - summary: Déviation/parade corporelle lisible
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Arme ou membre agit visiblement ; récupération et riposte perceptibles
 - evidence: Défense technique existe ; 2026-10-16 : une parade contre lame, flamme, hazard ou Rotation ne fait plus qu’annuler le coup (« deflect ») au lieu d’étourdir le lanceur à distance ; seul un coup de corps reste puni. TECHNICAL PASS (Regression) ; expressivité NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -382,7 +382,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: tools
 - character: CORE4
 - summary: Continuité outil ↔ corps à corps
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Draw/grip/release, throw pendant run/air/dodge, retour contact et conversion distincts par personnage
 - evidence: Tools et routes existent ; 2026-10-16 : un lancer (outil ou kunai marqué) depuis la garde la baisse — plus de lancer en garde pleine ni de « fausse garde » ; la garde revient après le lancer si la touche est tenue. TECHNICAL PASS ; transitions corporelles NATIVE_STUDIO PENDING
 - outcome: PENDING
@@ -395,7 +395,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: chakra
 - character: CORE4
 - summary: Prototype ciblé objet + chakra + déclencheur → résultat
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Au moins interaction concrète lisible/contre-jeu avant abstraction ; infusion propriété/nature testée
 - evidence: Vision systémique ; aucun système général actuel
 - outcome: PENDING
@@ -408,9 +408,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: chakra
 - character: CORE4
 - summary: Faire du chakra une décision contextuelle
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Coût, recharge, infusion, déclencheur, opportunité et contre-jeu mesurés ; éviter barre cosmétique
-- evidence: Ressources et jutsu présents ; infusion générale absente
+- evidence: Ressources et jutsu présents ; 2026-10-16 mission : chakra systémique `Objet + Propriété/Nature + Contexte → Résultat`, infrastructure générique d’abord (kunai/shuriken renforcés, vent coupant, foudre conduite par fil/métal, feu sur pièges/zones préparées, kunai marqué ancre FTG, collision/déviation de projectiles, projectile planté devenant point tactique) sans bouton par interaction. Fondations Codex à auditer (`7091585`)
 - outcome: PENDING
 
 ## SYS-002 — Interactions élémentaires/environnement ciblées
@@ -421,7 +421,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: elements
 - character: CORE4
 - summary: Interactions élémentaires/environnement ciblées
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Documenter interactions réellement existantes, prototypes et conditions ; pas full matrix forcée
 - evidence: Elements + System interactions ; couverture non exhaustive
 - outcome: PENDING
@@ -434,7 +434,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: awakening
 - character: CORE4
 - summary: Awake modifie des règles et respecte la jeunesse
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Deux modifications de règles compréhensibles proposées/testées par kit ; labels lore ; pas boost statistique seul
 - evidence: Awake et fenêtres existantes ; 2026-10-16 fiches : les quatre éveils sont surtout des multiplicateurs (Minato : stats + cooldowns ×0,4 ; Itachi : fenêtres ×1,5 ; Neji : sans angle mort + drain ×1,8 ; Sasuke : stats + perte de PV) ; une proposition d’éveil « à règle » par fiche, non implémentée
 - outcome: PENDING
@@ -564,7 +564,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: character
 - character: CORE4
 - summary: Quatre identités reconnaissables sans jutsu
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Mouvement, garde, distance, rythme, outil, conversions distinguent quatre en duel ; preuve native/lore pertinente
 - evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -577,35 +577,35 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: character
 - character: CORE4
 - summary: Revue lore par capacité
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Chaque proposition/kit documente label canonical jeune/plausible/liberté/rejet adulte avec source exacte ; preuve native/lore pertinente
 - evidence: 2026-10-16 : table « Labels lore par capacité » posée pour chaque capacité réelle des quatre kits (fiches personnage), sources canon citées ou marquées « à vérifier ». Aucun pouvoir de Partie 2 / Mangekyō dans src. Écarts code ↔ DEC-005 à trancher par l’utilisateur : noms/visuels adultes de Minato (« Flying Thunder God », kunai à trois branches, éveil « YELLOW FLASH », Rasengan / FlashRasengan / RasenganDrop = REJECT_ADULT_ONLY en l’état) ; Itachi `Age = 13` (âge du Mangekyō) et imagerie corbeaux ; Curse Mark niveau 2 non présent (exclusion à confirmer). Statut PARTIAL tant que ces décisions et la vérification des sources ne sont pas faites
 - outcome: PENDING
 
 ## CHR-EXT-001 — Activer Gaara uniquement sur décision explicite
 
-- status: DEFERRED
+- status: OPEN
 - priority: P3
 - dependencies: QA-001
 - subsystem: roster
 - character: Gaara
 - summary: Activer Gaara uniquement sur décision explicite
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Client/UI, identité/motion/lore, matrice et native complets avant exposition
-- evidence: Serveur +10tests existent ; caché ; déclencheur ouverture roster
+- evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable)
 - outcome: PENDING
 
 ## CHR-EXT-002 — Conserver ~32 archétypes et dix blueprints riches
 
-- status: DEFERRED
+- status: OPEN
 - priority: P3
 - dependencies: QA-001
 - subsystem: roster
 - character: FUTURE32
 - summary: Conserver ~32 archétypes et dix blueprints riches
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Scope approuvé, architecture kit, source/lore/validation spécifique ; pas produire32 kits maintenant
-- evidence: ROSTER_ARCHETYPES_32 (pool prioritaire de 25 personnages choisi par l’utilisateur le 2026-10-13, `16e3a00`) et ROSTER_MOVESETS_10_PRODIGIES conservés ; aucune activation
+- evidence: 2026-10-16 DEC-012 : architecture pour ~20 fighters ; vague prioritaire jouable pour éprouver le moteur : Naruto, Gaara, Rock Lee, Kakashi, Temari, Shikamaru, Haku, Kisame (+ CORE4). Pas de 20 kits à moitié faits ni de M1 copiés ; chaque fighter doit éprouver ou tordre un système. Pool de 25 noms du 2026-10-13 conservé dans ROSTER_ARCHETYPES_32
 - outcome: PENDING
 
 ## ARENA-001 — Échelle utile et exploitation murs/cover
@@ -616,9 +616,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: arena
 - character: CORE4
 - summary: Échelle utile et exploitation murs/cover
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Course/range/time de réentrée, fil/teleport/projectiles, wallcarry/pin/bounce et tech utiles ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente. 2026-10-16 : non modifié volontairement — la spec exige d’observer le stade actuel en Studio avant tout changement d’échelle/murs ; à reprendre après QA-001
+- evidence: Mécanismes existent ; 2026-10-16 DEC-012 : la mission autorise la refonte/mise à l’échelle de l’arène (fighters petits face au décor ; neutral long, sprint, pression d’outils, poursuite aérienne, murs utiles sans être partout) puis le retuning course/sprint/saut/projectiles/lock/caméra/IA — l’ancien tuning peut être invalidé. Observation Studio désormais possible
 - outcome: PENDING
 
 ## ARENA-002 — Tournoi jeune et présentation légère
@@ -642,7 +642,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: arena
 - character: CORE4
 - summary: Espace vertical et lignes de vue
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Bornes, heights/LOS/angles/obstacles influencent combat sans bloquer mouvements ; native avant/après
 - evidence: Mécanismes existent ; acceptation humaine finale absente. 2026-10-16 : non modifié (observation native requise avant changement) ; à reprendre après QA-001
 - outcome: PENDING
@@ -655,7 +655,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: camera
 - character: CORE4
 - summary: Continuité camera et swap
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Lock/free, fade, zoom, sideswap, téléport/throw/air/wall sans snap gênant ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 : basculer le verrouillage convertit le yaw (plus de bascule vers le nord du monde ni de décalage au re-verrouillage) ; la secousse s’applique après le lissage (avant : ~17 % survivait et restait incrustée) ; plus de secousse pendant le drain de la marque maudite. TECHNICAL compile PASS ; NATIVE_STUDIO PENDING
 - outcome: PENDING
@@ -668,9 +668,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: camera
 - character: CORE4
 - summary: Confort haute vitesse et verticalité
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Quatre personnages, caméra en poursuite et manette, ne masque pas appuis/contact ; native avant/après
-- evidence: 2026-10-14 : FOV de vitesse piloté par le seul sprint du joueur (+5° borné, kick +2,5 au départ), boom −1,5 / hauteur −0,6, lead jusqu’à 5 studs ; un saut ordinaire garde le cadrage Ground (AirCombo réservé au combat aérien) ; plus de secousse sur atterrissage léger. TECHNICAL compile + suites PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
+- evidence: 2026-10-14 FOV/boom/lead pilotés par le sprint du joueur ; 2026-10-16 NATIVE_STUDIO : secousse continue amortie (au lieu d’un décalage aléatoire par image) → images avec saut de caméra en combat IA 7,8 % → 0,3–0,5 % (ancienne base 1,8–4,5 %). HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## FX-001 — Audio d’impact et feedback
@@ -694,7 +694,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: reactions
 - character: CORE4
 - summary: Réactions par zones et usure corporelle
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Hit bodyzone, déséquilibre, réception, knockdown/KO et recovery, usure non gênante ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 : l’usure se réinitialise quand un nouveau round rend la vie pleine (avant : round 2 démarrait usé au maximum, sans progression possible) ; le drain de la marque maudite ne crée plus de burst « -0 » à chaque snapshot. TECHNICAL compile PASS ; NATIVE_STUDIO PENDING
 - outcome: PENDING
@@ -707,7 +707,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: inputs
 - character: CORE4
 - summary: Grammaire simple, tutoriel et choix contextuels
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Toutes routes apprenables et cohérentes keyboard/manette, aucun input conflict ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 : à la manette, les cues affichées traduisent les touches clavier en boutons (E → ×, SPACE → ×, C → R1 + L1, X → D-pad →, 1 → R1 + ×, labels issus de Controls) ; les cues WIRED/BOUND (comment s’échapper du fil/sable, utiliser Dragon Flame) sont désormais affichées. TECHNICAL PASS (Regression) ; NATIVE_STUDIO PENDING
 - outcome: PENDING
@@ -727,15 +727,15 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## NET-001 — PvP deux joueurs / audit fondation réseau
 
-- status: DEFERRED
-- priority: P2
+- status: OPEN
+- priority: P1
 - dependencies: QA-001
 - subsystem: network
 - character: ALL
 - summary: PvP deux joueurs / audit fondation réseau
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Décision scope, deux clients réel, autorité, délais/erreurs et reconnection validés avant prediction
-- evidence: Match actuel joueur vs IA ; vieux rollback/IAS non exigence de réécriture
+- evidence: 2026-10-16 DEC-012 : périmètre ouvert par la mission utilisateur (vrai 1v1 joueur contre joueur, autorité serveur, réactivité client, prédiction si utile, réconciliation, validation tenant compte de la latence, projectiles/substitution/FTG/air/mur/clash sous latence, sync chakra/état). Auditer d’abord les fondations Codex (`33028b2` : OnlineHost/Match/Queue/Validation/Replication) avant de reconstruire
 - outcome: PENDING
 
 ## NET-002 — Robustesse réseau et entrées hostiles
@@ -746,7 +746,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: network
 - character: ALL
 - summary: Robustesse réseau et entrées hostiles
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Charge/latence réelle, finite/borne/rate limits et déconnexions ; pas transfert de confiance client
 - evidence: Validation serveur/anti-cheat/rate limit existants ; profil réel à compléter
 - outcome: PENDING
@@ -772,7 +772,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: balance
 - character: CORE4
 - summary: Balance humain et durée sans inflation HP
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Seeds/sim distinctes des duels humains ; diversité routes/defense, pas augmenter HP pour masquer manque de décisions
 - evidence: Simulation disponible ; durée AI historique45–70s pas vérité joueur
 - outcome: PENDING
@@ -785,7 +785,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: ai
 - character: CORE4
 - summary: IA comprend les conversions tactiques utiles
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Mesurer planification wall/seal/angle/outil et sorties sans triche ni spam
 - evidence: AI fonctionne ; reports limites planification non clôturés
 - outcome: PENDING
@@ -948,13 +948,39 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## PROG-001 — Prodigy League / Shinobi Path
 
-- status: DEFERRED
-- priority: P3
+- status: OPEN
+- priority: P1
 - dependencies: QA-001
 - subsystem: progression
 - character: ALL
 - summary: Prodigy League / Shinobi Path
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Activation explicite, scope progression/compétition et interaction duel documentés
-- evidence: Vision future utilisateur ; aucune obligation présent prototype
+- evidence: 2026-10-16 DEC-012 : fondation de progression par arbres de compétences par fighter ouverte ; règle : chaque nœud majeur change ce que le joueur peut FAIRE ou VOIR, pas « +2 % dégâts » ; le fighter de base reste complet. Fondations Codex à auditer (`29a9ec1` : ProfileSchema, ProfileRepository, CharacterProgression…). Sous-tickets PROG-002 (budgets classés) et PROG-003 (IA à budget)
+- outcome: PENDING
+
+## PROG-002 — Budgets de points de compétence actifs en classé
+
+- status: OPEN
+- priority: P2
+- dependencies: PROG-001, NET-001
+- subsystem: progression
+- character: ALL
+- summary: Budgets de points de compétence actifs en classé
+- sources: [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
+- validation: Brackets configurables (ex. 50 / 80 / 100 / 120+ SP) ; dans une file à N SP chaque joueur n’active que N points quel que soit son total débloqué ; builds d’exemple valides et rejet serveur des builds hors budget ; « la progression donne plus de choix de build, pas plus de puissance dans un même bracket »
+- evidence: 2026-10-16 DEC-012 : ouvert par la mission ; architecture/config d’abord, UI classée finale plus tard
+- outcome: PENDING
+
+## PROG-003 — IA à builds de budget cohérents
+
+- status: OPEN
+- priority: P2
+- dependencies: PROG-001, AI-001
+- subsystem: ai
+- character: ALL
+- summary: IA à builds de budget cohérents
+- sources: [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
+- validation: Profils d’IA par budget (débutant ~20–30 SP, moyen ~40–50, difficile ~60–70, boss de tournoi ~80+, légendaire proche du max) au lieu de tricher sur les stats ; utilisables comme outil d’équilibrage
+- evidence: 2026-10-16 DEC-012 : ouvert par la mission
 - outcome: PENDING
