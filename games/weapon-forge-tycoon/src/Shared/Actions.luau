@@ -22,7 +22,7 @@ function A.finish(d,now,random)
  local c=d.Craft
  if not c or now<c.Ready then return nil end
  d.Craft=nil
- local luck=1+d.Upgrades.Luck*0.18+d.Prestige*0.03+(d.LuckUntil>os.time() and 0.5 or 0)
+ local luck=1+d.Upgrades.Luck*C.Upgrades.Luck.Effect+d.Prestige*C.PrestigeMinorBonus+(d.LuckUntil>os.time() and C.StarterLuckBonus or 0)
  local w={Id=c.Id,Blueprint=(d.Zone-1)*3+math.min(3,math.floor(random()*3)+1),Rarity=E.roll(C.Rarities,random,luck),Mutation=E.roll(C.Mutations,random),Locked=false,Displayed=false}
  if d.Stats.Forged==0 then w.Blueprint=2 end -- first sale always funds the 20-coin speed upgrade
  table.insert(d.Inventory,w); d.Collection[tostring(w.Blueprint)]=true; d.Stats.Forged+=1
@@ -92,7 +92,7 @@ function A.pass(d,key,now)
  if not p or p.Kind~='Pass' then return false end
  if d.Owned[key] then return true end
  d.Owned[key]=true
- if key=='Starter' then A.credit(d,500); d.LuckUntil=now+600 end
+ if key=='Starter' then A.credit(d,C.StarterCoins); d.LuckUntil=now+C.StarterLuckSeconds end
  return true
 end
 function A.receipt(d,receipt,key)

@@ -42,5 +42,5 @@ suffix='-QA' if args.qa else ''
 output=ROOT/'dist'/f'ForgeAndFlex{suffix}.rbxlx'; output.parent.mkdir(exist_ok=True)
 ET.indent(xml); ET.ElementTree(xml).write(output,encoding='utf-8',xml_declaration=True)
 fingerprint=hashlib.sha256(output.read_bytes()).hexdigest()
-(ROOT/'dist'/f'build{suffix}.json').write_text(json.dumps({'artifact':output.name,'sha256':fingerprint,'local_qa':args.qa},indent=2)+'\n')
+(ROOT/'dist'/f'build{suffix}.json').write_text(json.dumps({'artifact':output.name,'sha256':fingerprint,'source_sha256':hashlib.sha256(b''.join(p.relative_to(ROOT).as_posix().encode()+p.read_bytes() for p in sorted((ROOT/'src').rglob('*.luau')) if not p.stem.startswith('NativeQA'))).hexdigest(),'local_qa':args.qa},indent=2)+'\n')
 print(f'{output}: {fingerprint}')

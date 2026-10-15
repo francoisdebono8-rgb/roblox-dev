@@ -1,0 +1,1 @@
+PASS: workspace boundaries (66 code/project files); dynamic imports require review

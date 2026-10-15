@@ -1,0 +1,1245 @@
+<?xml version='1.0' encoding='utf-8'?>
+<roblox version="4">
+  <Item class="Workspace" referent="WFT1">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="Gravity">196.2</float>
+      <float name="FallenPartsDestroyHeight">-100</float>
+    </Properties>
+  </Item>
+  <Item class="ServerScriptService" referent="WFT2">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+    </Properties>
+    <Item class="Script" referent="WFT3">
+      <Properties>
+        <string name="Name">LocalQAMode</string>
+        <ProtectedString name="Source">workspace:SetAttribute('WFT_LocalQA',true)</ProtectedString>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="WFT11">
+      <Properties>
+        <string name="Name">WFTServer</string>
+      </Properties>
+      <Item class="ModuleScript" referent="WFT12">
+        <Properties>
+          <string name="Name">Analytics</string>
+          <ProtectedString name="Source">local Service=game:GetService('AnalyticsService')
+local Run=game:GetService('RunService')
+local Analytics={}
+function Analytics.event(player,name,value)
+ if Run:IsStudio() then return end
+ task.spawn(function() local ok,err=pcall(function() Service:LogCustomEvent(player,name,value or 1) end); if not ok then warn('WFT analytics: '..tostring(err)) end end)
+end
+function Analytics.step(player,step,name)
+ if Run:IsStudio() then return end
+ task.spawn(function() pcall(function() Service:LogOnboardingFunnelStepEvent(player,step,name) end) end)
+end
+return Analytics
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT13">
+        <Properties>
+          <string name="Name">DataService</string>
+          <ProtectedString name="Source">local DSS=game:GetService('DataStoreService')
+local Http=game:GetService('HttpService')
+local Run=game:GetService('RunService')
+local Shared=game.ReplicatedStorage.WFT
+local Profile=require(Shared.Profile)
+local Data={Sessions={}}
+local store
+local function getStore()
+ if not store then store=DSS:GetDataStore('WeaponForgeTycoon_v1') end
+ return store
+end
+local function retry(fn)
+ local last
+ for attempt=1,4 do
+  local ok,result=pcall(fn)
+  if ok then return true,result end
+  last=result; task.wait(math.min(2^(attempt-1),4))
+ end
+ warn('WFT persistence request failed: '..tostring(last))
+ return false
+end
+function Data.load(player)
+ local token=Http:GenerateGUID(false)
+ local now=os.time()
+ if Run:IsStudio() and (workspace:GetAttribute('WFT_LocalQA') or game.PlaceId==0) then
+  local s={Data=Profile.new(now),Token=token,Busy=false,Memory=true,LastSave=os.clock(),Closing=false}
+  Data.Sessions[player]=s; return s
+ end
+ local ok,record=retry(function()
+  return getStore():UpdateAsync('u_'..player.UserId,function(old)
+   if old and old.Lease and old.Lease.Expires&gt;os.time() and old.Lease.Token~=token then return nil end
+   local d=Profile.load(old and old.Profile,now)
+   return {Profile=d,Lease={Token=token,Expires=os.time()+180}}
+  end)
+ end)
+ local memory=false
+ if not ok and Run:IsStudio() and workspace:GetAttribute('WFT_LocalQA') then
+  memory=true; record={Profile=Profile.new(now)}
+  warn('WFT LOCAL QA: unsaved Studio session; purchases disabled')
+ elseif not ok or not record then return nil end
+ local s={Data=record.Profile,Token=token,Busy=false,Memory=memory,LastSave=os.clock(),Closing=false}
+ Data.Sessions[player]=s
+ return s
+end
+function Data.save(player,release)
+ local s=Data.Sessions[player]
+ if not s or s.Busy then return false end
+ s.Busy=true
+ s.Data.LastSeen=os.time()
+ local snapshot=Http:JSONDecode(Http:JSONEncode(s.Data))
+ snapshot.Craft=nil -- unfinished crafts never survive reconnect
+ local ok=true
+ if not s.Memory then
+  local result
+  ok,result=retry(function()
+   return getStore():UpdateAsync('u_'..player.UserId,function(old)
+    if not old or not old.Lease or old.Lease.Token~=s.Token then return nil end
+    return {Profile=snapshot,Lease=not release and {Token=s.Token,Expires=os.time()+180} or nil}
+   end)
+  end)
+  ok=ok and result~=nil
+ end
+ s.Busy=false
+ if ok then s.LastSave=os.clock() elseif os.clock()-s.LastSave&gt;110 then
+  s.Closing=true; player:Kick('Your save connection was lost. Please rejoin to protect your progress.')
+ end
+ return ok
+end
+return Data
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="WFT14">
+        <Properties>
+          <string name="Name">Main</string>
+          <ProtectedString name="Source">workspace:SetAttribute('WFT_LocalQA',true)
+local Players=game:GetService('Players')
+local Http=game:GetService('HttpService')
+local Physics=game:GetService('PhysicsService')
+local Shared=game.ReplicatedStorage.WFT
+local C=require(Shared.Config)
+local E=require(Shared.Economy)
+local A=require(Shared.Actions)
+local Data=require(script.Parent.DataService)
+local Plot=require(script.Parent.PlotService)
+local Analytics=require(script.Parent.Analytics)
+local Monetization=require(script.Parent.MonetizationService)
+local request=Instance.new('RemoteEvent'); request.Name='Request'; request.Parent=Shared
+local state=Instance.new('RemoteEvent'); state.Name='State'; state.Parent=Shared
+local buckets,confirms,ready,remainders,starts={},{},{},{},{}
+local function push(player,event,result)
+ local s=Data.Sessions[player]; if not s or not ready[player] then return end
+ local d=s.Data
+ local payload={Coins=d.Coins,Upgrades=d.Upgrades,Zone=d.Zone,Inventory=d.Inventory,Collection=d.Collection,Prestige=d.Prestige,Owned=d.Owned,Settings=d.Settings,Tutorial=d.Tutorial,Stats=d.Stats,Income=E.income(d),Capacity=E.capacity(d),Slots=E.slots(d),Memory=s.Memory,Busy=d.Craft~=nil,Duration=E.speed(d)}
+ state:FireClient(player,payload,event,result)
+ Plot.update(player,d)
+end
+local function first(player,d,key,event)
+ d.Flags=d.Flags or {}
+ if not d.Flags[key] then d.Flags[key]=true; Analytics.event(player,event) end
+end
+Plot.init()
+pcall(function() Physics:RegisterCollisionGroup('WFTPlayers') end)
+Physics:CollisionGroupSetCollidable('WFTPlayers','WFTPlayers',false)
+local function joined(player)
+ if not Plot.assign(player) then player:Kick('All six workshops are occupied. Please join another server.'); return end
+ player.CharacterAdded:Connect(function(character)
+  Plot.spawn(player,character)
+  for _,p in ipairs(character:GetDescendants()) do if p:IsA('BasePart') then p.CollisionGroup='WFTPlayers' end end
+  character.DescendantAdded:Connect(function(p) if p:IsA('BasePart') then p.CollisionGroup='WFTPlayers' end end)
+ end)
+ if player.Character then task.spawn(Plot.spawn,player,player.Character) end
+ local s=Data.load(player)
+ if not s then player:Kick('Your progress is still open elsewhere or saving is unavailable. Please try again shortly.'); Plot.release(player); return end
+ if not player.Parent then Data.save(player,true); Data.Sessions[player]=nil; Plot.release(player); return end
+ local offline=E.offline(s.Data,os.time()); A.credit(s.Data,offline); s.Data.LastSeen=os.time(); s.Offline=offline
+ starts[player]=os.clock(); remainders[player]=0
+ Analytics.event(player,'session_start'); Analytics.event(player,'tutorial_start'); Analytics.step(player,1,'Forge arrival')
+ Monetization.refresh(player,Data,push)
+ push(player,'welcome',offline)
+end
+Players.PlayerAdded:Connect(joined)
+for _,p in ipairs(Players:GetPlayers()) do task.spawn(joined,p) end
+request.OnServerEvent:Connect(function(player,action,arg)
+ if type(action)~='string' or #action&gt;32 then return end
+ local now=os.clock(); local b=buckets[player] or {Tokens=12,At=now}; buckets[player]=b
+ b.Tokens=math.min(12,b.Tokens+(now-b.At)*5); b.At=now
+ if b.Tokens&lt;1 then return end; b.Tokens-=1
+ if action=='Ready' then ready[player]=true; local s=Data.Sessions[player]; if s then push(player,'welcome',s.Offline); s.Offline=0 end; return end
+ local s=Data.Sessions[player]; if not s or s.Busy or s.Closing then return end
+ local d=s.Data; local ok,result=false,'Action unavailable.'
+ if action=='Forge' then ok,result=A.forge(d,now,math.random,Http:GenerateGUID(false))
+ elseif action=='Hammer' then ok,result=A.hammer(d,now); if ok then state:FireClient(player,nil,'hammer') end
+ elseif (action=='Sell' or action=='Display' or action=='Lock') and type(arg)=='string' and #arg&lt;=64 then
+  if action=='Sell' then ok,result=A.sell(d,arg); if ok then first(player,d,'Sell','first_sell') end
+  elseif action=='Display' then ok,result=A.display(d,arg); if ok then first(player,d,'Display','first_display') end
+  else ok,result=A.lock(d,arg) end
+ elseif action=='MergePreview' then
+  local ids,rarity=A.mergePreview(d)
+  if ids then confirms[player]={Kind='Merge',Ids=ids,Token=Http:GenerateGUID(false),Expires=now+30}; state:FireClient(player,nil,'merge_preview',{Ids=ids,Rarity=rarity,Token=confirms[player].Token}); return end
+  result='Keep three unlocked weapons of the same rarity to merge.'
+ elseif action=='MergeConfirm' and type(arg)=='string' then
+  local c=confirms[player]; confirms[player]=nil
+  if c and c.Kind=='Merge' and c.Token==arg and c.Expires&gt;=now then ok,result=A.merge(d,c.Ids,Http:GenerateGUID(false)); if ok then first(player,d,'Merge','first_merge') end end
+ elseif action=='Upgrade' and type(arg)=='string' then ok,result=A.upgrade(d,arg); if ok then first(player,d,'Upgrade','first_upgrade') end
+ elseif action=='Zone' then ok,result=A.zone(d); if ok then Analytics.event(player,'zone_'..d.Zone..'_unlock') end
+ elseif action=='PrestigePreview' then
+  confirms[player]={Kind='Prestige',Token=Http:GenerateGUID(false),Expires=now+30}
+  state:FireClient(player,nil,'prestige_preview',confirms[player].Token); return
+ elseif action=='PrestigeConfirm' and type(arg)=='string' then
+  local c=confirms[player]; confirms[player]=nil
+  if c and c.Kind=='Prestige' and c.Token==arg and c.Expires&gt;=now then ok,result=A.prestige(d); if ok then Analytics.event(player,'prestige') end end
+ elseif action=='Setting' and type(arg)=='table' and type(arg.Key)=='string' then
+  local key,value=arg.Key,arg.Value
+  if key=='MergeThreshold' and type(value)=='number' and value==math.floor(value) and value&gt;=1 and value&lt;=5 then d.Settings[key]=value; ok=true
+  elseif type(d.Settings[key])=='boolean' and type(value)=='boolean' then
+   if key=='AutoForge' and not d.Owned.AutoForge or key=='AutoMerge' and not d.Owned.AutoMerge then result='This option needs its matching pass.'
+   else d.Settings[key]=value; ok=true end
+  end
+ elseif action=='TutorialDone' and d.Tutorial==4 then d.Tutorial=5; ok=true; Analytics.event(player,'tutorial_complete'); Analytics.step(player,5,'Ready to collect')
+ elseif action=='Shop' then Analytics.event(player,'shop_open'); return
+ elseif action=='PurchasePrompt' and type(arg)=='string' and C.Monetization[arg] and C.Monetization[arg].Id and not s.Memory then
+  Analytics.event(player,'purchase_prompt'); state:FireClient(player,nil,'purchase_prompt',arg); return
+ end
+ if ok then
+  if action=='Forge' then state:FireClient(player,nil,'forge_start',E.speed(d)) end
+  push(player,action,result)
+ else state:FireClient(player,nil,'error',result) end
+end)
+Monetization.init(Data,push)
+Players.PlayerRemoving:Connect(function(player)
+ local s=Data.Sessions[player]
+ if s then
+  s.Closing=true
+  Analytics.event(player,'session_seconds',os.clock()-(starts[player] or os.clock()))
+  while s.Busy do task.wait(.1) end
+  Data.save(player,true); Data.Sessions[player]=nil
+ end
+ Plot.release(player); buckets[player]=nil; confirms[player]=nil; ready[player]=nil; remainders[player]=nil; starts[player]=nil
+end)
+task.spawn(function()
+ while true do
+  task.wait(.25)
+  for player,s in pairs(Data.Sessions) do
+   if not s.Busy and not s.Closing then
+    local d=s.Data; local now=os.clock()
+    remainders[player]=(remainders[player] or 0)+E.income(d)*.25
+    if remainders[player]&gt;=1 then local n=math.floor(remainders[player]); remainders[player]-=n; A.credit(d,n) end
+    local weapon=A.finish(d,now,math.random)
+    if weapon then first(player,d,'Forge','first_forge'); push(player,'reveal',weapon) end
+    if d.Settings.AutoMerge and d.Owned.AutoMerge then
+     local ids=A.mergePreview(d,d.Settings.MergeThreshold)
+     if ids then A.merge(d,ids,Http:GenerateGUID(false)); first(player,d,'Merge','first_merge'); push(player,'auto_merge') end
+    end
+    if not d.Craft and d.Settings.AutoForge and d.Owned.AutoForge then
+     if A.forge(d,now,math.random,Http:GenerateGUID(false)) then state:FireClient(player,nil,'forge_start',E.speed(d)); push(player) end
+    end
+   end
+  end
+ end
+end)
+task.spawn(function()
+ while true do
+  task.wait(2)
+  for player,s in pairs(Data.Sessions) do if not s.Closing then
+   if not s.Busy then s.Data.Stats.Seconds+=2 end
+   push(player)
+   if s.Data.Stats.Seconds&gt;=600 and not s.TenMinutes then s.TenMinutes=true; Analytics.event(player,'session_10_minutes') end
+   if os.clock()-s.LastSave&gt;30 and not s.Busy then task.spawn(Data.save,player,false) end
+  end end
+ end
+end)
+game:BindToClose(function()
+ local pending=0
+ for player,s in pairs(Data.Sessions) do pending+=1; s.Closing=true; task.spawn(function() while s.Busy do task.wait(.1) end; Data.save(player,true); pending-=1 end) end
+ local deadline=os.clock()+25; while pending&gt;0 and os.clock()&lt;deadline do task.wait(.1) end
+end)
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT15">
+        <Properties>
+          <string name="Name">MonetizationService</string>
+          <ProtectedString name="Source">local MPS=game:GetService('MarketplaceService')
+local Players=game:GetService('Players')
+local Shared=game.ReplicatedStorage.WFT
+local C=require(Shared.Config)
+local A=require(Shared.Actions)
+local Analytics=require(script.Parent.Analytics)
+local M={}
+function M.init(Data,push)
+ local pending={}
+ MPS.ProcessReceipt=function(receipt)
+  local player=Players:GetPlayerByUserId(receipt.PlayerId)
+  local s=player and Data.Sessions[player]
+  if not s or s.Busy or s.Closing or s.Memory or pending[player] then return Enum.ProductPurchaseDecision.NotProcessedYet end
+  local key
+  for k,p in pairs(C.Monetization) do if p.Kind=='Product' and p.Id and p.Id==receipt.ProductId then key=k end end
+  if not key then return Enum.ProductPurchaseDecision.NotProcessedYet end
+  pending[player]=true
+  local first=not s.Data.Receipts[receipt.PurchaseId]
+  A.receipt(s.Data,receipt.PurchaseId,key)
+  -- Grant and receipt marker share one durable profile transaction. Never ACK before save.
+  local saved=Data.save(player,false)
+  pending[player]=nil
+  if not saved then return Enum.ProductPurchaseDecision.NotProcessedYet end
+  if first then Analytics.event(player,'purchase_success') end
+  push(player,'purchase')
+  return Enum.ProductPurchaseDecision.PurchaseGranted
+ end
+ MPS.PromptGamePassPurchaseFinished:Connect(function(player,id,bought)
+  if bought then M.refresh(player,Data,push) end
+ end)
+end
+function M.refresh(player,Data,push)
+ for key,p in pairs(C.Monetization) do
+  if p.Kind=='Pass' and p.Id and p.Id&gt;0 then
+   local ok,owned=pcall(MPS.UserOwnsGamePassAsync,MPS,player.UserId,p.Id)
+   local s=Data.Sessions[player]
+   if ok and owned and s and not s.Closing then
+    while s.Busy do task.wait(0.1) end
+    A.pass(s.Data,key,os.time()); push(player,'pass')
+   end
+  end
+ end
+end
+return M
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="WFT16">
+        <Properties>
+          <string name="Name">NativeQA</string>
+          <ProtectedString name="Source">-- Included only in the QA artifact. Does not modify any player profile.
+task.wait(3)
+assert(game:GetService('RunService'):IsStudio(),'QA scripts must never ship')
+local root=workspace:WaitForChild('ForgeAndFlex',10); assert(root)
+for i=1,6 do
+ local plot=root:FindFirstChild('Workshop '..i); assert(plot and plot:FindFirstChild('Anvil') and plot:FindFirstChild('Furnace'))
+ assert(plot:FindFirstChild('Zone gate 2') and plot:FindFirstChild('Zone gate 3'))
+end
+local S=game.ReplicatedStorage.WFT
+local W=require(S.WeaponModel)
+local Profile=require(S.Profile)
+local Http=game:GetService('HttpService')
+local p=Profile.new(os.time()); p.Coins=100; p.Inventory={{Id='native',Blueprint=9,Rarity=6,Mutation=5,Locked=true,Displayed=false}}
+local loaded=Profile.load(Http:JSONDecode(Http:JSONEncode(p)),os.time())
+assert(loaded.Coins==100 and loaded.Inventory[1].Locked and loaded.Inventory[1].Mutation==5)
+local scratch=Instance.new('Folder')
+for i=1,9 do
+ local m=W.build({Blueprint=i,Rarity=6,Mutation=5},scratch,CFrame.new(),1)
+ assert(#m:GetChildren()&gt;=4)
+ for _,v in ipairs(m:GetChildren()) do if v:IsA('BasePart') then assert(v.Anchored and not v.CanCollide) end end
+end
+scratch:Destroy()
+for _,player in ipairs(game:GetService('Players'):GetPlayers()) do
+ local index=player:GetAttribute('Plot'); local plot=index and root:FindFirstChild('Workshop '..index)
+ if plot and player.Character then assert((player.Character:GetPivot().Position-plot:FindFirstChild('Workshop spawn').Position).Magnitude&lt;18,'Player spawned away from assigned forge') end
+end
+print('WFT_NATIVE_QA PASS: 6 plots, 9 weapon models, safe parts, native JSON save/load')
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT17">
+        <Properties>
+          <string name="Name">PlotService</string>
+          <ProtectedString name="Source">local Shared=game.ReplicatedStorage.WFT
+local C=require(Shared.Config)
+local W=require(Shared.WeaponModel)
+local P={Plots={}}
+local stone=Color3.fromRGB(103,108,115)
+local wood=Color3.fromRGB(89,56,40)
+local function part(parent,name,size,cf,color,material)
+ local p=Instance.new('Part'); p.Name=name; p.Size=size; p.CFrame=cf; p.Color=color; p.Material=material or Enum.Material.Slate; p.Anchored=true; p.TopSurface=Enum.SurfaceType.Smooth; p.BottomSurface=Enum.SurfaceType.Smooth; p.Parent=parent; return p
+end
+local function label(p,text,color)
+ local gui=Instance.new('BillboardGui'); gui.Size=UDim2.fromOffset(220,54); gui.StudsOffset=Vector3.new(0,3,0); gui.MaxDistance=36; gui.Parent=p
+ local t=Instance.new('TextLabel'); t.Size=UDim2.fromScale(1,1); t.BackgroundTransparency=1; t.Font=Enum.Font.GothamBold; t.TextSize=16; t.TextColor3=color or Color3.fromRGB(255,231,192); t.TextStrokeTransparency=.35; t.Text=text; t.Parent=gui
+ return t
+end
+function P.init()
+ local root=Instance.new('Folder'); root.Name='ForgeAndFlex'; root.Parent=workspace; P.Root=root
+ part(root,'Island foundation',Vector3.new(200,5,190),CFrame.new(0,-3,0),Color3.fromRGB(47,58,54))
+ part(root,'Village square',Vector3.new(45,.3,130),CFrame.new(0,-.25,0),Color3.fromRGB(104,96,82),Enum.Material.Cobblestone)
+ for i=-2,2 do part(root,'Path inlay',Vector3.new(.3,.1,120),CFrame.new(i*6,0,0),Color3.fromRGB(144,128,99)) end
+ local monument=part(root,'Forge &amp; Flex',Vector3.new(9,4,7),CFrame.new(0,2,0),stone)
+ label(monument,'FORGE &amp; FLEX\nCraft • Collect • Become a master')
+ W.build({Blueprint=9,Rarity=5,Mutation=4},root,CFrame.new(0,8,0),1.8)
+ for _,x in ipairs({-90,90}) do for _,z in ipairs({-78,-26,26,78}) do
+  part(root,'Tree trunk',Vector3.new(2,7,2),CFrame.new(x,3,z),wood,Enum.Material.Wood)
+  local crown=part(root,'Low-poly canopy',Vector3.new(10,10,10),CFrame.new(x,10,z),Color3.fromRGB(60,90,66),Enum.Material.Grass); crown.Shape=Enum.PartType.Ball
+ end end
+ part(root,'Island edge',Vector3.new(210,2,200),CFrame.new(0,-5,0),Color3.fromRGB(66,83,77))
+ for i=1,6 do
+  local x=i&lt;=3 and -52 or 52; local z=((i-1)%3-1)*53
+  local m=Instance.new('Model'); m.Name='Workshop '..i; m.Parent=root
+  local base=CFrame.new(x,0,z)*(x&gt;0 and CFrame.Angles(0,math.pi,0) or CFrame.new())
+  local floor=part(m,'Workshop stone',Vector3.new(46,1,46),base*CFrame.new(0,-.5,0),Color3.fromRGB(105,98,84),Enum.Material.Cobblestone)
+  for _,dx in ipairs({-21,21}) do
+   part(m,'Timber post',Vector3.new(1.3,10,1.3),base*CFrame.new(dx,5,-19),wood,Enum.Material.Wood)
+   part(m,'Stone curb',Vector3.new(1,1,44),base*CFrame.new(dx,0,0),stone)
+  end
+  for _,side in ipairs({-1,1}) do
+   part(m,'Sloped workshop awning',Vector3.new(12,.6,13),base*CFrame.new(side*5.5,11,-14)*CFrame.Angles(0,0,side*math.rad(-17)),Color3.fromRGB(84,59,52),Enum.Material.WoodPlanks)
+  end
+  part(m,'Timber lintel',Vector3.new(44,1.2,1.4),base*CFrame.new(0,10,-19),wood,Enum.Material.Wood)
+  local owner=label(m:FindFirstChild('Timber lintel'),'Unclaimed workshop')
+  owner.Parent.StudsOffset=Vector3.new(0,1,0)
+  local forge=part(m,'Furnace',Vector3.new(7,5,5),base*CFrame.new(-12,2.5,-12),stone,Enum.Material.Brick)
+  part(m,'Chimney',Vector3.new(2.5,7,2.8),base*CFrame.new(-12,8,-13),stone,Enum.Material.Brick)
+  local heat=part(m,'Hot coals',Vector3.new(5,2.4,.15),base*CFrame.new(-12,2.3,-9.4),Color3.fromRGB(255,123,48),Enum.Material.Neon)
+  local light=Instance.new('PointLight'); light.Color=heat.Color; light.Range=17; light.Brightness=1.8; light.Parent=heat
+  local anvil=part(m,'Anvil',Vector3.new(4,1.1,2),base*CFrame.new(-4,2,-6),Color3.fromRGB(84,91,101),Enum.Material.Metal)
+  part(m,'Anvil pedestal',Vector3.new(2.5,1.5,2.5),base*CFrame.new(-4,.75,-6),wood,Enum.Material.Wood)
+  local horn=Instance.new('WedgePart'); horn.Size=Vector3.new(2,1,2); horn.CFrame=base*CFrame.new(-7,2,-6)*CFrame.Angles(0,0,math.pi); horn.Color=anvil.Color; horn.Anchored=true; horn.Parent=m
+  local prompt=Instance.new('ProximityPrompt'); prompt.Name='ForgePrompt'; prompt.ActionText='Forge a weapon'; prompt.ObjectText='Your anvil'; prompt.KeyboardKeyCode=Enum.KeyCode.E; prompt.GamepadKeyCode=Enum.KeyCode.ButtonX; prompt.HoldDuration=0; prompt.Parent=anvil
+  local racks=Instance.new('Folder'); racks.Name='DisplayedWeapons'; racks.Parent=m
+  for slot=1,6 do
+   local dx=(slot-3.5)*5.6
+   part(m,'Display plinth '..slot,Vector3.new(4,.7,3),base*CFrame.new(dx,.35,-18),wood,Enum.Material.Wood)
+  end
+  local sell=part(m,'Sell counter',Vector3.new(6,2,3),base*CFrame.new(13,1,-7),wood,Enum.Material.Wood)
+  label(sell,'SELL / KEEP / DISPLAY')
+  local sellPrompt=Instance.new('ProximityPrompt'); sellPrompt.Name='InventoryPrompt'; sellPrompt.ActionText='Manage weapons'; sellPrompt.ObjectText='Sell • Keep • Display'; sellPrompt.Parent=sell
+  local up=part(m,'Upgrade bench',Vector3.new(6,2,3),base*CFrame.new(13,1,1),stone)
+  label(up,'UPGRADE YOUR FORGE')
+  local upgradePrompt=Instance.new('ProximityPrompt'); upgradePrompt.Name='UpgradePrompt'; upgradePrompt.ActionText='Upgrade forge'; upgradePrompt.Parent=up
+  for zone=2,3 do
+   local gate=part(m,'Zone gate '..zone,Vector3.new(8,5,1),base*CFrame.new(zone==2 and -11 or 10,2.5,18),Color3.fromRGB(55,49,47),Enum.Material.Metal)
+   local gatePrompt=Instance.new('ProximityPrompt'); gatePrompt.Name='UpgradePrompt'; gatePrompt.ActionText='View next forge'; gatePrompt.Parent=gate
+   label(gate,C.Zones[zone].Name..'\n'..C.Zones[zone].Cost..' coins')
+  end
+  for _,pos in ipairs({Vector3.new(-18,1,0),Vector3.new(-16,1,7)}) do
+   part(m,'Supply crate',Vector3.new(3,2,3),base*CFrame.new(pos),wood,Enum.Material.WoodPlanks)
+  end
+  local spawn=Instance.new('SpawnLocation'); spawn.Name='Workshop spawn'; spawn.Size=Vector3.new(4,.2,4); spawn.CFrame=base*CFrame.new(-4,.15,3); spawn.Transparency=1; spawn.CanCollide=false; spawn.Anchored=true; spawn.Neutral=true; spawn.Duration=0; spawn.Parent=m
+  P.Plots[i]={Spawn=spawn,Model=m,Base=base,Owner=owner,Forge=forge,Heat=heat,Light=light,Racks=racks,Anvil=anvil,Zone=0,Signature=''}
+ end
+ local lighting=game:GetService('Lighting'); lighting.ClockTime=16; lighting.Brightness=2.5; lighting.Ambient=Color3.fromRGB(119,112,102); lighting.OutdoorAmbient=Color3.fromRGB(138,143,155); lighting.GlobalShadows=true
+ local bloom=Instance.new('BloomEffect'); bloom.Intensity=.18; bloom.Size=18; bloom.Threshold=1.5; bloom.Parent=lighting
+ local correction=Instance.new('ColorCorrectionEffect'); correction.Saturation=.08; correction.Contrast=.06; correction.Parent=lighting
+ local atmosphere=Instance.new('Atmosphere'); atmosphere.Density=.22; atmosphere.Color=Color3.fromRGB(226,207,181); atmosphere.Decay=Color3.fromRGB(133,130,150); atmosphere.Parent=lighting
+end
+function P.assign(player)
+ for i,p in ipairs(P.Plots) do if not p.Player then p.Player=player; player.RespawnLocation=p.Spawn; p.Owner.Text=player.DisplayName..'’s forge'; player:SetAttribute('Plot',i); return p end end
+end
+function P.spawn(player,character)
+ local p=P.Plots[player:GetAttribute('Plot') or 0]; if not p then return end
+ local root=character:WaitForChild('HumanoidRootPart',10)
+ if root then task.wait(.25); if not character.Parent then return end; character:PivotTo(p.Base*CFrame.new(-4,4,3)) end
+end
+function P.update(player,d)
+ local p=P.Plots[player:GetAttribute('Plot') or 0]; if not p then return end
+ if p.Zone~=d.Zone then
+  p.Zone=d.Zone
+  local old=p.Model:FindFirstChild('ZoneDetails'); if old then old:Destroy() end
+  local details=Instance.new('Folder'); details.Name='ZoneDetails'; details.Parent=p.Model
+  local color=Color3.fromRGB(unpack(C.Zones[d.Zone].Color)); p.Heat.Color=color; p.Light.Color=color
+  p.Forge.Material=d.Zone==1 and Enum.Material.Brick or Enum.Material.Basalt
+  if d.Zone==2 then
+   for j=1,5 do part(details,'Magma channel',Vector3.new(.8,.08,15),p.Base*CFrame.new(-18+j*2,.05,-9),color,Enum.Material.Neon) end
+   for _,x in ipairs({-18,-8}) do part(details,'Foundry exhaust',Vector3.new(2,9,2),p.Base*CFrame.new(x,4.5,-15),stone,Enum.Material.DiamondPlate) end
+  elseif d.Zone==3 then
+   for j=1,5 do
+    local crystal=part(details,'Arcane crystal',Vector3.new(1.2,3+j*.3,1.2),p.Base*CFrame.new(-19+j*2,2,-12)*CFrame.Angles(0,0,(j-3)*.12),color,Enum.Material.Neon)
+    crystal.Shape=Enum.PartType.Cylinder
+   end
+   part(details,'Runic arch',Vector3.new(14,1,2),p.Base*CFrame.new(-12,8,-10),color,Enum.Material.Slate)
+  end
+ end
+ local signature=''
+ for _,w in ipairs(d.Inventory) do if w.Displayed then signature..=w.Id end end
+ if signature~=p.Signature then
+  p.Signature=signature; p.Racks:ClearAllChildren(); local slot=0
+  for _,w in ipairs(d.Inventory) do if w.Displayed then
+   slot+=1
+   local model=W.build(w,p.Racks,p.Base*CFrame.new((slot-3.5)*5.6,3.3,-18),.8)
+   local anchor=model:FindFirstChildWhichIsA('BasePart')
+   label(anchor,C.Weapons[w.Blueprint].Name..'\n'..C.Rarities[w.Rarity].Name..(w.Mutation&gt;1 and ' • '..C.Mutations[w.Mutation].Name or ''),Color3.fromRGB(unpack(C.Rarities[w.Rarity].Color)))
+  end end
+ end
+ local accent=p.Model:FindFirstChild('Founder accent')
+ if d.Owned.Starter and not accent then part(p.Model,'Founder accent',Vector3.new(7,.25,5),p.Base*CFrame.new(-12,5.15,-12),Color3.fromRGB(235,188,85),Enum.Material.Metal) end
+ p.Owner.Text=player.DisplayName..'’s '..C.Zones[d.Zone].Name..(d.Prestige&gt;0 and ' ★'..d.Prestige or '')
+end
+function P.release(player)
+ local p=P.Plots[player:GetAttribute('Plot') or 0]; if p then p.Player=nil; p.Owner.Text='Unclaimed workshop'; p.Racks:ClearAllChildren(); p.Signature=''; p.Zone=0; local accent=p.Model:FindFirstChild('Founder accent'); if accent then accent:Destroy() end; local details=p.Model:FindFirstChild('ZoneDetails'); if details then details:Destroy() end end
+end
+return P
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ReplicatedStorage" referent="WFT4">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+    </Properties>
+    <Item class="Folder" referent="WFT5">
+      <Properties>
+        <string name="Name">WFT</string>
+      </Properties>
+      <Item class="ModuleScript" referent="WFT6">
+        <Properties>
+          <string name="Name">Actions</string>
+          <ProtectedString name="Source">-- Pure authoritative transitions: no yielding, no client-supplied prices or roll results.
+local C=require(script.Parent.Config)
+local E=require(script.Parent.Economy)
+local A={}
+function A.credit(d,n)
+ d.Coins=math.min(C.MaxCoins,d.Coins+math.max(0,math.floor(n)))
+ d.Stats.Earned+=math.max(0,math.floor(n))
+end
+function A.find(d,id) for i,w in ipairs(d.Inventory) do if w.Id==id then return w,i end end end
+function A.forge(d,now,random,id)
+ if d.Craft or #d.Inventory&gt;=E.capacity(d) then return false,'Your inventory is full or the forge is busy.' end
+ d.Craft={Started=now,Ready=now+E.speed(d),Hits=0,LastHit=now-1,Id=id}
+ return true
+end
+function A.hammer(d,now)
+ local c=d.Craft
+ if not c or c.Hits&gt;=3 or now-c.LastHit&lt;0.45 then return false,'Wait for the next hammer strike.' end
+ c.Hits+=1; c.LastHit=now; c.Ready=math.max(now,c.Ready-C.HammerReduction)
+ return true
+end
+function A.finish(d,now,random)
+ local c=d.Craft
+ if not c or now&lt;c.Ready then return nil end
+ d.Craft=nil
+ local luck=1+d.Upgrades.Luck*C.Upgrades.Luck.Effect+d.Prestige*C.PrestigeMinorBonus+(d.LuckUntil&gt;os.time() and C.StarterLuckBonus or 0)
+ local w={Id=c.Id,Blueprint=(d.Zone-1)*3+math.min(3,math.floor(random()*3)+1),Rarity=E.roll(C.Rarities,random,luck),Mutation=E.roll(C.Mutations,random),Locked=false,Displayed=false}
+ if d.Stats.Forged==0 then w.Blueprint=2 end -- first sale always funds the 20-coin speed upgrade
+ table.insert(d.Inventory,w); d.Collection[tostring(w.Blueprint)]=true; d.Stats.Forged+=1
+ if d.Tutorial==0 then d.Tutorial=1 elseif d.Tutorial==3 then d.Tutorial=4 end
+ return w
+end
+function A.sell(d,id)
+ local w,i=A.find(d,id)
+ if not w or w.Locked or w.Displayed then return false,'Only unlocked, stored weapons can be sold.' end
+ local value=E.value(d,w); table.remove(d.Inventory,i); A.credit(d,value); d.Stats.Sold+=1
+ if d.Tutorial==1 then d.Tutorial=2 end
+ return true,value
+end
+function A.display(d,id)
+ local w=A.find(d,id); if not w then return false,'Weapon no longer exists.' end
+ if w.Displayed then w.Displayed=false; return true end
+ local count=0; for _,v in ipairs(d.Inventory) do if v.Displayed then count+=1 end end
+ if count&gt;=E.slots(d) then return false,'All rack slots are occupied. Store a displayed weapon first.' end
+ w.Displayed=true; return true
+end
+function A.lock(d,id) local w=A.find(d,id); if not w then return false,'Weapon no longer exists.' end; w.Locked=not w.Locked; return true end
+function A.mergePreview(d,threshold)
+ for rarity=1,math.min(threshold or 5,5) do
+  local ids={}
+  for _,w in ipairs(d.Inventory) do if w.Rarity==rarity and not w.Displayed and not w.Locked then table.insert(ids,w.Id); if #ids==3 then return ids,rarity+1 end end end
+ end
+ return nil
+end
+function A.merge(d,ids,id)
+ if type(ids)~='table' or #ids~=3 then return false,'Choose three weapons.' end
+ local items,seen={},{}
+ for _,key in ipairs(ids) do
+  if type(key)~='string' or seen[key] then return false,'Invalid merge.' end
+  seen[key]=true; local w=A.find(d,key)
+  if not w or w.Locked or w.Displayed or w.Rarity&gt;=6 then return false,'Merge contents changed. Review again.' end
+  table.insert(items,w)
+ end
+ if items[1].Rarity~=items[2].Rarity or items[1].Rarity~=items[3].Rarity then return false,'Rarities must match.' end
+ -- The first preview weapon supplies silhouette and mutation; explicitly shown in UI.
+ local result={Id=id,Blueprint=items[1].Blueprint,Rarity=items[1].Rarity+1,Mutation=items[1].Mutation,Locked=false,Displayed=false}
+ for i=#d.Inventory,1,-1 do if seen[d.Inventory[i].Id] then table.remove(d.Inventory,i) end end
+ table.insert(d.Inventory,result); d.Stats.Merged+=1
+ return true,result
+end
+function A.upgrade(d,key)
+ local u=C.Upgrades[key]; if not u then return false,'Unknown upgrade.' end
+ local level=d.Upgrades[key]; if level&gt;=u.Max then return false,'Maximum level reached.' end
+ local cost=E.cost(key,level); if d.Coins&lt;cost then return false,'Earn more coins first.' end
+ d.Coins-=cost; d.Upgrades[key]+=1
+ if d.Tutorial==2 then d.Tutorial=3 end
+ return true
+end
+function A.zone(d)
+ if d.Zone&gt;=3 then return false,'All forges unlocked.' end
+ local cost=C.Zones[d.Zone+1].Cost; if d.Coins&lt;cost then return false,'Earn more coins to unlock the next forge.' end
+ if d.Craft then return false,'Finish forging first.' end
+ d.Coins-=cost; d.Zone+=1; return true
+end
+function A.prestige(d)
+ if d.Zone~=3 or d.Coins&lt;C.PrestigeCost or d.Craft then return false,'Unlock Arcane Forge and hold 150,000 coins. Finish forging first.' end
+ d.Coins=0; d.Zone=1; d.Inventory={}; d.Prestige+=1
+ for k in pairs(d.Upgrades) do d.Upgrades[k]=0 end
+ return true
+end
+function A.pass(d,key,now)
+ local p=C.Monetization[key]
+ if not p or p.Kind~='Pass' then return false end
+ if d.Owned[key] then return true end
+ d.Owned[key]=true
+ if key=='Starter' then A.credit(d,C.StarterCoins); d.LuckUntil=now+C.StarterLuckSeconds end
+ return true
+end
+function A.receipt(d,receipt,key)
+ local p=C.Monetization[key]
+ if not p or p.Kind~='Product' or type(receipt)~='string' then return false end
+ if d.Receipts[receipt] then return true end
+ A.credit(d,E.coinPack(d,key)); d.Receipts[receipt]=true; return true
+end
+return A
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT7">
+        <Properties>
+          <string name="Name">Config</string>
+          <ProtectedString name="Source">-- All balance knobs live here. No marketplace asset is enabled by default.
+local C = {}
+C.Schema = 1
+C.MaxCoins = 1e12
+C.InventoryBase = 30
+C.DisplaySlots = 4
+C.OfflineCap = 7200
+C.PrestigeCost = 150000
+C.PrestigeBonus = 0.25
+C.PrestigeMinorBonus = 0.03
+C.ForgeMinimumSeconds = 1.6
+C.ExpectedRarityValue = 1.55
+C.StarterCoins = 500
+C.StarterLuckSeconds = 600
+C.StarterLuckBonus = 0.5
+C.ForgeSeconds = 7
+C.HammerReduction = 0.35
+C.Rarities = {
+ {Name='Common', Weight=62, Multiplier=1, Color={174,180,184}},
+ {Name='Uncommon', Weight=25, Multiplier=1.35, Color={110,215,151}},
+ {Name='Rare', Weight=9.5, Multiplier=2, Color={93,178,255}},
+ {Name='Epic', Weight=2.9, Multiplier=3.5, Color={193,132,255}},
+ {Name='Legendary', Weight=0.55, Multiplier=6, Color={255,195,80}},
+ {Name='Mythic', Weight=0.05, Multiplier=10, Color={255,104,143}},
+}
+C.Mutations = {
+ {Name='None', Weight=94, Multiplier=1},
+ {Name='Heated', Weight=3, Multiplier=1.5, Color={255,120,45}},
+ {Name='Frozen', Weight=1.8, Multiplier=1.8, Color={107,234,255}},
+ {Name='Arcane', Weight=1, Multiplier=2.3, Color={183,119,255}},
+ {Name='Glitched', Weight=0.2, Multiplier=4, Color={112,255,188}},
+}
+C.Weapons = {
+ {Name='Rusted Shortsword', Shape='Shortsword', Zone=1, Value=14},
+ {Name='Iron Saber', Shape='Saber', Zone=1, Value=21},
+ {Name='Steel Axe', Shape='Axe', Zone=1, Value=30},
+ {Name='Ember Dagger', Shape='Dagger', Zone=2, Value=65},
+ {Name='Magma Hammer', Shape='Hammer', Zone=2, Value=95},
+ {Name='Obsidian Greatsword', Shape='Greatsword', Zone=2, Value=135},
+ {Name='Arcane Katana', Shape='Katana', Zone=3, Value=250},
+ {Name='Void Scythe', Shape='Scythe', Zone=3, Value=360},
+ {Name='Runic Greatblade', Shape='Runic', Zone=3, Value=500},
+}
+C.Zones = {
+ {Name='Village Forge', Cost=0, Color={231,156,78}},
+ {Name='Magma Foundry', Cost=2500, Color={255,98,48}},
+ {Name='Arcane Forge', Cost=25000, Color={158,133,255}},
+}
+C.Upgrades = {
+ Speed={Name='Forge speed', Base=20, Growth=2.5, Max=12, Effect=0.10, Description='10% faster per level'},
+ Value={Name='Weapon value', Base=30, Growth=2.8, Max=12, Effect=0.25, Description='+25% sell value per level'},
+ Luck={Name='Rare luck', Base=70, Growth=2, Max=10, Effect=0.18, Description='+18% rare weight per level'},
+ Display={Name='Armory income', Base=50, Growth=1.9, Max=10, Effect=0.30, Description='+30% rack income per level'},
+ Capacity={Name='Inventory', Base=100, Growth=2.2, Max=6, Effect=10, Description='+10 inventory slots per level'},
+}
+C.DisplayRate = 0.0025 -- weapon value per second; collection helps, active forging leads
+C.Monetization = {
+ AutoForge={Kind='Pass', Id=nil, Target=99, Name='Auto Forge', Benefit='Repeat the forge cycle automatically.'},
+ AutoMerge={Kind='Pass', Id=nil, Target=129, Name='Auto Merge', Benefit='Merge eligible weapons up to your chosen rarity.'},
+ DoubleCoins={Kind='Pass', Id=nil, Target=149, Name='2× Coins', Benefit='Double weapon sales and armory income.'},
+ DisplaySlots={Kind='Pass', Id=nil, Target=79, Name='+2 Display Slots', Benefit='Show six weapons instead of four.'},
+ Starter={Kind='Pass', Id=nil, Target=49, Name='Starter Pack', Benefit='500 coins, 10 minutes of luck and a gold forge accent.'},
+ Small={Kind='Product', Id=nil, Target=29, Name='Coin Pouch', Minutes=5, Floor=250, Cap=100000},
+ Medium={Kind='Product', Id=nil, Target=79, Name='Coin Chest', Minutes=20, Floor=1200, Cap=500000},
+ Large={Kind='Product', Id=nil, Target=199, Name='Coin Vault', Minutes=60, Floor=4000, Cap=1500000},
+}
+C.Sounds = {hammer_hit=nil, forge_fire=nil, quench=nil, rarity_reveal=nil, legendary_reveal=nil, merge=nil, coins=nil, upgrade=nil, zone_unlock=nil, button_click=nil, music=nil}
+return C
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT8">
+        <Properties>
+          <string name="Name">Economy</string>
+          <ProtectedString name="Source">local C = require(script.Parent.Config)
+local E = {}
+function E.cost(key, level)
+ local u=C.Upgrades[key]
+ return math.floor(u.Base*u.Growth^level)
+end
+function E.capacity(d) return C.InventoryBase+d.Upgrades.Capacity*C.Upgrades.Capacity.Effect end
+function E.slots(d) return C.DisplaySlots+(d.Owned.DisplaySlots and 2 or 0) end
+function E.speed(d) return math.max(C.ForgeMinimumSeconds,C.ForgeSeconds/(1+d.Upgrades.Speed*C.Upgrades.Speed.Effect+d.Prestige*C.PrestigeMinorBonus)) end
+function E.multiplier(d) return (1+d.Upgrades.Value*C.Upgrades.Value.Effect)*(1+d.Prestige*C.PrestigeBonus)*(d.Owned.DoubleCoins and 2 or 1) end
+function E.value(d,w)
+ return math.floor(C.Weapons[w.Blueprint].Value*C.Rarities[w.Rarity].Multiplier*C.Mutations[w.Mutation].Multiplier*E.multiplier(d))
+end
+function E.income(d)
+ local total=0
+ for _,w in ipairs(d.Inventory) do if w.Displayed then total+=E.value(d,w)*C.DisplayRate*(1+d.Upgrades.Display*C.Upgrades.Display.Effect) end end
+ return total
+end
+function E.offline(d,now) return math.floor(E.income(d)*math.clamp(now-d.LastSeen,0,C.OfflineCap)) end
+function E.coinPack(d,key)
+ local p=C.Monetization[key]
+ local rate=C.Weapons[d.Zone*3-1].Value*C.ExpectedRarityValue*E.multiplier(d)/E.speed(d)+E.income(d)
+ return math.floor(math.clamp(rate*p.Minutes*60,p.Floor,p.Cap))
+end
+function E.roll(list,random,luck)
+ local sum=0
+ for i,v in ipairs(list) do sum+=v.Weight*(i&gt;2 and (luck or 1) or 1) end
+ local r=random()*sum
+ for i,v in ipairs(list) do r-=v.Weight*(i&gt;2 and (luck or 1) or 1); if r&lt;=0 then return i end end
+ return #list
+end
+return E
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT9">
+        <Properties>
+          <string name="Name">Profile</string>
+          <ProtectedString name="Source">local C=require(script.Parent.Config)
+local P={}
+function P.new(now)
+ return {Schema=C.Schema,Coins=0,Upgrades={Speed=0,Value=0,Luck=0,Display=0,Capacity=0},Zone=1,Inventory={},Collection={},Prestige=0,Owned={},Receipts={},Settings={Music=true,SFX=true,LowVFX=false,CameraShake=true,AutoForge=false,AutoMerge=false,MergeThreshold=2},LastSeen=now,Stats={Forged=0,Sold=0,Merged=0,Earned=0,Seconds=0},Tutorial=0,LuckUntil=0}
+end
+local function number(v, fallback, lo, hi)
+ if type(v)~='number' or v~=v or math.abs(v)==math.huge then return fallback end
+ return math.clamp(math.floor(v),lo,hi)
+end
+function P.load(raw,now)
+ local d=P.new(now)
+ if type(raw)~='table' then return d end
+ if type(raw.Schema)=='number' and raw.Schema&gt;C.Schema then error('Future profile schema; refusing downgrade') end
+ d.Coins=number(raw.Coins,0,0,C.MaxCoins)
+ d.Zone=number(raw.Zone,1,1,3); d.Prestige=number(raw.Prestige,0,0,100000)
+ d.LastSeen=number(raw.LastSeen,now,0,now); d.Tutorial=number(raw.Tutorial,0,0,5)
+ d.LuckUntil=number(raw.LuckUntil,0,0,now+C.StarterLuckSeconds)
+ for k,u in pairs(C.Upgrades) do d.Upgrades[k]=number(type(raw.Upgrades)=='table' and raw.Upgrades[k],0,0,u.Max) end
+ for k,v in pairs(d.Settings) do
+  local x=type(raw.Settings)=='table' and raw.Settings[k]
+  if type(x)==type(v) then d.Settings[k]=k=='MergeThreshold' and number(x,2,1,5) or x end
+ end
+ for k in pairs(d.Stats) do d.Stats[k]=number(type(raw.Stats)=='table' and raw.Stats[k],0,0,C.MaxCoins) end
+ for k in pairs(C.Monetization) do if type(raw.Owned)=='table' and raw.Owned[k]==true then d.Owned[k]=true end end
+ if type(raw.Receipts)=='table' then for id,v in pairs(raw.Receipts) do if type(id)=='string' and v==true then d.Receipts[id]=true end end end
+ if type(raw.Collection)=='table' then for i=1,#C.Weapons do if raw.Collection[tostring(i)] then d.Collection[tostring(i)]=true end end end
+ local seen,displayed={},0
+ if type(raw.Inventory)=='table' then
+  for _,w in ipairs(raw.Inventory) do
+   if type(w)=='table' and type(w.Id)=='string' and #w.Id&lt;=64 and not seen[w.Id] and type(w.Blueprint)=='number' and C.Weapons[w.Blueprint] and type(w.Rarity)=='number' and C.Rarities[w.Rarity] and type(w.Mutation)=='number' and C.Mutations[w.Mutation] then
+    seen[w.Id]=true
+    local display=w.Displayed==true and displayed&lt;(C.DisplaySlots+(d.Owned.DisplaySlots and 2 or 0))
+    if display then displayed+=1 end
+    table.insert(d.Inventory,{Id=w.Id,Blueprint=w.Blueprint,Rarity=w.Rarity,Mutation=w.Mutation,Locked=w.Locked==true,Displayed=display})
+   end
+   if #d.Inventory&gt;=C.InventoryBase+d.Upgrades.Capacity*C.Upgrades.Capacity.Effect then break end
+  end
+ end
+ if type(raw.Flags)=='table' then d.Flags={} for k,v in pairs(raw.Flags) do if type(k)=='string' and #k&lt;32 and v==true then d.Flags[k]=true end end end
+ return d
+end
+return P
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="WFT10">
+        <Properties>
+          <string name="Name">WeaponModel</string>
+          <ProtectedString name="Source">local C=require(script.Parent.Config)
+local W={}
+local function rgb(a) return Color3.fromRGB(a[1],a[2],a[3]) end
+function W.build(w,parent,cf,scale,silhouette)
+ local bp=C.Weapons[w.Blueprint]; local model=Instance.new('Model'); model.Name=bp.Name
+ local metal=silhouette and Color3.fromRGB(44,45,49) or rgb(C.Rarities[w.Rarity].Color)
+ local glow=not silhouette and w.Mutation&gt;1 and rgb(C.Mutations[w.Mutation].Color) or metal
+ scale=scale or 1; cf=cf or CFrame.new()
+ local function part(name,size,pos,color,shape,angle,material)
+  local p=Instance.new(shape=='Wedge' and 'WedgePart' or 'Part'); p.Name=name
+  p.Size=size*scale; p.CFrame=cf*CFrame.new(pos*scale)*(angle or CFrame.new())
+  p.Color=color; p.Material=material or Enum.Material.Metal
+  if shape=='Cylinder' then p.Shape=Enum.PartType.Cylinder end
+  p.Anchored=true; p.CanCollide=false; p.CanTouch=false; p.CanQuery=false; p.CastShadow=true; p.Parent=model; return p
+ end
+ local brown=silhouette and metal or Color3.fromRGB(82,45,35)
+ part('Leather grip',Vector3.new(.22,1.2,.25),Vector3.new(0,-1.2,0),brown)
+ part('Pommel',Vector3.new(.4,.3,.36),Vector3.new(0,-1.88,0),metal)
+ local shape=bp.Shape
+ if shape=='Hammer' then
+  part('Haft',Vector3.new(.25,2,.25),Vector3.new(0,.1,0),brown)
+  part('Forged head',Vector3.new(2.2,1.1,.9),Vector3.new(0,1.45,0),metal)
+  for _,x in ipairs({-1.15,1.15}) do part('Ember face',Vector3.new(.12,.85,.7),Vector3.new(x,1.45,0),glow,nil,nil,Enum.Material.Neon) end
+ elseif shape=='Axe' or shape=='Scythe' then
+  part('Long haft',Vector3.new(.23,3,.23),Vector3.new(0,.5,0),brown)
+  part('Blade',Vector3.new(shape=='Scythe' and 2.3 or 1.2,1.1,.22),Vector3.new(.65,1.8,0),metal,'Wedge',CFrame.Angles(0,math.pi/2,0))
+  if shape=='Axe' then part('Back blade',Vector3.new(.9,.8,.22),Vector3.new(-.55,1.8,0),metal,'Wedge',CFrame.Angles(0,-math.pi/2,0))
+  else part('Hook tip',Vector3.new(.22,1,.22),Vector3.new(1.8,1.2,0),glow,'Wedge') end
+ else
+  local length=shape=='Dagger' and 1.5 or shape=='Shortsword' and 2.2 or shape=='Greatsword' and 3.7 or 3.1
+  local width=(shape=='Greatsword' or shape=='Runic') and .8 or shape=='Katana' and .25 or .45
+  part('Guard',Vector3.new(shape=='Dagger' and .8 or 1.25,.18,.34),Vector3.new(0,-.5,0),metal)
+  local lean=(shape=='Saber' or shape=='Katana') and -.13 or 0
+  part('Blade',Vector3.new(width,length,.18),Vector3.new(.1,length/2-.4,0),metal,nil,CFrame.Angles(0,0,lean))
+  part('Edge point',Vector3.new(width,.65,.18),Vector3.new(.1-lean*length/2,length-.1,0),metal,'Wedge',CFrame.Angles(0,math.pi/2,0))
+  if shape=='Runic' then
+   for i=1,4 do part('Rune',Vector3.new(.18,.18,.20),Vector3.new(.1,i*.6,0),glow,nil,CFrame.Angles(0,0,math.pi/4),Enum.Material.Neon) end
+  elseif shape=='Saber' then part('Knuckle bow',Vector3.new(.15,1,.2),Vector3.new(.5,-1,0),metal) end
+ end
+ if not silhouette and (w.Rarity&gt;=4 or w.Mutation&gt;1) then
+  local p=model:FindFirstChild('Blade') or model:FindFirstChild('Forged head')
+  if p then local l=Instance.new('PointLight'); l.Color=glow; l.Range=5; l.Brightness=.35; l.Parent=p end
+ end
+ model.Parent=parent
+ return model
+end
+return W
+</ProtectedString>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="StarterPlayer" referent="WFT18">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+      <float name="CameraMinZoomDistance">7</float>
+      <float name="CameraMaxZoomDistance">30</float>
+    </Properties>
+    <Item class="StarterPlayerScripts" referent="WFT19">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+      </Properties>
+      <Item class="Folder" referent="WFT20">
+        <Properties>
+          <string name="Name">WFTClient</string>
+        </Properties>
+        <Item class="ModuleScript" referent="WFT21">
+          <Properties>
+            <string name="Name">Effects</string>
+            <ProtectedString name="Source">local Shared=game.ReplicatedStorage.WFT
+local C=require(Shared.Config)
+local Tween=game:GetService('TweenService')
+local Debris=game:GetService('Debris')
+local Effects={Settings={}}
+function Effects.sound(key)
+ if Effects.Settings.SFX==false or not C.Sounds[key] then return end
+ local s=Instance.new('Sound'); s.SoundId='rbxassetid://'..C.Sounds[key]; s.Volume=.35; s.Parent=game:GetService('SoundService'); s:Play(); Debris:AddItem(s,8)
+end
+function Effects.impact(position,color,big)
+ Effects.sound(big and 'merge' or 'hammer_hit')
+ if not Effects.Settings.LowVFX then
+  local wave=Instance.new('Part'); wave.Name='Forge shockwave'; wave.Shape=Enum.PartType.Cylinder; wave.Size=Vector3.new(.05,.5,.5); wave.CFrame=CFrame.new(position)*CFrame.Angles(0,0,math.pi/2); wave.Material=Enum.Material.Neon; wave.Color=color; wave.Transparency=.45; wave.Anchored=true; wave.CanCollide=false; wave.CanTouch=false; wave.CanQuery=false; wave.Parent=workspace
+  Tween:Create(wave,TweenInfo.new(.25),{Size=Vector3.new(.03,big and 7 or 3,big and 7 or 3),Transparency=1}):Play(); Debris:AddItem(wave,.3)
+  for i=1,(big and 12 or 6) do
+   local p=Instance.new('Part'); p.Size=Vector3.new(.12,.12,.4); p.Material=Enum.Material.Neon; p.Color=color; p.Anchored=true; p.CanCollide=false; p.CanQuery=false; p.CanTouch=false; p.CFrame=CFrame.new(position); p.Parent=workspace
+   local delta=Vector3.new(math.random(-20,20)/10,math.random(5,25)/10,math.random(-20,20)/10)
+   Tween:Create(p,TweenInfo.new(.35),{Position=position+delta,Transparency=1,Size=Vector3.new(.02,.02,.02)}):Play(); Debris:AddItem(p,.4)
+  end
+ end
+ if Effects.Settings.CameraShake~=false then
+  local camera=workspace.CurrentCamera
+  local original=camera.CFrame
+  camera.CFrame=original*CFrame.Angles(math.rad(.28),0,0)
+ end
+end
+return Effects
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="WFT22">
+          <Properties>
+            <string name="Name">ForgeVisual</string>
+            <ProtectedString name="Source">local Tween=game:GetService('TweenService')
+local Shared=game.ReplicatedStorage.WFT
+local W=require(Shared.WeaponModel)
+local F={Generation=0}
+local function part(parent,name,size,cf,color,material)
+ local p=Instance.new('Part'); p.Name=name; p.Size=size; p.CFrame=cf; p.Color=color; p.Material=material or Enum.Material.Metal; p.Anchored=true; p.CanCollide=false; p.CanTouch=false; p.CanQuery=false; p.Parent=parent; return p
+end
+function F.clear()
+ F.Generation+=1
+ if F.Model then F.Model:Destroy(); F.Model=nil end
+end
+function F.begin(anvil,duration,hit)
+ F.clear(); if not anvil then return end
+ local gen=F.Generation
+ local model=Instance.new('Model'); model.Name='LocalForging'; model.Parent=workspace; F.Model=model
+ local base=anvil.CFrame*CFrame.new(0,.8,0)
+ local ingot=part(model,'Heated billet',Vector3.new(2,.3,.6),base,Color3.fromRGB(96,70,54),Enum.Material.Neon)
+ Tween:Create(ingot,TweenInfo.new(duration/4),{Color=Color3.fromRGB(255,158,66)}):Play()
+ local handle=part(model,'Hammer haft',Vector3.new(.22,2,.22),base*CFrame.new(0,2.5,0),Color3.fromRGB(92,57,34),Enum.Material.Wood)
+ local head=part(model,'Hammer face',Vector3.new(1.4,.7,.7),base*CFrame.new(0,1.5,0),Color3.fromRGB(159,165,170))
+ task.spawn(function()
+  for _=1,3 do
+   task.wait(duration/4)
+   if gen~=F.Generation then return end
+   Tween:Create(head,TweenInfo.new(.12),{CFrame=base*CFrame.new(0,.6,0)}):Play()
+   Tween:Create(handle,TweenInfo.new(.12),{CFrame=base*CFrame.new(0,1.6,0)}):Play()
+   hit(false)
+   task.wait(.12)
+   if gen~=F.Generation then return end
+   Tween:Create(head,TweenInfo.new(.18),{CFrame=base*CFrame.new(0,1.5,0)}):Play()
+   Tween:Create(handle,TweenInfo.new(.18),{CFrame=base*CFrame.new(0,2.5,0)}):Play()
+  end
+ end)
+end
+function F.reveal(anvil,w)
+ F.clear(); if not anvil then return end
+ local model=W.build(w,workspace,anvil.CFrame*CFrame.new(0,3,0),.8); F.Model=model
+ local gen=F.Generation
+ for _,p in ipairs(model:GetChildren()) do if p:IsA('BasePart') then Tween:Create(p,TweenInfo.new(.4,Enum.EasingStyle.Back),{CFrame=p.CFrame*CFrame.new(0,.7,0)}):Play() end end
+ task.delay(4,function() if gen==F.Generation then F.clear() end end)
+end
+return F
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="WFT23">
+          <Properties>
+            <string name="Name">Main</string>
+            <ProtectedString name="Source">local Players=game:GetService('Players')
+local UIS=game:GetService('UserInputService')
+local GuiService=game:GetService('GuiService')
+local Tween=game:GetService('TweenService')
+local Marketplace=game:GetService('MarketplaceService')
+local PPS=game:GetService('ProximityPromptService')
+local CAS=game:GetService('ContextActionService')
+local player=Players.LocalPlayer
+local Shared=game.ReplicatedStorage:WaitForChild('WFT')
+local C=require(Shared.Config)
+local E=require(Shared.Economy)
+local W=require(Shared.WeaponModel)
+local Effects=require(script.Parent.Effects)
+local ForgeVisual=require(script.Parent.ForgeVisual)
+local request=Shared:WaitForChild('Request')
+local state=Shared:WaitForChild('State')
+local data,page,selected,token,mergeItems,mergeRarity,prestigeToken
+local reveal,forgeRunning,forgeGeneration=nil,false,0
+local prices,shopTab={},'PERMANENT'
+local warm=Color3.fromRGB(255,176,78)
+local ink=Color3.fromRGB(25,24,28)
+local text=Color3.fromRGB(247,235,215)
+local muted=Color3.fromRGB(181,173,161)
+local gui=Instance.new('ScreenGui'); gui.Name='ForgeAndFlex'; gui.ResetOnSpawn=false; gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling; gui.IgnoreGuiInset=false; gui.Parent=player:WaitForChild('PlayerGui')
+local function make(cls,parent,props)
+ local obj=Instance.new(cls); for k,v in pairs(props or {}) do obj[k]=v end; obj.Parent=parent; return obj
+end
+local function corner(obj,r) make('UICorner',obj,{CornerRadius=UDim.new(0,r or 10)}) end
+local function label(parent,copy,size,color)
+ return make('TextLabel',parent,{BackgroundTransparency=1,Size=UDim2.new(1,0,0,size+12),Font=Enum.Font.GothamMedium,Text=copy,TextSize=size,TextColor3=color or text,TextXAlignment=Enum.TextXAlignment.Left,TextWrapped=true})
+end
+local function button(parent,copy,callback,primary)
+ local b=make('TextButton',parent,{Size=UDim2.new(1,0,0,46),BackgroundColor3=primary and warm or Color3.fromRGB(53,49,48),AutoButtonColor=false,Text=copy,Font=Enum.Font.GothamBold,TextSize=14,TextColor3=primary and ink or text,Selectable=true})
+ corner(b,8)
+ b.Activated:Connect(function() Effects.sound('button_click'); callback() end)
+ b.MouseEnter:Connect(function() Tween:Create(b,TweenInfo.new(.16),{BackgroundColor3=primary and Color3.fromRGB(255,196,117) or Color3.fromRGB(72,64,55)}):Play() end)
+ b.MouseLeave:Connect(function() Tween:Create(b,TweenInfo.new(.16),{BackgroundColor3=primary and warm or Color3.fromRGB(53,49,48)}):Play() end)
+ return b
+end
+local function send(action,arg) request:FireServer(action,arg) end
+local hud=make('Frame',gui,{Size=UDim2.new(1,-24,0,60),Position=UDim2.fromOffset(12,8),BackgroundColor3=ink,BackgroundTransparency=.08})
+corner(hud)
+local money=label(hud,'FORGE &amp; FLEX',20,warm); money.Size=UDim2.new(.46,-16,1,0); money.Position=UDim2.fromOffset(14,0)
+local progress=label(hud,'Loading your workshop…',13); progress.Position=UDim2.new(.46,0,0,0); progress.Size=UDim2.new(.54,-12,1,0); progress.TextXAlignment=Enum.TextXAlignment.Right
+local tutorial=make('TextButton',gui,{Position=UDim2.new(.5,0,0,78),AnchorPoint=Vector2.new(.5,0),Size=UDim2.new(.94,0,0,52),BackgroundColor3=Color3.fromRGB(54,41,28),TextColor3=text,TextSize=14,Font=Enum.Font.GothamBold,TextWrapped=true,Text='Light the forge. Your first weapon awaits.',AutoButtonColor=false}); corner(tutorial)
+local toast=label(gui,'',15,warm); toast.Size=UDim2.new(.9,0,0,48); toast.Position=UDim2.new(.5,0,0,138); toast.AnchorPoint=Vector2.new(.5,0); toast.TextXAlignment=Enum.TextXAlignment.Center; toast.TextStrokeTransparency=.3
+local toastVersion=0
+local function notify(copy)
+ toastVersion+=1; local v=toastVersion; toast.Text=tostring(copy or '')
+ task.delay(4,function() if toastVersion==v then toast.Text='' end end)
+end
+local forgeButton=button(gui,'⚒  FORGE A WEAPON',function() send(forgeRunning and 'Hammer' or 'Forge') end,true)
+forgeButton.Size=UDim2.new(UIS.TouchEnabled and .55 or .7,0,0,52); forgeButton.Position=UDim2.new(.5,0,1,-78); forgeButton.AnchorPoint=Vector2.new(.5,1)
+make('UISizeConstraint',forgeButton,{MaxSize=Vector2.new(420,52)})
+local forgeBar=make('Frame',forgeButton,{Size=UDim2.new(0,0,0,4),Position=UDim2.new(0,0,1,-4),BackgroundColor3=Color3.fromRGB(255,237,190),BorderSizePixel=0})
+corner(forgeBar,2)
+local nav=make('Frame',gui,{Size=UDim2.new(UIS.TouchEnabled and .72 or 1,-16,0,54),Position=UDim2.new(.5,0,1,-10),AnchorPoint=Vector2.new(.5,1),BackgroundTransparency=1})
+make('UIListLayout',nav,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,5),HorizontalAlignment=Enum.HorizontalAlignment.Center,SortOrder=Enum.SortOrder.LayoutOrder})
+local panel=make('Frame',gui,{Size=UDim2.new(.94,0,UIS.TouchEnabled and .76 or .66,0),Position=UDim2.new(.5,0,.48,0),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=ink,Visible=false})
+corner(panel,14); make('UIStroke',panel,{Color=Color3.fromRGB(99,79,54),Thickness=1})
+make('UISizeConstraint',panel,{MaxSize=Vector2.new(900,680)})
+local panelScale=make('UIScale',panel,{Scale=1})
+local title=label(panel,'ARMORY',21,warm); title.Position=UDim2.fromOffset(16,10); title.Size=UDim2.new(1,-80,0,40)
+local close=button(panel,'×',function() page=nil; panel.Visible=false; forgeButton.Visible=true end)
+close.Size=UDim2.fromOffset(44,38); close.Position=UDim2.new(1,-54,0,10)
+local scroller=make('ScrollingFrame',panel,{Position=UDim2.fromOffset(14,60),Size=UDim2.new(1,-28,1,-76),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=4,ScrollBarImageColor3=warm,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y})
+local render
+local function clear()
+ for _,child in ipairs(scroller:GetChildren()) do child:Destroy() end
+ make('UIListLayout',scroller,{Padding=UDim.new(0,10),SortOrder=Enum.SortOrder.LayoutOrder})
+ make('UIPadding',scroller,{PaddingBottom=UDim.new(0,16),PaddingRight=UDim.new(0,6)})
+end
+local function row(copy,size,color) return label(scroller,copy,size or 14,color) end
+local function viewport(parent,w,height,silhouette)
+ local frame=make('ViewportFrame',parent,{Size=UDim2.new(1,0,0,height),BackgroundTransparency=1,Ambient=Color3.fromRGB(180,171,161),LightColor=Color3.fromRGB(255,226,190),LightDirection=Vector3.new(-1,-1,-1)})
+ local world=make('WorldModel',frame)
+ W.build(w,world,CFrame.new()*CFrame.Angles(0,math.rad(-20),math.rad(-20)),1,silhouette)
+ local camera=make('Camera',frame,{CFrame=CFrame.lookAt(Vector3.new(0,1,8),Vector3.new(0,.6,0)),FieldOfView=43}); frame.CurrentCamera=camera
+ return frame
+end
+local function itemName(w) return C.Weapons[w.Blueprint].Name..' • '..C.Rarities[w.Rarity].Name..(w.Mutation&gt;1 and ' / '..C.Mutations[w.Mutation].Name or '') end
+local function get(id) for _,w in ipairs(data.Inventory) do if w.Id==id then return w end end end
+local function show(nextPage)
+ page=nextPage; selected=nil; scroller.CanvasPosition=Vector2.new(0,0); panel.Visible=true; forgeButton.Visible=false; render()
+ panelScale.Scale=.97; Tween:Create(panelScale,TweenInfo.new(.18,Enum.EasingStyle.Quad),{Scale=1}):Play()
+ if UIS.GamepadEnabled then GuiService.SelectedObject=close end
+end
+local function rackPosition()
+ local root=workspace:FindFirstChild('ForgeAndFlex'); local plot=root and root:FindFirstChild('Workshop '..tostring(player:GetAttribute('Plot')))
+ return plot and plot:FindFirstChild('Anvil')
+end
+local function impact(big)
+ local a=rackPosition(); if a then Effects.impact(a.Position+Vector3.new(0,1,0),warm,big) end
+end
+local function weaponActions(w)
+ row(itemName(w),17,Color3.fromRGB(unpack(C.Rarities[w.Rarity].Color)))
+ local compact=scroller.AbsoluteSize.Y&lt;310
+ viewport(scroller,w,compact and 60 or 110)
+ row(tostring(E.value(data,w))..' coins  •  '..(w.Displayed and 'On display' or 'In inventory')..(w.Locked and '  •  Locked' or ''))
+ local choices=make('Frame',scroller,{Size=UDim2.new(1,0,0,48),BackgroundTransparency=1})
+ make('UIListLayout',choices,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,6)})
+ local sell=button(choices,'SELL',function()
+  if w.Locked or w.Displayed then notify('Store and unlock this weapon before selling.'); return end
+  send('Sell',w.Id); selected=nil; reveal=nil; page='Inventory'
+ end,true); sell.Size=UDim2.new(1/3,-4,0,46)
+ local display=button(choices,w.Displayed and 'STORE' or 'DISPLAY',function() send('Display',w.Id); reveal=nil; page='Inventory' end); display.Size=UDim2.new(1/3,-4,0,46)
+ local keep=button(choices,'KEEP',function() reveal=nil; page=nil; panel.Visible=false; forgeButton.Visible=true end); keep.Size=UDim2.new(1/3,-4,0,46)
+ button(scroller,w.Locked and 'UNLOCK WEAPON' or 'LOCK — PROTECT FROM SELL / MERGE',function() send('Lock',w.Id) end)
+ row('Displayed weapons earn coins over time. Keep three of one rarity for Quick Merge.',12,muted)
+end
+
+local function inventory()
+ if selected then local w=get(selected); if w then weaponActions(w); button(scroller,'← ALL WEAPONS',function() selected=nil; render() end); return end; selected=nil end
+ row(#data.Inventory..' / '..data.Capacity..' stored  •  '..string.format('%.2f',data.Income)..' coins / sec')
+ button(scroller,'QUICK MERGE — PREVIEW',function() send('MergePreview') end,true)
+ if #data.Inventory==0 then row('Your next great weapon starts at the anvil. Forge one, then sell, keep or display it.',16) end
+ local grid=make('Frame',scroller,{Size=UDim2.new(1,0,0,0),BackgroundTransparency=1,AutomaticSize=Enum.AutomaticSize.Y})
+ local columns=panel.AbsoluteSize.X&lt;500 and 2 or 3
+ make('UIGridLayout',grid,{CellSize=UDim2.new(1/columns,-8,0,216),CellPadding=UDim2.fromOffset(8,8),SortOrder=Enum.SortOrder.LayoutOrder})
+ for _,w in ipairs(data.Inventory) do
+  local card=make('Frame',grid,{BackgroundColor3=Color3.fromRGB(39,36,37)}); corner(card,8)
+  viewport(card,w,112)
+  local name=label(card,C.Weapons[w.Blueprint].Name,12); name.Position=UDim2.fromOffset(8,112); name.Size=UDim2.new(1,-16,0,30)
+  local rarity=label(card,C.Rarities[w.Rarity].Name..(w.Mutation&gt;1 and ' · '..C.Mutations[w.Mutation].Name or '')..(w.Locked and ' 🔒' or '')..(w.Displayed and ' ◈' or ''),11,Color3.fromRGB(unpack(C.Rarities[w.Rarity].Color))); rarity.Position=UDim2.fromOffset(8,140); rarity.Size=UDim2.new(1,-16,0,24)
+  local b=button(card,E.value(data,w)..' coins  →',function() selected=w.Id; render() end); b.Position=UDim2.new(0,6,1,-48); b.Size=UDim2.new(1,-12,0,44); b.TextSize=12
+ end
+end
+local function collection()
+ local found=0; for _ in pairs(data.Collection) do found+=1 end
+ row(found..' / 9 blueprints discovered  •  '..math.floor(found/9*100)..'%')
+ local grid=make('Frame',scroller,{Size=UDim2.new(1,0,0,0),BackgroundTransparency=1,AutomaticSize=Enum.AutomaticSize.Y})
+ local cols=panel.AbsoluteSize.X&lt;500 and 2 or 3
+ make('UIGridLayout',grid,{CellSize=UDim2.new(1/cols,-8,0,172),CellPadding=UDim2.fromOffset(8,8)})
+ for i,bp in ipairs(C.Weapons) do
+  local discovered=data.Collection[tostring(i)]
+  local card=make('Frame',grid,{BackgroundColor3=Color3.fromRGB(39,36,37)}); corner(card)
+  viewport(card,{Blueprint=i,Rarity=1,Mutation=1},120,not discovered)
+  local t=label(card,discovered and bp.Name or '???  •  '..C.Zones[bp.Zone].Name,12,discovered and text or muted); t.Position=UDim2.fromOffset(8,126); t.Size=UDim2.new(1,-16,0,40)
+ end
+end
+local function upgrades()
+ row('A better forge. A bigger collection.',16)
+ for _,key in ipairs({'Speed','Value','Luck','Display','Capacity'}) do
+  local u=C.Upgrades[key]; local level=data.Upgrades[key]
+  row(u.Name..'  '..level..' / '..u.Max,17,warm); row(u.Description)
+  button(scroller,level&gt;=u.Max and 'MAX LEVEL' or 'UPGRADE  •  '..E.cost(key,level)..' coins',function() send('Upgrade',key) end,level&lt;u.Max)
+ end
+ if data.Zone&lt;3 then
+  local zone=C.Zones[data.Zone+1]
+  row('NEXT FORGE — '..string.upper(zone.Name),18,warm)
+  row('Unlock three new weapon blueprints and transform your workshop. '..math.floor(math.min(1,data.Coins/zone.Cost)*100)..'% funded.')
+  button(scroller,'UNLOCK  •  '..zone.Cost..' coins',function() send('Zone') end,true)
+ else row('All three forges unlocked. Master your craft with Prestige.',16) end
+ row('MASTER FORGE / PRESTIGE',18,warm)
+ row('Requires Arcane Forge + 150,000 coins. Gain +25% permanent value per prestige. Review the reset before confirming.')
+ button(scroller,'REVIEW PRESTIGE',function() send('PrestigePreview') end)
+end
+local function fetchPrice(key)
+ local p=C.Monetization[key]
+ if not p.Id or prices[key] then return end
+ prices[key]={Loading=true}
+ task.spawn(function()
+  local ok,info=pcall(Marketplace.GetProductInfoAsync,Marketplace,p.Id,p.Kind=='Pass' and Enum.InfoType.GamePass or Enum.InfoType.Product)
+  prices[key]=ok and info or {Unavailable=true}
+  if page=='Shop' then render() end
+ end)
+end
+local function shop()
+ row('Optional convenience. Every forge is free to unlock.',14,muted)
+ local tabs=make('Frame',scroller,{Size=UDim2.new(1,0,0,46),BackgroundTransparency=1})
+ make('UIListLayout',tabs,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,8)})
+ for _,tab in ipairs({'PERMANENT','COINS'}) do local b=button(tabs,tab,function() shopTab=tab; render() end,shopTab==tab); b.Size=UDim2.new(.5,-4,0,44) end
+ local keys=shopTab=='PERMANENT' and {'AutoForge','AutoMerge','DoubleCoins','DisplaySlots','Starter'} or {'Small','Medium','Large'}
+ for _,key in ipairs(keys) do
+  local p=C.Monetization[key]; fetchPrice(key)
+  row((p.Kind=='Pass' and '◈  ' or '◉  ')..p.Name,18,warm)
+  row(p.Benefit or ('Approximately '..p.Minutes..' minutes of current active income. Now: '..E.coinPack(data,key)..' coins.'))
+  local info=prices[key]
+  local available=p.Id and info and info.PriceInRobux and info.IsForSale~=false and not data.Memory
+  local copy=data.Owned[key] and 'OWNED' or available and ('BUY  •  R$ '..info.PriceInRobux) or 'CURRENTLY UNAVAILABLE'
+  button(scroller,copy,function() if available and not data.Owned[key] then send('PurchasePrompt',key) else notify('This purchase is currently unavailable. Keep playing for free.') end end,available and not data.Owned[key])
+ end
+end
+local function settings()
+ for _,key in ipairs({'Music','SFX','LowVFX','CameraShake','AutoForge','AutoMerge'}) do
+  button(scroller,key..'  •  '..(data.Settings[key] and 'ON' or 'OFF'),function() send('Setting',{Key=key,Value=not data.Settings[key]}) end)
+ end
+ row('Auto Merge consumes unlocked, stored weapons only. Result keeps the first input’s silhouette and mutation.',14,muted)
+ button(scroller,'Auto Merge input limit: '..C.Rarities[data.Settings.MergeThreshold].Name,function() send('Setting',{Key='MergeThreshold',Value=data.Settings.MergeThreshold%5+1}) end)
+ if data.Memory then row('LOCAL STUDIO TEST — progress is not saved. Purchases are disabled.',14,warm) end
+ row('Music and sound hooks remain silent until approved audio IDs are configured.',13,muted)
+end
+render=function()
+ if not data or not page then return end
+ clear()
+ title.Text=page=='Reveal' and 'FRESH FROM THE FORGE' or page=='PrestigeConfirm' and 'CONFIRM PRESTIGE' or string.upper(page)
+ if page=='Inventory' then inventory()
+ elseif page=='Collection' then collection()
+ elseif page=='Upgrades' then upgrades()
+ elseif page=='Shop' then shop()
+ elseif page=='Settings' then settings()
+ elseif page=='Reveal' and reveal then
+  local w=get(reveal.Id); if w then weaponActions(w) else page='Inventory'; render() end
+ elseif page=='Merge' then
+  row('THREE WEAPONS → ONE '..string.upper(C.Rarities[mergeRarity].Name),17,warm)
+  local valid=true
+  for i,id in ipairs(mergeItems) do local w=get(id); if w then row(i..'. '..itemName(w),14) else valid=false end end
+  if valid then
+   local first=get(mergeItems[1]); local result={Blueprint=first.Blueprint,Rarity=mergeRarity,Mutation=first.Mutation}
+   viewport(scroller,result,130)
+   row('Result: '..itemName(result)..'. All three inputs are permanently consumed.',14)
+   button(scroller,'CONFIRM MERGE — CONSUME THESE 3',function() send('MergeConfirm',token); page='Inventory' end,true)
+  else row('Items changed. Close and review a new merge.') end
+ elseif page=='Prestige' then
+  row('BECOME A MASTER FORGER',20,warm)
+  row('RESETS: all coins, upgrade levels, zones AND every stored/displayed weapon. This cannot be undone.',16)
+  row('KEEPS: discovered blueprints, lifetime stats, settings, purchases, cosmetic accent and prestige stars.',15)
+  row('GAIN: +25% permanent weapon value and a small luck/speed bonus per prestige.',15)
+  button(scroller,'I UNDERSTAND — FINAL CONFIRMATION',function()
+   page='PrestigeConfirm'; render()
+  end)
+ elseif page=='PrestigeConfirm' then
+  row('Your current weapons and economy will be reset.',18,warm)
+  button(scroller,'RESET &amp; PRESTIGE',function() send('PrestigeConfirm',prestigeToken); page='Upgrades' end,true)
+  button(scroller,'CANCEL',function() show('Upgrades') end)
+ end
+end
+for i,name in ipairs({'Inventory','Collection','Upgrades','Shop','Settings'}) do
+ local b=button(nav,name,function() if data then if name=='Shop' then send('Shop') end; show(name) end end)
+ b.LayoutOrder=i; b.Size=UDim2.new(.2,-5,1,0); b.TextSize=12
+end
+local tutorialCopy={
+ [0]='1 / 5  •  FORGE YOUR FIRST WEAPON  —  tap the orange button',
+ [1]='2 / 5  •  SELL your first weapon to earn coins',
+ [2]='3 / 5  •  Open UPGRADES and buy Forge speed',
+ [3]='4 / 5  •  FORGE a second weapon',
+ [4]='5 / 5  •  DISPLAY your favorites for income. KEEP three to MERGE. Tap to begin!',
+}
+tutorial.Activated:Connect(function()
+ if not data then return end
+ if data.Tutorial==4 then send('TutorialDone')
+ elseif data.Tutorial==2 then show('Upgrades')
+ elseif data.Tutorial==1 then show('Inventory')
+ elseif data.Tutorial&lt;4 then send('Forge')
+ else show('Upgrades') end
+end)
+local lastSignature=''
+state.OnClientEvent:Connect(function(snapshot,event,result)
+ if snapshot then
+  data=snapshot; Effects.Settings=data.Settings
+  local music=game:GetService('SoundService'):FindFirstChild('WFTMusic')
+  if not music and C.Sounds.music then music=make('Sound',game:GetService('SoundService'),{Name='WFTMusic',SoundId='rbxassetid://'..C.Sounds.music,Looped=true,Volume=.2}) end
+  if music then if data.Settings.Music and not music.IsPlaying then music:Play() elseif not data.Settings.Music then music:Pause() end end
+  money.Text='◉ '..math.floor(data.Coins)..' COINS'
+  progress.Text=C.Zones[data.Zone].Name..'\n★ '..data.Prestige..'   •   Speed '..data.Upgrades.Speed
+  tutorial.Text=tutorialCopy[data.Tutorial] or (data.Zone&lt;3 and ('NEXT: '..C.Zones[data.Zone+1].Name..'  •  '..math.floor(data.Coins)..' / '..C.Zones[data.Zone+1].Cost..' coins') or 'MASTER FORGE  •  150,000 coins + Arcane Forge')
+  local signature=game:GetService('HttpService'):JSONEncode({data.Inventory,data.Upgrades,data.Settings,data.Zone,data.Owned})
+  if page and signature~=lastSignature then render() end
+  lastSignature=signature
+ end
+ if event=='error' then notify(result)
+ elseif event=='welcome' and result and result&gt;0 then notify('YOUR FORGE WORKED WHILE YOU WERE AWAY  + '..result..' coins')
+ elseif event=='forge_start' then
+  forgeGeneration+=1; local gen=forgeGeneration; forgeRunning=true; forgeButton.Text='HEATING METAL…  TAP TO HAMMER'
+  Effects.sound('forge_fire')
+  ForgeVisual.begin(rackPosition(),result,impact)
+  forgeBar.Size=UDim2.new(0,0,0,4); Tween:Create(forgeBar,TweenInfo.new(result),{Size=UDim2.new(1,0,0,4)}):Play()
+  task.spawn(function()
+   for hit=1,3 do
+    task.wait(result/4)
+    if gen~=forgeGeneration or not forgeRunning then return end
+    forgeButton.Text='HAMMER '..hit..' / 3  •  TAP TO SPEED UP'
+   end
+  end)
+ elseif event=='hammer' then impact(false)
+ elseif event=='reveal' then
+  forgeRunning=false; forgeBar.Size=UDim2.new(0,0,0,4); forgeButton.Text='⚒  FORGE ANOTHER WEAPON'
+  Effects.sound('quench'); reveal=result; ForgeVisual.reveal(rackPosition(),result); impact(result.Rarity&gt;=4); Effects.sound(result.Rarity&gt;=5 and 'legendary_reveal' or 'rarity_reveal')
+  if not data.Settings.AutoForge then show('Reveal') else notify(itemName(result)..'  •  Added to inventory') end
+ elseif event=='merge_preview' then token=result.Token; mergeItems=result.Ids; mergeRarity=result.Rarity; show('Merge')
+ elseif event=='prestige_preview' then prestigeToken=result; show('Prestige')
+ elseif event=='Sell' then Effects.sound('coins'); notify('+ '..tostring(result)..' coins'); if page then render() end
+ elseif event=='MergeConfirm' or event=='auto_merge' then impact(true); notify('MERGE COMPLETE'); if page then render() end
+ elseif event=='Upgrade' then Effects.sound('upgrade'); notify('Forge upgraded'); if page then render() end
+ elseif event=='Zone' then Effects.sound('zone_unlock'); impact(true); notify('NEW FORGE UNLOCKED'); if page then render() end
+ elseif event=='PrestigeConfirm' then notify('MASTER FORGE ★ '..data.Prestige); if page then render() end
+ elseif event=='purchase_prompt' then
+  local p=C.Monetization[result]
+  if p and p.Id then
+   local ok=pcall(function() if p.Kind=='Pass' then Marketplace:PromptGamePassPurchase(player,p.Id) else Marketplace:PromptProductPurchase(player,p.Id) end end)
+   if not ok then notify('Purchase unavailable. Please try again later.') end
+  end
+ end
+end)
+PPS.PromptTriggered:Connect(function(prompt,who)
+ if who~=player then return end
+ local a=rackPosition()
+ if a and prompt.Parent==a then send(forgeRunning and 'Hammer' or 'Forge')
+ elseif a and prompt:IsDescendantOf(a.Parent) then
+  if prompt.Name=='InventoryPrompt' then show('Inventory') elseif prompt.Name=='UpgradePrompt' then show('Upgrades') end
+ end
+end)
+CAS:BindAction('ForgeWeapon',function(_,input)
+ if input==Enum.UserInputState.Begin and not panel.Visible then send(forgeRunning and 'Hammer' or 'Forge') end
+ return Enum.ContextActionResult.Sink
+end,false,Enum.KeyCode.ButtonR2)
+CAS:BindAction('OpenArmory',function(_,input) if input==Enum.UserInputState.Begin and data then show('Inventory') end; return Enum.ContextActionResult.Sink end,false,Enum.KeyCode.ButtonY)
+CAS:BindAction('CloseForgeMenu',function(_,input) if input==Enum.UserInputState.Begin then page=nil; panel.Visible=false; forgeButton.Visible=true end; return Enum.ContextActionResult.Sink end,false,Enum.KeyCode.ButtonB)
+send('Ready')
+task.spawn(function() while not data do task.wait(2); send('Ready') end end)
+</ProtectedString>
+          </Properties>
+        </Item>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Lighting" referent="WFT24">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <token name="Technology">3</token>
+      <float name="ClockTime">16</float>
+      <float name="Brightness">2.5</float>
+    </Properties>
+  </Item>
+  <Item class="SoundService" referent="WFT25">
+    <Properties>
+      <string name="Name">SoundService</string>
+    </Properties>
+  </Item>
+  <Item class="StarterGui" referent="WFT26">
+    <Properties>
+      <string name="Name">StarterGui</string>
+      <token name="ScreenOrientation">2</token>
+    </Properties>
+  </Item>
+</roblox>

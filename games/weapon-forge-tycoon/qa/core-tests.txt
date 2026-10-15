@@ -1,0 +1,19 @@
+PASS rarities probability config
+PASS mutations probability config
+PASS nonnegative economy and insufficient funds
+PASS double sell and locked/displayed protection
+PASS merge consumes once and preserves first mutation
+PASS merge locked displayed duplicates and wrong rarity rejected
+PASS cooldown and hammer limit
+PASS upgrade maximum
+PASS zone unlock only once per tier
+PASS prestige resets documented fields only
+PASS receipt idempotency
+PASS load round trip and old schema migration
+PASS corrupt input sanitation and duplicate IDs
+PASS offline cap and clock reversal
+PASS pass benefit applied once
+PASS nil product IDs safe and coin pack capped
+PASS rack capacity and no merge of rack weapons
+PASS inventory cap
+ALL 18 CORE TESTS PASSED

@@ -14,7 +14,7 @@ function P.load(raw,now)
  d.Coins=number(raw.Coins,0,0,C.MaxCoins)
  d.Zone=number(raw.Zone,1,1,3); d.Prestige=number(raw.Prestige,0,0,100000)
  d.LastSeen=number(raw.LastSeen,now,0,now); d.Tutorial=number(raw.Tutorial,0,0,5)
- d.LuckUntil=number(raw.LuckUntil,0,0,now+600)
+ d.LuckUntil=number(raw.LuckUntil,0,0,now+C.StarterLuckSeconds)
  for k,u in pairs(C.Upgrades) do d.Upgrades[k]=number(type(raw.Upgrades)=='table' and raw.Upgrades[k],0,0,u.Max) end
  for k,v in pairs(d.Settings) do
   local x=type(raw.Settings)=='table' and raw.Settings[k]
@@ -33,7 +33,7 @@ function P.load(raw,now)
     if display then displayed+=1 end
     table.insert(d.Inventory,{Id=w.Id,Blueprint=w.Blueprint,Rarity=w.Rarity,Mutation=w.Mutation,Locked=w.Locked==true,Displayed=display})
    end
-   if #d.Inventory>=C.InventoryBase+d.Upgrades.Capacity*10 then break end
+   if #d.Inventory>=C.InventoryBase+d.Upgrades.Capacity*C.Upgrades.Capacity.Effect then break end
   end
  end
  if type(raw.Flags)=='table' then d.Flags={} for k,v in pairs(raw.Flags) do if type(k)=='string' and #k<32 and v==true then d.Flags[k]=true end end end

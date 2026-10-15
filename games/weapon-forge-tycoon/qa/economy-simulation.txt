@@ -1,0 +1,20 @@
+seed 1 | 10m | coins 2109 | zone 1 | forged 71 | prestige 0
+seed 1 | 30m | coins 26948 | zone 3 | forged 234 | prestige 0
+seed 1 | 60m | coins 8367 | zone 2 | forged 479 | prestige 1
+seed 1 MILESTONES zone2=11.4m zone3=28.2m prestige=46.0m
+seed 2 | 10m | coins 2268 | zone 1 | forged 71 | prestige 0
+seed 2 | 30m | coins 29083 | zone 3 | forged 234 | prestige 0
+seed 2 | 60m | coins 16876 | zone 2 | forged 479 | prestige 1
+seed 2 MILESTONES zone2=10.6m zone3=27.1m prestige=43.6m
+seed 3 | 10m | coins 2179 | zone 1 | forged 71 | prestige 0
+seed 3 | 30m | coins 23040 | zone 3 | forged 234 | prestige 0
+seed 3 | 60m | coins 12493 | zone 2 | forged 479 | prestige 1
+seed 3 MILESTONES zone2=11.0m zone3=28.2m prestige=45.0m
+seed 4 | 10m | coins 1909 | zone 1 | forged 71 | prestige 0
+seed 4 | 30m | coins 24902 | zone 3 | forged 233 | prestige 0
+seed 4 | 60m | coins 5716 | zone 2 | forged 477 | prestige 1
+seed 4 MILESTONES zone2=11.9m zone3=28.6m prestige=45.7m
+seed 5 | 10m | coins 2119 | zone 1 | forged 71 | prestige 0
+seed 5 | 30m | coins 21113 | zone 3 | forged 234 | prestige 0
+seed 5 | 60m | coins 13646 | zone 2 | forged 479 | prestige 1
+seed 5 MILESTONES zone2=11.2m zone3=27.9m prestige=45.0m

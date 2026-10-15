@@ -1,0 +1,3 @@
+Roblox Studio 0.743.0.7431133
+QA artifact: WFT-ReleaseQA-6.rbxlx (byte-identical to dist/ForgeAndFlex-QA.rbxlx)
+2026-10-15T15:11:36.138Z,21.138353,6b9ab000,6,Info [FLog::CreatorOutput] WFT_NATIVE_QA PASS: 6 plots, 9 weapon models, safe parts, native JSON save/load

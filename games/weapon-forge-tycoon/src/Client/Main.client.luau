@@ -59,6 +59,7 @@ make('UIListLayout',nav,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDi
 local panel=make('Frame',gui,{Size=UDim2.new(.94,0,UIS.TouchEnabled and .76 or .66,0),Position=UDim2.new(.5,0,.48,0),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=ink,Visible=false})
 corner(panel,14); make('UIStroke',panel,{Color=Color3.fromRGB(99,79,54),Thickness=1})
 make('UISizeConstraint',panel,{MaxSize=Vector2.new(900,680)})
+local panelScale=make('UIScale',panel,{Scale=1})
 local title=label(panel,'ARMORY',21,warm); title.Position=UDim2.fromOffset(16,10); title.Size=UDim2.new(1,-80,0,40)
 local close=button(panel,'×',function() page=nil; panel.Visible=false; forgeButton.Visible=true end)
 close.Size=UDim2.fromOffset(44,38); close.Position=UDim2.new(1,-54,0,10)
@@ -81,7 +82,7 @@ local function itemName(w) return C.Weapons[w.Blueprint].Name..' • '..C.Rariti
 local function get(id) for _,w in ipairs(data.Inventory) do if w.Id==id then return w end end end
 local function show(nextPage)
  page=nextPage; selected=nil; scroller.CanvasPosition=Vector2.new(0,0); panel.Visible=true; forgeButton.Visible=false; render()
- Tween:Create(panel,TweenInfo.new(.18),{BackgroundTransparency=0}):Play()
+ panelScale.Scale=.97; Tween:Create(panelScale,TweenInfo.new(.18,Enum.EasingStyle.Quad),{Scale=1}):Play()
  if UIS.GamepadEnabled then GuiService.SelectedObject=close end
 end
 local function rackPosition()
@@ -94,7 +95,7 @@ end
 local function weaponActions(w)
  row(itemName(w),17,Color3.fromRGB(unpack(C.Rarities[w.Rarity].Color)))
  local compact=scroller.AbsoluteSize.Y<310
- if not compact then viewport(scroller,w,110) end
+ viewport(scroller,w,compact and 60 or 110)
  row(tostring(E.value(data,w))..' coins  •  '..(w.Displayed and 'On display' or 'In inventory')..(w.Locked and '  •  Locked' or ''))
  local choices=make('Frame',scroller,{Size=UDim2.new(1,0,0,48),BackgroundTransparency=1})
  make('UIListLayout',choices,{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,6)})
@@ -105,7 +106,6 @@ local function weaponActions(w)
  local display=button(choices,w.Displayed and 'STORE' or 'DISPLAY',function() send('Display',w.Id); reveal=nil; page='Inventory' end); display.Size=UDim2.new(1/3,-4,0,46)
  local keep=button(choices,'KEEP',function() reveal=nil; page=nil; panel.Visible=false; forgeButton.Visible=true end); keep.Size=UDim2.new(1/3,-4,0,46)
  button(scroller,w.Locked and 'UNLOCK WEAPON' or 'LOCK — PROTECT FROM SELL / MERGE',function() send('Lock',w.Id) end)
- if compact then viewport(scroller,w,70) end
  row('Displayed weapons earn coins over time. Keep three of one rarity for Quick Merge.',12,muted)
 end
 
@@ -177,8 +177,8 @@ local function shop()
   row(p.Benefit or ('Approximately '..p.Minutes..' minutes of current active income. Now: '..E.coinPack(data,key)..' coins.'))
   local info=prices[key]
   local available=p.Id and info and info.PriceInRobux and info.IsForSale~=false and not data.Memory
-  local copy=data.Owned[key] and 'OWNED' or available and ('BUY  •  R$ '..info.PriceInRobux) or 'UNAVAILABLE — NOT CONFIGURED'
-  button(scroller,copy,function() if available and not data.Owned[key] then send('PurchasePrompt',key) else notify('This purchase is unavailable. Keep playing for free.') end end,available and not data.Owned[key])
+  local copy=data.Owned[key] and 'OWNED' or available and ('BUY  •  R$ '..info.PriceInRobux) or 'CURRENTLY UNAVAILABLE'
+  button(scroller,copy,function() if available and not data.Owned[key] then send('PurchasePrompt',key) else notify('This purchase is currently unavailable. Keep playing for free.') end end,available and not data.Owned[key])
  end
 end
 local function settings()
@@ -193,7 +193,7 @@ end
 render=function()
  if not data or not page then return end
  clear()
- title.Text=page=='Reveal' and 'FRESH FROM THE FORGE' or string.upper(page)
+ title.Text=page=='Reveal' and 'FRESH FROM THE FORGE' or page=='PrestigeConfirm' and 'CONFIRM PRESTIGE' or string.upper(page)
  if page=='Inventory' then inventory()
  elseif page=='Collection' then collection()
  elseif page=='Upgrades' then upgrades()
@@ -275,7 +275,7 @@ state.OnClientEvent:Connect(function(snapshot,event,result)
  elseif event=='hammer' then impact(false)
  elseif event=='reveal' then
   forgeRunning=false; forgeBar.Size=UDim2.new(0,0,0,4); forgeButton.Text='⚒  FORGE ANOTHER WEAPON'
-  reveal=result; ForgeVisual.reveal(rackPosition(),result); impact(result.Rarity>=4); Effects.sound(result.Rarity>=5 and 'legendary_reveal' or 'rarity_reveal')
+  Effects.sound('quench'); reveal=result; ForgeVisual.reveal(rackPosition(),result); impact(result.Rarity>=4); Effects.sound(result.Rarity>=5 and 'legendary_reveal' or 'rarity_reveal')
   if not data.Settings.AutoForge then show('Reveal') else notify(itemName(result)..'  •  Added to inventory') end
  elseif event=='merge_preview' then token=result.Token; mergeItems=result.Ids; mergeRarity=result.Rarity; show('Merge')
  elseif event=='prestige_preview' then prestigeToken=result; show('Prestige')

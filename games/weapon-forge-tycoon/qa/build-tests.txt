@@ -1,0 +1,4 @@
+PASS 14 Luau sources compile (official CLI 0.742)
+PASS release excludes NativeQA
+PASS release/QA gameplay sources identical (only QA mode prefix and test script differ)
+PASS source fingerprints match
