@@ -20,7 +20,7 @@ return {
 		Techniques = {
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
-			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Two seals planted at once • a hit seals the body" },
+			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
 			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
 			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },

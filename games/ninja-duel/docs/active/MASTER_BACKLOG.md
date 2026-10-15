@@ -25,7 +25,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## QA-001 — Baseline Studio du HEAD actuel, 16 matchups et manette
 
-- status: OPEN
+- status: BLOCKED
 - priority: P0
 - dependencies: QA-002, QA-003
 - subsystem: qa
@@ -33,7 +33,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Baseline Studio du HEAD actuel, 16 matchups et manette
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
 - validation: Artefact exact/hashes ; quatre joueurs × quatre IA ; contrôles, transitions, camera, reset/rematch ; résultat natif distinct du feel
-- evidence: Native final PENDING ; anciens reports non transférables
+- evidence: 2026-10-16 : cause — la session Claude n’a aucun pilotage de Studio (pas d’outil de contrôle d’écran ; StudioMCP.exe n’expose aucun outil tant que « Enable Studio as MCP server » est désactivé dans Studio). Condition de sortie : activer cette option (Claude exécute alors NativeQA, le mode Play et les mesures) ou faire tester à la main la checklist du journal 2026-10-16. Artefacts à valider : NinjaDuel `232601a4…`, QA `f26a0bdd…`. Native final PENDING ; anciens reports non transférables
 - outcome: PENDING
 
 ## QA-002 — Contrats headless existants
@@ -45,8 +45,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - character: ALL
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
-- validation: 15 suites /161 cas passent sur sources actuelles
-- evidence: tests/run.sh : 161 PASS (2026-10-16 : Input.spec par DEC-011, +2 cas saut/atterrissage, +6 cas audit combat/défense dans Regression) ; ne valide pas feel
+- validation: 15 suites /162 cas passent sur sources actuelles
+- evidence: tests/run.sh : 162 PASS (2026-10-16 : Input.spec par DEC-011, Regression +9 cas saut, audit combat/défense et cues manette) ; ne valide pas feel
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -436,7 +436,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Awake modifie des règles et respecte la jeunesse
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Deux modifications de règles compréhensibles proposées/testées par kit ; labels lore ; pas boost statistique seul
-- evidence: Awake et fenêtres existantes ; research adulte filtrée, qualité à auditer
+- evidence: Awake et fenêtres existantes ; 2026-10-16 fiches : les quatre éveils sont surtout des multiplicateurs (Minato : stats + cooldowns ×0,4 ; Itachi : fenêtres ×1,5 ; Neji : sans angle mort + drain ×1,8 ; Sasuke : stats + perte de PV) ; une proposition d’éveil « à règle » par fiche, non implémentée
 - outcome: PENDING
 
 ## CHR-MIN-001 — Marques FTG et angles techniques
@@ -501,7 +501,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Identité jeune, grip kunai, transfert et vitesse
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Entrée/sortie main/FTG visibles ; rapidité corporelle lisible, pas costume Hokage ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: Code et profils existent ; 2026-10-16 fiche : signature « géométrie préparée » (jusqu’à 4 destinations : 2 sceaux plantés 12 s, 1 corporel, 1 kunai en vol) ; candidat P1 recadrage jeune des noms/visuels (décision utilisateur requise). Anomalie à vérifier : clip Flashstep.Heavy construit sur la stance d’Itachi ; hint MarkedBlade « Two seals planted at once » corrigé le 2026-10-16 (« Plants a seal (two held at most) »). NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## CHR-MIN-003 — Conversions Minato recherchées
@@ -514,7 +514,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Conversions Minato recherchées
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Sources jeunes + angle/marque/outil/poursuite ; juger avant ajout, pas copier kit adulte ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: 2026-10-16 fiche : candidats P4 déviation au kunai revers et P5 sortie après poursuite FTG aérienne, non implémentés (à juger en natif avant ajout)
 - outcome: PENDING
 
 ## CHR-ITA-002 — Calme, tromperie, geometry et feu
@@ -527,7 +527,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Calme, tromperie, geometry et feu
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Lecture, précision, feintes et lanes distinctes, pas spam jutsu ni costume Akatsuki ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: Code et profils existent ; 2026-10-16 fiche : signature = l’action adverse devient l’ouverture (Geometry jugée depuis le flanc, Read, punition du whiff sous Mirage, ricochet) ; manques : CounterPalm « vers un mur » annoncé dans MoveGraphs mais non codé, Fireball/Phoenix quasi identiques à ceux de Sasuke, éveil numérique. Décision âge 13 → 12 requise. NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## CHR-NEJ-002 — Personnaliser les clips hérités air/throws
@@ -540,7 +540,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Personnaliser les clips hérités air/throws
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Héritage Mirage préservé adapter ; juger paumes/rotation/pression/précision et créer variante seulement si insuffisant ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: Code et profils existent ; 2026-10-16 fiche : 7 clips hérités d’Itachi confirmés (Air1, Air2, Slam, Grab, Throw, ThrowUp, WallDive) ; PalmThrust occupe les emplacements du CounterPalm d’Itachi et CircleStep laisse une image rémanente comme FeintStep ; signature drain chakra/tenketsu + 64 Paumes scellant les techniques 3,5 s. Vacuum Palm labellisée PLAUSIBLE_YOUNG provisoire (apparition Partie 1 contre Kidōmaru à vérifier). NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## CHR-SAS-002 — Agressivité jeune et transitions mix-range
@@ -553,7 +553,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Agressivité jeune et transitions mix-range
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Lion/Flashstep hérités évalués, kicks/fil/projection/poursuite/recovery distincts et lisibles ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: Code et profils existent ; 2026-10-16 fiche : signature LionKick → ShadowLeaf (chasse gratuite) → Lion Combo, fil → Dragon Flame, Chidori 34 chakra ; manques : Heavy après 2 coups lance le Launcher générique sans ShadowLeaf, counterUntil du Sharingan sans readCounter, aucune interaction murale propre (la matrice annonce Chidori/wire au mur, absent du code), Curse Mark purement numérique. NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## CHR-CORE-001 — Quatre identités reconnaissables sans jutsu
@@ -566,7 +566,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Quatre identités reconnaissables sans jutsu
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Mouvement, garde, distance, rythme, outil, conversions distinguent quatre en duel ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## CHR-CORE-002 — Revue lore par capacité
@@ -579,7 +579,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Revue lore par capacité
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md)
 - validation: Chaque proposition/kit documente label canonical jeune/plausible/liberté/rejet adulte avec source exacte ; preuve native/lore pertinente
-- evidence: Code et profils existent ; audit visuel/lore détaillé non clôturé
+- evidence: 2026-10-16 : table « Labels lore par capacité » posée pour chaque capacité réelle des quatre kits (fiches personnage), sources canon citées ou marquées « à vérifier ». Aucun pouvoir de Partie 2 / Mangekyō dans src. Écarts code ↔ DEC-005 à trancher par l’utilisateur : noms/visuels adultes de Minato (« Flying Thunder God », kunai à trois branches, éveil « YELLOW FLASH », Rasengan / FlashRasengan / RasenganDrop = REJECT_ADULT_ONLY en l’état) ; Itachi `Age = 13` (âge du Mangekyō) et imagerie corbeaux ; Curse Mark niveau 2 non présent (exclusion à confirmer). Statut PARTIAL tant que ces décisions et la vérification des sources ne sont pas faites
 - outcome: PENDING
 
 ## CHR-EXT-001 — Activer Gaara uniquement sur décision explicite
@@ -618,7 +618,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Échelle utile et exploitation murs/cover
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Course/range/time de réentrée, fil/teleport/projectiles, wallcarry/pin/bounce et tech utiles ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; acceptation humaine finale absente. 2026-10-16 : non modifié volontairement — la spec exige d’observer le stade actuel en Studio avant tout changement d’échelle/murs ; à reprendre après QA-001
 - outcome: PENDING
 
 ## ARENA-002 — Tournoi jeune et présentation légère
@@ -644,7 +644,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Espace vertical et lignes de vue
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Bornes, heights/LOS/angles/obstacles influencent combat sans bloquer mouvements ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; acceptation humaine finale absente. 2026-10-16 : non modifié (observation native requise avant changement) ; à reprendre après QA-001
 - outcome: PENDING
 
 ## CAM-001 — Continuité camera et swap
@@ -709,7 +709,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Grammaire simple, tutoriel et choix contextuels
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Toutes routes apprenables et cohérentes keyboard/manette, aucun input conflict ; native avant/après
-- evidence: Mécanismes existent ; acceptation humaine finale absente
+- evidence: Mécanismes existent ; 2026-10-16 : à la manette, les cues affichées traduisent les touches clavier en boutons (E → ×, SPACE → ×, C → R1 + L1, X → D-pad →, 1 → R1 + ×, labels issus de Controls) ; les cues WIRED/BOUND (comment s’échapper du fil/sable, utiliser Dragon Flame) sont désormais affichées. TECHNICAL PASS (Regression) ; NATIVE_STUDIO PENDING
 - outcome: PENDING
 
 ## UX-002 — Mobile, rebinding et accessibilité

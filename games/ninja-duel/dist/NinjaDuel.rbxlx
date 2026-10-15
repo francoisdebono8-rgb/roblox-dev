@@ -354,7 +354,7 @@ return Controls
 		Techniques = {
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
-			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Two seals planted at once • a hit seals the body" },
+			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
 			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
 			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">acb3286e8acfe4cdd5bd71d03761fdf0a02dd7f01cbadba53032d8c645389d35</string>
+          <string name="Value">c65a0a7f5d1677e0c0c8ffcefed129504522dda5ee92aa609f15218eba253ccc</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -9288,6 +9288,15 @@ local function subtitle(actor)
 	if not def then return "" end
 	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
+-- Server cues name keyboard keys; a pad player reads the pad button instead
+-- (labels from Controls, so the copy cannot drift from the bindings).
+function UI.padCue(cue)
+	local P=Controls.PadLabel
+	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
+	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
+	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	return cue
+end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
@@ -9378,6 +9387,9 @@ function UI:render(data)
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
 		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
+		-- Caught in wire or sand: the way out must be on screen.
+		or cue:find("WIRED") or cue:find("BOUND")
+	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do

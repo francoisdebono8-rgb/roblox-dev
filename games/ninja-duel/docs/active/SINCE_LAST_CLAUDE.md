@@ -91,3 +91,19 @@ Méthode : audit de code en lecture seule (sous-agent), puis vérification de ch
 Différé avec protocole (COM-004) : Motor.move intègre la position et pose la vélocité alors que le solveur Studio tourne (Rush/Pursuit/ShadowLeaf/WallDive possiblement ×2). Ne pas corriger sans mesure Studio (chronométrer un Rush contre gap/90). Constats mineurs consignés (DEF-001, COM-003) : gap anti-cheat Dodge > fenêtre de wall tech ; perfect dodge d’Itachi éveillé borné par les i-frames ; coup Stunned sans pose de recul ; SHIELD_BREAKERS appliqué aux projectiles (Gaara, caché).
 
 Preuves TECHNICAL : 15 suites / 161 cas PASS ; builds normal `bfac3d5e56aba8f3e9c04d3803a3171c607bac28fb4ca9aa7c16cbf4e982e18f`, debug `cc6636f2762b0b450eb304516ee937987e0184f1236d0590f3f80b96673c7baf`, QA `252c7a3f42b73357345afb0afd7facd1b4c51dc9ec1a35100da25c99664ddb57` ; isolation, architecture, docs, Lab 45 PASS. NATIVE_STUDIO et HUMAN_VISUAL PENDING.
+
+### Bloc 4 — identités CORE4 (DONE documentaire, décisions en attente)
+
+Fiches FIGHTER_TEMPLATE complètes (16 sections + différenciation + labels lore par capacité + 5 propositions chacune, non implémentées) ajoutées à MINATO.md, ITACHI.md, NEJI.md, SASUKE.md, rédigées à partir du code réel puis relues. Constats transverses : Sasuke hérite de 12 clips de Minato et Neji de 7 clips d’Itachi (CHR-CORE-001) ; `GuardStrength`/`CombatStyle` jamais lus ; les quatre éveils sont surtout numériques (SYS-003). Aucun pouvoir de Partie 2 dans `src`. Correction de texte : hint MarkedBlade. **Décisions utilisateur requises (CHR-CORE-002, DEC-005)** : recadrer ou garder les noms/visuels adultes de Minato (Flying Thunder God, kunai à trois branches, YELLOW FLASH, Rasengan) ; Itachi `Age = 13` → 12 ; exclusion du Curse Mark niveau 2. Sources canon marquées « à vérifier » non confirmées.
+
+### Bloc 5 — arène et présentation (PARTIAL)
+
+UX-001 : cues traduites en boutons manette (labels Controls), cues WIRED/BOUND affichées (+1 cas Regression). CAM-001/FX-001/FX-002 traités au bloc 3. ARENA-001/003 volontairement non modifiés : la spec exige l’observation du stade en Studio avant changement.
+
+### Bloc 6 — validation (TECHNICAL PASS, NATIVE BLOCKED)
+
+15 suites / 162 cas PASS ; builds normal `232601a44ec049f02c50b77cf4e8b9cbd77f773dab235d70e8f3fed6c4407189`, debug `e422a5aa98203b4a54fffd1ebda61863eca30e209537a437343c0252c3c7fa19`, QA `f26a0bdd4cff62d2dfd8ee4a78b07fc3764d58b50de4813b9ac537b16efee59b` ; isolation 4 OK ; architecture PASS ; docs + self-test PASS ; Lab 45 PASS. QA-001 BLOCKED (voir backlog). Rien n’est poussé sur GitHub sans accord.
+
+Checklist native (même artefact, avant/après si possible) : 1) Play, saut sur place / en course / en sprint : arc ≈12 studs et ≈0,8 s, pas de bridage de vitesse à l’atterrissage ; chute de 25+ studs = atterrissage lourd. 2) Sprint en ligne droite puis virage : sensation nettement plus rapide que la course, caméra confortable. 3) Slam aérien raté et Rasengan Drop : plongée franche, pas de flottement. 4) Tenir F pendant un enchaînement subi : la garde revient seule. 5) Garde au bon moment contre un kunai : déviation, le lanceur n’est pas étourdi. 6) Basculer le verrouillage (Shift / R3) : la caméra ne pivote pas. 7) Sasuke éveillé : pas de tremblement ni de « -0 » en continu. 8) Un seul son par coup ; aucun son de coup sur un lancement de jutsu. 9) Round 2 : usure remise à zéro. 10) À la manette : cues avec boutons. 11) Mesure Rush : temps d’arrivée vs distance/90 (COM-004).
+
+Prochaine action : lever QA-001 (option MCP de Studio ou test humain), puis trancher les décisions CHR-CORE-002, puis reprendre ARENA-001/003, CHR-SAS-002/CHR-NEJ-002 (clips hérités) et SYS-003 avec preuve native.

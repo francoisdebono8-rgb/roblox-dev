@@ -256,6 +256,15 @@ local function subtitle(actor)
 	if not def then return "" end
 	return string.format("AGE %d  •  %s",def.Age or 13,def.Title or "")
 end
+-- Server cues name keyboard keys; a pad player reads the pad button instead
+-- (labels from Controls, so the copy cannot drift from the bindings).
+function UI.padCue(cue)
+	local P=Controls.PadLabel
+	cue=cue:gsub("SPACE REBOUND",P.Jump.." REBOUND"):gsub("C DETACH",P.WallDetach.." DETACH")
+	cue=cue:gsub("• E ","• "..P.Pursuit.." "):gsub("X TO ESCAPE",P.Substitute.." TO ESCAPE")
+	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
+	return cue
+end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
@@ -346,6 +355,9 @@ function UI:render(data)
 		or cue:find("CLASH") or cue:find("SUBSTITUTION •") or cue:find("SEAL") or cue:find("COMBO LIMIT") or cue:find("GENJUTSU")
 		or cue:find("PALMS") or cue:find("ROTATION") or cue:find("BYAKUGAN") or cue:find("SHARINGAN")
 		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
+		-- Caught in wire or sand: the way out must be on screen.
+		or cue:find("WIRED") or cue:find("BOUND")
+	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
 	for i,tech in h.techniques do

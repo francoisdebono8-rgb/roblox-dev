@@ -422,4 +422,18 @@ test("throwing from a raised guard lowers it",function()
  assert(c:request(a,"Tool"),"tool refused from guard")
  assert(a.state~="Guarding" and not a.guardHeld,"a blade was thrown from a full guard")
 end)
+test("a pad player reads pad buttons in on-screen cues",function()
+ local UI=H.load("Client/UI")
+ local Controls=H.load("Shared/Controls")
+ local P=Controls.PadLabel
+ for cue,want in {
+  ["WALL BOUNCE • E TO PURSUE"]="WALL BOUNCE • "..P.Pursuit.." TO PURSUE",
+  ["WALL SPLAT • E PURSUE • HEAVY BOUNCE"]="WALL SPLAT • "..P.Pursuit.." PURSUE • HEAVY BOUNCE",
+  ["WALL RUN • SPACE REBOUND / C DETACH"]="WALL RUN • "..P.Jump.." REBOUND / "..P.WallDetach.." DETACH",
+  ["WIRED • X TO ESCAPE"]="WIRED • "..P.Substitute.." TO ESCAPE",
+  ["WIRED • 1 = DRAGON FLAME"]="WIRED • "..Controls.TechniquePad[1].." = DRAGON FLAME",
+ } do
+  assert(UI.padCue(cue)==want,cue.." -> "..UI.padCue(cue))
+ end
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))
