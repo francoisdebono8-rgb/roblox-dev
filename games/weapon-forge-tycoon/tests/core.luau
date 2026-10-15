@@ -1,0 +1,26 @@
+local C=require('../src/Shared/Config')
+local P=require('../src/Shared/Profile')
+local E=require('../src/Shared/Economy')
+local A=require('../src/Shared/Actions')
+local count=0
+local function test(name,fn) local ok,err=pcall(fn); if not ok then error(name..': '..tostring(err)) end; count+=1; print('PASS '..name) end
+local function weapon(id,r,locked,displayed) return {Id=id,Blueprint=1,Rarity=r or 1,Mutation=1,Locked=locked or false,Displayed=displayed or false} end
+local function fresh() return P.new(1000) end
+for name,list in pairs({rarities=C.Rarities,mutations=C.Mutations}) do test(name..' probability config',function() local sum=0; for _,v in ipairs(list) do assert(v.Weight>=0 and v.Multiplier>=1); sum+=v.Weight end; assert(math.abs(sum-100)<.0001) end) end
+test('nonnegative economy and insufficient funds',function() local d=fresh(); assert(not A.upgrade(d,'Value')); assert(not A.zone(d)); assert(d.Coins==0); A.credit(d,-10); assert(d.Coins==0) end)
+test('double sell and locked/displayed protection',function() local d=fresh(); d.Inventory={weapon('a'),weapon('b',1,true),weapon('c',1,false,true)}; assert(A.sell(d,'a')); assert(not A.sell(d,'a')); assert(not A.sell(d,'b')); assert(not A.sell(d,'c')); assert(d.Coins==14) end)
+test('merge consumes once and preserves first mutation',function() local d=fresh(); d.Inventory={weapon('a'),weapon('b'),weapon('c')}; d.Inventory[1].Mutation=5; assert(A.merge(d,{'a','b','c'},'d')); assert(#d.Inventory==1 and d.Inventory[1].Rarity==2 and d.Inventory[1].Mutation==5); assert(not A.merge(d,{'a','b','c'},'e')) end)
+test('merge locked displayed duplicates and wrong rarity rejected',function() for _,mode in ipairs({'Locked','Displayed','Rarity'}) do local d=fresh(); d.Inventory={weapon('a'),weapon('b'),weapon('c')}; d.Inventory[2][mode]=mode=='Rarity' and 2 or true; assert(not A.merge(d,{'a','b','c'},'d')); assert(#d.Inventory==3) end; local d=fresh(); d.Inventory={weapon('a')}; assert(not A.merge(d,{'a','a','a'},'b')) end)
+test('cooldown and hammer limit',function() local d=fresh(); assert(A.forge(d,0,math.random,'a')); assert(not A.forge(d,1,math.random,'b')); assert(not A.finish(d,1,math.random)); assert(A.hammer(d,1)); assert(not A.hammer(d,1)); assert(A.hammer(d,2)); assert(A.hammer(d,3)); assert(not A.hammer(d,4)); assert(A.finish(d,8,math.random)); assert(#d.Inventory==1); assert(not A.finish(d,9,math.random)) end)
+test('upgrade maximum',function() local d=fresh(); d.Coins=1e10; for _=1,C.Upgrades.Speed.Max do assert(A.upgrade(d,'Speed')) end; local n=d.Coins; assert(not A.upgrade(d,'Speed')); assert(d.Coins==n) end)
+test('zone unlock only once per tier',function() local d=fresh(); d.Coins=27500; assert(A.zone(d)); assert(d.Coins==25000 and d.Zone==2); assert(A.zone(d)); assert(d.Coins==0 and d.Zone==3); assert(not A.zone(d)) end)
+test('prestige resets documented fields only',function() local d=fresh(); d.Coins=150000; d.Zone=3; d.Collection['1']=true; d.Inventory={weapon('a')}; d.Owned.Starter=true; d.Stats.Forged=7; d.Upgrades.Speed=4; d.Receipts.x=true; assert(A.prestige(d)); assert(d.Coins==0 and d.Zone==1 and #d.Inventory==0 and d.Upgrades.Speed==0); assert(d.Prestige==1 and d.Collection['1'] and d.Owned.Starter and d.Stats.Forged==7 and d.Receipts.x) end)
+test('receipt idempotency',function() local d=fresh(); assert(A.receipt(d,'receipt','Small')); local n=d.Coins; assert(A.receipt(d,'receipt','Small')); assert(d.Coins==n); assert(not A.receipt(d,'bad','Missing')) end)
+test('load round trip and old schema migration',function() local d=fresh(); d.Coins=133; d.Inventory={weapon('a')}; d.Collection['1']=true; d.Receipts.a=true; local next=P.load(d,2000); assert(next.Coins==133 and #next.Inventory==1 and next.Receipts.a); local old=P.load({Coins=12},2000); assert(old.Schema==C.Schema and old.Coins==12 and old.Upgrades.Speed==0); assert(not pcall(P.load,{Schema=100},2000)) end)
+test('corrupt input sanitation and duplicate IDs',function() local d=P.load({Coins=0/0,Inventory={weapon('a'),weapon('a'),{Id='bad',Blueprint=-1}}},1000); assert(d.Coins==0 and #d.Inventory==1) end)
+test('offline cap and clock reversal',function() local d=fresh(); d.Inventory={weapon('a',6,false,true)}; assert(E.offline(d,999999)==math.floor(E.income(d)*7200)); assert(E.offline(d,100)==0) end)
+test('pass benefit applied once',function() local d=fresh(); assert(A.pass(d,'Starter',1000)); local n=d.Coins; assert(A.pass(d,'Starter',2000)); assert(d.Coins==n and d.LuckUntil==1600); A.pass(d,'DisplaySlots',1000); A.pass(d,'DisplaySlots',1000); assert(E.slots(d)==6) end)
+test('nil product IDs safe and coin pack capped',function() local d=fresh(); for _,p in pairs(C.Monetization) do assert(p.Id==nil) end; d.Prestige=100000; assert(E.coinPack(d,'Small')==C.Monetization.Small.Cap) end)
+test('rack capacity and no merge of rack weapons',function() local d=fresh(); for i=1,5 do table.insert(d.Inventory,weapon(tostring(i))) end; for i=1,4 do assert(A.display(d,tostring(i))) end; assert(not A.display(d,'5')); assert(not A.mergePreview(d)); assert(A.display(d,'1')); assert(A.display(d,'5')) end)
+test('inventory cap',function() local d=fresh(); for i=1,E.capacity(d) do table.insert(d.Inventory,weapon(tostring(i))) end; assert(not A.forge(d,0,math.random,'overflow')) end)
+print('ALL '..count..' CORE TESTS PASSED')
