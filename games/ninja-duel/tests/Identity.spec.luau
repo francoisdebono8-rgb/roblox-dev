@@ -719,9 +719,10 @@ local function inScene(run)
  local instance,restore=H.stubScene()
  local ok,err=pcall(function()
   local FX=H.load("Client/Effects")
-  local IdentityFX=H.load("Client/IdentityFX")
+  -- (pcall: on a tree without the identity layer the cues are simply missing.)
+  local layered,IdentityFX=pcall(H.load,"Client/IdentityFX")
   local clock=50
-  IdentityFX.clock=function() return clock end
+  if layered then IdentityFX.clock=function() return clock end end
   local fx=FX.new()
   local folder=instance("Folder")
   local bodies={}
@@ -865,6 +866,162 @@ test("HUD · closed points read on both plates, their cost dims the chakra bar, 
  end)
  H.envBase.Instance=saved
  assert(ok,err)
+end)
+
+-- Minato (server) ----------------------------------------------------------------
+local function launchAndFlash(c,a,b)
+ place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+ for hit=1,2 do assert(c:request(a,"Attack"));assert(chainOpen(c,a),"string broke at hit "..hit) end
+ a.intentOverride={"forward",0}
+ assert(c:request(a,"Attack"))
+ a.intentOverride=nil
+ assert(a.attackName=="Launcher","not the rising kick ("..tostring(a.attackName)..")")
+ until_(c,.5,function() return b.reaction=="Launched" end,"the rising kick did not launch")
+ assert(#bodySeals(a,b)==1,"the rising kick left no seal on the body")
+ local flashed=false
+ for _=1,80 do H.step(c,.01);if c:request(a,"Technique2") then flashed=true;break end end
+ assert(flashed,"no Flying Thunder God onto the sealed body")
+ until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no arrival")
+end
+test("Minato · combo -> relocation -> combo: the rising kick's seal takes him to the body and the arrival strike carries the chain on",function()
+ local c,a,b,match=H.duel("Flashstep","Mirage")
+ launchAndFlash(c,a,b)
+ local hits=b.comboHits
+ assert(hits>=3 and b.reaction=="Launched","setup: the body should still be in the combo ("..hits..")")
+ local serial=c.impactSerial
+ assert(c:request(a,"Attack"))
+ assert(a.attackName=="Air1","the arrival strike in the air is "..tostring(a.attackName))
+ until_(c,.4,function() return (b.comboHits or 0)>hits end,"the arrival strike did not land")
+ local link
+ for _,impact in impactsSince(c,serial) do if impact.arrival then link=impact end end
+ assert(link and link.move=="Air1" and link.owner==a.id and link.victim==b.id,"the arrival strike's contact does not say the chain went on")
+ assert(ev(a,"FlashChain")==1,"no chain event")
+ local said=false
+ for _,cue in match.cues do if cue.actor==a.id and cue.message:find("CHAIN GOES ON",1,true) then said=true end end
+ assert(said,"the player is not told the chain went on")
+ -- An arrival strike that opens a fresh exchange is no chain.
+ local c2,x,y=H.duel("Flashstep","Mirage")
+ place(c2,x,y,V.new(0,3,0),V.new(0,3,-14))
+ Techniques.plant(c2,x,y.root.Position,V.yAxis,y)
+ assert(c2:request(x,"Technique2"))
+ until_(c2,.3,function() return (x.flashUntil or 0)>c2.now end,"no arrival")
+ assert(c2:request(x,"Attack"))
+ until_(c2,.4,function() return y.health<y.def.Health end,"the arrival strike did not land")
+ assert(ev(x,"FlashChain")==0,"a fresh exchange was called a chain")
+end)
+
+test("Minato · the Rasengan contact names itself (the client grinds it into the body)",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ place(c,a,b,V.new(0,3,4),V.new(0,3,-4))
+ local serial=c.impactSerial
+ assert(c:request(a,slot(a,"BurstStrike"),b.root.Position),"Rasengan refused")
+ until_(c,1,function() return b.health<b.def.Health end,"the Rasengan never landed")
+ local grind
+ for _,impact in impactsSince(c,serial) do if impact.variant=="Rasengan" and impact.victim==b.id then grind=impact end end
+ assert(grind and grind.owner==a.id and grind.fighter=="Flashstep","the Rasengan contact does not say it was the Rasengan")
+end)
+
+-- Minato (client) ----------------------------------------------------------------
+test("client · Minato's seals read apart: a beacon over a planted kunai, a formula on the floor (no kunai) where Yellow Flash left, a ring round a sealed body",function()
+ inScene(function(fx,folder,bodies)
+  local minato=actorData("A","Flashstep",{seals={
+   {id=1,surface=V.new(10,0,0),normal=V.yAxis,remaining=8},
+   {id=2,surface=V.new(-10,0,0),normal=V.yAxis,remaining=8,wake=true},
+   {id=3,surface=V.new(0,3,-3),normal=V.yAxis,remaining=4,body="B"}}})
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=minato,bot=actorData("B","Mirage")}
+  fx:update(data,1/60,folder)
+  local marks=named(fx,"SealMark")
+  assert(#marks==3,"three seals, "..#marks.." marks")
+  assert(#named(fx,"SealBeacon")==1,"the planted kunai has no beacon")
+  assert(fx.seals["A:1"].model~=nil,"the planted seal lost its kunai")
+  assert(fx.seals["A:2"].model==nil,"a return seal is drawn as a thrown kunai")
+  -- The body ring surrounds the torso: parts in front of it and behind it.
+  local torso=bodies.B:FindFirstChild("UpperTorso").Position
+  local front,behind=0,0
+  for _,mark in marks do
+   local parts=mark:GetChildren()
+   if #parts==11 then
+    for _,p in parts do
+     local d=p.Position-torso
+     assert(V.new(d.X,0,d.Z).Magnitude>1.1,"a ring part sits inside the body")
+     if d.Z>.3 then front+=1 elseif d.Z<-.3 then behind+=1 end
+    end
+   end
+  end
+  assert(front>0 and behind>0,"the body mark cannot be seen from both sides ("..front.." front, "..behind.." behind)")
+  -- Seals that end take their marks with them.
+  minato.seals={}
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"SealMark")==0,"a spent seal kept its mark")
+ end)
+end)
+test("client · Minato: the arrival window rings under him and closes; Yellow Flash draws the thread back to his return seal",function()
+ inScene(function(fx,folder,bodies,advance)
+  local minato=actorData("A","Flashstep",{flash=true})
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=minato,bot=actorData("B","Mirage")}
+  fx:update(data,1/60,folder)
+  local ring=named(fx,"ArrivalWindow")[1]
+  assert(ring,"no arrival window ring")
+  local first=ring.Size.Y
+  advance(.3);fx:update(data,1/60,folder)
+  assert(ring.Size.Y<first-1,"the arrival ring does not close with the window")
+  minato.flash=false;fx:update(data,1/60,folder)
+  assert(#named(fx,"ArrivalWindow")==0,"the ring outlived the window")
+  -- Awakened with a return seal: the thread; not awakened: none.
+  minato.awaken=6;minato.seals={{id=4,surface=V.new(-12,0,0),normal=V.yAxis,remaining=11,wake=true}}
+  fx:update(data,1/60,folder)
+  assert(bodies.A:FindFirstChild("UpperTorso"):FindFirstChild("ReturnThread"),"no thread from Yellow Flash to its return seal")
+  assert(#named(fx,"ReturnThread")==1,"the thread is not drawn")
+  minato.awaken=0;fx:update(data,1/60,folder)
+  assert(bodies.A:FindFirstChild("UpperTorso"):FindFirstChild("ReturnThread")==nil and #named(fx,"ReturnThread")==0,"the thread outlived the awakening")
+ end)
+end)
+test("client · an arrival strike that carries the chain links in gold; a Rasengan grinds where it lands",function()
+ inScene(function(fx,folder)
+  fx:impact({style="light",position=V.new(0,3,-3),owner="A",victim="B",fighter="Flashstep",move="Air1",arrival=true,serial=1},folder)
+  assert(#named(fx,"ChainLink")==1,"no gold link for the chain carried through the jump")
+  fx:impact({style="light",position=V.new(0,3,-3),owner="A",victim="B",fighter="Flashstep",move="Light1",serial=2},folder)
+  assert(#named(fx,"ChainLink")==1,"a plain strike drew a chain link")
+  fx:impact({style="finisher",position=V.new(0,3,-3),owner="A",victim="B",fighter="Flashstep",move="DashAttack",variant="Rasengan",serial=3},folder)
+  local grind=named(fx,"RasenganGrind")
+  assert(#grind==1 and #grind[1]:GetChildren()==3,"the Rasengan does not grind where it lands")
+ end)
+end)
+local function hudScene(run)
+ H.envBase.UDim2=H.roblox.UDim2
+ H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
+ H.workspace.GetAttribute=function() return nil end
+ local baseNew=H.envBase.Instance.new
+ local saved=H.envBase.Instance
+ H.envBase.Instance={new=function(class) local x=baseNew(class);x.Activated={Connect=function() end};return x end}
+ local ok,err=pcall(function()
+  local UI=H.load("Client/UI")
+  run(UI.new(baseNew("PlayerGui"),function() end),UI)
+ end)
+ H.envBase.Instance=saved
+ if not ok then error(tostring(err),0) end
+end
+local function plate(fighterId,extra)
+ local def=H.fighters[fighterId]
+ local techniques={}
+ for _,spec in def.Techniques do table.insert(techniques,{id=spec.Id,name=spec.Name,cost=spec.Cost,remaining=0,condition=true}) end
+ local data={id=fighterId,fighterId=fighterId,health=def.Health,maxHealth=def.Health,chakra=100,maxChakra=def.Chakra,stamina=100,state="Neutral",subCharges=2,subRegen=0,
+  cue="",dodge=0,pursuit=0,counter=0,seals={},techniques=techniques,tenketsuPoints={},chakraRegen=1,sealed=0,awaken=0}
+ for k,v in extra or {} do data[k]=v end
+ return data
+end
+local function duelView(h,b) return {phase="Duel",epoch=1,intro=0,round=1,roundsToWin=2,wins={human=0,bot=0},human=h,bot=b} end
+test("HUD · Minato: after a jump the arrival strike and the Rasengan are prompted; Yellow Flash says what it changes and how long it lasts",function()
+ hudScene(function(ui)
+  local me=plate("Flashstep",{flash=true})
+  ui:render(duelView(me,plate("Mirage")))
+  assert(ui.hint.Text:find("ARRIVAL STRIKE",1,true) and ui.hint.Text:find("3 — RASENGAN",1,true),"the arrival is not prompted ("..ui.hint.Text..")")
+  me.flash=false;me.awaken=7.25
+  ui:render(duelView(me,plate("Mirage")))
+  assert(not ui.hint.Text:find("ARRIVAL",1,true),"the arrival prompt outlived the window")
+  assert(ui.hp.awake.Text:find("YELLOW FLASH  7.2",1,true) and ui.hp.awake.Text:find("RETURN SEAL",1,true),"the awakening does not say what it changes ("..ui.hp.awake.Text..")")
+  assert(ui.enemy.awake.Text=="","an unawakened opponent shows an awakening")
+ end)
 end)
 
 print("NinjaDuel identity pass: "..passed.." PASS")

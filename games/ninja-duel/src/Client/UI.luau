@@ -200,7 +200,11 @@ function UI.new(parent,send)
 			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
 			corner(m,7);table.insert(medals,m)
 		end
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0}
+		-- The awakening while it burns: its name, the time left and what it
+		-- changes in the fight (UI.awakening), under the plate.
+		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
+		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -378,6 +382,44 @@ function UI.network(widget,actor,foe)
 	local regen=math.clamp(actor.chakraRegen or 1,0,1)
 	widget.chakra.BackgroundColor3=if regen<1 then palette.blue:Lerp(Color3.fromRGB(112,118,138),math.min(1,(1-regen)*1.4)) else palette.blue
 end
+-- What each CORE4 awakening changes in the fight, said while it burns (a
+-- fighter without a line here shows its name and time only).
+local AWAKENED={
+	Flashstep="EACH JUMP LEAVES A RETURN SEAL  •  FLASH ONTO A LAUNCHED BODY",
+	GentleFist="NO BLIND SPOT  •  ONE PALM CLOSES TWO POINTS",
+	Mirage="HIS GUARD READS  •  A MISS NEAR HIM IS READ",
+	Lion="KICKS DO NOT LET GO  •  LAUNCHERS BECOME THE DANCING LEAF",
+}
+UI.AWAKENED=AWAKENED
+function UI.awakening(actor)
+	if (actor.awaken or 0)<=0 or (actor.health or 1)<=0 then return "" end
+	local def=Fighters[actor.fighterId]
+	local name=def and def.Awakening and def.Awakening.Name or "AWAKENED"
+	local line=string.format("%s  %.1fs",name,actor.awaken)
+	if actor.curseHunger then return line.."  •  HUNGRY: LAND A BLOW" end
+	return if AWAKENED[actor.fighterId] then line.."  •  "..AWAKENED[actor.fighterId] else line
+end
+-- Contextual prompts for a conversion that is open right now (nil: none):
+-- after a teleport the arrival strike or Rasengan, after the Dancing Leaf the
+-- air finisher.
+function UI.conversion(h,pad)
+	local light=if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light
+	local heavy=if pad then Controls.PadLabel.Heavy else Controls.KeyLabel.Heavy
+	if h.flash then
+		local line=light.." — ARRIVAL STRIKE  •  "..heavy.." — LAUNCH"
+		for i,tech in h.techniques or {} do
+			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra>=tech.cost and (h.sealed or 0)<=0 then
+				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"
+			end
+		end
+		return line
+	end
+	if (h.lion or 0)>0 and h.airborne then
+		local finisher=(MoveGraphs[h.fighterId] or {}).airFinisher
+		return heavy.." — "..(if finisher then finisher.cue else "LION COMBO")
+	end
+	return nil
+end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
@@ -433,6 +475,9 @@ function UI:render(data)
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.
 		UI.network(widget,actor,if actor==h then b else h)
+		widget.awake.Text=UI.awakening(actor)
+		local tone=Fighters[actor.fighterId] and Fighters[actor.fighterId].Awakening and Fighters[actor.fighterId].Awakening.Color
+		widget.awake.TextColor3=if tone then Color3.fromRGB(table.unpack(tone)) else palette.gold
 		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   JUTSU SEALED %.1fs",actor.sealed)
 		elseif (actor.chakraRegen or 1)<1 then widget.status.Text..=string.format("   •   CHAKRA REGEN -%d%%%s",math.floor((1-actor.chakraRegen)*100+.5),if actor.tenketsuSevere then "  •  NETWORK SEALED" else "") end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
@@ -497,7 +542,9 @@ function UI:render(data)
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
+	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)>0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")

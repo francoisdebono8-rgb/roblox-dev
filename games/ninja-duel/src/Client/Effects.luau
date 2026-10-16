@@ -1253,12 +1253,16 @@ function FX:seal(owner,actor,folder)
 			local surface=info.surface
 			local normal=info.normal or Vector3.yAxis
 			if not entry then
-				local model=FX.buildKunai(true)
-				model.Parent=self.folder
-				local into=-normal
-				local tilt=(if math.abs(normal.Y)>.7 then Vector3.xAxis else Vector3.yAxis)*.35
-				local axis=(into+tilt).Unit
-				model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				-- A Yellow Flash return seal is written where he stood: no kunai
+				-- was thrown there (IdentityFX draws its floor formula).
+				local model=if info.wake then nil else FX.buildKunai(true)
+				if model then
+					model.Parent=self.folder
+					local into=-normal
+					local tilt=(if math.abs(normal.Y)>.7 then Vector3.xAxis else Vector3.yAxis)*.35
+					local axis=(into+tilt).Unit
+					model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				end
 				local glyph=new("Model",{Name="Seal"},self.folder)
 				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
 				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8

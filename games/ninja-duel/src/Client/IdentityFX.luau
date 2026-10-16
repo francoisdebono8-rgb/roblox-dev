@@ -243,14 +243,204 @@ local function networkFrame(fx,model,actor,st)
 	end
 end
 
+-- ----------------------------------------------------------------- Minato
+local MINATO=Color3.fromRGB(255,214,92)
+local MINATO_CORE=Color3.fromRGB(255,248,214)
+local WIND=Color3.fromRGB(190,255,226)
+local RASENGAN=Color3.fromRGB(150,210,255)
+local RASENGAN_CORE=Color3.fromRGB(235,250,255)
+-- Three kinds of Flying Thunder God seal, three looks (Effects draws the kunai
+-- and its disc; this adds what tells them apart):
+--   planted kunai  a thrown marked kunai stuck in a surface: a gold beacon
+--                  stands over it, seen across the stadium;
+--   floor formula  the Yellow Flash return seal written where he stood (no
+--                  kunai): the formula drawn on the floor, white-gold, turning;
+--   body mark      a seal riding on the opponent (a marked kunai that hit, the
+--                  rising kick, a wind cut): a ring of formula round the body,
+--                  seen from the front as from the back, tightening as it expires.
+local function segmentRing(parent,count,radius,size,color)
+	local parts={}
+	for _=1,count do
+		local p=K.block(parent,size,CFrame.new(),color,Enum.Material.Neon)
+		p.Transparency=.25
+		table.insert(parts,p)
+	end
+	return parts
+end
+local function placeRing(parts,center,radius,spin,tilt)
+	for i,p in parts do
+		local a=(i-1)/#parts*math.pi*2+spin
+		p.CFrame=center*CFrame.Angles(tilt or 0,a,0)*CFrame.new(0,0,-radius)
+	end
+end
+local function buildSeal(fx,info)
+	local model=K.new("Model",{Name="SealMark"},fx.folder)
+	local look={model=model}
+	if info.body then
+		look.kind="body"
+		look.ring=segmentRing(model,8,1.6,Vector3.new(.5,.09,.07),if info.wind then WIND else MINATO)
+		look.tags=segmentRing(model,3,1.75,Vector3.new(.08,.5,.08),if info.wind then WIND else MINATO_CORE)
+	elseif info.wake then
+		look.kind="floor"
+		look.ring=segmentRing(model,16,2.5,Vector3.new(.85,.04,.12),MINATO_CORE)
+		look.strokes=segmentRing(model,8,1.5,Vector3.new(.1,.04,.7),MINATO)
+		local cross={}
+		for _,yaw in {0,math.pi/2} do
+			local p=K.block(model,Vector3.new(1.4,.04,.14),CFrame.new(),MINATO_CORE,Enum.Material.Neon);p.Transparency=.2
+			table.insert(cross,{part=p,yaw=yaw})
+		end
+		look.cross=cross
+		K.flash(fx.folder,info.surface,MINATO_CORE,.6,5,.25,.2)
+	else
+		look.kind="kunai"
+		local beam=K.block(model,Vector3.new(.14,7,.14),CFrame.new(),MINATO,Enum.Material.Neon)
+		beam.Name="SealBeacon";beam.Transparency=.6
+		look.beacon=beam
+	end
+	return look
+end
+local function stepSeal(fx,folder,look,info,clock)
+	local remaining=info.remaining or 12
+	local ending=remaining<1 and math.sin(clock*30)>0
+	if look.kind=="body" then
+		local body=folder and folder:FindFirstChild(info.body or "")
+		local torso=body and (body:FindFirstChild("UpperTorso") or rootOf(body))
+		if not torso then return end
+		-- Round the waist, turning: wherever the camera stands it crosses the body.
+		local center=CFrame.new(torso.Position-Vector3.new(0,.35,0))
+		local radius=1.25+.45*math.clamp(remaining/1.5,0,1)
+		placeRing(look.ring,center,radius,clock*2.2)
+		placeRing(look.tags,center,radius+.15,-clock*1.4)
+		for _,p in look.ring do p.Transparency=if ending then .9 else .25 end
+	elseif look.kind=="floor" then
+		local at=info.surface+(info.normal or Vector3.yAxis)*.06
+		local base=CFrame.new(at)
+		placeRing(look.ring,base,2.5,clock*.35)
+		placeRing(look.strokes,base,1.5,-clock*.6)
+		for _,c in look.cross do c.part.CFrame=base*CFrame.Angles(0,c.yaw+clock*.35,0) end
+		local glow=if ending then .9 else .2+.15*math.sin(clock*4)
+		for _,p in look.ring do p.Transparency=glow end
+	else
+		-- The beacon stands up from the kunai, whatever surface holds it.
+		local at=info.surface+(info.normal or Vector3.yAxis)*.3
+		look.beacon.CFrame=CFrame.new(at+Vector3.new(0,3.6,0))
+		look.beacon.Transparency=if ending then .95 else .55+.15*math.sin(clock*5)
+	end
+end
+local function sealFrame(fx,model,actor,clock)
+	fx.identitySeals=fx.identitySeals or {}
+	local folder=model.Parent
+	local live={}
+	for _,info in actor.seals or {} do
+		local key=tostring(actor.id)..":"..tostring(info.id)
+		live[key]=true
+		local look=fx.identitySeals[key]
+		if not look or not look.model.Parent then look=buildSeal(fx,info);fx.identitySeals[key]=look end
+		stepSeal(fx,folder,look,info,clock)
+	end
+	local prefix=tostring(actor.id)..":"
+	for key,look in fx.identitySeals do
+		if string.sub(key,1,#prefix)==prefix and not live[key] then look.model:Destroy();fx.identitySeals[key]=nil end
+	end
+end
+-- After a teleport the arrival window is open (a strike or Rasengan cancels the
+-- recovery): a gold ring under him shrinks to nothing as it closes.
+local function arrivalRing(fx,model,actor,st,clock)
+	local root=rootOf(model)
+	if actor.flash and root and (actor.health or 1)>0 then
+		if not st.arrival or not st.arrival.ring.Parent then
+			local ring=K.block(fx.folder,Vector3.new(.06,5,5),CFrame.new(),MINATO,Enum.Material.Neon)
+			ring.Name="ArrivalWindow";ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.35
+			st.arrival={ring=ring,born=clock,window=if (actor.awaken or 0)>0 then .8 else .55}
+		end
+		local left=1-math.clamp((clock-st.arrival.born)/st.arrival.window,0,1)
+		local size=1+4*left
+		st.arrival.ring.Size=Vector3.new(.06,size,size)
+		st.arrival.ring.CFrame=CFrame.new(root.Position-Vector3.new(0,2.85,0))*CFrame.Angles(0,0,math.pi/2)
+	elseif st.arrival then
+		st.arrival.ring:Destroy();st.arrival=nil
+	end
+end
+-- Yellow Flash: a thin gold thread from him to his newest return seal, the way
+-- back the next jump takes (A -> B -> A).
+local function returnThread(fx,model,actor,st)
+	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
+	local newest=nil
+	if awake then
+		for _,info in actor.seals or {} do
+			if info.wake and info.surface and (not newest or info.id>newest.id) then newest=info end
+		end
+	end
+	local torso=model:FindFirstChild("UpperTorso") or rootOf(model)
+	if newest and torso then
+		local thread=st.thread
+		if not thread or not thread.anchor.Parent then
+			local anchor=K.anchorPart(fx.folder,newest.surface);anchor.Name="ReturnSeal"
+			local a0=K.new("Attachment",{Name="ReturnThread"},torso)
+			local a1=K.new("Attachment",{},anchor)
+			local beam=K.new("Beam",{Name="ReturnThread",Attachment0=a0,Attachment1=a1,Width0=.12,Width1=.3,FaceCamera=true,Segments=8,CurveSize0=-4,
+				Color=ColorSequence.new(MINATO),LightEmission=1,Transparency=K.num({{0,.35},{1,.55}})},anchor)
+			thread={anchor=anchor,a0=a0,beam=beam,id=newest.id}
+			st.thread=thread
+		end
+		if thread.id~=newest.id then thread.anchor.CFrame=CFrame.new(newest.surface+Vector3.new(0,.3,0));thread.id=newest.id end
+	elseif st.thread then
+		st.thread.anchor:Destroy();st.thread.a0:Destroy();st.thread=nil
+	end
+end
+-- The arrival strike landed on a body still inside the combo that led to the
+-- jump: a gold link where it lands, the chain visibly goes on.
+local function chainCue(fx,data,folder)
+	local at=data.position
+	local striker=rootOf(find(folder,data.owner))
+	local along=if striker then flatUnit(at-striker.Position) else Vector3.zAxis
+	K.shockRing(fx.folder,at,MINATO_CORE,1.5,7,.24,along)
+	K.shockRing(fx.folder,at,MINATO,3,11,.32,along)
+	K.sparks(fx.folder,at,MINATO,16,22)
+	if striker then
+		local delta=at-striker.Position
+		local streak=K.block(fx.folder,Vector3.new(.25,.25,math.max(delta.Magnitude,.5)),CFrame.lookAt(striker.Position:Lerp(at,.5),at),MINATO,Enum.Material.Neon)
+		streak.Name="ChainLink";streak.Transparency=.2
+		fade(streak,.18)
+		Debris:AddItem(streak,.22)
+	end
+end
+-- Rasengan where it lands: the sphere grinds into the body (rings turning on
+-- every axis), not a punch flash.
+local function grindCue(fx,data)
+	local at=data.position
+	local model=K.new("Model",{Name="RasenganGrind"},fx.folder)
+	for k=1,3 do
+		local ring=K.block(model,Vector3.new(.08,1.6,1.6),CFrame.new(at)*CFrame.Angles(k*1.1,k*.7,k*1.9),if k==1 then RASENGAN_CORE else RASENGAN,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.2
+		K.tween(ring,.32,{Size=Vector3.new(.03,5.5,5.5),Transparency=1,CFrame=ring.CFrame*CFrame.Angles(math.pi,0,0)})
+	end
+	K.flash(fx.folder,at,RASENGAN_CORE,1,5,.2,0)
+	K.sparks(fx.folder,at,RASENGAN,24,26)
+	Debris:AddItem(model,.4)
+end
+local function minatoImpact(fx,data,folder)
+	if data.arrival then chainCue(fx,data,folder) end
+	if data.variant=="Rasengan" or data.variant=="RasenganDrop" then grindCue(fx,data) end
+	return false
+end
+local function minatoFrame(fx,model,actor,st,clock)
+	sealFrame(fx,model,actor,clock)
+	arrivalRing(fx,model,actor,st,clock)
+	returnThread(fx,model,actor,st)
+end
+
 -- ------------------------------------------------------------------ layer
 local function impact(fx,data,folder)
+	if minatoImpact(fx,data,folder) then return true end
 	return nejiImpact(fx,data,folder)
 end
 local function fighter(fx,model,actor,dt)
 	if not model or not actor then return end
 	local st=stateOf(fx,model)
+	local clock=IdentityFX.clock()
 	networkFrame(fx,model,actor,st)
+	if actor.fighterId=="Flashstep" or #(actor.seals or {})>0 then minatoFrame(fx,model,actor,st,clock) end
 end
 function IdentityFX.install(FX,kit)
 	K=kit
