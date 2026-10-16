@@ -1848,7 +1848,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">417d4c0efeff44cb86eeea828961b22de8c63e58d5e9dc85d545a1fe1da99960</string>
+          <string name="Value">2dab8e045f6852c7a009bcec09abc3da10bd935131d59cf9fe205517452d3b36</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -2354,6 +2354,9 @@ function AI:update(now)
 	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
 	if calm then return end
 	local reach=(a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.range or 6)+1.5
+	-- A body on the floor with wake-up cover cannot be hit: no swings at it.
+	local covered=target.groundPose~=nil and (target.invulnerableUntil or 0)&gt;now
+	if covered then return end
 	if distance&lt;math.max(8,reach) and self.rng:NextNumber()&lt;tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance&lt;5 and self.rng:NextNumber()&lt;.12 then "Grab" elseif self.rng:NextNumber()&lt;.16 then "Heavy" else "Attack")
 	end
@@ -2966,7 +2969,16 @@ function Brawler.start(c,a,name)
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
- if spec.air or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if spec.air or name=="Slam" then
+  -- The air hold carries a string that works (or the first swing of a jump,
+  -- and the slam): mashed whiffs used to keep a body hovering a stud above the
+  -- floor indefinitely (an AI duel showed four seconds of Air1/Air2 over a
+  -- knocked-down opponent).
+  if name=="Slam" or not a.airSwingUsed or (a.airCombo or 0)&gt;=1 then
+   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+  end
+  a.airSwingUsed=true
+ end
  -- Lateral routes leave an afterimage where the body was (a flash for Minato).
  if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
   c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})
@@ -8447,7 +8459,7 @@ function Motor.step(a,c,dt,now)
 	if vertical&lt;0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now&gt;(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y&lt;=5 then
-		a.airborne=false; a.airDodgeUsed=false; a.airHold=0
+		a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false
 		local falling=a.fallSpeed or 0;a.fallSpeed=0
 		-- Only a real drop costs speed. A standard or sprint jump lands below
 		-- HardLandVelocity and keeps its momentum straight into the next step.

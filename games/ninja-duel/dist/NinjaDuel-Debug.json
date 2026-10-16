@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "ddb80be5f6604bc5819ae164cbe40dfd543e16b5dcdb80930c011b4d79f68518",
+  "sha256": "46435108cbf57f52ada6f032898fc970d1ed884236db564ee80bb5eede0c9c74",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -15,11 +15,11 @@
     "src/Client/UI.luau": "4ca0e3a7286914bb150b317fc23a88515b8ccb0b3e3f814789bbfa2a278c10aa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
     "src/Client/VelmoraMotionEngine.luau": "24d887307f9d68b22b5b3abf143f965cb03679ae6fdf1e15d411b7f30746b025",
-    "src/Server/AI.luau": "1c22574a730d94b4ace90dceb36a4e8592b28604dc88462f9a628904715f3611",
+    "src/Server/AI.luau": "c5894f48e8fd56cac3b64750ccf2e78c2a05688029f28572c436eca26ffddd6a",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "83298d7003b58d2b1517726b14dc3f9f78764f2836fdeb4426ae127f90491dd1",
     "src/Server/BanglaEvade.luau": "cf7d9c38790e3839f43900632090077b6000d76e2ce12428252822508c5cde9b",
-    "src/Server/Brawler.luau": "60b7130876b69f487629073585be6315879299a52f0cfeca9727ce84b4566ac9",
+    "src/Server/Brawler.luau": "55e23a4bb89c2ea6a27339891cf6ab2ec23f9279348f79018bbcc4910a738bd0",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "f5f0b94e665b3ac0edb1fa902a75abb5ed0962d0f7ccd08db1fa021a8afcc74b",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -43,7 +43,7 @@
     "src/Server/Elements.luau": "320f12375f05091cf583007cbbb787ae927175342df5eb577154621c01d46046",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
     "src/Server/Matches.luau": "f0503845d89a668c95b92b2173f8735f976463e6ed4693d2c8b0e2ab680cf582",
-    "src/Server/Motor.luau": "c2b32c9f5e0c979ad82f7cebb17cac17a346dbaa0bb4021dcdb0ed011901fe7f",
+    "src/Server/Motor.luau": "8b0bc91b3094fa93df05e4497784aec6f12d7d5e81c27ea046015ca0b17e6df7",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
     "src/Server/Place1Movement.luau": "db654671d91a984b045f0c73c3d8cbe5cda3c4a2e89a6a8b414cc769ce4035e0",
     "src/Server/Place1Parkour.luau": "38f68d55f0484df41e1649e828df3e8a7bbfaa98fc2b8cc6d5e3b49eecb21af5",
@@ -60,7 +60,7 @@
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
     "src/Shared/Attacks.luau": "87e9dd388263ba53a2032f32afb337eeeead3c092d0b423f356dcf3e22206267",
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
-    "src/Shared/Config.luau": "fdb566366df319a3ef10cb01cf9557896b8fb72f9cf872c03f1beb53e9d1b88b",
+    "src/Shared/Config.luau": "3d1c6ea4c3f7e83eddb147f486791b1f369b9bad8acd1a6ddc82fe007360e799",
     "src/Shared/Controls.luau": "35c9f4ee549ea6f328fbd2490b42a796df7b3ff87fbc38578d10dbbd810070aa",
     "src/Shared/DevMetrics.luau": "011735bb738b123e7d097faf408bd5473f57a2ea978d76303c964c473d281cea",
     "src/Shared/Fighters.luau": "f0a5ccd12a13252affe2f774dd87a9a0e4f9fe14615d9362fa50e136a51d902e",
@@ -71,7 +71,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "89308ace0d8a62773aa2fd42801eb3de244685672e31debeca7a17c8404897ea",
+  "buildFingerprint": "2dab8e045f6852c7a009bcec09abc3da10bd935131d59cf9fe205517452d3b36",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -118,7 +118,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 25 PASS"
+        "summary": "NinjaDuel regressions: 26 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,

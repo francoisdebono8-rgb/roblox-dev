@@ -350,7 +350,16 @@ function Brawler.start(c,a,name)
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
- if spec.air or name=="Slam" then a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18 end
+ if spec.air or name=="Slam" then
+  -- The air hold carries a string that works (or the first swing of a jump,
+  -- and the slam): mashed whiffs used to keep a body hovering a stud above the
+  -- floor indefinitely (an AI duel showed four seconds of Air1/Air2 over a
+  -- knocked-down opponent).
+  if name=="Slam" or not a.airSwingUsed or (a.airCombo or 0)>=1 then
+   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+  end
+  a.airSwingUsed=true
+ end
  -- Lateral routes leave an afterimage where the body was (a flash for Minato).
  if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
   c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})

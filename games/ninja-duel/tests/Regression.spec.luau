@@ -576,4 +576,18 @@ test("a chakra dash stops where it arrives (no slide through the recovery)",func
   assert(flat<=8.5,string.format("%s keeps %.0f studs/s past its arrival",id,flat))
  end
 end)
+test("mashed air whiffs fall back to the floor (no hover)",function()
+ -- Each air swing renewed the air hold, so mashing at nothing kept a body
+ -- hovering just above the floor (seen in an AI duel: four seconds).
+ local c,a,b=H.duel("GentleFist","Flashstep")
+ engage(c,a,b,24)
+ assert(c:request(a,"Jump"),"jump refused")
+ for _=1,8 do H.step(c,.02) end
+ local t=0
+ while t<2.5 and a.airborne do
+  c:request(a,"Attack")
+  H.step(c,.02);t+=.02
+ end
+ assert(not a.airborne,"mashing air whiffs kept the body airborne for 2.5 s")
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))
