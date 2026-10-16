@@ -1387,28 +1387,33 @@ function Combat:projectileHit(p,target,position,normal)
 end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
+	local mastery=p.a.def.ToolMastery
+	local target=p.a.target
+	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
+	local bounceFrom=nil
+	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)<.7
+		and target and target.health>0 and (target.root.Position-hit.Position).Magnitude<36 then
+		local from=hit.Position+hit.Normal*.8
+		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
+		if not clear or clear.Instance:IsDescendantOf(target.model) then bounceFrom=from end
+	end
 	-- A chakra blade stays planted (a contestable point), a fire blade leaves a
 	-- burning point, a missed wire stays stretched: decided before the impact
 	-- so the client draws the object that stays instead of a plain stuck blade.
-	local stayed=(p.chakra or p.kind=="wire") and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
+	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
 	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
 	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
-	local mastery=p.a.def.ToolMastery
-	local target=p.a.target
-	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)<.7
-		and target and target.health>0 and (target.root.Position-hit.Position).Magnitude<36 then
-		local from=hit.Position+hit.Normal*.8
-		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
-		if not clear or clear.Instance:IsDescendantOf(target.model) then
-			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
-			bounce.bounced=true
-			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
-			Brawler.event(self,p.a,"Ricochet")
-		end
+	if bounceFrom then
+		local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=bounceFrom})
+		bounce.bounced=true
+		-- An infused blade keeps its chakra through the bounce (no second scaling).
+		Chakra.inherit(bounce,p)
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		Brawler.event(self,p.a,"Ricochet")
 	end
 end
 -- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second

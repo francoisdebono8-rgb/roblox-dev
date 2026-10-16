@@ -196,9 +196,10 @@ test("fire shuriken (Itachi): ignites the body, leaves a burning point, feeds on
 	local hazards=#c.hazards
 	c:projectileHit(p,b,b.root.Position,-p.direction)
 	assert(#c.hazards==hazards+1 and c.hazards[#c.hazards].kind=="Fire","a clean fire blade did not ignite")
-	-- A miss against the wall: the blade stays planted and the point burns.
+	-- A miss against the wall (no ricochet line to the opponent, beyond 36
+	-- studs): the blade stays planted and the point burns.
 	local c2,x,y=H.duel("Mirage","Flashstep")
-	place(c2,x,y,V.new(0,3,0),V.new(0,3,-14))
+	place(c2,x,y,V.new(0,3,0),V.new(0,3,-42))
 	H.addWall(8)
 	local q=c2:projectile(x,V.new(12,4,0),88,70,2,"shuriken",nil,{chakra=Chakra.plan(c2,x,"Shuriken")})
 	until_(c2,.3,function() return q.dead or not table.find(c2.projectiles,q) end,"the fire blade never reached the wall")
@@ -207,6 +208,17 @@ test("fire shuriken (Itachi): ignites the body, leaves a burning point, feeds on
 	assert(burning,"no burning point at the wall")
 	local points=mine(c2,x,"point")
 	assert(#points==1 and points[1].infusion=="Fire" and points[1].planted=="shuriken","the fire blade did not stay planted")
+	-- Itachi's ricochet: an infused blade that bounces keeps its fire, and a
+	-- bounced blade does not also stay planted.
+	local c4,x4,y4=H.duel("Mirage","GentleFist")
+	place(c4,x4,y4,V.new(0,3,0),V.new(4,3,-10))
+	H.addWall(9)
+	local r=c4:projectile(x4,V.new(14,4,0),88,70,2,"shuriken",nil,{chakra=Chakra.plan(c4,x4,"Shuriken")})
+	local bounce
+	for _=1,40 do H.step(c4,.01);for _,q4 in c4.projectiles do if q4.a==x4 and q4.bounced then bounce=q4 end end;if bounce then break end end
+	assert(bounce and bounce.infusion=="Fire" and bounce.speed<=r.speed*.9+1e-6,"the ricochet lost the fire or was scaled twice")
+	assert(#mine(c4,x4,"point")==0,"a bounced blade also stayed planted")
+	H.clearWalls()
 	-- Fire feeds on wind: Itachi's fire shuriken eat Minato's wind kunai.
 	local c3,m,i=H.duel("Flashstep","Mirage")
 	place(c3,m,i,V.new(0,3,20),V.new(0,3,-20))
@@ -331,6 +343,12 @@ test("Neji's chakra palm: swats the blades in front, reaches the chakra network 
 	until_(c2,.6,function() return (x.events or {}).PalmThroughGuard~=nil end,"the palm never reached through the guard")
 	assert(y.tenketsu>=1 and y.chakra<=100-x.def.GentleFist.GuardDrain-T.Effects.palm.drain+1e-6,"the guard stopped the chakra")
 	assert(impactWith(c2,"throughguard"),"no through-guard impact")
+	-- A grounded technique: in the air it is refused before any chakra is paid.
+	local c3,n3=H.duel("GentleFist","Flashstep")
+	n3.airborne=true
+	local before=n3.chakra
+	local ok,why=chakraTool(c3,n3)
+	assert(not ok and why=="Palm needs the ground" and n3.chakra==before and n3.attackName==nil,"an air chakra palm was not refused cleanly")
 end)
 
 test("meetings resolve deterministically, whatever the order of the projectile list",function()

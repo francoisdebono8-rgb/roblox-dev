@@ -179,6 +179,8 @@ function Chakra.plan(c,a,object)
 	if input.infusion=="None" then return nil,"No chakra tool" end
 	local result=resolve(c,a,objectId,input.infusion,false)
 	result.profile=profileId;result.owner=a.id
+	-- The palm is a grounded twin-palm thrust: refused in the air, before any cost.
+	if result.mode=="body" and a.airborne then return nil,"Palm needs the ground" end
 	return result
 end
 -- A nature carried by a jutsu (no input, no cost).
@@ -222,6 +224,14 @@ function Chakra.arm(c,p,infused)
 	p.contest=(T.Objects[infused.object].radius or .45)+(if infused.innate then 0 else E.contestBonus)
 end
 
+-- A blade born from an infused one (a ricochet) carries the same chakra,
+-- without scaling its flight a second time.
+function Chakra.inherit(q,p)
+	if not p.chakra then return end
+	q.chakra=p.chakra;q.infusion=p.infusion;q.tags=p.tags;q.weight=p.weight;q.impact=p.impact;q.contest=p.contest;q.flared=p.flared
+	q.radius=math.max(q.radius or 0,p.radius or 0)
+end
+
 -- ------------------------------------------------------------- views
 -- The interaction view of any live projectile: tags, weight and the radius at
 -- which it meets another object. Plain tools and jutsu volumes come straight
@@ -252,7 +262,6 @@ local function kill(c,p,position,style,extra)
 	for k,v in extra or {} do entry[k]=v end
 	c:pushImpact(position,style,false,entry)
 end
-Chakra.kill=kill
 
 -- ------------------------------------------------------------- clashes
 -- Which side leads a meeting: elemental precedence, then a reinforced blade
@@ -334,7 +343,6 @@ local function settle(c,s,t,vs,vt,at,forced)
 	record(c,"ProjectileClash",applied,{outcome=outcome,source=s.kind,target=t.kind,sourceInfusion=s.infusion,targetInfusion=t.infusion})
 	return outcome
 end
-Chakra.settle=settle
 -- Neji's chakra palm: for its startup and active frames, the blades in front of
 -- it are swatted aside (a frontal answer, unlike the 360-degree Rotation).
 local function swat(c,a)
