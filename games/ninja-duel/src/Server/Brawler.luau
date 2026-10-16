@@ -223,7 +223,11 @@ end
 -- Config.Rush.CancelAfter. Nobody answering it leaves a punishable gap.
 function Brawler.arrive(c,a)
  local r=a.rush or {}
- a.rush=nil
+ a.rush=nil;a.aimIntent=nil
+ -- The dash stops where it arrives: the body keeps a step of momentum, not
+ -- the dash speed (measured in Studio: live physics slid the root 10-25 studs
+ -- past the opponent through the whole recovery).
+ Brawler.brake(a,Config.Rush.Carry or 8)
  local recovery=r.recovery or Config.Rush.Recovery
  c:setState(a,"Recovery",recovery)
  a.recoveryCancelAt=c.now+math.min(Config.Rush.CancelAfter,recovery)
@@ -231,10 +235,19 @@ function Brawler.arrive(c,a)
  a.rushArriveUntil=c.now+Config.Rush.Arrive
  Brawler.event(c,a,"RushArrive")
 end
+-- Kill a kinetic burst (dash, chase) down to `carry` studs/s along its line.
+function Brawler.brake(a,carry)
+ local v=a.root.AssemblyLinearVelocity
+ local flat=Vector3.new(v.X,0,v.Z)
+ local keep=if flat.Magnitude>.1 then flat.Unit*math.min(flat.Magnitude,carry) else Vector3.zero
+ a.root.AssemblyLinearVelocity=Vector3.new(keep.X,v.Y,keep.Z)
+ a.locomotion=keep
+end
 -- Itachi's feint: guard or dodge during his dash stops it where he is; an
 -- afterimage carries on the illusion of the approach.
 function Brawler.feintRush(c,a)
  a.rush=nil;a.rushArriveUntil=0;a.aimIntent=nil
+ Brawler.brake(a,0)
  c:setState(a,"Neutral",0)
  c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="feint"})
  Brawler.event(c,a,"RushFeint")

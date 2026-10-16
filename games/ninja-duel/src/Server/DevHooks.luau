@@ -133,7 +133,7 @@ function DevHooks.install(matches)
 		return chakraDev:run(op,arg)
 	end
 	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
-	hook.OnInvoke=function(op,arg1,arg2,arg3)
+	hook.OnInvoke=function(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
 		if op=="interactions" then return interactions(arg1,arg2) end
@@ -185,8 +185,9 @@ function DevHooks.install(matches)
 		local c=s.combat
 		local actor=if arg1=="bot" then s.bot else s.human
 		if op=="act" then
-			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim
-			local ok,reason=c:request(actor,arg2,arg3)
+			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim, arg4 =
+			-- optional request options (e.g. {chakra=true}, the chakra chord)
+			local ok,reason=c:request(actor,arg2,arg3,nil,if type(arg4)=="table" then arg4 else nil)
 			return {ok=ok,reason=reason}
 		elseif op=="scripted" then
 			-- Ignore the local client's (idle) move packets while a tool drives the human.

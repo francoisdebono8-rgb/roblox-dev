@@ -562,4 +562,18 @@ test("a string steps in to an arm's length, connects every hit, and bodies do no
  assert(b.health<b.def.Health-(Attacks.Light1.damage or 0),"the string did not connect")
  assert(closest>=contact-.15,string.format("the attacker closed to %.2f studs (contact %.2f)",closest,contact))
 end)
+test("a chakra dash stops where it arrives (no slide through the recovery)",function()
+ -- Measured in Studio: the dash velocity survived its arrival and live
+ -- physics slid the body 10-25 studs past the opponent during the recovery.
+ for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
+  local c,a,b=H.duel(id,"Mirage")
+  engage(c,a,b,22)
+  assert(c:request(a,"Pursuit"),id.." dash refused")
+  for _=1,80 do H.step(c,.01);if a.state~="Rush" then break end end
+  assert(a.state=="Recovery",id.." dash never arrived ("..a.state..")")
+  local v=a.root.AssemblyLinearVelocity
+  local flat=Vector3.new(v.X,0,v.Z).Magnitude
+  assert(flat<=8.5,string.format("%s keeps %.0f studs/s past its arrival",id,flat))
+ end
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

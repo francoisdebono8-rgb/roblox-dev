@@ -597,5 +597,12 @@ test("the AI re-engages: every CORE4 bot dashes or chases within a minute, witho
  assert(ok,err)
 end)
 
+test("a deliberate double tap reaches the buffer (the flood guard sits under it)",function()
+ -- The anti-cheat refused a second Attack packet within 0.16 s: a fast
+ -- double tap meant to buffer the next light never reached the server.
+ local Tune=H.load("Shared/VelmoraCombatConfig")
+ assert(Tune.Rates.Attack<=.1,"two presses 0.1 s apart: the second is dropped (gap "..Tune.Rates.Attack..")")
+end)
+
 print(string.format("NinjaDuel combo model: %d PASS",passed))
 if #failures>0 then error(#failures.." FAIL: "..table.concat(failures," | "),0) end

@@ -518,4 +518,55 @@ test("a fighter is built from its motion family, never silently from Minato",fun
  Motion.weapon(a.model,body(a,{attackName="Light1",state="Active",attackElapsed=.1}))
  assert(not Motion.weaponState(a.model).visible,"Gaara drew a kunai for a sand lash")
 end)
+test("identity poses: tenketsu weight, exposed swing, dash brake, counter glide, Wind Cut slash",function()
+ local c,a=H.duel("Mirage","Flashstep")
+ local function settle(actor,clock,n)
+  local mode
+  for _=1,n or 40 do mode=frame(a.model,actor,clock or {attackElapsed=0,reactionElapsed=0},1/60) end
+  return mode,snapshot(a.model)
+ end
+ local function pitchOf(t) local x,y=axisAngles(t);return math.deg(y) end
+ -- Closed points fold the spine further, point by point.
+ Motion.reset(a.model)
+ local _,free=settle(body(a,{state="Neutral"}))
+ Motion.reset(a.model)
+ local _,two=settle(body(a,{state="Neutral",tenketsu=2}))
+ Motion.reset(a.model)
+ local _,four=settle(body(a,{state="Neutral",tenketsu=4,tenketsuSevere=true}))
+ local w0,w2,w4=pitchOf(free.Waist),pitchOf(two.Waist),pitchOf(four.Waist)
+ assert(w2>w0+1.5 and w4>w2+3,string.format("the spine does not fold with the points (%.1f, %.1f, %.1f)",w0,w2,w4))
+ -- A swing that bit an image: overextended, not standing in the idle stance.
+ Motion.reset(a.model)
+ local mode=settle(body(a,{state="Stunned",cue="GENJUTSU • EXPOSED"}))
+ assert(mode=="exposed","the exposed victim is presented as "..tostring(mode))
+ Motion.reset(a.model)
+ assert(settle(body(a,{state="Stunned",cue=""}))~="exposed","every stun became the exposed pose")
+ -- The end of a dash brakes low for a moment.
+ Motion.reset(a.model)
+ settle(body(a,{state="Rush",velocity=V.new(0,0,-60),speed=60}),nil,6)
+ local _,braking=settle(body(a,{state="Recovery"}),nil,6)
+ Motion.reset(a.model)
+ local _,walking=settle(body(a,{state="Recovery"}),nil,6)
+ assert(braking.Root.Position.Y<walking.Root.Position.Y-.15,"the dash arrival does not brake")
+ -- Counter palms glide low through the image / past the read blow.
+ Motion.reset(a.model)
+ local plainClock={attackElapsed=.05,reactionElapsed=0}
+ local _,plain=settle(body(a,{state="Startup",attackName="CounterPalm",attackSerial=1}),plainClock,8)
+ Motion.reset(a.model)
+ local _,glide=settle(body(a,{state="Startup",attackName="CounterPalm",attackVariant="MirageCounter",attackSerial=2}),plainClock,8)
+ assert(glide.Root.Position.Y<plain.Root.Position.Y-.3,"the counter does not glide low")
+ -- Wind Cut is a horizontal slash, not Minato's overhand kunai throw.
+ local c2,m=H.duel("Flashstep","Mirage")
+ local function armAt(over)
+  Motion.reset(m.model)
+  local clock={attackElapsed=0,reactionElapsed=0}
+  for _=1,30 do frame(m.model,body(m,over),clock,1/60) end
+  return snapshot(m.model).RightShoulder
+ end
+ local throw=armAt({state="Neutral",throwKind="Kunai",throwElapsed=.17,throwRelease=.16})
+ local slash=armAt({state="Neutral",throwKind="Kunai",throwElapsed=.17,throwRelease=.16,castId="WindCut",castElapsed=.17})
+ local tx,ty=axisAngles(throw);local sx,sy=axisAngles(slash)
+ assert(math.deg(math.abs(tx-sx)+math.abs(ty-sy))>15,"Wind Cut is still the overhand throw")
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))
