@@ -456,4 +456,45 @@ test("planted feet stay put in the world while walking, strafing, stopping and t
  assert(worstReach<2.2,string.format("a foot was left %.2f studs from its hip",worstReach))
 end)
 
+test("a palm, a chakra-point hit and a side kick each land differently on the body",function()
+ -- Convergence 2 (phase 7): every standing hit used to answer with the same
+ -- fold whatever struck it (a Gentle Fist palm read as a jab to the face).
+ local c,a=H.duel("Mirage","GentleFist")
+ local function reaction(kind,angle)
+  Motion.reset(a.model)
+  local actor=body(a,{reaction="HitStun",hitAngle=angle or 0,hitStrength=.3,hitKind=kind,hitZone="body",hitTwist=1,reactionElapsed=.06})
+  for _=1,10 do Motion.defense(a.model,actor,1/60) end
+  return snapshot(a.model)
+ end
+ local function diff(x,y)
+  local n=0
+  for key,t in x do if not t:FuzzyEq(y[key],.02) then n+=1 end end
+  return n
+ end
+ local strike=reaction("strike")
+ local palm=reaction("palm")
+ local point=reaction("tenketsu")
+ local kick=reaction("kick",90)
+ assert(diff(strike,palm)>=3,"a palm reads like an ordinary strike")
+ assert(diff(strike,point)>=3,"a chakra-point hit reads like an ordinary strike")
+ assert(diff(palm,point)>=3,"a palm push and a chakra-point jolt look alike")
+ assert(diff(strike,kick)>=3,"a kick from the side folds the body like a punch")
+end)
+test("a pursuit after a launched body is a rising leap, a level pursuit a dash",function()
+ local c,a=H.duel("Flashstep","Mirage")
+ local function chase(velocity)
+  Motion.reset(a.model)
+  local clock={attackElapsed=0,reactionElapsed=0}
+  for _=1,30 do frame(a.model,body(a,{state="Pursuit",velocity=velocity,speed=velocity.Magnitude}),clock,1/60) end
+  return snapshot(a.model)
+ end
+ local level=chase(V.new(0,0,-70))
+ local rising=chase(V.new(0,60,-12))
+ local function pitchOf(transform) local x=transform:ToEulerAnglesXYZ();return math.deg(x) end
+ local n=0
+ for key,t in level do if not t:FuzzyEq(rising[key],.05) then n+=1 end end
+ assert(n>=4,"chasing upward uses the floor-level dive pose")
+ -- The dash leans the root far forward; the leap stays near upright.
+ assert(math.abs(pitchOf(rising.Root))<math.abs(pitchOf(level.Root))-.3,"the rising chase leans like a dive")
+end)
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

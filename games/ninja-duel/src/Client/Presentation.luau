@@ -153,7 +153,11 @@ local function clockFor(self,key,actor,now)
  if not clock then clock={};self.clocks[key]=clock end
  -- A new swing restarts the clock even when it repeats the same move name.
  if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
-  clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=now
+  -- Start the clip where the server already is: a snapshot arrives up to an
+  -- interval late, and a clip restarted at 0 trailed the real contact (the
+  -- launcher's kick was cut off by the chase before it ever showed).
+  clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0
+  clock.attackAt=now-math.clamp(actor.attackElapsed or 0,0,.12)
  end
  -- A fresh contact restarts the recoil even when it repeats the same reaction
  -- kind (Light1 -> Light2 are both HitStun), so every hit reads as a hit.

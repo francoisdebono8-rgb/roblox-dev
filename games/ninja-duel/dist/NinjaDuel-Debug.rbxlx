@@ -365,7 +365,7 @@ return Controls
 		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
 		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
-			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
+			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24,kind="slash"},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3,kind="palm"},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
 			DashAttack={startup=.78,travel=1.16,angle=-.18},Air1={startup=.8,angle=.24},Air2={startup=.82,angle=-.3},Slam={startup=.78,recovery=.86},
 		},
@@ -398,8 +398,8 @@ return Controls
 		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
 		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
-			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
-			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
+			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
+			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
 			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
 			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
@@ -432,8 +432,8 @@ return Controls
 		-- one closes a chakra point, slowing the victim's chakra recovery.
 		GentleFist = { Drain = 6, GuardDrain = 3, RegenCut = 0.15, MaxPoints = 4, Duration = 5 },
 		AttackProfile = {
-			Light1={startup=.92,recovery=.9,travel=1.0,range=6.4},Light2={startup=.94,recovery=.9,travel=1.0,range=6.6},
-			Light3={startup=1.0,recovery=.96,travel=1.05,impulseZ=54},Heavy={startup=1.02,recovery=1.0},
+			Light1={startup=.92,recovery=.9,travel=1.0,range=6.4,kind="tenketsu",zone="body"},Light2={startup=.94,recovery=.9,travel=1.0,range=6.6,kind="tenketsu"},
+			Light3={startup=1.0,recovery=.96,travel=1.05,impulseZ=54,kind="palm"},Heavy={startup=1.02,recovery=1.0,kind="palm"},
 			Launcher={startup=.98,travel=.95,impulseY=56},DashAttack={startup=.94,travel=1.02},
 			Air1={startup=.96},Air2={startup=.98},Slam={startup=1.0},
 		},
@@ -462,7 +462,7 @@ return Controls
 		-- The cursed seal: faster and harder, but it eats his body while it burns.
 		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.18, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Color = { 120, 60, 200 } },
 		AttackProfile = {
-			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6},Light3={startup=1.05,impulseZ=56,range=6.8},
+			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6,kind="kick"},Light3={startup=1.05,impulseZ=56,range=6.8},
 			DashAttack={travel=1.1},Air1={startup=.92},Air2={startup=.92},
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
@@ -1656,7 +1656,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">827789abe735eb13b10e4f6a8d213574037f54335f60412dce8719a237980f00</string>
+          <string name="Value">fb1fe1efb00fef2f7b4a6cdee09536c14bb88b02500108e2464b69517366fbe4</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -2422,6 +2422,7 @@ function Brawler.start(c,a,name)
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
+		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
@@ -11501,7 +11502,11 @@ local function clockFor(self,key,actor,now)
  if not clock then clock={};self.clocks[key]=clock end
  -- A new swing restarts the clock even when it repeats the same move name.
  if actor.attackName~=clock.attackName or (actor.attackSerial or 0)~=clock.attackSerial then
-  clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=now
+  -- Start the clip where the server already is: a snapshot arrives up to an
+  -- interval late, and a clip restarted at 0 trailed the real contact (the
+  -- launcher's kick was cut off by the chase before it ever showed).
+  clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0
+  clock.attackAt=now-math.clamp(actor.attackElapsed or 0,0,.12)
  end
  -- A fresh contact restarts the recoil even when it repeats the same reaction
  -- kind (Light1 -&gt; Light2 are both HitStun), so every hit reads as a hit.
@@ -13626,8 +13631,18 @@ local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
 	s.phase=(s.phase+(dt or 1/60)*3)%1
 	local swing=math.sin(s.phase*math.pi*2)
-	return build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
-		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}}),RATE.chase
+	local dash=build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
+		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}})
+	-- Chasing a launched body is a leap, not a dive along the floor: the body
+	-- goes up vertical behind its own rising knee, arms pulling up, eyes on
+	-- the target — the launcher's kick carries on into the jump after it.
+	local v=actor.velocity or Vector3.zero
+	local flat=Vector3.new(v.X,0,v.Z).Magnitude
+	local rise=math.clamp((v.Y-flat*.4)/30,0,1)
+	if rise&lt;=.01 then return dash,RATE.chase end
+	local leap=build({root={pitch=-4},torso={pitch=-12},head={pitch=-26},ra={raise=150,out=22,elbow=34},la={raise=70,out=30,elbow=86},
+		rl={lift=100,knee=112,ankle=-18},ll={lift=-16,knee=22,ankle=-32}})
+	return blend(dash,leap,rise),RATE.chase
 end
 
 -- ------------------------------------------------------------ reactions
@@ -13720,7 +13735,27 @@ local function reactionTargets(actor,feet)
 	-- fold): light blows get a floor, heavier ones still go further.
 	local s=math.max(strong,.62)
 	local spec
-	if zone=="head" then
+	-- Which way the blow came from (+1: from the fighter's right).
+	local dir=if math.abs(side)&gt;.3 then (if side&gt;0 then 1 else -1) else twist
+	if hitKind=="palm" then
+		-- A palm is a push, not a punch: the chest is driven straight back and
+		-- the shoulders round over it, hips sent back, head jolted.
+		spec={root={y=-.2*snap,z=.85*snap*math.max(from,.3),pitch=-6*snap},torso={pitch=14*snap*s,roll=-dir*6*snap},head={pitch=-14*snap,yaw=-dir*8*snap},
+			ra={raise=30*snap,out=40*snap,elbow=30+30*snap},la={raise=26*snap,out=40*snap,elbow=30+30*snap}}
+	elseif hitKind=="tenketsu" then
+		-- Gentle Fist: a precise, small, stiff jolt rather than a recoil; the
+		-- struck side goes slack (that arm drops out of the guard).
+		local twitch=math.sin(elapsed*70)*(1-math.clamp(elapsed/.3,0,1))
+		spec={root={y=-.12*snap,z=.25*snap,pitch=3*snap},torso={pitch=6*snap+2*twitch,roll=dir*4*snap},head={pitch=-6*snap,yaw=dir*6*snap+2*twitch},
+			ra={raise=34*snap,out=10,elbow=70},la={raise=34*snap,out=10,elbow=70}}
+		local slack={raise=-6,out=14,elbow=12}
+		if dir&gt;0 then spec.ra=slack else spec.la=slack end
+	elseif hitKind=="kick" or hitKind=="slash" then
+		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
+		-- away from the blow and turns with it instead of folding forward.
+		spec={root={y=-.25*snap,z=.35*snap,roll=-dir*14*snap,yaw=-dir*16*snap},torso={roll=-dir*16*snap,yaw=-dir*22*snap,pitch=8*snap},head={roll=-dir*12*snap,yaw=-dir*20*snap},
+			ra={raise=36*snap,out=30*snap,elbow=56},la={raise=32*snap,out=30*snap,elbow=52}}
+	elseif zone=="head" then
 		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
 			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
 			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}

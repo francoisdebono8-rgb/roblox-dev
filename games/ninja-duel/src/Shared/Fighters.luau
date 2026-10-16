@@ -12,7 +12,7 @@ return {
 		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
 		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
 		AttackProfile = {
-			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
+			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24,kind="slash"},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3,kind="palm"},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
 			DashAttack={startup=.78,travel=1.16,angle=-.18},Air1={startup=.8,angle=.24},Air2={startup=.82,angle=-.3},Slam={startup=.78,recovery=.86},
 		},
@@ -45,8 +45,8 @@ return {
 		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
 		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
-			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
-			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
+			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
+			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
 			Launcher={startup=1.0,travel=.86,impulseY=53,impulseZ=20},DashAttack={startup=.95,travel=.92},
 			Air1={startup=.98,travel=.9},Air2={startup=1.0,travel=.88},Slam={startup=1.0,recovery=1.0},
 		},
@@ -79,8 +79,8 @@ return {
 		-- one closes a chakra point, slowing the victim's chakra recovery.
 		GentleFist = { Drain = 6, GuardDrain = 3, RegenCut = 0.15, MaxPoints = 4, Duration = 5 },
 		AttackProfile = {
-			Light1={startup=.92,recovery=.9,travel=1.0,range=6.4},Light2={startup=.94,recovery=.9,travel=1.0,range=6.6},
-			Light3={startup=1.0,recovery=.96,travel=1.05,impulseZ=54},Heavy={startup=1.02,recovery=1.0},
+			Light1={startup=.92,recovery=.9,travel=1.0,range=6.4,kind="tenketsu",zone="body"},Light2={startup=.94,recovery=.9,travel=1.0,range=6.6,kind="tenketsu"},
+			Light3={startup=1.0,recovery=.96,travel=1.05,impulseZ=54,kind="palm"},Heavy={startup=1.02,recovery=1.0,kind="palm"},
 			Launcher={startup=.98,travel=.95,impulseY=56},DashAttack={startup=.94,travel=1.02},
 			Air1={startup=.96},Air2={startup=.98},Slam={startup=1.0},
 		},
@@ -109,7 +109,7 @@ return {
 		-- The cursed seal: faster and harder, but it eats his body while it burns.
 		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.18, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Color = { 120, 60, 200 } },
 		AttackProfile = {
-			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6},Light3={startup=1.05,impulseZ=56,range=6.8},
+			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6,kind="kick"},Light3={startup=1.05,impulseZ=56,range=6.8},
 			DashAttack={travel=1.1},Air1={startup=.92},Air2={startup=.92},
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },

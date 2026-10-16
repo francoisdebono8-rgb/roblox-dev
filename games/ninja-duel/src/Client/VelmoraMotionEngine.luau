@@ -1377,8 +1377,18 @@ local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
 	s.phase=(s.phase+(dt or 1/60)*3)%1
 	local swing=math.sin(s.phase*math.pi*2)
-	return build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
-		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}}),RATE.chase
+	local dash=build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
+		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}})
+	-- Chasing a launched body is a leap, not a dive along the floor: the body
+	-- goes up vertical behind its own rising knee, arms pulling up, eyes on
+	-- the target — the launcher's kick carries on into the jump after it.
+	local v=actor.velocity or Vector3.zero
+	local flat=Vector3.new(v.X,0,v.Z).Magnitude
+	local rise=math.clamp((v.Y-flat*.4)/30,0,1)
+	if rise<=.01 then return dash,RATE.chase end
+	local leap=build({root={pitch=-4},torso={pitch=-12},head={pitch=-26},ra={raise=150,out=22,elbow=34},la={raise=70,out=30,elbow=86},
+		rl={lift=100,knee=112,ankle=-18},ll={lift=-16,knee=22,ankle=-32}})
+	return blend(dash,leap,rise),RATE.chase
 end
 
 -- ------------------------------------------------------------ reactions
@@ -1471,7 +1481,27 @@ local function reactionTargets(actor,feet)
 	-- fold): light blows get a floor, heavier ones still go further.
 	local s=math.max(strong,.62)
 	local spec
-	if zone=="head" then
+	-- Which way the blow came from (+1: from the fighter's right).
+	local dir=if math.abs(side)>.3 then (if side>0 then 1 else -1) else twist
+	if hitKind=="palm" then
+		-- A palm is a push, not a punch: the chest is driven straight back and
+		-- the shoulders round over it, hips sent back, head jolted.
+		spec={root={y=-.2*snap,z=.85*snap*math.max(from,.3),pitch=-6*snap},torso={pitch=14*snap*s,roll=-dir*6*snap},head={pitch=-14*snap,yaw=-dir*8*snap},
+			ra={raise=30*snap,out=40*snap,elbow=30+30*snap},la={raise=26*snap,out=40*snap,elbow=30+30*snap}}
+	elseif hitKind=="tenketsu" then
+		-- Gentle Fist: a precise, small, stiff jolt rather than a recoil; the
+		-- struck side goes slack (that arm drops out of the guard).
+		local twitch=math.sin(elapsed*70)*(1-math.clamp(elapsed/.3,0,1))
+		spec={root={y=-.12*snap,z=.25*snap,pitch=3*snap},torso={pitch=6*snap+2*twitch,roll=dir*4*snap},head={pitch=-6*snap,yaw=dir*6*snap+2*twitch},
+			ra={raise=34*snap,out=10,elbow=70},la={raise=34*snap,out=10,elbow=70}}
+		local slack={raise=-6,out=14,elbow=12}
+		if dir>0 then spec.ra=slack else spec.la=slack end
+	elseif hitKind=="kick" or hitKind=="slash" then
+		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
+		-- away from the blow and turns with it instead of folding forward.
+		spec={root={y=-.25*snap,z=.35*snap,roll=-dir*14*snap,yaw=-dir*16*snap},torso={roll=-dir*16*snap,yaw=-dir*22*snap,pitch=8*snap},head={roll=-dir*12*snap,yaw=-dir*20*snap},
+			ra={raise=36*snap,out=30*snap,elbow=56},la={raise=32*snap,out=30*snap,elbow=52}}
+	elseif zone=="head" then
 		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
 			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
 			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}

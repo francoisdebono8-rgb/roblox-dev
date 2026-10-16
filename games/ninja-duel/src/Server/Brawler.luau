@@ -55,6 +55,7 @@ function Brawler.start(c,a,name)
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
+		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
