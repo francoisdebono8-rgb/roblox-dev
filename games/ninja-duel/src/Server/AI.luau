@@ -402,6 +402,9 @@ function AI:update(now)
 	-- Probing or breathing: no fresh melee initiation, only punishes and reads.
 	if calm then return end
 	local reach=(a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.range or 6)+1.5
+	-- A body on the floor with wake-up cover cannot be hit: no swings at it.
+	local covered=target.groundPose~=nil and (target.invulnerableUntil or 0)>now
+	if covered then return end
 	if distance<math.max(8,reach) and self.rng:NextNumber()<tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end
