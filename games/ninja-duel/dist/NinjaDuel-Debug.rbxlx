@@ -1944,7 +1944,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">2407108c74439b8346d075f6c769fd71c3a35928f5cf5a68bb7c12b796aa3aee</string>
+          <string name="Value">dfe7961c5cd6c00c1f897a9b330bcc2225eca242951d51d2113aeb8ddef4fccd</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -13059,17 +13059,17 @@ local function dressLee(model,def)
 	end
 	wear(model,"UpperTorso","Collar",Vector3.new(1.3,.22,1.06),CFrame.new(0,.76,.02),suitDark)
 	-- The Leaf headband, worn as a red belt with the plate in front.
-	wear(model,"LowerTorso","HeadbandBelt",Vector3.new(2.08,.28,1.08),CFrame.new(0,.28,0),belt,Enum.Material.Fabric)
+	wear(model,"LowerTorso","HeadbandBelt",Vector3.new(2.08,.28,1.08),CFrame.new(0,.28,0),belt,Enum.Material.SmoothPlastic)
 	wear(model,"LowerTorso","BeltPlate",Vector3.new(.8,.3,.06),CFrame.new(0,.28,-.57),rgb(176,184,194),Enum.Material.Metal)
 	wear(model,"LowerTorso","LeafMark",Vector3.new(.28,.13,.02),CFrame.new(0,.3,-.61),rgb(70,78,90),Enum.Material.Metal)
 	for _,side in {-1,1} do
-		wear(model,"LowerTorso","BeltTail",Vector3.new(.16,.6,.06),CFrame.new(side*.22,.02,.56)*A(R(-10),0,R(side*8)),belt,Enum.Material.Fabric)
+		wear(model,"LowerTorso","BeltTail",Vector3.new(.16,.6,.06),CFrame.new(side*.22,.02,.56)*A(R(-10),0,R(side*8)),belt,Enum.Material.SmoothPlastic)
 	end
 	for _,side in {"Left","Right"} do
 		-- Orange leg warmers from the knee to the ankle, rolled at both ends.
-		wear(model,side.."LowerLeg","LegWarmer",Vector3.new(.98,.92,.98),CFrame.new(0,-.06,0),warmer,Enum.Material.Fabric)
-		wear(model,side.."LowerLeg","WarmerRoll",Vector3.new(1.02,.16,1.02),CFrame.new(0,.42,0),warmerDark,Enum.Material.Fabric)
-		wear(model,side.."LowerLeg","WarmerCuff",Vector3.new(1.04,.18,1.04),CFrame.new(0,-.5,0),warmerDark,Enum.Material.Fabric)
+		wear(model,side.."LowerLeg","LegWarmer",Vector3.new(.98,.92,.98),CFrame.new(0,-.06,0),warmer,Enum.Material.SmoothPlastic)
+		wear(model,side.."LowerLeg","WarmerRoll",Vector3.new(1.02,.16,1.02),CFrame.new(0,.42,0),warmerDark,Enum.Material.SmoothPlastic)
+		wear(model,side.."LowerLeg","WarmerCuff",Vector3.new(1.04,.18,1.04),CFrame.new(0,-.5,0),warmerDark,Enum.Material.SmoothPlastic)
 		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,48,72) end
 		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
 		-- Hands wrapped in bandages for training, a few turns up the wrist.
