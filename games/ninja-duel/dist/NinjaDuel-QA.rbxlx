@@ -1656,7 +1656,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a6837d0bce68b471a86372ac3ad52d948bf881fc503b3079fca41fb2d0a3b011</string>
+          <string name="Value">39a677197c4c7efe98c9d586535744c310ed70b1c38a2982b4da24f08b76f128</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -9600,6 +9600,32 @@ function World.arena(parent, origin)
 		part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
 		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(decor,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
+	end
+	-- Height and routes (convergence 2, phase 9). The centre stays open for close
+	-- combat; around it, two stone terraces (a ramp on the inner side, faces you
+	-- can run up) give high ground and a reason to move, and three tall pillars
+	-- near the edge are wall routes, splat surfaces and blade cover without the
+	-- outer wall appearing in every exchange.
+	for _,spot in {{2.3,50},{5.1,50}} do
+		local dir=Vector3.new(math.sin(spot[1]),0,math.cos(spot[1]))
+		local at=origin+dir*spot[2]
+		local face=CFrame.lookAt(at,at+dir)
+		local terrace=part(folder,"Terrace",Vector3.new(20,6,12),face*CFrame.new(0,3,0),rgb(132,128,118),Enum.Material.Slate)
+		terrace:SetAttribute("NinjaWall",true)
+		deco(decor,"Terrace cap",Vector3.new(20.4,.6,12.4),face*CFrame.new(0,6.1,0),rgb(150,146,134),Enum.Material.Slate)
+		-- Ramp on the inner side (toward the centre): walk up, no jump needed.
+		local ramp=Instance.new("WedgePart");ramp.Name="Terrace ramp";ramp.Anchored=true
+		ramp.Size=Vector3.new(14,6,9);ramp.Color=rgb(124,120,110);ramp.Material=Enum.Material.Slate
+		ramp.CFrame=face*CFrame.new(0,3,10.5)*CFrame.Angles(0,math.pi,0) -- high side against the terrace
+		ramp.TopSurface=Enum.SurfaceType.Smooth;ramp.BottomSurface=Enum.SurfaceType.Smooth
+		ramp.Parent=folder
+	end
+	for _,spot in {{.95,70},{3.55,66},{4.6,72}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
+		local pillar=part(folder,"Pillar",Vector3.new(5,22,5),CFrame.new(at+Vector3.new(0,11,0))*CFrame.Angles(0,spot[1],0),rgb(196,194,176),Enum.Material.Concrete)
+		pillar:SetAttribute("NinjaWall",true)
+		deco(decor,"Pillar cap",Vector3.new(6,1.2,6),CFrame.new(at+Vector3.new(0,22.6,0))*CFrame.Angles(0,spot[1],0),C.wallSeam,Enum.Material.Concrete)
+		deco(decor,"Pillar footing",Vector3.new(6.4,1.4,6.4),CFrame.new(at+Vector3.new(0,.7,0))*CFrame.Angles(0,spot[1],0),C.wallSeam,Enum.Material.Concrete)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do

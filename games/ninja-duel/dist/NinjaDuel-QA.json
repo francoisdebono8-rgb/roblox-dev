@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "97078a4b41d5767bea7dadf4bcc8c35beb510126f7d33a8949a450420aba9653",
+  "sha256": "c189489e6da8821560d3e7eade84de5b9dae2c79119465a66bbf01e38a5c76d9",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -39,7 +39,7 @@
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
     "src/Server/VelmoraDefense.luau": "f961733b4df4b41154a10d2e8633285674fdbe2f57bdc8206698a7293d125aed",
     "src/Server/VelmoraHitDetection.luau": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb",
-    "src/Server/World.luau": "04cb4eeeb04fd9936cde9a990e06fa0c48ff8a4164e9fd198e7de31382b2be3d",
+    "src/Server/World.luau": "9e9f90ace3cbe20d9ed0815fd633084ae417a1563fa0a335ab56af2526514dcb",
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
     "src/Shared/Attacks.luau": "87e9dd388263ba53a2032f32afb337eeeead3c092d0b423f356dcf3e22206267",
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
@@ -53,7 +53,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "a6837d0bce68b471a86372ac3ad52d948bf881fc503b3079fca41fb2d0a3b011",
+  "buildFingerprint": "39a677197c4c7efe98c9d586535744c310ed70b1c38a2982b4da24f08b76f128",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
