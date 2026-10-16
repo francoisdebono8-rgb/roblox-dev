@@ -350,6 +350,125 @@ return Controls
       </Item>
       <Item class="ModuleScript" referent="ND9">
         <Properties>
+          <string name="Name">DevMetrics</string>
+          <ProtectedString name="Source">-- Bounded, opt-in measurements for the Studio dev tools (Codex 33028b2, ported).
+-- No instances, remotes or gameplay policy. Debug/QA places only: build.py
+-- lists this module in DEBUG_SOURCES, so the normal build never contains it.
+local MAX_LABELS=128
+local Metrics={};Metrics.__index=Metrics
+function Metrics.new(clock)
+	return setmetatable({clock=clock or os.clock,enabled=false,stats={},counters={},events={},restores={},started=0,labels=0},Metrics)
+end
+function Metrics:start()
+	self.stats={};self.counters={};self.events={};self.labels=0;self.started=self.clock();self.ended=nil;self.enabled=true
+end
+function Metrics:sample(name,value)
+	if not self.enabled or type(value)~="number" or value~=value or math.abs(value)==math.huge then return end
+	local s=self.stats[name]
+	if not s then
+		if self.labels&gt;=MAX_LABELS then return end
+		self.labels+=1
+		s={n=0,sum=0,max=0,values={},next=1};self.stats[name]=s
+	end
+	s.n+=1;s.sum+=value;s.max=math.max(s.max,value)
+	s.values[s.next]=value;s.next=s.next%240+1
+end
+function Metrics:count(name,n)
+	if not self.enabled then return end
+	if self.counters[name]==nil then if self.labels&gt;=MAX_LABELS then name="overflow" else self.labels+=1 end end
+	self.counters[name]=(self.counters[name] or 0)+(n or 1)
+end
+function Metrics:event(kind,context)
+	if not self.enabled then return end
+	table.insert(self.events,{at=self.clock()-self.started,kind=kind,context=context})
+	if #self.events&gt;80 then table.remove(self.events,1) end
+end
+-- Wraps object[key] at instance level. The original keeps its arguments,
+-- results (nil included) and errors; stop() puts back exactly what was there.
+function Metrics:wrap(object,key,label,after,before)
+	local original=object[key];local own=rawget(object,key)
+	assert(type(original)=="function","No method "..key)
+	local wrapper=function(...)
+		if not self.enabled then return original(...) end
+		if before then before(...) end
+		local at=self.clock()
+		if debug.profilebegin then debug.profilebegin("NinjaDuel/"..label) end
+		local result=table.pack(pcall(original,...))
+		if debug.profileend then debug.profileend() end
+		self:sample(label..".ms",(self.clock()-at)*1000);self:count(label..".calls")
+		if not result[1] then self:event("script-error",{scope=label,error=tostring(result[2])});error(result[2],0) end
+		if after then after(...) end
+		return table.unpack(result,2,result.n)
+	end
+	object[key]=wrapper
+	self:addRestore(object,function() if rawget(object,key)==wrapper then object[key]=own end end)
+end
+function Metrics:addRestore(object,fn) table.insert(self.restores,{object=object,fn=fn}) end
+function Metrics:restoreObject(object)
+	for i=#self.restores,1,-1 do
+		local entry=self.restores[i]
+		if entry.object==object then entry.fn();table.remove(self.restores,i) end
+	end
+end
+function Metrics:stop()
+	if self.enabled then self.ended=self.clock() end
+	self.enabled=false
+	for i=#self.restores,1,-1 do self.restores[i].fn() end
+	self.restores={}
+end
+-- Mean/max cover the whole capture; p50/p95 the last 240 samples of a label.
+function Metrics:report()
+	local out={seconds=math.max(0,(self.ended or self.clock())-self.started),enabled=self.enabled,stats={},counters=table.clone(self.counters),events=table.clone(self.events)}
+	for name,s in self.stats do
+		local sorted=table.clone(s.values);table.sort(sorted)
+		out.stats[name]={count=s.n,mean=s.sum/s.n,max=s.max,p50=sorted[math.max(1,math.ceil(#sorted*.5))],p95=sorted[math.max(1,math.ceil(#sorted*.95))],window=#sorted}
+	end
+	return out
+end
+-- An estimate of application payload size, NOT wire bytes or Roblox bandwidth.
+function Metrics.estimate(value,depth,budget)
+	depth=depth or 0;budget=budget or {left=2048}
+	if depth&gt;8 or budget.left&lt;=0 then return 0 end
+	budget.left-=1
+	local kind=typeof(value)
+	if kind=="number" then return 8 elseif kind=="boolean" then return 1 elseif kind=="Vector3" then return 12
+	elseif kind=="CFrame" then return 48 elseif kind=="string" then return #value+2 elseif kind=="table" then
+		local size=2
+		for k,v in value do
+			size+=Metrics.estimate(k,depth+1,budget)+Metrics.estimate(v,depth+1,budget)
+			if budget.left&lt;=0 then break end
+		end
+		return size
+	end
+	return 0
+end
+-- Telemetry stays small even for malformed clients in multi-client Studio
+-- tests: finite numbers, booleans, strings up to 512 characters, string or
+-- number keys, depth 8 and `budget` visited values (default 2048).
+function Metrics.validPayload(value,budget)
+	budget=budget or 2048
+	local function visit(v,depth)
+		budget-=1;if budget&lt;0 or depth&gt;8 then return false end
+		local t=type(v)
+		if t=="number" then return v==v and math.abs(v)&lt;math.huge
+		elseif t=="boolean" then return true
+		elseif t=="string" then return #v&lt;=512
+		elseif t=="table" then
+			for k,item in v do
+				if (type(k)~="string" and type(k)~="number") or not visit(k,depth+1) or not visit(item,depth+1) then return false end
+			end
+			return true
+		end
+		return false
+	end
+	return visit(value,0)
+end
+return Metrics
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND10">
+        <Properties>
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">return {
 	Flashstep = {
@@ -509,7 +628,7 @@ return Controls
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND10">
+      <Item class="ModuleScript" referent="ND11">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -589,7 +708,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -615,7 +734,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND13">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -657,7 +776,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND13">
+      <Item class="ModuleScript" referent="ND14">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1653,17 +1772,17 @@ return table.freeze({
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND14">
+      <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">827789abe735eb13b10e4f6a8d213574037f54335f60412dce8719a237980f00</string>
+          <string name="Value">81b1c7ef8397b0700cd78be121064f916c1343131f6942b2dd38374d772fa764</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND15">
+      <Item class="Folder" referent="ND16">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND16">
+        <Item class="StringValue" referent="ND17">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -1690,7 +1809,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND17">
+        <Item class="StringValue" referent="ND18">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -1717,7 +1836,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND18">
+        <Item class="StringValue" referent="ND19">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -1747,15 +1866,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND19">
+  <Item class="ServerScriptService" referent="ND20">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND20">
+    <Item class="Folder" referent="ND21">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -2135,7 +2254,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -2241,7 +2360,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -2322,7 +2441,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -2362,7 +2481,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -3051,7 +3170,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -3179,7 +3298,324 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
+        <Properties>
+          <string name="Name">ChakraDev</string>
+          <ProtectedString name="Source">-- Server-internal tool facade. Studio bindable or offline CLI, no client Remote.
+-- Chakra lab (Codex 7091585, ported verbatim): reached only through
+-- dev:Invoke("interactions",op,args), loaded on the first call and only when
+-- the chakra runtime modules exist (DevTools.ChakraRuntime). Debug/QA places
+-- only (DEBUG_SOURCES).
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local Lab=require(script.Parent.ChakraLab)
+local Dev={};Dev.__index=Dev
+function Dev.new(cfg,studio)
+ if studio then assert(game:GetService("RunService"):IsStudio(),"Studio only") end
+ return setmetatable({cfg=cfg,lab=Lab.new(cfg),studio=studio==true,view=nil,connection=nil,running=false,log=false,accumulator=0,lastPrinted=0},Dev)
+end
+function Dev:draw()
+ if self.view then self.view:update({objects=self.lab.engine.objects,surfaces=self.lab.engine.surfaces}) end
+ if self.log then
+  for _,event in self.lab.engine.events do if event.sequence&gt;self.lastPrinted then
+   print("[NinjaDuelChakra] "..game:GetService("HttpService"):JSONEncode(event));self.lastPrinted=event.sequence
+  end end
+ end
+end
+function Dev:stop()
+ if self.connection then self.connection:Disconnect();self.connection=nil end;self.running=false;self.accumulator=0
+end
+function Dev:destroy()
+ self:stop();if self.view then self.view:destroy();self.view=nil end;self.lab:reset(true)
+end
+function Dev:_run(op,arg)
+ local e=self.lab.engine
+ if op=="qa" then assert(self.studio,"Native QA is Studio only");return require(script.Parent.ChakraStudioQA).run()
+ elseif op=="spawn" then return e:spawn(arg.id,arg.tool or "Kunai",arg)
+ elseif op=="surface" then return e:surface(arg.id,arg.kind or "Wall",arg.position or V.new(8,3,0),arg.normal)
+ elseif op=="nature" then return e:infuse(arg.id,arg.nature or "None")
+ elseif op=="property" then return e:property(arg.id,arg.property,arg.enabled)
+ elseif op=="launch" then return e:launch(arg.id,arg.direction or V.new(1,0,0),arg.speed)
+ elseif op=="collision" then return self.lab:forceClash(arg.source,arg.target,arg.direction,arg.normal)
+ elseif op=="embed" then return self.lab:embed(arg.id,arg.surface)
+ elseif op=="trigger" then return e:trigger(arg)
+ elseif op=="toggle" then e:toggle(arg.rule,arg.enabled);return {rule=arg.rule,enabled=arg.enabled}
+ elseif op=="inspect" then return e:inspect(arg.id)
+ elseif op=="report" then return self.lab:report()
+ elseif op=="compare" then return Lab.compare(self.cfg,arg.tool or "Kunai",arg.infusions or {"None","Reinforce","Wind"},arg.masteries or {"Basic","WeaponExpert"})
+ elseif op=="demo" then self:stop();self.lastPrinted=0;if self.view then self.view:reset() end;return self.lab:demo(arg.name,arg.mastery)
+ elseif op=="step" then return self.lab:run(arg.seconds or 1)
+ elseif op=="reset" then self:stop();self.lab:reset(arg.clearRules==true);self.lastPrinted=0;if self.view then self.view:reset() end;return self.lab:report()
+ elseif op=="stop" then self:stop();return {running=false}
+ elseif op=="close" then self:destroy();return {closed=true}
+ elseif op=="log" then assert(self.studio and type(arg.enabled)=="boolean","Studio boolean log switch");self.log=arg.enabled;return {enabled=self.log}
+ elseif op=="show" then
+  assert(self.studio,"Studio view only");if self.view then self.view:destroy();self.view=nil end
+  if arg.enabled~=false then
+   assert(not arg.origin or V.valid(arg.origin),"Invalid lab origin")
+   self.view=require(script.Parent.ChakraStudioView).new(self.cfg,arg.origin and Vector3.new(arg.origin.x,arg.origin.y,arg.origin.z))
+  end
+  return {visible=self.view~=nil,folder="Workspace.NinjaDuelChakraLab",cameraChanged=false}
+ elseif op=="play" then
+  assert(self.studio,"Realtime lab is Studio only");self:stop();self.running=true
+  self.connection=game:GetService("RunService").Heartbeat:Connect(function(dt)
+   self.accumulator+=dt;local limit=8/60
+   if self.accumulator&gt;limit then self.lab.discardedSeconds+=self.accumulator-limit;self.accumulator=limit end
+   local ok,err=pcall(function()
+    while self.accumulator&gt;=1/60 do self.lab:step(1/60);self.accumulator-=1/60 end;self:draw()
+   end)
+   if not ok then self:stop();warn("[NinjaDuelChakra] lab stopped: "..tostring(err)) end
+  end)
+  return {running=true}
+ end
+ error("Unknown interaction operation")
+end
+function Dev:run(op,arg)
+ arg=arg or {};if type(arg)~="table" or not S.serializable(arg) then return {ok=false,error="Invalid dev arguments"} end
+ local ok,value=pcall(self._run,self,op,arg)
+ if ok then
+  local drawn,err=pcall(self.draw,self);if not drawn then self:stop();return {ok=false,error="Lab view: "..tostring(err)} end
+ end
+ if ok and type(value)=="table" and value.ok==false then return value end
+ return if ok then {ok=true,result=value} else {ok=false,error=tostring(value)}
+end
+return Dev
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND29">
+        <Properties>
+          <string name="Name">ChakraLab</string>
+          <ProtectedString name="Source">-- Explicit experimental sandbox: kinematic proxies, never the live projectiles.
+-- Chakra lab (Codex 7091585, ported verbatim). Needs the chakra runtime
+-- modules ChakraConfig/ChakraRules/ChakraInteractions/ChakraVectors, which are
+-- NOT part of the dev-tools port: DevHooks loads this lab only when all four
+-- exist (DevTools.ChakraRuntime). Debug/QA places only (DEBUG_SOURCES).
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local Engine=require(script.Parent.ChakraInteractions)
+local Lab={};Lab.__index=Lab
+function Lab.new(cfg)
+ local copy=S.copy(cfg);copy.Enabled=true
+ return setmetatable({engine=assert(Engine.new(copy)),contacts={},steps=0,discardedSeconds=0},Lab)
+end
+local demos={
+ kunai_wind={rules={"wind-kunai"}},kunai_seal={rules={"surface-embed","seal-anchor"}},
+ redirection={rules={"wind-kunai","redirect-projectile","deflect-projectile"}},wire_property={rules={"wire-property","metal-conduction"}},
+ projectile_surface={rules={"surface-embed"}},fire_surface={rules={"fire-surface"}},
+}
+function Lab:reset(clearRules)
+ self.engine:reset();if clearRules then self.engine.switches={} end;self.contacts={};self.steps=0;self.discardedSeconds=0
+end
+function Lab:demo(name,mastery)
+ local def=assert(demos[name],"Unknown chakra demo");self:reset(false)
+ local e=self.engine;for _,id in def.rules do if e.switches[id]==nil then e:toggle(id,true) end end
+ local kind=if name=="wire_property" then "Wire" else "Kunai"
+ e:spawn("a",kind,{position=V.new(-10,3,0),mastery=mastery or "Basic"})
+ if name=="kunai_wind" then assert(e:infuse("a","Wind").ok);e:launch("a",V.new(1,0,0))
+ elseif name=="kunai_seal" then
+  assert(e:property("a","Marked",true).ok);assert(e:property("a","Seal",true).ok)
+  e:surface("wall","Wall",V.new(8,3,0));e:launch("a",V.new(1,0,0))
+ elseif name=="redirection" then
+  assert(e:infuse("a","Wind").ok);e:spawn("b","Shuriken",{position=V.new(10,3,0)});e:launch("a",V.new(1,0,0));e:launch("b",V.new(-1,0,0))
+ elseif name=="wire_property" then assert(e:infuse("a","Lightning").ok)
+ elseif name=="projectile_surface" then
+  e:surface("floor","Floor",V.new(0,0,0));e.objects.a.position=V.new(0,9,0);e:launch("a",V.new(0,-1,0))
+ elseif name=="fire_surface" then
+  assert(e:infuse("a","Fire").ok);e:surface("wood","Wood",V.new(8,3,0));e:launch("a",V.new(1,0,0))
+ end
+ return e:inspect()
+end
+function Lab:forceClash(a,b,direction,normal)
+ local e=self.engine;local source=assert(e.objects[a],"Unknown source")
+ local tagList={};for _,nature in e.cfg.Natures do if source.tags[nature.tag] then table.insert(tagList,nature.tag) end end
+ return e:trigger({trigger="ProjectileClash",source=a,target=b,direction=direction or V.new(0,1,0),normal=normal or V.new(1,0,0),tags=tagList})
+end
+function Lab:embed(id,surface)
+ local s=assert(self.engine.surfaces[surface],"Unknown surface")
+ return self.engine:trigger({trigger="SurfaceHit",source=id,surface=surface,position=s.position,normal=s.normal})
+end
+function Lab:step(dt)
+ local e=self.engine;local before=S.copy(e.objects);local candidates={};local ids={}
+ for id,o in before do if o.launched then table.insert(ids,id) end end;table.sort(ids)
+ local overlapping={}
+ for i,id in ids do
+  local a=before[id];local da=V.mul(a.velocity,dt)
+  for j=i+1,#ids do
+   local b=before[ids[j]];local key=id..":"..b.id;local radius=a.radius+b.radius
+   local touching=V.length(V.sub(a.position,b.position))&lt;=radius+.01
+   if touching then overlapping[key]=true end
+   if not (touching and self.contacts[key]) then
+    local t=V.sweep(a.position,da,b.position,V.mul(b.velocity,dt),radius)
+    if t then table.insert(candidates,{t=t,source=id,target=b.id,key=key}) end
+   end
+  end
+  for surfaceId,s in e.surfaces do
+   local signed=V.dot(V.sub(a.position,s.position),s.normal)-a.radius;local travel=V.dot(da,s.normal)
+   if signed&gt;=0 and travel&lt;0 and signed+travel&lt;=0 then
+    local t=-signed/travel;local center=V.add(a.position,V.mul(da,t));local hit=V.sub(center,V.mul(s.normal,a.radius))
+    if V.length(V.sub(hit,s.position))&lt;=s.radius then table.insert(candidates,{t=t,source=id,surface=surfaceId,hit=hit,key=id..":"..surfaceId}) end
+   end
+  end
+ end
+ table.sort(candidates,function(a,b) return if a.t==b.t then a.key&lt;b.key else a.t&lt;b.t end)
+ e:advance(dt);self.steps+=1;local handled={}
+ for _,hit in candidates do
+  local a=e.objects[hit.source];local b=hit.target and e.objects[hit.target]
+  if a and not handled[a.id] and (not hit.target or b and not handled[b.id]) then
+   local oldA=S.copy(a.position);local oldB=b and S.copy(b.position)
+   a.position=V.add(before[a.id].position,V.mul(before[a.id].velocity,dt*hit.t))
+   local result
+   if b then
+    b.position=V.add(before[b.id].position,V.mul(before[b.id].velocity,dt*hit.t))
+    local normal=V.sub(a.position,b.position);if V.length(normal)&lt;1e-8 then normal=V.sub(a.velocity,b.velocity) end
+    if V.length(normal)&lt;1e-8 then normal=V.new(1,0,0) end
+    result=self:forceClash(a.id,b.id,a.velocity,normal);overlapping[hit.key]=true
+   else result=e:trigger({trigger="SurfaceHit",source=a.id,surface=hit.surface,position=hit.hit,normal=e.surfaces[hit.surface].normal}) end
+   if result.ok then
+    for _,id in {a.id,b and b.id} do
+     local o=e.objects[id];handled[id]=true;if o.launched then o.position=V.add(o.position,V.mul(o.velocity,dt*(1-hit.t))) end
+    end
+   else a.position=oldA;if b then b.position=oldB end end
+  end
+ end
+ self.contacts=overlapping
+end
+function Lab:run(seconds)
+ assert(type(seconds)=="number" and seconds&gt;0 and seconds&lt;=30,"Run budget 0..30 seconds")
+ local remaining=seconds;while remaining&gt;1e-8 do local dt=math.min(1/60,remaining);self:step(dt);remaining-=dt end
+ return self:report()
+end
+function Lab:report()
+ local report=self.engine:inspect();report.lab={kinematicProxies=true,steps=self.steps,discardedSeconds=self.discardedSeconds};return report
+end
+-- Compare in independent sandboxes; never mutates the current run or config.
+function Lab.compare(cfg,kind,infusions,masteries)
+ assert(cfg.Objects[kind] and #infusions&gt;0 and #infusions&lt;=8 and #masteries&gt;0 and #masteries&lt;=8,"Comparison budget")
+ local rows={}
+ for _,mastery in masteries do for _,infusion in infusions do
+  local lab=Lab.new(cfg);for _,rule in cfg.Rules do if rule.trigger=="Infuse" then lab.engine:toggle(rule.id,true) end end
+  lab.engine:spawn("preview",kind,{mastery=mastery});local ok,result=pcall(lab.engine.infuse,lab.engine,"preview",infusion);if not ok then result={ok=false,error=tostring(result)} end
+  table.insert(rows,{tool=kind,infusion=infusion,mastery=mastery,result=result})
+ end end
+ return rows
+end
+Lab.demos=demos
+return Lab
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND30">
+        <Properties>
+          <string name="Name">ChakraStudioQA</string>
+          <ProtectedString name="Source">-- Explicit smoke test of the chakra lab, run by dev:Invoke("interactions","qa")
+-- in the Debug/QA place (Codex 7091585, ported verbatim; DEBUG_SOURCES). Never
+-- called by bootstrap. Needs the chakra runtime modules (DevTools.ChakraRuntime).
+local QA={}
+function QA.run()
+ assert(game:GetService("RunService"):IsStudio(),"Studio only")
+ local cfg=require(script.Parent.ChakraConfig)
+ local Dev=require(script.Parent.ChakraDev)
+ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+ local fighters=require(Shared.Fighters);local before={};for id,f in fighters do before[id]={speed=f.Speed,health=f.Health} end
+ local camera=workspace.CurrentCamera;local cf=camera and camera.CFrame
+ local tool=Dev.new(cfg,true);local passed=0
+ local ok,err=pcall(function()
+  for _,name in {"kunai_wind","kunai_seal","redirection","wire_property","projectile_surface","fire_surface"} do
+   local demo=tool:run("demo",{name=name});assert(demo.ok,demo.error)
+   local shown=tool:run("show",{enabled=true});assert(shown.ok,shown.error)
+   local result=tool:run("step",{seconds=1});assert(result.ok,result.error)
+   local report=result.result;local a=report.objects.a;assert(a and #report.events&gt;0)
+   if name=="kunai_wind" then assert(a.stats.speed&gt;42)
+   elseif name=="kunai_seal" then assert(a.embedded and a.anchor)
+   elseif name=="redirection" then assert(report.objects.b.velocity.x&gt;0)
+   elseif name=="wire_property" then assert(a.tags.conductiveWire)
+   elseif name=="projectile_surface" then assert(a.embedded)
+   elseif name=="fire_surface" then assert(report.surfaces.wood.tags.ignited) end
+   local model=tool.view.objects.a.model;assert((model:GetPivot().Position-(tool.view.origin+Vector3.new(a.position.x,a.position.y,a.position.z))).Magnitude&lt;.01)
+   for _,part in tool.view.folder:GetDescendants() do if part:IsA("BasePart") then assert(part.Anchored and not part.CanCollide and not part.CanQuery and not part.CanTouch) end end
+   passed+=1
+  end
+  tool:run("play");assert(tool.connection and tool.running);tool:stop();assert(not tool.connection)
+  local folder=tool.view.folder;tool:destroy();assert(folder.Parent==nil)
+  for id,f in fighters do assert(f.Speed==before[id].speed and f.Health==before[id].health) end
+  assert(workspace.CurrentCamera==camera and (not camera or camera.CFrame==cf) and cfg.Enabled==false)
+  passed+=1
+ end)
+ tool:destroy()
+ local result={ok=ok,passed=passed,expected=7,build=Shared.BuildFingerprint.Value,gameplayIntegration=false,error=not ok and tostring(err) or nil}
+ print("[NinjaDuelChakraQA] RESULT "..game:GetService("HttpService"):JSONEncode(result))
+ assert(ok,err);return result
+end
+return QA
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND31">
+        <Properties>
+          <string name="Name">ChakraStudioView</string>
+          <ProtectedString name="Source">-- Optional Studio proxy renderer. Only draws its own folder; no camera/UI changes.
+-- Chakra lab (Codex 7091585, ported verbatim). Debug/QA places only (DEBUG_SOURCES).
+local S=require(script.Parent.ProfileSchema)
+local View={};View.__index=View
+local function vector(v) return Vector3.new(v.x,v.y,v.z) end
+local colors={wind=Color3.fromRGB(120,255,200),fire=Color3.fromRGB(255,125,70),lightning=Color3.fromRGB(120,175,255),spatialAnchor=Color3.fromRGB(225,125,255)}
+local function part(parent,name,size,cf,color)
+ local p=Instance.new("Part");p.Name=name;p.Anchored=true;p.CanCollide=false;p.CanTouch=false;p.CanQuery=false;p.Size=size;p.CFrame=cf;p.Color=color;p.Material=Enum.Material.Neon;p.Parent=parent;return p
+end
+function View.new(cfg,origin)
+ assert(game:GetService("RunService"):IsStudio(),"Studio only")
+ local folder=Instance.new("Folder");folder.Name="NinjaDuelChakraLab";folder.Parent=workspace
+ return setmetatable({cfg=cfg,folder=folder,origin=origin or Vector3.new(0,250,500),objects={},surfaces={}},View)
+end
+function View:reset()
+ self.folder:ClearAllChildren();self.objects={};self.surfaces={}
+end
+function View:destroy() self.folder:Destroy() end
+function View:object(o)
+ local model=Instance.new("Model");model.Name=o.id.."_"..o.kind;model.Parent=self.folder
+ local color=Color3.fromRGB(195,200,215)
+ local root=part(model,"Root",Vector3.new(.14,.14,2),CFrame.new(),color);root.Transparency=1;model.PrimaryPart=root
+ local shape=self.cfg.Objects[o.kind].visual
+ if shape=="kunai" then
+  part(model,"Blade",Vector3.new(.35,.15,1.25),CFrame.new(0,0,-.55),color)
+  part(model,"Grip",Vector3.new(.18,.18,.65),CFrame.new(0,0,.4),color)
+  local ring=part(model,"Ring",Vector3.new(.35,.12,.35),CFrame.new(0,0,.95),color);ring.Shape=Enum.PartType.Ball
+ elseif shape=="shuriken" then
+  for i=0,3 do part(model,"Blade"..i,Vector3.new(.2,.08,1.2),CFrame.Angles(0,math.pi*i/2,0)*CFrame.new(0,0,-.35),color) end
+ elseif shape=="wire" then part(model,"Wire",Vector3.new(12,.06,.06),CFrame.new(),color)
+ else part(model,"Target",Vector3.new(2,3,2),CFrame.new(),color) end
+ local gui=Instance.new("BillboardGui");gui.Name="Tags";gui.Adornee=root;gui.Size=UDim2.fromOffset(420,64);gui.StudsOffset=Vector3.new(0,2,0);gui.AlwaysOnTop=true;gui.Parent=root
+ local label=Instance.new("TextLabel");label.Size=UDim2.fromScale(1,1);label.BackgroundTransparency=.3;label.BackgroundColor3=Color3.new(0,0,0);label.TextColor3=Color3.new(1,1,1);label.TextSize=14;label.TextWrapped=true;label.Parent=gui
+ self.objects[o.id]={model=model,label=label}
+ return self.objects[o.id]
+end
+function View:update(report)
+ for id,entry in self.objects do if not report.objects[id] then entry.model:Destroy();self.objects[id]=nil end end
+ for id,o in report.objects do
+  local entry=self.objects[id] or self:object(o);local p=self.origin+vector(o.position)
+  local direction=if vector(o.velocity).Magnitude&gt;.01 then vector(o.velocity).Unit elseif o.anchor then -vector(o.anchor.normal) else Vector3.new(1,0,0)
+  local up=if math.abs(direction.Y)&gt;.95 then Vector3.zAxis else Vector3.yAxis
+  entry.model:PivotTo(CFrame.lookAt(p,p+direction,up))
+  local color=Color3.fromRGB(195,200,215);for _,tag in {"wind","fire","lightning","spatialAnchor"} do if o.tags[tag] then color=colors[tag] end end
+  for _,child in entry.model:GetChildren() do if child:IsA("BasePart") then child.Color=color end end
+  local active={};for tag in o.tags do table.insert(active,tag) end;table.sort(active)
+  entry.label.Text=id.." / "..o.kind.." / "..o.mastery.."\n"..table.concat(active," · ")
+ end
+ for id,s in report.surfaces do
+  if not self.surfaces[id] then
+   local p=self.origin+vector(s.position);local n=vector(s.normal);local up=if math.abs(n.Y)&gt;.95 then Vector3.zAxis else Vector3.yAxis
+   local surface=part(self.folder,id,Vector3.new(s.radius*2,s.radius*2,.15),CFrame.lookAt(p,p+n,up),Color3.fromRGB(85,100,130));surface.Transparency=.6
+   self.surfaces[id]=surface
+  end
+  if s.tags.ignited then self.surfaces[id].Color=colors.fire end
+ end
+end
+return View
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -4735,7 +5171,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -4805,7 +5241,38 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND34">
+        <Properties>
+          <string name="Name">DevCommands</string>
+          <ProtectedString name="Source">-- Studio tooling boundary (Codex 33028b2, ported): the F6 panel's remote and
+-- the `tool` bindable op reach DevTools only through this allowlist of
+-- operations, argument keys and types. Debug/QA places only (DEBUG_SOURCES).
+local Commands={}
+Commands.ops={reset=true,character=true,scenario=true,["repeat"]=true,profile=true,report=true,
+	dummy=true,refill=true,awaken=true,ko=true,list=true,panel=true,selftest=true}
+function Commands.validate(op,arg)
+	if type(op)~="string" or not Commands.ops[op] then return false end
+	if arg==nil then return true,{} end
+	if type(arg)~="table" then return false end
+	local out={};local n=0
+	for k,v in arg do
+		n+=1;if n&gt;5 then return false end
+		if k=="first" or k=="second" or k=="name" then
+			if type(v)~="string" or #v&gt;32 then return false end
+		elseif k=="actor" then
+			if v~="human" and v~="bot" then return false end
+		elseif k=="enabled" then
+			if type(v)~="boolean" then return false end
+		else return false end
+		out[k]=v
+	end
+	return true,out
+end
+return Commands
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -4878,8 +5345,75 @@ function DevHooks.install(matches)
 			chainOpen=a.chainOpen and now&gt;=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
 			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end
+	-- Codex's Studio tools (33028b2 / 7091585, ported; docs/tools/DEVTOOLS.md):
+	-- the F6 panel's remote, the `tool` ops (setups, profiler, report, self-test)
+	-- and the optional chakra lab (`interactions`). Debug/QA places only, like
+	-- this module; the ops above and below keep their exact behaviour.
+	local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+	local Rules=require(Shared.Rules)
+	local Metrics=require(Shared.DevMetrics)
+	local DevTools=require(script.Parent.DevTools)
+	local tools=DevTools.new(matches)
+	local buckets={}
+	local function allowed(player,kind,rate,burst)
+		buckets[player]=buckets[player] or {}
+		local bucket=buckets[player][kind] or {tokens=burst,time=os.clock()};buckets[player][kind]=bucket
+		return Rules.consumeToken(bucket,os.clock(),rate,burst)
+	end
+	-- The client's side of a measurement report: bounded and validated.
+	logRemote.OnServerEvent:Connect(function(player,kind,payload)
+		if kind~="report" or not allowed(player,"report",2,4) then return end
+		if type(payload)=="table" and Metrics.validPayload(payload,8192) and Metrics.estimate(payload,0,{left=8192})&lt;200000 then tools.reports[player]=payload end
+	end)
+	local qaRunning=false
+	local function run(player,op,arg)
+		if not player then return {ok=false,error="No player"} end
+		if op=="report" then
+			-- Ask the client for its measurements, then wait briefly for them.
+			tools.reports[player]=nil;logRemote:FireClient(player,"report")
+			local deadline=os.clock()+.6
+			while tools.reports[player]==nil and os.clock()&lt;deadline do task.wait(.05) end
+		end
+		if op=="selftest" and qaRunning then return {ok=false,error="Self-test already running"} end
+		local result=tools:run(player,op,arg)
+		if not result.ok then return result end
+		if op=="profile" then logRemote:FireClient(player,"profile",result.enabled)
+		elseif op=="report" then require(script.Parent.DevReport).print(result)
+		elseif op=="panel" then logRemote:FireClient(player,"panel")
+		elseif op=="selftest" then
+			qaRunning=true;result.started=true
+			task.spawn(function()
+				local ok,err=pcall(require(script.Parent.DevQA).run,matches)
+				qaRunning=false
+				if not ok then warn("[NinjaDuelDevQA] FAIL "..tostring(err)) end
+			end)
+		end
+		return result
+	end
+	local control=Instance.new("RemoteFunction");control.Name="NinjaDuelDevControl";control.Parent=game:GetService("ReplicatedStorage")
+	control.OnServerInvoke=function(player,op,arg)
+		if not allowed(player,"control",4,8) then return {ok=false,error="Dev command rate limit"} end
+		return run(player,op,arg)
+	end
+	Players.PlayerRemoving:Connect(function(player) tools:remove(player);buckets[player]=nil end)
+	-- Chakra lab: loaded on its first command, and only when the chakra runtime
+	-- modules (DevTools.ChakraRuntime) are part of this build.
+	local chakraDev=nil
+	local function interactions(op,arg)
+		if not chakraDev then
+			local missing=DevTools.missing(script.Parent,DevTools.ChakraRuntime)
+			if missing then return {ok=false,error="Chakra lab needs the chakra runtime module "..missing.." (not in this build)"} end
+			local ok,value=pcall(function() return require(script.Parent.ChakraDev).new(require(script.Parent.ChakraConfig),true) end)
+			if not ok then return {ok=false,error="Chakra lab failed to load: "..tostring(value)} end
+			chakraDev=value
+		end
+		return chakraDev:run(op,arg)
+	end
+	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+		if op=="tool" then return run(player,arg1,arg2) end
+		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)
 		elseif op=="start" then
@@ -5018,7 +5552,417 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">DevProfiler</string>
+          <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
+-- installed only while measurements are ON and removed at OFF and when a
+-- duel is destroyed. Never changes positions, states, packet content, tick
+-- rate or network ownership. Local duels and online duels are both observed.
+-- Debug/QA places only (build.py DEBUG_SOURCES).
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Metrics=require(Shared.DevMetrics)
+local Profiler={};Profiler.__index=Profiler
+local TRANSIENT={Startup=true,Active=true,Recovery=true,TechniqueChannel=true,TechniqueActive=true,TechniqueRecovery=true,Pursuit=true,Rush=true,Dodging=true,Stunned=true}
+local function weak() return setmetatable({},{__mode="k"}) end
+function Profiler.new(matches)
+	return setmetatable({matches=matches,metrics=Metrics.new(),attached=weak(),tracks=weak(),lastWatch=0,lastSend={},lastEvents=weak(),lastCommand=nil},Profiler)
+end
+-- Every live Combat: local sessions and online duels.
+function Profiler:combats()
+	local list={}
+	for _,s in self.matches.sessions do if s.combat then table.insert(list,s.combat) end end
+	local online=self.matches.online
+	if online and online.duels then for d in online.duels do if d.combat then table.insert(list,d.combat) end end end
+	return list
+end
+function Profiler:attach(c)
+	if self.attached[c] then return end
+	self.attached[c]=true
+	local m=self.metrics
+	for _,key in {"updateActor","updateProjectiles","updateHazards","runScheduled","separate"} do
+		m:wrap(c,key,"server."..key)
+	end
+	m:wrap(c,"update","server.combat",function(_,dt)
+		m:sample("server.dt.ms",dt*1000)
+		m:sample("server.projectiles",#c.projectiles);m:sample("server.impacts.retained",#c.impacts)
+		m:sample("server.scheduled",c.scheduled and #c.scheduled or 0)
+	end)
+	m:wrap(c,"pushImpact","server.pushImpact")
+	m:wrap(c,"relocate","server.relocate",function(_,a)
+		m:event("intentional-relocation",{actor=a.id,state=a.state,attack=a.attackName,command=self.lastCommand})
+	end)
+	local separate=c.separate
+	-- Observe the actual separation correction around the existing implementation.
+	c.separate=function(selfCombat,...)
+		local a,b=selfCombat.actors[1],selfCombat.actors[2]
+		local pa,pb=a and a.root.Position,b and b.root.Position
+		local result=table.pack(separate(selfCombat,...))
+		if m.enabled and a and b then
+			local correction=(a.root.Position-pa).Magnitude+(b.root.Position-pb).Magnitude
+			m:sample("server.separation.studs",correction)
+			if correction&gt;.001 then m:count("server.separation.corrections") end
+		end
+		return table.unpack(result,1,result.n)
+	end
+	local observer=c.separate
+	m:addRestore(c,function() if c.separate==observer then c.separate=separate end end)
+end
+function Profiler:release(c)
+	if c and self.attached[c] then self.metrics:restoreObject(c);self.attached[c]=nil end
+end
+function Profiler:start()
+	self.metrics:stop();self.metrics:start()
+	self.attached=weak();self.tracks=weak();self.lastSend={};self.lastEvents=weak()
+	local m=self.metrics
+	m:wrap(self.matches,"destroy","server.destroy",nil,function(_,s) self:release(s.combat) end)
+	if self.matches.online then
+		m:wrap(self.matches.online,"teardown","server.online.teardown",nil,function(_,d) self:release(d.combat) end)
+	end
+	m:wrap(self.matches,"update","server.matches",function(_,dt)
+		m:sample("server.heartbeat.ms",dt*1000)
+		if dt&gt;.05 then m:event("heartbeat-spike",{ms=dt*1000}) end
+	end)
+	m:wrap(self.matches,"request","server.request",function(_,player,payload)
+		if type(payload)=="table" and type(payload.action)=="string" and #payload.action&lt;=24 then
+			m:count("input."..payload.action)
+			if payload.action~="Move" then
+				local s=self.matches.sessions[player];local a=s and s.human
+				local epoch=payload.epoch
+				m:event("input-intent",{userId=player.UserId,action=payload.action,
+					epoch=if type(epoch)=="number" and epoch==epoch and math.abs(epoch)&lt;1e6 then epoch else nil,state=a and a.state,
+					direction=if typeof(payload.direction)=="Vector3" then tostring(payload.direction) else nil,attack=a and a.attackName})
+			end
+		end
+	end)
+	m:wrap(self.matches,"send","server.snapshot",function(_,player,payload)
+		local now=os.clock();local last=self.lastSend[player];self.lastSend[player]=now
+		if last then m:sample("server.snapshot.gap.ms",(now-last)*1000) end
+		m:sample("server.snapshot.estimatedBytes",Metrics.estimate(payload))
+	end)
+	for _,c in self:combats() do self:attach(c) end
+end
+-- Called every Heartbeat by DevHooks; samples at most every 0.1 s.
+function Profiler:watch()
+	local m=self.metrics;if not m.enabled then return end
+	local now=os.clock();if now-self.lastWatch&lt;.1 then return end;self.lastWatch=now
+	for _,c in self:combats() do
+		self:attach(c)
+		for _,a in c.actors do
+			local previous=self.tracks[a]
+			local position=a.root.Position
+			if previous then
+				local elapsed=now-previous.at;local delta=(position-previous.position).Magnitude
+				m:sample("server.root.sampleDelta.studs",delta)
+				if delta&gt;math.max(8,elapsed*160) then m:event("server-position-jump",{actor=a.id,state=a.state,attack=a.attackName,studs=delta,warp=a.warpSerial or 0,previousWarp=previous.warp,command=self.lastCommand}) end
+				if previous.state~=a.state or previous.reaction~=a.reaction then m:event("state",{actor=a.id,from=previous.state,state=a.state,reaction=a.reaction,attack=a.attackName}) end
+			end
+			self.tracks[a]={at=now,position=position,state=a.state,reaction=a.reaction,warp=a.warpSerial or 0}
+			if TRANSIENT[a.state] and c.now-(a.untilTime or c.now)&gt;.6 then m:count("watchdog.overdueState");m:event("overdue-state",{actor=a.id,state=a.state,overdue=c.now-a.untilTime}) end
+			if (a.airHold or 0)-c.now&gt;3 then m:count("watchdog.longAirHold") end
+			local events=a.events or {};local old=self.lastEvents[a] or {}
+			for name,n in events do if n&gt;(old[name] or 0) then m:count("event."..name,n-(old[name] or 0)) end end
+			self.lastEvents[a]=table.clone(events)
+		end
+	end
+end
+function Profiler:command(op)
+	self.lastCommand=op;self.metrics:event("qa-command",{op=op})
+end
+function Profiler:stop() self.metrics:stop() end
+function Profiler:report()
+	local report=self.metrics:report();report.build=Shared.BuildFingerprint.Value
+	report.units="*.ms = milliseconds; *.studs = studs; estimatedBytes = estimate, not wire bytes"
+	return report
+end
+return Profiler
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
+        <Properties>
+          <string name="Name">DevQA</string>
+          <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
+-- Never runs at bootstrap: started explicitly from the Debug/QA place with
+-- dev:Invoke("tool","selftest"). It drives the same NinjaDuelDev "tool" ops
+-- as the F6 panel: the nine setups, character / refill / awakening / repeat,
+-- an AI-vs-AI capture with measurements on both sides, then checks that every
+-- profiling wrapper is gone. Prints [NinjaDuelDevQA] PASS/FAIL rows and one
+-- RESULT row (read by tools/dev.py report). Debug/QA places only (DEBUG_SOURCES).
+local QA={}
+local function stamp() return game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value end
+function QA.run(matches)
+	if not game:GetService("RunService"):IsStudio() then return end
+	local Players=game:GetService("Players");local p=Players:GetPlayers()[1]
+	local http=game:GetService("HttpService")
+	if not p then warn("[NinjaDuelDevQA] FAIL no player in the playtest");return end
+	local s0=matches.sessions[p]
+	if s0 and s0.online then warn("[NinjaDuelDevQA] FAIL leave the online session first");return end
+	local hook=game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev")
+	local failures={};local passed=0
+	local function check(name,fn)
+		local ok,err=pcall(fn)
+		if ok then passed+=1;print("[NinjaDuelDevQA] PASS "..name)
+		else table.insert(failures,name..": "..tostring(err));warn("[NinjaDuelDevQA] FAIL "..failures[#failures]) end
+	end
+	local function command(op,arg)
+		local result=hook:Invoke("tool",op,arg);assert(type(result)=="table" and result.ok,type(result)=="table" and result.error or tostring(result));return result
+	end
+	local report=nil
+	local ok,err=pcall(function()
+		command("profile",{enabled=true})
+		for _,name in {"neutral","launcher","air","wall","substitution","grab","whiff","projectile","ko"} do
+			check(name,function()
+				command("scenario",{name=name});local s=matches.sessions[p]
+				assert(s and s.combat and s.botFrozen,"no frozen duel")
+				if name=="launcher" then assert(s.bot.reaction=="Launched","bot not launched")
+				elseif name=="wall" then assert(s.bot.reaction=="WallSplat","bot not splatted")
+				elseif name=="air" then assert(s.human.airborne and s.bot.airborne,"not airborne")
+				elseif name=="substitution" then assert(s.human.subCharges==1,"substitution charge not spent")
+				elseif name=="ko" then assert(s.finishing,"no KO beat") end
+				task.wait(.8)
+			end)
+		end
+		check("fresh character / refill / awakening / repeat",function()
+			command("character",{first="GentleFist",second="Mirage"});command("refill");command("awaken")
+			assert(matches.sessions[p].human.awakened,"not awakened");command("repeat")
+			assert(matches.sessions[p].human.fighterId=="GentleFist","repeat changed the fighter")
+		end)
+		command("reset",{first="Flashstep",second="Mirage"});command("dummy",{enabled=false});hook:Invoke("autopilot",true)
+		task.wait(12);hook:Invoke("autopilot",false)
+		report=command("report")
+		check("both client and server measurements delivered",function()
+			assert(report.client and report.client.stats["client.frame.ms"],"no client frame measurements (DevClient loaded? Studio in the foreground?)")
+			assert(report.client.build==report.server.build,"client and server builds differ")
+			assert(report.server.stats["server.combat.ms"],"no server combat measurements")
+		end)
+		command("profile",{enabled=false})
+		check("all profiling wrappers removed",function()
+			assert(rawget(matches,"update")==nil and rawget(matches.sessions[p].combat,"update")==nil,"a wrapper survived OFF")
+		end)
+		command("reset")
+	end)
+	if not ok then table.insert(failures,"aborted: "..tostring(err));warn("[NinjaDuelDevQA] FAIL aborted: "..tostring(err)) end
+	pcall(function() hook:Invoke("autopilot",false);hook:Invoke("tool","profile",{enabled=false}) end)
+	print("[NinjaDuelDevQA] RESULT "..http:JSONEncode({pass=passed,failures=failures,build=stamp()}))
+end
+return QA
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND38">
+        <Properties>
+          <string name="Name">DevReport</string>
+          <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
+-- lines: one bounded JSON row per metric/event, framed by begin/end rows that
+-- carry the exact build fingerprint (tools/dev.py report checks both).
+-- Debug/QA places only (build.py DEBUG_SOURCES).
+local Report={}
+function Report.print(report)
+	local http=game:GetService("HttpService")
+	local id=report.server.build:sub(1,12).."-"..tostring(math.floor(os.clock()*1000));local rows=0
+	local function emit(row)
+		row.id=id;row.build=report.server.build
+		print("[NinjaDuelPerf] "..http:JSONEncode(row))
+	end
+	emit({kind="begin",clientPresent=report.client~=nil})
+	for _,side in {"server","client"} do
+		local data=report[side]
+		if data then
+			emit({kind="meta",side=side,enabled=data.enabled,seconds=data.seconds});rows+=1
+			for name,value in data.stats do emit({kind="metric",side=side,name=name,value=value});rows+=1 end
+			for name,value in data.counters do emit({kind="counter",side=side,name=name,value=value});rows+=1 end
+			for _,value in data.events do
+				local event=table.clone(value)
+				if event.context and event.context.error then event.context=table.clone(event.context);event.context.error=tostring(event.context.error):sub(1,300) end
+				emit({kind="event",side=side,value=event});rows+=1
+			end
+		end
+	end
+	emit({kind="end",rows=rows})
+end
+return Report
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND39">
+        <Properties>
+          <string name="Name">DevScenarios</string>
+          <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
+-- one rebuilds the duel through Matches:start (fresh actors and epoch, no
+-- intro, the bot held as a dummy), then puts it in a state through the live
+-- engine only: Brawler reactions, Brawler.splat on a real NinjaWall panel,
+-- Combat:request and Combat:damage. A setup reproduces a state; it does not
+-- prove that a human executed the route. Online sessions are never touched.
+-- Debug/QA places only (build.py DEBUG_SOURCES).
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Fighters=require(Shared.Fighters)
+local Brawler=require(script.Parent.Brawler)
+local World=require(script.Parent.World)
+local Scenarios={}
+Scenarios.names={"neutral","launcher","air","wall","substitution","grab","whiff","projectile","ko"}
+-- The selectable CORE4 roster. Other ids (Sand) stay reachable from the command bar.
+Scenarios.core={"Flashstep","Mirage","GentleFist","Lion"}
+function Scenarios.known(name) return table.find(Scenarios.names,name)~=nil end
+-- A fresh duel at close range. `first`/`second` default to the current pair.
+function Scenarios.reset(matches,player,first,second,dummy)
+	local old=matches.sessions[player]
+	if old and old.online then return false,"Online session: leave it first (back to Selection)" end
+	first=first or (old and old.playerId) or "Flashstep"
+	second=second or (old and old.botId) or "Mirage"
+	if type(first)~="string" or type(second)~="string" or not Fighters[first] or not Fighters[second] then return false,"Unknown fighter" end
+	-- The same pairing keeps its validated skill builds (startBuild); a new
+	-- pairing starts on the canonical kits.
+	local options=if old and old.playerId==first and old.botId==second then old.options else nil
+	local ok,reason=matches:start(player,first,second,false,options)
+	if not ok then return false,reason or "Start refused" end
+	local s=matches.sessions[player]
+	s.introUntil=nil;s.botFrozen=dummy~=false
+	if s.botFrozen then s.bot.move=Vector3.zero end
+	local c=s.combat
+	c:relocate(s.human,s.origin+Vector3.new(0,3,3));c:relocate(s.bot,s.origin+Vector3.new(0,3,-3))
+	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
+	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
+	matches:snapshot(player,s)
+	return true,s
+end
+-- Chakra, cooldowns and substitution charges back to full (health untouched).
+function Scenarios.refill(s,actor)
+	for _,a in (if actor then {actor} else {s.human,s.bot}) do
+		a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
+		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
+	end
+end
+function Scenarios.setup(matches,player,name,first,second)
+	if not Scenarios.known(name) then return false,"Unknown scenario" end
+	local ok,s=Scenarios.reset(matches,player,first,second,true)
+	if not ok then return false,s end
+	local c,a,b=s.combat,s.human,s.bot
+	local accepted,reason=true,nil
+	if name=="launcher" then
+		Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2,a);a.pursuitUntil=c.now+Config.PursuitWindow
+	elseif name=="air" then
+		for _,x in {a,b} do c:relocate(x,x.root.Position+Vector3.new(0,13,0));x.airborne=true end
+		a.airHold=c.now+2;Brawler.react(c,b,"Juggled",Vector3.zero,2,a)
+	elseif name=="wall" then
+		-- A real NinjaWall panel probed at World.WALL_RADIUS on +X, never a stored coordinate.
+		local hit=workspace:Raycast(s.origin+Vector3.new(World.WALL_RADIUS-12,12,0),Vector3.xAxis*24,c:rayParams(true))
+		if not hit or not hit.Instance:GetAttribute("NinjaWall") then return false,"No wall surface on probe ray" end
+		c:relocate(b,hit.Position+hit.Normal*2.1)
+		local front=b.root.Position+hit.Normal*5
+		c:relocate(a,Vector3.new(front.X,s.origin.Y+3,front.Z))
+		a.root.CFrame=CFrame.lookAt(a.root.Position,Vector3.new(b.root.Position.X,a.root.Position.Y,b.root.Position.Z))
+		-- The engine's own splat: pin window, wall impact, splat damage and the attacker's chase window.
+		Brawler.react(c,b,"Knockback",Vector3.zero,.42,a)
+		Brawler.splat(c,b,hit)
+	elseif name=="substitution" then
+		a.lastHurt=c.now;Brawler.react(c,a,"HitStun",Vector3.zero,.45,b)
+		accepted,reason=c:request(a,"Substitute")
+	elseif name=="grab" then
+		c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.4)
+		accepted,reason=c:request(a,"Grab")
+	elseif name=="whiff" then
+		c:relocate(b,s.origin+Vector3.new(0,3,-22))
+		accepted,reason=c:request(a,"Heavy")
+	elseif name=="projectile" then
+		c:relocate(b,s.origin+Vector3.new(0,3,-24))
+		accepted,reason=c:request(a,"Tool",b.root.Position)
+	elseif name=="ko" then
+		b.rotationUntil=0;b.shieldCharges=0;b.invulnerableUntil=0;b.readUntil=0;b.guardHeld=false
+		c:damage(a,b,b.health+200,false,false)
+		accepted,reason=b.health&lt;=0,"damage refused"
+	end
+	if not accepted then return false,name..": "..tostring(reason) end
+	matches:snapshot(player,s)
+	return true,{scenario=name,epoch=s.epoch,first=s.playerId,second=s.botId}
+end
+return Scenarios
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND40">
+        <Properties>
+          <string name="Name">DevTools</string>
+          <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
+-- (NinjaDuelDevControl remote) and the command bar (NinjaDuelDev "tool" op).
+-- Every op acts on the calling player's own local session, through the
+-- allowlist in DevCommands; online sessions are refused, never rebuilt.
+-- Debug/QA places only (build.py DEBUG_SOURCES).
+local Commands=require(script.Parent.DevCommands)
+local Scenarios=require(script.Parent.DevScenarios)
+local Profiler=require(script.Parent.DevProfiler)
+local Tools={};Tools.__index=Tools
+-- The chakra lab (ChakraDev/ChakraLab) runs on the chakra runtime modules,
+-- which arrive with the chakra-interactions work, not with these tools.
+Tools.ChakraRuntime={"ChakraConfig","ChakraRules","ChakraInteractions","ChakraVectors"}
+-- First module of `names` absent from `parent` (nil when all are present).
+function Tools.missing(parent,names)
+	for _,name in names do
+		if not parent:FindFirstChild(name) then return name end
+	end
+	return nil
+end
+function Tools.new(matches)
+	return setmetatable({matches=matches,profiler=Profiler.new(matches),last={},reports={},dummy={}},Tools)
+end
+function Tools:run(player,op,arg)
+	local valid,clean=Commands.validate(op,arg)
+	if not valid then return {ok=false,error="Invalid command"} end
+	local matches=self.matches;local s=matches.sessions[player];arg=clean
+	self.profiler:command(op)
+	if op=="list" then
+		return {ok=true,scenarios=table.clone(Scenarios.names),fighters=table.clone(Scenarios.core),last=self.last[player],
+			profiling=self.profiler.metrics.enabled,dummy=s~=nil and s.botFrozen==true}
+	elseif op=="profile" then
+		if arg.enabled then self.profiler:start() else self.profiler:stop() end
+		return {ok=true,enabled=self.profiler.metrics.enabled}
+	elseif op=="report" then
+		return {ok=true,server=self.profiler:report(),client=self.reports[player]}
+	elseif op=="panel" or op=="selftest" then
+		-- Carried out by DevHooks (client toggle / DevQA task).
+		return {ok=true}
+	end
+	if s and s.online then return {ok=false,error="Online session: leave it first (back to Selection)"} end
+	if op=="reset" or op=="character" then
+		local ok,value=Scenarios.reset(matches,player,arg.first,arg.second,self.dummy[player]~=false)
+		return {ok=ok,epoch=if ok then value.epoch else nil,error=if ok then nil else value}
+	elseif op=="scenario" or op=="repeat" then
+		local name=if op=="repeat" then self.last[player] or "neutral" else arg.name
+		local ok,value=Scenarios.setup(matches,player,name,arg.first,arg.second)
+		if ok then self.last[player]=name;self.dummy[player]=true end
+		return {ok=ok,scenario=if ok then value else nil,error=if ok then nil else value}
+	end
+	if not s or not s.combat or s.phase~="Duel" then return {ok=false,error="No active duel"} end
+	local c=s.combat;local a=if arg.actor=="bot" then s.bot else s.human
+	if op=="dummy" then
+		self.dummy[player]=arg.enabled==true;s.botFrozen=self.dummy[player]
+		if s.botFrozen then s.bot.move=Vector3.zero end
+	elseif op=="refill" then
+		Scenarios.refill(s)
+	elseif op=="awaken" then
+		-- QA override of once-per-match: health under the threshold, then the real Awaken request.
+		Scenarios.refill(s,a);a.awakened=false;a.health=a.def.Health*.3;a.hum.Health=a.health
+		local ok,reason=c:request(a,"Awaken")
+		matches:snapshot(player,s)
+		return {ok=ok,error=if ok then nil else reason}
+	elseif op=="ko" then
+		a.invulnerableUntil=0;a.rotationUntil=0;a.readUntil=0;a.guardHeld=false;a.shieldCharges=0;a.comboHits=0
+		c:damage(a.target,a,a.health+200,false,false)
+	else
+		return {ok=false,error="Unknown command"}
+	end
+	matches:snapshot(player,s)
+	return {ok=true,epoch=s.epoch,dummy=s.botFrozen==true}
+end
+function Tools:remove(player)
+	self.last[player]=nil;self.reports[player]=nil;self.dummy[player]=nil;self.profiler.lastSend[player]=nil
+end
+return Tools
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -5060,7 +6004,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -5138,7 +6082,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND32">
+      <Item class="Script" referent="ND43">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -5167,7 +6111,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5510,7 +6454,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -5762,7 +6706,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -6100,7 +7044,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -6365,7 +7309,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6841,7 +7785,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -7052,7 +7996,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -7255,7 +8199,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -7744,7 +8688,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -8057,7 +9001,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -8643,7 +9587,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -8743,7 +9687,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -8771,7 +9715,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -8836,7 +9780,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -8887,7 +9831,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -9611,21 +10555,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND48">
+  <Item class="StarterPlayer" referent="ND59">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND49">
+    <Item class="StarterPlayerScripts" referent="ND60">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND50">
+      <Item class="Folder" referent="ND61">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND51">
+        <Item class="ModuleScript" referent="ND62">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -9902,7 +10846,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND52">
+        <Item class="LocalScript" referent="ND63">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -9936,7 +10880,201 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND53">
+        <Item class="ModuleScript" referent="ND64">
+          <Properties>
+            <string name="Name">DevClient</string>
+            <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
+-- Hidden at start. While it is open the fighter's combat input is held:
+-- Main.client hands Input a non-Duel state (`blocked`), so every binding
+-- passes to the panel, and held keys are released as on a window blur.
+-- Closed, input is exactly the game's. Main.client's existing Studio probe,
+-- info and log forwarding are left alone: this module only answers the
+-- profiler ("profile", "report") and the command-bar fallback ("panel").
+-- Debug/QA places only (build.py DEBUG_SOURCES); Main.client requires it only
+-- when the module is present.
+local Dev={}
+local CORE={"Flashstep","Mirage","GentleFist","Lion"}
+local SCENARIOS={"neutral","launcher","air","wall","substitution","grab","whiff","projectile"}
+function Dev.install(ctx)
+	local rs=game:GetService("RunService");if not rs:IsStudio() then return nil end
+	local RS=game:GetService("ReplicatedStorage")
+	local Shared=RS:WaitForChild("NinjaDuel")
+	local Metrics=require(Shared.DevMetrics)
+	local Fighters=require(Shared.Fighters)
+	local volumes=require(script.Parent.DevVolumes).new(ctx.player)
+	local m=Metrics.new()
+	local self={panelOpen=false,metrics=m,blocked={phase="DevPanel"}}
+	local track={};local lastPacket=nil;local packetAt=0;local epoch=nil
+	local control=nil;local busy=false;local profile=false
+	local gui=Instance.new("ScreenGui");gui.Name="NinjaDuelDevPanel";gui.ResetOnSpawn=false;gui.DisplayOrder=110;gui.Enabled=false
+	gui.Parent=ctx.player:WaitForChild("PlayerGui")
+	-- Right edge: the F8 inspector keeps the top-left corner.
+	local frame=Instance.new("Frame");frame.Size=UDim2.fromOffset(360,530);frame.Position=UDim2.new(1,-376,0,16)
+	frame.BackgroundColor3=Color3.fromRGB(20,24,30);frame.BackgroundTransparency=.05;frame.Parent=gui
+	local title=Instance.new("TextLabel");title.Size=UDim2.new(1,-16,0,40);title.Position=UDim2.fromOffset(8,4);title.BackgroundTransparency=1
+	title.TextColor3=Color3.new(1,1,1);title.TextSize=16;title.Font=Enum.Font.GothamBold;title.Text="DEV / F6 — Studio uniquement";title.Parent=frame
+	local status=title:Clone();status.Position=UDim2.fromOffset(8,478);status.Size=UDim2.new(1,-16,0,46);status.TextSize=13;status.Font=Enum.Font.Gotham
+	status.TextWrapped=true;status.Text="Mesures OFF · aucun scénario actif";status.Parent=frame
+	local firstButton,selectedBefore
+	local function run(op,arg)
+		if busy then return end
+		if not control then status.Text="Outils serveur absents (place Debug/QA ?)";return end
+		busy=true;status.Text=op.." …"
+		task.spawn(function()
+			local ok,result=pcall(function() return control:InvokeServer(op,arg or {}) end)
+			if ok and type(result)=="table" and result.ok then
+				status.Text=op.." : OK"
+				if op=="profile" then profile=result.enabled==true end
+			else status.Text=op.." : "..tostring(if ok and type(result)=="table" then result.error else result) end
+			busy=false
+		end)
+	end
+	local index=0
+	local function button(text,callback)
+		local b=Instance.new("TextButton");local row=math.floor(index/2);local col=index%2;index+=1
+		b.Position=UDim2.fromOffset(8+col*174,48+row*32);b.Size=UDim2.fromOffset(168,28);b.BackgroundColor3=Color3.fromRGB(43,51,65)
+		b.TextColor3=Color3.new(1,1,1);b.TextSize=13;b.Font=Enum.Font.Gotham;b.Text=text;b.Parent=frame;b.Activated:Connect(callback)
+		firstButton=firstButton or b
+	end
+	-- CORE4 ids from the active data; nothing new is registered.
+	for _,id in CORE do
+		local def=Fighters[id]
+		if def then
+			button("Joueur : "..def.Name,function() run("character",{first=id}) end)
+			button("Adversaire : "..def.Name,function() run("character",{second=id}) end)
+		end
+	end
+	button("Reset immédiat",function() run("reset") end);button("Chakra / sub pleins",function() run("refill") end)
+	button("Éveil joueur",function() run("awaken") end);button("KO adversaire",function() run("ko",{actor="bot"}) end)
+	button("Dummy",function() run("dummy",{enabled=true}) end);button("IA",function() run("dummy",{enabled=false}) end)
+	for _,name in SCENARIOS do button("Situation : "..name,function() run("scenario",{name=name}) end) end
+	button("Répéter situation",function() run("repeat") end)
+	button("Mesures ON / OFF",function() run("profile",{enabled=not profile}) end)
+	button("Rapport → Output",function() run("report") end)
+	button("Volumes ON / OFF",function()
+		volumes:set(not volumes.enabled)
+		status.Text=if volumes.enabled then "Volumes : racines bleues / hitboxes rouges" else "Volumes OFF"
+	end)
+	function self:toggle(open)
+		if open==nil then open=not self.panelOpen end
+		if open==self.panelOpen then return end
+		self.panelOpen=open;gui.Enabled=open
+		local gs=game:GetService("GuiService")
+		if open then
+			selectedBefore=gs.SelectedObject
+			-- The same release as a window blur: no key stays held behind the panel.
+			local jumping=next(ctx.input.jumps)~=nil
+			ctx.input:reset();ctx.send("GuardOff");if jumping then ctx.send("JumpOff") end;ctx.send("Move",Vector3.zero)
+			-- Controller navigation starts on the first button; mouse users get no highlight.
+			if ctx.input.pad then gs.SelectedObject=firstButton end
+		else
+			gs.SelectedObject=if selectedBefore and selectedBefore.Parent then selectedBefore else nil
+		end
+	end
+	game:GetService("UserInputService").InputBegan:Connect(function(key,processed)
+		if not processed and key.KeyCode==Enum.KeyCode.F6 then self:toggle() end
+	end)
+	local function setProfile(enabled)
+		m:stop();track={};lastPacket=nil
+		if not enabled then return end
+		m:start()
+		for _,key in {"smoothStep","update","impacts"} do m:wrap(ctx.presentation,key,"client.presentation."..key) end
+		m:wrap(ctx.camera,"update","client.camera");m:wrap(ctx.ui,"render","client.hud")
+		m:wrap(ctx.presentation.fx,"update","client.fx")
+	end
+	rs:BindToRenderStep("NinjaDuelDevMeasure",Enum.RenderPriority.Camera.Value+2,function(dt)
+		local data=ctx.state()
+		volumes:update(data)
+		if not m.enabled or not data or data.phase~="Duel" or dt&lt;=0 then return end
+		m:sample("client.frame.ms",dt*1000)
+		if dt&gt;.05 then m:event("frame-spike",{ms=dt*1000,state=data.human and data.human.state}) end
+		if epoch~=data.epoch then track={};epoch=data.epoch;m:event("epoch",{epoch=epoch}) end
+		if data~=lastPacket then
+			local at=os.clock();if lastPacket then m:sample("client.snapshot.gap.ms",(at-packetAt)*1000) end
+			packetAt=at;lastPacket=data
+			if data.serverNow then m:sample("client.snapshot.age.ms",math.max(0,workspace:GetServerTimeNow()-data.serverNow)*1000) end
+		end
+		for _,key in {"human","bot"} do
+			local actor=data[key];local st=ctx.presentation.smooth[key];local draw=ctx.presentation:visualRoot(key)
+			if actor and st and st.replicatedCF and draw then
+				-- Includes the intended ~45 ms smoothing delay of Presentation.
+				m:sample("client."..key..".presentationGap.studs",(draw-st.replicatedCF.Position).Magnitude)
+				local old=track[key];local delta=old and (draw-old.p).Magnitude or 0
+				m:sample("client."..key..".frameTravel.studs",delta)
+				if old and delta&gt;math.max(6,dt*160) then
+					m:event("visual-position-jump",{actor=key,state=actor.state,reaction=actor.reaction,attack=actor.attackName,studs=delta,warp=actor.warpSerial,previousWarp=old.warp,ms=dt*1000})
+				end
+				track[key]={p=draw,warp=actor.warpSerial}
+			end
+		end
+	end)
+	task.spawn(function()
+		-- Both channels are created by the server's DevHooks at ReplicatedStorage root.
+		control=RS:WaitForChild("NinjaDuelDevControl",15)
+		if not control then status.Text="Outils serveur absents (place Debug/QA ?)" end
+		local log=RS:WaitForChild("NinjaDuelDevLog",15)
+		if not log then return end
+		log.OnClientEvent:Connect(function(kind,value)
+			if kind=="profile" then
+				profile=value==true;setProfile(profile);status.Text="Mesures "..(if profile then "ON" else "OFF")
+			elseif kind=="report" then
+				local report=m:report();report.build=Shared.BuildFingerprint.Value;log:FireServer("report",report)
+			elseif kind=="panel" then
+				self:toggle()
+			end
+		end)
+	end)
+	return self
+end
+return Dev
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND65">
+          <Properties>
+            <string name="Name">DevVolumes</string>
+            <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
+-- the live BanglaHitbox Parts of the viewer's duel in red. Never creates a
+-- collision Part, never changes a property or a query. A startup box is not a
+-- confirmed active window; projectiles and hazards do not use this Part.
+-- Debug/QA places only (build.py DEBUG_SOURCES).
+local Volumes={};Volumes.__index=Volumes
+function Volumes.new(player) return setmetatable({player=player,enabled=false,boxes={},last=0},Volumes) end
+function Volumes:clear()
+	for _,box in self.boxes do box:Destroy() end;self.boxes={}
+end
+function Volumes:set(enabled) self.enabled=enabled;if not enabled then self:clear() end end
+-- `data` is the latest duel snapshot: the opponent's model is named data.bot.id
+-- ("AIFighter" against the AI, a duelist online).
+function Volumes:update(data)
+	if not self.enabled or os.clock()-self.last&lt;.1 then return end;self.last=os.clock()
+	local model=self.player.Character;local folder=model and model.Parent;local effects=folder and folder:FindFirstChild("Effects")
+	local wanted={}
+	if effects then
+		for _,part in effects:GetChildren() do
+			if part:IsA("BasePart") and part.Name=="BanglaHitbox" then wanted[part]=Color3.fromRGB(255,100,85) end
+		end
+	end
+	local opponent=folder and folder:FindFirstChild(data and data.bot and data.bot.id or "AIFighter")
+	for _,fighter in {model,opponent} do
+		local root=fighter and fighter:FindFirstChild("HumanoidRootPart");if root then wanted[root]=Color3.fromRGB(70,170,255) end
+	end
+	for part,box in self.boxes do if not wanted[part] or not part.Parent then box:Destroy();self.boxes[part]=nil end end
+	local count=0
+	for part,color in wanted do
+		count+=1;if count&gt;40 then break end
+		local box=self.boxes[part]
+		if not box then
+			box=Instance.new("BoxHandleAdornment");box.Name="DevObservedVolume";box.Adornee=part;box.AlwaysOnTop=true;box.ZIndex=4;box.Transparency=.7;box.Parent=self.player.PlayerGui;self.boxes[part]=box
+		end
+		box.Size=part.Size;box.Color3=color
+	end
+end
+return Volumes
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND66">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -11059,7 +12197,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND54">
+        <Item class="ModuleScript" referent="ND67">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -11207,7 +12345,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND55">
+        <Item class="LocalScript" referent="ND68">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -11243,7 +12381,10 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+-- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
+-- Input sees a non-Duel state, so no combat binding fires behind the panel.
+local dev
+input=Input.new(send,function() return if dev and dev.panelOpen then dev.blocked else current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -11338,12 +12479,22 @@ if RunService:IsStudio() then
 		end)
 	end)
 end
+-- The normal build has no DevClient module, so this stays inert there.
+local devModule=RunService:IsStudio() and script.Parent:FindFirstChild("DevClient")
+if devModule then
+	task.spawn(function()
+		local ok,err=pcall(function()
+			dev=require(devModule).install({player=player,input=input,presentation=presentation,camera=camera,ui=ui,state=function() return current end,send=send})
+		end)
+		if not ok then warn("[NinjaDuel] dev panel unavailable: "..tostring(err)) end
+	end)
+end
 send("Ready")
 print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND56">
+        <Item class="ModuleScript" referent="ND69">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -11606,7 +12757,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND57">
+        <Item class="ModuleScript" referent="ND70">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -12103,7 +13254,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND58">
+        <Item class="ModuleScript" referent="ND71">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -12244,7 +13395,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND59">
+        <Item class="ModuleScript" referent="ND72">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -14126,7 +15277,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND60">
+  <Item class="Lighting" referent="ND73">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -14144,7 +15295,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND61">
+  <Item class="SoundService" referent="ND74">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
