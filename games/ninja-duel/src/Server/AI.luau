@@ -105,6 +105,10 @@ function AI:update(now)
 	local calm=self.probing or now<(self.breathUntil or 0)
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
+	-- Genjutsu image (Itachi's Mirage): hold the line behind the image while it
+	-- stands; the opponent has to come to it (blades still fly through it).
+	local holding=target.illusionBy==a and (target.illusionUntil or 0)>now
+	if holding then desired=distance end
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
 	-- Lateral movement is committed for a beat, then changes side: readable
 	-- repositioning, not a sine-wave drift around the opponent.
@@ -118,6 +122,7 @@ function AI:update(now)
 	-- bounded rate) orbit each other forever instead of meeting.
 	local lateral=self.strafeAmount or .5
 	if radial>0 and not calm then lateral*=if distance>desired+8 then 0 else .35 end
+	if holding then lateral=0 end
 	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.

@@ -121,6 +121,21 @@ test("Itachi · Mirage: walking into the image dissolves it; any blow breaks the
  assert(n.illusionUntil<=c3.now,"the image fooled the Byakugan")
 end)
 
+test("Itachi · AI: while its image holds, the Itachi AI keeps the line behind it",function()
+ local AI=H.load("Server/AI")
+ local c,a,b=H.duel("Mirage","Flashstep")
+ local stood=mirage(c,a,b)
+ local start=a.root.Position
+ local brain=AI.new(c,a,5)
+ for _=1,100 do brain:update(c.now);H.step(c,.01) end
+ assert(b.illusionUntil>c.now,"setup: the image should still hold")
+ local line=(stood-b.root.Position).Unit
+ local rel=a.root.Position-stood
+ local off=flat(rel-line*rel:Dot(line)).Magnitude
+ assert(off<1.5 and rel:Dot(line)>3,"the AI left the line behind its image ("..string.format("%.2f off, %.2f back",off,rel:Dot(line))..")")
+ assert(flat(a.root.Position-start).Magnitude<2.5,"the AI walked away from behind its image")
+end)
+
 test("Itachi · Read: the blow bites his afterimage, he slips aside square to the attacker, the counter opens",function()
  local c,a,b=H.duel("Mirage","Flashstep")
  place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
