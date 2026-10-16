@@ -1,0 +1,1039 @@
+{
+  "schemaVersion": 1,
+  "status": "optional_proposals_not_runtime",
+  "archetypes": {
+    "rapide_precis": "contacts courts, angles, engagement choisi",
+    "taijutsu": "engagement du bassin, contact rapproché",
+    "zoner": "distance et fenêtres de réengagement",
+    "projectile_master": "trajectoires et couverture de sortie",
+    "grappler": "prises lisibles et décisions de projection",
+    "acrobatique": "changement de niveau et de côté",
+    "defensif_counter": "lecture puis réponse exposée",
+    "teleportation": "repères de départ/arrivée",
+    "controle_zone": "espace durable, sorties lisibles",
+    "rushdown": "pression avec sorties défensives possibles"
+  },
+  "entries": [
+    {
+      "id": "short_string",
+      "family": "combo",
+      "title": "Jab → cross → recul adverse",
+      "status": "proposal_only",
+      "usage": "Conversion simple près du centre",
+      "context": "neutral → hit confirm",
+      "archetypes": [
+        "rapide_precis",
+        "taijutsu",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Deux rotations de bassin opposées puis séparation",
+        "gameplay": "Récompense une confirmation simple"
+      },
+      "sequence": [
+        "Light1",
+        "Light2",
+        "Light3"
+      ],
+      "integrationNotes": "Attacks/Brawler : route existante ; proposer seulement une variante de pose",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "pressure_end",
+      "family": "combo",
+      "title": "Deux contacts → finisher horizontal",
+      "status": "proposal_only",
+      "usage": "Terminer une string et rendre le neutral",
+      "context": "ground confirm",
+      "archetypes": [
+        "taijutsu",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Troisième contact déplace nettement la victime",
+        "gameplay": "Distance après combo"
+      },
+      "sequence": [
+        "Light1",
+        "Light2",
+        "Light3"
+      ],
+      "integrationNotes": "Ne pas étendre la chainWindow sans décision Claude",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "low_branch",
+      "family": "directionnel",
+      "title": "Contacts → branche basse",
+      "status": "proposal_only",
+      "usage": "Lire la garde debout puis renoncer à l’air",
+      "context": "ground confirm + away",
+      "archetypes": [
+        "taijutsu",
+        "defensif_counter"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Changement de niveau et chute",
+        "gameplay": "Choix knockdown plutôt que launcher"
+      },
+      "sequence": [
+        "Light1",
+        "Light2",
+        "Sweep"
+      ],
+      "integrationNotes": "MoveGraphs.routes.down ; garder la substitution existante",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "side_branch",
+      "family": "directionnel",
+      "title": "Contact → pas latéral → reprise",
+      "status": "proposal_only",
+      "usage": "Créer un angle autour de la garde",
+      "context": "ground confirm + side",
+      "archetypes": [
+        "rapide_precis",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Deux silhouettes se croisent latéralement",
+        "gameplay": "Angle contre poursuite directe"
+      },
+      "sequence": [
+        "Light1",
+        "AngleStep",
+        "Light2"
+      ],
+      "integrationNotes": "MoveGraphs.routes.side ; collider/occlusion à vérifier",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "back_tool",
+      "family": "directionnel",
+      "title": "Contact → recul + outil",
+      "status": "proposal_only",
+      "usage": "Abandonner le contact sous couverture",
+      "context": "confirmed string + away/tool",
+      "archetypes": [
+        "zoner",
+        "projectile_master"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Recul du lanceur et projectile vers la ligne précédente",
+        "gameplay": "Retour au neutral choisi"
+      },
+      "sequence": [
+        "Light1",
+        "retreat",
+        "Tool"
+      ],
+      "integrationNotes": "MoveGraphs.disengage ; aucune garantie de touche ajoutée",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "uppercut",
+      "family": "launcher",
+      "title": "Deux contacts → montée courte",
+      "status": "proposal_only",
+      "usage": "Déclencher le chemin aérien classique",
+      "context": "ground confirm + toward",
+      "archetypes": [
+        "taijutsu",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Impulsion verticale lisible de la cible",
+        "gameplay": "Choix pursuit ou maintien au sol"
+      },
+      "sequence": [
+        "Light1",
+        "Light2",
+        "Launcher"
+      ],
+      "integrationNotes": "Réutiliser Launched/pursuitUntil ; ne pas doubler les forces",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "knee_pop",
+      "family": "launcher",
+      "title": "Un contact → genou → petit pop",
+      "status": "proposal_only",
+      "usage": "Petit dénivelé sans full air route imposée",
+      "context": "ground confirm after one",
+      "archetypes": [
+        "rapide_precis"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Genou connecté, cible à hauteur de taille",
+        "gameplay": "Choix jump/ground follow-up"
+      },
+      "sequence": [
+        "Light1",
+        "KneeStrike"
+      ],
+      "integrationNotes": "heavyAfterOne existant ; éviter de transformer Juggled en Launched",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "rising_follow",
+      "family": "sol_air",
+      "title": "Coup montant avec engagement du lanceur",
+      "status": "proposal_only",
+      "usage": "Transition sol/air acrobatique",
+      "context": "ground launcher confirmed",
+      "archetypes": [
+        "acrobatique"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Les deux corps montent avec décalage",
+        "gameplay": "Route aérienne active et exposée"
+      },
+      "sequence": [
+        "LionKick",
+        "Pursuit",
+        "Air1"
+      ],
+      "integrationNotes": "LionKick/Sasuke déjà présents ; poser variante uniquement",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "basic_air",
+      "family": "aerial",
+      "title": "Launcher → chase → deux hits → slam",
+      "status": "proposal_only",
+      "usage": "Route de référence reproductible",
+      "context": "Launched + pursuit window",
+      "archetypes": [
+        "rapide_precis",
+        "taijutsu",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Montée, plateau de contacts puis descente",
+        "gameplay": "Conversion complète avec sortie défense"
+      },
+      "sequence": [
+        "Launcher",
+        "Pursuit",
+        "Air1",
+        "Air2",
+        "Slam"
+      ],
+      "integrationNotes": "États existants ; ne pas rallonger airHold gratuitement",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "air_side",
+      "family": "aerial",
+      "title": "Air hit → passage de côté → reprise",
+      "status": "proposal_only",
+      "usage": "Décaler l’orientation en hauteur",
+      "context": "air confirmed + side",
+      "archetypes": [
+        "acrobatique",
+        "teleportation"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Échange visible des côtés",
+        "gameplay": "Changer la future ligne de mur"
+      },
+      "sequence": [
+        "Air1",
+        "AirSwitch",
+        "Air2"
+      ],
+      "integrationNotes": "MoveGraphs.airSide ; contraintes de plafond et trajectoires",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "air_drive",
+      "family": "air_mur",
+      "title": "Air hit → propulsion vers une paroi",
+      "status": "proposal_only",
+      "usage": "Conversion environnementale conditionnelle",
+      "context": "air + visible wall in direction",
+      "archetypes": [
+        "taijutsu",
+        "projectile_master"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Arc horizontal qui finit contre une surface",
+        "gameplay": "Récompenser le placement réel"
+      },
+      "sequence": [
+        "Air1",
+        "AirDrive",
+        "WallSplat"
+      ],
+      "integrationNotes": "Raycast réel ; aucun mur = knockback simple",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "air_spike",
+      "family": "slam",
+      "title": "Air hit → spike au sol",
+      "status": "proposal_only",
+      "usage": "Rendre une fin de route verticale lisible",
+      "context": "air confirmed + away",
+      "archetypes": [
+        "taijutsu",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Ligne descendante et rebond court",
+        "gameplay": "Fin de combo/okizeme choisi"
+      },
+      "sequence": [
+        "Air1",
+        "AirSpike",
+        "ground"
+      ],
+      "integrationNotes": "Spiked/floor ray ; pas de bounce infini",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "axe_slam",
+      "family": "slam",
+      "title": "Deux hits aériens → coup de talon",
+      "status": "proposal_only",
+      "usage": "Finir un air combo classique",
+      "context": "air route established",
+      "archetypes": [
+        "acrobatique",
+        "taijutsu"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Jambe au-dessus puis cible descendante",
+        "gameplay": "Récupération au sol après engagement"
+      },
+      "sequence": [
+        "Air1",
+        "Air2",
+        "Slam"
+      ],
+      "integrationNotes": "Slam existant ; ne pas changer les dégâts",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "delayed_slam",
+      "family": "slam",
+      "title": "Pause lisible → frappe descendante",
+      "status": "proposal_only",
+      "usage": "Variante de rythme seulement si Claude choisit",
+      "context": "air hold with legal time remaining",
+      "archetypes": [
+        "defensif_counter",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "eleve",
+      "value": {
+        "visual": "Suspension annoncée puis descente",
+        "gameplay": "Mindgame avec dodge/escape"
+      },
+      "sequence": [
+        "Air1",
+        "delay",
+        "Slam"
+      ],
+      "integrationNotes": "Idée future ; pas de nouvel airHold, buffer ou délai actif",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "wall_convert",
+      "family": "wall",
+      "title": "Propulsion → splat → suivi court",
+      "status": "proposal_only",
+      "usage": "Exploiter une collision confirmée",
+      "context": "wall actually intersected",
+      "archetypes": [
+        "rushdown",
+        "taijutsu"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Corps plaqué puis attaquant arrive",
+        "gameplay": "Conversion de placement"
+      },
+      "sequence": [
+        "Light3",
+        "WallSplat",
+        "Pursuit",
+        "Attack"
+      ],
+      "integrationNotes": "WallSplat/wallTech existants ; conserver échappatoire",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "wall_tech_answer",
+      "family": "wall",
+      "title": "Wall splat → tech → sortie",
+      "status": "proposal_only",
+      "usage": "Réponse défensive visible",
+      "context": "WallSplat tech window",
+      "archetypes": [
+        "defensif_counter",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Rebond de la victime hors de la ligne",
+        "gameplay": "Neutral après lecture"
+      },
+      "sequence": [
+        "WallSplat",
+        "Dodge",
+        "neutral"
+      ],
+      "integrationNotes": "Dodge déjà interprété wallTech ; ne pas dépenser sub",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "wall_dive",
+      "family": "mur_sol",
+      "title": "Wall-run → plongeon vers cible",
+      "status": "proposal_only",
+      "usage": "Retour au sol depuis la paroi",
+      "context": "wall state + target in flight range",
+      "archetypes": [
+        "acrobatique",
+        "rushdown"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Diagonale de plongeon, réception distincte",
+        "gameplay": "Punissable si esquivé"
+      },
+      "sequence": [
+        "wallrun",
+        "WallDive",
+        "ground"
+      ],
+      "integrationNotes": "WallDive/Motor ; vérifier plafond et obstacles",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "wall_rebound",
+      "family": "mur_sol",
+      "title": "Détachement → retour au centre",
+      "status": "proposal_only",
+      "usage": "Sortie environnementale sans attaque garantie",
+      "context": "wall with free clearance",
+      "archetypes": [
+        "rapide_precis",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Impulsion opposée au mur",
+        "gameplay": "Repositionnement ouvert"
+      },
+      "sequence": [
+        "wall",
+        "WallDetach",
+        "landing"
+      ],
+      "integrationNotes": "Utiliser Motor.detach ; ne pas inventer invulnérabilité",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "forward_throw",
+      "family": "projection",
+      "title": "Saisie → projection avant",
+      "status": "proposal_only",
+      "usage": "Anti-garde à courte portée",
+      "context": "grab range + eligible target",
+      "archetypes": [
+        "grappler",
+        "taijutsu"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Prise, rotation, séparation",
+        "gameplay": "Branche directionnelle claire"
+      },
+      "sequence": [
+        "Grab",
+        "Throw"
+      ],
+      "integrationNotes": "Lien grabbedBy/grabbing ; vérifier nettoyage KO/sub",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "up_throw",
+      "family": "projection",
+      "title": "Saisie → lancer vertical",
+      "status": "proposal_only",
+      "usage": "Préparer un suivi en hauteur",
+      "context": "grab established + toward",
+      "archetypes": [
+        "grappler",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Cible libérée vers le haut",
+        "gameplay": "Choix chase/neutral"
+      },
+      "sequence": [
+        "Grab",
+        "ThrowUp",
+        "Pursuit"
+      ],
+      "integrationNotes": "ThrowUp existant ; ne pas accorder launcher confirmé sans fenêtre",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "side_throw",
+      "family": "projection",
+      "title": "Saisie → roulé de hanche latéral",
+      "status": "proposal_only",
+      "usage": "Archétype de contrôle spatial",
+      "context": "grab confirmed + side clearance",
+      "archetypes": [
+        "grappler",
+        "controle_zone"
+      ],
+      "technicalDifficulty": "elevee",
+      "conflictRisk": "eleve",
+      "value": {
+        "visual": "Pivot autour du centre de gravité puis chute latérale",
+        "gameplay": "Choisir la sortie de la cible"
+      },
+      "sequence": [
+        "Grab",
+        "lateral",
+        "release",
+        "ground"
+      ],
+      "integrationNotes": "Proposition seulement : nouvelle variante de throw + motion serait requise",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "sacrifice_throw",
+      "family": "projection",
+      "title": "Saisie → bascule acrobatique",
+      "status": "proposal_only",
+      "usage": "Projection propre à un grappler mobile",
+      "context": "grab confirmed, ground plane clear",
+      "archetypes": [
+        "grappler",
+        "acrobatique"
+      ],
+      "technicalDifficulty": "elevee",
+      "conflictRisk": "eleve",
+      "value": {
+        "visual": "Les deux corps basculent, attaquant se relève",
+        "gameplay": "Engagement risqué et lisible"
+      },
+      "sequence": [
+        "Grab",
+        "roll",
+        "release",
+        "Wakeup"
+      ],
+      "integrationNotes": "Proposition ; synchronisation double corps et collisions à concevoir",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "block_riposte",
+      "family": "contre",
+      "title": "Bloc propre → riposte → contact",
+      "status": "proposal_only",
+      "usage": "Répondre à une pression après garde",
+      "context": "existing block counter window",
+      "archetypes": [
+        "defensif_counter",
+        "taijutsu"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Épaule absorbe puis paume repart",
+        "gameplay": "Réponse ponctuelle au neutral"
+      },
+      "sequence": [
+        "Guard",
+        "Riposte",
+        "Light2"
+      ],
+      "integrationNotes": "Riposte existante ; pas de contre automatique supplémentaire",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "read_palm",
+      "family": "contre",
+      "title": "Lecture → paume de contrôle",
+      "status": "proposal_only",
+      "usage": "Réponse précise puis espace",
+      "context": "successful existing Read",
+      "archetypes": [
+        "defensif_counter",
+        "zoner"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "faible",
+      "value": {
+        "visual": "Coup arrêté puis cible projetée",
+        "gameplay": "Distance après lecture"
+      },
+      "sequence": [
+        "Read",
+        "CounterPalm",
+        "neutral"
+      ],
+      "integrationNotes": "MoveGraphs.readCounter ; fenêtre existante",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "offensive_evade",
+      "family": "esquive_offensive",
+      "title": "Dodge latéral → entrée en angle",
+      "status": "proposal_only",
+      "usage": "Punir une grosse attaque ratée",
+      "context": "neutral + enemy whiff recovery",
+      "archetypes": [
+        "rapide_precis",
+        "rushdown"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Esquive hors ligne puis pas vers la cible",
+        "gameplay": "Punish choisi, pas de hit automatique"
+      },
+      "sequence": [
+        "Dodge",
+        "DashAttack",
+        "Light1"
+      ],
+      "integrationNotes": "Dodge/DashAttack présents ; vérifier fenêtre autorisée",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "perfect_dodge_reply",
+      "family": "esquive_offensive",
+      "title": "Perfect dodge → riposte",
+      "status": "proposal_only",
+      "usage": "Exposer clairement le succès défensif",
+      "context": "existing perfect dodge window",
+      "archetypes": [
+        "defensif_counter",
+        "rapide_precis"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Coup frôle le corps puis riposte courte",
+        "gameplay": "Récompense la précision"
+      },
+      "sequence": [
+        "Dodge",
+        "Riposte",
+        "neutral"
+      ],
+      "integrationNotes": "Defense perfectDodge existant ; ne pas agrandir i-frames",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "knockback_chase",
+      "family": "poursuite",
+      "title": "Finisher horizontal → chase si possible",
+      "status": "proposal_only",
+      "usage": "Récupérer une distance sans téléporter",
+      "context": "pursuit eligibility + unobstructed path",
+      "archetypes": [
+        "rushdown",
+        "rapide_precis"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Trajet du poursuivant visible entre corps",
+        "gameplay": "Engagement volontaire"
+      },
+      "sequence": [
+        "Light3",
+        "Pursuit",
+        "Attack"
+      ],
+      "integrationNotes": "La fenêtre réelle décide ; ne pas forcer targetLock/warp",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "projectile_entry",
+      "family": "poursuite",
+      "title": "Outil → approche → contact",
+      "status": "proposal_only",
+      "usage": "Faire du projectile une couverture",
+      "context": "long neutral with sightline",
+      "archetypes": [
+        "projectile_master",
+        "rushdown"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Projectile précède l’attaquant sur sa ligne",
+        "gameplay": "Entrée contestable par garde/esquive"
+      },
+      "sequence": [
+        "Tool",
+        "Pursuit",
+        "DashAttack"
+      ],
+      "integrationNotes": "Projectile lancé peut toucher plus tard ; ne pas confirmer la route fictivement",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "teleport_angle",
+      "family": "variante",
+      "title": "Repère → téléportation → angle court",
+      "status": "proposal_only",
+      "usage": "Archétype rapide à repères",
+      "context": "existing valid seal + cost",
+      "archetypes": [
+        "teleportation",
+        "rapide_precis"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Départ/arrivée marqués et reprise courte",
+        "gameplay": "Lire et choisir un repère réel"
+      },
+      "sequence": [
+        "MarkedBlade",
+        "Flashstep",
+        "Attack"
+      ],
+      "integrationNotes": "Minato/seals ; utiliser warpSerial, aucune téléportation anonyme",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "projectile_exit",
+      "family": "variante",
+      "title": "Contact → éventail → recul",
+      "status": "proposal_only",
+      "usage": "Contrôle de distance après confirmation",
+      "context": "Itachi tool cancel already allowed",
+      "archetypes": [
+        "zoner",
+        "projectile_master"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Bras lance, blades couvrent l’espace créé",
+        "gameplay": "Choisir distance et ligne de relance"
+      },
+      "sequence": [
+        "Light2",
+        "Tool",
+        "retreat"
+      ],
+      "integrationNotes": "Itachi ToolMastery/onRoute ; éviter doublon de projectiles",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "palms_pressure",
+      "family": "variante",
+      "title": "Paumes → pas circulaire → poussée",
+      "status": "proposal_only",
+      "usage": "Taijutsu avec précision de placement",
+      "context": "Neji confirmed string",
+      "archetypes": [
+        "taijutsu",
+        "defensif_counter"
+      ],
+      "technicalDifficulty": "faible",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Paumes ouvertes, bassin stable, sortie latérale",
+        "gameplay": "String avec décision de distance"
+      },
+      "sequence": [
+        "Light1",
+        "CircleStep",
+        "PalmThrust"
+      ],
+      "integrationNotes": "Neji/heavyAfterOne ; ne pas changer tenketsu/états",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "vault_route",
+      "family": "variante",
+      "title": "Contact → vault → rising kick",
+      "status": "proposal_only",
+      "usage": "Acrobatie d’entrée sol/air",
+      "context": "Sasuke confirmed string + clearance",
+      "archetypes": [
+        "acrobatique",
+        "rushdown"
+      ],
+      "technicalDifficulty": "moyenne",
+      "conflictRisk": "moyen",
+      "value": {
+        "visual": "Passage au-dessus puis retour de la jambe",
+        "gameplay": "Angle et niveau après contact"
+      },
+      "sequence": [
+        "Light1",
+        "VaultKick",
+        "LionKick"
+      ],
+      "integrationNotes": "Sasuke routes déjà présentes ; plafond/occlusion à mesurer",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    },
+    {
+      "id": "zone_reentry",
+      "family": "variante",
+      "title": "Champ de contrôle → attente → entrée",
+      "status": "proposal_only",
+      "usage": "Préparer un archétype de zone",
+      "context": "active hazard owned by fighter",
+      "archetypes": [
+        "controle_zone",
+        "zoner"
+      ],
+      "technicalDifficulty": "elevee",
+      "conflictRisk": "eleve",
+      "value": {
+        "visual": "Zone durable lisible puis mouvement bref",
+        "gameplay": "Forcer une décision spatiale sans combo garanti"
+      },
+      "sequence": [
+        "zone",
+        "wait",
+        "entry"
+      ],
+      "integrationNotes": "Proposition future ; budgets hazards et réplication à décider",
+      "acceptance": [
+        "Lire les deux corps sans HUD",
+        "Tester whiff / garde / dodge / substitution / KO",
+        "Vérifier collisions, sol, plafond, mur et reset",
+        "Claude décide avant toute activation"
+      ]
+    }
+  ],
+  "characterVariants": {
+    "Flashstep": [
+      "short_string",
+      "side_branch",
+      "knee_pop",
+      "teleport_angle"
+    ],
+    "Mirage": [
+      "read_palm",
+      "projectile_exit",
+      "back_tool"
+    ],
+    "GentleFist": [
+      "palms_pressure",
+      "block_riposte",
+      "low_branch"
+    ],
+    "Lion": [
+      "vault_route",
+      "rising_follow",
+      "air_side"
+    ]
+  },
+  "notes": [
+    "Aucune valeur de dégâts/timing ni animation nouvelle imposée.",
+    "Les séquences sont des intentions, pas des chaînes garanties ou exécutables.",
+    "Les routes proches de routes actives sont des repères de réutilisation ; ne pas les enregistrer une seconde fois."
+  ]
+}

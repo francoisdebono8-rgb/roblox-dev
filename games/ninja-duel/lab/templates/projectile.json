@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_not_runtime",
+  "registration": "manual_review_by_Claude",
+  "numericFieldsPolicy": "null signifie à décider, jamais une valeur injectée automatiquement",
+  "existingSchema": "Fighters.ToolMastery / Techniques + Combat.projectile",
+  "definition": {
+    "Kind": null,
+    "Count": null,
+    "Speed": null,
+    "Damage": null,
+    "Recover": null
+  },
+  "optionalFlags": {
+    "Geometry": false,
+    "Ricochet": false,
+    "AirSpread": null
+  },
+  "checks": [
+    "swept collision",
+    "occlusion",
+    "propriétaire serveur",
+    "une touche par cible prévue",
+    "cleanup expiration/KO/reset",
+    "budgets VFX et payload mesurés"
+  ]
+}

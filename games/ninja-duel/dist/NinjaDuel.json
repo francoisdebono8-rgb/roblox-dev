@@ -1,12 +1,12 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "f8944f455bc290b523fa5080dff29b5f86a21443bf9ad1fef6ddaa5f2157e996",
+  "sha256": "706df6d51abdd342154fee81319f6fc936c8e9269264b77e9df5c218817d0ba8",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/Effects.luau": "8a6aa0a712eaaa96f42bb8f528b4c7501ee5292c98f0543f8d7f473364580af7",
     "src/Client/Input.luau": "44c5629585fb7fb405294ef832535f1b583aae3af4d68c523b51227b0ac08012",
-    "src/Client/Main.client.luau": "f09ffb03e716f0795eb360a895675ae6111a66ea151042c0e3b45bc6d946c54d",
+    "src/Client/Main.client.luau": "a45525940ccbe971c1d7e8a49fcbf762719a22078c71541da64b065b902a7f43",
     "src/Client/Presentation.luau": "4b6fbe8d86a1af711bee24b97f98524013e74fe2bb14dcfe9ab19a3a1004c675",
     "src/Client/UI.luau": "e7fe9bee50acfbec1fe01b9eafd308d860f66314f290753a3865dc7669bde28e",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
@@ -49,7 +49,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "aae3b75768f894dea48864554f3562c36a5dbb604cdd53e10b96fddcd25d6bc7",
+  "buildFingerprint": "b624b3cd872d010717a329157c13edb579894b8a7e8637968fd3b1a6972da000",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -149,6 +149,10 @@
       "tests/Preparation.spec.luau": {
         "exit": 0,
         "summary": "NinjaDuel technical preparation: 7 PASS"
+      },
+      "tests/DevInfra.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel dev tools: 14 PASS (chakra lab gated: runtime modules absent)"
       }
     }
   },

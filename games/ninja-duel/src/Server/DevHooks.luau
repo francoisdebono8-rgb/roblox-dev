@@ -68,8 +68,75 @@ function DevHooks.install(matches)
 			chainOpen=a.chainOpen and now>=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
 			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end
+	-- Codex's Studio tools (33028b2 / 7091585, ported; docs/tools/DEVTOOLS.md):
+	-- the F6 panel's remote, the `tool` ops (setups, profiler, report, self-test)
+	-- and the optional chakra lab (`interactions`). Debug/QA places only, like
+	-- this module; the ops above and below keep their exact behaviour.
+	local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+	local Rules=require(Shared.Rules)
+	local Metrics=require(Shared.DevMetrics)
+	local DevTools=require(script.Parent.DevTools)
+	local tools=DevTools.new(matches)
+	local buckets={}
+	local function allowed(player,kind,rate,burst)
+		buckets[player]=buckets[player] or {}
+		local bucket=buckets[player][kind] or {tokens=burst,time=os.clock()};buckets[player][kind]=bucket
+		return Rules.consumeToken(bucket,os.clock(),rate,burst)
+	end
+	-- The client's side of a measurement report: bounded and validated.
+	logRemote.OnServerEvent:Connect(function(player,kind,payload)
+		if kind~="report" or not allowed(player,"report",2,4) then return end
+		if type(payload)=="table" and Metrics.validPayload(payload,8192) and Metrics.estimate(payload,0,{left=8192})<200000 then tools.reports[player]=payload end
+	end)
+	local qaRunning=false
+	local function run(player,op,arg)
+		if not player then return {ok=false,error="No player"} end
+		if op=="report" then
+			-- Ask the client for its measurements, then wait briefly for them.
+			tools.reports[player]=nil;logRemote:FireClient(player,"report")
+			local deadline=os.clock()+.6
+			while tools.reports[player]==nil and os.clock()<deadline do task.wait(.05) end
+		end
+		if op=="selftest" and qaRunning then return {ok=false,error="Self-test already running"} end
+		local result=tools:run(player,op,arg)
+		if not result.ok then return result end
+		if op=="profile" then logRemote:FireClient(player,"profile",result.enabled)
+		elseif op=="report" then require(script.Parent.DevReport).print(result)
+		elseif op=="panel" then logRemote:FireClient(player,"panel")
+		elseif op=="selftest" then
+			qaRunning=true;result.started=true
+			task.spawn(function()
+				local ok,err=pcall(require(script.Parent.DevQA).run,matches)
+				qaRunning=false
+				if not ok then warn("[NinjaDuelDevQA] FAIL "..tostring(err)) end
+			end)
+		end
+		return result
+	end
+	local control=Instance.new("RemoteFunction");control.Name="NinjaDuelDevControl";control.Parent=game:GetService("ReplicatedStorage")
+	control.OnServerInvoke=function(player,op,arg)
+		if not allowed(player,"control",4,8) then return {ok=false,error="Dev command rate limit"} end
+		return run(player,op,arg)
+	end
+	Players.PlayerRemoving:Connect(function(player) tools:remove(player);buckets[player]=nil end)
+	-- Chakra lab: loaded on its first command, and only when the chakra runtime
+	-- modules (DevTools.ChakraRuntime) are part of this build.
+	local chakraDev=nil
+	local function interactions(op,arg)
+		if not chakraDev then
+			local missing=DevTools.missing(script.Parent,DevTools.ChakraRuntime)
+			if missing then return {ok=false,error="Chakra lab needs the chakra runtime module "..missing.." (not in this build)"} end
+			local ok,value=pcall(function() return require(script.Parent.ChakraDev).new(require(script.Parent.ChakraConfig),true) end)
+			if not ok then return {ok=false,error="Chakra lab failed to load: "..tostring(value)} end
+			chakraDev=value
+		end
+		return chakraDev:run(op,arg)
+	end
+	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
+		if op=="tool" then return run(player,arg1,arg2) end
+		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)
 		elseif op=="start" then

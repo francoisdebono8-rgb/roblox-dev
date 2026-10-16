@@ -12,7 +12,13 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--qa', action='store_true')
 parser.add_argument('--debug', action='store_true', help='Separate Studio-only inspector place; no automatic native QA')
 args = parser.parse_args()
-DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau'}
+# Studio-only modules: Debug and QA places, never the normal build
+# (tests/test_build_isolation.py). Inspector: DevHooks, CombatInspector,
+# CombatDebug. Codex's dev tools (docs/tools/DEVTOOLS.md): F6 panel, setups,
+# profiler, report, self-test, and the optional chakra lab (Chakra*).
+DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau',
+    'DevTools.luau','DevCommands.luau','DevScenarios.luau','DevProfiler.luau','DevReport.luau','DevQA.luau','DevMetrics.luau',
+    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau'}
 def included(p):
     return (args.qa or p.stem!='NativeQA') and (args.qa or args.debug or p.name not in DEBUG_SOURCES)
 xml = ET.Element('roblox', version='4')
@@ -88,7 +94,7 @@ for asset_file in asset_files:
     external_ids.update(map(int,re.findall(r'rbxassetid://(\d+)',asset_file.read_text(encoding='utf-8'))))
 import subprocess,sys
 # Automated gate: every headless spec must pass on the exact sources built here.
-TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Progression.spec.luau'),('lune','tests/Profiles.spec.luau'),('lune','tests/Preparation.spec.luau')]
+TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Progression.spec.luau'),('lune','tests/Profiles.spec.luau'),('lune','tests/Preparation.spec.luau'),('lune','tests/DevInfra.spec.luau')]
 def run_automated():
     tool={}
     import os

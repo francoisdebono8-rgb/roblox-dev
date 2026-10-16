@@ -31,7 +31,10 @@ local function send(action,extra)
 	remote:FireServer(payload)
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
-input=Input.new(send,function() return current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
+-- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
+-- Input sees a non-Duel state, so no combat binding fires behind the panel.
+local dev
+input=Input.new(send,function() return if dev and dev.panelOpen then dev.blocked else current end,function() camera:setLocked(not camera.locked);send("Move",input:direction(workspace.CurrentCamera)) end,camera)
 -- Disable the default movement controller; server receives finite normalized intent.
 local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 require(playerModule):GetControls():Disable()
@@ -124,6 +127,16 @@ if RunService:IsStudio() then
 				log:FireServer("info",{presented=presentation.presented,camera=cam.CFrame,fov=cam.FieldOfView,focus=camera.focus,mode=camera.mode,boomAngle=camera.boomAngle,distance=camera.distance,viewport=cam.ViewportSize,gui=table.concat(gui," || ")})
 			end
 		end)
+	end)
+end
+-- The normal build has no DevClient module, so this stays inert there.
+local devModule=RunService:IsStudio() and script.Parent:FindFirstChild("DevClient")
+if devModule then
+	task.spawn(function()
+		local ok,err=pcall(function()
+			dev=require(devModule).install({player=player,input=input,presentation=presentation,camera=camera,ui=ui,state=function() return current end,send=send})
+		end)
+		if not ok then warn("[NinjaDuel] dev panel unavailable: "..tostring(err)) end
 	end)
 end
 send("Ready")
