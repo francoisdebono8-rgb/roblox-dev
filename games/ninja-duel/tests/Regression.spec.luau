@@ -503,4 +503,26 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
  H.envBase.Random=saved
  assert(ok,err)
 end)
+test("an awakening's speed bonus survives the ground speed limit",function()
+ -- Motor.step clamped locomotion to the base speed, cancelling the bonus the
+ -- donor movement had just applied (Yellow Flash ran at normal speed).
+ local function topSpeed(awake)
+  local c,a,b=H.duel("Flashstep","Mirage")
+  c:relocate(a,V.new(0,3,60));c:relocate(b,V.new(0,3,-90))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  if awake then a.awakened=true;a.awakenUntil=c.now+10 end
+  a.locked=false
+  local best=0
+  for _=1,120 do
+   a.move=V.new(0,0,-1);a.lastMove=os.clock()
+   H.step(c,.02)
+   best=math.max(best,a.locomotion.Magnitude)
+  end
+  return best,a
+ end
+ local base,a=topSpeed(false)
+ local awake=topSpeed(true)
+ assert(base>a.def.Speed*.95,string.format("the base run never reached its speed (%.1f)",base))
+ assert(awake>base*(a.def.Awakening.Speed-.05),string.format("awakened %.1f vs base %.1f: the bonus was clamped away",awake,base))
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

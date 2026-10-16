@@ -1644,7 +1644,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">4bbc4ce9b73d617b33c0fa0507bd505fe5538c5fdec7d08b96cc16dc472cec00</string>
+          <string name="Value">67f43849fafbc6b819c18106f0f7c8a65b9850e3267b83b8a67fb217ee68777f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -5012,7 +5012,9 @@ function Motor.step(a,c,dt,now)
   a.fallbackAirY=nil;a.fallbackAirVY=nil
  end
  local locomotion=a.locomotion
- local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
+ -- The awakening's speed bonus (speedScale) is part of the limit: the donor
+ -- movement already asks for it, and clamping it back here cancelled it.
+ local limit=(if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed)*(a.speedScale or 1)
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0

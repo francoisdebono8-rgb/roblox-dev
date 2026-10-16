@@ -436,7 +436,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Awake modifie des règles et respecte la jeunesse
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Deux modifications de règles compréhensibles proposées/testées par kit ; labels lore ; pas boost statistique seul
-- evidence: Awake et fenêtres existantes ; 2026-10-16 fiches : les quatre éveils sont surtout des multiplicateurs (Minato : stats + cooldowns ×0,4 ; Itachi : fenêtres ×1,5 ; Neji : sans angle mort + drain ×1,8 ; Sasuke : stats + perte de PV) ; une proposition d’éveil « à règle » par fiche, non implémentée
+- evidence: Awake et fenêtres existantes ; 2026-10-16 fiches : les quatre éveils sont surtout des multiplicateurs (Minato : stats + cooldowns ×0,4 ; Itachi : fenêtres ×1,5 ; Neji : sans angle mort + drain ×1,8 ; Sasuke : stats + perte de PV) ; une proposition d’éveil « à règle » par fiche, non implémentée 2026-10-16 : le bonus de vitesse d’éveil était annulé au sol (`Motor.step` bridait la locomotion à la vitesse de base après que le mouvement l’avait demandé) → limite multipliée par `speedScale` ; test Regression (échoue sur l’ancien code : 19,5 contre 19,5).
 - outcome: PENDING
 
 ## CHR-MIN-001 — Marques FTG et angles techniques

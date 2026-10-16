@@ -218,7 +218,9 @@ function Motor.step(a,c,dt,now)
   a.fallbackAirY=nil;a.fallbackAirVY=nil
  end
  local locomotion=a.locomotion
- local limit=if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed
+ -- The awakening's speed bonus (speedScale) is part of the limit: the donor
+ -- movement already asks for it, and clamping it back here cancelled it.
+ local limit=(if sprinting then profile.SprintSpeed*(a.def.SprintScale or 1) else a.def.Speed)*(a.speedScale or 1)
  if a.state=="Guarding" then limit=Config.GuardSpeed
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0

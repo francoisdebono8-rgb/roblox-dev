@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "4cc4c8ee40db211b6eae849c0663932ffe4ec9fbcab9323c522fc41c9b1080ea",
+  "sha256": "7bf88e4a320bbf41433a9f2f4ea45070626fe365ea73ff23369b9eb22f9840dc",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -24,7 +24,7 @@
     "src/Server/Elements.luau": "50ccd1a36b3de6cc5a796348683d3f5e4a4e7b8903c1348b5126ea455a733333",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
     "src/Server/Matches.luau": "0a126203139e6041e2405a93b90c3f9f5531692599004f0a62166a6245f560fc",
-    "src/Server/Motor.luau": "1eed0b730ed39d291c306fc8d02cebc0b7e5bed1450354d113596b8d69a0b9d2",
+    "src/Server/Motor.luau": "c2b32c9f5e0c979ad82f7cebb17cac17a346dbaa0bb4021dcdb0ed011901fe7f",
     "src/Server/NativeQA.luau": "5830c6bc049fd12f835baf4f961756d308cefd2785c30d72dba92a43811407c1",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
     "src/Server/Place1Movement.luau": "db654671d91a984b045f0c73c3d8cbe5cda3c4a2e89a6a8b414cc769ce4035e0",
@@ -48,7 +48,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "f3fd09d82433f3b09168d273432850b4e9f2350d0186ef86e2b771c7c5509029",
+  "buildFingerprint": "aba6d077acc80e64624d9663e7942e9332ba96e9dbc28660a67aa1fb0a97319c",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -95,7 +95,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 23 PASS"
+        "summary": "NinjaDuel regressions: 24 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,
