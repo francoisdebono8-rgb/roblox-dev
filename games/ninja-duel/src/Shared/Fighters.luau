@@ -181,7 +181,7 @@ return {
 		Name = "Rock Lee", FullName = "Rock Lee", Age = 13, Title = "THE TAIJUTSU PRODIGY", Color = { 64, 172, 84 },
 		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
 		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
-		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.12, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
+		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.2, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
 		CombatTravel = 1.15, CombatDamage = 1, DashScale = 1.12, GuardStrength = 0.08, PreferredRange = 4.5,
 		ComboToolCancel = false, CombatStyle = "Taijutsu", Tool = "Deflect",
 		-- Heavy after two clean hits is the rising kick too (into the chase).
@@ -201,7 +201,7 @@ return {
 		-- The Fifth Gate (the five gates he opened against Gaara): faster and
 		-- harder, the lotus becomes the free Hidden Lotus, but the body burns
 		-- (health drain, never to a KO).
-		Awakening = { Name = "FIFTH GATE", Speed = 1.28, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
+		Awakening = { Name = "FIFTH GATE", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
 		AttackProfile = {
 			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
 			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},

@@ -296,7 +296,14 @@ test("the Fifth Gate: only under 35%; faster legs (the real limit), harder, the 
  a.health=a.def.Health*.3;a.hum.Health=a.health
  assert(c:request(a,"Awaken"),"the gate refused under 35%")
  H.step(c,.5)
- assert(math.abs(a.speedScale-1.28)<.001,"the gate did not speed him up ("..tostring(a.speedScale)..")")
+ assert(a.speedScale>1.1 and math.abs(a.speedScale-a.def.Awakening.Speed)<.001,"the gate did not speed him up ("..tostring(a.speedScale)..")")
+ -- Measured in Studio: the fastest legs of the cast on foot (his sprint was
+ -- Minato's), with the gate's peak kept where it was readable (~64 studs/s).
+ for id,def in H.fighters do
+  if id~="Leaf" and type(def)=="table" and def.Speed then
+   assert((def.Speed or 0)*(def.SprintScale or 1)<a.def.Speed*a.def.SprintScale,id.." runs as fast as Lee")
+  end
+ end
  -- The speed is real: walking, the limit Motor.step allows is the gate's.
  local before=a.health
  H.step(c,2)
@@ -305,7 +312,7 @@ test("the Fifth Gate: only under 35%; faster legs (the real limit), harder, the 
  H.step(c,2)
  assert(a.health>=1,"the gate killed him")
  local moved=walk(c,a,1)
- assert(moved>base*1.2,string.format("he walked %.1f studs in the gate against %.1f without: the gate's speed is capped",moved,base))
+ assert(moved>base*(a.def.Awakening.Speed-.05),string.format("he walked %.1f studs in the gate against %.1f without: the gate's speed is capped",moved,base))
 end)
 test("the Fifth Gate turns the lotus into the Hidden Lotus: free, harder, and the body bounces back up",function()
  local c,a,b=shadow(function(c,a,b)
@@ -699,6 +706,17 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
  end)
  H.envBase.Instance=saved
  assert(ok,err)
+end)
+
+test("the Lotus starts beside the body, not inside it",function()
+ -- Seen in Studio: put 2.4 studs over the victim's root, Lee's body went
+ -- through the victim's head all the way down.
+ local c,a,b=H.duel("Leaf","Lion")
+ place(c,a,b,3)
+ b.airborne=true;b.reaction="Juggled";b.reactionUntil=c.now+1
+ assert(Brawler.airFinisher(c,a,MoveGraphs.Leaf.airFinisher))
+ local d=a.root.Position-b.root.Position
+ assert(V.new(d.X,0,d.Z).Magnitude>=2,"Lee starts the Lotus "..string.format("%.1f",V.new(d.X,0,d.Z).Magnitude).." studs from the body's centre")
 end)
 
 test("tutorial: the interrupt step gives Lee readable hand signs, like any bot",function()

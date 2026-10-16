@@ -157,6 +157,24 @@ test("AI duels: Gaara against every prodigy, both ways, without wedging",functio
  end
 end)
 
+test("re-engage: a glide on the sand that stops at lash range, slower than a dash",function()
+ -- A controller, not a rushdown (mission NEXT_VALIDATION_ROSTER_SCALE §3):
+ -- before, Gaara used the generic dash and arrived at contact.
+ local function dash(id)
+  local c,a,b=H.duel(id,"Mirage")
+  place(c,a,b,V.new(0,3,12),V.new(0,3,-12))
+  assert(c:request(a,"Pursuit"),id..": re-engage refused")
+  local t=0
+  while a.state=="Rush" and t<1 do H.step(c,.01);t+=.01 end
+  local d=b.root.Position-a.root.Position
+  return V.new(d.X,0,d.Z).Magnitude,t
+ end
+ local gap,time=dash("Sand")
+ local _,fast=dash("Flashstep")
+ assert(gap>6.5 and gap<9,"Gaara's glide stopped at "..string.format("%.1f",gap).." studs")
+ assert(time>fast,"Gaara's glide is not slower than Minato's dash")
+end)
+
 test("client: his sand is drawn as sand (flights, shield, flicker, coffin, Desert Wave, lashes, pillar, charges)",function()
  -- Before SandFX the sand bullet and Sand Coffin flew as kunai and none of
  -- his contacts (shield, flicker, burial, wall) drew anything.

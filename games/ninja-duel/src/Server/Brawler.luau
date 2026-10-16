@@ -657,7 +657,11 @@ function Brawler.airFinisher(c,a,f)
  elseif cost>0 and a.health<=math.max(f.minHealth or 0,cost+1) then use,cost=f.fallback or {},0 end
  local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
  look=if look.Magnitude>.1 then look.Unit else a.root.CFrame.LookVector
- c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+ -- Beside the body, a little above, more than a body width away and facing
+ -- along the line (the dive is head first): put over its head, or turned
+ -- toward it, the two bodies interpenetrated all the way down (seen in Studio).
+ local side=look:Cross(Vector3.yAxis)
+ c:relocate(a,b.root.Position+Vector3.new(0,1.8,0)+side*3)
  a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
  a.airborne=true
  local ok=Brawler.start(c,a,"Slam")

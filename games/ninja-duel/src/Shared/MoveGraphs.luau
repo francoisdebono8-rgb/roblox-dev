@@ -95,6 +95,9 @@ return {
 	},
 	Sand={
 		routes={up="SandPillar",down="Sweep"},
+		-- A controller, not a rushdown: the re-engage is a glide on the sand that
+		-- stops at lash range (the arrival strike is a lash), slower than a dash.
+		reengage={name="sand",speed=.85,arrive=7.5,angle=0,minRange=11,chase=.3,recovery=.22},
 		-- One lash, then the pillar: sand erupts under the opponent.
 		heavyAfterOne="SandPillar",
 		stringCancels={SandCoffin=true},

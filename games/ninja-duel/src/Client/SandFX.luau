@@ -531,11 +531,28 @@ local function tint(fx,model)
 		aura.sandMantle=aura.mantle
 	end
 end
+-- The re-engage is a glide on a wave of sand, not a run: sand pours under
+-- his feet for as long as it lasts.
+local function stepGlide(fx,model,actor,st)
+	local root=model:FindFirstChild("HumanoidRootPart")
+	local gliding=actor.state=="Rush" and (actor.health or 1)>0
+	if gliding and root and not (st.glide and st.glide.Parent) then
+		local at=K.new("Attachment",{Name="SandGlide",Position=Vector3.new(0,-2.8,0)},root)
+		K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=90,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(70,70),
+			EmissionDirection=Enum.NormalId.Top,Color=ColorSequence.new(SAND_PALE),LightEmission=0,LightInfluence=1,Size=K.num({{0,1.4},{1,3.2}}),
+			Transparency=K.num({{0,.25},{1,1}}),Drag=3,Acceleration=Vector3.new(0,-8,0),Rotation=NumberRange.new(0,360)},at)
+		st.glide=at
+	elseif not gliding and st.glide then
+		local e=st.glide:FindFirstChildOfClass("ParticleEmitter");if e then e.Enabled=false end
+		Debris:AddItem(st.glide,.7);st.glide=nil
+	end
+end
 local function fighter(fx,model,actor,dt)
 	if not model or not actor then return end
 	local st=stateOf(fx,model)
 	stepCoffin(fx,model,actor,st)
 	if actor.fighterId~="Sand" then return end
+	stepGlide(fx,model,actor,st)
 	stepStrike(fx,model,actor,st)
 	stepCharges(fx,model,actor,st,dt)
 	tint(fx,model)
