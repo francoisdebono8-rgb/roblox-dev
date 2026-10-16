@@ -590,4 +590,17 @@ test("mashed air whiffs fall back to the floor (no hover)",function()
  end
  assert(not a.airborne,"mashing air whiffs kept the body airborne for 2.5 s")
 end)
+test("burning ground chips health without stunning or counting combo hits",function()
+ -- Each burn tick went through Combat:damage: a body in the fire was stunned
+ -- every 0.48 s and the ticks filled the combo counter ("8 HITS, next x0.35").
+ local c,a,b=H.duel("Mirage","Flashstep")
+ engage(c,a,b,8)
+ local hp=b.health
+ c:addHazard(a,b.root.Position-V.new(0,2.5,0),4,3,10,"Fire")
+ local stunned=0
+ for _=1,200 do H.step(c,.01);if b.state=="Stunned" then stunned+=1 end end
+ assert(b.health<hp,"fixture: the fire never burned")
+ assert(stunned==0,"the fire stunned the body for "..stunned.." frames")
+ assert((b.comboHits or 0)==0,"burn ticks counted as combo hits ("..tostring(b.comboHits)..")")
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

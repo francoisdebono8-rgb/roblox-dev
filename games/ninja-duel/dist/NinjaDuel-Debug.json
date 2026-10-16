@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "28ac3699420bc25f8ba2fe373e51f855965c64bfcecba2fc28fe6068b741c18a",
+  "sha256": "785c2b9fe43d2978b19210e23f3325c6473f632427d799904eb35bb139ca2106",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -31,7 +31,7 @@
     "src/Server/ChakraStudioView.luau": "966d7c5d04a9195b2bcdfcf89405c016ea209b797f07b33830e765d4f3e93bed",
     "src/Server/ChakraTuning.luau": "cb9fe68d7c4ce5d2dd8dfbda7e302eb13bfb814fa30e727596f87df96d0f8d57",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "aa87b8c806aab2ec38891f34b83ad3a5657e86e92741c1ead0b6bbf0777377af",
+    "src/Server/Combat.luau": "e817983d063a5d505f926d202cc15bea329f21d75fd2bf01838a22a840a4a4d8",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
     "src/Server/DevHooks.luau": "4656e906ab377dff89e0e28aea333d62b8a38e0fbd16715ba296531c4be00dcb",
@@ -72,7 +72,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "56a8a379d1e0b67ae76df1f8cc6f5767bfb98fb987276ffa55751637de022e11",
+  "buildFingerprint": "d749f82f2ddb65b7e0cb945477c7789869119bb27a3730bc9f51dffaae72075c",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -119,7 +119,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 27 PASS"
+        "summary": "NinjaDuel regressions: 28 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,

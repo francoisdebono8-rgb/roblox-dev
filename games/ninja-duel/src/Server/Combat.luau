@@ -159,6 +159,25 @@ function Combat:setState(a,state,duration)
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
+-- Damage over time (burning ground, a burning wire): chip damage that never
+-- stuns, interrupts, scales or confirms anything. Through Combat:damage a body
+-- standing in fire was re-stunned every 0.48 s (its action cancelled), every
+-- tick filled the combo counter and its scaling (one fire shuriken read
+-- "8 HITS, next x0.35" in Studio) and Gaara's shield spent itself on flames.
+function Combat:chip(attacker,victim,amount)
+	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
+	if (victim.rotationUntil or 0)>self.now or victim.invulnerableUntil>self.now then return false end
+	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
+	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
+	if victim.health<=0 then
+		Brawler.releaseGrab(victim); victim.reaction=nil
+		victim.state="Defeated"; victim.pending=nil; victim.move=Vector3.zero
+		victim.koStyle="light";victim.koAirborne=victim.airborne==true
+		self.match.finish(attacker,victim)
+	end
+	return true
+end
 function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
@@ -1673,7 +1692,7 @@ function Combat:updateHazards()
 				if not ray then
 					h.lastHit[target]=self.now
 					self.damageTag="burn"
-					self:damage(h.a,target,h.damage*0.34,false,false)
+					self:chip(h.a,target,h.damage*0.34)
 					self.damageTag=nil
 					-- A burn that ends the duel may clear the hazard list (Combat:clear).
 					if self.match.phase~="Duel" then return end
