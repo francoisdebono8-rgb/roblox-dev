@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "9f296290a0a18665175eea942d472be8dd6d8b56008c27b2bc20f36b8124d91f",
+  "sha256": "0b7456427cdafb28ddc91ba08ee1f932b56751cebd71a14873583a28cb08f7a4",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -38,11 +38,11 @@
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
     "src/Server/VelmoraDefense.luau": "f961733b4df4b41154a10d2e8633285674fdbe2f57bdc8206698a7293d125aed",
     "src/Server/VelmoraHitDetection.luau": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb",
-    "src/Server/World.luau": "9e9f90ace3cbe20d9ed0815fd633084ae417a1563fa0a335ab56af2526514dcb",
+    "src/Server/World.luau": "41bf60dc07791f8305ec450972fc07ef2f071348bf4c92806316df782d82e560",
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
     "src/Shared/Attacks.luau": "87e9dd388263ba53a2032f32afb337eeeead3c092d0b423f356dcf3e22206267",
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
-    "src/Shared/Config.luau": "b1471ac2fe9368d609a1c0abff6b3c4e0c0381de9645de586bdc47ca4bb21a6a",
+    "src/Shared/Config.luau": "5a0301df4529b23928debd3fa0b96bbc5e3b17ba6cbd09d153b9614cb8fc2315",
     "src/Shared/Controls.luau": "8534849f00c3733d57d492ba331dba1f18455454f4527bef6ffcc2ac4c896e61",
     "src/Shared/Fighters.luau": "04e0b3be369362236886e40fa8ff12e7361f729aa2ae7099487cada32cdef847",
     "src/Shared/MoveGraphs.luau": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b",
@@ -52,7 +52,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "90c329ac8ac421561811f58ff03cf9588755c12bddd56cd7e6e0f0b8848fa182",
+  "buildFingerprint": "567c08ed46ed15eb1b4f868c61588acf340baa5835543fb683f428999acd88ea",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
