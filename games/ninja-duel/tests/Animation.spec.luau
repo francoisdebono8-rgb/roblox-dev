@@ -63,7 +63,7 @@ local function body(actor,overrides)
 end
 
 test("every pose stays inside human joint limits",function()
- for _,fighter in {"Flashstep","Mirage","GentleFist","Lion"} do
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand"} do
   local c,a=H.duel(fighter,if fighter=="Flashstep" then "Mirage" else "Flashstep")
   local actors={
    body(a,{}),
@@ -129,7 +129,7 @@ end)
 test("every strike of every fighter stays finite and inside joint limits through its timeline",function()
  local names={"LionBarrage","Rasengan","RasenganDrop"}
  for name in H.Attacks do table.insert(names,name) end
- for _,fighter in {"Flashstep","Mirage","GentleFist","Lion"} do
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand"} do
   local c,a=H.duel(fighter,"Mirage")
   for _,name in names do
    Motion.reset(a.model)
@@ -496,5 +496,26 @@ test("a pursuit after a launched body is a rising leap, a level pursuit a dash",
  assert(n>=4,"chasing upward uses the floor-level dive pose")
  -- The dash leans the root far forward; the leap stays near upright.
  assert(math.abs(pitchOf(rising.Root))<math.abs(pitchOf(level.Root))-.3,"the rising chase leans like a dive")
+end)
+test("a fighter is built from its motion family, never silently from Minato",function()
+ -- Character production framework (DEC-015): Gaara used to inherit Minato's
+ -- stance, clips, kunai and kunai-twirl intro.
+ assert(Motion.familyOf("Sand").weapons=="none","Gaara's family carries a weapon")
+ assert(Motion.familyOf("Flashstep").weapons=="kunai","Minato lost his kunai family")
+ local c,a,b=H.duel("Sand","Flashstep")
+ local function idle(model,actor)
+  Motion.reset(model)
+  local clock={attackElapsed=0,reactionElapsed=0}
+  for _=1,30 do frame(model,body(actor,{velocity=Vector3.zero,speed=0}),clock,1/60) end
+  return snapshot(model)
+ end
+ local sand=idle(a.model,a)
+ local minato=idle(b.model,b)
+ local differ=0
+ for key,t in sand do if not t:FuzzyEq(minato[key],.03) then differ+=1 end end
+ assert(differ>=4,"Gaara stands like Minato ("..differ.." joints differ)")
+ -- A sand lash never brings a blade out.
+ Motion.weapon(a.model,body(a,{attackName="Light1",state="Active",attackElapsed=.1}))
+ assert(not Motion.weaponState(a.model).visible,"Gaara drew a kunai for a sand lash")
 end)
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

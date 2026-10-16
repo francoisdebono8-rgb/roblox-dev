@@ -1656,7 +1656,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">567c08ed46ed15eb1b4f868c61588acf340baa5835543fb683f428999acd88ea</string>
+          <string name="Value">6a8224d330bede495bb902922cb2515445d52558e922b5d24fbe1bf42f02e96a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -11694,7 +11694,8 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	local playable={"Flashstep","Mirage","GentleFist","Lion"}
+	-- CORE4, then Gaara as the first stress-test fighter of the next wave (DEC-015).
+	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -12519,10 +12520,39 @@ STANCE.GentleFist={root={y=-.62,pitch=6,yaw=38},torso={pitch=4,yaw=-14},head={pi
 STANCE.Lion={root={y=-.5,pitch=10,yaw=30},torso={pitch=6,yaw=-14},head={pitch=-6,yaw=-14},
 	la={raise=66,out=6,twist=10,elbow=64,wrist=0},ra={raise=52,out=-16,twist=24,elbow=118,wrist=0},
 	rf={x=.26,z=.84,yaw=38},lf={x=-.1,z=-.76,yaw=-6},breath=1.3,tempo=7}
-local function stance(id) return STANCE[id] or STANCE.Flashstep end
+-- Motion families: the character production framework (DEC-015). A fighter
+-- names the body language it is built from (stance, gait, clip set), its
+-- weapon family and its intro; a new fighter declares `Motion = {body=...,
+-- weapons=..., clips=...}` in Fighters instead of silently inheriting Minato.
+-- Bespoke stance/clips by its own id still win over the family.
+local FAMILY={
+	Flashstep={body="Flashstep",weapons="kunai",springy=true},
+	Mirage={body="Mirage",weapons="shuriken",springy=false},
+	GentleFist={body="GentleFist",weapons="palms",springy=false},
+	Lion={body="Lion",weapons="wire",springy=true},
+	Sand={body="Sand",weapons="none",springy=false},
+}
+local function familyOf(id)
+	local f=FAMILY[id]
+	if f then return f end
+	local def=Fighters[id]
+	if def and def.Motion then return def.Motion end
+	return FAMILY.Flashstep
+end
+Motion.familyOf=familyOf
+-- Gaara: upright and still, arms folded across the chest, feet close. He does
+-- not fight with his body: the sand moves, he barely does.
+STANCE.Sand={root={y=-.06,pitch=0,yaw=6},torso={pitch=-2,yaw=-2},head={pitch=6,yaw=-4},
+	ra={raise=62,out=-42,twist=44,elbow=122,wrist=0},la={raise=58,out=-46,twist=40,elbow=118,wrist=0},
+	rf={x=.06,z=.22,yaw=8},lf={x=-.06,z=-.2,yaw=-4},breath=.35,tempo=3.6}
+local function stance(id) return STANCE[id] or STANCE[familyOf(id).body] or STANCE.Flashstep end
 -- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
 local SPRINGY={Flashstep=true,Lion=true}
-local function springy(id) return SPRINGY[id]==true or (id~="Mirage" and id~="GentleFist" and STANCE[id]==nil) end
+local function springy(id)
+	local f=familyOf(id)
+	if f.springy~=nil then return f.springy end
+	return SPRINGY[f.body]==true
+end
 
 -- ---------------------------------------------------------- attack clips
 -- Keys are placed on the move's own timeline: 0 = start, 1 = end of startup
@@ -12535,7 +12565,56 @@ local function m(over) return merge(M,over) end
 local function i(over) return merge(I,over) end
 local N=STANCE.GentleFist
 local function n(over) return merge(N,over) end
-local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={}}
+local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={},Sand={}}
+-- Gaara ---------------------------------------------------------------
+-- He barely moves: one hand unfolds and flicks the sand out, then folds back.
+local G=STANCE.Sand
+local function g(over) return merge(G,over) end
+CLIPS.Sand.Light1={ -- right hand flicks the sand out, palm open
+	K(0,g({torso={yaw=6},ra={raise=72,out=-14,twist=10,elbow=94,wrist=0}})),
+	K(1,g({torso={yaw=-12},head={yaw=4},ra={raise=94,out=8,twist=-6,elbow=8,wrist=-42}}),"out"),
+	K(2,g({torso={yaw=-12},ra={raise=92,out=8,twist=-6,elbow=12,wrist=-40}})),
+	K(3,G),
+}
+CLIPS.Sand.Light2={ -- the left hand answers
+	K(0,g({torso={yaw=-6},la={raise=72,out=-14,twist=10,elbow=94,wrist=0}})),
+	K(1,g({torso={yaw=12},head={yaw=-4},la={raise=94,out=8,twist=-6,elbow=8,wrist=-42}}),"out"),
+	K(2,g({torso={yaw=12},la={raise=92,out=8,twist=-6,elbow=12,wrist=-40}})),
+	K(3,G),
+}
+CLIPS.Sand.Light3={ -- both palms push: the sand wave throws the body back
+	K(0,g({root={z=.15},ra={raise=66,out=-6,elbow=100},la={raise=66,out=-6,elbow=100}})),
+	K(1,g({root={z=.25,pitch=-3},torso={pitch=-4},ra={raise=90,out=10,elbow=10,wrist=-44},la={raise=90,out=10,elbow=10,wrist=-44}}),"out"),
+	K(2,g({root={z=.25,pitch=-3},ra={raise=88,out=10,elbow=14,wrist=-40},la={raise=88,out=10,elbow=14,wrist=-40}})),
+	K(3,G),
+}
+CLIPS.Sand.SandPillar={ -- the hand rises palm up: sand erupts under the opponent
+	K(0,g({root={y=-.12},head={pitch=12},ra={raise=40,out=10,twist=-30,elbow=100,wrist=30}})),
+	K(1,g({root={y=.02,pitch=-4},torso={pitch=-6},head={pitch=-14},ra={raise=152,out=18,twist=-30,elbow=36,wrist=40}}),"out"),
+	K(2,g({root={pitch=-4},torso={pitch=-6},head={pitch=-14},ra={raise=150,out=18,twist=-30,elbow=38,wrist=40}})),
+	K(3,G),
+}
+CLIPS.Sand.Sweep={ -- the arm sweeps low: sand reaps the legs
+	K(0,g({root={y=-.15},ra={raise=30,out=62,twist=0,elbow=40,wrist=0}})),
+	K(1,g({root={y=-.2},torso={yaw=-20},ra={raise=16,out=-34,twist=0,elbow=24,wrist=-30}}),"out"),
+	K(2,g({root={y=-.2},torso={yaw=-22},ra={raise=16,out=-36,elbow=26,wrist=-30}})),
+	K(3,G),
+}
+CLIPS.Sand.DashAttack={ -- gliding forward on the sand, both hands out
+	K(0,g({root={pitch=6},ra={raise=70,out=-8,elbow=90},la={raise=70,out=-8,elbow=90}})),
+	K(1,g({root={pitch=10,z=-.2},ra={raise=88,out=14,elbow=12,wrist=-40},la={raise=86,out=14,elbow=14,wrist=-40}}),"out"),
+	K(2,g({root={pitch=10,z=-.2},ra={raise=86,out=14,elbow=14,wrist=-40},la={raise=84,out=14,elbow=16,wrist=-40}})),
+	K(3,G),
+}
+CLIPS.Sand.Air1=CLIPS.Sand.Light1
+CLIPS.Sand.Air2=CLIPS.Sand.Light2
+CLIPS.Sand.Slam={ -- both hands drive down: the sand crashes on the body
+	K(0,g({ra={raise=150,out=10,elbow=40},la={raise=150,out=10,elbow=40}})),
+	K(1,g({torso={pitch=10},ra={raise=40,out=-6,elbow=10,wrist=-30},la={raise=40,out=-6,elbow=10,wrist=-30}}),"out"),
+	K(2,g({torso={pitch=10},ra={raise=38,out=-6,elbow=12},la={raise=38,out=-6,elbow=12}})),
+	K(3,G),
+}
+CLIPS.Sand.Riposte=CLIPS.Sand.Light1
 -- Minato --------------------------------------------------------------
 CLIPS.Flashstep.Light1={ -- reverse-grip kunai: cross-body load, outward slash
 	K(0,m({root={y=-.55,yaw=10,pitch=12},torso={yaw=-28,pitch=8},ra={raise=72,out=-42,twist=38,elbow=112,wrist=-30},la={raise=40,out=12,elbow=70},lf={z=-.95}})),
@@ -13145,7 +13224,7 @@ end
 -- The clip's footwork at `elapsed`: where each planted foot should be (root
 -- space), or nil for a leg that is kicking (free) at this moment.
 local function attackFeet(name,elapsed,fighterId)
-	local route=CLIPS[fighterId] or CLIPS.Flashstep
+	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local keys=route[name] or route.Light1
 	local t=attackPhase(name,elapsed,fighterId)
 	local a,b=keys[1],keys[1]
@@ -13175,7 +13254,7 @@ end
 -- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId)
-	local route=CLIPS[fighterId] or CLIPS.Flashstep
+	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local keys=route[name] or route.Light1
 	local phase=attackPhase(name,elapsed,fighterId)
 	local weight=if phase&lt;2.55 then 1 else 1-smooth((phase-2.55)/.45)
@@ -13330,8 +13409,10 @@ local GAIT={
 	Mirage={stride=1.0,cadence=.94,arm=24,lean=-1,bob=.7,guard=.35},
 	GentleFist={stride=.84,cadence=1.12,arm=16,lean=0,bob=.55,guard=.8},
 	Lion={stride=1.08,cadence=1.02,arm=44,lean=6,bob=1.05,guard=.15},
+	-- Gaara walks with his arms folded: short steps, almost no bounce.
+	Sand={stride=.8,cadence=.88,arm=0,lean=-1,bob=.35,guard=0,holdArms=true},
 }
-local function gaitOf(id) return GAIT[id] or GAIT.Flashstep end
+local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -13535,7 +13616,7 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	dir=if dir.Magnitude&gt;1e-3 then dir.Unit else Vector3.new(0,0,-1)
 	local forward=-dir.Z -- +1 moving where the body faces
 	local side=dir.X
-	local sprint=speed&gt;(if minato then 30 else 28)
+	local sprint=speed&gt;(if minato then 30 else 28) and not gait.holdArms
 	local swing=armSwing
 	local alpha=math.clamp(speed/30,0,1)
 	local lean=if forward&gt;-.3 then forward*(5+alpha*(if minato then 18 else 12)) else forward*10
@@ -13579,6 +13660,10 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 		local g=gait.guard*(1-math.clamp((speed-12)/20,0,.6))
 		spec.ra.raise=spec.ra.raise+(58-spec.ra.raise)*g;spec.ra.elbow=spec.ra.elbow+(96-spec.ra.elbow)*g
 		spec.la.raise=spec.la.raise+(66-spec.la.raise)*g;spec.la.elbow=spec.la.elbow+(80-spec.la.elbow)*g
+	end
+	if gait.holdArms then
+		-- (Gaara) the arms stay folded whatever the legs do.
+		spec.ra=table.clone(base.ra);spec.la=table.clone(base.la)
 	end
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
@@ -13892,9 +13977,11 @@ local function weaponsFor(char,fighterId)
 	if items then return items end
 	items={}
 	weapons[char]=items
-	local minato=fighterId=="Flashstep" or (fighterId~="Mirage" and fighterId~="GentleFist" and fighterId~="Lion")
-	local palms=fighterId=="GentleFist"
-	local hand=char:FindFirstChild(if fighterId=="Mirage" then "LeftHand" else "RightHand")
+	local kind=familyOf(fighterId).weapons
+	local minato=kind=="kunai"
+	local palms=kind=="palms"
+	if kind=="none" then return items end
+	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
@@ -13923,12 +14010,13 @@ end
 function Motion.weapon(char,actor)
 	local items=weaponsFor(char,actor.fighterId)
 	if not items then return end
-	local minato=actor.fighterId=="Flashstep" or (actor.fighterId~="Mirage" and actor.fighterId~="GentleFist" and actor.fighterId~="Lion")
+	local kind=familyOf(actor.fighterId).weapons
+	local minato=kind=="kunai"
 	local name=actor.attackName
 	local spec=name and Attacks[name]
 	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
 	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*.45 end)() else .35
-	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE.Flashstep)[name]==true and (actor.attackElapsed or 0)&lt;=release
+	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE[familyOf(actor.fighterId).body] or {})[name]==true and (actor.attackElapsed or 0)&lt;=release
 		and actor.attackVariant~="Rasengan") or (minato and (actor.intro or 0)&gt;0)
 	-- Thrown weapons sit in the hand from the wind-up until their release frame.
 	local throwKind=actor.throwKind
@@ -13937,13 +14025,15 @@ function Motion.weapon(char,actor)
 	local holding=throwKind~=nil and throwElapsed&gt;=0 and throwElapsed&lt;releaseAt
 	if throwKind=="Shuriken" and throwElapsed&gt;=releaseAt and throwElapsed&lt;releaseAt+.08 then holding=throwElapsed&gt;=releaseAt+.03 end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
-	if actor.fighterId=="GentleFist" then
+	if kind=="none" then
+		-- (no hand weapon: the sand does the work)
+	elseif kind=="palms" then
 		setVisible(items.throw,holding and throwKind=="Kunai")
 	elseif minato then
 		setVisible(items.melee,meleeOut and not holding)
 		setVisible(items.throw,holding and throwKind=="Kunai")
 		setVisible(items.marked,holding and throwKind=="MarkedKunai")
-	elseif actor.fighterId=="Lion" then
+	elseif kind=="wire" then
 		setVisible(items.shuriken,(holding and throwKind=="Shuriken") or (actor.castId=="WireTrap" and actor.state=="TechniqueChannel"))
 	else
 		setVisible(items.shuriken,(meleeOut and (name=="Light2")) or (holding and throwKind=="Shuriken") or castFan)
@@ -14048,12 +14138,16 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.intro or 0)&gt;0 and subject.state=="Neutral" then
 		local base=stance(subject.fighterId)
 		local spec
-		if subject.fighterId=="Mirage" then
+		local body=familyOf(subject.fighterId).body
+		if body=="Sand" then
+			-- Arms folded, chin down, perfectly still: the sand will do it.
+			spec=merge(base,{root={y=-.04,pitch=-1},head={pitch=10,yaw=0},torso={pitch=-2}})
+		elseif body=="Mirage" then
 			spec=merge(base,{root={y=-.1,pitch=0,yaw=8},torso={pitch=-2,yaw=-4},head={pitch=-4,yaw=-6},ra={raise=6,out=6,elbow=14},la={raise=6,out=6,elbow=14}})
-		elseif subject.fighterId=="Lion" then
+		elseif body=="Lion" then
 			-- Hands in the pockets, chin up: unimpressed until the fight starts.
 			spec=merge(base,{root={y=-.08,pitch=-2,yaw=10},torso={pitch=-4,yaw=-6},head={pitch=-8,yaw=-10},ra={raise=-6,out=14,twist=-30,elbow=60,wrist=0},la={raise=-6,out=14,twist=-30,elbow=60,wrist=0},rf={x=.1,z=.2},lf={x=-.1,z=-.2}})
-		elseif subject.fighterId=="GentleFist" then
+		elseif body=="GentleFist" then
 			-- Byakugan: two fingers raised to the eyes, then the stance.
 			spec=merge(base,{root={y=-.4,yaw=30},head={pitch=0,yaw=-18},ra={raise=128,out=-30,twist=20,elbow=146,wrist=0},la={raise=40,out=10,elbow=40}})
 		else

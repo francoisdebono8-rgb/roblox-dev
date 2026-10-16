@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "0a3ad11aa41470e7c5f5f96fd2f0c83aee715e5f0b552aa5d13eeadca6ab1b47",
+  "sha256": "c449b85f05208ade04fb4e5df1c7b7628d502d1e04226eafd1110953afa66bd5",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -9,9 +9,9 @@
     "src/Client/Input.luau": "44c5629585fb7fb405294ef832535f1b583aae3af4d68c523b51227b0ac08012",
     "src/Client/Main.client.luau": "f09ffb03e716f0795eb360a895675ae6111a66ea151042c0e3b45bc6d946c54d",
     "src/Client/Presentation.luau": "4b6fbe8d86a1af711bee24b97f98524013e74fe2bb14dcfe9ab19a3a1004c675",
-    "src/Client/UI.luau": "74366ec622f36ca36c8050ff96ce0f92e4bd33dc92f256496bff1106c9726dba",
+    "src/Client/UI.luau": "e7fe9bee50acfbec1fe01b9eafd308d860f66314f290753a3865dc7669bde28e",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
-    "src/Client/VelmoraMotionEngine.luau": "11c465875289febb2ee4551e14408de5dc737fe554672429ed9012ac2874fe0d",
+    "src/Client/VelmoraMotionEngine.luau": "cdac226bd09e963b5f3ac3103ed9d4afa819ae5ec231f4dd5247077af16a22e9",
     "src/Server/AI.luau": "76b0f37b7d12381b55ef85468ba7e2c7b62729e755872833b190949c07c23a1c",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "83298d7003b58d2b1517726b14dc3f9f78764f2836fdeb4426ae127f90491dd1",
@@ -53,7 +53,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "a12ad8e37b9a85349898823dc61bbc52a4039ce86adf8d4660891947bc2bedea",
+  "buildFingerprint": "c6df5a004912ad88d6fd990024f8818984e96dfae3702d3460860c97467592dc",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -108,7 +108,7 @@
       },
       "tests/Animation.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel animation presentation: 12 PASS"
+        "summary": "NinjaDuel animation presentation: 13 PASS"
       },
       "tests/Branches.spec.luau": {
         "exit": 0,
