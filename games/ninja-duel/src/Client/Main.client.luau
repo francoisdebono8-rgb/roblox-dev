@@ -70,7 +70,7 @@ if RunService:IsStudio() then
 		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
 			if current.phase~="Duel" or dt<=0 then return end
 			local folder=player.Character and player.Character.Parent
-			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
+			for _,model in {player.Character,Presentation.opponent(current,folder)} do
 				for _,partName in {"Head","HumanoidRootPart"} do
 					local part=model and model:FindFirstChild(partName)
 					if part then

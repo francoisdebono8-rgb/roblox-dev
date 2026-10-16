@@ -1,9 +1,11 @@
--- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
--- result framing. Presentation only; every value comes from the snapshot.
+-- Prodigy Tournament interface: roster/selection, online queue and fighter
+-- pick, duel HUD, match intro and result framing. Presentation only; every
+-- value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
 local MoveGraphs=require(Shared.MoveGraphs)
+local Protocol=require(Shared.OnlineProtocol)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -59,10 +61,10 @@ function UI.new(parent,send)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
 	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,600),palette.ink,1)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,668),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/660) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/728) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
 	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
 	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
@@ -85,6 +87,7 @@ function UI.new(parent,send)
 			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
 			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
 			pick.Activated:Connect(function()
+				if self.picking then self:choose(id);return end
 				self.player=id
 				if self.bot==id then self.bot=playable[index%#playable+1] end
 				self:refreshSelection()
@@ -101,15 +104,41 @@ function UI.new(parent,send)
 	-- The selected fighter's reading of the shared combo grammar.
 	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
-	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(300,18),14,palette.muted)
+	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
 	-- Fighter buttons share each half of the panel, however many are playable.
+	-- During an online pick the left half is yours, the right shows the opponent's.
 	local stride=math.floor(430/#playable)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+			if self.picking then self:choose(id);return end
+			self.player=id; self:refreshSelection()
+		end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+			if self.picking then return end
+			self.bot=id; self:refreshSelection()
+		end)
 	end
-	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
-	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function()
+		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
+	end,palette.red)
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function()
+		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
+	end)
+	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
+	-- by code (host one, or type a friend's code and join).
+	self.onlineRow=frame(shell,UDim2.fromOffset(0,604),UDim2.fromOffset(900,40),palette.ink,1)
+	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(290,40),function() send("Queue",{player=self.player}) end)
+	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(300,0),UDim2.fromOffset(290,40),function() send("Host",{player=self.player}) end)
+	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(600,0),Size=UDim2.fromOffset(170,40),Text="",PlaceholderText="CODE",
+		TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,PlaceholderColor3=palette.muted,BackgroundColor3=palette.panel,BorderSizePixel=0,ClearTextOnFocus=false})
+	corner(codeBox,6)
+	codeBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local clean=string.sub(string.gsub(string.upper(codeBox.Text),"[^A-Z0-9]",""),1,Protocol.CodeLength)
+		if clean~=codeBox.Text then codeBox.Text=clean end
+	end)
+	self.codeBox=codeBox
+	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(780,0),UDim2.fromOffset(120,40),function() send("Join",{player=self.player,code=codeBox.Text}) end)
+	self.notice=text(shell,"",UDim2.fromOffset(0,648),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
@@ -217,6 +246,16 @@ function UI.new(parent,send)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- ---------------------------------------------------------- online queue
+	self.queue=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
+	local queueBox=frame(self.queue,UDim2.new(.5,-300,.5,-150),UDim2.fromOffset(600,300),palette.ink,.1)
+	corner(queueBox,10)
+	stroke(queueBox,palette.red,3)
+	self.queueTitle=text(queueBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,56),48,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.queueCode=text(queueBox,"",UDim2.fromOffset(30,80),UDim2.fromOffset(540,70),72,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.queueNote=text(queueBox,"",UDim2.fromOffset(30,154),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
+	self.queue.Visible=false
 	-- A small displaced indicator during Mirage; real body remains visible and controllable.
 	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
 	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
@@ -238,14 +277,49 @@ function UI.new(parent,send)
 	return self
 end
 function UI:refreshSelection()
+	-- During an online pick the right half shows the opponent's live choice.
+	local other=if self.picking and Fighters[self.opponentPick or ""] then self.opponentPick else self.bot
 	for key,b in self.selectionButtons do
-		local selected=key=="player"..self.player or key=="bot"..self.bot or key=="slot"..self.player
+		local selected=key=="player"..self.player or key=="bot"..other or key=="slot"..self.player
 		b.BackgroundColor3=if selected then Color3.fromRGB(120,36,34) else palette.panel
 	end
-	local p,o=Fighters[self.player],Fighters[self.bot]
+	local p,o=Fighters[self.player],Fighters[other]
 	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
 	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- Online pick: your fighter changes until you confirm; the server echoes it.
+function UI:choose(id)
+	if self.onlineInfo and self.onlineInfo.ready then return end
+	self.player=id;self:refreshSelection();self.send("Pick",{player=id})
+end
+-- Roster, online waiting screen and online pick (the roster in versus mode).
+function UI:lobby(data)
+	local online=data.online
+	self.picking=data.phase=="Pick" and online~=nil
+	if self.picking then
+		if Fighters[online.me or ""] then self.player=online.me end
+		self.opponentPick=online.them
+		self.opponentLabel.Text="OPPONENT  •  "..string.upper(online.opponent or "")..(if online.theirReady then "  •  READY" else "")
+		self.startButton.Text=if online.ready then "READY  •  WAITING FOR OPPONENT" else "READY"
+		self.tutorialButton.Text="LEAVE"
+		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
+	else
+		self.opponentPick=nil
+		self.opponentLabel.Text="OPPONENT (AI)"
+		self.startButton.Text="ENTER THE STAGE"
+		self.tutorialButton.Text="TRAINING (TUTORIAL)"
+		self.notice.Text=data.notice or ""
+	end
+	self.onlineRow.Visible=data.phase=="Selection"
+	if data.phase=="Queue" then
+		local private=online~=nil and online.mode=="private"
+		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
+		self.queueCode.Text=if private then (online.code or "") else ""
+		self.queueNote.Text=if private then "Share this code: your friend types it next to JOIN on the roster screen."
+			else "Casual 1v1  •  you meet the next player who searches."
+	end
+	self:refreshSelection()
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
@@ -273,15 +347,18 @@ function UI:render(data)
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)>0
-	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.onlineInfo=data.online
+	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.queue.Visible=data.phase=="Queue"
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then
-		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
+		GuiService.SelectedObject=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
+			elseif data.phase=="Queue" then self.cancelButton else nil
 		self.lastPhase=data.phase
 	end
 	self.echo.Enabled=false
-	if data.phase=="Selection" then return end
+	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
 	if introActive then
@@ -305,7 +382,7 @@ function UI:render(data)
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
-	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
+	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
@@ -395,6 +472,14 @@ function UI:render(data)
 	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
+	-- Online: a rematch needs both players; a forfeit says so.
+	local online=data.online
+	self.rematchButton.Text=if not online then "REMATCH" elseif online.opponentLeft then "OPPONENT LEFT" elseif online.rematch then "WAITING FOR OPPONENT…"
+		elseif online.theirRematch then "REMATCH  •  OPPONENT IS READY" else "REMATCH"
+	if online and online.forfeit then
+		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
+		self.resultNote.Text="Your opponent left the duel. The win is yours."
+	end
 	if h.illusion>0 and data.phase=="Duel" then
 		local character=game:GetService("Players").LocalPlayer.Character
 		local folder=character and character.Parent

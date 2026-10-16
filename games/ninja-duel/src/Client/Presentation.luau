@@ -9,6 +9,11 @@ local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
 	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
 end
+-- The opponent's body in the viewer's duel folder: the server names it by the
+-- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
+function Presentation.opponent(data,folder)
+	return folder and folder:FindFirstChild(data and data.bot and data.bot.id or "AIFighter")
+end
 -- The replicated root of a server-owned fighter only moves every other
 -- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
 -- body drawn on it advances in jerks. Each fighter is instead drawn on a short
@@ -80,7 +85,7 @@ function Presentation:smoothStep(data,dt)
 	if not data or data.phase~="Duel" then return end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local folder=character and character.Parent
-	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
+	for key,model in {human=character,bot=Presentation.opponent(data,folder)} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
 		local actor=data[key]
 		if root and not root.Anchored and actor then
@@ -126,7 +131,7 @@ function Presentation:impacts(data,camera)
 end
 function Presentation:illusion(data,model)
  local active=data.phase=="Duel" and data.human.illusion>0 and data.human.decoy
- local opponent=model and model.Parent and model.Parent:FindFirstChild("AIFighter")
+ local opponent=model and Presentation.opponent(data,model.Parent)
  active=active and opponent~=nil
  if active and opponent and not self.echo then
   local ghost=opponent:Clone();ghost.Name="LocalAfterimage"
@@ -182,7 +187,7 @@ function Presentation:update(data,dt)
  local character=players.LocalPlayer.Character
  self:illusion(data,character)
  local folder=character and character.Parent
- local bot=folder and folder:FindFirstChild("AIFighter")
+ local bot=Presentation.opponent(data,folder)
  self.botModel=bot
  local models={human=character,bot=bot}
  for key,model in models do

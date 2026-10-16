@@ -251,6 +251,8 @@ local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() 
 -- the server no longer reports.
 function FX:sync(data)
 	if data.epoch~=self.epoch then self.epoch=data.epoch;self:reset() end
+	-- The two fighters' model names in this duel (online they are not the AI names).
+	if data.human and data.bot then self.fighterIds={data.human.id,data.bot.id} end
 	local live={}
 	for _,p in data.projectiles or {} do
 		live[p.id]=true
@@ -480,7 +482,7 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
 		local nearest
-		for _,name in {"PlayerFighter","AIFighter"} do
+		for _,name in self.fighterIds or {"PlayerFighter","AIFighter"} do
 			local m=modelFor(folder,name);local r=m and m:FindFirstChild("HumanoidRootPart")
 			if r and (r.Position-position).Magnitude<4 then nearest=m end
 		end
