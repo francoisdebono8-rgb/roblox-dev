@@ -111,7 +111,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Appuis, cadence et transfert de poids crédibles
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Longueur/fréquence du pas liées vitesse, bonne jambe pousse, pied pose stable, centre de gravité, dash impulsé ; comparaison native avant/après
-- evidence: Animation/renderer/IK existent ; 2026-10-14 cadence de foulée plafonnée à 3,8 (au lieu de 3,1) au-delà de la vitesse de course pour que le sprint se lise aussi par les jambes. TECHNICAL PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING
+- evidence: Animation/renderer/IK existent ; 2026-10-14 cadence de foulée plafonnée à 3,8 (au lieu de 3,1) au-delà de la vitesse de course pour que le sprint se lise aussi par les jambes. 2026-10-16 NATIVE_STUDIO ([audit visuel](../reports/convergence/VISUAL_AUDIT.md)) : trajectoire de jambe de course refaite (talon qui remonte, genou qui passe haut, pied posé devant la hanche), bras normalisés par la foulée, appui de sprint ≥ 85 ms ; pied qui « saute » par rapport au corps en sprint 11,7 % → 4,8 % des images, course inchangée 0,1 %. TECHNICAL PASS (Animation 10). HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## MOV-003 — Vraie course latérale et changement de direction
@@ -150,7 +150,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Transitions air, landing et mur cohérentes
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Impulsion, ascension/apogée/chute, appui mur, rebond, poursuite, récupération et corps lisibles sans snap ; comparaison native avant/après
-- evidence: 2026-10-16 NATIVE_STUDIO (debug, mesuré) : saut debout 19,6 studs/0,53 s → 16,4/0,94 s ; saut en course vitesse à l’atterrissage 36→14 avant, 36→19 après ; saut sprint 69→20 avant, 69→50 après. TECHNICAL PASS (Regression). HUMAN_VISUAL PENDING : la mission du 2026-10-16 demande en plus anticipation, silhouette et réentrée en combat
+- evidence: 2026-10-16 NATIVE_STUDIO (debug, mesuré) : saut debout 19,6 studs/0,53 s → 16,4/0,94 s ; saut en course vitesse à l’atterrissage 36→14 avant, 36→19 après ; saut sprint 69→20 avant, 69→50 après. TECHNICAL PASS (Regression). Silhouette ([audit visuel](../reports/convergence/VISUAL_AUDIT.md)) : bond en ciseaux dès la vitesse de course (avant : seulement au-delà de ~30 studs/s), sauts latéral et arrière lisibles, réception en course sans arrêt-accroupi (le bassin absorbe, la foulée continue). Anticipation encore absente. HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient

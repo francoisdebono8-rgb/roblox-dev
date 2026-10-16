@@ -400,7 +400,7 @@ test("weapons follow the hand and only appear for their own moves",function()
  Motion.weapon(b.model,body(b,{attackName="Slam",state="Active",attackElapsed=.14}))
  assert(not Motion.weaponState(b.model).visible,"a body move kept the shuriken out")
 end)
-test("planted feet stay put in the world while walking, strafing, stopping and turning",function()
+test("planted feet stay put in the world while walking, strafing, stopping and turning; a sprint stance never flickers",function()
  local root={CFrame=H.C.lookAt(V.new(0,3,0),V.new(1,3,0))}
  local char={FindFirstChild=function(_,name) if name=="HumanoidRootPart" then return root end return nil end}
  local base={rf={x=.2,z=.7},lf={x=-.1,z=-.7}}
@@ -410,6 +410,9 @@ test("planted feet stay put in the world while walking, strafing, stopping and t
  local steps=0
  local worstSlide=0
  local worstReach=0
+ local worstGlide=0
+ local stanceFrames={}
+ local shortestStance=math.huge
  local segments={{V.new(18,0,0),1.5,0},{V.new(38,0,0),1,0},{V.new(0,0,15),1,0},{V.new(-12,0,0),.8,0},{V.zero,.8,0},{V.zero,1,2.5}}
  for _,seg in segments do
   local velocity,duration,turn=seg[1],seg[2],seg[3]
@@ -425,8 +428,18 @@ test("planted feet stay put in the world while walking, strafing, stopping and t
     local world=root.CFrame:PointToWorldSpace(V.new(.5*sign+f.x,Motion._ankleY+f.y,f.z))
     local isPlanted=f.toe==0
     if isPlanted and planted[side] and lastWorld[side] then
-     worstSlide=math.max(worstSlide,(world-lastWorld[side]).Magnitude)
+     local slide=(world-lastWorld[side]).Magnitude
+     if velocity.Magnitude<28 then worstSlide=math.max(worstSlide,slide)
+     else worstGlide=math.max(worstGlide,slide/(velocity.Magnitude*dt)) end
     end
+    -- Sprint: count how many frames each stance lasts.
+    -- (Only stances that begin at sprint speed: one already under way when the
+    -- speed changed is not a sprint stance.)
+    if velocity.Magnitude>=28 then
+     if isPlanted and not planted[side] then stanceFrames[side]=1
+     elseif isPlanted and stanceFrames[side] then stanceFrames[side]+=1
+     elseif not isPlanted and stanceFrames[side] then shortestStance=math.min(shortestStance,stanceFrames[side]);stanceFrames[side]=nil end
+    else stanceFrames[side]=nil end
     if not isPlanted and planted[side] then steps+=1 end
     planted[side]=isPlanted;lastWorld[side]=world
     worstReach=math.max(worstReach,math.sqrt(f.x*f.x+f.z*f.z))
@@ -434,6 +447,11 @@ test("planted feet stay put in the world while walking, strafing, stopping and t
   end
  end
  assert(worstSlide<.05,string.format("a planted foot slid %.3f studs in one frame",worstSlide))
+ -- At sprint speed a world-locked foot would sweep under the body in 2-3
+ -- frames (read as a teleport); it stays down >= 4 frames and glides slower
+ -- than half the body speed instead.
+ assert(shortestStance>=4 and shortestStance<math.huge,"a sprint stance lasted only "..tostring(shortestStance).." frames")
+ assert(worstGlide<.5,string.format("a sprint stance foot glided at %.2f of the body speed",worstGlide))
  assert(steps>=10,"the feet barely stepped ("..steps..")")
  assert(worstReach<2.2,string.format("a foot was left %.2f studs from its hip",worstReach))
 end)

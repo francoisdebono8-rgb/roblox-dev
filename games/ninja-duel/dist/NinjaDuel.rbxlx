@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5c90ae19b23091e19ccaf577ea2bbfa5bd47f82d12c99c413d3e451469039626</string>
+          <string name="Value">1566a76a1c840d188ba6cb7b9a69dcd36ba9bae6ca971dfc1f21b6bf162e650c</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -10681,6 +10681,7 @@ end
 -- stopping and turning on the spot all come out of the same rule, so feet
 -- never skate and the steps always match the real displacement.
 local STEP_REACH,STEP_LEAD,RUN_SPEED=1.3,1.05,9
+local MIN_STANCE=.085 -- seconds a running foot stays on the ground, at least
 -- How each prodigy carries his body before any jutsu: stride and cadence
 -- (Minato long and explosive, Itachi economical, Neji short precise steps),
 -- arm swing, forward lean, vertical bounce, and a guard carried while moving.
@@ -10760,13 +10761,24 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	-- legs pattering, and the arms and chest have time to move.
 	local running=not mode and speed&gt;=RUN_SPEED
 	local runDip=0
+	local stanceLen=1
+	-- Swing height: a running foot rises well off the floor (heel toward the
+	-- hips, knee driven through), more the faster the body travels.
+	local runLift=math.clamp(.3+speed*.024,.45,1.35)
 	if running then
 		local gait=s.gait or GAIT.Flashstep
 		-- A sprint drives the legs faster as well as longer: above run speed the
 		-- cadence keeps rising (3.8 cap) so a sprint reads fast before the floor does.
 		local cadence=math.clamp(speed/7.2,1.7,3.8)*gait.cadence
-		local stanceLen=math.clamp((.9+speed*.028)*gait.stride,.9,1.95)
+		-- The sprint posture sits lower, so its planted foot can reach further.
+		stanceLen=math.clamp((1+speed*.03)*gait.stride,.9,if speed&gt;28 then 2.3 else 1.85)
 		local duty=math.clamp(stanceLen/speed*cadence,.16,.6)
+		-- Never fewer than ~5 frames on the ground: at sprint speed a world-locked
+		-- foot sweeps under the body in 2-3 frames, which reads as the foot
+		-- teleporting. The stance foot glides a little with the body instead
+		-- (slip), which the speed hides.
+		duty=math.max(duty,math.min(.6,MIN_STANCE*cadence))
+		local slip=math.max(0,1-stanceLen*cadence/(speed*duty))
 		if not s.runPhase then
 			-- Enter the cycle with the foot that is already ahead in stance.
 			local rz=rootCF:PointToObjectSpace(feet.R.world).Z
@@ -10785,6 +10797,7 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 					f.world=Vector3.new(land.X,groundY,land.Z);f.planted=true;f.p=nil
 				end
 				f.runStance=true
+				if slip&gt;0 then f.world+=Vector3.new(dirUnit.X,0,dirUnit.Z)*speed*slip*dt end
 				runDip=math.max(runDip,math.sin(math.pi*q/duty))
 			else
 				-- Flight / swing: the foot is carried with the hips, from where it
@@ -10796,7 +10809,11 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 				f.runStance=false
 				local u=(q-duty)/(1-duty)
 				f.p=u
-				f.runRel=f.fromRel:Lerp(dirUnit*stanceLen*.5,smooth(u))
+				-- Not a glide from back to front at ankle height: the foot peels off
+				-- behind while the heel rises, then the knee drives through and the
+				-- shin reaches out to land ahead of the hip.
+				local h=if u&lt;.3 then .1*smooth(u/.3) else .1+.9*smooth((u-.3)/.7)
+				f.runRel=f.fromRel:Lerp(dirUnit*stanceLen*.5,h)
 				f.hipNow=Vector3.new(hip.X,groundY,hip.Z)
 			end
 		end
@@ -10810,15 +10827,19 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local out={}
 	for key,f in feet do
 		local pos=f.world
+		local toe=if f.planted then 0 else -18
 		if not f.planted then
 			local p=f.p or 0
-			if f.runRel and f.runStance==false then pos=f.hipNow+f.runRel+Vector3.new(0,math.sin(math.pi*p)*lift,0)
+			if f.runRel and f.runStance==false then
+				-- Peak early (heel recovery), still high as the knee drives, down to land.
+				pos=f.hipNow+f.runRel+Vector3.new(0,math.sin(math.pi*p^.75)*runLift,0)
+				toe=-18-22*math.sin(math.pi*math.min(1,p/.7))
 			else pos=f.from:Lerp(rests[key],smooth(p))+Vector3.new(0,math.sin(math.pi*p)*lift,0) end
 		end
 		local side=if key=="R" then 1 else -1
 		local l=rootCF:PointToObjectSpace(pos)
 		local a=authored(side)
-		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=if f.planted then 0 else -18}
+		out[key]={x=l.X-.5*side,y=l.Y-ANKLE_Y,z=l.Z,yaw=(a.yaw or 0)*(1-moving),toe=toe}
 	end
 	-- The body is lowest as a foot lands and rises through the step (running:
 	-- it sinks through each stance and floats in the flight phase).
@@ -10827,7 +10848,9 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	if running then bob=(.03-.13*runDip)*((s.gait and s.gait.bob) or 1)
 	else bob=if swingP then -.05*moving+.08*math.sin(math.pi*swingP)*moving else -.05*moving end
 	-- Arms answer the legs: the left arm comes forward with the right foot.
-	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then 2.6 else 2.2),-1,1)
+	-- Running: normalised by the stride, so the arms pump through their whole
+	-- range instead of a third of it.
+	local armSwing=math.clamp((out.L.z-out.R.z)/(if running then stanceLen*.8 else 2.2),-1,1)
 	return out.R,out.L,bob,armSwing
 end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
@@ -10925,8 +10948,10 @@ local function airTargets(char,actor,fighterId)
 	local minato=springy(fighterId)
 	local spec
 	if rise&gt;.25 then
-		spec={root={pitch=-4},torso={pitch=-10},head={pitch=-10},ra={raise=-20,out=30,elbow=40},la={raise=60,out=24,elbow=70},
-			rl={lift=74,knee=104,ankle=-14},ll={lift=-12,knee=46,ankle=-20}}
+		-- Take-off: the lead knee drives up, the push-off leg trails, the arms
+		-- answer the legs. The chest stays over the hips (no lean back).
+		spec={root={pitch=2},torso={pitch=3},head={pitch=-6},ra={raise=-20,out=30,elbow=40},la={raise=60,out=24,elbow=70},
+			rl={lift=74,knee=104,ankle=-14},ll={lift=-18,knee=40,ankle=-24}}
 	elseif rise&lt;-.3 then
 		spec={root={pitch=4},torso={pitch=8},head={pitch=-4},ra={raise=34,out=44,elbow=34},la={raise=30,out=40,elbow=36},
 			rl={lift=26,knee=42,ankle=-6},ll={lift=8,knee=30,ankle=-6}}
@@ -10940,14 +10965,30 @@ local function airTargets(char,actor,fighterId)
 	-- of a standing hop's tuck, so the arc reads as distance, not a bounce.
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local flatV=planar(actor.velocity or Vector3.zero)
-	local forward=if root and flatV.Magnitude&gt;1 then -root.CFrame:VectorToObjectSpace(flatV).Unit.Z else 0
-	local travel=math.clamp((flatV.Magnitude-14)/30,0,1)*math.max(0,forward)
+	local localV=if root and flatV.Magnitude&gt;1 then root.CFrame:VectorToObjectSpace(flatV).Unit else Vector3.zero
+	local forward=-localV.Z
+	-- A plain running jump (run speed ~19) already leaps; a sprint jump fully.
+	local momentum=math.clamp((flatV.Magnitude-8)/22,0,1)
+	local travel=momentum*math.max(0,forward)
+	-- Sideways and backward jumps read as such: lean into a side hop, sit
+	-- back into a retreating jump with the guard up.
+	local sideways=momentum*localV.X*(1-math.max(0,forward))
+	local backward=momentum*math.max(0,-forward)
+	if math.abs(sideways)&gt;.05 then
+		spec.root.roll=(spec.root.roll or 0)+14*sideways;spec.torso.roll=(spec.torso.roll or 0)-6*sideways
+		spec.head.roll=(spec.head.roll or 0)-8*sideways
+	end
+	if backward&gt;.05 then
+		spec.root.pitch-=14*backward;spec.torso.pitch-=6*backward;spec.head.pitch+=8*backward
+		spec.ra.raise+=(58-spec.ra.raise)*backward;spec.ra.elbow+=(100-spec.ra.elbow)*backward
+		spec.la.raise+=(66-spec.la.raise)*backward;spec.la.elbow+=(86-spec.la.elbow)*backward
+	end
 	if travel&gt;0 then
-		spec.root.pitch+=14*travel;spec.torso.pitch+=10*travel;spec.head.pitch-=12*travel
+		spec.root.pitch+=18*travel;spec.torso.pitch+=10*travel;spec.head.pitch-=14*travel
 		spec.ra.raise+=(-52-spec.ra.raise)*travel;spec.ra.elbow+=(16-spec.ra.elbow)*travel
 		spec.la.raise+=(-52-spec.la.raise)*travel;spec.la.elbow+=(16-spec.la.elbow)*travel
 		spec.rl.lift+=(68-spec.rl.lift)*travel;spec.rl.knee+=(70-spec.rl.knee)*travel
-		spec.ll.lift+=(-26-spec.ll.lift)*travel;spec.ll.knee+=(34-spec.ll.knee)*travel
+		spec.ll.lift+=(-36-spec.ll.lift)*travel;spec.ll.knee+=(28-spec.ll.knee)*travel
 	end
 	return build(spec),RATE.air
 end
@@ -11415,6 +11456,14 @@ function Motion.present(char,actor,clock,dt)
 		return "attack"
 	end
 	if subject.landing then
+		if not subject.landStrong and not subject.airborne and (subject.speed or 0)&gt;6 then
+			-- A running landing keeps its stride and momentum: the hips absorb the
+			-- drop for a few frames instead of the body stopping in a crouch.
+			local final=table.clone(base)
+			final.Root=(base.Root or IDENTITY)*CF(0,-.3,0)*ANG(rad(-7),0,0)
+			apply(char,final,baseRate or RATE.locomotion,dt)
+			return "landing"
+		end
 		local targets,rate=landTargets(subject.fighterId,if subject.landStrong then 1 else .45)
 		apply(char,targets,rate,dt)
 		return "landing"

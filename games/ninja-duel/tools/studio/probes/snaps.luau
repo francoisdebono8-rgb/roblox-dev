@@ -26,11 +26,20 @@ local function part(modelName,partName)
   return p and p.Position
  end
 end
-local order={"camera","meRoot","meLFoot","botTorso","botLFoot"}
+local order={"camera","meRoot","meLFoot","meLFootRel","botTorso","botLFoot","botLFootRel"}
 local yaw={me={prev=nil,n=0,snaps=0,max=0},bot={prev=nil,n=0,snaps=0,max=0}}
 local function torso(which) local me=Players.LocalPlayer.Character local f=me and me.Parent local m=if which=="me" then me else f and f:FindFirstChild("AIFighter") local t=m and m:FindFirstChild("HumanoidRootPart") return t and t.CFrame.LookVector end
-local getters={camera=function() return cam.CFrame.Position end,meRoot=part("me","HumanoidRootPart"),meLFoot=part("me","LeftFoot"),
- botTorso=part("AIFighter","UpperTorso"),botLFoot=part("AIFighter","LeftFoot")}
+local function rel(modelName)
+ return function()
+  local me=Players.LocalPlayer.Character
+  local folder=me and me.Parent
+  local m=if modelName=="me" then me else folder and folder:FindFirstChild(modelName)
+  local r=m and m:FindFirstChild("HumanoidRootPart");local f=m and m:FindFirstChild("LeftFoot")
+  return r and f and r.CFrame:PointToObjectSpace(f.Position)
+ end
+end
+local getters={camera=function() return cam.CFrame.Position end,meRoot=part("me","HumanoidRootPart"),meLFoot=part("me","LeftFoot"),meLFootRel=rel("me"),
+ botTorso=part("AIFighter","UpperTorso"),botLFoot=part("AIFighter","LeftFoot"),botLFootRel=rel("AIFighter")}
 for _,n in order do tracks[n]={prev=nil,vel=Vector3.zero,frames=0,snaps=0,events={}} end
 local t0=os.clock()
 local conn=RS.RenderStepped:Connect(function(dt)
@@ -50,9 +59,9 @@ local conn=RS.RenderStepped:Connect(function(dt)
    if tr.prev and t>0.6 then
     local err=(p-(tr.prev+tr.vel*dt)).Magnitude
     tr.frames+=1
-    if err>0.8 then
+    if err>(if string.find(n,"Rel") then .5 else .8) then
      tr.snaps+=1
-     if #tr.events<8 then table.insert(tr.events,string.format("  %.2fs %.1f | %s",t,err,ctx())) end
+     if #tr.events<(if n=="meRoot" then 10 else 0) then table.insert(tr.events,string.format("  %.2fs %.1f | %s",t,err,ctx())) end
     end
    end
    if tr.prev then tr.vel=tr.vel:Lerp((p-tr.prev)/dt,.5) end

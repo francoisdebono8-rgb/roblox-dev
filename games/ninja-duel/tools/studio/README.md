@@ -32,6 +32,10 @@ Keep **one** bridge alive: spawning `StudioMCP.exe` per call makes Studio drop a
 | `snaps.luau` | Client | per-frame discontinuities of camera, roots, torsos and feet (error vs. own recent velocity > 0.8 stud) and root yaw turns > 25°/frame, annotated with the inspector state |
 | `flash_exposure.luau` | Client | dynamic light power and large-neon exposure per frame during a fight |
 | `fps.luau` | Client | client render rate |
+| `poses.luau` | Server | pose loops for visual comparison (`MODE`: idle, strafe, run, sprint, circle, circlerun, zigzag, retreat, jump, runjump, jab, combo, heavy, air, guard, tool); `circle`/`circlerun` lap the arena without any re-placement, so probes stay clean |
+| `side_camera.luau` | Client | analysis camera bound after the game camera (`VIEW` side/front/off, optional fixed `AXIS`): profile views of gait, jumps and strikes; Studio-only tool, never shipped |
+
+`snaps.luau` also reports `…FootRel` (foot position in its own root frame, threshold 0.5 stud): the animation's own discontinuities, without the body's translation. `hot_push.py` writes sources into the Edit datamodel and restarts Play, so an animation change is checked in seconds without rebuilding or reopening the place (the shipped build still comes from `build.py`). `contact_sheet.py` tiles captures (`CROP=x0,y0,x1,y1`) for side-by-side comparison.
 
 Rules: run client probes with Studio in the **foreground** (`open_place.py` does it; otherwise the client renders at ~15–20 fps and every metric is noise). A placement (`place`) inside a probe window is a deliberate teleport, not a defect. AI fights are random: compare averages of several runs, or scripted scenarios, never single fights.
 
