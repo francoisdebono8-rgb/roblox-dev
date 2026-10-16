@@ -430,9 +430,142 @@ local function minatoFrame(fx,model,actor,st,clock)
 	returnThread(fx,model,actor,st)
 end
 
+-- ----------------------------------------------------------------- Itachi
+local SHARINGAN=Color3.fromRGB(230,36,44)
+local SHARINGAN_DEEP=Color3.fromRGB(150,16,26)
+local EMBER=Color3.fromRGB(255,128,44)
+-- A straight line of light from one point to another that fades at once: a
+-- path shown for a beat (a prediction, a ricochet, the body behind an image).
+local function streak(fx,from,to,color,width,life,name)
+	local delta=to-from
+	if delta.Magnitude<.3 then return nil end
+	local line=K.block(fx.folder,Vector3.new(width,width,delta.Magnitude),CFrame.lookAt(from:Lerp(to,.5),to),color,Enum.Material.Neon)
+	line.Name=name or "Streak";line.Transparency=.15
+	K.tween(line,life,{Transparency=1,Size=Vector3.new(width*.2,width*.2,delta.Magnitude)})
+	Debris:AddItem(line,life+.05)
+	return line
+end
+-- Read stance: three tomoe turn round his feet while the eye waits for the
+-- blow. The attacker sees it too: swinging into it is his choice.
+local function tomoeRing(fx,model,actor,st,clock)
+	local root=rootOf(model)
+	if (actor.read or 0)>0 and root and (actor.health or 1)>0 then
+		if not st.tomoe or not st.tomoe.model.Parent then
+			local holder=K.new("Model",{Name="ReadTomoe"},fx.folder)
+			local ring=K.block(holder,Vector3.new(.05,4.6,4.6),CFrame.new(),SHARINGAN,Enum.Material.Neon)
+			ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.7
+			local marks={}
+			for _=1,3 do
+				local head=K.block(holder,Vector3.one*.42,CFrame.new(),SHARINGAN_DEEP,Enum.Material.Neon);head.Shape=Enum.PartType.Ball
+				local tail=K.block(holder,Vector3.new(.14,.06,.5),CFrame.new(),SHARINGAN_DEEP,Enum.Material.Neon)
+				table.insert(marks,{head=head,tail=tail})
+			end
+			st.tomoe={model=holder,ring=ring,marks=marks}
+		end
+		local base=CFrame.new(root.Position-Vector3.new(0,2.85,0))
+		st.tomoe.ring.CFrame=base*CFrame.Angles(0,0,math.pi/2)
+		for k,m in st.tomoe.marks do
+			local at=base*CFrame.Angles(0,clock*3+k*2*math.pi/3,0)*CFrame.new(0,.05,-1.75)
+			m.head.CFrame=at;m.tail.CFrame=at*CFrame.new(.28,0,.12)*CFrame.Angles(0,math.rad(-50),0)
+		end
+	elseif st.tomoe then
+		st.tomoe.model:Destroy();st.tomoe=nil
+	end
+end
+-- A read paid off: a red ring under him shrinks with the counter window (the
+-- snapshot's counter is the time left), the punish is now.
+local function counterWindow(fx,model,actor,st)
+	local root=rootOf(model)
+	local left=actor.counter or 0
+	if left>0 and root and (actor.health or 1)>0 then
+		if not st.window or not st.window.Parent then
+			local ring=K.block(fx.folder,Vector3.new(.06,5,5),CFrame.new(),SHARINGAN,Enum.Material.Neon)
+			ring.Name="CounterWindow";ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.35
+			st.window=ring
+		end
+		local size=1+4*math.clamp(left,0,1)
+		st.window.Size=Vector3.new(.06,size,size)
+		st.window.CFrame=CFrame.new(root.Position-Vector3.new(0,2.85,0))*CFrame.Angles(0,0,math.pi/2)
+	elseif st.window then
+		st.window:Destroy();st.window=nil
+	end
+end
+local function itachiImpact(fx,data,folder)
+	local style=data.style
+	if style=="read" and data.phase~="whiff" then
+		-- He saw it coming: a line from his eyes to the body that swung.
+		local reader=find(folder,data.owner)
+		local head=reader and reader:FindFirstChild("Head")
+		local swing=rootOf(find(folder,data.victim))
+		if head and swing then
+			streak(fx,head.Position,swing.Position+Vector3.new(0,.6,0),SHARINGAN,.07,.3,"ReadLine")
+			K.flash(fx.folder,swing.Position+Vector3.new(0,.6,0),SHARINGAN,.3,2.2,.16,.25)
+		end
+	elseif style=="mirage" and data.phase=="catch" then
+		-- The image breaks: the real body behind it lights for a beat.
+		local caster=rootOf(find(folder,data.owner))
+		if caster then
+			streak(fx,data.position,caster.Position,SHARINGAN,.12,.3,"MirageReveal")
+			K.flash(fx.folder,caster.Position,SHARINGAN,.5,3.5,.2,.2)
+		end
+	elseif style=="deflect" and data.ricochet and data.to then
+		-- A ricochet: its new path flashes from the bounce to the body it seeks.
+		streak(fx,data.position,data.to,Color3.fromRGB(255,236,236),.1,.25,"RicochetPath")
+		K.shockRing(fx.folder,data.position,SHARINGAN,.5,3.2,.18,data.direction)
+	elseif style=="clash" and data.geometry and data.to then
+		-- Shuriken Geometry: the two blades' meeting sends them into the flank.
+		for _,side in {-.6,.6} do
+			local across=flatUnit(data.to-data.position):Cross(Vector3.yAxis)*side
+			streak(fx,data.position,data.to+across,Color3.fromRGB(255,236,236),.08,.25,"GeometryPath")
+		end
+	end
+	return false
+end
+-- Itachi's burning lane (Elements.burnLane): the patches of one lane share a
+-- scorched strip from the first to the last, so it reads as a line across the
+-- field, not as scattered fires.
+local function laneFrame(fx,data)
+	fx.identityLanes=fx.identityLanes or {}
+	local lanes={}
+	for _,h in data.hazards or {} do
+		if h.lane then
+			local lane=lanes[h.lane] or {}
+			table.insert(lane,h)
+			lanes[h.lane]=lane
+		end
+	end
+	for id,patches in lanes do
+		local strip=fx.identityLanes[id]
+		local first,last=patches[1].position,patches[#patches].position
+		local span=Vector3.new(last.X-first.X,0,last.Z-first.Z)
+		if #patches>=2 and span.Magnitude>.5 and (not strip or strip.count~=#patches or not strip.model.Parent) then
+			if strip then strip.model:Destroy() end
+			local model=K.new("Model",{Name="FireLane"},fx.folder)
+			local width=patches[1].radius*1.5
+			local along=CFrame.lookAt(first:Lerp(last,.5)-Vector3.new(0,.42,0),last-Vector3.new(0,.42,0))
+			local scorch=K.block(model,Vector3.new(width,.05,span.Magnitude+width),along,Color3.fromRGB(32,22,18),Enum.Material.Slate)
+			scorch.Transparency=.25
+			for _,side in {-1,1} do
+				local edge=K.block(model,Vector3.new(.12,.06,span.Magnitude+width*.8),along*CFrame.new(side*width*.5,.02,0),EMBER,Enum.Material.Neon)
+				edge.Transparency=.3
+			end
+			strip={model=model,count=#patches}
+			fx.identityLanes[id]=strip
+		end
+	end
+	for id,strip in fx.identityLanes do
+		if not lanes[id] then strip.model:Destroy();fx.identityLanes[id]=nil end
+	end
+end
+local function itachiFrame(fx,model,actor,st,clock)
+	tomoeRing(fx,model,actor,st,clock)
+	if actor.fighterId=="Mirage" then counterWindow(fx,model,actor,st) end
+end
+
 -- ------------------------------------------------------------------ layer
 local function impact(fx,data,folder)
 	if minatoImpact(fx,data,folder) then return true end
+	if itachiImpact(fx,data,folder) then return true end
 	return nejiImpact(fx,data,folder)
 end
 local function fighter(fx,model,actor,dt)
@@ -441,10 +574,14 @@ local function fighter(fx,model,actor,dt)
 	local clock=IdentityFX.clock()
 	networkFrame(fx,model,actor,st)
 	if actor.fighterId=="Flashstep" or #(actor.seals or {})>0 then minatoFrame(fx,model,actor,st,clock) end
+	itachiFrame(fx,model,actor,st,clock)
+end
+local function frame(fx,data,dt,folder)
+	laneFrame(fx,data)
 end
 function IdentityFX.install(FX,kit)
 	K=kit
-	table.insert(FX.layers,{name="Identity",impact=impact,fighter=fighter})
+	table.insert(FX.layers,{name="Identity",impact=impact,fighter=fighter,frame=frame})
 end
 IdentityFX.palmPrint=function(fx,at,normal) return palmPrint(fx,at,normal,1,.1,.22) end
 return IdentityFX

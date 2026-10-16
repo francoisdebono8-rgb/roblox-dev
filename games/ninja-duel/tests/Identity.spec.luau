@@ -1024,4 +1024,128 @@ test("HUD · Minato: after a jump the arrival strike and the Rasengan are prompt
  end)
 end)
 
+-- Itachi (server) ----------------------------------------------------------------
+local Elements=H.load("Server/Elements")
+test("Itachi · the Great Fireball burns a lane where it passes the opponent: fire as control (a chip, never a stun); Sasuke's does not",function()
+ local function cast(fighter)
+  local c,a,b=H.duel(fighter,"Flashstep")
+  place(c,a,b,V.new(0,3,20),V.new(0,3,-20))
+  assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"fireball refused")
+  -- He side-steps the blast: it flies on six studs beside him.
+  c:relocate(b,V.new(6,3,-20))
+  H.step(c,2)
+  local lane={}
+  for _,h in c.hazards do if h.lane then table.insert(lane,h) end end
+  return c,a,b,lane
+ end
+ local c,a,b,lane=cast("Mirage")
+ assert(b.health==b.def.Health,"setup: the side-step should dodge the blast")
+ assert(#lane>=4,"no lane where the fireball passed him ("..#lane.." patches)")
+ local tune=Elements.LANE
+ for k,patch in lane do
+  local d=patch.position-b.root.Position
+  assert(V.new(d.X,0,d.Z).Magnitude<=tune.Reach+tune.Radius,"a patch burns far from the opponent")
+  assert(patch.kind=="Fire" and patch.radius==tune.Radius and patch.lane==lane[1].lane,"a patch is not part of one fire lane")
+  if k>1 then
+   local gap=V.new(patch.position.X-lane[k-1].position.X,0,patch.position.Z-lane[k-1].position.Z).Magnitude
+   assert(math.abs(gap-tune.Spacing)<.6,"the lane is not one line ("..string.format("%.2f",gap)..")")
+  end
+ end
+ local data=Matches.view(Matches,{combat=c,epoch=1,phase="Duel",origin=V.zero,round=1,wins={},roundsToWin=1},{},a,b)
+ local shown=0
+ for _,h in data.hazards do if h.lane==lane[1].lane then shown+=1 end end
+ assert(shown==#lane,"the snapshot does not carry the lane")
+ -- Standing in it burns (a chip), never stuns nor feeds a combo.
+ c:relocate(b,lane[2].position+V.new(0,.6,0))
+ local health,hits=b.health,b.comboHits
+ H.step(c,1)
+ assert(b.health<health and b.state~="Stunned" and b.comboHits==hits,"the lane does not burn like fire (chip only)")
+ local _,_,_,none=cast("Lion")
+ assert(#none==0,"Sasuke's fireball burned Itachi's lane")
+end)
+
+test("Itachi · a ricochet and Shuriken Geometry show the paths their blades take",function()
+ local c,a,b=H.duel("Mirage","Flashstep")
+ H.addWall(20)
+ place(c,a,b,V.new(0,3,0),V.new(10,3,8))
+ local serial=c.impactSerial
+ local seen,feed={},{}
+ c:projectile(a,V.new(26,3,-6),84,62,2,"shuriken")
+ for _=1,80 do H.step(c,.01);feedSince(c,serial,seen,feed) end
+ local ricochet
+ for _,impact in feed do if impact.style=="deflect" and impact.ricochet then ricochet=impact end end
+ assert(ricochet,"the ricochet does not say it is one")
+ assert(ricochet.to and (ricochet.to-b.root.Position).Magnitude<4 and ricochet.direction:Dot((ricochet.to-ricochet.position).Unit)>.95,"the ricochet's new path is not shown toward the body")
+ H.clearWalls()
+ local c2,x,y=H.duel("Mirage","Flashstep")
+ place(c2,x,y,V.new(0,3,12),V.new(0,3,-12))
+ x.intentOverride={"side",1}
+ assert(c2:request(x,"Tool"),"geometry refused")
+ x.intentOverride=nil
+ local s2=c2.impactSerial
+ local seen2,feed2={},{}
+ for _=1,90 do H.step(c2,.01);feedSince(c2,s2,seen2,feed2) end
+ local meet
+ for _,impact in feed2 do if impact.style=="clash" and impact.geometry then meet=impact end end
+ assert(meet and meet.to and (meet.to-y.root.Position).Magnitude<1.5,"the geometry meeting does not show where its blades go")
+end)
+
+-- Itachi (client) ----------------------------------------------------------------
+test("client · Itachi's Read: tomoe turn at his feet in the stance; a read draws the line from his eyes to the swing and a counter window that closes",function()
+ inScene(function(fx,folder,bodies)
+  local itachi=actorData("A","Mirage",{read=.8})
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=itachi,bot=actorData("B","Flashstep")}
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"ReadTomoe")==1,"the Read stance shows nothing at his feet")
+  itachi.read=0;itachi.counter=.9
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"ReadTomoe")==0,"the tomoe outlived the stance")
+  local ring=named(fx,"CounterWindow")[1]
+  assert(ring,"no counter window")
+  local open=ring.Size.Y
+  itachi.counter=.2;fx:update(data,1/60,folder)
+  assert(ring.Size.Y<open-2,"the counter window does not close with its time")
+  itachi.counter=0;fx:update(data,1/60,folder)
+  assert(#named(fx,"CounterWindow")==0,"the window outlived the counter")
+  fx:impact({style="read",position=V.new(.5,3,0),owner="A",fighter="Mirage",victim="B",to=V.new(2,3,0),phase="read",serial=1},folder)
+  assert(#named(fx,"ReadLine")==1,"the read does not show what he saw coming")
+ end)
+end)
+test("client · a caught image lights the real body behind it; ricochet and Geometry flash their paths",function()
+ inScene(function(fx,folder)
+  fx:impact({style="mirage",position=V.new(0,3,-6),owner="A",fighter="Mirage",victim="B",phase="catch",serial=1},folder)
+  assert(#named(fx,"MirageReveal")==1,"the caught image does not reveal the body")
+  fx:impact({style="deflect",position=V.new(20,3,-6),owner="A",fighter="Mirage",ricochet=true,to=V.new(10,3,8),direction=(V.new(10,3,8)-V.new(20,3,-6)).Unit,serial=2},folder)
+  assert(#named(fx,"RicochetPath")==1,"the ricochet's path does not flash")
+  fx:impact({style="deflect",position=V.new(0,3,-3),owner="B",serial=3},folder)
+  assert(#named(fx,"RicochetPath")==1,"a plain deflection drew a ricochet path")
+  fx:impact({style="clash",position=V.new(-6,3,-10),owner="A",fighter="Mirage",geometry=true,to=V.new(0,3,-12),direction=V.xAxis,serial=4},folder)
+  assert(#named(fx,"GeometryPath")==2,"the geometry's two blades do not show their paths")
+ end)
+end)
+test("client · Itachi's lane reads as one scorched strip across the field and clears with its fire",function()
+ inScene(function(fx,folder)
+  local hazards={}
+  for k=0,4 do table.insert(hazards,{position=V.new(6,2.4,-7-k*5),radius=2.4,remaining=2,kind="Fire",owner="A",lane=9}) end
+  table.insert(hazards,{position=V.new(-20,2.4,0),radius=7.5,remaining=2,kind="Fire",owner="A"})
+  local data={phase="Duel",epoch=1,hazards=hazards,projectiles={},human=actorData("A","Mirage"),bot=actorData("B","Flashstep")}
+  fx:update(data,1/60,folder)
+  local strips=named(fx,"FireLane")
+  assert(#strips==1,"the lane is not drawn as one strip ("..#strips..")")
+  local scorch=strips[1]:GetChildren()[1]
+  assert(scorch.Size.Z>=20,"the strip does not run the lane's length")
+  data.hazards={}
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"FireLane")==0,"the strip outlived its fire")
+ end)
+end)
+test("HUD · a read's counter is named and timed",function()
+ hudScene(function(ui)
+  ui:render(duelView(plate("Mirage",{counter=.74}),plate("Flashstep")))
+  assert(ui.hint.Text:find("COUNTER PALM  0.7",1,true),"the counter is not named and timed ("..ui.hint.Text..")")
+  ui:render(duelView(plate("GentleFist",{counter=.5}),plate("Flashstep")))
+  assert(ui.hint.Text:find("TWIN PALM",1,true),"Neji's counter is not named ("..ui.hint.Text..")")
+ end)
+end)
+
 print("NinjaDuel identity pass: "..passed.." PASS")

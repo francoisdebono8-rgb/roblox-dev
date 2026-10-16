@@ -1633,6 +1633,8 @@ function FX:update(data,dt,folder)
 			for _,layer in FX.layers do if layer.fighter then layer.fighter(self,model,actor,dt) end end
 		end
 	end
+	-- A layer may also read the whole duel once per frame (both fighters, hazards).
+	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

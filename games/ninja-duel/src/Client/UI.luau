@@ -399,6 +399,14 @@ function UI.awakening(actor)
 	if actor.curseHunger then return line.."  •  HUNGRY: LAND A BLOW" end
 	return if AWAKENED[actor.fighterId] then line.."  •  "..AWAKENED[actor.fighterId] else line
 end
+-- The counter a read, a repel or a caught image opened: named, with the time
+-- it stays open (it closes fast; the HUD says how fast).
+local COUNTER_NAME={CounterPalm="COUNTER PALM",PalmThrust="TWIN PALM"}
+function UI.counterPrompt(h,pad)
+	local move=(MoveGraphs[h.fighterId] or {}).readCounter
+	local name=COUNTER_NAME[move or ""] or "COUNTER"
+	return string.format("%s — %s  %.1fs",if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light,name,h.counter or 0)
+end
 -- Contextual prompts for a conversion that is open right now (nil: none):
 -- after a teleport the arrival strike or Rasengan, after the Dancing Leaf the
 -- air finisher.
@@ -546,7 +554,7 @@ function UI:render(data)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
 		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
-		elseif (h.counter or 0)>0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
+		elseif (h.counter or 0)>0 then UI.counterPrompt(h,pad)
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
 		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")

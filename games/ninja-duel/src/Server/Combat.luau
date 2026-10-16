@@ -1554,7 +1554,8 @@ function Combat:projectileSurface(p,hit)
 		bounce.bounced=true
 		-- An infused blade keeps its chakra through the bounce (no second scaling).
 		Chakra.inherit(bounce,p)
-		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		-- The new path is shown (ricochet, to): the geometry is the threat.
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id,fighter=p.a.fighterId,ricochet=true,to=target.root.Position,direction=bounce.direction})
 		Brawler.event(self,p.a,"Ricochet")
 	end
 end
@@ -1588,7 +1589,7 @@ end
 function Combat:projectileExpire(p)
 	if p.geometry and p.a.target and p.a.target.health>0 then
 		local b=p.a.target
-		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
+		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
 			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})

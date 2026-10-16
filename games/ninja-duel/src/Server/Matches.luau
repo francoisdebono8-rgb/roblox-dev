@@ -234,7 +234,7 @@ function Matches:view(s,cursor,mine,theirs)
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id})
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.

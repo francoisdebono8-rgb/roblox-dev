@@ -24,8 +24,37 @@ function Elements.fire(c,a,pending,now)
 	if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
 	local drop=math.clamp(delta.Y,-flat.Magnitude*.35,flat.Magnitude*.08)
 	local target=origin+flat.Unit*spec.Range+Vector3.new(0,drop*spec.Range/math.max(flat.Magnitude,1),0)
-	c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
+	local ball=c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
+	if spec.Lane then Elements.burnLane(c,a,ball) end
 	c:cue(a,"KATON • GREAT FIREBALL")
+end
+-- Itachi's Katon is control, not only damage (spec.Lane): where the fireball
+-- passes the opponent, the ground under its path catches, patch after patch at
+-- an even spacing. The lane cuts the field beside the body that dodged it:
+-- walk round it, jump it, or take the burn (Combat:chip, it never stuns).
+local LANE={Reach=14,Spacing=5,Radius=2.4,Life=2.6,Damage=.3,Drop=24}
+Elements.LANE=LANE
+function Elements.burnLane(c,a,ball)
+	c:schedule(c.now+.03,function()
+		if c.match.phase~="Duel" or ball.dead or not table.find(c.projectiles,ball) then return end
+		local b=a.target
+		if b and b.health>0 then
+			local near=Vector3.new(ball.position.X-b.root.Position.X,0,ball.position.Z-b.root.Position.Z).Magnitude<=LANE.Reach
+			if near and not ball.laneNext then ball.laneNext=ball.position end
+			-- Every patch point the flight has passed since the last poll.
+			while near and ball.laneNext and (ball.position-ball.laneNext):Dot(ball.direction)>=0 do
+				local floor=workspace:Raycast(ball.laneNext,Vector3.new(0,-LANE.Drop,0),c:rayParams(true))
+				if floor then
+					local patch=c:addHazard(a,floor.Position+Vector3.new(0,.5,0),LANE.Radius,LANE.Life,ball.damage*LANE.Damage,"Fire")
+					patch.lane=ball.id
+				end
+				ball.laneNext+=ball.direction*LANE.Spacing
+			end
+			-- Past the opponent: the lane is laid.
+			if not near and ball.laneNext then return end
+		end
+		Elements.burnLane(c,a,ball)
+	end)
 end
 -- Katon: Phoenix Flower. Five small flames released one after another, each
 -- re-aimed at the opponent with a lateral offset: a fan that follows the
