@@ -121,6 +121,7 @@ test("chakra cost per infusion, paid once; refused with a visible fizzle when sh
 	assert(not ok and why=="Need chakra","a short reserve was not refused: "..tostring(why))
 	assert(a.chakra==price-.5 and a.throwing==nil and #mine(c,a)==0,"a refused infusion still threw or charged")
 	assert(impactWith(c,"fizzle") and (a.events or {}).ChakraRefused,"the refusal had no cue")
+	for _,row in c.chakraLog or {} do assert(row.trigger~="Infuse","a refused infusion was logged as committed") end
 	a.chakra=100
 	assert(chakraTool(c,a))
 	assert(math.abs(100-a.chakra-price)<1e-6,"paid "..(100-a.chakra))
@@ -302,6 +303,13 @@ test("a missed wire stays stretched: binds on contact, carries fire, is cut by w
 	assert(chakraTool(c3,m,cross),"wind kunai refused")
 	until_(c3,.5,function() return w3.dead end,"the wind kunai did not cut the wire")
 	assert(impactWith(c3,"wirecut"),"no wire-cut impact")
+	-- A Rotation dome (state as Techniques.Rotation sets it) snaps a wire it
+	-- touches along its length, not only at the anchor.
+	local c4,_,spinner,w4=stretched()
+	spinner.rotationUntil=c4.now+.3
+	c4:relocate(spinner,w4.origin+w4.direction*(w4.range*.5)+V.new(3,0,0))
+	H.step(c4,.02)
+	assert(w4.dead,"the Rotation dome did not snap the wire")
 end)
 
 test("Neji's chakra palm: swats the blades in front, reaches the chakra network through a guard",function()

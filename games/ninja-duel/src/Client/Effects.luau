@@ -792,7 +792,7 @@ function FX:planted(p)
 		local blade=FX.buildShuriken();blade.Parent=model
 		blade:PivotTo(CFrame.lookAt(far,far+p.direction)*CFrame.Angles(math.rad(80),0,0))
 		local a0=new("Attachment",{},root);local a1=new("Attachment",{},tip)
-		local beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.07,Width1=.07,Color=ColorSequence.new(Color3.fromRGB(214,218,226)),LightEmission=.4,FaceCamera=true,Segments=2},root)
+		local beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.1,Width1=.1,Color=ColorSequence.new(Color3.fromRGB(226,230,238)),LightEmission=.6,FaceCamera=true,Segments=2},root)
 		local light=new("PointLight",{Color=INFUSION.Lightning.color,Brightness=0,Range=8,Shadows=false},tip)
 		model.PrimaryPart=root
 		sparks(self.folder,far,Color3.fromRGB(255,236,200),6,10)
@@ -817,7 +817,7 @@ function FX:restStep(entry)
 	if entry.wire then
 		local charged=p.infusion=="Lightning"
 		entry.beam.Color=ColorSequence.new(if charged then INFUSION.Lightning.core else Color3.fromRGB(214,218,226))
-		entry.beam.Width0=if charged then .1+math.random()*.08 else .07;entry.beam.Width1=entry.beam.Width0
+		entry.beam.Width0=if charged then .13+math.random()*.08 else .1;entry.beam.Width1=entry.beam.Width0
 		entry.light.Brightness=if charged then 1+math.random()*2.5 else 0
 		return
 	end
@@ -907,7 +907,7 @@ function FX:chakraImpact(impact,folder)
 		self:tumble(impact.kind,at,impact.tumble,nil)
 	elseif kind=="deflect" or kind=="knock" then
 		sparks(self.folder,at,color,10,22)
-		self:tumble(if kind=="knock" then "point" else impact.kind,at,impact.tumble,nil)
+		self:tumble(if kind=="knock" then impact.tool or "kunai" else impact.kind,at,impact.tumble,nil)
 	elseif kind=="swat" then
 		flash(self.folder,at,HYUGA,.6,3.5,.14,.25)
 		self:tumble(impact.kind,at,impact.tumble,HYUGA)
@@ -919,7 +919,9 @@ function FX:chakraImpact(impact,folder)
 		sparks(self.folder,at,INFUSION.Fire.core,12,16)
 		if kind=="absorb" then shockRing(self.folder,at,INFUSION.Fire.color,1.5,9,.25,impact.direction) end
 	elseif kind=="intercept" then
+		-- Both blades drop out of the meeting, to either side.
 		self:tumble(impact.kind,at,impact.tumble,nil)
+		if impact.tumble then self:tumble(impact.otherKind,at,Vector3.new(-impact.tumble.X,impact.tumble.Y,-impact.tumble.Z),nil) end
 	elseif kind=="crush" then
 		-- Reinforced steel leaning on a guard: a hard ring and chips off the guard.
 		shockRing(self.folder,at,INFUSION.Reinforce.core,1.5,if impact.heavy then 12 else 7,.24,impact.direction)

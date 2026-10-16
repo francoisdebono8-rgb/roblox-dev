@@ -178,8 +178,7 @@ function Chakra.plan(c,a,object)
 	local input=InputPlan.build(T,"Modifier",{action="Tool",modified=true},{tool=objectId,selectedInfusion=preferred})
 	if input.infusion=="None" then return nil,"No chakra tool" end
 	local result=resolve(c,a,objectId,input.infusion,false)
-	result.profile=profileId
-	record(c,"Infuse",result.rules,{owner=a.id,object=objectId,infusion=result.infusion,mode=result.mode})
+	result.profile=profileId;result.owner=a.id
 	return result
 end
 -- A nature carried by a jutsu (no input, no cost).
@@ -202,8 +201,16 @@ function Chakra.refuse(c,a)
 	c:pushImpact(hand,"fade",false,{owner=a.id,chakra="fizzle"})
 	Brawler.event(c,a,"ChakraRefused")
 end
+-- The infusion is logged once, when the chakra is actually committed (a plan
+-- refused for cost leaves no trace).
+local function committed(c,infused)
+	if infused.logged or infused.innate then return end
+	infused.logged=true
+	record(c,"Infuse",infused.rules,{owner=infused.owner,object=infused.object,infusion=infused.infusion,mode=infused.mode})
+end
 -- A projectile thrown with a plan carries it for its whole life.
 function Chakra.arm(c,p,infused)
+	committed(c,infused)
 	local s=infused.stats
 	p.chakra=infused;p.infusion=infused.infusion;p.tags=infused.tags
 	if not infused.innate then
@@ -318,7 +325,7 @@ local function settle(c,s,t,vs,vt,at,forced)
 		kill(c,t,at,"deflect",{chakra="deflect",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
 	elseif outcome=="intercept" then
 		t.dead=true
-		kill(c,s,at,"clash",{chakra="intercept",other=t.id,direction=dir,tumble=tumble(s.direction,t.direction),by=owner.id})
+		kill(c,s,at,"clash",{chakra="intercept",other=t.id,otherKind=t.kind,direction=dir,tumble=tumble(s.direction,t.direction),by=owner.id})
 	end
 	if outcome~="pass" then
 		Brawler.event(c,owner,"ChakraClash")
@@ -510,7 +517,7 @@ function Chakra.step(c,dt)
 				settle(c,s,t,vs,vt,P:Lerp(Q,.5))
 			elseif hit.kind=="point" then
 				-- A planted point is contestable: any thrown object knocks it out.
-				kill(c,q,q.position,"deflect",{chakra="knock",infusion=q.infusion,direction=p.direction,tumble=tumble(p.direction,p.direction),by=p.a.id})
+				kill(c,q,q.position,"deflect",{chakra="knock",tool=q.planted,infusion=q.infusion,direction=p.direction,tumble=tumble(p.direction,p.direction),by=p.a.id})
 				Brawler.event(c,p.a,"ChakraPointKnocked")
 				record(c,"PointKnocked",{"thrown-object-knocks-point"},{owner=q.a.id,by=p.kind})
 			elseif hit.kind=="wire" then
@@ -530,6 +537,17 @@ function Chakra.step(c,dt)
 				local far=q.origin+q.direction*q.range
 				for _,h in c.hazards do
 					if h.kind=="Fire" and not q.dead and (h.position-closest(q.origin,far,h.position)).Magnitude<=h.radius then burnWire(c,q,h.a) end
+				end
+				-- Rotation's dome snaps a wire it touches anywhere along its length.
+				for _,spin in c.actors do
+					if spin~=q.a and (spin.rotationUntil or 0)>now and not q.dead then
+						local reach=spin.rotationReach or 7
+						local point=closest(q.origin,far,spin.root.Position)
+						if (point-spin.root.Position).Magnitude<=reach then
+							kill(c,q,point,"deflect",{chakra="wirecut",by=spin.id})
+							Brawler.event(c,spin,"WireCut")
+						end
+					end
 				end
 				local x=q.a.target
 				if x and not q.dead then touchWire(c,q,x) end
@@ -697,6 +715,7 @@ end
 -- the blades in front of it while it comes out, drains and closes a point
 -- through a guard, and closes an extra point on a clean hit.
 function Chakra.palm(c,a,infused)
+	committed(c,infused)
 	Brawler.start(c,a,"PalmThrust")
 	local pending=a.pending
 	if not pending then return false,"Committed" end
@@ -753,6 +772,7 @@ function Chakra.conduct(c,a,infused)
 	local b=a.wireVictim
 	if not (b and b.reaction=="Bound" and b.boundBy==a and b.health>0) then return false,"Wire lost" end
 	local tune=E.conduct
+	committed(c,infused)
 	b.wireConducts=(b.wireConducts or 0)+1
 	local hand=c.launchPoint(a,"Kunai")
 	c.damageTag="Wire Lightning";c.hitOrigin=hand

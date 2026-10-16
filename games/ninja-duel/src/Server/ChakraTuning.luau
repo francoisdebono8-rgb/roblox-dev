@@ -65,7 +65,7 @@ end
 O.Fireball=volume({"projectile","volume","fire"},6)
 O.Phoenix=volume({"projectile","volume","fire"},2.5)
 O.VacuumPalm=volume({"projectile","volume","body"},5)
-O.WindCut=volume({"projectile","volume","wind"},4)
+O.WindCut=volume({"projectile","volume","wind","cutting"},4)
 O.SandWave=volume({"projectile","volume","sand","earth"},6)
 T.Surfaces.Wall={tags={"solid","wall","anchorCompatible"},normal={x=-1,y=0,z=0},radius=8}
 T.Surfaces.Floor={tags={"solid","floor","anchorCompatible"},normal={x=0,y=1,z=0},radius=8}
