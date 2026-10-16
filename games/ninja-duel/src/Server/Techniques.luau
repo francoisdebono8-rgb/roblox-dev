@@ -27,6 +27,16 @@ local function seals(c,a,now)
 	end
 	-- A seal written directly into the single legacy slot still counts.
 	if a.anchor and not known[a.anchor] and a.anchor.expires>now then table.insert(list,{position=a.anchor.position,anchor=a.anchor}) end
+	-- Yellow Flash: a body he has just launched, knocked away or splatted (his
+	-- chase window is open) is a destination by itself. No seal is spent on it;
+	-- the chase window is.
+	local tune=a.def.Awakening
+	local b=a.target
+	if tune and tune.FlashPursuit and (a.awakenUntil or 0)>now and b and b.health>0 and (a.pursuitUntil or 0)>now then
+		local onBody=false
+		for _,seal in list do if seal.body then onBody=true end end
+		if not onBody then table.insert(list,{position=b.root.Position,body=true,virtual=true}) end
+	end
 	return list
 end
 Techniques.seals=seals
@@ -59,6 +69,7 @@ local function sealOf(c,a,now)
 end
 Techniques.sealOf=sealOf
 function Techniques.consumeSeal(c,a,seal)
+	if seal.virtual then a.pursuitUntil=0;return end
 	if seal.flying then seal.flying.dead=true;c:removeProjectile(seal.flying);return end
 	local entry=seal.anchor
 	if not entry then return end
@@ -216,13 +227,24 @@ Techniques.Flashstep = {
 		a.airborne=a.root.Position.Y>c.match.origin.Y+4.2
 		c:effect("Arrival",target,a.color,Vector3.new(3,5,3),0.45)
 		Techniques.consumeSeal(c,a,seal)
+		-- Yellow Flash: every jump leaves its own return point (a floor seal
+		-- where he stood) and the arrival stays open longer, so relocations
+		-- chain A -> B -> A instead of ending on the first arrival.
+		local tune=a.def.Awakening
+		local awake=tune~=nil and (a.awakenUntil or 0)>now
+		if awake and tune.FlashWake then
+			local wake=Techniques.plant(c,a,Vector3.new(departure.X,c.match.origin.Y,departure.Z),Vector3.yAxis)
+			wake.wake=true
+			require(script.Parent.Brawler).event(c,a,"FlashWake")
+		end
 		-- The arrival opens a short window in which a strike (or Rasengan, with
 		-- almost no wind-up) cancels the technique recovery.
-		a.flashUntil=now+.55;a.teleportAt=now
+		a.flashUntil=now+(if awake and tune.Arrival then tune.Arrival else .55);a.teleportAt=now
 		a.teleportSerial=(a.teleportSerial or 0)+1
-		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id})
+		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id,awake=awake,body=seal.virtual==true})
 		local left=#seals(c,a,now)
-		c:cue(a,if left>0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left>1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7)
+		if seal.virtual then c:cue(a,"YELLOW FLASH • FLYING THUNDER GOD TO THE BODY",.7)
+		else c:cue(a,if left>0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left>1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7) end
 	end,
 }
 Techniques.BurstStrike = {
@@ -302,6 +324,15 @@ Techniques.NeedleFan = {
 		c:cue(a,"SHADOW SHURIKEN",.6)
 	end,
 }
+-- Genjutsu: Mirage. Itachi leaves his image standing where he was and
+-- withdraws a few steps straight back behind it, on the very line the
+-- opponent is watching: the image covers him. A swing that reaches the image
+-- (and not the body) gives the read away: the image breaks, the swing is
+-- exposed and Itachi steps through his image with the counter palm. Trusting
+-- the body works: walking into the image dissolves it, a blade thrown at him
+-- passes through it, and any blow (his or yours) breaks the genjutsu.
+local MIRAGE={Withdraw=5.5,Life=2.6,Touch=1.6,Reach=2,Exposed=.55,Counter=1.1,CounterReach=9}
+Techniques.MIRAGE=MIRAGE
 Techniques.MirageCast = {
 	check = function(c,a,spec)
 		return c:targetValid(a,a.target,spec.Range,0.35)
@@ -309,19 +340,119 @@ Techniques.MirageCast = {
 	execute = function(c,a,pending,now)
 		if not c:targetValid(a,a.target,pending.spec.Range,0.35) then c:cue(a,"CAST LOST SIGHT"); return end
 		local victim = a.target
-		-- The Byakugan sees chakra, not light: the afterimage has none.
+		-- The Byakugan sees chakra, not light: the image has none.
 		if victim.def.Byakugan then
 			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
+			c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="seen",victim=victim.id})
 			return
 		end
-		victim.illusionUntil = now+3
-		victim.decoyPosition = c:clamp(a.root.Position + a.root.CFrame.RightVector*7)
-		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),3)
-		c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=victim.decoyPosition})
-		c:cue(victim,"MIRAGE • TRUST THE BODY",3)
-		c:cue(a,"ECHO ACTIVE",3)
+		local Motor=require(script.Parent.Motor)
+		local image=a.root.Position
+		local away=image-victim.root.Position;away=Vector3.new(away.X,0,away.Z)
+		away=if away.Magnitude>.1 then away.Unit else -a.root.CFrame.LookVector
+		if Motor.travel(a,c,away,MIRAGE.Withdraw)<2.5 then
+			-- A wall behind him: the withdrawal becomes a slip to the side (the
+			-- stick's side when it points there); the image still stands in front.
+			local side=Vector3.new(-away.Z,0,away.X)
+			local stick=Vector3.new(a.move.X,0,a.move.Z)
+			if stick.Magnitude>.4 and stick:Dot(side)<0 then side=-side end
+			if Motor.travel(a,c,side,MIRAGE.Withdraw)<2.5 then Motor.travel(a,c,-side,MIRAGE.Withdraw) end
+		end
+		local face=victim.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
+		if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		victim.illusionUntil=now+MIRAGE.Life;victim.illusionAt=now;victim.illusionBy=a;victim.illusionKind="image"
+		victim.decoyPosition=c:clamp(image)
+		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),MIRAGE.Life)
+		c:pushImpact(victim.decoyPosition,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="cast",from=a.root.Position,to=victim.decoyPosition,victim=victim.id})
+		c:cue(victim,"GENJUTSU • TRUST THE BODY",MIRAGE.Life)
+		c:cue(a,"GENJUTSU • THE IMAGE HOLDS",1)
+		require(script.Parent.Brawler).event(c,a,"Mirage")
 	end,
 }
+-- Ends a genjutsu on `a` (the deceived fighter). why: "catch" | "touch" |
+-- "break" | "expire"; the client finishes the image accordingly.
+function Techniques.breakIllusion(c,a,why)
+	local at=a.decoyPosition
+	local caster=a.illusionBy
+	a.illusionUntil=0;a.decoyPosition=nil;a.illusionBy=nil;a.illusionKind=nil;a.illusionAt=nil
+	if at and why~="expire" then
+		c:pushImpact(at,"mirage",false,{owner=caster and caster.id,fighter=caster and caster.fighterId,phase=why,victim=a.id})
+	end
+	if why=="touch" then
+		c:cue(a,"GENJUTSU • DISPELLED",.7)
+		if caster then c:cue(caster,"GENJUTSU • SEEN THROUGH",.7) end
+	end
+end
+-- Every frame, for every fighter: a genjutsu image ends with its time, with
+-- its caster, on any blow after it began (pain breaks it), or when the body
+-- walks into the image. A skill-build echo (no kind) only keeps its timer.
+function Techniques.stepIllusion(c,a,now)
+	if (a.illusionUntil or 0)<=now then
+		if a.decoyPosition or a.illusionKind then a.decoyPosition=nil;a.illusionBy=nil;a.illusionKind=nil;a.illusionAt=nil end
+		return
+	end
+	if a.illusionKind~="image" then return end
+	local caster=a.illusionBy
+	local since=a.illusionAt or now
+	if not caster or caster.health<=0 or (a.lastHurt or -10)>since or (caster.lastHurt or -10)>since then
+		Techniques.breakIllusion(c,a,"break");return
+	end
+	local d=a.decoyPosition and a.decoyPosition-a.root.Position
+	if d and a.state~="Startup" and a.state~="Active" and Vector3.new(d.X,0,d.Z).Magnitude<=MIRAGE.Touch and math.abs(d.Y)<4 then
+		Techniques.breakIllusion(c,a,"touch")
+	end
+end
+-- The swing bit the image: it breaks, the swing is exposed, the counter palm
+-- opens with the reach to step through the image to the body.
+function Techniques.mirageCatch(c,a,caster,pending,now)
+	local legacy=a.illusionKind==nil
+	Techniques.breakIllusion(c,a,"catch")
+	caster.counterUntil=now+MIRAGE.Counter;caster.bonusUntil=now+MIRAGE.Counter
+	caster.counterReach={expires=now+MIRAGE.Counter,max=MIRAGE.CounterReach,variant="MirageCounter"}
+	require(script.Parent.Brawler).event(c,caster,"MirageCatch")
+	c:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);c:cue(a,"GENJUTSU • EXPOSED",1)
+	pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
+	if not legacy then
+		-- Exposed for a moment (a stun the counter reaches), not merely a longer
+		-- recovery a dodge could cancel.
+		c:schedule(now,function()
+			if a.health>0 and a.state=="Recovery" and not a.reaction then c:setState(a,"Stunned",MIRAGE.Exposed) end
+		end)
+	end
+end
+-- A committed swing that touched nothing (Combat, end of the active window).
+-- Under a genjutsu image, a swing that reached the image is caught; under
+-- Sharingan Focus any swing that misses close to Itachi is read. A skill-build
+-- echo keeps its own rule: any swing at all while it holds.
+function Techniques.whiffRead(c,a,pending,now)
+	local caster=a.illusionBy or a.target
+	if (a.illusionUntil or 0)>now and caster and caster.health>0 then
+		local struck=false
+		if a.illusionKind=="image" and a.decoyPosition then
+			local d=a.decoyPosition-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			local reach=(pending.spec.range or 6)+MIRAGE.Reach
+			struck=flat.Magnitude<=reach and math.abs(d.Y)<6 and (flat.Magnitude<1 or a.root.CFrame.LookVector:Dot(flat.Unit)>.3)
+		elseif a.illusionKind==nil then
+			struck=caster.fighterId=="Mirage"
+		end
+		if struck then Techniques.mirageCatch(c,a,caster,pending,now);return end
+	end
+	local eye=a.target
+	local tune=eye and eye.def.Awakening
+	if eye and eye.health>0 and tune and tune.WhiffRead and (eye.awakenUntil or 0)>now and not eye.reaction then
+		local d=eye.root.Position-a.root.Position
+		local flat=Vector3.new(d.X,0,d.Z)
+		if flat.Magnitude<=tune.WhiffRead and math.abs(d.Y)<6 and (flat.Magnitude<1 or a.root.CFrame.LookVector:Dot(flat.Unit)>.2) then
+			eye.counterUntil=math.max(eye.counterUntil or 0,now+.9);eye.bonusUntil=now+.9
+			eye.counterReach={expires=now+.9,max=5,variant="ReadCounter"}
+			pending.spec=table.clone(pending.spec);pending.spec.recovery+=.22
+			c:pushImpact(eye.root.Position,"read",false,{owner=eye.id,fighter=eye.fighterId,victim=a.id,phase="whiff"})
+			c:cue(eye,"SHARINGAN • WHIFF READ • PUNISH",.8);c:cue(a,"READ • EXPOSED",.6)
+			require(script.Parent.Brawler).event(c,eye,"WhiffRead")
+		end
+	end
+end
 Techniques.Quickstep={
 	check=function() return true end,
 	execute=function(c,a,pending,now)
@@ -495,7 +626,7 @@ Techniques.Rotation={
 		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
 		-- Skill builds: a wider dome (Reach) and blades sent back (Reflect).
 		a.rotationReach=pending.spec.Reach;a.rotationReflect=pending.spec.Reflect
-		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
+		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active);a.rotationGuardUntil=a.invulnerableUntil
 		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
 		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
 	end,
@@ -515,21 +646,36 @@ Techniques.VacuumPalm={
 }
 -- Eight Trigrams Sixty-Four Palms. The opening palm must land (and can be
 -- guarded); once it does, the flurry locks the opponent in place, drains its
--- chakra point by point and ends by sealing its techniques. The victim keeps one
--- answer: a substitution.
+-- chakra point by point and ends by sealing its techniques. It is the climax of
+-- the network: every chakra point already closed adds palms, quickens them and
+-- lengthens the seal, and with all of them closed the guard has nothing left
+-- to hold the opening palm with. The victim keeps one answer: a substitution.
 local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
+function Techniques.palmsPlan(points,seal)
+	points=math.clamp(points or 0,0,8)
+	return {strikes=7+points,interval=math.max(.1,.15-.012*points),final=2.5+.25*points,seal=(seal or 3.5)+.4*points}
+end
 Techniques.SixtyFourPalms={
 	check=function() return true end,
 	execute=function(c,a,pending,now)
 		local Brawler=require(script.Parent.Brawler)
 		local victim=a.target
+		local g=a.def.GentleFist
 		pending.spec=table.clone(pending.spec)
-		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId})
+		local points=if victim and (victim.tenketsuUntil or 0)>now then victim.tenketsu or 0 else 0
+		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId,points=points})
 		local reach=victim and victim.health>0 and c:targetValid(a,victim,pending.spec.Range,.4)
 		if not reach or victim.invulnerableUntil>now or (victim.rotationUntil or 0)>now then
 			pending.spec.Recovery=.85
 			c:cue(a,"64 PALMS • MISSED",.7)
 			return
+		end
+		if g and points>=g.MaxPoints and victim.guardHeld then
+			-- Every point closed: the guard collapses under the opening palm.
+			victim.guardHeld=false
+			if victim.state=="Guarding" then c:setState(victim,"Neutral",0) end
+			c:cue(victim,"GUARD BREAK • THE NETWORK IS CLOSED",.9)
+			Brawler.event(c,a,"GuardCollapse")
 		end
 		c.damageTag="64 Palms"
 		local opened=c:damage(a,victim,pending.spec.Damage,false,true)
@@ -540,30 +686,30 @@ Techniques.SixtyFourPalms={
 			c:cue(a,"64 PALMS • GUARDED",.7)
 			return
 		end
-		Brawler.gentleFist(c,a,victim,false)
+		Brawler.gentleFist(c,a,victim,false,"body")
 		-- Lock: Neji holds the technique, the victim is held in place.
-		local strikes=7
-		local interval=.15
+		local plan=Techniques.palmsPlan(points,pending.spec.Seal)
+		local strikes,interval=plan.strikes,plan.interval
 		c:setState(a,"TechniqueActive",strikes*interval+.25)
 		a.flurryUntil=now+strikes*interval+.2
 		Brawler.react(c,victim,"HitStun",Vector3.zero,strikes*interval+.3,a)
 		victim.flurriedBy=a
-		c:cue(a,"EIGHT TRIGRAMS • 64 PALMS",1)
+		c:cue(a,if points>0 then "EIGHT TRIGRAMS • 64 PALMS • "..points.." POINTS OPEN THE WAY" else "EIGHT TRIGRAMS • 64 PALMS",1)
 		for k=1,strikes do
 			c:schedule(now+k*interval,function()
 				if a.health<=0 or a.state~="TechniqueActive" or victim.health<=0 or victim.reaction~="HitStun" or victim.flurriedBy~=a then return end
 				local last=k==strikes
 				c.damageTag="64 Palms"
-				c:damage(a,victim,if last then pending.spec.Damage*2.5 else pending.spec.Damage,false,false)
+				c:damage(a,victim,if last then pending.spec.Damage*plan.final else pending.spec.Damage,false,false)
 				c.damageTag=nil
 				if c.match.phase~="Duel" or victim.health<=0 then return end
-				Brawler.gentleFist(c,a,victim,false)
+				Brawler.gentleFist(c,a,victim,false,"body")
 				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
 				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
-					victim.sealedUntil=c.now+(pending.spec.Seal or 3.5)
-					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
+					victim.sealedUntil=c.now+plan.seal
+					Brawler.sealPoints(c,a,victim)
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
 					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
@@ -575,6 +721,158 @@ Techniques.SixtyFourPalms={
 		end
 	end,
 }
+-- Rotation that repelled a strike flows straight into its answer: the dome
+-- winds down at once (no full recovery), and a strike pressed during the spin
+-- is the twin palm gliding out of it.
+function Techniques.rotationCounter(c,a)
+	local now=c.now
+	local queued=a.counterQueued~=nil and now-a.counterQueued<=.9
+	local stop=if queued then now else now+.08
+	a.rotationUntil=math.min(a.rotationUntil or 0,stop)
+	-- A strike pressed while the dome winds down cancels straight into the counter.
+	a.rotationCounterUntil=a.counterUntil
+	if a.rotationGuardUntil and math.abs((a.invulnerableUntil or 0)-a.rotationGuardUntil)<1e-6 then a.invulnerableUntil=stop end
+	local p=a.pending
+	if p and p.kind=="Technique" and p.spec.Id=="Rotation" and a.state=="TechniqueActive" then
+		p.spec=table.clone(p.spec);p.spec.Recovery=.04
+		a.untilTime=math.min(a.untilTime,stop)
+	end
+	if queued then
+		c:schedule(now,function()
+			if a.health<=0 or (a.counterUntil or 0)<=c.now or a.reaction then return end
+			if a.state=="TechniqueActive" or a.state=="TechniqueRecovery" then a.pending=nil;a.rotationUntil=0;c:setState(a,"Neutral",0) end
+			require(script.Parent.Brawler).counterStart(c,a)
+		end)
+	end
+end
 Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
-Techniques.WindCut={check=function() return true end,execute=Elements.wind}
+-- Minato's Wind Cut: a crescent of wind thrown off the kunai's edge on the run
+-- (the legs never stop). It cuts enemy blades out of its lane, and a body it
+-- cuts is thrown a step sideways with a short wind seal on it: the very next
+-- Flying Thunder God lands beside that body, on the side the stick picks.
+-- A guard stops the gust and keeps no seal.
+local BLADES={kunai=true,shuriken=true,marked=true,wire=true}
+local WIND={Seal=1.6,Cut=22,Lane=1.4,Radius=1.6}
+Techniques.WIND=WIND
+local function cutLane(c,a,gust)
+	c:schedule(c.now+.015,function()
+		if not table.find(c.projectiles,gust) or c.match.phase~="Duel" then return end
+		local radius=gust.radius+(gust.growth or 0)*(c.now-gust.born)+WIND.Lane
+		for i=#c.projectiles,1,-1 do
+			local q=c.projectiles[i]
+			if q~=gust and q.a~=a and BLADES[q.kind] and (q.position-gust.position).Magnitude<=radius then
+				table.remove(c.projectiles,i)
+				c:pushImpact(q.position,"deflect",false,{projectile=q.id,kind=q.kind,owner=q.a.id,direction=-q.direction})
+				require(script.Parent.Brawler).event(c,a,"WindCutBlade")
+			end
+		end
+		cutLane(c,a,gust)
+	end)
+end
+function Techniques.windSeal(c,a,b,direction,stick)
+	local Brawler=require(script.Parent.Brawler)
+	local across=Vector3.new(-direction.Z,0,direction.X)
+	across=if across.Magnitude>.05 then across.Unit else a.root.CFrame.RightVector
+	if stick and stick.Magnitude>.4 and stick:Dot(across)<0 then across=-across end
+	Brawler.react(c,b,if b.airborne then "Juggled" else "HitStun",across*WIND.Cut+(if b.airborne then Vector3.new(0,10,0) else Vector3.zero),.45,a)
+	-- A longer seal already on that body (a marked kunai) is kept, not shortened.
+	local kept=false
+	for _,entry in a.anchors or {} do if entry.actor==b and entry.expires>c.now+WIND.Seal then kept=true end end
+	if not kept then
+		local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+		entry.expires=c.now+WIND.Seal;entry.wind=true
+	end
+	c:pushImpact(b.root.Position,"windseal",false,{owner=a.id,fighter=a.fighterId,victim=b.id,direction=across})
+	c:cue(a,"WIND CUT • SEALED • FLASH BESIDE IT",.9)
+	Brawler.event(c,a,"WindSeal")
+end
+Techniques.WindCut={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*spec.Range
+		local origin=c.launchPoint(a,"Wind")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		local goal=origin+flat.Unit*spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-3,2),0)
+		local stick=Vector3.new(a.move.X,0,a.move.Z)
+		local gust
+		-- Skill build (Gale Chase): a gust that connects also opens the chase.
+		gust=c:projectile(a,goal,spec.Speed or 104,spec.Range,spec.Damage,"wind",function(_,_,victim)
+			if not victim or victim.health<=0 or a.health<=0 or c.match.phase~="Duel" then return end
+			Techniques.windSeal(c,a,victim,gust.direction,stick)
+		end,{origin=origin,radius=WIND.Radius,riders=if spec.Chase then {chase=spec.Chase} else nil})
+		cutLane(c,a,gust)
+		c:cue(a,"WIND CUT",.5)
+	end,
+}
+-- Awakening rules that live on a landed strike (Brawler.hit). Before the
+-- reaction: Minato's skill-build Flow chain; the Curse Mark feeding on the
+-- fight. After it (awakenedReact): the Curse Mark's extensions.
+function Techniques.awakenedHit(c,a,b,p)
+	local tune=a.def.Awakening
+	if not tune or (a.awakenUntil or 0)<=c.now or b.health<=0 then return end
+	-- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
+	-- arrival seals the body again, so the relocation chain continues.
+	local chain=tune.FlashChain
+	if chain and a.teleportAt and c.now-a.teleportAt<.7 then
+		local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+		entry.expires=c.now+chain
+		c:cue(a,"FLOW • SEALED AGAIN",.7);require(script.Parent.Brawler).event(c,a,"FlowSeal")
+	end
+	-- Curse Mark: a landed blow quiets the seal for a moment (it feeds on the fight).
+	if tune.HealthDrain then a.curseFedUntil=c.now+(tune.Feed or 0);a.curseLanded=c.now end
+end
+function Techniques.awakenedReact(c,a,b,p)
+	local tune=a.def.Awakening
+	if not tune or (a.awakenUntil or 0)<=c.now or b.health<=0 then return end
+	local Brawler=require(script.Parent.Brawler)
+	if tune.Extension and (p.name=="Light3" or p.name=="AirDrive") and b.reaction=="Knockback" and (a.curseHoldReadyAt or 0)<=c.now then
+		-- The cursed kick does not let go: a short stagger instead of the
+		-- knock-away, and the string stays open for the next route (heavy =
+		-- the launcher, which the curse turns into the Dancing Leaf). Once per
+		-- exchange: the next ender within 2.5 s knocks away as usual.
+		a.curseHoldReadyAt=c.now+2.5
+		local v=b.reactionVelocity or Vector3.zero
+		local flat=Vector3.new(v.X,0,v.Z)
+		flat=if flat.Magnitude>.1 then flat.Unit else a.root.CFrame.LookVector*Vector3.new(1,0,1)
+		-- (The knockback just marked the body airborne: judge by its height.)
+		if b.root.Position.Y>c.match.origin.Y+4.2 then Brawler.react(c,b,"Juggled",flat*12+Vector3.new(0,14,0),.55,a)
+		else b.airborne=false;Brawler.react(c,b,"HitStun",flat*14,.5,a) end
+		p.spec.chain=true
+		c:pushImpact(b.root.Position,"curse",false,{owner=a.id,fighter=a.fighterId,victim=b.id})
+		c:cue(a,"CURSE MARK • IT DOES NOT LET GO",.6)
+		Brawler.event(c,a,"CurseExtension")
+	end
+	if tune.CursedLeaf and b.reaction=="Launched" and p.name~="LionKick" then Techniques.cursedLeaf(c,a,b) end
+end
+-- Curse Mark: every launcher becomes the Dancing Leaf (a free chase glued
+-- under the body; heavy up there is the Lion Combo).
+function Techniques.cursedLeaf(c,a,b)
+	local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+	local Brawler=require(script.Parent.Brawler)
+	a.lionUntil=c.now+2.1
+	c:schedule(c.now+.12,function()
+		if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+		a.chakra+=Config.PursuitCost
+		local from=a.root.Position
+		if c:request(a,"Pursuit") then
+			a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
+			c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+			c:cue(a,"CURSED LEAF • HEAVY = LION COMBO",1)
+			Brawler.event(c,a,"CursedLeaf")
+		else a.chakra-=Config.PursuitCost end
+	end)
+end
+-- Curse Mark drain: it burns faster while he is not landing blows (hunger),
+-- pauses for a moment after each one, and never kills.
+function Techniques.curseDrain(c,a,dt,now)
+	local tune=a.def.Awakening
+	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)<=now or a.health<=1 then a.curseHunger=false;return end
+	local rate=tune.HealthDrain
+	if (a.curseFedUntil or 0)>now then rate=0
+	elseif tune.Hunger and now-(a.curseLanded or a.awakenedAt or now)>1.5 then rate*=tune.Hunger end
+	a.curseHunger=rate>tune.HealthDrain
+	if rate>0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
+end
 return Techniques

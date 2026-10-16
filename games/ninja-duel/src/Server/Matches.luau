@@ -175,7 +175,7 @@ function Matches:view(s,cursor,mine,theirs)
 			local entry=seal.anchor
 			if entry then
 				table.insert(list,{id=entry.id or 0,surface=entry.surface or seal.position,normal=entry.normal or Vector3.yAxis,
-					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id})
+					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id,wind=entry.wind==true,wake=entry.wake==true})
 			end
 		end
 		return list
@@ -211,7 +211,14 @@ function Matches:view(s,cursor,mine,theirs)
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
-			sealed=math.max(0,(a.sealedUntil or 0)-now)}
+			sealed=math.max(0,(a.sealedUntil or 0)-now),
+			-- Identity cues: which chakra points are closed on this body (body
+			-- locations the client lights), a severed network, the kind of
+			-- genjutsu it is under, a hungry Curse Mark.
+			tenketsuPoints=if (a.tenketsuUntil or 0)>now then table.clone(a.tenketsuPoints or {}) else {},
+			tenketsuSevere=(a.tenketsuUntil or 0)>now and (a.tenketsu or 0)>=4,
+			illusionKind=if (a.illusionUntil or 0)>now then a.illusionKind else nil,
+			curseHunger=a.curseHunger==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.

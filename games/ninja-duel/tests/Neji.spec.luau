@@ -77,7 +77,9 @@ test("Rotation repels a strike, deflects blades and opens the palm-thrust counte
  assert(c:request(b,"Technique1"),"Rotation refused")
  until_(c,.6,function() return (b.events.Repel or 0)>0 end,"the strike was not repelled")
  assert(b.health==b.def.Health,"Neji was hurt inside Rotation")
- assert(a.reaction=="Knockback","the attacker was not thrown out")
+ -- A turned-aside strike staggers out of the dome, within the counter's reach
+ -- (a body only standing in the dome is still thrown out: Identity.spec).
+ assert(a.reaction=="HitStun","the attacker did not stagger out of the dome ("..tostring(a.reaction)..")")
  H.step(c,.3)
  assert((b.events.Deflect or 0)>=1 or #c.projectiles==0,"the kunai was not deflected")
  until_(c,1,function() return b.state=="Neutral" end,"Rotation never recovered")

@@ -36,6 +36,7 @@ run Animation  "$LUNE" run tests/Animation.spec.luau
 run Branches   "$LUNE" run tests/Branches.spec.luau
 run Phase4     "$LUNE" run tests/Phase4.spec.luau
 run Neji       "$LUNE" run tests/Neji.spec.luau
+run Identity   "$LUNE" run tests/Identity.spec.luau
 run Systems    "$LUNE" run tests/Systems.spec.luau
 run Tools      "$LUNE" run tests/Tools.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
