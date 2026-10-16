@@ -24,7 +24,8 @@ return {
 	-- guard, dodge or jump only after CancelAfter, so a predictable dash is
 	-- punished. Unlocked, the dash is a straight Reposition-stud burst. Each
 	-- prodigy re-enters his own way (MoveGraphs[...].reengage).
-	Rush = {Cost = 8, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3, Recovery = 0.22, CancelAfter = 0.1, Reposition = 18},
+	-- Carry: the speed a dash keeps past its arrival (it stops where it arrives).
+	Rush = {Cost = 8, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3, Recovery = 0.22, CancelAfter = 0.1, Reposition = 18, Carry = 8},
 	-- Combo model (§1): strings count confirmed hits only. Grace: a press from
 	-- neutral this long after a chain window still continues the string.
 	-- Buffer: a press made during a committed swing waits this long past its
