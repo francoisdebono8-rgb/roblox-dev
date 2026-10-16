@@ -59,6 +59,17 @@ local attacks={
  LionKick=move(.15,.14,.28,8,3,"Launched",Vector3.new(0,50,5),1.25),
  VaultKick=move(.12,.12,.24,7,0,"HitStun",Vector3.new(0,6,12),.36),
  ChidoriThrust=move(.04,.26,.62,22,15,"Knockback",Vector3.new(0,12,70),.7),
+ -- Rock Lee (stress-test wave): the Leaf Rising Wind (a straight-leg kick out
+ -- of a crouch, followed into the air), the Leaf Hurricane (a low spinning kick
+ -- that keeps the string), the Leaf Whirlwind (a wide spinning kick that catches
+ -- a side step), the Leaf Great Whirlwind (his technique: a spinning kick across
+ -- the gap) and the deflecting crescent kick (his tool: no blade). Shapes and
+ -- tags at the end of this file.
+ LeafRising=move(.13,.14,.28,8,3.2,"Launched",Vector3.new(0,56,6),1.2),
+ LeafHurricane=move(.11,.16,.24,6,1.8,"Juggled",Vector3.new(0,16,7),.55),
+ LeafWhirlwind=move(.12,.16,.24,7,1.4,"HitStun",Vector3.new(0,5,14),.38),
+ GreatWhirlwind=move(.06,.24,.36,9,14,"Knockback",Vector3.new(0,16,54),.55),
+ DeflectKick=move(.05,.18,.3,4,0,"HitStun",Vector3.new(0,4,10),.3),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
 for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
@@ -136,4 +147,15 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
+-- Rock Lee's moves, kept together so the stress-test fighter stays additive:
+-- reach, body, hit zone and kind, and the two routes that keep the string.
+for name,shape in {
+ LeafRising={contact=3.4,range=6.5,width=5,height=7,zone="chin",kind="launch",side=1,twist=12,lean=-34,arm=40,step=1.15},
+ LeafHurricane={contact=3.5,range=6.5,width=6.5,height=3.5,zone="legs",kind="sweep",side=-1,twist=70,lean=24,arm=50,step=1.0,chain=true},
+ LeafWhirlwind={contact=3.8,range=7,width=9,height=6,zone="head",kind="kick",side=1,twist=80,lean=6,arm=60,step=1.05,chain=true},
+ GreatWhirlwind={contact=3.6,range=7,width=7,height=6,zone="body",kind="kick",side=1,twist=90,lean=10,arm=60,step=1.4},
+ DeflectKick={contact=3.6,range=6,width=7,height=7,zone="body",kind="kick",side=-1,twist=40,lean=-6,arm=50,step=1.0},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
 return attacks

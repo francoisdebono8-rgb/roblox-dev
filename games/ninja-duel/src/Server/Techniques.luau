@@ -486,6 +486,122 @@ Techniques.DesertWave={
 		c:cue(a,"DESERT WAVE",.6)
 	end,
 }
+-- Rock Lee (stress-test wave, DEC-015) -----------------------------------
+-- Pure taijutsu: nothing here is moulded into a jutsu. His technique is a
+-- strike started by the jutsu pipeline (like the Chidori thrust), his tool
+-- button a kick (Combat: def.Tool "Deflect") and his escape a kick too
+-- (Combat:substitute, Mode "burst"). The lotuses are Brawler.airFinisher.
+local LeeRules=require(game:GetService("ReplicatedStorage").NinjaDuel.Rules)
+-- Konoha Daisenpū: a spinning kick that crosses the gap and knocks away.
+Techniques.LeafGreatWhirlwind={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		a.stringCancel=nil
+		Brawler.start(c,a,"GreatWhirlwind")
+		if a.pending then a.pending.spec.damage=pending.spec.Damage end
+		c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+		c:cue(a,"LEAF GREAT WHIRLWIND",.7)
+	end,
+}
+-- Blades a kick can send away; fire, wind, palms and sand waves are jutsu
+-- volumes and go through.
+local DEFLECTABLE={kunai=true,marked=true,shuriken=true,wire=true,sand=true}
+Techniques.DEFLECTABLE=DEFLECTABLE
+-- An enemy blade near him, or one flying at him from within `Reach`.
+function Techniques.bladeIncoming(c,a,tune)
+	for _,p in c.projectiles do
+		if p.a~=a and DEFLECTABLE[p.kind] and not p.dead and not p.planted then
+			local offset=a.root.Position-p.position
+			local gap=offset.Magnitude
+			if gap<=tune.Radius or (gap<=(tune.Reach or 24) and gap>.1 and p.direction:Dot(offset.Unit)>.6) then return true end
+		end
+	end
+	return false
+end
+-- One sweep of the kick: every blade inside the frontal arc (Arc: cosine of
+-- the half angle) and Radius is kicked out of the air.
+function Techniques.deflectSweep(c,a,tune)
+	local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
+	look=if look.Magnitude>.05 then look.Unit else Vector3.new(0,0,-1)
+	local kicked=0
+	for i=#c.projectiles,1,-1 do
+		local p=c.projectiles[i]
+		if p.a~=a and DEFLECTABLE[p.kind] and not p.planted then
+			local d=p.position-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			if d.Magnitude<=tune.Radius and math.abs(d.Y)<5 and (flat.Magnitude<1.2 or look:Dot(flat.Unit)>=tune.Arc) then
+				table.remove(c.projectiles,i);p.dead=true
+				c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
+				kicked+=1
+			end
+		end
+	end
+	if kicked>0 then
+		-- The Counter-Rush rule: the next chakra dash is free for a moment.
+		a.freeRushUntil=c.now+(tune.FreeRush or .6)
+		a.deflected=(a.deflected or 0)+kicked
+		require(script.Parent.Brawler).event(c,a,"Deflect")
+		c:cue(a,"DEFLECTED • E: FREE RUSH",.7)
+	end
+	return kicked
+end
+-- The tool button (Fighters.Leaf.Deflect): a crescent kick whose sweep runs
+-- from the press to the end of its active window. It is a real strike on a
+-- body in reach; with no blade coming and nobody in reach it does nothing.
+function Techniques.deflectKick(c,a)
+	local tune=a.def.Deflect
+	if not tune then return false,"No tool" end
+	if a.reaction or a.wall or a.throwing or not LeeRules.canAct(a,c.now) then return false,"Committed" end
+	if (a.deflectReadyAt or 0)>c.now then return false,"Tool recovering" end
+	local b=a.target
+	local close=b~=nil and b.health>0 and (b.root.Position-a.root.Position).Magnitude<=tune.Radius+2
+	if not close and not Techniques.bladeIncoming(c,a,tune) then return false,"Nothing to deflect" end
+	local Brawler=require(script.Parent.Brawler)
+	a.deflectReadyAt=c.now+tune.Cooldown
+	if not Brawler.start(c,a,"DeflectKick") then return false end
+	local spec=a.pending.spec
+	local serial=a.attackSerial
+	local span=spec.startup+spec.active
+	Techniques.deflectSweep(c,a,tune)
+	for k=1,4 do
+		c:schedule(c.now+span*k/4,function()
+			if a.health<=0 or a.reaction or a.attackSerial~=serial then return end
+			Techniques.deflectSweep(c,a,tune)
+		end)
+	end
+	Brawler.event(c,a,"DeflectKick")
+	return true
+end
+-- The Rupture (Fighters.Leaf.Substitution, Mode "burst"): Combat:substitute
+-- has spent the charge and the chakra, given the i-frames and kept him where he
+-- is; this is the kick. A close attacker is thrown off. One that was out of
+-- reach, guarded or evaded it leaves him a longer recovery to punish.
+function Techniques.rupture(c,a,attacker,twist)
+	local Brawler=require(script.Parent.Brawler)
+	c:pushImpact(a.root.Position,"repel",true,{owner=a.id,direction=a.root.CFrame.LookVector})
+	Brawler.event(c,a,"Rupture")
+	local landed=false
+	if attacker and attacker.health>0 then
+		local away=attacker.root.Position-a.root.Position
+		local flat=Vector3.new(away.X,0,away.Z)
+		if flat.Magnitude<=(twist.Radius or 5.5) then
+			c.damageTag="Rupture"
+			local hit=c:damage(a,attacker,twist.Damage or 4,false,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return true end
+			landed=hit and attacker.impactStyle~="block"
+			if landed then
+				local push=if flat.Magnitude>.1 then flat.Unit else a.root.CFrame.LookVector
+				Brawler.react(c,attacker,"Knockback",push*(twist.Knockback or 40)+Vector3.new(0,12,0),.45,a)
+			end
+		end
+	end
+	if not landed then c:setState(a,"Recovery",twist.Whiff or .3) end
+	c:cue(a,if landed then "RUPTURE" else "RUPTURE • READ",.7)
+	if attacker then c:cue(attacker,if landed then "RUPTURE • THROWN OFF" else "RUPTURE • PUNISH HIS RECOVERY",.7) end
+	return true
+end
 -- Neji -----------------------------------------------------------------
 Techniques.ROTATION_REACH=7
 Techniques.Rotation={

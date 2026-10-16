@@ -71,4 +71,30 @@ return {
 		stringCancels={SandCoffin=true},
 		blockCancels={Tool=true},
 	},
+	-- Rock Lee (stress-test wave, DEC-015): kicks all the way, no blade, so no
+	-- disengage. Toward after two hits: the Leaf Rising Wind, followed into the
+	-- air at once (the shared Shadow of the Dancing Leaf; Sasuke copied it from
+	-- him); a heavy up there is his own finisher (airFinisher) instead of the
+	-- Lion Combo. Away: the Leaf Hurricane, a low spinning kick that keeps the
+	-- string going instead of ending it. Sideways: the Leaf Whirlwind, a wide
+	-- spinning kick that catches a side step instead of taking an angle.
+	Leaf={
+		routes={up="LeafRising",down="LeafHurricane",side="LeafWhirlwind",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		onRoute={LeafRising="shadowLeaf"},
+		heavyAfterOne="KneeStrike",
+		stringCancels={LeafGreatWhirlwind=true},
+		blockCancels={},
+		--   airFinisher   the heavy inside the Shadow of the Dancing Leaf window
+		--                 (Brawler.airFinisher): name (the client clip), cue,
+		--                 event, damage, impulse, reaction, stun; healthCost is
+		--                 paid from his own health (never to a KO) and refused
+		--                 at or under minHealth (then `fallback`); `awakened`
+		--                 replaces it, free, while the awakening burns.
+		-- Primary Lotus: the body driven head first into the floor. In the Fifth
+		-- Gate, the Hidden Lotus: harder, free, and the body bounces back up for
+		-- one more strike.
+		airFinisher={name="PrimaryLotus",cue="PRIMARY LOTUS",event="PrimaryLotus",damage=22,impulse=Vector3.new(0,-96,6),healthCost=10,minHealth=26,
+			fallback={name="LeafHeel",cue="LEAF HEEL • NO STRENGTH LEFT FOR THE LOTUS",event="LeafHeel",damage=14},
+			awakened={name="HiddenLotus",cue="FIFTH GATE • HIDDEN LOTUS",event="HiddenLotus",damage=26,reaction="Spiked",impulse=Vector3.new(0,-104,4),stun=.9}},
+	},
 }

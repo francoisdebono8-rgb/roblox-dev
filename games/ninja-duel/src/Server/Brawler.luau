@@ -227,6 +227,10 @@ function Brawler.request(c,a,action)
  end
  if action=="Heavy" then
   if a.airborne then
+   -- A fighter's own finisher in the same window (MoveGraphs airFinisher,
+   -- Rock Lee's lotuses); Sasuke's Lion Combo below stays the default.
+   local finisher=(Brawler.graph(a) or {}).airFinisher
+   if finisher and (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then return Brawler.airFinisher(c,a,finisher) end
    -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
    -- that ends in a heel drop driving the body into the floor.
    if (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then
@@ -352,6 +356,37 @@ function Brawler.routePayoff(c,a,b,p)
   c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
   c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
  end
+end
+-- A fighter's own air finisher after the Shadow of the Dancing Leaf
+-- (MoveGraphs[...].airFinisher, read by the heavy in its window; Sasuke keeps
+-- the Lion Combo). Like the Lion Combo the body is put above the target and the
+-- slam drives both down; the descriptor says what it is (name: the client clip
+-- and attackVariant, cue, event, damage, impulse, reaction, stun) and what it
+-- costs: healthCost from the attacker's own health, never to a KO and refused
+-- at or under minHealth (then `fallback`), free in its `awakened` form.
+function Brawler.airFinisher(c,a,f)
+ a.lionUntil=0
+ local b=a.target
+ local use,cost=f,f.healthCost or 0
+ if f.awakened and (a.awakenUntil or 0)>c.now then use,cost=f.awakened,0
+ elseif cost>0 and a.health<=math.max(f.minHealth or 0,cost+1) then use,cost=f.fallback or {},0 end
+ local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+ look=if look.Magnitude>.1 then look.Unit else a.root.CFrame.LookVector
+ c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+ a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+ a.airborne=true
+ local ok=Brawler.start(c,a,"Slam")
+ local p=a.pending
+ if p then
+  if use.damage then p.spec.damage=use.damage end
+  if use.impulse then p.spec.impulse=use.impulse end
+  if use.reaction then p.spec.reaction=use.reaction;p.spec.feedback=use.reaction end
+  if use.stun then p.spec.stun=use.stun end
+  a.attackVariant=use.name
+ end
+ if cost>0 then a.health=math.max(1,a.health-cost);a.hum.Health=math.max(1,a.health);a.finisherPaid=(a.finisherPaid or 0)+cost end
+ c:cue(a,use.cue or "AIR FINISHER",.9);Brawler.event(c,a,use.event or "AirFinisher")
+ return ok
 end
 function Brawler.stopStyle(p)
  if p.name=="Slam" then return "slam" end

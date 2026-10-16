@@ -152,4 +152,47 @@ return {
 			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
 		},
 	},
+	-- Stress-test fighter of the next wave (DEC-015): Rock Lee at the Chunin
+	-- Exam preliminaries (13). Pure taijutsu: no ninjutsu, no genjutsu, no
+	-- blade. Speed, kicks and pressure; the rising kick he follows into the air
+	-- (the shared Shadow of the Dancing Leaf) ends in the Primary Lotus, paid
+	-- with his own body; the Fifth Gate is his awakening. Sheet:
+	-- docs/characters/ROCK_LEE.md (implementation state at its end).
+	Leaf = {
+		Name = "Rock Lee", FullName = "Rock Lee", Age = 13, Title = "THE TAIJUTSU PRODIGY", Color = { 64, 172, 84 },
+		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
+		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
+		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.12, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
+		CombatTravel = 1.15, CombatDamage = 1, DashScale = 1.12, GuardStrength = 0.08, PreferredRange = 4.5,
+		ComboToolCancel = false, CombatStyle = "Taijutsu", Tool = "Deflect",
+		-- Heavy after two clean hits is the rising kick too (into the chase).
+		LauncherMove = "LeafRising",
+		-- Motion family (VelmoraMotionEngine.familyOf): Sasuke's kicks as the
+		-- base, his own stance (one hand forward, one behind the back), intro,
+		-- rising kick, low spin, lotuses; no hand weapon.
+		Motion = { body = "Lion", weapons = "none", clips = "Leaf", intro = "Leaf", springy = true },
+		-- No blade to throw: the tool button is a deflecting crescent kick
+		-- (Techniques.deflectKick). Blades inside a frontal arc are kicked away,
+		-- jutsu volumes are not; each deflection frees the next chakra dash.
+		Deflect = { Radius = 6.5, Arc = 0.5, Reach = 24, Cooldown = 0.55, FreeRush = 0.6 },
+		-- No kawarimi either (he cannot mould ninjutsu): the Rupture. Same key,
+		-- charges and window as the substitution, but he stays where he is and a
+		-- spinning kick throws a close attacker away (Combat:substitute "burst").
+		Substitution = { Mode = "burst", Radius = 5.5, Damage = 4, Knockback = 40, Whiff = 0.3 },
+		-- The Fifth Gate (the five gates he opened against Gaara): faster and
+		-- harder, the lotus becomes the free Hidden Lotus, but the body burns
+		-- (health drain, never to a KO).
+		Awakening = { Name = "FIFTH GATE", Speed = 1.28, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
+		AttackProfile = {
+			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
+			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
+			DashAttack={startup=.9,travel=1.15},Air1={startup=.86},Air2={startup=.86},
+		},
+		Skin = { 238, 208, 180 }, Hair = { 16, 16, 20 }, Outfit = { 52, 140, 66 },
+		Techniques = {
+			-- Konoha Daisenpū: a spinning kick that crosses the gap. A taijutsu
+			-- strike started by the jutsu pipeline (like the Chidori thrust).
+			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
+		},
+	},
 }

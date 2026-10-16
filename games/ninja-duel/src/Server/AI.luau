@@ -36,6 +36,8 @@ function AI:defend(now)
 					-- Neji answers blades and fire with Rotation when it is ready.
 					local rotation=slotOf(a,"Rotation")
 					if rotation and gap<11 and self.rng:NextNumber()<.55 and c:request(a,rotation) then return true end
+					-- Rock Lee kicks a blade out of the air (his tool is the deflecting kick).
+					if a.def.Tool=="Deflect" and Techniques.DEFLECTABLE[p.kind] and gap<12 and self.rng:NextNumber()<.6 and c:request(a,"Tool",p.position) then return true end
 					local roll=self.rng:NextNumber()
 					if roll<.35 then
 						c:request(a,"Guard");self.guardUntil=now+.35;return true
@@ -342,6 +344,10 @@ function AI:update(now)
 			if spec.Id=="PhoenixFlower" then use=distance>9 and distance<34 and c:lineOfSight(a,target) and self.rng:NextNumber()<.5 end
 			if spec.Id=="WindCut" then use=distance>8 and distance<28 end
 			if spec.Id=="Quickstep" then use=distance>9 and distance<20 and self.rng:NextNumber()<0.25 end
+			-- Rock Lee (stress-test wave): the spinning kick crosses a gap or
+			-- punishes a recovery, in line of sight; nothing he has is thrown.
+			if spec.Id=="LeafGreatWhirlwind" then use=distance>5 and distance<16 and c:lineOfSight(a,target)
+				and (target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or self.rng:NextNumber()<.4) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end

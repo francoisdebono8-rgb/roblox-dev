@@ -527,6 +527,9 @@ function Combat:substitute(a)
 	end
 	if destination then
 		self:relocate(a,destination)
+	elseif twist and twist.Mode=="burst" then
+		-- Rock Lee's Rupture: no ninjutsu, so no body swap. He stays where he is;
+		-- the kick that throws the attacker off is Techniques.rupture (below).
 	else
 		local away=a.root.Position-(if attacker then attacker.root.Position else a.root.Position-a.root.CFrame.LookVector)
 		away=Vector3.new(away.X,0,away.Z)
@@ -569,6 +572,7 @@ function Combat:substitute(a)
 		attacker.pursuitUntil=math.max(attacker.pursuitUntil,self.now+tune.Track)
 		self:cue(attacker,"SUBSTITUTION • E TO TRACK",tune.Track)
 	end
+	if twist and twist.Mode=="burst" then return Techniques.rupture(self,a,attacker,twist) end
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
@@ -750,6 +754,8 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
+		-- No blade to throw (Rock Lee): the tool button is his deflecting kick.
+		if a.def.Tool=="Deflect" then return Techniques.deflectKick(self,a) end
 		if a.def.ArrivalThrow then
 			local thrown,refusal=self:arrivalThrow(a)
 			if thrown~=nil then return thrown,refusal end
