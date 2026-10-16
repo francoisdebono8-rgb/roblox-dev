@@ -292,6 +292,9 @@ function Matches:act(s,actor,payload,clock)
 			if actor.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,actor,if payload.locked then "Lock" else "Unlock") end
 			actor.locked=payload.locked
 		end
+		-- Directional memory for routes: a strong push is kept for a moment even
+		-- when it falls between two server frames (Brawler.observe).
+		require(script.Parent.Brawler).observe(s.combat,actor)
 		return
 	end
 	-- An action carries the same validated movement intent as Move. This keeps

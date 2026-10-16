@@ -34,6 +34,7 @@ run Regression "$LUNE" run tests/Regression.spec.luau
 run Feedback   "$LUNE" run tests/Feedback.spec.luau
 run Animation  "$LUNE" run tests/Animation.spec.luau
 run Branches   "$LUNE" run tests/Branches.spec.luau
+run ComboModel "$LUNE" run tests/ComboModel.spec.luau
 run Phase4     "$LUNE" run tests/Phase4.spec.luau
 run Neji       "$LUNE" run tests/Neji.spec.luau
 run Identity   "$LUNE" run tests/Identity.spec.luau

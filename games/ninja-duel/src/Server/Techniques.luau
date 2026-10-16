@@ -840,6 +840,9 @@ function Techniques.awakenedReact(c,a,b,p)
 		if b.root.Position.Y>c.match.origin.Y+4.2 then Brawler.react(c,b,"Juggled",flat*12+Vector3.new(0,14,0),.55,a)
 		else b.airborne=false;Brawler.react(c,b,"HitStun",flat*14,.5,a) end
 		p.spec.chain=true
+		-- A string ender closes its string when it starts (combo model): the
+		-- held kick keeps the three confirmed hits, so heavy is the launcher.
+		a.combo=math.max(a.combo or 0,3);a.stringAt=c.now
 		c:pushImpact(b.root.Position,"curse",false,{owner=a.id,fighter=a.fighterId,victim=b.id})
 		c:cue(a,"CURSE MARK • IT DOES NOT LET GO",.6)
 		Brawler.event(c,a,"CurseExtension")

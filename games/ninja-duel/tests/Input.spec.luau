@@ -116,11 +116,28 @@ test("jump release cuts a jump but never a technique or pursuit",function()
  table.clear(sent);press("Modifier",E.KeyCode.ButtonR1)
  tap("Jump",E.KeyCode.ButtonA);assert(#sent==1 and last()=="Technique1")
 end)
-test("PS5 provides deliberate escape, feint, detach and rush",function()
+test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-pad press",function()
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
- tap("RushPad",E.KeyCode.DPadLeft);assert(last()=="Pursuit")
  press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
  assert(last()=="WallDetach","detach emitted a stray GuardOff")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- CORE_COMBAT_CONVERGENCE_2 §3: no D-pad input sends the re-engage.
+ for _,binding in bindings do
+  for _,code in binding.keys do
+   if typeof(code)=="EnumItem" and code.EnumType==E.KeyCode and code.Name:match("^DPad") then
+    local n=#sent
+    binding.callback("Probe",E.UserInputState.Begin,{KeyCode=code,UserInputType=E.UserInputType.Gamepad1,Position=V.zero})
+    binding.callback("Probe",E.UserInputState.End,{KeyCode=code,UserInputType=E.UserInputType.Gamepad1,Position=V.zero})
+    for k=n+1,#sent do assert(sent[k].action~="Pursuit",code.Name.." sends the re-engage") end
+   end
+  end
+ end
+ assert(Controls.Gamepad.Rush==nil,"the chakra dash is still declared on the D-pad")
+ -- On a pad the re-engage is × inside a chase window, sprint + ○ toward outside.
+ state.human.pursuit=1;tap("Jump",E.KeyCode.ButtonA);assert(last()=="Pursuit","× does not chase in a window")
+ state.human.pursuit=0;tap("Dodge",E.KeyCode.ButtonB);assert(last()=="Dodge","○ does not send the dodge the server reads")
+ assert(Controls.HelpPad:find("sprint + ○ toward: chakra dash",1,true),"the pad help does not teach the chakra dash")
+ assert(Controls.Help:find("E re-engage",1,true),"the keyboard help does not teach the re-engage")
 end)
 test("movement intent is current at a press and survives keyboard Change",function()
  press("W",E.KeyCode.W);press("W",E.KeyCode.W,E.UserInputState.Change)
@@ -193,6 +210,21 @@ test("remote directional press overrides a stale Move and buffer keeps it on rel
   a.move=V.zero
   for _=1,90 do H.step(c,.01);if a.attackName==(if id=="Lion" then "LionKick" else "Launcher") then break end end
   assert(a.attackName==(if id=="Lion" then "LionKick" else "Launcher"),id..": release lost the existing launcher route")
+ end
+end)
+test("remote pad re-engage: sprint + dodge toward a locked opponent is the chakra dash, a walking dodge stays a dodge",function()
+ for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
+  for _,sprint in {true,false} do
+   local c,a,b=H.duel(id,"Mirage")
+   c:relocate(a,V.new(0,3,10));c:relocate(b,V.new(0,3,-10))
+   a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);a.locked=true
+   local player={};local s=c.match;s.epoch=1;s.combat=c;s.human=a;s.bot=b;s.bucket={tokens=100,time=os.clock()}
+   local matches=setmetatable({sessions={[player]=s}},Matches)
+   AntiCheat.clear(a)
+   matches:request(player,{action="Dodge",epoch=1,direction=V.new(0,0,-1),sprint=sprint,clientTime=100})
+   if sprint then assert(a.state=="Rush",id..": the sprinting dodge toward did not re-engage ("..a.state..")")
+   else assert(a.state=="Dodging",id..": a walking dodge became "..a.state) end
+  end
  end
 end)
 test("remote rejects malformed intent before mutating move or executing an action",function()

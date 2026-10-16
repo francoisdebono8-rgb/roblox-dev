@@ -35,7 +35,10 @@ local Controls = {
 		Modifier = Enum.KeyCode.ButtonR1,
 		Technique5 = Enum.KeyCode.DPadUp,
 		Awaken = Enum.KeyCode.DPadDown,
-		Rush = Enum.KeyCode.DPadLeft,
+		-- Re-engage on a pad is never a D-pad press (CORE_COMBAT_CONVERGENCE_2 §3):
+		-- × chases inside a chase window (Input), and outside one a dodge (○)
+		-- toward a locked opponent while sprinting (L3) is the chakra dash (the
+		-- server reads the sprint and the stick: Brawler.dashIntent).
 		Substitute = Enum.KeyCode.DPadRight,
 		Skip = Enum.KeyCode.ButtonSelect,
 	},
@@ -47,12 +50,12 @@ local Controls = {
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
 	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   L1 guard   L2 grab   R2 tool   R1 + face: jutsu   D-pad ← rush · → escape · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Sprint="L3",Lock="R3",Pursuit="×",Substitute="D-pad →",Feint="R1 + L2",WallDetach="R1 + L1"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L2 grab   R2 tool   R1 + face: jutsu   D-pad → escape · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Feint="R1 + L2",WallDetach="R1 + L1"},
 	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
 }
 

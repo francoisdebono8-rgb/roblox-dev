@@ -8,6 +8,7 @@ return {
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
 	ToolCost = 4, PursuitCost = 8, PursuitWindow = 0.85, PursuitRange = 46, PursuitSpeed = 74,
+	-- (PursuitCost is the one re-engage price: the chase and the chakra dash.)
 	-- Kawarimi: a limited escape that recharges. Usable while being hit (or
 	-- grabbed, juggled, pinned), never as a neutral dodge. The attacker gets a
 	-- short window to track the reappearance.
@@ -16,8 +17,21 @@ return {
 	-- hit is worth less, and a combo that runs too long ends in a knockdown.
 	ComboScaling = {Free = 2, Step = 0.12, Floor = 0.35, Reset = 0.45, MaxHits = 11},
 	Clash = {Window = 0.07, Push = 4.5},
-	-- Chakra dash (E outside a chase window): a committed burst at the opponent.
-	Rush = {Cost = 10, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3},
+	-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): one contextual action (E; on a pad
+	-- × inside a chase window, sprint + ○ toward outside one). Inside a window it
+	-- is the chase, outside it is this chakra dash at a locked opponent; both cost
+	-- PursuitCost. The arrival converts at once into a strike, a heavy or a grab;
+	-- guard, dodge or jump only after CancelAfter, so a predictable dash is
+	-- punished. Unlocked, the dash is a straight Reposition-stud burst. Each
+	-- prodigy re-enters his own way (MoveGraphs[...].reengage).
+	Rush = {Cost = 8, Speed = 90, Range = 48, MinRange = 7, MaxTime = 0.55, Cooldown = 0.9, Arrive = 0.3, Recovery = 0.22, CancelAfter = 0.1, Reposition = 18},
+	-- Combo model (§1): strings count confirmed hits only. Grace: a press from
+	-- neutral this long after a chain window still continues the string.
+	-- Buffer: a press made during a committed swing waits this long past its
+	-- active window. Intent: a push stronger than IntentStrong is remembered for
+	-- IntentWindow seconds; toward is within acos(Toward) of the line to the
+	-- opponent, away within acos(Away) of the line away from him, side between.
+	Combo = {Grace = 0.18, Buffer = 0.3, IntentStrong = 0.45, IntentWindow = 0.22, Toward = 0.64, Away = 0.57},
 	-- Awakening: once per match, at low health, a fighter-specific power-up.
 	Awaken = {Threshold = 0.35, Duration = 12},
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
