@@ -1,5 +1,6 @@
 -- Element families define different gameplay primitives. Fire and Wind are
 -- equipped in this slice; the other families reserve explicit behavior seams.
+local Chakra=require(script.Parent.ChakraCombat)
 local Elements={
 	Families={
 		Fire={primitive="TravellingBlast",counter="Sidestep the fireball, then punish the recovery"},
@@ -55,7 +56,9 @@ function Elements.phoenix(c,a,pending,now)
 				if spec.WiredBlades then
 					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
 				else
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+					-- Blades hidden in the flames come out burning: they ignite what they
+					-- touch and leave a burning point where they land (ChakraCombat).
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
 				end
 			end)
 		end

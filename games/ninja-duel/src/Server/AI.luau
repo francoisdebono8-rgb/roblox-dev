@@ -9,6 +9,19 @@ local function slotOf(a,id)
 	for slot,spec in a.def.Techniques do if spec.Id==id then return "Technique"..slot,spec end end
 	return nil
 end
+-- A press with an explicit route intent. The stick memory (Brawler.observe)
+-- keeps the latest strong push for a moment; the bot's approach must never
+-- turn into a route it did not choose, so it declares the one it wants.
+local function press(c,a,action,dir,sideSign,aim)
+	a.intentOverride={dir or "neutral",sideSign or 0}
+	local ok,reason=c:request(a,action,aim)
+	a.intentOverride=nil
+	return ok,reason
+end
+-- How keen each prodigy is to re-engage (chakra dash from mid range, chase in
+-- a window): Sasuke presses after the body, Itachi waits for it.
+local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
+local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -74,6 +87,7 @@ function AI:update(now)
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	if a.state~="Rush" then self.feinted=nil end
 	if self:defend(now) then return end
 	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.
 	if a.illusionUntil>now then
@@ -90,9 +104,12 @@ function AI:update(now)
 	-- Rhythm: press for a while, then probe at range (spacing, reading), and
 	-- breathe after a combo lands instead of restarting at once.
 	if now>=(self.modeUntil or 0) then
+		local wasProbing=self.probing
 		self.probing=not self.probing and self.rng:NextNumber()<.55
 		self.modeUntil=now+(if self.probing then 1.6+self.rng:NextNumber()*2 else 2.2+self.rng:NextNumber()*2.6)
 		self.probeRange=8+self.rng:NextNumber()*12
+		-- A probe often resolves into an entry: the press opens with a dash.
+		if wasProbing and not self.probing then self.entryUntil=now+1.2 end
 	end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil<=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
@@ -107,6 +124,10 @@ function AI:update(now)
 	local calm=self.probing or now<(self.breathUntil or 0)
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
+	-- Genjutsu image (Itachi's Mirage): hold the line behind the image while it
+	-- stands; the opponent has to come to it (blades still fly through it).
+	local holding=target.illusionBy==a and (target.illusionUntil or 0)>now
+	if holding then desired=distance end
 	local radial=if distance>desired+2 then 1 elseif distance<desired-2 then -0.6 else 0
 	-- Lateral movement is committed for a beat, then changes side: readable
 	-- repositioning, not a sine-wave drift around the opponent.
@@ -120,6 +141,7 @@ function AI:update(now)
 	-- bounded rate) orbit each other forever instead of meeting.
 	local lateral=self.strafeAmount or .5
 	if radial>0 and not calm then lateral*=if distance>desired+8 then 0 else .35 end
+	if holding then lateral=0 end
 	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
@@ -232,10 +254,26 @@ function AI:update(now)
 		end
 	end
 	if a.grabVictim then c:request(a,if self.rng:NextNumber()<.4 then "Heavy" else "Attack");return end
-	if a.state=="Rush" or (a.rushArriveUntil or 0)>now then c:request(a,"Attack");return end
+	-- Re-engage: Itachi sometimes turns his dash into a feint (a guard and a
+	-- read) instead of arriving; on arrival the bot converts with the dash
+	-- strike, the quick heavy or, close to a guard, a grab.
+	if a.state=="Rush" then
+		if a.fighterId=="Mirage" and not self.feinted and distance<10 then
+			self.feinted=true
+			if self.rng:NextNumber()<.3 and c:request(a,"Guard") then self.guardUntil=now+.3;return end
+		end
+		press(c,a,"Attack");return
+	end
+	if (a.rushArriveUntil or 0)>now and not a.airborne then
+		local roll=self.rng:NextNumber()
+		if target.state=="Guarding" and distance<4.5 and roll<.45 then press(c,a,"Grab")
+		elseif roll<.2 then press(c,a,"Heavy")
+		else press(c,a,"Attack") end
+		return
+	end
 	-- Sasuke under the rising body: one strike, then the Lion Combo.
 	if (a.lionUntil or 0)>now and a.airborne and a.state=="Neutral" then
-		c:request(a,if (a.airCombo or 0)>=1 and self.rng:NextNumber()<.7 then "Heavy" else "Attack");return
+		press(c,a,if (a.airCombo or 0)>=1 and self.rng:NextNumber()<.7 then "Heavy" else "Attack");return
 	end
 	-- Wired opponent: Dragon Flame at once.
 	if a.wireVictim and a.wireVictim.reaction=="Bound" and a.state=="Neutral" then
@@ -243,7 +281,9 @@ function AI:update(now)
 		if fire and c:request(a,fire,target.root.Position) then return end
 	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
-	if (a.counterUntil or 0)>now and distance<8 then a.move=toward;c:request(a,"Attack");return end
+	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.
+	local counterRange=8+(if a.counterReach and a.counterReach.expires>now then a.counterReach.max else 0)
+	if (a.counterUntil or 0)>now and distance<counterRange then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
 	if (a.flashUntil or 0)>now then
 		local rasengan=slotOf(a,"BurstStrike")
@@ -266,7 +306,7 @@ function AI:update(now)
 			if slot and c:request(a,slot) then return end
 		end
 	end
-	if a.pursuitUntil>now and distance>8 and distance<Config.PursuitRange and self.rng:NextNumber()<0.58 then
+	if a.pursuitUntil>now and distance>8 and distance<Config.PursuitRange and self.rng:NextNumber()<(CHASE[a.fighterId] or .58) then
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then
@@ -279,14 +319,16 @@ function AI:update(now)
 		-- explicitly (an approach held by accident must not pick a launcher).
 		local roll=self.rng:NextNumber()
 		if a.airborne then
-			if (a.airCombo or 0)>=2 and roll<.4 then a.move=Vector3.zero;c:request(a,"Heavy");return end
+			if (a.airCombo or 0)>=2 and roll<.4 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 			if (a.airCombo or 0)>=1 then
-				if roll<.22 then a.move=-toward
-				elseif roll<.42 then a.move=toward
-				elseif roll<.54 then a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
-				else a.move=Vector3.zero end
-			else a.move=Vector3.zero end
-			c:request(a,"Attack");return
+				if roll<.22 then a.move=-toward;press(c,a,"Attack","back");return
+				elseif roll<.42 then a.move=toward;press(c,a,"Attack","forward");return
+				elseif roll<.54 then
+					local sign=if self.rng:NextNumber()<.5 then 1 else -1
+					a.move=tangent*sign;press(c,a,"Attack","side",sign);return
+				end
+			end
+			a.move=Vector3.zero;press(c,a,"Attack");return
 		end
 		-- Neji: end a string with Vacuum Palm.
 		if a.fighterId=="GentleFist" and a.combo>=2 and roll<.18 then
@@ -295,17 +337,21 @@ function AI:update(now)
 		end
 		local nearWall=fromCenter.Magnitude>Config.ArenaRadius-22
 		if a.combo>=2 then
-			if roll<.3 then a.move=toward;c:request(a,"Attack");return end -- launcher
-			if roll<.46 then a.move=-toward;c:request(a,"Attack");return end -- low route
-			if roll<.56 then a.move=Vector3.zero;c:request(a,"Heavy");return end
-		elseif a.combo==1 and roll<.2 then a.move=Vector3.zero;c:request(a,"Heavy");return end
-		if roll<.7 and roll>=.56 then a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1);c:request(a,"Attack");return end
+			if roll<.3 then a.move=toward;press(c,a,"Attack","forward");return end -- launcher
+			if roll<.46 then a.move=-toward;press(c,a,"Attack","back");return end -- low route
+			if roll<.56 then a.move=Vector3.zero;press(c,a,"Heavy");return end
+		elseif a.combo==1 and roll<.2 then a.move=Vector3.zero;press(c,a,"Heavy");return end
+		if roll<.7 and roll>=.56 then
+			local sign=if self.rng:NextNumber()<.5 then 1 else -1
+			a.move=tangent*sign;press(c,a,"Attack","side",sign);return
+		end
 		if roll>=.92 then
 			-- Tool inside the string; away + tool hops out behind it.
-			a.move=if nearWall or self.rng:NextNumber()<.5 then Vector3.zero else -toward
-			c:request(a,"Tool",target.root.Position);return
+			local away=not nearWall and self.rng:NextNumber()>=.5
+			a.move=if away then -toward else Vector3.zero
+			press(c,a,"Tool",if away then "back" else "neutral",0,target.root.Position);return
 		end
-		a.move=Vector3.zero;c:request(a,"Attack");return
+		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
@@ -314,7 +360,11 @@ function AI:update(now)
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()<.4 then
 			a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
 		end
-		if c:request(a,"Tool",target.root.Position) then return end
+		-- Chakra tool (isolated, no extra roll): every third probing throw with a
+		-- comfortable reserve is infused; a body-chakra fighter (Neji) keeps the blade.
+		self.probeThrows=(self.probeThrows or 0)+1
+		local infuse=self.probeThrows%3==0 and not a.def.GentleFist and a.chakra>=(a.def.Chakra or Config.Chakra)*.6
+		if c:request(a,"Tool",target.root.Position,nil,if infuse then {chakra=true} else nil) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
 	-- Jutsu are paced: after one, a few seconds of movement, tools and reads
@@ -369,9 +419,16 @@ function AI:update(now)
 		if self.rng:NextNumber()<.2 then c:request(a,"Dodge");return end
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
-	-- Chakra dash in from mid range when the opponent is not attacking.
-	if not calm and distance>11 and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and self.rng:NextNumber()<.1 then
-		if c:request(a,"Pursuit") then return end
+	-- Chakra dash in from mid range when the opponent is not attacking (nor
+	-- holding a guard the arrival would run into); Neji closes in from closer.
+	local dashFrom=if a.fighterId=="GentleFist" then 7.5 else 11
+	-- Keener at the start of a press and from far away (walking twenty studs
+	-- into a zoner is the slow answer).
+	local keen=.1*(DASH[a.fighterId] or 1)
+	if (self.entryUntil or 0)>now then keen*=4 elseif distance>desired+10 then keen*=2 end
+	if not calm and distance>dashFrom and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and target.state~="Guarding"
+		and self.rng:NextNumber()<keen then
+		if c:request(a,"Pursuit") then self.entryUntil=nil;return end
 	end
 	-- Sidestep cover when the direct route is obstructed.
 	local block=workspace:Raycast(a.root.Position,toward*6,c:rayParams(true))

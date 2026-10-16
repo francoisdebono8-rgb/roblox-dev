@@ -175,7 +175,7 @@ function Matches:view(s,cursor,mine,theirs)
 			local entry=seal.anchor
 			if entry then
 				table.insert(list,{id=entry.id or 0,surface=entry.surface or seal.position,normal=entry.normal or Vector3.yAxis,
-					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id})
+					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id,wind=entry.wind==true,wake=entry.wake==true})
 			end
 		end
 		return list
@@ -211,13 +211,22 @@ function Matches:view(s,cursor,mine,theirs)
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health>0 and a.health<=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)>now,tenketsu=if (a.tenketsuUntil or 0)>now then a.tenketsu or 0 else 0,
-			sealed=math.max(0,(a.sealedUntil or 0)-now)}
+			sealed=math.max(0,(a.sealedUntil or 0)-now),
+			-- Identity cues: which chakra points are closed on this body (body
+			-- locations the client lights), a severed network, the kind of
+			-- genjutsu it is under, a hungry Curse Mark.
+			tenketsuPoints=if (a.tenketsuUntil or 0)>now then table.clone(a.tenketsuPoints or {}) else {},
+			tenketsuSevere=(a.tenketsuUntil or 0)>now and (a.tenketsu or 0)>=4,
+			illusionKind=if (a.illusionUntil or 0)>now then a.illusionKind else nil,
+			curseHunger=a.curseHunger==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
 	local projectiles={}
 	for _,p in s.combat.projectiles do
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth})
+		-- infusion: the chakra nature it carries (nil: a plain object); planted:
+		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
@@ -285,12 +294,18 @@ function Matches:act(s,actor,payload,clock)
 			if actor.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,actor,if payload.locked then "Lock" else "Unlock") end
 			actor.locked=payload.locked
 		end
+		-- Directional memory for routes: a strong push is kept for a moment even
+		-- when it falls between two server frames (Brawler.observe).
+		require(script.Parent.Brawler).observe(s.combat,actor)
 		return
 	end
 	-- An action carries the same validated movement intent as Move. This keeps
  -- directional routes/dodges atomic with the button press, without granting
  -- the client authority over a route, state, cooldown or hit.
  if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>.01) then return end
+ -- The chakra modifier is one boolean held with the action; what it does is
+ -- decided by the server (the fighter's mastery), never by the client.
+ if payload.chakra~=nil and type(payload.chakra)~="boolean" then return end
  local aim=nil
 	if payload.aim~=nil then
 		if not vector(payload.aim) or (payload.aim-actor.root.Position).Magnitude>150 then return end
@@ -303,7 +318,7 @@ function Matches:act(s,actor,payload,clock)
  -- The held guard key is an intent that outlives a refused press (Combat
  -- re-raises it once free). Only players send it; the AI guards per tick.
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
- local ok,reason=s.combat:request(actor,action,aim,payload.clientTime)
+ local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)

@@ -129,22 +129,55 @@ function Presentation:impacts(data,camera)
  end
  self.impactSerial=serial
 end
+-- Genjutsu image. The server says who is deceived (illusion + decoy on that
+-- actor). Seen by the deceived player, the image IS Itachi: a frozen copy in
+-- his stance facing them, with a faint red outline pulsing now and then (the
+-- tell), and the real body behind it drawn faint. Seen by Itachi's player, the
+-- image is a red translucent afterimage of himself: he sees the trap he left.
+function Presentation.fade(model,amount)
+ if not model then return end
+ for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=amount end end
+end
+function Presentation:clearEcho()
+ local echo=self.echo
+ if not echo then return end
+ if echo.model then echo.model:Destroy() end
+ if echo.mode=="deceived" then Presentation.fade(echo.source,0) end
+ self.echo=nil
+end
+-- Which view of the genjutsu this client draws: "deceived" (my fighter is
+-- under it), "caster" (the opponent is under mine) or nil.
+function Presentation.illusionView(data)
+ if not data or data.phase~="Duel" then return nil end
+ if data.human and (data.human.illusion or 0)>0 and data.human.decoy then return "deceived",data.human.decoy end
+ if data.bot and (data.bot.illusion or 0)>0 and data.bot.decoy then return "caster",data.bot.decoy end
+ return nil
+end
 function Presentation:illusion(data,model)
- local active=data.phase=="Duel" and data.human.illusion>0 and data.human.decoy
- local opponent=model and Presentation.opponent(data,model.Parent)
- active=active and opponent~=nil
- if active and opponent and not self.echo then
-  local ghost=opponent:Clone();ghost.Name="LocalAfterimage"
-  for _,v in ghost:GetDescendants() do
-   if v:IsA("BasePart") then v.Anchored=true;v.CanCollide=false;v.CanQuery=false;v.Transparency=math.max(v.Transparency,.72)
-   elseif v:IsA("Humanoid") or v:IsA("Sound") or v:IsA("Trail") then v:Destroy() end
-  end
-  ghost.Parent=workspace;self.echo=ghost;self.echoEpoch=data.epoch
+ local folder=model and model.Parent
+ local opponent=Presentation.opponent(data,folder)
+ local mode,decoy=Presentation.illusionView(data)
+ local source=if mode=="deceived" then opponent elseif mode=="caster" then model else nil
+ local watcher=if mode=="deceived" then model else opponent
+ if not source then mode=nil end
+ local echo=self.echo
+ if echo and (echo.mode~=mode or echo.epoch~=data.epoch or echo.source~=source) then self:clearEcho();echo=nil end
+ if not mode then return end
+ if not echo then
+  echo={mode=mode,epoch=data.epoch,source=source,model=self.fx:image(source,mode),born=os.clock()}
+  self.echo=echo
  end
- if self.echo then
-  if not active or self.echoEpoch~=data.epoch then self.echo:Destroy();self.echo=nil
-  else self.echo:PivotTo(CFrame.new(data.human.decoy)*opponent:GetPivot().Rotation) end
- end
+ if mode=="deceived" then Presentation.fade(source,.55) end
+ local image=echo.model
+ if not image then return end
+ local root=watcher and watcher:FindFirstChild("HumanoidRootPart")
+ local look=if root then Vector3.new(root.Position.X-decoy.X,0,root.Position.Z-decoy.Z) else Vector3.zero
+ if look.Magnitude<.1 then look=Vector3.zAxis end
+ local t=os.clock()-echo.born
+ local at=decoy+Vector3.new(0,math.sin(t*5)*.03,0)
+ image:PivotTo(CFrame.lookAt(at,at+look.Unit))
+ local tell=image:FindFirstChild("Tell")
+ if tell then tell.OutlineTransparency=1-.45*math.max(0,math.sin(t*7))^8 end
 end
 -- Local presentation clocks: an attack animates from the frame it was first
 -- seen, so a late or jittery packet cannot make the body jump backwards.
@@ -175,7 +208,7 @@ function Presentation:update(data,dt)
  Motion.tick(dt)
  local players=game:GetService("Players")
  if not data.human then
-  if self.echo then self.echo:Destroy();self.echo=nil end
+  self:clearEcho()
   self.fx:update(data,dt,nil)
   return
  end

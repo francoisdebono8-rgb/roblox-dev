@@ -148,7 +148,7 @@ return {
 			Counter = "Wall tech on the impact (Q) or a substitution; away from walls it is the normal palm.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "ShortSigns", Name = "Short Signs", Branch = "Genjutsu & Katon", Kind = "property", Cost = 5,
 			Effects = { { "tech.MirageCast.Channel", "mul", 0.8 } },
-			Shows = "Genjutsu: Mirage is cast in 0.72 s instead of 0.9 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
+			Shows = "Genjutsu: Mirage is cast in 0.34 s instead of 0.42 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "PhoenixVolley", Name = "Phoenix Volley", Branch = "Genjutsu & Katon", Kind = "property", Cost = 4,
 			Effects = { { "tech.PhoenixFlower.Cost", "add", -3 } },
 			Shows = "Phoenix Flower costs 17 chakra instead of 20.", Counter = "Same five flames: guard or advance diagonally.", Lore = "PLAUSIBLE_YOUNG" },

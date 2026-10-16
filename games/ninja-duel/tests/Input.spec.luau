@@ -16,8 +16,12 @@ local bindings={}
 local uis={WindowFocusReleased=signal(),TextBoxFocused=signal(),GamepadDisconnected=signal(),LastInputTypeChanged=signal(),focused=false}
 function uis:GetFocusedTextBox() return if self.focused then {} else nil end
 function uis:GetLastInputType() return E.UserInputType.Keyboard end
+-- Only the chakra tool reads the mouse itself (aim parity with a plain throw).
+local mouseHit=V.new(0,3,-20)
+local players={LocalPlayer={Character=nil,GetMouse=function() return {Hit=H.C.new(mouseHit)} end}}
 local game={GetService=function(_,name)
  if name=="UserInputService" then return uis end
+ if name=="Players" then return players end
  if name=="ReplicatedStorage" then return {NinjaDuel={Controls="Controls"}} end
  if name=="ContextActionService" then return {BindActionAtPriority=function(_,name,callback,_,_,...)
   bindings[name]={callback=callback,keys={...}}
@@ -30,7 +34,7 @@ local Input=fn()
 local state={phase="Duel",human={pursuit=0}}
 local camera={CFrame=H.C.new(),look=V2.zero}
 local sent={}
-local input=Input.new(function(action) table.insert(sent,{action=action}) end,
+local input=Input.new(function(action,extra) table.insert(sent,{action=action,extra=extra}) end,
  function() return state end,function() table.insert(sent,{action="Lock"}) end,camera)
 local function press(action,code,mode,position)
  local binding=assert(bindings["Ninja"..action],action.." is unbound")
@@ -109,6 +113,43 @@ test("garde remains held across Change and releases only after both devices",fun
  press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);assert(#sent==1)
  press("Guard",E.KeyCode.F,E.UserInputState.Cancel);assert(last()=="GuardOff" and #sent==2)
 end)
+test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay plain",function()
+ local clock,now=0,Input.now
+ Input.now=function() return clock end
+ local function chakra() local e=sent[#sent].extra;return type(e)=="table" and e.chakra==true end
+ tap("Tool",Controls.Keyboard.Tool);assert(last()=="Tool" and sent[#sent].extra==nil,"a plain R carried chakra")
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ tap("Tool",Controls.Keyboard.Tool);assert(last()=="Tool" and chakra(),"Z held + R was not infused")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ clock=Input.ChakraChord*.6;tap("Tool",Controls.Keyboard.Tool);assert(chakra(),"Z released just before R was lost")
+ clock=1;tap("Tool",Controls.Keyboard.Tool);assert(sent[#sent].extra==nil,"a stale Z still infused")
+ -- PS5: R2 alone is the plain tool, R1 + R2 the chakra tool; R1 + face stays a jutsu.
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and sent[#sent].extra==nil,"R2 alone carried chakra")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ press("Modifier",E.KeyCode.ButtonR1)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and chakra(),"R1 + R2 was not infused")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ tap("Light",E.KeyCode.ButtonX);assert(last()=="Technique2","R1 + square stopped being a jutsu")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- The keyboard modifier never turns a pad tool into a chakra tool.
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(sent[#sent].extra==nil,"keyboard Z modified the pad trigger")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ assert(Controls.Help:find("Z + R",1,true) and Controls.HelpPad:find("R1 + R2",1,true),"the chakra chord is missing from the help")
+ -- Aim parity with a plain throw: the mouse point in reach, the opponent on the pad.
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End);clock=5
+ players.LocalPlayer.Character={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then {Position=V.zero} else nil end}
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ tap("Tool",Controls.Keyboard.Tool);assert(chakra() and sent[#sent].extra.aim==mouseHit,"the chakra tool lost the mouse aim")
+ mouseHit=V.new(0,3,-500)
+ tap("Tool",Controls.Keyboard.Tool);assert(chakra() and sent[#sent].extra.aim==nil,"an out-of-reach aim was sent")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ state.bot={position=V.new(6,3,-12)};press("Modifier",E.KeyCode.ButtonR1)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(chakra() and sent[#sent].extra.aim==state.bot.position,"the pad chakra tool did not aim at the opponent")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ state.bot=nil;players.LocalPlayer.Character=nil;mouseHit=V.new(0,3,-20)
+ Input.now=now
+end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
  table.clear(sent);state.human.pursuit=1
@@ -116,11 +157,28 @@ test("jump release cuts a jump but never a technique or pursuit",function()
  table.clear(sent);press("Modifier",E.KeyCode.ButtonR1)
  tap("Jump",E.KeyCode.ButtonA);assert(#sent==1 and last()=="Technique1")
 end)
-test("PS5 provides deliberate escape, feint, detach and rush",function()
+test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-pad press",function()
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
- tap("RushPad",E.KeyCode.DPadLeft);assert(last()=="Pursuit")
  press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
  assert(last()=="WallDetach","detach emitted a stray GuardOff")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- CORE_COMBAT_CONVERGENCE_2 §3: no D-pad input sends the re-engage.
+ for _,binding in bindings do
+  for _,code in binding.keys do
+   if typeof(code)=="EnumItem" and code.EnumType==E.KeyCode and code.Name:match("^DPad") then
+    local n=#sent
+    binding.callback("Probe",E.UserInputState.Begin,{KeyCode=code,UserInputType=E.UserInputType.Gamepad1,Position=V.zero})
+    binding.callback("Probe",E.UserInputState.End,{KeyCode=code,UserInputType=E.UserInputType.Gamepad1,Position=V.zero})
+    for k=n+1,#sent do assert(sent[k].action~="Pursuit",code.Name.." sends the re-engage") end
+   end
+  end
+ end
+ assert(Controls.Gamepad.Rush==nil,"the chakra dash is still declared on the D-pad")
+ -- On a pad the re-engage is × inside a chase window, sprint + ○ toward outside.
+ state.human.pursuit=1;tap("Jump",E.KeyCode.ButtonA);assert(last()=="Pursuit","× does not chase in a window")
+ state.human.pursuit=0;tap("Dodge",E.KeyCode.ButtonB);assert(last()=="Dodge","○ does not send the dodge the server reads")
+ assert(Controls.HelpPad:find("sprint + ○ toward: chakra dash",1,true),"the pad help does not teach the chakra dash")
+ assert(Controls.Help:find("E re-engage",1,true),"the keyboard help does not teach the re-engage")
 end)
 test("movement intent is current at a press and survives keyboard Change",function()
  press("W",E.KeyCode.W);press("W",E.KeyCode.W,E.UserInputState.Change)
@@ -193,6 +251,21 @@ test("remote directional press overrides a stale Move and buffer keeps it on rel
   a.move=V.zero
   for _=1,90 do H.step(c,.01);if a.attackName==(if id=="Lion" then "LionKick" else "Launcher") then break end end
   assert(a.attackName==(if id=="Lion" then "LionKick" else "Launcher"),id..": release lost the existing launcher route")
+ end
+end)
+test("remote pad re-engage: sprint + dodge toward a locked opponent is the chakra dash, a walking dodge stays a dodge",function()
+ for _,id in {"Flashstep","Mirage","GentleFist","Lion"} do
+  for _,sprint in {true,false} do
+   local c,a,b=H.duel(id,"Mirage")
+   c:relocate(a,V.new(0,3,10));c:relocate(b,V.new(0,3,-10))
+   a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);a.locked=true
+   local player={};local s=c.match;s.epoch=1;s.combat=c;s.human=a;s.bot=b;s.bucket={tokens=100,time=os.clock()}
+   local matches=setmetatable({sessions={[player]=s}},Matches)
+   AntiCheat.clear(a)
+   matches:request(player,{action="Dodge",epoch=1,direction=V.new(0,0,-1),sprint=sprint,clientTime=100})
+   if sprint then assert(a.state=="Rush",id..": the sprinting dodge toward did not re-engage ("..a.state..")")
+   else assert(a.state=="Dodging",id..": a walking dodge became "..a.state) end
+  end
  end
 end)
 test("remote rejects malformed intent before mutating move or executing an action",function()

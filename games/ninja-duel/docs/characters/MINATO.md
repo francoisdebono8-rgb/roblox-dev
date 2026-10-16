@@ -180,4 +180,22 @@ Risques : Sasuke partage la famille de gait de Minato et hérite de ses clips (C
 
 Points à vérifier : numéros de chapitres/épisodes cités (sauf Kakashi Gaiden), âge canon de Minato genin/chûnin, affinités de chakra databook, possible copier-coller dans le clip `Flashstep.Heavy`, hint MarkedBlade « Two seals planted at once » alors qu'un lancer plante un seul sceau (2 au maximum détenus), absence de `tests/Minato.spec.luau` (couverture répartie entre Branches, Phase4, Tools et Preparation).
 
+### État — convergence 2 (identité, 2026-10-16)
+
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement.
+
+- **Wind Cut refondu (même slot)** :
+  - lancé en courant ;
+  - coupe les lames ennemies dans son couloir ;
+  - un corps coupé est rejeté de côté avec un sceau de vent de 1,6 s, et le FTG atterrit à côté ;
+  - la garde ne reçoit pas de sceau ;
+  - 14 chakra, CD 3,2 s.
+- **Yellow Flash = règles** :
+  - chaque FTG laisse un sceau au point de départ (sillage) ;
+  - un corps lancé, éjecté ou plaqué au mur est une destination sans sceau (poursuite éclair) ;
+  - l'arrivée dure 0,8 s ;
+  - bonus de dégâts retiré.
+- FTG et Quickstep cèdent la fin de leur récupération à une garde ou une esquive.
+- **MANQUE toujours** : pose de revers pour Wind Cut, arrivée aérienne dédiée, jugement Studio sur le bruit visuel des sceaux.
+
 Sources code lues : `src/Shared/Fighters.luau`, `src/Shared/MoveGraphs.luau`, `src/Shared/Attacks.luau`, `src/Shared/Config.luau`, `src/Shared/Rules.luau`, `src/Shared/VelmoraCombatConfig.luau`, `src/Shared/BanglaCombo.luau` (dégâts), `src/Server/Techniques.luau`, `src/Server/Brawler.luau`, `src/Server/Combat.luau`, `src/Server/AI.luau`, `src/Server/Elements.luau`, `src/Server/VelmoraDefense.luau`, `src/Server/BanglaEvade.luau`, `src/Server/Place1Movement.luau` (en-tête), `src/Server/Motor.luau` (vitesse de canal), `src/Client/VelmoraMotionEngine.luau` (STANCE/GAIT/CLIPS/castSpec/MELEE Flashstep), `src/Client/Effects.luau` (kunai marqué/téléport, extraits) ; docs : FIGHTER_TEMPLATE, MINATO, CORE_ROSTER, DECISIONS, FOUR_CHARACTER_COMBAT_MATRIX, ROSTER_MOVESETS_10_PRODIGIES (§1 Minato), MASTER_BACKLOG (tickets cités), COMBAT_INVENTORY.json (entrée Flashstep).

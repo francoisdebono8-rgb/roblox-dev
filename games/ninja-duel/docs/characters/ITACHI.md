@@ -218,4 +218,18 @@ Sources : `Fighters.luau:55-59`, `Server/Techniques.luau`, `Server/Elements.luau
 4. **Substitution « de jeunesse »** (CHR-CORE-002, DEF-002) — garder la réapparition derrière l'attaquant, avec habillage kawarimi/bûche + afterimage et au plus 1–2 corbeaux (si une source jeune est confirmée). Contre-jeu inchangé (tracking .75 s). GAMEPLAY_LIBERTY.
 5. **Ricochet → fenêtre de poursuite** (TOOL-005, TOOL-002) — un ricochet ou une Geometry qui touche ouvre `pursuitUntil` .5 s, pour lier outil et re-entry. Contre-jeu : garde de flanc ; Pursuit coûte 8. PLAUSIBLE_YOUNG.
 
+### État — convergence 2 (identité, 2026-10-16)
+
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement : le visuel et le ressenti restent à juger dans Studio.
+
+- **Mirage refondu (kit de base)** :
+  - l'image reste où il se tenait et il recule de 5,5 studs derrière elle, sur la ligne de l'adversaire ;
+  - seul un coup qui atteint l'image est pris (étourdissement 0,55 s, puis CounterPalm qui traverse l'image) ;
+  - l'illusion finit quand on la touche, sur un coup reçu ou porté, et face au Byakugan ;
+  - l'image est dessinée chez la victime (copie exacte et liseré rouge) et chez Itachi (image rouge) ;
+  - « ECHO? » supprimé ; canal 0,42 s, 26 chakra.
+- **Read visible** : glissade de 2,2 studs, image rémanente mordue, lueur des yeux, counter avec allonge. Un coup pressé dans la posture part en counter instantané.
+- **Sharingan Focus = règles** : la garde levée lit (une fois par levée), et les coups ratés près de lui sont lus. Bonus de dégâts retiré.
+- **MANQUE toujours** : poses dédiées (glissade, posture Read, retrait Mirage) et validation Studio. Le substitut corbeau garde son habillage (DEC-005).
+
 Sources code lues : `src/Shared/{Fighters,MoveGraphs,Attacks,Config,Rules,VelmoraCombatConfig,Controls(partiel)}.luau`, `src/Server/{Techniques,Elements,Brawler,Combat,VelmoraDefense,AI,Motor(partiel),World(dressItachi)}.luau`, `src/Client/{VelmoraMotionEngine(stance/gait/clips Mirage),Effects(corbeaux/Sharingan/Katon),Presentation(illusion)}.luau`, `tests/{Tools,Phase4}.spec.luau` ; docs FIGHTER_TEMPLATE, ITACHI, CORE_ROSTER, DECISIONS, FOUR_CHARACTER_COMBAT_MATRIX, ROSTER_MOVESETS_10_PRODIGIES §2, MASTER_BACKLOG, COMBAT_INVENTORY.json (survol).

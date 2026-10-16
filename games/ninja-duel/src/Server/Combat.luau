@@ -151,8 +151,9 @@ function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 	-- Chain and cancel windows belong to the attack recovery that computes them
 	-- right after this call; any other state change must not inherit stale ones
-	-- (a substitution or awaken recovery used to open a string-cancel).
-	a.chainOpen=false; a.recoveryCancelAt=nil
+	-- (a substitution or awaken recovery used to open a string-cancel). The
+	-- same holds for a re-engage arrival (Brawler.arrive sets it after this).
+	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
@@ -177,13 +178,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		if flat.Magnitude>.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
 		self:cue(victim,"SHARINGAN • TRACKED",.7)
 	end
-	if readEligible and frontal and victim.readUntil>self.now then
-		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
-		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
-		self:setState(victim,"Neutral",0)
-		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
-		return false
-	end
+	-- Sharingan Read: the blow is seen coming (VelmoraDefense.read).
+	if readEligible and frontal and victim.readUntil>self.now then return Defense.read(self,attacker,victim) end
 	-- Gaara's sand shield stops the hit by itself while it has charges.
 	local shield=victim.def.SandShield
 	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
@@ -234,11 +230,13 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
 			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
 			if interrupted then victim.stunFloorUntil=victim.untilTime end
-			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
+			if interrupted then victim.interruptedAt=self.now; Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
 	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
+	if (victim.awakenUntil or 0)>self.now and victim.def.Awakening then amount*=1+(victim.def.Awakening.Vulnerability or 0) end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
 	-- is worth less. Long routes stay possible; they just stop being lethal.
 	if not guarded then
@@ -376,6 +374,9 @@ function Combat:arrivalThrow(a)
 	Brawler.event(self,a,"ArrivalThrow")
 	return true
 end
+-- Chakra infusion and projectile interactions (ChakraCombat over the rules
+-- Codex prepared): infused throws, meetings in flight, planted points, wire.
+local Chakra=require(script.Parent.ChakraCombat)
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -394,6 +395,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
+	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
+	-- and what it does on contact; without one the throw is the plain one.
+	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -589,30 +593,91 @@ function Combat:openSpot(attacker,spot)
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
--- Chakra dash. A committed straight burst at the opponent from neutral (or
--- out of a recovery's cancel point). It is not armoured: a blade, a guard or a
--- read answers it. A strike on arrival becomes the dash attack.
+-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): ONE contextual action — keyboard
+-- E; on a pad × inside a chase window, sprint + ○ toward outside one. Inside a
+-- chase window (knock-away, launch, throw, wall splat or bounce, a substitution
+-- to track) it is the chase; outside it is the chakra dash at a locked
+-- opponent. Same chakra either way; each prodigy re-enters his own way
+-- (MoveGraphs[...].reengage, Brawler.rushPlan).
+function Combat:reengage(a)
+	if a.pursuitUntil>self.now and a.target.health>0 then return self:chase(a) end
+	return self:rush(a)
+end
+-- The chase: reach the knocked-away / launched / thrown body in three
+-- dimensions (motion in updateActor). The strike that connected and opened the
+-- window (a launcher, the third light, a palm thrust...) may be cancelled into
+-- it at once: E pressed on the knock-away is never eaten by its active frames.
+function Combat:chase(a)
+	if a.chakra<Config.PursuitCost then return false,"Need chakra" end
+	if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
+	local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		and a.pending~=nil and a.pending.kind=="Brawl"
+	if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
+	if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
+	local style=Brawler.reentry(a)
+	a.chakra-=Config.PursuitCost; a.pursuitUntil=0
+	a.reaction=nil; a.airborne=true
+	a.pursuitStarted=self.now
+	-- A body still rising fast (a chase pressed on the launch itself) is
+	-- followed up to where an air strike can catch it, not dropped at 0.24 s.
+	local b=a.target
+	local rising=if b.reaction and b.reactionVelocity then math.max(0,b.reactionVelocity.Y) else 0
+	local duration=(style.chase or .3)+math.clamp((rising-30)/75,0,.3)
+	a.pursuitDuration=duration
+	-- The side of the body the chase arrives on: the attacker's own.
+	local line=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+	a.pursuitLine=if line.Magnitude>.2 then line.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+	a.airHold=self.now+duration+.45
+	Brawler.breakString(a,false)
+	Brawler.event(self,a,"Chase");Brawler.event(self,a,"Reengage")
+	self:setState(a,"Pursuit",duration)
+	self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
+	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="chase"})
+	return true
+end
+-- Chakra dash. A committed burst at a locked opponent from neutral (or out of
+-- a recovery's cancel point), a straight reposition when unlocked. It is not
+-- armoured: a blade, a guard or a read answers it. The arrival (Brawler.arrive)
+-- converts at once into the dash attack, the quick heavy or a grab, but guards
+-- only after Config.Rush.CancelAfter: a predictable dash is punished.
 function Combat:rush(a)
 	local tune=Config.Rush
+	local style=Brawler.reentry(a)
 	local cancel=a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
 	-- Skill build (Counter-Rush): right after a substitution the dash is free.
 	local free=(a.freeRushUntil or 0)>self.now
-	if a.chakra<tune.Cost and not free then return false,"Need chakra" end
+	if a.chakra<Config.PursuitCost and not free then return false,"Need chakra" end
 	if self.now<(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
-	if gap<tune.MinRange then return false,"Too close" end
-	if gap>tune.Range then return false,"Too far" end
+	local line=nil
+	if a.locked==false then
+		-- Unlocked: no homing, a straight burst along the stick (or the facing).
+		local stick=Vector3.new(a.move.X,0,a.move.Z)
+		local look=a.root.CFrame.LookVector
+		line=if stick.Magnitude>.2 then stick.Unit else Vector3.new(look.X,0,look.Z).Unit
+	else
+		if gap<(style.minRange or tune.MinRange) then return false,"Too close" end
+		if gap>tune.Range then return false,"Too far" end
+	end
 	if cancel then Bangla.close(a.pending) end
-	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=tune.Cost end
+	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=Config.PursuitCost end
 	a.rushReadyAt=self.now+tune.Cooldown
 	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
-	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
+	-- A re-entry opens a fresh string on arrival.
+	Brawler.breakString(a,false)
+	local departure=a.root.Position
+	local plan=Brawler.rushPlan(self,a,style,line)
+	local travel=if line then tune.Reposition else gap
+	local duration=math.clamp(travel/plan.speed+.12,.12,tune.MaxTime*(style.time or 1))
 	self:setState(a,"Rush",duration)
+	a.rush=plan
 	a.rushArriveUntil=self.now+duration+tune.Arrive
-	Brawler.event(self,a,"Rush")
-	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
+	Brawler.event(self,a,"Rush");Brawler.event(self,a,"Reengage")
+	-- Itachi: the approach starts from an afterimage left where he stood.
+	if style.afterimage then self:pushImpact(departure,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="reengage"}) end
+	self:pushImpact(departure,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="dash",to=plan.goal,sealed=plan.sealed})
 	return true
 end
 -- Awakening: once per match, below a third of health. A shockwave buys space,
@@ -622,7 +687,7 @@ function Combat:awaken(a)
 	if not tune or a.awakened then return false,"No awakening" end
 	if a.health>a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration
+	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration;a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
 	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
 	a.cooldowns={}
 	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
@@ -675,10 +740,12 @@ function Combat:wallTech(a)
 	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
 	return true
 end
-function Combat:request(a,action,aim,clientTime)
+function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
+	-- The press carries its own stick (Matches:act): remember it as intent.
+	Brawler.observe(self,a)
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -717,40 +784,31 @@ function Combat:request(a,action,aim,clientTime)
 	if throwHeld and (action=="Attack" or action=="Heavy" or action=="Grab" or action=="Tool" or string.match(action,"^Technique")) then
 		return false,"Committed"
 	end
-	if action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0) and a.queuedLight==nil then
-		-- A buffered press is resolved when it actually chains, never when it was
-		-- first pressed, so the light progression advances exactly once per hit.
-		a.queuedLight=require(Shared.BanglaCombo).next(a,self.now)
-	end
+	-- (The light step is no longer resolved here: Brawler.request reads it from
+	-- the confirmed hits when the press actually starts a strike.)
 	if action=="Attack" or action=="Heavy" or action=="Grab" then a.attackCommitTime=clientTime or self.now end
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge) then
+	-- Itachi's re-entry is a feint he can abort: guard or dodge stops the dash.
+	if (action=="Guard" or action=="Dodge") and a.state=="Rush" and Brawler.reentry(a).feint then Brawler.feintRush(self,a) end
+	if (action=="Guard" or action=="Dodge") and (a.state=="Recovery" or a.state=="TechniqueRecovery") and self.now>=(a.recoveryCancelAt or math.huge) then
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
-	if action=="Pursuit" then
-		-- Outside a chase window, E is the chakra dash.
-		if a.pursuitUntil<=self.now or a.target.health<=0 then return self:rush(a) end
-		if a.chakra<Config.PursuitCost then return false,"Need chakra" end
-		if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
-		-- Any launcher that connected may be cancelled into the chase.
-		local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
-			and (a.attackName=="Launcher" or (a.pending~=nil and a.pending.kind=="Brawl" and a.pending.spec.reaction=="Launched"))
-		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
-		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
-		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
-		a.reaction=nil; a.airborne=true; a.airHold=self.now+.75
-		a.pursuitStarted=self.now
-		Brawler.event(self,a,"Chase")
-		self:setState(a,"Pursuit",0.24)
-		self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
-		self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
-		return true
+	-- Pad re-engage: sprint + dodge toward a locked opponent at mid range is the
+	-- re-engage (chase in a window, chakra dash outside); anything else, or a
+	-- re-engage that is not available (cooldown, chakra), stays a dodge.
+	if action=="Dodge" and Brawler.dashIntent(self,a) then
+		local ok,why=self:reengage(a)
+		if ok then return ok,why end
 	end
+	if action=="Pursuit" then return self:reengage(a) end
 	if action=="Jump" then
 		if a.wall then Motor.detach(a,self.now,true); return true end
 		if a.state~="Neutral" and a.state~="Recovery" then return false,"Committed" end
+		-- Like a guard or a dodge, a jump leaves a recovery only at its cancel
+		-- point: a whiff (or an unanswered dash) cannot hop out of its punish.
+		if a.state=="Recovery" and self.now<(a.recoveryCancelAt or 0) then return false,"Committed" end
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
@@ -762,15 +820,31 @@ function Combat:request(a,action,aim,clientTime)
 		end
 		local graph=Brawler.graph(a) or {}
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now>=(a.chainAt or 0)
-		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
+		-- Chakra modifier held (keyboard Z + R, pad R1 + R2). With the wire still on
+		-- a bound body, the current may leave the jutsu recovery, like Dragon Flame.
+		local chakra=opts~=nil and opts.chakra==true
+		local wired=chakra and a.state=="TechniqueRecovery" and a.wireVictim~=nil and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
+		if (not chainCancel and not wired and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
+		-- The fighter's mastery decides what the chakra does to this tool (server
+		-- side only); a reserve that cannot pay refuses with a visible fizzle.
+		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
+		local infused=nil
+		if chakra then
+			local why
+			infused,why=Chakra.plan(self,a,if a.def.Tool=="Sand" then "Sand" elseif mastery.Kind=="kunai" then "Kunai" else "Shuriken")
+			if not infused then Chakra.refuse(self,a);return false,why end
+			if wired and infused.mode~="conduct" then return false,"Tool recovering" end
+			if a.chakra<Chakra.cost(infused,chainCancel) then Chakra.refuse(self,a);return false,"Need chakra" end
+		end
 		-- A neutral throw costs a little chakra so blades pressure, not spam;
 		-- the throw that cancels a confirmed string stays free.
-		if not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
-		if not chainCancel then a.chakra-=Config.ToolCost end
+		if not infused and not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
+		if infused then a.chakra-=Chakra.cost(infused,chainCancel) elseif not chainCancel then a.chakra-=Config.ToolCost end
+		if wired then a.pending=nil;self:setState(a,"Neutral",0) end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
 		local disengage=graph.disengage
-		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
 		end
@@ -778,15 +852,23 @@ function Combat:request(a,action,aim,clientTime)
 		-- Throwing lowers the guard: a blade never leaves a fully blocking body.
 		if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
 		if a.wall then Motor.detach(a,self.now,false) end
+		-- Chakra without a throw: down the wire (Sasuke) or through the palm (Neji).
+		if infused and infused.mode=="conduct" then
+			a.neutralToolAt=self.now+.35
+			return Chakra.conduct(self,a,infused)
+		end
+		if infused and infused.mode=="body" then
+			a.neutralToolAt=self.now+mastery.Recover
+			return Chakra.palm(self,a,infused)
+		end
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
 			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
-				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
+				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6,chakra=infused})
 			end})
-			self:cue(a,"SAND BULLET",.5)
+			self:cue(a,if infused then Chakra.label(infused) else "SAND BULLET",.5)
 			return true
 		end
-		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
 		local blade=mastery.Kind=="kunai"
 		a.neutralToolAt=self.now+(if chainCancel then .42 else mastery.Recover)
 		local range=if chainCancel then 20 else 62
@@ -794,7 +876,7 @@ function Combat:request(a,action,aim,clientTime)
 		-- second that strikes it beside the opponent; both fly into the flank.
 		local dir,sideSign=Brawler.intent(a)
 		if mastery.Geometry and dir=="side" and not chainCancel and a.target and a.target.health>0 then
-			return self:shurikenGeometry(a,sideSign)
+			return self:shurikenGeometry(a,sideSign,infused)
 		end
 		-- In the air a master fans several blades down at the opponent.
 		local count=if a.airborne and mastery.AirSpread then mastery.AirSpread else mastery.Count
@@ -803,9 +885,9 @@ function Combat:request(a,action,aim,clientTime)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken")
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused})
 			end})
-		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if infused then Chakra.label(infused) elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -> technique: Minato may spend a confirmed string on Rasengan with
@@ -927,7 +1009,14 @@ function Combat:request(a,action,aim,clientTime)
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
-	if flat.Magnitude>0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+	a.castFace=nil
+	if flat.Magnitude>0.1 then
+		-- A small correction snaps (unseen); a large one turns through the
+		-- channel instead of teleporting the facing on the first frame.
+		local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+		if look.Magnitude<.01 or look.Unit:Dot(flat.Unit)>=.82 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+		else a.castFace=flat.Unit end
+	end
 	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
 	if variant=="WallChidori" then
 		-- Held off the wall for the whole charge (the hover window zeroes the fall).
@@ -943,6 +1032,8 @@ function Combat:updateActor(a,dt)
 	if a.health<=0 then a.hum:Move(Vector3.zero); return end
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
+	-- Directional memory for routes: the latest strong push, every frame.
+	Brawler.observe(self,a)
 	Defense.step(self,a,dt,now)
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
@@ -954,7 +1045,7 @@ function Combat:updateActor(a,dt)
 		a.subRegenAt=if a.subCharges<Config.Substitution.Charges then now+Config.Substitution.Recharge else math.huge
 		self:cue(a,"SUBSTITUTION READY",.6)
 	end
-	if a.illusionUntil<=now then a.decoyPosition=nil end
+	Techniques.stepIllusion(self,a,now)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
@@ -969,10 +1060,9 @@ function Combat:updateActor(a,dt)
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
 	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
-	-- The curse mark burns the body that carries it (never to a KO).
-	if (a.awakenUntil or 0)>now and a.def.Awakening.HealthDrain and a.health>1 then
-		a.health=math.max(1,a.health-a.def.Awakening.HealthDrain*dt);a.hum.Health=math.max(1,a.health)
-	end
+	-- The curse mark burns the body that carries it (never to a KO), faster
+	-- while it goes hungry (Techniques.curseDrain).
+	Techniques.curseDrain(self,a,dt,now)
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
@@ -991,30 +1081,37 @@ function Combat:updateActor(a,dt)
 			a.activeAt=now
 		elseif a.state=="Active" then
 			Bangla.close(pending)
+			-- The swing's own contact (Brawler.step), never a blade or a burn that
+			-- landed while it was out.
+			local brawl=pending~=nil and pending.kind=="Brawl"
+			a.hitConfirmed=brawl and pending.contact==true
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
-			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
+			if brawl and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
-				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
-				local caster=a.target
-				if a.illusionUntil>now and caster and caster.health>0 and caster.fighterId=="Mirage" then
-					a.illusionUntil=0;a.decoyPosition=nil
-					caster.counterUntil=now+1.1;caster.bonusUntil=now+1.1
-					Brawler.event(self,caster,"MirageCatch")
-					self:pushImpact(a.root.Position,"mirage",false,{owner=caster.id,fighter=caster.fighterId})
-					self:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);self:cue(a,"GENJUTSU • EXPOSED",1)
-					pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
-				end
+				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
+				Techniques.whiffRead(self,a,pending,now)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
 			-- Cancel philosophy: a string continues only on a clean hit. On block the
 			-- attacker keeps a dodge cancel (and Itachi a shuriken cancel); a whiff
 			-- keeps its full recovery.
-			a.chainOpen=a.hitConfirmed and not a.hitBlocked and pending and pending.kind=="Brawl" and pending.spec.chain==true
+			a.chainOpen=a.hitConfirmed and not a.hitBlocked and brawl and pending.spec.chain==true
 			a.chainAt=now
-			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
+			-- Combo model: a clean chain hit keeps its string for the chain window
+			-- plus the grace; a whiff or a block ends it (the next press opens).
+			if brawl then Brawler.settle(self,a,pending) end
+			local whiffHeavy=brawl and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
+		elseif a.state=="Rush" then
+			-- The dash is over: its arrival (Brawler.arrive).
+			Brawler.arrive(self,a)
+		elseif a.state=="Pursuit" then
+			-- The chase arrived: a short window in which a press is the arrival
+			-- strike (air string up there, dash attack on the ground) or heavy.
+			a.pending=nil;a.attackName=nil;self:setState(a,"Neutral",0)
+			a.rushArriveUntil=now+Config.Rush.Arrive
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
@@ -1022,6 +1119,9 @@ function Combat:updateActor(a,dt)
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
+			-- A utility jutsu (Flow) yields the second half of its recovery to a
+			-- guard or a dodge: it flows back into movement instead of freezing.
+			if pending.spec.Flow then a.recoveryCancelAt=now+pending.spec.Recovery*.5 end
 		else
 			a.pending=nil;a.attackName=nil; self:setState(a,"Neutral",0)
 		end
@@ -1043,6 +1143,11 @@ function Combat:updateActor(a,dt)
 		if a.hop.remaining<=.01 or a.reaction then a.hop=nil end
 	end
 	if a.castId and not a.pending and not a.throwing and a.state~="TechniqueRecovery" then a.castId=nil end
+	-- A cast that started off-line turns into its aim through the channel.
+	if a.castFace then
+		if (a.state=="TechniqueChannel" or a.state=="TechniqueActive") and (a.rotationUntil or 0)<=now then self:turnToward(a,a.castFace,dt,1440)
+		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
+	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
@@ -1063,30 +1168,50 @@ function Combat:updateActor(a,dt)
 		local flat=Vector3.new(-back.X,0,-back.Z)
 		a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
 	elseif a.state=="Pursuit" then
-		-- Reach a rising victim in three dimensions, but kinetically: the chase
-		-- keeps a continuous velocity instead of being teleported frame by frame.
+		-- Reach the victim in three dimensions, but kinetically: the chase keeps
+		-- a continuous velocity instead of being teleported frame by frame. A
+		-- body in a reaction flies on its reactionVelocity (its root velocity is
+		-- held at zero), so that is what the chase leads. It arrives on its own
+		-- side of the body, a step short and a little below, facing it, and ends
+		-- as soon as the body is within reach and an air strike can follow it.
+		local b=a.target
 		local elapsed=now-(a.pursuitStarted or now)
-		local remaining=math.max(.02,.24-elapsed)
-		local toTarget=a.target.root.Position-a.root.Position
-		local grab=toTarget+a.target.root.AssemblyLinearVelocity*remaining*.6
-		local close=a.target.root.Position-a.root.Position
-		local point=if grab.Magnitude>3.2 then grab-grab.Unit*3
-			else close-close.Unit*3
-		if point.Magnitude>.05 then
-			-- Reach the window in time, then brake on approach so the chaser never
-			-- overshoots its own target and snaps back.
-			local speed=math.clamp(point.Magnitude/math.max(remaining,.06),70,420)
-			local distance=close.Magnitude
-			if distance<7 then speed=math.min(speed,40+distance*distance*2.4) end
-			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
+		local remaining=math.max(.04,(a.pursuitDuration or .24)-elapsed)
+		local velocity=if b.reaction and b.reactionVelocity then b.reactionVelocity else b.root.AssemblyLinearVelocity
+		local lead=math.min(remaining,.15)
+		local fall=if b.reaction and b.airborne then 37.5*lead*lead else 0
+		local predicted=b.root.Position+velocity*lead-Vector3.new(0,fall,0)
+		local line=a.pursuitLine or Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+		local point=predicted-line*2.6-Vector3.new(0,.6,0)
+		local toward=point-a.root.Position
+		local distance=(b.root.Position-a.root.Position).Magnitude
+		local face=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+		if face.Magnitude>.3 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		if Brawler.chaseArrived(self,a) then
+			a.untilTime=math.min(a.untilTime,now)
+		elseif toward.Magnitude>.2 then
+			-- Reach the window in time, then ease in on approach so the chaser
+			-- never overshoots its own target and snaps back.
+			local speed=math.clamp(toward.Magnitude/math.max(remaining,.06),70,420)
+			if distance<7 then speed=math.min(speed,60+distance*distance*3) end
+			a.aimIntent={target=point,speed=speed,acceleration=1600}
 		end
 	elseif a.state=="Rush" then
-		-- Chakra dash: a straight burst at the opponent that stops a step short.
-		local delta=a.target.root.Position-a.root.Position
-		local flat=Vector3.new(delta.X,0,delta.Z)
-		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
-		if flat.Magnitude>4.1 then a.aimIntent={target=a.root.Position+flat-flat.Unit*3.6,speed=Config.Rush.Speed,acceleration=1100}
-		else a.untilTime=math.min(a.untilTime,now) end
+		-- Chakra dash toward its arrival point (Brawler.rushPlan): a step short of
+		-- the body, an angle beside it, or a committed line through it.
+		local r=a.rush
+		if not r then a.untilTime=math.min(a.untilTime,now)
+		else
+			local b=a.target
+			if not r.line and (not r.commitAt or now<r.commitAt) then r.goal=Brawler.rushGoal(a,r) end
+			local toTarget=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+			local toGoal=Vector3.new(r.goal.X-a.root.Position.X,0,r.goal.Z-a.root.Position.Z)
+			local committed=r.line~=nil or (r.commitAt~=nil and now>=r.commitAt)
+			local face=if committed then toGoal elseif toTarget.Magnitude>.1 then toTarget else toGoal
+			if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=r.arrive) then a.untilTime=math.min(a.untilTime,now)
+			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
+		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
 		-- straight lunge at the opponent's body.
@@ -1214,13 +1339,21 @@ function Combat:stepRotation(a)
 		local hit=self:damage(a,b,a.rotationDamage or 6,false,false)
 		self.damageTag=nil
 		if self.match.phase~="Duel" then return end
-		-- The dome throws the body out even through a guard.
-		if hit then Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		-- The dome throws a body that was only standing in it out, even through a
+		-- guard; a strike it turns aside staggers out of the dome instead, still
+		-- inside the palm that answers (Techniques.rotationCounter).
+		if hit then
+			if attacking and b.airborne then Brawler.react(self,b,"Juggled",away*16+Vector3.new(0,14,0),.6,a)
+			elseif attacking then Brawler.react(self,b,"HitStun",away*20,.6,a)
+			else Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		end
 		self:pushImpact(b.root.Position,"repel",true,{owner=a.id,direction=away})
 		if attacking then
 			a.counterUntil=self.now+.9
+			a.counterReach={expires=self.now+.9,max=7,variant="TrigramCounter"}
 			Brawler.event(self,a,"Repel")
 			self:cue(a,"ROTATION • REPELLED • COUNTER",.8);self:cue(b,"REPELLED",.6)
+			Techniques.rotationCounter(self,a)
 		end
 	end
 end
@@ -1317,6 +1450,13 @@ function Combat:projectileHit(p,target,position,normal)
 	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
+	-- Infused objects add their own consequence (guard crush, shock, ignition,
+	-- gust, current through a wire) once the defence has resolved.
+	if p.chakra then
+		if entry and entry.projectile==p.id then entry.infusion=p.infusion end
+		Chakra.contact(self,p,target,damaged)
+		if self.match.phase~="Duel" then return end
+	end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
@@ -1356,28 +1496,38 @@ function Combat:projectileHit(p,target,position,normal)
 end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
-	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
-	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
-	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
-	if self.match.phase~="Duel" then return end
-	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
 	local mastery=p.a.def.ToolMastery
 	local target=p.a.target
+	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
+	local bounceFrom=nil
 	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)<.7
 		and target and target.health>0 and (target.root.Position-hit.Position).Magnitude<36 then
 		local from=hit.Position+hit.Normal*.8
 		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
-		if not clear or clear.Instance:IsDescendantOf(target.model) then
-			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
-			bounce.bounced=true
-			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
-			Brawler.event(self,p.a,"Ricochet")
-		end
+		if not clear or clear.Instance:IsDescendantOf(target.model) then bounceFrom=from end
+	end
+	-- A chakra blade stays planted (a contestable point), a fire blade leaves a
+	-- burning point, a missed wire stays stretched: decided before the impact
+	-- so the client draws the object that stays instead of a plain stuck blade.
+	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
+	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
+	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
+	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
+	if self.match.phase~="Duel" then return end
+	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+	if bounceFrom then
+		local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=bounceFrom})
+		bounce.bounced=true
+		-- An infused blade keeps its chakra through the bounce (no second scaling).
+		Chakra.inherit(bounce,p)
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		Brawler.event(self,p.a,"Ricochet")
 	end
 end
 -- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second
 -- thrown to strike it beside them; the collision sends both into the flank.
-function Combat:shurikenGeometry(a,sideSign)
+function Combat:shurikenGeometry(a,sideSign,infused)
 	local b=a.target
 	local start=Combat.launchPoint(a,"Shuriken")
 	local toward=Vector3.new(b.root.Position.X-start.X,0,b.root.Position.Z-start.Z)
@@ -1396,7 +1546,7 @@ function Combat:shurikenGeometry(a,sideSign)
 		-- The second blade is thrown later and faster: both reach the point together.
 		local speed=if index==1 then 70 else math.max(70,gap/math.max(.08,arrive-.1))
 		local p=self:projectile(a,meet,speed,gap,0,"shuriken",nil,{origin=from})
-		p.geometry=index==1 and {meet=meet}
+		p.geometry=index==1 and {meet=meet,chakra=infused}
 	end})
 	self:cue(a,"SHURIKEN GEOMETRY",.7)
 	Brawler.event(self,a,"Geometry")
@@ -1408,7 +1558,7 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
-			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position})
+			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})
 			redirected.bounced=true
 		end
 		Brawler.event(self,p.a,"GeometryHit")
@@ -1423,6 +1573,8 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		return
 	end
+	-- A chakra blade (or a wire) at the end of its flight drops and stays there.
+	if Chakra.expire(self,p) then return end
 	-- A marked kunai that reaches the end of its flight drops to the ground and
 	-- still plants its seal there: a long throw is a long-range anchor.
 	if p.kind=="marked" and p.onSurface then
@@ -1436,9 +1588,21 @@ function Combat:projectileExpire(p)
 	self:pushImpact(p.position,"fade",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
 end
 function Combat:updateProjectiles(dt)
+	-- Meetings in flight, planted points and stretched wires (ChakraCombat).
+	Chakra.step(self,dt)
+	if self.match.phase~="Duel" then return end
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if not p or self.match.phase~="Duel" then return end
+		-- Removed by a meeting, or planted: never moved here. A projectile without
+		-- speed (a reflection of something planted) cannot fly either.
+		if p.dead or p.planted or (p.speed or 0)<=0 then
+			if p.dead or not p.planted then
+				local index=table.find(self.projectiles,p)
+				if index then table.remove(self.projectiles,index) end
+			end
+			continue
+		end
 		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
@@ -1545,6 +1709,7 @@ function Combat:clear(preserveAnimations)
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
+		Brawler.resetStrings(a);a.intentMemory=nil;a.intentOverride=nil;a.rush=nil;a.arrivalRecovery=nil;a.pursuitDuration=nil;a.rushReadyAt=0
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
