@@ -1656,7 +1656,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">39a677197c4c7efe98c9d586535744c310ed70b1c38a2982b4da24f08b76f128</string>
+          <string name="Value">85fb76d10ef828666f04402715b6d7161b3f2bd872ed25df249629cf2637128d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -12819,7 +12819,9 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22,chainIn=26}
+local CHAIN_IN=.08 -- seconds of a chained strike during which the upper body eases in
+local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike may whip at 2280)
 local MAX_SPEED=1750
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
@@ -12837,7 +12839,7 @@ local function write(char,key,target,rate,dt)
 	local nextCF=current:Lerp(target,alpha)
 	local step=angleBetween(current,nextCF)
 	-- Strikes may whip faster than ordinary motion so their shape reads.
-	local limit=rad(if (rate or 0)&gt;=RATE.attack then 2280 else MAX_SPEED)*dt
+	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif (rate or 0)&gt;=RATE.attack then 2280 else MAX_SPEED)*dt
 	if step&gt;limit and step&gt;1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
@@ -12848,11 +12850,11 @@ local function write(char,key,target,rate,dt)
 end
 local LEG_SIDE={RightHip="R",RightKnee="R",RightAnkle="R",LeftHip="L",LeftKnee="L",LeftAnkle="L"}
 local legIK
-local function apply(char,targets,rate,dt)
+local function apply(char,targets,rate,dt,upperRate)
 	local feet=targets.__feet
 	for key in JOINTS do
 		local side=LEG_SIDE[key]
-		if not (feet and side and feet[side]) then write(char,key,targets[key] or IDENTITY,rate,dt) end
+		if not (feet and side and feet[side]) then write(char,key,targets[key] or IDENTITY,if upperRate and UPPER[key] then upperRate else rate,dt) end
 	end
 	if feet then
 		-- The hips are damped; a planted foot must not be. Solve each planted leg
@@ -13044,8 +13046,8 @@ CLIPS.Flashstep.Light2={ -- body-turned palm strike with the lead hand, step in
 }
 CLIPS.Flashstep.Light3={ -- spinning roundhouse with the right leg
 	K(0,m({root={y=-.62,yaw=-40,pitch=8},torso={yaw=-22},ra={raise=52,out=-8,elbow=112},la={raise=52,out=-4,elbow=112},rl={lift=72,out=18,knee=104,ankle=-10},lf={z=-.35,yaw=-30}})),
-	K(1,m({root={y=-.32,yaw=62,pitch=-6,roll=-20},torso={yaw=12,roll=-24},head={roll=14,yaw=-30},ra={raise=24,out=82,elbow=18},la={raise=34,out=70,elbow=30},rl={lift=86,out=56,twist=-28,knee=10,ankle=-24},lf={z=-.3,yaw=40}}),"out"),
-	K(2,m({root={y=-.34,yaw=76,pitch=-4,roll=-18},torso={yaw=16,roll=-20},ra={raise=24,out=80,elbow=22},la={raise=32,out=68,elbow=34},rl={lift=80,out=60,twist=-30,knee=16,ankle=-20},lf={z=-.3,yaw=55}})),
+	K(1,m({root={y=-.32,yaw=62,pitch=-6,roll=-20},torso={yaw=12,roll=-24},head={roll=14,yaw=-30},ra={raise=-6,out=40,elbow=46},la={raise=62,out=-6,twist=18,elbow=104},rl={lift=86,out=56,twist=-28,knee=10,ankle=-24},lf={z=-.3,yaw=40}}),"out"),
+	K(2,m({root={y=-.34,yaw=76,pitch=-4,roll=-18},torso={yaw=16,roll=-20},ra={raise=-4,out=40,elbow=48},la={raise=60,out=-6,twist=18,elbow=104},rl={lift=80,out=60,twist=-30,knee=16,ankle=-20},lf={z=-.3,yaw=55}})),
 	K(2.5,m({root={y=-.5,yaw=60},rl={lift=42,out=20,knee=76},lf={z=-.3,yaw=40}})),
 	K(3,M),
 }
@@ -13416,16 +13418,16 @@ CLIPS.Lion.Light1={ -- lead-hand jab
 }
 CLIPS.Lion.Light2={ -- rear-leg roundhouse to the ribs
 	K(0,sk({root={y=-.55,yaw=-24,pitch=6},torso={yaw=-16},ra={raise=50,out=-10,elbow=110},la={raise=60,out=10,elbow=90},rl={lift=62,out=22,knee=112,ankle=-10},lf={yaw=-24}})),
-	K(1,sk({root={y=-.4,yaw=70,pitch=-4,roll=-18},torso={yaw=10,roll=-18},head={yaw=-40,roll=12},ra={raise=20,out=70,elbow=20},la={raise=40,out=50,elbow=40},rl={lift=76,out=62,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
-	K(2,sk({root={y=-.42,yaw=80,pitch=-4,roll=-16},torso={yaw=12,roll=-16},ra={raise=20,out=70,elbow=24},la={raise=40,out=50,elbow=40},rl={lift=72,out=64,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
+	K(1,sk({root={y=-.4,yaw=70,pitch=-4,roll=-18},torso={yaw=10,roll=-18},head={yaw=-40,roll=12},ra={raise=-10,out=34,elbow=40},la={raise=64,out=-8,twist=20,elbow=112},rl={lift=76,out=62,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
+	K(2,sk({root={y=-.42,yaw=80,pitch=-4,roll=-16},torso={yaw=12,roll=-16},ra={raise=-8,out=34,elbow=44},la={raise=64,out=-8,twist=20,elbow=112},rl={lift=72,out=64,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
 	K(2.6,sk({root={y=-.5,yaw=50},rl={lift=40,out=20,knee=70},lf={yaw=30}})),
 	K(3,S),
 }
 CLIPS.Lion.Light3={ -- spinning heel kick: the turning strike that sends the body away
 	K(0,sk({root={y=-.62,yaw=-20,pitch=6},torso={yaw=-20},ra={raise=40,out=30,elbow=90},la={raise=40,out=30,elbow=90}})),
-	K(.5,sk({root={y=-.45,yaw=90,pitch=0,roll=8},torso={yaw=-10},head={yaw=-60},ra={raise=30,out=60,elbow=50},la={raise=30,out=60,elbow=50},rl={lift=40,out=30,knee=90},lf={yaw=90,x=.4,z=0}})),
-	K(1,sk({root={y=-.25,yaw=196,pitch=-8,roll=16},torso={yaw=16,roll=12},head={yaw=50},ra={raise=20,out=80,elbow=20},la={raise=30,out=70,elbow=30},rl={lift=94,out=52,twist=20,knee=6,ankle=-20},lf={yaw=196,x=.4,z=0}}),"out"),
-	K(2,sk({root={y=-.28,yaw=214,pitch=-6,roll=14},torso={yaw=18,roll=10},ra={raise=20,out=80,elbow=24},la={raise=30,out=70,elbow=30},rl={lift=88,out=54,twist=20,knee=10,ankle=-20},lf={yaw=214,x=.4,z=0}})),
+	K(.5,sk({root={y=-.45,yaw=90,pitch=0,roll=8},torso={yaw=-10},head={yaw=-60},ra={raise=40,out=24,elbow=100},la={raise=40,out=24,elbow=100},rl={lift=40,out=30,knee=90},lf={yaw=90,x=.4,z=0}})),
+	K(1,sk({root={y=-.25,yaw=196,pitch=-8,roll=16},torso={yaw=16,roll=12},head={yaw=50},ra={raise=24,out=46,elbow=50},la={raise=34,out=40,elbow=60},rl={lift=94,out=52,twist=20,knee=6,ankle=-20},lf={yaw=196,x=.4,z=0}}),"out"),
+	K(2,sk({root={y=-.28,yaw=214,pitch=-6,roll=14},torso={yaw=18,roll=10},ra={raise=24,out=48,elbow=52},la={raise=34,out=42,elbow=60},rl={lift=88,out=54,twist=20,knee=10,ankle=-20},lf={yaw=214,x=.4,z=0}})),
 	K(2.5,sk({root={y=-.45,yaw=290},rl={lift=40,out=20,knee=70},lf={yaw=290,x=.3,z=0}})),
 	K(3,merge(S,{root={yaw=S.root.yaw+360}})),
 }
@@ -13594,13 +13596,21 @@ for fighterId,route in {Flashstep=CLIPS.Flashstep,Mirage=CLIPS.Mirage,GentleFist
 end
 
 -- Sample a key list at time `t` on the [0,3] attack timeline.
+-- The drive into contact accelerates through the strike (slow load, fast
+-- arrival) instead of popping out of the chamber at full speed: an "out" ease
+-- on the contact key put the fastest frame at the very start, which read as
+-- pose A -&gt; pose B. Other keys keep their authored ease.
+local function keyEase(b)
+	if b.at==1 and b.ease=="out" then return smooth end
+	return EASE[b.ease] or smooth
+end
 local function sampleKeys(keys,t)
 	if t&lt;=keys[1].at then return built(keys[1].pose) end
 	for index=1,#keys-1 do
 		local a,b=keys[index],keys[index+1]
 		if t&lt;=b.at then
 			local span=math.max(b.at-a.at,1e-3)
-			local ease=EASE[b.ease] or smooth
+			local ease=keyEase(b)
 			return blend(built(a.pose),built(b.pose),ease((t-a.at)/span))
 		end
 	end
@@ -13640,7 +13650,7 @@ local function attackFeet(name,elapsed,fighterId)
 		for index=1,#keys-1 do
 			if t&lt;=keys[index+1].at then
 				a,b=keys[index],keys[index+1]
-				u=(EASE[b.ease] or smooth)((t-a.at)/math.max(b.at-a.at,1e-3))
+				u=keyEase(b)((t-a.at)/math.max(b.at-a.at,1e-3))
 				break
 			end
 		end
@@ -14611,7 +14621,19 @@ function Motion.present(char,actor,clock,dt)
 			final.__feet={}
 			for side in footwork do final.__feet[side]=base.__feet[side] end
 		else final.__feet=nil end
-		apply(char,final,RATE.attack,dt)
+		-- Chaining into the next strike: the arms travel from the last contact
+		-- pose back into the new chamber over a few frames instead of in one or
+		-- two (a hand used to jump ~3 studs in a frame between Light1 and Light2,
+		-- four times a real punch). The strike itself keeps its full speed.
+		local s=stateOf(char)
+		local key=tostring(name)..":"..tostring(subject.attackSerial or 0)
+		if s.swingKey~=key then
+			s.chainedIn=s.lastBranch=="attack" and elapsedTime-(s.lastBranchAt or -1)&lt;.1
+			s.swingKey=key;s.swingAt=elapsedTime
+		end
+		local chainIn=s.chainedIn and elapsedTime-s.swingAt&lt;CHAIN_IN
+		s.lastBranch="attack";s.lastBranchAt=elapsedTime
+		apply(char,final,RATE.attack,dt,if chainIn then RATE.chainIn else nil)
 		return "attack"
 	end
 	if subject.landing then

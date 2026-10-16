@@ -1,6 +1,7 @@
 -- Client: record every rendered frame of both fighters' parts for DUR seconds into
 -- shared.NdFilm (poses only, no VFX), annotated with the inspector's combat state.
 local DUR=4
+local ASYNC=false -- true: start recording and return at once (shared.NdFilmDone when finished)
 local RS=game:GetService("RunService")
 local Players=game:GetService("Players")
 local me=Players.LocalPlayer.Character
@@ -42,7 +43,9 @@ local function label()
 end
 local frames={}
 local t0=os.clock()
-local conn=RS.RenderStepped:Connect(function()
+shared.NdFilmDone=false
+local conn
+conn=RS.RenderStepped:Connect(function()
  local f={t=os.clock()-t0,label=label(),poses={}}
  for who,model in models do
   local pose={}
@@ -53,7 +56,15 @@ local conn=RS.RenderStepped:Connect(function()
  end
  table.insert(frames,f)
 end)
+local function finish()
+ conn:Disconnect();if rconn then rconn:Disconnect() end
+ shared.NdFilm={frames=frames,models=models}
+ shared.NdFilmDone=true
+end
+if ASYNC then
+ task.delay(DUR,finish)
+ return "recording "..DUR.." s"
+end
 task.wait(DUR)
-conn:Disconnect();if rconn then rconn:Disconnect() end
-shared.NdFilm={frames=frames,models=models}
+finish()
 return string.format("recorded %d frames over %.2f s",#frames,DUR)

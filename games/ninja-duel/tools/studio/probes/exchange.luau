@@ -5,8 +5,9 @@ local DELAY=2.5
 local A,B="Flashstep","Mirage"
 local dev=game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev",10)
 workspace:SetAttribute("NdCapGen",(workspace:GetAttribute("NdCapGen") or 0)+1)
+local FORCE=true -- always restart the duel with A vs B
 local s=dev:Invoke("state")
-if type(s)~="table" or s.phase~="Duel" then
+if FORCE or type(s)~="table" or s.phase~="Duel" then
  dev:Invoke("start",A,B)
  local t0=os.clock()
  repeat task.wait(.25) local r=dev:Invoke("act","human","GuardOff") until (type(r)=="table" and r.reason~="Intro") or os.clock()-t0>12
@@ -28,12 +29,14 @@ task.spawn(function()
  if SCEN=="string" then
   press("Attack",9,.14)
  elseif SCEN=="launch" then
-  press("Attack",4,.14)
-  press("Attack",3,.14,Vector3.new(0,0,-1)) -- toward: launcher route
+  press("Attack",1,.2)
+  press("Attack",1,.2)
+  press("Attack",1,.32,Vector3.new(0,0,-1)) -- toward after two clean hits: launcher
   dev:Invoke("move","human",Vector3.zero)
-  press("Pursuit",2,.12)
-  press("Attack",6,.14)
-  press("Heavy",2,.14)
+  press("Pursuit",1,.3)
+  press("Attack",1,.22)
+  press("Attack",1,.22)
+  press("Heavy",1,.5)
  elseif SCEN=="heavy" then
   press("Heavy",1,1)
  elseif SCEN=="guarded" then
