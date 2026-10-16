@@ -281,6 +281,9 @@ local Controls = {
 		Guard = Enum.KeyCode.F,
 		Grab = Enum.KeyCode.V,
 		Tool = Enum.KeyCode.R,
+		-- Chakra modifier: held with the tool (Z + R), or pressed just before it.
+		-- The pad has no extra button: R1 (the jutsu modifier) + R2 is the same chord.
+		Chakra = Enum.KeyCode.Z,
 		Pursuit = Enum.KeyCode.E,
 		Substitute = Enum.KeyCode.X,
 		Feint = Enum.KeyCode.G,
@@ -311,17 +314,17 @@ local Controls = {
 	-- Human-readable key names so HUD and tutorial copy cannot drift from bindings.
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
-		Grab = "V", Tool = "R", Pursuit = "E", Substitute = "X", Feint = "G",
+		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
 		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Skip = "ESC",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E chase / chakra dash   R tool   Z + R chakra   X substitute   G feint   T awaken   CTRL sprint   SHIFT lock   1-5 jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
 	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   L1 guard   L2 grab   R2 tool   R1 + face: jutsu   D-pad ← rush · → escape · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Sprint="L3",Lock="R3",Pursuit="×",Substitute="D-pad →",Feint="R1 + L2",WallDetach="R1 + L1"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   L1 guard   L2 grab   R2 tool   R1 + R2 chakra   R1 + face: jutsu   D-pad ← rush · → escape · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Chakra="R1 + R2",Sprint="L3",Lock="R3",Pursuit="×",Substitute="D-pad →",Feint="R1 + L2",WallDetach="R1 + L1"},
 	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
 }
 
@@ -1656,7 +1659,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">827789abe735eb13b10e4f6a8d213574037f54335f60412dce8719a237980f00</string>
+          <string name="Value">f639ad200b9cfa7fb5e92bbbe7a103563ab7d7265b00660a2d40566971fc4f30</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -2072,7 +2075,11 @@ function AI:update(now)
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()&lt;.4 then
 			a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
 		end
-		if c:request(a,"Tool",target.root.Position) then return end
+		-- Chakra tool (isolated, no extra roll): every third probing throw with a
+		-- comfortable reserve is infused; a body-chakra fighter (Neji) keeps the blade.
+		self.probeThrows=(self.probeThrows or 0)+1
+		local infuse=self.probeThrows%3==0 and not a.def.GentleFist and a.chakra&gt;=(a.def.Chakra or Config.Chakra)*.6
+		if c:request(a,"Tool",target.root.Position,nil,if infuse then {chakra=true} else nil) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
 	-- Jutsu are paced: after one, a few seconds of movement, tools and reads
@@ -3181,6 +3188,1124 @@ return Presets
       </Item>
       <Item class="ModuleScript" referent="ND27">
         <Properties>
+          <string name="Name">ChakraCombat</string>
+          <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
+-- bodies, guards, wire) and the declarative rules Codex prepared
+-- (ChakraRules + ChakraInputPlan) over the live ChakraTuning data.
+--
+--   OBJECT / BODY ACTION + CHAKRA + NATURE / MASTERY + CONTEXT = MODIFIED ACTION
+--
+-- Server-only. The client sends one validated boolean (the chakra modifier was
+-- held with the tool action); the fighter's mastery profile, the object, the
+-- cost, the context and every consequence are decided here from server state.
+-- The rules select named signals; the handlers below are the only code that
+-- turns a signal into a gameplay change, each one bounded and explicit.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Rules=require(script.Parent.ChakraRules)
+local InputPlan=require(script.Parent.ChakraInputPlan)
+local T=require(script.Parent.ChakraTuning)
+local Brawler=require(script.Parent.Brawler)
+local Motor=require(script.Parent.Motor)
+assert(Rules.validate(T),"Invalid chakra tuning")
+local E=T.Effects
+local Chakra={Tuning=T}
+local NATURE_TAGS={"fire","wind","lightning","earth"}
+local NATURE_OF={}
+for name,nature in T.Natures do NATURE_OF[nature.tag]=name end
+local LABEL={Reinforce="CHAKRA",Wind="WIND",Fire="KATON",Lightning="RAITON",GentleFist="GENTLE FIST"}
+
+local function set(list,into)
+	into=into or {}
+	for _,tag in list or {} do into[tag]=true end
+	return into
+end
+local function copy(t)
+	local out={}
+	for k,v in t do out[k]=v end
+	return out
+end
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function natureOf(tags)
+	for _,tag in NATURE_TAGS do if tags[tag] then return NATURE_OF[tag] end end
+	return nil
+end
+local function beats(a,b) return a~=nil and b~=nil and T.Beats[a]==b end
+local function closest(a,b,point)
+	local ab=b-a
+	local length=ab:Dot(ab)
+	if length&lt;1e-6 then return a end
+	return a+ab*math.clamp((point-a):Dot(ab)/length,0,1)
+end
+-- Closest points of two segments [p1,q1] and [p2,q2] (s, t in 0..1).
+local function segments(p1,q1,p2,q2)
+	local d1,d2,r=q1-p1,q2-p2,p1-p2
+	local a,e,f=d1:Dot(d1),d2:Dot(d2),d2:Dot(r)
+	local s,t
+	if a&lt;1e-8 and e&lt;1e-8 then return p1,p2,0,0 end
+	if a&lt;1e-8 then s=0;t=math.clamp(f/e,0,1)
+	else
+		local c=d1:Dot(r)
+		if e&lt;1e-8 then t=0;s=math.clamp(-c/a,0,1)
+		else
+			local b=d1:Dot(d2)
+			local denom=a*e-b*b
+			s=if denom&gt;1e-8 then math.clamp((b*f-c*e)/denom,0,1) else 0
+			t=(b*s+f)/e
+			if t&lt;0 then t=0;s=math.clamp(-c/a,0,1) elseif t&gt;1 then t=1;s=math.clamp((b-c)/a,0,1) end
+		end
+	end
+	return p1+d1*s,p2+d2*t,s,t
+end
+-- Earliest time in [0,horizon] at which two moving spheres touch.
+local function meet(p0,v0,q0,v1,horizon,radius)
+	local d=p0-q0
+	local r=v0-v1
+	local c0=d:Dot(d)-radius*radius
+	if c0&lt;=0 then return 0 end
+	local aa=r:Dot(r)
+	if aa&lt;1e-8 then return nil end
+	local bb=2*d:Dot(r)
+	local disc=bb*bb-4*aa*c0
+	if disc&lt;0 then return nil end
+	local t=(-bb-math.sqrt(disc))/(2*aa)
+	if t&gt;=0 and t&lt;=horizon then return t end
+	return nil
+end
+local function ground(c,position)
+	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-80,0),c:rayParams(true))
+	return if hit then hit.Position else Vector3.new(position.X,c.match.origin.Y,position.Z)
+end
+
+-- ------------------------------------------------------------- profiles
+-- A character id only selects a mastery profile; the interpreter is shared.
+function Chakra.profile(a)
+	local id=T.CharacterMastery[a.fighterId] or "Basic"
+	return id,T.Masteries[id] or T.Masteries.Basic
+end
+local function masteryOf(a)
+	local _,m=Chakra.profile(a)
+	return {tags=set(m.tags),levels=m.levels}
+end
+-- Studio A/B switch (devtools): changes the next triggers only.
+function Chakra.toggle(c,ruleId,enabled)
+	assert(type(enabled)=="boolean","Boolean switch required")
+	local found=false
+	for _,r in T.Rules do found=found or r.id==ruleId end
+	assert(found,"Unknown chakra rule: "..tostring(ruleId))
+	c.chakraSwitches=c.chakraSwitches or {}
+	c.chakraSwitches[ruleId]=enabled
+end
+local function plan(c,trigger,event)
+	event.trigger=trigger
+	event.context=event.context or {tags={}}
+	local selected=Rules.plan(T,event,c.chakraSwitches or {})
+	local signals,applied={},{}
+	for _,r in selected do
+		table.insert(applied,r.id)
+		for _,e in r.effects do if e.kind=="signal" then table.insert(signals,e.name) end end
+	end
+	return selected,signals,applied
+end
+-- Bounded decision log: which rules fired, for tests and Studio inspection.
+local function record(c,trigger,applied,detail)
+	if #applied==0 then return end
+	c.chakraLog=c.chakraLog or {}
+	local row={trigger=trigger,rules=applied,at=c.now}
+	for k,v in detail or {} do row[k]=v end
+	table.insert(c.chakraLog,row)
+	while #c.chakraLog&gt;40 do table.remove(c.chakraLog,1) end
+end
+Chakra.record=record
+
+-- ------------------------------------------------------------- infusion
+local function resolve(c,a,objectId,infusionId,innate)
+	local def=T.Objects[objectId]
+	local infusion=T.Infusions[infusionId]
+	local tags=set(def.tags)
+	local stats=copy(def.stats)
+	if innate then
+		-- Carried by a jutsu (blades hidden in fire): the nature only, no
+		-- reinforcement, no cost, no stat change.
+		if infusion.nature then tags[T.Natures[infusion.nature].tag]=true end
+		return {object=objectId,infusion=infusionId,nature=infusion.nature,tags=tags,stats=stats,cost=0,mode="throw",innate=true,rules={},signals={}}
+	end
+	set(infusion.tags,tags)
+	if infusion.nature then tags[T.Natures[infusion.nature].tag]=true end
+	-- Context comes from server state only.
+	local context={}
+	local victim=a.wireVictim
+	if victim and victim.reaction=="Bound" and victim.boundBy==a and victim.health&gt;0 and (victim.wireConducts or 0)&lt;E.conduct.uses then
+		context.holdingWire=true
+	end
+	local mastery=masteryOf(a)
+	local selected,signals,applied=plan(c,"Infuse",{source={tags=tags,toolType=def.toolType},context={tags=context},mastery=mastery})
+	local cost=infusion.cost
+	for _,r in selected do
+		cost+=r.cost or 0
+		for _,e in r.effects do
+			if e.kind=="scaleStat" and stats[e.stat]~=nil then
+				-- Codex's semantics: factor + per-level mastery bonus, bounded by
+				-- maxFactor, the result bounded by the object's cap.
+				local factor=e.factor+(e.perLevel or 0)*(if e.mastery then mastery.levels[e.mastery] or 0 else 0)
+				factor=math.min(e.maxFactor or 4,factor)
+				stats[e.stat]=math.min(def.caps[e.stat] or math.huge,stats[e.stat]*factor)
+			elseif e.kind=="tag" then tags[e.tag]=true end
+		end
+	end
+	local mode="throw"
+	if table.find(signals,"conduct-wire") then mode="conduct" elseif table.find(signals,"chakra-palm") then mode="body" end
+	return {object=objectId,infusion=infusionId,nature=infusion.nature,tags=tags,stats=stats,cost=cost,mode=mode,rules=applied,signals=signals}
+end
+-- The chakra modifier on the tool action. `object` is the tool the fighter's
+-- action uses ("Kunai", "Shuriken", "Sand"); a body mastery replaces it with
+-- the palm. Codex's input planner (Modifier mode) keeps the existing action
+-- and refuses an incompatible proposal. Returns the plan, or nil + refusal.
+function Chakra.plan(c,a,object)
+	local profileId=Chakra.profile(a)
+	local objectId=T.BodyTool[profileId] or object
+	if not T.Objects[objectId] then return nil,"No chakra tool" end
+	local preferred=(T.Preferred[profileId] or {})[objectId] or T.Preferred.Basic[objectId]
+	local input=InputPlan.build(T,"Modifier",{action="Tool",modified=true},{tool=objectId,selectedInfusion=preferred})
+	if input.infusion=="None" then return nil,"No chakra tool" end
+	local result=resolve(c,a,objectId,input.infusion,false)
+	result.profile=profileId;result.owner=a.id
+	-- The palm is a grounded twin-palm thrust: refused in the air, before any cost.
+	if result.mode=="body" and a.airborne then return nil,"Palm needs the ground" end
+	return result
+end
+-- A nature carried by a jutsu (no input, no cost).
+function Chakra.innate(c,a,object,infusionId)
+	if not T.Objects[object] or not T.Infusions[infusionId] then return nil end
+	return resolve(c,a,object,infusionId,true)
+end
+-- Chakra spent: a thrown chakra tool also pays the plain throw cost, which a
+-- string cancel waives; a palm or a current down the wire throws nothing.
+function Chakra.cost(p,chainCancel)
+	return p.cost+(if p.mode=="throw" and E.toolCost and not chainCancel then Config.ToolCost else 0)
+end
+function Chakra.label(p)
+	return (LABEL[p.infusion] or "CHAKRA").." "..string.upper(p.object)
+end
+-- Refused (chakra short, or nothing to infuse): the chakra fizzles at the
+-- hand, so the refusal is seen even when the HUD cue stays quiet.
+function Chakra.refuse(c,a)
+	local hand=a.root.Position+a.root.CFrame.RightVector*1.1+a.root.CFrame.LookVector*1.1+Vector3.new(0,.9,0)
+	c:pushImpact(hand,"fade",false,{owner=a.id,chakra="fizzle"})
+	Brawler.event(c,a,"ChakraRefused")
+end
+-- The infusion is logged once, when the chakra is actually committed (a plan
+-- refused for cost leaves no trace).
+local function committed(c,infused)
+	if infused.logged or infused.innate then return end
+	infused.logged=true
+	record(c,"Infuse",infused.rules,{owner=infused.owner,object=infused.object,infusion=infused.infusion,mode=infused.mode})
+end
+-- A projectile thrown with a plan carries it for its whole life.
+function Chakra.arm(c,p,infused)
+	committed(c,infused)
+	local s=infused.stats
+	p.chakra=infused;p.infusion=infused.infusion;p.tags=infused.tags
+	if not infused.innate then
+		p.speed*=s.speed or 1;p.range*=s.range or 1;p.remaining=p.range;p.damage*=s.damage or 1
+		-- Stronger contact: the chakra blade connects through a small sphere.
+		p.radius=math.max(p.radius or 0,E.hitRadius)
+	end
+	p.weight=s.weight or 1;p.impact=s.impact or 1
+	p.contest=(T.Objects[infused.object].radius or .45)+(if infused.innate then 0 else E.contestBonus)
+end
+
+-- A blade born from an infused one (a ricochet) carries the same chakra,
+-- without scaling its flight a second time.
+function Chakra.inherit(q,p)
+	if not p.chakra then return end
+	q.chakra=p.chakra;q.infusion=p.infusion;q.tags=p.tags;q.weight=p.weight;q.impact=p.impact;q.contest=p.contest;q.flared=p.flared
+	q.radius=math.max(q.radius or 0,p.radius or 0)
+end
+
+-- ------------------------------------------------------------- views
+-- The interaction view of any live projectile: tags, weight and the radius at
+-- which it meets another object. Plain tools and jutsu volumes come straight
+-- from their object data (a plain throw itself is never changed).
+local function view(c,p)
+	if p.chakra then
+		local def=T.Objects[p.chakra.object]
+		return {tags=p.tags,weight=p.weight or 1,contest=p.contest or .5,volume=false,nature=natureOf(p.tags),toolType=def.toolType}
+	end
+	local id=T.ObjectOf[p.kind]
+	local def=id and T.Objects[id]
+	if not def then return nil end
+	local tags=set(def.tags)
+	-- A shuriken that crossed its thrower's burning ground (Fire Geometry) burns.
+	if p.ignited then tags.fire=true end
+	local volume=tags.volume==true
+	local contest=if volume then (p.radius or 0)+(p.growth or 0)*math.max(0,c.now-p.born) else def.radius
+	return {tags=tags,weight=def.stats.weight or 1,contest=math.max(contest,.3),volume=volume,nature=natureOf(tags),toolType=def.toolType}
+end
+Chakra.view=view
+local function moving(p)
+	return not p.dead and not p.planted and (p.speed or 0)&gt;0 and (p.remaining or 0)&gt;0
+end
+local function kill(c,p,position,style,extra)
+	if p.dead then return end
+	p.dead=true
+	local entry={projectile=p.id,kind=p.kind,owner=p.a.id,direction=p.direction}
+	for k,v in extra or {} do entry[k]=v end
+	c:pushImpact(position,style,false,entry)
+end
+
+-- ------------------------------------------------------------- clashes
+-- Which side leads a meeting: elemental precedence, then a reinforced blade
+-- heavier than a small flame, then the jutsu volume, then weight, then age.
+local function dominant(p,q,vp,vq)
+	if vp.volume and vq.volume then
+		if p.id&lt;=q.id then return p,q,vp,vq end
+		return q,p,vq,vp
+	end
+	if vp.volume~=vq.volume then
+		local vol,tool,vv,vt=p,q,vp,vq
+		if vq.volume then vol,tool,vv,vt=q,p,vq,vp end
+		local steel=vt.tags.reinforced and vt.weight&gt;vv.weight+.25 and not (vv.nature=="Fire" and vt.nature=="Wind")
+		if steel then return tool,vol,vt,vv end
+		return vol,tool,vv,vt
+	end
+	if beats(vp.nature,vq.nature) then return p,q,vp,vq end
+	if beats(vq.nature,vp.nature) then return q,p,vq,vp end
+	if math.abs(vp.weight-vq.weight)&gt;.25 then
+		if vp.weight&gt;vq.weight then return p,q,vp,vq end
+		return q,p,vq,vp
+	end
+	if p.id&lt;=q.id then return p,q,vp,vq end
+	return q,p,vq,vp
+end
+local OUTCOME={["clash-pass"]="pass",["clash-absorb"]="absorb",["clash-pierce"]="pierce",["clash-swallow"]="swallow",
+	["clash-swat"]="swat",["clash-deflect"]="deflect",["clash-intercept"]="intercept"}
+local function tumble(direction,across)
+	local side=across:Cross(Vector3.yAxis)
+	if side.Magnitude&lt;.05 then side=Vector3.xAxis end
+	local away=(direction*.4+side.Unit*(if direction:Dot(side)&gt;=0 then 1 else -1)+Vector3.new(0,.7,0))
+	return if away.Magnitude&gt;.05 then away.Unit else Vector3.yAxis
+end
+local function flare(s)
+	if s.chakra or not (s.radius and s.radius&gt;0) then
+		s.damage+=E.feed.damage;s.flared=true
+	else
+		s.radius+=.6;s.damage*=1.15;s.flared=true
+	end
+end
+-- Resolve one meeting. The rules pick one outcome (exclusive group "clash");
+-- the dominant side is the rule source.
+local function settle(c,s,t,vs,vt,at,forced)
+	local ctx={}
+	if not (vs.tags.chakra or vs.tags.volume or vt.tags.chakra or vt.tags.volume) then ctx.plain=true end
+	if beats(vs.nature,vt.nature) then ctx.natureAdvantage=true end
+	local gap=vs.weight-vt.weight
+	if gap&gt;.25 then ctx.heavier=true elseif gap&gt;=-.25 then ctx.even=true end
+	local _,signals,applied=plan(c,"ProjectileClash",{source={tags=vs.tags,toolType=vs.toolType},target={tags=vt.tags,toolType=vt.toolType},
+		context={tags=ctx},mastery=masteryOf(s.a or forced)})
+	local outcome="pass"
+	for _,name in signals do if OUTCOME[name] then outcome=OUTCOME[name];break end end
+	-- A forced source (the palm) is not a projectile: it only ever swats a blade
+	-- (switching its rule off leaves the blades alone).
+	if forced and outcome~="swat" then outcome="pass" end
+	local owner=forced or s.a
+	local dir=s.direction or (owner and owner.root.CFrame.LookVector) or Vector3.zAxis
+	local infusion=s.infusion
+	if outcome=="absorb" then
+		kill(c,t,at,"ember",{chakra="absorb",infusion="Fire",by=owner.id})
+		if not forced then flare(s) end
+	elseif outcome=="pierce" then
+		kill(c,t,at,"deflect",{chakra="cut",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+	elseif outcome=="swallow" then
+		local fire=vs.tags.fire==true
+		kill(c,t,at,if fire then "ember" else "deflect",{chakra=if fire then "burn" else "blown",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+	elseif outcome=="swat" then
+		kill(c,t,at,"deflect",{chakra="swat",infusion="GentleFist",direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+	elseif outcome=="deflect" then
+		kill(c,t,at,"deflect",{chakra="deflect",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+	elseif outcome=="intercept" then
+		t.dead=true
+		kill(c,s,at,"clash",{chakra="intercept",other=t.id,otherKind=t.kind,direction=dir,tumble=tumble(s.direction,t.direction),by=owner.id})
+	end
+	if outcome~="pass" then
+		Brawler.event(c,owner,"ChakraClash")
+		Brawler.event(c,owner,"Clash_"..outcome)
+	end
+	record(c,"ProjectileClash",applied,{outcome=outcome,source=s.kind,target=t.kind,sourceInfusion=s.infusion,targetInfusion=t.infusion})
+	return outcome
+end
+-- Neji's chakra palm: for its startup and active frames, the blades in front of
+-- it are swatted aside (a frontal answer, unlike the 360-degree Rotation).
+local function swat(c,a)
+	local st=a.chakraPalm
+	local look=flat(a.root.CFrame.LookVector)
+	if look.Magnitude&lt;.05 then return end
+	look=look.Unit
+	local palm={tags=st.plan.tags,weight=T.Objects.Palm.stats.weight,contest=1,volume=false,toolType="Palm"}
+	for _,p in c.projectiles do
+		if p.a~=a and moving(p) then
+			local v=view(c,p)
+			if v and not v.volume and v.tags.tool then
+				local d=p.position-a.root.Position
+				local f=flat(d)
+				if d.Magnitude&lt;=E.palm.reach and (f.Magnitude&lt;1 or look:Dot(f.Unit)&gt;=E.palm.cone) then
+					settle(c,{direction=look,kind="palm",infusion="GentleFist"},p,palm,v,p.position,a)
+				end
+			end
+		end
+	end
+end
+-- Wire crossed by a flying object: fire runs along it, the owner's lightning
+-- charges it, wind cuts it.
+local burnWire
+local function crossWire(c,p,w,at)
+	local v=view(c,p)
+	if not v then return end
+	local ctx={}
+	if p.a==w.a then ctx.own=true end
+	local _,signals,applied=plan(c,"WireCross",{source={tags=v.tags,toolType=v.toolType},target={tags=w.tags},context={tags=ctx},mastery=masteryOf(p.a)})
+	for _,name in signals do
+		if name=="wire-burn" then burnWire(c,w,p.a)
+		elseif name=="wire-charge" then
+			w.charged=c.now+E.tripwire.charge;w.tags.charged=true;w.infusion="Lightning"
+			c:pushImpact(at,"shock",false,{owner=w.a.id,chakra="wirecharge",infusion="Lightning"})
+			Brawler.event(c,w.a,"WireCharged")
+		elseif name=="wire-cut" then
+			kill(c,w,at,"deflect",{chakra="wirecut",infusion=p.infusion,by=p.a.id})
+			Brawler.event(c,p.a,"WireCut")
+		end
+	end
+	record(c,"WireCross",applied,{source=p.kind,infusion=p.infusion})
+end
+function burnWire(c,w,fireOwner)
+	if w.dead then return end
+	local tune=E.tripwire
+	local far=w.origin+w.direction*w.range
+	local steps=math.max(1,math.floor(w.range/tune.patch))
+	for k=0,steps do
+		local point=w.origin:Lerp(far,k/steps)
+		c:addHazard(fireOwner,point,2.2,tune.burn,4,"Fire")
+	end
+	kill(c,w,w.origin:Lerp(far,.5),"ember",{chakra="wireburn",infusion="Fire",from=w.origin,to=far,by=fireOwner.id})
+	Brawler.event(c,fireOwner,"WireBurn")
+end
+
+-- ------------------------------------------------------------- planted points
+local POINT={}
+POINT["point-recover"]=function(c,q,x)
+	kill(c,q,q.position,"fade",{chakra="recover",infusion=q.infusion})
+	x.chakra=math.min(x.def.Chakra or Config.Chakra,x.chakra+E.plant.refund)
+	c:cue(x,"CHAKRA BLADE RECOVERED • +"..E.plant.refund,.6)
+	Brawler.event(c,x,"ChakraRecover")
+end
+POINT["point-shock"]=function(c,q,x)
+	kill(c,q,q.position,"shock",{chakra="pointshock",infusion="Lightning",victim=x.id})
+	c.damageTag="Shock Point";c.hitOrigin=q.position
+	local hit=c:damage(q.a,x,E.shockPoint.damage,false,false)
+	c.hitOrigin=nil;c.damageTag=nil
+	if hit and x.state=="Stunned" and not x.reaction then x.untilTime=math.max(x.untilTime,c.now+E.shockPoint.stun) end
+	c:cue(q.a,"SHOCK POINT",.6)
+	Brawler.event(c,q.a,"ChakraShockPoint")
+end
+POINT["point-deny"]=function(c,q,x)
+	kill(c,q,q.position,"fade",{chakra="deny",infusion=q.infusion})
+	Brawler.event(c,x,"ChakraDeny")
+end
+local function touchPoint(c,q,x,owner)
+	local d=x.root.Position-q.position
+	if flat(d).Magnitude&gt;E.plant.radius or math.abs(d.Y)&gt;E.plant.height then return end
+	if x.health&lt;=0 or (not owner and x.invulnerableUntil&gt;c.now) then return end
+	local ctx={}
+	ctx[if owner then "owner" else "opponent"]=true
+	if not x.airborne then ctx.grounded=true end
+	local _,signals,applied=plan(c,"PointContact",{source={tags=q.tags},target={tags={actor=true}},context={tags=ctx},mastery=masteryOf(q.a)})
+	for _,name in signals do
+		local handler=POINT[name]
+		if handler and not q.dead then handler(c,q,x) end
+		if c.match.phase~="Duel" then return end
+	end
+	record(c,"PointContact",applied,{owner=q.a.id,actor=x.id,infusion=q.infusion})
+end
+local function touchWire(c,w,x)
+	local tune=E.tripwire
+	if x.health&lt;=0 or x.invulnerableUntil&gt;c.now or x.reaction=="Bound" then return end
+	local far=w.origin+w.direction*w.range
+	local point=closest(w.origin,far,x.root.Position)
+	if (x.root.Position-point).Magnitude&gt;tune.radius then return end
+	local ctx={opponent=true}
+	if not x.airborne then ctx.grounded=true end
+	local _,signals,applied=plan(c,"WireContact",{source={tags=w.tags},target={tags={actor=true}},context={tags=ctx},mastery=masteryOf(w.a)})
+	local bind,shock=table.find(signals,"tripwire-bind")~=nil,table.find(signals,"tripwire-shock")~=nil
+	if bind then
+		kill(c,w,point,"pin",{chakra="tripwire",infusion=w.infusion,from=w.origin,to=far,victim=x.id})
+		require(script.Parent.Techniques).wireBind(c,w.a,x,nil,w.direction)
+		if c.match.phase~="Duel" then return end
+		if shock and x.reaction=="Bound" then
+			c.damageTag="Charged Wire";c.hitOrigin=point
+			c:damage(w.a,x,tune.shock,false,false)
+			c.hitOrigin=nil;c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			x.reactionUntil+=tune.bind
+			c:pushImpact(x.root.Position,"chidori",false,{owner=w.a.id,victim=x.id,chakra="surge",infusion="Lightning",from=point,to=x.root.Position})
+		end
+		c:cue(w.a,"TRIPWIRE • 1 = DRAGON FLAME",.9)
+		Brawler.event(c,w.a,"TripwireBind")
+	end
+	record(c,"WireContact",applied,{owner=w.a.id,actor=x.id,charged=w.charged~=nil})
+end
+
+-- ------------------------------------------------------------- per tick
+-- Runs before projectiles move: palm swats, meetings between flying objects
+-- (and with planted points and stretched wires), then the planted objects
+-- against bodies and fire. Meetings resolve in time order, so the outcome
+-- never depends on the order of the projectile list.
+function Chakra.step(c,dt)
+	local now=c.now
+	for _,a in c.actors do
+		if a.chakraPalm and now&lt;a.chakraPalm.untilTime and a.health&gt;0 then swat(c,a) end
+	end
+	local list=c.projectiles
+	local hits={}
+	for i=1,#list do
+		local p=list[i]
+		if moving(p) then
+			local vp=view(c,p)
+			if vp then
+				local horizon=math.min(dt,p.remaining/p.speed)
+				local velocity=p.direction*p.speed
+				for j=1,#list do
+					local q=list[j]
+					-- Own objects never meet, except a stretched wire: the owner's
+					-- lightning charges it and his own fire runs along it.
+					if q~=p and (q.a~=p.a or q.planted=="wire") and not q.dead and not (p.clashed and p.clashed[q.id]) then
+						if q.planted=="wire" then
+							local a1,b1=p.position,p.position+velocity*horizon
+							local far=q.origin+q.direction*q.range
+							local onPath,onWire,s=segments(a1,b1,q.origin,far)
+							if (onPath-onWire).Magnitude&lt;=vp.contest+.35 then table.insert(hits,{t=s*horizon,p=p,q=q,kind="wire",at=onWire}) end
+						elseif q.planted then
+							local t=meet(p.position,velocity,q.position,Vector3.zero,horizon,vp.contest+E.plant.contest)
+							if t then table.insert(hits,{t=t,p=p,q=q,kind="point"}) end
+						elseif j&gt;i and moving(q) then
+							local vq=view(c,q)
+							if vq then
+								local t=meet(p.position,velocity,q.position,q.direction*q.speed,math.min(horizon,q.remaining/q.speed),vp.contest+vq.contest)
+								if t then table.insert(hits,{t=t,p=p,q=q,kind="pair",vp=vp,vq=vq}) end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	table.sort(hits,function(x,y)
+		if x.t~=y.t then return x.t&lt;y.t end
+		local xa,ya=math.min(x.p.id,x.q.id),math.min(y.p.id,y.q.id)
+		if xa~=ya then return xa&lt;ya end
+		return math.max(x.p.id,x.q.id)&lt;math.max(y.p.id,y.q.id)
+	end)
+	for _,hit in hits do
+		local p,q=hit.p,hit.q
+		if not p.dead and not q.dead then
+			p.clashed=p.clashed or {};p.clashed[q.id]=true
+			q.clashed=q.clashed or {};q.clashed[p.id]=true
+			if hit.kind=="pair" then
+				local P=p.position+p.direction*p.speed*hit.t
+				local Q=q.position+q.direction*q.speed*hit.t
+				local s,t,vs,vt=dominant(p,q,hit.vp,hit.vq)
+				settle(c,s,t,vs,vt,P:Lerp(Q,.5))
+			elseif hit.kind=="point" then
+				-- A planted point is contestable: any thrown object knocks it out.
+				kill(c,q,q.position,"deflect",{chakra="knock",tool=q.planted,infusion=q.infusion,direction=p.direction,tumble=tumble(p.direction,p.direction),by=p.a.id})
+				Brawler.event(c,p.a,"ChakraPointKnocked")
+				record(c,"PointKnocked",{"thrown-object-knocks-point"},{owner=q.a.id,by=p.kind})
+			elseif hit.kind=="wire" then
+				crossWire(c,p,q,hit.at)
+			end
+			if c.match.phase~="Duel" then return end
+		end
+	end
+	-- Planted points and wires against bodies, fire and time.
+	for i=#list,1,-1 do
+		local q=list[i]
+		if q and q.planted and not q.dead then
+			if now&gt;=(q.expires or 0) or q.a.health&lt;=0 then
+				kill(c,q,q.position,"fade",{chakra="expire",infusion=q.infusion})
+			elseif q.planted=="wire" then
+				if q.charged and now&gt;=q.charged then q.charged=nil;q.tags.charged=nil;q.infusion=nil end
+				local far=q.origin+q.direction*q.range
+				for _,h in c.hazards do
+					if h.kind=="Fire" and not q.dead and (h.position-closest(q.origin,far,h.position)).Magnitude&lt;=h.radius then burnWire(c,q,h.a) end
+				end
+				-- Rotation's dome snaps a wire it touches anywhere along its length.
+				for _,spin in c.actors do
+					if spin~=q.a and (spin.rotationUntil or 0)&gt;now and not q.dead then
+						local reach=spin.rotationReach or 7
+						local point=closest(q.origin,far,spin.root.Position)
+						if (point-spin.root.Position).Magnitude&lt;=reach then
+							kill(c,q,point,"deflect",{chakra="wirecut",by=spin.id})
+							Brawler.event(c,spin,"WireCut")
+						end
+					end
+				end
+				local x=q.a.target
+				if x and not q.dead then touchWire(c,q,x) end
+			elseif now-q.born&gt;=E.plant.settle then
+				touchPoint(c,q,q.a,true)
+				local x=q.a.target
+				if x and not q.dead then touchPoint(c,q,x,false) end
+			end
+			if c.match.phase~="Duel" then return end
+		end
+	end
+end
+
+-- ------------------------------------------------------------- contact
+local CONTACT={}
+CONTACT["guard-crush"]=function(c,p,b)
+	-- Reinforced steel leans on the guard: stamina, a shove, and a break when
+	-- the guard has nothing left.
+	local tune=E.guardCrush
+	local impact=p.impact or 1
+	b.stamina=math.max(0,(b.stamina or 100)-tune.stamina*impact)
+	local push=flat(p.direction)
+	if push.Magnitude&gt;.05 then Motor.travel(b,c,push.Unit,tune.push*impact) end
+	b.guardImpact=c.now+.18
+	local broken=b.stamina&lt;=0 and b.guardHeld
+	if broken then
+		b.guardHeld=false;c:setState(b,"Stunned",tune.stun)
+		c:cue(b,"GUARD BREAK",.7);c:cue(p.a,"GUARD BREAK",.7)
+		Brawler.event(c,p.a,"GuardCrushBreak")
+	end
+	c:pushImpact(b.root.Position,"crush",broken,{owner=p.a.id,victim=b.id,direction=p.direction,chakra="crush",infusion=p.infusion})
+	Brawler.event(c,p.a,"GuardCrush")
+end
+CONTACT["shock"]=function(c,p,b)
+	-- Lightning locks the muscles: the hit stun lasts longer (grounded only).
+	if b.state=="Stunned" and not b.reaction then b.untilTime=math.max(b.untilTime,c.now+E.shock.stun) end
+	c:pushImpact(b.root.Position,"shock",false,{owner=p.a.id,victim=b.id,chakra="shock",infusion="Lightning"})
+	Brawler.event(c,p.a,"ChakraShock")
+end
+CONTACT["wire-surge"]=function(c,p,b)
+	-- Lightning reaching a body held by the thrower's own wire runs through it.
+	local tune=E.wireSurge
+	c.damageTag="Wire Lightning"
+	c:damage(p.a,b,tune.damage,false,false)
+	c.damageTag=nil
+	if c.match.phase~="Duel" then return end
+	if b.reaction=="Bound" then b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+E.conduct.maxBind) end
+	c:pushImpact(b.root.Position,"chidori",false,{owner=p.a.id,victim=b.id,chakra="surge",infusion="Lightning",from=p.a.root.Position,to=b.root.Position})
+	Brawler.event(c,p.a,"WireSurge")
+end
+CONTACT["ignite"]=function(c,p,b)
+	local tune=E.ignite
+	c:addHazard(p.a,ground(c,b.root.Position),tune.radius*(if p.flared then 1.4 else 1),tune.duration,tune.damage,"Fire")
+	c:pushImpact(b.root.Position,"ember",false,{owner=p.a.id,victim=b.id,chakra="ignite",infusion="Fire"})
+	Brawler.event(c,p.a,"ChakraIgnite")
+end
+CONTACT["gust"]=function(c,p,b)
+	-- The wind kunai shoves the body along its line and opens a chase.
+	local tune=E.gust
+	local push=flat(p.direction)
+	if push.Magnitude&gt;.05 and not b.reaction then b.root.AssemblyLinearVelocity=push.Unit*tune.push+Vector3.new(0,tune.lift,0) end
+	p.a.pursuitUntil=math.max(p.a.pursuitUntil or 0,c.now+tune.chase)
+	c:cue(p.a,"WIND KUNAI • E TO CHASE",tune.chase)
+	c:pushImpact(b.root.Position,"gust",false,{owner=p.a.id,victim=b.id,chakra="gust",infusion="Wind",direction=p.direction})
+	Brawler.event(c,p.a,"ChakraGust")
+end
+-- A chakra projectile reached a body. `damaged` is what Combat:damage
+-- returned (false: evaded, parried, absorbed: the chakra does nothing).
+function Chakra.contact(c,p,b,damaged)
+	if not p.chakra or not damaged or b.health&lt;=0 or c.match.phase~="Duel" then return end
+	local guarded=b.impactStyle=="block"
+	local tags={actor=true}
+	if guarded then tags.guarding=true end
+	if b.reaction=="Bound" then tags.bound=true;if b.boundBy==p.a then tags.wired=true end end
+	if b.airborne then tags.airborne=true end
+	local ctx={}
+	ctx[if guarded then "guarded" else "clean"]=true
+	local _,signals,applied=plan(c,"Contact",{source={tags=p.tags,toolType=T.Objects[p.chakra.object].toolType},target={tags=tags},context={tags=ctx},mastery=masteryOf(p.a)})
+	for _,name in signals do
+		local handler=CONTACT[name]
+		if handler then handler(c,p,b) end
+		if c.match.phase~="Duel" or b.health&lt;=0 then break end
+	end
+	record(c,"Contact",applied,{source=p.kind,infusion=p.infusion,victim=b.id,guarded=guarded})
+end
+
+-- ------------------------------------------------------------- surfaces
+local function plantPoint(c,p,position,normal,shock)
+	local into=p.direction
+	if into:Dot(normal)&gt;-.2 then into=(into-normal*1.2).Unit end
+	c.projectileSerial=(c.projectileSerial or 0)+1
+	local tags=copy(p.tags)
+	if shock then tags.shockPoint=true end
+	local q={id=c.projectileSerial,a=p.a,origin=position,position=position,direction=into,speed=0,range=0,remaining=0,damage=0,
+		kind="point",planted=p.kind,born=c.now,radius=0,growth=0,expires=c.now+E.plant.life,normal=normal,
+		chakra=p.chakra,infusion=p.infusion,tags=tags,weight=p.weight,impact=p.impact,contest=E.plant.contest}
+	table.insert(c.projectiles,q)
+	local mine={}
+	for _,x in c.projectiles do if x.a==p.a and x.kind=="point" and not x.dead then table.insert(mine,x) end end
+	for i=1,#mine-E.plant.max do kill(c,mine[i],mine[i].position,"fade",{chakra="expire",infusion=mine[i].infusion}) end
+	c.urgent=true
+	Brawler.event(c,p.a,"ChakraPlant")
+	return q
+end
+-- A wired shuriken that misses stays strung from where it was thrown (tied
+-- off at ankle height) to where it landed: a tripwire across that lane.
+local function stretch(c,p,position,normal)
+	local near=ground(c,p.origin)+Vector3.new(0,.7,0)
+	local far=position+normal*.15
+	local span=far-near
+	if span.Magnitude&lt;3 or span.Magnitude&gt;80 then return nil end
+	for _,x in c.projectiles do
+		if x.a==p.a and x.kind=="tripwire" and not x.dead then kill(c,x,x.position,"fade",{chakra="expire"}) end
+	end
+	c.projectileSerial=(c.projectileSerial or 0)+1
+	local w={id=c.projectileSerial,a=p.a,origin=near,position=near,direction=span.Unit,speed=0,range=span.Magnitude,remaining=0,damage=0,
+		kind="tripwire",planted="wire",born=c.now,radius=0,growth=0,expires=c.now+E.tripwire.life,tags={tool=true,wire=true,metal=true}}
+	table.insert(c.projectiles,w)
+	c.urgent=true
+	c:cue(p.a,"WIRE STRETCHED",.8)
+	Brawler.event(c,p.a,"Tripwire")
+	return w
+end
+-- A chakra blade or a wire reached a wall or the floor. Returns what stayed
+-- behind ({point=, wire=, burn=}) so the caller tags its own impact.
+function Chakra.surface(c,p,position,normal,instance)
+	local v=view(c,p)
+	if not v or not (p.chakra or v.tags.wire) then return nil end
+	local tags={solid=true}
+	tags[if math.abs(normal.Y)&lt;.7 then "wall" else "floor"]=true
+	if instance==nil or instance.CanCollide~=false then tags.anchorCompatible=true end
+	local selected,signals,applied=plan(c,"SurfaceHit",{source={tags=v.tags,toolType=v.toolType},surface={tags=tags},mastery=masteryOf(p.a)})
+	local embed,shock=false,false
+	for _,r in selected do
+		for _,e in r.effects do
+			if e.kind=="embed" then embed=true elseif e.kind=="tag" and e.tag=="shockPoint" then shock=true end
+		end
+	end
+	local outcome={}
+	if embed then outcome.point=plantPoint(c,p,position,normal,shock) end
+	for _,name in signals do
+		if name=="burn-point" then
+			local tune=E.burnPoint
+			c:addHazard(p.a,position+normal*.6,tune.radius*(if p.flared then 1.4 else 1),tune.duration,tune.damage,"Fire")
+			outcome.burn=true
+		elseif name=="wire-stretch" then outcome.wire=stretch(c,p,position,normal) end
+	end
+	record(c,"SurfaceHit",applied,{source=p.kind,infusion=p.infusion,planted=outcome.point~=nil,wire=outcome.wire~=nil})
+	return outcome
+end
+-- End of flight: a chakra blade or a wire drops to the floor and stays there.
+function Chakra.expire(c,p)
+	if not ((p.chakra and not p.chakra.innate) or p.kind=="wire") then return false end
+	local floor=workspace:Raycast(p.position,Vector3.new(0,-80,0),c:rayParams(true))
+	if not floor then return false end
+	local outcome=Chakra.surface(c,p,floor.Position,floor.Normal,floor.Instance)
+	if not outcome or not (outcome.point or outcome.wire) then return false end
+	c:pushImpact(floor.Position,"stick",false,{projectile=p.id,kind=p.kind,normal=floor.Normal,owner=p.a.id,direction=p.direction,
+		chakra=if outcome.wire then "stretch" else "plant",infusion=p.infusion})
+	return true
+end
+
+-- ------------------------------------------------------------- body chakra
+-- Neji: the chakra goes through the palm. A short twin-palm thrust that swats
+-- the blades in front of it while it comes out, drains and closes a point
+-- through a guard, and closes an extra point on a clean hit.
+function Chakra.palm(c,a,infused)
+	committed(c,infused)
+	Brawler.start(c,a,"PalmThrust")
+	local pending=a.pending
+	if not pending then return false,"Committed" end
+	local tune=E.palm
+	pending.spec.damage*=tune.damage;pending.spec.travel=tune.travel;a.travelRemaining=tune.travel
+	pending.chakra=infused
+	a.attackVariant="ChakraPalm"
+	local window=pending.spec.startup+pending.spec.active
+	local serial=a.attackSerial
+	a.chakraPalm={untilTime=c.now+window+.04,serial=serial,plan=infused}
+	c:schedule(c.now+window+.02,function() Chakra.palmResolve(c,a,serial) end)
+	c:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique="ChakraPalm",chakra="palm",infusion="GentleFist"})
+	c:cue(a,"CHAKRA PALM",.5)
+	Brawler.event(c,a,"ChakraPalm")
+	return true
+end
+function Chakra.palmResolve(c,a,serial)
+	local st=a.chakraPalm
+	if not st or st.serial~=serial then return end
+	a.chakraPalm=nil
+	local b=a.target
+	if a.health&lt;=0 or not b or b.health&lt;=0 or a.attackSerial~=serial or not a.hitConfirmed or not a.def.GentleFist then return end
+	local guarded=a.hitBlocked==true
+	local tags={actor=true}
+	if guarded then tags.guarding=true end
+	local ctx={}
+	ctx[if guarded then "guarded" else "clean"]=true
+	local _,signals,applied=plan(c,"Contact",{source={tags=st.plan.tags,toolType="Palm"},target={tags=tags},context={tags=ctx},mastery=masteryOf(a)})
+	local tune=E.palm
+	for _,name in signals do
+		if name=="palm-through-guard" then
+			b.chakra=math.max(0,b.chakra-tune.drain)
+			b.stamina=math.max(0,(b.stamina or 100)-tune.stamina)
+			-- The point closes as if the guard were not there.
+			Brawler.gentleFist(c,a,b,false)
+			local push=flat(b.root.Position-a.root.Position)
+			if push.Magnitude&gt;.05 then Motor.travel(b,c,push.Unit,tune.push) end
+			b.guardImpact=c.now+.18
+			c:pushImpact(b.root.Position,"palm",true,{owner=a.id,victim=b.id,chakra="throughguard",infusion="GentleFist",direction=a.root.CFrame.LookVector})
+			c:cue(a,"CHAKRA PALM • THROUGH THE GUARD",.8);c:cue(b,"CHAKRA DRAINED",.6)
+			Brawler.event(c,a,"PalmThroughGuard")
+		elseif name=="palm-point" then
+			for _=1,tune.points do Brawler.gentleFist(c,a,b,false) end
+			c:pushImpact(b.root.Position,"palm",false,{owner=a.id,victim=b.id,chakra="tenketsu",infusion="GentleFist"})
+			Brawler.event(c,a,"PalmPoint")
+		end
+	end
+	record(c,"Contact",applied,{source="palm",infusion="GentleFist",victim=b.id,guarded=guarded})
+end
+-- Sasuke: with the wire still on a bound body, the chakra tool sends the
+-- lightning down the wire instead of throwing (the wire stays: Dragon Flame
+-- remains available). Bounded: two currents per bind, never past 2.2 s.
+function Chakra.conduct(c,a,infused)
+	local b=a.wireVictim
+	if not (b and b.reaction=="Bound" and b.boundBy==a and b.health&gt;0) then return false,"Wire lost" end
+	local tune=E.conduct
+	committed(c,infused)
+	b.wireConducts=(b.wireConducts or 0)+1
+	local hand=c.launchPoint(a,"Kunai")
+	c.damageTag="Wire Lightning";c.hitOrigin=hand
+	local hit=c:damage(a,b,tune.damage,false,false)
+	c.hitOrigin=nil;c.damageTag=nil
+	if c.match.phase~="Duel" then return true end
+	if b.reaction=="Bound" then b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+tune.maxBind) end
+	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
+	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
+	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • X TO ESCAPE",.9)
+	Brawler.event(c,a,"WireLightning")
+	record(c,"Conduct",infused.rules,{owner=a.id,victim=b.id,uses=b.wireConducts})
+	return true
+end
+return Chakra
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND28">
+        <Properties>
+          <string name="Name">ChakraInputPlan</string>
+          <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
+-- context MUST be resolved by a future host (technique/loadout/mastery/geometry),
+-- never accepted as authoritative client data. Hold qualification belongs to Claude.
+local S=require(script.Parent.ProfileSchema)
+local P={Modes={AutoTechnique=true,Modifier=true,Contextual=true,Loadout=true,HoldRelease=true,CompatibleAuto=true}}
+function P.build(cfg,mode,intent,context)
+ assert(P.Modes[mode] and S.serializable(intent) and S.serializable(context),"Invalid input proposal")
+ assert(type(intent)=="table" and type(context)=="table" and S.id(intent.action) and cfg.Objects[context.tool],"Action/tool required")
+ assert(intent.modified==nil or type(intent.modified)=="boolean","Invalid modifier")
+ assert(intent.released==nil or type(intent.released)=="boolean","Invalid release")
+ local candidate="None"
+ if mode=="AutoTechnique" then candidate=context.techniqueInfusion or "None"
+ elseif mode=="Modifier" and intent.modified then candidate=context.selectedInfusion or "None"
+ elseif mode=="Contextual" and context.compatible==true then candidate=context.contextInfusion or "None"
+ elseif mode=="Loadout" then candidate=(context.loadout or {})[context.tool] or "None"
+ elseif mode=="HoldRelease" and intent.released and context.holdQualified==true then candidate=context.selectedInfusion or "None"
+ elseif mode=="CompatibleAuto" and context.compatible==true and context.availableProperty then candidate=context.propertyInfusion or "None" end
+ assert(candidate=="None" or cfg.Infusions[candidate],"Unknown proposed infusion")
+ local compatible=candidate=="None" or cfg.Objects[context.tool].infusions[candidate]==true
+ return {action=intent.action,mode=mode,candidate=candidate,compatible=compatible,infusion=if compatible then candidate else "None",requiresServerValidation=true,gameplayIntegration=false}
+end
+return P
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND29">
+        <Properties>
+          <string name="Name">ChakraRules</string>
+          <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
+local S=require(script.Parent.ProfileSchema)
+local V=require(script.Parent.ChakraVectors)
+local R={}
+local kinds={scaleStat=true,tag=true,signal=true,redirect=true,reflect=true,embed=true,anchor=true}
+local scopes={source=true,target=true,surface=true,context=true,mastery=true}
+local function number(n,max) return type(n)=="number" and n==n and n&gt;=0 and n&lt;=(max or 1000) end
+local function tags(cfg,list)
+ assert(type(list)=="table" and #list&lt;=64,"Tag list required")
+ for _,tag in list do assert(cfg.Tags[tag]==true,"Unknown tag: "..tostring(tag)) end
+end
+function R.validate(cfg)
+ assert(S.serializable(cfg) and type(cfg.Enabled)=="boolean","Unsafe interaction config")
+ for _,key in {"MaxObjects","MaxSurfaces","MaxEvents","MaxLife","MaxSpeed","MaxChakra"} do assert(S.integer(cfg[key],1000) and cfg[key]&gt;0,"Invalid limit") end
+ assert(cfg.MaxObjects&lt;=64 and cfg.MaxSurfaces&lt;=32 and cfg.MaxEvents&lt;=256 and cfg.MaxSpeed&lt;=1000,"Lab budget exceeded")
+ for id,value in cfg.Tags do assert(S.id(id) and value==true,"Invalid tag") end
+ for id,nature in cfg.Natures do assert(S.id(id) and cfg.Tags[nature.tag],"Invalid nature") end
+ for id,property in cfg.Properties do assert(S.id(id) and cfg.Tags[property.tag],"Invalid property");tags(cfg,property.requires) end
+ for id,enabled in cfg.MasterySkills do assert(S.id(id) and enabled==true,"Invalid mastery skill") end
+ for id,mastery in cfg.Masteries do
+  assert(S.id(id),"Invalid mastery");tags(cfg,mastery.tags)
+  for name,level in mastery.levels do assert(cfg.MasterySkills[name] and S.integer(level,100),"Invalid mastery level") end
+ end
+ assert(cfg.Masteries.Basic,"Basic mastery required")
+ for character,mastery in cfg.CharacterMastery do assert(S.id(character) and cfg.Masteries[mastery],"Invalid character mastery mapping") end
+ for id,def in cfg.Objects do
+  assert(S.id(id) and S.id(def.toolType) and type(def.canLaunch)=="boolean" and number(def.radius,3) and def.radius&gt;0,"Invalid tool");tags(cfg,def.tags)
+  assert(({kunai=true,shuriken=true,wire=true,target=true})[def.visual],"Unknown lab visual")
+  for infusion,enabled in def.infusions do assert(cfg.Infusions[infusion] and enabled==true,"Invalid tool infusion") end
+  for stat,n in def.stats do assert(S.id(stat) and number(n,cfg.MaxSpeed) and number(def.caps[stat],cfg.MaxSpeed) and def.caps[stat]&gt;=n,"Invalid stat cap") end
+ end
+ for id,def in cfg.Surfaces do assert(S.id(id) and V.valid(def.normal) and V.length(def.normal)&gt;0 and number(def.radius,30) and def.radius&gt;0,"Invalid surface");tags(cfg,def.tags) end
+ for id,def in cfg.Infusions do assert(S.id(id) and number(def.cost,cfg.MaxChakra) and (not def.nature or cfg.Natures[def.nature]),"Invalid infusion");tags(cfg,def.tags) end
+ local ids={}
+ for _,rule in cfg.Rules do
+  assert(S.id(rule.id) and not ids[rule.id] and cfg.Triggers[rule.trigger] and type(rule.enabled)=="boolean" and S.integer(rule.priority,1000),"Invalid interaction rule");ids[rule.id]=true
+  assert(not rule.group or S.id(rule.group),"Invalid exclusive group")
+  assert(not rule.cost or number(rule.cost,cfg.MaxChakra),"Invalid rule cost")
+  for scope,filter in rule.when do
+   if scope=="toolType" then assert(S.id(filter),"Invalid tool type")
+   elseif scope=="minMastery" then for name,level in filter do assert(cfg.MasterySkills[name] and S.integer(level,100),"Invalid mastery threshold") end
+   else assert(scopes[scope],"Unknown condition scope");for op,list in filter do assert(op=="all" or op=="any" or op=="none","Unknown tag filter");tags(cfg,list) end end
+  end
+  assert(#rule.effects&gt;0 and #rule.effects&lt;=16,"Invalid result count")
+  for _,effect in rule.effects do
+   assert(kinds[effect.kind],"Unknown result kind")
+   if effect.kind=="scaleStat" then
+    assert(S.id(effect.stat) and number(effect.factor,4) and effect.factor&gt;0,"Invalid stat result")
+    assert(not effect.mastery or cfg.MasterySkills[effect.mastery],"Invalid scaling mastery")
+    assert(not effect.perLevel or number(effect.perLevel,1),"Invalid mastery factor")
+    assert(not effect.maxFactor or number(effect.maxFactor,4) and effect.maxFactor&gt;0,"Invalid max factor")
+   elseif effect.kind=="signal" then assert(S.id(effect.name),"Invalid signal")
+   else
+    assert(effect.target=="source" or effect.target=="target" or (effect.kind=="tag" and effect.target=="surface"),"Invalid result target")
+    if effect.kind=="tag" then assert(cfg.Tags[effect.tag],"Invalid result tag") end
+    if effect.kind=="reflect" or effect.kind=="redirect" then assert(number(effect.speedScale,2) and effect.speedScale&gt;0,"Invalid velocity scale") end
+   end
+  end
+ end
+ return true
+end
+local function filter(tagsValue,spec)
+ tagsValue=tagsValue or {}
+ for _,tag in spec.all or {} do if not tagsValue[tag] then return false,"missing "..tag end end
+ if spec.any and #spec.any&gt;0 then local found=false;for _,tag in spec.any do found=found or tagsValue[tag]==true end;if not found then return false,"missing any tag" end end
+ for _,tag in spec.none or {} do if tagsValue[tag] then return false,"excluded "..tag end end
+ return true
+end
+function R.match(rule,event)
+ for _,scope in {"source","target","surface","context","mastery"} do
+  local spec=rule.when[scope]
+  if spec then local ok,why=filter(event[scope] and event[scope].tags,spec);if not ok then return false,scope..": "..why end end
+ end
+ if rule.when.toolType and event.source.toolType~=rule.when.toolType then return false,"toolType" end
+ for name,min in rule.when.minMastery or {} do if (event.mastery.levels[name] or 0)&lt;min then return false,"mastery "..name end end
+ return true
+end
+function R.plan(cfg,event,switches)
+ assert(cfg.Triggers[event.trigger],"Unknown trigger")
+ local ordered={};for _,rule in cfg.Rules do if rule.trigger==event.trigger then table.insert(ordered,rule) end end
+ table.sort(ordered,function(a,b) return if a.priority==b.priority then a.id&lt;b.id else a.priority&gt;b.priority end)
+ local selected={};local trace={};local used={}
+ for _,rule in ordered do
+  local enabled=rule.enabled;if switches[rule.id]~=nil then enabled=switches[rule.id] end
+  local matched,why=R.match(rule,event);local status
+  if not enabled then status="disabled" elseif not matched then status=why elseif rule.group and used[rule.group] then status="exclusive-group" else status="selected";table.insert(selected,rule);if rule.group then used[rule.group]=true end end
+  table.insert(trace,{rule=rule.id,status=status})
+ end
+ return selected,trace
+end
+return R
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND30">
+        <Properties>
+          <string name="Name">ChakraTuning</string>
+          <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
+-- MASTERY + CONTEXT -&gt; a modified action. Same format as Codex's prepared
+-- fixtures (7091585) and validated by ChakraRules at load; ChakraCombat is the
+-- only reader. Character ids only select a mastery profile: one interpreter,
+-- different identities. Stats are scales on the fighter's own ToolMastery
+-- (speed, range, damage) or absolute contest values (weight, impact, contest).
+local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxSpeed=400,MaxChakra=1000,
+	Triggers={Infuse=true,ProjectileClash=true,SurfaceHit=true,Contact=true,PointContact=true,WireContact=true,WireCross=true},
+	Tags={tool=true,projectile=true,metal=true,blade=true,wire=true,sand=true,body=true,volume=true,actor=true,
+		solid=true,wall=true,floor=true,anchorCompatible=true,
+		chakra=true,reinforced=true,cutting=true,conductive=true,ignited=true,shockPoint=true,charged=true,
+		wind=true,fire=true,lightning=true,earth=true,marked=true,
+		guarding=true,bound=true,wired=true,airborne=true,holdingWire=true,
+		clean=true,guarded=true,heavier=true,even=true,natureAdvantage=true,plain=true,owner=true,opponent=true,grounded=true,own=true},
+	Natures={Wind={tag="wind"},Fire={tag="fire"},Lightning={tag="lightning"},Earth={tag="earth"}},
+	-- Elemental precedence between natured objects (fire feeds on wind, wind
+	-- cuts lightning, lightning breaks earth). Anything else is decided by weight.
+	Beats={Fire="Wind",Wind="Lightning",Lightning="Earth"},
+	Properties={Marked={tag="marked",requires={"tool"}}},
+	MasterySkills={Wind=true,Fire=true,Lightning=true,GentleFist=true,Seal=true},
+	Masteries={
+		Basic={tags={},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}},
+		-- Minato: wind through the kunai, seals in the hand.
+		WindBlade={tags={"wind"},levels={Wind=3,Fire=0,Lightning=0,GentleFist=0,Seal=3}},
+		-- Itachi: Katon carried by precise shuriken.
+		FireBlade={tags={"fire"},levels={Wind=0,Fire=3,Lightning=0,GentleFist=0,Seal=0}},
+		-- Neji: chakra goes through the body, never into a thrown blade.
+		GentleFist={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=3,Seal=0}},
+		-- Sasuke: lightning in steel and wire (fire stays in his jutsu).
+		LightningWire={tags={"lightning","wire"},levels={Wind=0,Fire=2,Lightning=3,GentleFist=0,Seal=0}},
+	},
+	CharacterMastery={Flashstep="WindBlade",Mirage="FireBlade",GentleFist="GentleFist",Lion="LightningWire",Sand="Basic"},
+	-- What the chakra modifier pours into each tool, per mastery (Basic: plain
+	-- reinforcement). A body mastery turns the tool action into a palm.
+	Preferred={
+		Basic={Kunai="Reinforce",Shuriken="Reinforce",Sand="Reinforce",Palm="GentleFist"},
+		WindBlade={Kunai="Wind",Shuriken="Wind"},
+		FireBlade={Shuriken="Fire",Kunai="Fire"},
+		GentleFist={Palm="GentleFist"},
+		LightningWire={Shuriken="Lightning",Kunai="Lightning"},
+	},
+	BodyTool={GentleFist="Palm"},
+	-- Projectile kinds as interaction objects. Volumes are jutsu bodies: they
+	-- take part in clashes with their real radius.
+	ObjectOf={kunai="Kunai",marked="Marked",shuriken="Shuriken",wire="Wire",sand="Sand",
+		fireball="Fireball",phoenix="Phoenix",palm="VacuumPalm",wind="WindCut",sandwave="SandWave"},
+	Objects={},Surfaces={},Infusions={},Rules={},
+}
+local O=T.Objects
+local function tool(toolType,tags,infusions,weight,impact,contest,visual)
+	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,
+		stats={speed=1,range=1,damage=1,weight=weight,impact=impact},
+		caps={speed=2,range=2,damage=2,weight=8,impact=4},radius=contest,visual=visual}
+end
+local steel={Reinforce=true,Wind=true,Fire=true,Lightning=true}
+O.Kunai=tool("Kunai",{"tool","projectile","metal","blade"},steel,2,1,.45,"kunai")
+O.Marked=tool("Kunai",{"tool","projectile","metal","blade","marked"},{},2,1,.45,"kunai")
+O.Shuriken=tool("Shuriken",{"tool","projectile","metal","blade"},steel,1.5,.6,.5,"shuriken")
+O.Wire=tool("Wire",{"tool","projectile","metal","wire"},{},1.5,.5,.5,"wire")
+O.Sand=tool("Sand",{"tool","projectile","sand","earth"},{Reinforce=true},2,1,.6,"target")
+O.Palm={toolType="Palm",tags={"body"},canLaunch=false,infusions={GentleFist=true},stats={damage=1,weight=6,impact=1},caps={damage=2,weight=8,impact=4},radius=1,visual="target"}
+local function volume(tags,weight)
+	return {toolType="Volume",tags=tags,canLaunch=true,infusions={},stats={weight=weight},caps={weight=8},radius=1,visual="target"}
+end
+O.Fireball=volume({"projectile","volume","fire"},6)
+O.Phoenix=volume({"projectile","volume","fire"},2.5)
+O.VacuumPalm=volume({"projectile","volume","body"},5)
+O.WindCut=volume({"projectile","volume","wind","cutting"},4)
+O.SandWave=volume({"projectile","volume","sand","earth"},6)
+T.Surfaces.Wall={tags={"solid","wall","anchorCompatible"},normal={x=-1,y=0,z=0},radius=8}
+T.Surfaces.Floor={tags={"solid","floor","anchorCompatible"},normal={x=0,y=1,z=0},radius=8}
+-- Every chakra blade is reinforced steel; a mastered nature adds its own rule.
+T.Infusions.Reinforce={tags={"chakra","reinforced"},cost=6}
+T.Infusions.Wind={nature="Wind",tags={"chakra","reinforced","cutting"},cost=8}
+T.Infusions.Fire={nature="Fire",tags={"chakra","reinforced"},cost=8}
+T.Infusions.Lightning={nature="Lightning",tags={"chakra","reinforced","conductive"},cost=8}
+T.Infusions.GentleFist={tags={"chakra","body"},cost=10}
+-- Magnitudes of the signals the rules select (read by ChakraCombat only).
+T.Effects={
+	toolCost=true, -- a thrown chakra tool also pays the plain throw cost (free in a string cancel)
+	contestBonus=.45, -- a chakra blade meets other projectiles from further away
+	hitRadius=.25, -- and connects with a body through a small sphere ("stronger contact")
+	guardCrush={stamina=14,push=1.1,stun=.45},
+	shock={stun=.38,damage=1},
+	wireSurge={damage=3,bind=.45},
+	ignite={radius=2.2,duration=1.0,damage=3},
+	burnPoint={radius=2.6,duration=2.0,damage=4},
+	gust={push=20,lift=6,chase=.6},
+	plant={life=5,max=4,refund=4,radius=2.4,height=4.5,settle=.5,contest=.9},
+	shockPoint={stun=.4,damage=3},
+	palm={damage=.6,travel=2.2,reach=8.5,cone=.3,drain=8,stamina=18,points=1,push=1.6},
+	conduct={damage=5,bind=.4,maxBind=2.2,uses=2},
+	tripwire={life=6,radius=2.7,shock=4,bind=.4,charge=4,burn=1.4,patch=4},
+	feed={damage=1.5},
+}
+local function rule(id,trigger,priority,when,effects,extra)
+	local r={id=id,enabled=true,priority=priority,trigger=trigger,when=when,effects=effects}
+	for k,v in extra or {} do r[k]=v end
+	table.insert(T.Rules,r)
+end
+local function scale(stat,factor,extra)
+	local e={kind="scaleStat",stat=stat,factor=factor}
+	for k,v in extra or {} do e[k]=v end
+	return e
+end
+local function signal(name) return {kind="signal",name=name} end
+-- Infuse: how the chakra changes the object itself (stats are scales).
+rule("reinforced-steel","Infuse",20,{source={all={"tool","reinforced"}}},
+	{scale("weight",2),scale("impact",1.8),scale("range",1.15),scale("damage",1.25)})
+rule("wind-blade","Infuse",30,{source={all={"blade","wind"}}},
+	{scale("speed",1.3,{mastery="Wind",perLevel=.05,maxFactor=1.5}),scale("range",1.5),scale("weight",.8)})
+rule("fire-blade","Infuse",30,{source={all={"blade","fire"}}},
+	{scale("speed",1.05),{kind="tag",tag="ignited",target="source"}})
+rule("lightning-steel","Infuse",30,{source={all={"metal","lightning"}}},
+	{scale("speed",1.1),{kind="tag",tag="conductive",target="source"}})
+rule("sand-reinforced","Infuse",30,{source={all={"sand","reinforced"}}},{scale("weight",1.2)})
+-- With the wire still on a bound opponent, Sasuke's lightning runs down it.
+rule("lightning-down-the-wire","Infuse",60,{source={all={"lightning"}},context={all={"holdingWire"}}},{signal("conduct-wire")})
+rule("gentle-palm","Infuse",40,{source={all={"body","chakra"}}},{signal("chakra-palm")})
+-- ProjectileClash: one exclusive outcome per meeting, from the dominant side.
+rule("plain-pass","ProjectileClash",100,{context={all={"plain"}}},{signal("clash-pass")},{group="clash"})
+-- Two jutsu never cancel each other: matchups between techniques stay as they are.
+rule("volumes-pass","ProjectileClash",99,{source={all={"volume"}},target={all={"volume"}}},{signal("clash-pass")},{group="clash"})
+rule("fire-feeds-on-wind","ProjectileClash",95,{source={all={"fire"}},target={all={"wind"}},context={all={"natureAdvantage"}}},{signal("clash-absorb")},{group="clash"})
+rule("element-overpowers","ProjectileClash",90,{context={all={"natureAdvantage"}}},{signal("clash-pierce")},{group="clash"})
+-- Neji's chakra palm swats the blades in front of it (it never meets a jutsu).
+rule("palm-swats-blades","ProjectileClash",85,{source={all={"body","chakra"}},target={all={"tool"}}},{signal("clash-swat")},{group="clash"})
+rule("volume-swallows-tool","ProjectileClash",80,{source={all={"volume"}},target={all={"tool"}}},{signal("clash-swallow")},{group="clash"})
+-- A reinforced blade heavier than a small flame (Phoenix Flower) goes through it.
+rule("heavy-steel-pierces-flame","ProjectileClash",78,{source={all={"tool","reinforced"}},target={all={"volume"}},context={all={"heavier"}}},{signal("clash-pierce")},{group="clash"})
+rule("wind-cuts-the-lane","ProjectileClash",70,{source={all={"cutting","tool"}},target={all={"tool"}},context={any={"heavier","even"}}},{signal("clash-pierce")},{group="clash"})
+rule("heavier-deflects","ProjectileClash",50,{context={all={"heavier"}}},{signal("clash-deflect")},{group="clash"})
+rule("even-intercept","ProjectileClash",10,{},{signal("clash-intercept")},{group="clash"})
+-- Contact: what the infused object does to the body it reaches.
+rule("reinforced-guard-crush","Contact",50,{source={all={"reinforced"}},target={all={"guarding"}}},{signal("guard-crush")})
+rule("lightning-wire-surge","Contact",45,{source={all={"lightning"}},target={all={"wired"}}},{signal("wire-surge")})
+rule("lightning-shock","Contact",40,{source={all={"lightning"}},context={all={"clean"}}},{signal("shock")})
+rule("fire-ignites","Contact",40,{source={all={"fire","tool"}},context={all={"clean"}}},{signal("ignite")})
+rule("wind-gust","Contact",40,{source={all={"wind","tool"}},context={all={"clean"}}},{signal("gust")})
+rule("gentle-palm-through-guard","Contact",50,{source={all={"body","chakra"}},target={all={"guarding"}}},{signal("palm-through-guard")})
+rule("gentle-palm-point","Contact",40,{source={all={"body","chakra"}},context={all={"clean"}}},{signal("palm-point")})
+-- SurfaceHit: a chakra blade stays planted; natures leave their mark.
+rule("chakra-blade-plants","SurfaceHit",50,{source={all={"chakra","blade"}},surface={all={"anchorCompatible"}}},{{kind="embed",target="source"}})
+rule("lightning-shock-point","SurfaceHit",45,{source={all={"lightning","blade"}}},{{kind="tag",tag="shockPoint",target="source"}})
+rule("fire-burn-point","SurfaceHit",40,{source={all={"fire","tool"}}},{signal("burn-point")})
+rule("wire-stretches","SurfaceHit",60,{source={all={"wire"}},surface={all={"anchorCompatible"}}},{signal("wire-stretch")})
+-- PointContact: a planted chakra blade is a contestable point.
+rule("owner-recovers","PointContact",50,{context={all={"owner","grounded"}}},{signal("point-recover")},{group="point"})
+rule("shock-point-trap","PointContact",60,{source={all={"shockPoint"}},context={all={"opponent","grounded"}}},{signal("point-shock")},{group="point"})
+rule("opponent-tramples","PointContact",10,{context={all={"opponent","grounded"}}},{signal("point-deny")},{group="point"})
+-- Wire: a stretched wire binds on contact, carries fire, conducts lightning.
+rule("tripwire-binds","WireContact",50,{context={all={"opponent","grounded"}}},{signal("tripwire-bind")})
+rule("charged-wire-shocks","WireContact",60,{source={all={"charged"}},context={all={"opponent","grounded"}}},{signal("tripwire-shock")})
+rule("fire-runs-the-wire","WireCross",60,{source={all={"fire"}}},{signal("wire-burn")},{group="wire"})
+rule("lightning-charges-wire","WireCross",50,{source={all={"lightning"}},context={all={"own"}}},{signal("wire-charge")},{group="wire"})
+rule("wind-cuts-wire","WireCross",40,{source={all={"cutting"}}},{signal("wire-cut")},{group="wire"})
+return T
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND31">
+        <Properties>
+          <string name="Name">ChakraVectors</string>
+          <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
+local V={}
+function V.valid(v) return type(v)=="table" and type(v.x)=="number" and type(v.y)=="number" and type(v.z)=="number" and v.x==v.x and v.y==v.y and v.z==v.z and math.max(math.abs(v.x),math.abs(v.y),math.abs(v.z))&lt;=100000 end
+function V.new(x,y,z) return {x=x or 0,y=y or 0,z=z or 0} end
+function V.add(a,b) return V.new(a.x+b.x,a.y+b.y,a.z+b.z) end
+function V.sub(a,b) return V.new(a.x-b.x,a.y-b.y,a.z-b.z) end
+function V.mul(a,n) return V.new(a.x*n,a.y*n,a.z*n) end
+function V.dot(a,b) return a.x*b.x+a.y*b.y+a.z*b.z end
+function V.length(a) return math.sqrt(V.dot(a,a)) end
+function V.unit(a) local length=V.length(a);assert(length&gt;1e-8,"Zero direction");return V.mul(a,1/length) end
+function V.reflect(a,n) n=V.unit(n);return V.sub(a,V.mul(n,2*V.dot(a,n))) end
+-- Swept relative spheres catch fast projectiles that cross between ticks.
+function V.sweep(a,da,b,db,radius)
+ local p=V.sub(a,b);local d=V.sub(da,db);local c=V.dot(p,p)-radius*radius
+ if c&lt;=0 then return 0 end
+ local aa=V.dot(d,d);if aa&lt;1e-10 then return nil end
+ local bb=2*V.dot(p,d);local disc=bb*bb-4*aa*c;if disc&lt;0 then return nil end
+ local t=(-bb-math.sqrt(disc))/(2*aa);return if t&gt;=0 and t&lt;=1 then t else nil
+end
+return V
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND32">
+        <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
 local Config = require(Shared.Config)
@@ -3560,6 +4685,9 @@ function Combat:arrivalThrow(a)
 	Brawler.event(self,a,"ArrivalThrow")
 	return true
 end
+-- Chakra infusion and projectile interactions (ChakraCombat over the rules
+-- Codex prepared): infused throws, meetings in flight, planted points, wire.
+local Chakra=require(script.Parent.ChakraCombat)
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -3578,6 +4706,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
+	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
+	-- and what it does on contact; without one the throw is the plain one.
+	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -3855,7 +4986,7 @@ function Combat:wallTech(a)
 	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
 	return true
 end
-function Combat:request(a,action,aim,clientTime)
+function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
 	if self.match.introUntil and self.now&lt;self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
@@ -3940,15 +5071,31 @@ function Combat:request(a,action,aim,clientTime)
 		end
 		local graph=Brawler.graph(a) or {}
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now&gt;=(a.chainAt or 0)
-		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
+		-- Chakra modifier held (keyboard Z + R, pad R1 + R2). With the wire still on
+		-- a bound body, the current may leave the jutsu recovery, like Dragon Flame.
+		local chakra=opts~=nil and opts.chakra==true
+		local wired=chakra and a.state=="TechniqueRecovery" and a.wireVictim~=nil and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
+		if (not chainCancel and not wired and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
+		-- The fighter's mastery decides what the chakra does to this tool (server
+		-- side only); a reserve that cannot pay refuses with a visible fizzle.
+		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
+		local infused=nil
+		if chakra then
+			local why
+			infused,why=Chakra.plan(self,a,if a.def.Tool=="Sand" then "Sand" elseif mastery.Kind=="kunai" then "Kunai" else "Shuriken")
+			if not infused then Chakra.refuse(self,a);return false,why end
+			if wired and infused.mode~="conduct" then return false,"Tool recovering" end
+			if a.chakra&lt;Chakra.cost(infused,chainCancel) then Chakra.refuse(self,a);return false,"Need chakra" end
+		end
 		-- A neutral throw costs a little chakra so blades pressure, not spam;
 		-- the throw that cancels a confirmed string stays free.
-		if not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
-		if not chainCancel then a.chakra-=Config.ToolCost end
+		if not infused and not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+		if infused then a.chakra-=Chakra.cost(infused,chainCancel) elseif not chainCancel then a.chakra-=Config.ToolCost end
+		if wired then a.pending=nil;self:setState(a,"Neutral",0) end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
 		local disengage=graph.disengage
-		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
 		end
@@ -3956,15 +5103,23 @@ function Combat:request(a,action,aim,clientTime)
 		-- Throwing lowers the guard: a blade never leaves a fully blocking body.
 		if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
 		if a.wall then Motor.detach(a,self.now,false) end
+		-- Chakra without a throw: down the wire (Sasuke) or through the palm (Neji).
+		if infused and infused.mode=="conduct" then
+			a.neutralToolAt=self.now+.35
+			return Chakra.conduct(self,a,infused)
+		end
+		if infused and infused.mode=="body" then
+			a.neutralToolAt=self.now+mastery.Recover
+			return Chakra.palm(self,a,infused)
+		end
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
 			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
-				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
+				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6,chakra=infused})
 			end})
-			self:cue(a,"SAND BULLET",.5)
+			self:cue(a,if infused then Chakra.label(infused) else "SAND BULLET",.5)
 			return true
 		end
-		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
 		local blade=mastery.Kind=="kunai"
 		a.neutralToolAt=self.now+(if chainCancel then .42 else mastery.Recover)
 		local range=if chainCancel then 20 else 62
@@ -3972,7 +5127,7 @@ function Combat:request(a,action,aim,clientTime)
 		-- second that strikes it beside the opponent; both fly into the flank.
 		local dir,sideSign=Brawler.intent(a)
 		if mastery.Geometry and dir=="side" and not chainCancel and a.target and a.target.health&gt;0 then
-			return self:shurikenGeometry(a,sideSign)
+			return self:shurikenGeometry(a,sideSign,infused)
 		end
 		-- In the air a master fans several blades down at the opponent.
 		local count=if a.airborne and mastery.AirSpread then mastery.AirSpread else mastery.Count
@@ -3981,9 +5136,9 @@ function Combat:request(a,action,aim,clientTime)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count&gt;1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count&gt;2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken")
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused})
 			end})
-		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if infused then Chakra.label(infused) elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -&gt; technique: Minato may spend a confirmed string on Rasengan with
@@ -4495,6 +5650,13 @@ function Combat:projectileHit(p,target,position,normal)
 	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
+	-- Infused objects add their own consequence (guard crush, shock, ignition,
+	-- gust, current through a wire) once the defence has resolved.
+	if p.chakra then
+		if entry and entry.projectile==p.id then entry.infusion=p.infusion end
+		Chakra.contact(self,p,target,damaged)
+		if self.match.phase~="Duel" then return end
+	end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
@@ -4534,28 +5696,38 @@ function Combat:projectileHit(p,target,position,normal)
 end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
-	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
-	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
-	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
-	if self.match.phase~="Duel" then return end
-	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
 	local mastery=p.a.def.ToolMastery
 	local target=p.a.target
+	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
+	local bounceFrom=nil
 	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)&lt;.7
 		and target and target.health&gt;0 and (target.root.Position-hit.Position).Magnitude&lt;36 then
 		local from=hit.Position+hit.Normal*.8
 		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
-		if not clear or clear.Instance:IsDescendantOf(target.model) then
-			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
-			bounce.bounced=true
-			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
-			Brawler.event(self,p.a,"Ricochet")
-		end
+		if not clear or clear.Instance:IsDescendantOf(target.model) then bounceFrom=from end
+	end
+	-- A chakra blade stays planted (a contestable point), a fire blade leaves a
+	-- burning point, a missed wire stays stretched: decided before the impact
+	-- so the client draws the object that stays instead of a plain stuck blade.
+	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
+	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
+	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
+	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
+	if self.match.phase~="Duel" then return end
+	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+	if bounceFrom then
+		local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=bounceFrom})
+		bounce.bounced=true
+		-- An infused blade keeps its chakra through the bounce (no second scaling).
+		Chakra.inherit(bounce,p)
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		Brawler.event(self,p.a,"Ricochet")
 	end
 end
 -- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second
 -- thrown to strike it beside them; the collision sends both into the flank.
-function Combat:shurikenGeometry(a,sideSign)
+function Combat:shurikenGeometry(a,sideSign,infused)
 	local b=a.target
 	local start=Combat.launchPoint(a,"Shuriken")
 	local toward=Vector3.new(b.root.Position.X-start.X,0,b.root.Position.Z-start.Z)
@@ -4574,7 +5746,7 @@ function Combat:shurikenGeometry(a,sideSign)
 		-- The second blade is thrown later and faster: both reach the point together.
 		local speed=if index==1 then 70 else math.max(70,gap/math.max(.08,arrive-.1))
 		local p=self:projectile(a,meet,speed,gap,0,"shuriken",nil,{origin=from})
-		p.geometry=index==1 and {meet=meet}
+		p.geometry=index==1 and {meet=meet,chakra=infused}
 	end})
 	self:cue(a,"SHURIKEN GEOMETRY",.7)
 	Brawler.event(self,a,"Geometry")
@@ -4586,7 +5758,7 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
-			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position})
+			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})
 			redirected.bounced=true
 		end
 		Brawler.event(self,p.a,"GeometryHit")
@@ -4601,6 +5773,8 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		return
 	end
+	-- A chakra blade (or a wire) at the end of its flight drops and stays there.
+	if Chakra.expire(self,p) then return end
 	-- A marked kunai that reaches the end of its flight drops to the ground and
 	-- still plants its seal there: a long throw is a long-range anchor.
 	if p.kind=="marked" and p.onSurface then
@@ -4614,9 +5788,21 @@ function Combat:projectileExpire(p)
 	self:pushImpact(p.position,"fade",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
 end
 function Combat:updateProjectiles(dt)
+	-- Meetings in flight, planted points and stretched wires (ChakraCombat).
+	Chakra.step(self,dt)
+	if self.match.phase~="Duel" then return end
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if not p or self.match.phase~="Duel" then return end
+		-- Removed by a meeting, or planted: never moved here. A projectile without
+		-- speed (a reflection of something planted) cannot fly either.
+		if p.dead or p.planted or (p.speed or 0)&lt;=0 then
+			if p.dead or not p.planted then
+				local index=table.find(self.projectiles,p)
+				if index then table.remove(self.projectiles,index) end
+			end
+			continue
+		end
 		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
@@ -4735,7 +5921,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -4805,7 +5991,7 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -5018,7 +6204,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -5060,11 +6246,12 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
 -- equipped in this slice; the other families reserve explicit behavior seams.
+local Chakra=require(script.Parent.ChakraCombat)
 local Elements={
 	Families={
 		Fire={primitive="TravellingBlast",counter="Sidestep the fireball, then punish the recovery"},
@@ -5120,7 +6307,9 @@ function Elements.phoenix(c,a,pending,now)
 				if spec.WiredBlades then
 					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
 				else
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+					-- Blades hidden in the flames come out burning: they ignite what they
+					-- touch and leave a burning point where they land (ChakraCombat).
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
 				end
 			end)
 		end
@@ -5138,7 +6327,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND32">
+      <Item class="Script" referent="ND37">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -5167,7 +6356,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -5389,7 +6578,9 @@ function Matches:view(s,cursor,mine,theirs)
 	-- exactly on the shared server clock, so blades and fire never stutter.
 	local projectiles={}
 	for _,p in s.combat.projectiles do
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth})
+		-- infusion: the chakra nature it carries (nil: a plain object); planted:
+		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
@@ -5463,6 +6654,9 @@ function Matches:act(s,actor,payload,clock)
  -- directional routes/dodges atomic with the button press, without granting
  -- the client authority over a route, state, cooldown or hit.
  if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;.01) then return end
+ -- The chakra modifier is one boolean held with the action; what it does is
+ -- decided by the server (the fighter's mastery), never by the client.
+ if payload.chakra~=nil and type(payload.chakra)~="boolean" then return end
  local aim=nil
 	if payload.aim~=nil then
 		if not vector(payload.aim) or (payload.aim-actor.root.Position).Magnitude&gt;150 then return end
@@ -5475,7 +6669,7 @@ function Matches:act(s,actor,payload,clock)
  -- The held guard key is an intent that outlives a refused press (Combat
  -- re-raises it once free). Only players send it; the AI guards per tick.
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
- local ok,reason=s.combat:request(actor,action,aim,payload.clientTime)
+ local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
@@ -5510,7 +6704,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -5762,7 +6956,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -6100,7 +7294,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -6365,7 +7559,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6841,7 +8035,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -7052,7 +8246,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -7255,7 +8449,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -7744,7 +8938,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -8057,7 +9251,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -8454,6 +9648,9 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	end
 	Brawler.react(c,victim,"Bound",Vector3.zero,duration,owner)
 	victim.boundBy=owner;owner.wireVictim=victim
+	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
+	-- (ChakraCombat.conduct), bounded from the moment the bind started.
+	victim.boundAt=c.now;victim.wireConducts=0
 	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
@@ -8643,7 +9840,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -8743,7 +9940,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -8771,7 +9968,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -8836,7 +10033,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -8887,7 +10084,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -9611,21 +10808,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND48">
+  <Item class="StarterPlayer" referent="ND53">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND49">
+    <Item class="StarterPlayerScripts" referent="ND54">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND50">
+      <Item class="Folder" referent="ND55">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND51">
+        <Item class="ModuleScript" referent="ND56">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -9902,7 +11099,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND52">
+        <Item class="LocalScript" referent="ND57">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -9936,7 +11133,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND53">
+        <Item class="ModuleScript" referent="ND58">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -10198,12 +11395,24 @@ function FX:sync(data)
 	for _,p in data.projectiles or {} do
 		live[p.id]=true
 		local entry=self.projectiles[p.id]
-		if not entry then
+		if not entry and p.planted then
+			-- A chakra blade planted in a surface, or a stretched wire: drawn once
+			-- where it rests (ChakraCombat points); an unknown kind is skipped.
+			local ok,built=pcall(self.planted,self,p)
+			if ok and built then self.projectiles[p.id]=built end
+			entry=self.projectiles[p.id]
+			if not entry then continue end
+		elseif not entry then
 			local build=BUILD[p.kind] or BUILD.kunai
 			local model=build()
 			model.Parent=self.folder
 			local root=model.PrimaryPart
-			if p.kind=="kunai" or p.kind=="marked" then
+			-- Chakra infusion: the object itself looks reinforced / windy / burning /
+			-- charged (decorations only; the flight is the server's).
+			local decor=p.infusion and select(2,pcall(self.infuse,self,model,root,p.infusion,p.kind))
+			if p.infusion then
+				-- the infusion owns the trail
+			elseif p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
 			elseif p.kind=="shuriken" or p.kind=="wire" then
 				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
@@ -10219,7 +11428,7 @@ function FX:sync(data)
 					Debris:AddItem(a0,1.2)
 				end
 			end
-			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true}
+			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true,decor=if type(decor)=="table" then decor else nil}
 			self.projectiles[p.id]=entry
 			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
 			if p.kind=="fireball" then
@@ -10245,7 +11454,7 @@ function FX:finishProjectile(id)
 	local root=entry.root
 	-- Let a trail finish fading instead of cutting it.
 	for _,d in entry.model:GetDescendants() do
-		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
+		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
 	end
 	Debris:AddItem(entry.model,.6)
 	return entry,root
@@ -10259,15 +11468,27 @@ function FX:stepProjectiles(dt)
 			self:finishProjectile(id)
 			continue
 		end
+		if entry.static then
+			pcall(self.restStep,self,entry)
+			continue
+		end
 		local hidden=age&lt;0
 		if hidden~=entry.hidden then
 			entry.hidden=hidden
 			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
+			if entry.decor then for _,e in entry.decor.emitters do e.Enabled=not hidden end end
 		end
-		local travel=math.clamp(age,0,p.range/p.speed)*p.speed
+		if entry.decor and entry.decor.light then
+			local look=entry.decor.look
+			entry.decor.light.Brightness=if look.spark then look.light*(.4+math.random()*1.2) else look.light*(.85+math.sin(os.clock()*18)*.15)
+		end
+		local travel=if (p.speed or 0)&lt;=0 then 0 else math.clamp(age,0,p.range/p.speed)*p.speed
 		local position=p.origin+p.direction*travel
 		local look=CFrame.lookAt(position,position+p.direction)
 		local cf
+		if entry.decor and entry.decor.ring then
+			entry.decor.ring.CFrame=look*CFrame.Angles(0,0,os.clock()*20)*CFrame.Angles(0,math.pi/2,0)
+		end
 		if p.kind=="kunai" or p.kind=="marked" then
 			-- Point first, with a slow roll so the blade catches the light.
 			entry.spin+=dt*14
@@ -10398,11 +11619,12 @@ function FX:impact(impact,folder)
 	local style=impact.style
 	local position=impact.position
 	if not position then return end
+	if impact.other then self:finishProjectile(impact.other) end
 	if impact.projectile then
 		local entry=self.projectiles[impact.projectile]
 		local direction=impact.direction or (entry and entry.data.direction) or Vector3.zAxis
 		if entry then self:finishProjectile(impact.projectile) end
-		if style=="stick" and (impact.kind=="kunai" or impact.kind=="marked" or impact.kind=="shuriken") then
+		if style=="stick" and not impact.chakra and (impact.kind=="kunai" or impact.kind=="marked" or impact.kind=="shuriken") then
 			self:stick(impact.kind,position,impact.normal or Vector3.yAxis,direction,impact.owner)
 		end
 	end
@@ -10536,6 +11758,9 @@ function FX:impact(impact,folder)
 		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
 		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
 	end
+	-- Chakra interactions (infusion contacts, meetings in flight, planted
+	-- points, wire). Presentation only, and never allowed to break the feed.
+	if impact.chakra then pcall(self.chakraImpact,self,impact,folder) end
 end
 -- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
 function FX:trigram(position)
@@ -10645,6 +11870,240 @@ function FX:substitute(position,to,fighter,model)
 	sound(anchorPart(self.folder,position),SOUND.whoosh,.4,.9)
 end
 
+-- ------------------------------------------------------------------ chakra
+-- What an infusion looks like on the object, read from the snapshot's
+-- `infusion` (ChakraCombat). Unknown natures fall back to plain reinforcement.
+local INFUSION={
+	Reinforce={color=Color3.fromRGB(150,205,255),core=Color3.fromRGB(232,246,255),light=2.6,trail=.2,width=1.8},
+	Wind={color=Color3.fromRGB(150,255,214),core=Color3.fromRGB(232,255,246),light=2.2,trail=.36,width=2.8,ring=true},
+	Fire={color=Color3.fromRGB(255,128,44),core=Color3.fromRGB(255,226,150),light=4,trail=.24,width=2,flame=true},
+	Lightning={color=Color3.fromRGB(140,186,255),core=Color3.fromRGB(236,244,255),light=4,trail=.13,width=1.6,spark=true},
+	GentleFist={color=HYUGA,core=Color3.fromRGB(236,242,255),light=2.6,trail=.14,width=1.4},
+}
+FX.Infusion=INFUSION
+local function lookOf(infusion) return INFUSION[infusion or ""] or INFUSION.Reinforce end
+-- Decorate a projectile model: a chakra sheath around the steel, a coloured
+-- trail sized by the nature, a light, flames or sparks, a wind ring.
+function FX:infuse(model,root,infusion,kind,planted)
+	local look=lookOf(infusion)
+	local decor={look=look,emitters={}}
+	local flatBlade=kind=="shuriken" or kind=="wire"
+	-- A translucent chakra sheath: a disc round a shuriken, a sleeve along a kunai.
+	local sheath=if flatBlade then block(model,Vector3.new(.2,1.05,1.05),root.CFrame*CFrame.Angles(0,0,math.pi/2),look.color,Enum.Material.Neon)
+		else block(model,Vector3.new(1.35,.34,.34),root.CFrame*CFrame.new(0,0,-.25)*CFrame.Angles(0,math.pi/2,0),look.color,Enum.Material.Neon)
+	sheath.Shape=Enum.PartType.Cylinder;sheath.Transparency=.55;sheath.Name="ChakraSheath"
+	weldAll(root,{sheath})
+	if not planted then
+		if flatBlade then addTrail(root,Vector3.new(-.5,0,0),Vector3.new(.5,0,0),look.color,look.trail,.3,look.width)
+		else addTrail(root,Vector3.new(0,.12,.25),Vector3.new(0,-.12,.25),look.color,look.trail,.3,look.width) end
+	end
+	decor.light=new("PointLight",{Color=look.color,Brightness=look.light,Range=if planted then 7 else 10,Shadows=false},root)
+	local at=new("Attachment",{},root)
+	if look.flame then
+		table.insert(decor.emitters,emitter(at,{Name="ChakraFlame",Enabled=false,Texture=TEX.fire,Rate=70,Lifetime=NumberRange.new(.12,.26),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(40,40),
+			Color=seq({{0,Color3.fromRGB(255,232,150)},{.5,look.color},{1,Color3.fromRGB(120,30,10)}}),LightEmission=1,Size=num({{0,.9},{1,.2}}),Transparency=num({{0,.2},{1,1}})}))
+	elseif look.spark then
+		table.insert(decor.emitters,emitter(at,{Name="ChakraSpark",Enabled=false,Texture=TEX.spark,Rate=90,Lifetime=NumberRange.new(.05,.12),Speed=NumberRange.new(3,9),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(look.core),LightEmission=1,Size=num({{0,.7},{1,0}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400)}))
+	end
+	if look.ring and not planted then
+		-- The wind blade cuts with a thin spinning ring around its line.
+		local ring=block(self.folder,Vector3.new(.06,1.5,1.5),root.CFrame,look.core,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.45;ring.Name="WindRing";ring.Parent=model
+		decor.ring=ring
+	end
+	if planted then for _,e in decor.emitters do e.Enabled=true end end
+	return decor
+end
+-- A planted chakra blade (kind "point") or a stretched wire (kind
+-- "tripwire"): built once where it rests.
+function FX:planted(p)
+	local tool=p.planted
+	local origin=p.origin
+	if tool=="wire" then
+		local far=origin+p.direction*(p.range or 0)
+		local model=new("Model",{Name="Tripwire"},self.folder)
+		local root=block(model,Vector3.new(.15,.15,.15),CFrame.new(origin),STEEL,Enum.Material.Metal);root.Name="Root"
+		local tip=block(model,Vector3.new(.15,.15,.15),CFrame.new(far),STEEL,Enum.Material.Metal);tip.Transparency=1
+		local stake=FX.buildKunai(false);stake.Parent=model
+		stake:PivotTo(CFrame.lookAt(origin+Vector3.new(0,.35,0),origin-Vector3.new(0,1,0)))
+		local blade=FX.buildShuriken();blade.Parent=model
+		blade:PivotTo(CFrame.lookAt(far,far+p.direction)*CFrame.Angles(math.rad(80),0,0))
+		local a0=new("Attachment",{},root);local a1=new("Attachment",{},tip)
+		local beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.1,Width1=.1,Color=ColorSequence.new(Color3.fromRGB(226,230,238)),LightEmission=.6,FaceCamera=true,Segments=2},root)
+		local light=new("PointLight",{Color=INFUSION.Lightning.color,Brightness=0,Range=8,Shadows=false},tip)
+		model.PrimaryPart=root
+		sparks(self.folder,far,Color3.fromRGB(255,236,200),6,10)
+		return {data=p,model=model,root=root,static=true,hidden=false,beam=beam,light=light,wire=true,born=os.clock()}
+	end
+	local model=if tool=="shuriken" then FX.buildShuriken() elseif tool=="kunai" or tool=="marked" then FX.buildKunai(tool=="marked") else nil
+	if not model then return nil end
+	model.Parent=self.folder
+	local root=model.PrimaryPart
+	local into=p.direction
+	local depth=if tool=="shuriken" then .25 else .45
+	local cf=CFrame.lookAt(origin-into*depth,origin-into*depth+into)
+	if tool=="shuriken" then cf=cf*CFrame.Angles(math.rad(80),0,0) end
+	root.CFrame=cf
+	local decor=if p.infusion then self:infuse(model,root,p.infusion,tool,true) else nil
+	flash(self.folder,origin,lookOf(p.infusion).color,.5,3,.18,.2)
+	return {data=p,model=model,root=root,static=true,hidden=false,decor=decor,born=os.clock()}
+end
+-- A planted object at rest: a slow chakra pulse; a wire crackles while charged.
+function FX:restStep(entry)
+	local p=entry.data
+	if entry.wire then
+		local charged=p.infusion=="Lightning"
+		entry.beam.Color=ColorSequence.new(if charged then INFUSION.Lightning.core else Color3.fromRGB(214,218,226))
+		entry.beam.Width0=if charged then .13+math.random()*.08 else .1;entry.beam.Width1=entry.beam.Width0
+		entry.light.Brightness=if charged then 1+math.random()*2.5 else 0
+		return
+	end
+	local decor=entry.decor
+	if decor and decor.light then
+		local pulse=.5+.5*math.sin((os.clock()-entry.born)*5)
+		decor.light.Brightness=if decor.look.spark then decor.look.light*(.3+math.random()) else decor.look.light*(.35+pulse*.5)
+	end
+end
+-- A blade knocked out of the air spins away and drops.
+function FX:tumble(kind,position,direction,color)
+	local model=if kind=="shuriken" or kind=="wire" then FX.buildShuriken() elseif kind=="kunai" or kind=="marked" or kind=="point" then FX.buildKunai(kind=="marked") else nil
+	if not model then return end
+	model.Parent=self.folder
+	local root=model.PrimaryPart
+	local away=(direction or Vector3.yAxis)
+	if away.Magnitude&lt;.05 then away=Vector3.yAxis end
+	away=away.Unit
+	root.CFrame=CFrame.lookAt(position,position+away)
+	local finish=CFrame.new(position+away*5+Vector3.new(0,-2.5,0))*CFrame.Angles(math.random()*6,math.random()*6,math.random()*6)
+	tween(root,.45,{CFrame=finish},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	if color then sparks(self.folder,position,color,8,14) end
+	task.delay(.35,function()
+		for _,d in model:GetDescendants() do if d:IsA("BasePart") then tween(d,.2,{Transparency=1}) end end
+	end)
+	Debris:AddItem(model,.7)
+end
+-- A jagged lightning line between two points, flickering twice.
+function FX:bolt(from,to,color)
+	if not from or not to then return end
+	local function strike()
+		local points={from}
+		local delta=to-from
+		local side=delta:Cross(Vector3.yAxis)
+		if side.Magnitude&lt;.05 then side=Vector3.xAxis end
+		side=side.Unit
+		for k=1,4 do
+			local jitter=side*(math.random()-.5)*1.2+Vector3.new(0,(math.random()-.5)*1.2,0)
+			table.insert(points,from+delta*(k/5)+jitter)
+		end
+		table.insert(points,to)
+		for k=1,#points-1 do
+			local a,b=points[k],points[k+1]
+			local length=(b-a).Magnitude
+			if length&gt;.05 then
+				local seg=block(self.folder,Vector3.new(.12,.12,length),CFrame.lookAt(a:Lerp(b,.5),b),color,Enum.Material.Neon)
+				seg.Transparency=.1
+				tween(seg,.14,{Transparency=1,Size=Vector3.new(.03,.03,length)})
+				Debris:AddItem(seg,.18)
+			end
+		end
+	end
+	strike()
+	task.delay(.07,strike)
+	sparks(self.folder,to,color,14,22)
+end
+-- Hands lit with chakra for the palm (Neji's body infusion).
+function FX:handGlow(model,color,time)
+	if not model then return end
+	for _,name in {"RightHand","LeftHand"} do
+		local hand=model:FindFirstChild(name)
+		if hand then
+			local at=new("Attachment",{Name="ChakraPalm"},hand)
+			local e=emitter(at,{Texture=TEX.glow,Rate=0,Lifetime=NumberRange.new(.12,.2),Speed=NumberRange.new(0,1),
+				Color=ColorSequence.new(color),LightEmission=1,Size=num({{0,1.4},{1,.4}}),Transparency=num({{0,.25},{1,1}}),LockedToPart=true})
+			e:Emit(10)
+			local light=new("PointLight",{Color=color,Brightness=3,Range=6,Shadows=false},at)
+			tween(light,time,{Brightness=0})
+			Debris:AddItem(at,time+.1)
+		end
+	end
+end
+-- Every chakra contact the server reports (impact.chakra); unknown kinds do
+-- nothing. Called inside pcall from FX:impact.
+function FX:chakraImpact(impact,folder)
+	local kind=impact.chakra
+	local at=impact.position
+	local look=lookOf(impact.infusion)
+	local color=look.color
+	if kind=="cut" then
+		-- The wind kunai cuts the blade in its lane: a bright slash across it.
+		local across=(impact.direction or Vector3.zAxis):Cross(Vector3.yAxis)
+		if across.Magnitude&lt;.05 then across=Vector3.xAxis end
+		local slash=block(self.folder,Vector3.new(.08,.08,3.2),CFrame.lookAt(at,at+across.Unit),look.core,Enum.Material.Neon)
+		tween(slash,.18,{Transparency=1,Size=Vector3.new(.02,.02,4.2)});Debris:AddItem(slash,.22)
+		sparks(self.folder,at,color,12,24)
+		self:tumble(impact.kind,at,impact.tumble,nil)
+	elseif kind=="deflect" or kind=="knock" then
+		sparks(self.folder,at,color,10,22)
+		self:tumble(if kind=="knock" then impact.tool or "kunai" else impact.kind,at,impact.tumble,nil)
+	elseif kind=="swat" then
+		flash(self.folder,at,HYUGA,.6,3.5,.14,.25)
+		self:tumble(impact.kind,at,impact.tumble,HYUGA)
+	elseif kind=="blown" then
+		shockRing(self.folder,at,Color3.fromRGB(220,232,255),1,6,.2,impact.direction)
+		self:tumble(impact.kind,at,impact.tumble,nil)
+	elseif kind=="burn" or kind=="absorb" then
+		flash(self.folder,at,INFUSION.Fire.color,.8,if kind=="absorb" then 6 else 3.5,.2,.2)
+		sparks(self.folder,at,INFUSION.Fire.core,12,16)
+		if kind=="absorb" then shockRing(self.folder,at,INFUSION.Fire.color,1.5,9,.25,impact.direction) end
+	elseif kind=="intercept" then
+		-- Both blades drop out of the meeting, to either side.
+		self:tumble(impact.kind,at,impact.tumble,nil)
+		if impact.tumble then self:tumble(impact.otherKind,at,Vector3.new(-impact.tumble.X,impact.tumble.Y,-impact.tumble.Z),nil) end
+	elseif kind=="crush" then
+		-- Reinforced steel leaning on a guard: a hard ring and chips off the guard.
+		shockRing(self.folder,at,INFUSION.Reinforce.core,1.5,if impact.heavy then 12 else 7,.24,impact.direction)
+		flash(self.folder,at,INFUSION.Reinforce.color,.8,if impact.heavy then 6 else 3.5,.16,.2)
+		sparks(self.folder,at,INFUSION.Reinforce.core,impact.heavy and 18 or 10,20)
+	elseif kind=="shock" or kind=="pointshock" or kind=="wirecharge" then
+		local victim=modelFor(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		local center=if root then root.Position else at
+		for k=1,3 do
+			local offset=Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5)*3
+			self:bolt(center+offset,center-offset,INFUSION.Lightning.core)
+		end
+		flash(self.folder,center,INFUSION.Lightning.color,.8,4.5,.14,.2)
+	elseif kind=="surge" or kind=="conduct" then
+		self:bolt(impact.from or at,impact.to or at,INFUSION.Lightning.core)
+		flash(self.folder,impact.to or at,INFUSION.Lightning.color,1,5,.16,.2)
+	elseif kind=="ignite" then
+		burst(self.folder,at,{Texture=TEX.fire,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(4,9),SpreadAngle=Vector2.new(180,180),
+			Color=seq({{0,Color3.fromRGB(255,232,150)},{.5,INFUSION.Fire.color},{1,Color3.fromRGB(80,24,10)}}),LightEmission=1,Size=num({{0,1.6},{1,.4}}),Transparency=num({{0,.2},{1,1}})},14)
+	elseif kind=="gust" then
+		shockRing(self.folder,at,INFUSION.Wind.core,1.5,9,.22,impact.direction)
+		smokePuff(self.folder,at-Vector3.new(0,2.4,0),Color3.fromRGB(214,236,226),6,1.2)
+	elseif kind=="plant" or kind=="stretch" then
+		flash(self.folder,at,color,.4,2.4,.14,.3)
+	elseif kind=="recover" then
+		flash(self.folder,at+Vector3.new(0,1,0),color,.4,2.5,.2,.3)
+		sparks(self.folder,at+Vector3.new(0,1,0),look.core,8,8)
+	elseif kind=="deny" or kind=="expire" or kind=="fizzle" then
+		smokePuff(self.folder,at,if kind=="fizzle" then Color3.fromRGB(176,184,198) else Color3.fromRGB(206,206,214),if kind=="fizzle" then 6 else 4,.7)
+	elseif kind=="palm" then
+		self:handGlow(modelFor(folder,impact.owner),HYUGA,.35)
+	elseif kind=="throughguard" then
+		shockRing(self.folder,at,HYUGA,1.5,10,.24,impact.direction)
+		flash(self.folder,at,HYUGA,.6,5,.16,.2)
+	elseif kind=="tenketsu" then
+		flash(self.folder,at,HYUGA,.3,2,.12,.2)
+	elseif kind=="tripwire" or kind=="wirecut" then
+		sparks(self.folder,at,Color3.fromRGB(230,234,240),10,14)
+	elseif kind=="wireburn" then
+		local from,to=impact.from or at,impact.to or at
+		for k=0,4 do flash(self.folder,from:Lerp(to,k/4),INFUSION.Fire.color,.6,3,.2,.25) end
+	end
+end
 -- ------------------------------------------------------------------ persistent
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.
@@ -11059,13 +12518,17 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND54">
+        <Item class="ModuleScript" referent="ND59">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
 local UIS=game:GetService("UserInputService")
 local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local Input={};Input.__index=Input
+-- Chakra chord: a modifier released this long before the tool still counts
+-- (Z then R rolled quickly); the clock is a field so specs can drive it.
+Input.ChakraChord=.3
+Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
 local function both(action) return {KEYBOARD[action],GAMEPAD[action]} end
@@ -11074,6 +12537,18 @@ local function padObject(object)
   or object.KeyCode.Name:match("^DPad")~=nil or object.KeyCode.Name:match("^Thumbstick")~=nil
 end
 local function released(state) return state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel end
+-- The plain throw's aim (the client's send only computes it without extras):
+-- the opponent on the pad, the mouse point on keyboard, within reach.
+local function toolAim(state,pad)
+ local ok,hit=pcall(function()
+  local player=game:GetService("Players").LocalPlayer
+  local point=if pad then state.bot and state.bot.position else player:GetMouse().Hit.Position
+  local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+  if point and root and (point-root.Position).Magnitude&lt;=140 then return point end
+  return nil
+ end)
+ return if ok then hit else nil
+end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
   sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
@@ -11154,7 +12629,17 @@ function Input.new(send,getState,toggleLock,camera)
    end
   end
  end)
- bind("Tool",both("Tool"),function(state,obj) if pressed(state,obj) then send("Tool") end end)
+ -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
+ -- Only a boolean leaves the client; the server picks what the chakra does.
+ bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
+  if begin(state) then self.chakra=true;self.chakraAt=Input.now() elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
+ end)
+ bind("Tool",both("Tool"),function(state,obj)
+  if pressed(state,obj) then
+   local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)&lt;=Input.ChakraChord)
+   if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
+  end
+ end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
  end)
@@ -11191,6 +12676,7 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
+ self.chakra=false;self.chakraAt=nil
 end
 function Input:direction(camera)
  -- The current device owns movement; a resting controller cannot steer WASD.
@@ -11207,7 +12693,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND55">
+        <Item class="LocalScript" referent="ND60">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -11343,7 +12829,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND56">
+        <Item class="ModuleScript" referent="ND61">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -11606,7 +13092,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND57">
+        <Item class="ModuleScript" referent="ND62">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -12103,7 +13589,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND58">
+        <Item class="ModuleScript" referent="ND63">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -12244,7 +13730,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND59">
+        <Item class="ModuleScript" referent="ND64">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -14126,7 +15612,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND60">
+  <Item class="Lighting" referent="ND65">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -14144,7 +15630,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND61">
+  <Item class="SoundService" referent="ND66">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
