@@ -358,7 +358,11 @@ function AI:update(now)
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()<.4 then
 			a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
 		end
-		if c:request(a,"Tool",target.root.Position) then return end
+		-- Chakra tool (isolated, no extra roll): every third probing throw with a
+		-- comfortable reserve is infused; a body-chakra fighter (Neji) keeps the blade.
+		self.probeThrows=(self.probeThrows or 0)+1
+		local infuse=self.probeThrows%3==0 and not a.def.GentleFist and a.chakra>=(a.def.Chakra or Config.Chakra)*.6
+		if c:request(a,"Tool",target.root.Position,nil,if infuse then {chakra=true} else nil) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
 	-- Jutsu are paced: after one, a few seconds of movement, tools and reads

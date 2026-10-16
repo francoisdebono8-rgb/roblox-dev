@@ -523,6 +523,9 @@ function Techniques.wireBind(c,owner,victim,riders,direction)
 	end
 	Brawler.react(c,victim,"Bound",Vector3.zero,duration,owner)
 	victim.boundBy=owner;owner.wireVictim=victim
+	-- The wire is a conductor while it holds: Sasuke's lightning may run down it
+	-- (ChakraCombat.conduct), bounded from the moment the bind started.
+	victim.boundAt=c.now;victim.wireConducts=0
 	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
 	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end

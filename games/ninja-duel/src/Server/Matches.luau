@@ -224,7 +224,9 @@ function Matches:view(s,cursor,mine,theirs)
 	-- exactly on the shared server clock, so blades and fire never stutter.
 	local projectiles={}
 	for _,p in s.combat.projectiles do
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth})
+		-- infusion: the chakra nature it carries (nil: a plain object); planted:
+		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
@@ -301,6 +303,9 @@ function Matches:act(s,actor,payload,clock)
  -- directional routes/dodges atomic with the button press, without granting
  -- the client authority over a route, state, cooldown or hit.
  if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude>1.01 or math.abs(payload.direction.Y)>.01) then return end
+ -- The chakra modifier is one boolean held with the action; what it does is
+ -- decided by the server (the fighter's mastery), never by the client.
+ if payload.chakra~=nil and type(payload.chakra)~="boolean" then return end
  local aim=nil
 	if payload.aim~=nil then
 		if not vector(payload.aim) or (payload.aim-actor.root.Position).Magnitude>150 then return end
@@ -313,7 +318,7 @@ function Matches:act(s,actor,payload,clock)
  -- The held guard key is an intent that outlives a refused press (Combat
  -- re-raises it once free). Only players send it; the AI guards per tick.
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
- local ok,reason=s.combat:request(actor,action,aim,payload.clientTime)
+ local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)

@@ -40,6 +40,7 @@ run Neji       "$LUNE" run tests/Neji.spec.luau
 run Identity   "$LUNE" run tests/Identity.spec.luau
 run Systems    "$LUNE" run tests/Systems.spec.luau
 run Tools      "$LUNE" run tests/Tools.spec.luau
+run Chakra     "$LUNE" run tests/Chakra.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau
 run Online     "$LUNE" run tests/Online.spec.luau

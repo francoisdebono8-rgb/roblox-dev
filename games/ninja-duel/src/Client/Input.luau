@@ -2,6 +2,10 @@ local CAS=game:GetService("ContextActionService")
 local UIS=game:GetService("UserInputService")
 local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local Input={};Input.__index=Input
+-- Chakra chord: a modifier released this long before the tool still counts
+-- (Z then R rolled quickly); the clock is a field so specs can drive it.
+Input.ChakraChord=.3
+Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
 local function both(action) return {KEYBOARD[action],GAMEPAD[action]} end
@@ -10,6 +14,18 @@ local function padObject(object)
   or object.KeyCode.Name:match("^DPad")~=nil or object.KeyCode.Name:match("^Thumbstick")~=nil
 end
 local function released(state) return state==Enum.UserInputState.End or state==Enum.UserInputState.Cancel end
+-- The plain throw's aim (the client's send only computes it without extras):
+-- the opponent on the pad, the mouse point on keyboard, within reach.
+local function toolAim(state,pad)
+ local ok,hit=pcall(function()
+  local player=game:GetService("Players").LocalPlayer
+  local point=if pad then state.bot and state.bot.position else player:GetMouse().Hit.Position
+  local root=player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+  if point and root and (point-root.Position).Magnitude<=140 then return point end
+  return nil
+ end)
+ return if ok then hit else nil
+end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
   sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
@@ -90,7 +106,17 @@ function Input.new(send,getState,toggleLock,camera)
    end
   end
  end)
- bind("Tool",both("Tool"),function(state,obj) if pressed(state,obj) then send("Tool") end end)
+ -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
+ -- Only a boolean leaves the client; the server picks what the chakra does.
+ bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
+  if begin(state) then self.chakra=true;self.chakraAt=Input.now() elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
+ end)
+ bind("Tool",both("Tool"),function(state,obj)
+  if pressed(state,obj) then
+   local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)<=Input.ChakraChord)
+   if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
+  end
+ end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
  end)
@@ -129,6 +155,7 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
+ self.chakra=false;self.chakraAt=nil
 end
 function Input:direction(camera)
  -- The current device owns movement; a resting controller cannot steer WASD.

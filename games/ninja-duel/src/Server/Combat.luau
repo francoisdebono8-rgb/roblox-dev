@@ -374,6 +374,9 @@ function Combat:arrivalThrow(a)
 	Brawler.event(self,a,"ArrivalThrow")
 	return true
 end
+-- Chakra infusion and projectile interactions (ChakraCombat over the rules
+-- Codex prepared): infused throws, meetings in flight, planted points, wire.
+local Chakra=require(script.Parent.ChakraCombat)
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -392,6 +395,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
+	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
+	-- and what it does on contact; without one the throw is the plain one.
+	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -730,7 +736,7 @@ function Combat:wallTech(a)
 	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
 	return true
 end
-function Combat:request(a,action,aim,clientTime)
+function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
@@ -808,15 +814,31 @@ function Combat:request(a,action,aim,clientTime)
 		end
 		local graph=Brawler.graph(a) or {}
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now>=(a.chainAt or 0)
-		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
+		-- Chakra modifier held (keyboard Z + R, pad R1 + R2). With the wire still on
+		-- a bound body, the current may leave the jutsu recovery, like Dragon Flame.
+		local chakra=opts~=nil and opts.chakra==true
+		local wired=chakra and a.state=="TechniqueRecovery" and a.wireVictim~=nil and a.wireVictim.reaction=="Bound" and a.wireVictim.boundBy==a
+		if (not chainCancel and not wired and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
+		-- The fighter's mastery decides what the chakra does to this tool (server
+		-- side only); a reserve that cannot pay refuses with a visible fizzle.
+		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
+		local infused=nil
+		if chakra then
+			local why
+			infused,why=Chakra.plan(self,a,if a.def.Tool=="Sand" then "Sand" elseif mastery.Kind=="kunai" then "Kunai" else "Shuriken")
+			if not infused then Chakra.refuse(self,a);return false,why end
+			if wired and infused.mode~="conduct" then return false,"Tool recovering" end
+			if a.chakra<Chakra.cost(infused,chainCancel) then Chakra.refuse(self,a);return false,"Need chakra" end
+		end
 		-- A neutral throw costs a little chakra so blades pressure, not spam;
 		-- the throw that cancels a confirmed string stays free.
-		if not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
-		if not chainCancel then a.chakra-=Config.ToolCost end
+		if not infused and not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
+		if infused then a.chakra-=Chakra.cost(infused,chainCancel) elseif not chainCancel then a.chakra-=Config.ToolCost end
+		if wired then a.pending=nil;self:setState(a,"Neutral",0) end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
 		local disengage=graph.disengage
-		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
 		end
@@ -824,15 +846,23 @@ function Combat:request(a,action,aim,clientTime)
 		-- Throwing lowers the guard: a blade never leaves a fully blocking body.
 		if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
 		if a.wall then Motor.detach(a,self.now,false) end
+		-- Chakra without a throw: down the wire (Sasuke) or through the palm (Neji).
+		if infused and infused.mode=="conduct" then
+			a.neutralToolAt=self.now+.35
+			return Chakra.conduct(self,a,infused)
+		end
+		if infused and infused.mode=="body" then
+			a.neutralToolAt=self.now+mastery.Recover
+			return Chakra.palm(self,a,infused)
+		end
 		if a.def.Tool=="Sand" then
 			a.neutralToolAt=self.now+(if chainCancel then .42 else .6)
 			self:beginThrow(a,{kind="Sand",release=.12,count=1,aim=aim,fire=function(_,target)
-				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6})
+				self:projectile(a,target,90,if chainCancel then 20 else 56,3,"sand",nil,{origin=self.launchPoint(a,"Palm"),radius=.6,chakra=infused})
 			end})
-			self:cue(a,"SAND BULLET",.5)
+			self:cue(a,if infused then Chakra.label(infused) else "SAND BULLET",.5)
 			return true
 		end
-		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
 		local blade=mastery.Kind=="kunai"
 		a.neutralToolAt=self.now+(if chainCancel then .42 else mastery.Recover)
 		local range=if chainCancel then 20 else 62
@@ -840,7 +870,7 @@ function Combat:request(a,action,aim,clientTime)
 		-- second that strikes it beside the opponent; both fly into the flank.
 		local dir,sideSign=Brawler.intent(a)
 		if mastery.Geometry and dir=="side" and not chainCancel and a.target and a.target.health>0 then
-			return self:shurikenGeometry(a,sideSign)
+			return self:shurikenGeometry(a,sideSign,infused)
 		end
 		-- In the air a master fans several blades down at the opponent.
 		local count=if a.airborne and mastery.AirSpread then mastery.AirSpread else mastery.Count
@@ -849,9 +879,9 @@ function Combat:request(a,action,aim,clientTime)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken")
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused})
 			end})
-		self:cue(a,if chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if infused then Chakra.label(infused) elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -> technique: Minato may spend a confirmed string on Rasengan with
@@ -1414,6 +1444,13 @@ function Combat:projectileHit(p,target,position,normal)
 	self.hitOrigin=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
+	-- Infused objects add their own consequence (guard crush, shock, ignition,
+	-- gust, current through a wire) once the defence has resolved.
+	if p.chakra then
+		if entry and entry.projectile==p.id then entry.infusion=p.infusion end
+		Chakra.contact(self,p,target,damaged)
+		if self.match.phase~="Duel" then return end
+	end
 	local guarded=target.impactStyle=="block"
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
@@ -1453,28 +1490,38 @@ function Combat:projectileHit(p,target,position,normal)
 end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
-	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction})
-	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
-	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
-	if self.match.phase~="Duel" then return end
-	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
 	local mastery=p.a.def.ToolMastery
 	local target=p.a.target
+	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
+	local bounceFrom=nil
 	if mastery and mastery.Ricochet and p.kind=="shuriken" and not p.bounced and hit.Instance.CanCollide and math.abs(hit.Normal.Y)<.7
 		and target and target.health>0 and (target.root.Position-hit.Position).Magnitude<36 then
 		local from=hit.Position+hit.Normal*.8
 		local clear=workspace:Raycast(from,target.root.Position-from,self:rayParams(true))
-		if not clear or clear.Instance:IsDescendantOf(target.model) then
-			local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=from})
-			bounce.bounced=true
-			self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
-			Brawler.event(self,p.a,"Ricochet")
-		end
+		if not clear or clear.Instance:IsDescendantOf(target.model) then bounceFrom=from end
+	end
+	-- A chakra blade stays planted (a contestable point), a fire blade leaves a
+	-- burning point, a missed wire stays stretched: decided before the impact
+	-- so the client draws the object that stays instead of a plain stuck blade.
+	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
+	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
+	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
+	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
+	if self.match.phase~="Duel" then return end
+	if p.onSurface and hit.Instance.CanCollide then p.onSurface(hit.Position,hit.Normal) end
+	if bounceFrom then
+		local bounce=self:projectile(p.a,target.root.Position,p.speed*.9,40,p.damage,"shuriken",nil,{origin=bounceFrom})
+		bounce.bounced=true
+		-- An infused blade keeps its chakra through the bounce (no second scaling).
+		Chakra.inherit(bounce,p)
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		Brawler.event(self,p.a,"Ricochet")
 	end
 end
 -- Itachi's Shuriken Geometry: a blade thrown wide of the opponent, a second
 -- thrown to strike it beside them; the collision sends both into the flank.
-function Combat:shurikenGeometry(a,sideSign)
+function Combat:shurikenGeometry(a,sideSign,infused)
 	local b=a.target
 	local start=Combat.launchPoint(a,"Shuriken")
 	local toward=Vector3.new(b.root.Position.X-start.X,0,b.root.Position.Z-start.Z)
@@ -1493,7 +1540,7 @@ function Combat:shurikenGeometry(a,sideSign)
 		-- The second blade is thrown later and faster: both reach the point together.
 		local speed=if index==1 then 70 else math.max(70,gap/math.max(.08,arrive-.1))
 		local p=self:projectile(a,meet,speed,gap,0,"shuriken",nil,{origin=from})
-		p.geometry=index==1 and {meet=meet}
+		p.geometry=index==1 and {meet=meet,chakra=infused}
 	end})
 	self:cue(a,"SHURIKEN GEOMETRY",.7)
 	Brawler.event(self,a,"Geometry")
@@ -1505,7 +1552,7 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
-			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position})
+			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})
 			redirected.bounced=true
 		end
 		Brawler.event(self,p.a,"GeometryHit")
@@ -1520,6 +1567,8 @@ function Combat:projectileExpire(p)
 		self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
 		return
 	end
+	-- A chakra blade (or a wire) at the end of its flight drops and stays there.
+	if Chakra.expire(self,p) then return end
 	-- A marked kunai that reaches the end of its flight drops to the ground and
 	-- still plants its seal there: a long throw is a long-range anchor.
 	if p.kind=="marked" and p.onSurface then
@@ -1533,9 +1582,21 @@ function Combat:projectileExpire(p)
 	self:pushImpact(p.position,"fade",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
 end
 function Combat:updateProjectiles(dt)
+	-- Meetings in flight, planted points and stretched wires (ChakraCombat).
+	Chakra.step(self,dt)
+	if self.match.phase~="Duel" then return end
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if not p or self.match.phase~="Duel" then return end
+		-- Removed by a meeting, or planted: never moved here. A projectile without
+		-- speed (a reflection of something planted) cannot fly either.
+		if p.dead or p.planted or (p.speed or 0)<=0 then
+			if p.dead or not p.planted then
+				local index=table.find(self.projectiles,p)
+				if index then table.remove(self.projectiles,index) end
+			end
+			continue
+		end
 		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel

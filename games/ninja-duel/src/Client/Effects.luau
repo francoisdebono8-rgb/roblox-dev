@@ -259,12 +259,24 @@ function FX:sync(data)
 	for _,p in data.projectiles or {} do
 		live[p.id]=true
 		local entry=self.projectiles[p.id]
-		if not entry then
+		if not entry and p.planted then
+			-- A chakra blade planted in a surface, or a stretched wire: drawn once
+			-- where it rests (ChakraCombat points); an unknown kind is skipped.
+			local ok,built=pcall(self.planted,self,p)
+			if ok and built then self.projectiles[p.id]=built end
+			entry=self.projectiles[p.id]
+			if not entry then continue end
+		elseif not entry then
 			local build=BUILD[p.kind] or BUILD.kunai
 			local model=build()
 			model.Parent=self.folder
 			local root=model.PrimaryPart
-			if p.kind=="kunai" or p.kind=="marked" then
+			-- Chakra infusion: the object itself looks reinforced / windy / burning /
+			-- charged (decorations only; the flight is the server's).
+			local decor=p.infusion and select(2,pcall(self.infuse,self,model,root,p.infusion,p.kind))
+			if p.infusion then
+				-- the infusion owns the trail
+			elseif p.kind=="kunai" or p.kind=="marked" then
 				addTrail(root,Vector3.new(0,.06,.2),Vector3.new(0,-.06,.2),if p.kind=="marked" then MINATO else Color3.fromRGB(220,226,236),.1,.5,1)
 			elseif p.kind=="shuriken" or p.kind=="wire" then
 				addTrail(root,Vector3.new(-.35,0,0),Vector3.new(.35,0,0),Color3.fromRGB(226,232,240),.08,.6,1)
@@ -280,7 +292,7 @@ function FX:sync(data)
 					Debris:AddItem(a0,1.2)
 				end
 			end
-			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true}
+			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true,decor=if type(decor)=="table" then decor else nil}
 			self.projectiles[p.id]=entry
 			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
 			if p.kind=="fireball" then
@@ -306,7 +318,7 @@ function FX:finishProjectile(id)
 	local root=entry.root
 	-- Let a trail finish fading instead of cutting it.
 	for _,d in entry.model:GetDescendants() do
-		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
+		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
 	end
 	Debris:AddItem(entry.model,.6)
 	return entry,root
@@ -320,15 +332,27 @@ function FX:stepProjectiles(dt)
 			self:finishProjectile(id)
 			continue
 		end
+		if entry.static then
+			pcall(self.restStep,self,entry)
+			continue
+		end
 		local hidden=age<0
 		if hidden~=entry.hidden then
 			entry.hidden=hidden
 			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
+			if entry.decor then for _,e in entry.decor.emitters do e.Enabled=not hidden end end
 		end
-		local travel=math.clamp(age,0,p.range/p.speed)*p.speed
+		if entry.decor and entry.decor.light then
+			local look=entry.decor.look
+			entry.decor.light.Brightness=if look.spark then look.light*(.4+math.random()*1.2) else look.light*(.85+math.sin(os.clock()*18)*.15)
+		end
+		local travel=if (p.speed or 0)<=0 then 0 else math.clamp(age,0,p.range/p.speed)*p.speed
 		local position=p.origin+p.direction*travel
 		local look=CFrame.lookAt(position,position+p.direction)
 		local cf
+		if entry.decor and entry.decor.ring then
+			entry.decor.ring.CFrame=look*CFrame.Angles(0,0,os.clock()*20)*CFrame.Angles(0,math.pi/2,0)
+		end
 		if p.kind=="kunai" or p.kind=="marked" then
 			-- Point first, with a slow roll so the blade catches the light.
 			entry.spin+=dt*14
@@ -671,11 +695,12 @@ function FX:impact(impact,folder)
 	local style=impact.style
 	local position=impact.position
 	if not position then return end
+	if impact.other then self:finishProjectile(impact.other) end
 	if impact.projectile then
 		local entry=self.projectiles[impact.projectile]
 		local direction=impact.direction or (entry and entry.data.direction) or Vector3.zAxis
 		if entry then self:finishProjectile(impact.projectile) end
-		if style=="stick" and (impact.kind=="kunai" or impact.kind=="marked" or impact.kind=="shuriken") then
+		if style=="stick" and not impact.chakra and (impact.kind=="kunai" or impact.kind=="marked" or impact.kind=="shuriken") then
 			self:stick(impact.kind,position,impact.normal or Vector3.yAxis,direction,impact.owner)
 		end
 	end
@@ -824,6 +849,9 @@ function FX:impact(impact,folder)
 		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
 		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
 	end
+	-- Chakra interactions (infusion contacts, meetings in flight, planted
+	-- points, wire). Presentation only, and never allowed to break the feed.
+	if impact.chakra then pcall(self.chakraImpact,self,impact,folder) end
 end
 -- Eight trigrams drawn on the ground around Neji for the sixty-four palms.
 function FX:trigram(position)
@@ -939,6 +967,240 @@ function FX:substitute(position,to,fighter,model)
 	sound(anchorPart(self.folder,position),SOUND.whoosh,.4,.9)
 end
 
+-- ------------------------------------------------------------------ chakra
+-- What an infusion looks like on the object, read from the snapshot's
+-- `infusion` (ChakraCombat). Unknown natures fall back to plain reinforcement.
+local INFUSION={
+	Reinforce={color=Color3.fromRGB(150,205,255),core=Color3.fromRGB(232,246,255),light=2.6,trail=.2,width=1.8},
+	Wind={color=Color3.fromRGB(150,255,214),core=Color3.fromRGB(232,255,246),light=2.2,trail=.36,width=2.8,ring=true},
+	Fire={color=Color3.fromRGB(255,128,44),core=Color3.fromRGB(255,226,150),light=4,trail=.24,width=2,flame=true},
+	Lightning={color=Color3.fromRGB(140,186,255),core=Color3.fromRGB(236,244,255),light=4,trail=.13,width=1.6,spark=true},
+	GentleFist={color=HYUGA,core=Color3.fromRGB(236,242,255),light=2.6,trail=.14,width=1.4},
+}
+FX.Infusion=INFUSION
+local function lookOf(infusion) return INFUSION[infusion or ""] or INFUSION.Reinforce end
+-- Decorate a projectile model: a chakra sheath around the steel, a coloured
+-- trail sized by the nature, a light, flames or sparks, a wind ring.
+function FX:infuse(model,root,infusion,kind,planted)
+	local look=lookOf(infusion)
+	local decor={look=look,emitters={}}
+	local flatBlade=kind=="shuriken" or kind=="wire"
+	-- A translucent chakra sheath: a disc round a shuriken, a sleeve along a kunai.
+	local sheath=if flatBlade then block(model,Vector3.new(.2,1.05,1.05),root.CFrame*CFrame.Angles(0,0,math.pi/2),look.color,Enum.Material.Neon)
+		else block(model,Vector3.new(1.35,.34,.34),root.CFrame*CFrame.new(0,0,-.25)*CFrame.Angles(0,math.pi/2,0),look.color,Enum.Material.Neon)
+	sheath.Shape=Enum.PartType.Cylinder;sheath.Transparency=.55;sheath.Name="ChakraSheath"
+	weldAll(root,{sheath})
+	if not planted then
+		if flatBlade then addTrail(root,Vector3.new(-.5,0,0),Vector3.new(.5,0,0),look.color,look.trail,.3,look.width)
+		else addTrail(root,Vector3.new(0,.12,.25),Vector3.new(0,-.12,.25),look.color,look.trail,.3,look.width) end
+	end
+	decor.light=new("PointLight",{Color=look.color,Brightness=look.light,Range=if planted then 7 else 10,Shadows=false},root)
+	local at=new("Attachment",{},root)
+	if look.flame then
+		table.insert(decor.emitters,emitter(at,{Name="ChakraFlame",Enabled=false,Texture=TEX.fire,Rate=70,Lifetime=NumberRange.new(.12,.26),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(40,40),
+			Color=seq({{0,Color3.fromRGB(255,232,150)},{.5,look.color},{1,Color3.fromRGB(120,30,10)}}),LightEmission=1,Size=num({{0,.9},{1,.2}}),Transparency=num({{0,.2},{1,1}})}))
+	elseif look.spark then
+		table.insert(decor.emitters,emitter(at,{Name="ChakraSpark",Enabled=false,Texture=TEX.spark,Rate=90,Lifetime=NumberRange.new(.05,.12),Speed=NumberRange.new(3,9),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(look.core),LightEmission=1,Size=num({{0,.7},{1,0}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-400,400)}))
+	end
+	if look.ring and not planted then
+		-- The wind blade cuts with a thin spinning ring around its line.
+		local ring=block(self.folder,Vector3.new(.06,1.5,1.5),root.CFrame,look.core,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.45;ring.Name="WindRing";ring.Parent=model
+		decor.ring=ring
+	end
+	if planted then for _,e in decor.emitters do e.Enabled=true end end
+	return decor
+end
+-- A planted chakra blade (kind "point") or a stretched wire (kind
+-- "tripwire"): built once where it rests.
+function FX:planted(p)
+	local tool=p.planted
+	local origin=p.origin
+	if tool=="wire" then
+		local far=origin+p.direction*(p.range or 0)
+		local model=new("Model",{Name="Tripwire"},self.folder)
+		local root=block(model,Vector3.new(.15,.15,.15),CFrame.new(origin),STEEL,Enum.Material.Metal);root.Name="Root"
+		local tip=block(model,Vector3.new(.15,.15,.15),CFrame.new(far),STEEL,Enum.Material.Metal);tip.Transparency=1
+		local stake=FX.buildKunai(false);stake.Parent=model
+		stake:PivotTo(CFrame.lookAt(origin+Vector3.new(0,.35,0),origin-Vector3.new(0,1,0)))
+		local blade=FX.buildShuriken();blade.Parent=model
+		blade:PivotTo(CFrame.lookAt(far,far+p.direction)*CFrame.Angles(math.rad(80),0,0))
+		local a0=new("Attachment",{},root);local a1=new("Attachment",{},tip)
+		local beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.1,Width1=.1,Color=ColorSequence.new(Color3.fromRGB(226,230,238)),LightEmission=.6,FaceCamera=true,Segments=2},root)
+		local light=new("PointLight",{Color=INFUSION.Lightning.color,Brightness=0,Range=8,Shadows=false},tip)
+		model.PrimaryPart=root
+		sparks(self.folder,far,Color3.fromRGB(255,236,200),6,10)
+		return {data=p,model=model,root=root,static=true,hidden=false,beam=beam,light=light,wire=true,born=os.clock()}
+	end
+	local model=if tool=="shuriken" then FX.buildShuriken() elseif tool=="kunai" or tool=="marked" then FX.buildKunai(tool=="marked") else nil
+	if not model then return nil end
+	model.Parent=self.folder
+	local root=model.PrimaryPart
+	local into=p.direction
+	local depth=if tool=="shuriken" then .25 else .45
+	local cf=CFrame.lookAt(origin-into*depth,origin-into*depth+into)
+	if tool=="shuriken" then cf=cf*CFrame.Angles(math.rad(80),0,0) end
+	root.CFrame=cf
+	local decor=if p.infusion then self:infuse(model,root,p.infusion,tool,true) else nil
+	flash(self.folder,origin,lookOf(p.infusion).color,.5,3,.18,.2)
+	return {data=p,model=model,root=root,static=true,hidden=false,decor=decor,born=os.clock()}
+end
+-- A planted object at rest: a slow chakra pulse; a wire crackles while charged.
+function FX:restStep(entry)
+	local p=entry.data
+	if entry.wire then
+		local charged=p.infusion=="Lightning"
+		entry.beam.Color=ColorSequence.new(if charged then INFUSION.Lightning.core else Color3.fromRGB(214,218,226))
+		entry.beam.Width0=if charged then .13+math.random()*.08 else .1;entry.beam.Width1=entry.beam.Width0
+		entry.light.Brightness=if charged then 1+math.random()*2.5 else 0
+		return
+	end
+	local decor=entry.decor
+	if decor and decor.light then
+		local pulse=.5+.5*math.sin((os.clock()-entry.born)*5)
+		decor.light.Brightness=if decor.look.spark then decor.look.light*(.3+math.random()) else decor.look.light*(.35+pulse*.5)
+	end
+end
+-- A blade knocked out of the air spins away and drops.
+function FX:tumble(kind,position,direction,color)
+	local model=if kind=="shuriken" or kind=="wire" then FX.buildShuriken() elseif kind=="kunai" or kind=="marked" or kind=="point" then FX.buildKunai(kind=="marked") else nil
+	if not model then return end
+	model.Parent=self.folder
+	local root=model.PrimaryPart
+	local away=(direction or Vector3.yAxis)
+	if away.Magnitude<.05 then away=Vector3.yAxis end
+	away=away.Unit
+	root.CFrame=CFrame.lookAt(position,position+away)
+	local finish=CFrame.new(position+away*5+Vector3.new(0,-2.5,0))*CFrame.Angles(math.random()*6,math.random()*6,math.random()*6)
+	tween(root,.45,{CFrame=finish},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	if color then sparks(self.folder,position,color,8,14) end
+	task.delay(.35,function()
+		for _,d in model:GetDescendants() do if d:IsA("BasePart") then tween(d,.2,{Transparency=1}) end end
+	end)
+	Debris:AddItem(model,.7)
+end
+-- A jagged lightning line between two points, flickering twice.
+function FX:bolt(from,to,color)
+	if not from or not to then return end
+	local function strike()
+		local points={from}
+		local delta=to-from
+		local side=delta:Cross(Vector3.yAxis)
+		if side.Magnitude<.05 then side=Vector3.xAxis end
+		side=side.Unit
+		for k=1,4 do
+			local jitter=side*(math.random()-.5)*1.2+Vector3.new(0,(math.random()-.5)*1.2,0)
+			table.insert(points,from+delta*(k/5)+jitter)
+		end
+		table.insert(points,to)
+		for k=1,#points-1 do
+			local a,b=points[k],points[k+1]
+			local length=(b-a).Magnitude
+			if length>.05 then
+				local seg=block(self.folder,Vector3.new(.12,.12,length),CFrame.lookAt(a:Lerp(b,.5),b),color,Enum.Material.Neon)
+				seg.Transparency=.1
+				tween(seg,.14,{Transparency=1,Size=Vector3.new(.03,.03,length)})
+				Debris:AddItem(seg,.18)
+			end
+		end
+	end
+	strike()
+	task.delay(.07,strike)
+	sparks(self.folder,to,color,14,22)
+end
+-- Hands lit with chakra for the palm (Neji's body infusion).
+function FX:handGlow(model,color,time)
+	if not model then return end
+	for _,name in {"RightHand","LeftHand"} do
+		local hand=model:FindFirstChild(name)
+		if hand then
+			local at=new("Attachment",{Name="ChakraPalm"},hand)
+			local e=emitter(at,{Texture=TEX.glow,Rate=0,Lifetime=NumberRange.new(.12,.2),Speed=NumberRange.new(0,1),
+				Color=ColorSequence.new(color),LightEmission=1,Size=num({{0,1.4},{1,.4}}),Transparency=num({{0,.25},{1,1}}),LockedToPart=true})
+			e:Emit(10)
+			local light=new("PointLight",{Color=color,Brightness=3,Range=6,Shadows=false},at)
+			tween(light,time,{Brightness=0})
+			Debris:AddItem(at,time+.1)
+		end
+	end
+end
+-- Every chakra contact the server reports (impact.chakra); unknown kinds do
+-- nothing. Called inside pcall from FX:impact.
+function FX:chakraImpact(impact,folder)
+	local kind=impact.chakra
+	local at=impact.position
+	local look=lookOf(impact.infusion)
+	local color=look.color
+	if kind=="cut" then
+		-- The wind kunai cuts the blade in its lane: a bright slash across it.
+		local across=(impact.direction or Vector3.zAxis):Cross(Vector3.yAxis)
+		if across.Magnitude<.05 then across=Vector3.xAxis end
+		local slash=block(self.folder,Vector3.new(.08,.08,3.2),CFrame.lookAt(at,at+across.Unit),look.core,Enum.Material.Neon)
+		tween(slash,.18,{Transparency=1,Size=Vector3.new(.02,.02,4.2)});Debris:AddItem(slash,.22)
+		sparks(self.folder,at,color,12,24)
+		self:tumble(impact.kind,at,impact.tumble,nil)
+	elseif kind=="deflect" or kind=="knock" then
+		sparks(self.folder,at,color,10,22)
+		self:tumble(if kind=="knock" then impact.tool or "kunai" else impact.kind,at,impact.tumble,nil)
+	elseif kind=="swat" then
+		flash(self.folder,at,HYUGA,.6,3.5,.14,.25)
+		self:tumble(impact.kind,at,impact.tumble,HYUGA)
+	elseif kind=="blown" then
+		shockRing(self.folder,at,Color3.fromRGB(220,232,255),1,6,.2,impact.direction)
+		self:tumble(impact.kind,at,impact.tumble,nil)
+	elseif kind=="burn" or kind=="absorb" then
+		flash(self.folder,at,INFUSION.Fire.color,.8,if kind=="absorb" then 6 else 3.5,.2,.2)
+		sparks(self.folder,at,INFUSION.Fire.core,12,16)
+		if kind=="absorb" then shockRing(self.folder,at,INFUSION.Fire.color,1.5,9,.25,impact.direction) end
+	elseif kind=="intercept" then
+		-- Both blades drop out of the meeting, to either side.
+		self:tumble(impact.kind,at,impact.tumble,nil)
+		if impact.tumble then self:tumble(impact.otherKind,at,Vector3.new(-impact.tumble.X,impact.tumble.Y,-impact.tumble.Z),nil) end
+	elseif kind=="crush" then
+		-- Reinforced steel leaning on a guard: a hard ring and chips off the guard.
+		shockRing(self.folder,at,INFUSION.Reinforce.core,1.5,if impact.heavy then 12 else 7,.24,impact.direction)
+		flash(self.folder,at,INFUSION.Reinforce.color,.8,if impact.heavy then 6 else 3.5,.16,.2)
+		sparks(self.folder,at,INFUSION.Reinforce.core,impact.heavy and 18 or 10,20)
+	elseif kind=="shock" or kind=="pointshock" or kind=="wirecharge" then
+		local victim=modelFor(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		local center=if root then root.Position else at
+		for k=1,3 do
+			local offset=Vector3.new(math.random()-.5,math.random()-.5,math.random()-.5)*3
+			self:bolt(center+offset,center-offset,INFUSION.Lightning.core)
+		end
+		flash(self.folder,center,INFUSION.Lightning.color,.8,4.5,.14,.2)
+	elseif kind=="surge" or kind=="conduct" then
+		self:bolt(impact.from or at,impact.to or at,INFUSION.Lightning.core)
+		flash(self.folder,impact.to or at,INFUSION.Lightning.color,1,5,.16,.2)
+	elseif kind=="ignite" then
+		burst(self.folder,at,{Texture=TEX.fire,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(4,9),SpreadAngle=Vector2.new(180,180),
+			Color=seq({{0,Color3.fromRGB(255,232,150)},{.5,INFUSION.Fire.color},{1,Color3.fromRGB(80,24,10)}}),LightEmission=1,Size=num({{0,1.6},{1,.4}}),Transparency=num({{0,.2},{1,1}})},14)
+	elseif kind=="gust" then
+		shockRing(self.folder,at,INFUSION.Wind.core,1.5,9,.22,impact.direction)
+		smokePuff(self.folder,at-Vector3.new(0,2.4,0),Color3.fromRGB(214,236,226),6,1.2)
+	elseif kind=="plant" or kind=="stretch" then
+		flash(self.folder,at,color,.4,2.4,.14,.3)
+	elseif kind=="recover" then
+		flash(self.folder,at+Vector3.new(0,1,0),color,.4,2.5,.2,.3)
+		sparks(self.folder,at+Vector3.new(0,1,0),look.core,8,8)
+	elseif kind=="deny" or kind=="expire" or kind=="fizzle" then
+		smokePuff(self.folder,at,if kind=="fizzle" then Color3.fromRGB(176,184,198) else Color3.fromRGB(206,206,214),if kind=="fizzle" then 6 else 4,.7)
+	elseif kind=="palm" then
+		self:handGlow(modelFor(folder,impact.owner),HYUGA,.35)
+	elseif kind=="throughguard" then
+		shockRing(self.folder,at,HYUGA,1.5,10,.24,impact.direction)
+		flash(self.folder,at,HYUGA,.6,5,.16,.2)
+	elseif kind=="tenketsu" then
+		flash(self.folder,at,HYUGA,.3,2,.12,.2)
+	elseif kind=="tripwire" or kind=="wirecut" then
+		sparks(self.folder,at,Color3.fromRGB(230,234,240),10,14)
+	elseif kind=="wireburn" then
+		local from,to=impact.from or at,impact.to or at
+		for k=0,4 do flash(self.folder,from:Lerp(to,k/4),INFUSION.Fire.color,.6,3,.2,.25) end
+	end
+end
 -- ------------------------------------------------------------------ persistent
 -- Planted Flying Thunder God seals: a real three-pronged kunai in the surface
 -- and a slowly pulsing seal formula around it.

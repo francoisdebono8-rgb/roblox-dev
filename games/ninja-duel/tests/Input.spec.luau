@@ -16,8 +16,12 @@ local bindings={}
 local uis={WindowFocusReleased=signal(),TextBoxFocused=signal(),GamepadDisconnected=signal(),LastInputTypeChanged=signal(),focused=false}
 function uis:GetFocusedTextBox() return if self.focused then {} else nil end
 function uis:GetLastInputType() return E.UserInputType.Keyboard end
+-- Only the chakra tool reads the mouse itself (aim parity with a plain throw).
+local mouseHit=V.new(0,3,-20)
+local players={LocalPlayer={Character=nil,GetMouse=function() return {Hit=H.C.new(mouseHit)} end}}
 local game={GetService=function(_,name)
  if name=="UserInputService" then return uis end
+ if name=="Players" then return players end
  if name=="ReplicatedStorage" then return {NinjaDuel={Controls="Controls"}} end
  if name=="ContextActionService" then return {BindActionAtPriority=function(_,name,callback,_,_,...)
   bindings[name]={callback=callback,keys={...}}
@@ -30,7 +34,7 @@ local Input=fn()
 local state={phase="Duel",human={pursuit=0}}
 local camera={CFrame=H.C.new(),look=V2.zero}
 local sent={}
-local input=Input.new(function(action) table.insert(sent,{action=action}) end,
+local input=Input.new(function(action,extra) table.insert(sent,{action=action,extra=extra}) end,
  function() return state end,function() table.insert(sent,{action="Lock"}) end,camera)
 local function press(action,code,mode,position)
  local binding=assert(bindings["Ninja"..action],action.." is unbound")
@@ -108,6 +112,43 @@ test("garde remains held across Change and releases only after both devices",fun
  press("Guard",E.KeyCode.F);assert(#sent==1)
  press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);assert(#sent==1)
  press("Guard",E.KeyCode.F,E.UserInputState.Cancel);assert(last()=="GuardOff" and #sent==2)
+end)
+test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay plain",function()
+ local clock,now=0,Input.now
+ Input.now=function() return clock end
+ local function chakra() local e=sent[#sent].extra;return type(e)=="table" and e.chakra==true end
+ tap("Tool",Controls.Keyboard.Tool);assert(last()=="Tool" and sent[#sent].extra==nil,"a plain R carried chakra")
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ tap("Tool",Controls.Keyboard.Tool);assert(last()=="Tool" and chakra(),"Z held + R was not infused")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ clock=Input.ChakraChord*.6;tap("Tool",Controls.Keyboard.Tool);assert(chakra(),"Z released just before R was lost")
+ clock=1;tap("Tool",Controls.Keyboard.Tool);assert(sent[#sent].extra==nil,"a stale Z still infused")
+ -- PS5: R2 alone is the plain tool, R1 + R2 the chakra tool; R1 + face stays a jutsu.
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and sent[#sent].extra==nil,"R2 alone carried chakra")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ press("Modifier",E.KeyCode.ButtonR1)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and chakra(),"R1 + R2 was not infused")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ tap("Light",E.KeyCode.ButtonX);assert(last()=="Technique2","R1 + square stopped being a jutsu")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- The keyboard modifier never turns a pad tool into a chakra tool.
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(sent[#sent].extra==nil,"keyboard Z modified the pad trigger")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ assert(Controls.Help:find("Z + R",1,true) and Controls.HelpPad:find("R1 + R2",1,true),"the chakra chord is missing from the help")
+ -- Aim parity with a plain throw: the mouse point in reach, the opponent on the pad.
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End);clock=5
+ players.LocalPlayer.Character={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then {Position=V.zero} else nil end}
+ press("ChakraKey",Controls.Keyboard.Chakra)
+ tap("Tool",Controls.Keyboard.Tool);assert(chakra() and sent[#sent].extra.aim==mouseHit,"the chakra tool lost the mouse aim")
+ mouseHit=V.new(0,3,-500)
+ tap("Tool",Controls.Keyboard.Tool);assert(chakra() and sent[#sent].extra.aim==nil,"an out-of-reach aim was sent")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ state.bot={position=V.new(6,3,-12)};press("Modifier",E.KeyCode.ButtonR1)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(chakra() and sent[#sent].extra.aim==state.bot.position,"the pad chakra tool did not aim at the opponent")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ state.bot=nil;players.LocalPlayer.Character=nil;mouseHit=V.new(0,3,-20)
+ Input.now=now
 end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
