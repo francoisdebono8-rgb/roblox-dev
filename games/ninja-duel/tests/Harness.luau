@@ -354,4 +354,50 @@ do
   return advanced
  end
 end
+-- A scene of plain instances for client presentation modules (Effects and the
+-- per-fighter layers): parenting, children and the calls they make, nothing
+-- rendered. Returns the instance constructor and a restore function.
+function Harness.stubScene()
+ local saved={Instance=envBase.Instance,task=envBase.task,now=workspace.GetServerTimeNow}
+ for _,k in {"ColorSequence","ColorSequenceKeypoint","NumberSequence","NumberSequenceKeypoint","NumberRange"} do envBase[k]=roblox[k] end
+ local function instance(class)
+  local o={ClassName=class,Name=class,children={},props={}}
+  local mt={}
+  mt.__index=function(t,k)
+   if k=="Parent" then return rawget(t,"_parent") end
+   if k=="Position" then local cf=rawget(t,"props").CFrame;return cf and cf.Position or V.zero end
+   return rawget(t,"props")[k]
+  end
+  mt.__newindex=function(t,k,v)
+   if k=="Parent" then
+    local old=rawget(t,"_parent")
+    if old and old.children then local i=table.find(old.children,t);if i then table.remove(old.children,i) end end
+    rawset(t,"_parent",v)
+    if type(v)=="table" and v.children then table.insert(v.children,t) end
+   else rawget(t,"props")[k]=v end
+  end
+  setmetatable(o,mt)
+  o.IsA=function(self,q) return q==self.ClassName or q=="Instance" or (q=="BasePart" and (self.ClassName=="Part" or self.ClassName=="WedgePart")) end
+  o.GetChildren=function(self) return table.clone(self.children) end
+  o.GetDescendants=function(self)
+   local out={}
+   local function walk(x) for _,ch in x.children do table.insert(out,ch);walk(ch) end end
+   walk(self);return out
+  end
+  o.FindFirstChild=function(self,name) for _,ch in self.children do if ch.Name==name then return ch end end return nil end
+  o.FindFirstChildOfClass=function(self,cl) for _,ch in self.children do if ch.ClassName==cl then return ch end end return nil end
+  o.Destroy=function(self) self.Parent=nil end
+  o.ClearAllChildren=function(self) table.clear(self.children) end
+  o.Emit=function() end;o.Play=function() end;o.Stop=function() end
+  o.PivotTo=function(self,cf) if self.PrimaryPart then self.PrimaryPart.CFrame=cf end end
+  o.GetPivot=function(self) return if self.PrimaryPart then self.PrimaryPart.CFrame else C.new() end
+  return o
+ end
+ envBase.Instance={new=instance}
+ envBase.task={delay=function(_,fn,...) fn(...) end,spawn=function() end,wait=function() end}
+ workspace.GetServerTimeNow=function() return 100 end
+ return instance,function()
+  envBase.Instance=saved.Instance;envBase.task=saved.task;workspace.GetServerTimeNow=saved.now
+ end
+end
 return Harness

@@ -1,13 +1,14 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "0de68880b3404f361604c13d2d635bc2fb73d149aeb54aa616c11bde07e20582",
+  "sha256": "1683f2886a77e359307bc9cf6b5b259625fe936dcc8facb8935491ec04fbe087",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
-    "src/Client/Effects.luau": "0301719d3f0e3e0d80f748ee9f777e9c2bdc6d49e207e128c0f788dd8f0ab42b",
+    "src/Client/Effects.luau": "b65de72488d33410d6752cf06e34d910e6d0344e41a8bc8c286062c786a014c0",
     "src/Client/Input.luau": "afcd30a36c38868fa394effcb9e8a9d3edfb3229209a12d41af0e7efe5baad14",
     "src/Client/Main.client.luau": "a45525940ccbe971c1d7e8a49fcbf762719a22078c71541da64b065b902a7f43",
     "src/Client/Presentation.luau": "b90e472f010bb08b62e321c3f66e9f5bd85c31d46a4dd339ee35c8369e5c7e19",
+    "src/Client/SandFX.luau": "508b91049b7e45c568d6707c3db3f81dc76829e9b5fd7b643cb1e5e60ee1f3b2",
     "src/Client/UI.luau": "4ca0e3a7286914bb150b317fc23a88515b8ccb0b3e3f814789bbfa2a278c10aa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
     "src/Client/VelmoraMotionEngine.luau": "ebe3293c6d857b9b7555f810ac8d12c757b80673789adf8a05ebb9b016dbf16e",
@@ -54,7 +55,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "618a79c099b7ab3e94642aba2eed2054e23143abf733749850739c582f9439f2",
+  "buildFingerprint": "307ab0d944fa09fd4cdf1c3b1536df90c55e36a07366ff835a87410aeb9dfb29",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -137,7 +138,7 @@
       },
       "tests/Gaara.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel Gaara prototype: 10 PASS"
+        "summary": "NinjaDuel Gaara prototype: 11 PASS"
       },
       "tests/Online.spec.luau": {
         "exit": 0,

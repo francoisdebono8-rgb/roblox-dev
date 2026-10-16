@@ -37,6 +37,8 @@ Keep **one** bridge alive: spawning `StudioMCP.exe` per call makes Studio drop a
 | `film_record.luau` | Client | records every rendered frame of both fighters' parts (poses, no VFX) for `DUR` s into `shared.NdFilm`, with the inspector's combat state |
 | `film_show.luau` | Client | chronophotograph: `COUNT` instants between `FROM` and `TO` posed as frozen copies side by side (`COLS` per row), seen from the side; `film_clear.luau` restores |
 | `film_distances.luau` / `film_labels.luau` | Client | per-frame root / torso / head / nearest-part distances between the fighters; state changes over the recording |
+| `staged_moment.luau` | Server | `MODE="setup"` starts `A` vs `B` (bot frozen, tool-driven); otherwise `WHO` performs `MODE` (Attack, Heavy, Technique1…, Tool, Dodge) at `GAP` studs |
+| `fx_freeze.luau` | Client | freeze-frame of an effect: waits for an object named `TARGET` under the effects folder, then after `DELAY` copies every visible effect and fighter part into a static `FrozenFX` folder and holds a side camera on it, so a 0.1 s effect can be captured; `TARGET="off"` restores |
 | `side_camera.luau` | Client | analysis camera bound after the game camera (`VIEW` side/front/off, optional fixed `AXIS`): profile views of gait, jumps and strikes; Studio-only tool, never shipped |
 
 `snaps.luau` also reports `…FootRel` (foot position in its own root frame, threshold 0.5 stud): the animation's own discontinuities, without the body's translation. `hot_push.py` writes sources into the Edit datamodel and restarts Play, so an animation change is checked in seconds without rebuilding or reopening the place (the shipped build still comes from `build.py`). `contact_sheet.py` tiles captures (`CROP=x0,y0,x1,y1`) for side-by-side comparison.
