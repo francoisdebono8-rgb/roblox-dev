@@ -51,7 +51,12 @@ function Elements.phoenix(c,a,pending,now)
 			c:schedule(now+.14+k*.07,function()
 				if a.health<=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health<=0 then return end
 				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
-				c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+				-- Skill build (Wired Flames): the hidden blades trail wire and bind.
+				if spec.WiredBlades then
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
+				else
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+				end
 			end)
 		end
 	end
@@ -60,7 +65,8 @@ end
 function Elements.wind(c,a,pending)
 	local aim=pending.aim
 	if (aim-a.root.Position).Magnitude<1 then aim=a.root.Position+a.root.CFrame.LookVector*pending.spec.Range end
-	c:projectile(a,aim,88,pending.spec.Range,pending.spec.Damage,"wind",nil,{radius=1.4})
+	-- Skill build (Gale Chase): a gust that connects opens the chase window.
+	c:projectile(a,aim,88,pending.spec.Range,pending.spec.Damage,"wind",nil,{radius=1.4,riders=if pending.spec.Chase then {chase=pending.spec.Chase} else nil})
 	c:cue(a,"WIND • CUTTING LANE")
 end
 return Elements

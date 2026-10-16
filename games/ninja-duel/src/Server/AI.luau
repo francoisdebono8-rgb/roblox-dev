@@ -113,7 +113,12 @@ function AI:update(now)
 		self.strafeUntil=now+.6+self.rng:NextNumber()*(if minato then .7 else 1.1)
 		self.strafeAmount=if self.rng:NextNumber()<.2 then 0 else (if minato then .95 else .6)
 	end
-	a.move=(toward*radial+tangent*(self.strafeSign or 1)*(self.strafeAmount or .5))
+	-- Pressing in from range: straight at them, angling only on the last
+	-- steps. Two sprinting fighters offset the same way (velocity turns at a
+	-- bounded rate) orbit each other forever instead of meeting.
+	local lateral=self.strafeAmount or .5
+	if radial>0 and not calm then lateral*=if distance>desired+8 then 0 else .35 end
+	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)

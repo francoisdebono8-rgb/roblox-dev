@@ -10,7 +10,27 @@ local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
 local Online=require(script.Parent.Online)
+local SkillBuilds=require(script.Parent.SkillBuilds)
+local BuildPresets=require(script.Parent.BuildPresets)
 local Matches={}; Matches.__index=Matches
+-- Skill builds (PROG-001..003) are resolved and validated here, on the server:
+-- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
+-- or, for the AI, {preset="Hard"}; with a ranked bracket the build must also
+-- fit its budget. Returns true + kit (nil = no build) or false + reason.
+function Matches.resolveKit(fighterId,spec,bracket)
+	if spec==nil then return true,nil end
+	if type(spec)~="table" then return false,"Invalid build" end
+	local nodes=spec.nodes
+	if spec.preset~=nil then
+		nodes=BuildPresets.ai(fighterId,spec.preset)
+		if not nodes then return false,"Unknown AI preset" end
+	end
+	local kit,reason
+	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked)
+	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked}) end
+	if not kit then return false,reason end
+	return true,kit
+end
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
 	local self=setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
@@ -44,21 +64,35 @@ function Matches:selection(player,notice)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 end
-function Matches:start(player,playerId,botId,training)
+-- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
+-- Matches.resolveKit). An invalid or over-budget build refuses the start. No
+-- options: both fighters are exactly today's kits.
+function Matches:start(player,playerId,botId,training,options)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
+	local playerKit,botKit
+	if options~=nil then
+		if type(options)~="table" then return false,"Invalid options" end
+		local ok,result=Matches.resolveKit(playerId,options.player,options.bracket)
+		if not ok then return false,result end
+		playerKit=result
+		ok,result=Matches.resolveKit(botId,options.bot,options.bracket)
+		if not ok then return false,result end
+		botKit=result
+	end
 	self:destroy(s); s.epoch+=1
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
+	s.options=options
 	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	World.arena(s.folder,s.origin)
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
-	local function actor(id,def,position,look)
+	local function actor(id,def,position,look,kit)
 		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
-		return s.combat:add(id,model,hum,root,joints,def)
+		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
-	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance))
-	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance))
+	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance),playerKit)
+	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
@@ -220,7 +254,7 @@ function Matches:request(player,payload)
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
 			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot,action=="Tutorial")
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil)
+			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end

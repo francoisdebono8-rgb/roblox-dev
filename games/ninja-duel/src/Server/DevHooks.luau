@@ -65,7 +65,8 @@ function DevHooks.install(matches)
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
 			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)>now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,
-			chainOpen=a.chainOpen and now>=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind}
+			chainOpen=a.chainOpen and now>=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
+			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end
 	hook.OnInvoke=function(op,arg1,arg2,arg3)
 		local player,s=session()
@@ -75,6 +76,35 @@ function DevHooks.install(matches)
 			if not player then return "no player" end
 			if s and s.phase~="Selection" then matches:selection(player) end
 			return matches:start(player,arg1 or "Flashstep",arg2 or "Mirage",arg3==true)
+		elseif op=="startBuild" then
+			-- Skill builds (PROG-001..003), validated exactly like a real start.
+			-- arg1 = {player=id, bot=id, training=bool, bracket=id,
+			--   playerNodes={...} or playerRanked=bracket id (example build),
+			--   botPreset=AI tier or botNodes={...}}
+			if not player then return "no player" end
+			local BuildPresets=require(script.Parent.BuildPresets)
+			local spec=if type(arg1)=="table" then arg1 else {}
+			local playerId,botId=spec.player or "Flashstep",spec.bot or "Mirage"
+			local playerNodes=spec.playerNodes or (spec.playerRanked and BuildPresets.ranked(playerId,spec.playerRanked))
+			local options={bracket=spec.bracket,player=if playerNodes then {nodes=playerNodes} else nil,
+				bot=if spec.botPreset then {preset=spec.botPreset} elseif spec.botNodes then {nodes=spec.botNodes} else nil}
+			if s and s.phase~="Selection" then matches:selection(player) end
+			local ok,reason=matches:start(player,playerId,botId,spec.training==true,options)
+			return {ok=ok,reason=reason}
+		elseif op=="skills" then
+			-- Trees, brackets and presets, for tooling and Studio checks.
+			local SkillBuilds=require(script.Parent.SkillBuilds)
+			local BuildPresets=require(script.Parent.BuildPresets)
+			local out={brackets=SkillBuilds.Brackets,aiTiers=BuildPresets.AITiers,fighters={}}
+			for id,tree in SkillBuilds.Trees do
+				local nodes={}
+				for _,node in tree.Nodes do
+					table.insert(nodes,{id=node.Id,kind=node.Kind,cost=node.Cost,major=node.Major==true,branch=node.Branch,
+						requires=node.Requires,requiresAny=node.RequiresAny,exclusive=node.Exclusive,wired=SkillBuilds.wired(id,node.Id),shows=node.Shows})
+				end
+				out.fighters[id]={nodes=nodes,designMax=SkillBuilds.maxCost(id,false),playableMax=SkillBuilds.maxCost(id,true),unwired=SkillBuilds.unwired(id)}
+			end
+			return out
 		elseif op=="selection" then
 			if player then matches:selection(player) end;return true
 		elseif op=="lag" then
