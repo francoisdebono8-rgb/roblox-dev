@@ -948,7 +948,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## PROG-001 — Prodigy League / Shinobi Path
 
-- status: OPEN
+- status: PARTIAL
 - priority: P1
 - dependencies: QA-001
 - subsystem: progression
@@ -956,12 +956,12 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Prodigy League / Shinobi Path
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Activation explicite, scope progression/compétition et interaction duel documentés
-- evidence: 2026-10-16 DEC-012 : fondation de progression par arbres de compétences par fighter ouverte ; règle : chaque nœud majeur change ce que le joueur peut FAIRE ou VOIR, pas « +2 % dégâts » ; le fighter de base reste complet. Fondations Codex à auditer (`29a9ec1` : ProfileSchema, ProfileRepository, CharacterProgression…). Sous-tickets PROG-002 (budgets classés) et PROG-003 (IA à budget)
+- evidence: 2026-10-16 DEC-012 : fondation de progression par arbres de compétences par fighter ouverte ; règle : chaque nœud majeur change ce que le joueur peut FAIRE ou VOIR, pas « +2 % dégâts » ; le fighter de base reste complet. Fondations Codex à auditer (`29a9ec1` : ProfileSchema, ProfileRepository, CharacterProgression…). Sous-tickets PROG-002 (budgets classés) et PROG-003 (IA à budget) 2026-10-16 fondation livrée (merge `5c6f3be`, [rapport](../reports/PROGRESSION_FOUNDATION.md), [système](../systems/PROGRESSION.md)) : arbres CORE4 (75 nœuds dont 35 majeurs, tous câblés et testés avec/sans), builds validés côté serveur sur des copies bornées (jamais dégâts ni vitesse), 0 SP = fighter actuel tick pour tick, profil v1 (SP gagnés, nœuds débloqués, 8 builds) et dépôt à verrou de session réutilisant `29a9ec1` sans l’économie. TECHNICAL PASS (Progression 49, Profiles 11). NATIVE_STUDIO et HUMAN_VISUAL PENDING ; pas d’UI de build, persistance non branchée au jeu
 - outcome: PENDING
 
 ## PROG-002 — Budgets de points de compétence actifs en classé
 
-- status: OPEN
+- status: PARTIAL
 - priority: P2
 - dependencies: PROG-001, NET-001
 - subsystem: progression
@@ -969,12 +969,12 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Budgets de points de compétence actifs en classé
 - sources: [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Brackets configurables (ex. 50 / 80 / 100 / 120+ SP) ; dans une file à N SP chaque joueur n’active que N points quel que soit son total débloqué ; builds d’exemple valides et rejet serveur des builds hors budget ; « la progression donne plus de choix de build, pas plus de puissance dans un même bracket »
-- evidence: 2026-10-16 DEC-012 : ouvert par la mission ; architecture/config d’abord, UI classée finale plus tard
+- evidence: 2026-10-16 DEC-012 : ouvert par la mission ; architecture/config d’abord, UI classée finale plus tard 2026-10-16 (merge `5c6f3be`) : brackets 50 / 80 / 100 / 120+ en données, `SkillBuilds.admit` refuse tout build hors budget, verrouillé ou invalide (jamais rogné), build d’exemple par bracket et par fighter. TECHNICAL PASS. File classée à brancher sur NET-001
 - outcome: PENDING
 
 ## PROG-003 — IA à builds de budget cohérents
 
-- status: OPEN
+- status: PARTIAL
 - priority: P2
 - dependencies: PROG-001, AI-001
 - subsystem: ai
@@ -982,5 +982,5 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: IA à builds de budget cohérents
 - sources: [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Profils d’IA par budget (débutant ~20–30 SP, moyen ~40–50, difficile ~60–70, boss de tournoi ~80+, légendaire proche du max) au lieu de tricher sur les stats ; utilisables comme outil d’équilibrage
-- evidence: 2026-10-16 DEC-012 : ouvert par la mission
+- evidence: 2026-10-16 DEC-012 : ouvert par la mission 2026-10-16 (merge `5c6f3be`) : cinq paliers d’IA par fighter construits uniquement depuis l’arbre (débutant 23–27 SP, moyen 43–46, difficile 65–69, boss 88–95, légendaire 118–132), `Config.AI` inchangé ; `Matches:start(…, options)` validé côté serveur. TECHNICAL PASS. L’IA n’exploite pas encore les nœuds d’entrée pure (cancels, Air Exit)
 - outcome: PENDING
