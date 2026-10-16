@@ -667,7 +667,9 @@ return Metrics
 		-- Sand shield: while charged it stops hits by itself (not while he is
 		-- attacking or already hurt). A heavy blow, a third string hit or a
 		-- Rasengan breaks it outright; charges come back one at a time.
-		SandShield = { Charges = 3, Regen = 3.5, Break = 17 },
+		-- Cover: the cosine past which the sand no longer reaches (-0.4: it
+		-- covers ~130 degrees either side of his facing, never his back).
+		SandShield = { Charges = 3, Regen = 3.5, Break = 17, Cover = -0.4 },
 		-- His heavy is not a punch: sand erupts under the opponent at range.
 		HeavyMove = "SandPillar", LauncherMove = "SandPillar",
 		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
@@ -677,8 +679,11 @@ return Metrics
 			-- Sand lashes: long, narrow volumes in front of him.
 			-- Slower than a fist, long to recover and light: the reach is paid for
 			-- (pokes that set up the pillar and the coffin, not a damage string).
-			Light1={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
-			Light3={startup=1.5,recovery=1.35,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
+			-- (Studio soaks: lashes out on nearly a fist's startup let him out-hit
+			-- Lee both ways; the reach is now read before it lands and a whiff is
+			-- punished — slow, oppressive at his range, punishable when bypassed.)
+			Light1={startup=1.8,recovery=1.45,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.8,recovery=1.45,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
+			Light3={startup=1.9,recovery=1.5,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
 			Air1={startup=1.1,range=8},Air2={startup=1.1,range=8},Slam={startup=1.1},
 		},
 		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },
@@ -1947,7 +1952,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">230528e2716b178b3a726ef5f300601854f2897196bd14efcf8975ef9ce094ad</string>
+          <string name="Value">7ec5e721bf30ca2d4c68a6f069ccf25be8a086ab0e8952620a82aa99985e2bfe</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -5619,7 +5624,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	-- Gaara's sand shield stops the hit by itself while it has charges.
 	local shield=victim.def.SandShield
 	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
-	if shield and (victim.shieldCharges or 0)&gt;0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
+	-- The sand covers his front and flanks, not his back: a blow that gets
+	-- round him (a teleport, an angle, a clone) is the way past it, so he is
+	-- punishable when bypassed instead of absorbing every basic string.
+	local covered=delta.Magnitude&lt;0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;(shield and shield.Cover or -1)
+	if shield and covered and (victim.shieldCharges or 0)&gt;0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
 		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil&lt;=self.now then
 		local breaking=heavy or amount&gt;=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
 		-- A new fighter's strike carries the flag in its own data (Attacks

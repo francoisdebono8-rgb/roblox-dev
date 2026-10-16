@@ -150,7 +150,9 @@ return {
 		-- Sand shield: while charged it stops hits by itself (not while he is
 		-- attacking or already hurt). A heavy blow, a third string hit or a
 		-- Rasengan breaks it outright; charges come back one at a time.
-		SandShield = { Charges = 3, Regen = 3.5, Break = 17 },
+		-- Cover: the cosine past which the sand no longer reaches (-0.4: it
+		-- covers ~130 degrees either side of his facing, never his back).
+		SandShield = { Charges = 3, Regen = 3.5, Break = 17, Cover = -0.4 },
 		-- His heavy is not a punch: sand erupts under the opponent at range.
 		HeavyMove = "SandPillar", LauncherMove = "SandPillar",
 		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
@@ -160,8 +162,11 @@ return {
 			-- Sand lashes: long, narrow volumes in front of him.
 			-- Slower than a fist, long to recover and light: the reach is paid for
 			-- (pokes that set up the pillar and the coffin, not a damage string).
-			Light1={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.45,recovery=1.3,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
-			Light3={startup=1.5,recovery=1.35,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
+			-- (Studio soaks: lashes out on nearly a fist's startup let him out-hit
+			-- Lee both ways; the reach is now read before it lands and a whiff is
+			-- punished — slow, oppressive at his range, punishable when bypassed.)
+			Light1={startup=1.8,recovery=1.45,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.8},Light2={startup=1.8,recovery=1.45,travel=.25,range=8.5,depth=7.5,offset=4.3,width=3.4,damage=.5},
+			Light3={startup=1.9,recovery=1.5,travel=.25,range=9,depth=8,offset=4.5,width=4.2,impulseZ=56,damage=.5},DashAttack={startup=1.1,travel=.8,range=8.5},
 			Air1={startup=1.1,range=8},Air2={startup=1.1,range=8},Slam={startup=1.1},
 		},
 		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },

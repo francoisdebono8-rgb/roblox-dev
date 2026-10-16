@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "3cf22607e7d0abf88cec5a9828479157576f86e2b1c443440d1e6f9acc07a1d8",
+  "sha256": "3fb1d3a5371eb86b7be7f330b253764c75f2159aaf18cb758413b14bd4588b53",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -31,7 +31,7 @@
     "src/Server/ChakraStudioView.luau": "966d7c5d04a9195b2bcdfcf89405c016ea209b797f07b33830e765d4f3e93bed",
     "src/Server/ChakraTuning.luau": "cb9fe68d7c4ce5d2dd8dfbda7e302eb13bfb814fa30e727596f87df96d0f8d57",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "e817983d063a5d505f926d202cc15bea329f21d75fd2bf01838a22a840a4a4d8",
+    "src/Server/Combat.luau": "98162dd8e794009e855fe03ee456d838c7866027f4e1670f4a6a9f19abd3c608",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
     "src/Server/DevHooks.luau": "4656e906ab377dff89e0e28aea333d62b8a38e0fbd16715ba296531c4be00dcb",
@@ -64,7 +64,7 @@
     "src/Shared/Config.luau": "3d1c6ea4c3f7e83eddb147f486791b1f369b9bad8acd1a6ddc82fe007360e799",
     "src/Shared/Controls.luau": "35c9f4ee549ea6f328fbd2490b42a796df7b3ff87fbc38578d10dbbd810070aa",
     "src/Shared/DevMetrics.luau": "011735bb738b123e7d097faf408bd5473f57a2ea978d76303c964c473d281cea",
-    "src/Shared/Fighters.luau": "7d26b13804059e7c5e3ed540a4b949fefc31db41942a9752194f575cfb2f837b",
+    "src/Shared/Fighters.luau": "8d67ff27bbcbc1dae96479a49b9234f59fd07a4e361ec9621e39d905a29af7c9",
     "src/Shared/MoveGraphs.luau": "600771212ac24d186de40b09c145bd599eb0b35b02e17d8782b3c3a956c11487",
     "src/Shared/OnlineProtocol.luau": "d297a74dc56b750386ef8c051204ad5ee7040b49d32cf0a7f4ec58fe6e22628a",
     "src/Shared/Rules.luau": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1",
@@ -72,7 +72,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "2706da05a37e9456df3583afac2dcd4834c37d08522a0d7de51b84dae4ffbcdd",
+  "buildFingerprint": "7161be77cdffb40ad62855238ac474b434f87c21a0fcd59e6b64386621b88a8d",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -155,7 +155,7 @@
       },
       "tests/Gaara.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel Gaara prototype: 12 PASS"
+        "summary": "NinjaDuel Gaara prototype: 13 PASS"
       },
       "tests/Lee.spec.luau": {
         "exit": 0,

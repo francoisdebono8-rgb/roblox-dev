@@ -204,7 +204,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	-- Gaara's sand shield stops the hit by itself while it has charges.
 	local shield=victim.def.SandShield
 	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
-	if shield and (victim.shieldCharges or 0)>0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
+	-- The sand covers his front and flanks, not his back: a blow that gets
+	-- round him (a teleport, an angle, a clone) is the way past it, so he is
+	-- punishable when bypassed instead of absorbing every basic string.
+	local covered=delta.Magnitude<0.1 or victim.root.CFrame.LookVector:Dot(delta.Unit)>(shield and shield.Cover or -1)
+	if shield and covered and (victim.shieldCharges or 0)>0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
 		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil<=self.now then
 		local breaking=heavy or amount>=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
 		-- A new fighter's strike carries the flag in its own data (Attacks

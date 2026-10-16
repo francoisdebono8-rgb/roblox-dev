@@ -36,6 +36,17 @@ test("sand shield: stops a strike by itself, a charge at a time, and comes back"
  until_(c,b.def.SandShield.Regen+.5,function() return b.shieldCharges==3 end,"the charge never came back")
 end)
 
+test("sand shield: covers his front and flanks, never his back (bypassed, he is hit)",function()
+ -- Mission §6: the shield absorbed every basic string; getting round him
+ -- (a teleport, an angle, a clone) is now the way past it.
+ local c,a,b=H.duel("Flashstep","Sand")
+ place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+ b.locked=false
+ b.root.CFrame=H.C.lookAt(b.root.Position,b.root.Position+(b.root.Position-a.root.Position))
+ assert(c:request(a,"Attack"))
+ until_(c,.5,function() return b.health<b.def.Health end,"a strike in the back was stopped by the sand")
+ assert(b.shieldCharges==3,"a strike in the back spent a charge ("..b.shieldCharges..")")
+end)
 test("sand shield: a heavy blow breaks it outright and opens him",function()
  local c,a,b=H.duel("Flashstep","Sand")
  place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
