@@ -6,6 +6,7 @@ local TARGET="SandLash"
 local DELAY=.15
 local DIST=17
 local HEIGHT=4
+local VIEW="side" -- or "behind": over the human's shoulder, like the game camera
 local RS=game:GetService("RunService")
 local Players=game:GetService("Players")
 pcall(function() RS:UnbindFromRenderStep("NdFreezeCam") end)
@@ -43,9 +44,23 @@ task.spawn(function()
 		return c
 	end
 	local sum,n=Vector3.zero,0
-	for _,d in fxf:GetDescendants() do
-		if d:IsA("BasePart") and d.Transparency<.98 then
-			if copy(d) and (d==hit or d:IsDescendantOf(hit)) then sum+=d.Position;n+=1 end
+	-- Effect models are cloned whole (their Beams keep their handles); loose
+	-- parts are copied one by one.
+	for _,top in fxf:GetChildren() do
+		if top:IsA("Model") then
+			local ok,c=pcall(function() return top:Clone() end)
+			if ok and c then
+				for _,x in c:GetDescendants() do
+					if x:IsA("BasePart") then x.Anchored=true;x.CanCollide=false end
+					if x:IsA("JointInstance") or x:IsA("WeldConstraint") then x:Destroy() end
+				end
+				c.Parent=frozen
+			end
+			for _,d in top:GetDescendants() do
+				if d:IsA("BasePart") and (top==hit or d==hit or top:IsDescendantOf(hit) or d:IsDescendantOf(hit)) then sum+=d.Position;n+=1 end
+			end
+		elseif top:IsA("BasePart") and top.Transparency<.98 then
+			copy(top)
 		end
 	end
 	local me,bot=bodies()
@@ -60,7 +75,8 @@ task.spawn(function()
 	frozen.Parent=workspace
 	local cam=workspace.CurrentCamera
 	RS:BindToRenderStep("NdFreezeCam",Enum.RenderPriority.Camera.Value+6,function()
-		cam.CFrame=CFrame.lookAt(focus+side*DIST+Vector3.new(0,HEIGHT,0),focus)
+		local eye=if VIEW=="behind" and a and b then a.Position-line.Unit*DIST+Vector3.new(0,HEIGHT,0)+side*2 else focus+side*DIST+Vector3.new(0,HEIGHT,0)
+		cam.CFrame=CFrame.lookAt(eye,focus)
 		cam.FieldOfView=50
 		for _,m in {me,bot} do if m then for _,p in m:GetDescendants() do if p:IsA("BasePart") then p.LocalTransparencyModifier=1 end end end end
 	end)

@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "3fb1d3a5371eb86b7be7f330b253764c75f2159aaf18cb758413b14bd4588b53",
+  "sha256": "a4cec5cf36a6087ac493e624ff9dd80b1bed7a62acf08effa8445c5b6fdfc26a",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -12,7 +12,7 @@
     "src/Client/LeeFX.luau": "3f45ced5aa86dc552a07c0802c33e6dcb6a05019da3bd4768585cefeef07e159",
     "src/Client/Main.client.luau": "a45525940ccbe971c1d7e8a49fcbf762719a22078c71541da64b065b902a7f43",
     "src/Client/Presentation.luau": "b90e472f010bb08b62e321c3f66e9f5bd85c31d46a4dd339ee35c8369e5c7e19",
-    "src/Client/SandFX.luau": "49805b2d3285ef40dfe50c5ede1958aa45417bd9791f5f301a0dac899297dc02",
+    "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "5a9b0fa5a7602bfa6ec142b18d96f4fcd755333e863988b9e70451b48fe5b46b",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
     "src/Client/VelmoraMotionEngine.luau": "0578451108d3f4b53301908586873d2b051f45e130011b3c76bbd1448a759bc4",
@@ -72,7 +72,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "7161be77cdffb40ad62855238ac474b434f87c21a0fcd59e6b64386621b88a8d",
+  "buildFingerprint": "f2a8309117407b11c3195424746b9cc518267420f875ddade5f9e5e50976ae7e",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
