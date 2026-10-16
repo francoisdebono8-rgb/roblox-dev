@@ -5,8 +5,39 @@
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local DevHooks={}
+-- Studio latency simulation for the client-to-server half (Studio's Incoming
+-- Replication Lag covers server-to-client). Each player's requests reach the
+-- server `latency` ms (± `jitter` ms) late and in order, like a slow reliable
+-- remote. Wraps this matches instance only; returns the per-frame flush.
+-- Debug/QA places only: this module never ships in the normal build.
+function DevHooks.delayRequests(matches,settings,clock,random)
+	local inbound=matches.request
+	local queues={}
+	matches.request=function(self,player,payload)
+		local latency,jitter=settings()
+		if latency<=0 and jitter<=0 and not queues[player] then return inbound(self,player,payload) end
+		local queue=queues[player] or {}
+		queues[player]=queue
+		local due=clock()+math.max(0,latency+(random()*2-1)*jitter)/1000
+		-- Reliable remotes never reorder: a request is never due before the previous one.
+		if queue[#queue] and queue[#queue].due>due then due=queue[#queue].due end
+		table.insert(queue,{due=due,payload=payload})
+	end
+	return function()
+		local now=clock()
+		for player,queue in queues do
+			while queue[1] and queue[1].due<=now and player.Parent~=nil do inbound(matches,player,table.remove(queue,1).payload) end
+			if #queue==0 or player.Parent==nil then queues[player]=nil end
+		end
+	end
+end
 function DevHooks.install(matches)
 	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
+	-- Set from the server command bar or the Workspace properties while testing:
+	-- workspace:SetAttribute("NinjaDuelSimLatency",60) and ("NinjaDuelSimJitter",15).
+	local flushRequests=DevHooks.delayRequests(matches,function()
+		return tonumber(workspace:GetAttribute("NinjaDuelSimLatency")) or 0,tonumber(workspace:GetAttribute("NinjaDuelSimJitter")) or 0
+	end,os.clock,math.random)
 	local Inspector=require(script.Parent.CombatInspector)
 	local debugRemote=Instance.new("RemoteEvent");debugRemote.Name="NinjaDuelCombatDebug";debugRemote.Parent=game:GetService("ReplicatedStorage")
 	local traces=setmetatable({},{__mode="k"})
@@ -46,6 +77,12 @@ function DevHooks.install(matches)
 			return matches:start(player,arg1 or "Flashstep",arg2 or "Mirage",arg3==true)
 		elseif op=="selection" then
 			if player then matches:selection(player) end;return true
+		elseif op=="lag" then
+			-- arg1 = one-way request delay (ms), arg2 = jitter (± ms); 0, 0 turns it off.
+			workspace:SetAttribute("NinjaDuelSimLatency",tonumber(arg1) or 0);workspace:SetAttribute("NinjaDuelSimJitter",tonumber(arg2) or 0)
+			return {latency=workspace:GetAttribute("NinjaDuelSimLatency"),jitter=workspace:GetAttribute("NinjaDuelSimJitter")}
+		elseif op=="online" then
+			return matches.online and matches.online:summary()
 		end
 		if not s or not s.combat then return "no duel" end
 		local c=s.combat
@@ -121,6 +158,7 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+		flushRequests()
 		if workspace:GetAttribute("NinjaDuelDebugEnabled")~=false then
 			for viewer,session in matches.sessions do
 				if session.combat then

@@ -75,7 +75,8 @@ function Camera:impulse(style,role)
 end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
-	if not data or data.phase=="Selection" then
+	-- Roster, online queue and fighter pick: no duel on screen yet.
+	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
 		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
 		camera.CameraType=Enum.CameraType.Scriptable
 		-- Slow establishing orbit over the training ground behind the menu.
@@ -105,7 +106,8 @@ function Camera:update(data,dt)
 	local presentation=self.presentation
 	local a=(presentation and presentation:visualRoot("human")) or root.Position
 	local folder=root.Parent and root.Parent.Parent
-	local bot=folder and folder:FindFirstChild("AIFighter")
+	-- The opponent's model is named by its id (AIFighter locally, a duelist online).
+	local bot=folder and folder:FindFirstChild(data.bot.id or "AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
 	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)

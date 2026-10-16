@@ -572,6 +572,32 @@ return {
       </Item>
       <Item class="ModuleScript" referent="ND11">
         <Properties>
+          <string name="Name">OnlineProtocol</string>
+          <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
+-- online flow. Authority stays in Server/Online and Server/Matches; nothing in
+-- here is ever read back from a client.
+return table.freeze({
+	-- Seconds both players get to confirm (or change) their fighter once paired;
+	-- the duel starts when both confirm or when the time runs out.
+	PickTime=15,
+	-- Private duel codes: short, upper case, no look-alike characters (0/O, 1/I/L).
+	CodeLength=5,
+	CodeAlphabet="ABCDEFGHJKMNPQRSTUVWXYZ23456789",
+	-- Minimum gap between two lobby requests of one player (same as the local duel).
+	LifecycleGap=0.8,
+	-- Requests that enter or leave the online flow from the roster / waiting screen.
+	Lifecycle=table.freeze({Queue=true,Host=true,Join=true,Cancel=true}),
+	-- The only requests an online fighter may send during a fight. Anything else
+	-- is ignored before it reaches Combat.
+	Combat=table.freeze({Move=true,Attack=true,Heavy=true,Jump=true,JumpOff=true,Dodge=true,Guard=true,GuardOff=true,
+		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Awaken=true,
+		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}),
+})
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND12">
+        <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
 local Rules = {}
@@ -612,7 +638,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND13">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1608,17 +1634,17 @@ return table.freeze({
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND13">
+      <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5b1fe9cff08ad1b65f209ab6739fd7fa50ac6ab5f451b12b87e568749db4318d</string>
+          <string name="Value">f7d4a230bab11de86ccf2328cb32e634c63fc4c55bdff8a646832e5c0b78fd6c</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND14">
+      <Item class="Folder" referent="ND15">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND15">
+        <Item class="StringValue" referent="ND16">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -1645,7 +1671,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND16">
+        <Item class="StringValue" referent="ND17">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -1672,7 +1698,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND17">
+        <Item class="StringValue" referent="ND18">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -1702,15 +1728,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND18">
+  <Item class="ServerScriptService" referent="ND19">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND19">
+    <Item class="Folder" referent="ND20">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -2018,7 +2044,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -2124,7 +2150,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -2205,7 +2231,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -2245,7 +2271,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -2874,7 +2900,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -4238,7 +4264,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -4308,7 +4334,7 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -4318,8 +4344,39 @@ return Inspector
 local Players=game:GetService("Players")
 local RunService=game:GetService("RunService")
 local DevHooks={}
+-- Studio latency simulation for the client-to-server half (Studio's Incoming
+-- Replication Lag covers server-to-client). Each player's requests reach the
+-- server `latency` ms (± `jitter` ms) late and in order, like a slow reliable
+-- remote. Wraps this matches instance only; returns the per-frame flush.
+-- Debug/QA places only: this module never ships in the normal build.
+function DevHooks.delayRequests(matches,settings,clock,random)
+	local inbound=matches.request
+	local queues={}
+	matches.request=function(self,player,payload)
+		local latency,jitter=settings()
+		if latency&lt;=0 and jitter&lt;=0 and not queues[player] then return inbound(self,player,payload) end
+		local queue=queues[player] or {}
+		queues[player]=queue
+		local due=clock()+math.max(0,latency+(random()*2-1)*jitter)/1000
+		-- Reliable remotes never reorder: a request is never due before the previous one.
+		if queue[#queue] and queue[#queue].due&gt;due then due=queue[#queue].due end
+		table.insert(queue,{due=due,payload=payload})
+	end
+	return function()
+		local now=clock()
+		for player,queue in queues do
+			while queue[1] and queue[1].due&lt;=now and player.Parent~=nil do inbound(matches,player,table.remove(queue,1).payload) end
+			if #queue==0 or player.Parent==nil then queues[player]=nil end
+		end
+	end
+end
 function DevHooks.install(matches)
 	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
+	-- Set from the server command bar or the Workspace properties while testing:
+	-- workspace:SetAttribute("NinjaDuelSimLatency",60) and ("NinjaDuelSimJitter",15).
+	local flushRequests=DevHooks.delayRequests(matches,function()
+		return tonumber(workspace:GetAttribute("NinjaDuelSimLatency")) or 0,tonumber(workspace:GetAttribute("NinjaDuelSimJitter")) or 0
+	end,os.clock,math.random)
 	local Inspector=require(script.Parent.CombatInspector)
 	local debugRemote=Instance.new("RemoteEvent");debugRemote.Name="NinjaDuelCombatDebug";debugRemote.Parent=game:GetService("ReplicatedStorage")
 	local traces=setmetatable({},{__mode="k"})
@@ -4359,6 +4416,12 @@ function DevHooks.install(matches)
 			return matches:start(player,arg1 or "Flashstep",arg2 or "Mirage",arg3==true)
 		elseif op=="selection" then
 			if player then matches:selection(player) end;return true
+		elseif op=="lag" then
+			-- arg1 = one-way request delay (ms), arg2 = jitter (± ms); 0, 0 turns it off.
+			workspace:SetAttribute("NinjaDuelSimLatency",tonumber(arg1) or 0);workspace:SetAttribute("NinjaDuelSimJitter",tonumber(arg2) or 0)
+			return {latency=workspace:GetAttribute("NinjaDuelSimLatency"),jitter=workspace:GetAttribute("NinjaDuelSimJitter")}
+		elseif op=="online" then
+			return matches.online and matches.online:summary()
 		end
 		if not s or not s.combat then return "no duel" end
 		local c=s.combat
@@ -4434,6 +4497,7 @@ function DevHooks.install(matches)
 		return "unknown op"
 	end
 	RunService.Heartbeat:Connect(function()
+		flushRequests()
 		if workspace:GetAttribute("NinjaDuelDebugEnabled")~=false then
 			for viewer,session in matches.sessions do
 				if session.combat then
@@ -4453,7 +4517,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -4495,7 +4559,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -4567,7 +4631,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND30">
+      <Item class="Script" referent="ND31">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -4597,7 +4661,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4611,10 +4675,18 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local Online=require(script.Parent.Online)
 local Matches={}; Matches.__index=Matches
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
-	return setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
+	local self=setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
+	-- Online 1v1 (queue, private codes, two-player duels) on the same sessions.
+	self.online=Online.new(self)
+	return self
+end
+-- Each duel owns a stage far from every other one.
+function Matches.laneOrigin(lane)
+	return Vector3.new((lane-1)*520,0,0)
 end
 function Matches:send(player,data)
 	if player.Parent==Players then self.remote:FireClient(player,data) end
@@ -4631,16 +4703,18 @@ function Matches:destroy(s)
 	if s.folder then s.folder:Destroy() end
 	s.tutorial=nil; s.folder=nil; s.combat=nil; s.ai=nil; s.human=nil; s.bot=nil
 end
-function Matches:selection(player)
-	local s=self:session(player); self:destroy(s)
+function Matches:selection(player,notice)
+	local s=self:session(player)
+	if s.online and self.online then self.online:leave(player,s) end
+	self:destroy(s)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
-	self:send(player,{phase="Selection",epoch=s.epoch})
+	self:send(player,{phase="Selection",epoch=s.epoch,notice=notice})
 end
 function Matches:start(player,playerId,botId,training)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
 	self:destroy(s); s.epoch+=1
-	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*520,0,0)
+	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Matches.laneOrigin(s.lane)
 	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	World.arena(s.folder,s.origin)
@@ -4658,24 +4732,7 @@ function Matches:start(player,playerId,botId,training)
 	-- Tournament rounds: first to two (one in training).
 	s.round=1;s.wins={PlayerFighter=0,AIFighter=0};s.roundsToWin=if training then 1 else Config.RoundsToWin
 	s.finish=function(winner,_loser)
-		if s.phase~="Duel" or s.finishing then return end
-		-- The finishing blow gets a beat: the world holds, the camera eases out
-		-- and K.O. is called before the next round or the result screen.
-		s.finishing=true; s.winner=winner.id
-		s.wins[winner.id]=(s.wins[winner.id] or 0)+1
-		local decided=s.wins[winner.id]&gt;=s.roundsToWin
-		s.matchPoint=decided
-		local finishEpoch=s.epoch
-		self:snapshot(player,s)
-		task.delay(if decided then 1.5 else 1.9,function()
-			if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
-			s.finishing=false
-			if not decided then self:nextRound(player,s);return end
-			s.phase="Result"; s.combat:clear(true)
-			for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
-			for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
-			self:snapshot(player,s)
-		end)
+		self:roundOver(s,winner,function() self:snapshot(player,s) end,function() self:nextRound(player,s) end)
 	end
 	s.tutorial=nil; if training then Tutorial.new(s) end
 	-- Tournament framing: both fighters are shown before the round begins.
@@ -4686,27 +4743,61 @@ function Matches:start(player,playerId,botId,training)
 	self:snapshot(player,s)
 	return true
 end
--- Next round: same stage and bodies, fresh fighters, a short intro. A new
--- epoch tells the client to reset its presentation like a fresh duel.
+-- A round is won. Shared by the local duel and the online duel: `notify` sends
+-- the snapshots, `advance` starts the next round.
+function Matches:roundOver(s,winner,notify,advance)
+	if s.phase~="Duel" or s.finishing then return end
+	-- The finishing blow gets a beat: the world holds, the camera eases out
+	-- and K.O. is called before the next round or the result screen.
+	s.finishing=true; s.winner=winner.id
+	s.wins[winner.id]=(s.wins[winner.id] or 0)+1
+	local decided=s.wins[winner.id]&gt;=s.roundsToWin
+	s.matchPoint=decided
+	local finishEpoch=s.epoch
+	notify()
+	task.delay(if decided then 1.5 else 1.9,function()
+		if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
+		s.finishing=false
+		if not decided then advance();return end
+		s.phase="Result"; s.combat:clear(true)
+		for _,a in s.combat.actors do World.pose(a,s.combat.now,0.1) end
+		for _,a in s.combat.actors do a.hum.WalkSpeed=0; a.root.Anchored=true end
+		notify()
+	end)
+end
 function Matches:nextRound(player,s)
+	self:resetRound(s)
+	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+s.epoch)
+	self:snapshot(player,s)
+end
+-- Next round: same stage and bodies, fresh fighters, a short intro. A new
+-- epoch tells the client to reset its presentation like a fresh duel. The
+-- first actor (the player, or online seat 1) restarts on +Z, the second on -Z.
+function Matches:resetRound(s)
 	local c=s.combat
+	local first,second=c.actors[1],c.actors[2]
 	s.epoch+=1;s.round+=1;s.winner=nil;s.matchPoint=false
 	c:clear(true)
-	for _,a in {s.human,s.bot} do
+	for _,a in c.actors do
 		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
 		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
 		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
-	c:relocate(s.human,s.origin+Vector3.new(0,3,Config.StartDistance));c:relocate(s.bot,s.origin+Vector3.new(0,3,-Config.StartDistance))
-	s.human.root.CFrame=CFrame.lookAt(s.human.root.Position,s.bot.root.Position)
-	s.bot.root.CFrame=CFrame.lookAt(s.bot.root.Position,s.human.root.Position)
+	c:relocate(first,s.origin+Vector3.new(0,3,Config.StartDistance));c:relocate(second,s.origin+Vector3.new(0,3,-Config.StartDistance))
+	first.root.CFrame=CFrame.lookAt(first.root.Position,second.root.Position)
+	second.root.CFrame=CFrame.lookAt(second.root.Position,first.root.Position)
 	s.introUntil=c.now+1.8
-	s.ai=AI.new(c,s.bot,player.UserId%100000+s.epoch)
-	self:snapshot(player,s)
 end
 function Matches:snapshot(player,s)
+	self:send(player,self:view(s,s,s.human,s.bot))
+end
+-- The duel seen from one side: `human` is the viewer's own actor and `bot` the
+-- opponent (its model is named bot.id); `winner` reads "PlayerFighter" when
+-- the viewer won. `cursor` holds this viewer's impact feed position: the local
+-- session itself, or an online seat.
+function Matches:view(s,cursor,mine,theirs)
 	local now=s.combat.now
 	-- Every Flying Thunder God seal the client should draw: planted kunai
 	-- (surface + normal) and the seal riding on the opponent's body.
@@ -4767,12 +4858,13 @@ function Matches:snapshot(player,s)
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.
 	local feed={}
-	local sent=if s.impactEpoch==s.epoch then (s.sentImpact or 0) else 0
+	local sent=if cursor.impactEpoch==s.epoch then (cursor.sentImpact or 0) else 0
 	for _,impact in s.combat.impacts do if impact.serial&gt;sent then table.insert(feed,impact) end end
-	s.sentImpact=s.combat.impactSerial or 0;s.impactEpoch=s.epoch
-	self:send(player,{phase=s.phase,epoch=s.epoch,winner=s.winner,tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(s.human),bot=data(s.bot),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
+	local wins=s.wins or {}
+	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
 		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
-		round=s.round or 1,wins={human=s.wins and s.wins.PlayerFighter or 0,bot=s.wins and s.wins.AIFighter or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint})
+		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
@@ -4780,10 +4872,13 @@ function Matches:request(player,payload)
 	if type(payload)~="table" or type(payload.action)~="string" or #payload.action&gt;24 then return end
 	local action=payload.action
 	if action=="Ready" then
-		if s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch}) else self:snapshot(player,s) end
+		if s.online and self.online then self.online:refresh(player,s)
+		elseif s.phase=="Selection" then self:send(player,{phase="Selection",epoch=s.epoch}) else self:snapshot(player,s) end
 		return
 	end
 	if payload.epoch~=s.epoch then return end
+	-- The online flow owns every request of a player who is in it.
+	if self.online and self.online:request(player,s,action,payload,clock) then return end
 	if action=="TutorialSkip" and s.tutorial then self:selection(player);s.tutorial=nil;return end
 	if action=="Start" or action=="Tutorial" or action=="Rematch" or action=="Selection" then
 		if clock-s.lastLifecycle&lt;0.8 then return end
@@ -4796,18 +4891,31 @@ function Matches:request(player,payload)
 		return
 	end
 	if s.phase~="Duel" or not s.human then return end
-	if action~="Move" and not AntiCheat.check(s.human,action,payload.clientTime,workspace:GetServerTimeNow()) then return end
+	self:act(s,s.human,payload,clock)
+end
+-- One player's input to their own actor: validated intent only, never state.
+-- Shared by the local duel (s.human) and the online duel (each seat's actor);
+-- the anti-cheat timing and rate state is kept per actor, so per player.
+function Matches:act(s,actor,payload,clock)
+	local action=payload.action
+	if action~="Move" and not AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow()) then
+		-- Diagnostics for latency tests: how many presses were refused, and how
+		-- old the last refused one was (late packets vs rate limit).
+		actor.refusedInputs=(actor.refusedInputs or 0)+1
+		actor.refusedAge=if type(payload.clientTime)=="number" then workspace:GetServerTimeNow()-payload.clientTime else nil
+		return
+	end
 	local function vector(v)
 		return typeof(v)=="Vector3" and Rules.finite(v.X) and Rules.finite(v.Y) and Rules.finite(v.Z)
 	end
 	if action=="Move" then
 		if s.autopilot or s.scripted or s.finishing then return end
 		if not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;0.01 then return end
-		s.human.move=payload.direction; s.human.lastMove=clock
-		if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
+		actor.move=payload.direction; actor.lastMove=clock
+		if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
 		if type(payload.locked)=="boolean" then
-			if s.human.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,s.human,if payload.locked then "Lock" else "Unlock") end
-			s.human.locked=payload.locked
+			if actor.locked~=payload.locked then require(script.Parent.Brawler).event(s.combat,actor,if payload.locked then "Lock" else "Unlock") end
+			actor.locked=payload.locked
 		end
 		return
 	end
@@ -4817,22 +4925,23 @@ function Matches:request(player,payload)
  if payload.direction~=nil and (not vector(payload.direction) or payload.direction.Magnitude&gt;1.01 or math.abs(payload.direction.Y)&gt;.01) then return end
  local aim=nil
 	if payload.aim~=nil then
-		if not vector(payload.aim) or (payload.aim-s.human.root.Position).Magnitude&gt;150 then return end
+		if not vector(payload.aim) or (payload.aim-actor.root.Position).Magnitude&gt;150 then return end
 		aim=payload.aim
 	end
 	if payload.direction~=nil and not (s.autopilot or s.scripted or s.finishing) then
-  s.human.move=payload.direction;s.human.lastMove=clock
-  if type(payload.sprint)=="boolean" then s.human.sprinting=payload.sprint end
+  actor.move=payload.direction;actor.lastMove=clock
+  if type(payload.sprint)=="boolean" then actor.sprinting=payload.sprint end
  end
  -- The held guard key is an intent that outlives a refused press (Combat
- -- re-raises it once free). Only the player sends it; the AI guards per tick.
- if action=="Guard" then s.human.guardWanted=true elseif action=="GuardOff" then s.human.guardWanted=false end
- local ok,reason=s.combat:request(s.human,action,aim,payload.clientTime)
-	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(s.human,string.upper(reason)) end
+ -- re-raises it once free). Only players send it; the AI guards per tick.
+ if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
+ local ok,reason=s.combat:request(actor,action,aim,payload.clientTime)
+	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
 	for player,s in self.sessions do
-		if s.phase=="Duel" then
+		-- Online players' duels are stepped once each by Online:update below.
+		if s.phase=="Duel" and not s.online then
 			if os.clock()-s.human.lastMove&gt;0.4 then s.human.move=Vector3.zero end
 			s.combat:update(math.min(dt,0.1),now)
 			if s.phase=="Duel" then
@@ -4847,16 +4956,21 @@ function Matches:update(dt,now)
 			s.nextSnapshot=now+Config.SnapshotInterval; s.combat.urgent=false; s.lastUrgent=now; self:snapshot(player,s)
 		end
 	end
+	if self.online then self.online:update(dt,now) end
 end
 function Matches:remove(player)
 	local s=self.sessions[player]
-	if s then self:destroy(s); self.sessions[player]=nil end
+	if s then
+		-- A disconnect forfeits an online fight and frees queue entries and codes.
+		if s.online and self.online then self.online:leave(player,s) end
+		self:destroy(s); self.sessions[player]=nil
+	end
 end
 return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -5106,7 +5220,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -5579,7 +5693,345 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
+        <Properties>
+          <string name="Name">Online</string>
+          <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
+-- pick, then a duel between two players on the same server-authoritative
+-- Combat as the local duel, with the same rounds, KO beat and result.
+--  * Each player's requests drive only their own actor, through the local
+--    duel's validation, per-player rate limit and anti-cheat (Matches:act).
+--  * No AI is ever created or updated for an online duel.
+--  * Every viewer receives the local-duel snapshot from their own side:
+--    `human` is their actor and `bot` the opponent, whose model in the shared
+--    duel folder is named `bot.id`; `winner` and `wins` are mapped the same way.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Fighters=require(Shared.Fighters)
+local Protocol=require(Shared.OnlineProtocol)
+local World=require(script.Parent.World)
+local Combat=require(script.Parent.Combat)
+local AntiCheat=require(script.Parent.VelmoraAntiCheat)
+local Online={};Online.__index=Online
+function Online.new(matches)
+	return setmetatable({matches=matches,queue={},codes={},duels={},freeLanes={},rng=Random.new()},Online)
+end
+local function fighter(id)
+	return if type(id)=="string" and #id&lt;=24 and Fighters[id]~=nil then id else nil
+end
+local function nameOf(player)
+	local name=player.DisplayName
+	if type(name)~="string" or name=="" then name=player.Name end
+	return if type(name)=="string" and name~="" then name else "Opponent"
+end
+-- A typed code: spaces dropped, case folded, exact length and alphabet.
+local function cleanCode(code)
+	if type(code)~="string" or #code&gt;16 then return nil end
+	code=string.upper((string.gsub(code,"%s","")))
+	if #code~=Protocol.CodeLength or string.match(code,"^[A-Z0-9]+$")==nil then return nil end
+	return code
+end
+Online.cleanCode=cleanCode
+function Online:newCode()
+	local alphabet=Protocol.CodeAlphabet
+	for _=1,32 do
+		local chars={}
+		for i=1,Protocol.CodeLength do
+			local k=self.rng:NextInteger(1,#alphabet)
+			chars[i]=string.sub(alphabet,k,k)
+		end
+		local code=table.concat(chars)
+		if not self.codes[code] then return code end
+	end
+	return nil
+end
+-- Online duels draw lanes from the local sessions' counter (never the same
+-- stage position) and hand them back when they are disposed.
+function Online:claimLane()
+	local lane=table.remove(self.freeLanes)
+	if lane then return lane end
+	self.matches.nextLane+=1
+	return self.matches.nextLane
+end
+function Online:notice(player,s,message)
+	self.matches:send(player,{phase="Selection",epoch=s.epoch,notice=message})
+end
+function Online:waiting(s)
+	local o=s.online
+	return {phase="Queue",epoch=s.epoch,online={mode=if o.kind=="host" then "private" else "casual",code=o.entry.code}}
+end
+-- From the roster: join the casual queue, host a private code or join one.
+function Online:enter(player,s,action,payload)
+	local id=fighter(payload.player)
+	if not id then return self:notice(player,s,"CHOOSE A FIGHTER FIRST") end
+	local entry={player=player,session=s,fighter=id}
+	if action=="Join" then
+		local code=cleanCode(payload.code)
+		local host=code and self.codes[code]
+		if not host or host.player==player then return self:notice(player,s,"NO PRIVATE DUEL WITH THIS CODE") end
+		self.codes[code]=nil;host.session.online=nil
+		self:pair(host,entry,"private",code)
+		return
+	end
+	if action=="Host" then
+		entry.code=self:newCode()
+		if not entry.code then return self:notice(player,s,"NO FREE CODE — TRY AGAIN") end
+		self.codes[entry.code]=entry
+		s.online={kind="host",entry=entry}
+	else
+		table.insert(self.queue,entry)
+		s.online={kind="queue",entry=entry}
+	end
+	s.phase="Queue";s.epoch+=1
+	self.matches:send(player,self:waiting(s))
+	-- Casual queue: first come, first paired.
+	while #self.queue&gt;=2 do
+		local first=table.remove(self.queue,1);local second=table.remove(self.queue,1)
+		first.session.online=nil;second.session.online=nil
+		self:pair(first,second,"casual")
+	end
+end
+-- Two players are paired: the duel exists from here, starting with the pick.
+-- Its epoch starts above both players' own, so no client drops its packets.
+function Online:pair(first,second,mode,code)
+	local d={online=true,mode=mode,code=code,phase="Pick",epoch=0,seats={},lane=self:claimLane(),
+		pickUntil=workspace:GetServerTimeNow()+Protocol.PickTime}
+	d.origin=self.matches.laneOrigin(d.lane)
+	for index,entry in {first,second} do
+		local seat={index=index,player=entry.player,session=entry.session,fighter=entry.fighter,name=nameOf(entry.player),
+			present=true,ready=false,rematch=false}
+		d.seats[index]=seat
+		entry.session.online={kind="duel",duel=d,seat=seat}
+		d.epoch=math.max(d.epoch,entry.session.epoch)
+	end
+	d.epoch+=1
+	self.duels[d]=true
+	self:broadcast(d)
+	return d
+end
+-- Every present player gets the duel from their own side; their session
+-- follows the duel's phase and epoch, which their requests must carry back.
+function Online:broadcast(d)
+	for _,seat in d.seats do
+		if seat.present then
+			seat.session.phase=d.phase;seat.session.epoch=d.epoch
+			self.matches:send(seat.player,self:packet(d,seat))
+		end
+	end
+end
+function Online:packet(d,seat)
+	local other=d.seats[3-seat.index]
+	local info={mode=d.mode,code=d.code,opponent=other.name,opponentLeft=not other.present,forfeit=d.forfeit==true,
+		me=seat.fighter,them=other.fighter,ready=seat.ready,theirReady=other.ready,rematch=seat.rematch,theirRematch=other.rematch}
+	if d.phase=="Pick" then
+		info.remaining=math.max(0,d.pickUntil-workspace:GetServerTimeNow())
+		return {phase="Pick",epoch=d.epoch,online=info}
+	end
+	local view=self.matches:view(d,seat,seat.actor,other.actor)
+	view.online=info
+	return view
+end
+function Online:refresh(player,s)
+	local o=s.online
+	if o.kind=="duel" then self.matches:send(player,self:packet(o.duel,o.seat))
+	else self.matches:send(player,self:waiting(s)) end
+end
+function Online:pick(d,seat,action,payload)
+	if seat.ready then return end
+	if action=="Pick" then
+		local id=fighter(payload.player)
+		if id and id~=seat.fighter then seat.fighter=id;self:broadcast(d) end
+	elseif action=="Confirm" then
+		seat.ready=true
+		if d.seats[1].ready and d.seats[2].ready then self:fight(d) else self:broadcast(d) end
+	end
+end
+-- The fight: a fresh stage in the duel's lane, one actor per player and the
+-- local duel's tournament rounds. A rematch rebuilds it the same way.
+function Online:fight(d)
+	local m=self.matches
+	self:teardown(d)
+	d.phase="Duel";d.winner=nil;d.forfeit=nil;d.finishing=false;d.matchPoint=false
+	d.folder=Instance.new("Folder");d.folder.Name="Online_"..d.lane;d.folder.Parent=m.folder
+	d.effects=Instance.new("Folder");d.effects.Name="Effects";d.effects.Parent=d.folder
+	World.arena(d.folder,d.origin)
+	local c=Combat.new(d);c.now=workspace:GetServerTimeNow();d.combat=c
+	for index,seat in d.seats do
+		local side=if index==1 then 1 else -1
+		local from=d.origin+Vector3.new(0,3,side*Config.StartDistance)
+		local id="Duelist"..index
+		local model,hum,root,joints=World.rig(d.folder,Fighters[seat.fighter],CFrame.lookAt(from,d.origin+Vector3.new(0,3,-side*Config.StartDistance)),id)
+		seat.actor=c:add(id,model,hum,root,joints,seat.fighter)
+		-- Two players: both start locked on, as the local duel's fighters do.
+		seat.actor.locked=true
+		seat.ready=false;seat.rematch=false;seat.sentImpact=nil;seat.impactEpoch=nil
+	end
+	local a,b=d.seats[1].actor,d.seats[2].actor
+	a.target=b;b.target=a
+	for _,seat in d.seats do
+		if seat.present then
+			seat.player.Character=seat.actor.model
+			-- The body stays server-simulated even as the player's character.
+			pcall(function() seat.actor.root:SetNetworkOwner(nil) end)
+		end
+	end
+	d.round=1;d.wins={[a.id]=0,[b.id]=0};d.roundsToWin=Config.RoundsToWin
+	d.introUntil=c.now+2.6
+	d.finish=function(winner)
+		m:roundOver(d,winner,function() self:broadcast(d) end,function() m:resetRound(d);self:broadcast(d) end)
+	end
+	for _,seat in d.seats do
+		local actor,other=seat.actor,d.seats[3-seat.index].actor
+		actor.hum.Died:Connect(function()
+			if d.combat==c and d.phase=="Duel" then actor.health=0;actor.state="Defeated";d.finish(other,actor) end
+		end)
+	end
+	d.epoch+=1
+	self:broadcast(d)
+end
+function Online:rematch(d,seat)
+	local other=d.seats[3-seat.index]
+	if seat.rematch or not other.present then return end
+	seat.rematch=true
+	if other.rematch then self:fight(d) else self:broadcast(d) end
+end
+function Online:teardown(d)
+	local c=d.combat
+	d.combat=nil
+	if c then
+		c:clear()
+		for _,a in c.actors do AntiCheat.clear(a) end
+	end
+	for _,seat in d.seats do
+		if seat.actor and seat.present and seat.player.Character==seat.actor.model then seat.player.Character=nil end
+		seat.actor=nil
+	end
+	if d.folder then d.folder:Destroy() end
+	d.folder=nil;d.effects=nil
+end
+function Online:dispose(d)
+	if not self.duels[d] then return end
+	self.duels[d]=nil
+	self:teardown(d)
+	table.insert(self.freeLanes,d.lane)
+end
+-- The fight ends early: the player who stays wins, unless the final knockout
+-- had already decided the match (its winner stands).
+function Online:forfeit(d,stay)
+	if not (d.finishing and d.matchPoint) then d.winner=stay.actor.id;d.forfeit=true end
+	d.finishing=false;d.matchPoint=true;d.phase="Result"
+	local c=d.combat
+	c:clear(true)
+	for _,a in c.actors do World.pose(a,c.now,.1);a.hum.WalkSpeed=0;a.root.Anchored=true end
+end
+-- A player leaves the online flow (cancel, back to the roster, disconnect).
+-- Waiting entries are withdrawn; a fight in progress is forfeited to the
+-- player who stays; the duel and its stage go once nobody is left in it.
+function Online:leave(player,s)
+	local o=s.online
+	if not o then return end
+	s.online=nil
+	if o.kind=="queue" then
+		local index=table.find(self.queue,o.entry)
+		if index then table.remove(self.queue,index) end
+		return
+	elseif o.kind=="host" then
+		if self.codes[o.entry.code]==o.entry then self.codes[o.entry.code]=nil end
+		return
+	end
+	local d,seat=o.duel,o.seat
+	seat.present=false
+	s.epoch=math.max(s.epoch,d.epoch)
+	if seat.actor and player.Character==seat.actor.model then player.Character=nil end
+	local other=d.seats[3-seat.index]
+	if other.present then
+		if d.phase=="Pick" then
+			-- No fight yet: the pairing is void and the other player is told why.
+			other.present=false;other.session.online=nil
+			other.session.epoch=math.max(other.session.epoch,d.epoch)
+			self.matches:selection(other.player,"OPPONENT LEFT")
+		else
+			if d.phase=="Duel" then self:forfeit(d,other) end
+			self:broadcast(d)
+		end
+	end
+	if not other.present then self:dispose(d) end
+end
+-- Returns true when the request belongs to the online flow (handled or
+-- deliberately ignored); false hands it to the local duel.
+function Online:request(player,s,action,payload,clock)
+	local o=s.online
+	local gap=clock-s.lastLifecycle&gt;=Protocol.LifecycleGap
+	if not o then
+		if not Protocol.Lifecycle[action] then return false end
+		if action~="Cancel" and s.phase=="Selection" and gap then
+			s.lastLifecycle=clock
+			self:enter(player,s,action,payload)
+		end
+		return true
+	end
+	if o.kind~="duel" then
+		-- Waiting in the queue or on a private code: only cancelling is possible.
+		if action=="Cancel" and gap then s.lastLifecycle=clock;self.matches:selection(player) end
+		return true
+	end
+	local d,seat=o.duel,o.seat
+	if d.phase=="Duel" then
+		if Protocol.Combat[action] and seat.actor then self.matches:act(d,seat.actor,payload,clock) end
+		return true
+	end
+	if d.phase=="Pick" and (action=="Pick" or action=="Confirm") then
+		self:pick(d,seat,action,payload)
+	elseif action=="Cancel" or action=="Selection" then
+		if gap then s.lastLifecycle=clock;self.matches:selection(player) end
+	elseif action=="Rematch" and d.phase=="Result" and gap then
+		s.lastLifecycle=clock;self:rematch(d,seat)
+	end
+	return true
+end
+function Online:update(dt,now)
+	for d in table.clone(self.duels) do
+		if not self.duels[d] then continue end
+		if d.phase=="Pick" then
+			if now&gt;=d.pickUntil then self:fight(d)
+			elseif now&gt;=(d.nextPick or 0) then d.nextPick=now+1;self:broadcast(d) end
+			continue
+		end
+		local c=d.combat
+		if not c then continue end
+		if d.phase=="Duel" then
+			-- The local duel's idle rule, for both players.
+			for _,seat in d.seats do if os.clock()-seat.actor.lastMove&gt;0.4 then seat.actor.move=Vector3.zero end end
+			c:update(math.min(dt,0.1),now)
+		end
+		-- Regular cadence, plus an immediate packet on a contact, throw or teleport.
+		local urgent=c.urgent and now&gt;=(d.lastUrgent or 0)+.03
+		if d.combat==c and (now&gt;=(d.nextSnapshot or 0) or urgent) then
+			d.nextSnapshot=now+Config.SnapshotInterval;c.urgent=false;d.lastUrgent=now;self:broadcast(d)
+		end
+	end
+end
+-- Read-only state for Studio tooling (DevHooks "online").
+function Online:summary()
+	local duels={}
+	for d in self.duels do
+		local seats={}
+		for _,seat in d.seats do
+			local a=seat.actor
+			table.insert(seats,{name=seat.name,fighter=seat.fighter,present=seat.present,ready=seat.ready,rematch=seat.rematch,
+				health=a and a.health,state=a and a.state,refusedInputs=a and a.refusedInputs or 0,refusedAge=a and a.refusedAge})
+		end
+		table.insert(duels,{mode=d.mode,phase=d.phase,lane=d.lane,round=d.round,winner=d.winner,forfeit=d.forfeit,seats=seats})
+	end
+	local codes=0
+	for _ in self.codes do codes+=1 end
+	return {queued=#self.queue,codes=codes,duels=duels}
+end
+return Online
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -5844,7 +6296,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -6320,7 +6772,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -6841,7 +7293,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -6941,7 +7393,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -6969,7 +7421,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -7034,7 +7486,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -7085,7 +7537,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -7809,21 +8261,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND42">
+  <Item class="StarterPlayer" referent="ND44">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND43">
+    <Item class="StarterPlayerScripts" referent="ND45">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND44">
+      <Item class="Folder" referent="ND46">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND45">
+        <Item class="ModuleScript" referent="ND47">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -7903,7 +8355,8 @@ function Camera:impulse(style,role)
 end
 function Camera:update(data,dt)
 	local camera=workspace.CurrentCamera
-	if not data or data.phase=="Selection" then
+	-- Roster, online queue and fighter pick: no duel on screen yet.
+	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
 		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
 		camera.CameraType=Enum.CameraType.Scriptable
 		-- Slow establishing orbit over the training ground behind the menu.
@@ -7933,7 +8386,8 @@ function Camera:update(data,dt)
 	local presentation=self.presentation
 	local a=(presentation and presentation:visualRoot("human")) or root.Position
 	local folder=root.Parent and root.Parent.Parent
-	local bot=folder and folder:FindFirstChild("AIFighter")
+	-- The opponent's model is named by its id (AIFighter locally, a duelist online).
+	local bot=folder and folder:FindFirstChild(data.bot.id or "AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
 	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
@@ -8098,7 +8552,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND46">
+        <Item class="LocalScript" referent="ND48">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -8132,7 +8586,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND47">
+        <Item class="ModuleScript" referent="ND49">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -8388,6 +8842,8 @@ local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() 
 -- the server no longer reports.
 function FX:sync(data)
 	if data.epoch~=self.epoch then self.epoch=data.epoch;self:reset() end
+	-- The two fighters' model names in this duel (online they are not the AI names).
+	if data.human and data.bot then self.fighterIds={data.human.id,data.bot.id} end
 	local live={}
 	for _,p in data.projectiles or {} do
 		live[p.id]=true
@@ -8617,7 +9073,7 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
 	elseif style=="dodge" then
 		local nearest
-		for _,name in {"PlayerFighter","AIFighter"} do
+		for _,name in self.fighterIds or {"PlayerFighter","AIFighter"} do
 			local m=modelFor(folder,name);local r=m and m:FindFirstChild("HumanoidRootPart")
 			if r and (r.Position-position).Magnitude&lt;4 then nearest=m end
 		end
@@ -9253,7 +9709,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND48">
+        <Item class="ModuleScript" referent="ND50">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -9401,7 +9857,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND49">
+        <Item class="LocalScript" referent="ND51">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -9476,7 +9932,7 @@ if RunService:IsStudio() then
 		RunService:BindToRenderStep("NinjaDuelProbe",Enum.RenderPriority.Camera.Value+1,function(dt)
 			if current.phase~="Duel" or dt&lt;=0 then return end
 			local folder=player.Character and player.Character.Parent
-			for _,model in {player.Character,folder and folder:FindFirstChild("AIFighter")} do
+			for _,model in {player.Character,Presentation.opponent(current,folder)} do
 				for _,partName in {"Head","HumanoidRootPart"} do
 					local part=model and model:FindFirstChild(partName)
 					if part then
@@ -9537,7 +9993,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND50">
+        <Item class="ModuleScript" referent="ND52">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -9550,6 +10006,11 @@ local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
 	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
+end
+-- The opponent's body in the viewer's duel folder: the server names it by the
+-- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
+function Presentation.opponent(data,folder)
+	return folder and folder:FindFirstChild(data and data.bot and data.bot.id or "AIFighter")
 end
 -- The replicated root of a server-owned fighter only moves every other
 -- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
@@ -9622,7 +10083,7 @@ function Presentation:smoothStep(data,dt)
 	if not data or data.phase~="Duel" then return end
 	local character=game:GetService("Players").LocalPlayer.Character
 	local folder=character and character.Parent
-	for key,model in {human=character,bot=folder and folder:FindFirstChild("AIFighter")} do
+	for key,model in {human=character,bot=Presentation.opponent(data,folder)} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
 		local actor=data[key]
 		if root and not root.Anchored and actor then
@@ -9668,7 +10129,7 @@ function Presentation:impacts(data,camera)
 end
 function Presentation:illusion(data,model)
  local active=data.phase=="Duel" and data.human.illusion&gt;0 and data.human.decoy
- local opponent=model and model.Parent and model.Parent:FindFirstChild("AIFighter")
+ local opponent=model and Presentation.opponent(data,model.Parent)
  active=active and opponent~=nil
  if active and opponent and not self.echo then
   local ghost=opponent:Clone();ghost.Name="LocalAfterimage"
@@ -9724,7 +10185,7 @@ function Presentation:update(data,dt)
  local character=players.LocalPlayer.Character
  self:illusion(data,character)
  local folder=character and character.Parent
- local bot=folder and folder:FindFirstChild("AIFighter")
+ local bot=Presentation.opponent(data,folder)
  self.botModel=bot
  local models={human=character,bot=bot}
  for key,model in models do
@@ -9795,15 +10256,17 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND51">
+        <Item class="ModuleScript" referent="ND53">
           <Properties>
             <string name="Name">UI</string>
-            <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
--- result framing. Presentation only; every value comes from the snapshot.
+            <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
+-- pick, duel HUD, match intro and result framing. Presentation only; every
+-- value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Controls=require(Shared.Controls)
 local MoveGraphs=require(Shared.MoveGraphs)
+local Protocol=require(Shared.OnlineProtocol)
 local GuiService=game:GetService("GuiService")
 local UIS=game:GetService("UserInputService")
 local Tween=game:GetService("TweenService")
@@ -9859,10 +10322,10 @@ function UI.new(parent,send)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
 	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,600),palette.ink,1)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,668),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/660) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/728) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
 	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
 	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
@@ -9885,6 +10348,7 @@ function UI.new(parent,send)
 			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
 			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
 			pick.Activated:Connect(function()
+				if self.picking then self:choose(id);return end
 				self.player=id
 				if self.bot==id then self.bot=playable[index%#playable+1] end
 				self:refreshSelection()
@@ -9901,15 +10365,41 @@ function UI.new(parent,send)
 	-- The selected fighter's reading of the shared combo grammar.
 	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
-	text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(300,18),14,palette.muted)
+	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
 	-- Fighter buttons share each half of the panel, however many are playable.
+	-- During an online pick the left half is yours, the right shows the opponent's.
 	local stride=math.floor(430/#playable)
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.player=id; self:refreshSelection() end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function() self.bot=id; self:refreshSelection() end)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+			if self.picking then self:choose(id);return end
+			self.player=id; self:refreshSelection()
+		end)
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+			if self.picking then return end
+			self.bot=id; self:refreshSelection()
+		end)
 	end
-	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function() send("Start",{player=self.player,bot=self.bot}) end,palette.red)
-	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function() send("Tutorial",{player=self.player,bot=self.bot}) end)
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function()
+		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
+	end,palette.red)
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function()
+		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
+	end)
+	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
+	-- by code (host one, or type a friend's code and join).
+	self.onlineRow=frame(shell,UDim2.fromOffset(0,604),UDim2.fromOffset(900,40),palette.ink,1)
+	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(290,40),function() send("Queue",{player=self.player}) end)
+	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(300,0),UDim2.fromOffset(290,40),function() send("Host",{player=self.player}) end)
+	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(600,0),Size=UDim2.fromOffset(170,40),Text="",PlaceholderText="CODE",
+		TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,PlaceholderColor3=palette.muted,BackgroundColor3=palette.panel,BorderSizePixel=0,ClearTextOnFocus=false})
+	corner(codeBox,6)
+	codeBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local clean=string.sub(string.gsub(string.upper(codeBox.Text),"[^A-Z0-9]",""),1,Protocol.CodeLength)
+		if clean~=codeBox.Text then codeBox.Text=clean end
+	end)
+	self.codeBox=codeBox
+	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(780,0),UDim2.fromOffset(120,40),function() send("Join",{player=self.player,code=codeBox.Text}) end)
+	self.notice=text(shell,"",UDim2.fromOffset(0,648),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
@@ -10017,6 +10507,16 @@ function UI.new(parent,send)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- ---------------------------------------------------------- online queue
+	self.queue=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
+	local queueBox=frame(self.queue,UDim2.new(.5,-300,.5,-150),UDim2.fromOffset(600,300),palette.ink,.1)
+	corner(queueBox,10)
+	stroke(queueBox,palette.red,3)
+	self.queueTitle=text(queueBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,56),48,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.queueCode=text(queueBox,"",UDim2.fromOffset(30,80),UDim2.fromOffset(540,70),72,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.queueNote=text(queueBox,"",UDim2.fromOffset(30,154),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
+	self.queue.Visible=false
 	-- A small displaced indicator during Mirage; real body remains visible and controllable.
 	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
 	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
@@ -10038,14 +10538,49 @@ function UI.new(parent,send)
 	return self
 end
 function UI:refreshSelection()
+	-- During an online pick the right half shows the opponent's live choice.
+	local other=if self.picking and Fighters[self.opponentPick or ""] then self.opponentPick else self.bot
 	for key,b in self.selectionButtons do
-		local selected=key=="player"..self.player or key=="bot"..self.bot or key=="slot"..self.player
+		local selected=key=="player"..self.player or key=="bot"..other or key=="slot"..self.player
 		b.BackgroundColor3=if selected then Color3.fromRGB(120,36,34) else palette.panel
 	end
-	local p,o=Fighters[self.player],Fighters[self.bot]
+	local p,o=Fighters[self.player],Fighters[other]
 	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
 	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- Online pick: your fighter changes until you confirm; the server echoes it.
+function UI:choose(id)
+	if self.onlineInfo and self.onlineInfo.ready then return end
+	self.player=id;self:refreshSelection();self.send("Pick",{player=id})
+end
+-- Roster, online waiting screen and online pick (the roster in versus mode).
+function UI:lobby(data)
+	local online=data.online
+	self.picking=data.phase=="Pick" and online~=nil
+	if self.picking then
+		if Fighters[online.me or ""] then self.player=online.me end
+		self.opponentPick=online.them
+		self.opponentLabel.Text="OPPONENT  •  "..string.upper(online.opponent or "")..(if online.theirReady then "  •  READY" else "")
+		self.startButton.Text=if online.ready then "READY  •  WAITING FOR OPPONENT" else "READY"
+		self.tutorialButton.Text="LEAVE"
+		self.notice.Text=string.format("ONLINE 1v1  •  THE DUEL STARTS IN %d s",math.ceil(online.remaining or 0))
+	else
+		self.opponentPick=nil
+		self.opponentLabel.Text="OPPONENT (AI)"
+		self.startButton.Text="ENTER THE STAGE"
+		self.tutorialButton.Text="TRAINING (TUTORIAL)"
+		self.notice.Text=data.notice or ""
+	end
+	self.onlineRow.Visible=data.phase=="Selection"
+	if data.phase=="Queue" then
+		local private=online~=nil and online.mode=="private"
+		self.queueTitle.Text=if private then "PRIVATE DUEL" else "SEARCHING FOR AN OPPONENT"
+		self.queueCode.Text=if private then (online.code or "") else ""
+		self.queueNote.Text=if private then "Share this code: your friend types it next to JOIN on the roster screen."
+			else "Casual 1v1  •  you meet the next player who searches."
+	end
+	self:refreshSelection()
 end
 local function fullName(actor)
 	local def=Fighters[actor.fighterId]
@@ -10073,15 +10608,18 @@ function UI:render(data)
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
 	end
 	local introActive=data.phase=="Duel" and (data.intro or 0)&gt;0
-	self.selection.Visible=data.phase=="Selection"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.onlineInfo=data.online
+	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
+	self.queue.Visible=data.phase=="Queue"
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then
-		GuiService.SelectedObject=if data.phase=="Selection" then self.startButton elseif data.phase=="Result" then self.rematchButton else nil
+		GuiService.SelectedObject=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
+			elseif data.phase=="Queue" then self.cancelButton else nil
 		self.lastPhase=data.phase
 	end
 	self.echo.Enabled=false
-	if data.phase=="Selection" then return end
+	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
 	if introActive then
@@ -10105,7 +10643,7 @@ function UI:render(data)
 	self.ko.Visible=data.ko==true
 	self.round.Text=if data.matchPoint and data.ko then "MATCH" else "ROUND "..(data.round or 1)
 	self.hp.name.Text=fullName(h);self.hp.title.Text=subtitle(h).."  •  YOU"
-	self.enemy.name.Text=fullName(b);self.enemy.title.Text="AI  •  "..subtitle(b)
+	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
@@ -10195,6 +10733,14 @@ function UI:render(data)
 	self.resultTitle.TextColor3=if won then palette.gold else palette.crimson
 	self.resultName.Text=fullName(winner).."  ADVANCES"
 	self.resultNote.Text=if won then "The judges saw it too. The bracket waits for no one." else "Read the commitment. Find a better opening — prodigies learn fastest from defeat."
+	-- Online: a rematch needs both players; a forfeit says so.
+	local online=data.online
+	self.rematchButton.Text=if not online then "REMATCH" elseif online.opponentLeft then "OPPONENT LEFT" elseif online.rematch then "WAITING FOR OPPONENT…"
+		elseif online.theirRematch then "REMATCH  •  OPPONENT IS READY" else "REMATCH"
+	if online and online.forfeit then
+		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
+		self.resultNote.Text="Your opponent left the duel. The win is yours."
+	end
 	if h.illusion&gt;0 and data.phase=="Duel" then
 		local character=game:GetService("Players").LocalPlayer.Character
 		local folder=character and character.Parent
@@ -10207,7 +10753,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND52">
+        <Item class="ModuleScript" referent="ND54">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -10348,7 +10894,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND53">
+        <Item class="ModuleScript" referent="ND55">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -12177,7 +12723,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND54">
+  <Item class="Lighting" referent="ND56">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -12195,7 +12741,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND55">
+  <Item class="SoundService" referent="ND57">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
