@@ -591,4 +591,280 @@ test("client · the genjutsu image is drawn from the deceived side and from the 
  assert(Presentation.illusionView({phase="Result",human={illusion=2,decoy=V.one}})==nil,"an image outside the duel")
 end)
 
+-- =============================================================================
+-- Convergence 3 (NEXT_VALIDATION_ROSTER_SCALE §5): the identity is SEEN in play.
+-- Server half: the facts a cue needs ride on the contact feed and the snapshot.
+-- Client half: each cue builds in a stub scene (Harness.stubScene: parenting and
+-- calls only, nothing rendered). How it looks is a Studio check.
+-- =============================================================================
+local function feedSince(c,serial,seen,list)
+ for _,impact in c.impacts do
+  if impact.serial>serial and not seen[impact.serial] then seen[impact.serial]=true;table.insert(list,impact) end
+ end
+end
+
+-- Neji (server) ----------------------------------------------------------------
+test("Neji · the palm strikes the chakra point it closes: one palm contact names the point, the move and the drain; no fist burst",function()
+ local c,a,b=H.duel("GentleFist","Mirage")
+ place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+ local emits=H.effectEmits
+ local serial=c.impactSerial
+ assert(c:request(a,"Attack"))
+ until_(c,.4,function() return (b.tenketsu or 0)==1 end,"no point closed")
+ local palms=impactsSince(c,serial,"palm")
+ assert(#palms==1,"one palm, "..#palms.." palm contacts")
+ local palm=palms[1]
+ assert(palm.point==b.tenketsuPoints[1] and palm.move=="Light1" and palm.owner==a.id and palm.victim==b.id and palm.fighter=="GentleFist",
+  "the palm contact does not say where it struck ("..tostring(palm.point)..", "..tostring(palm.move)..")")
+ assert(math.abs((palm.drain or 0)-a.def.GentleFist.Drain)<1e-6,"the palm does not carry the chakra it drained")
+ assert(H.effectEmits==emits,"a palm still bursts the donor fist effect on the body")
+ -- Contrast: Minato's cut keeps the donor burst; its contact names the strike, no point.
+ local c2,x,y=H.duel("Flashstep","Mirage")
+ place(c2,x,y,V.new(0,3,2.25),V.new(0,3,-2.25))
+ local before=H.effectEmits
+ local s2=c2.impactSerial
+ assert(c2:request(x,"Attack"))
+ until_(c2,.4,function() return y.health<y.def.Health end,"the cut never landed")
+ assert(H.effectEmits>before,"setup: a generic strike lost its burst")
+ local hit=impactsSince(c2,s2,"light")[1]
+ assert(hit and hit.move=="Light1" and hit.owner==x.id and hit.fighter=="Flashstep" and hit.victim==y.id and hit.point==nil,"a strike's contact does not say what landed")
+end)
+
+test("Neji · a blocked palm still shows the chakra it drained",function()
+ local c,a,b=H.duel("GentleFist","Mirage")
+ place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+ assert(c:request(b,"Guard"));H.step(c,.4) -- raised long before: a block, not a parry
+ local serial=c.impactSerial
+ assert(c:request(a,"Attack"));H.step(c,.3)
+ local block=impactsSince(c,serial,"block")[1]
+ assert(block,"setup: the palm was not blocked")
+ assert(block.owner==a.id and block.fighter=="GentleFist" and math.abs((block.drain or 0)-a.def.GentleFist.GuardDrain)<1e-6,"a blocked palm does not show the chakra it drained")
+ assert(#impactsSince(c,serial,"tenketsu")==0,"a blocked palm closed a point")
+end)
+
+test("Neji · closed points: the snapshot carries the chakra recovery they leave, the same the body regenerates with",function()
+ local c,a,b=H.duel("GentleFist","Mirage")
+ assert(view(c,b,a).chakraRegen==1,"a fresh body shows a cut recovery")
+ for _=1,2 do Brawler.closePoint(c,a,b,"body") end
+ local data=view(c,b,a)
+ assert(math.abs((data.chakraRegen or 1)-.7)<1e-6,"two points should leave 70 % ("..tostring(data.chakraRegen)..")")
+ b.chakra=10;local before=b.chakra;H.step(c,1)
+ assert(math.abs((b.chakra-before)-b.def.ChakraRegen*.7)<.05,"the recovery does not match what the bar shows ("..string.format("%.2f",b.chakra-before)..")")
+ for _=1,2 do Brawler.closePoint(c,a,b,"body") end
+ assert(math.abs(view(c,b,a).chakraRegen-.4)<1e-6,"four points should leave 40 %")
+end)
+
+test("Neji · 64 Palms counts 2-4-8-16-32-64 for both players, one palm contact per palm, 64 on the last, which throws the body",function()
+ local c,a,b,match=H.duel("GentleFist","Flashstep")
+ place(c,a,b,V.new(0,3,2),V.new(0,3,-2))
+ for _=1,2 do Brawler.closePoint(c,a,b,"body") end
+ local plan=Techniques.palmsPlan(2)
+ local serial=c.impactSerial
+ local seen,feed={},{}
+ assert(c:request(a,slot(a,"SixtyFourPalms")),"64 Palms refused")
+ for _=1,300 do
+  H.step(c,.01);feedSince(c,serial,seen,feed)
+  if (b.sealedUntil or 0)>c.now then break end
+ end
+ local counted,calls,lights={},{},0
+ for _,impact in feed do
+  if impact.style=="palm" and impact.count then table.insert(counted,impact) end
+  if impact.style=="light" then lights+=1 end
+ end
+ assert(lights==0,"the flurry still pushed "..lights.." generic punch contact(s)")
+ assert(#counted==plan.strikes,"one counted palm contact per palm ("..#counted.." for "..plan.strikes..")")
+ for k,impact in counted do
+  assert(impact.strike==k and impact.strikes==plan.strikes and impact.victim==b.id and impact.owner==a.id and impact.move=="SixtyFourPalms","palm "..k.." does not say which palm it is")
+  assert((impact.count==64)==(k==#counted) and (impact.final==true)==(k==#counted),"64 called on palm "..k.." of "..#counted)
+  if calls[#calls]~=impact.count then table.insert(calls,impact.count) end
+ end
+ assert(table.concat(calls,",")=="2,4,8,16,32,64","the count did not climb 2-4-8-16-32-64 ("..table.concat(calls,",")..")")
+ assert(counted[#counted].heavy and b.reaction=="Knockback","the last palm did not throw the body")
+ local victimRead=false
+ for _,cue in match.cues do if cue.actor==b.id and cue.message:find("PALMS",1,true) then victimRead=true end end
+ assert(victimRead,"the victim is not told the count")
+ for n=7,12 do
+  local last=nil
+  for k=1,n do local count=Techniques.palmCount(k,n);assert(count>=(last or 0),"the count went down");last=count end
+  assert(last==64 and Techniques.palmCount(n-1,n)<64,"64 is not the last palm alone at "..n.." palms")
+ end
+end)
+
+test("Neji · a Vacuum Palm that drives a body into a wall says so on the wall contact",function()
+ local c,a,b=H.duel("GentleFist","Flashstep")
+ H.addWall(20)
+ place(c,a,b,V.new(-6,3,0),V.new(6,3,0))
+ local serial=c.impactSerial
+ local seen,feed={},{}
+ assert(c:request(a,slot(a,"VacuumPalm"),b.root.Position))
+ for _=1,120 do
+  H.step(c,.01);feedSince(c,serial,seen,feed)
+  for _,p in c.projectiles do
+   if p.kind=="palm" and (p.position-b.root.Position).Magnitude<2.5 then c:projectileHit(p,b,b.root.Position,-V.xAxis);p.dead=true end
+  end
+  feedSince(c,serial,seen,feed)
+  if b.reaction=="WallSplat" then break end
+ end
+ assert(b.reaction=="WallSplat","setup: no wall splat ("..tostring(b.reaction)..")")
+ local wall
+ for _,impact in feed do if impact.style=="wall" then wall=impact end end
+ assert(wall and wall.cause=="VacuumPalm" and wall.by=="GentleFist","the wall contact does not say a Vacuum Palm drove the body there")
+end)
+
+-- Neji (client) ----------------------------------------------------------------
+H.envBase.UDim=H.roblox.UDim
+-- A stub scene with two bodies (A at the origin facing -Z, B 3 studs in front
+-- facing A); `run(fx,folder,bodies)` inside it.
+local function inScene(run)
+ local instance,restore=H.stubScene()
+ local ok,err=pcall(function()
+  local FX=H.load("Client/Effects")
+  local IdentityFX=H.load("Client/IdentityFX")
+  local clock=50
+  IdentityFX.clock=function() return clock end
+  local fx=FX.new()
+  local folder=instance("Folder")
+  local bodies={}
+  local function body(id,at,look)
+   local m=instance("Model");m.Name=id;m.Parent=folder
+   for _,n in {"HumanoidRootPart","Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","RightHand","LeftHand"} do
+    local p=instance("Part");p.Name=n;p.Size=V.new(1,1,1);p.Transparency=0;p.Parent=m
+    local y=if n=="Head" then 1.6 elseif n=="UpperTorso" then .6 elseif n=="LowerTorso" then -.4 elseif n:find("Hand") then -.2 else 0
+    local x=if n:find("Left") then -1 elseif n:find("Right") then 1 else 0
+    p.CFrame=H.C.lookAt(at+V.new(x,y,0),at+V.new(x,y,0)+look)
+   end
+   bodies[id]=m
+   return m
+  end
+  body("A",V.new(0,3,0),-V.zAxis);body("B",V.new(0,3,-3),V.zAxis)
+  run(fx,folder,bodies,function(dt) clock+=dt end,FX,IdentityFX)
+ end)
+ restore()
+ if not ok then error(tostring(err),0) end
+end
+local function named(fx,name)
+ local list={}
+ for _,d in fx.folder:GetDescendants() do if d.Name==name then table.insert(list,d) end end
+ return list
+end
+local function actorData(id,fighterId,extra)
+ local data={id=id,fighterId=fighterId,health=135,maxHealth=135,seals={},state="Neutral",tenketsuPoints={},awaken=0,counter=0}
+ for k,v in extra or {} do data[k]=v end
+ return data
+end
+test("client · Neji's palm strikes the chakra point: an open-palm print there, no fist burst at the body's centre",function()
+ inScene(function(fx,folder,bodies,_,FX)
+  local victim=bodies.B
+  local heart=FX.tenketsuWorld(victim,"heart")
+  local root=victim:FindFirstChild("HumanoidRootPart").Position
+  fx:impact({style="palm",position=root,owner="A",victim="B",fighter="GentleFist",move="Light1",point="heart",serial=1},folder)
+  local prints=named(fx,"PalmPrint")
+  assert(#prints==1,"no palm print ("..#prints..")")
+  local nearest=math.huge
+  for _,p in prints[1]:GetChildren() do nearest=math.min(nearest,(p.Position-heart).Magnitude) end
+  assert(nearest<.4,"the palm is not printed on the heart point ("..string.format("%.2f",nearest)..")")
+  for _,d in fx.folder:GetDescendants() do
+   if d.ClassName=="Part" and d.Shape==H.roblox.Enum.PartType.Ball and (d.Position-root).Magnitude<.2 then error("a generic burst still flashes at the body's centre") end
+  end
+  assert(#named(fx,"PalmThrough")==1,"the chakra does not go through the body")
+ end)
+end)
+test("client · a blocked palm draws the chakra it drained out of the guard",function()
+ inScene(function(fx,folder,bodies)
+  fx:impact({style="block",position=bodies.B:FindFirstChild("HumanoidRootPart").Position,owner="A",victim="B",fighter="GentleFist",move="Light1",drain=3,serial=1},folder)
+  local drain=named(fx,"ChakraDrain")
+  assert(#drain==1 and #drain[1]:GetChildren()>=2,"no chakra drawn out of the guard")
+  -- Any other fighter's blocked strike draws nothing of the kind.
+  fx:impact({style="block",position=V.new(0,3,-3),owner="A",victim="B",fighter="Flashstep",move="Light1",serial=2},folder)
+  assert(#named(fx,"ChakraDrain")==1,"a non-palm block drained chakra")
+ end)
+end)
+test("client · 64 Palms: the count stands over the victim for both players, climbs, and clears after the throw",function()
+ inScene(function(fx,folder,bodies,advance)
+  local function palm(k,count,final,victim,owner)
+   fx:impact({style="palm",position=V.new(0,3,-3),owner=owner,victim=victim,fighter="GentleFist",move="SixtyFourPalms",point="heart",
+    count=count,strike=k,strikes=7,final=final,heavy=final,direction=-V.zAxis,serial=k},folder)
+  end
+  for k,count in {2,2,4,8,16,32,64} do palm(k,count,k==7,"B","A") end
+  local boards=named(fx,"PalmCount")
+  assert(#boards==1,"the count is not one board over the victim ("..#boards..")")
+  assert(boards[1].Adornee==bodies.B:FindFirstChild("Head") and boards[1].AlwaysOnTop,"the count does not stand over the victim's head")
+  assert(boards[1]:FindFirstChild("Count").Text=="64","the count did not reach 64")
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=actorData("A","GentleFist"),bot=actorData("B","Flashstep")}
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"PalmCount")==1,"the throw did not hold its count a beat")
+  advance(1.5);fx:update(data,1/60,folder)
+  assert(#named(fx,"PalmCount")==0,"the count outlived the flurry")
+  -- The other side of the same duel (the local player is the victim): same board.
+  for k,count in {2,4} do palm(k,count,false,"A","B") end
+  boards=named(fx,"PalmCount")
+  assert(#boards==1 and boards[1].Adornee==bodies.A:FindFirstChild("Head") and boards[1]:FindFirstChild("Count").Text=="4","the victim's own view has no count")
+ end)
+end)
+test("client · closed points keep a marker readable from any distance; Rotation's counter keeps Neji's palms lit",function()
+ inScene(function(fx,folder,bodies)
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=actorData("A","GentleFist",{counter=.8}),
+   bot=actorData("B","Mirage",{tenketsuPoints={"heart","throat"},tenketsu=2})}
+  fx:update(data,1/60,folder)
+  local marks=named(fx,"TenketsuMark")
+  assert(#marks==2,"closed points carry "..#marks.." markers")
+  assert(marks[1].AlwaysOnTop and marks[1].Size[1]==12,"a marker is not a constant-size mark over the body")
+  local glow=0
+  for _,hand in {"RightHand","LeftHand"} do if bodies.A:FindFirstChild(hand):FindFirstChild("CounterPalmGlow") then glow+=1 end end
+  assert(glow==2,"the counter does not light Neji's palms")
+  data.bot.tenketsuPoints={"heart","throat","solar","navel"};data.bot.tenketsuSevere=true;data.human.counter=0
+  fx:update(data,1/60,folder)
+  marks=named(fx,"TenketsuMark")
+  assert(#marks==4 and marks[1].Size[1]==16,"a sealed network does not grow its markers")
+  assert(bodies.A:FindFirstChild("RightHand"):FindFirstChild("CounterPalmGlow")==nil,"the palms stay lit after the counter")
+  data.bot.tenketsuPoints={};data.bot.tenketsuSevere=false
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"TenketsuMark")==0,"reopened points kept their markers")
+ end)
+end)
+test("client · a body a Vacuum Palm drove into a wall leaves the air's palm print on the stone (not on any wall hit)",function()
+ inScene(function(fx,folder)
+  fx:impact({style="wall",position=V.new(20,3,0),normal=-V.xAxis,owner="B",cause="VacuumPalm",by="GentleFist",heavy=true,serial=1},folder)
+  local prints=named(fx,"PalmPrint")
+  assert(#prints==1,"no air print on the wall")
+  assert(prints[1]:GetChildren()[1].Size.X>2,"the air print is not wall-sized")
+  fx:impact({style="wall",position=V.new(20,3,8),normal=-V.xAxis,owner="B",cause="Light3",by="Flashstep",heavy=true,serial=2},folder)
+  assert(#named(fx,"PalmPrint")==1,"another fighter's wall hit printed a palm")
+ end)
+end)
+test("HUD · closed points read on both plates, their cost dims the chakra bar, sealed jutsu grey out with the reason",function()
+ H.envBase.UDim2=H.roblox.UDim2
+ H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
+ H.workspace.GetAttribute=function() return nil end
+ local baseNew=H.envBase.Instance.new
+ local saved=H.envBase.Instance
+ H.envBase.Instance={new=function(class) local x=baseNew(class);x.Activated={Connect=function() end};return x end}
+ local ok,err=pcall(function()
+  local UI=H.load("Client/UI")
+  local ui=UI.new(baseNew("PlayerGui"),function() end)
+  local function tech(id,name,cost) return {id=id,name=name,cost=cost,remaining=0,condition=true} end
+  local me={id="PlayerFighter",fighterId="Mirage",health=100,maxHealth=145,chakra=80,maxChakra=125,stamina=100,state="Neutral",subCharges=2,subRegen=0,cue="",dodge=0,pursuit=0,counter=0,
+   seals={},techniques={tech("Read","Sharingan Read",14),tech("NeedleFan","Shadow Shuriken",18)},tenketsu=2,tenketsuPoints={"heart","solar"},chakraRegen=.7,sealed=2.4}
+  local neji={id="AIFighter",fighterId="GentleFist",health=135,maxHealth=135,chakra=100,maxChakra=115,stamina=100,state="Neutral",subCharges=2,subRegen=0,cue="",dodge=0,pursuit=0,counter=0,
+   seals={},techniques={},tenketsuPoints={},chakraRegen=1,sealed=0}
+  ui:render({phase="Duel",epoch=1,intro=0,round=1,roundsToWin=2,wins={human=0,bot=0},human=me,bot=neji})
+  local lit=0
+  for k,pip in ui.hp.points do
+   assert(pip.Visible,"my plate hides the points Neji can close")
+   if pip.BackgroundColor3~=H.roblox.Color3.fromRGB(46,42,48) then lit+=1 end
+  end
+  assert(lit==2,"my plate lights "..lit.." points for two closed")
+  for _,pip in ui.enemy.points do assert(not pip.Visible,"Neji's own plate shows points nobody can close") end
+  assert(ui.hp.status.Text:find("JUTSU SEALED",1,true),"the sealed jutsu are not said ("..ui.hp.status.Text..")")
+  assert(ui.hp.chakra.BackgroundColor3~=ui.enemy.chakra.BackgroundColor3,"the chakra bar does not show the cut recovery")
+  assert(ui.techniqueButtons[1].status.Text:find("SEALED",1,true) and ui.techniqueButtons[1].title.TextColor3~=H.roblox.Color3.fromRGB(240,232,212),"a sealed jutsu still reads ready")
+  me.sealed=0
+  ui:render({phase="Duel",epoch=1,intro=0,round=1,roundsToWin=2,wins={human=0,bot=0},human=me,bot=neji})
+  assert(ui.hp.status.Text:find("REGEN -30%",1,true),"the recovery the points cost is not spelled out ("..ui.hp.status.Text..")")
+  assert(ui.techniqueButtons[1].status.Text=="14 CHAKRA","an unsealed jutsu still reads sealed")
+ end)
+ H.envBase.Instance=saved
+ assert(ok,err)
+end)
+
 print("NinjaDuel identity pass: "..passed.." PASS")

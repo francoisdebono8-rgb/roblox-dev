@@ -270,7 +270,9 @@ function Brawler.releaseGrab(a)
  if b then b.grabbedBy=nil;b.reaction=nil;b.reactionUntil=0;a.grabVictim=nil end
  if a.grabbedBy then a.grabbedBy.grabVictim=nil;a.grabbedBy=nil end
 end
-function Brawler.react(c,a,kind,velocity,duration,source)
+-- `cause` (optional): what threw the body (a move or technique name); a wall
+-- the flight ends on reports it, so the client can say which blow did it.
+function Brawler.react(c,a,kind,velocity,duration,source,cause)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
  -- A guard break or channel interrupt already set a longer stun: the melee
@@ -278,7 +280,7 @@ function Brawler.react(c,a,kind,velocity,duration,source)
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
-	 a.reactionSource=source
+	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
  Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
@@ -454,14 +456,16 @@ function Brawler.request(c,a,action)
  if canFlash then
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
+  -- The arrival strike (Brawler.hit reads it: a chain carried through the jump).
+  local function arrival(ok) a.flashStrike=a.attackSerial;return ok end
   if action=="Heavy" then
-   if a.airborne then return Brawler.start(c,a,"Slam") end
-   return Brawler.start(c,a,"Launcher")
+   if a.airborne then return arrival(Brawler.start(c,a,"Slam")) end
+   return arrival(Brawler.start(c,a,"Launcher"))
   end
   if action=="Attack" then
-   if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return Brawler.start(c,a,"Air1") end
+   if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return arrival(Brawler.start(c,a,"Air1")) end
    Brawler.breakString(a,false);a.lastAttack=c.now
-   return Brawler.start(c,a,if gap>5.5 then "DashAttack" else "Light1")
+   return arrival(Brawler.start(c,a,if gap>5.5 then "DashAttack" else "Light1"))
   end
  end
  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
@@ -697,8 +701,10 @@ function Brawler.splat(c,a,hit)
  a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
  a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.07)
  Brawler.event(c,a,"WallSplat")
- c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
  local source=a.reactionSource
+ -- `cause`/`by`: the blow that drove the body into the wall (a Vacuum Palm
+ -- reads as Neji's air pressure on the stone, not a generic wall hit).
+ c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id,cause=a.reactionCause,by=source and source.fighterId})
  if source and source.health>0 then
   c.damageTag="wall";c:damage(source,a,tune.SplatDamage,false,false);c.damageTag=nil
   if c.match.phase~="Duel" then return end
@@ -826,6 +832,33 @@ end
 function Brawler.sealPoints(c,a,b)
  for _=1,a.def.GentleFist.MaxPoints do if not Brawler.closePoint(c,a,b,"body") then break end end
 end
+-- The contact entry Combat:damage pushed for a blow on `b` this very frame
+-- (a hit, a block), so the blow can say what it was. nil when there is none.
+local CONTACT={light=true,palm=true,finisher=true,launcher=true,slam=true,block=true}
+function Brawler.contactImpact(c,b)
+ local feed=c.impacts or {}
+ for i=#feed,1,-1 do
+  local entry=feed[i]
+  if entry.at~=c.now then return nil end
+  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude<1 then return entry end
+ end
+ return nil
+end
+-- What a landed (or blocked) strike was, written on its contact: the move, its
+-- variant (Rasengan, a counter...), who threw it and at whom. Each fighter's
+-- client identity layer draws its own blows from it.
+function Brawler.tagContact(c,a,b,p)
+ local entry=Brawler.contactImpact(c,b)
+ if not entry then return nil end
+ entry.move=p.name;entry.variant=a.attackVariant;entry.owner=a.id;entry.fighter=a.fighterId;entry.victim=b.id
+ return entry
+end
+-- How much of its chakra recovery a body keeps under closed points (1: all).
+-- Combat regenerates with it, the snapshot shows it on the chakra bar.
+function Brawler.tenketsuRegen(a,now)
+ if (a.tenketsuUntil or 0)<=now then return 1 end
+ return math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0))
+end
 -- `zone`: where the palm landed (defaults to the body's last hit zone);
 -- `palm`: a melee contact whose generic hit feedback becomes the palm's.
 function Brawler.gentleFist(c,a,b,guarded,zone,palm)
@@ -837,17 +870,22 @@ function Brawler.gentleFist(c,a,b,guarded,zone,palm)
  -- through a guard (full drain and a closed point).
  local through=guarded and awake and tune.GuardPoints==true
  if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
- b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
+ local drained=(if guarded and not through then g.GuardDrain else g.Drain)*boost
+ b.chakra=math.max(0,b.chakra-drained)
+ -- The palm's own contact: even a blocked one shows the chakra it drained.
+ local entry=if palm then Brawler.contactImpact(c,b) else nil
+ if entry then entry.owner=a.id;entry.drain=drained end
  if guarded and not through then return end
  -- The contact reads as a palm on the network, not a punch: the generic light
  -- hit this blow pushed takes the palm's feedback (sound, flash, camera).
- if palm then
-  local last=c.impacts and c.impacts[#c.impacts]
-  if last and last.at==c.now and last.style=="light" and (last.position-b.root.Position).Magnitude<1 then last.style="palm";last.owner=a.id end
- end
+ if entry and entry.style=="light" then entry.style="palm" end
  zone=zone or b.hitZone or "body"
  -- Byakugan Full Field: he sees the whole network, a clean palm closes two.
- for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do Brawler.closePoint(c,a,b,zone) end
+ -- The palm lands on the (first) point it closes: the client strikes there.
+ for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do
+  local point=Brawler.closePoint(c,a,b,zone)
+  if entry and point and not entry.point then entry.point=point end
+ end
  -- Full Field: a palm that breaks a jutsu being moulded cuts the flow itself.
  if awake and tune.ChannelCut and b.interruptedAt==c.now then
   b.sealedUntil=math.max(b.sealedUntil or 0,c.now+tune.ChannelCut)
@@ -919,9 +957,18 @@ function Brawler.hit(c,a,p)
  if p.name=="Throw" or p.name=="ThrowUp" then
   c.damageTag=p.name;success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true);c.damageTag=nil
  end
+ -- What landed (or was blocked), written on its contact for the client.
+ local contact=if success then Brawler.tagContact(c,a,b,p) else nil
  if not success or b.health<=0 then return success end
  if protected then return true end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
+ -- Flying Thunder God: the arrival strike lands on a body still inside the
+ -- combo that led to the teleport. The chain went on through the relocation.
+ if contact and not guarded and a.flashStrike==a.attackSerial and (b.comboHits or 0)>=2 then
+  contact.arrival=true
+  c:cue(a,"FLYING THUNDER GOD • THE CHAIN GOES ON",.8)
+  Brawler.event(c,a,"FlashChain")
+ end
  if p.flow and not guarded and b.health>0 then
   a.flowStreak=(a.flowStreak or 0)+1
   b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
@@ -958,7 +1005,7 @@ function Brawler.hit(c,a,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
- Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
  Techniques.awakenedReact(c,a,b,p)
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)>=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then

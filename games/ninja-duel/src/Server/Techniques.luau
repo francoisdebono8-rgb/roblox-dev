@@ -769,10 +769,17 @@ Techniques.VacuumPalm={
 -- the network: every chakra point already closed adds palms, quickens them and
 -- lengthens the seal, and with all of them closed the guard has nothing left
 -- to hold the opening palm with. The victim keeps one answer: a substitution.
-local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
 function Techniques.palmsPlan(points,seal)
 	points=math.clamp(points or 0,0,8)
 	return {strikes=7+points,interval=math.max(.1,.15-.012*points),final=2.5+.25*points,seal=(seal or 3.5)+.4*points}
+end
+-- The count called on the k-th of n palms: the six calls (2, 4, 8, 16, 32, 64)
+-- spread evenly over the flurry, the first palm already "two", 64 on the last
+-- palm only (the one that throws the body).
+function Techniques.palmCount(k,n)
+	local count=2
+	for j=2,6 do if k>=math.floor(j*n/6+.5) then count=2^j end end
+	return count
 end
 Techniques.SixtyFourPalms={
 	check=function() return true end,
@@ -805,7 +812,10 @@ Techniques.SixtyFourPalms={
 			c:cue(a,"64 PALMS • GUARDED",.7)
 			return
 		end
-		Brawler.gentleFist(c,a,victim,false,"body")
+		-- The opening palm is a palm on the network too (no count yet).
+		Brawler.gentleFist(c,a,victim,false,"body",true)
+		local opening=Brawler.contactImpact(c,victim)
+		if opening then opening.move="SixtyFourPalms";opening.fighter=a.fighterId;opening.victim=victim.id end
 		-- Lock: Neji holds the technique, the victim is held in place.
 		local plan=Techniques.palmsPlan(points,pending.spec.Seal)
 		local strikes,interval=plan.strikes,plan.interval
@@ -822,17 +832,23 @@ Techniques.SixtyFourPalms={
 				c:damage(a,victim,if last then pending.spec.Damage*plan.final else pending.spec.Damage,false,false)
 				c.damageTag=nil
 				if c.match.phase~="Duel" or victim.health<=0 then return end
-				Brawler.gentleFist(c,a,victim,false,"body")
-				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
-				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
+				-- One contact per palm: the blow's own entry becomes the palm, on
+				-- the point it closes, carrying the count both players read.
+				Brawler.gentleFist(c,a,victim,false,"body",true)
+				local count=Techniques.palmCount(k,strikes)
+				local entry=Brawler.contactImpact(c,victim)
+				if not entry then c:pushImpact(victim.root.Position,"palm",last,{owner=a.id});entry=c.impacts[#c.impacts] end
+				entry.style="palm";entry.heavy=last;entry.owner=a.id;entry.fighter=a.fighterId;entry.victim=victim.id;entry.move="SixtyFourPalms"
+				entry.direction=a.root.CFrame.LookVector;entry.count=count;entry.strike=k;entry.strikes=strikes;entry.final=last
+				c:cue(a,count.." PALMS",.4);c:cue(victim,count.." PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
 					victim.sealedUntil=c.now+plan.seal
 					Brawler.sealPoints(c,a,victim)
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
-					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
-					c:cue(victim,"CHAKRA POINTS SEALED",1.2)
+					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a,"SixtyFourPalms")
+					c:cue(victim,"64 PALMS • CHAKRA POINTS SEALED",1.2)
 				else
 					victim.reactionUntil=math.max(victim.reactionUntil,c.now+interval+.15)
 				end

@@ -54,7 +54,9 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
-   if success then
+   -- A Gentle Fist palm is not a punch: no donor fist burst on the body (the
+   -- client strikes the chakra point itself, IdentityFX).
+   if success and not a.def.GentleFist then
     -- Contact audio comes from the client's impact feed (VelmoraHitFeedback);
     -- a replicated server Sound here doubled every hit, out of sync.
     local vfx=if donor.action=='MegaPunch' then 'ComboPunch' else 'BasicPunch'
@@ -64,6 +66,8 @@ function Bangla.tryHit(c,a,p)
      if v:IsA('ParticleEmitter') then v:Emit(v:GetAttribute('EmitCount') or 1) end
     end
     Debris:AddItem(basicPunch,.25)
+   end
+   if success then
     if c.now-(a.donorLastHit or -10)>2 then a.donorHitCount=0 end
     a.donorHitCount=(a.donorHitCount or 0)+1;a.donorLastHit=c.now
    end
