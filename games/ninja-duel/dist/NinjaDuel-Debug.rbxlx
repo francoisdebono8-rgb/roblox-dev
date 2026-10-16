@@ -1702,7 +1702,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">0348fbe63e4dd02e0856a94ba71f771d290f0c23c1e22329a06f66fdd1afb12b</string>
+          <string name="Value">e1c59a055a80b7f5bb9b3c449ac1554e02576257fd5db30281d1678926f7502c</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -3159,6 +3159,8 @@ function Brawler.clash(c,a,p)
  if a.root.CFrame.LookVector:Dot(flat.Unit)&lt;.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)&lt;.4 then return false end
  for _,x in {a,b} do
   Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.travelRemaining=0
+  -- Neither strike landed: both strings start over.
+  Brawler.resetStrings(x)
   x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
   x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
  end

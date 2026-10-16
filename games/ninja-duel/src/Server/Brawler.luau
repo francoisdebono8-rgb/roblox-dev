@@ -707,6 +707,8 @@ function Brawler.clash(c,a,p)
  if a.root.CFrame.LookVector:Dot(flat.Unit)<.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)<.4 then return false end
  for _,x in {a,b} do
   Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.travelRemaining=0
+  -- Neither strike landed: both strings start over.
+  Brawler.resetStrings(x)
   x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
   x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
  end
