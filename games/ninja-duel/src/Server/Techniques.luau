@@ -243,7 +243,7 @@ Techniques.Flashstep = {
 		a.teleportSerial=(a.teleportSerial or 0)+1
 		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id,awake=awake,body=seal.virtual==true})
 		local left=#seals(c,a,now)
-		if seal.virtual then c:cue(a,"YELLOW FLASH • STRAIGHT TO THE BODY",.7)
+		if seal.virtual then c:cue(a,"YELLOW FLASH • FLYING THUNDER GOD TO THE BODY",.7)
 		else c:cue(a,if left>0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left>1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7) end
 	end,
 }
@@ -395,11 +395,11 @@ function Techniques.stepIllusion(c,a,now)
 	local caster=a.illusionBy
 	local since=a.illusionAt or now
 	if not caster or caster.health<=0 or (a.lastHurt or -10)>since or (caster.lastHurt or -10)>since then
-		return Techniques.breakIllusion(c,a,"break")
+		Techniques.breakIllusion(c,a,"break");return
 	end
 	local d=a.decoyPosition and a.decoyPosition-a.root.Position
 	if d and a.state~="Startup" and a.state~="Active" and Vector3.new(d.X,0,d.Z).Magnitude<=MIRAGE.Touch and math.abs(d.Y)<4 then
-		return Techniques.breakIllusion(c,a,"touch")
+		Techniques.breakIllusion(c,a,"touch")
 	end
 end
 -- The swing bit the image: it breaks, the swing is exposed, the counter palm
@@ -436,7 +436,7 @@ function Techniques.whiffRead(c,a,pending,now)
 		elseif a.illusionKind==nil then
 			struck=caster.fighterId=="Mirage"
 		end
-		if struck then return Techniques.mirageCatch(c,a,caster,pending,now) end
+		if struck then Techniques.mirageCatch(c,a,caster,pending,now);return end
 	end
 	local eye=a.target
 	local tune=eye and eye.def.Awakening
@@ -674,7 +674,7 @@ Techniques.SixtyFourPalms={
 			-- Every point closed: the guard collapses under the opening palm.
 			victim.guardHeld=false
 			if victim.state=="Guarding" then c:setState(victim,"Neutral",0) end
-			c:cue(victim,"GUARD COLLAPSES • THE NETWORK IS CLOSED",.9)
+			c:cue(victim,"GUARD BREAK • THE NETWORK IS CLOSED",.9)
 			Brawler.event(c,a,"GuardCollapse")
 		end
 		c.damageTag="64 Palms"
@@ -778,7 +778,7 @@ function Techniques.windSeal(c,a,b,direction,stick)
 	local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
 	entry.expires=c.now+WIND.Seal;entry.wind=true
 	c:pushImpact(b.root.Position,"windseal",false,{owner=a.id,fighter=a.fighterId,victim=b.id,direction=across})
-	c:cue(a,"WIND CUT • MARKED • 2 = FLASH BESIDE",.9)
+	c:cue(a,"WIND CUT • SEALED • FLASH BESIDE IT",.9)
 	Brawler.event(c,a,"WindSeal")
 end
 Techniques.WindCut={

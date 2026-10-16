@@ -490,4 +490,71 @@ test("jutsu flow: utility jutsu yield the end of their recovery to a dodge; comm
  assert(not lateFire,"the Great Fireball commitment became cancellable")
 end)
 
+-- Client cues (presentation only) --------------------------------------------
+-- Effects runs headless on stubs: it proves every new cue resolves its body
+-- points and builds without error, NOT how it looks (native Studio).
+for _,k in {"NumberRange","NumberSequence","NumberSequenceKeypoint","ColorSequence","ColorSequenceKeypoint"} do H.envBase[k]=H.roblox[k] end
+local baseNew=H.envBase.Instance.new
+local created=0
+H.envBase.Instance={new=function(class)
+ created+=1
+ local x=baseNew(class)
+ if class=="ParticleEmitter" then function x:Emit() end end
+ if x.GetPivot==nil then function x:GetPivot() return self.CFrame end end
+ if x.PivotTo==nil then function x:PivotTo(cf) self.CFrame=cf end end
+ return x
+end}
+local Effects=H.load("Client/Effects")
+local Presentation=H.load("Client/Presentation")
+test("client · every chakra point the server can close has a place on the body",function()
+ local c,a,b=H.duel("GentleFist","Mirage")
+ local seen={}
+ for _,order in Brawler.TENKETSU_ORDER do for _,id in order do seen[id]=true end end
+ for id in seen do
+  local at,part=Effects.tenketsuWorld(b.model,id)
+  assert(at and part,"no body location for point "..id)
+  assert((at-b.root.Position).Magnitude<4,"point "..id.." floats off the body")
+ end
+end)
+test("client · the new identity cues build on the contact feed without error",function()
+ local c,a,b=H.duel("Mirage","GentleFist")
+ local fx=Effects.new()
+ local models={[a.id]=a.model,[b.id]=b.model}
+ local folder={FindFirstChild=function(_,id) return models[id] end}
+ local before=created
+ for _,impact in {
+  {style="read",position=a.root.Position,owner=a.id,victim=b.id,to=a.root.Position+V.xAxis*2,phase="read"},
+  {style="read",position=a.root.Position,owner=a.id,victim=b.id,phase="whiff"},
+  {style="mirage",position=a.root.Position,owner=a.id,victim=b.id,phase="cast"},
+  {style="mirage",position=a.root.Position,owner=a.id,victim=b.id,phase="catch"},
+  {style="mirage",position=a.root.Position,owner=a.id,victim=b.id,phase="touch"},
+  {style="mirage",position=a.root.Position,owner=a.id,victim=b.id,phase="seen"},
+  {style="mirage",position=a.root.Position,owner=a.id,to=b.root.Position},
+  {style="tenketsu",position=b.root.Position,owner=b.id,victim=a.id,point="heart",count=1},
+  {style="tenketsu",position=b.root.Position,owner=b.id,victim=a.id,point="navel",count=4,severe=true},
+  {style="windseal",position=b.root.Position,owner=a.id,victim=b.id,direction=V.xAxis},
+  {style="curse",position=b.root.Position,owner=a.id,victim=b.id},
+  {style="teleport",position=b.root.Position,owner=a.id,from=a.root.Position,to=b.root.Position,awake=true},
+ } do fx:impact(impact,folder) end
+ assert(created>before+60,"the cues built nothing ("..(created-before)..")")
+ -- Persistent cues: closed points stay lit, the full field, a hungry curse.
+ local aura={marks={}}
+ fx:identity(a.model,{fighterId="Mirage",health=10,tenketsuPoints={"heart","throat","navel","leftHip"},tenketsuSevere=true},aura)
+ local lit=0;for _ in aura.points do lit+=1 end
+ assert(lit==4 and aura.leak,"closed points are not drawn on the body")
+ fx:identity(a.model,{fighterId="Mirage",health=10,tenketsuPoints={}},aura)
+ lit=0;for _ in aura.points do lit+=1 end
+ assert(lit==0 and aura.leak==nil,"reopened points stayed lit")
+ local neji={}
+ fx:identity(b.model,{fighterId="GentleFist",health=10,awaken=5,tenketsuPoints={}},neji)
+ assert(neji.field,"no Byakugan field")
+end)
+test("client · the genjutsu image is drawn from the deceived side and from the caster's side",function()
+ local deceived,at=Presentation.illusionView({phase="Duel",human={illusion=2,decoy=V.one},bot={illusion=0}})
+ assert(deceived=="deceived" and at==V.one,"the deceived player does not see the image")
+ assert(Presentation.illusionView({phase="Duel",human={illusion=0},bot={illusion=1,decoy=V.one}})=="caster","Itachi's player does not see his image")
+ assert(Presentation.illusionView({phase="Duel",human={illusion=0},bot={illusion=0}})==nil,"an image without a genjutsu")
+ assert(Presentation.illusionView({phase="Result",human={illusion=2,decoy=V.one}})==nil,"an image outside the duel")
+end)
+
 print("NinjaDuel identity pass: "..passed.." PASS")

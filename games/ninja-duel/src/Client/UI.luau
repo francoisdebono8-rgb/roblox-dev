@@ -256,9 +256,7 @@ function UI.new(parent,send)
 	self.queueNote=text(queueBox,"",UDim2.fromOffset(30,154),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
 	self.queue.Visible=false
-	-- A small displaced indicator during Mirage; real body remains visible and controllable.
-	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
-	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
+	-- The genjutsu image carries no label: the world shows it (Presentation:illusion).
 	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),palette.ink,.15)
 	corner(self.tutorialPanel,8)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,6),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
@@ -357,7 +355,6 @@ function UI:render(data)
 			elseif data.phase=="Queue" then self.cancelButton else nil
 		self.lastPhase=data.phase
 	end
-	self.echo.Enabled=false
 	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
@@ -393,7 +390,7 @@ function UI:render(data)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
 		-- Gentle Fist effects on this fighter.
 		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
-		elseif (actor.tenketsu or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
+		elseif (actor.tenketsu or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%%s",actor.tenketsu*15,if actor.tenketsuSevere then "  •  SEALED" else "") end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)>1 and k<=(data.roundsToWin or 1)
@@ -479,13 +476,6 @@ function UI:render(data)
 	if online and online.forfeit then
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
 		self.resultNote.Text="Your opponent left the duel. The win is yours."
-	end
-	if h.illusion>0 and data.phase=="Duel" then
-		local character=game:GetService("Players").LocalPlayer.Character
-		local folder=character and character.Parent
-		local effects=folder and folder:FindFirstChild("Effects")
-		local echo=effects and effects:FindFirstChild("Echo")
-		if echo then self.echo.Adornee=echo; self.echo.Enabled=true end
 	end
 end
 return UI

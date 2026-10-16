@@ -507,7 +507,7 @@ function Brawler.closePoint(c,a,b,zone)
  local severe=b.tenketsu>=g.MaxPoints
  c:pushImpact(b.root.Position,"tenketsu",false,{owner=a.id,fighter=a.fighterId,victim=b.id,point=point,count=b.tenketsu,severe=severe})
  Brawler.event(c,a,"PointClosed")
- if severe then c:cue(b,"CHAKRA NETWORK SEVERED",1);Brawler.event(c,a,"Severed") end
+ if severe then c:cue(b,"CHAKRA NETWORK SEALED",1);Brawler.event(c,a,"Severed") end
  return point
 end
 -- Every point at once (the last of the Sixty-Four Palms).
@@ -539,7 +539,7 @@ function Brawler.gentleFist(c,a,b,guarded,zone,palm)
  -- Full Field: a palm that breaks a jutsu being moulded cuts the flow itself.
  if awake and tune.ChannelCut and b.interruptedAt==c.now then
   b.sealedUntil=math.max(b.sealedUntil or 0,c.now+tune.ChannelCut)
-  c:cue(a,"FULL FIELD • CHAKRA FLOW CUT",.8);c:cue(b,"CHAKRA FLOW CUT • NO JUTSU",.9)
+  c:cue(a,"BYAKUGAN • CHAKRA FLOW CUT",.8);c:cue(b,"CHAKRA FLOW SEALED • NO JUTSU",.9)
   Brawler.event(c,a,"FlowCut")
  end
 end

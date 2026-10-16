@@ -38,6 +38,8 @@ local MINATO=Color3.fromRGB(255,214,92)
 local LION=Color3.fromRGB(150,180,255)
 local CURSE=Color3.fromRGB(120,60,200)
 local MINATO_CORE=Color3.fromRGB(255,248,214)
+local SHARINGAN=Color3.fromRGB(230,36,44)
+local WIND=Color3.fromRGB(190,255,226)
 
 local function new(class,props,parent)
 	local x=Instance.new(class)
@@ -449,6 +451,218 @@ local function crows(parent,position,count,spread)
 end
 FX.crows=crows
 
+-- ----------------------------------------------------------------- identity
+-- Restrained per-fighter feedback for the identity rules (all server-driven):
+-- Itachi's read (eye glint, the afterimage the swing bites) and genjutsu image,
+-- Neji's closed chakra points, Minato's wind seal and Yellow Flash, Sasuke's
+-- curse. Nothing here can change gameplay.
+-- Where each chakra point Neji can close sits on the body (bone, offset from
+-- its centre; -Z is the front). Ids: Brawler.TENKETSU_ORDER on the server.
+local TENKETSU={
+	throat={"Head",CFrame.new(0,-.5,-.42)},heart={"UpperTorso",CFrame.new(-.32,.22,-.52)},solar={"UpperTorso",CFrame.new(0,-.3,-.52)},
+	navel={"LowerTorso",CFrame.new(0,.08,-.52)},leftShoulder={"LeftUpperArm",CFrame.new(0,.3,-.3)},rightShoulder={"RightUpperArm",CFrame.new(0,.3,-.3)},
+	leftHip={"LowerTorso",CFrame.new(-.52,-.12,-.46)},rightHip={"LowerTorso",CFrame.new(.52,-.12,-.46)},
+}
+FX.TENKETSU=TENKETSU
+local function find(folder,id) return folder and id and folder:FindFirstChild(id) end
+function FX.tenketsuWorld(model,id)
+	local spec=TENKETSU[id or ""]
+	local part=spec and model and model:FindFirstChild(spec[1])
+	if not part then return nil,nil end
+	return (part.CFrame*spec[2]).Position,part
+end
+-- Two red points and a thin glint across the eyes: the Sharingan reading.
+local function eyeGlint(parent,model)
+	local head=model and model:FindFirstChild("Head")
+	if not head then return end
+	for _,x in {-.22,.22} do flash(parent,(head.CFrame*CFrame.new(x,.1,-.62)).Position,SHARINGAN,.12,.55,.22,0) end
+	local streak=block(parent,Vector3.new(1,.05,.05),head.CFrame*CFrame.new(0,.1,-.64),SHARINGAN,Enum.Material.Neon)
+	streak.Transparency=.1
+	tween(streak,.26,{Size=Vector3.new(2.4,.02,.02),Transparency=1})
+	Debris:AddItem(streak,.3)
+	local light=new("PointLight",{Color=SHARINGAN,Brightness=4,Range=8,Shadows=false},head)
+	tween(light,.3,{Brightness=0})
+	Debris:AddItem(light,.35)
+end
+FX.eyeGlint=eyeGlint
+-- Sharingan Read / Focus read: the eyes, the afterimage where he stood that
+-- the swing bites, a dry cut. A whiff read is the eyes and a ring only.
+function FX:readCue(impact,folder)
+	local reader=find(folder,impact.owner)
+	eyeGlint(self.folder,reader)
+	local at=impact.position
+	if impact.phase=="whiff" then
+		local victim=find(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		if root then shockRing(self.folder,root.Position-Vector3.new(0,2.6,0),SHARINGAN,1,5,.25) end
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.22,2.6)
+		return
+	end
+	if reader then
+		local ghost=self:ghost(reader,SHARINGAN,.34,.35)
+		local root=reader:FindFirstChild("HumanoidRootPart")
+		if ghost and root then
+			-- The body may already be drawn at its new spot: leave the copy where he stood.
+			local shift=at-root.Position
+			ghost:PivotTo(ghost:GetPivot()+Vector3.new(shift.X,0,shift.Z))
+		end
+	end
+	flash(self.folder,at+Vector3.new(0,.5,0),Color3.fromRGB(255,240,236),.3,2.8,.14,.2)
+	sparks(self.folder,at+Vector3.new(0,.5,0),Color3.fromRGB(255,220,220),8,16)
+	sound(anchorPart(self.folder,at),SOUND.whoosh,.34,2.3)
+	sound(anchorPart(self.folder,at),SOUND.hit,.18,.6)
+	self:cheer(.6)
+end
+-- Genjutsu: Mirage. cast = a red ripple under the deceived body as the image
+-- takes; catch = the image breaks where the swing bit it; touch/break = it
+-- dissolves; seen = the Byakugan shrugs it off. A skill-build echo: red smoke.
+function FX:mirageCue(impact,folder)
+	local at=impact.position
+	local caster=find(folder,impact.owner)
+	local phase=impact.phase
+	if phase=="cast" then
+		local victim=find(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		if root then shockRing(self.folder,root.Position-Vector3.new(0,2.6,0),SHARINGAN,2,9,.45) end
+		flash(self.folder,at,Color3.fromRGB(150,24,34),1,4,.3,.55)
+		eyeGlint(self.folder,caster)
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.3,.55)
+	elseif phase=="catch" then
+		for _=1,12 do
+			local dir=Vector3.new(math.random()-.5,math.random()*.8,math.random()-.5)
+			dir=if dir.Magnitude>.01 then dir.Unit else Vector3.yAxis
+			local shard=block(self.folder,Vector3.new(.3,.5,.06),CFrame.lookAt(at,at+dir)*CFrame.new(0,(math.random()-.5)*3,0),SHARINGAN,Enum.Material.Neon)
+			shard.Transparency=.25
+			tween(shard,.4,{CFrame=shard.CFrame+dir*(2+math.random()*3),Transparency=1,Size=Vector3.new(.05,.2,.02)})
+			Debris:AddItem(shard,.45)
+		end
+		flash(self.folder,at,SHARINGAN,1,6,.22,.15)
+		smokePuff(self.folder,at,Color3.fromRGB(60,24,30),12,1.6)
+		eyeGlint(self.folder,caster)
+		sound(anchorPart(self.folder,at),SOUND.hit,.4,.7)
+		self:cheer(.8)
+	elseif phase=="seen" then
+		local victim=find(folder,impact.victim)
+		local head=victim and victim:FindFirstChild("Head")
+		if head then flash(self.folder,head.Position,HYUGA,.4,2.4,.2,.2) end
+	elseif phase=="touch" or phase=="break" then
+		smokePuff(self.folder,at,Color3.fromRGB(70,40,46),6,1.2)
+	else
+		smokePuff(self.folder,at+Vector3.new(0,1,0),Color3.fromRGB(60,24,30),10,1.6)
+		if impact.to then smokePuff(self.folder,impact.to+Vector3.new(0,1,0),Color3.fromRGB(60,24,30),6,1.2) end
+	end
+end
+-- Gentle Fist: a pinpoint flash on the exact point that closed, a short chakra
+-- pulse and a dry tick; a sealed network (every point) rings once, deeper.
+function FX:tenketsuCue(impact,folder)
+	local victim=find(folder,impact.victim)
+	local at,part=FX.tenketsuWorld(victim,impact.point)
+	at=at or impact.position
+	local severe=impact.severe==true
+	flash(self.folder,at,HYUGA,.12,if severe then 1.6 else 1.05,.14,0)
+	shockRing(self.folder,at,HYUGA,.3,if severe then 4.6 else 3,.22,part and part.CFrame.LookVector or nil)
+	sparks(self.folder,at,HYUGA,if severe then 10 else 5,8)
+	sound(anchorPart(self.folder,at),SOUND.hit,.26,1.95)
+	if severe then
+		sound(anchorPart(self.folder,at),SOUND.heavy,.32,.6)
+		local torso=victim and victim:FindFirstChild("UpperTorso")
+		if torso then shockRing(self.folder,torso.Position,HYUGA,1,7,.4) end
+	end
+end
+-- Wind Cut: a pale crescent where the cut throws the body aside; the wind seal
+-- then rides on it (FX:seal draws it in the wind's colour).
+function FX:windSealCue(impact)
+	local at=impact.position
+	local across=impact.direction or Vector3.xAxis
+	local slash=block(self.folder,Vector3.new(.1,3.2,.25),CFrame.lookAt(at,at+across)*CFrame.Angles(0,0,math.rad(35)),WIND,Enum.Material.Neon)
+	slash.Transparency=.2
+	tween(slash,.22,{Size=Vector3.new(.04,4.2,.08),Transparency=1})
+	Debris:AddItem(slash,.25)
+	flash(self.folder,at,MINATO,.3,2,.16,.3)
+	sound(anchorPart(self.folder,at),SOUND.whoosh,.34,1.9)
+end
+-- Curse Mark: the kick that does not let go flares purple on the body.
+function FX:curseCue(impact)
+	local at=impact.position
+	flash(self.folder,at,CURSE,.4,3.2,.2,.2)
+	sparks(self.folder,at,Color3.fromRGB(170,120,255),10,18)
+	sound(anchorPart(self.folder,at),SOUND.heavy,.28,1.4)
+end
+-- The genjutsu image (Presentation:illusion): a frozen copy of `source` in its
+-- current pose. "deceived": exactly the fighter, with a faint red outline that
+-- pulses now and then (the tell); "caster": a red translucent afterimage, so
+-- Itachi's player sees the trap he left. Its pivot is the copied root.
+function FX:image(source,mode)
+	if not source then return nil end
+	local archivable=source.Archivable
+	source.Archivable=true
+	local ok,copy=pcall(function() return source:Clone() end)
+	source.Archivable=archivable
+	if not ok or not copy then return nil end
+	copy.Name="GenjutsuImage"
+	for _,d in copy:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored=true;d.CanCollide=false;d.CanQuery=false;d.CanTouch=false;d.CastShadow=false
+			d.LocalTransparencyModifier=0
+			if mode=="caster" and d.Transparency<.95 then d.Color=SHARINGAN;d.Material=Enum.Material.SmoothPlastic;d.Transparency=math.max(d.Transparency,.62) end
+		elseif d:IsA("Humanoid") or d:IsA("Sound") or d:IsA("Trail") or d:IsA("ParticleEmitter") or d:IsA("Light") or d:IsA("Beam") or d:IsA("BaseScript") or d:IsA("Highlight") then
+			d:Destroy()
+		end
+	end
+	if mode=="deceived" then
+		new("Highlight",{Name="Tell",FillTransparency=1,OutlineColor=SHARINGAN,OutlineTransparency=1,DepthMode=Enum.HighlightDepthMode.Occluded},copy)
+	end
+	copy.Parent=self.folder
+	return copy
+end
+-- Persistent identity cues, every frame (FX:fighter): Neji's closed points stay
+-- lit on the body that carries them (pulsing fast once the network is sealed,
+-- chakra leaking), Byakugan Full Field lays its field, a hungry Curse Mark
+-- flickers.
+function FX:identity(model,actor,aura)
+	local root=model:FindFirstChild("HumanoidRootPart")
+	local alive=(actor.health or 1)>0
+	local severe=actor.tenketsuSevere==true and alive
+	aura.points=aura.points or {}
+	local live={}
+	for _,id in (if alive then actor.tenketsuPoints else nil) or {} do
+		live[id]=true
+		local entry=aura.points[id]
+		if not entry or not entry.dot.Parent then
+			local dot=block(self.folder,Vector3.one*.18,CFrame.new(),HYUGA,Enum.Material.Neon);dot.Shape=Enum.PartType.Ball
+			entry={dot=dot,born=os.clock()};aura.points[id]=entry
+		end
+		local at=FX.tenketsuWorld(model,id)
+		if at then entry.dot.CFrame=CFrame.new(at) end
+		local pulse=.5+.5*math.sin((os.clock()-entry.born)*(if severe then 14 else 5))
+		entry.dot.Transparency=(if severe then .05 else .3)+pulse*.35
+		entry.dot.Size=Vector3.one*(if severe then .26 else .18)
+	end
+	for id,entry in aura.points do if not live[id] then entry.dot:Destroy();aura.points[id]=nil end end
+	local torso=model:FindFirstChild("UpperTorso") or root
+	if severe and not aura.leak and torso then
+		local at=new("Attachment",{Name="ChakraLeak"},torso)
+		aura.leak=new("ParticleEmitter",{Texture=TEX.glow,Rate=10,Lifetime=NumberRange.new(.4,.7),Speed=NumberRange.new(1,2.5),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(HYUGA),LightEmission=.6,LightInfluence=0,Size=num({{0,.35},{1,0}}),Transparency=num({{0,.4},{1,1}})},at)
+	elseif not severe and aura.leak then
+		aura.leak.Enabled=false;Debris:AddItem(aura.leak.Parent,.8);aura.leak=nil
+	end
+	if actor.fighterId=="GentleFist" and root then
+		local full=(actor.awaken or 0)>0 and alive
+		if full and (not aura.field or not aura.field.Parent) then
+			local ring=block(self.folder,Vector3.new(.06,16,16),root.CFrame,HYUGA,Enum.Material.Neon);ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.9
+			aura.field=ring
+		elseif not full and aura.field then
+			tween(aura.field,.3,{Transparency=1});Debris:AddItem(aura.field,.35);aura.field=nil
+		end
+		if aura.field then aura.field.CFrame=CFrame.new(root.Position-Vector3.new(0,2.9,0))*CFrame.Angles(0,0,math.pi/2) end
+	end
+	if actor.fighterId=="Lion" and (actor.awaken or 0)>0 and actor.curseHunger and alive then
+		local on=math.sin(os.clock()*18)>0
+		for _,mark in aura.marks or {} do mark.Transparency=if on then .5 else 0 end
+	end
+end
+
 -- ------------------------------------------------------------------ contacts
 local function modelFor(folder,id)
 	return folder and folder:FindFirstChild(id or "")
@@ -469,12 +683,19 @@ function FX:impact(impact,folder)
 	if style=="fire" then
 		self:explosion(position,impact.normal)
 	elseif style=="teleport" then
-		self:teleport(impact.from or position,impact.to or position,modelFor(folder,impact.owner))
+		self:teleport(impact.from or position,impact.to or position,modelFor(folder,impact.owner),impact.awake)
 	elseif style=="substitute" then
 		self:substitute(position,impact.to,impact.fighter,modelFor(folder,impact.owner))
 	elseif style=="mirage" then
-		crows(self.folder,position+Vector3.new(0,1,0),9,10)
-		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
+		self:mirageCue(impact,folder)
+	elseif style=="read" then
+		self:readCue(impact,folder)
+	elseif style=="tenketsu" then
+		self:tenketsuCue(impact,folder)
+	elseif style=="windseal" then
+		self:windSealCue(impact)
+	elseif style=="curse" then
+		self:curseCue(impact)
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
 		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.22,.55)
@@ -665,7 +886,7 @@ function FX:explosion(position,normal)
 		Debris:AddItem(scorch,5.2)
 	end
 end
-function FX:teleport(from,to,model)
+function FX:teleport(from,to,model,awake)
 	-- Yellow flash: a body-shaped afterimage where he stood, a single bright
 	-- streak along the path, and a flash + shockwave where he reappears.
 	if model then self:ghost(model,MINATO,.28,.25) end
@@ -681,6 +902,12 @@ function FX:teleport(from,to,model)
 	flash(self.folder,to,MINATO,4,12,.32,.4)
 	shockRing(self.folder,to-Vector3.new(0,2.6,0),MINATO,2,16,.3)
 	sparks(self.folder,to,MINATO,18,24)
+	if awake then
+		-- Yellow Flash: a second, wider ring at the arrival and a flash left at
+		-- the departure (the seal he leaves there): the chain has a rhythm.
+		shockRing(self.folder,to-Vector3.new(0,2.6,0),MINATO_CORE,3,22,.4)
+		flash(self.folder,from,MINATO,1,5,.3,.3)
+	end
 	local holder=anchorPart(self.folder,to);holder.Transparency=1
 	sound(holder,SOUND.whoosh,.55,1.6)
 	local light=new("PointLight",{Color=MINATO,Brightness=8,Range=24,Shadows=false},holder)
@@ -720,13 +947,14 @@ function FX:seal(owner,actor,folder)
 			if torso then
 				if not entry then
 					local glyph=new("Model",{Name="Body seal"},self.folder)
-					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
+					local tone=if info.wind then WIND else MINATO
+					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,tone,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
 					local marks={}
-					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,MINATO,Enum.Material.Neon)) end
-					local light=new("PointLight",{Color=MINATO,Brightness=2,Range=7,Shadows=false},disc)
+					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,tone,Enum.Material.Neon)) end
+					local light=new("PointLight",{Color=tone,Brightness=2,Range=7,Shadows=false},disc)
 					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
 					self.seals[key]=entry
-					flash(self.folder,torso.Position,MINATO,.6,4,.2,.2)
+					flash(self.folder,torso.Position,tone,.6,4,.2,.2)
 				end
 				local back=torso.CFrame*CFrame.new(0,.1,.62)
 				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
@@ -955,7 +1183,7 @@ function FX:fighter(model,actor,dt)
 	if aura.chidori then aura.chidori.light.Brightness=1.2+math.random()*1.4 end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
-		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true
+		local focused=(actor.intro or 0)>0 or actor.castId~=nil or (actor.counter or 0)>0 or actor.rotation==true or (actor.awaken or 0)>0
 		for _,vein in aura.veins or {} do vein.Transparency=if focused then 0 else 1 end
 		local dome=aura.dome
 		if actor.rotation and not dome then
@@ -1046,6 +1274,7 @@ function FX:fighter(model,actor,dt)
 			aura.mouth.Rate=0;aura.mouthLight.Brightness=0
 		end
 	end
+	self:identity(model,actor,aura)
 end
 -- ----------------------------------------------------------------- crowd
 -- The stands react to the fight: big moments bring spectators to their feet,

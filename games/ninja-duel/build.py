@@ -89,6 +89,8 @@ for asset_file in asset_files:
 import subprocess,sys
 # Automated gate: every headless spec must pass on the exact sources built here.
 TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),('lune','tests/Combat.spec.luau'),('lune','tests/Sequences.spec.luau'),('lune','tests/Regression.spec.luau'),('lune','tests/Feedback.spec.luau'),('lune','tests/Animation.spec.luau'),('lune','tests/Branches.spec.luau'),('lune','tests/Phase4.spec.luau'),('lune','tests/Neji.spec.luau'),('lune','tests/Systems.spec.luau'),('lune','tests/Tools.spec.luau'),('lune','tests/Sasuke.spec.luau'),('lune','tests/Gaara.spec.luau'),('lune','tests/Online.spec.luau'),('lune','tests/Progression.spec.luau'),('lune','tests/Profiles.spec.luau'),('lune','tests/Preparation.spec.luau')]
+# CORE4 identity pass (Mirage, Read, Wind Cut, tenketsu, awakenings, jutsu flow).
+TEST_RUNNERS.append(('lune','tests/Identity.spec.luau'))
 def run_automated():
     tool={}
     import os
