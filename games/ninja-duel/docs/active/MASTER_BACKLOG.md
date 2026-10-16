@@ -85,7 +85,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Contrôles natifs Mac/PC/manette puis périmètre mobile
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../reports/ORCHESTRATION_REFACTOR.md)
 - validation: Chaque action accessible sans conflit, lock/camera confortable ; plateformes testées explicites
-- evidence: Mapping centralisé Controls ; correctif clavier/PS5 `2de7b03`/`5db5199` + Input.spec 14 PASS (TECHNICAL) ; NATIVE_STUDIO et manette réelle PENDING ; ergonomie humaine non validée
+- evidence: Mapping centralisé Controls ; correctif clavier/PS5 `2de7b03`/`5db5199` + Input.spec 14 PASS (TECHNICAL) ; NATIVE_STUDIO et manette réelle PENDING ; ergonomie humaine non validée 2026-10-16 soir : double tap à 0,1 s par le vrai remote `Action` (anti-triche inclus) : Light1 seul avant, Light1 > Light2 après (`ac31aa2`, probe `double_tap.luau`). Manette matérielle toujours non testée
 - outcome: PENDING
 
 ## MOV-001 — Course huit directions et conscience partielle de la cible
@@ -137,7 +137,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Continuité biomécanique des actions
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Pied→hanche→torse→épaule→membre, anticipation/contact/followthrough/recovery ; aucun cut/run→attaque→run ; comparaison native avant/après
-- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle 2026-10-16 : outil de chronophotographie Studio (poses de 6–9 instants côte à côte, distances par image) ; premier usage sur la chaîne de Minato ([rapport](../reports/convergence/CONTACT_AND_REACTIONS.md)) 2026-10-16 : poursuite en bond vertical après un lanceur, clips recalés sur le temps serveur, entrée des coups enchaînés adoucie et coups tournants bras serrés (pire saut de main par chaîne : Sasuke 3,1→1,8, Minato 2,9→2,1 studs/image) ; familles de mouvement pour les nouveaux combattants
+- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle 2026-10-16 : outil de chronophotographie Studio (poses de 6–9 instants côte à côte, distances par image) ; premier usage sur la chaîne de Minato ([rapport](../reports/convergence/CONTACT_AND_REACTIONS.md)) 2026-10-16 : poursuite en bond vertical après un lanceur, clips recalés sur le temps serveur, entrée des coups enchaînés adoucie et coups tournants bras serrés (pire saut de main par chaîne : Sasuke 3,1→1,8, Minato 2,9→2,1 studs/image) ; familles de mouvement pour les nouveaux combattants 2026-10-16 soir : poses d’identité (glissade du Read, retrait du Mirage, contres glissés, posture tenketsu, Curse Mark, freinage de fin de dash, arrivée aérienne Yellow Flash) ; attaques aériennes martelées qui faisaient planer au ras du sol corrigées (`885fdbc`, Regression.spec)
 - outcome: PENDING
 
 ## MOV-005 — Transitions air, landing et mur cohérentes
@@ -176,7 +176,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Grammaire directionnelle et routes techniques existantes
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Branches ground/air/launcher/chase/slam/throw/side swap/wall bornées
-- evidence: Branches/Sequences/Sasuke/Preparation PASS
+- evidence: Branches/Sequences/Sasuke/Preparation PASS 2026-10-16 soir (CCC2) : modèle de combo à coups confirmés et mémoire directionnelle fusionné (`c4f0466`) ; NATIVE_STUDIO : coup dans le vide puis pression = Light1, L, L, vers relâché + L = Launcher, côté + L = AngleStep (`tools/studio/probes/staged_moment.luau`)
 - outcome: VERIFIED_TECHNICAL
 
 ## COM-002 — Taijutsu riche et expressif
@@ -228,7 +228,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Transitions, cancels et décisions entre combos
 - sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Feinte/outil/esquive/angle/clash/counter/disengage ; fenêtres lisibles, pas autoroutes ni infinites ni recovery gratuite ; preuve native
-- evidence: Mécanismes partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus (f93d866). Mission 2026-10-16 : construire une vraie couche de neutral (approche, retraite, repositionnement latéral, feinte, sonde, outil, pression projectile, garde, parade, esquive, perfect dodge, contre, substitution, clash, reset) avec des phases et des échanges courts
+- evidence: Mécanismes partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus (f93d866). Mission 2026-10-16 : construire une vraie couche de neutral (approche, retraite, repositionnement latéral, feinte, sonde, outil, pression projectile, garde, parade, esquive, perfect dodge, contre, substitution, clash, reset) avec des phases et des échanges courts 2026-10-16 soir : réengagement unique (poursuite dans une fenêtre, dash chakra hors fenêtre) ; NATIVE_STUDIO : arrivée à 3,0 studs pour les quatre après correction du glissement post-arrivée (`6b98e28`, Regression.spec), probe `reengage.luau`
 - outcome: PENDING
 
 ## COM-006 — Grabs et micro-conflits physiques
@@ -397,7 +397,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Prototype ciblé objet + chakra + déclencheur → résultat
 - sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Au moins interaction concrète lisible/contre-jeu avant abstraction ; infusion propriété/nature testée
-- evidence: Vision systémique ; aucun système général actuel
+- evidence: Vision systémique ; aucun système général actuel 2026-10-16 soir : prototype « objet + chakra + déclencheur → résultat » livré par la passe chakra (ChakraCombat/ChakraTuning, règles Codex portées) ; voir SYS-001
 - outcome: PENDING
 
 ## SYS-001 — Faire du chakra une décision contextuelle
@@ -410,7 +410,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Faire du chakra une décision contextuelle
 - sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Coût, recharge, infusion, déclencheur, opportunité et contre-jeu mesurés ; éviter barre cosmétique
-- evidence: Ressources et jutsu présents ; 2026-10-16 mission : chakra systémique `Objet + Propriété/Nature + Contexte → Résultat`, infrastructure générique d’abord (kunai/shuriken renforcés, vent coupant, foudre conduite par fil/métal, feu sur pièges/zones préparées, kunai marqué ancre FTG, collision/déviation de projectiles, projectile planté devenant point tactique) sans bouton par interaction. Fondations Codex à auditer (`7091585`)
+- evidence: Ressources et jutsu présents ; 2026-10-16 mission : chakra systémique `Objet + Propriété/Nature + Contexte → Résultat`, infrastructure générique d’abord (kunai/shuriken renforcés, vent coupant, foudre conduite par fil/métal, feu sur pièges/zones préparées, kunai marqué ancre FTG, collision/déviation de projectiles, projectile planté devenant point tactique) sans bouton par interaction. Fondations Codex à auditer (`7091585`) 2026-10-16 soir : chakra systémique sur l’outil (Z + R / R1 + R2), maîtrise par combattant, collisions par règles de données (`4ec179c`, Chakra.spec 17) ; kunai de vent vu en Studio. PARTIAL : brûlures, fil, points plantés et collisions non observés en natif
 - outcome: PENDING
 
 ## SYS-002 — Interactions élémentaires/environnement ciblées
@@ -566,7 +566,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Quatre identités reconnaissables sans jutsu
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Mouvement, garde, distance, rythme, outil, conversions distinguent quatre en duel ; preuve native/lore pertinente
-- evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING
+- evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING 2026-10-16 soir : passe identité CORE4 fusionnée (`1a6fb94`) — image Mirage qui trompe vraiment (vue côté victime en Studio), Read visible, Wind Cut refait (tranche horizontale vue en Studio), points de tenketsu suivis, éveils qui changent les règles ; poses d’identité (`d2676c7`, Animation.spec)
 - outcome: PENDING
 
 ## CHR-CORE-002 — Revue lore par capacité
@@ -592,7 +592,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Activer Gaara uniquement sur décision explicite
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Client/UI, identité/motion/lore, matrice et native complets avant exposition
-- evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable) 2026-10-16 (DEC-015) : Gaara sélectionnable des deux côtés (`545bc3d`) avec sa propre famille de mouvement (bras croisés, pas courts sans course ninja, fouets de sable lancés de la main, pilier paume levée, aucune arme en main) au lieu des visuels de Minato ; vu en Studio (menu, chaîne de fouets). PARTIAL : pas encore d’effet de sable sur les fouets ni d’acceptation humaine
+- evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable) 2026-10-16 (DEC-015) : Gaara sélectionnable des deux côtés (`545bc3d`) avec sa propre famille de mouvement (bras croisés, pas courts sans course ninja, fouets de sable lancés de la main, pilier paume levée, aucune arme en main) au lieu des visuels de Minato ; vu en Studio (menu, chaîne de fouets). PARTIAL : pas encore d’effet de sable sur les fouets ni d’acceptation humaine 2026-10-16 soir : couche client SandFX (`4dbccbe`, `15008c9`) — les projectiles de sable n’étaient plus des kunai, bouclier/flicker/cercueil/mur du Désert/fouets/pilier/charges dessinés ; vu en Studio sur images figées. PARTIAL : pas d’acceptation humaine en mouvement
 - outcome: PENDING
 
 ## CHR-EXT-002 — Conserver ~32 archétypes et dix blueprints riches
@@ -683,7 +683,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Audio d’impact et feedback
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md)
 - validation: Contacts, parry/tool/wall/steps lisibles, pas effets pour cacher corps insuffisant ; native avant/après
-- evidence: Mécanismes existent ; 2026-10-16 : un seul son par contact (le son serveur répliqué est retiré) ; seuls les styles de contact jouent un son de coup — cast, chase, fade, stick, afterimage n’en jouent plus, dodge/substitution/wall tech sonnent « air » ; une lame esquivée/parée/absorbée finit en silence. TECHNICAL compile + suites PASS ; écoute NATIVE_STUDIO PENDING
+- evidence: Mécanismes existent ; 2026-10-16 : un seul son par contact (le son serveur répliqué est retiré) ; seuls les styles de contact jouent un son de coup — cast, chase, fade, stick, afterimage n’en jouent plus, dodge/substitution/wall tech sonnent « air » ; une lame esquivée/parée/absorbée finit en silence. TECHNICAL compile + suites PASS ; écoute NATIVE_STUDIO PENDING 2026-10-16 soir : chaque son laissait un cube noir visible de 0,2 stud pour le reste du duel (ancre `anchorPart`) ; ancres invisibles et supprimées avec leur son (`15008c9`)
 - outcome: PENDING
 
 ## FX-002 — Réactions par zones et usure corporelle

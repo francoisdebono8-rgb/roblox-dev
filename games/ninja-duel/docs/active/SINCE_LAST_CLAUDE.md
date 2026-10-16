@@ -152,3 +152,11 @@ Addendum (`faacb4b`) : [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDEND
 - Arène (`2edd2b5` puis `e54688f`) : retour utilisateur → accessoires retirés, stade Chūnin agrandi (rayon 145, murs 76), balcon des participants praticable.
 - Roster (`545bc3d`) : familles de mouvement (cadre de production côté client) ; Gaara jouable en test de charge, sélectionnable.
 - Outils (`9766017`) : outils Studio Codex portés (Debug/QA), auto-test natif 9/9 PASS.
+
+### Convergence 2 — intégration des passes et validation native (2026-10-16, soir)
+
+- Fusions (`1a6fb94` identité CORE4, `c4f0466` modèle de combo et réengagement, `4ec179c` chakra systémique). Conflits résolus : la contre-attaque ouvre une nouvelle chaîne ; le coup maudit garde ses trois coups confirmés (le lanceur suivait plus) ; la règle de collision chakra et la coupe du Wind Cut sont un seul comportement ; aide des commandes fusionnée ; IA de Neji qui ne réengageait plus face à un Itachi qui zone (dash d’entrée après une phase de sondage).
+- Studio (NATIVE_STUDIO, probes `staged_moment`, `fx_freeze`, `double_tap`, `reengage`) : modèle de combo vérifié (dans le vide → Light1 ; L, L, vers relâché + L → Launcher ; côté + L → AngleStep) ; image du genjutsu vue côté victime ; kunai de vent ; tranche du Wind Cut ; sable de Gaara.
+- Défauts trouvés en natif et corrigés avec tests : double tap mangé (anti-triche 0,16 → 0,08 s, `ac31aa2`) ; dash qui glissait 13–25 studs au-delà de la cible (`6b98e28`) ; attaques aériennes martelées qui faisaient planer (`885fdbc`) ; projectiles de sable dessinés en kunai et aucun visuel de sable (`4dbccbe`) ; cubes noirs laissés par chaque son (`15008c9`).
+- Cadre de production de personnages : registre de couches d’identité dans Effects (FX.layers/FX.poses + helpers passés au module du combattant), `SandFX` comme premier module, `Harness.stubScene()` pour les tests client headless.
+- Restent ouverts : agent Rock Lee en cours ; manette réelle, ressenti humain, deux clients en ligne ; IA qui n’utilise pas murs/corniche dans le grand stade.
