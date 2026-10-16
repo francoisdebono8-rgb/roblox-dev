@@ -137,7 +137,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Continuité biomécanique des actions
 - sources: [LOCOMOTION](../movement/LOCOMOTION.md); [CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX](../archive/missions/CLAUDE_MOVEMENT_SYSTEM_FINAL_FIX.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Pied→hanche→torse→épaule→membre, anticipation/contact/followthrough/recovery ; aucun cut/run→attaque→run ; comparaison native avant/après
-- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle 2026-10-16 : outil de chronophotographie Studio (poses de 6–9 instants côte à côte, distances par image) ; premier usage sur la chaîne de Minato ([rapport](../reports/convergence/CONTACT_AND_REACTIONS.md))
+- evidence: Animation/renderer/IK existent, aucune acceptation native actuelle 2026-10-16 : outil de chronophotographie Studio (poses de 6–9 instants côte à côte, distances par image) ; premier usage sur la chaîne de Minato ([rapport](../reports/convergence/CONTACT_AND_REACTIONS.md)) 2026-10-16 : poursuite en bond vertical après un lanceur, clips recalés sur le temps serveur, entrée des coups enchaînés adoucie et coups tournants bras serrés (pire saut de main par chaîne : Sasuke 3,1→1,8, Minato 2,9→2,1 studs/image) ; familles de mouvement pour les nouveaux combattants
 - outcome: PENDING
 
 ## MOV-005 — Transitions air, landing et mur cohérentes
@@ -592,7 +592,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Activer Gaara uniquement sur décision explicite
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Client/UI, identité/motion/lore, matrice et native complets avant exposition
-- evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable)
+- evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable) 2026-10-16 (DEC-015) : Gaara sélectionnable des deux côtés (`545bc3d`) avec sa propre famille de mouvement (bras croisés, pas courts sans course ninja, fouets de sable lancés de la main, pilier paume levée, aucune arme en main) au lieu des visuels de Minato ; vu en Studio (menu, chaîne de fouets). PARTIAL : pas encore d’effet de sable sur les fouets ni d’acceptation humaine
 - outcome: PENDING
 
 ## CHR-EXT-002 — Conserver ~32 archétypes et dix blueprints riches
@@ -618,7 +618,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Échelle utile et exploitation murs/cover
 - sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Course/range/time de réentrée, fil/teleport/projectiles, wallcarry/pin/bounce et tech utiles ; native avant/après
-- evidence: Mécanismes existent ; 2026-10-16 DEC-012 : la mission autorise la refonte/mise à l’échelle de l’arène (fighters petits face au décor ; neutral long, sprint, pression d’outils, poursuite aérienne, murs utiles sans être partout) puis le retuning course/sprint/saut/projectiles/lock/caméra/IA — l’ancien tuning peut être invalidé. Observation Studio désormais possible
+- evidence: Mécanismes existent ; 2026-10-16 DEC-012 : la mission autorise la refonte/mise à l’échelle de l’arène (fighters petits face au décor ; neutral long, sprint, pression d’outils, poursuite aérienne, murs utiles sans être partout) puis le retuning course/sprint/saut/projectiles/lock/caméra/IA — l’ancien tuning peut être invalidé. Observation Studio désormais possible 2026-10-16 (DEC-015) : terrasses/piliers ajoutés puis retirés sur retour utilisateur (accessoires) ; stade de l’examen Chūnin agrandi (`e54688f`) : rayon de mur 103→145 (≈58 tailles de combattant), murs 62→76, sol ouvert, grands arbres le long du mur, 5 rochers conservés (couverture/splat), balcon des participants devenu une vraie corniche. Vu en Studio (vue d’ensemble, caméra de jeu, opposition à 90 studs). L’IA n’utilise pas encore murs/corniche dans ce stade plus grand
 - outcome: PENDING
 
 ## ARENA-002 — Tournoi jeune et présentation légère
@@ -865,7 +865,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Intégrer seulement exports choisis/validés par Claude
 - sources: [README](../../motion-lab/README.md); [FORGE_MOTION_LAB_CODEX_BRIEF](../archive/missions/FORGE_MOTION_LAB_CODEX_BRIEF.md)
 - validation: Sélection variante + preuve native avant/après ; timings/contacts et identité corrects ; pas exportautointégré
-- evidence: Export inert ; aucune motion remplacée pendant préparation
+- evidence: Export inert ; aucune motion remplacée pendant préparation 2026-10-16 : outils de dev Studio de Codex (`33028b2`/`7091585`) portés en Debug/QA (merge `9766017`, [DEVTOOLS](../tools/DEVTOOLS.md)) ; auto-test natif 9/9 PASS en Studio
 - outcome: PENDING
 
 ## LAB-003 — QA native UI/preview du Lab final
