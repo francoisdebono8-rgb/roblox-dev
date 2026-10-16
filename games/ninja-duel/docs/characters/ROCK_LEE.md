@@ -178,7 +178,7 @@ Lee est le seul fighter dont **la puissance se gagne en se déplaçant** (Élan)
 
 ## État d'implémentation (2026-10-16, test de charge DEC-015)
 
-Code de `claude/nd-ccc2-lee`, bâti sur les règles intégrées (modèle combo confirmé, relance, chakra systémique, couche identité). Rapport, découvertes moteur et liste Studio : [ROCK_LEE_STRESS_TEST](../reports/convergence2/ROCK_LEE_STRESS_TEST.md). **Validé en headless uniquement** (`tests/Lee.spec.luau`, 23 cas ; limites articulaires dans `tests/Animation.spec.luau`) : le feel, la lecture des coups et le costume restent à juger dans Studio. L'identifiant de code est **`Leaf`** (la fiche proposait `Lotus`).
+Code de `claude/nd-ccc2-lee`, bâti sur les règles intégrées (modèle combo confirmé, relance, chakra systémique, couche identité). Rapport, découvertes moteur et liste Studio : [ROCK_LEE_STRESS_TEST](../reports/convergence2/ROCK_LEE_STRESS_TEST.md). **Validé en headless uniquement** (`tests/Lee.spec.luau`, 24 cas ; limites articulaires dans `tests/Animation.spec.luau`) : le feel, la lecture des coups et le costume restent à juger dans Studio. L'identifiant de code est **`Leaf`** (la fiche proposait `Lotus`).
 
 **Implémenté et jouable (sélectionnable dans le roster)**
 - `Fighters.Leaf` : HP 125, chakra 100, regen 9,5, vitesse 20 (sprint ×1,12, accélération ×1,22), `PreferredRange 4,5`, frappes plus rapides (×0,85–0,9) et plus légères ; aucun élément, aucun projectile, aucun outil lancé.

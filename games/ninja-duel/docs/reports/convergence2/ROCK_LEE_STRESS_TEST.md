@@ -1,14 +1,14 @@
 # Rock Lee — test de charge (convergence 2, DEC-015)
 
-Branche `claude/nd-ccc2-lee`, base `6b9c254`, puis fusion de `claude/ninja-duel-2026-10-14` deux fois (`4ec179c` : identité, combo, chakra ; `15008c9` : registre de couches client). Fiche : [ROCK_LEE](../../characters/ROCK_LEE.md) (section « État d'implémentation »). Cadre : [LIVE_AUTONOMY_ADDENDUM](../../missions/LIVE_AUTONOMY_ADDENDUM.md) §7, DEC-015, stade DEC-013 (examen chûnin, cinq portes au plus).
+Branche `claude/nd-ccc2-lee`, base `6b9c254`, puis fusion de `claude/ninja-duel-2026-10-14` quatre fois (`4ec179c` : identité, combo, chakra ; `15008c9` : registre de couches client ; `6b98e28` : poses d'identité, frein de la ruée, double appui ; `2009811` : maintien aérien réservé aux strings qui touchent, IA sans coups sur un corps protégé au réveil). Fiche : [ROCK_LEE](../../characters/ROCK_LEE.md) (section « État d'implémentation »). Cadre : [LIVE_AUTONOMY_ADDENDUM](../../missions/LIVE_AUTONOMY_ADDENDUM.md) §7, DEC-015, stade DEC-013 (examen chûnin, cinq portes au plus).
 
 ## En bref
 
 - **Rock Lee (`Leaf`) est jouable et sélectionnable** : kit serveur complet sur les systèmes partagés, IA, famille de mouvement, couche visuelle `LeeFX`, costume, roster. Studio n'était pas disponible : **tout est prouvé en headless seulement**.
 - Taijutsu pur : aucun élément, aucun projectile, pas de kawarimi (Rupture), outil = coup de pied de déviation, chakra non infusable (profil `Taijutsu`).
 - Identité visible dans les règles : Leaf Rising Wind → Ombre de la feuille dansante → **Lotus primaire payé en PV** ; Leaf Hurricane qui garde la string (L L ↓ L3 = quatre coups) ; Cinquième porte (vitesse, drain, **Lotus caché** gratuit qui fait rebondir le corps).
-- Le test de charge a cassé **neuf hypothèses moteur** (dont un vrai crash) ; chacune est corrigée par un point d'extension générique et minimal, sans changer le comportement des CORE4.
-- `tests/Lee.spec.luau` : 23 cas, dont des duels IA contre les CORE4, Gaara et lui-même **jusqu'au KO** ; 23 suites passent, trois builds, isolation, docs, architecture.
+- Le test de charge a cassé **dix hypothèses moteur** (dont un vrai crash et une fuite d'identité de Sasuke vers Lee) ; chacune est corrigée par un point d'extension générique et minimal, sans changer le comportement des CORE4.
+- `tests/Lee.spec.luau` : 24 cas, dont des duels IA contre les CORE4, Gaara et lui-même **jusqu'au KO** ; 23 suites passent, trois builds, isolation, docs, architecture.
 
 ## Implémenté et jouable (preuve headless)
 
@@ -67,6 +67,7 @@ Proportion : environ un tiers sur mesure (données de kit, 5 clips, la couche VF
 7. **L'IA n'atteignait jamais le finisher.** Dans la fenêtre de l'Ombre, après un coup aérien, la branche de chaîne enchaînait des routes au lieu du lourd : zéro lotus sur 18 duels. → règle IA pour les graphes à `airFinisher` (Sasuke inchangé).
 8. **Un seul modificateur de vitesse : l'éveil.** `speedScale` est recalculé à chaque image depuis l'éveil : pas de vitesse par acteur pour les poids ou une technique Portes (H04). → retrait des poids non implémenté.
 9. **String figée à trois coups** (`Light min(combo+1,3)`) : pas de longueur par fighter (H02). → la quatrième frappe passe par la route ↓ qui garde la chaîne.
+10. **Fuite d'identité par la famille.** La posture voûtée de la Curse Mark (poses d'identité, `6b98e28`) s'appliquait à toute famille `body="Lion"` éveillée : Lee, bâti sur les coups de Sasuke, se voûtait comme Sasuke maudit pendant la Cinquième porte. → trait déclaré `awakenPosture="curse"` dans la famille de Sasuke ; les traits d'identité se déclarent, ils ne s'héritent pas du corps (test « family traits are declared »).
 
 Autres constats :
 - Couleurs d'éveil et de traînée dans `Effects` indexées par `fighterId` ; `Awakening.Color` n'est jamais lu par le client. → recolorées par `LeeFX`.
@@ -74,23 +75,23 @@ Autres constats :
 - `Random` du harness renvoie toujours 0,5 : les duels IA à RNG constante (`Sasuke.spec`, `Gaara.spec`) n'entrent jamais dans la boucle de techniques de l'IA (seuil 0,34) ni dans la substitution planifiée. `Lee.spec` utilise une RNG semée (comme `ComboModel.spec`).
 - Répétition d'animation : string, air string et genou identiques à Sasuke ; Leaf Whirlwind = L3 = talon tournant de Sasuke ; Daisenpū = roundhouse de Minato ; talon plongeant = clip du Lion Combo.
 - Composition racine `Rx*Ry` des clips : avec un grand lacet, le tangage relève la jambe balayée (même effet dans les sweeps CORE4).
-- Matchup : contre Gaara (bouclier + portée), Lee perd les deux ordres en duel IA semé, même avec `breaksShield`.
+- Matchups (un seul duel IA semé par ordre : échantillon minuscule, aucun réglage d'équilibre fait) : Lee bat Neji dans les deux ordres, partage avec Itachi, perd les deux ordres contre Minato, Sasuke et Gaara (bouclier + portée, même avec `breaksShield`).
 - Outil (hors gameplay) : sous Windows, `tools/dev.py verify` lit la sortie de `luau-compile` en cp1252 (`text=True` sans encodage) ; des threads de lecture lèvent `UnicodeDecodeError` sur le bytecode, sans effet sur le verdict (code de retour). Préexistant, non corrigé ici.
 
 ## Fichiers partagés touchés (fusions)
 
-Les deux fusions sont passées **sans conflit**. Modifications ajoutées dans les fichiers partagés, toutes localisées :
+Les quatre fusions sont passées **sans conflit dans les sources** (seuls les artefacts `dist/` de la troisième ont été pris d'un côté puis reconstruits). Aucune résolution manuelle dans `Brawler`, `Combat`, `AI`, `Fighters` ou `MoveGraphs`. Modifications ajoutées dans les fichiers partagés, toutes localisées :
 - `Brawler` : crochet `airFinisher` (2 lignes) + `Brawler.airFinisher` ; cue de l'Ombre lu dans le graphe (1 ligne).
 - `Combat` : crochet `Tool` (6 lignes), branche `burst` (2 + 1 lignes), `breaksShield` (1 ligne), garde des hazards (1 ligne).
 - `AI` : `DASH/CHASE.Leaf` (1 ligne), déviation (1), finisher aérien (1), sonde désactivée (condition), Daisenpū (2).
 - `Techniques` : bloc Lee séparé (entre Gaara et Neji).
 - `Fighters`, `MoveGraphs`, `Attacks` : entrées ajoutées en fin de table ; `ChakraTuning` : 3 lignes après la table.
-- Client : `VelmoraMotionEngine` (posture, démarche, clips, `VARIANT_OF`, intro, pose de canal), `Effects` (une ligne `require` de `LeeFX`), `UI` (liste + texte réduit), `World` (`dressLee` + une ligne de dispatch).
+- Client : `VelmoraMotionEngine` (posture, démarche, clips, `VARIANT_OF`, intro, pose de canal, trait `awakenPosture` de la famille de Sasuke), `Effects` (une ligne `require` de `LeeFX`), `UI` (liste + texte réduit), `World` (`dressLee` + une ligne de dispatch).
 - `build.py` / `tests/run.sh` : `Lee.spec` ajouté après Gaara dans les deux listes. `TEST_RUNNERS` reste une ligne unique : tout ajout parallèle y entre en conflit, résolution triviale.
 
 ## Tests
 
-- `bash tests/run.sh` : **23 suites PASS** (Lee 23 cas, Animation 13, Gaara 11, …).
+- `bash tests/run.sh` : **23 suites PASS** (Lee 24 cas, Animation 14, Gaara 11, …).
 - `python -I build.py`, `--debug`, `--qa` : PASS (les suites tournent dans chaque build) ; `tests/test_build_isolation.py` : 9 OK ; `tools/check_project_docs.py` : PASS ; `tools/check_architecture.py` : PASS.
 
 ## À valider dans Studio
