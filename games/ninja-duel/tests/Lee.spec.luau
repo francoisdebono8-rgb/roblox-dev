@@ -506,6 +506,84 @@ test("his own clips where his identity needs them, Sasuke's elsewhere; the lotus
  local seals=present(a.model,body(a,{state="TechniqueChannel",castId="SomeUnknownJutsu",castElapsed=.04}))
  assert(differ(cast,seals)>=4,"Lee forms hand seals for his kick")
 end)
+-- Largest single-frame joint change between two snapshots, in degrees (the
+-- Animation suite's measure: two fixed axes, exact on this host).
+local AXIS_X=H.roblox.CFrame.identity.RightVector
+local AXIS_Y=H.roblox.CFrame.identity.UpVector
+local function axisAngles(c)
+ local x=c:VectorToObjectSpace(AXIS_X)
+ local y=c:VectorToObjectSpace(AXIS_Y)
+ return math.acos(math.clamp(x.X,-1,1)),math.acos(math.clamp(y.Y,-1,1))
+end
+local function maxDelta(a,b)
+ local worst,where=0,""
+ for key,t in a do
+  local x1,y1=axisAngles(t)
+  local x2,y2=axisAngles(b[key])
+  local d=math.deg(math.max(math.abs(x1-x2),math.abs(y1-y2)))
+  if d>worst then worst,where=d,key end
+ end
+ return worst,where
+end
+test("his whole kit presents without a snap: string, low spin, rising kick, shadow, lotus, deflect, whirlwind, Rupture, gate",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ local clock={attackAt=0,reactionAt=0,attackElapsed=0,reactionElapsed=0}
+ local previous,worst,worstAt=nil,0,""
+ local seen={}
+ local function frame()
+  local velocity=a.root.AssemblyLinearVelocity
+  local visual=body(a,{velocity=velocity,speed=velocity.Magnitude,attackName=a.attackName,attackVariant=a.attackVariant,attackSerial=a.attackSerial,
+   state=a.state,reaction=a.reaction,airborne=a.airborne,groundPose=a.groundPose,castId=a.castId,castElapsed=c.now-(a.castStarted or c.now),
+   awaken=math.max(0,(a.awakenUntil or 0)-c.now),hitAngle=a.hitAngle or 0,hitStrength=a.hitStrength or .4})
+  Motion.tick(1/60)
+  local phase=Motion.present(a.model,visual,clock,1/60)
+  seen[phase]=(seen[phase] or 0)+1
+  local current=snapshot(a.model)
+  if previous then
+   local d,joint=maxDelta(previous,current)
+   if d>worst then worst=d;worstAt=string.format("%s %s @%s/%s/%s",phase,joint,a.state,tostring(a.attackName),tostring(a.attackVariant)) end
+  end
+  previous=current
+ end
+ local function advance(seconds,hold)
+  for _=1,math.ceil(seconds/.01) do
+   c:update(.01,c.now+.01)
+   if hold then b.reactionVelocity=V.zero end
+   local name=a.attackName and (a.attackName..":"..tostring(a.attackSerial or 0))
+   if clock.attackName~=name then clock.attackName=name;clock.attackAt=c.now end
+   clock.attackElapsed=if a.attackName then c.now-clock.attackAt else 0
+   if clock.reaction~=a.reaction then clock.reaction=a.reaction;clock.reactionAt=c.now end
+   clock.reactionElapsed=if a.reaction then c.now-clock.reactionAt else 0
+   frame()
+  end
+ end
+ local function reset(gap)
+  place(c,a,b,gap or 4.5)
+  for _,x in {a,b} do x.health=x.def.Health;x.hum.Health=x.health;x.reaction=nil;x.state="Neutral";x.untilTime=c.now;x.pending=nil;x.attackName=nil;x.airborne=false end
+  b.cooldowns={};a.cooldowns={};a.chakra=a.def.Chakra
+ end
+ a.move=V.new(1,0,0);advance(.4);a.move=V.zero;advance(.3)
+ reset()
+ press(c,a,"Attack");advance(.32);press(c,a,"Attack");advance(.32);press(c,a,"Attack",-toward(a));advance(.45);press(c,a,"Attack");advance(.6)
+ reset()
+ press(c,a,"Attack");advance(.32);press(c,a,"Attack");advance(.32);press(c,a,"Attack",toward(a));advance(1)
+ press(c,a,"Heavy");advance(1.4)
+ reset(9)
+ c:projectile(b,a.root.Position,80,30,3,"kunai");advance(.06);press(c,a,"Tool");advance(.6)
+ reset(12)
+ press(c,a,"Technique1",nil,b.root.Position);advance(1)
+ reset()
+ press(c,b,"Attack");advance(.12);c:request(a,"Substitute");advance(.6)
+ reset(10)
+ a.health=a.def.Health*.3;c:request(a,"Awaken");advance(.8)
+ a.move=V.new(0,0,-1);a.sprinting=true;advance(.5);a.move=V.zero;a.sprinting=false;advance(.4)
+ assert(seen.attack and seen.locomotion and seen.chase,"the fight never presented an attack, a run or a chase")
+ for _,name in {"LeafHurricane","LeafRising","ShadowLeaf","PrimaryLotus","Deflect","GreatWhirlwind","Rupture","Awaken"} do
+  assert(ev(a,name)>=1,"the sequence never played "..name)
+ end
+ print(string.format("   worst %.1f deg/frame (%s)",worst,worstAt))
+ assert(worst<39,"a snap of "..string.format("%.1f",worst).." deg/frame at "..worstAt)
+end)
 test("client: the Fifth Gate burns green, the lotuses spin and crack the floor, the kick sweeps a crescent, his speed is his",function()
  local instance,restore=H.stubScene()
  local ok,err=pcall(function()

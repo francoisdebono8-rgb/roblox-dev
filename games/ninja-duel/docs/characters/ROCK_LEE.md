@@ -175,3 +175,29 @@ Lee est le seul fighter dont **la puissance se gagne en se déplaçant** (Élan)
 - Chapitres des scènes citées ; capacité de Lee à courir sur un mur ; attribution de « Dynamic Entry ».
 - Mesure native du plafonnement de vitesse (`Motor.step`) avant de calibrer les poids.
 - Lisibilité de la Rupture face à la substitution commune (UX, cues).
+
+## État d'implémentation (2026-10-16, test de charge DEC-015)
+
+Code de `claude/nd-ccc2-lee`, bâti sur les règles intégrées (modèle combo confirmé, relance, chakra systémique, couche identité). Rapport, découvertes moteur et liste Studio : [ROCK_LEE_STRESS_TEST](../reports/convergence2/ROCK_LEE_STRESS_TEST.md). **Validé en headless uniquement** (`tests/Lee.spec.luau`, 23 cas ; limites articulaires dans `tests/Animation.spec.luau`) : le feel, la lecture des coups et le costume restent à juger dans Studio. L'identifiant de code est **`Leaf`** (la fiche proposait `Lotus`).
+
+**Implémenté et jouable (sélectionnable dans le roster)**
+- `Fighters.Leaf` : HP 125, chakra 100, regen 9,5, vitesse 20 (sprint ×1,12, accélération ×1,22), `PreferredRange 4,5`, frappes plus rapides (×0,85–0,9) et plus légères ; aucun élément, aucun projectile, aucun outil lancé.
+- String commune + routes à lui : ↑ **Leaf Rising Wind** (Konoha Shōfū, lanceur) suivi par l'**Ombre de la feuille dansante** partagée ; ↓ **Leaf Hurricane** (coup de pied tournant bas, `chain`) : L L ↓ L3 fait une string de quatre coups sous le modèle à coups confirmés ; ←→ **Leaf Whirlwind** (arc de 9 studs, pas d'orbite : il rattrape le pas de côté). Lourd après deux coups = le lanceur (`LauncherMove`), lourd après un coup = genou commun.
+- **Lotus primaire** (Omote Renge) : le lourd dans la fenêtre de l'Ombre, 22 dégâts, coûte 10 PV (jamais létal, refusé à 26 PV ou moins → **Leaf Heel** gratuit). Mécanisme générique `MoveGraphs.airFinisher` + `Brawler.airFinisher` ; Sasuke garde son Lion Combo.
+- Technique 1 **Leaf Great Whirlwind** (Konoha Daisenpū) : coup de pied tournant qui traverse ~14 studs, Knockback + poursuite, 10 chakra, CD 2,6, annule une string propre.
+- Outil = **coup de pied de déviation** : kunai, kunai marqués, shuriken, fil et balle de sable détruits dans un arc frontal pendant la fenêtre active ; les volumes de jutsu passent ; chaque déviation rend la prochaine ruée gratuite 0,6 s. Le modificateur chakra est refusé (profil `Taijutsu`, aucune infusion).
+- **Rupture** à la place du kawarimi (`Substitution.Mode="burst"`) : même touche, charges et fenêtre ; il reste sur place, i-frames communes, coup tournant 4 dégâts / Knockback 40 dans 5,5 studs ; ratée, 0,3 s de récupération.
+- Éveil **CINQUIÈME PORTE** : ≤ 35 % PV, vitesse ×1,28, dégâts ×1,1, regen ×1,6, CD ×0,5, drain 2 PV/s non létal ; le lotus devient le **Lotus caché** (26, gratuit, le corps rebondit au sol pour une reprise).
+- Relance `reengage` « leaf » (la plus rapide du roster) ; IA : la plus avide de relance, utilise le Daisenpū, dévie les lames, encaisse le lotus, ne « sonde » pas avec un outil.
+- Client : famille de mouvement (`body="Lion"`, `weapons="none"`, intro à lui), posture Gōken (main arrière derrière le dos, vérifiée en cinématique directe), démarche qui garde la main dans le dos, clips propres (Leaf Rising Wind, Leaf Hurricane, coup de déviation, Lotus primaire, Lotus caché), couche `LeeFX` (porte verte, lueur rouge, spirale et cratère du lotus, croissant de la déviation, ses couleurs de vitesse) ; costume (combinaison verte, jambières orange, bandeau en ceinture rouge, mains bandées, coupe au bol, gros sourcils).
+
+**Implémenté, à polir (feel / lecture)**
+- Clips réutilisés de la famille : jab, coup de pied tournant, talon tournant, air string, genou de Sasuke ; le Leaf Whirlwind et le L3 partagent le talon tournant de Sasuke, le Daisenpū le roundhouse de Minato : répétition visible.
+- Le lotus est une plongée au-dessus du corps (comme le Lion Combo), pas une prise aérienne (H14) ; le Lotus caché est un seul impact lourd, pas la série de cinq coups.
+- Équilibrage IA : contre Gaara (bouclier, portée) Lee perd les deux ordres dans les duels IA semés.
+
+**Fondation seulement**
+- Le Lotus caché comme route d'éveil (données `airFinisher.awakened`) ; la règle `breaksShield` portée par ses deux grands coups de pied, à côté de la liste de noms de `Combat`.
+
+**Non implémenté (planifié)**
+- Élan (0–3/5) et tout ce qui en dépend (Kage Buyō payé, retrait des poids à 3 crans, gains sur esquive/déviation) ; retrait des poids (pas de modificateur de vitesse par acteur hors éveil, H04) ; string de quatre via `Combo.next` par acteur (H02) ; GokenBody ; technique Portes à tout moment ; esquives payées en PV et épuisement de sortie de la Cinquième porte ; prise aérienne du lotus (H14) ; rebond mural athlétique ; règle « plus rapide que le sable » ; Poing ivre (hors kit minimal).
