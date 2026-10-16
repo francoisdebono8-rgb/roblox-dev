@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "1683f2886a77e359307bc9cf6b5b259625fe936dcc8facb8935491ec04fbe087",
+  "sha256": "493e99bd27aeb1bdd18f0b795998a68e9a9417dc7e7da137de04dae4178862b3",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/Effects.luau": "b65de72488d33410d6752cf06e34d910e6d0344e41a8bc8c286062c786a014c0",
@@ -51,11 +51,11 @@
     "src/Shared/MoveGraphs.luau": "ce1c8fa3add003b4885ae4eb341ce80baa3935a35d4cfd145d40dc8a26b03cd8",
     "src/Shared/OnlineProtocol.luau": "d297a74dc56b750386ef8c051204ad5ee7040b49d32cf0a7f4ec58fe6e22628a",
     "src/Shared/Rules.luau": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1",
-    "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
+    "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0"
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "307ab0d944fa09fd4cdf1c3b1536df90c55e36a07366ff835a87410aeb9dfb29",
+  "buildFingerprint": "00a4252040b3dbd90c47fb3f961af7f3d7cd54107969ba91d4e226548a774e03",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -162,7 +162,7 @@
       },
       "tests/ComboModel.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel combo model: 22 PASS"
+        "summary": "NinjaDuel combo model: 23 PASS"
       },
       "tests/Chakra.spec.luau": {
         "exit": 0,

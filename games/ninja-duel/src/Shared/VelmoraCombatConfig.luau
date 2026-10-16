@@ -11,5 +11,9 @@ return table.freeze({
 	BloodstepWindow = 0.13,
 	History = 0.20,
 	TimestampWindow = 0.10,
-	Rates = table.freeze({Attack=0.16,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
+	-- Minimum gap between two packets of one action (a flood guard, not a
+	-- gameplay rule: the server state machine and the press buffer decide what
+	-- a press does). Attack stays under a deliberate double tap (~0.1 s), or the
+	-- second press of a buffered string was dropped before reaching the buffer.
+	Rates = table.freeze({Attack=0.08,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
 })

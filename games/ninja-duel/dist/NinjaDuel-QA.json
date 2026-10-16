@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "ec308575506fa668cdb8cd068335a0985273cd3ef43d28221c3b96c457515a48",
+  "sha256": "0228c2555a057e6aefe75a905385b709f8be72eb7c4899179595e1458ebbf92b",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -33,7 +33,7 @@
     "src/Server/Combat.luau": "219d463201d5efe8a7a100e53a928f1a4c8f7afa2ef6fd3168bfb1d37b98a185",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
-    "src/Server/DevHooks.luau": "63700460c798a2680b2e2fc31c2de8822aae240a373b56badfb0d964d1c7c99f",
+    "src/Server/DevHooks.luau": "55b391949031a97a337d689d1a5e8aaad7df419c21db801192b275d7a013c9a2",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
     "src/Server/DevReport.luau": "461791d52ce11511efba91e59be7407e7f6a71ef170f9a9f79a92cefe981c530",
@@ -68,11 +68,11 @@
     "src/Shared/MoveGraphs.luau": "ce1c8fa3add003b4885ae4eb341ce80baa3935a35d4cfd145d40dc8a26b03cd8",
     "src/Shared/OnlineProtocol.luau": "d297a74dc56b750386ef8c051204ad5ee7040b49d32cf0a7f4ec58fe6e22628a",
     "src/Shared/Rules.luau": "c746028e65bafcce246240478730aee0bae4b3e0cb91b56b0ee18ad3e2bf99b1",
-    "src/Shared/VelmoraCombatConfig.luau": "0ea7c9ed7f873c55f1a5a4f11ef040cd713fd319602f94a18832b5e719eb6371"
+    "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0"
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "0742c4763cd8a172ed0da026f591c818ef773abe4874606a2c0b5a77ccf36cd2",
+  "buildFingerprint": "97f6beff523197223ed120a53e13a514c73f4f527ddd466da6b8e835bea53958",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -179,7 +179,7 @@
       },
       "tests/ComboModel.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel combo model: 22 PASS"
+        "summary": "NinjaDuel combo model: 23 PASS"
       },
       "tests/Chakra.spec.luau": {
         "exit": 0,

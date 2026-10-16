@@ -860,7 +860,11 @@ return table.freeze({
 	BloodstepWindow = 0.13,
 	History = 0.20,
 	TimestampWindow = 0.10,
-	Rates = table.freeze({Attack=0.16,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
+	-- Minimum gap between two packets of one action (a flood guard, not a
+	-- gameplay rule: the server state machine and the press buffer decide what
+	-- a press does). Attack stays under a deliberate double tap (~0.1 s), or the
+	-- second press of a buffered string was dropped before reaching the buffer.
+	Rates = table.freeze({Attack=0.08,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
 })
 </ProtectedString>
         </Properties>
@@ -1843,7 +1847,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">0742c4763cd8a172ed0da026f591c818ef773abe4874606a2c0b5a77ccf36cd2</string>
+          <string name="Value">97f6beff523197223ed120a53e13a514c73f4f527ddd466da6b8e835bea53958</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -7178,7 +7182,7 @@ function DevHooks.install(matches)
 		return chakraDev:run(op,arg)
 	end
 	RunService.Heartbeat:Connect(function() tools.profiler:watch() end)
-	hook.OnInvoke=function(op,arg1,arg2,arg3)
+	hook.OnInvoke=function(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
 		if op=="interactions" then return interactions(arg1,arg2) end
@@ -7230,8 +7234,9 @@ function DevHooks.install(matches)
 		local c=s.combat
 		local actor=if arg1=="bot" then s.bot else s.human
 		if op=="act" then
-			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim
-			local ok,reason=c:request(actor,arg2,arg3)
+			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim, arg4 =
+			-- optional request options (e.g. {chakra=true}, the chakra chord)
+			local ok,reason=c:request(actor,arg2,arg3,nil,if type(arg4)=="table" then arg4 else nil)
 			return {ok=ok,reason=reason}
 		elseif op=="scripted" then
 			-- Ignore the local client's (idle) move packets while a tool drives the human.
