@@ -1825,7 +1825,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b2b536e1d3a9fdbe5d8b860bca90fe1dc099544eafb0909fdd29d09cdc1c2465</string>
+          <string name="Value">586b7525f52170361443f665e67f3855c64692f6306ea38a5df49abc4ff21197</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -3139,7 +3139,9 @@ function Brawler.request(c,a,action)
  if a.airborne then
   -- Air grammar: after a confirmed air hit the stick picks the follow-up.
   local airAlive=Brawler.stringAlive(c,a,true)
-  if canChain and airAlive and (a.airCombo or 0)&gt;=1 then
+  -- Like the ground routes, an air route also takes the grace after its
+  -- window: in Studio, W + a click a moment late after Air1 played Air2.
+  if (canChain or a.state=="Neutral") and airAlive and (a.airCombo or 0)&gt;=1 then
    local dir,sideSign=Brawler.intent(a)
    local route=if dir=="forward" then routes.airUp elseif dir=="back" then routes.airDown elseif dir=="side" then routes.airSide else nil
    if route then

@@ -269,6 +269,20 @@ test("air: a whiffed air strike resets the air string; after a confirmed air hit
  end
 end)
 
+test("air: toward pressed a moment late after an air hit still drives (no Air2 by accident) (CORE4)",function()
+ -- Studio, real keys: W + click just after Air1's window gave Air2.
+ for _,id in CORE4 do
+  local c,a,b=H.duel(id,"Mirage")
+  airborne(c,a,b,3)
+  assert(press(c,a,"Attack"))
+  assert(airStep(c,b,.6,function() return chainOpen(c,a) end),id..": the air string never opened")
+  assert(airStep(c,b,.6,function() return a.state=="Neutral" end),id..": the air hit never recovered")
+  assert(a.airborne and (a.airCombo or 0)==1,id..": fixture: not airborne with one air hit")
+  assert(press(c,a,"Attack",toward(a)))
+  assert(a.attackName==MoveGraphs[id].routes.airUp,id..": the late toward air press gave "..tostring(a.attackName))
+ end
+end)
+
 -- Phase 2: route table --------------------------------------------------------
 test("route table, ground: base string, routes with their payoffs, running attacks, tool branch, disengage, jutsu conversion (CORE4)",function()
  for _,id in CORE4 do

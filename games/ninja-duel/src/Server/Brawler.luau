@@ -531,7 +531,9 @@ function Brawler.request(c,a,action)
  if a.airborne then
   -- Air grammar: after a confirmed air hit the stick picks the follow-up.
   local airAlive=Brawler.stringAlive(c,a,true)
-  if canChain and airAlive and (a.airCombo or 0)>=1 then
+  -- Like the ground routes, an air route also takes the grace after its
+  -- window: in Studio, W + a click a moment late after Air1 played Air2.
+  if (canChain or a.state=="Neutral") and airAlive and (a.airCombo or 0)>=1 then
    local dir,sideSign=Brawler.intent(a)
    local route=if dir=="forward" then routes.airUp elseif dir=="back" then routes.airDown elseif dir=="side" then routes.airSide else nil
    if route then

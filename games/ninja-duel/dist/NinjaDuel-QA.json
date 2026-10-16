@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "5f4bd15e69968f1fa047938144a5d5e84e6c73d52d4ac1c6c8d9f23bae2a644c",
+  "sha256": "5088fd5d4a17f972794d60d9d12a3094be099826beffdb7885c9060ba190675d",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -20,7 +20,7 @@
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "83298d7003b58d2b1517726b14dc3f9f78764f2836fdeb4426ae127f90491dd1",
     "src/Server/BanglaEvade.luau": "cf7d9c38790e3839f43900632090077b6000d76e2ce12428252822508c5cde9b",
-    "src/Server/Brawler.luau": "4cd82b4da9614945361cbc32f3435dfae7d063cee95c5e9b517daa80ae432342",
+    "src/Server/Brawler.luau": "d3ca008c102bf099e00c2b3462bf4ceee089cdd63b535c4acd31525e85cb880b",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "f5f0b94e665b3ac0edb1fa902a75abb5ed0962d0f7ccd08db1fa021a8afcc74b",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -73,7 +73,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "a3b2fc03b380d0f071d3b000065209e898514d6b4e60cda37dd3cfddd51fdf3c",
+  "buildFingerprint": "8245eb09709c35ccc963be8391a04896d77149737acb59e4f858422f9b0ffbb1",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -184,7 +184,7 @@
       },
       "tests/ComboModel.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel combo model: 24 PASS"
+        "summary": "NinjaDuel combo model: 25 PASS"
       },
       "tests/Chakra.spec.luau": {
         "exit": 0,
