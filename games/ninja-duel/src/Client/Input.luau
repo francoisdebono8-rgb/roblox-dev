@@ -2,6 +2,10 @@ local CAS=game:GetService("ContextActionService")
 local UIS=game:GetService("UserInputService")
 local Controls=require(game:GetService("ReplicatedStorage").NinjaDuel.Controls)
 local Input={};Input.__index=Input
+-- Chakra chord: a modifier released this long before the tool still counts
+-- (Z then R rolled quickly); the clock is a field so specs can drive it.
+Input.ChakraChord=.3
+Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
 local function both(action) return {KEYBOARD[action],GAMEPAD[action]} end
@@ -90,7 +94,17 @@ function Input.new(send,getState,toggleLock,camera)
    end
   end
  end)
- bind("Tool",both("Tool"),function(state,obj) if pressed(state,obj) then send("Tool") end end)
+ -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
+ -- Only a boolean leaves the client; the server picks what the chakra does.
+ bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
+  if begin(state) then self.chakra=true;self.chakraAt=Input.now() elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
+ end)
+ bind("Tool",both("Tool"),function(state,obj)
+  if pressed(state,obj) then
+   local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)<=Input.ChakraChord)
+   if chakra then send("Tool",{chakra=true}) else send("Tool") end
+  end
+ end)
  bind("Grab",both("Grab"),function(state,obj)
   if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
  end)
@@ -127,6 +141,7 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
+ self.chakra=false;self.chakraAt=nil
 end
 function Input:direction(camera)
  -- The current device owns movement; a resting controller cannot steer WASD.

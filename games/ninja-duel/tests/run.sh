@@ -38,6 +38,7 @@ run Phase4     "$LUNE" run tests/Phase4.spec.luau
 run Neji       "$LUNE" run tests/Neji.spec.luau
 run Systems    "$LUNE" run tests/Systems.spec.luau
 run Tools      "$LUNE" run tests/Tools.spec.luau
+run Chakra     "$LUNE" run tests/Chakra.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau
 run Online     "$LUNE" run tests/Online.spec.luau
