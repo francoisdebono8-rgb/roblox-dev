@@ -1467,19 +1467,23 @@ local function reactionTargets(actor,feet)
 	-- strike to the face, the body folds around one to the ribs, a low kick
 	-- buckles the knee on its side; from behind the body arches instead.
 	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
-	local s=strong
+	-- Even a jab must read at game speed (a 5-damage hit was worth 9 degrees of
+	-- fold): light blows get a floor, heavier ones still go further.
+	local s=math.max(strong,.62)
 	local spec
 	if zone=="head" then
-		spec={root={y=-.2*snap,z=.25*snap,yaw=twist*8*snap,roll=-twist*5*snap},torso={pitch=-8*snap,yaw=twist*16*snap,roll=-twist*6*snap},
-			head={pitch=-16*snap*s,yaw=twist*40*snap,roll=twist*14*snap},
+		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
+			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
 			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
 	elseif zone=="legs" then
 		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
 			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
 	else
-		local fold=(1-behind)*26*snap*s
-		spec={root={y=-.35*snap*s,z=from*.4*snap,pitch=6*snap*s,yaw=twist*10*snap},torso={pitch=fold-behind*26*snap,yaw=twist*20*snap,roll=-side*10*snap},
-			head={pitch=12*snap*(1-behind)-behind*28*snap,yaw=-side*12*snap},
+		-- Support -> fold: the hips are driven back off the blow, the chest folds
+		-- over it and twists away, the head follows the chest down.
+		local fold=(1-behind)*32*snap*s
+		spec={root={y=-.35*snap*s,z=from*.6*snap,pitch=6*snap*s,yaw=twist*14*snap},torso={pitch=fold-behind*26*snap,yaw=twist*24*snap,roll=-side*10*snap},
+			head={pitch=18*snap*(1-behind)-behind*28*snap,yaw=-side*14*snap},
 			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
 	end
 	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}

@@ -32,7 +32,10 @@ local Combo=require(script.Parent.BanglaCombo)
 local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
  return {startup=startup,active=active,recovery=recovery,damage=damage,travel=travel,
   travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,7),stun=stun or 0.27,
-  range=7.8,width=5.5,height=6,blockable=true}
+  range=7.8,width=5.5,height=6,blockable=true,
+  -- Contact distance (root to root) where the step-in stops: an arm's length
+  -- for hand strikes. Closer, the two bodies visibly merge mid-string.
+  contact=3.6}
 end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
@@ -86,9 +89,18 @@ local attacks={
  VaultKick=move(.12,.12,.24,7,0,"HitStun",Vector3.new(0,6,12),.36),
  ChidoriThrust=move(.04,.26,.62,22,15,"Knockback",Vector3.new(0,12,70),.7),
 }
+-- Reach of the body that lands each strike (see `contact` in move()).
+for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
+ if attacks[name] then attacks[name].contact=gap end
+end
 
 for name,spec in attacks do
- if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
+ if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4
+ else
+  -- The string's donor volume (1 to 3 studs ahead) stopped short of the
+  -- contact distance: it now reaches a quarter stud past it.
+  spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
+ end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch"
@@ -1644,7 +1656,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f28a0688c391c8b162e512354b2e432ac60b01d41c2ef16b5fa5e69d776cb31d</string>
+          <string name="Value">89dbc89e253921f7b4a3c805966879eab620071ce0a74fd49a872707dc8cabd5</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -3010,7 +3022,11 @@ function Brawler.step(c,a,dt)
       velocity=a.reactionVelocity or Vector3.zero
      end
     end
-   else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end
+   else
+    -- A light hit (HitStun) slides the body back ~0.9 stud, enough for the
+    -- string to drive forward instead of the attacker walking into it.
+    Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*(if a.reaction=="HitStun" then 8 else 14))
+   end
 		 a.reactionVelocity=velocity;return true
   end
  end
@@ -4247,7 +4263,7 @@ function Combat:updateActor(a,dt)
 		local delta=a.target.root.Position-a.root.Position
 		local flat=Vector3.new(delta.X,0,delta.Z)
 		if flat.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
-		if flat.Magnitude&gt;3.2 then a.aimIntent={target=a.root.Position+flat-flat.Unit*2.8,speed=Config.Rush.Speed,acceleration=1100}
+		if flat.Magnitude&gt;4.1 then a.aimIntent={target=a.root.Position+flat-flat.Unit*3.6,speed=Config.Rush.Speed,acceleration=1100}
 		else a.untilTime=math.min(a.untilTime,now) end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
@@ -4289,12 +4305,13 @@ function Combat:updateActor(a,dt)
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining&gt;0 then
 		local toTarget=a.target.root.Position-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
-		if flatTarget.Magnitude&gt;2.6 then
+		local gap=a.pending.spec.contact or 3.6
+		if flatTarget.Magnitude&gt;gap then
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
 			if flatTarget.Magnitude&gt;.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
+			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
@@ -14173,19 +14190,23 @@ local function reactionTargets(actor,feet)
 	-- strike to the face, the body folds around one to the ribs, a low kick
 	-- buckles the knee on its side; from behind the body arches instead.
 	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
-	local s=strong
+	-- Even a jab must read at game speed (a 5-damage hit was worth 9 degrees of
+	-- fold): light blows get a floor, heavier ones still go further.
+	local s=math.max(strong,.62)
 	local spec
 	if zone=="head" then
-		spec={root={y=-.2*snap,z=.25*snap,yaw=twist*8*snap,roll=-twist*5*snap},torso={pitch=-8*snap,yaw=twist*16*snap,roll=-twist*6*snap},
-			head={pitch=-16*snap*s,yaw=twist*40*snap,roll=twist*14*snap},
+		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
+			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
 			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
 	elseif zone=="legs" then
 		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
 			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
 	else
-		local fold=(1-behind)*26*snap*s
-		spec={root={y=-.35*snap*s,z=from*.4*snap,pitch=6*snap*s,yaw=twist*10*snap},torso={pitch=fold-behind*26*snap,yaw=twist*20*snap,roll=-side*10*snap},
-			head={pitch=12*snap*(1-behind)-behind*28*snap,yaw=-side*12*snap},
+		-- Support -&gt; fold: the hips are driven back off the blow, the chest folds
+		-- over it and twists away, the head follows the chest down.
+		local fold=(1-behind)*32*snap*s
+		spec={root={y=-.35*snap*s,z=from*.6*snap,pitch=6*snap*s,yaw=twist*14*snap},torso={pitch=fold-behind*26*snap,yaw=twist*24*snap,roll=-side*10*snap},
+			head={pitch=18*snap*(1-behind)-behind*28*snap,yaw=-side*14*snap},
 			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
 	end
 	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}

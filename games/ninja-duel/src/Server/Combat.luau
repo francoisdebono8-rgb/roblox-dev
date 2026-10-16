@@ -1079,7 +1079,7 @@ function Combat:updateActor(a,dt)
 		local delta=a.target.root.Position-a.root.Position
 		local flat=Vector3.new(delta.X,0,delta.Z)
 		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
-		if flat.Magnitude>3.2 then a.aimIntent={target=a.root.Position+flat-flat.Unit*2.8,speed=Config.Rush.Speed,acceleration=1100}
+		if flat.Magnitude>4.1 then a.aimIntent={target=a.root.Position+flat-flat.Unit*3.6,speed=Config.Rush.Speed,acceleration=1100}
 		else a.untilTime=math.min(a.untilTime,now) end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
@@ -1121,12 +1121,13 @@ function Combat:updateActor(a,dt)
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining>0 then
 		local toTarget=a.target.root.Position-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
-		if flatTarget.Magnitude>2.6 then
+		local gap=a.pending.spec.contact or 3.6
+		if flatTarget.Magnitude>gap then
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
 			if flatTarget.Magnitude>.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-2.6)
+			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end

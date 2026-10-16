@@ -466,7 +466,7 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
   local AI=H.load("Server/AI")
   local c,a,b,match=H.duel("Flashstep","Mirage")
   c:relocate(a,V.new(0,3,12));c:relocate(b,V.new(0,3,-12))
-  local last,worstGap,techniques,guards,conversions={},math.huge,0,0,0
+  local last,worstGap,techniques,guards,conversions,teleported={},math.huge,0,0,0,{}
   local request=c.request
   c.request=function(self,actor,action,...)
    local accepted,reason=request(self,actor,action,...)
@@ -474,10 +474,11 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
     local t=actor.target
     local gap=((t.root.Position-actor.root.Position)*V.new(1,0,1)).Magnitude
     local punish=t.state=="Stunned" or t.reaction=="Bound" or ((t.state=="Recovery" or t.state=="TechniqueRecovery") and gap<7)
-    -- Minato's teleport onto his own flying/planted seal is the second half of
-    -- a kunai conversion, not a fresh neutral jutsu.
+    -- Minato's teleport onto his own flying/planted seal, and the strike that
+    -- lands on arrival, finish a kunai conversion: not fresh neutral jutsu.
     local spec=actor.def.Techniques[tonumber(string.match(action,"%d+"))]
-    local conversion=spec and spec.Id=="Flashstep"
+    local conversion=spec and (spec.Id=="Flashstep" or (teleported[actor] and self.now-teleported[actor]<.8))
+    if spec and spec.Id=="Flashstep" then teleported[actor]=self.now end
     if not punish and not conversion and last[actor] then worstGap=math.min(worstGap,self.now-last[actor]) end
     if not conversion then last[actor]=self.now;techniques+=1 else conversions+=1 end
    end
@@ -524,5 +525,28 @@ test("an awakening's speed bonus survives the ground speed limit",function()
  local awake=topSpeed(true)
  assert(base>a.def.Speed*.95,string.format("the base run never reached its speed (%.1f)",base))
  assert(awake>base*(a.def.Awakening.Speed-.05),string.format("awakened %.1f vs base %.1f: the bonus was clamped away",awake,base))
+end)
+test("a string steps in to an arm's length, connects every hit, and bodies do not merge",function()
+ -- The step-in used to stop at 2.6 studs root to root while a light hit only
+ -- slid the victim back ~0.5 stud: from the second hit on, the two bodies
+ -- overlapped (measured in Studio: heads 1.4 studs apart).
+ local Attacks=H.load("Shared/Attacks")
+ local c,a,b=H.duel("Flashstep","Mirage")
+ engage(c,a,b,5.5)
+ a.locked=true;b.locked=true
+ local closest=math.huge
+ local pressed=0
+ for step=1,160 do
+  if step%7==1 and pressed<3 then
+   if c:request(a,"Attack") then pressed+=1 end
+  end
+  H.step(c,.01)
+  local gap=((b.root.Position-a.root.Position)*V.new(1,0,1)).Magnitude
+  if a.state=="Startup" or a.state=="Active" then closest=math.min(closest,gap) end
+ end
+ local contact=Attacks.Light1.contact or 3.6
+ assert(pressed==3,"the string was not accepted ("..pressed.." presses)")
+ assert(b.health<b.def.Health-(Attacks.Light1.damage or 0),"the string did not connect")
+ assert(closest>=contact-.15,string.format("the attacker closed to %.2f studs (contact %.2f)",closest,contact))
 end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

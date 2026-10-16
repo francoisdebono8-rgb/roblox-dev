@@ -3,7 +3,10 @@ local Combo=require(script.Parent.BanglaCombo)
 local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
  return {startup=startup,active=active,recovery=recovery,damage=damage,travel=travel,
   travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,7),stun=stun or 0.27,
-  range=7.8,width=5.5,height=6,blockable=true}
+  range=7.8,width=5.5,height=6,blockable=true,
+  -- Contact distance (root to root) where the step-in stops: an arm's length
+  -- for hand strikes. Closer, the two bodies visibly merge mid-string.
+  contact=3.6}
 end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
@@ -57,9 +60,18 @@ local attacks={
  VaultKick=move(.12,.12,.24,7,0,"HitStun",Vector3.new(0,6,12),.36),
  ChidoriThrust=move(.04,.26,.62,22,15,"Knockback",Vector3.new(0,12,70),.7),
 }
+-- Reach of the body that lands each strike (see `contact` in move()).
+for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
+ if attacks[name] then attacks[name].contact=gap end
+end
 
 for name,spec in attacks do
- if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4 end
+ if not Combo.Actions[name] then spec.depth=spec.range*.8;spec.offset=spec.range*.4
+ else
+  -- The string's donor volume (1 to 3 studs ahead) stopped short of the
+  -- contact distance: it now reaches a quarter stud past it.
+  spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
+ end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch"

@@ -655,7 +655,11 @@ function Brawler.step(c,a,dt)
       velocity=a.reactionVelocity or Vector3.zero
      end
     end
-   else Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*14) end
+   else
+    -- A light hit (HitStun) slides the body back ~0.9 stud, enough for the
+    -- string to drive forward instead of the attacker walking into it.
+    Motor.travel(a,c,velocity,velocity.Magnitude*dt);velocity*=math.exp(-dt*(if a.reaction=="HitStun" then 8 else 14))
+   end
 		 a.reactionVelocity=velocity;return true
   end
  end
