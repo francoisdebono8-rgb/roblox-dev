@@ -45,5 +45,12 @@ return {
 		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
-	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34 },
+	-- Neutral rhythm (convergence §8): jutsu are paced (Gap + Jitter seconds
+	-- between two, punishes excepted), a fast approach into melee range is read
+	-- before the strike (guard / sidestep / counter-poke, no reaction latency:
+	-- a guess), probing at range uses tools and step-in feints, and a fighter
+	-- that just got hit backs off to neutral instead of mashing back.
+	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
+		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
+		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35 },
 }

@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "b0b77aec7cf880e16898c41232e807e5d5788a8ec6b4360a8ff629c9398f9ba7",
+  "sha256": "0eb4214d75b6fc943c7ed8262350f7095d0b77465c3ebe51bf9b48700829be4b",
   "sources": {
     "src/Client/Camera.luau": "6f7d118c1bdec8a4f917733be8aafbc82be76e7f5967e55181c9bfb0aca176bb",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -12,7 +12,7 @@
     "src/Client/UI.luau": "5daece68888aa237b58ee54e9c94998d60d650bd6dacaeac8fffbadf11ee3238",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
     "src/Client/VelmoraMotionEngine.luau": "a88ee0b1bf1e2ea4ccc91db0b036bc93f26d03116940b42a23dbc6af489c8ece",
-    "src/Server/AI.luau": "8adaeb49e309aa762e38c27d17d90c833c644c5507ccebe959c7961e2687c107",
+    "src/Server/AI.luau": "500272130e4685e4993b7339a77346d2b30024b32520d1f2e02be82510c8a23e",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "83298d7003b58d2b1517726b14dc3f9f78764f2836fdeb4426ae127f90491dd1",
     "src/Server/BanglaEvade.luau": "cf7d9c38790e3839f43900632090077b6000d76e2ce12428252822508c5cde9b",
@@ -37,7 +37,7 @@
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
     "src/Shared/Attacks.luau": "179ebafbbf72c9cb853250bad1858f849fcd9cf19c723db0b9e4f5253267ebe7",
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
-    "src/Shared/Config.luau": "94d14d522c13f55d615733d210154515ae8816c7e1ff86894f23fd52938fd4bf",
+    "src/Shared/Config.luau": "b1471ac2fe9368d609a1c0abff6b3c4e0c0381de9645de586bdc47ca4bb21a6a",
     "src/Shared/Controls.luau": "8534849f00c3733d57d492ba331dba1f18455454f4527bef6ffcc2ac4c896e61",
     "src/Shared/Fighters.luau": "452dcacfcc226b6857be2338206c6d9cd6eaabc359c2e054ed083691f01b1070",
     "src/Shared/MoveGraphs.luau": "fbc9d262dfd00f42f8e7b5072f4bf49975f59c4b9f3795087e48d743dc2f1f6b",
@@ -46,7 +46,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "6f22b9b176747b0312be40b2e95f43c595d5d1611fb8b7576513887df64c5831",
+  "buildFingerprint": "1a5610727571b24c26aa92e4f8a7a00b8c876a5d79948f4742087fd1186a2684",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -93,7 +93,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 22 PASS"
+        "summary": "NinjaDuel regressions: 23 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,

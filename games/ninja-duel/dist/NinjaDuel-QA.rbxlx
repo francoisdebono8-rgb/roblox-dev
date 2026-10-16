@@ -240,7 +240,14 @@ return {
 		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
-	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34 },
+	-- Neutral rhythm (convergence §8): jutsu are paced (Gap + Jitter seconds
+	-- between two, punishes excepted), a fast approach into melee range is read
+	-- before the strike (guard / sidestep / counter-poke, no reaction latency:
+	-- a guess), probing at range uses tools and step-in feints, and a fighter
+	-- that just got hit backs off to neutral instead of mashing back.
+	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
+		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
+		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35 },
 }
 </ProtectedString>
         </Properties>
@@ -1611,7 +1618,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6f22b9b176747b0312be40b2e95f43c595d5d1611fb8b7576513887df64c5831</string>
+          <string name="Value">1a5610727571b24c26aa92e4f8a7a00b8c876a5d79948f4742087fd1186a2684</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -1715,6 +1722,7 @@ SOFTWARE.
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local Techniques=require(script.Parent.Techniques)
+local Brawler=require(script.Parent.Brawler)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -1809,13 +1817,49 @@ function AI:update(now)
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil&lt;=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
+	-- Got hit and out of it: back off into neutral (reset, tools, reads)
+	-- instead of mashing straight back in.
+	local hurt=a.reaction~=nil or a.state=="Stunned"
+	if self.wasHurt and not hurt and self.rng:NextNumber()&lt;tune.Disengage then
+		self.probing=true;self.modeUntil=now+1.2+self.rng:NextNumber()*1.4;self.probeRange=10+self.rng:NextNumber()*8
+	end
+	self.wasHurt=hurt
 	local calm=self.probing or now&lt;(self.breathUntil or 0)
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
 	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
-	a.move=(toward*radial+tangent*math.sin(now*(if minato then 1.15 else .58))*(if minato then .95 else .48))
+	-- Lateral movement is committed for a beat, then changes side: readable
+	-- repositioning, not a sine-wave drift around the opponent.
+	if now&gt;=(self.strafeUntil or 0) then
+		self.strafeSign=if self.rng:NextNumber()&lt;.5 then 1 else -1
+		self.strafeUntil=now+.6+self.rng:NextNumber()*(if minato then .7 else 1.1)
+		self.strafeAmount=if self.rng:NextNumber()&lt;.2 then 0 else (if minato then .95 else .6)
+	end
+	a.move=(toward*radial+tangent*(self.strafeSign or 1)*(self.strafeAmount or .5))
+	-- Space is a resource: backing off drifts toward the open middle, so the
+	-- wall is a choice (wall run, splat) and not where every retreat ends.
+	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
+	local edge=math.clamp((centre.Magnitude-(Config.ArenaRadius-45))/30,0,1)
+	if edge&gt;0 and radial&lt;.5 and centre.Magnitude&gt;.1 then a.move-=centre.Unit*edge*.9 end
 	a.sprinting=distance&gt;desired+6 and not calm
 	if calm then a.move*=.7 end
+	-- Step-in feint at probing range: two quick steps in, then out of reach,
+	-- often with a blade on the way out.
+	if self.feintOut then
+		if now&lt;self.feintOut then
+			a.move=-toward+tangent*(self.strafeSign or 1)*.4;a.sprinting=false
+			if edge&gt;0 and centre.Magnitude&gt;.1 then a.move-=centre.Unit*edge end
+			if self.feintThrow and now&gt;=self.feintThrow then self.feintThrow=nil;c:request(a,"Tool",target.root.Position) end
+		else self.feintOut=nil end
+	elseif self.feintIn then
+		if now&lt;self.feintIn then a.move=toward;a.sprinting=true
+		else self.feintIn=nil;self.feintOut=now+.35+self.rng:NextNumber()*.2
+			self.feintThrow=if self.rng:NextNumber()&lt;.45 then now+.12 else nil
+			Brawler.event(c,a,"FeintStep")
+		end
+	elseif self.probing and a.state=="Neutral" and not a.airborne and distance&gt;9 and distance&lt;19 and self.rng:NextNumber()&lt;tune.Feint then
+		self.feintIn=now+.22+self.rng:NextNumber()*.12
+	end
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	-- Wall run: rise along the wall, then dive at the opponent.
@@ -1835,7 +1879,7 @@ function AI:update(now)
 		a.move=(outward+tangent*.25).Unit;a.sprinting=true
 		return
 	end
-	if fromCenter.Magnitude&gt;Config.ArenaRadius-18 and distance&gt;11 and distance&lt;44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()&lt;.22 then
+	if fromCenter.Magnitude&gt;Config.ArenaRadius-22 and distance&gt;11 and distance&lt;44 and a.state=="Neutral" and not a.airborne and self.rng:NextNumber()&lt;tune.WallRun then
 		self.wallRun=now+1.1;self.wallSide=if self.rng:NextNumber()&lt;.5 then 1 else -1
 		return
 	end
@@ -1843,6 +1887,29 @@ function AI:update(now)
   if target.state=="Startup" or target.state=="TechniqueChannel" then self.threatAt=now end
   self.observed=target.state;self.observedAt=now
  end
+	-- Reads: an opponent stepping into melee range is answered before the
+	-- strike lands. Not a reaction (no latency): a guess, taken once per entry
+	-- - guard (a parry when the timing lands), sidestep or counter-poke.
+	local closing=(target.locomotion or Vector3.zero):Dot(-toward)
+	local entering=distance&lt;8.5 and (self.lastDistance or 99)&gt;=8.5 and closing&gt;4
+	self.lastDistance=distance
+	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	if entering and free then
+		local roll=self.rng:NextNumber()
+		if roll&lt;tune.ReadGuard then
+			c:request(a,"Guard");self.guardUntil=now+.42;return
+		elseif roll&lt;tune.ReadGuard+tune.ReadDodge and a.dodgeUntil&lt;=now then
+			a.move=tangent*(self.strafeSign or 1)
+			if c:request(a,"Dodge") then return end
+		elseif roll&lt;tune.ReadGuard+tune.ReadDodge+tune.ReadPoke and distance&lt;7.5 then
+			if c:request(a,"Attack") then return end
+		end
+	end
+	-- Toe to toe with a fighter who is not swinging yet: sometimes hold a
+	-- guard in anticipation (a parry if the strike comes right then).
+	if free and distance&lt;7 and target.state=="Neutral" and not target.reaction and self.rng:NextNumber()&lt;tune.GuardRead then
+		c:request(a,"Guard");self.guardUntil=now+.28+self.rng:NextNumber()*.22;return
+	end
 	local reacted=now-self.observedAt&gt;=tune.Reaction
 	local danger=target.state=="Startup" or target.state=="TechniqueChannel"
 	local reactedThreat=reacted and (target.state=="Startup" or target.state=="Active")
@@ -1957,7 +2024,7 @@ function AI:update(now)
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
-	if distance&gt;7 and distance&lt;46 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then 1.8 else 1) and target.state~="Guarding" then
+	if distance&gt;7 and distance&lt;46 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
 		-- A tool master sometimes throws the geometry instead (side + tool).
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()&lt;.4 then
 			a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
@@ -1965,7 +2032,12 @@ function AI:update(now)
 		if c:request(a,"Tool",target.root.Position) then return end
 	end
 	-- Choose by capabilities/technique identifiers, never by a second bot combat engine.
-	if self.rng:NextNumber()&lt;tune.Technique then
+	-- Jutsu are paced: after one, a few seconds of movement, tools and reads
+	-- before the next. A close punish (stunned, bound, or recovering within
+	-- reach) is not; a recovery seen from range is still neutral.
+	local punish=target.state=="Stunned" or target.reaction=="Bound"
+		or ((target.state=="Recovery" or target.state=="TechniqueRecovery") and distance&lt;7)
+	if self.rng:NextNumber()&lt;tune.Technique and (now&gt;=(self.techReadyAt or 0) or punish) then
 		for slot,spec in a.def.Techniques do
 			local use=false; local aim=target.root.Position
 			if spec.Id=="MarkedBlade" then use=plantedSeals(a)&lt;2 and not c:markedInFlight(a) and distance&gt;8; aim=position+target.hum.MoveDirection*3
@@ -1987,7 +2059,9 @@ function AI:update(now)
 			if spec.Id=="PhoenixFlower" then use=distance&gt;9 and distance&lt;34 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.5 end
 			if spec.Id=="WindCut" then use=distance&gt;8 and distance&lt;28 end
 			if spec.Id=="Quickstep" then use=distance&gt;9 and distance&lt;20 and self.rng:NextNumber()&lt;0.25 end
-			if use and c:request(a,"Technique"..slot,aim) then return end
+			if use and c:request(a,"Technique"..slot,aim) then
+				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
+			end
 		end
 	end
 	local whiff=target.state=="Recovery" and (target.attackName=="Heavy" or not target.hitConfirmed)

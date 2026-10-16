@@ -451,4 +451,56 @@ test("aimed motion leaves a root the live solver already moved (no double integr
  Motor.move(a,c,aim,.01)
  assert((a.root.Position-solved).Magnitude<1e-6,"Motor.move moved again a root the solver had already moved")
 end)
+test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",function()
+ -- Convergence §8: a minute of AI combat used to be ~16 jutsu per fighter
+ -- (ability -> cooldown -> ability). Seeded rolls, a real one-minute fight.
+ local saved=H.envBase.Random
+ H.envBase.Random={new=function(seed)
+  local state=(seed or 1)*2654435761%4294967296
+  local function roll() state=(1103515245*state+12345)%2147483648;return state/2147483648 end
+  return {NextNumber=function(_,x,y) local r=roll();if x and y then return x+(y-x)*r end return r end,
+   NextInteger=function(_,x,y) return math.floor(x+(y-x+1)*roll()) end}
+ end}
+ local ok,err=pcall(function()
+  local Config=H.load("Shared/Config")
+  local AI=H.load("Server/AI")
+  local c,a,b,match=H.duel("Flashstep","Mirage")
+  c:relocate(a,V.new(0,3,12));c:relocate(b,V.new(0,3,-12))
+  local last,worstGap,techniques,guards,conversions={},math.huge,0,0,0
+  local request=c.request
+  c.request=function(self,actor,action,...)
+   local accepted,reason=request(self,actor,action,...)
+   if accepted and string.match(action,"^Technique") then
+    local t=actor.target
+    local gap=((t.root.Position-actor.root.Position)*V.new(1,0,1)).Magnitude
+    local punish=t.state=="Stunned" or t.reaction=="Bound" or ((t.state=="Recovery" or t.state=="TechniqueRecovery") and gap<7)
+    -- Minato's teleport onto his own flying/planted seal is the second half of
+    -- a kunai conversion, not a fresh neutral jutsu.
+    local spec=actor.def.Techniques[tonumber(string.match(action,"%d+"))]
+    local conversion=spec and spec.Id=="Flashstep"
+    if not punish and not conversion and last[actor] then worstGap=math.min(worstGap,self.now-last[actor]) end
+    if not conversion then last[actor]=self.now;techniques+=1 else conversions+=1 end
+   end
+   if accepted and action=="Guard" then guards+=1 end
+   return accepted,reason
+  end
+  local one,two=AI.new(c,a,7),AI.new(c,b,14)
+  local feints0=match.events.FeintStep or 0
+  local t=0
+  while t<60 do
+   match.phase="Duel"
+   for _,f in {a,b} do if f.health<f.def.Health*.3 then f.health=f.def.Health;f.hum.Health=f.health end end
+   one:update(c.now);two:update(c.now);H.step(c,.02);t+=.02
+  end
+  assert(techniques>=4,"the AI stopped using jutsu ("..techniques..")")
+  print(string.format("   (%d jutsu + %d seal teleports, %d guards in one minute)",techniques,conversions,guards))
+  -- (pre-change baseline on this seed: 34 jutsu + 13 teleports, 6 guards)
+  assert(techniques<=26,"the AI still spams jutsu: "..techniques.." in a minute for two fighters")
+  assert(worstGap>=Config.AI.TechniqueGap-.05,string.format("two neutral jutsu only %.2f s apart",worstGap))
+  assert(guards>=3,"the AI barely guards ("..guards..")")
+  assert((match.events.FeintStep or 0)-feints0>=1,"no step-in feint in a minute of probing")
+ end)
+ H.envBase.Random=saved
+ assert(ok,err)
+end)
 print(string.format("NinjaDuel regressions: %d PASS",passed))

@@ -787,7 +787,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: IA comprend les conversions tactiques utiles
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Mesurer planification wall/seal/angle/outil et sorties sans triche ni spam
-- evidence: AI fonctionne ; reports limites planification non clôturés
+- evidence: AI fonctionne ; reports limites planification non clôturés. 2026-10-16 rythme du neutre ([rapport](../reports/convergence/NEUTRAL_RHYTHM.md)) : jutsus espacés, lectures d’entrée en portée, feintes d’approche, strafe engagé, retour au neutre, replis vers le centre. NATIVE_STUDIO 60 s : techniques Minato 27→18, parades 1→5 / 0→4, feintes 0→8 / 1→6, corps à corps 46 %→23 %, conversions murales présentes ; headless 12 affrontements : techniques 16,3→10,3/min, outils 7,5→11,0/min. TECHNICAL PASS (Regression 23). HUMAN_VISUAL PENDING
 - outcome: PENDING
 
 ## REL-001 — Publication traçable de la place
