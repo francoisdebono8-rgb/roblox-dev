@@ -605,7 +605,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Conserver ~32 archétypes et dix blueprints riches
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Scope approuvé, architecture kit, source/lore/validation spécifique ; pas produire32 kits maintenant
-- evidence: 2026-10-16 DEC-012 : architecture pour ~20 fighters ; vague prioritaire jouable pour éprouver le moteur : Naruto, Gaara, Rock Lee, Kakashi, Temari, Shikamaru, Haku, Kisame (+ CORE4). Pas de 20 kits à moitié faits ni de M1 copiés ; chaque fighter doit éprouver ou tordre un système. Pool de 25 noms du 2026-10-13 conservé dans ROSTER_ARCHETYPES_32
+- evidence: 2026-10-16 DEC-012 : architecture pour ~20 fighters ; vague prioritaire jouable pour éprouver le moteur : Naruto, Gaara, Rock Lee, Kakashi, Temari, Shikamaru, Haku, Kisame (+ CORE4). Pas de 20 kits à moitié faits ni de M1 copiés ; chaque fighter doit éprouver ou tordre un système. Pool de 25 noms du 2026-10-13 conservé dans ROSTER_ARCHETYPES_32. 2026-10-16 conception livrée (merge `8faa218`) : fiches FIGHTER_TEMPLATE de la vague ([Naruto](../characters/NARUTO.md), [Gaara](../characters/GAARA.md), [Rock Lee](../characters/ROCK_LEE.md), [Kakashi](../characters/KAKASHI.md), [Temari](../characters/TEMARI.md), [Shikamaru](../characters/SHIKAMARU.md), [Haku](../characters/HAKU.md), [Kisame](../characters/KISAME.md)), [plan à ~20](../characters/ROSTER_WAVE_PLAN.md) et [hooks moteur partagés](../characters/ROSTER_WAVE_HOOKS.md) ; aucun nouveau kit jouable encore. Décisions utilisateur listées dans le plan (Kisame jeune, âge de Temari, Rasengan, définition de « jouable »)
 - outcome: PENDING
 
 ## ARENA-001 — Échelle utile et exploitation murs/cover
@@ -727,7 +727,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## NET-001 — PvP deux joueurs / audit fondation réseau
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: QA-001
 - subsystem: network
@@ -735,7 +735,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: PvP deux joueurs / audit fondation réseau
 - sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Décision scope, deux clients réel, autorité, délais/erreurs et reconnection validés avant prediction
-- evidence: 2026-10-16 DEC-012 : périmètre ouvert par la mission utilisateur (vrai 1v1 joueur contre joueur, autorité serveur, réactivité client, prédiction si utile, réconciliation, validation tenant compte de la latence, projectiles/substitution/FTG/air/mur/clash sous latence, sync chakra/état). Auditer d’abord les fondations Codex (`33028b2` : OnlineHost/Match/Queue/Validation/Replication) avant de reconstruire
+- evidence: 2026-10-16 DEC-012 : périmètre ouvert par la mission utilisateur (vrai 1v1 joueur contre joueur, autorité serveur, réactivité client, prédiction si utile, réconciliation, validation tenant compte de la latence, projectiles/substitution/FTG/air/mur/clash sous latence, sync chakra/état). Auditer d’abord les fondations Codex (`33028b2` : OnlineHost/Match/Queue/Validation/Replication) avant de reconstruire. 2026-10-16 fondation livrée ([rapport](../reports/ONLINE_FOUNDATION.md), merge `560d059`) : file casual, duel privé par code, choix en face à face, deux humains dans le même moteur serveur, validation par joueur (anti-triche, débit, visée), forfait à la déconnexion, outil de latence Debug seulement ; prédiction client volontairement écartée avant mesure. TECHNICAL PASS (Online 17 cas, isolation). NATIVE_STUDIO PENDING : session deux clients et matrice 0 / ~60 / ~100–120 ms + gigue
 - outcome: PENDING
 
 ## NET-002 — Robustesse réseau et entrées hostiles

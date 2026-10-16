@@ -123,3 +123,8 @@ Grille 0–2 appliquée en Studio (captures caméra de jeu + caméra latérale d
 ### Convergence bloc 2 — rythme du neutre (IA)
 
 Sonde Studio de 60 s et simulation headless des 12 affrontements ([rapport](../reports/convergence/NEUTRAL_RHYTHM.md)). Avant : une technique dès qu’elle était disponible (Minato 27 en 60 s), défense impossible contre les coups légers (latence 0,38 s > démarrage), jamais de mur, corps à corps 46 % du temps. Après (`AI.luau`, `Config.AI`) : jutsus espacés hors punition, lectures à l’entrée en portée (garde/parade, pas de côté, contre-coup), feintes d’approche avec lame, strafe engagé, retour au neutre après avoir été touché, replis vers le centre ; Studio : parades 1→9, feintes 1→14, corps à corps 23 %, conversions murales présentes. Nouveau test Regression (échoue sur l’ancien code). TECHNICAL PASS ; HUMAN_VISUAL PENDING.
+
+### Intégration des travaux parallèles
+
+- NET-001 : fondation 1v1 en ligne fusionnée (`560d059`, [rapport](../reports/ONLINE_FOUNDATION.md)) : file casual, code privé, choix en face à face, duel à deux humains sur le même moteur serveur, validation par joueur, forfait à la déconnexion, latence simulable en Debug. Tests Online 17 cas ; artefacts reconstruits après fusion ; 16 suites PASS. Pas encore joué à deux clients ni mesuré sous latence.
+- CHR-EXT-001/002 : fiches de la vague et plan à ~20 fusionnés (`8faa218`), liés depuis [CORE_ROSTER](../characters/CORE_ROSTER.md). Constats de lecture à vérifier : bonus de vitesse d’éveil ignoré au sol par `Motor.step`, client de Gaara replié sur Minato, vent sans réaction de recul.
