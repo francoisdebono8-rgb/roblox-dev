@@ -174,6 +174,8 @@ function Motor.descend(a,c,speed,dt)
 	a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,vertical,velocity.Z)
 	return false
 end
+-- How close a walk may bring one body to the other (root to root).
+Motor.SURFACE=3.4
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
  donor(a,c)
@@ -236,6 +238,19 @@ function Motor.step(a,c,dt,now)
  end
  if a.grabVictim then limit=math.min(limit,5) end
  if now<(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
+ -- Bodies do not collide (Combat:separate eases them apart): walking into the
+ -- opponent stops at his surface instead of sliding round to his side, which
+ -- also kept turning a held "toward" into "side" in the middle of a string.
+ local other=a.target
+ if other and other.health>0 and other.root and not a.airborne then
+  local d=other.root.Position-a.root.Position
+  local flat=Vector3.new(d.X,0,d.Z)
+  if flat.Magnitude>.05 and flat.Magnitude<Motor.SURFACE and math.abs(d.Y)<4 then
+   local n=flat.Unit
+   local inward=locomotion:Dot(n)
+   if inward>0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
+  end
+ end
 	 if locomotion.Magnitude>limit then locomotion=locomotion.Unit*limit end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude

@@ -546,8 +546,11 @@ function Brawler.request(c,a,action)
  end
  -- Directional combo grammar: inside a confirmed string the stick picks the
  -- route. Toward the opponent launches, away goes low, sideways turns the
- -- angle; each fighter answers with its own move.
- if action=="Attack" and inChain then
+ -- angle; each fighter answers with its own move. A route also takes the
+ -- grace after the window (Config.Combo.Grace), like the next light: with
+ -- toward held, a press a moment late launched in Studio one time in three and
+ -- played Light3 otherwise. (Heavy conversions still need the real window.)
+ if action=="Attack" and (inChain or (alive and a.state=="Neutral")) then
   local dir,sideSign=Brawler.intent(a)
   local route=nil
   if dir=="forward" and a.combo>=2 then route=routes.up

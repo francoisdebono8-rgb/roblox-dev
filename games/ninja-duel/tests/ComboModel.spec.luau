@@ -600,6 +600,21 @@ test("the AI re-engages: every CORE4 bot dashes or chases within a minute, witho
  assert(ok,err)
 end)
 
+test("toward held, a press a moment late after two hits still launches (no Light3 by accident)",function()
+ -- Studio, real keyboard and mouse: W held, three clicks 0.24 s apart gave
+ -- Light3 one time in three when the third click fell just after the window.
+ local c,a,b=H.duel("Flashstep","Mirage")
+ place(c,a,b,4)
+ local t,second,third=0,false,false
+ assert(c:request(a,"Attack"))
+ while t<1.4 do
+  a.move=V.new(0,0,-1)
+  H.step(c,.01);t+=.01
+  if not second and t>=.24 then second=true;c:request(a,"Attack") end
+  if not third and t>=.74 then third=true;c:request(a,"Attack");assert(a.attackName=="Launcher","the late toward press played "..tostring(a.attackName)) end
+ end
+ assert(third,"fixture: the third press never happened")
+end)
 test("a deliberate double tap reaches the buffer (the flood guard sits under it)",function()
  -- The anti-cheat refused a second Attack packet within 0.16 s: a fast
  -- double tap meant to buffer the next light never reached the server.

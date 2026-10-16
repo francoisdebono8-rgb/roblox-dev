@@ -248,6 +248,13 @@ function DevHooks.install(matches)
 			local trace=traces[s];local entries={}
 			if trace then for _,entry in trace.entries do table.insert(entries,table.clone(entry)) end end
 			return entries
+		elseif op=="intent" then
+			-- Route intent as the server reads it (stick, remembered push, line).
+			local Brawler=require(script.Parent.Brawler)
+			local dir,side=Brawler.classify(actor,actor.move or Vector3.zero)
+			local d=actor.target and (actor.target.root.Position-actor.root.Position) or Vector3.zero
+			return {move=actor.move,dir=dir,side=side,memory=actor.intentMemory and {dir=actor.intentMemory.dir,age=c.now-actor.intentMemory.at},
+				combo=actor.combo,gap=Vector3.new(d.X,0,d.Z).Magnitude,state=actor.state,attack=actor.attackName,chainOpen=actor.chainOpen==true}
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end

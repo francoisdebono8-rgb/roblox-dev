@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "684b4fc316a2d8a2f116dedb87bfad1a0ac8ce81cb7e6cb6fa432acf73803ffa",
+  "sha256": "413cf3d9d242bc9149dae7549a5a4142c3fb00f7f23ff1123ec7d8a4936a40ce",
   "sources": {
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -19,7 +19,7 @@
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "83298d7003b58d2b1517726b14dc3f9f78764f2836fdeb4426ae127f90491dd1",
     "src/Server/BanglaEvade.luau": "cf7d9c38790e3839f43900632090077b6000d76e2ce12428252822508c5cde9b",
-    "src/Server/Brawler.luau": "55e23a4bb89c2ea6a27339891cf6ab2ec23f9279348f79018bbcc4910a738bd0",
+    "src/Server/Brawler.luau": "e27e0093d2d6676cc78eeab74fd486c4957ba004ef51ee523a5571a842f9d5d6",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "f5f0b94e665b3ac0edb1fa902a75abb5ed0962d0f7ccd08db1fa021a8afcc74b",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -33,7 +33,7 @@
     "src/Server/Combat.luau": "219d463201d5efe8a7a100e53a928f1a4c8f7afa2ef6fd3168bfb1d37b98a185",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
-    "src/Server/DevHooks.luau": "55b391949031a97a337d689d1a5e8aaad7df419c21db801192b275d7a013c9a2",
+    "src/Server/DevHooks.luau": "4656e906ab377dff89e0e28aea333d62b8a38e0fbd16715ba296531c4be00dcb",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
     "src/Server/DevReport.luau": "461791d52ce11511efba91e59be7407e7f6a71ef170f9a9f79a92cefe981c530",
@@ -43,7 +43,7 @@
     "src/Server/Elements.luau": "320f12375f05091cf583007cbbb787ae927175342df5eb577154621c01d46046",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
     "src/Server/Matches.luau": "f0503845d89a668c95b92b2173f8735f976463e6ed4693d2c8b0e2ab680cf582",
-    "src/Server/Motor.luau": "8b0bc91b3094fa93df05e4497784aec6f12d7d5e81c27ea046015ca0b17e6df7",
+    "src/Server/Motor.luau": "62bdda23174b2f0eef1827d4e2cffe4f2c7e3e5f86774896fd13a9df9cf50552",
     "src/Server/NativeQA.luau": "5830c6bc049fd12f835baf4f961756d308cefd2785c30d72dba92a43811407c1",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
     "src/Server/Place1Movement.luau": "db654671d91a984b045f0c73c3d8cbe5cda3c4a2e89a6a8b414cc769ce4035e0",
@@ -72,7 +72,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "36fe270ab1448ee9ab909b1198c74ad761da93d89c453c4dfe8350fbf88c6169",
+  "buildFingerprint": "797a76bd7113af81a728631af4cdf3165ee22660d5b6ec21d5b06ad17c9b364a",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -119,7 +119,7 @@
       },
       "tests/Regression.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel regressions: 26 PASS"
+        "summary": "NinjaDuel regressions: 27 PASS"
       },
       "tests/Feedback.spec.luau": {
         "exit": 0,
@@ -179,7 +179,7 @@
       },
       "tests/ComboModel.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel combo model: 23 PASS"
+        "summary": "NinjaDuel combo model: 24 PASS"
       },
       "tests/Chakra.spec.luau": {
         "exit": 0,

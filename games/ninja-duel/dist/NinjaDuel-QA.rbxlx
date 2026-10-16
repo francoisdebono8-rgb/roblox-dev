@@ -1848,7 +1848,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">36fe270ab1448ee9ab909b1198c74ad761da93d89c453c4dfe8350fbf88c6169</string>
+          <string name="Value">797a76bd7113af81a728631af4cdf3165ee22660d5b6ec21d5b06ad17c9b364a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -3165,8 +3165,11 @@ function Brawler.request(c,a,action)
  end
  -- Directional combo grammar: inside a confirmed string the stick picks the
  -- route. Toward the opponent launches, away goes low, sideways turns the
- -- angle; each fighter answers with its own move.
- if action=="Attack" and inChain then
+ -- angle; each fighter answers with its own move. A route also takes the
+ -- grace after the window (Config.Combo.Grace), like the next light: with
+ -- toward held, a press a moment late launched in Studio one time in three and
+ -- played Light3 otherwise. (Heavy conversions still need the real window.)
+ if action=="Attack" and (inChain or (alive and a.state=="Neutral")) then
   local dir,sideSign=Brawler.intent(a)
   local route=nil
   if dir=="forward" and a.combo&gt;=2 then route=routes.up
@@ -7323,6 +7326,13 @@ function DevHooks.install(matches)
 			local trace=traces[s];local entries={}
 			if trace then for _,entry in trace.entries do table.insert(entries,table.clone(entry)) end end
 			return entries
+		elseif op=="intent" then
+			-- Route intent as the server reads it (stick, remembered push, line).
+			local Brawler=require(script.Parent.Brawler)
+			local dir,side=Brawler.classify(actor,actor.move or Vector3.zero)
+			local d=actor.target and (actor.target.root.Position-actor.root.Position) or Vector3.zero
+			return {move=actor.move,dir=dir,side=side,memory=actor.intentMemory and {dir=actor.intentMemory.dir,age=c.now-actor.intentMemory.at},
+				combo=actor.combo,gap=Vector3.new(d.X,0,d.Z).Magnitude,state=actor.state,attack=actor.attackName,chainOpen=actor.chainOpen==true}
 		elseif op=="state" then
 			local projectiles={}
 			for _,p in c.projectiles do table.insert(projectiles,{kind=p.kind,position=p.position}) end
@@ -8451,6 +8461,8 @@ function Motor.descend(a,c,speed,dt)
 	a.root.AssemblyLinearVelocity=Vector3.new(velocity.X,vertical,velocity.Z)
 	return false
 end
+-- How close a walk may bring one body to the other (root to root).
+Motor.SURFACE=3.4
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
  donor(a,c)
@@ -8513,6 +8525,19 @@ function Motor.step(a,c,dt,now)
  end
  if a.grabVictim then limit=math.min(limit,5) end
  if now&lt;(a.landUntil or 0) then limit=math.min(limit,profile.HardLandSpeed) end
+ -- Bodies do not collide (Combat:separate eases them apart): walking into the
+ -- opponent stops at his surface instead of sliding round to his side, which
+ -- also kept turning a held "toward" into "side" in the middle of a string.
+ local other=a.target
+ if other and other.health&gt;0 and other.root and not a.airborne then
+  local d=other.root.Position-a.root.Position
+  local flat=Vector3.new(d.X,0,d.Z)
+  if flat.Magnitude&gt;.05 and flat.Magnitude&lt;Motor.SURFACE and math.abs(d.Y)&lt;4 then
+   local n=flat.Unit
+   local inward=locomotion:Dot(n)
+   if inward&gt;0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
+  end
+ end
 	 if locomotion.Magnitude&gt;limit then locomotion=locomotion.Unit*limit end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
