@@ -1728,7 +1728,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">00a4252040b3dbd90c47fb3f961af7f3d7cd54107969ba91d4e226548a774e03</string>
+          <string name="Value">67bfbba98b614a63b65e3e00bfba03945a7f261026f1905260dc2f8727a6d4c8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -16277,6 +16277,20 @@ local THROWS={
 		if t&lt;release+.2 then return merge(flick,{la={out=46}}),1 end
 		return flick,1-smooth((t-release-.2)/.16)
 	end,
+	-- Wind Cut: thrown on the run as a horizontal slash off the kunai's edge
+	-- (the gust leaves the blade sideways), not an overhand throw.
+	WindCut=function(t,release)
+		local from={torso={yaw=-30,pitch=2},head={yaw=14},ra={raise=86,out=60,twist=-20,elbow=20,wrist=-10},la={raise=36,out=22,elbow=64}}
+		local to={torso={yaw=10,pitch=6},head={yaw=-6},ra={raise=88,out=-40,twist=20,elbow=10,wrist=24},la={raise=30,out=26,elbow=70}}
+		local start=math.max(release-.06,.02)
+		if t&lt;start then return from,smooth(t/start) end
+		if t&lt;release+.06 then
+			local u=smooth((t-start)/(release+.06-start))
+			return {torso=mixPart(from.torso,to.torso,nil,u),head=mixPart(from.head,to.head,nil,u),ra=mixPart(from.ra,to.ra,nil,u),la=mixPart(from.la,to.la,nil,u)},1
+		end
+		if t&lt;release+.2 then return to,1 end
+		return to,1-smooth((t-release-.2)/.16)
+	end,
 }
 
 -- --------------------------------------------------------- technique poses
@@ -16290,6 +16304,11 @@ local SEALS={
 local function sealPose(base,t,hold)
 	local index=if hold then #SEALS else (math.floor(t/.1)%#SEALS)+1
 	return merge(base,merge(SEALS[index],{torso={pitch=6,yaw=-2},head={pitch=8,yaw=0}}))
+end
+local function techSpec(fighterId,id)
+	local def=Fighters[fighterId]
+	for _,spec in (def and def.Techniques) or {} do if spec.Id==id then return spec end end
+	return {}
 end
 local function castSpec(actor)
 	local id=actor.castId
@@ -16335,9 +16354,17 @@ local function castSpec(actor)
 		return merge(base,{root={y=-.62,pitch=16,yaw=6},torso={pitch=12,yaw=-6},head={pitch=12,yaw=-4},
 			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.15},rf={z=1.05,yaw=30}})
 	elseif id=="MirageCast" then
-		return merge(base,{root={y=-.24},head={pitch=4,yaw=-4},ra={raise=110,out=-28,twist=30,elbow=150,wrist=10},la={raise=10,out=12,elbow=30}})
+		if state=="TechniqueChannel" then
+			-- One hand signs at the chest, the weight already going back.
+			return merge(base,{root={y=-.24,z=.3,pitch=-4},head={pitch=4,yaw=-4},ra={raise=96,out=-34,twist=30,elbow=140,wrist=10},la={raise=10,out=12,elbow=30}})
+		end
+		-- Released: he withdraws behind his image, then is back in guard.
+		local since=t-(techSpec(fighterId,id).Channel or .42)
+		if since&lt;.12 then return merge(base,{root={y=-.3,z=.6,pitch=-6},head={pitch=2},ra={raise=50,out=-10,elbow=90},la={raise=20,out=14,elbow=40}}) end
+		return nil
 	elseif id=="Read" then
-		return merge(base,{root={y=-.45,pitch=6},head={pitch=2},ra={raise=40,out=-16,elbow=110},la={raise=60,out=-20,elbow=104}})
+		-- Chin a little down, hands low and open: waiting for the blow.
+		return merge(base,{root={y=-.45,pitch=6},head={pitch=-4},ra={raise=30,out=-16,elbow=80,wrist=-10},la={raise=45,out=-20,elbow=70,wrist=-10}})
 	elseif id=="NeedleFan" then
 		if state=="TechniqueChannel" then return merge(base,{torso={yaw=26},la={raise=12,out=-42,twist=30,elbow=112},ra={raise=20,out=10,elbow=60}}) end
 		return merge(base,{torso={yaw=-24,pitch=6},la={raise=88,out=54,twist=-24,elbow=8,wrist=24},ra={raise=24,out=18,elbow=60}})
@@ -16348,6 +16375,11 @@ local function castSpec(actor)
 		if state=="TechniqueChannel" then return sealPose(base,t,false) end
 		return merge(base,{torso={yaw=-34,pitch=6},ra={raise=88,out=50,elbow=8,wrist=-10},la={raise=40,out=24,elbow=50},root={yaw=-20,y=-.5}})
 	elseif id=="Flashstep" then
+		if actor.airborne and state=="TechniqueRecovery" then
+			-- Arriving beside a launched body: already in the air, kunai up, ready
+			-- for the air strike (the legs keep the air pose).
+			return merge(base,{root={pitch=8},torso={pitch=6},head={pitch=-10},ra={raise=118,out=24,twist=30,elbow=58,wrist=-20},la={raise=36,out=34,elbow=40}})
+		end
 		if state=="TechniqueChannel" or state=="TechniqueActive" then
 			return merge(base,{root={y=-.6,pitch=12},la={raise=66,out=-34,twist=30,elbow=122},ra={raise=40,out=16,elbow=96}})
 		end
@@ -17107,6 +17139,40 @@ end
 -- presentation contract: a defeated body settles, a grounded body stays down, an
 -- airborne reaction keeps its trajectory, then defence, chase, wall, guard,
 -- techniques, attacks, landing and locomotion. Throws layer on the upper body.
+-- Closed chakra points weigh on the body (Neji's tenketsu, on any fighter):
+-- the spine folds a little more per point and the guard hands sag; a sealed
+-- network (four points) bends the knees, the arms hang and the head trembles.
+local function tenketsuPosture(targets,points,severe)
+	local out=table.clone(targets)
+	local sealed=points&gt;=4 or severe==true
+	local spine=if sealed then 10 elseif points&gt;=3 then 6 else 3
+	local sag=if sealed then 20 elseif points&gt;=3 then 15 else 8
+	out.Waist=(targets.Waist or IDENTITY)*ANG(rad(-spine),0,0)
+	out.Right=ANG(rad(-sag*.7),0,0)*(targets.Right or IDENTITY)
+	out.Left=ANG(rad(-sag),0,0)*(targets.Left or IDENTITY)
+	if sealed then
+		out.Root=CF(0,-.15,0)*(targets.Root or IDENTITY)
+		out.Neck=(targets.Neck or IDENTITY)*ANG(0,rad(math.sin(elapsedTime*44)*4),0)
+	end
+	return out
+end
+-- Curse Mark (Sasuke awakened): a lower, hunched, hungrier guard; the
+-- shoulders twitch while the seal is starving.
+local function cursePosture(targets,hungry)
+	local out=table.clone(targets)
+	out.Root=CF(0,-.1,0)*(targets.Root or IDENTITY)*ANG(rad(-6),0,0)
+	if hungry then out.Waist=(targets.Waist or IDENTITY)*ANG(0,0,rad(math.sin(elapsedTime*56)*3)) end
+	return out
+end
+-- The end of a chakra dash: the body brakes low, leaning back, arms out for
+-- balance, instead of popping straight back into the walk.
+local function brakePosture(targets,w)
+	local out=table.clone(targets)
+	out.Root=CF(0,-.45*w,0)*(targets.Root or IDENTITY)*ANG(rad(8*w),0,0)
+	out.Right=ANG(rad(18*w),0,rad(26*w))*(targets.Right or IDENTITY)
+	out.Left=ANG(rad(18*w),0,rad(-26*w))*(targets.Left or IDENTITY)
+	return out
+end
 function Motion.present(char,actor,clock,dt)
 	local elapsed=clock or {}
 	local subject=actor
@@ -17119,6 +17185,15 @@ function Motion.present(char,actor,clock,dt)
 		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
 		return "ko"
 	end
+	local memo=stateOf(char)
+	if subject.state~=memo.lastState then
+		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end
+		memo.lastState=subject.state
+	end
+	-- A Read that bit: the eye slips aside (events count, so every slip shows).
+	local slips=subject.events and subject.events.ReadSlip or 0
+	if slips&gt;(memo.slips or slips) then memo.slipAt=elapsedTime end
+	memo.slips=slips
 	-- Match intro attitude: Minato twirls a kunai, Itachi waits, perfectly still.
 	if (subject.intro or 0)&gt;0 and subject.state=="Neutral" then
 		local base=stance(subject.fighterId)
@@ -17170,6 +17245,15 @@ function Motion.present(char,actor,clock,dt)
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
+	local cue=if type(subject.cue)=="string" then subject.cue else ""
+	local seeking=string.find(cue,"EXPOSED",1,true)~=nil
+	if subject.state=="Stunned" and not subject.reaction and not subject.airborne and (seeking or string.find(cue,"BROKEN",1,true)~=nil) then
+		-- Exposed (a swing caught by an image, read or parried) or a broken
+		-- shield: overextended into nothing, the head turning to find the body.
+		apply(char,build(merge(stance(subject.fighterId),{root={y=-.5,z=-.3,pitch=12},torso={pitch=14,yaw=-8},head={pitch=-6,yaw=if seeking then 30 else 8},
+			ra={raise=92,out=-6,twist=10,elbow=10,wrist=-10},la={raise=20,out=26,elbow=40},lf={z=-1.1},rf={z=.9}})),RATE.recoil,dt)
+		return "exposed"
+	end
 	local swinging=subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active" or subject.state=="Recovery")
 	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
 	-- The base the body returns to: gait on the ground, air pose in the air.
@@ -17191,6 +17275,16 @@ function Motion.present(char,actor,clock,dt)
 				-- Keep the legs of the air pose; the upper body casts.
 				for key in JOINTS do if not UPPER[key] and key~="Root" then targets[key]=base[key] end end
 			end
+			local slip=memo.slipAt and elapsedTime-memo.slipAt
+			if slip and slip&lt;.14 and subject.castId=="Read" then
+				-- The slip: hips turn toward the attacker, a small roll away from
+				-- the blow, the front hand opens and rises for the palm.
+				local w=1-smooth(slip/.14)
+				targets=table.clone(targets)
+				targets.Root=(targets.Root or IDENTITY)*ANG(0,rad(-20*w),rad(6*w))
+				targets.Left=ANG(rad(40*w),0,0)*(targets.Left or IDENTITY)
+				targets.LeftElbow=(targets.LeftElbow or IDENTITY):Lerp(ANG(rad(60),0,0),w)
+			end
 			apply(char,targets,RATE.cast,dt)
 			return "technique"
 		end
@@ -17200,6 +17294,18 @@ function Motion.present(char,actor,clock,dt)
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		-- (Clone: blend may hand back a cached clip pose, which must not change.)
 		local final=table.clone(blend(base,targets,weight))
+		local variant=subject.attackVariant
+		if variant=="MirageCounter" or variant=="ReadCounter" or variant=="TrigramCounter" then
+			local phase=attackPhase(name,subject.attackElapsed or 0,subject.fighterId)
+			if variant=="TrigramCounter" then
+				-- Out of the spin: the yaw unwinds onto the opponent in the startup.
+				final.Root=(final.Root or IDENTITY)*ANG(0,rad(90*(1-smooth(math.min(phase,1)))),0)
+			else
+				-- A low glide through the image / past the read blow.
+				local w=if phase&lt;1 then 1 elseif phase&lt;2 then 2-phase else 0
+				final.Root=CF(0,-.7*w,-1.2*w)*(final.Root or IDENTITY)
+			end
+		end
 		-- Planted feet come from the stepping system; kicking legs from the clip.
 		if footwork and base.__feet then
 			final.__feet={}
@@ -17237,6 +17343,7 @@ function Motion.present(char,actor,clock,dt)
 	end
 	-- Throw overlay on top of the gait: the arm throws, the legs keep running.
 	local throw=subject.throwKind and THROWS[subject.throwKind]
+	if subject.castId=="WindCut" and math.abs((subject.castElapsed or 99)-(subject.throwElapsed or -99))&lt;.08 then throw=THROWS.WindCut end
 	local throwElapsed=subject.throwElapsed or 99
 	if throw and throwElapsed&gt;=0 and throwElapsed&lt;(subject.throwRelease or .1)+.45 then
 		local spec,weight=throw(throwElapsed,subject.throwRelease or .1)
@@ -17248,6 +17355,10 @@ function Motion.present(char,actor,clock,dt)
 			return "throw"
 		end
 	end
+	if (subject.tenketsu or 0)&gt;0 then base=tenketsuPosture(base,subject.tenketsu,subject.tenketsuSevere) end
+	if (subject.awaken or 0)&gt;0 and familyOf(subject.fighterId).body=="Lion" then base=cursePosture(base,subject.curseHunger) end
+	local brake=memo.brakeAt and elapsedTime-memo.brakeAt
+	if brake and brake&lt;.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
 	apply(char,base,baseRate,dt)
 	return "locomotion"
 end
