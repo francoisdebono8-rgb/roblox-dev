@@ -2,7 +2,7 @@
 
 Index de traçabilité, pas preuve que chaque proposition research est approuvée ou chaque qualité visuelle réalisée. Chaque titre/section source est relié à des IDs ; lire la section entière avant exécution. Les IDs techniques DONE ne suppriment pas les critères visuels voisins. Les candidats adultes restent filtrés par CHR-CORE-002/DECISIONS ; fondations rollback/PvP futures par NET-001/MOV-006 ; anciens ordres de délai/publication ne commandent pas la session.
 
-Les 37 documents déplacés gardent leur contenu détaillé. Les seules adaptations du contenu source sont les références et un avertissement historique du template. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
+Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission Phase 2 restée seule sur `main`, archivé le 2026-10-16). Les seules adaptations du contenu source sont les références et un avertissement historique du template. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
 
 ## [CLAUDE_FINAL_PASS.md](../archive/missions/CLAUDE_FINAL_PASS.md)
 
@@ -1112,3 +1112,35 @@ Les 37 documents déplacés gardent leur contenu détaillé. Les seules adaptati
 - L1 — Banc de test commun — Minato, Itachi, Neji, Sasuke → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003, CHR-ITA-001, CHR-ITA-002, CHR-NEJ-001, CHR-NEJ-002, CHR-SAS-001, CHR-SAS-002, QA-001, QA-002, QA-003, QA-004
 - L25 — Route de test commune → QA-001, QA-002, QA-003, QA-004
 - L40 — Couverture et limites → DOC-001, QA-001, QA-004, COM-002, COM-004, COM-005, COM-006, MOV-001, MOV-004, DEF-003, TOOL-005, CHR-CORE-001, CHR-CORE-002, ARENA-001, CAM-001, RES-001, NET-001
+
+## [CLAUDE_PHASE_2_COMBAT_ENGINE_MOVESETS.md](../archive/missions/CLAUDE_PHASE_2_COMBAT_ENGINE_MOVESETS.md)
+
+- L1 — Claude Phase 2 — Combat Engine, Movesets, Animation Depth & Vision Gap → COM-001, COM-002, MOV-004, CHR-CORE-001
+- L3 — Context → DOC-001
+- L32 — 1. Begin by playing the current version in Roblox Studio → QA-001, QA-004
+- L75 — 2. Combat engine audit — go beneath the presentation layer → COM-003, COM-005, COM-007, DEF-001, DEF-002, NET-001
+- L111 — 3. Movement must become a major strength → MOV-001, MOV-002, MOV-003, MOV-005
+- L117 — Legs and lower body → MOV-002, MOV-003, MOV-005
+- L155 — 4. Upper-body attack animation must become much more convincing → MOV-004, COM-002, COM-003, TOOL-005
+- L189 — 5. Hybrid animation approach — do what looks best → MOV-004, RES-001, LAB-001
+- L211 — 6. Expand the movesets — Minato and Itachi need deeper combat identities → CHR-MIN-001, CHR-ITA-001, CHR-CORE-001
+- L219 — Minato identity → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003
+- L248 — Itachi identity → CHR-ITA-001, CHR-ITA-002
+- L278 — 7. Combo design — inspired by Ninja Storm flow, but with more player agency → COM-001, COM-004, COM-005
+- L317 — 8. Input feel and responsiveness → UX-001, QA-005, COM-005
+- L346 — 9. Air combat must become reliable and satisfying → COM-004, MOV-005, CAM-002
+- L382 — 10. Bugs — perform a dedicated destruction pass → QA-004
+- L409 — 11. Camera — support the improved movement and combos → CAM-001, CAM-002
+- L431 — 12. Character feel — Minato and Itachi must feel different even with VFX disabled → CHR-CORE-001, CHR-CORE-002
+- L458 — 13. Jutsu integration — abilities must belong to the combat system → SYS-001, TOOL-005, CHR-MIN-002, CHR-ITA-002
+- L485 — 14. Arena interaction and traversal → ARENA-001, ARENA-003
+- L507 — 15. Game feel pass → FX-001, FX-002, COM-003
+- L535 — 16. VISION GAP AUDIT — mandatory → DOC-001, RES-001
+- L568 — 17. Ideas are welcome — but must serve the vision → DOC-001, AI-001
+- L597 — 18. Performance and robustness → PERF-001
+- L619 — 19. Test both fighters as if preparing for an external playtest → QA-001, QA-004
+- L625 — Minato → CHR-MIN-001, QA-001
+- L640 — Itachi → CHR-ITA-001, QA-001
+- L657 — 20. Delivery requirement — the user must be able to test on their Mac → QA-003, REL-001
+- L686 — 21. Final deliverables → DOC-001
+- L706 — Final quality bar → COM-001, MOV-001, CHR-CORE-001

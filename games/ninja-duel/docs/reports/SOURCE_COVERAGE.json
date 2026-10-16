@@ -14343,5 +14343,290 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       }
     ]
+  },
+  {
+    "before": "games/ninja-duel/CLAUDE_PHASE_2_COMBAT_ENGINE_MOVESETS.md",
+    "source": "games/ninja-duel/docs/archive/missions/CLAUDE_PHASE_2_COMBAT_ENGINE_MOVESETS.md",
+    "sha256": "384edbe87ed2e817704c656f6cebd3092a38ab6325eb24fdd52b1eb0e1090c05",
+    "sections": [
+      {
+        "heading": "Claude Phase 2 — Combat Engine, Movesets, Animation Depth & Vision Gap",
+        "line": 1,
+        "backlog_ids": [
+          "COM-001",
+          "COM-002",
+          "MOV-004",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Context",
+        "line": 3,
+        "backlog_ids": [
+          "DOC-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "1. Begin by playing the current version in Roblox Studio",
+        "line": 32,
+        "backlog_ids": [
+          "QA-001",
+          "QA-004"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "2. Combat engine audit — go beneath the presentation layer",
+        "line": 75,
+        "backlog_ids": [
+          "COM-003",
+          "COM-005",
+          "COM-007",
+          "DEF-001",
+          "DEF-002",
+          "NET-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "3. Movement must become a major strength",
+        "line": 111,
+        "backlog_ids": [
+          "MOV-001",
+          "MOV-002",
+          "MOV-003",
+          "MOV-005"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Legs and lower body",
+        "line": 117,
+        "backlog_ids": [
+          "MOV-002",
+          "MOV-003",
+          "MOV-005"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "4. Upper-body attack animation must become much more convincing",
+        "line": 155,
+        "backlog_ids": [
+          "MOV-004",
+          "COM-002",
+          "COM-003",
+          "TOOL-005"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "5. Hybrid animation approach — do what looks best",
+        "line": 189,
+        "backlog_ids": [
+          "MOV-004",
+          "RES-001",
+          "LAB-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "6. Expand the movesets — Minato and Itachi need deeper combat identities",
+        "line": 211,
+        "backlog_ids": [
+          "CHR-MIN-001",
+          "CHR-ITA-001",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Minato identity",
+        "line": 219,
+        "backlog_ids": [
+          "CHR-MIN-001",
+          "CHR-MIN-002",
+          "CHR-MIN-003"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Itachi identity",
+        "line": 248,
+        "backlog_ids": [
+          "CHR-ITA-001",
+          "CHR-ITA-002"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "7. Combo design — inspired by Ninja Storm flow, but with more player agency",
+        "line": 278,
+        "backlog_ids": [
+          "COM-001",
+          "COM-004",
+          "COM-005"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "8. Input feel and responsiveness",
+        "line": 317,
+        "backlog_ids": [
+          "UX-001",
+          "QA-005",
+          "COM-005"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "9. Air combat must become reliable and satisfying",
+        "line": 346,
+        "backlog_ids": [
+          "COM-004",
+          "MOV-005",
+          "CAM-002"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "10. Bugs — perform a dedicated destruction pass",
+        "line": 382,
+        "backlog_ids": [
+          "QA-004"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "11. Camera — support the improved movement and combos",
+        "line": 409,
+        "backlog_ids": [
+          "CAM-001",
+          "CAM-002"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "12. Character feel — Minato and Itachi must feel different even with VFX disabled",
+        "line": 431,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "13. Jutsu integration — abilities must belong to the combat system",
+        "line": 458,
+        "backlog_ids": [
+          "SYS-001",
+          "TOOL-005",
+          "CHR-MIN-002",
+          "CHR-ITA-002"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "14. Arena interaction and traversal",
+        "line": 485,
+        "backlog_ids": [
+          "ARENA-001",
+          "ARENA-003"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "15. Game feel pass",
+        "line": 507,
+        "backlog_ids": [
+          "FX-001",
+          "FX-002",
+          "COM-003"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "16. VISION GAP AUDIT — mandatory",
+        "line": 535,
+        "backlog_ids": [
+          "DOC-001",
+          "RES-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "17. Ideas are welcome — but must serve the vision",
+        "line": 568,
+        "backlog_ids": [
+          "DOC-001",
+          "AI-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "18. Performance and robustness",
+        "line": 597,
+        "backlog_ids": [
+          "PERF-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "19. Test both fighters as if preparing for an external playtest",
+        "line": 619,
+        "backlog_ids": [
+          "QA-001",
+          "QA-004"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Minato",
+        "line": 625,
+        "backlog_ids": [
+          "CHR-MIN-001",
+          "QA-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Itachi",
+        "line": 640,
+        "backlog_ids": [
+          "CHR-ITA-001",
+          "QA-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "20. Delivery requirement — the user must be able to test on their Mac",
+        "line": 657,
+        "backlog_ids": [
+          "QA-003",
+          "REL-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "21. Final deliverables",
+        "line": 686,
+        "backlog_ids": [
+          "DOC-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
+        "heading": "Final quality bar",
+        "line": 706,
+        "backlog_ids": [
+          "COM-001",
+          "MOV-001",
+          "CHR-CORE-001"
+        ],
+        "disposition": "Historical mission (main, 2026-10-10), executed in earlier phases (see VISION_GAP); scope each ID by active decisions; retain full section as detailed source"
+      }
+    ]
   }
 ]
