@@ -11,7 +11,6 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
-local MoveGraphs = require(Shared.MoveGraphs)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -28,9 +27,15 @@ function Combat.launchPoint(a,kind)
 	local cf=a.root.CFrame
 	return cf.Position+cf.RightVector*spec.side+Vector3.yAxis*spec.up+cf.LookVector*spec.forward
 end
-function Combat:add(id,model,hum,root,joints,definition)
-	local def = Fighters[definition]
+-- `kit` (optional) is a validated skill build from SkillBuilds: its own copy
+-- of the definition and move graph with the active nodes applied. Without one
+-- the actor reads Fighters/MoveGraphs directly: today's fighter, unchanged.
+function Combat:add(id,model,hum,root,joints,definition,kit)
+	assert(kit==nil or kit.fighterId==definition,"Skill build does not belong to "..tostring(definition))
+	local def = if kit then kit.def else Fighters[definition]
+	if kit then hum.MaxHealth=def.Health;hum.Health=def.Health;hum.WalkSpeed=def.Speed end
 	local a = { id=id,fighterId=definition,model=model,hum=hum,root=root,joints=joints,def=def,health=def.Health,
+		graph=kit and kit.graph,build=kit and {nodes=table.clone(kit.nodes),spent=kit.spent,bracket=kit.bracket},
 		chakra=def.Chakra or Config.Chakra,state="Neutral",untilTime=0,lockUntil=0,cooldowns={},move=Vector3.zero,
 		combo=0,lastAttack=-10,readUntil=0,illusionUntil=0,bonusUntil=0,dodgeUntil=0,invulnerableUntil=0,
 		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
@@ -199,7 +204,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
+	local counterBefore=victim.counterUntil
 	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal,readEligible)
+	-- Skill build (Mirage Reflex): the read that just opened a Sharingan counter
+	-- also leaves a genjutsu decoy while awakened.
+	if (outcome=="Evaded" or outcome=="Parried") and victim.counterUntil~=counterBefore then self:reflexEcho(victim,attacker) end
 	-- A guard break keeps its full stun through the melee reaction that follows.
 	if outcome=="GuardBreak" then victim.stunFloorUntil=victim.untilTime end
 	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
@@ -210,6 +219,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.impactStyle=style;victim.impactAt=self.now
 		self:pushImpact(victim.root.Position,style,false)
 		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
+		if readEligible then self:parryRider(victim,attacker) end
 		return false
 	end
 	amount=resolved
@@ -291,6 +301,81 @@ function Combat:strike(a,damage,range,facing,heavy)
 	if self:targetValid(a,a.target,range,facing) then return self:damage(a,a.target,damage,heavy,true) end
 	return false
 end
+-- Skill-build hooks (SkillBuilds.OPTIONAL). Each reads one optional field of
+-- the actor's definition; canonical kits never carry these fields.
+-- Parry riders: ParrySeal (Minato) seals the stunned attacker for a teleport;
+-- ParryRedirect (Neji) turns him aside, closes a point and opens a counter.
+function Combat:parryRider(victim,attacker)
+	if attacker.health<=0 then return end
+	local seal=victim.def.ParrySeal
+	if seal then
+		local entry=Techniques.plant(self,victim,attacker.root.Position,Vector3.yAxis,attacker)
+		entry.expires=self.now+seal
+		self:cue(victim,"PARRY • SEALED • 2 TO FOLLOW",.8)
+		Brawler.event(self,victim,"ParrySeal")
+	end
+	local redirect=victim.def.ParryRedirect
+	if redirect then
+		local away=attacker.root.Position-victim.root.Position;away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude>.1 then
+			-- A quarter turn aside: his chest no longer faces the palm that follows.
+			local aside=Vector3.new(-away.Z,0,away.X).Unit
+			attacker.root.CFrame=CFrame.lookAt(attacker.root.Position,attacker.root.Position+aside)
+		end
+		if victim.def.GentleFist then for _=1,redirect.Points or 1 do Brawler.gentleFist(self,victim,attacker,false) end end
+		if redirect.Counter then victim.counterUntil=math.max(victim.counterUntil or 0,self.now+redirect.Counter) end
+		self:pushImpact(attacker.root.Position,"deflect",false,{owner=victim.id})
+		self:cue(victim,"REDIRECTED • COUNTER",.8);self:cue(attacker,"REDIRECTED",.6)
+		Brawler.event(self,victim,"Redirect")
+	end
+end
+-- Mirage Reflex (Itachi's awakening): the clean read that just opened a
+-- Sharingan counter leaves a genjutsu decoy on the attacker.
+function Combat:reflexEcho(victim,attacker)
+	local tune=victim.def.Awakening
+	local reflex=tune and tune.Reflex
+	if not reflex or (victim.awakenUntil or 0)<=self.now or attacker==victim or attacker.health<=0 or attacker.def.Byakugan then return end
+	attacker.illusionUntil=self.now+reflex
+	attacker.decoyPosition=self:clamp(victim.root.Position+victim.root.CFrame.RightVector*5)
+	self:effect("Echo",attacker.decoyPosition,victim.color,Vector3.new(2,5,1),reflex)
+	self:pushImpact(victim.root.Position,"mirage",false,{owner=victim.id,fighter=victim.fighterId,to=attacker.decoyPosition})
+	self:cue(victim,"FOCUS • MIRAGE REFLEX",.8);self:cue(attacker,"MIRAGE • TRUST THE BODY",reflex)
+	Brawler.event(self,victim,"MirageReflex")
+end
+-- Blood for Chakra (Sasuke's Curse Mark): awakened, the chakra a technique
+-- lacks is paid with health, never down to a KO.
+function Combat:curseBlood(a,spec)
+	local tune=a.def.Awakening
+	if not (tune and tune.BloodChakra) or (a.awakenUntil or 0)<=self.now or a.chakra>=spec.Cost then return false end
+	if (a.cooldowns[spec.Id] or 0)>self.now or (a.sealedUntil or 0)>self.now or self.match.techniquesDisabled then return false end
+	local debt=spec.Cost-a.chakra
+	if a.health<=debt+1 then return false end
+	a.health-=debt;a.hum.Health=math.max(1,a.health);a.chakra=spec.Cost
+	self:cue(a,"CURSE MARK • BLOOD FOR CHAKRA",.8)
+	Brawler.event(self,a,"BloodChakra")
+	return true
+end
+-- Air Exit (Minato): Tool during a teleport arrival in the air throws a marked
+-- kunai straight down; where it lands becomes a seal. nil when not applicable.
+function Combat:arrivalThrow(a)
+	local throw=a.def.ArrivalThrow
+	if not throw or (a.flashUntil or 0)<=self.now or not a.airborne or a.throwing
+		or (a.state~="TechniqueRecovery" and a.state~="TechniqueActive") then return nil end
+	if a.chakra<Config.ToolCost then return false,"Need chakra" end
+	a.chakra-=Config.ToolCost
+	a.flashUntil=0;a.pending=nil;self:setState(a,"Neutral",0)
+	a.neutralToolAt=self.now+((a.def.ToolMastery and a.def.ToolMastery.Recover) or .55)
+	local below=Vector3.new(a.root.Position.X,self.match.origin.Y,a.root.Position.Z)
+	self:beginThrow(a,{kind="MarkedKunai",release=.08,count=1,aim=below,fire=function(_,target)
+		self:projectile(a,target,96,40,throw.Damage or 2,"marked",function(position,normal,victim)
+			if a.health<=0 or self.match.phase~="Duel" then return end
+			Techniques.plant(self,a,position,normal,victim)
+		end)
+	end})
+	self:cue(a,"SEAL BELOW",.6)
+	Brawler.event(self,a,"ArrivalThrow")
+	return true
+end
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -306,7 +391,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 	self.projectileSerial=(self.projectileSerial or 0)+1
 	local p={id=self.projectileSerial,a=a,origin=start,position=start,direction=delta.Unit,speed=speed,range=range,remaining=range,
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
-		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy}
+		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
+		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
+		riders=opts.riders}
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -414,6 +501,8 @@ function Combat:substitute(a)
 	local attacker=a.target
 	local departure=a.root.Position
 	local destination,mode=nil,"hop"
+	-- Skill-build twist (SkillBuilds def.Substitution); nil for canonical kits.
+	local twist=a.def.Substitution
 	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
 	if seal then
 		destination=self:clamp(seal.position);mode="seal"
@@ -421,11 +510,19 @@ function Combat:substitute(a)
 		local back=-attacker.root.CFrame.LookVector*Vector3.new(1,0,1)
 		if back.Magnitude>.1 then
 			local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+back.Unit*5.5)
-			local blocked=false
-			for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
-				if part.CanCollide then blocked=true;break end
+			if self:openSpot(attacker,spot) then destination=spot;mode="crow" end
+		end
+	elseif twist and twist.Mode=="flank" and attacker and attacker.health>0 then
+		-- Neji's outside step: reappear on the attacker's flank, on the side he
+		-- was already on, else the other one.
+		local right=attacker.root.CFrame.RightVector*Vector3.new(1,0,1)
+		if right.Magnitude>.1 then
+			right=right.Unit
+			local first=if (a.root.Position-attacker.root.Position):Dot(right)>=0 then 1 else -1
+			for _,sign in {first,-first} do
+				local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+right*sign*5)
+				if self:openSpot(attacker,spot) then destination=spot;mode="flank";break end
 			end
-			if not blocked and workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil then destination=spot;mode="crow" end
 		end
 	end
 	if destination then
@@ -453,6 +550,17 @@ function Combat:substitute(a)
 	Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil;a.groundPose=nil
 	a.airborne=a.root.Position.Y>self.match.origin.Y+4.2
 	if seal then Techniques.consumeSeal(self,a,seal) end
+	-- Skill-build twist riders: a seal left where he stood (Return Seal), a
+	-- counter window (Crow Counter, Outside Step), a free counter-rush.
+	local extra=""
+	if twist then
+		if twist.PlantDeparture then
+			Techniques.plant(self,a,Vector3.new(departure.X,self.match.origin.Y,departure.Z),Vector3.yAxis)
+			extra=" • SEAL LEFT"
+		end
+		if twist.Counter then a.counterUntil=self.now+twist.Counter;extra=extra.." • COUNTER" end
+		if twist.FreeRush then a.freeRushUntil=self.now+twist.FreeRush;extra=extra.." • E: COUNTER-RUSH" end
+	end
 	Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.24
 	a.comboHits=0;a.comboDamage=0
 	self:setState(a,"Recovery",0.14)
@@ -464,8 +572,16 @@ function Combat:substitute(a)
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-	self:cue(a,if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" else "SUBSTITUTION • REPOSITIONED")
+	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
+end
+-- A reappearance point next to `attacker` is usable when nothing solid fills it
+-- and the attacker has a clear line to it.
+function Combat:openSpot(attacker,spot)
+	for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
+		if part.CanCollide then return false end
+	end
+	return workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
@@ -477,13 +593,16 @@ function Combat:rush(a)
 	local cancel=a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
-	if a.chakra<tune.Cost then return false,"Need chakra" end
+	-- Skill build (Counter-Rush): right after a substitution the dash is free.
+	local free=(a.freeRushUntil or 0)>self.now
+	if a.chakra<tune.Cost and not free then return false,"Need chakra" end
 	if self.now<(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
 	if gap<tune.MinRange then return false,"Too close" end
 	if gap>tune.Range then return false,"Too far" end
 	if cancel then Bangla.close(a.pending) end
-	a.chakra-=tune.Cost;a.rushReadyAt=self.now+tune.Cooldown
+	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=tune.Cost end
+	a.rushReadyAt=self.now+tune.Cooldown
 	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
 	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
 	self:setState(a,"Rush",duration)
@@ -631,7 +750,11 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		local graph=MoveGraphs[a.fighterId] or {}
+		if a.def.ArrivalThrow then
+			local thrown,refusal=self:arrivalThrow(a)
+			if thrown~=nil then return thrown,refusal end
+		end
+		local graph=Brawler.graph(a) or {}
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now>=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
@@ -640,7 +763,7 @@ function Combat:request(a,action,aim,clientTime)
 		if not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
 		if not chainCancel then a.chakra-=Config.ToolCost end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
-		local disengage=(MoveGraphs[a.fighterId] or {}).disengage
+		local disengage=graph.disengage
 		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
@@ -684,9 +807,15 @@ function Combat:request(a,action,aim,clientTime)
 	a.stringCancel=nil
 	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
-	local cancelGraph=MoveGraphs[a.fighterId] or {}
+	-- Skill build (Blood for Chakra): the Curse Mark pays what the reserve lacks
+	-- before the usual checks, for a cancel or a neutral cast alike.
+	if cancelSpec and a.def.Awakening and a.def.Awakening.BloodChakra and ((a.state=="Recovery" and a.chainOpen) or Rules.canAct(a,self.now))
+		and Techniques[cancelSpec.Id].check(self,a,cancelSpec,self.now) then self:curseBlood(a,cancelSpec) end
+	local cancelGraph=Brawler.graph(a) or {}
+	-- The technique's own condition is checked before the string is spent (a
+	-- teleport cancel needs a seal); the original cancels have none.
 	if cancelSpec and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
-		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
+		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost and Techniques[cancelSpec.Id].check(self,a,cancelSpec,self.now) then
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id
 	end
@@ -748,7 +877,9 @@ function Combat:request(a,action,aim,clientTime)
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
-	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
+	-- A string cancel shortens the wind-up to .14 s; a technique that is already
+	-- quicker (a teleport, the Read, Rotation) keeps its own.
+	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
 	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
@@ -759,6 +890,9 @@ function Combat:request(a,action,aim,clientTime)
 		if a.flashCancel then spec=table.clone(spec);spec.Channel=.05;variant="FlashRasengan"
 		elseif a.airborne then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.12);variant="RasenganDrop" end
 	end
+	-- Skill build (Wall Chidori): charged from a wall run, he hangs on the wall
+	-- for a shorter charge, then the thrust dives at the opponent.
+	if spec.Id=="Chidori" and spec.WallCharge and a.wall then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,spec.WallCharge);variant="WallChidori" end
 	a.flashCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
@@ -789,6 +923,11 @@ function Combat:request(a,action,aim,clientTime)
 	local flat=Vector3.new(offset.X,0,offset.Z)
 	if flat.Magnitude>0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
 	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
+	if variant=="WallChidori" then
+		-- Held off the wall for the whole charge (the hover window zeroes the fall).
+		a.airborne=true;a.airHold=self.now+spec.Channel+.05
+		self:cue(a,"CHIDORI • FROM THE WALL",spec.Channel)
+	end
 	self:effect("Channel",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(4,0.12,4),spec.Channel)
 	self:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique=spec.Id,channel=spec.Channel})
 	return true
@@ -1037,14 +1176,24 @@ end
 local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
 -- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
 -- opponent inside it is thrown out once. Repelling a strike opens a counter.
+local REFLECTED={kunai="kunai",shuriken="shuriken",marked="kunai"}
 function Combat:stepRotation(a)
-	local reach=Techniques.ROTATION_REACH or 7
+	-- Skill builds: a wider dome (rotationReach) and blades sent back at their
+	-- thrower (rotationReflect), both set by Techniques.Rotation from the spec.
+	local reach=a.rotationReach or Techniques.ROTATION_REACH or 7
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if p.a~=a and (p.position-a.root.Position).Magnitude<=reach+1.5 then
 			table.remove(self.projectiles,i)
 			self:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
 			Brawler.event(self,a,"Deflect")
+			local thrower=p.a
+			if a.rotationReflect and REFLECTED[p.kind] and thrower.health>0 and a.target==thrower then
+				local gap=(thrower.root.Position-p.position).Magnitude
+				local back=self:projectile(a,thrower.root.Position,p.speed,gap+8,p.damage,REFLECTED[p.kind],nil,{origin=p.position})
+				back.bounced=true
+				Brawler.event(self,a,"Reflect")
+			end
 		end
 	end
 	local b=a.target
@@ -1107,6 +1256,46 @@ function Combat:fireExplosion(p,position,direct)
 		end
 	end
 end
+-- Skill-build riders (SkillBuilds) on a clean projectile hit: a chase window
+-- (Wind Cut, or a ricochet/Geometry blade with ToolMastery.Chase), a closed
+-- chakra point (Vacuum Palm) and the fire patch of a blade that crossed the
+-- thrower's burning ground. Inert for canonical kits.
+function Combat:projectileRiders(p,target)
+	local riders=p.riders or {}
+	local owner=p.a
+	local mastery=owner.def.ToolMastery
+	local chase=riders.chase
+	if not chase and p.bounced and p.kind=="shuriken" and mastery and mastery.Chase then chase=mastery.Chase end
+	if chase then
+		owner.pursuitUntil=math.max(owner.pursuitUntil or 0,self.now+chase)
+		self:cue(owner,if p.kind=="wind" then "GUST • E TO CHASE" else "BLADE • E TO PURSUE",chase)
+		Brawler.event(self,owner,"RiderChase")
+	end
+	if riders.tenketsu and owner.def.GentleFist and target.health>0 then
+		Brawler.gentleFist(self,owner,target,false)
+		self:cue(owner,"VACUUM PALM • POINT CLOSED",.6)
+	end
+	if p.ignited and mastery and mastery.FireBlades then
+		self:addHazard(owner,Vector3.new(target.root.Position.X,self.match.origin.Y+.5,target.root.Position.Z),2.5,mastery.FireBlades.Patch,p.damage,"Fire")
+	end
+end
+-- Fire Geometry (skill build): a thrower's shuriken that crosses his own
+-- burning ground catches fire once (+damage, an ember on the client).
+function Combat:igniteBlade(p)
+	local fire=p.a.def.ToolMastery.FireBlades
+	for _,h in self.hazards do
+		if h.a==p.a and h.kind=="Fire" then
+			local d=p.position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude<=h.radius and math.abs(d.Y)<6 then
+				p.ignited=true;p.damage+=fire.Damage
+				self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=p.direction})
+				Brawler.event(self,p.a,"BladeIgnited")
+				return true
+			end
+		end
+	end
+	return false
+end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
@@ -1126,7 +1315,7 @@ function Combat:projectileHit(p,target,position,normal)
 		if p.kind=="sandwave" then
 			Techniques.bindInSand(self,p.a,target)
 		elseif p.kind=="wire" then
-			Techniques.wireBind(self,p.a,target)
+			Techniques.wireBind(self,p.a,target,p.riders,p.direction)
 		elseif p.kind=="palm" then
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
@@ -1139,6 +1328,7 @@ function Combat:projectileHit(p,target,position,normal)
 			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
 		end
+		if p.riders or p.bounced or p.ignited then self:projectileRiders(p,target) end
 	end
 	-- Blades thrown at a body pinned against a wall nail it there a little longer
 	-- (Itachi's precision): the wall phase is extended, never restarted.
@@ -1242,6 +1432,7 @@ function Combat:updateProjectiles(dt)
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if not p or self.match.phase~="Duel" then return end
+		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
 		local target=p.a.target

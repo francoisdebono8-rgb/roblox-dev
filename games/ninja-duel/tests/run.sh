@@ -40,6 +40,8 @@ run Systems    "$LUNE" run tests/Systems.spec.luau
 run Tools      "$LUNE" run tests/Tools.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau
+run Progression "$LUNE" run tests/Progression.spec.luau
+run Profiles   "$LUNE" run tests/Profiles.spec.luau
 
 run Preparation "$LUNE" run tests/Preparation.spec.luau
 exit $status

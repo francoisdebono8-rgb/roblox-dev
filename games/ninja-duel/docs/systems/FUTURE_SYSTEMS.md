@@ -4,7 +4,7 @@ NET-001, MOV-006 : le match actuel est joueur vs IA. PvP à deux clients et pred
 
 CHR-EXT-001/002 : Gaara code/tests cachés et ~32 archétypes futurs, dix blueprints détaillés préservés. Activation par décision explicite ; quatre personnages d’abord, sans perte des composants existants.
 
-PROG-001 : Prodigy League et Shinobi Path futures compétition/progression, ouverts quand le duel et la direction sont validés. Ne pas introduire maintenant inventaire progression/matchmaking/32kits.
+PROG-001 : Prodigy League et Shinobi Path futures compétition/progression, ouverts quand le duel et la direction sont validés. Ne pas introduire maintenant inventaire progression/matchmaking/32kits. Depuis DEC-012 (2026-10-16), la fondation arbres de compétences / budgets classés / IA à budget (PROG-001/002/003) existe côté serveur : [référence](PROGRESSION.md). League/Path complets, matchmaking, UI de build et monétisation restent futurs.
 
 PERF-001, NET-002, BAL-001, AI-001 : profiler cadence, interpolation/error/drops, poids du stade/spectateurs,10rematches/cleanup et device avant budget. Les anciennes ambitions multi-lanes/30joueurs et1300spectatorparts sont des hypothèses à mesurer, pas garanties. Balance sim seeds et durée AI sont distinctes de feel/balance humains ; IA pourrait mieux lire wall/seal/angle mais respecter coûts/infos et ne pas masquer les règles.
 

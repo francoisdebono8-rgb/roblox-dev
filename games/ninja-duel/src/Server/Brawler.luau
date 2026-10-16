@@ -9,6 +9,11 @@ local Config=require(Shared.Config)
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
+-- The move graph this actor fights with: its skill build's copy when it has
+-- one (Combat:add), otherwise the canonical MoveGraphs entry.
+function Brawler.graph(a)
+ return a.graph or MoveGraphs[a.fighterId]
+end
 function Brawler.free(a,now)
  return a.reaction==nil or now>=(a.reactionUntil or 0)
 end
@@ -91,6 +96,8 @@ function Brawler.start(c,a,name)
  -- Lateral routes leave an afterimage where the body was (a flash for Minato).
  if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
   c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})
+  -- Where the afterimage stays (a skill build's echo payoff turns it into a decoy).
+  a.stepFrom=a.root.Position
  end
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
@@ -237,12 +244,12 @@ function Brawler.request(c,a,action)
    end
    return Brawler.start(c,a,"Slam")
   end
-  local heavyGraph=MoveGraphs[a.fighterId] or {}
+  local heavyGraph=Brawler.graph(a) or {}
   if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
   if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
   return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
- local graph=MoveGraphs[a.fighterId] or {}
+ local graph=Brawler.graph(a) or {}
  local routes=graph.routes or {}
  if a.airborne then
   -- Air grammar: after an air hit the stick picks the follow-up.
@@ -293,7 +300,7 @@ function Brawler.request(c,a,action)
 end
 -- What a fighter's own version of a route adds on contact.
 function Brawler.routePayoff(c,a,b,p)
- local graph=MoveGraphs[a.fighterId]
+ local graph=Brawler.graph(a)
  local kind=graph and graph.onRoute and graph.onRoute[p.name]
  if not kind or b.health<=0 then return end
  local Techniques=require(script.Parent.Techniques)
@@ -334,6 +341,15 @@ function Brawler.routePayoff(c,a,b,p)
  elseif kind=="tenketsu" then
   -- Neji: the low route strikes a second chakra point.
   Brawler.gentleFist(c,a,b,false)
+ elseif kind=="echo" then
+  -- Itachi (skill build Feint Echo): the feint step's afterimage stays as a
+  -- genjutsu decoy; a swing at it is caught (Combat: MirageCatch on a whiff).
+  if b.def.Byakugan then c:cue(b,"BYAKUGAN • SEES THROUGH",.8);return end
+  b.illusionUntil=c.now+1.2
+  b.decoyPosition=c:clamp(a.stepFrom or a.root.Position)
+  c:effect("Echo",b.decoyPosition,a.color,Vector3.new(2,5,1),1.2)
+  c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
+  c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
  end
 end
 function Brawler.stopStyle(p)
@@ -374,6 +390,26 @@ function Brawler.splat(c,a,hit)
  end
  c:cue(a,"WALL SPLAT • Q ON IMPACT TO TECH",.6)
 end
+-- Wall Palm (skill build): the nearest wall the body can be driven into, within
+-- steer.Range and a cone of +-acos(steer.Cone) around the attacker's facing.
+-- Returns the flat direction toward it, or nil (the strike keeps its own line).
+function Brawler.wallAim(c,a,b,steer)
+ local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
+ if look.Magnitude<.05 then return nil end
+ look=look.Unit
+ local half=math.acos(math.clamp(steer.Cone,-1,1))
+ local params=c:rayParams(true)
+ local best,bestDistance
+ for k=-2,2 do
+  local dir=CFrame.fromAxisAngle(Vector3.yAxis,half*k/2):VectorToWorldSpace(look)
+  local hit=workspace:Raycast(b.root.Position,dir*steer.Range,params)
+  if hit and math.abs(hit.Normal.Y)<.3 and Brawler.splatSurface(hit.Instance) and (not bestDistance or hit.Distance<bestDistance) then
+   best,bestDistance=dir,hit.Distance
+  end
+ end
+ if best then c:cue(a,"WALL READ",.6);Brawler.event(c,a,"WallSteer") end
+ return best
+end
 -- Keep a splatted body on the wall a little longer (lighter hits, blades).
 function Brawler.pin(c,b,duration,source)
  if b.reaction~="WallSplat" or (b.splatPins or 0)>=Config.Wall.PinMax then return false end
@@ -388,7 +424,9 @@ end
 -- it off the wall back into the open for a fresh air phase; lighter hits pin
 -- it for a short extension. Both are limited, so a wall is a phase, not a trap.
 function Brawler.wallFollow(c,a,b,p)
- local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true
+ -- graph.wallBounce (skill build Trigram Rebound): extra moves that bounce too.
+ local bounce=(Brawler.graph(a) or {}).wallBounce
+ local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true or (bounce~=nil and bounce[p.name]==true)
  if heavy and not b.wallBounced then
   b.wallBounced=true
   local out=b.splatNormal or -a.root.CFrame.LookVector
@@ -434,9 +472,14 @@ end
 -- the victim's chakra recovery for a few seconds (stacks up to four).
 function Brawler.gentleFist(c,a,b,guarded)
  local g=a.def.GentleFist
- local boost=if (a.awakenUntil or 0)>c.now and a.def.Awakening then (a.def.Awakening.Drain or 1) else 1
- b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain)*boost)
- if not guarded then
+ local awake=(a.awakenUntil or 0)>c.now and a.def.Awakening
+ local boost=if awake then (a.def.Awakening.Drain or 1) else 1
+ -- Skill build (Full Field Points): awakened, the palms reach the points
+ -- through a guard (full drain and a closed point).
+ local through=guarded and awake and a.def.Awakening.GuardPoints==true
+ if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
+ b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
+ if not guarded or through then
   local points=if (b.tenketsuUntil or 0)>c.now then (b.tenketsu or 0) else 0
   b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
  end
@@ -502,10 +545,23 @@ function Brawler.hit(c,a,p)
 	end
   return true
  end
- local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
+ local forward=a.root.CFrame.LookVector
+ -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
+ -- in reach in front of the attacker, when there is one.
+ local steer=a.def.WallSteer
+ if steer and steer.Moves[p.name] then forward=Brawler.wallAim(c,a,b,steer) or forward end
+ local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
  Brawler.routePayoff(c,a,b,p)
+ -- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
+ -- arrival seals the body again, so the relocation chain continues.
+ local chain=a.def.Awakening and a.def.Awakening.FlashChain
+ if chain and (a.awakenUntil or 0)>c.now and a.teleportAt and c.now-a.teleportAt<.7 and b.health>0 then
+  local entry=require(script.Parent.Techniques).plant(c,a,b.root.Position,Vector3.yAxis,b)
+  entry.expires=c.now+chain
+  c:cue(a,"FLOW • SEALED AGAIN",.7);Brawler.event(c,a,"FlowSeal")
+ end
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end

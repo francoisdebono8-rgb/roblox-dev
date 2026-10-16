@@ -1611,7 +1611,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND13">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">5c90ae19b23091e19ccaf577ea2bbfa5bd47f82d12c99c413d3e451469039626</string>
+          <string name="Value">39c1a5ada0830454a69b5551c4ec12b99148c802749509847f33588550ded476</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND14">
@@ -2259,6 +2259,11 @@ local Config=require(Shared.Config)
 -- progression and all strike hit volumes/damage/feedback run through Bangla.
 local Brawler={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
+-- The move graph this actor fights with: its skill build's copy when it has
+-- one (Combat:add), otherwise the canonical MoveGraphs entry.
+function Brawler.graph(a)
+ return a.graph or MoveGraphs[a.fighterId]
+end
 function Brawler.free(a,now)
  return a.reaction==nil or now&gt;=(a.reactionUntil or 0)
 end
@@ -2341,6 +2346,8 @@ function Brawler.start(c,a,name)
  -- Lateral routes leave an afterimage where the body was (a flash for Minato).
  if name=="FeintStep" or name=="AirSwitch" or name=="CircleStep" then
   c:pushImpact(a.root.Position,if a.fighterId=="Flashstep" then "quickstep" else "afterimage",false,{owner=a.id,fighter=a.fighterId})
+  -- Where the afterimage stays (a skill build's echo payoff turns it into a decoy).
+  a.stepFrom=a.root.Position
  end
  if name=="WallDive" then a.airborne=true;a.airHold=c.now+spec.startup end
  Brawler.event(c,a,name)
@@ -2487,12 +2494,12 @@ function Brawler.request(c,a,action)
    end
    return Brawler.start(c,a,"Slam")
   end
-  local heavyGraph=MoveGraphs[a.fighterId] or {}
+  local heavyGraph=Brawler.graph(a) or {}
   if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
   if canChain and a.combo&gt;=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
   return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
- local graph=MoveGraphs[a.fighterId] or {}
+ local graph=Brawler.graph(a) or {}
  local routes=graph.routes or {}
  if a.airborne then
   -- Air grammar: after an air hit the stick picks the follow-up.
@@ -2543,7 +2550,7 @@ function Brawler.request(c,a,action)
 end
 -- What a fighter's own version of a route adds on contact.
 function Brawler.routePayoff(c,a,b,p)
- local graph=MoveGraphs[a.fighterId]
+ local graph=Brawler.graph(a)
  local kind=graph and graph.onRoute and graph.onRoute[p.name]
  if not kind or b.health&lt;=0 then return end
  local Techniques=require(script.Parent.Techniques)
@@ -2584,6 +2591,15 @@ function Brawler.routePayoff(c,a,b,p)
  elseif kind=="tenketsu" then
   -- Neji: the low route strikes a second chakra point.
   Brawler.gentleFist(c,a,b,false)
+ elseif kind=="echo" then
+  -- Itachi (skill build Feint Echo): the feint step's afterimage stays as a
+  -- genjutsu decoy; a swing at it is caught (Combat: MirageCatch on a whiff).
+  if b.def.Byakugan then c:cue(b,"BYAKUGAN • SEES THROUGH",.8);return end
+  b.illusionUntil=c.now+1.2
+  b.decoyPosition=c:clamp(a.stepFrom or a.root.Position)
+  c:effect("Echo",b.decoyPosition,a.color,Vector3.new(2,5,1),1.2)
+  c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
+  c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
  end
 end
 function Brawler.stopStyle(p)
@@ -2624,6 +2640,26 @@ function Brawler.splat(c,a,hit)
  end
  c:cue(a,"WALL SPLAT • Q ON IMPACT TO TECH",.6)
 end
+-- Wall Palm (skill build): the nearest wall the body can be driven into, within
+-- steer.Range and a cone of +-acos(steer.Cone) around the attacker's facing.
+-- Returns the flat direction toward it, or nil (the strike keeps its own line).
+function Brawler.wallAim(c,a,b,steer)
+ local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
+ if look.Magnitude&lt;.05 then return nil end
+ look=look.Unit
+ local half=math.acos(math.clamp(steer.Cone,-1,1))
+ local params=c:rayParams(true)
+ local best,bestDistance
+ for k=-2,2 do
+  local dir=CFrame.fromAxisAngle(Vector3.yAxis,half*k/2):VectorToWorldSpace(look)
+  local hit=workspace:Raycast(b.root.Position,dir*steer.Range,params)
+  if hit and math.abs(hit.Normal.Y)&lt;.3 and Brawler.splatSurface(hit.Instance) and (not bestDistance or hit.Distance&lt;bestDistance) then
+   best,bestDistance=dir,hit.Distance
+  end
+ end
+ if best then c:cue(a,"WALL READ",.6);Brawler.event(c,a,"WallSteer") end
+ return best
+end
 -- Keep a splatted body on the wall a little longer (lighter hits, blades).
 function Brawler.pin(c,b,duration,source)
  if b.reaction~="WallSplat" or (b.splatPins or 0)&gt;=Config.Wall.PinMax then return false end
@@ -2638,7 +2674,9 @@ end
 -- it off the wall back into the open for a fresh air phase; lighter hits pin
 -- it for a short extension. Both are limited, so a wall is a phase, not a trap.
 function Brawler.wallFollow(c,a,b,p)
- local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true
+ -- graph.wallBounce (skill build Trigram Rebound): extra moves that bounce too.
+ local bounce=(Brawler.graph(a) or {}).wallBounce
+ local heavy=p.name=="Heavy" or p.name=="Launcher" or p.name=="Slam" or p.name=="WallDive" or p.rasengan==true or (bounce~=nil and bounce[p.name]==true)
  if heavy and not b.wallBounced then
   b.wallBounced=true
   local out=b.splatNormal or -a.root.CFrame.LookVector
@@ -2684,9 +2722,14 @@ end
 -- the victim's chakra recovery for a few seconds (stacks up to four).
 function Brawler.gentleFist(c,a,b,guarded)
  local g=a.def.GentleFist
- local boost=if (a.awakenUntil or 0)&gt;c.now and a.def.Awakening then (a.def.Awakening.Drain or 1) else 1
- b.chakra=math.max(0,b.chakra-(if guarded then g.GuardDrain else g.Drain)*boost)
- if not guarded then
+ local awake=(a.awakenUntil or 0)&gt;c.now and a.def.Awakening
+ local boost=if awake then (a.def.Awakening.Drain or 1) else 1
+ -- Skill build (Full Field Points): awakened, the palms reach the points
+ -- through a guard (full drain and a closed point).
+ local through=guarded and awake and a.def.Awakening.GuardPoints==true
+ if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
+ b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
+ if not guarded or through then
   local points=if (b.tenketsuUntil or 0)&gt;c.now then (b.tenketsu or 0) else 0
   b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
  end
@@ -2752,10 +2795,23 @@ function Brawler.hit(c,a,p)
 	end
   return true
  end
- local impulse=a.root.CFrame.LookVector*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
+ local forward=a.root.CFrame.LookVector
+ -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
+ -- in reach in front of the attacker, when there is one.
+ local steer=a.def.WallSteer
+ if steer and steer.Moves[p.name] then forward=Brawler.wallAim(c,a,b,steer) or forward end
+ local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
  Brawler.routePayoff(c,a,b,p)
+ -- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
+ -- arrival seals the body again, so the relocation chain continues.
+ local chain=a.def.Awakening and a.def.Awakening.FlashChain
+ if chain and (a.awakenUntil or 0)&gt;c.now and a.teleportAt and c.now-a.teleportAt&lt;.7 and b.health&gt;0 then
+  local entry=require(script.Parent.Techniques).plant(c,a,b.root.Position,Vector3.yAxis,b)
+  entry.expires=c.now+chain
+  c:cue(a,"FLOW • SEALED AGAIN",.7);Brawler.event(c,a,"FlowSeal")
+ end
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
@@ -2876,6 +2932,134 @@ return Brawler
       </Item>
       <Item class="ModuleScript" referent="ND25">
         <Properties>
+          <string name="Name">BuildPresets</string>
+          <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
+-- preset is an ordinary build of the fighter's skill tree: Matches validates it
+-- through SkillBuilds like a player's, so an AI gets choices, never hidden
+-- stats. AI presets favour nodes the current AI already exercises (passive
+-- rules, routes, defence riders) over inputs it never makes.
+local Presets={}
+-- Budget per AI tier: Min/Max skill points, or within NearMax of the fighter's
+-- playable maximum (SkillBuilds.maxCost(fighter,true)).
+Presets.AITiers={
+	{Id="Beginner",Min=20,Max=30},
+	{Id="Medium",Min=40,Max=50},
+	{Id="Hard",Min=60,Max=70},
+	{Id="Boss",Min=80,Max=100},
+	{Id="Legendary",NearMax=8},
+}
+Presets.AI={
+	Flashstep={
+		Beginner={Why="Seals that survive his substitution: the base loop, a little more forgiving.",
+			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance"}},
+		Medium={Why="Adds the air spike that plants a destination and a cheaper Rasengan.",
+			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands"}},
+		Hard={Why="Rasengan drive pick-ups, longer seals and a parry that seals the attacker.",
+			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal"}},
+		Boss={Why="The full relocation fighter: string teleports and air exits.",
+			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal","StringFlash","AirExit","LongSeal"}},
+		Legendary={Why="Everything, with the floor-seal air spike.",
+			Nodes={"SealInk","LongSeal","SealCraft","KunaiRecall","ReturnSeal","FlashEconomy","StringFlash","SpikeAnchor","AirExit","ParrySeal","YellowFlow","QuickstepCut","GaleChase","RasenganFocus","RasenganDrive","DeepReserves","Endurance","QuickHands"}},
+	},
+	Mirage={
+		Beginner={Why="Crow counter and blades: calm defence first.",
+			Nodes={"EconomicRead","CrowCounter","Precision","WideFan","SteadyBreath"}},
+		Medium={Why="A longer Read and ricochets that lead to a chase.",
+			Nodes={"EconomicRead","CrowCounter","Precision","WideFan","SteadyBreath","QuickRead","PatientRead","RicochetChase"}},
+		Hard={Why="Feint echoes and the palm that finds the wall.",
+			Nodes={"EconomicRead","CrowCounter","Precision","WideFan","SteadyBreath","QuickRead","PatientRead","RicochetChase","FeintEcho","WallPalm","Composure"}},
+		Boss={Why="Flank blades and burning geometry: every angle is covered.",
+			Nodes={"EconomicRead","CrowCounter","Precision","WideFan","SteadyBreath","QuickRead","PatientRead","RicochetChase","FeintEcho","WallPalm","Composure","FlankBlades","FireTempo","FireGeometry"}},
+		Legendary={Why="Everything, with the patient Read and the awakened reflex.",
+			Nodes={"QuickRead","EconomicRead","PatientRead","MirageReflex","CrowCounter","Precision","WideFan","RicochetChase","FlankBlades","FeintEcho","WallPalm","ShortSigns","PhoenixVolley","FireTempo","FireGeometry","SteadyBreath","Composure"}},
+	},
+	GentleFist={
+		Beginner={Why="The Rotation defence and a second point on the circular step.",
+			Nodes={"SwiftRotation","WideDome","PrecisePalms","PointStep","Conditioning"}},
+		Medium={Why="Blades come back off the dome; the vacuum palm closes points.",
+			Nodes={"SwiftRotation","WideDome","PrecisePalms","PointStep","Conditioning","ReturningRotation","VacuumEconomy","SealingPalm"}},
+		Hard={Why="The outside-step substitution and deeper points.",
+			Nodes={"SwiftRotation","WideDome","PrecisePalms","PointStep","Conditioning","ReturningRotation","VacuumEconomy","SealingPalm","NarrowBlindSpot","OutsideStep","DeepPoints"}},
+		Boss={Why="Redirecting parries, wall rebounds and a lasting seal.",
+			Nodes={"SwiftRotation","WideDome","PrecisePalms","PointStep","Conditioning","ReturningRotation","VacuumEconomy","SealingPalm","NarrowBlindSpot","OutsideStep","DeepPoints","RedirectParry","TrigramRebound","LingeringSeal"}},
+		Legendary={Why="Everything, with the 64 Palms string ender.",
+			Nodes={"PrecisePalms","DeepPoints","PointStep","PalmBarrage","FullFieldPoints","SwiftRotation","WideDome","ReturningRotation","NarrowBlindSpot","RedirectParry","OutsideStep","VacuumEconomy","SealingPalm","LingeringSeal","TrigramRebound","Conditioning","ChakraControl","ChakraReserve"}},
+	},
+	Lion={
+		Beginner={Why="The Dancing Leaf from the heavy and cheaper fire.",
+			Nodes={"DancingLeaf","FireMastery","PhoenixTempo","Stamina","ChakraFlow"}},
+		Medium={Why="Wired flames into the Dragon Flame, sharper eyes.",
+			Nodes={"DancingLeaf","FireMastery","PhoenixTempo","Stamina","ChakraFlow","ShurikenFan","WiredFlames","SharperEyes"}},
+		Hard={Why="Sharingan counters, a faster Chidori, a lighter curse.",
+			Nodes={"DancingLeaf","FireMastery","PhoenixTempo","Stamina","ChakraFlow","ShurikenFan","WiredFlames","SharperEyes","SharinganCounter","ChidoriFocus","CurseControl"}},
+		Boss={Why="Blood for chakra and the counter-rush: the cornered assault.",
+			Nodes={"DancingLeaf","FireMastery","PhoenixTempo","Stamina","ChakraFlow","ShurikenFan","WiredFlames","SharperEyes","SharinganCounter","ChidoriFocus","CurseControl","CurseBlood","CounterRush"}},
+		Legendary={Why="Everything, with the wired flames.",
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","CounterRush","ShurikenFan","BlockedTool","WireCancel","WiredFlames","FireMastery","PhoenixTempo","ChidoriFocus","ChidoriEconomy","WallChidori","CurseControl","CurseBlood","Stamina","ChakraFlow","Reserves"}},
+	},
+}
+-- One example build per ranked bracket: what a fighter looks like at that budget.
+Presets.Ranked={
+	Flashstep={
+		Fundamentals={Why="Teleport strings, kunai recall and the quickstep cut.",
+			Nodes={"FlashEconomy","StringFlash","SealInk","KunaiRecall","QuickstepCut","DeepReserves","Endurance"}},
+		Identity={Why="The air chain: switch seal and air exits.",
+			Nodes={"FlashEconomy","StringFlash","SealInk","KunaiRecall","QuickstepCut","DeepReserves","Endurance","AirSwitchSeal","AirExit","SealCraft","LongSeal","QuickHands"}},
+		Advanced={Why="Return seals and the gust that re-enters.",
+			Nodes={"FlashEconomy","StringFlash","SealInk","KunaiRecall","QuickstepCut","DeepReserves","Endurance","AirSwitchSeal","AirExit","SealCraft","LongSeal","QuickHands","ReturnSeal","RasenganFocus","GaleChase"}},
+		Endgame={Why="The whole tree with the switch seal.",
+			Nodes={"SealInk","LongSeal","SealCraft","KunaiRecall","ReturnSeal","FlashEconomy","StringFlash","AirSwitchSeal","AirExit","ParrySeal","YellowFlow","QuickstepCut","GaleChase","RasenganFocus","RasenganDrive","DeepReserves","Endurance","QuickHands"}},
+	},
+	Mirage={
+		Fundamentals={Why="Read cancels, ricochet chases, the feint echo and the crow counter.",
+			Nodes={"QuickRead","ReadCancel","Precision","RicochetChase","FeintEcho","EconomicRead","CrowCounter"}},
+		Identity={Why="Geometry everywhere: wall palm, wide fan, flank blades.",
+			Nodes={"QuickRead","ReadCancel","Precision","RicochetChase","FeintEcho","EconomicRead","CrowCounter","WallPalm","WideFan","FlankBlades","SteadyBreath"}},
+		Advanced={Why="Adds burning geometry.",
+			Nodes={"QuickRead","ReadCancel","Precision","RicochetChase","FeintEcho","EconomicRead","CrowCounter","WallPalm","WideFan","FlankBlades","SteadyBreath","FireTempo","FireGeometry","Composure"}},
+		Endgame={Why="The whole tree with the Read cancel.",
+			Nodes={"QuickRead","EconomicRead","ReadCancel","MirageReflex","CrowCounter","Precision","WideFan","RicochetChase","FlankBlades","FeintEcho","WallPalm","ShortSigns","PhoenixVolley","FireTempo","FireGeometry","SteadyBreath","Composure"}},
+	},
+	GentleFist={
+		Fundamentals={Why="Kaiten cancels, returning blades, redirecting parries.",
+			Nodes={"PrecisePalms","KaitenCancel","SwiftRotation","ReturningRotation","NarrowBlindSpot","RedirectParry","Conditioning"}},
+		Identity={Why="Points everywhere: step, sealing palm, outside step.",
+			Nodes={"PrecisePalms","KaitenCancel","SwiftRotation","ReturningRotation","NarrowBlindSpot","RedirectParry","Conditioning","PointStep","VacuumEconomy","SealingPalm","OutsideStep","ChakraControl"}},
+		Advanced={Why="Wall rebounds and a wider dome.",
+			Nodes={"PrecisePalms","KaitenCancel","SwiftRotation","ReturningRotation","NarrowBlindSpot","RedirectParry","Conditioning","PointStep","VacuumEconomy","SealingPalm","OutsideStep","ChakraControl","TrigramRebound","WideDome","DeepPoints"}},
+		Endgame={Why="The whole tree with the 64 Palms ender.",
+			Nodes={"PrecisePalms","DeepPoints","PointStep","PalmBarrage","FullFieldPoints","SwiftRotation","WideDome","ReturningRotation","NarrowBlindSpot","RedirectParry","OutsideStep","VacuumEconomy","SealingPalm","LingeringSeal","TrigramRebound","Conditioning","ChakraControl","ChakraReserve"}},
+	},
+	Lion={
+		Fundamentals={Why="Dancing Leaf from the heavy, Sharingan counters, wire cancels.",
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","BlockedTool","WireCancel","ChidoriFocus","Stamina"}},
+		Identity={Why="Wire pins on the walls and the counter-rush.",
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","BlockedTool","WireCancel","ChidoriFocus","Stamina","ShurikenFan","WirePin","CounterRush","FireMastery","ChakraFlow"}},
+		Advanced={Why="A cheaper, faster Chidori and a lighter curse.",
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","BlockedTool","WireCancel","ChidoriFocus","Stamina","ShurikenFan","WirePin","CounterRush","FireMastery","ChakraFlow","CurseControl","ChidoriEconomy","PhoenixTempo","Reserves"}},
+		Endgame={Why="The whole tree with the wall wire.",
+			Nodes={"DancingLeaf","SharperEyes","SharinganCounter","CounterRush","ShurikenFan","BlockedTool","WireCancel","WirePin","FireMastery","PhoenixTempo","ChidoriFocus","ChidoriEconomy","WallChidori","CurseControl","CurseBlood","Stamina","ChakraFlow","Reserves"}},
+	},
+}
+function Presets.tier(id)
+	for _,tier in Presets.AITiers do if tier.Id==id then return tier end end
+	return nil
+end
+-- A copy of a preset's node list, or nil when it does not exist.
+function Presets.ai(fighterId,tier)
+	local preset=Presets.AI[fighterId] and Presets.AI[fighterId][tier]
+	return preset and table.clone(preset.Nodes)
+end
+function Presets.ranked(fighterId,bracketId)
+	local preset=Presets.Ranked[fighterId] and Presets.Ranked[fighterId][bracketId]
+	return preset and table.clone(preset.Nodes)
+end
+return Presets
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND26">
+        <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
 local Config = require(Shared.Config)
@@ -2890,7 +3074,6 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
-local MoveGraphs = require(Shared.MoveGraphs)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -2907,9 +3090,15 @@ function Combat.launchPoint(a,kind)
 	local cf=a.root.CFrame
 	return cf.Position+cf.RightVector*spec.side+Vector3.yAxis*spec.up+cf.LookVector*spec.forward
 end
-function Combat:add(id,model,hum,root,joints,definition)
-	local def = Fighters[definition]
+-- `kit` (optional) is a validated skill build from SkillBuilds: its own copy
+-- of the definition and move graph with the active nodes applied. Without one
+-- the actor reads Fighters/MoveGraphs directly: today's fighter, unchanged.
+function Combat:add(id,model,hum,root,joints,definition,kit)
+	assert(kit==nil or kit.fighterId==definition,"Skill build does not belong to "..tostring(definition))
+	local def = if kit then kit.def else Fighters[definition]
+	if kit then hum.MaxHealth=def.Health;hum.Health=def.Health;hum.WalkSpeed=def.Speed end
 	local a = { id=id,fighterId=definition,model=model,hum=hum,root=root,joints=joints,def=def,health=def.Health,
+		graph=kit and kit.graph,build=kit and {nodes=table.clone(kit.nodes),spent=kit.spent,bracket=kit.bracket},
 		chakra=def.Chakra or Config.Chakra,state="Neutral",untilTime=0,lockUntil=0,cooldowns={},move=Vector3.zero,
 		combo=0,lastAttack=-10,readUntil=0,illusionUntil=0,bonusUntil=0,dodgeUntil=0,invulnerableUntil=0,
 		color=Color3.fromRGB(table.unpack(def.Color)),guardHeld=false,lastMove=0, cue="",cueUntil=0,
@@ -3078,7 +3267,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		else self:cue(victim,"SAND SHIELD",.4) end
 		return false
 	end
+	local counterBefore=victim.counterUntil
 	local outcome,resolved=Defense.resolve(self,attacker,victim,amount,frontal,readEligible)
+	-- Skill build (Mirage Reflex): the read that just opened a Sharingan counter
+	-- also leaves a genjutsu decoy while awakened.
+	if (outcome=="Evaded" or outcome=="Parried") and victim.counterUntil~=counterBefore then self:reflexEcho(victim,attacker) end
 	-- A guard break keeps its full stun through the melee reaction that follows.
 	if outcome=="GuardBreak" then victim.stunFloorUntil=victim.untilTime end
 	if outcome=="Evaded" then Brawler.event(self,victim,"Evaded");self:cue(victim,"EVADED");return false end
@@ -3089,6 +3282,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.impactStyle=style;victim.impactAt=self.now
 		self:pushImpact(victim.root.Position,style,false)
 		self:effect("Parry",victim.root.Position,Color3.fromRGB(255,236,145),Vector3.new(3.8,3.8,3.8),.16)
+		if readEligible then self:parryRider(victim,attacker) end
 		return false
 	end
 	amount=resolved
@@ -3170,6 +3364,81 @@ function Combat:strike(a,damage,range,facing,heavy)
 	if self:targetValid(a,a.target,range,facing) then return self:damage(a,a.target,damage,heavy,true) end
 	return false
 end
+-- Skill-build hooks (SkillBuilds.OPTIONAL). Each reads one optional field of
+-- the actor's definition; canonical kits never carry these fields.
+-- Parry riders: ParrySeal (Minato) seals the stunned attacker for a teleport;
+-- ParryRedirect (Neji) turns him aside, closes a point and opens a counter.
+function Combat:parryRider(victim,attacker)
+	if attacker.health&lt;=0 then return end
+	local seal=victim.def.ParrySeal
+	if seal then
+		local entry=Techniques.plant(self,victim,attacker.root.Position,Vector3.yAxis,attacker)
+		entry.expires=self.now+seal
+		self:cue(victim,"PARRY • SEALED • 2 TO FOLLOW",.8)
+		Brawler.event(self,victim,"ParrySeal")
+	end
+	local redirect=victim.def.ParryRedirect
+	if redirect then
+		local away=attacker.root.Position-victim.root.Position;away=Vector3.new(away.X,0,away.Z)
+		if away.Magnitude&gt;.1 then
+			-- A quarter turn aside: his chest no longer faces the palm that follows.
+			local aside=Vector3.new(-away.Z,0,away.X).Unit
+			attacker.root.CFrame=CFrame.lookAt(attacker.root.Position,attacker.root.Position+aside)
+		end
+		if victim.def.GentleFist then for _=1,redirect.Points or 1 do Brawler.gentleFist(self,victim,attacker,false) end end
+		if redirect.Counter then victim.counterUntil=math.max(victim.counterUntil or 0,self.now+redirect.Counter) end
+		self:pushImpact(attacker.root.Position,"deflect",false,{owner=victim.id})
+		self:cue(victim,"REDIRECTED • COUNTER",.8);self:cue(attacker,"REDIRECTED",.6)
+		Brawler.event(self,victim,"Redirect")
+	end
+end
+-- Mirage Reflex (Itachi's awakening): the clean read that just opened a
+-- Sharingan counter leaves a genjutsu decoy on the attacker.
+function Combat:reflexEcho(victim,attacker)
+	local tune=victim.def.Awakening
+	local reflex=tune and tune.Reflex
+	if not reflex or (victim.awakenUntil or 0)&lt;=self.now or attacker==victim or attacker.health&lt;=0 or attacker.def.Byakugan then return end
+	attacker.illusionUntil=self.now+reflex
+	attacker.decoyPosition=self:clamp(victim.root.Position+victim.root.CFrame.RightVector*5)
+	self:effect("Echo",attacker.decoyPosition,victim.color,Vector3.new(2,5,1),reflex)
+	self:pushImpact(victim.root.Position,"mirage",false,{owner=victim.id,fighter=victim.fighterId,to=attacker.decoyPosition})
+	self:cue(victim,"FOCUS • MIRAGE REFLEX",.8);self:cue(attacker,"MIRAGE • TRUST THE BODY",reflex)
+	Brawler.event(self,victim,"MirageReflex")
+end
+-- Blood for Chakra (Sasuke's Curse Mark): awakened, the chakra a technique
+-- lacks is paid with health, never down to a KO.
+function Combat:curseBlood(a,spec)
+	local tune=a.def.Awakening
+	if not (tune and tune.BloodChakra) or (a.awakenUntil or 0)&lt;=self.now or a.chakra&gt;=spec.Cost then return false end
+	if (a.cooldowns[spec.Id] or 0)&gt;self.now or (a.sealedUntil or 0)&gt;self.now or self.match.techniquesDisabled then return false end
+	local debt=spec.Cost-a.chakra
+	if a.health&lt;=debt+1 then return false end
+	a.health-=debt;a.hum.Health=math.max(1,a.health);a.chakra=spec.Cost
+	self:cue(a,"CURSE MARK • BLOOD FOR CHAKRA",.8)
+	Brawler.event(self,a,"BloodChakra")
+	return true
+end
+-- Air Exit (Minato): Tool during a teleport arrival in the air throws a marked
+-- kunai straight down; where it lands becomes a seal. nil when not applicable.
+function Combat:arrivalThrow(a)
+	local throw=a.def.ArrivalThrow
+	if not throw or (a.flashUntil or 0)&lt;=self.now or not a.airborne or a.throwing
+		or (a.state~="TechniqueRecovery" and a.state~="TechniqueActive") then return nil end
+	if a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+	a.chakra-=Config.ToolCost
+	a.flashUntil=0;a.pending=nil;self:setState(a,"Neutral",0)
+	a.neutralToolAt=self.now+((a.def.ToolMastery and a.def.ToolMastery.Recover) or .55)
+	local below=Vector3.new(a.root.Position.X,self.match.origin.Y,a.root.Position.Z)
+	self:beginThrow(a,{kind="MarkedKunai",release=.08,count=1,aim=below,fire=function(_,target)
+		self:projectile(a,target,96,40,throw.Damage or 2,"marked",function(position,normal,victim)
+			if a.health&lt;=0 or self.match.phase~="Duel" then return end
+			Techniques.plant(self,a,position,normal,victim)
+		end)
+	end})
+	self:cue(a,"SEAL BELOW",.6)
+	Brawler.event(self,a,"ArrivalThrow")
+	return true
+end
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -3185,7 +3454,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 	self.projectileSerial=(self.projectileSerial or 0)+1
 	local p={id=self.projectileSerial,a=a,origin=start,position=start,direction=delta.Unit,speed=speed,range=range,remaining=range,
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
-		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy}
+		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
+		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
+		riders=opts.riders}
 	table.insert(self.projectiles,p)
 	self.urgent=true
 	return p
@@ -3293,6 +3564,8 @@ function Combat:substitute(a)
 	local attacker=a.target
 	local departure=a.root.Position
 	local destination,mode=nil,"hop"
+	-- Skill-build twist (SkillBuilds def.Substitution); nil for canonical kits.
+	local twist=a.def.Substitution
 	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
 	if seal then
 		destination=self:clamp(seal.position);mode="seal"
@@ -3300,11 +3573,19 @@ function Combat:substitute(a)
 		local back=-attacker.root.CFrame.LookVector*Vector3.new(1,0,1)
 		if back.Magnitude&gt;.1 then
 			local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+back.Unit*5.5)
-			local blocked=false
-			for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
-				if part.CanCollide then blocked=true;break end
+			if self:openSpot(attacker,spot) then destination=spot;mode="crow" end
+		end
+	elseif twist and twist.Mode=="flank" and attacker and attacker.health&gt;0 then
+		-- Neji's outside step: reappear on the attacker's flank, on the side he
+		-- was already on, else the other one.
+		local right=attacker.root.CFrame.RightVector*Vector3.new(1,0,1)
+		if right.Magnitude&gt;.1 then
+			right=right.Unit
+			local first=if (a.root.Position-attacker.root.Position):Dot(right)&gt;=0 then 1 else -1
+			for _,sign in {first,-first} do
+				local spot=self:clamp(Vector3.new(attacker.root.Position.X,self.match.origin.Y+3,attacker.root.Position.Z)+right*sign*5)
+				if self:openSpot(attacker,spot) then destination=spot;mode="flank";break end
 			end
-			if not blocked and workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil then destination=spot;mode="crow" end
 		end
 	end
 	if destination then
@@ -3332,6 +3613,17 @@ function Combat:substitute(a)
 	Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.airHold=0; a.throwing=nil;a.groundPose=nil
 	a.airborne=a.root.Position.Y&gt;self.match.origin.Y+4.2
 	if seal then Techniques.consumeSeal(self,a,seal) end
+	-- Skill-build twist riders: a seal left where he stood (Return Seal), a
+	-- counter window (Crow Counter, Outside Step), a free counter-rush.
+	local extra=""
+	if twist then
+		if twist.PlantDeparture then
+			Techniques.plant(self,a,Vector3.new(departure.X,self.match.origin.Y,departure.Z),Vector3.yAxis)
+			extra=" • SEAL LEFT"
+		end
+		if twist.Counter then a.counterUntil=self.now+twist.Counter;extra=extra.." • COUNTER" end
+		if twist.FreeRush then a.freeRushUntil=self.now+twist.FreeRush;extra=extra.." • E: COUNTER-RUSH" end
+	end
 	Brawler.event(self,a,"Substitute"); a.pending=nil; a.guardHeld=false; a.invulnerableUntil=self.now+0.24
 	a.comboHits=0;a.comboDamage=0
 	self:setState(a,"Recovery",0.14)
@@ -3343,8 +3635,16 @@ function Combat:substitute(a)
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-	self:cue(a,if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" else "SUBSTITUTION • REPOSITIONED")
+	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
+end
+-- A reappearance point next to `attacker` is usable when nothing solid fills it
+-- and the attacker has a clear line to it.
+function Combat:openSpot(attacker,spot)
+	for _,part in workspace:GetPartBoundsInBox(CFrame.new(spot),Vector3.new(2.6,4.6,2.6),self:overlapParams()) do
+		if part.CanCollide then return false end
+	end
+	return workspace:Raycast(attacker.root.Position,spot-attacker.root.Position,self:rayParams(true))==nil
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
@@ -3356,13 +3656,16 @@ function Combat:rush(a)
 	local cancel=a.state=="Recovery" and self.now&gt;=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
-	if a.chakra&lt;tune.Cost then return false,"Need chakra" end
+	-- Skill build (Counter-Rush): right after a substitution the dash is free.
+	local free=(a.freeRushUntil or 0)&gt;self.now
+	if a.chakra&lt;tune.Cost and not free then return false,"Need chakra" end
 	if self.now&lt;(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
 	if gap&lt;tune.MinRange then return false,"Too close" end
 	if gap&gt;tune.Range then return false,"Too far" end
 	if cancel then Bangla.close(a.pending) end
-	a.chakra-=tune.Cost;a.rushReadyAt=self.now+tune.Cooldown
+	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=tune.Cost end
+	a.rushReadyAt=self.now+tune.Cooldown
 	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
 	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
 	self:setState(a,"Rush",duration)
@@ -3510,7 +3813,11 @@ function Combat:request(a,action,aim,clientTime)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		local graph=MoveGraphs[a.fighterId] or {}
+		if a.def.ArrivalThrow then
+			local thrown,refusal=self:arrivalThrow(a)
+			if thrown~=nil then return thrown,refusal end
+		end
+		local graph=Brawler.graph(a) or {}
 		local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and (a.chainOpen or (a.hitBlocked and graph.blockCancels and graph.blockCancels.Tool)) and self.now&gt;=(a.chainAt or 0)
 		if (not chainCancel and not Rules.canAct(a,self.now)) or self.now&lt;a.neutralToolAt then return false,"Tool recovering" end
 		if a.throwing then return false,"Throwing" end
@@ -3519,7 +3826,7 @@ function Combat:request(a,action,aim,clientTime)
 		if not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
 		if not chainCancel then a.chakra-=Config.ToolCost end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
-		local disengage=(MoveGraphs[a.fighterId] or {}).disengage
+		local disengage=graph.disengage
 		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
@@ -3563,9 +3870,15 @@ function Combat:request(a,action,aim,clientTime)
 	a.stringCancel=nil
 	local cancelSlot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local cancelSpec=cancelSlot and a.def.Techniques[cancelSlot]
-	local cancelGraph=MoveGraphs[a.fighterId] or {}
+	-- Skill build (Blood for Chakra): the Curse Mark pays what the reserve lacks
+	-- before the usual checks, for a cancel or a neutral cast alike.
+	if cancelSpec and a.def.Awakening and a.def.Awakening.BloodChakra and ((a.state=="Recovery" and a.chainOpen) or Rules.canAct(a,self.now))
+		and Techniques[cancelSpec.Id].check(self,a,cancelSpec,self.now) then self:curseBlood(a,cancelSpec) end
+	local cancelGraph=Brawler.graph(a) or {}
+	-- The technique's own condition is checked before the string is spent (a
+	-- teleport cancel needs a seal); the original cancels have none.
 	if cancelSpec and cancelGraph.stringCancels and cancelGraph.stringCancels[cancelSpec.Id] and a.state=="Recovery" and a.chainOpen and self.now&gt;=(a.chainAt or 0)
-		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
+		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost and Techniques[cancelSpec.Id].check(self,a,cancelSpec,self.now) then
 		Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.state="Neutral";a.untilTime=self.now
 		a.stringCancel=cancelSpec.Id
 	end
@@ -3627,7 +3940,9 @@ function Combat:request(a,action,aim,clientTime)
  if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
-	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=.14 end
+	-- A string cancel shortens the wind-up to .14 s; a technique that is already
+	-- quicker (a teleport, the Read, Rotation) keeps its own.
+	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
 	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
@@ -3638,6 +3953,9 @@ function Combat:request(a,action,aim,clientTime)
 		if a.flashCancel then spec=table.clone(spec);spec.Channel=.05;variant="FlashRasengan"
 		elseif a.airborne then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.12);variant="RasenganDrop" end
 	end
+	-- Skill build (Wall Chidori): charged from a wall run, he hangs on the wall
+	-- for a shorter charge, then the thrust dives at the opponent.
+	if spec.Id=="Chidori" and spec.WallCharge and a.wall then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,spec.WallCharge);variant="WallChidori" end
 	a.flashCancel=nil
 	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
 	if not ok then return false,reason end
@@ -3668,6 +3986,11 @@ function Combat:request(a,action,aim,clientTime)
 	local flat=Vector3.new(offset.X,0,offset.Z)
 	if flat.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
 	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
+	if variant=="WallChidori" then
+		-- Held off the wall for the whole charge (the hover window zeroes the fall).
+		a.airborne=true;a.airHold=self.now+spec.Channel+.05
+		self:cue(a,"CHIDORI • FROM THE WALL",spec.Channel)
+	end
 	self:effect("Channel",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(4,0.12,4),spec.Channel)
 	self:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique=spec.Id,channel=spec.Channel})
 	return true
@@ -3916,14 +4239,24 @@ end
 local IMPACT_STYLE={wire="shuriken",kunai="kunai",marked="kunai",shuriken="shuriken",wind="jutsu",fireball="fire",phoenix="ember",palm="palmburst",sand="sandhit",sandwave="sandburst"}
 -- Eight Trigrams Rotation: blades and fire near the dome are deflected, and an
 -- opponent inside it is thrown out once. Repelling a strike opens a counter.
+local REFLECTED={kunai="kunai",shuriken="shuriken",marked="kunai"}
 function Combat:stepRotation(a)
-	local reach=Techniques.ROTATION_REACH or 7
+	-- Skill builds: a wider dome (rotationReach) and blades sent back at their
+	-- thrower (rotationReflect), both set by Techniques.Rotation from the spec.
+	local reach=a.rotationReach or Techniques.ROTATION_REACH or 7
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if p.a~=a and (p.position-a.root.Position).Magnitude&lt;=reach+1.5 then
 			table.remove(self.projectiles,i)
 			self:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
 			Brawler.event(self,a,"Deflect")
+			local thrower=p.a
+			if a.rotationReflect and REFLECTED[p.kind] and thrower.health&gt;0 and a.target==thrower then
+				local gap=(thrower.root.Position-p.position).Magnitude
+				local back=self:projectile(a,thrower.root.Position,p.speed,gap+8,p.damage,REFLECTED[p.kind],nil,{origin=p.position})
+				back.bounced=true
+				Brawler.event(self,a,"Reflect")
+			end
 		end
 	end
 	local b=a.target
@@ -3986,6 +4319,46 @@ function Combat:fireExplosion(p,position,direct)
 		end
 	end
 end
+-- Skill-build riders (SkillBuilds) on a clean projectile hit: a chase window
+-- (Wind Cut, or a ricochet/Geometry blade with ToolMastery.Chase), a closed
+-- chakra point (Vacuum Palm) and the fire patch of a blade that crossed the
+-- thrower's burning ground. Inert for canonical kits.
+function Combat:projectileRiders(p,target)
+	local riders=p.riders or {}
+	local owner=p.a
+	local mastery=owner.def.ToolMastery
+	local chase=riders.chase
+	if not chase and p.bounced and p.kind=="shuriken" and mastery and mastery.Chase then chase=mastery.Chase end
+	if chase then
+		owner.pursuitUntil=math.max(owner.pursuitUntil or 0,self.now+chase)
+		self:cue(owner,if p.kind=="wind" then "GUST • E TO CHASE" else "BLADE • E TO PURSUE",chase)
+		Brawler.event(self,owner,"RiderChase")
+	end
+	if riders.tenketsu and owner.def.GentleFist and target.health&gt;0 then
+		Brawler.gentleFist(self,owner,target,false)
+		self:cue(owner,"VACUUM PALM • POINT CLOSED",.6)
+	end
+	if p.ignited and mastery and mastery.FireBlades then
+		self:addHazard(owner,Vector3.new(target.root.Position.X,self.match.origin.Y+.5,target.root.Position.Z),2.5,mastery.FireBlades.Patch,p.damage,"Fire")
+	end
+end
+-- Fire Geometry (skill build): a thrower's shuriken that crosses his own
+-- burning ground catches fire once (+damage, an ember on the client).
+function Combat:igniteBlade(p)
+	local fire=p.a.def.ToolMastery.FireBlades
+	for _,h in self.hazards do
+		if h.a==p.a and h.kind=="Fire" then
+			local d=p.position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude&lt;=h.radius and math.abs(d.Y)&lt;6 then
+				p.ignited=true;p.damage+=fire.Damage
+				self:pushImpact(p.position,"ember",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=p.direction})
+				Brawler.event(self,p.a,"BladeIgnited")
+				return true
+			end
+		end
+	end
+	return false
+end
 function Combat:projectileHit(p,target,position,normal)
 	local style=IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
@@ -4005,7 +4378,7 @@ function Combat:projectileHit(p,target,position,normal)
 		if p.kind=="sandwave" then
 			Techniques.bindInSand(self,p.a,target)
 		elseif p.kind=="wire" then
-			Techniques.wireBind(self,p.a,target)
+			Techniques.wireBind(self,p.a,target,p.riders,p.direction)
 		elseif p.kind=="palm" then
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
@@ -4018,6 +4391,7 @@ function Combat:projectileHit(p,target,position,normal)
 			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
 		end
+		if p.riders or p.bounced or p.ignited then self:projectileRiders(p,target) end
 	end
 	-- Blades thrown at a body pinned against a wall nail it there a little longer
 	-- (Itachi's precision): the wall phase is extended, never restarted.
@@ -4121,6 +4495,7 @@ function Combat:updateProjectiles(dt)
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if not p or self.match.phase~="Duel" then return end
+		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
 		local target=p.a.target
@@ -4238,7 +4613,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -4280,7 +4655,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -4336,7 +4711,12 @@ function Elements.phoenix(c,a,pending,now)
 			c:schedule(now+.14+k*.07,function()
 				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
 				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
-				c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+				-- Skill build (Wired Flames): the hidden blades trail wire and bind.
+				if spec.WiredBlades then
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
+				else
+					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken")
+				end
 			end)
 		end
 	end
@@ -4345,14 +4725,15 @@ end
 function Elements.wind(c,a,pending)
 	local aim=pending.aim
 	if (aim-a.root.Position).Magnitude&lt;1 then aim=a.root.Position+a.root.CFrame.LookVector*pending.spec.Range end
-	c:projectile(a,aim,88,pending.spec.Range,pending.spec.Damage,"wind",nil,{radius=1.4})
+	-- Skill build (Gale Chase): a gust that connects opens the chase window.
+	c:projectile(a,aim,88,pending.spec.Range,pending.spec.Damage,"wind",nil,{radius=1.4,riders=if pending.spec.Chase then {chase=pending.spec.Chase} else nil})
 	c:cue(a,"WIND • CUTTING LANE")
 end
 return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND28">
+      <Item class="Script" referent="ND29">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4380,7 +4761,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -4394,7 +4775,27 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local SkillBuilds=require(script.Parent.SkillBuilds)
+local BuildPresets=require(script.Parent.BuildPresets)
 local Matches={}; Matches.__index=Matches
+-- Skill builds (PROG-001..003) are resolved and validated here, on the server:
+-- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
+-- or, for the AI, {preset="Hard"}; with a ranked bracket the build must also
+-- fit its budget. Returns true + kit (nil = no build) or false + reason.
+function Matches.resolveKit(fighterId,spec,bracket)
+	if spec==nil then return true,nil end
+	if type(spec)~="table" then return false,"Invalid build" end
+	local nodes=spec.nodes
+	if spec.preset~=nil then
+		nodes=BuildPresets.ai(fighterId,spec.preset)
+		if not nodes then return false,"Unknown AI preset" end
+	end
+	local kit,reason
+	if bracket~=nil then kit,reason=SkillBuilds.admit(bracket,fighterId,nodes,spec.unlocked)
+	else kit,reason=SkillBuilds.build(fighterId,nodes,{unlocked=spec.unlocked}) end
+	if not kit then return false,reason end
+	return true,kit
+end
 function Matches.new(remote)
 	local folder=Instance.new("Folder"); folder.Name="NinjaDuels"; folder.Parent=workspace
 	return setmetatable({remote=remote,folder=folder,sessions={},nextLane=0,epoch=0},Matches)
@@ -4419,21 +4820,35 @@ function Matches:selection(player)
 	player.Character=nil; s.phase="Selection"; s.epoch+=1
 	self:send(player,{phase="Selection",epoch=s.epoch})
 end
-function Matches:start(player,playerId,botId,training)
+-- `options` (optional): {player=spec, bot=spec, bracket=id} skill builds (see
+-- Matches.resolveKit). An invalid or over-budget build refuses the start. No
+-- options: both fighters are exactly today's kits.
+function Matches:start(player,playerId,botId,training,options)
 	local s=self:session(player)
 	if not Fighters[playerId] or not Fighters[botId] then return false end
+	local playerKit,botKit
+	if options~=nil then
+		if type(options)~="table" then return false,"Invalid options" end
+		local ok,result=Matches.resolveKit(playerId,options.player,options.bracket)
+		if not ok then return false,result end
+		playerKit=result
+		ok,result=Matches.resolveKit(botId,options.bot,options.bracket)
+		if not ok then return false,result end
+		botKit=result
+	end
 	self:destroy(s); s.epoch+=1
 	s.playerId=playerId; s.botId=botId; s.winner=nil; s.phase="Duel"; s.origin=Vector3.new((s.lane-1)*520,0,0)
+	s.options=options
 	s.folder=Instance.new("Folder"); s.folder.Name="Duel_"..s.lane; s.folder.Parent=self.folder
 	s.effects=Instance.new("Folder"); s.effects.Name="Effects"; s.effects.Parent=s.folder
 	World.arena(s.folder,s.origin)
 	s.combat=Combat.new(s); s.combat.now=workspace:GetServerTimeNow()
-	local function actor(id,def,position,look)
+	local function actor(id,def,position,look,kit)
 		local model,hum,root,joints=World.rig(s.folder,Fighters[def],CFrame.lookAt(position,look),id)
-		return s.combat:add(id,model,hum,root,joints,def)
+		return s.combat:add(id,model,hum,root,joints,def,kit)
 	end
-	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance))
-	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance))
+	s.human=actor("PlayerFighter",playerId,s.origin+Vector3.new(0,3,Config.StartDistance),s.origin+Vector3.new(0,3,-Config.StartDistance),playerKit)
+	s.bot=actor("AIFighter",botId,s.origin+Vector3.new(0,3,-Config.StartDistance),s.origin+Vector3.new(0,3,Config.StartDistance),botKit)
 	s.human.target=s.bot; s.bot.target=s.human; s.human.locked=true; s.bot.locked=true
 	player.Character=s.human.model
 	s.ai=AI.new(s.combat,s.bot,player.UserId%100000+ s.epoch)
@@ -4574,7 +4989,7 @@ function Matches:request(player,payload)
 			if type(payload.player)~="string" or type(payload.bot)~="string" then return end
 			s.lastLifecycle=clock; self:start(player,payload.player,payload.bot,action=="Tutorial")
 		elseif action=="Rematch" and (s.phase=="Result" or s.finishing) then
-			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil)
+			s.lastLifecycle=clock; self:start(player,s.playerId,s.botId,s.tutorial~=nil,s.options)
 		elseif action=="Selection" and (s.phase=="Result" or s.finishing or s.tutorial) then s.lastLifecycle=clock; self:selection(player) end
 		return
 	end
@@ -4639,7 +5054,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -4889,7 +5304,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -5154,7 +5569,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -5630,7 +6045,1223 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
+        <Properties>
+          <string name="Name">ProfileRepository</string>
+          <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
+-- exclusive leased writer (session lock) with fenced revisions; every write is
+-- a fixed snapshot with an idempotency token, so an ambiguous UpdateAsync is
+-- retried without applying twice; a failed or corrupt read never becomes a
+-- writable default. Lease/fence/retry logic from Codex's foundation (29a9ec1),
+-- rebased on the skill profile (ProfileSchema), without economy.
+--
+-- Store adapter contract: update(key, transform) (UpdateAsync semantics: the
+-- transform may run more than once and returns nil to abort) and read(key).
+-- Repo.memoryStore() is the deterministic test double; Repo.dataStore() is the
+-- real Roblox adapter, never created implicitly. No game script loads profiles
+-- yet (player lifecycle, BindToClose and budgets are the next step).
+local S=require(script.Parent.ProfileSchema)
+local Repo={};Repo.__index=Repo
+Repo.Config={LeaseSeconds=120,SaveInterval=30,MaxRetries=3,
+	StoreName="NinjaDuel_Progression",DevStoreName="NinjaDuel_Progression_DEV",Scope="skills_v1"}
+function Repo.new(store,options)
+	options=options or {}
+	assert(store and type(store.update)=="function" and type(store.read)=="function","Store adapter required")
+	local owner=options.owner or game:GetService("HttpService"):GenerateGUID(false)
+	assert(S.id(owner),"Owner token required")
+	return setmetatable({store=store,config=options.config or Repo.Config,owner=owner,clock=options.clock or os.time,
+		sleep=options.sleep or task.wait,handles={},loading={}},Repo)
+end
+local function keyOf(id) return "p_"..id end
+function Repo:_update(key,transform)
+	local reason
+	for attempt=1,self.config.MaxRetries do
+		local ok,result=pcall(function() return self.store:update(key,transform) end)
+		if ok then return true,result end
+		reason=tostring(result)
+		if attempt&lt;self.config.MaxRetries then self.sleep(math.min(2,.2*2^(attempt-1))) end
+	end
+	return false,reason
+end
+-- A stored record: {envelopeVersion, revision, lease={owner,expires}, profile, lastWrite}.
+local function envelope(raw)
+	if raw==nil then return nil end
+	assert(S.serializable(raw) and type(raw)=="table" and raw.envelopeVersion==1 and S.integer(raw.revision),"Corrupt/future envelope")
+	if raw.lease then
+		assert(type(raw.lease)=="table" and S.id(raw.lease.owner) and type(raw.lease.expires)=="number" and raw.lease.expires==raw.lease.expires and math.abs(raw.lease.expires)&lt;1e12,"Invalid lease")
+	end
+	local p,reason=S.migrate(raw.profile)
+	assert(p,reason)
+	local result=S.copy(raw)
+	result.profile=p
+	return result
+end
+-- Acquire the lease and the profile (a missing profile starts fresh; a corrupt,
+-- foreign or locked one is refused and left untouched).
+function Repo:load(id)
+	if not S.profileId(id) then return nil,"Profile id required" end
+	if self.loading[id] then return nil,"Load busy" end
+	if self.handles[id] then return nil,"Already loaded" end
+	self.loading[id]=true
+	local reason
+	local ok,value=self:_update(keyOf(id),function(raw)
+		local okRead,current=pcall(envelope,raw)
+		if not okRead then reason=tostring(current);return nil end
+		local now=self.clock()
+		if current and current.profile.id~=id then reason="Identity mismatch";return nil end
+		if current and current.lease and current.lease.owner~=self.owner and current.lease.expires&gt;now then reason="Session locked";return nil end
+		current=current or {envelopeVersion=1,revision=0,profile=S.new(id)}
+		current.revision+=1
+		current.lease={owner=self.owner,expires=now+self.config.LeaseSeconds}
+		return current
+	end)
+	self.loading[id]=nil
+	if not ok or not value then return nil,reason or value or "Load failed" end
+	local h={id=id,data=S.copy(value.profile),revision=value.revision,leaseUntil=value.lease.expires,state="Ready",busy=false,writeNumber=0,lastSave=self.clock()}
+	self.handles[id]=h
+	return h
+end
+function Repo:ready(h)
+	if self.handles[h.id]~=h or h.state~="Ready" or h.busy then return false,"Profile not ready / busy" end
+	if self.clock()&gt;=h.leaseUntil then h.state="Lost";return false,"Lease expired" end
+	return true
+end
+function Repo:view(h) return S.copy(h.data),h.state end
+-- Run a ProfileSchema command on the loaded profile (in memory until saved).
+function Repo:apply(h,sequence,kind,args)
+	local ready,reason=self:ready(h)
+	if not ready then return false,reason end
+	local ok,data,result,replayed=pcall(S.apply,h.data,sequence,kind,args)
+	if not ok then return false,tostring(data) end
+	h.data=data
+	return true,S.copy(result),replayed
+end
+function Repo:save(h,release)
+	if self.handles[h.id]~=h or h.busy or h.state=="Closed" or h.state=="Lost" then return false,"Profile unavailable / busy" end
+	if self.clock()&gt;=h.leaseUntil then h.state="Lost";return false,"Lease expired" end
+	h.busy=true
+	if not h.pending then
+		local valid,reason=S.validate(h.data)
+		if not valid then h.busy=false;return false,reason end
+		h.writeNumber+=1
+		h.pending={token=self.owner..":"..h.writeNumber,revision=h.revision,data=S.copy(h.data),release=release==true}
+	end
+	local packet=h.pending
+	local reason
+	local ok,value=self:_update(keyOf(h.id),function(raw)
+		local okRead,current=pcall(envelope,raw)
+		if not okRead then reason=tostring(current);return nil end
+		local now=self.clock()
+		-- An ambiguous write that did commit is recognised by its token.
+		if current and current.lastWrite==packet.token and current.revision==packet.revision+1 then return current end
+		if not current or current.profile.id~=h.id or current.revision~=packet.revision or not current.lease
+			or current.lease.owner~=self.owner or current.lease.expires&lt;=now then reason="Writer fence / lease lost";return nil end
+		current.profile=S.copy(packet.data);current.revision+=1;current.lastWrite=packet.token
+		current.lease=if packet.release then nil else {owner=self.owner,expires=now+self.config.LeaseSeconds}
+		return current
+	end)
+	h.busy=false
+	if not ok then h.state="SaveUncertain";return false,value end
+	if not value then h.state="Lost";return false,reason or "Save rejected" end
+	h.pending=nil;h.revision=value.revision;h.lastSave=self.clock()
+	if packet.release then h.state="Closed";self.handles[h.id]=nil
+	else
+		if not value.lease or value.lease.owner~=self.owner or value.lease.expires&lt;=self.clock() then h.state="Lost";return false,"Lease lost after commit" end
+		h.leaseUntil=value.lease.expires;h.state="Ready"
+	end
+	if release and not packet.release then return self:save(h,true) end
+	return true
+end
+-- Read-only check of a stored profile; never creates one.
+function Repo:verify(id)
+	if not S.profileId(id) then return nil,"Profile id required" end
+	local ok,value=pcall(function() return self.store:read(keyOf(id)) end)
+	if not ok then return nil,tostring(value) end
+	if value==nil then return nil,"Missing saved profile" end
+	local valid,record=pcall(envelope,value)
+	if not valid then return nil,tostring(record) end
+	if record.profile.id~=id then return nil,"Identity mismatch" end
+	return record
+end
+-- Explicit host scheduling (periodic save + lease renewal); never installed by itself.
+function Repo:pulse()
+	local failures={}
+	for id,h in self.handles do
+		if not h.busy and (h.state=="SaveUncertain" or self.clock()-h.lastSave&gt;=self.config.SaveInterval) then
+			local ok,reason=self:save(h)
+			if not ok then failures[id]=reason end
+		end
+	end
+	return failures
+end
+function Repo:closeAll()
+	local failures={}
+	for id,h in self.handles do
+		local ok,reason=self:save(h,true)
+		if not ok then failures[id]=reason end
+	end
+	return failures
+end
+
+-- In-memory store: deterministic UpdateAsync stand-in with fault injection
+-- (failBefore: unavailable; failAfter: commits then errors; repeatTransform:
+-- runs the transform twice). Copies emulate the serialization boundary.
+local Memory={};Memory.__index=Memory
+function Repo.memoryStore(data)
+	return setmetatable({data=S.copy(data or {}),failBefore=0,failAfter=0,repeatTransform=false,calls=0},Memory)
+end
+function Memory:update(key,transform)
+	self.calls+=1
+	if self.failBefore&gt;0 then self.failBefore-=1;error("Simulated store unavailable") end
+	local value=transform(S.copy(self.data[key]))
+	if self.repeatTransform then value=transform(S.copy(self.data[key])) end
+	if value==nil then return nil end
+	assert(S.serializable(value),"Invalid serialized record")
+	self.data[key]=S.copy(value)
+	if self.failAfter&gt;0 then self.failAfter-=1;error("Simulated ambiguous commit") end
+	return S.copy(value)
+end
+function Memory:read(key)
+	if self.failBefore&gt;0 then self.failBefore-=1;error("Simulated read unavailable") end
+	return S.copy(self.data[key])
+end
+
+-- Real Roblox DataStore adapter, guarded: never created unless enabled=true.
+-- In Studio it only opens the DEV store (Studio sessions can never touch live
+-- data); on a live server it also requires live=true. Keys are validated.
+local DataStore={};DataStore.__index=DataStore
+function Repo.validKey(key)
+	return type(key)=="string" and #key&lt;=50 and (string.match(key,"^p_u_%d+$")~=nil or string.match(key,"^p_dev_[%w_%-]+$")~=nil)
+end
+function Repo.dataStore(options)
+	options=options or {}
+	if options.enabled~=true then return nil,"Persistence disabled" end
+	local name
+	if game:GetService("RunService"):IsStudio() then name=Repo.Config.DevStoreName
+	elseif options.live==true then name=Repo.Config.StoreName
+	else return nil,"Live persistence requires live=true" end
+	local store=game:GetService("DataStoreService"):GetDataStore(name,Repo.Config.Scope)
+	return setmetatable({store=store,name=name},DataStore)
+end
+function DataStore:update(key,transform)
+	assert(Repo.validKey(key),"Invalid profile key")
+	return self.store:UpdateAsync(key,transform)
+end
+function DataStore:read(key)
+	assert(Repo.validKey(key),"Invalid profile key")
+	local options=Instance.new("DataStoreGetOptions");options.UseCache=false
+	return self.store:GetAsync(key,options)
+end
+return Repo
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND35">
+        <Properties>
+          <string name="Name">ProfileSchema</string>
+          <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
+-- the nodes unlocked with them and the saved builds (one may be selected).
+-- Versioned and JSON-safe, validated on every load and every commit, never
+-- repaired silently. Points are granted by the server only: no currency, no
+-- purchase. Serialization limits, the command ledger and the refusal to repair
+-- come from Codex's foundation (29a9ec1), without its pack/collection economy.
+local SkillBuilds=require(script.Parent.SkillBuilds)
+local S={Version=1,MaxPoints=999,MaxBuilds=8,MaxSequence=1000000000}
+S.copy=SkillBuilds.copy
+function S.integer(n,max)
+	return type(n)=="number" and n==n and n&gt;=0 and n%1==0 and n&lt;=(max or S.MaxSequence)
+end
+function S.id(v)
+	return type(v)=="string" and #v&gt;0 and #v&lt;=64 and string.match(v,"^[%w_.:%-]+$")~=nil
+end
+-- Live players are u_&lt;UserId&gt;; tooling and tests use dev_&lt;name&gt;.
+function S.profileId(v)
+	return type(v)=="string" and #v&lt;=40 and (string.match(v,"^u_%d+$")~=nil or string.match(v,"^dev_[%w_%-]+$")~=nil)
+end
+function S.buildName(v)
+	return type(v)=="string" and #v&gt;=1 and #v&lt;=24 and string.match(v,"^[%w _%-]+$")~=nil
+end
+-- Bounded JSON-safe data: finite numbers, short strings, no cycles, arrays
+-- without holes, string or array keys only.
+function S.serializable(value)
+	local seen,nodes,bytes={},0,0
+	local function walk(v,depth)
+		nodes+=1
+		if nodes&gt;20000 or depth&gt;16 then return false end
+		if type(v)=="number" then return v==v and math.abs(v)&lt;math.huge end
+		if type(v)=="boolean" or v==nil then return true end
+		if type(v)=="string" then bytes+=#v;return #v&lt;=2048 and bytes&lt;1000000 end
+		if type(v)~="table" or seen[v] then return false end
+		seen[v]=true
+		local numeric,text,count=false,false,0
+		for k,item in v do
+			count+=1
+			if type(k)=="number" then numeric=true;if not S.integer(k,20000) or k&lt;1 then return false end
+			elseif type(k)=="string" then text=true else return false end
+			if not walk(k,depth+1) or not walk(item,depth+1) then return false end
+		end
+		if numeric and (text or count~=#v) then return false end
+		seen[v]=nil
+		return true
+	end
+	return walk(value,0)
+end
+function S.new(id)
+	assert(S.profileId(id),"Profile id must be u_&lt;UserId&gt; or dev_&lt;name&gt;")
+	return {schemaVersion=S.Version,id=id,fighters={},sequence=0}
+end
+function S.fighter() return {earned=0,unlocked={},builds={}} end
+-- Skill points spent on unlocks (derived, never stored).
+function S.spent(fighterId,record)
+	local total=0
+	for id in record.unlocked do
+		local node=SkillBuilds.node(fighterId,id)
+		total+=if node then node.Cost else 0
+	end
+	return total
+end
+local function unlockReady(fighterId,node,unlocked)
+	for _,need in node.Requires or {} do if not unlocked[need] then return false,node.Id.." requires "..need end end
+	if node.RequiresAny then
+		for _,need in node.RequiresAny do if unlocked[need] then return true end end
+		return false,node.Id.." requires one of "..table.concat(node.RequiresAny,", ")
+	end
+	return true
+end
+local function fighterValid(fighterId,record)
+	if type(record)~="table" or not S.integer(record.earned,S.MaxPoints) then return false,"points" end
+	if type(record.unlocked)~="table" or type(record.builds)~="table" then return false,"record" end
+	for id,flag in record.unlocked do
+		local node=SkillBuilds.node(fighterId,id)
+		if flag~=true or not node then return false,"unknown unlocked node "..tostring(id) end
+		local ok,reason=unlockReady(fighterId,node,record.unlocked)
+		if not ok then return false,reason end
+	end
+	if S.spent(fighterId,record)&gt;record.earned then return false,"more points spent than earned" end
+	local count=0
+	for name,build in record.builds do
+		count+=1
+		if count&gt;S.MaxBuilds or not S.buildName(name) or type(build)~="table" or type(build.nodes)~="table" then return false,"builds" end
+		local ok,reason=SkillBuilds.validate(fighterId,build.nodes,{unlocked=record.unlocked})
+		if not ok then return false,"build "..name..": "..reason end
+	end
+	if record.selected~=nil and record.builds[record.selected]==nil then return false,"selected build missing" end
+	return true
+end
+function S.validate(p)
+	if not S.serializable(p) then return false,"Unsafe serialized data" end
+	if type(p)~="table" or p.schemaVersion~=S.Version or not S.profileId(p.id) or not S.integer(p.sequence) or type(p.fighters)~="table" then return false,"Profile header/version" end
+	for fighterId,record in p.fighters do
+		if not SkillBuilds.tree(fighterId) then return false,"No skill tree for "..tostring(fighterId) end
+		local ok,reason=fighterValid(fighterId,record)
+		if not ok then return false,fighterId..": "..reason end
+	end
+	local last=p.lastCommand
+	if last~=nil and (type(last)~="table" or last.sequence~=p.sequence or not S.id(last.kind)) then return false,"Command ledger" end
+	return true
+end
+-- Only the current version exists; a future or unknown one is refused, never
+-- rewritten by an older server.
+function S.migrate(raw)
+	if not S.serializable(raw) or type(raw)~="table" or raw.schemaVersion~=S.Version then return nil,"Unknown/future schema" end
+	local p=S.copy(raw)
+	local ok,reason=S.validate(p)
+	if not ok then return nil,reason end
+	return p
+end
+-- Commands: server-side mutations, run on a copy by S.apply (an error aborts
+-- the whole command). Refusals are errors with a readable reason.
+local function record(p,fighterId)
+	assert(SkillBuilds.tree(fighterId),"No skill tree for "..tostring(fighterId))
+	p.fighters[fighterId]=p.fighters[fighterId] or S.fighter()
+	return p.fighters[fighterId]
+end
+local function buildCount(r)
+	local n=0
+	for _ in r.builds do n+=1 end
+	return n
+end
+S.Commands={}
+-- Points come from the server only (match rewards, tooling): never a purchase.
+function S.Commands.grant(p,args)
+	assert(S.integer(args.amount,S.MaxPoints) and args.amount&gt;0,"Invalid amount")
+	local r=record(p,args.fighter)
+	assert(r.earned+args.amount&lt;=S.MaxPoints,"Point cap")
+	r.earned+=args.amount
+	return {fighter=args.fighter,earned=r.earned}
+end
+-- Unlock with earned points. Both options of an exclusive choice may be
+-- unlocked; the build decides which one is active.
+function S.Commands.unlock(p,args)
+	local r=record(p,args.fighter)
+	local node=SkillBuilds.node(args.fighter,args.node)
+	assert(node,"Unknown node")
+	assert(SkillBuilds.wired(args.fighter,node.Id),"Node not available yet")
+	assert(not r.unlocked[node.Id],"Already unlocked")
+	local ready,reason=unlockReady(args.fighter,node,r.unlocked)
+	assert(ready,reason)
+	assert(r.earned-S.spent(args.fighter,r)&gt;=node.Cost,"Not enough skill points")
+	r.unlocked[node.Id]=true
+	return {fighter=args.fighter,node=node.Id,free=r.earned-S.spent(args.fighter,r)}
+end
+function S.Commands.saveBuild(p,args)
+	local r=record(p,args.fighter)
+	assert(S.buildName(args.name),"Invalid build name")
+	assert(r.builds[args.name]~=nil or buildCount(r)&lt;S.MaxBuilds,"Too many builds")
+	local ok,reason=SkillBuilds.validate(args.fighter,args.nodes,{unlocked=r.unlocked})
+	assert(ok,reason)
+	local nodes=SkillBuilds.apply(args.fighter,args.nodes).nodes
+	r.builds[args.name]={nodes=nodes}
+	return {fighter=args.fighter,name=args.name,cost=SkillBuilds.cost(args.fighter,nodes)}
+end
+function S.Commands.deleteBuild(p,args)
+	local r=record(p,args.fighter)
+	assert(r.builds[args.name],"Unknown build")
+	r.builds[args.name]=nil
+	if r.selected==args.name then r.selected=nil end
+	return {fighter=args.fighter,deleted=args.name}
+end
+-- name=nil selects the base fighter (no node active).
+function S.Commands.selectBuild(p,args)
+	local r=record(p,args.fighter)
+	assert(args.name==nil or r.builds[args.name],"Unknown build")
+	r.selected=args.name
+	return {fighter=args.fighter,selected=args.name}
+end
+-- Copy/validate/commit. The same sequence and kind replays the stored result
+-- (an ambiguous save or a repeated request never applies twice); an older or
+-- skipped sequence is refused.
+function S.apply(profile,sequence,kind,args)
+	assert(S.integer(sequence) and sequence&gt;0,"Invalid command sequence")
+	if sequence==profile.sequence and profile.lastCommand and profile.lastCommand.kind==kind then
+		return S.copy(profile),S.copy(profile.lastCommand.result),true
+	end
+	assert(sequence==profile.sequence+1,"Stale or gapped command")
+	local command=S.Commands[kind]
+	assert(command,"Unknown command")
+	assert(type(args)=="table" and S.serializable(args),"Invalid arguments")
+	local p=S.copy(profile)
+	local result=command(p,args)
+	p.sequence=sequence;p.lastCommand={sequence=sequence,kind=kind,result=S.copy(result)}
+	local ok,reason=S.validate(p)
+	assert(ok,reason)
+	return p,result,false
+end
+-- The nodes of a fighter's selected build (nil = base fighter): what a lobby
+-- passes to Matches/SkillBuilds.admit together with the unlocked set.
+function S.selection(p,fighterId)
+	local r=p.fighters[fighterId]
+	if not r then return nil,{} end
+	local build=r.selected and r.builds[r.selected]
+	return build and S.copy(build.nodes),S.copy(r.unlocked)
+end
+return S
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">SkillBuilds</string>
+          <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
+-- skill nodes and applies them onto copies of the fighter definition and move
+-- graph. The result (a "kit") is what Combat:add gives the actor; without a kit
+-- the actor uses Fighters/MoveGraphs directly, so no build means today's fighter.
+--
+-- Hook contract: a node effect only targets data the runtime reads. Canonical
+-- numeric fields need a declared bound (RATIO); fields absent from the base kit
+-- must be declared in OPTIONAL with the code that reads them. A node is "wired"
+-- when every field it touches has a live reader; unwired nodes stay data-only
+-- and cannot be activated (except in design tooling with allowUnwired).
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local MoveGraphs=require(Shared.MoveGraphs)
+local Attacks=require(Shared.Attacks)
+local Trees=require(script.Parent.SkillTrees)
+local SkillBuilds={Trees=Trees}
+
+SkillBuilds.KINDS={stat=true,property=true,route=true,airwall=true,counter=true,substitution=true,tool=true,jutsu=true,awakening=true}
+SkillBuilds.LORE={CANON_YOUNG=true,PLAUSIBLE_YOUNG=true,GAMEPLAY_LIBERTY=true}
+-- Every tree must reach this many skill points at its maximum (design), so a
+-- 120+ endgame bracket still leaves choices.
+SkillBuilds.DESIGN_MAX={120,150}
+SkillBuilds.MAX_NODES=40
+-- Route payoff kinds Brawler.routePayoff knows.
+local PAYOFFS={bodySeal=true,floorSeal=true,coverBlades=true,shadowLeaf=true,tenketsu=true,echo=true}
+-- Mild, bounded changes of canonical numbers: {min, max} ratio to the base value.
+local RATIO={
+	["def.Health"]={1,1.08},["def.Chakra"]={1,1.12},["def.ChakraRegen"]={1,1.12},
+	["def.ToolMastery.Recover"]={.8,1},["def.ToolMastery.AirSpread"]={1,1.7},
+	["def.Sharingan.ParryWindow"]={1,1.15},["def.Sharingan.PerfectDodge"]={1,1.15},
+	["def.GentleFist.Drain"]={1,1.2},["def.GentleFist.Duration"]={1,1.35},
+	["def.Byakugan.BlindSpot"]={1,1.06},["def.Awakening.HealthDrain"]={.65,1},
+	["tech.Cost"]={.75,1},["tech.Cooldown"]={.7,1},["tech.Channel"]={.7,1},["tech.Active"]={1,1.4},["tech.Range"]={1,1.3},
+}
+-- Technique fields the shared pipeline reads for every technique, and the
+-- techniques whose own implementation reads spec.Range.
+local TECH_FIELDS={Cost=true,Cooldown=true,Channel=true,Active=true,Recovery=true}
+local RANGE_READ={MarkedBlade=true,WindCut=true,NeedleFan=true,MirageCast=true,FireBloom=true,PhoenixFlower=true,VacuumPalm=true,SixtyFourPalms=true,WireTrap=true}
+-- Fields absent from the base kit, each read by one explicit hook (Hook names
+-- the reader). Kind: "attack" | "technique" (map key) | "payoff". Value: the
+-- only accepted value; Values: accepted strings; Max/Min: absolute numeric
+-- bounds; Default+Ratio: bounds relative to the implicit default; Fields: table
+-- schema. Wired=false marks a declared hook that is not implemented yet.
+SkillBuilds.OPTIONAL={
+	["def.LauncherMove"]={Kind="attack",Hook="Brawler.request: heavy after two clean hits"},
+	["graph.readCounter"]={Kind="attack",Hook="Brawler.request: strike inside a counter window"},
+	["graph.stringCancels.*"]={Key="technique",Value=true,Hook="Combat:request: string cancel"},
+	["graph.onRoute.*"]={Key="attack",Kind="payoff",Hook="Brawler.routePayoff"},
+	["graph.blockCancels.Tool"]={Value=true,Hook="Combat:request: Tool after a blocked string"},
+	["graph.wallBounce.*"]={Key="attack",Value=true,Hook="Brawler.wallFollow"},
+	["def.Seals.PlantedLife"]={Default=12,Ratio={1,1.3},Hook="Techniques.plant"},
+	["def.SealRecall"]={Fields={Radius={Max=5},Refund={Max=8}},Hook="Techniques.expireSeals"},
+	["def.ArrivalThrow"]={Fields={Damage={Max=3}},Hook="Combat:arrivalThrow"},
+	["def.Substitution"]={Fields={Mode={Values={flank=true}},Counter={Max=.8},PlantDeparture="boolean",FreeRush={Max=1}},Hook="Combat:substitute / Combat:rush"},
+	["def.ParrySeal"]={Max=2.5,Hook="Combat:parryRider"},
+	["def.ParryRedirect"]={Fields={Points={Max=2},Counter={Max=.8}},Hook="Combat:parryRider"},
+	["def.WallSteer"]={Fields={Moves="table",Range={Max=16},Cone={Max=.8}},Hook="Brawler.hit (knockback aim)"},
+	["def.ToolMastery.AirSpread"]={Min=2,Max=5,Hook="Combat:request: Tool in the air"},
+	["def.ToolMastery.Chase"]={Max=.8,Hook="Combat:projectileHit (bounced blade)"},
+	["def.ToolMastery.FireBlades"]={Fields={Damage={Max=2},Patch={Max=2}},Hook="Combat:igniteBlade / Combat:projectileHit"},
+	["def.Awakening.FlashChain"]={Max=2.5,Hook="Brawler.hit"},
+	["def.Awakening.Reflex"]={Max=2,Hook="Combat:reflexEcho"},
+	["def.Awakening.GuardPoints"]={Value=true,Hook="Brawler.gentleFist"},
+	["def.Awakening.BloodChakra"]={Value=true,Hook="Combat:curseBlood"},
+	["tech.Quickstep.Arrival"]={Max=.45,Hook="Techniques.Quickstep"},
+	["tech.WindCut.Chase"]={Max=1,Hook="Elements.wind / Combat:projectileHit"},
+	["tech.BurstStrike.DropReaction"]={Values={Spiked=true},Hook="Techniques.BurstStrike"},
+	["tech.NeedleFan.FlankBlades"]={Value=true,Hook="Techniques.NeedleFan"},
+	["tech.VacuumPalm.Tenketsu"]={Value=true,Hook="Techniques.VacuumPalm / Combat:projectileHit"},
+	["tech.Rotation.Reach"]={Default=7,Ratio={1,1.2},Hook="Techniques.Rotation / Combat:stepRotation"},
+	["tech.Rotation.Reflect"]={Value=true,Hook="Combat:stepRotation"},
+	["tech.SixtyFourPalms.Seal"]={Default=3.5,Ratio={1,1.3},Hook="Techniques.SixtyFourPalms"},
+	["tech.WireTrap.WallPin"]={Fields={Range={Max=12},Bind={Max=1.5}},Hook="Techniques.wireBind"},
+	["tech.PhoenixFlower.WiredBlades"]={Max=1,Hook="Elements.phoenix"},
+	["tech.Chidori.WallCharge"]={Min=.25,Max=.62,Hook="Combat:request (Chidori from a wall run)"},
+}
+-- Ranked brackets (PROG-002): inside a bracket every fighter may ACTIVATE at
+-- most Budget skill points, whatever he has unlocked. Progression gives more
+-- build choices, not more power inside the same bracket.
+SkillBuilds.Brackets={
+	{Id="Fundamentals",Budget=50,Enabled=true,Label="50 SP - fundamentals"},
+	{Id="Identity",Budget=80,Enabled=true,Label="80 SP - stronger fighter identity"},
+	{Id="Advanced",Budget=100,Enabled=true,Label="100 SP - advanced builds"},
+	{Id="Endgame",Budget=150,Enabled=false,Label="120+ SP - endgame / special (later)"},
+}
+
+local function copy(value)
+	if type(value)~="table" then return value end
+	local out={}
+	for k,v in value do out[k]=copy(v) end
+	return out
+end
+SkillBuilds.copy=copy
+local function split(path)
+	local parts={}
+	for part in string.gmatch(path,"[^%.]+") do table.insert(parts,part) end
+	return parts
+end
+local function techniqueOf(def,id)
+	for _,spec in def.Techniques or {} do if spec.Id==id then return spec end end
+	return nil
+end
+-- The table holding a path's leaf, and the leaf key. Missing intermediate
+-- tables are created only when `create` is set (optional rule tables).
+local function locate(kit,path,create)
+	local parts=split(path)
+	local node,start
+	if parts[1]=="def" then node=kit.def;start=2
+	elseif parts[1]=="graph" then node=kit.graph;start=2
+	elseif parts[1]=="tech" then node=techniqueOf(kit.def,parts[2]);start=3
+	else return nil end
+	if type(node)~="table" or #parts&lt;start then return nil end
+	for k=start,#parts-1 do
+		local child=node[parts[k]]
+		if child==nil and create then child={};node[parts[k]]=child end
+		if type(child)~="table" then return nil end
+		node=child
+	end
+	return node,parts[#parts]
+end
+local function canonical(fighterId,path)
+	local holder,key=locate({def=Fighters[fighterId],graph=MoveGraphs[fighterId] or {}},path,false)
+	if holder==nil then return nil end
+	return holder[key]
+end
+local function optionalOf(path)
+	local spec=SkillBuilds.OPTIONAL[path]
+	if spec then return spec,nil end
+	local parent,key=string.match(path,"^(.+)%.([^%.]+)$")
+	if parent then
+		spec=SkillBuilds.OPTIONAL[parent..".*"]
+		if spec then return spec,key end
+	end
+	return nil,nil
+end
+SkillBuilds.optionalOf=optionalOf
+local function ratioOf(path,spec)
+	if RATIO[path] then return RATIO[path] end
+	local field=string.match(path,"^tech%.[%w]+%.(%w+)$")
+	if field and RATIO["tech."..field] then return RATIO["tech."..field] end
+	return spec and spec.Ratio
+end
+
+local index={}
+local function nodesOf(fighterId)
+	local tree=Trees[fighterId]
+	if not tree then return nil end
+	if not index[fighterId] then
+		local map={}
+		for order,node in tree.Nodes do map[node.Id]={node=node,order=order} end
+		index[fighterId]=map
+	end
+	return index[fighterId]
+end
+function SkillBuilds.tree(fighterId) return Trees[fighterId] end
+function SkillBuilds.node(fighterId,id)
+	local map=nodesOf(fighterId)
+	local entry=map and map[id]
+	return entry and entry.node
+end
+-- A node is live when every field it touches has an implemented reader.
+function SkillBuilds.wired(fighterId,id)
+	local node=SkillBuilds.node(fighterId,id)
+	if not node then return false end
+	for _,effect in node.Effects do
+		local spec=optionalOf(effect[1])
+		if spec and spec.Wired==false then return false end
+	end
+	return true
+end
+function SkillBuilds.unwired(fighterId)
+	local list={}
+	for _,node in (Trees[fighterId] or {Nodes={}}).Nodes do
+		if not SkillBuilds.wired(fighterId,node.Id) then table.insert(list,node.Id) end
+	end
+	return list
+end
+-- Nodes in tree order (the order effects stack in).
+local function ordered(fighterId,set)
+	local list={}
+	for _,node in Trees[fighterId].Nodes do if set[node.Id] then table.insert(list,node.Id) end end
+	return list
+end
+function SkillBuilds.cost(fighterId,nodes)
+	local total=0
+	for _,id in nodes do
+		local node=SkillBuilds.node(fighterId,id)
+		if node then total+=node.Cost end
+	end
+	return total
+end
+-- Validate an ACTIVE build. opts.budget: maximum skill points (ranked bracket);
+-- opts.unlocked: set of unlocked node ids (profile); opts.allowUnwired: design
+-- tooling only. Returns true, total cost or false, reason.
+function SkillBuilds.validate(fighterId,nodes,opts)
+	opts=opts or {}
+	local map=nodesOf(fighterId)
+	if not map then return false,"No skill tree for "..tostring(fighterId) end
+	if type(nodes)~="table" then return false,"Invalid build" end
+	local count=0
+	for _ in nodes do count+=1 end
+	if count~=#nodes or count&gt;SkillBuilds.MAX_NODES then return false,"Invalid build" end
+	local active,total={},0
+	for _,id in nodes do
+		if type(id)~="string" or not map[id] then return false,"Unknown node "..tostring(id) end
+		if active[id] then return false,"Duplicate node "..id end
+		active[id]=true;total+=map[id].node.Cost
+	end
+	local groups={}
+	for _,id in ordered(fighterId,active) do
+		local node=map[id].node
+		if not opts.allowUnwired and not SkillBuilds.wired(fighterId,id) then return false,"Node not available yet: "..id end
+		if opts.unlocked and opts.unlocked[id]~=true then return false,"Node locked: "..id end
+		for _,need in node.Requires or {} do
+			if not active[need] then return false,id.." requires "..need end
+		end
+		if node.RequiresAny then
+			local any=false
+			for _,need in node.RequiresAny do if active[need] then any=true end end
+			if not any then return false,id.." requires one of "..table.concat(node.RequiresAny,", ") end
+		end
+		if node.Exclusive then
+			if groups[node.Exclusive] then return false,"Exclusive choice "..node.Exclusive..": "..groups[node.Exclusive].." or "..id end
+			groups[node.Exclusive]=id
+		end
+	end
+	if opts.budget and total&gt;opts.budget then return false,string.format("Build costs %d SP, budget is %d",total,opts.budget) end
+	return true,total
+end
+-- Apply nodes (assumed valid) onto copies of the canonical kit. Effects stack in
+-- tree order, so a build gives the same kit whatever order it was listed in.
+function SkillBuilds.apply(fighterId,nodes)
+	assert(Trees[fighterId] and Fighters[fighterId],"No skill tree for "..tostring(fighterId))
+	local kit={fighterId=fighterId,def=copy(Fighters[fighterId]),graph=copy(MoveGraphs[fighterId] or {}),nodes={},spent=0}
+	local active={}
+	for _,id in nodes or {} do
+		assert(SkillBuilds.node(fighterId,id),"Unknown node "..tostring(id))
+		active[id]=true
+	end
+	for _,node in Trees[fighterId].Nodes do
+		if active[node.Id] then
+			for _,effect in node.Effects do
+				local path,op,value=effect[1],effect[2],effect[3]
+				local holder,key=locate(kit,path,true)
+				assert(holder,"Unresolved effect path "..path)
+				if op=="set" then holder[key]=copy(value)
+				else
+					local spec=optionalOf(path)
+					local start=holder[key]
+					if start==nil and spec then start=spec.Default end
+					assert(type(start)=="number" and type(value)=="number","Numeric effect on a non-number: "..path)
+					holder[key]=if op=="add" then start+value else start*value
+				end
+			end
+			table.insert(kit.nodes,node.Id);kit.spent+=node.Cost
+		end
+	end
+	return kit
+end
+-- Validate then apply: the only way server code should obtain a kit.
+function SkillBuilds.build(fighterId,nodes,opts)
+	local ok,reason=SkillBuilds.validate(fighterId,nodes,opts)
+	if not ok then return nil,reason end
+	return SkillBuilds.apply(fighterId,nodes)
+end
+function SkillBuilds.bracket(id)
+	for _,bracket in SkillBuilds.Brackets do if bracket.Id==id then return bracket end end
+	return nil
+end
+-- Ranked admission: what a player may ACTIVATE in a bracket queue. The server
+-- calls this with the profile's unlocked set; an over-budget, locked or
+-- inconsistent build is refused, never trimmed.
+function SkillBuilds.admit(bracketId,fighterId,nodes,unlocked,opts)
+	local bracket=SkillBuilds.bracket(bracketId)
+	if not bracket then return nil,"Unknown bracket" end
+	if not bracket.Enabled and not (opts and opts.allowClosed) then return nil,"Bracket closed" end
+	local kit,reason=SkillBuilds.build(fighterId,nodes,{budget=bracket.Budget,unlocked=unlocked})
+	if not kit then return nil,reason end
+	kit.bracket=bracket.Id;kit.budget=bracket.Budget
+	return kit
+end
+function SkillBuilds.checkBrackets(list)
+	local errors,seen,previous={}, {},0
+	local enabled=0
+	for _,bracket in list or SkillBuilds.Brackets do
+		if type(bracket.Id)~="string" or seen[bracket.Id] then table.insert(errors,"bracket id "..tostring(bracket.Id)) end
+		seen[bracket.Id or ""]=true
+		if type(bracket.Budget)~="number" or bracket.Budget%1~=0 or bracket.Budget&lt;=previous then table.insert(errors,"bracket budgets must be increasing integers ("..tostring(bracket.Id)..")") end
+		previous=if type(bracket.Budget)=="number" then bracket.Budget else previous
+		if bracket.Enabled then enabled+=1 end
+	end
+	if enabled==0 then table.insert(errors,"no open bracket") end
+	return errors
+end
+-- Drop nodes whose requirements are missing (until stable), keep tree order.
+local function prune(fighterId,list)
+	local set={}
+	for _,id in list do set[id]=true end
+	local changed=true
+	while changed do
+		changed=false
+		for id in table.clone(set) do
+			local node=SkillBuilds.node(fighterId,id)
+			local ok=true
+			for _,need in node.Requires or {} do if not set[need] then ok=false end end
+			if node.RequiresAny then
+				local any=false
+				for _,need in node.RequiresAny do if set[need] then any=true end end
+				ok=ok and any
+			end
+			if not ok then set[id]=nil;changed=true end
+		end
+	end
+	return ordered(fighterId,set)
+end
+-- Every largest build: all nodes, one option per exclusive group (each combination).
+function SkillBuilds.maximalBuilds(fighterId,wiredOnly)
+	local groups,order,fixed={}, {}, {}
+	for _,node in Trees[fighterId].Nodes do
+		if not wiredOnly or SkillBuilds.wired(fighterId,node.Id) then
+			if node.Exclusive then
+				if not groups[node.Exclusive] then groups[node.Exclusive]={};table.insert(order,node.Exclusive) end
+				table.insert(groups[node.Exclusive],node.Id)
+			else table.insert(fixed,node.Id) end
+		end
+	end
+	local builds={fixed}
+	for _,name in order do
+		local grown={}
+		for _,build in builds do
+			for _,id in groups[name] do
+				local option=table.clone(build);table.insert(option,id);table.insert(grown,option)
+			end
+		end
+		builds=grown
+	end
+	for i,build in builds do builds[i]=prune(fighterId,build) end
+	return builds
+end
+-- Highest cost of a valid build (wiredOnly: what can actually be activated).
+function SkillBuilds.maxCost(fighterId,wiredOnly)
+	local best=0
+	for _,build in SkillBuilds.maximalBuilds(fighterId,wiredOnly) do best=math.max(best,SkillBuilds.cost(fighterId,build)) end
+	return best
+end
+local function checkValue(fighterId,path,op,value,errors)
+	local base=canonical(fighterId,path)
+	local spec,key=optionalOf(path)
+	local function fail(message) table.insert(errors,path..": "..message) end
+	if op~="set" and op~="add" and op~="mul" then return fail("unknown op "..tostring(op)) end
+	local root,tech,field=string.match(path,"^(%a+)%.([%w]+)%.?([%w]*)")
+	if root=="tech" then
+		if not techniqueOf(Fighters[fighterId],tech) then return fail("unknown technique") end
+		local leaf=string.match(path,"^tech%.[%w]+%.(%w+)$")
+		if not spec and not TECH_FIELDS[leaf or ""] and not (leaf=="Range" and RANGE_READ[tech]) then return fail("technique field not read by the runtime") end
+	elseif root~="def" and root~="graph" then return fail("unknown root")
+	end
+	if field=="" and root=="tech" then return fail("technique field missing") end
+	if base==nil and not spec then return fail("no canonical value and no declared hook") end
+	if op=="add" or op=="mul" then
+		local start=if base~=nil then base else spec and spec.Default
+		if type(value)~="number" or type(start)~="number" then return fail("numeric op needs numbers") end
+		if not ratioOf(path,spec) and not (spec and (spec.Max or spec.Min)) then return fail("no bound declared") end
+		return
+	end
+	if base~=nil then
+		-- A node may scale a base number; it never replaces part of the base kit.
+		if type(base)~="number" or type(value)~="number" then return fail("would replace part of the base kit") end
+		if not ratioOf(path,spec) then return fail("no bound declared") end
+		return
+	end
+	if spec.Key=="technique" and not techniqueOf(Fighters[fighterId],key) then return fail("unknown technique key") end
+	if spec.Key=="attack" and not Attacks[key] then return fail("unknown move key") end
+	if spec.Kind=="attack" and not Attacks[value] then return fail("unknown move") end
+	if spec.Kind=="payoff" and not PAYOFFS[value] then return fail("unknown route payoff") end
+	if spec.Value~=nil and value~=spec.Value then return fail("value must be "..tostring(spec.Value)) end
+	if spec.Values and not spec.Values[value] then return fail("value not allowed") end
+	if spec.Max or spec.Min or spec.Default then
+		if type(value)~="number" then return fail("number expected") end
+	end
+	if spec.Fields then
+		if type(value)~="table" then return fail("table expected") end
+		for name,item in value do
+			local rule=spec.Fields[name]
+			if rule==nil then fail("unexpected field "..tostring(name))
+			elseif type(rule)=="string" then if type(item)~=rule then fail(name.." must be a "..rule) end
+			else
+				if rule.Values then if not rule.Values[item] then fail(name.." not allowed") end
+				elseif type(item)~="number" or item&lt;=0 or (rule.Max and item&gt;rule.Max) then fail(name.." out of bounds") end
+			end
+		end
+	end
+end
+-- Tree integrity (PROG-001 contract). Returns a list of errors (empty = valid).
+function SkillBuilds.checkTree(fighterId)
+	local errors={}
+	local function fail(message) table.insert(errors,fighterId..": "..message) end
+	local tree=Trees[fighterId]
+	if not tree or tree.Fighter~=fighterId or not Fighters[fighterId] or not MoveGraphs[fighterId] then fail("tree/fighter/graph mismatch");return errors end
+	local ids,kinds,groups={}, {}, {}
+	for _,node in tree.Nodes do
+		local id=node.Id
+		if type(id)~="string" or not string.match(id,"^%a%w*$") or #id&gt;32 or ids[id] then fail("bad or duplicate id "..tostring(id)) end
+		ids[id or ""]=node
+		if type(node.Name)~="string" or type(node.Branch)~="string" then fail(tostring(id)..": name/branch") end
+		if not SkillBuilds.KINDS[node.Kind] then fail(tostring(id)..": kind "..tostring(node.Kind)) end
+		kinds[node.Kind or ""]=true
+		if type(node.Cost)~="number" or node.Cost%1~=0 or node.Cost&lt;1 or node.Cost&gt;20 then fail(tostring(id)..": cost") end
+		if type(node.Shows)~="string" or #node.Shows&lt;20 or type(node.Counter)~="string" or #node.Counter&lt;10 then fail(tostring(id)..": Shows/Counter text") end
+		if not SkillBuilds.LORE[node.Lore] then fail(tostring(id)..": lore label") end
+		if type(node.Effects)~="table" or #node.Effects==0 then fail(tostring(id)..": no effect") end
+		if node.Exclusive then groups[node.Exclusive]=(groups[node.Exclusive] or 0)+1 end
+		local addsBehaviour=false
+		for _,effect in node.Effects or {} do
+			local path,op,value=effect[1],effect[2],effect[3]
+			if type(path)~="string" then fail(tostring(id)..": effect path");continue end
+			local before=#errors
+			checkValue(fighterId,path,op,value,errors)
+			for k=before+1,#errors do errors[k]=fighterId.."."..tostring(id)..": "..errors[k] end
+			if op=="set" and canonical(fighterId,path)==nil then addsBehaviour=true end
+			if node.Kind=="stat" and path~="def.Health" and path~="def.Chakra" and path~="def.ChakraRegen" then fail(tostring(id)..": a stat node only changes health or chakra") end
+		end
+		if node.Major then
+			if node.Kind=="stat" then fail(tostring(id)..": a major node cannot be a stat") end
+			-- DO/SEE: a major node adds a rule, route or behaviour the base kit lacks.
+			if not addsBehaviour then fail(tostring(id)..": a major node must add behaviour, not only scale a number") end
+			if #node.Shows&lt;40 then fail(tostring(id)..": a major node must explain what changes") end
+		end
+	end
+	for name,count in groups do if count&lt;2 then fail("exclusive group "..name.." needs two options") end end
+	for kind in SkillBuilds.KINDS do if not kinds[kind] then fail("no "..kind.." node") end end
+	-- Requirements exist, cannot sit in the node's own exclusive group, no cycle.
+	for _,node in tree.Nodes do
+		for _,need in node.Requires or {} do
+			local other=ids[need]
+			if not other or need==node.Id then fail(tostring(node.Id).." requires unknown "..tostring(need))
+			elseif node.Exclusive and other.Exclusive==node.Exclusive then fail(tostring(node.Id).." requires its own exclusive alternative") end
+		end
+		for _,need in node.RequiresAny or {} do if not ids[need] then fail(tostring(node.Id).." requires unknown "..tostring(need)) end end
+	end
+	local state={}
+	local function visit(id)
+		if state[id]=="open" then fail("prerequisite cycle at "..id);return end
+		if state[id] then return end
+		state[id]="open"
+		local node=ids[id]
+		for _,need in node and node.Requires or {} do if ids[need] then visit(need) end end
+		for _,need in node and node.RequiresAny or {} do if ids[need] then visit(need) end end
+		state[id]="done"
+	end
+	for _,node in tree.Nodes do if type(node.Id)=="string" then visit(node.Id) end end
+	if #errors&gt;0 then return errors end
+	-- Design maximum and bounds on every largest build.
+	local design=SkillBuilds.maxCost(fighterId,false)
+	if design&lt;SkillBuilds.DESIGN_MAX[1] or design&gt;SkillBuilds.DESIGN_MAX[2] then fail("design maximum "..design.." SP outside "..SkillBuilds.DESIGN_MAX[1].."-"..SkillBuilds.DESIGN_MAX[2]) end
+	for _,build in SkillBuilds.maximalBuilds(fighterId,false) do
+		local ok,reason=SkillBuilds.validate(fighterId,build,{allowUnwired=true})
+		if not ok then fail("largest build invalid: "..reason) end
+		local kit=SkillBuilds.apply(fighterId,build)
+		for _,id in build do
+			for _,effect in SkillBuilds.node(fighterId,id).Effects do
+				local path=effect[1]
+				local holder,key=locate(kit,path,false)
+				local final=holder and holder[key]
+				if type(final)=="number" then
+					local spec=optionalOf(path)
+					local base=canonical(fighterId,path)
+					if base==nil and spec then base=spec.Default end
+					local ratio=if base then ratioOf(path,spec) else nil
+					if ratio and base and base~=0 then
+						local r=final/base
+						if r&lt;ratio[1]-1e-9 or r&gt;ratio[2]+1e-9 then fail(path.." ends at "..final.." ("..string.format("%.3f",r).."x base)") end
+					end
+					if spec and spec.Max and final&gt;spec.Max+1e-9 then fail(path.." above "..spec.Max) end
+					if spec and spec.Min and final&lt;spec.Min-1e-9 then fail(path.." below "..spec.Min) end
+					if string.match(path,"%.Channel$") and final&lt;.04 then fail(path.." channel below 0.04 s") end
+				end
+			end
+		end
+	end
+	return errors
+end
+return SkillBuilds
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
+        <Properties>
+          <string name="Name">SkillTrees</string>
+          <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
+-- CORE4 prodigy. The base fighter (no node active) is exactly the kit declared
+-- in Fighters/MoveGraphs; a node deepens a mechanic the fighter already has, it
+-- never repairs an incomplete kit. SkillBuilds validates and applies them.
+--
+-- Node fields
+--   Id           stable identifier, saved in profiles: never rename or recycle
+--   Kind         stat | property | route | airwall | counter | substitution |
+--                tool | jutsu | awakening
+--   Major        must change what the player can DO or SEE (never a bare number)
+--   Cost         skill points to unlock it, and to activate it in a build
+--   Branch       presentation group
+--   Requires     every listed node first (active in a build, unlocked to unlock)
+--   RequiresAny  at least one of the listed nodes first
+--   Exclusive    choice group: at most one node of the group in an active build
+--   Effects      {path, op, value}. path: "def.&lt;field&gt;", "tech.&lt;TechniqueId&gt;.&lt;field&gt;"
+--                or "graph.&lt;field&gt;"; op: set | add | mul. Applied in tree order on
+--                copies of Fighters/MoveGraphs (SkillBuilds.apply).
+--   Shows        what changes for the player
+--   Counter      what the opponent can answer
+--   Lore         DEC-005 label (CANON_YOUNG / PLAUSIBLE_YOUNG / GAMEPLAY_LIBERTY)
+return {
+	-- Minato: a network of prepared destinations, not teleport spam. Seals,
+	-- relocation that converts, angles and a Rasengan that finishes.
+	Flashstep = { Fighter = "Flashstep", Nodes = {
+		{ Id = "SealInk", Name = "Seal Ink", Branch = "Seals", Kind = "property", Cost = 4,
+			Effects = { { "def.Seals.PlantedLife", "set", 15 } },
+			Shows = "Planted seals hold 15 s instead of 12: a prepared destination outlives one exchange.",
+			Counter = "Still two planted seals at most, each one drawn on the floor.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "LongSeal", Name = "Long Seal", Branch = "Seals", Kind = "property", Cost = 3,
+			Effects = { { "tech.MarkedBlade.Range", "mul", 1.18 } },
+			Shows = "Marked Kunai flies 78 studs instead of 66 before it drops and plants.",
+			Counter = "A longer throw is a slower anchor; a guard still drops it at the feet.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "SealCraft", Name = "Seal Craft", Branch = "Seals", Kind = "property", Cost = 4,
+			Effects = { { "tech.MarkedBlade.Cooldown", "mul", 0.82 } },
+			Shows = "Marked Kunai is ready again after 1.8 s instead of 2.2 s.",
+			Counter = "Same 10 chakra per seal; Rotation and a guard still answer it.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "KunaiRecall", Name = "Kunai Recall", Branch = "Seals", Kind = "tool", Major = true, Cost = 10, Requires = { "SealInk" },
+			Effects = { { "def.SealRecall", "set", { Radius = 3.5, Refund = 5 } } },
+			Shows = "Running over one of his planted kunai picks it up: the seal leaves the floor and 5 chakra comes back. The run draws the geometry.",
+			Counter = "The pickup spot is a known destination, and a recovered kunai is one escape seal less.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "ReturnSeal", Name = "Return Seal", Branch = "Seals", Kind = "substitution", Major = true, Cost = 10, Requires = { "SealCraft" },
+			Effects = { { "def.Substitution", "set", { PlantDeparture = true } } },
+			Shows = "Every substitution leaves a seal where Minato stood: Flying Thunder God can bring him straight back into the exchange.",
+			Counter = "The seal marks the return point: stand on it, or punish the arrival.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "FlashEconomy", Name = "Light Seal", Branch = "Flash", Kind = "property", Cost = 5,
+			Effects = { { "tech.Flashstep.Cost", "add", -2 } },
+			Shows = "Flying Thunder God costs 14 chakra instead of 16.",
+			Counter = "A seal is still required and spent; the Sharingan guard still tracks the arrival.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "StringFlash", Name = "Cut and Flash", Branch = "Flash", Kind = "route", Major = true, Cost = 12, Requires = { "FlashEconomy" },
+			Effects = { { "graph.stringCancels.Flashstep", "set", true } },
+			Shows = "A clean string can cancel into Flying Thunder God: the combo jumps to a seal and resumes from the new angle.",
+			Counter = "Costs 16 chakra and a seal; no seal, no cancel; the Sharingan guard follows the arrival.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "AirSwitchSeal", Name = "Switch Seal", Branch = "Flash", Kind = "airwall", Major = true, Cost = 9, Requires = { "FlashEconomy" }, Exclusive = "AirSeal",
+			Effects = { { "graph.onRoute.AirSwitch", "set", "bodySeal" } },
+			Shows = "The air side switch leaves a 1.8 s seal on the body: the teleport follows it up in the air.",
+			Counter = "Air dodge or substitution before the seal is used; it expires fast.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "SpikeAnchor", Name = "Spike Anchor", Branch = "Flash", Kind = "airwall", Major = true, Cost = 9, Requires = { "FlashEconomy" }, Exclusive = "AirSeal",
+			Effects = { { "graph.onRoute.AirSpike", "set", "floorSeal" } },
+			Shows = "The air spike plants a marked kunai where the body lands: the knockdown becomes a destination.",
+			Counter = "The seal is on the floor in plain sight; the wake-up can move away from it.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "AirExit", Name = "Air Exit", Branch = "Flash", Kind = "airwall", Major = true, Cost = 9, RequiresAny = { "AirSwitchSeal", "SpikeAnchor" },
+			Effects = { { "def.ArrivalThrow", "set", { Damage = 2 } } },
+			Shows = "Tool during an air arrival throws a kunai straight down that plants a seal: a landing or an escape prepared mid-air.",
+			Counter = "It spends the arrival strike and 4 chakra; the planted seal is visible.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "ParrySeal", Name = "Seal on the Parry", Branch = "Flash", Kind = "counter", Major = true, Cost = 9, Requires = { "FlashEconomy" },
+			Effects = { { "def.ParrySeal", "set", 1.8 } },
+			Shows = "A parried strike leaves a 1.8 s seal on the attacker: the parry converts into a teleport behind the stunned body.",
+			Counter = "Feints and throws bait the parry; the seal is short.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "YellowFlow", Name = "Flow", Branch = "Flash", Kind = "awakening", Major = true, Cost = 14, Requires = { "StringFlash" },
+			Effects = { { "def.Awakening.FlashChain", "set", 1.8 } },
+			Shows = "Awakened, a clean hit within 0.7 s of a teleport arrival seals the body again (1.8 s): the relocation chain lasts as long as he keeps landing.",
+			Counter = "Guard or parry breaks the chain; 16 chakra per jump; once per match.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "QuickstepCut", Name = "Quickstep Cut", Branch = "Jutsu", Kind = "route", Major = true, Cost = 10,
+			Effects = { { "tech.Quickstep.Arrival", "set", 0.35 } },
+			Shows = "After Quickstep a strike cancels the recovery like a teleport arrival (light, launcher, or an instant Rasengan): the angle now converts.",
+			Counter = "The step is short and readable; a guard facing the new side stops it.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "GaleChase", Name = "Gale Chase", Branch = "Jutsu", Kind = "jutsu", Major = true, Cost = 8, Requires = { "QuickstepCut" },
+			Effects = { { "tech.WindCut.Chase", "set", 0.8 } },
+			Shows = "A Wind Cut that connects opens the chase (E) for 0.8 s: the gust becomes a re-entry.",
+			Counter = "Side-step the lane; a guarded gust opens nothing.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "RasenganFocus", Name = "Rasengan Focus", Branch = "Jutsu", Kind = "property", Cost = 4,
+			Effects = { { "tech.BurstStrike.Cost", "add", -3 } },
+			Shows = "Rasengan costs 21 chakra instead of 24.",
+			Counter = "Same wind-up and recovery: interrupt or punish it.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "RasenganDrive", Name = "Rasengan Drive", Branch = "Jutsu", Kind = "jutsu", Major = true, Cost = 10, Requires = { "RasenganFocus" },
+			Effects = { { "tech.BurstStrike.DropReaction", "set", "Spiked" } },
+			Shows = "The plunging Rasengan spikes the body into the floor: it bounces once for a pick-up instead of a flat knockdown.",
+			Counter = "Air dodge or substitution before the plunge; the bounce happens once per combo.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "DeepReserves", Name = "Deep Reserves", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Chakra", "add", 6 } },
+			Shows = "Chakra reserve 116 instead of 110.", Counter = "Gentle Fist drains it all the same.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "Endurance", Name = "Endurance", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Health", "add", 5 } },
+			Shows = "Health 130 instead of 125.", Counter = "Still the second lightest body.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "QuickHands", Name = "Quick Hands", Branch = "Body", Kind = "tool", Cost = 3,
+			Effects = { { "def.ToolMastery.Recover", "add", -0.07 } },
+			Shows = "A neutral kunai throw recovers in 0.48 s instead of 0.55 s.", Counter = "Same single blade and chakra cost.", Lore = "CANON_YOUNG" },
+	} },
+	-- Itachi: calm control. Reads, deception, shuriken geometry and fire that
+	-- turn the opponent's own action into his opening.
+	Mirage = { Fighter = "Mirage", Nodes = {
+		{ Id = "QuickRead", Name = "Quick Read", Branch = "Sharingan", Kind = "property", Cost = 5,
+			Effects = { { "tech.Read.Cooldown", "mul", 0.84 } },
+			Shows = "Sharingan Read is ready again after 3 s instead of 3.6 s.",
+			Counter = "Projectiles, grabs and flank strikes still ignore the Read.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "EconomicRead", Name = "Economic Read", Branch = "Sharingan", Kind = "property", Cost = 4,
+			Effects = { { "tech.Read.Cost", "add", -2 } },
+			Shows = "Sharingan Read costs 12 chakra instead of 14.",
+			Counter = "Waiting it out still works: the stance commits him for 1.2 s.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "ReadCancel", Name = "Read Cancel", Branch = "Sharingan", Kind = "route", Major = true, Cost = 10, Requires = { "QuickRead" }, Exclusive = "ReadStyle",
+			Effects = { { "graph.stringCancels.Read", "set", true } },
+			Shows = "A clean string can end in the Read stance: the opponent's retaliation is read and punished by the counter palm.",
+			Counter = "Do not retaliate frontally: wait, throw, or grab the stance.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "PatientRead", Name = "Patient Read", Branch = "Sharingan", Kind = "counter", Cost = 6, Requires = { "QuickRead" }, Exclusive = "ReadStyle",
+			Effects = { { "tech.Read.Active", "mul", 1.35 } },
+			Shows = "The Read window lasts 1.35 s instead of 1 s.",
+			Counter = "He stays rooted in the stance longer: throw or reposition.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "MirageReflex", Name = "Mirage Reflex", Branch = "Sharingan", Kind = "awakening", Major = true, Cost = 14, RequiresAny = { "ReadCancel", "PatientRead" },
+			Effects = { { "def.Awakening.Reflex", "set", 1.5 } },
+			Shows = "Under Sharingan Focus, a perfect dodge or a parry leaves a 1.5 s genjutsu decoy on the attacker: the next swing at it is caught.",
+			Counter = "Trust the body, not the afterimage; the Byakugan sees through it; once per match.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "CrowCounter", Name = "Crow Counter", Branch = "Sharingan", Kind = "substitution", Major = true, Cost = 10, Requires = { "EconomicRead" },
+			Effects = { { "def.Substitution", "set", { Counter = 0.6 } } },
+			Shows = "After a substitution behind the attacker, his next strike within 0.6 s is the counter palm.",
+			Counter = "The attacker's tracking window (E) still reaches the reappearance; a guard facing back stops the palm.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "Precision", Name = "Precision", Branch = "Shuriken", Kind = "tool", Cost = 3,
+			Effects = { { "def.ToolMastery.Recover", "add", -0.1 } },
+			Shows = "A neutral shuriken pair recovers in 0.65 s instead of 0.75 s.", Counter = "Same blades, same chakra cost.", Lore = "CANON_YOUNG" },
+		{ Id = "WideFan", Name = "Wide Fan", Branch = "Shuriken", Kind = "tool", Cost = 5,
+			Effects = { { "def.ToolMastery.AirSpread", "add", 2 } },
+			Shows = "In the air he fans five shuriken down instead of three.", Counter = "A guard still blocks the fan; side-step the spread.", Lore = "CANON_YOUNG" },
+		{ Id = "RicochetChase", Name = "Ricochet Chase", Branch = "Shuriken", Kind = "tool", Major = true, Cost = 9, Requires = { "Precision" },
+			Effects = { { "def.ToolMastery.Chase", "set", 0.6 } },
+			Shows = "A ricochet or Geometry blade that lands opens the chase (E) for 0.6 s: the redirected blade becomes a re-entry.",
+			Counter = "Guard the flank; the chase still costs 8 chakra.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "FlankBlades", Name = "Flank Blades", Branch = "Shuriken", Kind = "jutsu", Major = true, Cost = 10, Requires = { "Precision" },
+			Effects = { { "tech.NeedleFan.FlankBlades", "set", true } },
+			Shows = "Shadow Shuriken's two hidden blades are redirected beside the opponent and arrive from both flanks, past a frontal guard.",
+			Counter = "Byakugan sight, a late dodge, or hitting Itachi during the channel cancels them.", Lore = "CANON_YOUNG" },
+		{ Id = "FeintEcho", Name = "Feint Echo", Branch = "Taijutsu", Kind = "route", Major = true, Cost = 9,
+			Effects = { { "graph.onRoute.FeintStep", "set", "echo" } },
+			Shows = "A feint step that lands leaves its afterimage as a 1.2 s genjutsu decoy: swinging at it gives the read away.",
+			Counter = "Strike the real body, not the afterimage; the Byakugan is immune.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "WallPalm", Name = "Wall Palm", Branch = "Taijutsu", Kind = "airwall", Major = true, Cost = 10, Requires = { "FeintEcho" },
+			Effects = { { "def.WallSteer", "set", { Moves = { CounterPalm = true }, Range = 14, Cone = 0.7 } } },
+			Shows = "The counter palm drives the body toward a wall within 14 studs and 45 degrees: it splats and the wall phase begins.",
+			Counter = "Wall tech on the impact (Q) or a substitution; away from walls it is the normal palm.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "ShortSigns", Name = "Short Signs", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 5,
+			Effects = { { "tech.MirageCast.Channel", "mul", 0.8 } },
+			Shows = "Genjutsu: Mirage is cast in 0.72 s instead of 0.9 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "PhoenixVolley", Name = "Phoenix Volley", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
+			Effects = { { "tech.PhoenixFlower.Cost", "add", -3 } },
+			Shows = "Phoenix Flower costs 17 chakra instead of 20.", Counter = "Same five flames: guard or advance diagonally.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "FireTempo", Name = "Fire Tempo", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
+			Effects = { { "tech.FireBloom.Cooldown", "mul", 0.84 } },
+			Shows = "Great Fireball is ready again after 4.6 s instead of 5.5 s.", Counter = "Same wind-up: side-step and punish.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "FireGeometry", Name = "Fire Geometry", Branch = "Genjutsu &amp; Katon", Kind = "jutsu", Major = true, Cost = 12, Requires = { "FireTempo" },
+			Effects = { { "def.ToolMastery.FireBlades", "set", { Damage = 1, Patch = 1.5 } } },
+			Shows = "His shuriken that cross his own burning ground ignite: +1 damage and a small fire patch where they land. Lane, then blades.",
+			Counter = "Stay out of the lit lane's line; a guard absorbs the burning blade and its patch.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "SteadyBreath", Name = "Steady Breath", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.ChakraRegen", "add", 0.6 } },
+			Shows = "Chakra recovery 7.8/s instead of 7.2/s.", Counter = "Closed chakra points still slow it.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "Composure", Name = "Composure", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Chakra", "add", 8 } },
+			Shows = "Chakra reserve 133 instead of 125.", Counter = "Gentle Fist drains it all the same.", Lore = "PLAUSIBLE_YOUNG" },
+	} },
+	-- Neji: close-space dominance. Chakra points, the Rotation defence and
+	-- precise counters; his threat spikes inside his preferred range.
+	GentleFist = { Fighter = "GentleFist", Nodes = {
+		{ Id = "PrecisePalms", Name = "Precise Palms", Branch = "Gentle Fist", Kind = "property", Cost = 4,
+			Effects = { { "def.GentleFist.Drain", "add", 1 } },
+			Shows = "A clean palm drains 7 chakra instead of 6.", Counter = "Through a guard it still drains 3.", Lore = "CANON_YOUNG" },
+		{ Id = "DeepPoints", Name = "Deep Points", Branch = "Gentle Fist", Kind = "property", Cost = 5,
+			Effects = { { "def.GentleFist.Duration", "add", 1.5 } },
+			Shows = "Closed chakra points stay closed 6.5 s instead of 5.", Counter = "Distance: no palm, no new point.", Lore = "CANON_YOUNG" },
+		{ Id = "PointStep", Name = "Point Step", Branch = "Gentle Fist", Kind = "route", Cost = 5, Requires = { "PrecisePalms" },
+			Effects = { { "graph.onRoute.CircleStep", "set", "tenketsu" } },
+			Shows = "The circular step strikes a second chakra point.", Counter = "The step must land: guard the side.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "KaitenCancel", Name = "Kaiten Cancel", Branch = "Gentle Fist", Kind = "route", Major = true, Cost = 11, Requires = { "PrecisePalms" }, Exclusive = "StringEnder",
+			Effects = { { "graph.stringCancels.Rotation", "set", true } },
+			Shows = "A clean string can end in Rotation: the dome throws the opponent out of point blank and resets the space.",
+			Counter = "24 chakra and the 6 s cooldown; the recovery after the dome is open.", Lore = "CANON_YOUNG" },
+		{ Id = "PalmBarrage", Name = "Palm Barrage", Branch = "Gentle Fist", Kind = "route", Major = true, Cost = 12, Requires = { "DeepPoints" }, Exclusive = "StringEnder",
+			Effects = { { "graph.stringCancels.SixtyFourPalms", "set", true } },
+			Shows = "A clean string can cancel into the Sixty-Four Palms with a short wind-up: the confirmed hit becomes the full flurry.",
+			Counter = "The opening palm can still be guarded; a substitution escapes the flurry; 30 chakra, 10 s cooldown.", Lore = "CANON_YOUNG" },
+		{ Id = "FullFieldPoints", Name = "Full Field Points", Branch = "Gentle Fist", Kind = "awakening", Major = true, Cost = 14, Requires = { "PointStep" },
+			Effects = { { "def.Awakening.GuardPoints", "set", true } },
+			Shows = "Under Byakugan Full Field the palms reach the chakra points through a guard: full drain and a closed point on every blocked palm.",
+			Counter = "Do not block: move out of range for the 12 s; once per match.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "SwiftRotation", Name = "Swift Rotation", Branch = "Rotation", Kind = "property", Cost = 5,
+			Effects = { { "tech.Rotation.Cooldown", "mul", 0.87 } },
+			Shows = "Rotation is ready again after 5.2 s instead of 6 s.", Counter = "Same 24 chakra and open recovery.", Lore = "CANON_YOUNG" },
+		{ Id = "WideDome", Name = "Wide Dome", Branch = "Rotation", Kind = "property", Cost = 5,
+			Effects = { { "tech.Rotation.Reach", "set", 8.2 } },
+			Shows = "The dome reaches 8.2 studs instead of 7 (blades up to 9.7).", Counter = "Stay beyond the edge and wait for the recovery.", Lore = "CANON_YOUNG" },
+		{ Id = "ReturningRotation", Name = "Returning Rotation", Branch = "Rotation", Kind = "tool", Major = true, Cost = 10, Requires = { "SwiftRotation" },
+			Effects = { { "tech.Rotation.Reflect", "set", true } },
+			Shows = "Kunai and shuriken caught by the dome fly back at their thrower instead of vanishing.",
+			Counter = "Fire, wire and palms are still only deflected; do not throw into the dome.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "NarrowBlindSpot", Name = "Narrow Blind Spot", Branch = "Byakugan", Kind = "property", Cost = 4,
+			Effects = { { "def.Byakugan.BlindSpot", "set", 0.94 } },
+			Shows = "The guard's blind spot behind him narrows from about 52 to 40 degrees.", Counter = "It still exists: circle behind him.", Lore = "CANON_YOUNG" },
+		{ Id = "RedirectParry", Name = "Redirecting Palm", Branch = "Byakugan", Kind = "counter", Major = true, Cost = 10, Requires = { "NarrowBlindSpot" },
+			Effects = { { "def.ParryRedirect", "set", { Points = 1, Counter = 0.5 } } },
+			Shows = "His parry turns the attacker aside, closes one chakra point and opens a 0.5 s counter (the twin palm, now from the flank).",
+			Counter = "Feints, throws and grabs bait the parry; the parry window is the common 0.2 s.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "OutsideStep", Name = "Outside Step", Branch = "Byakugan", Kind = "substitution", Major = true, Cost = 10, Requires = { "NarrowBlindSpot" },
+			Effects = { { "def.Substitution", "set", { Mode = "flank", Counter = 0.5 } } },
+			Shows = "His substitution reappears on the attacker's flank instead of hopping away, and his next strike within 0.5 s is the twin palm.",
+			Counter = "The tracking window (E) still reaches him; a guard turned to the side answers the palm.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "VacuumEconomy", Name = "Vacuum Economy", Branch = "Hakke", Kind = "property", Cost = 4,
+			Effects = { { "tech.VacuumPalm.Cooldown", "mul", 0.82 } },
+			Shows = "Vacuum Palm is ready again after 2.3 s instead of 2.8 s.", Counter = "Same channel: side-step or interrupt.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "SealingPalm", Name = "Sealing Palm", Branch = "Hakke", Kind = "jutsu", Major = true, Cost = 9, Requires = { "VacuumEconomy" },
+			Effects = { { "tech.VacuumPalm.Tenketsu", "set", true } },
+			Shows = "Vacuum Palm becomes a Gentle Fist strike: on a clean hit it drains and closes a chakra point at range.",
+			Counter = "A guard stops the knockback and the point; side-step the palm.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "LingeringSeal", Name = "Lingering Seal", Branch = "Hakke", Kind = "jutsu", Cost = 5,
+			Effects = { { "tech.SixtyFourPalms.Seal", "set", 4.5 } },
+			Shows = "After the Sixty-Four Palms the techniques stay sealed 4.5 s instead of 3.5 s.", Counter = "Tools, dodge and substitution are never sealed.", Lore = "CANON_YOUNG" },
+		{ Id = "TrigramRebound", Name = "Trigram Rebound", Branch = "Hakke", Kind = "airwall", Major = true, Cost = 9, Requires = { "VacuumEconomy" },
+			Effects = { { "graph.wallBounce.PalmThrust", "set", true } },
+			Shows = "The twin palm on a body pinned to a wall bounces it back out like a heavy blow: a fresh air phase and the chase.",
+			Counter = "Wall tech on the impact; the bounce happens once per combo.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "Conditioning", Name = "Conditioning", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Health", "add", 6 } },
+			Shows = "Health 141 instead of 135.", Counter = "The blind spot is unchanged.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "ChakraControl", Name = "Chakra Control", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.ChakraRegen", "add", 0.6 } },
+			Shows = "Chakra recovery 8.2/s instead of 7.6/s.", Counter = "Stops during channels like everyone's.", Lore = "CANON_YOUNG" },
+		{ Id = "ChakraReserve", Name = "Chakra Reserve", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Chakra", "add", 6 } },
+			Shows = "Chakra reserve 121 instead of 115.", Counter = "Rotation still costs 24.", Lore = "PLAUSIBLE_YOUNG" },
+	} },
+	-- Sasuke: aggressive hybrid. Kicks, wire, fire and the Chidori; one opening
+	-- becomes an assault, every big commitment can be punished.
+	Lion = { Fighter = "Lion", Nodes = {
+		{ Id = "DancingLeaf", Name = "Dancing Leaf Launcher", Branch = "Lion", Kind = "route", Major = true, Cost = 10,
+			Effects = { { "def.LauncherMove", "set", "LionKick" } },
+			Shows = "The heavy after two clean hits is the rising kick too: it is followed into the air (Shadow of the Dancing Leaf) and a heavy up there is the Lion Combo.",
+			Counter = "Same launcher counterplay: block the string, air dodge or substitute before the chase.", Lore = "CANON_YOUNG" },
+		{ Id = "SharperEyes", Name = "Sharper Eyes", Branch = "Lion", Kind = "property", Cost = 5,
+			Effects = { { "def.Sharingan.ParryWindow", "add", 0.03 }, { "def.Sharingan.PerfectDodge", "add", 0.02 } },
+			Shows = "Sharingan parry window 0.27 s and perfect dodge 0.20 s (still below Itachi's).", Counter = "Feints and delays still beat it.", Lore = "CANON_YOUNG" },
+		{ Id = "SharinganCounter", Name = "Sharingan Counter", Branch = "Lion", Kind = "counter", Major = true, Cost = 10, Requires = { "SharperEyes" },
+			Effects = { { "graph.readCounter", "set", "VaultKick" } },
+			Shows = "After a Sharingan parry or perfect dodge his next strike is the vault kick: he switches sides over the opponent.",
+			Counter = "Do not commit into his guard; the vault kick is still a strike that can be guarded.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "CounterRush", Name = "Counter-Rush", Branch = "Lion", Kind = "substitution", Major = true, Cost = 9, Requires = { "DancingLeaf" },
+			Effects = { { "def.Substitution", "set", { FreeRush = 0.8 } } },
+			Shows = "After a substitution, E within 0.8 s is a free chakra dash straight back at the attacker.",
+			Counter = "The dash is not armoured: a blade, a guard or the attacker's own tracking answers it.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "ShurikenFan", Name = "Shuriken Fan", Branch = "Wire", Kind = "tool", Cost = 4,
+			Effects = { { "def.ToolMastery.AirSpread", "set", 3 } },
+			Shows = "In the air he throws three shuriken in a fan instead of two.", Counter = "A guard blocks the fan.", Lore = "CANON_YOUNG" },
+		{ Id = "BlockedTool", Name = "Blocked Tool", Branch = "Wire", Kind = "route", Cost = 5,
+			Effects = { { "graph.blockCancels.Tool", "set", true } },
+			Shows = "A blocked string can still be cancelled into a shuriken throw.", Counter = "The throw is a pair of blades: guard holds.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "WireCancel", Name = "Wire Cancel", Branch = "Wire", Kind = "route", Major = true, Cost = 10, Requires = { "BlockedTool" },
+			Effects = { { "graph.stringCancels.WireTrap", "set", true } },
+			Shows = "A clean string can cancel into Wire Trap: the bound body is ready for the Dragon Flame.",
+			Counter = "18 + 24 chakra for the full route; a substitution escapes the bind.", Lore = "CANON_YOUNG" },
+		{ Id = "WirePin", Name = "Wire Pin", Branch = "Wire", Kind = "airwall", Major = true, Cost = 10, Requires = { "ShurikenFan" }, Exclusive = "WireStyle",
+			Effects = { { "tech.WireTrap.WallPin", "set", { Range = 10, Bind = 1.35 } } },
+			Shows = "A wire that binds a body within 10 studs of a wall ties it against the surface for 1.35 s instead of 1 s.",
+			Counter = "Away from walls it is the normal bind; a guard or a dodge stops the wire; substitution escapes.", Lore = "CANON_YOUNG" },
+		{ Id = "WiredFlames", Name = "Wired Flames", Branch = "Wire", Kind = "tool", Major = true, Cost = 10, Requires = { "ShurikenFan" }, Exclusive = "WireStyle",
+			Effects = { { "tech.PhoenixFlower.WiredBlades", "set", 0.7 } },
+			Shows = "The two shuriken hidden in Phoenix Flower trail wire: one that lands binds for 0.7 s, ready for the Dragon Flame.",
+			Counter = "Guard the flames and the hidden blades bind nothing; substitution escapes.", Lore = "CANON_YOUNG" },
+		{ Id = "FireMastery", Name = "Fire Mastery", Branch = "Katon &amp; Chidori", Kind = "property", Cost = 4,
+			Effects = { { "tech.FireBloom.Cost", "add", -3 } },
+			Shows = "Great Fireball (and the Dragon Flame) costs 21 chakra instead of 24.", Counter = "Same wind-up and burning lane.", Lore = "CANON_YOUNG" },
+		{ Id = "PhoenixTempo", Name = "Phoenix Tempo", Branch = "Katon &amp; Chidori", Kind = "property", Cost = 4,
+			Effects = { { "tech.PhoenixFlower.Cooldown", "mul", 0.84 } },
+			Shows = "Phoenix Flower is ready again after 4.2 s instead of 5 s.", Counter = "Same flames: guard or a wide side-step.", Lore = "CANON_YOUNG" },
+		{ Id = "ChidoriFocus", Name = "Chidori Focus", Branch = "Katon &amp; Chidori", Kind = "property", Cost = 5,
+			Effects = { { "tech.Chidori.Channel", "mul", 0.82 } },
+			Shows = "The Chidori charge takes 0.51 s instead of 0.62 s.", Counter = "Still interruptible; a miss still leaves him open.", Lore = "CANON_YOUNG" },
+		{ Id = "ChidoriEconomy", Name = "Chidori Economy", Branch = "Katon &amp; Chidori", Kind = "property", Cost = 5, Requires = { "ChidoriFocus" },
+			Effects = { { "tech.Chidori.Cost", "add", -4 } },
+			Shows = "Chidori costs 30 chakra instead of 34.", Counter = "Same 9 s cooldown and punishable recovery.", Lore = "CANON_YOUNG" },
+		{ Id = "WallChidori", Name = "Wall Chidori", Branch = "Katon &amp; Chidori", Kind = "jutsu", Major = true, Cost = 12, Requires = { "ChidoriFocus" },
+			Effects = { { "tech.Chidori.WallCharge", "set", 0.3 } },
+			Shows = "Cast from a wall run, the Chidori charges in 0.3 s while he hangs on the wall, then the thrust dives at the opponent.",
+			Counter = "The charge is visible and still interruptible by blades; side-step the dive line.", Lore = "CANON_YOUNG" },
+		{ Id = "CurseControl", Name = "Curse Control", Branch = "Curse Mark", Kind = "awakening", Cost = 5,
+			Effects = { { "def.Awakening.HealthDrain", "add", -0.4 } },
+			Shows = "The Curse Mark burns 1.0 health per second instead of 1.4.", Counter = "It still never stops while it lasts.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "CurseBlood", Name = "Blood for Chakra", Branch = "Curse Mark", Kind = "awakening", Major = true, Cost = 14, Requires = { "CurseControl" },
+			Effects = { { "def.Awakening.BloodChakra", "set", true } },
+			Shows = "Under the Curse Mark the chakra a technique lacks is paid with health (never down to a KO): Chidori at an empty reserve.",
+			Counter = "Every jutsu he cannot afford costs him health; stall the 12 s.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "Stamina", Name = "Stamina", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Health", "add", 6 } },
+			Shows = "Health 126 instead of 120.", Counter = "Still the lightest body of the four.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "ChakraFlow", Name = "Chakra Flow", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.ChakraRegen", "add", 0.6 } },
+			Shows = "Chakra recovery 8.1/s instead of 7.5/s.", Counter = "Closed chakra points still slow it.", Lore = "PLAUSIBLE_YOUNG" },
+		{ Id = "Reserves", Name = "Reserves", Branch = "Body", Kind = "stat", Cost = 4,
+			Effects = { { "def.Chakra", "add", 6 } },
+			Shows = "Chakra reserve 111 instead of 105.", Counter = "The Chidori still takes a third of it.", Lore = "PLAUSIBLE_YOUNG" },
+	} },
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -5718,6 +7349,29 @@ function Techniques.expireSeals(c,a,now)
 		end
 	end
 	if changed then syncAnchor(a) end
+	-- Skill build (Kunai Recall): running over a planted kunai picks it up.
+	local recall=a.def.SealRecall
+	if recall and a.health&gt;0 and not a.reaction then Techniques.recall(c,a,now,recall) end
+end
+-- Kunai Recall (SkillTrees Flashstep.KunaiRecall): standing on one of his own
+-- planted kunai removes it and refunds a little chakra. A seal planted under
+-- 0.6 s ago is never swallowed by the throw that just planted it.
+function Techniques.recall(c,a,now,recall)
+	for i=#a.anchors,1,-1 do
+		local entry=a.anchors[i]
+		if not entry.actor and now-(entry.plantedAt or now)&gt;=.6 then
+			local d=entry.position-a.root.Position
+			if Vector3.new(d.X,0,d.Z).Magnitude&lt;=recall.Radius and math.abs(d.Y)&lt;4 then
+				if entry.part then entry.part:Destroy() end
+				table.remove(a.anchors,i);syncAnchor(a)
+				a.chakra=math.min(a.def.Chakra or 100,a.chakra+recall.Refund)
+				c:cue(a,"KUNAI RECOVERED • +"..recall.Refund.." CHAKRA",.7)
+				require(script.Parent.Brawler).event(c,a,"KunaiRecall")
+				return entry
+			end
+		end
+	end
+	return nil
 end
 -- Plant a seal on a surface, or on the opponent's body when the kunai connects.
 function Techniques.plant(c,a,surface,normal,victim)
@@ -5731,7 +7385,7 @@ function Techniques.plant(c,a,surface,normal,victim)
 				table.remove(a.anchors,i)
 			end
 		end
-		entry={actor=victim,position=victim.root.Position,expires=c.now+BODY_SEAL,id=a.sealSerial,
+		entry={actor=victim,position=victim.root.Position,expires=c.now+BODY_SEAL,id=a.sealSerial,plantedAt=c.now,
 			part=c:effect("Body seal",victim.root.Position,a.color,Vector3.new(.6,.6,.6),BODY_SEAL)}
 		c:cue(a,"SEAL ON TARGET • 2 TO FOLLOW",.9)
 	else
@@ -5744,8 +7398,10 @@ function Techniques.plant(c,a,surface,normal,victim)
 		end
 		local offset=if normal.Y&gt;0.5 then Vector3.new(0,3,0) else normal*3+Vector3.new(0,1,0)
 		local at=c:clamp(surface+offset)
-		entry={position=at,surface=surface,normal=normal,expires=c.now+12,id=a.sealSerial,
-			part=c:effect("Anchor",surface+normal*0.2,a.color,Vector3.new(1.3,0.2,1.3),12)}
+		-- Skill build (Seal Ink) may lengthen how long a planted seal holds.
+		local life=(a.def.Seals and a.def.Seals.PlantedLife) or 12
+		entry={position=at,surface=surface,normal=normal,expires=c.now+life,id=a.sealSerial,plantedAt=c.now,
+			part=c:effect("Anchor",surface+normal*0.2,a.color,Vector3.new(1.3,0.2,1.3),life)}
 		local count=0
 		for _,existing in a.anchors do if not existing.actor then count+=1 end end
 		c:cue(a,if count&gt;=1 then "SECOND SEAL PLANTED" else "SEAL PLANTED")
@@ -5844,7 +7500,9 @@ Techniques.BurstStrike = {
 			-- into the opponent and the floor, ending the air phase.
 			Brawler.start(c,a,"Slam")
 			local spec=table.clone(a.pending.spec)
-			spec.damage=pending.spec.Damage*.9;spec.reaction="Knockdown";spec.impulse=Vector3.new(0,-70,16);spec.stun=.92
+			-- Skill build (Rasengan Drive): DropReaction "Spiked" makes the body
+			-- bounce once off the floor for a pick-up instead of a flat knockdown.
+			spec.damage=pending.spec.Damage*.9;spec.reaction=pending.spec.DropReaction or "Knockdown";spec.impulse=Vector3.new(0,-70,16);spec.stun=.92
 			spec.width=6.5;spec.height=8
 			a.pending.spec=spec;a.pending.rasengan=true;a.attackVariant="RasenganDrop"
 			c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
@@ -5892,6 +7550,18 @@ Techniques.NeedleFan = {
 				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
 				local victim=a.target
 				local lead=victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.18
+				if pending.spec.FlankBlades then
+					-- Skill build (Flank Blades): each hidden blade is redirected
+					-- beside the opponent and comes in from a flank, past a frontal guard.
+					local toward=Vector3.new(victim.root.Position.X-a.root.Position.X,0,victim.root.Position.Z-a.root.Position.Z)
+					toward=if toward.Magnitude&gt;.1 then toward.Unit else a.root.CFrame.LookVector
+					local side=Vector3.new(-toward.Z,0,toward.X)*(if k==1 then -1 else 1)
+					-- Beside and a little past the body, like Geometry's meeting point.
+					local from=victim.root.Position+side*6+toward*1.5
+					c:pushImpact(from,"clash",false,{owner=a.id,direction=-side})
+					c:projectile(a,victim.root.Position+lead,86,12,pending.spec.Damage,"shuriken",nil,{origin=from})
+					return
+				end
 				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage,"shuriken")
 			end)
 		end
@@ -5920,12 +7590,20 @@ Techniques.MirageCast = {
 }
 Techniques.Quickstep={
 	check=function() return true end,
-	execute=function(c,a)
+	execute=function(c,a,pending,now)
 		local direction=if a.move.Magnitude&gt;0.2 then a.move else a.root.CFrame.RightVector
 		local departure=a.root.Position
 		local moved=require(script.Parent.Motor).travel(a,c,direction,11)
 		c:effect("Quickstep",a.root.Position,a.color,Vector3.new(2,3,2),0.22)
 		c:pushImpact(departure,"quickstep",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
+		-- Skill build (Quickstep Cut): the step opens the same arrival window as a
+		-- teleport, so the new angle converts (strike, launcher or Rasengan).
+		local arrival=pending and pending.spec.Arrival
+		if arrival and moved&gt;3 then
+			a.flashUntil=now+arrival
+			c:cue(a,"ANGLE CREATED • STRIKE",arrival)
+			return
+		end
 		c:cue(a,if moved&gt;3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
@@ -5956,17 +7634,32 @@ Techniques.WireTrap={
 	check=function() return true end,
 	execute=function(c,a,pending)
 		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
-		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7})
+		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7,riders=if pending.spec.WallPin then {wallPin=pending.spec.WallPin} else nil})
 		c:cue(a,"WIRE TRAP",.5)
 	end,
 }
-function Techniques.wireBind(c,owner,victim)
+-- `riders` (skill builds): bind = a shorter bind for wired hidden blades;
+-- wallPin = {Range, Bind}: a wall close behind the body along the wire ties it
+-- against the surface for longer (Wire Pin).
+function Techniques.wireBind(c,owner,victim,riders,direction)
 	if victim.health&lt;=0 then return end
 	local Brawler=require(script.Parent.Brawler)
-	Brawler.react(c,victim,"Bound",Vector3.zero,1.0,owner)
+	local duration=(riders and riders.bind) or 1.0
+	local pinned=false
+	local pin=riders and riders.wallPin
+	local along=direction and Vector3.new(direction.X,0,direction.Z)
+	if pin and along and along.Magnitude&gt;.05 then
+		local hit=workspace:Raycast(victim.root.Position,along.Unit*pin.Range,c:rayParams(true))
+		if hit and math.abs(hit.Normal.Y)&lt;.3 and Brawler.splatSurface(hit.Instance) then
+			c:relocate(victim,Vector3.new(hit.Position.X,victim.root.Position.Y,hit.Position.Z)+hit.Normal*1.7)
+			duration=pin.Bind;pinned=true
+			c:pushImpact(victim.root.Position,"pin",false,{owner=owner.id,normal=hit.Normal})
+		end
+	end
+	Brawler.react(c,victim,"Bound",Vector3.zero,duration,owner)
 	victim.boundBy=owner;owner.wireVictim=victim
-	c:cue(owner,"WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
-	Brawler.event(c,owner,"WireBind")
+	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
 -- a straight lightning thrust that ends the fight's momentum either way.
@@ -6066,6 +7759,8 @@ Techniques.Rotation={
 	execute=function(c,a,pending,now)
 		local active=pending.spec.Active
 		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
+		-- Skill builds: a wider dome (Reach) and blades sent back (Reflect).
+		a.rotationReach=pending.spec.Reach;a.rotationReflect=pending.spec.Reflect
 		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
 		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
 		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
@@ -6079,7 +7774,8 @@ Techniques.VacuumPalm={
 		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
 		if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
 		local goal=origin+flat.Unit*pending.spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-4,2),0)
-		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5})
+		-- Skill build (Sealing Palm): a clean hit closes a chakra point at range.
+		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5,riders=if pending.spec.Tenketsu then {tenketsu=true} else nil})
 		c:cue(a,"EIGHT TRIGRAMS • VACUUM PALM",.6)
 	end,
 }
@@ -6132,7 +7828,7 @@ Techniques.SixtyFourPalms={
 				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
-					victim.sealedUntil=c.now+3.5
+					victim.sealedUntil=c.now+(pending.spec.Seal or 3.5)
 					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
@@ -6151,7 +7847,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -6251,7 +7947,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -6279,7 +7975,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -6344,7 +8040,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -6395,7 +8091,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -7119,21 +8815,21 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND39">
+  <Item class="StarterPlayer" referent="ND44">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND40">
+    <Item class="StarterPlayerScripts" referent="ND45">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND41">
+      <Item class="Folder" referent="ND46">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND42">
+        <Item class="ModuleScript" referent="ND47">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -7408,7 +9104,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND43">
+        <Item class="ModuleScript" referent="ND48">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -8529,7 +10225,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND44">
+        <Item class="ModuleScript" referent="ND49">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -8677,7 +10373,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND45">
+        <Item class="LocalScript" referent="ND50">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -8813,7 +10509,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND46">
+        <Item class="ModuleScript" referent="ND51">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -9071,7 +10767,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND47">
+        <Item class="ModuleScript" referent="ND52">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, duel HUD, match intro and
@@ -9483,7 +11179,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND48">
+        <Item class="ModuleScript" referent="ND53">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -9624,7 +11320,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND49">
+        <Item class="ModuleScript" referent="ND54">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -11453,7 +13149,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND50">
+  <Item class="Lighting" referent="ND55">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -11471,7 +13167,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND51">
+  <Item class="SoundService" referent="ND56">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

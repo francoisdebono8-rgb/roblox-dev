@@ -168,6 +168,7 @@ local function newInstance(class)
  function obj:FindFirstChildOfClass() return nil end
  function obj:GetChildren() return self.Children end
  function obj:Clone() return newInstance(class) end
+ function obj:ClearAllChildren() table.clear(self.Children) end
  function obj:SetAttribute(k,v) self.attributes[k]=v end
  function obj:GetAttribute(k) return self.attributes[k] end
  return obj
@@ -300,7 +301,9 @@ end}
 Harness.bindings={}
 
 -- Deterministic duel fixture: real Combat/Brawler/AI against two rigs.
-function Harness.duel(first,second)
+-- Optional kits (SkillBuilds.apply/build results) give a side a skill build:
+-- kits.A / kits.B; without them both fighters are the canonical kits.
+function Harness.duel(first,second,kits)
  local effects=fakePart();effects.Name="Effects";effects.children={}
  function effects:ClearAllChildren() self.children={} end
  function effects:GetChildren() return self.children end
@@ -319,7 +322,7 @@ function Harness.duel(first,second)
  local function actor(id,key,z)
   local position=V.new(0,3,z)
   local model,hum,root,joints=buildRig(folder,fighters[key],C.lookAt(position,V.new(0,3,-z)),id)
-  return c:add(id,model,hum,root,joints,key)
+  return c:add(id,model,hum,root,joints,key,kits and kits[id])
  end
  local a,b=actor("A",first,2.5),actor("B",second,-2.5)
  a.target=b;b.target=a

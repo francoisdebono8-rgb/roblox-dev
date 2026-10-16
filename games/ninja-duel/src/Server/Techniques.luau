@@ -83,6 +83,29 @@ function Techniques.expireSeals(c,a,now)
 		end
 	end
 	if changed then syncAnchor(a) end
+	-- Skill build (Kunai Recall): running over a planted kunai picks it up.
+	local recall=a.def.SealRecall
+	if recall and a.health>0 and not a.reaction then Techniques.recall(c,a,now,recall) end
+end
+-- Kunai Recall (SkillTrees Flashstep.KunaiRecall): standing on one of his own
+-- planted kunai removes it and refunds a little chakra. A seal planted under
+-- 0.6 s ago is never swallowed by the throw that just planted it.
+function Techniques.recall(c,a,now,recall)
+	for i=#a.anchors,1,-1 do
+		local entry=a.anchors[i]
+		if not entry.actor and now-(entry.plantedAt or now)>=.6 then
+			local d=entry.position-a.root.Position
+			if Vector3.new(d.X,0,d.Z).Magnitude<=recall.Radius and math.abs(d.Y)<4 then
+				if entry.part then entry.part:Destroy() end
+				table.remove(a.anchors,i);syncAnchor(a)
+				a.chakra=math.min(a.def.Chakra or 100,a.chakra+recall.Refund)
+				c:cue(a,"KUNAI RECOVERED • +"..recall.Refund.." CHAKRA",.7)
+				require(script.Parent.Brawler).event(c,a,"KunaiRecall")
+				return entry
+			end
+		end
+	end
+	return nil
 end
 -- Plant a seal on a surface, or on the opponent's body when the kunai connects.
 function Techniques.plant(c,a,surface,normal,victim)
@@ -96,7 +119,7 @@ function Techniques.plant(c,a,surface,normal,victim)
 				table.remove(a.anchors,i)
 			end
 		end
-		entry={actor=victim,position=victim.root.Position,expires=c.now+BODY_SEAL,id=a.sealSerial,
+		entry={actor=victim,position=victim.root.Position,expires=c.now+BODY_SEAL,id=a.sealSerial,plantedAt=c.now,
 			part=c:effect("Body seal",victim.root.Position,a.color,Vector3.new(.6,.6,.6),BODY_SEAL)}
 		c:cue(a,"SEAL ON TARGET • 2 TO FOLLOW",.9)
 	else
@@ -109,8 +132,10 @@ function Techniques.plant(c,a,surface,normal,victim)
 		end
 		local offset=if normal.Y>0.5 then Vector3.new(0,3,0) else normal*3+Vector3.new(0,1,0)
 		local at=c:clamp(surface+offset)
-		entry={position=at,surface=surface,normal=normal,expires=c.now+12,id=a.sealSerial,
-			part=c:effect("Anchor",surface+normal*0.2,a.color,Vector3.new(1.3,0.2,1.3),12)}
+		-- Skill build (Seal Ink) may lengthen how long a planted seal holds.
+		local life=(a.def.Seals and a.def.Seals.PlantedLife) or 12
+		entry={position=at,surface=surface,normal=normal,expires=c.now+life,id=a.sealSerial,plantedAt=c.now,
+			part=c:effect("Anchor",surface+normal*0.2,a.color,Vector3.new(1.3,0.2,1.3),life)}
 		local count=0
 		for _,existing in a.anchors do if not existing.actor then count+=1 end end
 		c:cue(a,if count>=1 then "SECOND SEAL PLANTED" else "SEAL PLANTED")
@@ -209,7 +234,9 @@ Techniques.BurstStrike = {
 			-- into the opponent and the floor, ending the air phase.
 			Brawler.start(c,a,"Slam")
 			local spec=table.clone(a.pending.spec)
-			spec.damage=pending.spec.Damage*.9;spec.reaction="Knockdown";spec.impulse=Vector3.new(0,-70,16);spec.stun=.92
+			-- Skill build (Rasengan Drive): DropReaction "Spiked" makes the body
+			-- bounce once off the floor for a pick-up instead of a flat knockdown.
+			spec.damage=pending.spec.Damage*.9;spec.reaction=pending.spec.DropReaction or "Knockdown";spec.impulse=Vector3.new(0,-70,16);spec.stun=.92
 			spec.width=6.5;spec.height=8
 			a.pending.spec=spec;a.pending.rasengan=true;a.attackVariant="RasenganDrop"
 			c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
@@ -257,6 +284,18 @@ Techniques.NeedleFan = {
 				if a.health<=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health<=0 then return end
 				local victim=a.target
 				local lead=victim.root.AssemblyLinearVelocity*Vector3.new(1,0,1)*.18
+				if pending.spec.FlankBlades then
+					-- Skill build (Flank Blades): each hidden blade is redirected
+					-- beside the opponent and comes in from a flank, past a frontal guard.
+					local toward=Vector3.new(victim.root.Position.X-a.root.Position.X,0,victim.root.Position.Z-a.root.Position.Z)
+					toward=if toward.Magnitude>.1 then toward.Unit else a.root.CFrame.LookVector
+					local side=Vector3.new(-toward.Z,0,toward.X)*(if k==1 then -1 else 1)
+					-- Beside and a little past the body, like Geometry's meeting point.
+					local from=victim.root.Position+side*6+toward*1.5
+					c:pushImpact(from,"clash",false,{owner=a.id,direction=-side})
+					c:projectile(a,victim.root.Position+lead,86,12,pending.spec.Damage,"shuriken",nil,{origin=from})
+					return
+				end
 				c:projectile(a,victim.root.Position+lead+a.root.CFrame.RightVector*(if k==1 then -.6 else .6),86,pending.spec.Range,pending.spec.Damage,"shuriken")
 			end)
 		end
@@ -285,12 +324,20 @@ Techniques.MirageCast = {
 }
 Techniques.Quickstep={
 	check=function() return true end,
-	execute=function(c,a)
+	execute=function(c,a,pending,now)
 		local direction=if a.move.Magnitude>0.2 then a.move else a.root.CFrame.RightVector
 		local departure=a.root.Position
 		local moved=require(script.Parent.Motor).travel(a,c,direction,11)
 		c:effect("Quickstep",a.root.Position,a.color,Vector3.new(2,3,2),0.22)
 		c:pushImpact(departure,"quickstep",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position})
+		-- Skill build (Quickstep Cut): the step opens the same arrival window as a
+		-- teleport, so the new angle converts (strike, launcher or Rasengan).
+		local arrival=pending and pending.spec.Arrival
+		if arrival and moved>3 then
+			a.flashUntil=now+arrival
+			c:cue(a,"ANGLE CREATED • STRIKE",arrival)
+			return
+		end
 		c:cue(a,if moved>3 then "ANGLE CREATED" else "ANGLE BLOCKED")
 	end,
 }
@@ -321,17 +368,32 @@ Techniques.WireTrap={
 	check=function() return true end,
 	execute=function(c,a,pending)
 		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
-		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7})
+		c:projectile(a,aim,86,pending.spec.Range,pending.spec.Damage,"wire",nil,{radius=.7,riders=if pending.spec.WallPin then {wallPin=pending.spec.WallPin} else nil})
 		c:cue(a,"WIRE TRAP",.5)
 	end,
 }
-function Techniques.wireBind(c,owner,victim)
+-- `riders` (skill builds): bind = a shorter bind for wired hidden blades;
+-- wallPin = {Range, Bind}: a wall close behind the body along the wire ties it
+-- against the surface for longer (Wire Pin).
+function Techniques.wireBind(c,owner,victim,riders,direction)
 	if victim.health<=0 then return end
 	local Brawler=require(script.Parent.Brawler)
-	Brawler.react(c,victim,"Bound",Vector3.zero,1.0,owner)
+	local duration=(riders and riders.bind) or 1.0
+	local pinned=false
+	local pin=riders and riders.wallPin
+	local along=direction and Vector3.new(direction.X,0,direction.Z)
+	if pin and along and along.Magnitude>.05 then
+		local hit=workspace:Raycast(victim.root.Position,along.Unit*pin.Range,c:rayParams(true))
+		if hit and math.abs(hit.Normal.Y)<.3 and Brawler.splatSurface(hit.Instance) then
+			c:relocate(victim,Vector3.new(hit.Position.X,victim.root.Position.Y,hit.Position.Z)+hit.Normal*1.7)
+			duration=pin.Bind;pinned=true
+			c:pushImpact(victim.root.Position,"pin",false,{owner=owner.id,normal=hit.Normal})
+		end
+	end
+	Brawler.react(c,victim,"Bound",Vector3.zero,duration,owner)
 	victim.boundBy=owner;owner.wireVictim=victim
-	c:cue(owner,"WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
-	Brawler.event(c,owner,"WireBind")
+	c:cue(owner,if pinned then "WIRED TO THE WALL • 1 = DRAGON FLAME" else "WIRED • 1 = DRAGON FLAME",.9);c:cue(victim,"WIRED • X TO ESCAPE",.9)
+	Brawler.event(c,owner,if pinned then "WirePin" else "WireBind")
 end
 -- Chidori: the charge is the channel (slowed, interruptible); the release is
 -- a straight lightning thrust that ends the fight's momentum either way.
@@ -431,6 +493,8 @@ Techniques.Rotation={
 	execute=function(c,a,pending,now)
 		local active=pending.spec.Active
 		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
+		-- Skill builds: a wider dome (Reach) and blades sent back (Reflect).
+		a.rotationReach=pending.spec.Reach;a.rotationReflect=pending.spec.Reflect
 		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
 		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
 		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
@@ -444,7 +508,8 @@ Techniques.VacuumPalm={
 		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
 		if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
 		local goal=origin+flat.Unit*pending.spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-4,2),0)
-		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5})
+		-- Skill build (Sealing Palm): a clean hit closes a chakra point at range.
+		c:projectile(a,goal,pending.spec.Speed or 96,pending.spec.Range,pending.spec.Damage,"palm",nil,{origin=origin,radius=1.5,growth=2.5,riders=if pending.spec.Tenketsu then {tenketsu=true} else nil})
 		c:cue(a,"EIGHT TRIGRAMS • VACUUM PALM",.6)
 	end,
 }
@@ -497,7 +562,7 @@ Techniques.SixtyFourPalms={
 				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
-					victim.sealedUntil=c.now+3.5
+					victim.sealedUntil=c.now+(pending.spec.Seal or 3.5)
 					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
