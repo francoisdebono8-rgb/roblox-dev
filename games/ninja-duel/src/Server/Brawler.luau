@@ -186,6 +186,15 @@ function Brawler.request(c,a,action)
  -- so the teleport flows straight into an attack from the new angle.
  local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now
   and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
+ -- Rotation already repelled a strike and is winding down: the strike comes
+ -- straight out of the spin as the counter.
+ if action=="Attack" and (a.counterUntil or 0)>c.now and (a.rotationCounterUntil or 0)>c.now and (a.state=="TechniqueActive" or a.state=="TechniqueRecovery") then
+  a.pending=nil;a.rotationUntil=0;c:setState(a,"Neutral",0)
+  return Brawler.counterStart(c,a)
+ end
+ -- A strike pressed inside a counter stance (Read, Rotation) waits for the
+ -- stance to pay off instead of being refused.
+ if action=="Attack" and Brawler.counterStance(a) then a.counterQueued=c.now;return true,"Buffered" end
  if canFlash then
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -266,7 +275,7 @@ function Brawler.request(c,a,action)
  end
  -- A successful Read (Itachi) pays off with the graph's counter on the next press.
  if action=="Attack" and graph.readCounter and (a.counterUntil or 0)>c.now and not canChain then
-  a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
+  return Brawler.counterStart(c,a)
  end
  -- Directional combo grammar: inside a confirmed string the stick picks the
  -- route. Toward the opponent launches, away goes low, sideways turns the
@@ -469,20 +478,95 @@ function Brawler.clash(c,a,p)
 end
 -- Neji's Gentle Fist: palms reach the chakra network. Every palm drains
 -- chakra, even through a guard; a clean one closes a chakra point, which slows
--- the victim's chakra recovery for a few seconds (stacks up to four).
-function Brawler.gentleFist(c,a,b,guarded)
+-- the victim's chakra recovery for a few seconds (stacks up to four). Each
+-- closed point is a real place on the body: the snapshot lists them
+-- (tenketsuPoints) and the client lights them, so the network is seen closing.
+-- Which point closes follows where the palm landed (the strike's zone).
+local TENKETSU_ORDER={
+ head={"throat","leftShoulder","rightShoulder","heart","solar","navel","leftHip","rightHip"},
+ chin={"throat","heart","leftShoulder","rightShoulder","solar","navel","leftHip","rightHip"},
+ body={"heart","solar","navel","leftShoulder","rightShoulder","throat","leftHip","rightHip"},
+ legs={"navel","leftHip","rightHip","solar","heart","throat","leftShoulder","rightShoulder"},
+}
+Brawler.TENKETSU_ORDER=TENKETSU_ORDER
+-- Close one point on b; nil when every point is already closed (the palm then
+-- only keeps them closed longer).
+function Brawler.closePoint(c,a,b,zone)
  local g=a.def.GentleFist
- local awake=(a.awakenUntil or 0)>c.now and a.def.Awakening
- local boost=if awake then (a.def.Awakening.Drain or 1) else 1
+ if (b.tenketsuUntil or 0)<=c.now then b.tenketsu=0;b.tenketsuPoints={} end
+ b.tenketsuPoints=b.tenketsuPoints or {}
+ b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ if #b.tenketsuPoints>=g.MaxPoints then b.tenketsu=#b.tenketsuPoints;return nil end
+ local closed={}
+ for _,id in b.tenketsuPoints do closed[id]=true end
+ local point
+ for _,id in TENKETSU_ORDER[zone or "body"] or TENKETSU_ORDER.body do if not closed[id] then point=id;break end end
+ if not point then return nil end
+ table.insert(b.tenketsuPoints,point)
+ b.tenketsu=#b.tenketsuPoints
+ local severe=b.tenketsu>=g.MaxPoints
+ c:pushImpact(b.root.Position,"tenketsu",false,{owner=a.id,fighter=a.fighterId,victim=b.id,point=point,count=b.tenketsu,severe=severe})
+ Brawler.event(c,a,"PointClosed")
+ if severe then c:cue(b,"CHAKRA NETWORK SEVERED",1);Brawler.event(c,a,"Severed") end
+ return point
+end
+-- Every point at once (the last of the Sixty-Four Palms).
+function Brawler.sealPoints(c,a,b)
+ for _=1,a.def.GentleFist.MaxPoints do if not Brawler.closePoint(c,a,b,"body") then break end end
+end
+-- `zone`: where the palm landed (defaults to the body's last hit zone);
+-- `palm`: a melee contact whose generic hit feedback becomes the palm's.
+function Brawler.gentleFist(c,a,b,guarded,zone,palm)
+ local g=a.def.GentleFist
+ local tune=a.def.Awakening
+ local awake=(a.awakenUntil or 0)>c.now and tune
+ local boost=if awake then (tune.Drain or 1) else 1
  -- Skill build (Full Field Points): awakened, the palms reach the points
  -- through a guard (full drain and a closed point).
- local through=guarded and awake and a.def.Awakening.GuardPoints==true
+ local through=guarded and awake and tune.GuardPoints==true
  if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
  b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
- if not guarded or through then
-  local points=if (b.tenketsuUntil or 0)>c.now then (b.tenketsu or 0) else 0
-  b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ if guarded and not through then return end
+ -- The contact reads as a palm on the network, not a punch: the generic light
+ -- hit this blow pushed takes the palm's feedback (sound, flash, camera).
+ if palm then
+  local last=c.impacts and c.impacts[#c.impacts]
+  if last and last.at==c.now and last.style=="light" and (last.position-b.root.Position).Magnitude<1 then last.style="palm";last.owner=a.id end
  end
+ zone=zone or b.hitZone or "body"
+ -- Byakugan Full Field: he sees the whole network, a clean palm closes two.
+ for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do Brawler.closePoint(c,a,b,zone) end
+ -- Full Field: a palm that breaks a jutsu being moulded cuts the flow itself.
+ if awake and tune.ChannelCut and b.interruptedAt==c.now then
+  b.sealedUntil=math.max(b.sealedUntil or 0,c.now+tune.ChannelCut)
+  c:cue(a,"FULL FIELD • CHAKRA FLOW CUT",.8);c:cue(b,"CHAKRA FLOW CUT • NO JUTSU",.9)
+  Brawler.event(c,a,"FlowCut")
+ end
+end
+-- Counter stances (Itachi's Read, Neji's Rotation): a strike pressed while the
+-- stance holds is kept and fires the moment the stance reads or repels.
+function Brawler.counterStance(a)
+ local p=a.pending
+ return (a.state=="TechniqueChannel" or a.state=="TechniqueActive") and p~=nil and p.kind=="Technique" and (p.spec.Id=="Read" or p.spec.Id=="Rotation")
+end
+-- The graph's counter (CounterPalm, PalmThrust...) out of a read, a repel or a
+-- caught genjutsu. With a reach (a caught image, a repelled body) it glides the
+-- distance to the body instead of swinging at the air.
+function Brawler.counterStart(c,a)
+ local graph=Brawler.graph(a) or {}
+ if not graph.readCounter or not a.target then return false end
+ a.counterUntil=0;a.counterQueued=nil
+ local reach=a.counterReach;a.counterReach=nil
+ local ok=Brawler.start(c,a,graph.readCounter)
+ local p=a.pending
+ if ok and p and reach and reach.expires>c.now then
+  local d=a.target.root.Position-a.root.Position
+  local need=math.clamp(Vector3.new(d.X,0,d.Z).Magnitude-(p.spec.contact or 3.6),0,reach.max)
+  if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+  a.attackVariant=reach.variant
+ end
+ Brawler.event(c,a,"Counter")
+ return ok
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -523,7 +607,7 @@ function Brawler.hit(c,a,p)
  end
  if not success or b.health<=0 then return success end
  if protected then return true end
- if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
+ if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
  if p.flow and not guarded and b.health>0 then
   a.flowStreak=(a.flowStreak or 0)+1
   b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
@@ -554,18 +638,14 @@ function Brawler.hit(c,a,p)
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
  Brawler.routePayoff(c,a,b,p)
- -- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
- -- arrival seals the body again, so the relocation chain continues.
- local chain=a.def.Awakening and a.def.Awakening.FlashChain
- if chain and (a.awakenUntil or 0)>c.now and a.teleportAt and c.now-a.teleportAt<.7 and b.health>0 then
-  local entry=require(script.Parent.Techniques).plant(c,a,b.root.Position,Vector3.yAxis,b)
-  entry.expires=c.now+chain
-  c:cue(a,"FLOW • SEALED AGAIN",.7);Brawler.event(c,a,"FlowSeal")
- end
+ -- Awakening rules on a landed strike (Techniques.awakenedHit/awakenedReact).
+ local Techniques=require(script.Parent.Techniques)
+ Techniques.awakenedHit(c,a,b,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ Techniques.awakenedReact(c,a,b,p)
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)>=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)

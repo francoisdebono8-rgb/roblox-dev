@@ -241,7 +241,9 @@ function AI:update(now)
 		if fire and c:request(a,fire,target.root.Position) then return end
 	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
-	if (a.counterUntil or 0)>now and distance<8 then a.move=toward;c:request(a,"Attack");return end
+	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.
+	local counterRange=8+(if a.counterReach and a.counterReach.expires>now then a.counterReach.max else 0)
+	if (a.counterUntil or 0)>now and distance<counterRange then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
 	if (a.flashUntil or 0)>now then
 		local rasengan=slotOf(a,"BurstStrike")

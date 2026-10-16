@@ -177,13 +177,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		if flat.Magnitude>.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
 		self:cue(victim,"SHARINGAN • TRACKED",.7)
 	end
-	if readEligible and frontal and victim.readUntil>self.now then
-		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
-		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
-		self:setState(victim,"Neutral",0)
-		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
-		return false
-	end
+	-- Sharingan Read: the blow is seen coming (VelmoraDefense.read).
+	if readEligible and frontal and victim.readUntil>self.now then return Defense.read(self,attacker,victim) end
 	-- Gaara's sand shield stops the hit by itself while it has charges.
 	local shield=victim.def.SandShield
 	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
@@ -234,11 +229,13 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
 			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
 			if interrupted then victim.stunFloorUntil=victim.untilTime end
-			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
+			if interrupted then victim.interruptedAt=self.now; Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
 	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
+	if (victim.awakenUntil or 0)>self.now and victim.def.Awakening then amount*=1+(victim.def.Awakening.Vulnerability or 0) end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
 	-- is worth less. Long routes stay possible; they just stop being lethal.
 	if not guarded then
@@ -618,7 +615,7 @@ function Combat:awaken(a)
 	if not tune or a.awakened then return false,"No awakening" end
 	if a.health>a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration
+	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration;a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
 	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
 	a.cooldowns={}
 	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
@@ -722,7 +719,7 @@ function Combat:request(a,action,aim,clientTime)
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge) then
+	if (action=="Guard" or action=="Dodge") and (a.state=="Recovery" or a.state=="TechniqueRecovery") and self.now>=(a.recoveryCancelAt or math.huge) then
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
 	if action=="Pursuit" then
@@ -921,7 +918,14 @@ function Combat:request(a,action,aim,clientTime)
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
-	if flat.Magnitude>0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+	a.castFace=nil
+	if flat.Magnitude>0.1 then
+		-- A small correction snaps (unseen); a large one turns through the
+		-- channel instead of teleporting the facing on the first frame.
+		local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+		if look.Magnitude<.01 or look.Unit:Dot(flat.Unit)>=.82 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+		else a.castFace=flat.Unit end
+	end
 	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
 	if variant=="WallChidori" then
 		-- Held off the wall for the whole charge (the hover window zeroes the fall).
@@ -948,7 +952,7 @@ function Combat:updateActor(a,dt)
 		a.subRegenAt=if a.subCharges<Config.Substitution.Charges then now+Config.Substitution.Recharge else math.huge
 		self:cue(a,"SUBSTITUTION READY",.6)
 	end
-	if a.illusionUntil<=now then a.decoyPosition=nil end
+	Techniques.stepIllusion(self,a,now)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
@@ -963,10 +967,9 @@ function Combat:updateActor(a,dt)
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
 	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
-	-- The curse mark burns the body that carries it (never to a KO).
-	if (a.awakenUntil or 0)>now and a.def.Awakening.HealthDrain and a.health>1 then
-		a.health=math.max(1,a.health-a.def.Awakening.HealthDrain*dt);a.hum.Health=math.max(1,a.health)
-	end
+	-- The curse mark burns the body that carries it (never to a KO), faster
+	-- while it goes hungry (Techniques.curseDrain).
+	Techniques.curseDrain(self,a,dt,now)
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
@@ -989,16 +992,8 @@ function Combat:updateActor(a,dt)
 			-- the client can answer with air movement instead of silence.
 			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
-				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
-				local caster=a.target
-				if a.illusionUntil>now and caster and caster.health>0 and caster.fighterId=="Mirage" then
-					a.illusionUntil=0;a.decoyPosition=nil
-					caster.counterUntil=now+1.1;caster.bonusUntil=now+1.1
-					Brawler.event(self,caster,"MirageCatch")
-					self:pushImpact(a.root.Position,"mirage",false,{owner=caster.id,fighter=caster.fighterId})
-					self:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);self:cue(a,"GENJUTSU • EXPOSED",1)
-					pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
-				end
+				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
+				Techniques.whiffRead(self,a,pending,now)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -1016,6 +1011,9 @@ function Combat:updateActor(a,dt)
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
+			-- A utility jutsu (Flow) yields the second half of its recovery to a
+			-- guard or a dodge: it flows back into movement instead of freezing.
+			if pending.spec.Flow then a.recoveryCancelAt=now+pending.spec.Recovery*.5 end
 		else
 			a.pending=nil;a.attackName=nil; self:setState(a,"Neutral",0)
 		end
@@ -1037,6 +1035,11 @@ function Combat:updateActor(a,dt)
 		if a.hop.remaining<=.01 or a.reaction then a.hop=nil end
 	end
 	if a.castId and not a.pending and not a.throwing and a.state~="TechniqueRecovery" then a.castId=nil end
+	-- A cast that started off-line turns into its aim through the channel.
+	if a.castFace then
+		if (a.state=="TechniqueChannel" or a.state=="TechniqueActive") and (a.rotationUntil or 0)<=now then self:turnToward(a,a.castFace,dt,1440)
+		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
+	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
@@ -1208,13 +1211,21 @@ function Combat:stepRotation(a)
 		local hit=self:damage(a,b,a.rotationDamage or 6,false,false)
 		self.damageTag=nil
 		if self.match.phase~="Duel" then return end
-		-- The dome throws the body out even through a guard.
-		if hit then Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		-- The dome throws a body that was only standing in it out, even through a
+		-- guard; a strike it turns aside staggers out of the dome instead, still
+		-- inside the palm that answers (Techniques.rotationCounter).
+		if hit then
+			if attacking and b.airborne then Brawler.react(self,b,"Juggled",away*16+Vector3.new(0,14,0),.6,a)
+			elseif attacking then Brawler.react(self,b,"HitStun",away*20,.6,a)
+			else Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		end
 		self:pushImpact(b.root.Position,"repel",true,{owner=a.id,direction=away})
 		if attacking then
 			a.counterUntil=self.now+.9
+			a.counterReach={expires=self.now+.9,max=7,variant="TrigramCounter"}
 			Brawler.event(self,a,"Repel")
 			self:cue(a,"ROTATION • REPELLED • COUNTER",.8);self:cue(b,"REPELLED",.6)
+			Techniques.rotationCounter(self,a)
 		end
 	end
 end
