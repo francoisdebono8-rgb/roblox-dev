@@ -1944,7 +1944,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ca54deb947c5b2a189ad501b4f495a75e96336b73d9e1e33e6aa72920230dfec</string>
+          <string name="Value">8f0ba3c786e8c957045a47e496d4583066384b790a2956f2f1590f7e50496dca</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -5528,6 +5528,8 @@ function Combat:applyHitstop(attacker,victim,style,heavy)
 end
 -- Short feed of contacts that actually happened. Snapshots carry it so the
 -- client can layer sound and VFX on the real contact frame, never on the press.
+-- Shortest channel the tutorial's interrupt step shows.
+Combat.TRAINING_CHANNEL=.75
 function Combat:pushImpact(position,style,heavy,extra)
 	local feed=self.impacts or {}
 	self.impacts=feed
@@ -6376,7 +6378,11 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if string.match(action,"^Technique") and (a.sealedUntil or 0)&gt;self.now then return false,"Chakra points sealed" end
 	local slot=tonumber(string.match(action,"^Technique([1-5])$"))
 	local spec=slot and a.def.Techniques[slot]
- if spec and (a.trainingChannelScale or 1)~=1 then spec=table.clone(spec);spec.Channel*=a.trainingChannelScale end
+ if spec and (a.trainingChannelScale or 1)~=1 then
+  -- Tutorial (interrupt step): the signs last long enough to be read and hit,
+  -- whoever the bot is (Rock Lee's only jutsu channels 0.08 s).
+  spec=table.clone(spec);spec.Channel=math.max(spec.Channel*a.trainingChannelScale,Combat.TRAINING_CHANNEL)
+ end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
 	-- A string cancel shortens the wind-up to .14 s; a technique that is already

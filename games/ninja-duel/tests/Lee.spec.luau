@@ -698,4 +698,16 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
  assert(ok,err)
 end)
 
+test("tutorial: the interrupt step gives Lee readable hand signs, like any bot",function()
+ -- His only jutsu channels 0.08 s: tripled (the tutorial's scale) it was still
+ -- 0.24 s, too short to read and interrupt.
+ local Tutorial=H.load("Server/Tutorial")
+ for _,id in {"Leaf","Mirage","Flashstep"} do
+  local c,a,b=H.duel(if id=="Flashstep" then "Mirage" else "Flashstep",id)
+  b.trainingChannelScale=3
+  assert(c:request(b,Tutorial.interruptSlot(b),a.root.Position),id..": the tutorial jutsu was refused")
+  assert(b.state=="TechniqueChannel" and b.untilTime-c.now>=.74,id..": the signs last "..string.format("%.2f",b.untilTime-c.now).." s")
+ end
+end)
+
 print("NinjaDuel Rock Lee stress test: "..passed.." PASS")
