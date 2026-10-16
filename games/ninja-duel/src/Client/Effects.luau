@@ -60,6 +60,8 @@ end
 local function sound(parent,id,volume,speed)
 	local s=new("Sound",{SoundId=id,Volume=volume or .4,PlaybackSpeed=speed or 1,RollOffMaxDistance=160,RollOffMinDistance=12},parent)
 	s:Play();Debris:AddItem(s,3)
+	-- A bare anchor made for this sound goes with it.
+	if parent.Name=="SoundAnchor" then Debris:AddItem(parent,3) end
 	return s
 end
 local function tween(object,time,goal,style,direction)
@@ -81,8 +83,12 @@ local function emitter(parent,props)
 	for k,v in props do e[k]=v end
 	return e
 end
+-- An invisible point to hang a sound, light or emitter on (it used to be a
+-- visible black cube left behind at every contact for the rest of the duel).
 local function anchorPart(parent,position)
-	return block(parent,Vector3.new(.2,.2,.2),CFrame.new(position),Color3.new(),Enum.Material.SmoothPlastic)
+	local p=block(parent,Vector3.new(.2,.2,.2),CFrame.new(position),Color3.new(),Enum.Material.SmoothPlastic)
+	p.Name="SoundAnchor";p.Transparency=1
+	return p
 end
 -- Weld every piece of a model to its (anchored) root so one CFrame write moves
 -- the whole object.

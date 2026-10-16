@@ -1724,7 +1724,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a02b5556290346fa7ce646f41a8c4583367cdd4dfdefa6b8aed6ef5bd5b11bfd</string>
+          <string name="Value">307ab0d944fa09fd4cdf1c3b1536df90c55e36a07366ff835a87410aeb9dfb29</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -11841,6 +11841,8 @@ end
 local function sound(parent,id,volume,speed)
 	local s=new("Sound",{SoundId=id,Volume=volume or .4,PlaybackSpeed=speed or 1,RollOffMaxDistance=160,RollOffMinDistance=12},parent)
 	s:Play();Debris:AddItem(s,3)
+	-- A bare anchor made for this sound goes with it.
+	if parent.Name=="SoundAnchor" then Debris:AddItem(parent,3) end
 	return s
 end
 local function tween(object,time,goal,style,direction)
@@ -11862,8 +11864,12 @@ local function emitter(parent,props)
 	for k,v in props do e[k]=v end
 	return e
 end
+-- An invisible point to hang a sound, light or emitter on (it used to be a
+-- visible black cube left behind at every contact for the rest of the duel).
 local function anchorPart(parent,position)
-	return block(parent,Vector3.new(.2,.2,.2),CFrame.new(position),Color3.new(),Enum.Material.SmoothPlastic)
+	local p=block(parent,Vector3.new(.2,.2,.2),CFrame.new(position),Color3.new(),Enum.Material.SmoothPlastic)
+	p.Name="SoundAnchor";p.Transparency=1
+	return p
 end
 -- Weld every piece of a model to its (anchored) root so one CFrame write moves
 -- the whole object.
@@ -14088,6 +14094,25 @@ local function sandRing(fx,position,from,to,time)
 	K.tween(disc,time,{Size=Vector3.new(.04,to,to),Transparency=1})
 	Debris:AddItem(disc,time+.05)
 end
+-- A rounded column of sand standing on `frame` (its foot): a cylinder with a
+-- ball for a crown, so walls and pillars read as poured sand, not planks.
+local function column(parent,height,radius,color)
+	local body=K.block(parent,Vector3.new(height,radius*2,radius*2),CFrame.new(),color or SAND,GRAIN);body.Shape=Enum.PartType.Cylinder
+	local cap=K.block(parent,Vector3.one*radius*2.1,CFrame.new(),color or SAND,GRAIN);cap.Shape=Enum.PartType.Ball
+	return {body=body,cap=cap,height=height,radius=radius}
+end
+local function columnAt(c,frame)
+	return frame*CFrame.new(0,c.height/2,0)*CFrame.Angles(0,0,math.pi/2),frame*CFrame.new(0,c.height-c.radius*.5,0)
+end
+local function placeColumn(c,frame)
+	local body,cap=columnAt(c,frame);c.body.CFrame=body;c.cap.CFrame=cap
+end
+-- `fade`: also fade it out over the move.
+local function moveColumn(c,frame,time,fade,style,direction)
+	local body,cap=columnAt(c,frame)
+	K.tween(c.body,time,{CFrame=body,Transparency=if fade then 1 else c.body.Transparency},style,direction)
+	K.tween(c.cap,time,{CFrame=cap,Transparency=if fade then 1 else c.cap.Transparency},style,direction)
+end
 -- The body he leaves is sand: a copy of the pose that slumps and pours down.
 local function sandBody(fx,model,at)
 	local root=model:FindFirstChild("HumanoidRootPart")
@@ -14165,10 +14190,11 @@ local function wavePose(fx,entry,p,age,look,dt)
 	end
 	if not entry.hidden and (not entry.markAt or (at-entry.markAt).Magnitude&gt;1.6) then
 		entry.markAt=at
-		local mark=K.block(fx.folder,Vector3.new(.06,radius*1.6,radius*1.6),CFrame.new(at+Vector3.new(0,.04,0))*CFrame.Angles(0,0,math.pi/2),SAND_DARK,GRAIN)
-		mark.Shape=Enum.PartType.Cylinder;mark.Transparency=.2
-		task.delay(1.1,function() if mark.Parent then K.tween(mark,.8,{Transparency=1}) end end)
-		Debris:AddItem(mark,2)
+		local size=radius*(.75+math.random()*.45)
+		local mark=K.block(fx.folder,Vector3.new(.05,size,size*(.65+math.random()*.4)),CFrame.new(at+Vector3.new(0,.03,0))*CFrame.Angles(0,math.random()*math.pi,math.pi/2),SAND_DARK,GRAIN)
+		mark.Shape=Enum.PartType.Cylinder;mark.Transparency=.45
+		task.delay(.6,function() if mark.Parent then K.tween(mark,.6,{Transparency=1}) end end)
+		Debris:AddItem(mark,1.3)
 	end
 	return base
 end
@@ -14186,24 +14212,25 @@ STYLES.sandburst=function(fx,impact)
 	sandRing(fx,impact.position,2,12,.45)
 	thud(fx,impact.position,.45,.8)
 end
--- The shield: a curved wall of sand snaps up between him and the blow, then
--- pours back down; a breaking blow bursts it apart.
+-- The shield: a curved wall of sand columns snaps up between him and the
+-- blow, then pours back down; a breaking blow bursts it apart.
 STYLES.sandshield=function(fx,impact)
 	local at=impact.position
 	local face=flatUnit(impact.direction or Vector3.zAxis)
 	local breaking=impact.heavy==true
 	local centre=at-face*1.6
+	local y=ground(fx,centre,centre.Y-3)
 	local holder=K.new("Model",{Name="SandShield"},fx.folder)
-	local pieces={}
-	for k=-2,2 do
-		local dir=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(k*24)):VectorToWorldSpace(face)
-		local spot=centre+dir*1.9
-		local height=4.6-math.abs(k)*.55
-		local final=CFrame.lookAt(spot,spot+dir)*CFrame.new(0,-.6-math.abs(k)*.2,0)
-		local piece=K.block(holder,Vector3.new(1.35,height,.55),final*CFrame.new(0,-height*.6,0),if k==0 then SAND_PALE else SAND,GRAIN)
-		piece.Transparency=.05
-		K.tween(piece,.07,{CFrame=final})
-		table.insert(pieces,{part=piece,cf=final,dir=dir})
+	local cols={}
+	for k=-3,3 do
+		local dir=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(k*17)):VectorToWorldSpace(face)
+		local spot=Vector3.new(centre.X,y,centre.Z)+dir*2
+		local frame=CFrame.lookAt(spot,spot+dir)*CFrame.Angles(math.rad((math.random()-.5)*10),0,math.rad((math.random()-.5)*10))
+		local c=column(holder,5.3-math.abs(k)*.5+math.random()*.5,if k==0 then .9 else .8,if k%2==0 then SAND else SAND_PALE)
+		placeColumn(c,frame*CFrame.new(0,-c.height,0))
+		moveColumn(c,frame,.07)
+		c.frame=frame;c.dir=dir
+		table.insert(cols,c)
 	end
 	dust(fx,at,if breaking then 22 else 10,if breaking then 2.4 else 1.6)
 	grains(fx,at,if breaking then 30 else 14,if breaking then 26 else 14,false)
@@ -14211,15 +14238,15 @@ STYLES.sandshield=function(fx,impact)
 	if breaking then
 		fx:cheer(.6)
 		task.delay(.06,function()
-			for _,e in pieces do
-				local fly=e.dir*(3+math.random()*3)+Vector3.new((math.random()-.5)*2,1.5+math.random()*2,(math.random()-.5)*2)
-				K.tween(e.part,.4,{CFrame=(e.cf*CFrame.Angles(math.random()*2,math.random()*2,0))+fly,Transparency=1,Size=e.part.Size*.6})
+			for _,c in cols do
+				local fly=c.dir*(3+math.random()*3)+Vector3.new((math.random()-.5)*2,1.5+math.random()*2,(math.random()-.5)*2)
+				moveColumn(c,(c.frame+fly)*CFrame.Angles(math.random()*1.5,0,math.random()*1.5),.4,true)
 			end
 		end)
 		Debris:AddItem(holder,.55)
 	else
 		task.delay(.24,function()
-			for _,e in pieces do K.tween(e.part,.35,{CFrame=e.cf-Vector3.new(0,1.4,0),Transparency=1}) end
+			for _,c in cols do moveColumn(c,c.frame*CFrame.new(0,-c.height*.6,0),.35,true,Enum.EasingStyle.Quad,Enum.EasingDirection.In) end
 		end)
 		Debris:AddItem(holder,.7)
 	end
@@ -14256,27 +14283,27 @@ STYLES.sandburial=function(fx,impact)
 	end)
 	fx:cheer(1)
 end
--- Desert Wave: a wall of sand rises in front of him, then its crest falls
--- forward onto whoever stood there.
+-- Desert Wave: a wall of sand columns rises in front of him, then its crest
+-- falls forward onto whoever stood there.
 STYLES.sandwall=function(fx,impact)
 	local at=impact.position
 	local look=flatUnit(impact.direction or Vector3.zAxis)
 	local y=ground(fx,at,at.Y-3)
 	local across=Vector3.new(-look.Z,0,look.X)
 	local holder=K.new("Model",{Name="DesertWave"},fx.folder)
-	for k=-3,3 do
-		local spot=Vector3.new(at.X,y,at.Z)+across*k*1.9-look*math.abs(k)*.35
-		local height=7.5-math.abs(k)*.7+math.random()*.6
-		local base=CFrame.lookAt(spot,spot+look)
-		local piece=K.block(holder,Vector3.new(2.3,height,1.8),base*CFrame.new(0,-height/2,0),if k%2==0 then SAND else SAND_PALE,GRAIN)
+	for k=-4,4 do
+		local spot=Vector3.new(at.X,y,at.Z)+across*k*1.45-look*math.abs(k)*.3
+		local frame=CFrame.lookAt(spot,spot+look)
+		local c=column(holder,7-math.abs(k)*.5+math.random()*.8,1.05,if k%2==0 then SAND else SAND_PALE)
+		placeColumn(c,frame*CFrame.new(0,-c.height,0))
 		task.delay(math.abs(k)*.02,function()
-			if not piece.Parent then return end
-			K.tween(piece,.12,{CFrame=base*CFrame.new(0,height/2,0)})
+			if not c.body.Parent then return end
+			moveColumn(c,frame,.12)
 			task.delay(.3,function()
-				if not piece.Parent then return end
-				-- Tip forward about the front of its base.
-				local fall=base*CFrame.new(0,0,-.9)*CFrame.Angles(math.rad(-75),0,0)*CFrame.new(0,height/2,.9)
-				K.tween(piece,.4,{CFrame=fall,Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+				if not c.body.Parent then return end
+				-- Tip forward about the front of its foot.
+				local fall=frame*CFrame.new(0,0,-c.radius)*CFrame.Angles(math.rad(-75),0,0)*CFrame.new(0,0,c.radius)
+				moveColumn(c,fall,.4,true,Enum.EasingStyle.Quad,Enum.EasingDirection.In)
 			end)
 		end)
 	end
@@ -14332,7 +14359,7 @@ local LASH={
 	DashAttack={{"RightHand",.45},{"LeftHand",-.45}},Sweep={{"RightHand",1.3,low=true}},
 	Slam={{"RightHand",.25,down=true},{"LeftHand",-.25,down=true}},
 }
-local SEGMENTS=11
+local SEGMENTS=18
 -- The move's own timeline as the motion engine plays it (same per-fighter
 -- timings and lead), so the sand leaves the hand on the clip's contact key.
 local LEAD=.03
@@ -14369,7 +14396,8 @@ local function dropLashes(st)
 	st.lashes=nil
 end
 -- Sand Pillar: sand erupts under the opponent when he stands in the volume,
--- otherwise where the volume ends.
+-- otherwise where the volume ends: tapering tiers, a crown that bursts open
+-- and a geyser of sand.
 local function pillar(fx,model,root)
 	local look=flatUnit(root.CFrame.LookVector)
 	local spot=root.Position+look*7
@@ -14384,22 +14412,29 @@ local function pillar(fx,model,root)
 	end
 	local base=Vector3.new(spot.X,ground(fx,spot,root.Position.Y-3),spot.Z)
 	local holder=K.new("Model",{Name="SandPillar"},fx.folder)
-	local column=K.block(holder,Vector3.new(.2,4.6,4.6),CFrame.new(base)*CFrame.Angles(0,0,math.pi/2),SAND,GRAIN)
-	column.Shape=Enum.PartType.Cylinder
-	local height=10
-	K.tween(column,.1,{Size=Vector3.new(height,4.2,4.2),CFrame=CFrame.new(base+Vector3.new(0,height/2,0))*CFrame.Angles(0,0,math.pi/2)})
-	for k=0,4 do
-		local a=k/5*math.pi*2
-		local off=Vector3.new(math.cos(a),0,math.sin(a))*2.2
-		local spike=K.block(holder,Vector3.new(1.2,.2,1.2),CFrame.new(base+off),SAND_DARK,GRAIN)
-		K.tween(spike,.12,{Size=Vector3.new(1.1,5+math.random()*2,1.1),CFrame=CFrame.new(base+off+Vector3.new(0,2.8,0))*CFrame.Angles(off.Z*.12,0,-off.X*.12)})
+	local rise=0
+	for i,tier in {{4,2.35},{3.6,2.05},{3.2,1.75}} do
+		local frame=CFrame.new(base+Vector3.new(0,rise,0))*CFrame.Angles(0,i*1.3,0)
+		local c=column(holder,tier[1],tier[2],SAND)
+		placeColumn(c,frame*CFrame.new(0,-12,0))
+		task.delay((i-1)*.025,function() if c.body.Parent then moveColumn(c,frame,.1) end end)
+		rise+=tier[1]*.92
 	end
-	task.delay(.28,function()
+	local top=base+Vector3.new(0,rise,0)
+	for k=0,5 do
+		local out=Vector3.new(math.cos(k/6*math.pi*2),0,math.sin(k/6*math.pi*2))
+		local ball=K.block(holder,Vector3.one*1.2,CFrame.new(top-Vector3.new(0,1,0)),SAND_PALE,GRAIN);ball.Shape=Enum.PartType.Ball
+		task.delay(.08,function() if ball.Parent then K.tween(ball,.18,{CFrame=CFrame.new(top+out*1.9+Vector3.new(0,.3,0)),Size=Vector3.one*1.5}) end end)
+	end
+	K.burst(fx.folder,top,{Texture=K.TEX.smoke,Lifetime=NumberRange.new(.5,.9),Speed=NumberRange.new(14,26),SpreadAngle=Vector2.new(30,30),
+		EmissionDirection=Enum.NormalId.Top,Color=ColorSequence.new(SAND_PALE),LightEmission=0,LightInfluence=1,Size=K.num({{0,1.6},{1,3.4}}),
+		Transparency=K.num({{0,.3},{1,1}}),Acceleration=Vector3.new(0,-40,0),Drag=1},26)
+	task.delay(.3,function()
 		for _,d in holder:GetChildren() do
-			if d:IsA("BasePart") then K.tween(d,.45,{Transparency=1,CFrame=d.CFrame-Vector3.new(0,2.5,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end
+			if d:IsA("BasePart") then K.tween(d,.45,{Transparency=1,CFrame=d.CFrame-Vector3.new(0,3,0)},Enum.EasingStyle.Quad,Enum.EasingDirection.In) end
 		end
 	end)
-	Debris:AddItem(holder,.85)
+	Debris:AddItem(holder,.9)
 	dust(fx,base+Vector3.new(0,1,0),22,2.4)
 	grains(fx,base+Vector3.new(0,1.5,0),34,34,true)
 	sandRing(fx,base+Vector3.new(0,1,0),3,14,.4)
@@ -14449,7 +14484,7 @@ local function stepStrike(fx,model,actor,st)
 		for i,ball in l.balls do
 			local u=ext*i/count
 			local p=from:Lerp(mid,u):Lerp(mid:Lerp(tip,u),u)
-			ball.Size=Vector3.one*(.45+.75*(i/count)^1.6)*(.4+.6*ext)
+			ball.Size=Vector3.one*(.42+.8*(i/count)^1.5)*(.4+.6*ext)
 			ball.CFrame=CFrame.new(p)
 			ball.Transparency=if ext&lt;.05 then 1 else .02+(1-ext)*.5
 		end
@@ -14506,9 +14541,10 @@ local function stepCoffin(fx,model,actor,st)
 		local holder=K.new("Model",{Name="SandCoffin"},fx.folder)
 		local bands={}
 		for k=0,4 do
-			local band=K.block(holder,Vector3.new(.9,3.2-k*.2,3.2-k*.2),root.CFrame,if k%2==0 then SAND else SAND_DARK,GRAIN)
+			local width=3.2-k*.2+math.random()*.35
+			local band=K.block(holder,Vector3.new(.8+math.random()*.3,width,width),root.CFrame,if k%2==0 then SAND else SAND_DARK,GRAIN)
 			band.Shape=Enum.PartType.Cylinder;band.Transparency=1
-			table.insert(bands,{part=band,y=-2.4+k*.62,phase=k*.9})
+			table.insert(bands,{part=band,y=-2.4+k*.62,phase=k*.9,tilt=(math.random()-.5)*.35,roll=(math.random()-.5)*.35})
 		end
 		local swirl=K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=40,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
 			Color=ColorSequence.new(SAND_PALE),LightEmission=0,LightInfluence=1,Size=K.num({{0,1},{1,2.2}}),Transparency=K.num({{0,.4},{1,1}}),
@@ -14526,7 +14562,7 @@ local function stepCoffin(fx,model,actor,st)
 		local grow=smooth((SandFX.clock()-c.born)/.35)
 		for i,b in c.bands do
 			local rise=math.clamp(grow*#c.bands-(i-1),0,1)
-			b.part.CFrame=root.CFrame*CFrame.new(0,-3+(b.y+3)*rise,0)*CFrame.Angles(0,os.clock()*(2+i*.5)+b.phase,0)*CFrame.Angles(0,0,math.pi/2)
+			b.part.CFrame=root.CFrame*CFrame.new(0,-3+(b.y+3)*rise,0)*CFrame.Angles(b.tilt,os.clock()*(2+i*.5)+b.phase,b.roll)*CFrame.Angles(0,0,math.pi/2)
 			b.part.Transparency=if rise&lt;=0 then 1 else .08
 		end
 	end
