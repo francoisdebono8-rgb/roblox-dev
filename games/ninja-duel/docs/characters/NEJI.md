@@ -179,4 +179,19 @@ Stade visé : ~13 ans, de l’examen chûnin à l’arc de récupération de Sas
 
 Manque de test : les duels IA de `tests/Neji.spec.luau:153-154` n’incluent pas Sasuke/`Lion`.
 
+### État — convergence 2 (identité, 2026-10-16)
+
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement.
+
+- **Tenketsu visibles** :
+  - chaque point fermé est un lieu du corps (8 points), exposé dans le snapshot et marqué par l'impact `tenketsu` : éclair, pulsation et tic ;
+  - le point reste allumé tant qu'il est fermé ;
+  - à 4 points, le réseau est scellé : pulsation rapide, fuite de chakra, HUD « SEALED » ;
+  - les paumes ont un retour de paume.
+- **Garde compromise par les points fermés** : la fenêtre de parade fond de −25 %/point (plus de parade à 4) et le blocage coûte +20 %/point en stamina.
+- **64 Palms = apogée** : +1 paume, plus rapides et un scellement plus long par point fermé. À 4 points, la garde s'effondre.
+- **Rotation** : le coup détourné fait chanceler l'attaquant à portée et le dôme s'arrête aussitôt. La paume pressée pendant la rotation sort en PalmThrust avec allonge.
+- **Full Field = règles** : 2 points par paume propre ; une paume qui brise un jutsu en canal scelle les techniques 1,5 s. Anneau de champ et veines visibles.
+- **MANQUE toujours** : posture de la victime selon les points (pose demandée) et validation Studio.
+
 Sources code lues : src/Shared/Fighters.luau, src/Shared/MoveGraphs.luau, src/Shared/Attacks.luau, src/Shared/Config.luau, src/Shared/BanglaCombo.luau, src/Shared/Rules.luau, src/Shared/VelmoraCombatConfig.luau, src/Server/Techniques.luau, src/Server/Brawler.luau, src/Server/Combat.luau, src/Server/AI.luau, src/Server/VelmoraDefense.luau (extraits), src/Server/Matches.luau (extrait), src/Client/VelmoraMotionEngine.luau, src/Client/UI.luau et Effects.luau (extraits), tests/Neji.spec.luau, docs/characters/{FIGHTER_TEMPLATE,NEJI,CORE_ROSTER,ROSTER_MOVESETS_10_PRODIGIES}.md, docs/active/{DECISIONS,MASTER_BACKLOG,SINCE_LAST_CLAUDE}.md, docs/FOUR_CHARACTER_COMBAT_MATRIX.md, docs/current/MOTION_ATTACK_MAPPING.md (lignes Neji).

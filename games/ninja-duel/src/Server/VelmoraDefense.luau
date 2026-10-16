@@ -35,9 +35,10 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
 	local window=if eye then eye.ParryWindow else Tune.ParryWindow
-	-- Sharingan Focus: the raised guard itself reads. Any frontal blow that
-	-- meets it is parried (parry cooldown and stamina still apply) and read.
-	local focus=eye~=nil and victim.def.Awakening and victim.def.Awakening.GuardRead==true and (victim.awakenUntil or 0)>c.now
+	-- Sharingan Focus: the raised guard itself reads. Any frontal blow of the
+	-- body that meets it is parried (once per raise; parry cooldown and
+	-- stamina still apply) and read. Blades and jutsu keep the eye's window.
+	local focus=eye~=nil and melee and victim.def.Awakening and victim.def.Awakening.GuardRead==true and (victim.awakenUntil or 0)>c.now
 	if focus then window=1e3 end
 	-- Closed chakra points (Gentle Fist) compromise the guard: the parry
 	-- window narrows with each one (none left at four) and a blocked blow costs

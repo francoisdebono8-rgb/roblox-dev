@@ -184,6 +184,14 @@ test("Itachi · Sharingan Focus: the raised guard reads a late blow (slip, count
    assert(ev(b,'Parry')==1,"the focused guard did not read the blow")
    assert(#impactsSince(c,serial,"read")==1,"the focused read was not shown")
    assert((b.counterUntil or 0)>c.now and a.state=="Stunned","the read opened no counter")
+   -- A blade into a long-held focused guard is blocked, not read.
+   local c2,x,y=H.duel("Flashstep","Mirage")
+   place(c2,x,y,V.new(0,3,8),V.new(0,3,-8))
+   awaken(c2,y)
+   assert(c2:request(y,"Guard"));H.step(c2,.6)
+   local blade=c2:projectile(x,y.root.Position,90,30,3,"kunai")
+   c2:projectileHit(blade,y,y.root.Position,V.zAxis)
+   assert(y.impactStyle=="block" and ev(y,'Parry')==0,"a focused guard deflected a blade outside the eye's window")
   else
    assert(b.impactStyle=="block" and ev(b,'Parry')==0,"a late guard parried without Focus")
   end

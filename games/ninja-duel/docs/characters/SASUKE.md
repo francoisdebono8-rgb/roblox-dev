@@ -235,4 +235,16 @@ Risques de recouvrement : le feu est partagé avec Itachi (mêmes `Elements`, m�
 4. **`readCounter="VaultKick"`** : une lecture Sharingan réussie mène à un changement de côté. `counterUntil` devient utile, et l'effet se distingue de la CounterPalm d'Itachi. IDs : CHR-SAS-002, DEF-001, DEF-003. Contre-jeu : fenêtres plus étroites que celles d'Itachi (.24/.18). Label : PLAUSIBLE_YOUNG.
 5. **Curse Mark à règle** : pendant l'éveil, le chakra manquant est payé en PV (1 pour 1, sans pouvoir tuer), et le Chidori peut être annulé depuis un coup aérien. IDs : SYS-003, CHR-CORE-002. Contre-jeu : temporiser pendant les 12 s. Label : GAMEPLAY_LIBERTY appuyée sur l'état CANON_YOUNG.
 
+### État — convergence 2 (identité, 2026-10-16)
+
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement. Fil, feu et foudre : laissés à l'agent chakra.
+
+- **Curse Mark = le flux change** :
+  - le troisième coup et l'AirDrive ne lâchent pas (chancellement, la chaîne reste ouverte, une fois par échange) ;
+  - tout lanceur devient la Danse de la feuille (chase gratuite, puis Lion Combo) ;
+  - le drain double s'il ne touche plus et s'arrête après chaque coup porté ;
+  - le corps maudit encaisse +12 % ;
+  - dégâts ×1,12 au lieu de ×1,18.
+- **MANQUE toujours** : posture maudite dédiée (pose demandée) et validation Studio.
+
 Sources code lues : `src/Shared/` : `Fighters`, `MoveGraphs`, `Attacks`, `Config`, `Rules`, `BanglaCombo`, `VelmoraCombatConfig` ; `src/Server/` : `Techniques`, `Elements`, `Brawler`, `Combat`, `AI`, `VelmoraDefense`, `BanglaCombat`, `BanglaEvade`, `Motor` (extrait), `Place1Movement` (extrait) ; `src/Client/` : `VelmoraMotionEngine`, `Effects` (extraits) ; `tests/Sasuke.spec.luau` ; Docs : `FIGHTER_TEMPLATE`, `SASUKE`, `CORE_ROSTER`, `DECISIONS`, `FOUR_CHARACTER_COMBAT_MATRIX`, `ROSTER_MOVESETS_10_PRODIGIES` (§4), `MASTER_BACKLOG` (extraits), `MOTION_ATTACK_MAPPING`, `COMBAT_INVENTORY.json` (Lion), `CLAUDE_FINAL_PASS` (§10C).
