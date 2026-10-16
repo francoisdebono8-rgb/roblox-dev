@@ -125,5 +125,8 @@ return {
 		airFinisher={name="PrimaryLotus",cue="PRIMARY LOTUS",event="PrimaryLotus",damage=22,impulse=Vector3.new(0,-96,6),healthCost=10,minHealth=26,
 			fallback={name="LeafHeel",cue="LEAF HEEL • NO STRENGTH LEFT FOR THE LOTUS",event="LeafHeel",damage=14},
 			awakened={name="HiddenLotus",cue="FIFTH GATE • HIDDEN LOTUS",event="HiddenLotus",damage=26,reaction="Spiked",impulse=Vector3.new(0,-104,4),stun=.9}},
+		-- Relentless: the fastest re-entry of all, straight down the line, from
+		-- closer than most, and the shortest recovery after an arrival.
+		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
 	},
 }

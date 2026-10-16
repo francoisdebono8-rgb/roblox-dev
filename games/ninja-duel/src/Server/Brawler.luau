@@ -478,8 +478,7 @@ function Brawler.request(c,a,action)
   if a.airborne then
    -- A fighter's own finisher in the same window (MoveGraphs airFinisher,
    -- Rock Lee's lotuses); Sasuke's Lion Combo below stays the default.
-   local finisher=(Brawler.graph(a) or {}).airFinisher
-   if finisher and (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then return Brawler.airFinisher(c,a,finisher) end
+   if graph.airFinisher and (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then return Brawler.airFinisher(c,a,graph.airFinisher) end
    -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
    -- that ends in a heel drop driving the body into the floor.
    if (a.lionUntil or 0)>c.now and a.target and a.target.health>0 then
@@ -598,7 +597,7 @@ function Brawler.routePayoff(c,a,b,p)
     -- The shadow sticks to the rising body up to its apex, then hangs there.
     a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
     c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
-    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = LION COMBO",1)
+    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = "..(if graph.airFinisher then graph.airFinisher.cue else "LION COMBO"),1)
     Brawler.event(c,a,"ShadowLeaf")
    else a.chakra-=Config.PursuitCost end
   end)

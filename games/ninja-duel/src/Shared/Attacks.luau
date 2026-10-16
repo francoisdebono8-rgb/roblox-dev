@@ -148,12 +148,14 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 -- Rock Lee's moves, kept together so the stress-test fighter stays additive:
--- reach, body, hit zone and kind, and the two routes that keep the string.
+-- reach, body, hit zone and kind, the two routes that keep the string, and the
+-- two big kicks that crack Gaara's sand shield like a launcher does
+-- (breaksShield, read by Combat:damage next to its name list).
 for name,shape in {
- LeafRising={contact=3.4,range=6.5,width=5,height=7,zone="chin",kind="launch",side=1,twist=12,lean=-34,arm=40,step=1.15},
+ LeafRising={contact=3.4,range=6.5,width=5,height=7,zone="chin",kind="launch",side=1,twist=12,lean=-34,arm=40,step=1.15,breaksShield=true},
  LeafHurricane={contact=3.5,range=6.5,width=6.5,height=3.5,zone="legs",kind="sweep",side=-1,twist=70,lean=24,arm=50,step=1.0,chain=true},
  LeafWhirlwind={contact=3.8,range=7,width=9,height=6,zone="head",kind="kick",side=1,twist=80,lean=6,arm=60,step=1.05,chain=true},
- GreatWhirlwind={contact=3.6,range=7,width=7,height=6,zone="body",kind="kick",side=1,twist=90,lean=10,arm=60,step=1.4},
+ GreatWhirlwind={contact=3.6,range=7,width=7,height=6,zone="body",kind="kick",side=1,twist=90,lean=10,arm=60,step=1.4,breaksShield=true},
  DeflectKick={contact=3.6,range=6,width=7,height=7,zone="body",kind="kick",side=-1,twist=40,lean=-6,arm=50,step=1.0},
 } do
  for key,value in shape do attacks[name][key]=value end

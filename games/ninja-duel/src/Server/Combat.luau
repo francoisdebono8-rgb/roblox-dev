@@ -186,6 +186,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if shield and (victim.shieldCharges or 0)>0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
 		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil<=self.now then
 		local breaking=heavy or amount>=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
+		-- A new fighter's strike carries the flag in its own data (Attacks
+		-- breaksShield: Rock Lee's rising kick and spinning dash kick).
+		breaking=breaking or (attacker.pending~=nil and attacker.pending.kind=="Brawl" and attacker.pending.spec.breaksShield==true)
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
 		victim.shieldRegenAt=self.now+shield.Regen
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
@@ -812,8 +815,13 @@ function Combat:request(a,action,aim,clientTime,opts)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
-		-- No blade to throw (Rock Lee): the tool button is his deflecting kick.
-		if a.def.Tool=="Deflect" then return Techniques.deflectKick(self,a) end
+		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
+		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra
+		-- modifier is refused with the usual fizzle, before any cost.
+		if a.def.Tool=="Deflect" then
+			if opts~=nil and opts.chakra==true then Chakra.refuse(self,a);return false,"No chakra tool" end
+			return Techniques.deflectKick(self,a)
+		end
 		if a.def.ArrivalThrow then
 			local thrown,refusal=self:arrivalThrow(a)
 			if thrown~=nil then return thrown,refusal end
@@ -1661,6 +1669,8 @@ function Combat:updateHazards()
 					self.damageTag="burn"
 					self:damage(h.a,target,h.damage*0.34,false,false)
 					self.damageTag=nil
+					-- A burn that ends the duel may clear the hazard list (Combat:clear).
+					if self.match.phase~="Duel" then return end
 				end
 			end
 		end

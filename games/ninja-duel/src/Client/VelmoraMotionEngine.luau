@@ -289,6 +289,13 @@ Motion.familyOf=familyOf
 STANCE.Sand={root={y=-.06,pitch=0,yaw=6},torso={pitch=-2,yaw=-2},head={pitch=6,yaw=-4},
 	ra={raise=62,out=-42,twist=44,elbow=122,wrist=0},la={raise=58,out=-46,twist=40,elbow=118,wrist=0},
 	rf={x=.06,z=.22,yaw=8},lf={x=-.06,z=-.2,yaw=-4},breath=.35,tempo=3.6}
+-- Rock Lee (stress-test wave, DEC-015): the Strong Fist stance. Side-on, low
+-- and springy, the lead hand open and held out at the opponent, the rear hand
+-- folded behind the small of the back. His family (Fighters.Leaf.Motion) is
+-- Sasuke's kicks; this stance and a few clips (CLIPS.Leaf) are his own.
+STANCE.Leaf={root={y=-.58,pitch=8,yaw=36},torso={pitch=5,yaw=-16},head={pitch=-4,yaw=-22},
+	la={raise=92,out=-8,twist=-24,elbow=24,wrist=-30},ra={raise=-48,out=-4,twist=96,elbow=68,wrist=0},
+	rf={x=.3,z=.92,yaw=46},lf={x=-.12,z=-.88,yaw=-8},breath=1.5,tempo=8.5}
 local function stance(id) return STANCE[id] or STANCE[familyOf(id).body] or STANCE.Flashstep end
 -- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
 local SPRINGY={Flashstep=true,Lion=true}
@@ -817,6 +824,64 @@ setmetatable(CLIPS.Lion,{__index=CLIPS.Flashstep})
 CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
 CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
 CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
+-- Rock Lee (stress-test wave, DEC-015) -------------------------------------
+-- Built from Sasuke's kicking family (the string, the knee, the air string and
+-- routes, throws: CLIPS.Lion and through it Minato's), with his own clips only
+-- where his identity needs them: the rising kick out of a crouch, the low spin
+-- on one hand, the crescent kick that clears blades and the lotuses. The rear
+-- hand stays behind his back in all of them. Authored at their final size: the
+-- CORE4 readability and kinetic-chain passes below do not touch them.
+local LE=STANCE.Leaf
+local function le(over) return merge(LE,over) end
+local AIR_LE={root={pitch=8},torso={pitch=6},head={pitch=-6},ra=LE.ra,la={raise=60,out=20,elbow=70},rl={lift=62,knee=100,ankle=-10},ll={lift=36,knee=76,ankle=-10}}
+-- Both arms wrapped round a body (the lotus holds its opponent).
+local HUG={raise=96,out=-36,twist=30,elbow=96,wrist=0}
+CLIPS.Leaf={}
+CLIPS.Leaf.LeafRising={ -- Konoha Shōfū: a deep crouch, then one leg straight up under the chin
+	K(0,le({root={y=-1.12,pitch=20},torso={pitch=12},la={raise=40,out=20,elbow=60},lf={z=-.5},rf={z=.55}})),
+	K(.55,le({root={y=-.9,pitch=10},torso={pitch=6},la={raise=30,out=30,elbow=40},rl={lift=84,knee=112,ankle=-10},lf={z=-.3,toe=-10}})),
+	K(1,le({root={y=-.04,pitch=-16,yaw=4},torso={pitch=-10,yaw=-6},head={pitch=-14,yaw=-6},la={raise=-30,out=40,elbow=20},rl={lift=142,out=2,knee=4,ankle=-30},lf={z=0,toe=-26}}),"out"),
+	K(2,le({root={y=-.02,pitch=-20,yaw=4},torso={pitch=-12,yaw=-6},head={pitch=-16,yaw=-6},la={raise=-34,out=40,elbow=20},rl={lift=152,out=2,knee=6,ankle=-28},lf={z=0,toe=-24}})),
+	K(2.5,le({root={y=-.4,pitch=-4},rl={lift=60,knee=90}})),
+	K(3,LE),
+}
+CLIPS.Leaf.LeafHurricane={ -- Konoha Senpū, low: dropped onto the lead hand, a full spin that reaps the legs
+	K(0,le({root={y=-1.2,pitch=26,yaw=10},torso={pitch=14,yaw=-8},la={raise=24,out=24,elbow=20,wrist=-40},lf={x=.45,z=-.2},rf={z=.8}})),
+	K(1,le({root={y=-1.55,pitch=24,yaw=100},torso={pitch=16,yaw=8},head={yaw=-60},la={raise=14,out=40,elbow=8,wrist=-50},rl={lift=14,out=84,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=100}}),"out"),
+	K(2,le({root={y=-1.5,pitch=22,yaw=190},torso={pitch=14,yaw=10},head={yaw=-60},la={raise=14,out=42,elbow=8},rl={lift=14,out=84,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=190}})),
+	K(2.5,le({root={y=-1.15,pitch=22,yaw=280},torso={pitch=10},rl={lift=34,out=46,knee=40},lf={x=.5,z=0,yaw=280}})),
+	K(3,merge(LE,{root={yaw=LE.root.yaw+360}})),
+}
+CLIPS.Leaf.DeflectKick={ -- the crescent kick that clears blades: the lead leg sweeps across his front
+	K(0,le({root={y=-.5,yaw=20},torso={yaw=-6},la={raise=60,out=30,elbow=50},ll={lift=60,out=30,twist=20,knee=90,ankle=-10}})),
+	K(1,le({root={y=-.3,yaw=-30,pitch=-6},torso={yaw=-20},head={yaw=10},la={raise=40,out=60,elbow=30},ll={lift=100,out=-10,twist=-30,knee=10,ankle=-20}}),"out"),
+	K(2,le({root={y=-.3,yaw=-44,pitch=-6},torso={yaw=-24},la={raise=40,out=60,elbow=30},ll={lift=92,out=-24,twist=-30,knee=14,ankle=-20}})),
+	K(2.5,le({root={y=-.45,yaw=0},ll={lift=40,knee=70}})),
+	K(3,LE),
+}
+CLIPS.Leaf.PrimaryLotus={ -- Omote Renge: the arms wrap the body, the spin turns head first, the drive into the floor
+	K(0,merge(AIR_LE,{root={pitch=-14},torso={pitch=-10},head={pitch=-10},ra=HUG,la=HUG,rl={lift=96,knee=120,ankle=-20},ll={lift=90,knee=116,ankle=-20}})),
+	K(.6,merge(AIR_LE,{root={pitch=64},torso={pitch=18},head={pitch=18},ra=HUG,la=HUG,rl={lift=70,knee=100},ll={lift=64,knee=96}})),
+	K(1,merge(AIR_LE,{root={pitch=120},torso={pitch=22},head={pitch=22},ra=HUG,la=HUG,rl={lift=20,knee=30,ankle=-30},ll={lift=14,knee=26,ankle=-30}}),"out"),
+	K(2,merge(AIR_LE,{root={pitch=128},torso={pitch=24},head={pitch=24},ra=HUG,la=HUG,rl={lift=16,knee=26},ll={lift=12,knee=22}})),
+	K(3,le({root={y=-1.05,pitch=24},torso={pitch=18},la={raise=40,out=30,elbow=40},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Leaf.HiddenLotus={ -- Ura Renge (Fifth Gate): blows from above, then both fists driven down through the body
+	K(0,merge(AIR_LE,{root={pitch=-8},torso={pitch=-16,yaw=-20},ra={raise=150,out=20,elbow=90},la={raise=150,out=20,elbow=90},rl={lift=70,knee=110},ll={lift=60,knee=100}})),
+	K(.5,merge(AIR_LE,{root={pitch=10},torso={pitch=10,yaw=20},ra={raise=60,out=-10,elbow=20},la={raise=140,out=20,elbow=80},rl={lift=50,knee=90},ll={lift=70,knee=110}})),
+	K(1,merge(AIR_LE,{root={pitch=40},torso={pitch=40},head={pitch=10},ra={raise=40,out=-14,elbow=4,wrist=-10},la={raise=40,out=-14,elbow=4,wrist=-10},rl={lift=-10,knee=40},ll={lift=10,knee=60}}),"out"),
+	K(2,merge(AIR_LE,{root={pitch=44},torso={pitch=42},ra={raise=34,out=-14,elbow=6},la={raise=34,out=-14,elbow=6},rl={lift=-10,knee=40},ll={lift=10,knee=60}})),
+	K(3,le({root={y=-1.1,pitch=26},torso={pitch=20},la={raise=50,out=24,elbow=40},lf={z=-.95},rf={z=.95}})),
+}
+-- Reused where the family already has the move (the stress test counts them):
+-- the heel drop for his plain air heavy and the Leaf Heel, Sasuke's spinning
+-- heel kick for the Leaf Whirlwind, Minato's spinning roundhouse for the Leaf
+-- Great Whirlwind.
+CLIPS.Leaf.Slam=CLIPS.Lion.LionBarrage
+CLIPS.Leaf.LeafHeel=CLIPS.Lion.LionBarrage
+CLIPS.Leaf.LeafWhirlwind=CLIPS.Lion.Light3
+CLIPS.Leaf.GreatWhirlwind=CLIPS.Flashstep.Light3
+setmetatable(CLIPS.Leaf,{__index=CLIPS.Lion})
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -948,8 +1013,16 @@ end
 -- uses. A small lead compensates for the damping lag so contact frames land on
 -- the server's active window.
 local LEAD=.03
+-- Variants: strikes the server starts under another move's name
+-- (attackVariant). The clip is the variant's, the timing the carrier move's.
+-- Rock Lee's finishers ride on the Slam like the Lion Combo.
+local VARIANT_OF={Rasengan="DashAttack",RasenganDrop="Slam",LionBarrage="Slam",PrimaryLotus="Slam",HiddenLotus="Slam",LeafHeel="Slam"}
+Motion.VARIANT_OF=VARIANT_OF
+local function clipName(subject)
+	return if VARIANT_OF[subject.attackVariant or ""] then subject.attackVariant else subject.attackName
+end
 local function timing(name,fighterId)
-	local spec=Attacks[name] or (if name=="RasenganDrop" or name=="LionBarrage" then Attacks.Slam else Attacks.DashAttack)
+	local spec=Attacks[name] or Attacks[VARIANT_OF[name] or "DashAttack"]
 	local fighter=Fighters[fighterId]
 	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
 	local startup=spec.startup*(profile and profile.startup or 1)
@@ -1126,6 +1199,10 @@ local function castSpec(actor)
 		local shake=math.sin(t*90)*2
 		return merge(base,{root={y=-.95,pitch=24,yaw=20+shake},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},
 			la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})
+	elseif id=="LeafGreatWhirlwind" then
+		-- Rock Lee forms no seal: a crouch wound up for the spin, then the kick
+		-- itself is the GreatWhirlwind strike.
+		return merge(base,{root={y=-1.0,pitch=16,yaw=64},torso={pitch=8,yaw=30},head={yaw=-44},la={raise=50,out=30,elbow=60},lf={z=-1.0},rf={z=.9}})
 	end
 	return sealPose(base,t,false)
 end
@@ -1156,6 +1233,9 @@ local GAIT={
 	-- Gaara walks with his arms folded: short steps, almost no bounce.
 	Sand={stride=.8,cadence=.88,arm=0,lean=-1,bob=.35,guard=0,holdArms=true},
 }
+-- Rock Lee: long, quick and bouncy steps, leaning in; the rear hand stays behind
+-- his back until he breaks into a full sprint (holdRear).
+GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
@@ -1408,6 +1488,11 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	if gait.holdArms then
 		-- (Gaara) the arms stay folded whatever the legs do.
 		spec.ra=table.clone(base.ra);spec.la=table.clone(base.la)
+	end
+	if gait.holdRear and not (sprint and forward>.3) then
+		-- (Rock Lee) the rear hand stays behind his back while he moves in his
+		-- stance; only a full sprint swings both arms.
+		spec.ra=table.clone(base.ra)
 	end
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
@@ -1804,7 +1889,7 @@ end
 -- --------------------------------------------------------- public entries
 -- Attack pose on its own (blended over the rest pose): used by tests and tools.
 function Motion.pose(char,name,elapsed,fighterId,dt)
-	if not Attacks[name] and name~="Rasengan" and name~="RasenganDrop" then return end
+	if not Attacks[name] and not VARIANT_OF[name] then return end
 	local targets,weight=attackTargets(name,elapsed,fighterId)
 	apply(char,blend({},targets,weight),RATE.attack,dt)
 end
@@ -1882,8 +1967,14 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.intro or 0)>0 and subject.state=="Neutral" then
 		local base=stance(subject.fighterId)
 		local spec
-		local body=familyOf(subject.fighterId).body
-		if body=="Sand" then
+		-- A family may name its own intro (Rock Lee's), else its body's.
+		local body=familyOf(subject.fighterId).intro or familyOf(subject.fighterId).body
+		if body=="Leaf" then
+			-- Rock Lee: fired up. Upright on springy knees, the fist clenched at
+			-- shoulder height, chin up; the other hand already behind his back.
+			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
+				la={raise=70,out=30,twist=-60,elbow=128,wrist=0},rf={x=.2,z=.5},lf={x=-.1,z=-.5}})
+		elseif body=="Sand" then
 			-- Arms folded, chin down, perfectly still: the sand will do it.
 			spec=merge(base,{root={y=-.04,pitch=-1},head={pitch=10,yaw=0},torso={pitch=-2}})
 		elseif body=="Mirage" then
@@ -1933,7 +2024,7 @@ function Motion.present(char,actor,clock,dt)
 	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
 	-- The base the body returns to: gait on the ground, air pose in the air.
 	local base,baseRate
-	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+	local attackName=clipName(subject)
 	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
 	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
 	elseif footwork then
@@ -1955,7 +2046,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if swinging then
-		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+		local name=clipName(subject)
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		-- (Clone: blend may hand back a cached clip pose, which must not change.)
 		local final=table.clone(blend(base,targets,weight))
