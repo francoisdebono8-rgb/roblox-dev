@@ -65,7 +65,7 @@ Après : **un outil de Minato.**
   - **Lancé en courant** (`Mobile`, overlay de lancer de kunai, relâchement 0,16 s) : les jambes ne s'arrêtent pas.
   - Croissant rapide et large : vitesse 104, portée 40, rayon 1,6.
   - **Il coupe les lames ennemies dans son couloir** : kunai, shuriken, kunai marqué, fil. Impacts `deflect`. C'est la réponse de Minato au zonage.
-  - **Un corps touché est rejeté d'un pas sur le côté** (côté du stick) et porte un **sceau de vent de 1,6 s**. Le FTG suivant atterrit à côté de ce corps, côté choisi au stick.
+  - **Un corps touché est rejeté d'un pas sur le côté** (côté du stick) et porte un **sceau de vent de 1,6 s** (un sceau plus long déjà posé, comme celui d'un kunai marqué, est conservé). Le FTG suivant atterrit à côté de ce corps, côté choisi au stick.
   - Garde : rien, pas de sceau.
   - Coût 14, CD 3,2 s. Le nœud Gale Chase (fenêtre de chase) reste compatible.
 - **Retour :** croissant pâle au point de coupe et sceau corporel aux couleurs du vent (vert pâle, distinct du sceau jaune). Cue « WIND CUT • SEALED… ».
@@ -220,8 +220,9 @@ Je n'ai pas modifié `VelmoraMotionEngine.luau`. Toutes les données nécessaire
 
 ## Tests
 
-- **`tests/Identity.spec.luau` : 25 tests, dans `tests/run.sh` et dans la porte de `build.py`.**
-  - Les 25 tests échouent tous sur `50b90bc` (vérifié en lançant la spec sur l'archive de la base) : 21 tests de règles, le test IA (Itachi tient la ligne) et 3 tests client, dont les fonctions n'existent pas sur la base.
+- **`tests/Identity.spec.luau` : 26 tests, dans `tests/run.sh` et dans la porte de `build.py`.**
+  - 25 d'entre eux échouent sur `50b90bc` (vérifié en lançant la spec sur l'archive de la base) : 21 tests de règles, le test IA (Itachi tient la ligne) et 3 tests client, dont les fonctions n'existent pas sur la base.
+  - Le 26e (Wind Cut ne raccourcit pas un sceau plus long déjà posé) protège un invariant du nouveau comportement : il passe aussi sur la base.
 - **`tests/Neji.spec.luau`** : le test Rotation suit le nouveau contrat (chancellement HitStun au lieu de Knockback).
 - **Résultat** : 19 suites PASS, 3 builds, isolation, docs, architecture.
 - **Headless seulement** : règles, timings, géométrie (image en ligne, glissade, allonge), contrat snapshot et impacts. Les fonctions client tournent sur des bouchons (aucun rendu).

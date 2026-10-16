@@ -362,8 +362,11 @@ return Controls
 		-- Shared ninja tools: everyone throws; mastery changes what a throw does.
 		-- Minato: one fast kunai, the quickest recovery (the seals are his art).
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 96, Damage = 3, Recover = .55 },
-		-- Awakening: the Yellow Flash. Faster legs, techniques back almost at once.
-		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Damage = 1.05, Regen = 1.5, Cooldown = 0.4, Color = { 255, 214, 92 } },
+		-- Awakening: the Yellow Flash. Relocations chain: every Flying Thunder God
+		-- leaves a seal where he stood (FlashWake), a body he launched or knocked
+		-- away is a destination by itself (FlashPursuit), the arrival stays open
+		-- longer; faster legs and techniques back almost at once.
+		Awakening = { Name = "YELLOW FLASH", Speed = 1.18, Regen = 1.5, Cooldown = 0.4, FlashWake = true, FlashPursuit = true, Arrival = 0.8, Color = { 255, 214, 92 } },
 		AttackProfile = {
 			Light1={startup=.82,recovery=.9,travel=1.08,angle=.24},Light2={startup=.84,recovery=.9,travel=1.12,angle=-.3},
 			Light3={startup=.82,recovery=.88,travel=1.2,angle=.36,impulseZ=52},Launcher={startup=.72,travel=1.16,impulseY=62},
@@ -374,10 +377,13 @@ return Controls
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
-			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
+			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
 			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
-			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
-			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Cost = 18, Channel = 0.32, Active = 0.1, Recovery = 0.34, Cooldown = 3.7, Interruptible = true, Range = 36, Damage = 7, Hint = "Displace with a cutting gust" },
+			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Flow = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
+			-- Thrown off the kunai's edge on the run: cuts enemy blades out of its
+			-- lane; a body it cuts is thrown a step sideways with a short wind seal
+			-- (Flying Thunder God lands beside it). Techniques.WindCut.
+			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Mobile = true, Throw = "Kunai", Cost = 14, Channel = 0.16, Active = 0.02, Recovery = 0, Cooldown = 3.2, Interruptible = true, Range = 40, Speed = 104, Damage = 6, Hint = "Thrown on the run • cuts blades in its lane • a cut body is marked: 2 lands beside it" },
 		},
 	},
 	Mirage = {
@@ -395,8 +401,11 @@ return Controls
 		-- blade struck by a second one, redirected into the flank); his blades
 		-- ricochet off walls and cover once; in the air he fans three down.
 		ToolMastery = { Kind = "shuriken", Count = 2, Speed = 84, Damage = 2, Recover = .75, Geometry = true, Ricochet = true, AirSpread = 3 },
-		-- Awakening: Sharingan focus. Wider reads, cheaper and faster jutsu, heavier hits.
-		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Damage = 1.12, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, Color = { 230, 40, 50 } },
+		-- Awakening: Sharingan focus. His raised guard reads (any frontal blow
+		-- that meets it is parried and read: he slips aside, it bites the
+		-- afterimage), every swing that misses close to him is read
+		-- (WhiffRead, studs), cheaper and faster jutsu.
+		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, GuardRead = true, WhiffRead = 9, Color = { 230, 40, 50 } },
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -405,9 +414,12 @@ return Controls
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
-			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike or Rasengan • counter" },
-			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Range = 56, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
-			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 32, Channel = 0.9, Active = 0.08, Recovery = 0.45, Cooldown = 8, Interruptible = true, Range = 23, Requires = "Target", Hint = "3s decoy • a swing at it opens a punish" },
+			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter" },
+			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Flow = true, Range = 56, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			-- His image stays where he stood and he withdraws behind it, on the
+			-- opponent's line of sight: a swing that reaches the image is caught
+			-- (Techniques.MirageCast / whiffRead).
+			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 26, Channel = 0.42, Active = 0.06, Recovery = 0.2, Cooldown = 7, Interruptible = true, Flow = true, Range = 23, Requires = "Target", Hint = "His image stays, he withdraws behind it • a swing at the image is caught • trust the body" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Hint = "A miss leaves the lane burning" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
 		},
@@ -423,8 +435,10 @@ return Controls
 		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
 		-- Neji: standard kunai, secondary to the Gentle Fist.
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 86, Damage = 3, Recover = .85 },
-		-- Awakening: Byakugan full field. No blind spot, palms drain twice as much.
-		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Color = { 200, 214, 255 } },
+		-- Awakening: Byakugan full field. No blind spot; he sees the whole network:
+		-- a clean palm closes two chakra points (Points) and a palm that breaks a
+		-- jutsu being moulded seals the techniques (ChannelCut, s); palms drain more.
+		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Points = 2, ChannelCut = 1.5, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
 		-- narrow blind spot straight behind, and genjutsu decoys do not fool him.
 		Byakugan = { BlindSpot = 0.9 },
@@ -440,8 +454,8 @@ return Controls
 		Skin = { 228, 202, 178 }, Hair = { 52, 36, 30 }, Outfit = { 226, 220, 206 },
 		Techniques = {
 			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
-			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
-			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • seals the chakra points (no jutsu)" },
+			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Flow = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
+			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • each closed point adds palms and seal time • four closed: the guard collapses" },
 		},
 	},
 	-- Fourth playable prototype: Sasuke at the Chunin Exam (12). Faster and
@@ -460,7 +474,12 @@ return Controls
 		-- Two-tomoe Sharingan: smaller windows than Itachi's, the same idea.
 		Sharingan = { ParryWindow = 0.24, PerfectDodge = 0.18, Counter = 0.7 },
 		-- The cursed seal: faster and harder, but it eats his body while it burns.
-		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.18, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Color = { 120, 60, 200 } },
+		-- His kicks do not let go (Extension: the third kick and the air drive
+		-- stagger instead of knocking away, the string stays open), every
+		-- launcher becomes the Dancing Leaf (CursedLeaf), the drain doubles when
+		-- he stops landing blows (Hunger) and pauses after each one (Feed, s),
+		-- and the cursed body takes more (Vulnerability).
+		Awakening = { Name = "CURSE MARK", Speed = 1.15, Damage = 1.12, Regen = 1.3, Cooldown = 0.6, HealthDrain = 1.4, Hunger = 2, Feed = 0.6, Vulnerability = 0.12, Extension = true, CursedLeaf = true, Color = { 120, 60, 200 } },
 		AttackProfile = {
 			Light1={startup=.9,recovery=.95},Light2={startup=.95,range=6.6},Light3={startup=1.05,impulseZ=56,range=6.8},
 			DashAttack={travel=1.1},Air1={startup=.92},Air2={startup=.92},
@@ -1656,7 +1675,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">14d253b94fffa10b03a8f82c5a2cd02e0e8c9883eaf32dcb32c7a09f766a4d9b</string>
+          <string name="Value">3dd2746c5154604c5b4cbf48f577685cbf5462d32b149ec63df912f7f516b19c</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -1865,6 +1884,10 @@ function AI:update(now)
 	local calm=self.probing or now&lt;(self.breathUntil or 0)
 	-- Probing happens at tool range: spacing, throws and reads before running in.
 	if self.probing then desired+=self.probeRange or 14 elseif calm then desired+=4 end
+	-- Genjutsu image (Itachi's Mirage): hold the line behind the image while it
+	-- stands; the opponent has to come to it (blades still fly through it).
+	local holding=target.illusionBy==a and (target.illusionUntil or 0)&gt;now
+	if holding then desired=distance end
 	local radial=if distance&gt;desired+2 then 1 elseif distance&lt;desired-2 then -0.6 else 0
 	-- Lateral movement is committed for a beat, then changes side: readable
 	-- repositioning, not a sine-wave drift around the opponent.
@@ -1878,6 +1901,7 @@ function AI:update(now)
 	-- bounded rate) orbit each other forever instead of meeting.
 	local lateral=self.strafeAmount or .5
 	if radial&gt;0 and not calm then lateral*=if distance&gt;desired+8 then 0 else .35 end
+	if holding then lateral=0 end
 	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
@@ -2001,7 +2025,9 @@ function AI:update(now)
 		if fire and c:request(a,fire,target.root.Position) then return end
 	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
-	if (a.counterUntil or 0)&gt;now and distance&lt;8 then a.move=toward;c:request(a,"Attack");return end
+	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.
+	local counterRange=8+(if a.counterReach and a.counterReach.expires&gt;now then a.counterReach.max else 0)
+	if (a.counterUntil or 0)&gt;now and distance&lt;counterRange then a.move=toward;c:request(a,"Attack");return end
 	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
 	if (a.flashUntil or 0)&gt;now then
 		local rasengan=slotOf(a,"BurstStrike")
@@ -2553,6 +2579,15 @@ function Brawler.request(c,a,action)
  -- so the teleport flows straight into an attack from the new angle.
  local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)&gt;c.now
   and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
+ -- Rotation already repelled a strike and is winding down: the strike comes
+ -- straight out of the spin as the counter.
+ if action=="Attack" and (a.counterUntil or 0)&gt;c.now and (a.rotationCounterUntil or 0)&gt;c.now and (a.state=="TechniqueActive" or a.state=="TechniqueRecovery") then
+  a.pending=nil;a.rotationUntil=0;c:setState(a,"Neutral",0)
+  return Brawler.counterStart(c,a)
+ end
+ -- A strike pressed inside a counter stance (Read, Rotation) waits for the
+ -- stance to pay off instead of being refused.
+ if action=="Attack" and Brawler.counterStance(a) then a.counterQueued=c.now;return true,"Buffered" end
  if canFlash then
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
@@ -2633,7 +2668,7 @@ function Brawler.request(c,a,action)
  end
  -- A successful Read (Itachi) pays off with the graph's counter on the next press.
  if action=="Attack" and graph.readCounter and (a.counterUntil or 0)&gt;c.now and not canChain then
-  a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
+  return Brawler.counterStart(c,a)
  end
  -- Directional combo grammar: inside a confirmed string the stick picks the
  -- route. Toward the opponent launches, away goes low, sideways turns the
@@ -2836,20 +2871,95 @@ function Brawler.clash(c,a,p)
 end
 -- Neji's Gentle Fist: palms reach the chakra network. Every palm drains
 -- chakra, even through a guard; a clean one closes a chakra point, which slows
--- the victim's chakra recovery for a few seconds (stacks up to four).
-function Brawler.gentleFist(c,a,b,guarded)
+-- the victim's chakra recovery for a few seconds (stacks up to four). Each
+-- closed point is a real place on the body: the snapshot lists them
+-- (tenketsuPoints) and the client lights them, so the network is seen closing.
+-- Which point closes follows where the palm landed (the strike's zone).
+local TENKETSU_ORDER={
+ head={"throat","leftShoulder","rightShoulder","heart","solar","navel","leftHip","rightHip"},
+ chin={"throat","heart","leftShoulder","rightShoulder","solar","navel","leftHip","rightHip"},
+ body={"heart","solar","navel","leftShoulder","rightShoulder","throat","leftHip","rightHip"},
+ legs={"navel","leftHip","rightHip","solar","heart","throat","leftShoulder","rightShoulder"},
+}
+Brawler.TENKETSU_ORDER=TENKETSU_ORDER
+-- Close one point on b; nil when every point is already closed (the palm then
+-- only keeps them closed longer).
+function Brawler.closePoint(c,a,b,zone)
  local g=a.def.GentleFist
- local awake=(a.awakenUntil or 0)&gt;c.now and a.def.Awakening
- local boost=if awake then (a.def.Awakening.Drain or 1) else 1
+ if (b.tenketsuUntil or 0)&lt;=c.now then b.tenketsu=0;b.tenketsuPoints={} end
+ b.tenketsuPoints=b.tenketsuPoints or {}
+ b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ if #b.tenketsuPoints&gt;=g.MaxPoints then b.tenketsu=#b.tenketsuPoints;return nil end
+ local closed={}
+ for _,id in b.tenketsuPoints do closed[id]=true end
+ local point
+ for _,id in TENKETSU_ORDER[zone or "body"] or TENKETSU_ORDER.body do if not closed[id] then point=id;break end end
+ if not point then return nil end
+ table.insert(b.tenketsuPoints,point)
+ b.tenketsu=#b.tenketsuPoints
+ local severe=b.tenketsu&gt;=g.MaxPoints
+ c:pushImpact(b.root.Position,"tenketsu",false,{owner=a.id,fighter=a.fighterId,victim=b.id,point=point,count=b.tenketsu,severe=severe})
+ Brawler.event(c,a,"PointClosed")
+ if severe then c:cue(b,"CHAKRA NETWORK SEALED",1);Brawler.event(c,a,"Severed") end
+ return point
+end
+-- Every point at once (the last of the Sixty-Four Palms).
+function Brawler.sealPoints(c,a,b)
+ for _=1,a.def.GentleFist.MaxPoints do if not Brawler.closePoint(c,a,b,"body") then break end end
+end
+-- `zone`: where the palm landed (defaults to the body's last hit zone);
+-- `palm`: a melee contact whose generic hit feedback becomes the palm's.
+function Brawler.gentleFist(c,a,b,guarded,zone,palm)
+ local g=a.def.GentleFist
+ local tune=a.def.Awakening
+ local awake=(a.awakenUntil or 0)&gt;c.now and tune
+ local boost=if awake then (tune.Drain or 1) else 1
  -- Skill build (Full Field Points): awakened, the palms reach the points
  -- through a guard (full drain and a closed point).
- local through=guarded and awake and a.def.Awakening.GuardPoints==true
+ local through=guarded and awake and tune.GuardPoints==true
  if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
  b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
- if not guarded or through then
-  local points=if (b.tenketsuUntil or 0)&gt;c.now then (b.tenketsu or 0) else 0
-  b.tenketsu=math.min(g.MaxPoints,points+1);b.tenketsuUntil=c.now+g.Duration;b.tenketsuCut=g.RegenCut
+ if guarded and not through then return end
+ -- The contact reads as a palm on the network, not a punch: the generic light
+ -- hit this blow pushed takes the palm's feedback (sound, flash, camera).
+ if palm then
+  local last=c.impacts and c.impacts[#c.impacts]
+  if last and last.at==c.now and last.style=="light" and (last.position-b.root.Position).Magnitude&lt;1 then last.style="palm";last.owner=a.id end
  end
+ zone=zone or b.hitZone or "body"
+ -- Byakugan Full Field: he sees the whole network, a clean palm closes two.
+ for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do Brawler.closePoint(c,a,b,zone) end
+ -- Full Field: a palm that breaks a jutsu being moulded cuts the flow itself.
+ if awake and tune.ChannelCut and b.interruptedAt==c.now then
+  b.sealedUntil=math.max(b.sealedUntil or 0,c.now+tune.ChannelCut)
+  c:cue(a,"BYAKUGAN • CHAKRA FLOW CUT",.8);c:cue(b,"CHAKRA FLOW SEALED • NO JUTSU",.9)
+  Brawler.event(c,a,"FlowCut")
+ end
+end
+-- Counter stances (Itachi's Read, Neji's Rotation): a strike pressed while the
+-- stance holds is kept and fires the moment the stance reads or repels.
+function Brawler.counterStance(a)
+ local p=a.pending
+ return (a.state=="TechniqueChannel" or a.state=="TechniqueActive") and p~=nil and p.kind=="Technique" and (p.spec.Id=="Read" or p.spec.Id=="Rotation")
+end
+-- The graph's counter (CounterPalm, PalmThrust...) out of a read, a repel or a
+-- caught genjutsu. With a reach (a caught image, a repelled body) it glides the
+-- distance to the body instead of swinging at the air.
+function Brawler.counterStart(c,a)
+ local graph=Brawler.graph(a) or {}
+ if not graph.readCounter or not a.target then return false end
+ a.counterUntil=0;a.counterQueued=nil
+ local reach=a.counterReach;a.counterReach=nil
+ local ok=Brawler.start(c,a,graph.readCounter)
+ local p=a.pending
+ if ok and p and reach and reach.expires&gt;c.now then
+  local d=a.target.root.Position-a.root.Position
+  local need=math.clamp(Vector3.new(d.X,0,d.Z).Magnitude-(p.spec.contact or 3.6),0,reach.max)
+  if need&gt;p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+  a.attackVariant=reach.variant
+ end
+ Brawler.event(c,a,"Counter")
+ return ok
 end
 function Brawler.hit(c,a,p)
  local b=a.target;local spec=p.spec
@@ -2890,7 +3000,7 @@ function Brawler.hit(c,a,p)
  end
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
- if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded) end
+ if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
  if p.flow and not guarded and b.health&gt;0 then
   a.flowStreak=(a.flowStreak or 0)+1
   b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
@@ -2921,18 +3031,14 @@ function Brawler.hit(c,a,p)
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
  Brawler.routePayoff(c,a,b,p)
- -- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
- -- arrival seals the body again, so the relocation chain continues.
- local chain=a.def.Awakening and a.def.Awakening.FlashChain
- if chain and (a.awakenUntil or 0)&gt;c.now and a.teleportAt and c.now-a.teleportAt&lt;.7 and b.health&gt;0 then
-  local entry=require(script.Parent.Techniques).plant(c,a,b.root.Position,Vector3.yAxis,b)
-  entry.expires=c.now+chain
-  c:cue(a,"FLOW • SEALED AGAIN",.7);Brawler.event(c,a,"FlowSeal")
- end
+ -- Awakening rules on a landed strike (Techniques.awakenedHit/awakenedReact).
+ local Techniques=require(script.Parent.Techniques)
+ Techniques.awakenedHit(c,a,b,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ Techniques.awakenedReact(c,a,b,p)
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)&gt;=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
@@ -3361,13 +3467,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		if flat.Magnitude&gt;.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
 		self:cue(victim,"SHARINGAN • TRACKED",.7)
 	end
-	if readEligible and frontal and victim.readUntil&gt;self.now then
-		victim.readUntil=0; victim.bonusUntil=self.now+1.4; victim.counterUntil=self.now+1.0; victim.chakra=math.min(victim.def.Chakra or Config.Chakra,victim.chakra+10)
-		attacker.pending=nil; self:setState(attacker,"Stunned",0.48)
-		self:setState(victim,"Neutral",0)
-		self:cue(victim,"READ SUCCESS • PUNISH"); self:cue(attacker,"READ • EXPOSED")
-		return false
-	end
+	-- Sharingan Read: the blow is seen coming (VelmoraDefense.read).
+	if readEligible and frontal and victim.readUntil&gt;self.now then return Defense.read(self,attacker,victim) end
 	-- Gaara's sand shield stops the hit by itself while it has charges.
 	local shield=victim.def.SandShield
 	-- Not while he is attacking or recovering from it: a whiffed lash is the opening.
@@ -3418,11 +3519,13 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
 			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
 			if interrupted then victim.stunFloorUntil=victim.untilTime end
-			if interrupted then Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
+			if interrupted then victim.interruptedAt=self.now; Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
 	end
 	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
 	if (attacker.awakenUntil or 0)&gt;self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
+	if (victim.awakenUntil or 0)&gt;self.now and victim.def.Awakening then amount*=1+(victim.def.Awakening.Vulnerability or 0) end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
 	-- is worth less. Long routes stay possible; they just stop being lethal.
 	if not guarded then
@@ -3802,7 +3905,7 @@ function Combat:awaken(a)
 	if not tune or a.awakened then return false,"No awakening" end
 	if a.health&gt;a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration
+	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration;a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
 	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
 	a.cooldowns={}
 	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
@@ -3906,7 +4009,7 @@ function Combat:request(a,action,aim,clientTime)
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now&gt;=(a.recoveryCancelAt or math.huge) then
+	if (action=="Guard" or action=="Dodge") and (a.state=="Recovery" or a.state=="TechniqueRecovery") and self.now&gt;=(a.recoveryCancelAt or math.huge) then
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
 	if action=="Pursuit" then
@@ -4105,7 +4208,14 @@ function Combat:request(a,action,aim,clientTime)
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
-	if flat.Magnitude&gt;0.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+	a.castFace=nil
+	if flat.Magnitude&gt;0.1 then
+		-- A small correction snaps (unseen); a large one turns through the
+		-- channel instead of teleporting the facing on the first frame.
+		local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+		if look.Magnitude&lt;.01 or look.Unit:Dot(flat.Unit)&gt;=.82 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
+		else a.castFace=flat.Unit end
+	end
 	self:cue(a,spec.Name.." • PREPARING",spec.Channel)
 	if variant=="WallChidori" then
 		-- Held off the wall for the whole charge (the hover window zeroes the fall).
@@ -4132,7 +4242,7 @@ function Combat:updateActor(a,dt)
 		a.subRegenAt=if a.subCharges&lt;Config.Substitution.Charges then now+Config.Substitution.Recharge else math.huge
 		self:cue(a,"SUBSTITUTION READY",.6)
 	end
-	if a.illusionUntil&lt;=now then a.decoyPosition=nil end
+	Techniques.stepIllusion(self,a,now)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
@@ -4147,10 +4257,9 @@ function Combat:updateActor(a,dt)
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
 	a.speedScale=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1
-	-- The curse mark burns the body that carries it (never to a KO).
-	if (a.awakenUntil or 0)&gt;now and a.def.Awakening.HealthDrain and a.health&gt;1 then
-		a.health=math.max(1,a.health-a.def.Awakening.HealthDrain*dt);a.hum.Health=math.max(1,a.health)
-	end
+	-- The curse mark burns the body that carries it (never to a KO), faster
+	-- while it goes hungry (Techniques.curseDrain).
+	Techniques.curseDrain(self,a,dt,now)
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)&gt;now or (a.flurryUntil or 0)&gt;now then a.move=Vector3.zero end
 	if now&lt;(a.hitstopUntil or 0) then
@@ -4173,16 +4282,8 @@ function Combat:updateActor(a,dt)
 			-- the client can answer with air movement instead of silence.
 			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
-				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
-				local caster=a.target
-				if a.illusionUntil&gt;now and caster and caster.health&gt;0 and caster.fighterId=="Mirage" then
-					a.illusionUntil=0;a.decoyPosition=nil
-					caster.counterUntil=now+1.1;caster.bonusUntil=now+1.1
-					Brawler.event(self,caster,"MirageCatch")
-					self:pushImpact(a.root.Position,"mirage",false,{owner=caster.id,fighter=caster.fighterId})
-					self:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);self:cue(a,"GENJUTSU • EXPOSED",1)
-					pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
-				end
+				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
+				Techniques.whiffRead(self,a,pending,now)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -4200,6 +4301,9 @@ function Combat:updateActor(a,dt)
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
+			-- A utility jutsu (Flow) yields the second half of its recovery to a
+			-- guard or a dodge: it flows back into movement instead of freezing.
+			if pending.spec.Flow then a.recoveryCancelAt=now+pending.spec.Recovery*.5 end
 		else
 			a.pending=nil;a.attackName=nil; self:setState(a,"Neutral",0)
 		end
@@ -4221,6 +4325,11 @@ function Combat:updateActor(a,dt)
 		if a.hop.remaining&lt;=.01 or a.reaction then a.hop=nil end
 	end
 	if a.castId and not a.pending and not a.throwing and a.state~="TechniqueRecovery" then a.castId=nil end
+	-- A cast that started off-line turns into its aim through the channel.
+	if a.castFace then
+		if (a.state=="TechniqueChannel" or a.state=="TechniqueActive") and (a.rotationUntil or 0)&lt;=now then self:turnToward(a,a.castFace,dt,1440)
+		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
+	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
@@ -4392,13 +4501,21 @@ function Combat:stepRotation(a)
 		local hit=self:damage(a,b,a.rotationDamage or 6,false,false)
 		self.damageTag=nil
 		if self.match.phase~="Duel" then return end
-		-- The dome throws the body out even through a guard.
-		if hit then Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		-- The dome throws a body that was only standing in it out, even through a
+		-- guard; a strike it turns aside staggers out of the dome instead, still
+		-- inside the palm that answers (Techniques.rotationCounter).
+		if hit then
+			if attacking and b.airborne then Brawler.react(self,b,"Juggled",away*16+Vector3.new(0,14,0),.6,a)
+			elseif attacking then Brawler.react(self,b,"HitStun",away*20,.6,a)
+			else Brawler.react(self,b,"Knockback",away*48+Vector3.new(0,18,0),.55,a) end
+		end
 		self:pushImpact(b.root.Position,"repel",true,{owner=a.id,direction=away})
 		if attacking then
 			a.counterUntil=self.now+.9
+			a.counterReach={expires=self.now+.9,max=7,variant="TrigramCounter"}
 			Brawler.event(self,a,"Repel")
 			self:cue(a,"ROTATION • REPELLED • COUNTER",.8);self:cue(b,"REPELLED",.6)
+			Techniques.rotationCounter(self,a)
 		end
 	end
 end
@@ -5063,7 +5180,7 @@ function Matches:view(s,cursor,mine,theirs)
 			local entry=seal.anchor
 			if entry then
 				table.insert(list,{id=entry.id or 0,surface=entry.surface or seal.position,normal=entry.normal or Vector3.yAxis,
-					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id})
+					remaining=math.max(0,entry.expires-now),body=entry.actor and entry.actor.id,wind=entry.wind==true,wake=entry.wake==true})
 			end
 		end
 		return list
@@ -5099,7 +5216,14 @@ function Matches:view(s,cursor,mine,theirs)
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
 			rotation=(a.rotationUntil or 0)&gt;now,tenketsu=if (a.tenketsuUntil or 0)&gt;now then a.tenketsu or 0 else 0,
-			sealed=math.max(0,(a.sealedUntil or 0)-now)}
+			sealed=math.max(0,(a.sealedUntil or 0)-now),
+			-- Identity cues: which chakra points are closed on this body (body
+			-- locations the client lights), a severed network, the kind of
+			-- genjutsu it is under, a hungry Curse Mark.
+			tenketsuPoints=if (a.tenketsuUntil or 0)&gt;now then table.clone(a.tenketsuPoints or {}) else {},
+			tenketsuSevere=(a.tenketsuUntil or 0)&gt;now and (a.tenketsu or 0)&gt;=4,
+			illusionKind=if (a.illusionUntil or 0)&gt;now then a.illusionKind else nil,
+			curseHunger=a.curseHunger==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -7613,7 +7737,7 @@ return {
 			Counter = "Wall tech on the impact (Q) or a substitution; away from walls it is the normal palm.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "ShortSigns", Name = "Short Signs", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 5,
 			Effects = { { "tech.MirageCast.Channel", "mul", 0.8 } },
-			Shows = "Genjutsu: Mirage is cast in 0.72 s instead of 0.9 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
+			Shows = "Genjutsu: Mirage is cast in 0.34 s instead of 0.42 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "PhoenixVolley", Name = "Phoenix Volley", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
 			Effects = { { "tech.PhoenixFlower.Cost", "add", -3 } },
 			Shows = "Phoenix Flower costs 17 chakra instead of 20.", Counter = "Same five flames: guard or advance diagonally.", Lore = "PLAUSIBLE_YOUNG" },
@@ -7805,6 +7929,16 @@ local function seals(c,a,now)
 	end
 	-- A seal written directly into the single legacy slot still counts.
 	if a.anchor and not known[a.anchor] and a.anchor.expires&gt;now then table.insert(list,{position=a.anchor.position,anchor=a.anchor}) end
+	-- Yellow Flash: a body he has just launched, knocked away or splatted (his
+	-- chase window is open) is a destination by itself. No seal is spent on it;
+	-- the chase window is.
+	local tune=a.def.Awakening
+	local b=a.target
+	if tune and tune.FlashPursuit and (a.awakenUntil or 0)&gt;now and b and b.health&gt;0 and (a.pursuitUntil or 0)&gt;now then
+		local onBody=false
+		for _,seal in list do if seal.body then onBody=true end end
+		if not onBody then table.insert(list,{position=b.root.Position,body=true,virtual=true}) end
+	end
 	return list
 end
 Techniques.seals=seals
@@ -7837,6 +7971,7 @@ local function sealOf(c,a,now)
 end
 Techniques.sealOf=sealOf
 function Techniques.consumeSeal(c,a,seal)
+	if seal.virtual then a.pursuitUntil=0;return end
 	if seal.flying then seal.flying.dead=true;c:removeProjectile(seal.flying);return end
 	local entry=seal.anchor
 	if not entry then return end
@@ -7994,13 +8129,24 @@ Techniques.Flashstep = {
 		a.airborne=a.root.Position.Y&gt;c.match.origin.Y+4.2
 		c:effect("Arrival",target,a.color,Vector3.new(3,5,3),0.45)
 		Techniques.consumeSeal(c,a,seal)
+		-- Yellow Flash: every jump leaves its own return point (a floor seal
+		-- where he stood) and the arrival stays open longer, so relocations
+		-- chain A -&gt; B -&gt; A instead of ending on the first arrival.
+		local tune=a.def.Awakening
+		local awake=tune~=nil and (a.awakenUntil or 0)&gt;now
+		if awake and tune.FlashWake then
+			local wake=Techniques.plant(c,a,Vector3.new(departure.X,c.match.origin.Y,departure.Z),Vector3.yAxis)
+			wake.wake=true
+			require(script.Parent.Brawler).event(c,a,"FlashWake")
+		end
 		-- The arrival opens a short window in which a strike (or Rasengan, with
 		-- almost no wind-up) cancels the technique recovery.
-		a.flashUntil=now+.55;a.teleportAt=now
+		a.flashUntil=now+(if awake and tune.Arrival then tune.Arrival else .55);a.teleportAt=now
 		a.teleportSerial=(a.teleportSerial or 0)+1
-		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id})
+		c:pushImpact(target,"teleport",false,{owner=a.id,fighter=a.fighterId,from=departure,to=target,projectile=seal.flying and seal.flying.id,awake=awake,body=seal.virtual==true})
 		local left=#seals(c,a,now)
-		c:cue(a,if left&gt;0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left&gt;1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7)
+		if seal.virtual then c:cue(a,"YELLOW FLASH • FLYING THUNDER GOD TO THE BODY",.7)
+		else c:cue(a,if left&gt;0 then "FLYING THUNDER GOD • "..left.." SEAL"..(if left&gt;1 then "S" else "").." LEFT" else "FLYING THUNDER GOD",.7) end
 	end,
 }
 Techniques.BurstStrike = {
@@ -8080,6 +8226,15 @@ Techniques.NeedleFan = {
 		c:cue(a,"SHADOW SHURIKEN",.6)
 	end,
 }
+-- Genjutsu: Mirage. Itachi leaves his image standing where he was and
+-- withdraws a few steps straight back behind it, on the very line the
+-- opponent is watching: the image covers him. A swing that reaches the image
+-- (and not the body) gives the read away: the image breaks, the swing is
+-- exposed and Itachi steps through his image with the counter palm. Trusting
+-- the body works: walking into the image dissolves it, a blade thrown at him
+-- passes through it, and any blow (his or yours) breaks the genjutsu.
+local MIRAGE={Withdraw=5.5,Life=2.6,Touch=1.6,Reach=2,Exposed=.55,Counter=1.1,CounterReach=9}
+Techniques.MIRAGE=MIRAGE
 Techniques.MirageCast = {
 	check = function(c,a,spec)
 		return c:targetValid(a,a.target,spec.Range,0.35)
@@ -8087,19 +8242,119 @@ Techniques.MirageCast = {
 	execute = function(c,a,pending,now)
 		if not c:targetValid(a,a.target,pending.spec.Range,0.35) then c:cue(a,"CAST LOST SIGHT"); return end
 		local victim = a.target
-		-- The Byakugan sees chakra, not light: the afterimage has none.
+		-- The Byakugan sees chakra, not light: the image has none.
 		if victim.def.Byakugan then
 			c:cue(victim,"BYAKUGAN • SEES THROUGH",1);c:cue(a,"GENJUTSU • SEEN THROUGH",1)
+			c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="seen",victim=victim.id})
 			return
 		end
-		victim.illusionUntil = now+3
-		victim.decoyPosition = c:clamp(a.root.Position + a.root.CFrame.RightVector*7)
-		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),3)
-		c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=victim.decoyPosition})
-		c:cue(victim,"MIRAGE • TRUST THE BODY",3)
-		c:cue(a,"ECHO ACTIVE",3)
+		local Motor=require(script.Parent.Motor)
+		local image=a.root.Position
+		local away=image-victim.root.Position;away=Vector3.new(away.X,0,away.Z)
+		away=if away.Magnitude&gt;.1 then away.Unit else -a.root.CFrame.LookVector
+		if Motor.travel(a,c,away,MIRAGE.Withdraw)&lt;2.5 then
+			-- A wall behind him: the withdrawal becomes a slip to the side (the
+			-- stick's side when it points there); the image still stands in front.
+			local side=Vector3.new(-away.Z,0,away.X)
+			local stick=Vector3.new(a.move.X,0,a.move.Z)
+			if stick.Magnitude&gt;.4 and stick:Dot(side)&lt;0 then side=-side end
+			if Motor.travel(a,c,side,MIRAGE.Withdraw)&lt;2.5 then Motor.travel(a,c,-side,MIRAGE.Withdraw) end
+		end
+		local face=victim.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
+		if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		victim.illusionUntil=now+MIRAGE.Life;victim.illusionAt=now;victim.illusionBy=a;victim.illusionKind="image"
+		victim.decoyPosition=c:clamp(image)
+		c:effect("Echo",victim.decoyPosition,a.color,Vector3.new(2,5,1),MIRAGE.Life)
+		c:pushImpact(victim.decoyPosition,"mirage",false,{owner=a.id,fighter=a.fighterId,phase="cast",from=a.root.Position,to=victim.decoyPosition,victim=victim.id})
+		c:cue(victim,"GENJUTSU • TRUST THE BODY",MIRAGE.Life)
+		c:cue(a,"GENJUTSU • THE IMAGE HOLDS",1)
+		require(script.Parent.Brawler).event(c,a,"Mirage")
 	end,
 }
+-- Ends a genjutsu on `a` (the deceived fighter). why: "catch" | "touch" |
+-- "break" | "expire"; the client finishes the image accordingly.
+function Techniques.breakIllusion(c,a,why)
+	local at=a.decoyPosition
+	local caster=a.illusionBy
+	a.illusionUntil=0;a.decoyPosition=nil;a.illusionBy=nil;a.illusionKind=nil;a.illusionAt=nil
+	if at and why~="expire" then
+		c:pushImpact(at,"mirage",false,{owner=caster and caster.id,fighter=caster and caster.fighterId,phase=why,victim=a.id})
+	end
+	if why=="touch" then
+		c:cue(a,"GENJUTSU • DISPELLED",.7)
+		if caster then c:cue(caster,"GENJUTSU • SEEN THROUGH",.7) end
+	end
+end
+-- Every frame, for every fighter: a genjutsu image ends with its time, with
+-- its caster, on any blow after it began (pain breaks it), or when the body
+-- walks into the image. A skill-build echo (no kind) only keeps its timer.
+function Techniques.stepIllusion(c,a,now)
+	if (a.illusionUntil or 0)&lt;=now then
+		if a.decoyPosition or a.illusionKind then a.decoyPosition=nil;a.illusionBy=nil;a.illusionKind=nil;a.illusionAt=nil end
+		return
+	end
+	if a.illusionKind~="image" then return end
+	local caster=a.illusionBy
+	local since=a.illusionAt or now
+	if not caster or caster.health&lt;=0 or (a.lastHurt or -10)&gt;since or (caster.lastHurt or -10)&gt;since then
+		Techniques.breakIllusion(c,a,"break");return
+	end
+	local d=a.decoyPosition and a.decoyPosition-a.root.Position
+	if d and a.state~="Startup" and a.state~="Active" and Vector3.new(d.X,0,d.Z).Magnitude&lt;=MIRAGE.Touch and math.abs(d.Y)&lt;4 then
+		Techniques.breakIllusion(c,a,"touch")
+	end
+end
+-- The swing bit the image: it breaks, the swing is exposed, the counter palm
+-- opens with the reach to step through the image to the body.
+function Techniques.mirageCatch(c,a,caster,pending,now)
+	local legacy=a.illusionKind==nil
+	Techniques.breakIllusion(c,a,"catch")
+	caster.counterUntil=now+MIRAGE.Counter;caster.bonusUntil=now+MIRAGE.Counter
+	caster.counterReach={expires=now+MIRAGE.Counter,max=MIRAGE.CounterReach,variant="MirageCounter"}
+	require(script.Parent.Brawler).event(c,caster,"MirageCatch")
+	c:cue(caster,"GENJUTSU • CAUGHT • PUNISH",1);c:cue(a,"GENJUTSU • EXPOSED",1)
+	pending.spec=table.clone(pending.spec);pending.spec.recovery+=.32
+	if not legacy then
+		-- Exposed for a moment (a stun the counter reaches), not merely a longer
+		-- recovery a dodge could cancel.
+		c:schedule(now,function()
+			if a.health&gt;0 and a.state=="Recovery" and not a.reaction then c:setState(a,"Stunned",MIRAGE.Exposed) end
+		end)
+	end
+end
+-- A committed swing that touched nothing (Combat, end of the active window).
+-- Under a genjutsu image, a swing that reached the image is caught; under
+-- Sharingan Focus any swing that misses close to Itachi is read. A skill-build
+-- echo keeps its own rule: any swing at all while it holds.
+function Techniques.whiffRead(c,a,pending,now)
+	local caster=a.illusionBy or a.target
+	if (a.illusionUntil or 0)&gt;now and caster and caster.health&gt;0 then
+		local struck=false
+		if a.illusionKind=="image" and a.decoyPosition then
+			local d=a.decoyPosition-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			local reach=(pending.spec.range or 6)+MIRAGE.Reach
+			struck=flat.Magnitude&lt;=reach and math.abs(d.Y)&lt;6 and (flat.Magnitude&lt;1 or a.root.CFrame.LookVector:Dot(flat.Unit)&gt;.3)
+		elseif a.illusionKind==nil then
+			struck=caster.fighterId=="Mirage"
+		end
+		if struck then Techniques.mirageCatch(c,a,caster,pending,now);return end
+	end
+	local eye=a.target
+	local tune=eye and eye.def.Awakening
+	if eye and eye.health&gt;0 and tune and tune.WhiffRead and (eye.awakenUntil or 0)&gt;now and not eye.reaction then
+		local d=eye.root.Position-a.root.Position
+		local flat=Vector3.new(d.X,0,d.Z)
+		if flat.Magnitude&lt;=tune.WhiffRead and math.abs(d.Y)&lt;6 and (flat.Magnitude&lt;1 or a.root.CFrame.LookVector:Dot(flat.Unit)&gt;.2) then
+			eye.counterUntil=math.max(eye.counterUntil or 0,now+.9);eye.bonusUntil=now+.9
+			eye.counterReach={expires=now+.9,max=5,variant="ReadCounter"}
+			pending.spec=table.clone(pending.spec);pending.spec.recovery+=.22
+			c:pushImpact(eye.root.Position,"read",false,{owner=eye.id,fighter=eye.fighterId,victim=a.id,phase="whiff"})
+			c:cue(eye,"SHARINGAN • WHIFF READ • PUNISH",.8);c:cue(a,"READ • EXPOSED",.6)
+			require(script.Parent.Brawler).event(c,eye,"WhiffRead")
+		end
+	end
+end
 Techniques.Quickstep={
 	check=function() return true end,
 	execute=function(c,a,pending,now)
@@ -8273,7 +8528,7 @@ Techniques.Rotation={
 		a.rotationUntil=now+active;a.rotationHit={};a.rotationDamage=pending.spec.Damage
 		-- Skill builds: a wider dome (Reach) and blades sent back (Reflect).
 		a.rotationReach=pending.spec.Reach;a.rotationReflect=pending.spec.Reflect
-		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active)
+		a.invulnerableUntil=math.max(a.invulnerableUntil,now+active);a.rotationGuardUntil=a.invulnerableUntil
 		c:pushImpact(a.root.Position,"rotation",true,{owner=a.id,fighter=a.fighterId,duration=active})
 		c:cue(a,"EIGHT TRIGRAMS • ROTATION",.7)
 	end,
@@ -8293,21 +8548,36 @@ Techniques.VacuumPalm={
 }
 -- Eight Trigrams Sixty-Four Palms. The opening palm must land (and can be
 -- guarded); once it does, the flurry locks the opponent in place, drains its
--- chakra point by point and ends by sealing its techniques. The victim keeps one
--- answer: a substitution.
+-- chakra point by point and ends by sealing its techniques. It is the climax of
+-- the network: every chakra point already closed adds palms, quickens them and
+-- lengthens the seal, and with all of them closed the guard has nothing left
+-- to hold the opening palm with. The victim keeps one answer: a substitution.
 local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
+function Techniques.palmsPlan(points,seal)
+	points=math.clamp(points or 0,0,8)
+	return {strikes=7+points,interval=math.max(.1,.15-.012*points),final=2.5+.25*points,seal=(seal or 3.5)+.4*points}
+end
 Techniques.SixtyFourPalms={
 	check=function() return true end,
 	execute=function(c,a,pending,now)
 		local Brawler=require(script.Parent.Brawler)
 		local victim=a.target
+		local g=a.def.GentleFist
 		pending.spec=table.clone(pending.spec)
-		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId})
+		local points=if victim and (victim.tenketsuUntil or 0)&gt;now then victim.tenketsu or 0 else 0
+		c:pushImpact(a.root.Position,"trigram",false,{owner=a.id,fighter=a.fighterId,points=points})
 		local reach=victim and victim.health&gt;0 and c:targetValid(a,victim,pending.spec.Range,.4)
 		if not reach or victim.invulnerableUntil&gt;now or (victim.rotationUntil or 0)&gt;now then
 			pending.spec.Recovery=.85
 			c:cue(a,"64 PALMS • MISSED",.7)
 			return
+		end
+		if g and points&gt;=g.MaxPoints and victim.guardHeld then
+			-- Every point closed: the guard collapses under the opening palm.
+			victim.guardHeld=false
+			if victim.state=="Guarding" then c:setState(victim,"Neutral",0) end
+			c:cue(victim,"GUARD BREAK • THE NETWORK IS CLOSED",.9)
+			Brawler.event(c,a,"GuardCollapse")
 		end
 		c.damageTag="64 Palms"
 		local opened=c:damage(a,victim,pending.spec.Damage,false,true)
@@ -8318,30 +8588,30 @@ Techniques.SixtyFourPalms={
 			c:cue(a,"64 PALMS • GUARDED",.7)
 			return
 		end
-		Brawler.gentleFist(c,a,victim,false)
+		Brawler.gentleFist(c,a,victim,false,"body")
 		-- Lock: Neji holds the technique, the victim is held in place.
-		local strikes=7
-		local interval=.15
+		local plan=Techniques.palmsPlan(points,pending.spec.Seal)
+		local strikes,interval=plan.strikes,plan.interval
 		c:setState(a,"TechniqueActive",strikes*interval+.25)
 		a.flurryUntil=now+strikes*interval+.2
 		Brawler.react(c,victim,"HitStun",Vector3.zero,strikes*interval+.3,a)
 		victim.flurriedBy=a
-		c:cue(a,"EIGHT TRIGRAMS • 64 PALMS",1)
+		c:cue(a,if points&gt;0 then "EIGHT TRIGRAMS • 64 PALMS • "..points.." POINTS OPEN THE WAY" else "EIGHT TRIGRAMS • 64 PALMS",1)
 		for k=1,strikes do
 			c:schedule(now+k*interval,function()
 				if a.health&lt;=0 or a.state~="TechniqueActive" or victim.health&lt;=0 or victim.reaction~="HitStun" or victim.flurriedBy~=a then return end
 				local last=k==strikes
 				c.damageTag="64 Palms"
-				c:damage(a,victim,if last then pending.spec.Damage*2.5 else pending.spec.Damage,false,false)
+				c:damage(a,victim,if last then pending.spec.Damage*plan.final else pending.spec.Damage,false,false)
 				c.damageTag=nil
 				if c.match.phase~="Duel" or victim.health&lt;=0 then return end
-				Brawler.gentleFist(c,a,victim,false)
+				Brawler.gentleFist(c,a,victim,false,"body")
 				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
 				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
-					victim.sealedUntil=c.now+(pending.spec.Seal or 3.5)
-					victim.tenketsu=a.def.GentleFist.MaxPoints;victim.tenketsuUntil=c.now+a.def.GentleFist.Duration
+					victim.sealedUntil=c.now+plan.seal
+					Brawler.sealPoints(c,a,victim)
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
 					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
@@ -8353,8 +8623,160 @@ Techniques.SixtyFourPalms={
 		end
 	end,
 }
+-- Rotation that repelled a strike flows straight into its answer: the dome
+-- winds down at once (no full recovery), and a strike pressed during the spin
+-- is the twin palm gliding out of it.
+function Techniques.rotationCounter(c,a)
+	local now=c.now
+	local queued=a.counterQueued~=nil and now-a.counterQueued&lt;=.9
+	local stop=if queued then now else now+.08
+	a.rotationUntil=math.min(a.rotationUntil or 0,stop)
+	-- A strike pressed while the dome winds down cancels straight into the counter.
+	a.rotationCounterUntil=a.counterUntil
+	if a.rotationGuardUntil and math.abs((a.invulnerableUntil or 0)-a.rotationGuardUntil)&lt;1e-6 then a.invulnerableUntil=stop end
+	local p=a.pending
+	if p and p.kind=="Technique" and p.spec.Id=="Rotation" and a.state=="TechniqueActive" then
+		p.spec=table.clone(p.spec);p.spec.Recovery=.04
+		a.untilTime=math.min(a.untilTime,stop)
+	end
+	if queued then
+		c:schedule(now,function()
+			if a.health&lt;=0 or (a.counterUntil or 0)&lt;=c.now or a.reaction then return end
+			if a.state=="TechniqueActive" or a.state=="TechniqueRecovery" then a.pending=nil;a.rotationUntil=0;c:setState(a,"Neutral",0) end
+			require(script.Parent.Brawler).counterStart(c,a)
+		end)
+	end
+end
 Techniques.PhoenixFlower={check=function() return true end,execute=Elements.phoenix}
-Techniques.WindCut={check=function() return true end,execute=Elements.wind}
+-- Minato's Wind Cut: a crescent of wind thrown off the kunai's edge on the run
+-- (the legs never stop). It cuts enemy blades out of its lane, and a body it
+-- cuts is thrown a step sideways with a short wind seal on it: the very next
+-- Flying Thunder God lands beside that body, on the side the stick picks.
+-- A guard stops the gust and keeps no seal.
+local BLADES={kunai=true,shuriken=true,marked=true,wire=true}
+local WIND={Seal=1.6,Cut=22,Lane=1.4,Radius=1.6}
+Techniques.WIND=WIND
+local function cutLane(c,a,gust)
+	c:schedule(c.now+.015,function()
+		if not table.find(c.projectiles,gust) or c.match.phase~="Duel" then return end
+		local radius=gust.radius+(gust.growth or 0)*(c.now-gust.born)+WIND.Lane
+		for i=#c.projectiles,1,-1 do
+			local q=c.projectiles[i]
+			if q~=gust and q.a~=a and BLADES[q.kind] and (q.position-gust.position).Magnitude&lt;=radius then
+				table.remove(c.projectiles,i)
+				c:pushImpact(q.position,"deflect",false,{projectile=q.id,kind=q.kind,owner=q.a.id,direction=-q.direction})
+				require(script.Parent.Brawler).event(c,a,"WindCutBlade")
+			end
+		end
+		cutLane(c,a,gust)
+	end)
+end
+function Techniques.windSeal(c,a,b,direction,stick)
+	local Brawler=require(script.Parent.Brawler)
+	local across=Vector3.new(-direction.Z,0,direction.X)
+	across=if across.Magnitude&gt;.05 then across.Unit else a.root.CFrame.RightVector
+	if stick and stick.Magnitude&gt;.4 and stick:Dot(across)&lt;0 then across=-across end
+	Brawler.react(c,b,if b.airborne then "Juggled" else "HitStun",across*WIND.Cut+(if b.airborne then Vector3.new(0,10,0) else Vector3.zero),.45,a)
+	-- A longer seal already on that body (a marked kunai) is kept, not shortened.
+	local kept=false
+	for _,entry in a.anchors or {} do if entry.actor==b and entry.expires&gt;c.now+WIND.Seal then kept=true end end
+	if not kept then
+		local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+		entry.expires=c.now+WIND.Seal;entry.wind=true
+	end
+	c:pushImpact(b.root.Position,"windseal",false,{owner=a.id,fighter=a.fighterId,victim=b.id,direction=across})
+	c:cue(a,"WIND CUT • SEALED • FLASH BESIDE IT",.9)
+	Brawler.event(c,a,"WindSeal")
+end
+Techniques.WindCut={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local aim=pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*spec.Range
+		local origin=c.launchPoint(a,"Wind")
+		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
+		if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
+		local goal=origin+flat.Unit*spec.Range+Vector3.new(0,math.clamp(aim.Y-origin.Y,-3,2),0)
+		local stick=Vector3.new(a.move.X,0,a.move.Z)
+		local gust
+		-- Skill build (Gale Chase): a gust that connects also opens the chase.
+		gust=c:projectile(a,goal,spec.Speed or 104,spec.Range,spec.Damage,"wind",function(_,_,victim)
+			if not victim or victim.health&lt;=0 or a.health&lt;=0 or c.match.phase~="Duel" then return end
+			Techniques.windSeal(c,a,victim,gust.direction,stick)
+		end,{origin=origin,radius=WIND.Radius,riders=if spec.Chase then {chase=spec.Chase} else nil})
+		cutLane(c,a,gust)
+		c:cue(a,"WIND CUT",.5)
+	end,
+}
+-- Awakening rules that live on a landed strike (Brawler.hit). Before the
+-- reaction: Minato's skill-build Flow chain; the Curse Mark feeding on the
+-- fight. After it (awakenedReact): the Curse Mark's extensions.
+function Techniques.awakenedHit(c,a,b,p)
+	local tune=a.def.Awakening
+	if not tune or (a.awakenUntil or 0)&lt;=c.now or b.health&lt;=0 then return end
+	-- Skill build (Flow, Minato's awakening): a clean hit right after a teleport
+	-- arrival seals the body again, so the relocation chain continues.
+	local chain=tune.FlashChain
+	if chain and a.teleportAt and c.now-a.teleportAt&lt;.7 then
+		local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+		entry.expires=c.now+chain
+		c:cue(a,"FLOW • SEALED AGAIN",.7);require(script.Parent.Brawler).event(c,a,"FlowSeal")
+	end
+	-- Curse Mark: a landed blow quiets the seal for a moment (it feeds on the fight).
+	if tune.HealthDrain then a.curseFedUntil=c.now+(tune.Feed or 0);a.curseLanded=c.now end
+end
+function Techniques.awakenedReact(c,a,b,p)
+	local tune=a.def.Awakening
+	if not tune or (a.awakenUntil or 0)&lt;=c.now or b.health&lt;=0 then return end
+	local Brawler=require(script.Parent.Brawler)
+	if tune.Extension and (p.name=="Light3" or p.name=="AirDrive") and b.reaction=="Knockback" and (a.curseHoldReadyAt or 0)&lt;=c.now then
+		-- The cursed kick does not let go: a short stagger instead of the
+		-- knock-away, and the string stays open for the next route (heavy =
+		-- the launcher, which the curse turns into the Dancing Leaf). Once per
+		-- exchange: the next ender within 2.5 s knocks away as usual.
+		a.curseHoldReadyAt=c.now+2.5
+		local v=b.reactionVelocity or Vector3.zero
+		local flat=Vector3.new(v.X,0,v.Z)
+		flat=if flat.Magnitude&gt;.1 then flat.Unit else a.root.CFrame.LookVector*Vector3.new(1,0,1)
+		-- (The knockback just marked the body airborne: judge by its height.)
+		if b.root.Position.Y&gt;c.match.origin.Y+4.2 then Brawler.react(c,b,"Juggled",flat*12+Vector3.new(0,14,0),.55,a)
+		else b.airborne=false;Brawler.react(c,b,"HitStun",flat*14,.5,a) end
+		p.spec.chain=true
+		c:pushImpact(b.root.Position,"curse",false,{owner=a.id,fighter=a.fighterId,victim=b.id})
+		c:cue(a,"CURSE MARK • IT DOES NOT LET GO",.6)
+		Brawler.event(c,a,"CurseExtension")
+	end
+	if tune.CursedLeaf and b.reaction=="Launched" and p.name~="LionKick" then Techniques.cursedLeaf(c,a,b) end
+end
+-- Curse Mark: every launcher becomes the Dancing Leaf (a free chase glued
+-- under the body; heavy up there is the Lion Combo).
+function Techniques.cursedLeaf(c,a,b)
+	local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+	local Brawler=require(script.Parent.Brawler)
+	a.lionUntil=c.now+2.1
+	c:schedule(c.now+.12,function()
+		if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+		a.chakra+=Config.PursuitCost
+		local from=a.root.Position
+		if c:request(a,"Pursuit") then
+			a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
+			c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+			c:cue(a,"CURSED LEAF • HEAVY = LION COMBO",1)
+			Brawler.event(c,a,"CursedLeaf")
+		else a.chakra-=Config.PursuitCost end
+	end)
+end
+-- Curse Mark drain: it burns faster while he is not landing blows (hunger),
+-- pauses for a moment after each one, and never kills.
+function Techniques.curseDrain(c,a,dt,now)
+	local tune=a.def.Awakening
+	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)&lt;=now or a.health&lt;=1 then a.curseHunger=false;return end
+	local rate=tune.HealthDrain
+	if (a.curseFedUntil or 0)&gt;now then rate=0
+	elseif tune.Hunger and now-(a.curseLanded or a.awakenedAt or now)&gt;1.5 then rate*=tune.Hunger end
+	a.curseHunger=rate&gt;tune.HealthDrain
+	if rate&gt;0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
+end
 return Techniques
 </ProtectedString>
         </Properties>
@@ -8526,21 +8948,84 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	end
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
-	if since&lt;=(if eye then eye.ParryWindow else Tune.ParryWindow) and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
+	local window=if eye then eye.ParryWindow else Tune.ParryWindow
+	-- Sharingan Focus: the raised guard itself reads. Any frontal blow of the
+	-- body that meets it is parried (once per raise; parry cooldown and
+	-- stamina still apply) and read. Blades and jutsu keep the eye's window.
+	local focus=eye~=nil and melee and victim.def.Awakening and victim.def.Awakening.GuardRead==true and (victim.awakenUntil or 0)&gt;c.now
+	if focus then window=1e3 end
+	-- Closed chakra points (Gentle Fist) compromise the guard: the parry
+	-- window narrows with each one (none left at four) and a blocked blow costs
+	-- more stamina.
+	local points=Defense.closedPoints(victim,c.now)
+	window*=math.max(0,1-.25*points)
+	if since&lt;=window and c.now&gt;=victim.parryReadyAt and victim.stamina&gt;=Tune.ParryCost then
 		victim.stamina-=Tune.ParryCost;victim.parryReadyAt=c.now+Tune.ParryCooldown;victim.guardPressedAt=-math.huge
 		if not melee then c:cue(victim,'DEFLECTED');return 'Parried',0 end
 		attacker.pending=nil;attacker.guardHeld=false;c:setState(attacker,'Stunned',Tune.ParryStun)
 		if eye then victim.counterUntil=c.now+eye.Counter;c:cue(victim,'SHARINGAN • PARRY • COUNTER')
 		else c:cue(victim,'PARRY • PUNISH') end
+		if focus then
+			victim.bonusUntil=c.now+1;victim.counterReach={expires=c.now+eye.Counter,max=4,variant="ReadCounter"}
+			Defense.slip(c,victim,attacker,"focus")
+			c:cue(victim,'SHARINGAN FOCUS • READ • COUNTER')
+		end
 		c:cue(attacker,'PARRIED • EXPOSED')
 		return 'Parried',0
 	end
-	if victim.stamina&gt;=Tune.BlockHitCost then
-		victim.stamina-=Tune.BlockHitCost
+	local blockCost=Tune.BlockHitCost*(1+.2*points)
+	if victim.stamina&gt;=blockCost then
+		victim.stamina-=blockCost
 		return 'Blocked',amount*Tune.BlockDamageMultiplier
 	end
 	victim.guardHeld=false;c:setState(victim,'Stunned',.65);c:cue(victim,'GUARD BREAK')
 	return 'GuardBreak',amount
+end
+-- Chakra points Neji has closed on this fighter (0 once they reopen).
+function Defense.closedPoints(a,now)
+	return if (a.tenketsuUntil or 0)&gt;now then (a.tenketsu or 0) else 0
+end
+-- A read: the reader slips a step to the outside of the blow (an afterimage
+-- stays where he stood and the swing bites it), turns square to the attacker,
+-- and the client shows the eye, the afterimage and the bitten swing ("read").
+function Defense.slip(c,reader,attacker,phase)
+	local Motor=require(script.Parent.Motor)
+	local from=reader.root.Position
+	local line=from-attacker.root.Position;line=Vector3.new(line.X,0,line.Z)
+	line=if line.Magnitude&gt;.1 then line.Unit else Vector3.new(reader.root.CFrame.LookVector.X,0,reader.root.CFrame.LookVector.Z).Unit
+	local side=Vector3.new(-line.Z,0,line.X)
+	local stick=Vector3.new(reader.move.X,0,reader.move.Z)
+	local sign=if stick.Magnitude&gt;.4 then (if stick:Dot(side)&gt;=0 then 1 else -1) else (reader.slipSide or 1)
+	reader.slipSide=-sign
+	if Motor.travel(reader,c,side*sign,2.2)&lt;1 then Motor.travel(reader,c,-side*sign,2.2) end
+	local face=attacker.root.Position-reader.root.Position;face=Vector3.new(face.X,0,face.Z)
+	if face.Magnitude&gt;.1 then reader.root.CFrame=CFrame.lookAt(reader.root.Position,reader.root.Position+face) end
+	c:pushImpact(from,"read",false,{owner=reader.id,fighter=reader.fighterId,victim=attacker.id,to=reader.root.Position,phase=phase})
+	require(script.Parent.Brawler).event(c,reader,"ReadSlip")
+end
+-- A strike pressed during the counter stance fires the moment it pays off.
+function Defense.fireQueued(c,a)
+	if not a.counterQueued or c.now-a.counterQueued&gt;1.1 then return end
+	c:schedule(c.now,function()
+		if a.health&gt;0 and (a.counterUntil or 0)&gt;c.now and a.state=="Neutral" and not a.reaction then require(script.Parent.Brawler).counterStart(c,a) end
+	end)
+end
+-- Sharingan Read paid off (Combat:damage, a frontal melee blow inside the
+-- stance): no damage, the attacker is caught out, the reader slips aside out
+-- of the stance at once and the counter palm opens (instantly when the strike
+-- was already pressed during the stance). Returns false (no damage).
+function Defense.read(c,attacker,victim)
+	local now=c.now
+	victim.readUntil=0;victim.bonusUntil=now+1.4;victim.counterUntil=now+1.0
+	victim.counterReach={expires=now+1.0,max=4,variant="ReadCounter"}
+	victim.chakra=math.min(victim.def.Chakra or 100,victim.chakra+10)
+	attacker.pending=nil;c:setState(attacker,"Stunned",.5)
+	victim.pending=nil;c:setState(victim,"Neutral",0)
+	Defense.slip(c,victim,attacker,"read")
+	c:cue(victim,"READ • SEEN COMING • PUNISH");c:cue(attacker,"READ • EXPOSED")
+	require(script.Parent.Brawler).event(c,victim,"ReadSuccess")
+	Defense.fireQueued(c,victim)
+	return false
 end
 function Defense.step(c,a,dt,now)
 	if a.guardHeld then
@@ -9661,6 +10146,8 @@ local MINATO=Color3.fromRGB(255,214,92)
 local LION=Color3.fromRGB(150,180,255)
 local CURSE=Color3.fromRGB(120,60,200)
 local MINATO_CORE=Color3.fromRGB(255,248,214)
+local SHARINGAN=Color3.fromRGB(230,36,44)
+local WIND=Color3.fromRGB(190,255,226)
 
 local function new(class,props,parent)
 	local x=Instance.new(class)
@@ -10072,6 +10559,218 @@ local function crows(parent,position,count,spread)
 end
 FX.crows=crows
 
+-- ----------------------------------------------------------------- identity
+-- Restrained per-fighter feedback for the identity rules (all server-driven):
+-- Itachi's read (eye glint, the afterimage the swing bites) and genjutsu image,
+-- Neji's closed chakra points, Minato's wind seal and Yellow Flash, Sasuke's
+-- curse. Nothing here can change gameplay.
+-- Where each chakra point Neji can close sits on the body (bone, offset from
+-- its centre; -Z is the front). Ids: Brawler.TENKETSU_ORDER on the server.
+local TENKETSU={
+	throat={"Head",CFrame.new(0,-.5,-.42)},heart={"UpperTorso",CFrame.new(-.32,.22,-.52)},solar={"UpperTorso",CFrame.new(0,-.3,-.52)},
+	navel={"LowerTorso",CFrame.new(0,.08,-.52)},leftShoulder={"LeftUpperArm",CFrame.new(0,.3,-.3)},rightShoulder={"RightUpperArm",CFrame.new(0,.3,-.3)},
+	leftHip={"LowerTorso",CFrame.new(-.52,-.12,-.46)},rightHip={"LowerTorso",CFrame.new(.52,-.12,-.46)},
+}
+FX.TENKETSU=TENKETSU
+local function find(folder,id) return folder and id and folder:FindFirstChild(id) end
+function FX.tenketsuWorld(model,id)
+	local spec=TENKETSU[id or ""]
+	local part=spec and model and model:FindFirstChild(spec[1])
+	if not part then return nil,nil end
+	return (part.CFrame*spec[2]).Position,part
+end
+-- Two red points and a thin glint across the eyes: the Sharingan reading.
+local function eyeGlint(parent,model)
+	local head=model and model:FindFirstChild("Head")
+	if not head then return end
+	for _,x in {-.22,.22} do flash(parent,(head.CFrame*CFrame.new(x,.1,-.62)).Position,SHARINGAN,.12,.55,.22,0) end
+	local streak=block(parent,Vector3.new(1,.05,.05),head.CFrame*CFrame.new(0,.1,-.64),SHARINGAN,Enum.Material.Neon)
+	streak.Transparency=.1
+	tween(streak,.26,{Size=Vector3.new(2.4,.02,.02),Transparency=1})
+	Debris:AddItem(streak,.3)
+	local light=new("PointLight",{Color=SHARINGAN,Brightness=4,Range=8,Shadows=false},head)
+	tween(light,.3,{Brightness=0})
+	Debris:AddItem(light,.35)
+end
+FX.eyeGlint=eyeGlint
+-- Sharingan Read / Focus read: the eyes, the afterimage where he stood that
+-- the swing bites, a dry cut. A whiff read is the eyes and a ring only.
+function FX:readCue(impact,folder)
+	local reader=find(folder,impact.owner)
+	eyeGlint(self.folder,reader)
+	local at=impact.position
+	if impact.phase=="whiff" then
+		local victim=find(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		if root then shockRing(self.folder,root.Position-Vector3.new(0,2.6,0),SHARINGAN,1,5,.25) end
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.22,2.6)
+		return
+	end
+	if reader then
+		local ghost=self:ghost(reader,SHARINGAN,.34,.35)
+		local root=reader:FindFirstChild("HumanoidRootPart")
+		if ghost and root then
+			-- The body may already be drawn at its new spot: leave the copy where he stood.
+			local shift=at-root.Position
+			ghost:PivotTo(ghost:GetPivot()+Vector3.new(shift.X,0,shift.Z))
+		end
+	end
+	flash(self.folder,at+Vector3.new(0,.5,0),Color3.fromRGB(255,240,236),.3,2.8,.14,.2)
+	sparks(self.folder,at+Vector3.new(0,.5,0),Color3.fromRGB(255,220,220),8,16)
+	sound(anchorPart(self.folder,at),SOUND.whoosh,.34,2.3)
+	sound(anchorPart(self.folder,at),SOUND.hit,.18,.6)
+	self:cheer(.6)
+end
+-- Genjutsu: Mirage. cast = a red ripple under the deceived body as the image
+-- takes; catch = the image breaks where the swing bit it; touch/break = it
+-- dissolves; seen = the Byakugan shrugs it off. A skill-build echo: red smoke.
+function FX:mirageCue(impact,folder)
+	local at=impact.position
+	local caster=find(folder,impact.owner)
+	local phase=impact.phase
+	if phase=="cast" then
+		local victim=find(folder,impact.victim)
+		local root=victim and victim:FindFirstChild("HumanoidRootPart")
+		if root then shockRing(self.folder,root.Position-Vector3.new(0,2.6,0),SHARINGAN,2,9,.45) end
+		flash(self.folder,at,Color3.fromRGB(150,24,34),1,4,.3,.55)
+		eyeGlint(self.folder,caster)
+		sound(anchorPart(self.folder,at),SOUND.whoosh,.3,.55)
+	elseif phase=="catch" then
+		for _=1,12 do
+			local dir=Vector3.new(math.random()-.5,math.random()*.8,math.random()-.5)
+			dir=if dir.Magnitude&gt;.01 then dir.Unit else Vector3.yAxis
+			local shard=block(self.folder,Vector3.new(.3,.5,.06),CFrame.lookAt(at,at+dir)*CFrame.new(0,(math.random()-.5)*3,0),SHARINGAN,Enum.Material.Neon)
+			shard.Transparency=.25
+			tween(shard,.4,{CFrame=shard.CFrame+dir*(2+math.random()*3),Transparency=1,Size=Vector3.new(.05,.2,.02)})
+			Debris:AddItem(shard,.45)
+		end
+		flash(self.folder,at,SHARINGAN,1,6,.22,.15)
+		smokePuff(self.folder,at,Color3.fromRGB(60,24,30),12,1.6)
+		eyeGlint(self.folder,caster)
+		sound(anchorPart(self.folder,at),SOUND.hit,.4,.7)
+		self:cheer(.8)
+	elseif phase=="seen" then
+		local victim=find(folder,impact.victim)
+		local head=victim and victim:FindFirstChild("Head")
+		if head then flash(self.folder,head.Position,HYUGA,.4,2.4,.2,.2) end
+	elseif phase=="touch" or phase=="break" then
+		smokePuff(self.folder,at,Color3.fromRGB(70,40,46),6,1.2)
+	else
+		smokePuff(self.folder,at+Vector3.new(0,1,0),Color3.fromRGB(60,24,30),10,1.6)
+		if impact.to then smokePuff(self.folder,impact.to+Vector3.new(0,1,0),Color3.fromRGB(60,24,30),6,1.2) end
+	end
+end
+-- Gentle Fist: a pinpoint flash on the exact point that closed, a short chakra
+-- pulse and a dry tick; a sealed network (every point) rings once, deeper.
+function FX:tenketsuCue(impact,folder)
+	local victim=find(folder,impact.victim)
+	local at,part=FX.tenketsuWorld(victim,impact.point)
+	at=at or impact.position
+	local severe=impact.severe==true
+	flash(self.folder,at,HYUGA,.12,if severe then 1.6 else 1.05,.14,0)
+	shockRing(self.folder,at,HYUGA,.3,if severe then 4.6 else 3,.22,part and part.CFrame.LookVector or nil)
+	sparks(self.folder,at,HYUGA,if severe then 10 else 5,8)
+	sound(anchorPart(self.folder,at),SOUND.hit,.26,1.95)
+	if severe then
+		sound(anchorPart(self.folder,at),SOUND.heavy,.32,.6)
+		local torso=victim and victim:FindFirstChild("UpperTorso")
+		if torso then shockRing(self.folder,torso.Position,HYUGA,1,7,.4) end
+	end
+end
+-- Wind Cut: a pale crescent where the cut throws the body aside; the wind seal
+-- then rides on it (FX:seal draws it in the wind's colour).
+function FX:windSealCue(impact)
+	local at=impact.position
+	local across=impact.direction or Vector3.xAxis
+	local slash=block(self.folder,Vector3.new(.1,3.2,.25),CFrame.lookAt(at,at+across)*CFrame.Angles(0,0,math.rad(35)),WIND,Enum.Material.Neon)
+	slash.Transparency=.2
+	tween(slash,.22,{Size=Vector3.new(.04,4.2,.08),Transparency=1})
+	Debris:AddItem(slash,.25)
+	flash(self.folder,at,MINATO,.3,2,.16,.3)
+	sound(anchorPart(self.folder,at),SOUND.whoosh,.34,1.9)
+end
+-- Curse Mark: the kick that does not let go flares purple on the body.
+function FX:curseCue(impact)
+	local at=impact.position
+	flash(self.folder,at,CURSE,.4,3.2,.2,.2)
+	sparks(self.folder,at,Color3.fromRGB(170,120,255),10,18)
+	sound(anchorPart(self.folder,at),SOUND.heavy,.28,1.4)
+end
+-- The genjutsu image (Presentation:illusion): a frozen copy of `source` in its
+-- current pose. "deceived": exactly the fighter, with a faint red outline that
+-- pulses now and then (the tell); "caster": a red translucent afterimage, so
+-- Itachi's player sees the trap he left. Its pivot is the copied root.
+function FX:image(source,mode)
+	if not source then return nil end
+	local archivable=source.Archivable
+	source.Archivable=true
+	local ok,copy=pcall(function() return source:Clone() end)
+	source.Archivable=archivable
+	if not ok or not copy then return nil end
+	copy.Name="GenjutsuImage"
+	for _,d in copy:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored=true;d.CanCollide=false;d.CanQuery=false;d.CanTouch=false;d.CastShadow=false
+			d.LocalTransparencyModifier=0
+			if mode=="caster" and d.Transparency&lt;.95 then d.Color=SHARINGAN;d.Material=Enum.Material.SmoothPlastic;d.Transparency=math.max(d.Transparency,.62) end
+		elseif d:IsA("Humanoid") or d:IsA("Sound") or d:IsA("Trail") or d:IsA("ParticleEmitter") or d:IsA("Light") or d:IsA("Beam") or d:IsA("BaseScript") or d:IsA("Highlight") then
+			d:Destroy()
+		end
+	end
+	if mode=="deceived" then
+		new("Highlight",{Name="Tell",FillTransparency=1,OutlineColor=SHARINGAN,OutlineTransparency=1,DepthMode=Enum.HighlightDepthMode.Occluded},copy)
+	end
+	copy.Parent=self.folder
+	return copy
+end
+-- Persistent identity cues, every frame (FX:fighter): Neji's closed points stay
+-- lit on the body that carries them (pulsing fast once the network is sealed,
+-- chakra leaking), Byakugan Full Field lays its field, a hungry Curse Mark
+-- flickers.
+function FX:identity(model,actor,aura)
+	local root=model:FindFirstChild("HumanoidRootPart")
+	local alive=(actor.health or 1)&gt;0
+	local severe=actor.tenketsuSevere==true and alive
+	aura.points=aura.points or {}
+	local live={}
+	for _,id in (if alive then actor.tenketsuPoints else nil) or {} do
+		live[id]=true
+		local entry=aura.points[id]
+		if not entry or not entry.dot.Parent then
+			local dot=block(self.folder,Vector3.one*.18,CFrame.new(),HYUGA,Enum.Material.Neon);dot.Shape=Enum.PartType.Ball
+			entry={dot=dot,born=os.clock()};aura.points[id]=entry
+		end
+		local at=FX.tenketsuWorld(model,id)
+		if at then entry.dot.CFrame=CFrame.new(at) end
+		local pulse=.5+.5*math.sin((os.clock()-entry.born)*(if severe then 14 else 5))
+		entry.dot.Transparency=(if severe then .05 else .3)+pulse*.35
+		entry.dot.Size=Vector3.one*(if severe then .26 else .18)
+	end
+	for id,entry in aura.points do if not live[id] then entry.dot:Destroy();aura.points[id]=nil end end
+	local torso=model:FindFirstChild("UpperTorso") or root
+	if severe and not aura.leak and torso then
+		local at=new("Attachment",{Name="ChakraLeak"},torso)
+		aura.leak=new("ParticleEmitter",{Texture=TEX.glow,Rate=10,Lifetime=NumberRange.new(.4,.7),Speed=NumberRange.new(1,2.5),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(HYUGA),LightEmission=.6,LightInfluence=0,Size=num({{0,.35},{1,0}}),Transparency=num({{0,.4},{1,1}})},at)
+	elseif not severe and aura.leak then
+		aura.leak.Enabled=false;Debris:AddItem(aura.leak.Parent,.8);aura.leak=nil
+	end
+	if actor.fighterId=="GentleFist" and root then
+		local full=(actor.awaken or 0)&gt;0 and alive
+		if full and (not aura.field or not aura.field.Parent) then
+			local ring=block(self.folder,Vector3.new(.06,16,16),root.CFrame,HYUGA,Enum.Material.Neon);ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.9
+			aura.field=ring
+		elseif not full and aura.field then
+			tween(aura.field,.3,{Transparency=1});Debris:AddItem(aura.field,.35);aura.field=nil
+		end
+		if aura.field then aura.field.CFrame=CFrame.new(root.Position-Vector3.new(0,2.9,0))*CFrame.Angles(0,0,math.pi/2) end
+	end
+	if actor.fighterId=="Lion" and (actor.awaken or 0)&gt;0 and actor.curseHunger and alive then
+		local on=math.sin(os.clock()*18)&gt;0
+		for _,mark in aura.marks or {} do mark.Transparency=if on then .5 else 0 end
+	end
+end
+
 -- ------------------------------------------------------------------ contacts
 local function modelFor(folder,id)
 	return folder and folder:FindFirstChild(id or "")
@@ -10092,12 +10791,19 @@ function FX:impact(impact,folder)
 	if style=="fire" then
 		self:explosion(position,impact.normal)
 	elseif style=="teleport" then
-		self:teleport(impact.from or position,impact.to or position,modelFor(folder,impact.owner))
+		self:teleport(impact.from or position,impact.to or position,modelFor(folder,impact.owner),impact.awake)
 	elseif style=="substitute" then
 		self:substitute(position,impact.to,impact.fighter,modelFor(folder,impact.owner))
 	elseif style=="mirage" then
-		crows(self.folder,position+Vector3.new(0,1,0),9,10)
-		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
+		self:mirageCue(impact,folder)
+	elseif style=="read" then
+		self:readCue(impact,folder)
+	elseif style=="tenketsu" then
+		self:tenketsuCue(impact,folder)
+	elseif style=="windseal" then
+		self:windSealCue(impact)
+	elseif style=="curse" then
+		self:curseCue(impact)
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
 		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.22,.55)
@@ -10288,7 +10994,7 @@ function FX:explosion(position,normal)
 		Debris:AddItem(scorch,5.2)
 	end
 end
-function FX:teleport(from,to,model)
+function FX:teleport(from,to,model,awake)
 	-- Yellow flash: a body-shaped afterimage where he stood, a single bright
 	-- streak along the path, and a flash + shockwave where he reappears.
 	if model then self:ghost(model,MINATO,.28,.25) end
@@ -10304,6 +11010,12 @@ function FX:teleport(from,to,model)
 	flash(self.folder,to,MINATO,4,12,.32,.4)
 	shockRing(self.folder,to-Vector3.new(0,2.6,0),MINATO,2,16,.3)
 	sparks(self.folder,to,MINATO,18,24)
+	if awake then
+		-- Yellow Flash: a second, wider ring at the arrival and a flash left at
+		-- the departure (the seal he leaves there): the chain has a rhythm.
+		shockRing(self.folder,to-Vector3.new(0,2.6,0),MINATO_CORE,3,22,.4)
+		flash(self.folder,from,MINATO,1,5,.3,.3)
+	end
 	local holder=anchorPart(self.folder,to);holder.Transparency=1
 	sound(holder,SOUND.whoosh,.55,1.6)
 	local light=new("PointLight",{Color=MINATO,Brightness=8,Range=24,Shadows=false},holder)
@@ -10343,13 +11055,14 @@ function FX:seal(owner,actor,folder)
 			if torso then
 				if not entry then
 					local glyph=new("Model",{Name="Body seal"},self.folder)
-					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
+					local tone=if info.wind then WIND else MINATO
+					local disc=block(glyph,Vector3.new(.03,1.5,1.5),torso.CFrame,tone,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
 					local marks={}
-					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,MINATO,Enum.Material.Neon)) end
-					local light=new("PointLight",{Color=MINATO,Brightness=2,Range=7,Shadows=false},disc)
+					for i=0,5 do table.insert(marks,block(glyph,Vector3.new(.04,.08,.36),torso.CFrame,tone,Enum.Material.Neon)) end
+					local light=new("PointLight",{Color=tone,Brightness=2,Range=7,Shadows=false},disc)
 					entry={glyph=glyph,disc=disc,marks=marks,light=light,body=true,born=os.clock()}
 					self.seals[key]=entry
-					flash(self.folder,torso.Position,MINATO,.6,4,.2,.2)
+					flash(self.folder,torso.Position,tone,.6,4,.2,.2)
 				end
 				local back=torso.CFrame*CFrame.new(0,.1,.62)
 				local base=CFrame.lookAt(back.Position,back.Position+torso.CFrame.LookVector*-1)*CFrame.Angles(0,math.pi/2,0)
@@ -10578,7 +11291,7 @@ function FX:fighter(model,actor,dt)
 	if aura.chidori then aura.chidori.light.Brightness=1.2+math.random()*1.4 end
 	-- Neji: the Byakugan veins stand out while it is focused; the Rotation dome.
 	if actor.fighterId=="GentleFist" then
-		local focused=(actor.intro or 0)&gt;0 or actor.castId~=nil or (actor.counter or 0)&gt;0 or actor.rotation==true
+		local focused=(actor.intro or 0)&gt;0 or actor.castId~=nil or (actor.counter or 0)&gt;0 or actor.rotation==true or (actor.awaken or 0)&gt;0
 		for _,vein in aura.veins or {} do vein.Transparency=if focused then 0 else 1 end
 		local dome=aura.dome
 		if actor.rotation and not dome then
@@ -10669,6 +11382,7 @@ function FX:fighter(model,actor,dt)
 			aura.mouth.Rate=0;aura.mouthLight.Brightness=0
 		end
 	end
+	self:identity(model,actor,aura)
 end
 -- ----------------------------------------------------------------- crowd
 -- The stands react to the fight: big moments bring spectators to their feet,
@@ -11159,22 +11873,55 @@ function Presentation:impacts(data,camera)
  end
  self.impactSerial=serial
 end
+-- Genjutsu image. The server says who is deceived (illusion + decoy on that
+-- actor). Seen by the deceived player, the image IS Itachi: a frozen copy in
+-- his stance facing them, with a faint red outline pulsing now and then (the
+-- tell), and the real body behind it drawn faint. Seen by Itachi's player, the
+-- image is a red translucent afterimage of himself: he sees the trap he left.
+function Presentation.fade(model,amount)
+ if not model then return end
+ for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=amount end end
+end
+function Presentation:clearEcho()
+ local echo=self.echo
+ if not echo then return end
+ if echo.model then echo.model:Destroy() end
+ if echo.mode=="deceived" then Presentation.fade(echo.source,0) end
+ self.echo=nil
+end
+-- Which view of the genjutsu this client draws: "deceived" (my fighter is
+-- under it), "caster" (the opponent is under mine) or nil.
+function Presentation.illusionView(data)
+ if not data or data.phase~="Duel" then return nil end
+ if data.human and (data.human.illusion or 0)&gt;0 and data.human.decoy then return "deceived",data.human.decoy end
+ if data.bot and (data.bot.illusion or 0)&gt;0 and data.bot.decoy then return "caster",data.bot.decoy end
+ return nil
+end
 function Presentation:illusion(data,model)
- local active=data.phase=="Duel" and data.human.illusion&gt;0 and data.human.decoy
- local opponent=model and Presentation.opponent(data,model.Parent)
- active=active and opponent~=nil
- if active and opponent and not self.echo then
-  local ghost=opponent:Clone();ghost.Name="LocalAfterimage"
-  for _,v in ghost:GetDescendants() do
-   if v:IsA("BasePart") then v.Anchored=true;v.CanCollide=false;v.CanQuery=false;v.Transparency=math.max(v.Transparency,.72)
-   elseif v:IsA("Humanoid") or v:IsA("Sound") or v:IsA("Trail") then v:Destroy() end
-  end
-  ghost.Parent=workspace;self.echo=ghost;self.echoEpoch=data.epoch
+ local folder=model and model.Parent
+ local opponent=Presentation.opponent(data,folder)
+ local mode,decoy=Presentation.illusionView(data)
+ local source=if mode=="deceived" then opponent elseif mode=="caster" then model else nil
+ local watcher=if mode=="deceived" then model else opponent
+ if not source then mode=nil end
+ local echo=self.echo
+ if echo and (echo.mode~=mode or echo.epoch~=data.epoch or echo.source~=source) then self:clearEcho();echo=nil end
+ if not mode then return end
+ if not echo then
+  echo={mode=mode,epoch=data.epoch,source=source,model=self.fx:image(source,mode),born=os.clock()}
+  self.echo=echo
  end
- if self.echo then
-  if not active or self.echoEpoch~=data.epoch then self.echo:Destroy();self.echo=nil
-  else self.echo:PivotTo(CFrame.new(data.human.decoy)*opponent:GetPivot().Rotation) end
- end
+ if mode=="deceived" then Presentation.fade(source,.55) end
+ local image=echo.model
+ if not image then return end
+ local root=watcher and watcher:FindFirstChild("HumanoidRootPart")
+ local look=if root then Vector3.new(root.Position.X-decoy.X,0,root.Position.Z-decoy.Z) else Vector3.zero
+ if look.Magnitude&lt;.1 then look=Vector3.zAxis end
+ local t=os.clock()-echo.born
+ local at=decoy+Vector3.new(0,math.sin(t*5)*.03,0)
+ image:PivotTo(CFrame.lookAt(at,at+look.Unit))
+ local tell=image:FindFirstChild("Tell")
+ if tell then tell.OutlineTransparency=1-.45*math.max(0,math.sin(t*7))^8 end
 end
 -- Local presentation clocks: an attack animates from the frame it was first
 -- seen, so a late or jittery packet cannot make the body jump backwards.
@@ -11201,7 +11948,7 @@ function Presentation:update(data,dt)
  Motion.tick(dt)
  local players=game:GetService("Players")
  if not data.human then
-  if self.echo then self.echo:Destroy();self.echo=nil end
+  self:clearEcho()
   self.fx:update(data,dt,nil)
   return
  end
@@ -11549,9 +12296,7 @@ function UI.new(parent,send)
 	self.queueNote=text(queueBox,"",UDim2.fromOffset(30,154),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
 	self.queue.Visible=false
-	-- A small displaced indicator during Mirage; real body remains visible and controllable.
-	self.echo=create("BillboardGui",self.gui,{Name="FalseTarget",Size=UDim2.fromOffset(130,38),AlwaysOnTop=true,Enabled=false})
-	local echoLabel=text(self.echo,"◇  ECHO?",UDim2.fromScale(0,0),UDim2.fromScale(1,1),22,palette.crimson,TITLE_FONT); echoLabel.TextXAlignment=Enum.TextXAlignment.Center
+	-- The genjutsu image carries no label: the world shows it (Presentation:illusion).
 	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),palette.ink,.15)
 	corner(self.tutorialPanel,8)
 	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,6),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
@@ -11650,7 +12395,6 @@ function UI:render(data)
 			elseif data.phase=="Queue" then self.cancelButton else nil
 		self.lastPhase=data.phase
 	end
-	self.echo.Enabled=false
 	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
 	local h,b=data.human,data.bot
 	if not h or not b then return end
@@ -11686,7 +12430,7 @@ function UI:render(data)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
 		-- Gentle Fist effects on this fighter.
 		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
-		elseif (actor.tenketsu or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%",actor.tenketsu*15) end
+		elseif (actor.tenketsu or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%%s",actor.tenketsu*15,if actor.tenketsuSevere then "  •  SEALED" else "") end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)&gt;1 and k&lt;=(data.roundsToWin or 1)
@@ -11772,13 +12516,6 @@ function UI:render(data)
 	if online and online.forfeit then
 		self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT").."  •  FORFEIT"
 		self.resultNote.Text="Your opponent left the duel. The win is yours."
-	end
-	if h.illusion&gt;0 and data.phase=="Duel" then
-		local character=game:GetService("Players").LocalPlayer.Character
-		local folder=character and character.Parent
-		local effects=folder and folder:FindFirstChild("Effects")
-		local echo=effects and effects:FindFirstChild("Echo")
-		if echo then self.echo.Adornee=echo; self.echo.Enabled=true end
 	end
 end
 return UI

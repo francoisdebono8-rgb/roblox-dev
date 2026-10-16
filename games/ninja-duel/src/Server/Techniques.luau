@@ -775,8 +775,13 @@ function Techniques.windSeal(c,a,b,direction,stick)
 	across=if across.Magnitude>.05 then across.Unit else a.root.CFrame.RightVector
 	if stick and stick.Magnitude>.4 and stick:Dot(across)<0 then across=-across end
 	Brawler.react(c,b,if b.airborne then "Juggled" else "HitStun",across*WIND.Cut+(if b.airborne then Vector3.new(0,10,0) else Vector3.zero),.45,a)
-	local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
-	entry.expires=c.now+WIND.Seal;entry.wind=true
+	-- A longer seal already on that body (a marked kunai) is kept, not shortened.
+	local kept=false
+	for _,entry in a.anchors or {} do if entry.actor==b and entry.expires>c.now+WIND.Seal then kept=true end end
+	if not kept then
+		local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
+		entry.expires=c.now+WIND.Seal;entry.wind=true
+	end
 	c:pushImpact(b.root.Position,"windseal",false,{owner=a.id,fighter=a.fighterId,victim=b.id,direction=across})
 	c:cue(a,"WIND CUT • SEALED • FLASH BESIDE IT",.9)
 	Brawler.event(c,a,"WindSeal")

@@ -240,6 +240,17 @@ test("Minato · Wind Cut: thrown on the run; a cut body is marked and Flying Thu
  assert(#bodySeals(x,y)==0 and y.reaction==nil,"a guarded gust marked the body")
 end)
 
+test("Minato · Wind Cut: a longer seal already on the body is kept, not shortened",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ place(c,a,b,V.new(0,3,12),V.new(0,3,-12))
+ local marked=Techniques.plant(c,a,b.root.Position,V.yAxis,b)
+ local expires=marked.expires
+ assert(c:request(a,slot(a,"WindCut"),b.root.Position))
+ until_(c,.8,function() return b.health<b.def.Health end,"the gust never landed")
+ local seals=bodySeals(a,b)
+ assert(#seals==1 and seals[1]==marked and seals[1].expires==expires,"the wind cut shortened the marked kunai's seal")
+end)
+
 test("Minato · Wind Cut: the gust cuts enemy blades out of its lane",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  place(c,a,b,V.new(0,3,14),V.new(0,3,-14))
