@@ -174,7 +174,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Grammaire directionnelle et routes techniques existantes
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Branches ground/air/launcher/chase/slam/throw/side swap/wall bornées
 - evidence: Branches/Sequences/Sasuke/Preparation PASS
 - outcome: VERIFIED_TECHNICAL
@@ -226,7 +226,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: combat
 - character: CORE4
 - summary: Transitions, cancels et décisions entre combos
-- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [COMBAT_REQUIREMENTS](../combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Feinte/outil/esquive/angle/clash/counter/disengage ; fenêtres lisibles, pas autoroutes ni infinites ni recovery gratuite ; preuve native
 - evidence: Mécanismes partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus (f93d866). Mission 2026-10-16 : construire une vraie couche de neutral (approche, retraite, repositionnement latéral, feinte, sonde, outil, pression projectile, garde, parade, esquive, perfect dodge, contre, substitution, clash, reset) avec des phases et des échanges courts
 - outcome: PENDING
@@ -395,7 +395,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: chakra
 - character: CORE4
 - summary: Prototype ciblé objet + chakra + déclencheur → résultat
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Au moins interaction concrète lisible/contre-jeu avant abstraction ; infusion propriété/nature testée
 - evidence: Vision systémique ; aucun système général actuel
 - outcome: PENDING
@@ -408,7 +408,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: chakra
 - character: CORE4
 - summary: Faire du chakra une décision contextuelle
-- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [TOOLS_AND_CHAKRA](../systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Coût, recharge, infusion, déclencheur, opportunité et contre-jeu mesurés ; éviter barre cosmétique
 - evidence: Ressources et jutsu présents ; 2026-10-16 mission : chakra systémique `Objet + Propriété/Nature + Contexte → Résultat`, infrastructure générique d’abord (kunai/shuriken renforcés, vent coupant, foudre conduite par fil/métal, feu sur pièges/zones préparées, kunai marqué ancre FTG, collision/déviation de projectiles, projectile planté devenant point tactique) sans bouton par interaction. Fondations Codex à auditer (`7091585`)
 - outcome: PENDING
@@ -564,7 +564,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: character
 - character: CORE4
 - summary: Quatre identités reconnaissables sans jutsu
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Mouvement, garde, distance, rythme, outil, conversions distinguent quatre en duel ; preuve native/lore pertinente
 - evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -590,7 +590,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: roster
 - character: Gaara
 - summary: Activer Gaara uniquement sur décision explicite
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Client/UI, identité/motion/lore, matrice et native complets avant exposition
 - evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable)
 - outcome: PENDING
@@ -603,7 +603,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: roster
 - character: FUTURE32
 - summary: Conserver ~32 archétypes et dix blueprints riches
-- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
+- sources: [FUTURE_SYSTEMS](../systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Scope approuvé, architecture kit, source/lore/validation spécifique ; pas produire32 kits maintenant
 - evidence: 2026-10-16 DEC-012 : architecture pour ~20 fighters ; vague prioritaire jouable pour éprouver le moteur : Naruto, Gaara, Rock Lee, Kakashi, Temari, Shikamaru, Haku, Kisame (+ CORE4). Pas de 20 kits à moitié faits ni de M1 copiés ; chaque fighter doit éprouver ou tordre un système. Pool de 25 noms du 2026-10-13 conservé dans ROSTER_ARCHETYPES_32. 2026-10-16 conception livrée (merge `8faa218`) : fiches FIGHTER_TEMPLATE de la vague ([Naruto](../characters/NARUTO.md), [Gaara](../characters/GAARA.md), [Rock Lee](../characters/ROCK_LEE.md), [Kakashi](../characters/KAKASHI.md), [Temari](../characters/TEMARI.md), [Shikamaru](../characters/SHIKAMARU.md), [Haku](../characters/HAKU.md), [Kisame](../characters/KISAME.md)), [plan à ~20](../characters/ROSTER_WAVE_PLAN.md) et [hooks moteur partagés](../characters/ROSTER_WAVE_HOOKS.md) ; aucun nouveau kit jouable encore. Décisions utilisateur listées dans le plan (Kisame jeune, âge de Temari, Rasengan, définition de « jouable »)
 - outcome: PENDING
@@ -616,7 +616,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: arena
 - character: CORE4
 - summary: Échelle utile et exploitation murs/cover
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Course/range/time de réentrée, fil/teleport/projectiles, wallcarry/pin/bounce et tech utiles ; native avant/après
 - evidence: Mécanismes existent ; 2026-10-16 DEC-012 : la mission autorise la refonte/mise à l’échelle de l’arène (fighters petits face au décor ; neutral long, sprint, pression d’outils, poursuite aérienne, murs utiles sans être partout) puis le retuning course/sprint/saut/projectiles/lock/caméra/IA — l’ancien tuning peut être invalidé. Observation Studio désormais possible
 - outcome: PENDING
@@ -642,7 +642,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: arena
 - character: CORE4
 - summary: Espace vertical et lignes de vue
-- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [ARENA_CAMERA_PRESENTATION](../systems/ARENA_CAMERA_PRESENTATION.md); [CLAUDE_FINAL_TODAY_POLISH](../archive/missions/CLAUDE_FINAL_TODAY_POLISH.md); [CLAUDE_45MIN_FINAL_PLAYABLE_PASS](../archive/missions/CLAUDE_45MIN_FINAL_PLAYABLE_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Bornes, heights/LOS/angles/obstacles influencent combat sans bloquer mouvements ; native avant/après
 - evidence: Mécanismes existent ; acceptation humaine finale absente. 2026-10-16 : non modifié (observation native requise avant changement) ; à reprendre après QA-001
 - outcome: PENDING
