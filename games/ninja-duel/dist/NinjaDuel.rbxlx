@@ -88,6 +88,17 @@ local attacks={
  LionKick=move(.15,.14,.28,8,3,"Launched",Vector3.new(0,50,5),1.25),
  VaultKick=move(.12,.12,.24,7,0,"HitStun",Vector3.new(0,6,12),.36),
  ChidoriThrust=move(.04,.26,.62,22,15,"Knockback",Vector3.new(0,12,70),.7),
+ -- Rock Lee (stress-test wave): the Leaf Rising Wind (a straight-leg kick out
+ -- of a crouch, followed into the air), the Leaf Hurricane (a low spinning kick
+ -- that keeps the string), the Leaf Whirlwind (a wide spinning kick that catches
+ -- a side step), the Leaf Great Whirlwind (his technique: a spinning kick across
+ -- the gap) and the deflecting crescent kick (his tool: no blade). Shapes and
+ -- tags at the end of this file.
+ LeafRising=move(.13,.14,.28,8,3.2,"Launched",Vector3.new(0,56,6),1.2),
+ LeafHurricane=move(.11,.16,.24,6,1.8,"Juggled",Vector3.new(0,16,7),.55),
+ LeafWhirlwind=move(.12,.16,.24,7,1.4,"HitStun",Vector3.new(0,5,14),.38),
+ GreatWhirlwind=move(.06,.24,.36,9,14,"Knockback",Vector3.new(0,16,54),.55),
+ DeflectKick=move(.05,.18,.3,4,0,"HitStun",Vector3.new(0,4,10),.3),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
 for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
@@ -165,6 +176,19 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
+-- Rock Lee's moves, kept together so the stress-test fighter stays additive:
+-- reach, body, hit zone and kind, the two routes that keep the string, and the
+-- two big kicks that crack Gaara's sand shield like a launcher does
+-- (breaksShield, read by Combat:damage next to its name list).
+for name,shape in {
+ LeafRising={contact=3.4,range=6.5,width=5,height=7,zone="chin",kind="launch",side=1,twist=12,lean=-34,arm=40,step=1.15,breaksShield=true},
+ LeafHurricane={contact=3.5,range=6.5,width=6.5,height=3.5,zone="legs",kind="sweep",side=-1,twist=70,lean=24,arm=50,step=1.0,chain=true},
+ LeafWhirlwind={contact=3.8,range=7,width=9,height=6,zone="head",kind="kick",side=1,twist=80,lean=6,arm=60,step=1.05,chain=true},
+ GreatWhirlwind={contact=3.6,range=7,width=7,height=6,zone="body",kind="kick",side=1,twist=90,lean=10,arm=60,step=1.4,breaksShield=true},
+ DeflectKick={contact=3.6,range=6,width=7,height=7,zone="body",kind="kick",side=-1,twist=40,lean=-6,arm=50,step=1.0},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
 return attacks
 </ProtectedString>
         </Properties>
@@ -545,6 +569,49 @@ return Controls
 			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
 		},
 	},
+	-- Stress-test fighter of the next wave (DEC-015): Rock Lee at the Chunin
+	-- Exam preliminaries (13). Pure taijutsu: no ninjutsu, no genjutsu, no
+	-- blade. Speed, kicks and pressure; the rising kick he follows into the air
+	-- (the shared Shadow of the Dancing Leaf) ends in the Primary Lotus, paid
+	-- with his own body; the Fifth Gate is his awakening. Sheet:
+	-- docs/characters/ROCK_LEE.md (implementation state at its end).
+	Leaf = {
+		Name = "Rock Lee", FullName = "Rock Lee", Age = 13, Title = "THE TAIJUTSU PRODIGY", Color = { 64, 172, 84 },
+		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
+		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
+		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.12, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
+		CombatTravel = 1.15, CombatDamage = 1, DashScale = 1.12, GuardStrength = 0.08, PreferredRange = 4.5,
+		ComboToolCancel = false, CombatStyle = "Taijutsu", Tool = "Deflect",
+		-- Heavy after two clean hits is the rising kick too (into the chase).
+		LauncherMove = "LeafRising",
+		-- Motion family (VelmoraMotionEngine.familyOf): Sasuke's kicks as the
+		-- base, his own stance (one hand forward, one behind the back), intro,
+		-- rising kick, low spin, lotuses; no hand weapon.
+		Motion = { body = "Lion", weapons = "none", clips = "Leaf", intro = "Leaf", springy = true },
+		-- No blade to throw: the tool button is a deflecting crescent kick
+		-- (Techniques.deflectKick). Blades inside a frontal arc are kicked away,
+		-- jutsu volumes are not; each deflection frees the next chakra dash.
+		Deflect = { Radius = 6.5, Arc = 0.5, Reach = 24, Cooldown = 0.55, FreeRush = 0.6 },
+		-- No kawarimi either (he cannot mould ninjutsu): the Rupture. Same key,
+		-- charges and window as the substitution, but he stays where he is and a
+		-- spinning kick throws a close attacker away (Combat:substitute "burst").
+		Substitution = { Mode = "burst", Radius = 5.5, Damage = 4, Knockback = 40, Whiff = 0.3 },
+		-- The Fifth Gate (the five gates he opened against Gaara): faster and
+		-- harder, the lotus becomes the free Hidden Lotus, but the body burns
+		-- (health drain, never to a KO).
+		Awakening = { Name = "FIFTH GATE", Speed = 1.28, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
+		AttackProfile = {
+			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
+			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
+			DashAttack={startup=.9,travel=1.15},Air1={startup=.86},Air2={startup=.86},
+		},
+		Skin = { 238, 208, 180 }, Hair = { 16, 16, 20 }, Outfit = { 52, 140, 66 },
+		Techniques = {
+			-- Konoha Daisenpū: a spinning kick that crosses the gap. A taijutsu
+			-- strike started by the jutsu pipeline (like the Chidori thrust).
+			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
+		},
+	},
 }
 </ProtectedString>
         </Properties>
@@ -653,6 +720,35 @@ return {
 		heavyAfterOne="SandPillar",
 		stringCancels={SandCoffin=true},
 		blockCancels={Tool=true},
+	},
+	-- Rock Lee (stress-test wave, DEC-015): kicks all the way, no blade, so no
+	-- disengage. Toward after two hits: the Leaf Rising Wind, followed into the
+	-- air at once (the shared Shadow of the Dancing Leaf; Sasuke copied it from
+	-- him); a heavy up there is his own finisher (airFinisher) instead of the
+	-- Lion Combo. Away: the Leaf Hurricane, a low spinning kick that keeps the
+	-- string going instead of ending it. Sideways: the Leaf Whirlwind, a wide
+	-- spinning kick that catches a side step instead of taking an angle.
+	Leaf={
+		routes={up="LeafRising",down="LeafHurricane",side="LeafWhirlwind",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		onRoute={LeafRising="shadowLeaf"},
+		heavyAfterOne="KneeStrike",
+		stringCancels={LeafGreatWhirlwind=true},
+		blockCancels={},
+		--   airFinisher   the heavy inside the Shadow of the Dancing Leaf window
+		--                 (Brawler.airFinisher): name (the client clip), cue,
+		--                 event, damage, impulse, reaction, stun; healthCost is
+		--                 paid from his own health (never to a KO) and refused
+		--                 at or under minHealth (then `fallback`); `awakened`
+		--                 replaces it, free, while the awakening burns.
+		-- Primary Lotus: the body driven head first into the floor. In the Fifth
+		-- Gate, the Hidden Lotus: harder, free, and the body bounces back up for
+		-- one more strike.
+		airFinisher={name="PrimaryLotus",cue="PRIMARY LOTUS",event="PrimaryLotus",damage=22,impulse=Vector3.new(0,-96,6),healthCost=10,minHealth=26,
+			fallback={name="LeafHeel",cue="LEAF HEEL • NO STRENGTH LEFT FOR THE LOTUS",event="LeafHeel",damage=14},
+			awakened={name="HiddenLotus",cue="FIFTH GATE • HIDDEN LOTUS",event="HiddenLotus",damage=26,reaction="Spiked",impulse=Vector3.new(0,-104,4),stun=.9}},
+		-- Relentless: the fastest re-entry of all, straight down the line, from
+		-- closer than most, and the shortest recovery after an arrival.
+		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
 	},
 }
 </ProtectedString>
@@ -1729,7 +1825,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND14">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">533fbb9dce09779238e3699e3a7435cef9657a1ca67814351fbbac0ba28f997c</string>
+          <string name="Value">6a949e0dd2ee5f144a17de9625086b610f4f3c93dfe5f0f281dd6b5e26a0eddb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND15">
@@ -1855,6 +1951,8 @@ end
 -- a window): Sasuke presses after the body, Itachi waits for it.
 local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
 local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
+-- Rock Lee (stress-test wave) is the keenest of all: he never lets the body go.
+DASH.Leaf=1.6;CHASE.Leaf=.8
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -1882,6 +1980,8 @@ function AI:defend(now)
 					-- Neji answers blades and fire with Rotation when it is ready.
 					local rotation=slotOf(a,"Rotation")
 					if rotation and gap&lt;11 and self.rng:NextNumber()&lt;.55 and c:request(a,rotation) then return true end
+					-- Rock Lee kicks a blade out of the air (his tool is the deflecting kick).
+					if a.def.Tool=="Deflect" and Techniques.DEFLECTABLE[p.kind] and gap&lt;12 and self.rng:NextNumber()&lt;.6 and c:request(a,"Tool",p.position) then return true end
 					local roll=self.rng:NextNumber()
 					if roll&lt;.35 then
 						c:request(a,"Guard");self.guardUntil=now+.35;return true
@@ -2150,6 +2250,9 @@ function AI:update(now)
 		-- explicitly (an approach held by accident must not pick a launcher).
 		local roll=self.rng:NextNumber()
 		if a.airborne then
+			-- A fighter with its own air finisher (Rock Lee's lotuses) cashes it in
+			-- after one confirmed hit inside the Shadow of the Dancing Leaf window.
+			if (a.lionUntil or 0)&gt;now and (a.airCombo or 0)&gt;=1 and (Brawler.graph(a) or {}).airFinisher and roll&lt;.75 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 			if (a.airCombo or 0)&gt;=2 and roll&lt;.4 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 			if (a.airCombo or 0)&gt;=1 then
 				if roll&lt;.22 then a.move=-toward;press(c,a,"Attack","back");return
@@ -2186,7 +2289,8 @@ function AI:update(now)
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
-	if distance&gt;7 and distance&lt;46 and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
+	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)
+	if distance&gt;7 and distance&lt;46 and a.def.Tool~="Deflect" and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
 		-- A tool master sometimes throws the geometry instead (side + tool).
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()&lt;.4 then
 			a.move=tangent*(if self.rng:NextNumber()&lt;.5 then 1 else -1)
@@ -2225,6 +2329,10 @@ function AI:update(now)
 			if spec.Id=="PhoenixFlower" then use=distance&gt;9 and distance&lt;34 and c:lineOfSight(a,target) and self.rng:NextNumber()&lt;.5 end
 			if spec.Id=="WindCut" then use=distance&gt;8 and distance&lt;28 end
 			if spec.Id=="Quickstep" then use=distance&gt;9 and distance&lt;20 and self.rng:NextNumber()&lt;0.25 end
+			-- Rock Lee (stress-test wave): the spinning kick crosses a gap or
+			-- punishes a recovery, in line of sight; nothing he has is thrown.
+			if spec.Id=="LeafGreatWhirlwind" then use=distance&gt;5 and distance&lt;16 and c:lineOfSight(a,target)
+				and (target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or self.rng:NextNumber()&lt;.4) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
@@ -2998,6 +3106,9 @@ function Brawler.request(c,a,action)
  local inChain=canChain and alive
  if action=="Heavy" then
   if a.airborne then
+   -- A fighter's own finisher in the same window (MoveGraphs airFinisher,
+   -- Rock Lee's lotuses); Sasuke's Lion Combo below stays the default.
+   if graph.airFinisher and (a.lionUntil or 0)&gt;c.now and a.target and a.target.health&gt;0 then return Brawler.airFinisher(c,a,graph.airFinisher) end
    -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
    -- that ends in a heel drop driving the body into the floor.
    if (a.lionUntil or 0)&gt;c.now and a.target and a.target.health&gt;0 then
@@ -3119,7 +3230,7 @@ function Brawler.routePayoff(c,a,b,p)
     -- The shadow sticks to the rising body up to its apex, then hangs there.
     a.untilTime=c.now+.5;a.shadowUntil=a.untilTime;a.airHold=c.now+1.1
     c:pushImpact(from,"afterimage",false,{owner=a.id,fighter=a.fighterId})
-    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = LION COMBO",1)
+    c:cue(a,"SHADOW OF THE DANCING LEAF • HEAVY = "..(if graph.airFinisher then graph.airFinisher.cue else "LION COMBO"),1)
     Brawler.event(c,a,"ShadowLeaf")
    else a.chakra-=Config.PursuitCost end
   end)
@@ -3136,6 +3247,37 @@ function Brawler.routePayoff(c,a,b,p)
   c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
   c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
  end
+end
+-- A fighter's own air finisher after the Shadow of the Dancing Leaf
+-- (MoveGraphs[...].airFinisher, read by the heavy in its window; Sasuke keeps
+-- the Lion Combo). Like the Lion Combo the body is put above the target and the
+-- slam drives both down; the descriptor says what it is (name: the client clip
+-- and attackVariant, cue, event, damage, impulse, reaction, stun) and what it
+-- costs: healthCost from the attacker's own health, never to a KO and refused
+-- at or under minHealth (then `fallback`), free in its `awakened` form.
+function Brawler.airFinisher(c,a,f)
+ a.lionUntil=0
+ local b=a.target
+ local use,cost=f,f.healthCost or 0
+ if f.awakened and (a.awakenUntil or 0)&gt;c.now then use,cost=f.awakened,0
+ elseif cost&gt;0 and a.health&lt;=math.max(f.minHealth or 0,cost+1) then use,cost=f.fallback or {},0 end
+ local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
+ look=if look.Magnitude&gt;.1 then look.Unit else a.root.CFrame.LookVector
+ c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+ a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+ a.airborne=true
+ local ok=Brawler.start(c,a,"Slam")
+ local p=a.pending
+ if p then
+  if use.damage then p.spec.damage=use.damage end
+  if use.impulse then p.spec.impulse=use.impulse end
+  if use.reaction then p.spec.reaction=use.reaction;p.spec.feedback=use.reaction end
+  if use.stun then p.spec.stun=use.stun end
+  a.attackVariant=use.name
+ end
+ if cost&gt;0 then a.health=math.max(1,a.health-cost);a.hum.Health=math.max(1,a.health) end
+ c:cue(a,use.cue or "AIR FINISHER",.9);Brawler.event(c,a,use.event or "AirFinisher")
+ return ok
 end
 function Brawler.stopStyle(p)
  if p.name=="Slam" then return "slam" end
@@ -4677,6 +4819,14 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 		fireball="Fireball",phoenix="Phoenix",palm="VacuumPalm",wind="WindCut",sandwave="SandWave"},
 	Objects={},Surfaces={},Infusions={},Rules={},
 }
+-- Rock Lee (stress-test wave): he cannot mould chakra at all, so there is
+-- nothing to pour into a tool and no palm either. His tool is a kick
+-- (Techniques.deflectKick) and the chakra modifier is refused with the usual
+-- fizzle (Combat, def.Tool "Deflect"). Named here so every reader of the
+-- profile (logs, lab, tools) says Taijutsu instead of falling back to Basic.
+T.Masteries.Taijutsu={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Leaf="Taijutsu"
+T.Preferred.Taijutsu={}
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,
@@ -5006,6 +5156,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if shield and (victim.shieldCharges or 0)&gt;0 and victim.state~="Startup" and victim.state~="Active" and victim.state~="Recovery" and victim.state~="Stunned"
 		and not victim.reaction and not victim.grabbedBy and victim.invulnerableUntil&lt;=self.now then
 		local breaking=heavy or amount&gt;=shield.Break or SHIELD_BREAKERS[attacker.attackName or ""]==true
+		-- A new fighter's strike carries the flag in its own data (Attacks
+		-- breaksShield: Rock Lee's rising kick and spinning dash kick).
+		breaking=breaking or (attacker.pending~=nil and attacker.pending.kind=="Brawl" and attacker.pending.spec.breaksShield==true)
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
 		victim.shieldRegenAt=self.now+shield.Regen
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
@@ -5351,6 +5504,9 @@ function Combat:substitute(a)
 	end
 	if destination then
 		self:relocate(a,destination)
+	elseif twist and twist.Mode=="burst" then
+		-- Rock Lee's Rupture: no ninjutsu, so no body swap. He stays where he is;
+		-- the kick that throws the attacker off is Techniques.rupture (below).
 	else
 		local away=a.root.Position-(if attacker then attacker.root.Position else a.root.Position-a.root.CFrame.LookVector)
 		away=Vector3.new(away.X,0,away.Z)
@@ -5393,6 +5549,7 @@ function Combat:substitute(a)
 		attacker.pursuitUntil=math.max(attacker.pursuitUntil,self.now+tune.Track)
 		self:cue(attacker,"SUBSTITUTION • E TO TRACK",tune.Track)
 	end
+	if twist and twist.Mode=="burst" then return Techniques.rupture(self,a,attacker,twist) end
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
@@ -5628,6 +5785,13 @@ function Combat:request(a,action,aim,clientTime,opts)
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
+		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
+		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra
+		-- modifier is refused with the usual fizzle, before any cost.
+		if a.def.Tool=="Deflect" then
+			if opts~=nil and opts.chakra==true then Chakra.refuse(self,a);return false,"No chakra tool" end
+			return Techniques.deflectKick(self,a)
+		end
 		if a.def.ArrivalThrow then
 			local thrown,refusal=self:arrivalThrow(a)
 			if thrown~=nil then return thrown,refusal end
@@ -6475,6 +6639,8 @@ function Combat:updateHazards()
 					self.damageTag="burn"
 					self:damage(h.a,target,h.damage*0.34,false,false)
 					self.damageTag=nil
+					-- A burn that ends the duel may clear the hazard list (Combat:clear).
+					if self.match.phase~="Duel" then return end
 				end
 			end
 		end
@@ -10232,6 +10398,122 @@ Techniques.DesertWave={
 		c:cue(a,"DESERT WAVE",.6)
 	end,
 }
+-- Rock Lee (stress-test wave, DEC-015) -----------------------------------
+-- Pure taijutsu: nothing here is moulded into a jutsu. His technique is a
+-- strike started by the jutsu pipeline (like the Chidori thrust), his tool
+-- button a kick (Combat: def.Tool "Deflect") and his escape a kick too
+-- (Combat:substitute, Mode "burst"). The lotuses are Brawler.airFinisher.
+local LeeRules=require(game:GetService("ReplicatedStorage").NinjaDuel.Rules)
+-- Konoha Daisenpū: a spinning kick that crosses the gap and knocks away.
+Techniques.LeafGreatWhirlwind={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local Brawler=require(script.Parent.Brawler)
+		a.stringCancel=nil
+		Brawler.start(c,a,"GreatWhirlwind")
+		if a.pending then a.pending.spec.damage=pending.spec.Damage end
+		c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+		c:cue(a,"LEAF GREAT WHIRLWIND",.7)
+	end,
+}
+-- Blades a kick can send away; fire, wind, palms and sand waves are jutsu
+-- volumes and go through.
+local DEFLECTABLE={kunai=true,marked=true,shuriken=true,wire=true,sand=true}
+Techniques.DEFLECTABLE=DEFLECTABLE
+-- An enemy blade near him, or one flying at him from within `Reach`.
+function Techniques.bladeIncoming(c,a,tune)
+	for _,p in c.projectiles do
+		if p.a~=a and DEFLECTABLE[p.kind] and not p.dead and not p.planted then
+			local offset=a.root.Position-p.position
+			local gap=offset.Magnitude
+			if gap&lt;=tune.Radius or (gap&lt;=(tune.Reach or 24) and gap&gt;.1 and p.direction:Dot(offset.Unit)&gt;.6) then return true end
+		end
+	end
+	return false
+end
+-- One sweep of the kick: every blade inside the frontal arc (Arc: cosine of
+-- the half angle) and Radius is kicked out of the air.
+function Techniques.deflectSweep(c,a,tune)
+	local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
+	look=if look.Magnitude&gt;.05 then look.Unit else Vector3.new(0,0,-1)
+	local kicked=0
+	for i=#c.projectiles,1,-1 do
+		local p=c.projectiles[i]
+		if p.a~=a and DEFLECTABLE[p.kind] and not p.planted then
+			local d=p.position-a.root.Position
+			local flat=Vector3.new(d.X,0,d.Z)
+			if d.Magnitude&lt;=tune.Radius and math.abs(d.Y)&lt;5 and (flat.Magnitude&lt;1.2 or look:Dot(flat.Unit)&gt;=tune.Arc) then
+				table.remove(c.projectiles,i);p.dead=true
+				c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction})
+				kicked+=1
+			end
+		end
+	end
+	if kicked&gt;0 then
+		-- The Counter-Rush rule: the next chakra dash is free for a moment.
+		a.freeRushUntil=c.now+(tune.FreeRush or .6)
+		a.deflected=(a.deflected or 0)+kicked
+		require(script.Parent.Brawler).event(c,a,"Deflect")
+		c:cue(a,"DEFLECTED • E: FREE RUSH",.7)
+	end
+	return kicked
+end
+-- The tool button (Fighters.Leaf.Deflect): a crescent kick whose sweep runs
+-- from the press to the end of its active window. It is a real strike on a
+-- body in reach; with no blade coming and nobody in reach it does nothing.
+function Techniques.deflectKick(c,a)
+	local tune=a.def.Deflect
+	if not tune then return false,"No tool" end
+	if a.reaction or a.wall or a.throwing or not LeeRules.canAct(a,c.now) then return false,"Committed" end
+	if (a.deflectReadyAt or 0)&gt;c.now then return false,"Tool recovering" end
+	local b=a.target
+	local close=b~=nil and b.health&gt;0 and (b.root.Position-a.root.Position).Magnitude&lt;=tune.Radius+2
+	if not close and not Techniques.bladeIncoming(c,a,tune) then return false,"Nothing to deflect" end
+	local Brawler=require(script.Parent.Brawler)
+	a.deflectReadyAt=c.now+tune.Cooldown
+	if not Brawler.start(c,a,"DeflectKick") then return false end
+	local spec=a.pending.spec
+	local serial=a.attackSerial
+	local span=spec.startup+spec.active
+	Techniques.deflectSweep(c,a,tune)
+	for k=1,4 do
+		c:schedule(c.now+span*k/4,function()
+			if a.health&lt;=0 or a.reaction or a.attackSerial~=serial then return end
+			Techniques.deflectSweep(c,a,tune)
+		end)
+	end
+	Brawler.event(c,a,"DeflectKick")
+	return true
+end
+-- The Rupture (Fighters.Leaf.Substitution, Mode "burst"): Combat:substitute
+-- has spent the charge and the chakra, given the i-frames and kept him where he
+-- is; this is the kick. A close attacker is thrown off. One that was out of
+-- reach, guarded or evaded it leaves him a longer recovery to punish.
+function Techniques.rupture(c,a,attacker,twist)
+	local Brawler=require(script.Parent.Brawler)
+	c:pushImpact(a.root.Position,"repel",true,{owner=a.id,fighter=a.fighterId,direction=a.root.CFrame.LookVector})
+	Brawler.event(c,a,"Rupture")
+	local landed=false
+	if attacker and attacker.health&gt;0 then
+		local away=attacker.root.Position-a.root.Position
+		local flat=Vector3.new(away.X,0,away.Z)
+		if flat.Magnitude&lt;=(twist.Radius or 5.5) then
+			c.damageTag="Rupture"
+			local hit=c:damage(a,attacker,twist.Damage or 4,false,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return true end
+			landed=hit and attacker.impactStyle~="block"
+			if landed then
+				local push=if flat.Magnitude&gt;.1 then flat.Unit else a.root.CFrame.LookVector
+				Brawler.react(c,attacker,"Knockback",push*(twist.Knockback or 40)+Vector3.new(0,12,0),.45,a)
+			end
+		end
+	end
+	if not landed then c:setState(a,"Recovery",twist.Whiff or .3) end
+	c:cue(a,if landed then "RUPTURE" else "RUPTURE • READ",.7)
+	if attacker then c:cue(attacker,if landed then "RUPTURE • THROWN OFF" else "RUPTURE • PUNISH HIS RECOVERY",.7) end
+	return true
+end
 -- Neji -----------------------------------------------------------------
 Techniques.ROTATION_REACH=7
 Techniques.Rotation={
@@ -11502,6 +11784,65 @@ local function dressGaara(model,def)
 	cyl(wear(model,"UpperTorso","GourdNeck",Vector3.new(.4,.55,.55),CFrame.new(.42,1.42,1.18)*CFrame.Angles(0,0,math.rad(90)),gourdDark,Enum.Material.Wood))
 	wear(model,"UpperTorso","GourdBand",Vector3.new(1.95,.16,1.55),CFrame.new(.1,.2,1.2),rgb(120,92,62),Enum.Material.Fabric)
 end
+-- Rock Lee at the Chunin Exam (13, stress-test wave): the green one-piece
+-- training suit, orange leg warmers, the Leaf headband worn as a red belt,
+-- bandaged hands, a glossy black bowl cut over thick eyebrows and big round
+-- eyes. A genin's kit only: no vest, nothing of an adult jonin.
+local function dressLee(model,def)
+	local hair=rgb(16,16,20)
+	local suit=rgb(52,140,66)
+	local suitDark=rgb(38,110,50)
+	local warmer=rgb(236,128,38)
+	local warmerDark=rgb(204,104,28)
+	local belt=rgb(186,36,40)
+	local bandage=rgb(238,234,222)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(14,14,18),hair)
+	-- Big round eyes with small dark irises; the thin brows give way to his own.
+	for _,p in model:GetChildren() do
+		if p.Name=="Eye" then p.Size=Vector3.new(.32,.27,.04) end
+		if p.Name=="Iris" then p.Size=Vector3.new(.1,.1,.03) end
+		if p.Name=="Brow" then p.Transparency=1 end
+	end
+	for _,side in {-1,1} do
+		wear(model,"Head","ThickBrow",Vector3.new(.42,.15,.05),CFrame.new(side*.3,.31,-.82)*A(0,0,R(side*-6)),hair)
+	end
+	-- The bowl cut: a smooth glossy cap, a fringe cut straight across the
+	-- forehead, straight sides down to the jaw.
+	local bowl=hairCap(model,hair)
+	if bowl then bowl.Reflectance=.12 end
+	wear(model,"Head","BowlFringe",Vector3.new(1.72,.34,.18),CFrame.new(0,.5,-.8),hair)
+	for _,side in {-1,1} do
+		wear(model,"Head","BowlSide",Vector3.new(.18,.95,1.3),CFrame.new(side*.86,.12,.02),hair)
+	end
+	wear(model,"Head","BowlBack",Vector3.new(1.72,1.15,.26),CFrame.new(0,.08,.78),hair)
+	-- The one-piece suit, from the collar to the ankles.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=suit end
+	end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.3,.22,1.06),CFrame.new(0,.76,.02),suitDark)
+	-- The Leaf headband, worn as a red belt with the plate in front.
+	wear(model,"LowerTorso","HeadbandBelt",Vector3.new(2.08,.28,1.08),CFrame.new(0,.28,0),belt,Enum.Material.Fabric)
+	wear(model,"LowerTorso","BeltPlate",Vector3.new(.8,.3,.06),CFrame.new(0,.28,-.57),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"LowerTorso","LeafMark",Vector3.new(.28,.13,.02),CFrame.new(0,.3,-.61),rgb(70,78,90),Enum.Material.Metal)
+	for _,side in {-1,1} do
+		wear(model,"LowerTorso","BeltTail",Vector3.new(.16,.6,.06),CFrame.new(side*.22,.02,.56)*A(R(-10),0,R(side*8)),belt,Enum.Material.Fabric)
+	end
+	for _,side in {"Left","Right"} do
+		-- Orange leg warmers from the knee to the ankle, rolled at both ends.
+		wear(model,side.."LowerLeg","LegWarmer",Vector3.new(.98,.92,.98),CFrame.new(0,-.06,0),warmer,Enum.Material.Fabric)
+		wear(model,side.."LowerLeg","WarmerRoll",Vector3.new(1.02,.16,1.02),CFrame.new(0,.42,0),warmerDark,Enum.Material.Fabric)
+		wear(model,side.."LowerLeg","WarmerCuff",Vector3.new(1.04,.18,1.04),CFrame.new(0,-.5,0),warmerDark,Enum.Material.Fabric)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,48,72) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		-- Hands wrapped in bandages for training, a few turns up the wrist.
+		local hand=model:FindFirstChild(side.."Hand");if hand then hand.Color=bandage end
+		for k=0,1 do
+			wear(model,side.."LowerArm","BandageWrap",Vector3.new(.8,.07,.8),CFrame.new(0,-.36+k*.14,0)*A(0,0,R(6)),rgb(222,216,202))
+		end
+	end
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -11515,6 +11856,7 @@ function World.dress(model,def)
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
+	if def.Name=="Rock Lee" then dressLee(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -13462,6 +13804,9 @@ end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
+require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX
 </ProtectedString>
           </Properties>
@@ -13643,7 +13988,188 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND57">
+        <Item class="ModuleScript" referent="ND57">
+          <Properties>
+            <string name="Name">LeeFX</string>
+            <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
+-- chakra mantle and a flushed, burning body), his lotuses (the spin drawn
+-- round the body, the crater where it lands), the crescent of the deflecting
+-- kick, the Rupture's ring, and his speed (green afterimages, dust kicked up)
+-- instead of the shared colours. One identity layer installed into Effects
+-- (like SandFX): Effects only offers the registry and its helpers.
+-- Presentation only: nothing here can change gameplay.
+local Debris=game:GetService("Debris")
+
+local LeeFX={}
+local K -- Effects' helpers, handed over by install()
+LeeFX.clock=os.clock -- (headless tests drive time)
+local LEE="Leaf"
+
+local GATE=Color3.fromRGB(120,230,140) -- the gates' chakra
+local GATE_CORE=Color3.fromRGB(226,255,226)
+local FLUSH=Color3.fromRGB(226,92,72) -- the body burning in the gates
+local DUST=Color3.fromRGB(206,194,168)
+local LOTUS={PrimaryLotus=true,HiddenLotus=true,LeafHeel=true}
+
+local function stateOf(fx,model)
+	fx.leeState=fx.leeState or setmetatable({},{__mode="k"})
+	local st=fx.leeState[model]
+	if not st then st={};fx.leeState[model]=st end
+	return st
+end
+local function ground(fx,position,fallback)
+	local ok,hit=pcall(K.floorUnder,fx,position,3,12)
+	return if ok and hit then hit.Position.Y else fallback
+end
+local function kickDust(fx,position,count,size)
+	K.smokePuff(fx.folder,position,DUST,count,size)
+end
+-- Cracks and a ring of dust where a body was driven into the floor.
+local function crater(fx,at,size)
+	local y=ground(fx,at,at.Y-2.8)
+	local holder=K.new("Model",{Name="LotusCrater"},fx.folder)
+	local disc=K.block(holder,Vector3.new(.06,size,size),CFrame.new(at.X,y+.04,at.Z)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(70,62,54),Enum.Material.Slate)
+	disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.35
+	for k=0,5 do
+		local a=k/6*math.pi*2+math.random()*.4
+		local crack=K.block(holder,Vector3.new(.08,.05,size*.45),CFrame.new(at.X,y+.06,at.Z)*CFrame.Angles(0,a,0)*CFrame.new(0,0,-size*.3),Color3.fromRGB(40,36,32),Enum.Material.Slate)
+		crack.Transparency=.2
+	end
+	task.delay(1.2,function() for _,d in holder:GetChildren() do K.tween(d,.6,{Transparency=1}) end end)
+	Debris:AddItem(holder,2)
+	K.shockRing(fx.folder,Vector3.new(at.X,y+.1,at.Z),DUST,2,size*2.2,.35)
+	kickDust(fx,Vector3.new(at.X,y+.8,at.Z),22,2.4)
+end
+
+-- ------------------------------------------------------------------ contacts
+local function awaken(fx,impact,folder)
+	-- The Fifth Gate opens: a green burst, the floor cracked under him.
+	local at=impact.position
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	if model then fx:ghost(model,GATE,.4,.35) end
+	local burst=K.new("Model",{Name="GateBurst"},fx.folder)
+	K.flash(burst,at,GATE_CORE,2,10,.3,.1)
+	K.flash(burst,at,GATE,4,16,.45,.35)
+	Debris:AddItem(burst,.6)
+	crater(fx,at,7)
+	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),GATE,3,26,.5)
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.5,1.3)
+	fx:cheer(1)
+end
+local function speed(fx,impact,folder)
+	-- His dash and the shadow under a rising body: a green afterimage and the
+	-- dust his feet tear up.
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	if model then fx:ghost(model,GATE,.2,.6) end
+	kickDust(fx,impact.position-Vector3.new(0,2.6,0),10,1.5)
+	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.4,1.25)
+end
+local function rupture(fx,impact)
+	-- The Rupture: a spinning kick on the spot that throws the attacker off.
+	local at=impact.position
+	local holder=K.new("Model",{Name="RuptureRing"},fx.folder)
+	K.shockRing(holder,at-Vector3.new(0,.6,0),GATE_CORE,2,13,.25)
+	K.shockRing(holder,at-Vector3.new(0,2.5,0),DUST,2,10,.3)
+	Debris:AddItem(holder,.4)
+	kickDust(fx,at-Vector3.new(0,2.5,0),12,1.6)
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.5,.9)
+end
+local function windUp(fx,impact)
+	-- The Leaf Great Whirlwind needs no seal: the dust spins up round his feet.
+	local at=impact.position
+	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),DUST,2,9,.3)
+	kickDust(fx,at-Vector3.new(0,2.4,0),10,1.4)
+end
+local function impact(fx,data,folder)
+	if data.fighter~=LEE then return false end
+	local style=data.style
+	if style=="awaken" then awaken(fx,data,folder);return true end
+	if style=="chase" or style=="afterimage" then speed(fx,data,folder);return true end
+	if style=="repel" then rupture(fx,data);return true end
+	if style=="cast" and data.technique=="LeafGreatWhirlwind" then windUp(fx,data);return true end
+	return false
+end
+
+-- ------------------------------------------------------------------ per frame
+-- The Fifth Gate: the shared mantle burns green, the body glows red.
+local function gate(fx,model,actor,st)
+	local aura=fx.auras and fx.auras[model]
+	local open=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
+	if aura and aura.mantle and aura.leeMantle~=aura.mantle then
+		aura.mantle.emitter.Color=ColorSequence.new(GATE)
+		aura.mantle.light.Color=GATE
+		aura.leeMantle=aura.mantle
+	end
+	if aura and aura.trail and not aura.leeTrail then aura.trail.Color=ColorSequence.new(GATE);aura.leeTrail=true end
+	local head=model:FindFirstChild("Head")
+	if open and head and not (st.glow and st.glow.Parent) then
+		local glow=K.block(model,Vector3.one*2.1,head.CFrame,FLUSH,Enum.Material.Neon)
+		glow.Name="GateGlow";glow.Shape=Enum.PartType.Ball;glow.Transparency=.82;glow.Anchored=false;glow.Massless=true
+		K.new("WeldConstraint",{Part0=head,Part1=glow},glow)
+		st.glow=glow
+	elseif not open and st.glow then
+		st.glow:Destroy();st.glow=nil
+	end
+end
+-- The lotuses: a spiral of chakra round the falling body, a crater where it lands.
+local function lotus(fx,model,actor,st)
+	local root=model:FindFirstChild("HumanoidRootPart")
+	local variant=actor.attackVariant
+	local falling=root and LOTUS[variant or ""] and actor.attackName=="Slam" and (actor.state=="Startup" or actor.state=="Active")
+	if falling then
+		st.lotus=variant
+		st.spin=(st.spin or 0)+.9
+		local hidden=variant=="HiddenLotus"
+		for k=0,1 do
+			local a=st.spin+k*math.pi
+			local at=root.Position+Vector3.new(math.cos(a)*2.2,(k-.5)*1.2,math.sin(a)*2.2)
+			local streak=K.block(fx.folder,Vector3.new(.18,.18,1.6),CFrame.lookAt(at,at+Vector3.new(-math.sin(a),0,math.cos(a))),if hidden then FLUSH else GATE_CORE,Enum.Material.Neon)
+			streak.Name="LotusSpiral";streak.Transparency=.25
+			K.tween(streak,.22,{Transparency=1,Size=Vector3.new(.04,.04,2.2)})
+			Debris:AddItem(streak,.25)
+		end
+	elseif st.lotus and root then
+		-- Landed (or cut short): the floor takes it.
+		crater(fx,root.Position,if st.lotus=="HiddenLotus" then 10 else 7)
+		if st.lotus=="HiddenLotus" then K.shockRing(fx.folder,root.Position-Vector3.new(0,2.5,0),FLUSH,3,20,.4) end
+		st.lotus=nil
+	end
+end
+-- The deflecting kick: a crescent of air swept across his front.
+local function crescent(fx,model,actor,st)
+	if actor.attackName~="DeflectKick" or actor.state~="Startup" then return end
+	local serial=actor.attackSerial or 0
+	if st.kick==serial then return end
+	st.kick=serial
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if not root then return end
+	local holder=K.new("Model",{Name="DeflectArc"},fx.folder)
+	for k=-3,3 do
+		local a=math.rad(k*20)
+		local cf=root.CFrame*CFrame.new(0,.6,0)*CFrame.Angles(0,a,0)*CFrame.new(0,0,-3.2)
+		local piece=K.block(holder,Vector3.new(1.15,.1,.22),cf,Color3.fromRGB(236,244,255),Enum.Material.Neon)
+		piece.Transparency=.35+math.abs(k)*.08
+		K.tween(piece,.24,{Transparency=1})
+	end
+	Debris:AddItem(holder,.3)
+end
+local function fighter(fx,model,actor,dt)
+	if not model or not actor or actor.fighterId~=LEE then return end
+	local st=stateOf(fx,model)
+	gate(fx,model,actor,st)
+	lotus(fx,model,actor,st)
+	crescent(fx,model,actor,st)
+end
+
+function LeeFX.install(FX,kit)
+	K=kit
+	table.insert(FX.layers,{name="Lee",impact=impact,fighter=fighter})
+end
+return LeeFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="LocalScript" referent="ND58">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -13792,7 +14318,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND58">
+        <Item class="ModuleScript" referent="ND59">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -14092,7 +14618,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND59">
+        <Item class="ModuleScript" referent="ND60">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -14651,7 +15177,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND60">
+        <Item class="ModuleScript" referent="ND61">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -14729,8 +15255,9 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	-- CORE4, then Gaara as the first stress-test fighter of the next wave (DEC-015).
-	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand"}
+	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
+	-- Rock Lee.
+	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -14774,6 +15301,15 @@ function UI.new(parent,send)
 			if self.picking then return end
 			self.bot=id; self:refreshSelection()
 		end)
+	end
+	-- Six names share each half: a long one (ROCK LEE) shrinks to fit its
+	-- button, the others keep their size.
+	for _,id in playable do
+		for _,side in {"player","bot"} do
+			local b=self.selectionButtons[side..id]
+			b.TextScaled=true
+			create("UITextSizeConstraint",b,{MaxTextSize=24})
+		end
 	end
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function()
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
@@ -15139,7 +15675,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND61">
+        <Item class="ModuleScript" referent="ND62">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -15280,7 +15816,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND62">
+        <Item class="ModuleScript" referent="ND63">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -15554,11 +16090,14 @@ STANCE.Lion={root={y=-.5,pitch=10,yaw=30},torso={pitch=6,yaw=-14},head={pitch=-6
 -- weapon family and its intro; a new fighter declares `Motion = {body=...,
 -- weapons=..., clips=...}` in Fighters instead of silently inheriting Minato.
 -- Bespoke stance/clips by its own id still win over the family.
+-- Identity traits are declared, never inferred from the body: `awakenPosture`
+-- ("curse": Sasuke's hunched Curse Mark guard) does not follow his kicks into
+-- another fighter's family (Rock Lee is built on them).
 local FAMILY={
 	Flashstep={body="Flashstep",weapons="kunai",springy=true},
 	Mirage={body="Mirage",weapons="shuriken",springy=false},
 	GentleFist={body="GentleFist",weapons="palms",springy=false},
-	Lion={body="Lion",weapons="wire",springy=true},
+	Lion={body="Lion",weapons="wire",springy=true,awakenPosture="curse"},
 	Sand={body="Sand",weapons="none",springy=false},
 }
 local function familyOf(id)
@@ -15574,6 +16113,13 @@ Motion.familyOf=familyOf
 STANCE.Sand={root={y=-.06,pitch=0,yaw=6},torso={pitch=-2,yaw=-2},head={pitch=6,yaw=-4},
 	ra={raise=62,out=-42,twist=44,elbow=122,wrist=0},la={raise=58,out=-46,twist=40,elbow=118,wrist=0},
 	rf={x=.06,z=.22,yaw=8},lf={x=-.06,z=-.2,yaw=-4},breath=.35,tempo=3.6}
+-- Rock Lee (stress-test wave, DEC-015): the Strong Fist stance. Side-on, low
+-- and springy, the lead hand open and held out at the opponent, the rear hand
+-- folded behind the small of the back. His family (Fighters.Leaf.Motion) is
+-- Sasuke's kicks; this stance and a few clips (CLIPS.Leaf) are his own.
+STANCE.Leaf={root={y=-.58,pitch=8,yaw=36},torso={pitch=5,yaw=-16},head={pitch=-4,yaw=-22},
+	la={raise=92,out=-8,twist=-24,elbow=24,wrist=-30},ra={raise=-48,out=-4,twist=96,elbow=68,wrist=0},
+	rf={x=.3,z=.92,yaw=46},lf={x=-.12,z=-.88,yaw=-8},breath=1.5,tempo=8.5}
 local function stance(id) return STANCE[id] or STANCE[familyOf(id).body] or STANCE.Flashstep end
 -- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
 local SPRINGY={Flashstep=true,Lion=true}
@@ -16102,6 +16648,64 @@ setmetatable(CLIPS.Lion,{__index=CLIPS.Flashstep})
 CLIPS.Flashstep.Riposte=CLIPS.Flashstep.Light2
 CLIPS.Mirage.Riposte=CLIPS.Mirage.CounterPalm
 CLIPS.GentleFist.Riposte=CLIPS.GentleFist.Light1
+-- Rock Lee (stress-test wave, DEC-015) -------------------------------------
+-- Built from Sasuke's kicking family (the string, the knee, the air string and
+-- routes, throws: CLIPS.Lion and through it Minato's), with his own clips only
+-- where his identity needs them: the rising kick out of a crouch, the low spin
+-- on one hand, the crescent kick that clears blades and the lotuses. The rear
+-- hand stays behind his back in all of them. Authored at their final size: the
+-- CORE4 readability and kinetic-chain passes below do not touch them.
+local LE=STANCE.Leaf
+local function le(over) return merge(LE,over) end
+local AIR_LE={root={pitch=8},torso={pitch=6},head={pitch=-6},ra=LE.ra,la={raise=60,out=20,elbow=70},rl={lift=62,knee=100,ankle=-10},ll={lift=36,knee=76,ankle=-10}}
+-- Both arms wrapped round a body (the lotus holds its opponent).
+local HUG={raise=96,out=-36,twist=30,elbow=96,wrist=0}
+CLIPS.Leaf={}
+CLIPS.Leaf.LeafRising={ -- Konoha Shōfū: a deep crouch, then one leg straight up under the chin
+	K(0,le({root={y=-1.12,pitch=20},torso={pitch=12},la={raise=40,out=20,elbow=60},lf={z=-.5},rf={z=.55}})),
+	K(.55,le({root={y=-.9,pitch=10},torso={pitch=6},la={raise=30,out=30,elbow=40},rl={lift=84,knee=112,ankle=-10},lf={z=-.3,toe=-10}})),
+	K(1,le({root={y=-.04,pitch=-16,yaw=4},torso={pitch=-10,yaw=-6},head={pitch=-14,yaw=-6},la={raise=-30,out=40,elbow=20},rl={lift=142,out=2,knee=4,ankle=-30},lf={z=0,toe=-26}}),"out"),
+	K(2,le({root={y=-.02,pitch=-20,yaw=4},torso={pitch=-12,yaw=-6},head={pitch=-16,yaw=-6},la={raise=-34,out=40,elbow=20},rl={lift=152,out=2,knee=6,ankle=-28},lf={z=0,toe=-24}})),
+	K(2.5,le({root={y=-.4,pitch=-4},rl={lift=60,knee=90}})),
+	K(3,LE),
+}
+CLIPS.Leaf.LeafHurricane={ -- Konoha Senpū, low: dropped onto the lead hand, a full spin that reaps the legs
+	K(0,le({root={y=-1.2,pitch=26,yaw=10},torso={pitch=14,yaw=-8},la={raise=24,out=24,elbow=20,wrist=-40},lf={x=.45,z=-.2},rf={z=.8}})),
+	K(1,le({root={y=-1.55,pitch=24,yaw=100},torso={pitch=16,yaw=8},head={yaw=-60},la={raise=14,out=40,elbow=8,wrist=-50},rl={lift=14,out=84,twist=-40,knee=4,ankle=-12},lf={x=.5,z=-.1,yaw=100}}),"out"),
+	K(2,le({root={y=-1.5,pitch=22,yaw=190},torso={pitch=14,yaw=10},head={yaw=-60},la={raise=14,out=42,elbow=8},rl={lift=14,out=84,twist=-40,knee=6,ankle=-12},lf={x=.5,z=-.1,yaw=190}})),
+	K(2.5,le({root={y=-1.15,pitch=22,yaw=280},torso={pitch=10},rl={lift=34,out=46,knee=40},lf={x=.5,z=0,yaw=280}})),
+	K(3,merge(LE,{root={yaw=LE.root.yaw+360}})),
+}
+CLIPS.Leaf.DeflectKick={ -- the crescent kick that clears blades: the lead leg sweeps across his front
+	K(0,le({root={y=-.5,yaw=20},torso={yaw=-6},la={raise=60,out=30,elbow=50},ll={lift=60,out=30,twist=20,knee=90,ankle=-10}})),
+	K(1,le({root={y=-.3,yaw=-30,pitch=-6},torso={yaw=-20},head={yaw=10},la={raise=40,out=60,elbow=30},ll={lift=100,out=-10,twist=-30,knee=10,ankle=-20}}),"out"),
+	K(2,le({root={y=-.3,yaw=-44,pitch=-6},torso={yaw=-24},la={raise=40,out=60,elbow=30},ll={lift=92,out=-24,twist=-30,knee=14,ankle=-20}})),
+	K(2.5,le({root={y=-.45,yaw=0},ll={lift=40,knee=70}})),
+	K(3,LE),
+}
+CLIPS.Leaf.PrimaryLotus={ -- Omote Renge: the arms wrap the body, the spin turns head first, the drive into the floor
+	K(0,merge(AIR_LE,{root={pitch=-14},torso={pitch=-10},head={pitch=-10},ra=HUG,la=HUG,rl={lift=96,knee=120,ankle=-20},ll={lift=90,knee=116,ankle=-20}})),
+	K(.6,merge(AIR_LE,{root={pitch=64},torso={pitch=18},head={pitch=18},ra=HUG,la=HUG,rl={lift=70,knee=100},ll={lift=64,knee=96}})),
+	K(1,merge(AIR_LE,{root={pitch=120},torso={pitch=22},head={pitch=22},ra=HUG,la=HUG,rl={lift=20,knee=30,ankle=-30},ll={lift=14,knee=26,ankle=-30}}),"out"),
+	K(2,merge(AIR_LE,{root={pitch=128},torso={pitch=24},head={pitch=24},ra=HUG,la=HUG,rl={lift=16,knee=26},ll={lift=12,knee=22}})),
+	K(3,le({root={y=-1.05,pitch=24},torso={pitch=18},la={raise=40,out=30,elbow=40},lf={z=-.9},rf={z=.9}})),
+}
+CLIPS.Leaf.HiddenLotus={ -- Ura Renge (Fifth Gate): blows from above, then both fists driven down through the body
+	K(0,merge(AIR_LE,{root={pitch=-8},torso={pitch=-16,yaw=-20},ra={raise=150,out=20,elbow=90},la={raise=150,out=20,elbow=90},rl={lift=70,knee=110},ll={lift=60,knee=100}})),
+	K(.5,merge(AIR_LE,{root={pitch=10},torso={pitch=10,yaw=20},ra={raise=60,out=-10,elbow=20},la={raise=140,out=20,elbow=80},rl={lift=50,knee=90},ll={lift=70,knee=110}})),
+	K(1,merge(AIR_LE,{root={pitch=40},torso={pitch=40},head={pitch=10},ra={raise=40,out=-14,elbow=4,wrist=-10},la={raise=40,out=-14,elbow=4,wrist=-10},rl={lift=-10,knee=40},ll={lift=10,knee=60}}),"out"),
+	K(2,merge(AIR_LE,{root={pitch=44},torso={pitch=42},ra={raise=34,out=-14,elbow=6},la={raise=34,out=-14,elbow=6},rl={lift=-10,knee=40},ll={lift=10,knee=60}})),
+	K(3,le({root={y=-1.1,pitch=26},torso={pitch=20},la={raise=50,out=24,elbow=40},lf={z=-.95},rf={z=.95}})),
+}
+-- Reused where the family already has the move (the stress test counts them):
+-- the heel drop for his plain air heavy and the Leaf Heel, Sasuke's spinning
+-- heel kick for the Leaf Whirlwind, Minato's spinning roundhouse for the Leaf
+-- Great Whirlwind.
+CLIPS.Leaf.Slam=CLIPS.Lion.LionBarrage
+CLIPS.Leaf.LeafHeel=CLIPS.Lion.LionBarrage
+CLIPS.Leaf.LeafWhirlwind=CLIPS.Lion.Light3
+CLIPS.Leaf.GreatWhirlwind=CLIPS.Flashstep.Light3
+setmetatable(CLIPS.Leaf,{__index=CLIPS.Lion})
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -16233,8 +16837,16 @@ end
 -- uses. A small lead compensates for the damping lag so contact frames land on
 -- the server's active window.
 local LEAD=.03
+-- Variants: strikes the server starts under another move's name
+-- (attackVariant). The clip is the variant's, the timing the carrier move's.
+-- Rock Lee's finishers ride on the Slam like the Lion Combo.
+local VARIANT_OF={Rasengan="DashAttack",RasenganDrop="Slam",LionBarrage="Slam",PrimaryLotus="Slam",HiddenLotus="Slam",LeafHeel="Slam"}
+Motion.VARIANT_OF=VARIANT_OF
+local function clipName(subject)
+	return if VARIANT_OF[subject.attackVariant or ""] then subject.attackVariant else subject.attackName
+end
 local function timing(name,fighterId)
-	local spec=Attacks[name] or (if name=="RasenganDrop" or name=="LionBarrage" then Attacks.Slam else Attacks.DashAttack)
+	local spec=Attacks[name] or Attacks[VARIANT_OF[name] or "DashAttack"]
 	local fighter=Fighters[fighterId]
 	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
 	local startup=spec.startup*(profile and profile.startup or 1)
@@ -16443,6 +17055,10 @@ local function castSpec(actor)
 		local shake=math.sin(t*90)*2
 		return merge(base,{root={y=-.95,pitch=24,yaw=20+shake},torso={pitch=14,yaw=10},head={pitch=-14},ra={raise=-20,out=20,twist=40,elbow=30,wrist=-30},
 			la={raise=20,out=-30,twist=40,elbow=90},lf={z=-1.2},rf={z=1.1,yaw=40}})
+	elseif id=="LeafGreatWhirlwind" then
+		-- Rock Lee forms no seal: a crouch wound up for the spin, then the kick
+		-- itself is the GreatWhirlwind strike.
+		return merge(base,{root={y=-1.0,pitch=16,yaw=64},torso={pitch=8,yaw=30},head={yaw=-44},la={raise=50,out=30,elbow=60},lf={z=-1.0},rf={z=.9}})
 	end
 	return sealPose(base,t,false)
 end
@@ -16473,6 +17089,9 @@ local GAIT={
 	-- Gaara walks with his arms folded: short steps, almost no bounce.
 	Sand={stride=.8,cadence=.88,arm=0,lean=-1,bob=.35,guard=0,holdArms=true},
 }
+-- Rock Lee: long, quick and bouncy steps, leaning in; the rear hand stays behind
+-- his back until he breaks into a full sprint (holdRear).
+GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
@@ -16725,6 +17344,11 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	if gait.holdArms then
 		-- (Gaara) the arms stay folded whatever the legs do.
 		spec.ra=table.clone(base.ra);spec.la=table.clone(base.la)
+	end
+	if gait.holdRear and not (sprint and forward&gt;.3) then
+		-- (Rock Lee) the rear hand stays behind his back while he moves in his
+		-- stance; only a full sprint swings both arms.
+		spec.ra=table.clone(base.ra)
 	end
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
@@ -17121,7 +17745,7 @@ end
 -- --------------------------------------------------------- public entries
 -- Attack pose on its own (blended over the rest pose): used by tests and tools.
 function Motion.pose(char,name,elapsed,fighterId,dt)
-	if not Attacks[name] and name~="Rasengan" and name~="RasenganDrop" then return end
+	if not Attacks[name] and not VARIANT_OF[name] then return end
 	local targets,weight=attackTargets(name,elapsed,fighterId)
 	apply(char,blend({},targets,weight),RATE.attack,dt)
 end
@@ -17242,8 +17866,14 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.intro or 0)&gt;0 and subject.state=="Neutral" then
 		local base=stance(subject.fighterId)
 		local spec
-		local body=familyOf(subject.fighterId).body
-		if body=="Sand" then
+		-- A family may name its own intro (Rock Lee's), else its body's.
+		local body=familyOf(subject.fighterId).intro or familyOf(subject.fighterId).body
+		if body=="Leaf" then
+			-- Rock Lee: fired up. Upright on springy knees, the fist clenched at
+			-- shoulder height, chin up; the other hand already behind his back.
+			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
+				la={raise=70,out=30,twist=-60,elbow=128,wrist=0},rf={x=.2,z=.5},lf={x=-.1,z=-.5}})
+		elseif body=="Sand" then
 			-- Arms folded, chin down, perfectly still: the sand will do it.
 			spec=merge(base,{root={y=-.04,pitch=-1},head={pitch=10,yaw=0},torso={pitch=-2}})
 		elseif body=="Mirage" then
@@ -17302,7 +17932,7 @@ function Motion.present(char,actor,clock,dt)
 	local casting=subject.castId~=nil and (subject.state=="TechniqueChannel" or subject.state=="TechniqueActive" or subject.state=="TechniqueRecovery")
 	-- The base the body returns to: gait on the ground, air pose in the air.
 	local base,baseRate
-	local attackName=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+	local attackName=clipName(subject)
 	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
 	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
 	elseif footwork then
@@ -17334,7 +17964,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if swinging then
-		local name=if subject.attackVariant=="Rasengan" or subject.attackVariant=="RasenganDrop" or subject.attackVariant=="LionBarrage" then subject.attackVariant else subject.attackName
+		local name=clipName(subject)
 		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
 		-- (Clone: blend may hand back a cached clip pose, which must not change.)
 		local final=table.clone(blend(base,targets,weight))
@@ -17400,7 +18030,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if (subject.tenketsu or 0)&gt;0 then base=tenketsuPosture(base,subject.tenketsu,subject.tenketsuSevere) end
-	if (subject.awaken or 0)&gt;0 and familyOf(subject.fighterId).body=="Lion" then base=cursePosture(base,subject.curseHunger) end
+	if (subject.awaken or 0)&gt;0 and familyOf(subject.fighterId).awakenPosture=="curse" then base=cursePosture(base,subject.curseHunger) end
 	local brake=memo.brakeAt and elapsedTime-memo.brakeAt
 	if brake and brake&lt;.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
 	apply(char,base,baseRate,dt)
@@ -17424,7 +18054,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND63">
+  <Item class="Lighting" referent="ND64">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -17442,7 +18072,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND64">
+  <Item class="SoundService" referent="ND65">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

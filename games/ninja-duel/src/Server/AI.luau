@@ -22,6 +22,8 @@ end
 -- a window): Sasuke presses after the body, Itachi waits for it.
 local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
 local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
+-- Rock Lee (stress-test wave) is the keenest of all: he never lets the body go.
+DASH.Leaf=1.6;CHASE.Leaf=.8
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -49,6 +51,8 @@ function AI:defend(now)
 					-- Neji answers blades and fire with Rotation when it is ready.
 					local rotation=slotOf(a,"Rotation")
 					if rotation and gap<11 and self.rng:NextNumber()<.55 and c:request(a,rotation) then return true end
+					-- Rock Lee kicks a blade out of the air (his tool is the deflecting kick).
+					if a.def.Tool=="Deflect" and Techniques.DEFLECTABLE[p.kind] and gap<12 and self.rng:NextNumber()<.6 and c:request(a,"Tool",p.position) then return true end
 					local roll=self.rng:NextNumber()
 					if roll<.35 then
 						c:request(a,"Guard");self.guardUntil=now+.35;return true
@@ -317,6 +321,9 @@ function AI:update(now)
 		-- explicitly (an approach held by accident must not pick a launcher).
 		local roll=self.rng:NextNumber()
 		if a.airborne then
+			-- A fighter with its own air finisher (Rock Lee's lotuses) cashes it in
+			-- after one confirmed hit inside the Shadow of the Dancing Leaf window.
+			if (a.lionUntil or 0)>now and (a.airCombo or 0)>=1 and (Brawler.graph(a) or {}).airFinisher and roll<.75 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 			if (a.airCombo or 0)>=2 and roll<.4 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 			if (a.airCombo or 0)>=1 then
 				if roll<.22 then a.move=-toward;press(c,a,"Attack","back");return
@@ -353,7 +360,8 @@ function AI:update(now)
 	end
 	if a.state~="Neutral" or a.reaction then return end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
-	if distance>7 and distance<46 and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
+	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)
+	if distance>7 and distance<46 and a.def.Tool~="Deflect" and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
 		-- A tool master sometimes throws the geometry instead (side + tool).
 		if a.def.ToolMastery and a.def.ToolMastery.Geometry and self.rng:NextNumber()<.4 then
 			a.move=tangent*(if self.rng:NextNumber()<.5 then 1 else -1)
@@ -392,6 +400,10 @@ function AI:update(now)
 			if spec.Id=="PhoenixFlower" then use=distance>9 and distance<34 and c:lineOfSight(a,target) and self.rng:NextNumber()<.5 end
 			if spec.Id=="WindCut" then use=distance>8 and distance<28 end
 			if spec.Id=="Quickstep" then use=distance>9 and distance<20 and self.rng:NextNumber()<0.25 end
+			-- Rock Lee (stress-test wave): the spinning kick crosses a gap or
+			-- punishes a recovery, in line of sight; nothing he has is thrown.
+			if spec.Id=="LeafGreatWhirlwind" then use=distance>5 and distance<16 and c:lineOfSight(a,target)
+				and (target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or self.rng:NextNumber()<.4) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end

@@ -693,6 +693,65 @@ local function dressGaara(model,def)
 	cyl(wear(model,"UpperTorso","GourdNeck",Vector3.new(.4,.55,.55),CFrame.new(.42,1.42,1.18)*CFrame.Angles(0,0,math.rad(90)),gourdDark,Enum.Material.Wood))
 	wear(model,"UpperTorso","GourdBand",Vector3.new(1.95,.16,1.55),CFrame.new(.1,.2,1.2),rgb(120,92,62),Enum.Material.Fabric)
 end
+-- Rock Lee at the Chunin Exam (13, stress-test wave): the green one-piece
+-- training suit, orange leg warmers, the Leaf headband worn as a red belt,
+-- bandaged hands, a glossy black bowl cut over thick eyebrows and big round
+-- eyes. A genin's kit only: no vest, nothing of an adult jonin.
+local function dressLee(model,def)
+	local hair=rgb(16,16,20)
+	local suit=rgb(52,140,66)
+	local suitDark=rgb(38,110,50)
+	local warmer=rgb(236,128,38)
+	local warmerDark=rgb(204,104,28)
+	local belt=rgb(186,36,40)
+	local bandage=rgb(238,234,222)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(14,14,18),hair)
+	-- Big round eyes with small dark irises; the thin brows give way to his own.
+	for _,p in model:GetChildren() do
+		if p.Name=="Eye" then p.Size=Vector3.new(.32,.27,.04) end
+		if p.Name=="Iris" then p.Size=Vector3.new(.1,.1,.03) end
+		if p.Name=="Brow" then p.Transparency=1 end
+	end
+	for _,side in {-1,1} do
+		wear(model,"Head","ThickBrow",Vector3.new(.42,.15,.05),CFrame.new(side*.3,.31,-.82)*A(0,0,R(side*-6)),hair)
+	end
+	-- The bowl cut: a smooth glossy cap, a fringe cut straight across the
+	-- forehead, straight sides down to the jaw.
+	local bowl=hairCap(model,hair)
+	if bowl then bowl.Reflectance=.12 end
+	wear(model,"Head","BowlFringe",Vector3.new(1.72,.34,.18),CFrame.new(0,.5,-.8),hair)
+	for _,side in {-1,1} do
+		wear(model,"Head","BowlSide",Vector3.new(.18,.95,1.3),CFrame.new(side*.86,.12,.02),hair)
+	end
+	wear(model,"Head","BowlBack",Vector3.new(1.72,1.15,.26),CFrame.new(0,.08,.78),hair)
+	-- The one-piece suit, from the collar to the ankles.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=suit end
+	end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.3,.22,1.06),CFrame.new(0,.76,.02),suitDark)
+	-- The Leaf headband, worn as a red belt with the plate in front.
+	wear(model,"LowerTorso","HeadbandBelt",Vector3.new(2.08,.28,1.08),CFrame.new(0,.28,0),belt,Enum.Material.Fabric)
+	wear(model,"LowerTorso","BeltPlate",Vector3.new(.8,.3,.06),CFrame.new(0,.28,-.57),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"LowerTorso","LeafMark",Vector3.new(.28,.13,.02),CFrame.new(0,.3,-.61),rgb(70,78,90),Enum.Material.Metal)
+	for _,side in {-1,1} do
+		wear(model,"LowerTorso","BeltTail",Vector3.new(.16,.6,.06),CFrame.new(side*.22,.02,.56)*A(R(-10),0,R(side*8)),belt,Enum.Material.Fabric)
+	end
+	for _,side in {"Left","Right"} do
+		-- Orange leg warmers from the knee to the ankle, rolled at both ends.
+		wear(model,side.."LowerLeg","LegWarmer",Vector3.new(.98,.92,.98),CFrame.new(0,-.06,0),warmer,Enum.Material.Fabric)
+		wear(model,side.."LowerLeg","WarmerRoll",Vector3.new(1.02,.16,1.02),CFrame.new(0,.42,0),warmerDark,Enum.Material.Fabric)
+		wear(model,side.."LowerLeg","WarmerCuff",Vector3.new(1.04,.18,1.04),CFrame.new(0,-.5,0),warmerDark,Enum.Material.Fabric)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(40,48,72) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		-- Hands wrapped in bandages for training, a few turns up the wrist.
+		local hand=model:FindFirstChild(side.."Hand");if hand then hand.Color=bandage end
+		for k=0,1 do
+			wear(model,side.."LowerArm","BandageWrap",Vector3.new(.8,.07,.8),CFrame.new(0,-.36+k*.14,0)*A(0,0,R(6)),rgb(222,216,202))
+		end
+	end
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -706,6 +765,7 @@ function World.dress(model,def)
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
+	if def.Name=="Rock Lee" then dressLee(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

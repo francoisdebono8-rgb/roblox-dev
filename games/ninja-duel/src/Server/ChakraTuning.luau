@@ -46,6 +46,14 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 		fireball="Fireball",phoenix="Phoenix",palm="VacuumPalm",wind="WindCut",sandwave="SandWave"},
 	Objects={},Surfaces={},Infusions={},Rules={},
 }
+-- Rock Lee (stress-test wave): he cannot mould chakra at all, so there is
+-- nothing to pour into a tool and no palm either. His tool is a kick
+-- (Techniques.deflectKick) and the chakra modifier is refused with the usual
+-- fizzle (Combat, def.Tool "Deflect"). Named here so every reader of the
+-- profile (logs, lab, tools) says Taijutsu instead of falling back to Basic.
+T.Masteries.Taijutsu={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Leaf="Taijutsu"
+T.Preferred.Taijutsu={}
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,
