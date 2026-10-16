@@ -7,11 +7,12 @@ end
 function Rules.canAct(a, now)
 	return a.health > 0 and free[a.state] == true and now >= (a.lockUntil or 0)
 end
-function Rules.technique(a, spec, now, prerequisites)
+-- `why`: the refusal a technique's own check gave (its second return value).
+function Rules.technique(a, spec, now, prerequisites, why)
 	if not Rules.canAct(a, now) then return false, "Committed" end
 	if (a.cooldowns[spec.Id] or 0) > now then return false, "Cooldown" end
 	if a.chakra < spec.Cost then return false, "Need chakra" end
-	if not prerequisites then return false, "Condition missing" end
+	if not prerequisites then return false, why or "Condition missing" end
 	return true
 end
 function Rules.reserve(a, spec, now)

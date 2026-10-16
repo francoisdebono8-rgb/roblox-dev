@@ -12,6 +12,7 @@ local Techniques=require(script.Parent.Techniques)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
+local Zones=require(script.Parent.Zones)
 local Matches={}; Matches.__index=Matches
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
@@ -218,7 +219,9 @@ function Matches:view(s,cursor,mine,theirs)
 			tenketsuPoints=if (a.tenketsuUntil or 0)>now then table.clone(a.tenketsuPoints or {}) else {},
 			tenketsuSevere=(a.tenketsuUntil or 0)>now and (a.tenketsu or 0)>=4,
 			illusionKind=if (a.illusionUntil or 0)>now then a.illusionKind else nil,
-			curseHunger=a.curseHunger==true}
+			curseHunger=a.curseHunger==true,
+			-- Temari: the open fan holding her up in the air.
+			glide=a.gliding==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -240,7 +243,8 @@ function Matches:view(s,cursor,mine,theirs)
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
 	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
+		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
+		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end
 function Matches:request(player,payload)

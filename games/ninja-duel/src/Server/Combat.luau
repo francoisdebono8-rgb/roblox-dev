@@ -11,6 +11,8 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
+-- Persistent typed zones (wind lanes, updrafts) beside the burning hazards.
+local Zones = require(script.Parent.Zones)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -417,6 +419,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 	local p={id=self.projectileSerial,a=a,origin=start,position=start,direction=delta.Unit,speed=speed,range=range,remaining=range,
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
+		-- A flight that names its own contact (style, and reaction/impulse/stun:
+		-- Temari's wind scythe knocks away) instead of its kind's.
+		style=opts.style,stun=opts.stun,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
@@ -430,6 +435,20 @@ function Combat:removeProjectile(p)
 	for i=#self.projectiles,1,-1 do
 		if self.projectiles[i]==p then table.remove(self.projectiles,i) end
 	end
+end
+-- A flight changed in the air (a wind lane turns it aside, speeds it up or
+-- feeds it): the client rebuilds every flight as origin + direction x speed x
+-- (t - born), so the change starts a new leg here and now (origin, born and
+-- range re-based, a volume's growth folded into its radius) and goes out in
+-- the next snapshot. Changing direction or speed in place drew it on the old line.
+function Combat:redirect(p,direction,speed)
+	p.radius=(p.radius or 0)+(p.growth or 0)*math.max(0,self.now-p.born)
+	p.origin=p.position;p.born=self.now;p.range=p.remaining
+	if direction and direction.Magnitude>.01 then p.direction=direction.Unit end
+	if speed then p.speed=speed end
+	p.leg=(p.leg or 0)+1
+	self.urgent=true
+	return p
 end
 -- The marked kunai that is still travelling, if any: Minato can relocate onto
 -- it mid-flight, which is the whole point of the seal.
@@ -563,11 +582,13 @@ function Combat:substitute(a)
 		away=Vector3.new(away.X,0,away.Z)
 		if away.Magnitude<0.1 then away=a.root.CFrame.RightVector end
 		-- Pinned against a wall the straight escape is blocked: slide along it.
-		local moved=Motor.travel(a,self,away,tune.Distance)
+		-- (A twist may jump further: Temari's wind retreat.)
+		local hop=(twist and twist.Distance) or tune.Distance
+		local moved=Motor.travel(a,self,away,hop)
 		if moved<2 then
 			local side=Vector3.new(-away.Z,0,away.X)
-			moved=Motor.travel(a,self,side,tune.Distance)
-			if moved<2 then moved=Motor.travel(a,self,-side,tune.Distance) end
+			moved=Motor.travel(a,self,side,hop)
+			if moved<2 then moved=Motor.travel(a,self,-side,hop) end
 		end
 		if moved<2 then return false,"Escape blocked" end
 	end
@@ -667,6 +688,8 @@ end
 function Combat:rush(a)
 	local tune=Config.Rush
 	local style=Brawler.reentry(a)
+	-- A re-entry at range instead of into melee (Temari's wind step, Gale.reposition).
+	if style.reposition and Techniques.reposition then return Techniques.reposition(self,a,style) end
 	local cancel=a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
@@ -726,6 +749,8 @@ function Combat:awaken(a)
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
 	if b then self:cue(b,"OPPONENT AWAKENED",1) end
 	Brawler.event(self,a,"Awaken")
+	-- What an awakening sets off on entry (Techniques.awakenHooks: Kamatari).
+	for _,hook in Techniques.awakenHooks or {} do hook(self,a) end
 	return true
 end
 -- Awakened techniques recover faster (and Itachi's cost less).
@@ -775,7 +800,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		return true
 	end
+	-- The jump key held (Jump ... JumpOff): Temari's glide reads it.
+	if action=="Jump" then a.jumpHeld=true end
 	if action=="JumpOff" then
+		a.jumpHeld=false
 		if a.airborne and a.root.AssemblyLinearVelocity.Y>22 and self.now<(a.takeoffUntil or 0)+0.18 then
 			local v=a.root.AssemblyLinearVelocity
 			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
@@ -843,6 +871,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 			if opts~=nil and opts.chakra==true then Chakra.refuse(self,a);return false,"No chakra tool" end
 			return Techniques.deflectKick(self,a)
 		end
+		-- A tool that is not thrown, registered by its fighter's module
+		-- (Techniques.Tools: Temari's fan gust); it owns its chakra rule too.
+		local custom=Techniques.Tools and Techniques.Tools[a.def.Tool]
+		if custom then return custom(self,a,opts~=nil and opts.chakra==true,aim) end
 		if a.def.ArrivalThrow then
 			local thrown,refusal=self:arrivalThrow(a)
 			if thrown~=nil then return thrown,refusal end
@@ -1092,10 +1124,13 @@ function Combat:updateActor(a,dt)
 		local rate=if (a.awakenUntil or 0)>now then (a.def.Awakening.ShieldRegen or 1) else 1
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
-	a.speedScale=if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1
+	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale)
+	a.speedScale=(if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
+	-- Per-fighter steps registered by a fighter's module (Temari's glide).
+	for _,step in Techniques.actorSteps or {} do step(self,a,dt,now) end
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)>now or (a.flurryUntil or 0)>now then a.move=Vector3.zero end
 	if now<(a.hitstopUntil or 0) then
@@ -1470,7 +1505,7 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
-	local style=IMPACT_STYLE[p.kind] or "shuriken"
+	local style=p.style or IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	-- The entry still finishes the blade on the client; it only reads as a body
 	-- hit once the defence has resolved. A blade that was evaded, parried or
@@ -1507,6 +1542,13 @@ function Combat:projectileHit(p,target,position,normal)
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
+		elseif p.reaction then
+			-- A flight that names its reaction (impulse: lift, push along its line):
+			-- a real Knockback, so the wind can splat a body on a wall at range.
+			local push=Vector3.new(p.direction.X,0,p.direction.Z)
+			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
+			local impulse=p.impulse or Vector3.new(0,12,40)
+			Brawler.react(self,target,p.reaction,push.Unit*impulse.Z+Vector3.new(0,impulse.Y,0),p.stun or .5,p.a)
 		end
 		if p.riders or p.bounced or p.ignited then self:projectileRiders(p,target) end
 	end
@@ -1727,6 +1769,8 @@ function Combat:update(dt,now)
 	end
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
+	-- Zones act before the flights move (a blade entering a lane turns this frame).
+	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -1750,6 +1794,7 @@ function Combat:clear(preserveAnimations)
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
+	Zones.clear(self)
 	if self.scheduled then table.clear(self.scheduled) end
 	self.impacts={}; self.impactSerial=0
 end

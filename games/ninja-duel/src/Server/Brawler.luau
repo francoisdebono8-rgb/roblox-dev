@@ -303,6 +303,8 @@ function Brawler.start(c,a,name)
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
 		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+		-- A weapon's reach: the step-in stops further out (Temari's iron fan).
+		spec.contact=profile.contact or spec.contact
 	end
  a.buffered=nil
  a.attackVariant=nil
@@ -592,6 +594,9 @@ function Brawler.routePayoff(c,a,b,p)
  local kind=graph and graph.onRoute and graph.onRoute[p.name]
  if not kind or b.health<=0 then return end
  local Techniques=require(script.Parent.Techniques)
+ -- A payoff a fighter's own module registered (Techniques.payoffs: Temari's updraft).
+ local custom=Techniques.payoffs and Techniques.payoffs[kind]
+ if custom then custom(c,a,b,p);return end
  if kind=="bodySeal" then
   -- Minato: the rising kick leaves a short seal on the body: 2 follows it up.
   local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
@@ -948,6 +953,9 @@ function Brawler.hit(c,a,p)
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer
  if steer and steer.Moves[p.name] then forward=Brawler.wallAim(c,a,b,steer) or forward end
+ -- A lateral strike (Attacks lateral: Temari's pirouette) throws the body to
+ -- the side the stick asked for instead of straight away.
+ if spec.lateral then forward=a.root.CFrame.RightVector*(if (a.angleSide or 0)~=0 then a.angleSide else 1) end
  local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)

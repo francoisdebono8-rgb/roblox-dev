@@ -997,4 +997,7 @@ function Techniques.curseDrain(c,a,dt,now)
 	a.curseHunger=rate>tune.HealthDrain
 	if rate>0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
 end
+-- Temari (roster wave): her kit registers itself (techniques, the fan gust
+-- tool, the updraft payoff, Kamatari, the glide, the wind step).
+require(script.Parent.Gale).install(Techniques)
 return Techniques

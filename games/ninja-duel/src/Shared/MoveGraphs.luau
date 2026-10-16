@@ -129,4 +129,22 @@ return {
 		-- closer than most, and the shortest recovery after an arrival.
 		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
 	},
+	-- Temari (roster wave): the fan strikes make distance. Toward after two
+	-- hits: the Updraft, a scoop into a column of rising air (onRoute "updraft",
+	-- Gale.updraft): the body comes down slowly, in reach of the wind, not of a
+	-- chase. Away: the closed fan slammed down. Sideways after one: a full turn,
+	-- the gust throws the body aside (Attacks lateral). In the air, the drive
+	-- and the Fan Dive; no switch (she does not vault over anyone).
+	--   reengage.reposition  the wind step (Gale.reposition): E outside a chase
+	--                        window takes her back to `keep` studs (out at an
+	--                        `angle` when close, in when far, aside at range),
+	--                        never into melee.
+	Gale={
+		routes={up="Updraft",down="FanSlam",side="FanPirouette",airUp="AirDrive",airDown="FanDive"},
+		onRoute={Updraft="updraft"},
+		heavyAfterOne="FanBackhand",
+		stringCancels={Kamaitachi=true},
+		blockCancels={Tool=true},
+		reengage={name="gale",reposition=true,keep=17,speed=1.0,reach=22,angle=30,side=10,chase=.26,recovery=.16},
+	},
 }
