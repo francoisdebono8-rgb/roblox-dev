@@ -7,8 +7,9 @@ games/ninja-duel/
   src/Server/                 Combat/Brawler/Motor/Techniques/Matches/World/AI, autorité
   src/Client/                 Input/UI/Camera/Presentation/Effects, présentation
   tests/                      suites headless + isolation build
-  tools/                      inventaire combat + vérification docs
-  build.py ; dist/             normal/debug/QA et manifests
+  tools/                      inventaire combat, vérification docs, dev.py (CLI outils), studio/ (sondes MCP)
+  lab/                        propositions de combat inertes (catalogue, templates), jamais buildées
+  build.py ; dist/             normal/debug/QA et manifests ; outils Dev* et labo chakra = Debug/QA seulement
   motion-lab/                  ForgeMotionLab/Modules, adapter, tests, build, dist
   design_research/             sources riches, conservées
   docs/active/                 décisions/état/backlog/journal/règles/outils
