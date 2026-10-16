@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_not_runtime",
+  "registration": "manual_review_by_Claude",
+  "numericFieldsPolicy": "null signifie à décider, jamais une valeur injectée automatiquement",
+  "existingSchema": "Fighters.Awakening + Combat.awaken",
+  "definition": {
+    "Name": "À définir",
+    "Speed": null,
+    "Damage": null,
+    "Regen": null,
+    "Cooldown": null,
+    "Color": null
+  },
+  "activation": "Conserver Config.Awaken et la validation serveur existante",
+  "checks": [
+    "une fois par match",
+    "reset/nextRound",
+    "expiration",
+    "lecture visible sans rendre le combat illisible"
+  ]
+}

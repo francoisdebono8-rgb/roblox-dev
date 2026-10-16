@@ -44,4 +44,5 @@ run Online     "$LUNE" run tests/Online.spec.luau
 run Progression "$LUNE" run tests/Progression.spec.luau
 run Profiles   "$LUNE" run tests/Profiles.spec.luau
 run Preparation "$LUNE" run tests/Preparation.spec.luau
+run DevInfra   "$LUNE" run tests/DevInfra.spec.luau
 exit $status

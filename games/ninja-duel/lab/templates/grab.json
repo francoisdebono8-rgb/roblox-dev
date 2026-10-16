@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "status": "draft_not_runtime",
+  "registration": "manual_review_by_Claude",
+  "numericFieldsPolicy": "null signifie à décider, jamais une valeur injectée automatiquement",
+  "existingSchema": "Attacks.Grab/Throw/ThrowUp + Brawler",
+  "definition": {
+    "existingVariant": null,
+    "direction": "forward/up/side proposition",
+    "releasePose": null,
+    "trajectoryIntent": null
+  },
+  "relationship": "grabbing / grabbedBy : une seule paire serveur, détachement symétrique",
+  "checks": [
+    "grab break légal",
+    "KO acteur/cible",
+    "substitution",
+    "paroi/plafond/sol",
+    "reset en plein attachement",
+    "aucune paire orpheline"
+  ]
+}
