@@ -65,7 +65,8 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22,chainIn=26}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22,chainIn=26,kick=43}
+local KICK_SPEED=1600 -- deg/s cap for a free (kicking) leg during a strike
 local CHAIN_IN=.08 -- seconds of a chained strike during which the upper body eases in
 local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike may whip at 2280)
 local MAX_SPEED=1750
@@ -85,7 +86,7 @@ local function write(char,key,target,rate,dt)
 	local nextCF=current:Lerp(target,alpha)
 	local step=angleBetween(current,nextCF)
 	-- Strikes may whip faster than ordinary motion so their shape reads.
-	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
+	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif rate==RATE.kick then KICK_SPEED elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
 	if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
@@ -96,11 +97,14 @@ local function write(char,key,target,rate,dt)
 end
 local LEG_SIDE={RightHip="R",RightKnee="R",RightAnkle="R",LeftHip="L",LeftKnee="L",LeftAnkle="L"}
 local legIK
-local function apply(char,targets,rate,dt,upperRate)
+local function apply(char,targets,rate,dt,upperRate,legRate)
 	local feet=targets.__feet
 	for key in JOINTS do
 		local side=LEG_SIDE[key]
-		if not (feet and side and feet[side]) then write(char,key,targets[key] or IDENTITY,if upperRate and UPPER[key] then upperRate else rate,dt) end
+		if not (feet and side and feet[side]) then
+			local r=if upperRate and UPPER[key] then upperRate elseif legRate and side then legRate else rate
+			write(char,key,targets[key] or IDENTITY,r,dt)
+		end
 	end
 	if feet then
 		-- The hips are damped; a planted foot must not be. Solve each planted leg
@@ -1972,7 +1976,9 @@ function Motion.present(char,actor,clock,dt)
 		end
 		local chainIn=s.chainedIn and elapsedTime-s.swingAt<CHAIN_IN
 		s.lastBranch="attack";s.lastBranchAt=elapsedTime
-		apply(char,final,RATE.attack,dt,if chainIn then RATE.chainIn else nil)
+		-- A kicking (free) leg whips a little slower than an arm: at the strike
+		-- cap a foot crossed ~2.5 studs in one frame, twice a real kick.
+		apply(char,final,RATE.attack,dt,if chainIn then RATE.chainIn else nil,RATE.kick)
 		return "attack"
 	end
 	if subject.landing then
