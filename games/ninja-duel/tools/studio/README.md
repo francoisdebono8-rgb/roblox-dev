@@ -40,6 +40,7 @@ Keep **one** bridge alive: spawning `StudioMCP.exe` per call makes Studio drop a
 | `staged_moment.luau` | Server | `MODE="setup"` starts `A` vs `B` (bot frozen, tool-driven); otherwise `WHO` performs `MODE` (Attack, Heavy, Technique1…, Tool, Dodge) at `GAP` studs |
 | `fx_freeze.luau` | Client | freeze-frame of an effect: waits for an object named `TARGET` under the effects folder, then after `DELAY` copies every visible effect and fighter part into a static `FrozenFX` folder and holds a side camera on it, so a 0.1 s effect can be captured; `TARGET="off"` restores |
 | `double_tap.luau` / `seqrec.luau` | Client | real packets through the `Action` remote (anti-cheat included): two Attack presses `GAP` s apart; or record the light/route names the snapshots show for `DUR` s while `user_keyboard_input` / `user_mouse_input` (Studio MCP) play real keys and clicks |
+| `projrec.luau` | Client | records the projectiles (kind and chakra infusion) and the human's states from the snapshots while real keys are played (Z + R chord, R, E) |
 | `intentrec.luau` | Server | samples the human's route intent every frame (stick class, remembered push, combo count, gap, chain open) through the Debug-only `dev:Invoke("intent")` |
 | `reengage.luau` | Server | chakra dash from 22 studs and launcher + chase for the four CORE4: state changes and distance to the target |
 | `side_camera.luau` | Client | analysis camera bound after the game camera (`VIEW` side/front/off, optional fixed `AXIS`): profile views of gait, jumps and strikes; Studio-only tool, never shipped |
