@@ -642,7 +642,7 @@ function Brawler.airFinisher(c,a,f)
   if use.stun then p.spec.stun=use.stun end
   a.attackVariant=use.name
  end
- if cost>0 then a.health=math.max(1,a.health-cost);a.hum.Health=math.max(1,a.health);a.finisherPaid=(a.finisherPaid or 0)+cost end
+ if cost>0 then a.health=math.max(1,a.health-cost);a.hum.Health=math.max(1,a.health) end
  c:cue(a,use.cue or "AIR FINISHER",.9);Brawler.event(c,a,use.event or "AirFinisher")
  return ok
 end

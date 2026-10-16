@@ -410,8 +410,202 @@ test("AI duels: Rock Lee against every CORE4 prodigy, Gaara and himself, both wa
    end
   end
   assert(routes>=6,"Lee's bot barely used his routes ("..routes..")")
-  assert(lotus>=1,"Lee's bot never reached a lotus in twelve duels")
+  assert(lotus>=1,"Lee's bot never reached a lotus in eleven duels")
  end)
+end)
+
+-- Client -----------------------------------------------------------------------------
+local Motion=H.load("Client/VelmoraMotionEngine")
+local C=H.C
+local function snapshot(model)
+ local out={}
+ for key,joint in model.joints do out[key]=joint.Transform end
+ return out
+end
+local function differ(x,y,eps)
+ local n=0
+ for key,t in x do if not t:FuzzyEq(y[key],eps or .03) then n+=1 end end
+ return n
+end
+local function body(actor,overrides)
+ local out={fighterId=actor.fighterId,state="Neutral",health=actor.health,attackElapsed=0,reactionElapsed=0,airborne=false,
+  velocity=V.zero,speed=0,hitAngle=0,hitStrength=.5,landing=false}
+ for k,v in overrides or {} do out[k]=v end
+ return out
+end
+local function present(model,actor,frames)
+ Motion.reset(model)
+ local clock={attackElapsed=actor.attackElapsed or 0,reactionElapsed=0}
+ for _=1,frames or 45 do Motion.tick(1/60);Motion.present(model,actor,clock,1/60) end
+ return snapshot(model)
+end
+-- Where the right (rear) hand is, in the upper torso's frame (z > 0: behind
+-- the back), from the joints the engine wrote (the World.rig joint layout).
+local function rearHand(model)
+ local j=model.joints
+ local upper=j.Root.Transform*C.new(0,.65,0)*j.Waist.Transform*C.new(0,.5,0)
+ local arm=upper*C.new(1.05,.45,0)*j.RightShoulder.Transform*C.new(.4,-.5,0)
+ local hand=arm*C.new(0,-.55,0)*j.RightElbow.Transform*C.new(0,-.45,0)*C.new(0,-.73,0)
+ return upper:PointToObjectSpace(hand.Position)
+end
+test("motion family: Sasuke's kicks as a base, no weapon, his own stance with the rear hand behind his back",function()
+ local family=Motion.familyOf("Leaf")
+ assert(family.body=="Lion" and family.weapons=="none" and family.intro=="Leaf","Lee's motion family is "..tostring(family.body).."/"..tostring(family.weapons))
+ local c,a,b=H.duel("Leaf","Lion")
+ local lee=present(a.model,body(a))
+ local hand=rearHand(a.model)
+ assert(hand.Z>.6 and math.abs(hand.X)<.9,string.format("the rear hand is not behind his back (%.2f, %.2f, %.2f)",hand.X,hand.Y,hand.Z))
+ local sasuke=present(b.model,body(b))
+ assert(differ(lee,sasuke)>=4,"Lee stands like Sasuke ("..differ(lee,sasuke).." joints differ)")
+ -- Walking in his stance the hand stays there; a full sprint swings both arms.
+ present(a.model,body(a,{velocity=V.new(0,0,-12),speed=12}))
+ local walking=rearHand(a.model)
+ assert(walking.Z>.6 and math.abs(walking.X)<.9,string.format("walking, the rear hand left his back (%.2f, %.2f)",walking.X,walking.Z))
+ -- (The ninja run sweeps both arms straight back at his sides.)
+ present(a.model,body(a,{velocity=V.new(0,0,-36),speed=36}))
+ local sprinting=rearHand(a.model)
+ assert(sprinting.X>walking.X+.6,string.format("sprinting, the rear hand stayed folded behind his back (x %.2f)",sprinting.X))
+ -- No blade ever shows, not even for his tool button.
+ for _,name in {"DeflectKick","Light1","Light2","LeafRising"} do
+  Motion.weapon(a.model,body(a,{attackName=name,state="Active",attackElapsed=.1}))
+  local w=Motion.weaponState(a.model)
+  assert(not w.visible and w.count==0,"a weapon appeared for "..name)
+ end
+end)
+test("his own clips where his identity needs them, Sasuke's elsewhere; the lotuses reach the client as his",function()
+ local c,a=H.duel("Leaf","Mirage")
+ local c2,s=H.duel("Lion","Mirage")
+ -- The first key of each clip (no timing difference between the two kits).
+ local function key0(x,fighter,name)
+  Motion.reset(x.model)
+  for _=1,40 do Motion.pose(x.model,name,-.03,fighter,1/60) end
+  return snapshot(x.model)
+ end
+ assert(differ(key0(a,"Leaf","Light2"),key0(s,"Lion","Light2"),.001)==0,"Lee's roundhouse is not Sasuke's (the family is not reused)")
+ assert(differ(key0(a,"Leaf","Light3"),key0(s,"Lion","Light3"),.001)==0,"Lee's spinning heel kick is not Sasuke's")
+ assert(differ(key0(a,"Leaf","LeafRising"),key0(s,"Lion","LionKick"))>=3,"the Leaf Rising Wind is Sasuke's rising kick")
+ assert(differ(key0(a,"Leaf","LeafHurricane"),key0(s,"Lion","Sweep"))>=3,"the Leaf Hurricane is Sasuke's sweep")
+ assert(differ(key0(a,"Leaf","DeflectKick"),key0(a,"Leaf","Light1"))>=3,"the deflecting kick falls back to the jab")
+ -- The Primary Lotus is drawn with his own clip, not the plain slam.
+ assert(Motion.VARIANT_OF.PrimaryLotus=="Slam" and Motion.VARIANT_OF.HiddenLotus=="Slam","the lotuses are not Slam variants on the client")
+ local swing={attackName="Slam",state="Active",airborne=true,attackElapsed=.2,attackSerial=3,velocity=V.new(0,-40,0),speed=0}
+ local lotus=present(a.model,body(a,table.clone(swing)))
+ local plainSwing=table.clone(swing)
+ local plain=present(a.model,body(a,plainSwing))
+ swing.attackVariant="PrimaryLotus"
+ lotus=present(a.model,body(a,swing))
+ assert(differ(lotus,plain)>=4,"the Primary Lotus looks like a plain slam")
+ swing.attackVariant="HiddenLotus"
+ assert(differ(present(a.model,body(a,swing)),lotus)>=3,"the Hidden Lotus looks like the Primary Lotus")
+ -- His intro is his own, not Sasuke's hands in the pockets.
+ local intro=present(a.model,body(a,{intro=1}))
+ local sIntro=present(s.model,body(s,{intro=1}))
+ assert(differ(intro,sIntro)>=4,"Lee's intro is Sasuke's")
+ -- The Leaf Great Whirlwind is wound up from a crouch, never with hand seals.
+ local cast=present(a.model,body(a,{state="TechniqueChannel",castId="LeafGreatWhirlwind",castElapsed=.04}))
+ local seals=present(a.model,body(a,{state="TechniqueChannel",castId="SomeUnknownJutsu",castElapsed=.04}))
+ assert(differ(cast,seals)>=4,"Lee forms hand seals for his kick")
+end)
+test("client: the Fifth Gate burns green, the lotuses spin and crack the floor, the kick sweeps a crescent, his speed is his",function()
+ local instance,restore=H.stubScene()
+ local ok,err=pcall(function()
+  local FX=H.load("Client/Effects")
+  local fx=FX.new()
+  local folder=instance("Folder")
+  local function rig(id,at)
+   local m=instance("Model");m.Name=id;m.Parent=folder
+   for _,n in {"HumanoidRootPart","Head","RightHand","LeftHand","UpperTorso"} do
+    local p=instance("Part");p.Name=n;p.CFrame=C.lookAt(at,at-V.zAxis);p.Size=V.new(1,1,1);p.Transparency=0;p.Parent=m
+   end
+   return m
+  end
+  local lee=rig("A",V.new(0,3,0));rig("B",V.new(0,3,-6))
+  local function named(name,root)
+   local count=0
+   for _,d in (root or fx.folder):GetDescendants() do if d.Name==name then count+=1 end end
+   return count
+  end
+  -- His contacts are his: none falls through to the shared colours.
+  for _,style in {"awaken","chase","afterimage","repel"} do
+   local before=#fx.folder:GetDescendants()
+   fx:impact({style=style,position=V.new(0,3,0),owner="A",fighter="Leaf",direction=-V.zAxis,serial=1},folder)
+   assert(#fx.folder:GetDescendants()>before,style.." drew nothing for Lee")
+  end
+  assert(named("GateBurst")==1,"the gate did not open with its own burst")
+  local before=#fx.folder:GetDescendants()
+  fx:impact({style="cast",technique="LeafGreatWhirlwind",position=V.new(0,3,0),owner="A",fighter="Leaf",serial=2},folder)
+  assert(#fx.folder:GetDescendants()>before,"the whirlwind wind-up drew nothing")
+  -- The Fifth Gate: a red glow on the burning body while it lasts.
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},
+   human={id="A",fighterId="Leaf",seals={},state="Neutral",health=40,maxHealth=125,awaken=6},
+   bot={id="B",fighterId="Mirage",seals={},state="Neutral",health=145,maxHealth=145}}
+  fx:update(data,1/60,folder)
+  assert(named("GateGlow",lee)==1,"no glow on the body in the Fifth Gate")
+  data.human.awaken=0
+  fx:update(data,1/60,folder)
+  assert(named("GateGlow",lee)==0,"the gate's glow outlived the gate")
+  -- A lotus: spirals round the falling body, then the crater.
+  data.human.attackName="Slam";data.human.attackVariant="PrimaryLotus";data.human.state="Active";data.human.airborne=true
+  fx:update(data,1/60,folder)
+  assert(named("LotusSpiral")>=1,"the lotus spin is not drawn")
+  local craters=named("LotusCrater")
+  data.human.state="Recovery";data.human.airborne=false
+  fx:update(data,1/60,folder)
+  assert(named("LotusCrater")==craters+1,"the lotus left no crater")
+  -- The deflecting kick: one crescent per kick.
+  data.human.attackName="DeflectKick";data.human.attackVariant=nil;data.human.state="Startup";data.human.attackSerial=9
+  fx:update(data,1/60,folder);fx:update(data,1/60,folder)
+  assert(named("DeflectArc")==1,"the deflecting kick drew "..named("DeflectArc").." crescents")
+  -- Another fighter's contacts are not his.
+  before=named("GateBurst")
+  fx:impact({style="awaken",position=V.new(0,3,-6),owner="B",fighter="Mirage",serial=3},folder)
+  assert(named("GateBurst")==before,"Itachi's awakening was drawn as a gate")
+ end)
+ restore()
+ assert(ok,err)
+end)
+test("his costume builds: green suit, orange leg warmers, the headband as a red belt, bowl cut and thick brows",function()
+ local made={}
+ local base=H.envBase.Instance
+ H.envBase.Instance={new=function(class) local x=base.new(class);table.insert(made,x);return x end}
+ local World=H.load("Server/World")
+ local c,a=H.duel("Leaf","Mirage")
+ local ok,err=pcall(World.dress,a.model,H.fighters.Leaf)
+ H.envBase.Instance=base
+ assert(ok,err)
+ local names={}
+ for _,x in made do local n=rawget(x,"Name") or x.Name;if n then names[n]=(names[n] or 0)+1 end end
+ assert(names.LegWarmer==2 and names.WarmerCuff==2,"no leg warmers")
+ assert(names.HeadbandBelt==1 and names.BeltPlate==1,"no headband belt")
+ assert(names.BowlFringe==1 and names.ThickBrow==2,"no bowl cut or thick brows")
+ assert(names.Headband==nil,"he wears the headband on his head")
+ assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(52,140,66),"the suit is not his green")
+end)
+test("he is selectable: his roster slot and both buttons, and the duel starts with him",function()
+ H.envBase.UDim2=H.roblox.UDim2;H.envBase.UDim=H.roblox.UDim
+ H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
+ H.workspace.GetAttribute=function() return nil end
+ local baseNew=H.envBase.Instance.new
+ local saved=H.envBase.Instance
+ H.envBase.Instance={new=function(class)
+  local x=baseNew(class)
+  x.Activated={Connect=function(_,fn) x.click=fn end}
+  return x
+ end}
+ local ok,err=pcall(function()
+  local UI=H.load("Client/UI")
+  local sent={}
+  local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
+  assert(ui.selectionButtons.slotLeaf and ui.selectionButtons.playerLeaf and ui.selectionButtons.botLeaf,"Rock Lee is not in the roster")
+  ui.selectionButtons.playerLeaf.click()
+  assert(ui.player=="Leaf","picking Lee did not select him")
+  assert(ui.routeNote.Text:find("ROCK LEE",1,true),"his strings are not shown")
+  ui.startButton.click()
+  local last=sent[#sent]
+  assert(last.action=="Start" and last.extra.player=="Leaf","the start request does not carry Lee ("..tostring(last.extra and last.extra.player)..")")
+ end)
+ H.envBase.Instance=saved
+ assert(ok,err)
 end)
 
 print("NinjaDuel Rock Lee stress test: "..passed.." PASS")

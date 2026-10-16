@@ -713,7 +713,7 @@ end
 -- reach, guarded or evaded it leaves him a longer recovery to punish.
 function Techniques.rupture(c,a,attacker,twist)
 	local Brawler=require(script.Parent.Brawler)
-	c:pushImpact(a.root.Position,"repel",true,{owner=a.id,direction=a.root.CFrame.LookVector})
+	c:pushImpact(a.root.Position,"repel",true,{owner=a.id,fighter=a.fighterId,direction=a.root.CFrame.LookVector})
 	Brawler.event(c,a,"Rupture")
 	local landed=false
 	if attacker and attacker.health>0 then
