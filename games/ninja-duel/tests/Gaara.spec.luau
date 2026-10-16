@@ -157,4 +157,81 @@ test("AI duels: Gaara against every prodigy, both ways, without wedging",functio
  end
 end)
 
+test("client: his sand is drawn as sand (flights, shield, flicker, coffin, Desert Wave, lashes, pillar, charges)",function()
+ -- Before SandFX the sand bullet and Sand Coffin flew as kunai and none of
+ -- his contacts (shield, flicker, burial, wall) drew anything.
+ local instance,restore=H.stubScene()
+ local ok,err=pcall(function()
+  local FX=H.load("Client/Effects")
+  local Sand=H.load("Client/SandFX")
+  local clock=50
+  Sand.clock=function() return clock end
+  local fx=FX.new()
+  local folder=instance("Folder")
+  local function body(id,at)
+   local m=instance("Model");m.Name=id;m.Parent=folder
+   for _,n in {"HumanoidRootPart","RightHand","LeftHand","UpperTorso"} do
+    local p=instance("Part");p.Name=n;p.CFrame=H.C.lookAt(at,at-V.zAxis);p.Size=V.new(1,1,1);p.Transparency=0;p.Parent=m
+   end
+   return m
+  end
+  body("A",V.new(0,3,0));body("B",V.new(0,3,-8))
+  local function named(name)
+   local count=0
+   for _,d in fx.folder:GetDescendants() do if d.Name==name then count+=1 end end
+   return count
+  end
+  local data={phase="Duel",epoch=1,hazards={},projectiles={
+    {id=1,kind="sand",origin=V.new(0,4,0),direction=-V.zAxis,speed=90,born=99,range=56,owner="A",radius=.6,growth=0},
+    {id=2,kind="sandwave",origin=V.new(0,1,0),direction=-V.zAxis,speed=46,born=99,range=30,owner="A",radius=1.8,growth=.6}},
+   human={id="A",fighterId="Sand",seals={},shield=3,shieldMax=3,state="Neutral",bound=false,health=140,maxHealth=140},
+   bot={id="B",fighterId="Flashstep",seals={},state="Neutral",bound=true,reaction="Bound",health=125,maxHealth=125}}
+  fx:sync(data)
+  assert(fx.projectiles[1].model.Name=="SandBullet","the sand bullet flies as "..fx.projectiles[1].model.Name)
+  assert(fx.projectiles[2].model.Name=="SandWave","the Sand Coffin wave flies as "..fx.projectiles[2].model.Name)
+  for _=1,4 do fx:stepProjectiles(1/30) end
+  -- Every sand contact is drawn by the sand layer, none falls through.
+  for _,style in {"sandhit","sandburst","sandshield","sandflicker","sandburial","sandwall"} do
+   for _,heavy in {false,true} do
+    local before=#fx.folder:GetDescendants()
+    fx:impact({style=style,position=V.new(0,3,-1.6),heavy=heavy,direction=-V.zAxis,to=V.new(10,3,0),owner="A",fighter="Sand",serial=1},folder)
+    assert(#fx.folder:GetDescendants()>before,style.." drew nothing")
+   end
+  end
+  -- A frame: the opponent held by sand gets the coffin (not the wire), Gaara
+  -- his three shield charges.
+  data.projectiles={}
+  fx:update(data,1/60,folder)
+  assert(named("SandCoffin")==1 and named("Binding")==0,"the sand bind is drawn as wire")
+  assert(named("SandShieldCharges")==1,"no shield charges around him")
+  -- A lash: out on the contact key, reaching the strike's range, gone after it.
+  data.human.state="Startup";data.human.attackName="Light1";data.human.attackSerial=1;data.human.attackElapsed=0
+  fx:update(data,1/60,folder)
+  clock+=.16
+  data.human.state="Active"
+  fx:update(data,1/60,folder)
+  local reach=0
+  for _,d in fx.folder:GetDescendants() do
+   if d.Name=="SandLash" then for _,ball in d:GetChildren() do reach=math.max(reach,(ball.Position-V.new(0,3,0)).Magnitude) end end
+  end
+  assert(reach>7,"the lash reached "..string.format("%.1f",reach).." studs")
+  clock+=2;data.human.state="Neutral";data.human.attackName=nil
+  fx:update(data,1/60,folder)
+  assert(named("SandLash")==0,"the lash never went back")
+  -- The Sand Pillar erupts under the opponent.
+  data.human.state="Startup";data.human.attackName="SandPillar";data.human.attackSerial=2;data.human.attackElapsed=0
+  fx:update(data,1/60,folder)
+  assert(named("SandPillar")==0,"the pillar came before its contact")
+  clock+=.3
+  fx:update(data,1/60,folder)
+  assert(named("SandPillar")==1,"no pillar")
+  -- Released: the coffin crumbles.
+  data.bot.bound=false;data.bot.reaction=nil
+  fx:update(data,1/60,folder)
+  assert(fx.sandState[folder:FindFirstChild("B")].coffin==nil,"the coffin outlived the bind")
+ end)
+ restore()
+ assert(ok,err)
+end)
+
 print("NinjaDuel Gaara prototype: "..passed.." PASS")

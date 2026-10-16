@@ -6,6 +6,10 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local FX={};FX.__index=FX
+-- Identity layers: a fighter whose look lives in its own module (SandFX)
+-- registers projectile builders and poses, contact styles and a per-frame step.
+FX.layers={}
+FX.poses={}
 
 local TEX={
 	fire="rbxasset://textures/particles/fire_main.dds",
@@ -378,6 +382,8 @@ function FX:stepProjectiles(dt)
 			if ring then ring.Size=Vector3.new(.3,radius*2.2,radius*2.2) end
 			if core then core.Size=Vector3.new(.2,radius*1.2,radius*1.2) end
 			cf=look
+		elseif FX.poses[p.kind] then
+			cf=FX.poses[p.kind](self,entry,p,age,look,dt)
 		else
 			cf=look
 		end
@@ -705,6 +711,7 @@ function FX:impact(impact,folder)
 		end
 	end
 	if CHEER[style] then self:cheer(CHEER[style]) end
+	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
 	if style=="fire" then
 		self:explosion(position,impact.normal)
 	elseif style=="teleport" then
@@ -1412,7 +1419,8 @@ function FX:fighter(model,actor,dt)
 	end
 	for _,mark in aura.marks or {} do mark.Transparency=if awake then 0 else 1 end
 	-- Bound: wire coiled around the chest and arms while the bind holds.
-	local bound=actor.bound==true and (actor.health or 1)>0
+	-- (Held by Gaara's sand: SandFX draws the coffin instead of the wire.)
+	local bound=actor.bound==true and (actor.health or 1)>0 and actor.opponentFighter~="Sand"
 	if bound and not aura.binding then
 		local torso=model:FindFirstChild("UpperTorso") or root
 		local holder=new("Model",{Name="Binding"},self.folder)
@@ -1607,10 +1615,16 @@ function FX:update(data,dt,folder)
 		local actor=data[key]
 		if actor then
 			actor.intro=data.intro
+			local other=data[if key=="human" then "bot" else "human"]
+			actor.opponentFighter=other and other.fighterId
 			self:seal(actor.id or key,actor,folder)
 			local model=folder and folder:FindFirstChild(actor.id or "")
 			self:fighter(model,actor,dt)
+			for _,layer in FX.layers do if layer.fighter then layer.fighter(self,model,actor,dt) end end
 		end
 	end
 end
+-- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
+require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX
