@@ -29,7 +29,7 @@ Types de preuve : **TECHNIQUE** (suite headless qui échoue sur l’ancien code)
 | Rock Lee (stress test DEC-015) | TECHNIQUE : Lee.spec (25). NATIVE_STUDIO : costume (jambières orange après correction `d866b1e`), Lotus primaire (Light1 > Light2 > Leaf Rising > Air1 > Lotus) vu en Studio, endurance IA sans erreur. Limites : la plongée du Lotus traverse le corps adverse ; vitesse de la Cinquième Porte non mesurée ; équilibre (perd contre Minato, Sasuke, Gaara en duels IA) |
 | Gaara (stress test) | Visuels de sable vus figés, pas en mouvement par un humain ; Gaara bat nettement Minato en duel IA (le bouclier absorbe ses coups légers) |
 | Poses et mécanique corporelle | Mesures natives de la session précédente (pieds, contacts, sauts de mains) ; poses d’identité nouvelles seulement en headless |
-| Cadre de production de personnages | Familles de mouvement (client), registre de couches d’identité dans Effects (`FX.layers`, `FX.poses`, helpers passés au module du combattant), `SandFX` et `LeeFX`, `Harness.stubScene()` pour les tests client. Deux combattants l’ont traversé ; pas encore de gabarit documenté pas à pas |
+| Cadre de production de personnages | Familles de mouvement (client), registre de couches d’identité dans Effects (`FX.layers`, `FX.poses`, helpers passés au module du combattant), `SandFX` et `LeeFX`, `Harness.stubScene()` pour les tests client. Deux combattants l’ont traversé ; chemin d’intégration documenté pas à pas dans [PRODUCTION_FRAMEWORK](../../characters/PRODUCTION_FRAMEWORK.md) |
 
 ## 3. PARTIEL / FONDATION
 
@@ -49,4 +49,4 @@ Types de preuve : **TECHNIQUE** (suite headless qui échoue sur l’ancien code)
 
 ## Défauts trouvés et corrigés pendant cette passe (chacun avec un test qui échoue sur l’ancien code)
 
-Double tap mangé par l’anti-triche ; dash qui glissait au-delà de la cible ; attaques aériennes martelées qui faisaient planer au ras du sol ; marcher dans l’adversaire qui le contournait ; route perdue pour une pression un peu tardive ; projectiles de sable dessinés en kunai ; petits cubes noirs laissés à chaque son ; Curse Mark qui perdait son lanceur et Wind Cut qui ne comptait plus ses coupes (conflits de fusion) ; étape « interrompre » du tutoriel illisible contre Lee ; jambières de Lee rendues comme du bois.
+Double tap mangé par l’anti-triche ; dash qui glissait au-delà de la cible ; attaques aériennes martelées qui faisaient planer au ras du sol ; marcher dans l’adversaire qui le contournait ; route perdue pour une pression un peu tardive ; projectiles de sable dessinés en kunai ; petits cubes noirs laissés à chaque son ; Curse Mark qui perdait son lanceur et Wind Cut qui ne comptait plus ses coupes (conflits de fusion) ; étape « interrompre » du tutoriel illisible contre Lee ; jambières de Lee rendues comme du bois ; brûlure qui ré-étourdissait la victime toutes les 0,48 s et gonflait le compteur de combo (« 8 HITS, next x0.35 » pour un shuriken de feu, `796eb6d`).
