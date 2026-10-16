@@ -472,6 +472,18 @@ test("motion family: Sasuke's kicks as a base, no weapon, his own stance with th
   assert(not w.visible and w.count==0,"a weapon appeared for "..name)
  end
 end)
+test("family traits are declared, not inherited: the Fifth Gate does not hunch into Sasuke's Curse Mark guard",function()
+ -- The Curse Mark posture used to follow the family body ("Lion"), so Lee in
+ -- the Fifth Gate stood like an awakened Sasuke.
+ local function tilt(id)
+  local c,a=H.duel(id,"Mirage")
+  local calm=present(a.model,body(a,{awaken=0}),60).Root
+  local awake=present(a.model,body(a,{awaken=6}),60).Root
+  return math.deg(math.acos(math.clamp(calm.LookVector:Dot(awake.LookVector),-1,1)))
+ end
+ assert(tilt("Lion")>4,"fixture: Sasuke's Curse Mark posture is gone")
+ assert(tilt("Leaf")<1,string.format("the Fifth Gate tilts Lee like the Curse Mark (%.1f deg)",tilt("Leaf")))
+end)
 test("his own clips where his identity needs them, Sasuke's elsewhere; the lotuses reach the client as his",function()
  local c,a=H.duel("Leaf","Mirage")
  local c2,s=H.duel("Lion","Mirage")

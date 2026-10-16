@@ -269,11 +269,14 @@ STANCE.Lion={root={y=-.5,pitch=10,yaw=30},torso={pitch=6,yaw=-14},head={pitch=-6
 -- weapon family and its intro; a new fighter declares `Motion = {body=...,
 -- weapons=..., clips=...}` in Fighters instead of silently inheriting Minato.
 -- Bespoke stance/clips by its own id still win over the family.
+-- Identity traits are declared, never inferred from the body: `awakenPosture`
+-- ("curse": Sasuke's hunched Curse Mark guard) does not follow his kicks into
+-- another fighter's family (Rock Lee is built on them).
 local FAMILY={
 	Flashstep={body="Flashstep",weapons="kunai",springy=true},
 	Mirage={body="Mirage",weapons="shuriken",springy=false},
 	GentleFist={body="GentleFist",weapons="palms",springy=false},
-	Lion={body="Lion",weapons="wire",springy=true},
+	Lion={body="Lion",weapons="wire",springy=true,awakenPosture="curse"},
 	Sand={body="Sand",weapons="none",springy=false},
 }
 local function familyOf(id)
@@ -2206,7 +2209,7 @@ function Motion.present(char,actor,clock,dt)
 		end
 	end
 	if (subject.tenketsu or 0)>0 then base=tenketsuPosture(base,subject.tenketsu,subject.tenketsuSevere) end
-	if (subject.awaken or 0)>0 and familyOf(subject.fighterId).body=="Lion" then base=cursePosture(base,subject.curseHunger) end
+	if (subject.awaken or 0)>0 and familyOf(subject.fighterId).awakenPosture=="curse" then base=cursePosture(base,subject.curseHunger) end
 	local brake=memo.brakeAt and elapsedTime-memo.brakeAt
 	if brake and brake<.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
 	apply(char,base,baseRate,dt)
