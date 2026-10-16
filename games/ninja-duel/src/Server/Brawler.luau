@@ -2,13 +2,20 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
-local Combo=require(Shared.BanglaCombo)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Config=require(Shared.Config)
--- Adapter: reaction/air/grab mechanics missing from the donor; ground M1
--- progression and all strike hit volumes/damage/feedback run through Bangla.
+local Rules=require(Shared.Rules)
+-- Adapter: reaction/air/grab mechanics missing from the donor; all strike hit
+-- volumes/damage/feedback run through Bangla. String progression is Ninja
+-- Duel's own (confirmed hits, below), no longer the donor's press counter.
 local Brawler={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
+local TUNE=Config.Combo
+local UP=Vector3.yAxis
+local function flatUnit(v)
+ local f=Vector3.new(v.X,0,v.Z)
+ return if f.Magnitude>.01 then f.Unit else nil
+end
 -- The move graph this actor fights with: its skill build's copy when it has
 -- one (Combat:add), otherwise the canonical MoveGraphs entry.
 function Brawler.graph(a)
@@ -20,6 +27,230 @@ end
 function Brawler.event(c,a,event)
  a.events=a.events or {};a.events[event]=(a.events[event] or 0)+1
  if c.match.onCombatEvent then c.match.onCombatEvent(a,event) end
+end
+-- Combo model (CORE_COMBAT_CONVERGENCE_2 §1). A string is counted in
+-- CONFIRMED hits: a press, a startup, a buffered input or a whiff never
+-- advances it.
+--   a.combo / a.airCombo   confirmed hits of the current ground / air string
+--   a.stringUntil / a.airStringUntil   until then a press from neutral still
+--                          continues it (chain window plus Config.Combo.Grace)
+--   a.stringAt             when its last hit was confirmed (a hit taken since
+--                          breaks it)
+--   pending.step           the count a chain move confirms if it connects
+-- Light step = confirmed hits + 1 (third light ends the string); routes ask for
+-- confirmed hits; a whiff, a blocked strike or a hit taken restarts at Light1.
+function Brawler.chainWindow(c,a)
+ return a.state=="Recovery" and a.chainOpen==true and c.now>=(a.chainAt or 0)
+end
+function Brawler.stringAlive(c,a,air)
+ local count=if air then a.airCombo else a.combo
+ if (count or 0)<1 then return false end
+ if air and not a.airborne then return false end
+ if (a.lastHurt or -10)>((if air then a.airStringAt else a.stringAt) or -10) then return false end
+ if Brawler.chainWindow(c,a) and (a.chainAir==true)==(air==true) then return true end
+ return c.now<=((if air then a.airStringUntil else a.stringUntil) or 0)
+end
+function Brawler.breakString(a,air)
+ if air then a.airCombo=0;a.airStringUntil=0 else a.combo=0;a.stringUntil=0 end
+end
+function Brawler.resetStrings(a)
+ Brawler.breakString(a,false);Brawler.breakString(a,true)
+end
+-- The swing connected (cleanly, or into armour or a sand shield): it is the
+-- string's next confirmed hit.
+function Brawler.confirm(c,a,p)
+ if p.spec.air then a.airCombo=p.step;a.airStringAt=c.now else a.combo=p.step;a.stringAt=c.now end
+end
+-- The swing's outcome is known (end of its active window): a clean chain hit
+-- keeps its string alive for the chain window plus the grace; a whiff or a
+-- blocked hit ends it, so the next press is an opener again.
+function Brawler.settle(c,a,p)
+ local air=p.spec.air==true
+ if a.chainOpen then
+  a.chainAir=air
+  if air then a.airStringUntil=a.untilTime+TUNE.Grace else a.stringUntil=a.untilTime+TUNE.Grace end
+ elseif p.spec.chain then
+  Brawler.breakString(a,air)
+ end
+end
+-- Directional intent, relative to the opponent (CORE_COMBAT_CONVERGENCE_2 §1.6):
+-- "forward" (toward him), "back" (away), "side" (+1 to the right of the line to
+-- him, -1 to the left), or nil for a weak push. Toward and away are wide cones
+-- (Config.Combo.Toward/Away), so a camera a few degrees off still reads the
+-- route the player meant.
+function Brawler.classify(a,stick)
+ local m=Vector3.new(stick.X,0,stick.Z)
+ if m.Magnitude<TUNE.IntentStrong then return nil,0 end
+ local line=a.target and a.target.root and flatUnit(a.target.root.Position-a.root.Position)
+ line=line or flatUnit(a.root.CFrame.LookVector) or Vector3.new(0,0,-1)
+ local u=m.Unit
+ local along=u:Dot(line)
+ if along>=TUNE.Toward then return "forward",0 end
+ if along<=-TUNE.Away then return "back",0 end
+ return "side",if u:Dot(line:Cross(UP))>=0 then 1 else -1
+end
+-- The directional memory: the latest strong push, sampled every frame and at
+-- every packet, so a stick released (or crossing the threshold) a moment
+-- before the press still picks the route it was pushed for.
+function Brawler.observe(c,a)
+ a.intentAt=c.now
+ local dir,sideSign=Brawler.classify(a,a.move or Vector3.zero)
+ if dir then a.intentMemory={dir=dir,side=sideSign,at=c.now} end
+end
+-- Movement intent read when a press lands: this is what turns one string into
+-- a small move graph per character. The current strong push first, else the
+-- latest strong push inside Config.Combo.IntentWindow, else neutral. A
+-- buffered press replays its own intent (intentOverride); the AI sets one too.
+function Brawler.intent(a,now)
+ if a.intentOverride then return a.intentOverride[1],a.intentOverride[2] end
+ local dir,sideSign=Brawler.classify(a,a.move or Vector3.zero)
+ if dir then return dir,sideSign end
+ local memory=a.intentMemory
+ now=now or a.intentAt or 0
+ if memory and now-memory.at<=TUNE.IntentWindow then return memory.dir,memory.side end
+ return "neutral",0
+end
+-- Presses made while the body is committed wait for its outcome: a swing
+-- before its contact is known, a chase or a dash before the arrival, a
+-- teleport before it lands.
+local function bufferable(a)
+ local p=a.pending
+ if p and p.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then return true end
+ if a.state=="Pursuit" or a.state=="Rush" then return true end
+ return p~=nil and p.kind=="Technique" and p.spec.Id=="Flashstep" and (a.state=="TechniqueChannel" or a.state=="TechniqueActive")
+end
+local function bufferExpiry(a)
+ local p=a.pending
+ local active=0
+ if p and a.state=="Startup" and p.kind=="Brawl" then active=p.spec.active
+ elseif p and a.state=="TechniqueChannel" then active=p.spec.Active or 0 end
+ return a.untilTime+active+TUNE.Buffer
+end
+-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3) -----------------------------------
+local REENTRY={name="dash",speed=1,arrive=3.6,angle=0,chase=.3}
+function Brawler.reentry(a)
+ local graph=Brawler.graph(a)
+ return (graph and graph.reengage) or REENTRY
+end
+-- A chase is over once the body is within reach and no longer escaping faster
+-- than an air strike follows (a launched body near its apex, a knocked-away
+-- one, a grounded one).
+function Brawler.chaseArrived(c,a)
+ local b=a.target
+ if not b or c.now-(a.pursuitStarted or c.now)<.1 then return false end
+ if (b.root.Position-a.root.Position).Magnitude>4.6 then return false end
+ local rising=if b.reaction and b.reactionVelocity then b.reactionVelocity.Y else 0
+ return rising<=30 or not b.airborne
+end
+-- The re-entry windows in which a press is the arrival strike (dash attack on
+-- the ground, the air string in the air) or the arrival heavy.
+function Brawler.arrival(c,a)
+ if a.state=="Dodging" then return c.now>=a.untilTime-.23 end
+ if a.state=="Rush" then
+  local r=a.rush
+  if c.now>=a.untilTime-.15 then return true end
+  if r and not r.line and a.target then
+   local d=a.target.root.Position-a.root.Position
+   return Vector3.new(d.X,0,d.Z).Magnitude<=(r.arrive or 3.6)+1.4
+  end
+  return false
+ end
+ if a.state=="Pursuit" then return Brawler.chaseArrived(c,a) end
+ if (a.rushArriveUntil or 0)>c.now then return a.state=="Neutral" or (a.state=="Recovery" and a.arrivalRecovery==true) end
+ return false
+end
+-- The closest planted (not flying, not body) seal of Minato's near the target.
+function Brawler.nearSeal(c,a,b,radius)
+ local best,bestGap
+ for _,seal in require(script.Parent.Techniques).seals(c,a,c.now) do
+  if not seal.flying and not seal.body then
+   local d=seal.position-b.root.Position
+   local gap=Vector3.new(d.X,0,d.Z).Magnitude
+   if gap<=(radius or 12) and (not bestGap or gap<bestGap) then best,bestGap=seal.position,gap end
+  end
+ end
+ return best
+end
+-- Where a dash arrives: a step short of the body on the centre line, an angle
+-- beside it (fixed in the world at the start, so it tracks the body without
+-- spiralling), or a point through it for a committed line.
+function Brawler.rushGoal(a,r)
+ local b=a.target
+ local y=a.root.Position.Y
+ local there=Vector3.new(b.root.Position.X,y,b.root.Position.Z)
+ if r.offset then return there+r.offset end
+ local line=flatUnit(b.root.Position-a.root.Position) or flatUnit(a.root.CFrame.LookVector) or Vector3.new(0,0,-1)
+ if r.past then return there+line*r.past end
+ return there-line*r.arrive
+end
+function Brawler.rushPlan(c,a,style,line)
+ local tune=Config.Rush
+ local r={style=style,speed=tune.Speed*(style.speed or 1),arrive=style.arrive or 3.6,recovery=style.recovery or tune.Recovery,from=a.root.Position}
+ if line then
+  r.line=line;r.goal=c:clamp(a.root.Position+line*tune.Reposition)
+  return r
+ end
+ local b=a.target
+ local toward=flatUnit(b.root.Position-a.root.Position) or flatUnit(a.root.CFrame.LookVector) or Vector3.new(0,0,-1)
+ local right=toward:Cross(UP)
+ local angle=style.angle or 0
+ local sign=nil
+ if style.sealAngle then
+  -- A planted seal near the target pulls the re-entry onto its side.
+  local seal=Brawler.nearSeal(c,a,b)
+  if seal then
+   sign=if (seal-b.root.Position):Dot(right)>=0 then 1 else -1
+   angle=style.sealAngle;r.speed*=style.sealPull or 1;r.sealed=true
+  end
+ end
+ if angle>0 then
+  if not sign then
+   local dir,stickSide=Brawler.classify(a,a.move or Vector3.zero)
+   sign=if dir=="side" then stickSide else (a.rushSide or 1)
+   -- With no side asked for, the angle alternates from one dash to the next.
+   a.rushSide=-sign
+  end
+  local rad=math.rad(angle)
+  r.offset=(-toward*math.cos(rad)+right*sign*math.sin(rad))*r.arrive
+  r.side=sign
+ end
+ if style.past then r.past=style.past;r.commitAt=c.now+(style.commit or 0) end
+ r.goal=Brawler.rushGoal(a,r)
+ return r
+end
+-- The dash is over: a short recovery that converts at once into a strike, a
+-- heavy or a grab (Brawler.arrival), and into guard / dodge / jump only after
+-- Config.Rush.CancelAfter. Nobody answering it leaves a punishable gap.
+function Brawler.arrive(c,a)
+ local r=a.rush or {}
+ a.rush=nil
+ local recovery=r.recovery or Config.Rush.Recovery
+ c:setState(a,"Recovery",recovery)
+ a.recoveryCancelAt=c.now+math.min(Config.Rush.CancelAfter,recovery)
+ a.arrivalRecovery=true
+ a.rushArriveUntil=c.now+Config.Rush.Arrive
+ Brawler.event(c,a,"RushArrive")
+end
+-- Itachi's feint: guard or dodge during his dash stops it where he is; an
+-- afterimage carries on the illusion of the approach.
+function Brawler.feintRush(c,a)
+ a.rush=nil;a.rushArriveUntil=0;a.aimIntent=nil
+ c:setState(a,"Neutral",0)
+ c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="feint"})
+ Brawler.event(c,a,"RushFeint")
+ c:cue(a,"FEINT",.5)
+end
+-- Pad re-engage: sprint + dodge with the stick toward a locked opponent at
+-- mid range (Combat:request turns it into the re-engage).
+function Brawler.dashIntent(c,a)
+ if not a.sprinting or not a.locked or a.airborne or a.wall or a.def.SandFlicker then return false end
+ local b=a.target
+ if not b or b.health<=0 then return false end
+ -- The current push (a dodge goes where the stick is now), or the bot's own.
+ local dir=if a.intentOverride then a.intentOverride[1] else (Brawler.classify(a,a.move or Vector3.zero))
+ if dir~="forward" then return false end
+ local d=b.root.Position-a.root.Position
+ return Vector3.new(d.X,0,d.Z).Magnitude>=(Brawler.reentry(a).minRange or Config.Rush.MinRange)
 end
 function Brawler.releaseGrab(a)
  local b=a.grabVictim
@@ -36,6 +267,8 @@ function Brawler.react(c,a,kind,velocity,duration,source)
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
 	 a.reactionSource=source
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
+ -- Hit out of it: his own strings and re-entry are over.
+ Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
  a.locomotion=Vector3.zero
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then
@@ -58,10 +291,21 @@ function Brawler.start(c,a,name)
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
  a.buffered=nil
- a.queuedLight=nil
  a.attackVariant=nil
  a.hitBlocked=false
  a.attackSerial=(a.attackSerial or 0)+1
+ -- String bookkeeping: a chain move records the count it confirms if it
+ -- connects (the string continues only while it is alive); a string ender
+ -- (third light, route, heavy, grab, slam) closes its string now.
+ local air=spec.air==true
+ local step=nil
+ if spec.chain then
+  if not Brawler.stringAlive(c,a,air) then Brawler.breakString(a,air) end
+  step=((if air then a.airCombo else a.combo) or 0)+1
+ else
+  Brawler.breakString(a,air or name=="Slam")
+ end
+ a.arrivalRecovery=nil
  a.attackName=name;a.attackStarted=c.now;a.hitConfirmed=false;a.chainOpen=false;a.chainAt=c.now+1e9;a.guardHeld=false
  -- The swing must reach the client as fast as the contact it leads to.
  c.urgent=true
@@ -80,7 +324,7 @@ function Brawler.start(c,a,name)
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   slamWindow=math.clamp(gap/88,.16,.5)
  end
- a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true}
+ a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true,step=step}
  if not a.nextFlow then a.flowStreak=0 end
  a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
@@ -103,24 +347,11 @@ function Brawler.start(c,a,name)
  Brawler.event(c,a,name)
  return true
 end
--- Movement intent relative to the fighter's facing, read when a press lands:
--- this is what turns one string into a small move graph per character.
-function Brawler.intent(a)
- -- A buffered press replays the direction it was pressed with.
- if a.intentOverride then return a.intentOverride[1],a.intentOverride[2] end
- local m=Vector3.new(a.move.X,0,a.move.Z)
- if m.Magnitude<.4 then return "neutral",0 end
- local l=a.root.CFrame:VectorToObjectSpace(m.Unit)
- local forward,side=-l.Z,l.X
- if forward<-.55 then return "back",0 end
- if math.abs(side)>.55 then return "side",if side>0 then 1 else -1 end
- if forward>.55 then return "forward",0 end
- return "neutral",0
-end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
 function Brawler.disengage(c,a,kind)
- Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.queuedLight=nil;a.buffered=nil
+ Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.buffered=nil
+ Brawler.breakString(a,false)
  local away=a.root.Position-a.target.root.Position;away=Vector3.new(away.X,0,away.Z)
  if away.Magnitude<.1 then away=-a.root.CFrame.LookVector end
  local minato=kind=="Kunai"
@@ -151,10 +382,10 @@ function Brawler.request(c,a,action)
  end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
  -- Riposte: right after a clean block or a perfect dodge, a strike comes out
- -- at once and opens the string.
+ -- at once and opens a string (its contact is the string's first hit).
  if action=="Attack" and (a.riposteUntil or 0)>c.now and (a.state=="Guarding" or a.state=="Neutral" or a.state=="Dodging" or a.state=="Recovery") and not a.airborne then
   a.riposteUntil=0;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
-  a.combo=1;a.lastAttack=c.now;a.queuedLight=nil
+  Brawler.breakString(a,false);a.lastAttack=c.now
   c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
   return Brawler.start(c,a,"Riposte")
  end
@@ -173,17 +404,19 @@ function Brawler.request(c,a,action)
   end
  end
  local pending=a.pending
- local canChain=a.state=="Recovery" and a.chainOpen and c.now>=(a.chainAt or 0)
- local close=a.target and (a.target.root.Position-a.root.Position).Magnitude<5.5
- local canDash=(a.state=="Dodging" and c.now>=a.untilTime-.23) or (a.state=="Rush" and c.now>=a.untilTime-.15)
-  or (a.state=="Pursuit" and close and c.now-(a.pursuitStarted or 0)>=.12)
-  or (a.state=="Neutral" and (a.rushArriveUntil or 0)>c.now)
+ local canChain=Brawler.chainWindow(c,a)
+ -- Re-entry windows: the end of a dodge, a dash or a chase arrival.
+ local canDash=Brawler.arrival(c,a)
+ local reentry=canDash and a.state~="Dodging"
+ local style=reentry and Brawler.reentry(a)
  -- Rhythm: a chained press made on the beat (around the moment the chain
- -- opens, not mashed early during the swing) becomes a Flow strike.
+ -- opens, not mashed early during the swing) becomes a Flow strike. A bonus
+ -- only: an off-beat press chains just the same.
  local pressAt=a.pressAt or c.now;a.pressAt=nil
  a.nextFlow=canChain and pressAt>=(a.chainAt or 0)-Config.Flow.Early and pressAt<=(a.chainAt or 0)+Config.Flow.Late
  -- Flying Thunder God arrival: the technique recovery is cancelled by a strike,
- -- so the teleport flows straight into an attack from the new angle.
+ -- so the teleport flows straight into an attack from the new angle. The
+ -- arrival strike opens a fresh string.
  local canFlash=(a.state=="TechniqueRecovery" or a.state=="TechniqueActive") and (a.flashUntil or 0)>c.now
   and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
  if canFlash then
@@ -194,25 +427,25 @@ function Brawler.request(c,a,action)
    return Brawler.start(c,a,"Launcher")
   end
   if action=="Attack" then
-   if a.airborne then a.airCombo=1;a.lastAirAttack=c.now;return Brawler.start(c,a,"Air1") end
-   a.combo=1;a.lastAttack=c.now
+   if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return Brawler.start(c,a,"Air1") end
+   Brawler.breakString(a,false);a.lastAttack=c.now
    return Brawler.start(c,a,if gap>5.5 then "DashAttack" else "Light1")
   end
  end
-  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
-   if pending and pending.kind=="Brawl" then
-    -- Buffer the follow-up pressed during a swing, even before contact: a press
-    -- made a few frames early must not be eaten. It only fires if the chain
-    -- opens (the swing landed cleanly); after a whiff it simply expires, so no
-    -- phantom combo runs through a recovery the player must respect.
-    -- The stick is read at the press, not when the buffer fires: a route
-    -- pressed early (toward + strike) must not turn neutral on release.
-    local dir,sideSign=Brawler.intent(a)
-    a.buffered={action=action,at=c.now,intent={dir,sideSign},expires=a.untilTime+(if a.state=="Startup" then pending.spec.active else 0)+.3}
-    return true,"Buffered"
-   end
-   return false,"Committed"
+ if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
+  if bufferable(a) then
+   -- Buffer a press made before the outcome of the committed swing, chase,
+   -- dash or teleport is known: a press made a few frames early is never
+   -- eaten, yet it prepares nothing. It fires when the chain opens (the swing
+   -- landed cleanly), on the arrival, or, after a whiff or a block, as a fresh
+   -- opener once the full recovery is over. The direction is the one it was
+   -- pressed with (or pushed while it waits): Brawler.step.
+   local dir,sideSign=Brawler.intent(a)
+   a.buffered={action=action,at=c.now,intent={dir,sideSign},explicit=a.intentOverride~=nil,expires=bufferExpiry(a)}
+   return true,"Buffered"
   end
+  return false,"Committed"
+ end
  if action=="Grab" then
   if a.airborne or (a.grabCooldown or 0)>c.now then return false,"Grab unavailable" end
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
@@ -221,9 +454,16 @@ function Brawler.request(c,a,action)
  -- Running taijutsu: out of a full sprint the strike becomes a flying kick
  -- and the heavy a sliding sweep.
  if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude>30 then
-  if action=="Attack" then a.combo=0;return Brawler.start(c,a,"FlyingKick") end
+  if action=="Attack" then return Brawler.start(c,a,"FlyingKick") end
   if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
  end
+ local graph=Brawler.graph(a) or {}
+ local routes=graph.routes or {}
+ -- Inside a confirmed string: its chain window picks routes and heavy
+ -- conversions; the light step alone also continues in the short grace after
+ -- it (a press a moment late is still the next light, never a route).
+ local alive=not a.airborne and Brawler.stringAlive(c,a,false)
+ local inChain=canChain and alive
  if action=="Heavy" then
   if a.airborne then
    -- Lion Combo: after Shadow of the Dancing Leaf, the heavy is a barrage
@@ -244,59 +484,69 @@ function Brawler.request(c,a,action)
    end
    return Brawler.start(c,a,"Slam")
   end
-  local heavyGraph=Brawler.graph(a) or {}
-  if canChain and a.combo==1 and heavyGraph.heavyAfterOne then a.combo=0;return Brawler.start(c,a,heavyGraph.heavyAfterOne) end
-  if canChain and a.combo>=2 then a.combo=0;return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
+  if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end
+  if inChain and a.combo>=2 then return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
+  -- Heavy on a re-engage arrival: the prodigy's quick heavy (knee, palm),
+  -- except on a body pinned to a wall, where the heavy is the wall bounce.
+  if reentry and graph.heavyAfterOne and not (a.target and a.target.reaction=="WallSplat") then
+   Brawler.event(c,a,"ArrivalHeavy");return Brawler.start(c,a,graph.heavyAfterOne)
+  end
   return Brawler.start(c,a,a.def.HeavyMove or "Heavy")
  end
- local graph=Brawler.graph(a) or {}
- local routes=graph.routes or {}
  if a.airborne then
-  -- Air grammar: after an air hit the stick picks the follow-up.
-  if canChain and (a.airCombo or 0)>=1 and c.now-(a.lastAirAttack or 0)<=.8 then
+  -- Air grammar: after a confirmed air hit the stick picks the follow-up.
+  local airAlive=Brawler.stringAlive(c,a,true)
+  if canChain and airAlive and (a.airCombo or 0)>=1 then
    local dir,sideSign=Brawler.intent(a)
    local route=if dir=="forward" then routes.airUp elseif dir=="back" then routes.airDown elseif dir=="side" then routes.airSide else nil
    if route then
-    a.angleSide=sideSign;a.airCombo=0;a.lastAirAttack=c.now
+    a.angleSide=sideSign;a.lastAirAttack=c.now
     Brawler.event(c,a,"Route");return Brawler.start(c,a,route)
    end
   end
-  a.airCombo=if c.now-(a.lastAirAttack or 0)>.8 then 1 else (a.airCombo or 0)%2+1
-  a.lastAirAttack=c.now;return Brawler.start(c,a,"Air"..a.airCombo)
+  if not airAlive then Brawler.breakString(a,true) end
+  a.lastAirAttack=c.now
+  return Brawler.start(c,a,if (a.airCombo or 0)%2==0 then "Air1" else "Air2")
  end
  -- A successful Read (Itachi) pays off with the graph's counter on the next press.
  if action=="Attack" and graph.readCounter and (a.counterUntil or 0)>c.now and not canChain then
-  a.counterUntil=0;return Brawler.start(c,a,graph.readCounter)
+  a.counterUntil=0;Brawler.breakString(a,false);return Brawler.start(c,a,graph.readCounter)
  end
  -- Directional combo grammar: inside a confirmed string the stick picks the
  -- route. Toward the opponent launches, away goes low, sideways turns the
  -- angle; each fighter answers with its own move.
- if action=="Attack" and canChain then
+ if action=="Attack" and inChain then
   local dir,sideSign=Brawler.intent(a)
   local route=nil
   if dir=="forward" and a.combo>=2 then route=routes.up
   elseif dir=="back" and a.combo>=2 then route=routes.down
   elseif dir=="side" and a.combo>=1 then route=routes.side end
   if route and Attacks[route] then
-   a.angleSide=sideSign;a.queuedLight=nil
-   if not Attacks[route].chain then a.combo=0 end
+   a.angleSide=sideSign;a.lastAttack=c.now
    Brawler.event(c,a,"Route");Brawler.event(c,a,if dir=="forward" then "RouteUp" elseif dir=="back" then "RouteDown" else "RouteSide")
    return Brawler.start(c,a,route)
   end
  end
- -- The ground light step is resolved once per accepted press, so a buffered
- -- chain cannot advance the combo counter twice.
- local name=a.queuedLight
- if not name then
-  name=Combo.next(a,c.now)
-  a.queuedLight=name
- end
+ -- The light step follows the confirmed hits: Light1 opens, Light2 after one
+ -- confirmed hit, Light3 (the string's end) after two. Out of a string (a
+ -- whiff, a block, a pause, a hit taken) it is Light1 again.
+ if not alive then Brawler.breakString(a,false) end
+ local name="Light"..math.min((a.combo or 0)+1,3)
+ a.lastAttack=c.now
  -- Context finisher (Neji): with three chakra points closed, the third palm
  -- becomes the twin-palm thrust that throws the body away.
  if name=="Light3" and a.def.GentleFist and a.target and (a.target.tenketsuUntil or 0)>c.now and (a.target.tenketsu or 0)>=3 then
-  a.queuedLight=nil;return Brawler.start(c,a,"PalmThrust")
+  return Brawler.start(c,a,"PalmThrust")
  end
- return Brawler.start(c,a,if canDash then "DashAttack" else name)
+ if canDash then
+  local ok=Brawler.start(c,a,"DashAttack")
+  -- Sasuke's explosive re-entry: the arrival strike lands harder.
+  if reentry and style and style.dashDamage and a.pending then
+   a.pending.spec.damageScale=(a.pending.spec.damageScale or 1)*style.dashDamage
+  end
+  return ok
+ end
+ return Brawler.start(c,a,name)
 end
 -- What a fighter's own version of a route adds on contact.
 function Brawler.routePayoff(c,a,b,p)
@@ -456,7 +706,7 @@ function Brawler.clash(c,a,p)
  if flat.Magnitude<.1 or delta.Magnitude>math.max(p.spec.range or 6,q.spec.range or 6)+1.5 then return false end
  if a.root.CFrame.LookVector:Dot(flat.Unit)<.4 or b.root.CFrame.LookVector:Dot(-flat.Unit)<.4 then return false end
  for _,x in {a,b} do
-  Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.queuedLight=nil;x.travelRemaining=0
+  Bangla.close(x.pending);x.pending=nil;x.attackName=nil;x.chainOpen=false;x.buffered=nil;x.travelRemaining=0
   x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
   x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
  end
@@ -669,14 +919,36 @@ function Brawler.step(c,a,dt)
    -- Re-check every active frame. A single early test used to mark the whole
    -- swing as a whiff, so a target that entered the volume one frame later
    -- took no damage from a visibly connected strike.
-   p.hit=Brawler.hit(c,a,p) or nil;a.hitConfirmed=p.hit==true or a.hitConfirmed
+   -- Contact is this swing's own: a blade, a burn or a cover shuriken landing
+   -- while it is out (they also set hitConfirmed) is not the strike connecting.
+   a.hitConfirmed=false
+   local hit=Brawler.hit(c,a,p)
+   if (hit or a.hitConfirmed) and not p.contact then
+    p.contact=true
+    -- The string's next confirmed hit (a guarded strike confirms nothing).
+    if p.step and not a.hitBlocked then Brawler.confirm(c,a,p) end
+   end
+   p.hit=hit or nil
+   a.hitConfirmed=p.contact==true
   end
  end
-	if a.buffered and c.now<=a.buffered.expires and a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt then
-  local action,at,intent=a.buffered.action,a.buffered.at,a.buffered.intent;a.buffered=nil;a.pressAt=at
-  a.intentOverride=intent
-  Brawler.request(c,a,action)
-  a.intentOverride=nil
+ local buffered=a.buffered
+ if buffered and c.now>buffered.expires then a.buffered=nil;buffered=nil end
+ if buffered and not a.reaction and not (a.throwing and c.now<a.throwing.release) then
+  -- Released on the chain (the swing before it landed cleanly), on a re-entry
+  -- arrival, or once the body is free again: after a whiff or a block the
+  -- buffered press is a fresh opener that waited out the whole recovery.
+  local canFlash=(a.flashUntil or 0)>c.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
+   and (a.pending==nil or (a.pending.kind=="Technique" and a.pending.spec.Id=="Flashstep"))
+  if Brawler.chainWindow(c,a) or Brawler.arrival(c,a) or canFlash or Rules.canAct(a,c.now) then
+   a.buffered=nil;a.pressAt=buffered.at
+   -- The direction: a strong push made while it waited wins (the latest
+   -- intent), else the one it was pressed with.
+   local memory=a.intentMemory
+   a.intentOverride=if memory and memory.at>buffered.at and not buffered.explicit then {memory.dir,memory.side} else buffered.intent
+   Brawler.request(c,a,buffered.action)
+   a.intentOverride=nil
+  end
  end
  return false
 end

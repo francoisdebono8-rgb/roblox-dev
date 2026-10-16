@@ -151,8 +151,9 @@ function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
 	-- Chain and cancel windows belong to the attack recovery that computes them
 	-- right after this call; any other state change must not inherit stale ones
-	-- (a substitution or awaken recovery used to open a string-cancel).
-	a.chainOpen=false; a.recoveryCancelAt=nil
+	-- (a substitution or awaken recovery used to open a string-cancel). The
+	-- same holds for a re-engage arrival (Brawler.arrive sets it after this).
+	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
 local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
@@ -585,30 +586,91 @@ function Combat:openSpot(attacker,spot)
 end
 -- Wall tech: pinned against a wall, a well-timed dodge kicks off it. Too early
 -- (before the impact settles) or too late and the pin holds.
--- Chakra dash. A committed straight burst at the opponent from neutral (or
--- out of a recovery's cancel point). It is not armoured: a blade, a guard or a
--- read answers it. A strike on arrival becomes the dash attack.
+-- Re-engage (CORE_COMBAT_CONVERGENCE_2 §3): ONE contextual action — keyboard
+-- E; on a pad × inside a chase window, sprint + ○ toward outside one. Inside a
+-- chase window (knock-away, launch, throw, wall splat or bounce, a substitution
+-- to track) it is the chase; outside it is the chakra dash at a locked
+-- opponent. Same chakra either way; each prodigy re-enters his own way
+-- (MoveGraphs[...].reengage, Brawler.rushPlan).
+function Combat:reengage(a)
+	if a.pursuitUntil>self.now and a.target.health>0 then return self:chase(a) end
+	return self:rush(a)
+end
+-- The chase: reach the knocked-away / launched / thrown body in three
+-- dimensions (motion in updateActor). The strike that connected and opened the
+-- window (a launcher, the third light, a palm thrust...) may be cancelled into
+-- it at once: E pressed on the knock-away is never eaten by its active frames.
+function Combat:chase(a)
+	if a.chakra<Config.PursuitCost then return false,"Need chakra" end
+	if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
+	local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
+		and a.pending~=nil and a.pending.kind=="Brawl"
+	if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
+	if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
+	local style=Brawler.reentry(a)
+	a.chakra-=Config.PursuitCost; a.pursuitUntil=0
+	a.reaction=nil; a.airborne=true
+	a.pursuitStarted=self.now
+	-- A body still rising fast (a chase pressed on the launch itself) is
+	-- followed up to where an air strike can catch it, not dropped at 0.24 s.
+	local b=a.target
+	local rising=if b.reaction and b.reactionVelocity then math.max(0,b.reactionVelocity.Y) else 0
+	local duration=(style.chase or .3)+math.clamp((rising-30)/75,0,.3)
+	a.pursuitDuration=duration
+	-- The side of the body the chase arrives on: the attacker's own.
+	local line=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+	a.pursuitLine=if line.Magnitude>.2 then line.Unit else Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+	a.airHold=self.now+duration+.45
+	Brawler.breakString(a,false)
+	Brawler.event(self,a,"Chase");Brawler.event(self,a,"Reengage")
+	self:setState(a,"Pursuit",duration)
+	self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
+	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="chase"})
+	return true
+end
+-- Chakra dash. A committed burst at a locked opponent from neutral (or out of
+-- a recovery's cancel point), a straight reposition when unlocked. It is not
+-- armoured: a blade, a guard or a read answers it. The arrival (Brawler.arrive)
+-- converts at once into the dash attack, the quick heavy or a grab, but guards
+-- only after Config.Rush.CancelAfter: a predictable dash is punished.
 function Combat:rush(a)
 	local tune=Config.Rush
+	local style=Brawler.reentry(a)
 	local cancel=a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
 	-- Skill build (Counter-Rush): right after a substitution the dash is free.
 	local free=(a.freeRushUntil or 0)>self.now
-	if a.chakra<tune.Cost and not free then return false,"Need chakra" end
+	if a.chakra<Config.PursuitCost and not free then return false,"Need chakra" end
 	if self.now<(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
-	if gap<tune.MinRange then return false,"Too close" end
-	if gap>tune.Range then return false,"Too far" end
+	local line=nil
+	if a.locked==false then
+		-- Unlocked: no homing, a straight burst along the stick (or the facing).
+		local stick=Vector3.new(a.move.X,0,a.move.Z)
+		local look=a.root.CFrame.LookVector
+		line=if stick.Magnitude>.2 then stick.Unit else Vector3.new(look.X,0,look.Z).Unit
+	else
+		if gap<(style.minRange or tune.MinRange) then return false,"Too close" end
+		if gap>tune.Range then return false,"Too far" end
+	end
 	if cancel then Bangla.close(a.pending) end
-	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=tune.Cost end
+	if free then a.freeRushUntil=nil;self:cue(a,"COUNTER-RUSH",.5) else a.chakra-=Config.PursuitCost end
 	a.rushReadyAt=self.now+tune.Cooldown
 	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
-	local duration=math.clamp(gap/tune.Speed,.12,tune.MaxTime)
+	-- A re-entry opens a fresh string on arrival.
+	Brawler.breakString(a,false)
+	local departure=a.root.Position
+	local plan=Brawler.rushPlan(self,a,style,line)
+	local travel=if line then tune.Reposition else gap
+	local duration=math.clamp(travel/plan.speed+.12,.12,tune.MaxTime*(style.time or 1))
 	self:setState(a,"Rush",duration)
+	a.rush=plan
 	a.rushArriveUntil=self.now+duration+tune.Arrive
-	Brawler.event(self,a,"Rush")
-	self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
+	Brawler.event(self,a,"Rush");Brawler.event(self,a,"Reengage")
+	-- Itachi: the approach starts from an afterimage left where he stood.
+	if style.afterimage then self:pushImpact(departure,"afterimage",false,{owner=a.id,fighter=a.fighterId,variant="reengage"}) end
+	self:pushImpact(departure,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="dash",to=plan.goal,sealed=plan.sealed})
 	return true
 end
 -- Awakening: once per match, below a third of health. A shockwave buys space,
@@ -675,6 +737,8 @@ function Combat:request(a,action,aim,clientTime)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
+	-- The press carries its own stick (Matches:act): remember it as intent.
+	Brawler.observe(self,a)
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -713,40 +777,31 @@ function Combat:request(a,action,aim,clientTime)
 	if throwHeld and (action=="Attack" or action=="Heavy" or action=="Grab" or action=="Tool" or string.match(action,"^Technique")) then
 		return false,"Committed"
 	end
-	if action=="Attack" and a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0) and a.queuedLight==nil then
-		-- A buffered press is resolved when it actually chains, never when it was
-		-- first pressed, so the light progression advances exactly once per hit.
-		a.queuedLight=require(Shared.BanglaCombo).next(a,self.now)
-	end
+	-- (The light step is no longer resolved here: Brawler.request reads it from
+	-- the confirmed hits when the press actually starts a strike.)
 	if action=="Attack" or action=="Heavy" or action=="Grab" then a.attackCommitTime=clientTime or self.now end
 	local handled,reason=Brawler.request(self,a,action)
 	if handled~=nil then return handled,reason end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
+	-- Itachi's re-entry is a feint he can abort: guard or dodge stops the dash.
+	if (action=="Guard" or action=="Dodge") and a.state=="Rush" and Brawler.reentry(a).feint then Brawler.feintRush(self,a) end
 	if (action=="Guard" or action=="Dodge") and a.state=="Recovery" and self.now>=(a.recoveryCancelAt or math.huge) then
 		a.pending=nil;self:setState(a,"Neutral",0)
 	end
-	if action=="Pursuit" then
-		-- Outside a chase window, E is the chakra dash.
-		if a.pursuitUntil<=self.now or a.target.health<=0 then return self:rush(a) end
-		if a.chakra<Config.PursuitCost then return false,"Need chakra" end
-		if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
-		-- Any launcher that connected may be cancelled into the chase.
-		local launchCancel=a.hitConfirmed and (a.state=="Active" or a.state=="Recovery")
-			and (a.attackName=="Launcher" or (a.pending~=nil and a.pending.kind=="Brawl" and a.pending.spec.reaction=="Launched"))
-		if a.state~="Neutral" and a.state~="Recovery" and a.state~="TechniqueRecovery" and not launchCancel then return false,"Committed" end
-		if launchCancel then Bangla.close(a.pending);a.pending=nil;a.hitstopUntil=0 end
-		a.chakra-=Config.PursuitCost; a.pursuitUntil=0
-		a.reaction=nil; a.airborne=true; a.airHold=self.now+.75
-		a.pursuitStarted=self.now
-		Brawler.event(self,a,"Chase")
-		self:setState(a,"Pursuit",0.24)
-		self:effect("Pursuit",a.root.Position,a.color,Vector3.new(2,4,2),0.35)
-		self:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId})
-		return true
+	-- Pad re-engage: sprint + dodge toward a locked opponent at mid range is the
+	-- re-engage (chase in a window, chakra dash outside); anything else, or a
+	-- re-engage that is not available (cooldown, chakra), stays a dodge.
+	if action=="Dodge" and Brawler.dashIntent(self,a) then
+		local ok,why=self:reengage(a)
+		if ok then return ok,why end
 	end
+	if action=="Pursuit" then return self:reengage(a) end
 	if action=="Jump" then
 		if a.wall then Motor.detach(a,self.now,true); return true end
 		if a.state~="Neutral" and a.state~="Recovery" then return false,"Committed" end
+		-- Like a guard or a dodge, a jump leaves a recovery only at its cancel
+		-- point: a whiff (or an unanswered dash) cannot hop out of its punish.
+		if a.state=="Recovery" and self.now<(a.recoveryCancelAt or 0) then return false,"Committed" end
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
 	if action=="Tool" then
@@ -937,6 +992,8 @@ function Combat:updateActor(a,dt)
 	if a.health<=0 then a.hum:Move(Vector3.zero); return end
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
+	-- Directional memory for routes: the latest strong push, every frame.
+	Brawler.observe(self,a)
 	Defense.step(self,a,dt,now)
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
@@ -985,9 +1042,13 @@ function Combat:updateActor(a,dt)
 			a.activeAt=now
 		elseif a.state=="Active" then
 			Bangla.close(pending)
+			-- The swing's own contact (Brawler.step), never a blade or a burn that
+			-- landed while it was out.
+			local brawl=pending~=nil and pending.kind=="Brawl"
+			a.hitConfirmed=brawl and pending.contact==true
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
-			if pending and pending.kind=="Brawl" and not a.hitConfirmed then
+			if brawl and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
 				-- Genjutsu: swinging at Itachi's afterimage gives the read away.
 				local caster=a.target
@@ -1005,10 +1066,21 @@ function Combat:updateActor(a,dt)
 			-- Cancel philosophy: a string continues only on a clean hit. On block the
 			-- attacker keeps a dodge cancel (and Itachi a shuriken cancel); a whiff
 			-- keeps its full recovery.
-			a.chainOpen=a.hitConfirmed and not a.hitBlocked and pending and pending.kind=="Brawl" and pending.spec.chain==true
+			a.chainOpen=a.hitConfirmed and not a.hitBlocked and brawl and pending.spec.chain==true
 			a.chainAt=now
-			local whiffHeavy=pending and pending.kind=="Brawl" and pending.name=="Heavy" and not a.hitConfirmed
+			-- Combo model: a clean chain hit keeps its string for the chain window
+			-- plus the grace; a whiff or a block ends it (the next press opens).
+			if brawl then Brawler.settle(self,a,pending) end
+			local whiffHeavy=brawl and pending.name=="Heavy" and not a.hitConfirmed
 			a.recoveryCancelAt=if whiffHeavy then a.untilTime else now+recovery*(if a.hitConfirmed then .36 else .72)
+		elseif a.state=="Rush" then
+			-- The dash is over: its arrival (Brawler.arrive).
+			Brawler.arrive(self,a)
+		elseif a.state=="Pursuit" then
+			-- The chase arrived: a short window in which a press is the arrival
+			-- strike (air string up there, dash attack on the ground) or heavy.
+			a.pending=nil;a.attackName=nil;self:setState(a,"Neutral",0)
+			a.rushArriveUntil=now+Config.Rush.Arrive
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
@@ -1057,30 +1129,50 @@ function Combat:updateActor(a,dt)
 		local flat=Vector3.new(-back.X,0,-back.Z)
 		a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat)
 	elseif a.state=="Pursuit" then
-		-- Reach a rising victim in three dimensions, but kinetically: the chase
-		-- keeps a continuous velocity instead of being teleported frame by frame.
+		-- Reach the victim in three dimensions, but kinetically: the chase keeps
+		-- a continuous velocity instead of being teleported frame by frame. A
+		-- body in a reaction flies on its reactionVelocity (its root velocity is
+		-- held at zero), so that is what the chase leads. It arrives on its own
+		-- side of the body, a step short and a little below, facing it, and ends
+		-- as soon as the body is within reach and an air strike can follow it.
+		local b=a.target
 		local elapsed=now-(a.pursuitStarted or now)
-		local remaining=math.max(.02,.24-elapsed)
-		local toTarget=a.target.root.Position-a.root.Position
-		local grab=toTarget+a.target.root.AssemblyLinearVelocity*remaining*.6
-		local close=a.target.root.Position-a.root.Position
-		local point=if grab.Magnitude>3.2 then grab-grab.Unit*3
-			else close-close.Unit*3
-		if point.Magnitude>.05 then
-			-- Reach the window in time, then brake on approach so the chaser never
-			-- overshoots its own target and snaps back.
-			local speed=math.clamp(point.Magnitude/math.max(remaining,.06),70,420)
-			local distance=close.Magnitude
-			if distance<7 then speed=math.min(speed,40+distance*distance*2.4) end
-			a.aimIntent={target=a.root.Position+point,speed=speed,acceleration=1400}
+		local remaining=math.max(.04,(a.pursuitDuration or .24)-elapsed)
+		local velocity=if b.reaction and b.reactionVelocity then b.reactionVelocity else b.root.AssemblyLinearVelocity
+		local lead=math.min(remaining,.15)
+		local fall=if b.reaction and b.airborne then 37.5*lead*lead else 0
+		local predicted=b.root.Position+velocity*lead-Vector3.new(0,fall,0)
+		local line=a.pursuitLine or Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
+		local point=predicted-line*2.6-Vector3.new(0,.6,0)
+		local toward=point-a.root.Position
+		local distance=(b.root.Position-a.root.Position).Magnitude
+		local face=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+		if face.Magnitude>.3 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		if Brawler.chaseArrived(self,a) then
+			a.untilTime=math.min(a.untilTime,now)
+		elseif toward.Magnitude>.2 then
+			-- Reach the window in time, then ease in on approach so the chaser
+			-- never overshoots its own target and snaps back.
+			local speed=math.clamp(toward.Magnitude/math.max(remaining,.06),70,420)
+			if distance<7 then speed=math.min(speed,60+distance*distance*3) end
+			a.aimIntent={target=point,speed=speed,acceleration=1600}
 		end
 	elseif a.state=="Rush" then
-		-- Chakra dash: a straight burst at the opponent that stops a step short.
-		local delta=a.target.root.Position-a.root.Position
-		local flat=Vector3.new(delta.X,0,delta.Z)
-		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
-		if flat.Magnitude>4.1 then a.aimIntent={target=a.root.Position+flat-flat.Unit*3.6,speed=Config.Rush.Speed,acceleration=1100}
-		else a.untilTime=math.min(a.untilTime,now) end
+		-- Chakra dash toward its arrival point (Brawler.rushPlan): a step short of
+		-- the body, an angle beside it, or a committed line through it.
+		local r=a.rush
+		if not r then a.untilTime=math.min(a.untilTime,now)
+		else
+			local b=a.target
+			if not r.line and (not r.commitAt or now<r.commitAt) then r.goal=Brawler.rushGoal(a,r) end
+			local toTarget=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
+			local toGoal=Vector3.new(r.goal.X-a.root.Position.X,0,r.goal.Z-a.root.Position.Z)
+			local committed=r.line~=nil or (r.commitAt~=nil and now>=r.commitAt)
+			local face=if committed then toGoal elseif toTarget.Magnitude>.1 then toTarget else toGoal
+			if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=r.arrive) then a.untilTime=math.min(a.untilTime,now)
+			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
+		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
 		-- Wall dive: a beat crouched against the wall (held by airHold), then a
 		-- straight lunge at the opponent's body.
@@ -1539,6 +1631,7 @@ function Combat:clear(preserveAnimations)
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
+		Brawler.resetStrings(a);a.intentMemory=nil;a.intentOverride=nil;a.rush=nil;a.arrivalRecovery=nil;a.pursuitDuration=nil;a.rushReadyAt=0
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false

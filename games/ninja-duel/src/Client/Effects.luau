@@ -477,9 +477,17 @@ function FX:impact(impact,folder)
 		if impact.to then crows(self.folder,impact.to+Vector3.new(0,1,0),5,6) end
 	elseif style=="chase" then
 		local model=modelFor(folder,impact.owner)
-		self:ghost(model,if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60),.22,.55)
-		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),8,1.4)
-		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,.8)
+		-- Each prodigy's re-entry reads differently (server: MoveGraphs reengage):
+		-- Minato a clean flash, Itachi a lingering copy, Neji a small chakra
+		-- pulse, Sasuke an explosive kick-off. Unknown variants keep the plain look.
+		local variant=impact.variant
+		local tone=if impact.fighter=="Flashstep" then MINATO elseif impact.fighter=="GentleFist" then HYUGA elseif impact.fighter=="Lion" then LION else Color3.fromRGB(150,40,60)
+		self:ghost(model,tone,if variant=="mirage" then .45 else .22,if variant=="mirage" then .4 else .55)
+		if variant=="flash" then flash(self.folder,position,MINATO,1,4,.14,.3)
+		elseif variant=="palm" then flash(self.folder,position,HYUGA,.5,3,.12,.25)
+		elseif variant=="lion" then sparks(self.folder,position-Vector3.new(0,2.4,0),LION,10,18) end
+		smokePuff(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(200,190,170),if variant=="lion" then 14 elseif variant=="flash" then 4 else 8,if variant=="lion" then 1.9 else 1.4)
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.35,if variant=="flash" then 1.15 elseif variant=="lion" then .7 else .8)
 	elseif style=="dodge" then
 		local nearest
 		for _,name in self.fighterIds or {"PlayerFighter","AIFighter"} do

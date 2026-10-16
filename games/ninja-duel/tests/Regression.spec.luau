@@ -78,11 +78,24 @@ test("a whiffed swing keeps its recovery and cannot queue a phantom combo",funct
  assert(c:request(a,"Attack"),"follow-up swing refused")
  local ok,reason=c:request(a,"Attack")
  assert(not ok or reason=="Buffered","a whiffed swing accepted a queued chain")
- local swing=a.attackName
- H.step(c,.6)
- assert(not a.chainOpen,"whiff opened a chain")
- assert(a.attackName==nil or a.attackName==swing,"a buffered press chained after a whiff ("..tostring(a.attackName)..")")
- assert(a.state=="Neutral" or a.state=="Recovery","whiff left "..a.state)
+ -- The whiff keeps its whole recovery: the buffered press comes out only after
+ -- it, and as a fresh opener (CORE_COMBAT_CONVERGENCE_2 §1), never as a chain.
+ local serial=a.attackSerial
+ local recoveryEnd=nil
+ for _=1,60 do
+  H.step(c,.01)
+  if a.attackSerial==serial and a.state=="Recovery" then
+   assert(not a.chainOpen,"whiff opened a chain")
+   recoveryEnd=a.untilTime
+  end
+  if a.attackSerial>serial then break end
+ end
+ assert(recoveryEnd~=nil,"fixture: the whiff never reached its recovery")
+ if a.attackSerial>serial then
+  assert(c.now>=recoveryEnd-.011,"the buffered press cut the whiff recovery short")
+  assert(a.attackName=="Light1","a buffered press chained after a whiff ("..tostring(a.attackName)..")")
+ end
+ assert((a.combo or 0)==0,"the whiff left a combo count ("..tostring(a.combo)..")")
 end)
 test("pursuit reaches a victim that is still rising",function()
  local c,a,b=H.duel("Flashstep","Mirage")

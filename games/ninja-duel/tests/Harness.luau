@@ -211,6 +211,11 @@ local function buildRig(folder,def,cf,name)
  -- the systems they are checking.
  function hum:Move(direction)
   self.MoveDirection=direction or V.zero
+  -- Kinetic motion (Motor.move: chase, dash, slam drift) already moved the root
+  -- this frame from the velocity it set, as Studio's solver does; walking it a
+  -- second time made Motor.move believe a live solver ran and stop integrating,
+  -- which dropped every vertical chase headlessly.
+  if model.kineticMoved then model.kineticMoved=nil;return end
   local speed=self.WalkSpeed or 0
   if speed>0 and self.MoveDirection.Magnitude>0.01 then
    local delta=self.MoveDirection.Unit*speed*Harness.stepDelta
@@ -339,4 +344,14 @@ end
 
 Harness.fighters=loadModule("Shared/Fighters")
 Harness.Attacks=loadModule("Shared/Attacks")
+-- Mark the frames in which Motor.move integrated a root (see hum:Move).
+do
+ local Motor=loadModule("Server/Motor")
+ local move=Motor.move
+ Motor.move=function(a,c,aim,dt)
+  local advanced=move(a,c,aim,dt)
+  if a.model and type(a.model)=="table" then a.model.kineticMoved=true end
+  return advanced
+ end
+end
 return Harness

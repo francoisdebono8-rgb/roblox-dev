@@ -105,7 +105,9 @@ function Input.new(send,getState,toggleLock,camera)
  for _,action in {"Technique5","Awaken"} do
   bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
- bind("RushPad",key(GAMEPAD.Rush),function(state,obj) if pressed(state,obj) then send("Pursuit") end end)
+ -- Pad re-engage has no button of its own: × in a chase window (Jump above),
+ -- else ○ toward a locked opponent while sprinting. The Dodge packet already
+ -- carries the stick and the sprint toggle; the server turns it into the dash.
  bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
  bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do

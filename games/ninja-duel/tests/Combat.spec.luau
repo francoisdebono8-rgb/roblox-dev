@@ -144,16 +144,19 @@ test("active window late entry, whiff recovery and combo buffer",function()
  -- The swing connected, so the next press is buffered and chains on recovery.
  assert(c:request(a,"Attack"));step(c,.4)
  assert(a.attackName=="Light2" and a.combo==2,"connected light did not chain")
- -- A whiffed swing keeps its recovery: no chain and no phantom combo.
+ -- A pause ends the string (CORE_COMBAT_CONVERGENCE_2 §1): the next press is
+ -- an opener again, not the third light of a string the player let go.
  b.root.CFrame=C.new(0,3,-30);step(c,.6)
  local health=b.health
- assert(c:request(a,"Attack"));assert(a.attackName=="Light3")
- -- An early press may be held in the buffer, but a whiff must never chain it.
+ assert(c:request(a,"Attack"));assert(a.attackName=="Light1","a press after a pause continued the string ("..tostring(a.attackName)..")")
+ -- An early press may be held in the buffer: a whiff never chains it, it comes
+ -- out as a fresh opener once the whole recovery is over.
  local ok,reason=c:request(a,"Attack")
  assert(not ok or reason=="Buffered","whiffed swing accepted a chain")
  step(c,.5)
  assert(b.health==health and not a.chainOpen,"whiff produced a contact or a chain")
- assert(a.attackName==nil or a.attackName=="Light3","a buffered press chained after a whiff ("..tostring(a.attackName)..")")
+ assert(a.combo==0,"a whiff advanced the combo ("..tostring(a.combo)..")")
+ assert(a.attackName==nil or a.attackName=="Light1","a buffered press after a whiff was not a fresh opener ("..tostring(a.attackName)..")")
 end)
 test("grab, directional throw, no orphan relationship and upthrow",function()
  local c,a,b=pair();assert(c:request(a,"Grab"));step(c,.23)
@@ -267,8 +270,10 @@ test("imported Bangla combo owns damage, contacts, effects and cleanup",function
  health=b.health;assert(c:request(a,"Attack"));local f2=flowScale();step(c,.3);assert(math.abs(health-b.health-10*f2)<.01,"second hit "..(health-b.health))
  -- The third hit (MegaPunch 18) is scaled by Config.ComboScaling: 18 * 0.88.
  health=b.health;assert(c:request(a,"Attack"));local f3=flowScale();step(c,.3);assert(math.abs(health-b.health-15.84*f3)<.01,"third hit not scaled: "..(health-b.health))
- assert(a.combo==3 and not a.chainOpen)
- step(c,.5);assert(c:request(a,"Attack") and a.combo==1)
+ -- The third hit ends the string: nothing left to continue, no chain.
+ assert(a.attackName=="Light3" and a.combo==0 and not a.chainOpen)
+ -- The next press opens a new string; it counts once it connects.
+ step(c,.5);assert(c:request(a,"Attack") and a.attackName=="Light1" and a.combo==0)
  c:clear();assert(a.combo==0 and not a.pending and a.donorHitCount==0)
 end)
 test("Place1 sprint stamina, takeoff carry and air steering run on actors",function()
