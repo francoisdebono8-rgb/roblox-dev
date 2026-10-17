@@ -478,14 +478,40 @@ F.Burst={
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
 }
+-- Where a zone or a charge may be set (QA-004 M2): Self is at his feet, with
+-- no other bound. Target needs the body inside Range (+slack) and in sight,
+-- refused before any cost, like a relocation. Aim is clamped: along the aim,
+-- never further than Range from him, never through a wall (it stops short of
+-- the first obstacle on the way).
+function Families.placeWithin(c,a,position,range)
+	local from=a.root.Position
+	local off=flat(position-from)
+	if off.Magnitude>range then position=from+off.Unit*range+Vector3.new(0,position.Y-from.Y,0) end
+	-- A level ray at body height (the floor under the point is not a wall).
+	local level=Vector3.new(position.X,from.Y,position.Z)
+	local ray=workspace:Raycast(from,level-from,c:rayParams(true))
+	if ray then
+		local back=flat(ray.Position-from)
+		position=if back.Magnitude>1.5 then from+back.Unit*(back.Magnitude-1.2) else from
+	end
+	return position
+end
 F.Zone={
-	check=function() return true end,
+	check=function(c,a,spec)
+		if (spec.At or "Aim")~="Target" then return true end
+		local b=a.target
+		if not b or b.health<=0 then return false,"No target" end
+		if (b.root.Position-a.root.Position).Magnitude>(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
+		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		return true
+	end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local at=spec.At or "Aim"
 		-- An aim on or near the body (the mouse at his feet) means him, now.
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
 			else Families.snapAim(a,aimOf(a,pending))
+		if at~="Self" then position=Families.placeWithin(c,a,position,(spec.Range or 30)+(if at=="Target" then Families.TELEPORT_SLACK else 0)) end
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
 		if spec.Charge then
@@ -535,6 +561,19 @@ F.Teleport={
 		local spec=pending.spec
 		local b=a.target
 		local to=spec.To or "Behind"
+		-- The bound holds at the release too (QA-004 M2): a body that left the
+		-- Range or the line of sight during the channel is not followed. The
+		-- jutsu fizzles where he stands: the chakra is spent (the opponent read
+		-- it), the cooldown is a short one (not the full one on top).
+		if to~="Back" then
+			local ok,why=F.Teleport.check(c,a,spec)
+			if not ok then
+				a.cooldowns[spec.Id]=c.now+math.min(spec.Cooldown or 1,.8)
+				c:cue(a,string.upper(spec.Name).." • "..string.upper(why or "lost"),.7)
+				brawler().event(c,a,"TeleportFizzle")
+				return
+			end
+		end
 		local d=spec.Distance or 3.2
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)

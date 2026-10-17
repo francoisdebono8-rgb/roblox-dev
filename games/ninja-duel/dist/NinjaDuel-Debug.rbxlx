@@ -1876,7 +1876,7 @@ fighters.Puppet = {
 	CombatTravel = 0.6, CombatDamage = 0.92, DashScale = 0.98, GuardStrength = 0.1, PreferredRange = 11,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 	-- The puppet (Server/Wave3Kit marionette controller, Server/Bodies).
-	Bodies = { puppet = { Max = 1, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
+	Bodies = { puppet = { Max = 1, Persist = true, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
 	ToolMastery = { Kind = "shuriken", Projectile = "poisonneedle", Count = 2, Speed = 96, Damage = 1.6, Recover = .65, Contact = { Poison = { Damage = .7, Time = 2, Every = .5 } } },
 	-- Awakening: the puppet master. Every blow poisons, holds last longer,
 	-- the threads come cheaper and back sooner.
@@ -3032,7 +3032,7 @@ return {
       <Item class="StringValue" referent="ND21">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">fdba31aba1328dc62426f8e4ffd0fadfbb383d593ef68def532d8b7006f09194</string>
+          <string name="Value">a340f4915897e54a7023bff1386994c7e5dc27c4397d87ee56d326761a080db5</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND22">
@@ -4054,6 +4054,8 @@ return Evade
 --
 -- Data: Fighters[id].Bodies[kind] = {Max, Cost, Life, ...} (Max counts the
 -- persistent bodies; a body made for one strike is `ephemeral`).
+-- Persist=true: a body that carried a strike returns to its own controller
+-- instead of being spent (a marionette, not a one-strike clone).
 -- MoveGraphs[id].proxy[move] = {move, body, summon, solo, awake}: a strike
 -- another body carries out (Bodies.route / Bodies.bind); Attacks[move].proxy
 -- says where it stands ("behind", "side", "under").
@@ -4206,6 +4208,9 @@ function Bodies.bind(c,a,p,proxy,kind)
 	elseif (at-body.position).Magnitude&gt;14 then
 		Bodies.warp(c,body,at)
 	end
+	-- A persistent body that keeps its own job after the strike (tuning
+	-- Persist: Sasori's marionette) goes back to it; others are spent.
+	if proxy~="summon" and Bodies.tuning(a,body.kind).Persist and body.mode~="carry" then body.resume=body.mode end
 	body.carry=p;body.mode="carry";body.goal=at
 	body.action=p.name;body.variant=spec.proxyClip;body.actionAt=c.now;body.actionSerial+=1;body.state="Startup"
 	body.expires=math.max(body.expires,c.now+span+.6)
@@ -4219,8 +4224,16 @@ local function carry(c,body,dt)
 	local a=body.owner
 	local b=a.target
 	if a.pending~=p or a.health&lt;=0 or not b or b.health&lt;=0 then
-		-- The strike is over (landed, missed, or its owner was hit): spent.
-		body.carry=nil;body.mode="spent";body.state="Recovery"
+		-- The strike is over (landed, missed, or its owner was hit): spent,
+		-- unless it is a persistent body back to its own job (Persist).
+		body.carry=nil;body.state="Recovery"
+		if body.resume and a.health&gt;0 and not body.ephemeral then
+			body.mode=body.resume;body.resume=nil
+			body.actionAt=c.now;body.nextStrike=math.max(body.nextStrike or 0,c.now+.6)
+			c:schedule(c.now+.25,function() if body.alive and body.mode~="carry" and body.state=="Recovery" then body.state="Neutral" end end)
+			return
+		end
+		body.resume=nil;body.mode="spent"
 		body.expires=math.min(body.expires,c.now+.22)
 		return
 	end
@@ -9636,6 +9649,177 @@ return Commands
       </Item>
       <Item class="ModuleScript" referent="ND48">
         <Properties>
+          <string name="Name">DevGateCheck</string>
+          <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): QA-004 gate scenarios run
+-- in the real build (native physics, real stage, real Combat) on the live
+-- session, from the Server command bar:
+--   workspace:SetAttribute("NinjaDuelGate","M1,M2")  (DevHooks runs it here)
+-- Each scenario starts its own duel through the dev hook, drives both sides
+-- through Combat:request (the remote's own entry point) and prints PASS/FAIL
+-- with what was measured. It proves server behaviour in the native world;
+-- real keys, the look and human feel are separate checks.
+local ServerStorage=game:GetService("ServerStorage")
+local LogService=game:GetService("LogService")
+local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local DevHooks=require(script.Parent.DevHooks)
+local Bodies=require(script.Parent.Bodies)
+local Brawler=require(script.Parent.Brawler)
+
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function slot(id,tech)
+	for i,spec in Fighters[id].Techniques do if spec.Id==tech then return "Technique"..i,spec end end
+	error(id.." has no "..tech)
+end
+local dev
+local function session()
+	for _,s in DevHooks.matches.sessions do if s.combat then return s end end
+end
+local function start(a,b)
+	dev:Invoke("start",a,b)
+	local t0=os.clock()
+	repeat task.wait(.2);local r=dev:Invoke("act","human","GuardOff") until (type(r)=="table" and r.reason~="Intro") or os.clock()-t0&gt;12
+	dev:Invoke("autopilot",false);dev:Invoke("freezeBot",true);dev:Invoke("scripted",true);dev:Invoke("refill")
+	dev:Invoke("health","bot",400)
+	local s=session()
+	return s.combat,s.human,s.bot,s
+end
+local function place(c,a,b,pa,pb)
+	local o=c.match.origin
+	c:relocate(a,o+pa);c:relocate(b,o+pb)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,Vector3.new(b.root.Position.X,a.root.Position.Y,b.root.Position.Z))
+	b.root.CFrame=CFrame.lookAt(b.root.Position,Vector3.new(a.root.Position.X,b.root.Position.Y,a.root.Position.Z))
+	a.move=Vector3.zero;b.move=Vector3.zero
+	task.wait(.2)
+end
+local function confirmOne(c,a)
+	c:request(a,"Attack")
+	local t=os.clock()
+	repeat task.wait() until (a.state=="Recovery" and a.chainOpen==true and c.now&gt;=(a.chainAt or 0)) or os.clock()-t&gt;1
+end
+
+local S={}
+-- M1 ----------------------------------------------------------------------
+S.S1=function()
+	local c,a,b=start("Puppet","Leaf");place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5));a.chakra=999
+	c:request(a,(slot("Puppet","Marionette")),b.root.Position);task.wait(.8)
+	local p=Bodies.of(c,a,"puppet")[1];if not p then return false,"no marionette" end
+	place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5))
+	confirmOne(c,a);c:request(a,"Heavy")
+	local carried=a.attackName=="PuppetBlade" and a.pending and a.pending.body==p
+	task.wait(2)
+	return carried and p.alive and p.mode=="marionette",string.format("carried=%s alive=%s mode=%s",tostring(carried),tostring(p.alive),tostring(p.mode))
+end
+S.S2=function()
+	local c,a,b=start("Puppet","Leaf");place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5));a.chakra=999
+	c:request(a,(slot("Puppet","Marionette")),b.root.Position);task.wait(.8)
+	local p=Bodies.of(c,a,"puppet")[1];if not p then return false,"no marionette" end
+	place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5))
+	confirmOne(c,a);confirmOne(c,a)
+	a.move=flat(b.root.Position-a.root.Position).Unit;c:request(a,"Attack");a.move=Vector3.zero
+	local route=a.attackName
+	task.wait(2)
+	return route=="PuppetRise" and p.alive and p.mode=="marionette",string.format("route=%s alive=%s mode=%s",tostring(route),tostring(p.alive),tostring(p.mode))
+end
+S.S3=function()
+	local c,a,b=start("Puppet","Leaf");place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5));a.chakra=999
+	c:request(a,(slot("Puppet","Marionette")),b.root.Position);task.wait(.8)
+	local p=Bodies.of(c,a,"puppet")[1];if not p then return false,"no marionette" end
+	place(c,a,b,Vector3.new(0,3,3.5),Vector3.new(0,3,-3.5))
+	confirmOne(c,a);c:request(a,"Heavy")
+	Brawler.react(c,a,"HitStun",Vector3.zero,.4,b)
+	task.wait(1)
+	return p.alive and p.mode=="marionette" and not p.carry,string.format("alive=%s mode=%s carry=%s",tostring(p.alive),tostring(p.mode),tostring(p.carry~=nil))
+end
+S.S4=function()
+	local out={}
+	for _,guarding in {true,false} do
+		local c,a,b=start("Puppet","Leaf");place(c,a,b,Vector3.new(0,3,10),Vector3.new(0,3,-10));a.chakra=999;b.health=400
+		c:request(a,(slot("Puppet","Marionette")),b.root.Position)
+		local t=os.clock()
+		repeat
+			if guarding and b.state~="Guarding" then c:request(b,"Guard") end
+			task.wait()
+		until b.health&lt;400 or os.clock()-t&gt;5
+		task.wait(.1)
+		table.insert(out,{guarding=guarding,hit=b.health&lt;400,poisoned=(b.poisonedUntil or 0)&gt;0})
+	end
+	local ok=out[1].hit and not out[1].poisoned and out[2].hit and out[2].poisoned
+	return ok,string.format("guard: hit=%s poisoned=%s • open: hit=%s poisoned=%s",tostring(out[1].hit),tostring(out[1].poisoned),tostring(out[2].hit),tostring(out[2].poisoned))
+end
+S.S5=function()
+	local c,a,b,s=start("Puppet","Leaf");place(c,a,b,Vector3.new(0,3,6),Vector3.new(0,3,-6));a.chakra=999
+	c:request(a,(slot("Puppet","Marionette")),b.root.Position);task.wait(.5)
+	local p=Bodies.of(c,a,"puppet")[1];if not p then return false,"no marionette" end
+	Bodies.dispel(c,p,"hit",b);task.wait(.3)
+	local broken=#Bodies.of(c,a,"puppet")==0
+	-- KO and the next round: nothing left over.
+	dev:Invoke("ko","bot")
+	task.wait(6)
+	local s2=session()
+	local left=s2 and s2.combat and #(s2.combat.bodies or {}) or 0
+	return broken and left==0,string.format("broken=%s bodies after KO/reset=%d phase=%s",tostring(broken),left,tostring(s2 and s2.phase))
+end
+-- M2 ----------------------------------------------------------------------
+S.S6=function()
+	local c,a,b=start("Clay","Leaf");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-20));a.chakra=999
+	local s,spec=slot("Clay","ClayMine")
+	local o=c.match.origin
+	c:request(a,s,o+Vector3.new(-10,3,-15));task.wait(.6)
+	local near
+	for _,h in c.hazards do if h.a==a then near=flat(h.position-a.root.Position).Magnitude end end
+	a.cooldowns={};a.chakra=999
+	local before=#c.hazards
+	c:request(a,s,o+Vector3.new(0,3,-100));task.wait(.6)
+	local far=0
+	for _,h in c.hazards do if h.a==a then far=math.max(far,flat(h.position-a.root.Position).Magnitude) end end
+	return near~=nil and far&lt;=spec.Range+.5,string.format("aimed at 18: set at %.1f • aimed at 100: furthest %.1f (Range %d, hazards %d→%d)",near or -1,far,spec.Range,before,#c.hazards)
+end
+S.S8=function()
+	local c,a,b=start("Mist","Leaf");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-20));a.chakra=999
+	local from=a.root.Position
+	local ok=c:request(a,(slot("Mist","SilentKilling")),b.root.Position)
+	c:relocate(b,c.match.origin+Vector3.new(0,3,-105))
+	task.wait(.7)
+	local moved=flat(a.root.Position-from).Magnitude
+	return ok and moved&lt;4,string.format("accepted=%s moved=%.1f studs after the body left to 105",tostring(ok),moved)
+end
+S.S10=function()
+	local c,a,b=start("Flicker","Leaf");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-20));a.chakra=999
+	c:request(a,(slot("Flicker","BodyFlicker")),b.root.Position);task.wait(.4)
+	local arrived=flat(a.root.Position-b.root.Position).Magnitude&lt;6
+	place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-80));a.chakra=999;a.cooldowns={}
+	local back=c:request(a,(slot("Flicker","FlickerOut")),b.root.Position)
+	local c2,a2,b2=start("Mist","Leaf");place(c2,a2,b2,Vector3.new(0,3,0),Vector3.new(0,3,-90));a2.chakra=999
+	local chakra=a2.chakra
+	local far,why=c2:request(a2,(slot("Mist","SilentKilling")),b2.root.Position)
+	local mist=c2:request(a2,(slot("Mist","HiddenMist")))
+	return arrived and back and not far and a2.chakra&lt;=chakra and mist,string.format("flicker in range arrived=%s • retreat at 80=%s • kill at 90 refused=%s (%s) • mist Self=%s",
+		tostring(arrived),tostring(back),tostring(not far),tostring(why),tostring(mist))
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"}}
+
+return function(list)
+	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
+	local errors={}
+	local conn=LogService.MessageOut:Connect(function(m,k) if k==Enum.MessageType.MessageError then table.insert(errors,m) end end)
+	local lines={}
+	for group in string.gmatch(list,"[^,%s]+") do
+		for _,name in GROUPS[group] or {group} do
+			local fn=S[name]
+			local ok,pass,detail=pcall(fn)
+			local line=if not ok then name.." ERROR "..tostring(pass) else name.." "..(if pass then "PASS" else "FAIL").." • "..tostring(detail)
+			print("[GateCheck] "..line);table.insert(lines,line)
+		end
+	end
+	conn:Disconnect()
+	print("[GateCheck] errors in Output during the run: "..#errors..(if #errors&gt;0 then " • "..errors[1] else ""))
+	return table.concat(lines,"\n")
+end
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND49">
+        <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
 -- tool (or the command bar) start duels, drive either fighter through the real
@@ -9671,6 +9855,20 @@ function DevHooks.delayRequests(matches,settings,clock,random)
 	end
 end
 function DevHooks.install(matches)
+	-- Debug-only probes (DevGateCheck) reach the live session through this.
+	-- The command bar has its own module cache, so a gate is started from it
+	-- by an attribute and runs here, in the server's own context:
+	--   workspace:SetAttribute("NinjaDuelGate","M1,M2")
+	DevHooks.matches=matches
+	if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDebug")==true then
+		workspace:GetAttributeChangedSignal("NinjaDuelGate"):Connect(function()
+			local list=workspace:GetAttribute("NinjaDuelGate")
+			if type(list)~="string" or list=="" then return end
+			workspace:SetAttribute("NinjaDuelGate","")
+			local ok,gate=pcall(require,script.Parent:FindFirstChild("DevGateCheck"))
+			if ok and gate then task.spawn(gate,list) end
+		end)
+	end
 	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
 	-- Set from the server command bar or the Workspace properties while testing:
 	-- workspace:SetAttribute("NinjaDuelSimLatency",60) and ("NinjaDuelSimJitter",15).
@@ -9922,7 +10120,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
@@ -10049,7 +10247,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">DevQA</string>
           <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
@@ -10120,7 +10318,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
@@ -10155,7 +10353,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">DevRosterCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): a native Studio pass for
@@ -10281,7 +10479,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
@@ -10377,7 +10575,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -10458,7 +10656,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -10500,7 +10698,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -10613,7 +10811,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -11096,14 +11294,40 @@ F.Burst={
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
 }
+-- Where a zone or a charge may be set (QA-004 M2): Self is at his feet, with
+-- no other bound. Target needs the body inside Range (+slack) and in sight,
+-- refused before any cost, like a relocation. Aim is clamped: along the aim,
+-- never further than Range from him, never through a wall (it stops short of
+-- the first obstacle on the way).
+function Families.placeWithin(c,a,position,range)
+	local from=a.root.Position
+	local off=flat(position-from)
+	if off.Magnitude&gt;range then position=from+off.Unit*range+Vector3.new(0,position.Y-from.Y,0) end
+	-- A level ray at body height (the floor under the point is not a wall).
+	local level=Vector3.new(position.X,from.Y,position.Z)
+	local ray=workspace:Raycast(from,level-from,c:rayParams(true))
+	if ray then
+		local back=flat(ray.Position-from)
+		position=if back.Magnitude&gt;1.5 then from+back.Unit*(back.Magnitude-1.2) else from
+	end
+	return position
+end
 F.Zone={
-	check=function() return true end,
+	check=function(c,a,spec)
+		if (spec.At or "Aim")~="Target" then return true end
+		local b=a.target
+		if not b or b.health&lt;=0 then return false,"No target" end
+		if (b.root.Position-a.root.Position).Magnitude&gt;(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
+		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		return true
+	end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local at=spec.At or "Aim"
 		-- An aim on or near the body (the mouse at his feet) means him, now.
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
 			else Families.snapAim(a,aimOf(a,pending))
+		if at~="Self" then position=Families.placeWithin(c,a,position,(spec.Range or 30)+(if at=="Target" then Families.TELEPORT_SLACK else 0)) end
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
 		if spec.Charge then
@@ -11153,6 +11377,19 @@ F.Teleport={
 		local spec=pending.spec
 		local b=a.target
 		local to=spec.To or "Behind"
+		-- The bound holds at the release too (QA-004 M2): a body that left the
+		-- Range or the line of sight during the channel is not followed. The
+		-- jutsu fizzles where he stands: the chakra is spent (the opponent read
+		-- it), the cooldown is a short one (not the full one on top).
+		if to~="Back" then
+			local ok,why=F.Teleport.check(c,a,spec)
+			if not ok then
+				a.cooldowns[spec.Id]=c.now+math.min(spec.Cooldown or 1,.8)
+				c:cue(a,string.upper(spec.Name).." • "..string.upper(why or "lost"),.7)
+				brawler().event(c,a,"TeleportFizzle")
+				return
+			end
+		end
 		local d=spec.Distance or 3.2
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
@@ -11391,7 +11628,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -11716,7 +11953,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -11991,7 +12228,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND60">
+      <Item class="Script" referent="ND61">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -12020,7 +12257,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -12399,7 +12636,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -12666,7 +12903,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -13004,7 +13241,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -13269,7 +13506,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -13745,7 +13982,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -13956,7 +14193,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -14159,7 +14396,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -14648,7 +14885,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -14961,7 +15198,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -16007,7 +16244,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -16107,7 +16344,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -16135,7 +16372,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -16263,7 +16500,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -16314,7 +16551,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -16449,7 +16686,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -16563,7 +16800,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -16597,7 +16834,8 @@ function Kit.install(Techniques)
 			body.state="Active"
 			local s=body.pendingStrike or {}
 			if Bodies.hitFrom(c,body,b,{damage=s.damage,reach=s.reach,height=6,arc=-.2,reaction=s.reaction,push=s.push,up=s.up,stun=s.stun,tag=s.tag}) then
-				if s.poison then Families.poison(c,a,b,s.poison) end
+				-- A guard that held takes the chip, never the venom.
+				if s.poison and b.impactStyle~="block" then Families.poison(c,a,b,s.poison) end
 				require(script.Parent.Brawler).event(c,a,"PuppetHit")
 			end
 		elseif body.state=="Active" and c.now&gt;=body.actionAt+.3 then body.state="Recovery"
@@ -16748,7 +16986,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -17711,7 +17949,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -17939,21 +18177,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND80">
+  <Item class="StarterPlayer" referent="ND81">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND81">
+    <Item class="StarterPlayerScripts" referent="ND82">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND82">
+      <Item class="Folder" referent="ND83">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -18117,7 +18355,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -18394,7 +18632,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -18949,7 +19187,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND86">
+        <Item class="LocalScript" referent="ND87">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -18983,7 +19221,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -19133,7 +19371,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -19177,7 +19415,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -20876,7 +21114,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -21408,7 +21646,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -21886,7 +22124,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -22067,7 +22305,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -22807,7 +23045,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -22984,7 +23222,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -23165,7 +23403,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND96">
+        <Item class="LocalScript" referent="ND97">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -23314,7 +23552,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -23572,7 +23810,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -23876,7 +24114,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -24469,7 +24707,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -25071,7 +25309,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -25212,7 +25450,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -27646,7 +27884,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -27743,7 +27981,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -27756,7 +27994,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's own drawing, installed by
@@ -27772,7 +28010,7 @@ return M
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND106">
+  <Item class="Lighting" referent="ND107">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -27790,7 +28028,7 @@ return M
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND107">
+  <Item class="SoundService" referent="ND108">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

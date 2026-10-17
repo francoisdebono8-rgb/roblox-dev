@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # chakra lab (docs/tools/DEVTOOLS.md). build.py's DEBUG_SOURCES must list them.
 INSPECTOR = {'DevHooks', 'CombatInspector', 'CombatDebug'}
 DEV_TOOLS = {'DevTools', 'DevCommands', 'DevScenarios', 'DevProfiler', 'DevReport', 'DevQA', 'DevMetrics',
-             'DevClient', 'DevVolumes', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck'}
+             'DevClient', 'DevVolumes', 'ChakraLab', 'ChakraDev', 'ChakraStudioView', 'ChakraStudioQA', 'DevRosterCheck', 'DevGateCheck'}
 DEBUG_ONLY = INSPECTOR | DEV_TOOLS
 # Strings that only the debug-only modules contain (remote, GUI, Output and folder names).
 MARKERS = ('NinjaDuelDevControl', 'NinjaDuelDevPanel', 'NinjaDuelDevMeasure', 'DevObservedVolume', '[NinjaDuelPerf]',

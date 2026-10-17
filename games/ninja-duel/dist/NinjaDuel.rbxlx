@@ -1757,7 +1757,7 @@ fighters.Puppet = {
 	CombatTravel = 0.6, CombatDamage = 0.92, DashScale = 0.98, GuardStrength = 0.1, PreferredRange = 11,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 	-- The puppet (Server/Wave3Kit marionette controller, Server/Bodies).
-	Bodies = { puppet = { Max = 1, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
+	Bodies = { puppet = { Max = 1, Persist = true, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
 	ToolMastery = { Kind = "shuriken", Projectile = "poisonneedle", Count = 2, Speed = 96, Damage = 1.6, Recover = .65, Contact = { Poison = { Damage = .7, Time = 2, Every = .5 } } },
 	-- Awakening: the puppet master. Every blow poisons, holds last longer,
 	-- the threads come cheaper and back sooner.
@@ -2913,7 +2913,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f20f9fc1736f9ce88e0debf7571c3f0ffc1e8819f34128f992d9b5016909043d</string>
+          <string name="Value">adb80f0d0ea34aa9ec5bd522c0f5bfe98e4266f3d64fe4d02aac17c822a248a2</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -3935,6 +3935,8 @@ return Evade
 --
 -- Data: Fighters[id].Bodies[kind] = {Max, Cost, Life, ...} (Max counts the
 -- persistent bodies; a body made for one strike is `ephemeral`).
+-- Persist=true: a body that carried a strike returns to its own controller
+-- instead of being spent (a marionette, not a one-strike clone).
 -- MoveGraphs[id].proxy[move] = {move, body, summon, solo, awake}: a strike
 -- another body carries out (Bodies.route / Bodies.bind); Attacks[move].proxy
 -- says where it stands ("behind", "side", "under").
@@ -4087,6 +4089,9 @@ function Bodies.bind(c,a,p,proxy,kind)
 	elseif (at-body.position).Magnitude&gt;14 then
 		Bodies.warp(c,body,at)
 	end
+	-- A persistent body that keeps its own job after the strike (tuning
+	-- Persist: Sasori's marionette) goes back to it; others are spent.
+	if proxy~="summon" and Bodies.tuning(a,body.kind).Persist and body.mode~="carry" then body.resume=body.mode end
 	body.carry=p;body.mode="carry";body.goal=at
 	body.action=p.name;body.variant=spec.proxyClip;body.actionAt=c.now;body.actionSerial+=1;body.state="Startup"
 	body.expires=math.max(body.expires,c.now+span+.6)
@@ -4100,8 +4105,16 @@ local function carry(c,body,dt)
 	local a=body.owner
 	local b=a.target
 	if a.pending~=p or a.health&lt;=0 or not b or b.health&lt;=0 then
-		-- The strike is over (landed, missed, or its owner was hit): spent.
-		body.carry=nil;body.mode="spent";body.state="Recovery"
+		-- The strike is over (landed, missed, or its owner was hit): spent,
+		-- unless it is a persistent body back to its own job (Persist).
+		body.carry=nil;body.state="Recovery"
+		if body.resume and a.health&gt;0 and not body.ephemeral then
+			body.mode=body.resume;body.resume=nil
+			body.actionAt=c.now;body.nextStrike=math.max(body.nextStrike or 0,c.now+.6)
+			c:schedule(c.now+.25,function() if body.alive and body.mode~="carry" and body.state=="Recovery" then body.state="Neutral" end end)
+			return
+		end
+		body.resume=nil;body.mode="spent"
 		body.expires=math.min(body.expires,c.now+.22)
 		return
 	end
@@ -9735,14 +9748,40 @@ F.Burst={
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
 }
+-- Where a zone or a charge may be set (QA-004 M2): Self is at his feet, with
+-- no other bound. Target needs the body inside Range (+slack) and in sight,
+-- refused before any cost, like a relocation. Aim is clamped: along the aim,
+-- never further than Range from him, never through a wall (it stops short of
+-- the first obstacle on the way).
+function Families.placeWithin(c,a,position,range)
+	local from=a.root.Position
+	local off=flat(position-from)
+	if off.Magnitude&gt;range then position=from+off.Unit*range+Vector3.new(0,position.Y-from.Y,0) end
+	-- A level ray at body height (the floor under the point is not a wall).
+	local level=Vector3.new(position.X,from.Y,position.Z)
+	local ray=workspace:Raycast(from,level-from,c:rayParams(true))
+	if ray then
+		local back=flat(ray.Position-from)
+		position=if back.Magnitude&gt;1.5 then from+back.Unit*(back.Magnitude-1.2) else from
+	end
+	return position
+end
 F.Zone={
-	check=function() return true end,
+	check=function(c,a,spec)
+		if (spec.At or "Aim")~="Target" then return true end
+		local b=a.target
+		if not b or b.health&lt;=0 then return false,"No target" end
+		if (b.root.Position-a.root.Position).Magnitude&gt;(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
+		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		return true
+	end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local at=spec.At or "Aim"
 		-- An aim on or near the body (the mouse at his feet) means him, now.
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
 			else Families.snapAim(a,aimOf(a,pending))
+		if at~="Self" then position=Families.placeWithin(c,a,position,(spec.Range or 30)+(if at=="Target" then Families.TELEPORT_SLACK else 0)) end
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
 		if spec.Charge then
@@ -9792,6 +9831,19 @@ F.Teleport={
 		local spec=pending.spec
 		local b=a.target
 		local to=spec.To or "Behind"
+		-- The bound holds at the release too (QA-004 M2): a body that left the
+		-- Range or the line of sight during the channel is not followed. The
+		-- jutsu fizzles where he stands: the chakra is spent (the opponent read
+		-- it), the cooldown is a short one (not the full one on top).
+		if to~="Back" then
+			local ok,why=F.Teleport.check(c,a,spec)
+			if not ok then
+				a.cooldowns[spec.Id]=c.now+math.min(spec.Cooldown or 1,.8)
+				c:cue(a,string.upper(spec.Name).." • "..string.upper(why or "lost"),.7)
+				brawler().event(c,a,"TeleportFizzle")
+				return
+			end
+		end
 		local d=spec.Distance or 3.2
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
@@ -15235,7 +15287,8 @@ function Kit.install(Techniques)
 			body.state="Active"
 			local s=body.pendingStrike or {}
 			if Bodies.hitFrom(c,body,b,{damage=s.damage,reach=s.reach,height=6,arc=-.2,reaction=s.reaction,push=s.push,up=s.up,stun=s.stun,tag=s.tag}) then
-				if s.poison then Families.poison(c,a,b,s.poison) end
+				-- A guard that held takes the chip, never the venom.
+				if s.poison and b.impactStyle~="block" then Families.poison(c,a,b,s.poison) end
 				require(script.Parent.Brawler).event(c,a,"PuppetHit")
 			end
 		elseif body.state=="Active" and c.now&gt;=body.actionAt+.3 then body.state="Recovery"

@@ -32,6 +32,20 @@ function DevHooks.delayRequests(matches,settings,clock,random)
 	end
 end
 function DevHooks.install(matches)
+	-- Debug-only probes (DevGateCheck) reach the live session through this.
+	-- The command bar has its own module cache, so a gate is started from it
+	-- by an attribute and runs here, in the server's own context:
+	--   workspace:SetAttribute("NinjaDuelGate","M1,M2")
+	DevHooks.matches=matches
+	if RunService:IsStudio() and workspace:GetAttribute("NinjaDuelDebug")==true then
+		workspace:GetAttributeChangedSignal("NinjaDuelGate"):Connect(function()
+			local list=workspace:GetAttribute("NinjaDuelGate")
+			if type(list)~="string" or list=="" then return end
+			workspace:SetAttribute("NinjaDuelGate","")
+			local ok,gate=pcall(require,script.Parent:FindFirstChild("DevGateCheck"))
+			if ok and gate then task.spawn(gate,list) end
+		end)
+	end
 	if not RunService:IsStudio() or workspace:GetAttribute("NinjaDuelDebug")~=true then return end
 	-- Set from the server command bar or the Workspace properties while testing:
 	-- workspace:SetAttribute("NinjaDuelSimLatency",60) and ("NinjaDuelSimJitter",15).

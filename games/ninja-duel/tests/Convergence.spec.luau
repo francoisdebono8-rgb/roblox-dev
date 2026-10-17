@@ -226,4 +226,61 @@ test("M1: a guard that holds against the marionette's jab takes chip, never the 
  end
 end)
 
+
+-- QA-004 M2 (Codex, bc7faa3): a mine of Range 26 was set at 100; a relocation
+-- followed a body that left its Range during the channel.
+test("M2: zones and charges are set within Range and never through a wall; Self zones have no other bound",function()
+ local c,a,b=H.duel("Clay","Leaf");place(c,a,b,V.new(0,3,0),V.new(0,3,-20));a.chakra=999
+ local s,spec=specOf("Clay","ClayMine")
+ -- (Aimed away from the body: an aim near it snaps onto it.)
+ assert(c:request(a,s,V.new(-10,3,-15)));step(c,.6)
+ local mine
+ for _,h in c.hazards do if h.a==a then mine=h end end
+ assert(mine and V.new(mine.position.X+10,0,mine.position.Z+15).Magnitude<2,"a mine aimed inside its Range was not set there")
+ local c2,a2,b2=H.duel("Clay","Leaf");place(c2,a2,b2,V.new(0,3,0),V.new(0,3,-20));a2.chakra=999
+ assert(c2:request(a2,s,V.new(0,3,-100)));step(c2,.6)
+ for _,h in c2.hazards do if h.a==a2 then
+  local d=V.new(h.position.X,0,h.position.Z).Magnitude
+  assert(d<=spec.Range+.01,string.format("a mine aimed at 100 was set at %.1f (Range %d)",d,spec.Range))
+ end end
+ -- A wall at x=10: aimed past it, the mine stops short of it.
+ H.addWall(10)
+ local c3,a3,b3=H.duel("Clay","Leaf");place(c3,a3,b3,V.new(0,3,0),V.new(0,3,-20));a3.chakra=999
+ assert(c3:request(a3,s,V.new(20,3,0)));step(c3,.6)
+ for _,h in c3.hazards do if h.a==a3 then assert(h.position.X<10,"a mine was set through a wall") end end
+ H.clearWalls()
+ -- Hidden Mist (Self) with the opponent far away: always there, at his feet.
+ local c4,a4,b4=H.duel("Mist","Leaf");place(c4,a4,b4,V.new(0,3,0),V.new(0,3,-90));a4.chakra=999
+ assert(c4:request(a4,slot("Mist","HiddenMist")));step(c4,.8)
+ local mist=false
+ for _,h in c4.hazards do if h.a==a4 and V.new(h.position.X,0,h.position.Z).Magnitude<1 then mist=true end end
+ assert(mist,"the Hidden Mist was bounded by the opponent's distance")
+end)
+test("M2: a relocation is not followed past its Range or sight at the release; a step back always works",function()
+ -- Silent Killing accepted at 20, the body dashes to 105 during the channel.
+ local c,a,b=H.duel("Mist","Leaf");place(c,a,b,V.new(0,3,0),V.new(0,3,-20));a.chakra=999
+ local s=slot("Mist","SilentKilling")
+ local chakra=a.chakra
+ assert(c:request(a,s,b.root.Position))
+ c:relocate(b,V.new(0,3,-105))
+ step(c,.6)
+ assert((a.root.Position-V.new(0,3,0)).Magnitude<4,"Zabuza followed a body that left his Range during the channel")
+ assert(a.chakra<chakra,"the fizzle refunded the chakra (policy: spent)")
+ assert((a.cooldowns.SilentKilling or 0)-c.now<=.8,"the fizzle put the full cooldown on top")
+ -- The body steps behind a wall during the channel.
+ local c2,a2,b2=H.duel("Flicker","Leaf");place(c2,a2,b2,V.new(0,3,0),V.new(6,3,0));a2.chakra=999
+ assert(c2:request(a2,slot("Flicker","BodyFlicker"),b2.root.Position))
+ H.addWall(10);c2:relocate(b2,V.new(16,3,0))
+ step(c2,.5)
+ assert(a2.root.Position.X<10,"Shisui blinked through a wall")
+ H.clearWalls()
+ -- Inside the Range at the release: the relocation happens.
+ local c3,a3,b3=H.duel("Flicker","Leaf");place(c3,a3,b3,V.new(0,3,0),V.new(0,3,-20));a3.chakra=999
+ assert(c3:request(a3,slot("Flicker","BodyFlicker"),b3.root.Position));step(c3,.4)
+ assert(V.new(a3.root.Position.X-b3.root.Position.X,0,a3.root.Position.Z-b3.root.Position.Z).Magnitude<6,"a flicker in Range did not arrive")
+ -- The step back at any distance, no refusal.
+ local c4,a4,b4=H.duel("Flicker","Leaf");place(c4,a4,b4,V.new(0,3,0),V.new(0,3,-80));a4.chakra=999
+ assert(c4:request(a4,slot("Flicker","FlickerOut")),"the afterimage retreat was refused at long range")
+end)
+
 print(string.format("NinjaDuel convergence (lifecycle, composition, reach): %d PASS (headless)",passed))
