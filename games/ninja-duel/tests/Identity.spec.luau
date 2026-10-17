@@ -690,6 +690,20 @@ test("Neji · 64 Palms counts 2-4-8-16-32-64 for both players, one palm contact 
  end
 end)
 
+test("Neji · the twin palm out of Rotation lands as a palm that names the counter (the client releases the dome there)",function()
+ local c,a,b=H.duel("Flashstep","GentleFist")
+ place(c,a,b,V.new(0,3,3),V.new(0,3,-3))
+ assert(c:request(a,"Attack"))
+ assert(c:request(b,"Technique1"),"Rotation refused")
+ assert(c:request(b,"Attack"))
+ local serial=c.impactSerial
+ local health=a.health
+ until_(c,1,function() return ev(b,"Repel")>0 and a.health<health-6 end,"the counter palm never landed")
+ local counter
+ for _,impact in impactsSince(c,serial,"palm") do if impact.variant=="TrigramCounter" then counter=impact end end
+ assert(counter and counter.move=="PalmThrust" and counter.owner==b.id and counter.point,"the counter out of Rotation does not land as a named palm on a point")
+end)
+
 test("Neji · a Vacuum Palm that drives a body into a wall says so on the wall contact",function()
  local c,a,b=H.duel("GentleFist","Flashstep")
  H.addWall(20)
@@ -768,6 +782,10 @@ test("client · Neji's palm strikes the chakra point: an open-palm print there, 
    if d.ClassName=="Part" and d.Shape==H.roblox.Enum.PartType.Ball and (d.Position-root).Magnitude<.2 then error("a generic burst still flashes at the body's centre") end
   end
   assert(#named(fx,"PalmThrough")==1,"the chakra does not go through the body")
+  assert(#named(fx,"TrigramRelease")==0,"a plain palm released the dome")
+  -- The twin palm out of Rotation releases the chakra the dome left in the palms.
+  fx:impact({style="palm",position=root,owner="A",victim="B",fighter="GentleFist",move="PalmThrust",variant="TrigramCounter",point="solar",serial=2},folder)
+  assert(#named(fx,"TrigramRelease")==1,"the counter out of Rotation releases nothing")
  end)
 end)
 test("client · a blocked palm draws the chakra it drained out of the guard",function()
@@ -908,6 +926,16 @@ test("Minato · combo -> relocation -> combo: the rising kick's seal takes him t
  assert(c2:request(x,"Attack"))
  until_(c2,.4,function() return y.health<y.def.Health end,"the arrival strike did not land")
  assert(ev(x,"FlashChain")==0,"a fresh exchange was called a chain")
+ -- The Rasengan out of the jump carries the chain too, and grinds where it lands.
+ local c3,m,n=H.duel("Flashstep","Mirage")
+ launchAndFlash(c3,m,n)
+ local s3=c3.impactSerial
+ assert(c3:request(m,slot(m,"BurstStrike"),n.root.Position),"no Rasengan out of the arrival")
+ local before=n.health
+ until_(c3,.6,function() return n.health<before end,"the arrival Rasengan did not land")
+ local rasengan
+ for _,impact in impactsSince(c3,s3) do if impact.variant=="Rasengan" and impact.arrival then rasengan=impact end end
+ assert(rasengan and ev(m,"FlashChain")==1,"the Rasengan out of the jump does not carry the chain")
 end)
 
 test("Minato · the Rasengan contact names itself (the client grinds it into the body)",function()
@@ -1015,7 +1043,10 @@ test("HUD · Minato: after a jump the arrival strike and the Rasengan are prompt
  hudScene(function(ui)
   local me=plate("Flashstep",{flash=true})
   ui:render(duelView(me,plate("Mirage")))
-  assert(ui.hint.Text:find("ARRIVAL STRIKE",1,true) and ui.hint.Text:find("3 — RASENGAN",1,true),"the arrival is not prompted ("..ui.hint.Text..")")
+  assert(ui.hint.Text:find("ARRIVAL STRIKE",1,true) and ui.hint.Text:find("RMB — LAUNCH",1,true) and ui.hint.Text:find("3 — RASENGAN",1,true),"the arrival is not prompted ("..ui.hint.Text..")")
+  me.airborne=true;ui:render(duelView(me,plate("Mirage")))
+  assert(ui.hint.Text:find("RMB — SLAM",1,true),"the air arrival prompts a launcher ("..ui.hint.Text..")")
+  me.airborne=false
   me.flash=false;me.awaken=7.25
   ui:render(duelView(me,plate("Mirage")))
   assert(not ui.hint.Text:find("ARRIVAL",1,true),"the arrival prompt outlived the window")
@@ -1265,6 +1296,10 @@ test("client · a Chidori bursts along its line where it lands and fizzles when 
   assert(#named(fx,"HiddenGlint")==1,"the hidden steel does not glint (or a plain blade did)")
   fx:update(data,1/60,folder)
   assert(#named(fx,"HiddenGlint")==1,"the glint repeats")
+  -- The next duel numbers its blades from one again: its hidden steel glints too.
+  data.epoch=2
+  fx:sync(data);fx:update(data,1/60,folder)
+  assert(#named(fx,"HiddenGlint")==1,"a new duel's hidden blade does not glint")
  end)
 end)
 test("HUD · Sasuke's continuations and risks are said: the Dancing Leaf, the Lion Combo prompt, the hungry curse, the Chidori charge and miss",function()

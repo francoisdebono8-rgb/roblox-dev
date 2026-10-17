@@ -414,7 +414,7 @@ function UI.conversion(h,pad)
 	local light=if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light
 	local heavy=if pad then Controls.PadLabel.Heavy else Controls.KeyLabel.Heavy
 	if h.flash then
-		local line=light.." — ARRIVAL STRIKE  •  "..heavy.." — LAUNCH"
+		local line=light.." — ARRIVAL STRIKE  •  "..heavy..(if h.airborne then " — SLAM" else " — LAUNCH")
 		for i,tech in h.techniques or {} do
 			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra>=tech.cost and (h.sealed or 0)<=0 then
 				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"

@@ -274,7 +274,9 @@ Techniques.BurstStrike = {
 		a.travelRemaining=10
 		if pending.variant=="FlashRasengan" then
 			-- Out of a teleport he is already beside the target: a short, fast thrust.
+			-- It is an arrival strike too (a combo carried through the jump: Brawler.hit).
 			a.pending.spec.travel=5;a.travelRemaining=5;a.pending.spec.recovery=.4
+			a.flashStrike=a.attackSerial
 		end
 		c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
 	end,

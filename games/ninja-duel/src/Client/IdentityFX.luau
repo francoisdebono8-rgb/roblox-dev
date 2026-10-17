@@ -48,6 +48,17 @@ end
 local function fade(part,time,grow)
 	K.tween(part,time,{Transparency=1,Size=part.Size*(grow or 1)})
 end
+-- A straight line of light from one point to another that fades at once: a
+-- path shown for a beat (a prediction, a ricochet, the body behind an image).
+local function streak(fx,from,to,color,width,life,name)
+	local delta=to-from
+	if delta.Magnitude<.3 then return nil end
+	local line=K.block(fx.folder,Vector3.new(width,width,delta.Magnitude),CFrame.lookAt(from:Lerp(to,.5),to),color,Enum.Material.Neon)
+	line.Name=name or "Streak";line.Transparency=.15
+	K.tween(line,life,{Transparency=1,Size=Vector3.new(width*.2,width*.2,delta.Magnitude)})
+	Debris:AddItem(line,life+.05)
+	return line
+end
 
 -- ------------------------------------------------------------------- Neji
 -- An open palm laid on a point, facing `normal` (out of the body, toward the
@@ -185,10 +196,26 @@ local function wallCue(fx,data)
 	for k=1,3 do K.shockRing(fx.folder,data.position+normal*.12,HYUGA,1+k,6+k*4,.25+k*.08,normal) end
 	K.smokePuff(fx.folder,data.position+normal,Color3.fromRGB(226,232,246),14,2)
 end
+-- The twin palm out of Rotation releases the dome's chakra the palms held: a
+-- ring the size of the dome closes onto the palm and bursts out of the body.
+local function trigramRelease(fx,data,folder,at,normal)
+	local neji=rootOf(find(folder,data.owner))
+	if neji then K.shockRing(fx.folder,neji.Position-Vector3.new(0,.6,0),HYUGA,12,3,.2) end
+	K.shockRing(fx.folder,at,HYUGA_CORE,1,9,.3,normal)
+	local burst=K.new("Model",{Name="TrigramRelease"},fx.folder)
+	for k=0,7 do
+		local a=k/8*math.pi*2
+		local ray=K.block(burst,Vector3.new(.08,.08,1.4),CFrame.lookAt(at,at-normal)*CFrame.Angles(0,0,a)*CFrame.Angles(math.rad(70),0,0)*CFrame.new(0,0,-.9),HYUGA,Enum.Material.Neon)
+		ray.Transparency=.15
+		fade(ray,.22,1.5)
+	end
+	Debris:AddItem(burst,.3)
+end
 local function nejiImpact(fx,data,folder)
 	local style=data.style
 	if style=="palm" then
-		palmCue(fx,data,folder)
+		local at,normal=palmCue(fx,data,folder)
+		if data.variant=="TrigramCounter" then trigramRelease(fx,data,folder,at,normal) end
 		if data.count then countCue(fx,data,folder) end
 		-- A chakra palm (ChakraCombat) keeps its own layer on top.
 		return data.chakra==nil
@@ -387,10 +414,11 @@ local function returnThread(fx,model,actor,st)
 	if newest and torso then
 		local thread=st.thread
 		if not thread or not thread.anchor.Parent then
+			if thread then thread.a0:Destroy() end
 			local anchor=K.anchorPart(fx.folder,newest.surface);anchor.Name="ReturnSeal"
 			local a0=K.new("Attachment",{Name="ReturnThread"},torso)
 			local a1=K.new("Attachment",{},anchor)
-			local beam=K.new("Beam",{Name="ReturnThread",Attachment0=a0,Attachment1=a1,Width0=.12,Width1=.3,FaceCamera=true,Segments=8,CurveSize0=-4,
+			local beam=K.new("Beam",{Name="ReturnThread",Attachment0=a0,Attachment1=a1,Width0=.12,Width1=.3,FaceCamera=true,Segments=1,
 				Color=ColorSequence.new(MINATO),LightEmission=1,Transparency=K.num({{0,.35},{1,.55}})},anchor)
 			thread={anchor=anchor,a0=a0,beam=beam,id=newest.id}
 			st.thread=thread
@@ -409,13 +437,7 @@ local function chainCue(fx,data,folder)
 	K.shockRing(fx.folder,at,MINATO_CORE,1.5,7,.24,along)
 	K.shockRing(fx.folder,at,MINATO,3,11,.32,along)
 	K.sparks(fx.folder,at,MINATO,16,22)
-	if striker then
-		local delta=at-striker.Position
-		local streak=K.block(fx.folder,Vector3.new(.25,.25,math.max(delta.Magnitude,.5)),CFrame.lookAt(striker.Position:Lerp(at,.5),at),MINATO,Enum.Material.Neon)
-		streak.Name="ChainLink";streak.Transparency=.2
-		fade(streak,.18)
-		Debris:AddItem(streak,.22)
-	end
+	if striker then streak(fx,striker.Position,at,MINATO,.25,.18,"ChainLink") end
 end
 -- Rasengan where it lands: the sphere grinds into the body (rings turning on
 -- every axis), not a punch flash.
@@ -446,17 +468,6 @@ end
 local SHARINGAN=Color3.fromRGB(230,36,44)
 local SHARINGAN_DEEP=Color3.fromRGB(150,16,26)
 local EMBER=Color3.fromRGB(255,128,44)
--- A straight line of light from one point to another that fades at once: a
--- path shown for a beat (a prediction, a ricochet, the body behind an image).
-local function streak(fx,from,to,color,width,life,name)
-	local delta=to-from
-	if delta.Magnitude<.3 then return nil end
-	local line=K.block(fx.folder,Vector3.new(width,width,delta.Magnitude),CFrame.lookAt(from:Lerp(to,.5),to),color,Enum.Material.Neon)
-	line.Name=name or "Streak";line.Transparency=.15
-	K.tween(line,life,{Transparency=1,Size=Vector3.new(width*.2,width*.2,delta.Magnitude)})
-	Debris:AddItem(line,life+.05)
-	return line
-end
 -- Read stance: three tomoe turn round his feet while the eye waits for the
 -- blow. The attacker sees it too: swinging into it is his choice.
 local function tomoeRing(fx,model,actor,st,clock)
@@ -710,6 +721,8 @@ local function fighter(fx,model,actor,dt)
 	sasukeFrame(fx,model,actor,st,clock)
 end
 local function frame(fx,data,dt,folder)
+	-- A new duel numbers its projectiles from one again.
+	if fx.identityEpoch~=data.epoch then fx.identityEpoch=data.epoch;fx.identityGlints={} end
 	laneFrame(fx,data)
 	hiddenGlint(fx,data)
 end
