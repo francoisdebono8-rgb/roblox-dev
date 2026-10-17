@@ -1091,7 +1091,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	-- for a shorter charge, then the thrust dives at the opponent.
 	if spec.Id=="Chidori" and spec.WallCharge and a.wall then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,spec.WallCharge);variant="WallChidori" end
 	a.flashCancel=nil
-	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
+	local ready,why=technique.check(self,a,spec,self.now)
+	local ok,reason=Rules.technique(a,spec,self.now,ready,why)
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
 	if spec.Mobile then
@@ -1876,6 +1877,8 @@ function Combat:clear(preserveAnimations)
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
+		-- Every other temporary state (buffs, stances, slows, poison, windows).
+		Families.clearState(a)
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
 	Zones.clear(self)

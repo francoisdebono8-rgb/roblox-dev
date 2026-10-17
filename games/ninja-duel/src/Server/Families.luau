@@ -49,18 +49,50 @@ end
 Families.flat=flat
 
 -- ----------------------------------------------------------- traits
--- Active buff on a body (Buff family or an awakening that declares Buff).
-function Families.buff(a,now)
+-- Composition of a body's temporary traits (one policy for the twenty).
+-- Two layers can be active together: a technique's buff (Buff family) and
+-- the awakening's (Awakening.Buff). They are MERGED, never one hiding the
+-- other, with bounded rules:
+--   Heavy   either layer grants it;
+--   Armor   the larger of the two (never added: 0.3 + 0.12 is not 0.42);
+--   Damage, Speed   multiplied, then the whole outgoing scale including the
+--           awakening's own Damage/Speed (applied by Combat) is capped at
+--           Families.CAP (a buff inside an awakening still helps, it never
+--           runs away);
+--   Regen   the larger.
+-- def.Armor (Kimimaro's bones) is a separate, permanent trait.
+Families.CAP={Damage=1.4,Speed=1.35}
+local TRAITS={"Heavy","Armor","Damage","Speed","Regen"}
+local function layers(a,now)
 	local b=a.buff
-	if b and now<b.untilT then return b.spec end
-	if (a.awakenUntil or 0)>now and a.def.Awakening and a.def.Awakening.Buff then return a.def.Awakening.Buff end
-	return nil
+	local own=if b and now<b.untilT then b.spec else nil
+	local awake=(a.awakenUntil or 0)>now and a.def.Awakening and a.def.Awakening.Buff or nil
+	return own,awake
+end
+function Families.buff(a,now)
+	local own,awake=layers(a,now)
+	if not own then return awake end
+	if not awake then return own end
+	local merged={}
+	for _,key in TRAITS do
+		local x,y=own[key],awake[key]
+		if key=="Heavy" then merged.Heavy=(x==true or y==true) or nil
+		elseif key=="Damage" or key=="Speed" then merged[key]=if x or y then (x or 1)*(y or 1) else nil
+		elseif x or y then merged[key]=math.max(x or 0,y or 0) end
+	end
+	return merged
+end
+-- The awakening's own multiplier (Combat applies it); the buff's part is
+-- trimmed so that both together stay under the cap.
+local function capped(a,now,key,value)
+	local aw=(a.awakenUntil or 0)>now and a.def.Awakening and a.def.Awakening[key] or 1
+	return math.min(value,Families.CAP[key]/aw)
 end
 -- Movement scale: buffs and slows (Combat sets speedScale every frame).
 function Families.speedScale(a,now)
 	local s=1
 	local b=Families.buff(a,now)
-	if b and b.Speed then s*=b.Speed end
+	if b and b.Speed then s*=capped(a,now,"Speed",b.Speed) end
 	if (a.slowUntil or 0)>now then s*=a.slowScale or 1 end
 	return s
 end
@@ -72,7 +104,7 @@ end
 function Families.damageScale(attacker,victim,now)
 	local s=1
 	local b=Families.buff(attacker,now)
-	if b and b.Damage then s*=b.Damage end
+	if b and b.Damage then s*=capped(attacker,now,"Damage",b.Damage) end
 	local armor=Families.buff(victim,now)
 	if armor and armor.Armor then s*=1-armor.Armor end
 	if victim.def.Armor then s*=1-victim.def.Armor end
@@ -83,6 +115,35 @@ function Families.withstands(a,now,heavy,amount)
 	if heavy or amount>=12 then return false end
 	local b=Families.buff(a,now)
 	return b~=nil and b.Heavy==true
+end
+-- On-hit riders (def.OnHit, a running buff's OnHit, the awakening's OnHit):
+-- merged FIELD BY FIELD, so a layer adds what it has without erasing the
+-- others' (Kabuto's scalpel drain stays when his awakening adds its slow).
+-- Where two layers carry the same rider the stronger wins: Drain/Steal/Heal
+-- the larger, Slow the lower Scale (and the longer Time), Poison the larger
+-- Damage per tick.
+local function stronger(key,x,y)
+	if x==nil then return y end
+	if y==nil then return x end
+	if key=="Slow" then
+		return {Scale=math.min(x.Scale or .8,y.Scale or .8),Time=math.max(x.Time or 1.5,y.Time or 1.5)}
+	elseif key=="Poison" then
+		return if (y.Damage or 1)>(x.Damage or 1) then y else x
+	end
+	return math.max(x,y)
+end
+function Families.onHit(a,now)
+	local own=a.buff and now<a.buff.untilT and a.buff.spec.OnHit or nil
+	local awake=(a.awakenUntil or 0)>now and a.def.Awakening and a.def.Awakening.OnHit or nil
+	local sources={a.def.OnHit,own,awake}
+	local merged=nil
+	for _,src in sources do
+		if src then
+			merged=merged or {}
+			for key,value in src do merged[key]=stronger(key,merged[key],value) end
+		end
+	end
+	return merged
 end
 
 -- ----------------------------------------------------------- contact
@@ -311,8 +372,20 @@ F.Buff={
 		brawler().event(c,a,"Buff")
 	end,
 }
+-- A relocation onto the opponent (Behind, Side, Aim) needs the body inside
+-- the technique's Range and in sight (no blinking through a wall to it); a
+-- refusal happens before any cost. A step back (Back) needs neither.
+Families.TELEPORT_SLACK=1.5
 F.Teleport={
-	check=function(c,a) return a.target~=nil and a.target.health>0 end,
+	check=function(c,a,spec)
+		local b=a.target
+		if not b or b.health<=0 then return false,"No target" end
+		if (spec.To or "Behind")=="Back" then return true end
+		local gap=(b.root.Position-a.root.Position).Magnitude
+		if gap>(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
+		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		return true
+	end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local b=a.target
@@ -398,11 +471,7 @@ end
 -- (def.OnHit: Samehada's drain, insects on the body...).
 function Families.afterHit(c,attacker,victim,amount,guarded)
 	if victim.health<=0 or attacker==victim then return end
-	-- The awakening's rider wins, then a running buff's, then the fighter's own.
-	local awake=(attacker.awakenUntil or 0)>c.now and attacker.def.Awakening and attacker.def.Awakening.OnHit
-	local b=attacker.buff
-	local buffed=b and c.now<b.untilT and b.spec.OnHit
-	local spec=awake or buffed or attacker.def.OnHit
+	local spec=Families.onHit(attacker,c.now)
 	if not spec then return end
 	if spec.Drain then
 		local taken=math.min(victim.chakra,spec.Drain*(if guarded then .5 else 1))
@@ -449,6 +518,19 @@ function Families.install(Techniques,Fighters)
 				Techniques[spec.Id]=family
 			end
 		end
+	end
+end
+-- Lifecycle (Combat:clear: a new round, the result screen, a rematch, a
+-- player who leaves): every temporary state a body carries ends there, the
+-- families' own (buff, counter stance, slow, poison, the bind's look) and any
+-- `...Until` window the core or a fighter module left on the actor, so
+-- nothing of a round leaks into the next one (a buff, a dose still ticking).
+function Families.clearState(a)
+	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil
+	-- A dose already scheduled checks its serial: a new one cancels it.
+	a.poisonSerial=(a.poisonSerial or 0)+1
+	for key,value in a do
+		if type(key)=="string" and type(value)=="number" and string.sub(key,-5)=="Until" then a[key]=0 end
 	end
 end
 -- Snapshot: what a body carries from the families (client auras, HUD).
