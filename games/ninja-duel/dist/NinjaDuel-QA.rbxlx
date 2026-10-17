@@ -99,6 +99,16 @@ local attacks={
  LeafWhirlwind=move(.12,.16,.24,7,1.4,"HitStun",Vector3.new(0,5,14),.38),
  GreatWhirlwind=move(.06,.24,.36,9,14,"Knockback",Vector3.new(0,16,54),.55),
  DeflectKick=move(.05,.18,.3,4,0,"HitStun",Vector3.new(0,4,10),.3),
+ -- Temari (roster wave): the iron fan. The Updraft scoops the body into
+ -- rising air (Gale.updraft holds it there), the Fan Slam brings the closed fan
+ -- down, the Fan Pirouette throws the body aside (lateral), the backhand pushes
+ -- away, the Fan Dive blows a body in the air down into the floor. Shapes and
+ -- tags at the end of this file.
+ Updraft=move(.15,.15,.3,8,1.5,"Launched",Vector3.new(0,46,3),1.25),
+ FanSlam=move(.16,.14,.36,9,1.4,"Knockdown",Vector3.new(0,6,12),.7),
+ FanPirouette=move(.12,.18,.3,7,.8,"Knockback",Vector3.new(0,8,34),.42),
+ FanBackhand=move(.1,.14,.32,9,1.6,"Knockback",Vector3.new(0,12,52),.5),
+ FanDive=move(.1,.14,.26,7,1.5,"Spiked",Vector3.new(0,-70,4),.9),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
 for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
@@ -186,6 +196,18 @@ for name,shape in {
  LeafWhirlwind={contact=3.8,range=7,width=9,height=6,zone="head",kind="kick",side=1,twist=80,lean=6,arm=60,step=1.05,chain=true},
  GreatWhirlwind={contact=3.6,range=7,width=7,height=6,zone="body",kind="kick",side=1,twist=90,lean=10,arm=60,step=1.4,breaksShield=true},
  DeflectKick={contact=3.6,range=6,width=7,height=7,zone="body",kind="kick",side=-1,twist=40,lean=-6,arm=50,step=1.0},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
+-- Temari's fan moves: a reach of their own (contact: she stays further out),
+-- the zone and kind the body answers, the air flag of the Fan Dive and the
+-- lateral push of the pirouette (Brawler.hit: thrown aside, not away).
+for name,shape in {
+ Updraft={contact=4.8,range=7.5,width=6,height=8,zone="chin",kind="launch",side=1,twist=12,lean=-28,arm=120,step=1.1,breaksShield=true},
+ FanSlam={contact=4.8,range=7.6,width=5,height=7,zone="head",kind="heavy",side=1,twist=10,lean=30,arm=120,step=1.15},
+ FanPirouette={contact=4.6,range=7.6,width=8.5,height=6,zone="body",kind="palm",side=1,twist=90,lean=6,arm=80,step=1.0,lateral=true},
+ FanBackhand={contact=4.8,range=7.6,width=6,height=6,zone="body",kind="slash",side=-1,twist=50,lean=10,arm=96,step=1.15},
+ FanDive={contact=4.2,range=7.5,width=6,height=8,zone="head",kind="spike",side=1,twist=10,lean=40,arm=120,step=1,air=true},
 } do
  for key,value in shape do attacks[name][key]=value end
 end
@@ -731,6 +753,66 @@ return Metrics
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
 		},
 	},
+	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke
+	-- retrieval (15). A long-range zoner: she does not close the distance, she
+	-- paints it. Her wind leaves lanes (Zones) that slow the way up, carry the
+	-- way down and turn blades aside; the iron fan pushes and sends blades back.
+	-- Sheet: docs/characters/TEMARI.md (implementation state at its end).
+	Gale = {
+		Name = "Temari", FullName = "Temari of the Sand", Age = 15, Title = "THE WIND FAN", Color = { 168, 140, 214 },
+		Routes = "↑ Updraft: the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  ↓ Fan Slam  ·  ←→ Fan Pirouette: a full turn, the gust throws the body aside  ·  air: drive / Fan Dive",
+		Description = "The wind fan: she paints the distance. Wind lanes slow, carry and turn blades aside; the fan pushes and sends them back. Hold the range or be caught.",
+		Health = 130, Chakra = 120, ChakraRegen = 8, Speed = 17.5, SprintScale = 0.95, JumpScale = 1.0, AirControlScale = 1.3, AccelerationScale = 0.95,
+		CombatTravel = 0.55, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 16,
+		ComboToolCancel = true, CombatStyle = "Wind", Tool = "Gust",
+		-- Heavy after two clean hits is the scoop into the updraft.
+		LauncherMove = "Updraft",
+		-- Motion family (VelmoraMotionEngine.familyOf, GaleMotion): her own
+		-- stance, gait, clips and intro; the iron fan is drawn by GaleFX (on the
+		-- back at rest, in the hand for her strikes, opened for the wind).
+		Motion = { body = "Gale", weapons = "none", clips = "Gale", intro = "Gale", springy = false },
+		-- Her tool is the fan, not a blade (Gale.gust): a cone of wind that
+		-- pushes the body out and sends the blades in it back at their thrower;
+		-- fire in it grows. With the chakra modifier (Wind) it reaches further
+		-- and leaves a short lane. Inside a clean string it is free; away + tool
+		-- there hops her back behind it.
+		Gust = { Range = 18, Cone = 0.8, Push = 40, GuardPush = 2, Recover = 0.55, Release = 0.1, Infused = 1.35, Lane = 3, LaneLife = 2.6, Hop = 6 },
+		-- Holding jump in the air: the open fan carries her (fall capped).
+		Glide = { Fall = 12 },
+		-- The wind's retreat: the kawarimi throws her further back.
+		Substitution = { Mode = "hop", Distance = 14 },
+		-- Zoner AI profile (AI:zone): too close under Close (the gust under Push),
+		-- backs off at an angle under Keep (she holds ~20-40 studs).
+		Zoner = { Close = 9, Push = 12, Keep = 20 },
+		-- Awakening: Kuchiyose: Kirikiri Mai. Kamatari cuts across the arena (a
+		-- big projectile that leaves a long lane); for the rest of it her lanes
+		-- last longer, widen and send blades back at their thrower, and every
+		-- gust leaves a lane. No damage multiplier; when it ends the fan stays
+		-- shut for FanClosed seconds (no technique).
+		Awakening = { Name = "KIRIKIRI MAI", Speed = 1.06, Regen = 1.4, Cooldown = 0.7, LaneLife = 1.5, LaneWidth = 1.3, Reflect = true, GustReach = 1.4, GustLane = true, FanClosed = 3,
+			Summon = { Speed = 105, Range = 90, Damage = 15, Radius = 2.8, Lane = 4.5, LaneLife = 6 }, Color = { 196, 255, 232 } },
+		AttackProfile = {
+			-- The closed fan is a long iron club: further reach, a larger contact
+			-- distance (she stops further away), slower and lighter than fists.
+			Light1={startup=1.05,recovery=1.0,travel=.8,range=7.5,depth=5.4,offset=3.4,width=3.6,contact=5,damage=.9,kind="strike"},
+			Light2={startup=1.1,recovery=1.0,travel=.8,range=7.6,depth=5.2,offset=3.4,width=8,contact=5,damage=.7,kind="slash"},
+			-- The third opens the fan: a gust that throws the body away (the string makes distance).
+			Light3={startup=1.12,recovery=1.05,travel=.6,range=7.8,depth=5.8,offset=3.6,width=7,contact=5,impulseZ=70,impulseY=16,damage=.55,kind="palm"},
+			Heavy={startup=1.05,range=7.6,depth=5.4,offset=3.4,contact=5,kind="heavy"},
+			DashAttack={travel=.85,range=7.5,contact=4.6},Air1={range=7,contact=4.6},Air2={range=7,contact=4.6},
+		},
+		Skin = { 240, 214, 188 }, Hair = { 226, 196, 120 }, Outfit = { 186, 170, 204 },
+		Techniques = {
+			-- The fan opens on the first moon: a wind scythe that leaves a lane of
+			-- wind behind it (Zones "Wind": carried by the scythe as it flies).
+			{ Id = "Kamaitachi", Name = "Kamaitachi", Element = "Wind", Cost = 12, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 2.8, Interruptible = true, Range = 46, Speed = 74, Damage = 8, Lane = 4, LaneLife = 3.6, Hint = "A wind scythe • its lane slows the way up, carries the way down, turns blades aside • knocks away (walls)" },
+			-- Three moons: a wide gust that blows the blades away, throws the body
+			-- (to a wall when one is behind it) and leaves a wide lane.
+			{ Id = "GreatGust", Name = "Great Gust", Element = "Wind", Cost = 22, Channel = 0.5, Active = 0.2, Recovery = 0.42, Cooldown = 7, Interruptible = true, Range = 30, Cone = 0.74, Damage = 9, Push = 58, Lane = 5, LaneLife = 4.2, Hint = "Three moons: blades blown away, the body thrown back • a wide lane stays" },
+			-- A whirlwind rises where the opponent stood a beat ago (Zones "Updraft").
+			{ Id = "Cyclone", Name = "Rising Whirlwind", Element = "Wind", Cost = 16, Channel = 0.24, Active = 0.05, Recovery = 0.3, Cooldown = 5.5, Interruptible = true, Range = 34, Damage = 6, Delay = 0.45, Radius = 3.4, Life = 2.2, Lift = 50, Hint = "A whirlwind rises where the opponent stood • keep moving" },
+		},
+	},
 }
 </ProtectedString>
         </Properties>
@@ -869,6 +951,24 @@ return {
 		-- closer than most, and the shortest recovery after an arrival.
 		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
 	},
+	-- Temari (roster wave): the fan strikes make distance. Toward after two
+	-- hits: the Updraft, a scoop into a column of rising air (onRoute "updraft",
+	-- Gale.updraft): the body comes down slowly, in reach of the wind, not of a
+	-- chase. Away: the closed fan slammed down. Sideways after one: a full turn,
+	-- the gust throws the body aside (Attacks lateral). In the air, the drive
+	-- and the Fan Dive; no switch (she does not vault over anyone).
+	--   reengage.reposition  the wind step (Gale.reposition): E outside a chase
+	--                        window takes her back to `keep` studs (out at an
+	--                        `angle` when close, in when far, aside at range),
+	--                        never into melee.
+	Gale={
+		routes={up="Updraft",down="FanSlam",side="FanPirouette",airUp="AirDrive",airDown="FanDive"},
+		onRoute={Updraft="updraft"},
+		heavyAfterOne="FanBackhand",
+		stringCancels={Kamaitachi=true},
+		blockCancels={Tool=true},
+		reengage={name="gale",reposition=true,keep=17,speed=1.0,reach=22,angle=30,side=10,chase=.26,recovery=.16},
+	},
 }
 </ProtectedString>
         </Properties>
@@ -911,11 +1011,12 @@ end
 function Rules.canAct(a, now)
 	return a.health &gt; 0 and free[a.state] == true and now &gt;= (a.lockUntil or 0)
 end
-function Rules.technique(a, spec, now, prerequisites)
+-- `why`: the refusal a technique's own check gave (its second return value).
+function Rules.technique(a, spec, now, prerequisites, why)
 	if not Rules.canAct(a, now) then return false, "Committed" end
 	if (a.cooldowns[spec.Id] or 0) &gt; now then return false, "Cooldown" end
 	if a.chakra &lt; spec.Cost then return false, "Need chakra" end
-	if not prerequisites then return false, "Condition missing" end
+	if not prerequisites then return false, why or "Condition missing" end
 	return true
 end
 function Rules.reserve(a, spec, now)
@@ -1944,7 +2045,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a3b2fc03b380d0f071d3b000065209e898514d6b4e60cda37dd3cfddd51fdf3c</string>
+          <string name="Value">2908203446c5761c852ec101b7a1243cc74397af15eb75dd55989f8c1cee0a18</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -2049,6 +2150,7 @@ SOFTWARE.
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
+local Zones=require(script.Parent.Zones)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -2072,6 +2174,34 @@ local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
 local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
 -- Rock Lee (stress-test wave) is the keenest of all: he never lets the body go.
 DASH.Leaf=1.6;CHASE.Leaf=.8
+-- Temari (roster wave) re-enters at her range (the wind step) and rarely
+-- chases: her conversions are at range (AI:zone).
+DASH.Gale=.35;CHASE.Gale=.25
+-- A wind lane (Zones) the body stands in that blows against its way to the
+-- opponent: the side to step out of it, else nil.
+local function laneAgainst(c,a,toward)
+	for _,z in c.zones or {} do
+		if z.owner~=a and z.tune.headwind and z.direction:Dot(toward)&lt;-.4 and Zones.inside(z,a.root.Position) then
+			local d=a.root.Position-z.origin
+			local across=Vector3.new(d.X,0,d.Z)-z.direction*(d.X*z.direction.X+d.Z*z.direction.Z)
+			return if across.Magnitude&gt;.3 then across.Unit else z.direction:Cross(Vector3.yAxis).Unit
+		end
+	end
+	return nil
+end
+-- A straight dash at the opponent would run up an enemy lane (it breaks there).
+local function laneOnPath(c,a,target)
+	if not c.zones or #c.zones==0 then return false end
+	local from,to=a.root.Position,target.root.Position
+	local way=Vector3.new(to.X-from.X,0,to.Z-from.Z)
+	if way.Magnitude&lt;1 then return false end
+	for _,z in c.zones do
+		if z.owner~=a and z.tune.headwind and z.direction:Dot(way.Unit)&lt;-.35 then
+			for k=1,6 do if Zones.inside(z,from:Lerp(to,k/7)) then return true end end
+		end
+	end
+	return false
+end
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -2132,6 +2262,89 @@ function AI:defend(now)
 	end
 	return false
 end
+-- A zoner (def.Zoner: Temari). The distance is hers: too close, the fan pushes
+-- the body out or she steps back on the wind (else the fan string makes the
+-- distance); a body thrown or held up in the air is converted at range, never
+-- chased; at range the scythe, a whirlwind where the body is going, the Great
+-- Gust at an approach or at blades, and no walking into melee. Same costs and
+-- windows as the player. True when it decided this tick.
+function AI:zone(now,distance,toward,tangent,target)
+	local c,a=self.combat,self.actor
+	local tune=a.def.Zoner
+	if a.state=="Rush" then return true end
+	if a.reaction or a.airborne or a.state~="Neutral" then return false end
+	local function cast(id,aim)
+		local slot=slotOf(a,id)
+		if slot and c:request(a,slot,aim or target.root.Position) then self.techReadyAt=now+.5+self.rng:NextNumber()*.9;return true end
+		return false
+	end
+	local tool=now&gt;=(a.neutralToolAt or 0) and a.chakra&gt;=Config.ToolCost
+	local closing=(target.locomotion or Vector3.zero):Dot(-toward)
+	local threat=target.state=="Rush" or target.state=="Pursuit" or closing&gt;6
+	local hurt=target.reaction~=nil or target.state=="Stunned"
+	-- Where the body will be when the wind gets there (a scythe at ~74 studs/s).
+	local lead=target.root.Position+(target.locomotion or Vector3.zero)*math.min(.5,distance/74)*.8
+	-- A dash or a chase at her: the gust stops it in the air (it is not
+	-- armoured); already on her, the guard takes the arrival strike.
+	if target.state=="Rush" or target.state=="Pursuit" then
+		if distance&lt;7 and self.rng:NextNumber()&lt;.6 then c:request(a,"Guard");self.guardUntil=now+.4;return true end
+		if distance&lt;(a.def.Gust and a.def.Gust.Range or 18)+2 and tool and self.rng:NextNumber()&lt;.75 then
+			a.move=Vector3.zero
+			if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+		end
+	end
+	if distance&lt;tune.Close then
+		if hurt then return false end
+		-- A strike already coming: the guard (her fan string or a gust answers after).
+		if (target.state=="Startup" or target.state=="Active") and distance&lt;8 and self.rng:NextNumber()&lt;.55 then
+			c:request(a,"Guard");self.guardUntil=now+.35;return true
+		end
+		-- Walking into the fan's length: the tip first (it out-reaches a fist),
+		-- the string then throws the body back out.
+		if distance&gt;4.6 and distance&lt;7.6 and target.state~="Startup" and target.state~="Active" and self.rng:NextNumber()&lt;.45 then
+			a.move=Vector3.zero
+			if press(c,a,"Attack") then return true end
+		end
+		if distance&lt;tune.Push and tool and self.rng:NextNumber()&lt;.55 and press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+		if a.pursuitUntil&lt;=now and self.rng:NextNumber()&lt;.45 then
+			a.move=-toward
+			if press(c,a,"Pursuit","back",0) then return true end
+		end
+		return false
+	end
+	local floating=target.reaction=="Launched" or target.reaction=="Juggled" or (target.reaction=="Knockback" and target.airborne)
+	local sight=c:lineOfSight(a,target)
+	if floating and sight and distance&lt;32 then
+		if cast("Kamaitachi") then return true end
+		if distance&lt;17 and tool and press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+	end
+	-- Blades coming at her: the gust sends them back.
+	if tool and Techniques.bladeIncoming(c,a,{Radius=6,Reach=16}) and self.rng:NextNumber()&lt;.55 then
+		if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+	end
+	-- Coming in fast inside her band: out on the wind before the body arrives.
+	if threat and distance&lt;tune.Close+5 and a.pursuitUntil&lt;=now and self.rng:NextNumber()&lt;.35 then
+		a.move=-toward
+		if press(c,a,"Pursuit","back",0) then return true end
+	end
+	if now&gt;=(self.techReadyAt or 0) and sight and target.state~="Defeated" then
+		local roll=self.rng:NextNumber()
+		if distance&lt;24 and threat and roll&lt;.3 and cast("GreatGust") then return true end
+		if distance&gt;12 and distance&lt;34 and closing&gt;3 and roll&lt;.5 then
+			-- (where the body will be when the column rises: the signs, then the beat)
+			if cast("Cyclone",target.root.Position+(target.locomotion or Vector3.zero)*.69) then return true end
+		end
+		-- (against a body coming in fast, from far enough that a dash into the
+		-- channel meets the scythe)
+		if distance&gt;(if threat then 15 else 10) and distance&lt;42 and roll&lt;.7 and cast("Kamaitachi",lead) then return true end
+	end
+	-- Hold the band: inside it she backs off at an angle (a straight backpedal
+	-- is slower than any approach), never walks into melee.
+	if distance&lt;(tune.Keep or tune.Close+6) then
+		a.move=(-toward*.75+tangent*(self.strafeSign or 1)*.66).Unit;a.sprinting=distance&lt;tune.Close+3
+	end
+	return true
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health&lt;=0 or target.health&lt;=0 then a.move=Vector3.zero; return end
@@ -2161,6 +2374,11 @@ function AI:update(now)
 		-- A probe often resolves into an entry: the press opens with a dash.
 		if wasProbing and not self.probing then self.entryUntil=now+1.2 end
 	end
+	-- Against a zoner (a far longer preferred range than ours: Temari) waiting
+	-- at range is losing: no probing, weave on the way in, dash from further,
+	-- step out of a wind lane that blows against the approach (below).
+	local zoner=(target.def.PreferredRange or 7)&gt;=14 and (a.def.PreferredRange or 7)&lt;12 and not a.def.Zoner
+	if zoner then self.probing=false end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil&lt;=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
@@ -2190,9 +2408,12 @@ function AI:update(now)
 	-- steps. Two sprinting fighters offset the same way (velocity turns at a
 	-- bounded rate) orbit each other forever instead of meeting.
 	local lateral=self.strafeAmount or .5
-	if radial&gt;0 and not calm then lateral*=if distance&gt;desired+8 then 0 else .35 end
+	if radial&gt;0 and not calm then lateral*=if zoner then .8 elseif distance&gt;desired+8 then 0 else .35 end
 	if holding then lateral=0 end
 	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
+	-- Standing in a wind lane that blows against the way in: out of it sideways.
+	local outOfLane=radial&gt;0 and laneAgainst(c,a,toward)
+	if outOfLane then a.move=outOfLane+toward*.25;Brawler.event(c,a,"LaneAvoid") end
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
@@ -2251,6 +2472,8 @@ function AI:update(now)
 	local entering=distance&lt;8.5 and (self.lastDistance or 99)&gt;=8.5 and closing&gt;4
 	self.lastDistance=distance
 	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	-- A zoner plays her own range game (AI:zone) before any melee logic.
+	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then
 		local roll=self.rng:NextNumber()
 		if roll&lt;tune.ReadGuard then
@@ -2472,7 +2695,7 @@ function AI:update(now)
 	local theirs=(target.def.AttackProfile and target.def.AttackProfile.Light1 and target.def.AttackProfile.Light1.range or 6)
 	if theirs&gt;reach and distance&gt;reach-1 and distance&lt;theirs+3 and target.state~="Startup" then
 		a.move=toward;a.sprinting=true
-		if distance&gt;Config.Rush.MinRange+.5 and self.rng:NextNumber()&lt;.3 and c:request(a,"Pursuit") then return end
+		if distance&gt;Config.Rush.MinRange+.5 and self.rng:NextNumber()&lt;.3 and not laneOnPath(c,a,target) and c:request(a,"Pursuit") then return end
 		if self.rng:NextNumber()&lt;.2 then c:request(a,"Dodge");return end
 	end
 	if distance&gt;6 and distance&lt;17 and self.rng:NextNumber()&lt;0.1 then c:request(a,"Jump") end
@@ -2483,8 +2706,9 @@ function AI:update(now)
 	-- into a zoner is the slow answer).
 	local keen=.1*(DASH[a.fighterId] or 1)
 	if (self.entryUntil or 0)&gt;now then keen*=4 elseif distance&gt;desired+10 then keen*=2 end
+	if zoner then keen*=1.3 end
 	if not calm and distance&gt;dashFrom and distance&lt;44 and target.state~="Startup" and target.state~="TechniqueChannel" and target.state~="Guarding"
-		and self.rng:NextNumber()&lt;keen then
+		and self.rng:NextNumber()&lt;keen and not laneOnPath(c,a,target) then
 		if c:request(a,"Pursuit") then self.entryUntil=nil;return end
 	end
 	-- Sidestep cover when the direct route is obstructed.
@@ -3030,6 +3254,8 @@ function Brawler.start(c,a,name)
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
 		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
+		-- A weapon's reach: the step-in stops further out (Temari's iron fan).
+		spec.contact=profile.contact or spec.contact
 	end
  a.buffered=nil
  a.attackVariant=nil
@@ -3319,6 +3545,9 @@ function Brawler.routePayoff(c,a,b,p)
  local kind=graph and graph.onRoute and graph.onRoute[p.name]
  if not kind or b.health&lt;=0 then return end
  local Techniques=require(script.Parent.Techniques)
+ -- A payoff a fighter's own module registered (Techniques.payoffs: Temari's updraft).
+ local custom=Techniques.payoffs and Techniques.payoffs[kind]
+ if custom then custom(c,a,b,p);return end
  if kind=="bodySeal" then
   -- Minato: the rising kick leaves a short seal on the body: 2 follows it up.
   local entry=Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b)
@@ -3675,6 +3904,9 @@ function Brawler.hit(c,a,p)
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer
  if steer and steer.Moves[p.name] then forward=Brawler.wallAim(c,a,b,steer) or forward end
+ -- A lateral strike (Attacks lateral: Temari's pirouette) throws the body to
+ -- the side the stick asked for instead of straight away.
+ if spec.lateral then forward=a.root.CFrame.RightVector*(if (a.angleSide or 0)~=0 then a.angleSide else 1) end
  local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
@@ -5263,6 +5495,15 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 T.Masteries.Taijutsu={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
 T.CharacterMastery.Leaf="Taijutsu"
 T.Preferred.Taijutsu={}
+-- Temari (roster wave): wind through the iron fan. Her tool is not thrown; the
+-- chakra modifier on it (Gale.gust) is a Wind infusion of the fan: a longer
+-- gust that leaves a short lane. Her Kamaitachi and Kamatari meet other
+-- flights as cutting wind volumes (they blow blades away, fire feeds on them).
+T.Objects.Fan={toolType="Fan",tags={"tool","wind"},canLaunch=false,infusions={Wind=true},stats={weight=3,impact=1},caps={weight=8,impact=4},radius=1,visual="target"}
+T.Masteries.WindFan={tags={"wind"},levels={Wind=3,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Gale="WindFan"
+T.Preferred.WindFan={Fan="Wind"}
+T.ObjectOf.gale="WindCut";T.ObjectOf.kamatari="WindCut"
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,
@@ -5417,6 +5658,8 @@ local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
 local Defense = require(script.Parent.VelmoraDefense)
+-- Persistent typed zones (wind lanes, updrafts) beside the burning hazards.
+local Zones = require(script.Parent.Zones)
 local Combat = {}; Combat.__index = Combat
 function Combat.new(match)
 	return setmetatable({match=match,now=0,actors={},effects={},projectiles={},hazards={},historyAt=0,impacts={},impactSerial=0,projectileSerial=0},Combat)
@@ -5616,6 +5859,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- A new fighter's strike carries the flag in its own data (Attacks
 		-- breaksShield: Rock Lee's rising kick and spinning dash kick).
 		breaking=breaking or (attacker.pending~=nil and attacker.pending.kind=="Brawl" and attacker.pending.spec.breaksShield==true)
+		-- Wind scatters sand (TEMARI.md §11): a contact flagged by its source
+		-- (Combat.shieldBreak, set around the damage: Temari's scythe and gust).
+		breaking=breaking or self.shieldBreak==true
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
 		victim.shieldRegenAt=self.now+shield.Regen
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
@@ -5823,6 +6069,10 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 	local p={id=self.projectileSerial,a=a,origin=start,position=start,direction=delta.Unit,speed=speed,range=range,remaining=range,
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
+		-- A flight that names its own contact (style, and reaction/impulse/stun:
+		-- Temari's wind scythe knocks away; breaksShield: wind scatters sand)
+		-- instead of its kind's.
+		style=opts.style,stun=opts.stun,breaksShield=opts.breaksShield,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
@@ -5836,6 +6086,20 @@ function Combat:removeProjectile(p)
 	for i=#self.projectiles,1,-1 do
 		if self.projectiles[i]==p then table.remove(self.projectiles,i) end
 	end
+end
+-- A flight changed in the air (a wind lane turns it aside, speeds it up or
+-- feeds it): the client rebuilds every flight as origin + direction x speed x
+-- (t - born), so the change starts a new leg here and now (origin, born and
+-- range re-based, a volume's growth folded into its radius) and goes out in
+-- the next snapshot. Changing direction or speed in place drew it on the old line.
+function Combat:redirect(p,direction,speed)
+	p.radius=(p.radius or 0)+(p.growth or 0)*math.max(0,self.now-p.born)
+	p.origin=p.position;p.born=self.now;p.range=p.remaining
+	if direction and direction.Magnitude&gt;.01 then p.direction=direction.Unit end
+	if speed then p.speed=speed end
+	p.leg=(p.leg or 0)+1
+	self.urgent=true
+	return p
 end
 -- The marked kunai that is still travelling, if any: Minato can relocate onto
 -- it mid-flight, which is the whole point of the seal.
@@ -5969,11 +6233,13 @@ function Combat:substitute(a)
 		away=Vector3.new(away.X,0,away.Z)
 		if away.Magnitude&lt;0.1 then away=a.root.CFrame.RightVector end
 		-- Pinned against a wall the straight escape is blocked: slide along it.
-		local moved=Motor.travel(a,self,away,tune.Distance)
+		-- (A twist may jump further: Temari's wind retreat.)
+		local hop=(twist and twist.Distance) or tune.Distance
+		local moved=Motor.travel(a,self,away,hop)
 		if moved&lt;2 then
 			local side=Vector3.new(-away.Z,0,away.X)
-			moved=Motor.travel(a,self,side,tune.Distance)
-			if moved&lt;2 then moved=Motor.travel(a,self,-side,tune.Distance) end
+			moved=Motor.travel(a,self,side,hop)
+			if moved&lt;2 then moved=Motor.travel(a,self,-side,hop) end
 		end
 		if moved&lt;2 then return false,"Escape blocked" end
 	end
@@ -6073,6 +6339,8 @@ end
 function Combat:rush(a)
 	local tune=Config.Rush
 	local style=Brawler.reentry(a)
+	-- A re-entry at range instead of into melee (Temari's wind step, Gale.reposition).
+	if style.reposition and Techniques.reposition then return Techniques.reposition(self,a,style) end
 	local cancel=a.state=="Recovery" and self.now&gt;=(a.recoveryCancelAt or math.huge)
 	if not Rules.canAct(a,self.now) and not cancel then return false,"Committed" end
 	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
@@ -6132,6 +6400,8 @@ function Combat:awaken(a)
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
 	if b then self:cue(b,"OPPONENT AWAKENED",1) end
 	Brawler.event(self,a,"Awaken")
+	-- What an awakening sets off on entry (Techniques.awakenHooks: Kamatari).
+	for _,hook in Techniques.awakenHooks or {} do hook(self,a) end
 	return true
 end
 -- Awakened techniques recover faster (and Itachi's cost less).
@@ -6181,7 +6451,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		return true
 	end
+	-- The jump key held (Jump ... JumpOff): Temari's glide reads it.
+	if action=="Jump" then a.jumpHeld=true end
 	if action=="JumpOff" then
+		a.jumpHeld=false
 		if a.airborne and a.root.AssemblyLinearVelocity.Y&gt;22 and self.now&lt;(a.takeoffUntil or 0)+0.18 then
 			local v=a.root.AssemblyLinearVelocity
 			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
@@ -6249,6 +6522,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 			if opts~=nil and opts.chakra==true then Chakra.refuse(self,a);return false,"No chakra tool" end
 			return Techniques.deflectKick(self,a)
 		end
+		-- A tool that is not thrown, registered by its fighter's module
+		-- (Techniques.Tools: Temari's fan gust); it owns its chakra rule too.
+		local custom=Techniques.Tools and Techniques.Tools[a.def.Tool]
+		if custom then return custom(self,a,opts~=nil and opts.chakra==true,aim) end
 		if a.def.ArrivalThrow then
 			local thrown,refusal=self:arrivalThrow(a)
 			if thrown~=nil then return thrown,refusal end
@@ -6498,10 +6775,13 @@ function Combat:updateActor(a,dt)
 		local rate=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.ShieldRegen or 1) else 1
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
-	a.speedScale=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1
+	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale)
+	a.speedScale=(if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
+	-- Per-fighter steps registered by a fighter's module (Temari's glide).
+	for _,step in Techniques.actorSteps or {} do step(self,a,dt,now) end
 	-- Rooted while spinning or striking the sixty-four palms.
 	if (a.rotationUntil or 0)&gt;now or (a.flurryUntil or 0)&gt;now then a.move=Vector3.zero end
 	if now&lt;(a.hitstopUntil or 0) then
@@ -6876,7 +7156,7 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
-	local style=IMPACT_STYLE[p.kind] or "shuriken"
+	local style=p.style or IMPACT_STYLE[p.kind] or "shuriken"
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	-- The entry still finishes the blade on the client; it only reads as a body
 	-- hit once the defence has resolved. A blade that was evaded, parried or
@@ -6884,9 +7164,11 @@ function Combat:projectileHit(p,target,position,normal)
 	local entry=self.impacts[#self.impacts]
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
+	self.shieldBreak=p.breaksShield
 	local damaged=self:damage(p.a,target,p.damage,false,false)
 	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
+	self.shieldBreak=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	-- Infused objects add their own consequence (guard crush, shock, ignition,
@@ -6913,6 +7195,13 @@ function Combat:projectileHit(p,target,position,normal)
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
 			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
+		elseif p.reaction then
+			-- A flight that names its reaction (impulse: lift, push along its line):
+			-- a real Knockback, so the wind can splat a body on a wall at range.
+			local push=Vector3.new(p.direction.X,0,p.direction.Z)
+			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
+			local impulse=p.impulse or Vector3.new(0,12,40)
+			Brawler.react(self,target,p.reaction,push.Unit*impulse.Z+Vector3.new(0,impulse.Y,0),p.stun or .5,p.a)
 		end
 		if p.riders or p.bounced or p.ignited then self:projectileRiders(p,target) end
 	end
@@ -7133,6 +7422,8 @@ function Combat:update(dt,now)
 	end
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
+	-- Zones act before the flights move (a blade entering a lane turns this frame).
+	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -7156,6 +7447,7 @@ function Combat:clear(preserveAnimations)
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
+	Zones.clear(self)
 	if self.scheduled then table.clear(self.scheduled) end
 	self.impacts={}; self.impactSerial=0
 end
@@ -8085,7 +8377,332 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND48">
+      <Item class="ModuleScript" referent="ND48">
+        <Properties>
+          <string name="Name">Gale</string>
+          <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
+-- lives here so the contested combat files only carry short registries
+-- (Techniques.Tools / payoffs / awakenHooks / actorSteps / reposition, read by
+-- Combat and Brawler): Kamaitachi, Great Gust and Rising Whirlwind (each one
+-- leaves a zone, Zones.luau), the fan gust that replaces a thrown tool, the
+-- wind step that re-enters at her range, the updraft route, the glide and the
+-- Kirikiri Mai awakening. Sheet: docs/characters/TEMARI.md.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+local Rules=require(Shared.Rules)
+local Zones=require(script.Parent.Zones)
+local Motor=require(script.Parent.Motor)
+local Brawler=require(script.Parent.Brawler)
+local Defense=require(script.Parent.VelmoraDefense)
+local Gale={}
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function flatUnit(v,fallback)
+	local f=flat(v)
+	return if f.Magnitude&gt;.05 then f.Unit else (fallback or Vector3.zAxis)
+end
+local function awake(c,a) return (a.awakenUntil or 0)&gt;c.now and a.def.Awakening or nil end
+-- After Kirikiri Mai the fan stays shut for a moment: no technique.
+function Gale.fanOpen(c,a,_spec,now)
+	local tune=a.def.Awakening
+	local until_=a.awakenUntil or 0
+	if tune and tune.FanClosed and a.awakened and until_&gt;0 and now&gt;=until_ and now&lt;until_+tune.FanClosed then return false,"Fan closed" end
+	return true
+end
+-- A lane of wind from `origin` (put on the floor) along `direction`. Kirikiri
+-- Mai: longer, wider, and blades going up it are sent back.
+local function lane(c,a,origin,direction,length,width,life,carrier)
+	local on=awake(c,a)
+	return Zones.add(c,a,"Wind",{origin=Vector3.new(origin.X,c.match.origin.Y,origin.Z),direction=direction,length=length,
+		width=width*(if on then on.LaneWidth or 1 else 1),life=life*(if on then on.LaneLife or 1 else 1),carrier=carrier,reflect=on~=nil and on.Reflect==true})
+end
+Gale.lane=lane
+-- The fan's line: from the hand at the aim, rising to a body held up in the
+-- air (never steeper than ~40 degrees), and the flat direction of its lane.
+local function windLine(c,a,aim,range)
+	local origin=c.launchPoint(a,"Wind")
+	aim=aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*range
+	local d=aim-origin
+	local f=flat(d)
+	if f.Magnitude&lt;1 then f=flat(a.root.CFrame.LookVector);d=f end
+	local rise=math.clamp(d.Y,-f.Magnitude*.2,f.Magnitude*.84)
+	return origin,Vector3.new(f.X,rise,f.Z).Unit,f.Unit
+end
+-- In the fan's cone (flat reach, cosine of the half angle, 10 studs up or down).
+local function inCone(a,position,reach,cos)
+	local d=position-a.root.Position
+	local f=flat(d)
+	if f.Magnitude&gt;reach or math.abs(d.Y)&gt;10 then return false end
+	if f.Magnitude&lt;1.5 then return true end
+	return flatUnit(a.root.CFrame.LookVector):Dot(f.Unit)&gt;=cos
+end
+Gale.inCone=inCone
+-- The blades in the cone are blown out of the air (sent back at their thrower
+-- when `back`), fire in it grows. Returns how many blades.
+local function sweep(c,a,reach,cos,back)
+	local count=0
+	for _,p in table.clone(c.projectiles) do
+		if p.a~=a and not p.dead and not p.planted and (p.speed or 0)&gt;0 and inCone(a,p.position,reach,cos) then
+			if Zones.FIRE[p.kind] then
+				Zones.feed(c,p,a,Zones.KINDS.Wind.feed,Zones.KINDS.Wind.feedDamage)
+			elseif Zones.OBJECT[p.kind] then
+				count+=1
+				if back then Zones.sendBack(c,p,a)
+				else
+					p.dead=true
+					local index=table.find(c.projectiles,p)
+					if index then table.remove(c.projectiles,index) end
+					c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id,direction=-p.direction,chakra="blown"})
+				end
+			end
+		end
+	end
+	return count
+end
+
+-- --------------------------------------------------------------- techniques
+-- Kamaitachi: a wind scythe that knocks away (a wall behind the body splats
+-- it) and leaves a lane of wind behind it, laid as it flies. Wind scatters
+-- sand: it breaks Gaara's shield outright (breaksShield), as the Great Gust does.
+local function kamaitachi(c,a,pending)
+	local spec=pending.spec
+	local origin,line,direction=windLine(c,a,pending.aim,spec.Range)
+	local p=c:projectile(a,origin+line*spec.Range,spec.Speed or 74,spec.Range,spec.Damage,"gale",nil,
+		{origin=origin,radius=2.4,growth=3,reaction="Knockback",impulse=Vector3.new(0,12,46),stun=.5,style="jutsu",breaksShield=true})
+	lane(c,a,origin,direction,spec.Range,spec.Lane or 3.2,spec.LaneLife or 3.6,p)
+	c:cue(a,"KAMAITACHI",.6)
+	Brawler.event(c,a,"Kamaitachi")
+end
+-- Great Gust: the fan fully open. Blades in the cone are blown away, fire
+-- grows, the body is thrown back (a wall splat at range) and a wide lane stays.
+local function greatGust(c,a,pending)
+	local spec=pending.spec
+	local reach,cos=spec.Range,spec.Cone or .74
+	local look=flatUnit(a.root.CFrame.LookVector)
+	local blown=sweep(c,a,reach,cos,false)
+	local b=a.target
+	if b and b.health&gt;0 and inCone(a,b.root.Position,reach,cos) and c:lineOfSight(a,b) then
+		c.damageTag="Great Gust";c.shieldBreak=true
+		local hit=c:damage(a,b,spec.Damage,false,false)
+		c.damageTag=nil;c.shieldBreak=nil
+		if c.match.phase~="Duel" then return end
+		if hit then
+			local away=flatUnit(b.root.Position-a.root.Position,look)
+			if b.impactStyle=="block" then Motor.travel(b,c,away,3)
+			else Brawler.react(c,b,"Knockback",away*(spec.Push or 58)+Vector3.new(0,14,0),.6,a) end
+			Brawler.event(c,a,"GreatGustHit")
+		end
+	end
+	lane(c,a,a.root.Position+look*2,look,reach,spec.Lane or 5,spec.LaneLife or 4.2)
+	c:pushImpact(a.root.Position+look*3,"greatgust",true,{owner=a.id,fighter=a.fighterId,direction=look,range=reach,blown=blown})
+	c:cue(a,if blown&gt;0 then "GREAT GUST • "..blown.." BLADES BLOWN AWAY" else "GREAT GUST",.7)
+	Brawler.event(c,a,"GreatGust")
+end
+-- Rising Whirlwind: the spot where the opponent stands is marked; a beat later
+-- a column of rising air erupts there. A body still in it is thrown up and
+-- held (Zones "Updraft"); one that kept moving is not.
+local function cyclone(c,a,pending)
+	local spec=pending.spec
+	local b=a.target
+	local aim=pending.aim or (b and b.root.Position) or a.root.Position+a.root.CFrame.LookVector*spec.Range
+	local d=flat(aim-a.root.Position)
+	if d.Magnitude&gt;spec.Range then aim=a.root.Position+d.Unit*spec.Range end
+	local spot=Vector3.new(aim.X,c.match.origin.Y,aim.Z)
+	local radius=spec.Radius or 3.4
+	local delay=spec.Delay or .45
+	c:pushImpact(spot+Vector3.new(0,.3,0),"cyclone",false,{owner=a.id,fighter=a.fighterId,phase="mark",delay=delay,radius=radius})
+	c:cue(a,"RISING WHIRLWIND",.6)
+	Brawler.event(c,a,"Cyclone")
+	c:schedule(c.now+delay,function()
+		if a.health&lt;=0 or c.match.phase~="Duel" then return end
+		local z=Zones.add(c,a,"Updraft",{origin=spot,radius=radius,life=spec.Life or 2.2})
+		c:pushImpact(spot+Vector3.new(0,.3,0),"cyclone",true,{owner=a.id,fighter=a.fighterId,phase="rise",radius=radius,zone=z.id})
+		local victim=a.target
+		if not victim or victim.health&lt;=0 or victim.invulnerableUntil&gt;c.now or not Zones.inside(z,victim.root.Position) then return end
+		c.damageTag="Rising Whirlwind";c.hitOrigin=spot+Vector3.new(0,3,0)
+		local hit=c:damage(a,victim,spec.Damage,false,false)
+		c.hitOrigin=nil;c.damageTag=nil
+		if c.match.phase~="Duel" or not hit or victim.impactStyle=="block" then return end
+		Brawler.react(c,victim,"Launched",Vector3.new(0,spec.Lift or 50,0),1.1,a)
+		Brawler.event(c,a,"CycloneHit")
+	end)
+end
+
+-- ---------------------------------------------------------------- the fan
+-- The release of a gust: everything in the cone at that frame.
+function Gale.blow(c,a,infused)
+	local tune=a.def.Gust
+	local on=awake(c,a)
+	local reach=tune.Range*(if infused then tune.Infused or 1 else 1)*(if on then on.GustReach or 1 else 1)
+	local cos=tune.Cone or .8
+	local look=flatUnit(a.root.CFrame.LookVector)
+	local sent=sweep(c,a,reach,cos,true)
+	local b=a.target
+	if b and b.health&gt;0 and b.invulnerableUntil&lt;=c.now and (b.rotationUntil or 0)&lt;=c.now and not b.groundPose
+		and inCone(a,b.root.Position,reach,cos) and c:lineOfSight(a,b) then
+		local away=flatUnit(b.root.Position-a.root.Position,look)
+		if b.state=="Guarding" then Motor.travel(b,c,away,tune.GuardPush or 2)
+		else
+			Brawler.react(c,b,"Knockback",away*(tune.Push or 34)+Vector3.new(0,8,0),.4,a)
+			Brawler.event(c,a,"GustPush")
+		end
+	end
+	if infused or (on and on.GustLane) then lane(c,a,a.root.Position+look*2,look,reach,tune.Lane or 3,tune.LaneLife or 2.6) end
+	c:pushImpact(a.root.Position+look*2.5,"gust",infused~=nil,{owner=a.id,fighter=a.fighterId,direction=look,range=reach,sent=sent,infusion=infused and infused.infusion})
+	if sent&gt;0 then c:cue(a,"GUST • "..sent.." SENT BACK",.6);Brawler.event(c,a,"GustReturn") end
+end
+-- The tool button (Fighters.Gale.Gust): the fan swung like a throw (the legs
+-- keep moving, a hit cancels it before the release). Free inside a clean
+-- string (away + tool there also hops her back); with the chakra modifier a
+-- Wind infusion (ChakraTuning WindFan): further, and a short lane stays.
+function Gale.gust(c,a,chakra,aim)
+	local tune=a.def.Gust
+	if not tune then return false,"No tool" end
+	if a.throwing then return false,"Throwing" end
+	if a.reaction or a.wall then return false,"Committed" end
+	local chainCancel=a.def.ComboToolCancel and a.state=="Recovery" and a.chainOpen and c.now&gt;=(a.chainAt or 0)
+	if (not chainCancel and not Rules.canAct(a,c.now)) or c.now&lt;(a.neutralToolAt or 0) then return false,"Tool recovering" end
+	local infused=nil
+	if chakra then
+		local Chakra=require(script.Parent.ChakraCombat)
+		local why
+		infused,why=Chakra.plan(c,a,"Fan")
+		if not infused then Chakra.refuse(c,a);return false,why end
+		local cost=Chakra.cost(infused,chainCancel)
+		if a.chakra&lt;cost then Chakra.refuse(c,a);return false,"Need chakra" end
+		a.chakra-=cost
+		Chakra.record(c,"Infuse",infused.rules,{owner=a.id,object="Fan",infusion=infused.infusion,mode="gust"})
+	elseif not chainCancel then
+		if a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+		a.chakra-=Config.ToolCost
+	end
+	local back=chainCancel and Brawler.intent(a)=="back"
+	if chainCancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;c:setState(a,"Neutral",0);Brawler.event(c,a,"ChainTool") end
+	if a.state=="Guarding" then Defense.guard(a,false,c.now);c:setState(a,"Neutral",0) end
+	if back and a.target then
+		a.hop={direction=flatUnit(a.root.Position-a.target.root.Position,-a.root.CFrame.LookVector),remaining=tune.Hop or 6,speed=40}
+		Brawler.event(c,a,"Disengage")
+	end
+	a.neutralToolAt=c.now+(if chainCancel then .45 else tune.Recover or .7)
+	c:beginThrow(a,{kind="Gust",release=tune.Release or .1,count=1,aim=aim,fire=function() Gale.blow(c,a,infused) end})
+	c:cue(a,if infused then "WIND GUST • LANE" else "GUST",.5)
+	Brawler.event(c,a,"Gust")
+	return true
+end
+
+-- ------------------------------------------------------------ the wind step
+-- E outside a chase window (MoveGraphs.Gale.reengage.reposition): back to her
+-- range on the wind. Close in, out at an angle; far, in to `keep` studs (never
+-- into melee); at range, a step aside that changes her lanes' angle. Same
+-- price, cooldown and Rush state as the shared chakra dash (its motion and
+-- arrival are Combat's), so it can be read and punished the same way.
+function Gale.reposition(c,a,style)
+	local tune=Config.Rush
+	local cancel=a.state=="Recovery" and c.now&gt;=(a.recoveryCancelAt or math.huge)
+	if not Rules.canAct(a,c.now) and not cancel then return false,"Committed" end
+	if a.airborne or a.wall or a.reaction then return false,"No chakra dash" end
+	if a.chakra&lt;Config.PursuitCost then return false,"Need chakra" end
+	if c.now&lt;(a.rushReadyAt or 0) then return false,"Cooldown" end
+	local b=a.target
+	if not b then return false,"No target" end
+	local look=flatUnit(a.root.CFrame.LookVector)
+	local gap=flat(b.root.Position-a.root.Position).Magnitude
+	local toward=flatUnit(b.root.Position-a.root.Position,look)
+	local right=toward:Cross(Vector3.yAxis)
+	local dir,stickSide=Brawler.classify(a,a.move or Vector3.zero)
+	local side=if dir=="side" then stickSide else (a.rushSide or 1)
+	a.rushSide=-side
+	local keep=style.keep or 17
+	local line,distance,mode
+	if a.locked==false then
+		local stick=flat(a.move or Vector3.zero)
+		line=if stick.Magnitude&gt;.2 then stick.Unit else look;distance=tune.Reposition;mode="step"
+	elseif gap&gt;keep+4 then
+		line=toward;distance=math.min(gap-keep,style.reach or 22);mode="in"
+	elseif gap&lt;keep-4 then
+		-- Out at an angle, to `keep` studs from the body.
+		local rad=math.rad(style.angle or 30)
+		line=(-toward*math.cos(rad)+right*side*math.sin(rad)).Unit
+		local along=gap*line:Dot(toward)
+		distance=math.clamp(along+math.sqrt(math.max(0,along*along-gap*gap+keep*keep)),6,style.reach or 22)
+		mode="out"
+	else
+		line=right*side;distance=style.side or 10;mode="aside"
+	end
+	if cancel then a.pending=nil end
+	a.chakra-=Config.PursuitCost
+	a.rushReadyAt=c.now+tune.Cooldown
+	a.pending=nil;a.attackName=nil;a.guardHeld=false;a.chainOpen=false
+	Brawler.breakString(a,false)
+	local speed=tune.Speed*(style.speed or 1)
+	local goal=c:clamp(a.root.Position+line*distance)
+	local duration=math.clamp(distance/speed+.12,.12,tune.MaxTime*(style.time or 1))
+	c:setState(a,"Rush",duration)
+	a.rush={style=style,speed=speed,arrive=0,recovery=style.recovery or tune.Recovery,from=a.root.Position,line=line,goal=goal,reposition=mode}
+	a.rushArriveUntil=c.now+duration+tune.Arrive
+	Brawler.event(c,a,"Rush");Brawler.event(c,a,"Reengage");Brawler.event(c,a,"WindStep")
+	c:pushImpact(a.root.Position,"chase",false,{owner=a.id,fighter=a.fighterId,variant=style.name,mode="dash",to=goal,reposition=mode})
+	c:cue(a,"WIND STEP",.4)
+	return true
+end
+
+-- ------------------------------------------------------------ air and route
+-- The glide (Fighters.Gale.Glide): jump held in the air, the open fan holds
+-- her up (the fall is capped). Free bodies only: an attack, a reaction, a
+-- dash or a hover window own their own motion.
+function Gale.glide(c,a,_dt,now)
+	local g=a.def.Glide
+	if not g then return end
+	local on=a.jumpHeld==true and a.airborne and not a.reaction and not a.wall and a.state=="Neutral" and (a.airHold or 0)&lt;=now
+	if on then
+		local v=a.root.AssemblyLinearVelocity
+		if v.Y&lt;-g.Fall then a.root.AssemblyLinearVelocity=Vector3.new(v.X,-g.Fall,v.Z) end
+		if not a.gliding then a.gliding=true;Brawler.event(c,a,"Glide") end
+	else a.gliding=nil end
+end
+-- The Updraft route (onRoute "updraft"): the scooped body is held up by a
+-- column of rising air, in reach of the wind instead of a chase.
+function Gale.updraft(c,a,b,_p)
+	local z=Zones.add(c,a,"Updraft",{origin=Vector3.new(b.root.Position.X,c.match.origin.Y,b.root.Position.Z),radius=4.6,life=2})
+	c:pushImpact(b.root.Position,"cyclone",false,{owner=a.id,fighter=a.fighterId,phase="updraft",radius=4.6,zone=z.id})
+	c:cue(a,"UPDRAFT • KAMAITACHI OR GUST",1)
+	Brawler.event(c,a,"UpdraftHold")
+end
+
+-- --------------------------------------------------------------- awakening
+-- Kuchiyose: Kirikiri Mai (Combat:awaken, Techniques.awakenHooks): Kamatari
+-- cuts across the arena at the opponent, a big wind projectile that knocks
+-- down and lays a long lane. The rest of the rules are read where they apply
+-- (lane, Gale.blow, Gale.fanOpen).
+function Gale.summon(c,a)
+	local tune=a.def.Awakening
+	local s=tune and tune.Summon
+	if not s then return end
+	local b=a.target
+	local look=flatUnit(a.root.CFrame.LookVector)
+	local toward=if b then flatUnit(b.root.Position-a.root.Position,look) else look
+	local origin=a.root.Position+toward*2+Vector3.new(0,.6,0)
+	local p=c:projectile(a,origin+toward*s.Range,s.Speed,s.Range,s.Damage,"kamatari",nil,
+		{origin=origin,radius=s.Radius,growth=0,reaction="Knockdown",impulse=Vector3.new(0,16,34),stun=.8,style="jutsu",heavy=true,breaksShield=true})
+	lane(c,a,origin,toward,s.Range,s.Lane or 4.5,s.LaneLife or 6,p)
+	c:cue(a,"KUCHIYOSE • KIRIKIRI MAI",1.2)
+	Brawler.event(c,a,"Kamatari")
+end
+
+function Gale.install(T)
+	T.Kamaitachi={check=Gale.fanOpen,execute=kamaitachi}
+	T.GreatGust={check=Gale.fanOpen,execute=greatGust}
+	T.Cyclone={check=Gale.fanOpen,execute=cyclone}
+	T.Tools=T.Tools or {};T.Tools.Gust=Gale.gust
+	T.payoffs=T.payoffs or {};T.payoffs.updraft=Gale.updraft
+	T.awakenHooks=T.awakenHooks or {};table.insert(T.awakenHooks,Gale.summon)
+	T.actorSteps=T.actorSteps or {};table.insert(T.actorSteps,Gale.glide)
+	T.reposition=Gale.reposition
+end
+return Gale
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="ND49">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -8115,7 +8732,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -8132,6 +8749,7 @@ local Techniques=require(script.Parent.Techniques)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
+local Zones=require(script.Parent.Zones)
 local Matches={}; Matches.__index=Matches
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
@@ -8338,7 +8956,9 @@ function Matches:view(s,cursor,mine,theirs)
 			tenketsuPoints=if (a.tenketsuUntil or 0)&gt;now then table.clone(a.tenketsuPoints or {}) else {},
 			tenketsuSevere=(a.tenketsuUntil or 0)&gt;now and (a.tenketsu or 0)&gt;=4,
 			illusionKind=if (a.illusionUntil or 0)&gt;now then a.illusionKind else nil,
-			curseHunger=a.curseHunger==true}
+			curseHunger=a.curseHunger==true,
+			-- Temari: the open fan holding her up in the air.
+			glide=a.gliding==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -8360,7 +8980,8 @@ function Matches:view(s,cursor,mine,theirs)
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
 	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
+		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
+		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end
 function Matches:request(player,payload)
@@ -8473,7 +9094,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -8740,7 +9361,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -9213,7 +9834,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -9551,7 +10172,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -9816,7 +10437,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -10292,7 +10913,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -10503,7 +11124,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -10706,7 +11327,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -11195,7 +11816,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -11508,7 +12129,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -12510,11 +13131,14 @@ function Techniques.curseDrain(c,a,dt,now)
 	a.curseHunger=rate&gt;tune.HealthDrain
 	if rate&gt;0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
 end
+-- Temari (roster wave): her kit registers itself (techniques, the fan gust
+-- tool, the updraft payoff, Kamatari, the glide, the wind step).
+require(script.Parent.Gale).install(Techniques)
 return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -12614,7 +13238,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -12642,7 +13266,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -12770,7 +13394,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -12821,7 +13445,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -13578,6 +14202,59 @@ local function dressLee(model,def)
 		end
 	end
 end
+-- Temari between the Chunin Exam and the Sasuke retrieval (15, roster wave):
+-- sandy hair in four short spiky tufts, the Sand headband on the forehead, the
+-- light lilac short kimono with a crimson obi, fishnet at the elbows and knees,
+-- bare legs and sandals. The iron fan is not costume: GaleFX carries it (on the
+-- back at rest, in the hand for the fight). All flat SmoothPlastic.
+local function dressTemari(model,def)
+	local hair=rgb(226,196,120)
+	local hairShade=rgb(196,164,92)
+	local kimono=rgb(186,170,204)
+	local kimonoShade=rgb(160,144,182)
+	local obi=rgb(176,40,52)
+	local mesh=rgb(62,62,70)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(52,112,96),hairShade)
+	hairCap(model,hair)
+	-- Four short tufts at the back, two each side, pointing out and down.
+	for _,s in {{Vector3.new(-.55,.3,.5),Vector3.new(-.75,.35,.6)},{Vector3.new(.55,.3,.5),Vector3.new(.75,.35,.6)},
+		{Vector3.new(-.5,-.25,.6),Vector3.new(-.7,-.45,.55)},{Vector3.new(.5,-.25,.6),Vector3.new(.7,-.45,.55)}} do
+		local lock=spike(model,s[1],s[2],.95,.5,.32,hair)
+		if lock then lock.Name="TemariPonytail" end
+		local tie=wear(model,"Head","HairTie",Vector3.new(.2,.2,.2),CFrame.new(s[1]),rgb(60,46,40))
+		if tie then tie.Shape=Enum.PartType.Ball end
+	end
+	-- A fringe parted to the side, short locks framing the face.
+	for _,x in {-.4,-.08,.26} do spike(model,Vector3.new(x,.62,-.56),Vector3.new(x*.4-.1,-.75,-.55),.48,.4,.22,hair) end
+	for _,side in {-1,1} do wear(model,"Head","Bang",Vector3.new(.18,.7,.32),CFrame.new(side*.8,.1,-.4)*A(R(4),0,R(side*4)),hair) end
+	-- The Sand headband on the forehead.
+	wear(model,"Head","Headband",Vector3.new(1.66,.24,1.66),CFrame.new(0,.36,0),rgb(40,40,48))
+	wear(model,"Head","HeadbandPlate",Vector3.new(.86,.3,.06),CFrame.new(0,.36,-.85),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"Head","SandMark",Vector3.new(.26,.12,.02),CFrame.new(0,.37,-.89),rgb(70,78,90),Enum.Material.Metal)
+	-- The kimono: top, short sleeves, the skirt over the thighs, the crossed collar.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=kimono end
+	end
+	wear(model,"UpperTorso","KimonoCollar",Vector3.new(.08,1.0,.04),CFrame.new(-.18,.25,-.53)*A(0,0,R(-28)),kimonoShade)
+	wear(model,"UpperTorso","KimonoCollar",Vector3.new(.08,1.0,.04),CFrame.new(.18,.25,-.53)*A(0,0,R(28)),kimonoShade)
+	wear(model,"LowerTorso","KimonoSkirt",Vector3.new(2.16,1.35,1.2),CFrame.new(0,-.62,0),kimono)
+	wear(model,"LowerTorso","KimonoHem",Vector3.new(2.2,.1,1.24),CFrame.new(0,-1.3,0),kimonoShade)
+	-- The crimson obi and its knot at the back.
+	wear(model,"LowerTorso","Obi",Vector3.new(2.12,.5,1.12),CFrame.new(0,.36,0),obi)
+	wear(model,"LowerTorso","ObiKnot",Vector3.new(.7,.42,.3),CFrame.new(0,.38,.66),obi)
+	for _,side in {"Left","Right"} do
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.9,.5,.9),CFrame.new(0,.25,0),kimono)
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=skin end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		-- Fishnet at the elbows and knees.
+		wear(model,side.."LowerArm","Fishnet",Vector3.new(.8,.36,.8),CFrame.new(0,.3,0),mesh)
+		wear(model,side.."LowerLeg","Fishnet",Vector3.new(.84,.4,.84),CFrame.new(0,.36,0),mesh)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(44,46,62) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -13592,6 +14269,7 @@ function World.dress(model,def)
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	if def.Name=="Rock Lee" then dressLee(model,def) end
+	if def.Name=="Temari" then dressTemari(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -13608,23 +14286,249 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
+      <Item class="ModuleScript" referent="ND66">
+        <Properties>
+          <string name="Name">Zones</string>
+          <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
+-- (which only burn): pieces of the arena that rewrite movement and flight for
+-- a few seconds. A zone is data {kind, owner, shape, life}; KINDS says what a
+-- kind does to bodies and to projectiles, the client draws each kind its own
+-- way (GaleFX: wind, never fire), Combat:clear empties the list and the
+-- snapshot carries it (Matches:view `zones`). First user: Temari (wind lanes,
+-- updraft columns). Server authority only.
+local Brawler=require(script.Parent.Brawler)
+local Motor=require(script.Parent.Motor)
+local Zones={}
+-- Physical objects the wind turns aside, carries or sends back; fire it
+-- feeds. Jutsu volumes (palms, sand waves, wind blades) go through.
+local OBJECT={kunai=true,marked=true,shuriken=true,wire=true,sand=true,needle=true}
+local FIRE={fireball=true,phoenix=true}
+-- What a blade sent back becomes (a marked kunai loses its seal, a wire its wire).
+local RETURN={kunai="kunai",marked="kunai",shuriken="shuriken",wire="shuriken",sand="sand",needle="shuriken"}
+Zones.OBJECT=OBJECT;Zones.FIRE=FIRE;Zones.RETURN=RETURN
+--   lane    origin (on the floor), flat direction, length, half width, height
+--   column  origin (on the floor), radius, height
+-- Wind: walking into it x headwind, with it x tailwind (the stick decides);
+-- a free body is carried downwind (more in the air); a chakra dash straight
+-- up it breaks there (+dashBreak recovery; not the owner's); a blade flying up it is
+-- turned aside (x deflect speed, a short flight left), one riding it goes x
+-- ride faster and +rideDamage; fire crossing it grows (x feed radius, x
+-- feedDamage), whoever threw it. The owner gets `refund` chakra per blade
+-- turned aside. Updraft: a body thrown up in it falls at `fall` at most, a free
+-- airborne body is held at `hold`.
+Zones.KINDS={
+	Wind={shape="lane",height=9,headwind=.7,tailwind=1.15,carry=4,airCarry=11,dashBreak=.25,deflect=.75,flightLeft=12,ride=1.4,rideDamage=1,feed=1.5,feedDamage=1.2,refund=2},
+	Updraft={shape="column",height=18,fall=-6,hold=-4},
+}
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+-- spec: origin, direction, length, width, radius, height, life, carrier (a
+-- projectile whose flight lays the lane: it grows as the projectile flies and
+-- stops where it ended), reflect (blades going up it are sent back instead).
+function Zones.add(c,owner,kind,spec)
+	local tune=Zones.KINDS[kind]
+	assert(tune,"Unknown zone kind "..tostring(kind))
+	c.zones=c.zones or {}
+	c.zoneSerial=(c.zoneSerial or 0)+1
+	local direction=spec.direction and flat(spec.direction)
+	local z={id=c.zoneSerial,kind=kind,tune=tune,owner=owner,origin=spec.origin,born=c.now,expires=c.now+(spec.life or 3),
+		direction=if direction and direction.Magnitude&gt;.01 then direction.Unit else Vector3.zAxis,length=spec.length or 0,
+		width=spec.width or 3,radius=spec.radius or 3,height=spec.height or tune.height,carrier=spec.carrier,reflect=spec.reflect==true,
+		touched=setmetatable({},{__mode="k"})}
+	z.reach=if z.carrier then 0 else z.length
+	table.insert(c.zones,z)
+	c.urgent=true
+	return z
+end
+-- Inside the zone? For a lane, also how far along it.
+function Zones.inside(z,position)
+	local d=position-z.origin
+	if d.Y&lt;-2.5 or d.Y&gt;z.height then return false end
+	if z.tune.shape=="column" then return flat(d).Magnitude&lt;=z.radius,0 end
+	local along=d.X*z.direction.X+d.Z*z.direction.Z
+	if along&lt;0 or along&gt;z.reach then return false end
+	return Vector3.new(d.X-z.direction.X*along,0,d.Z-z.direction.Z*along).Magnitude&lt;=z.width,along
+end
+-- Walking with or against the wind: the multiplier on this actor's speed this
+-- frame (Combat:updateActor folds it into speedScale, which Place1Movement and
+-- Motor.step both read).
+function Zones.speedScale(c,a)
+	local list=c.zones
+	if not list or #list==0 or not a.move then return 1 end
+	local move=flat(a.move)
+	if move.Magnitude&lt;.2 then return 1 end
+	move=move.Unit
+	local scale=1
+	for _,z in list do
+		local tune=z.tune
+		if tune.headwind and Zones.inside(z,a.root.Position) then
+			local along=move:Dot(z.direction)
+			scale*=if along&lt;0 then 1+(tune.headwind-1)*-along else 1+(tune.tailwind-1)*along
+		end
+	end
+	return scale
+end
+-- Fire feeds on wind: the flight goes on from here (re-announced), bigger and hotter.
+function Zones.feed(c,p,owner,factor,damage)
+	local radius=(p.radius or 0)+(p.growth or 0)*math.max(0,c.now-p.born)
+	c:redirect(p)
+	p.radius=math.max(radius,1)*factor;p.damage*=damage;p.fed=(p.fed or 0)+1
+	c:pushImpact(p.position,"windfeed",false,{projectile=p.id,kind=p.kind,owner=owner.id,fighter=owner.fighterId,direction=p.direction})
+	Brawler.event(c,owner,"WindFeed")
+end
+-- A blade sent back at its thrower: the old flight ends, a new one (owned by
+-- the wind's owner) leaves from where it was.
+function Zones.sendBack(c,p,owner)
+	local thrower=p.a
+	p.dead=true
+	local index=table.find(c.projectiles,p)
+	if index then table.remove(c.projectiles,index) end
+	c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=thrower.id,direction=-p.direction})
+	if thrower.health&lt;=0 or owner.target~=thrower then return nil end
+	local gap=(thrower.root.Position-p.position).Magnitude
+	local back=c:projectile(owner,thrower.root.Position,math.max(p.speed,80)*1.1,gap+10,p.damage,RETURN[p.kind] or "kunai",nil,{origin=p.position,radius=p.radius})
+	back.bounced=true
+	-- An infused blade keeps its chakra on the way back (like a ricochet).
+	if p.chakra then require(script.Parent.ChakraCombat).inherit(back,p) end
+	return back
+end
+-- One projectile entering one lane (once per lane).
+local function flight(c,z,p)
+	local tune=z.tune
+	local owner=z.owner
+	if FIRE[p.kind] then Zones.feed(c,p,owner,tune.feed,tune.feedDamage);return end
+	if not OBJECT[p.kind] then return end
+	local course=flat(p.direction)
+	if course.Magnitude&lt;.05 then return end
+	local along=course.Unit:Dot(z.direction)
+	if along&lt;=-.35 then
+		-- Up the lane: turned aside out of it, or (Kirikiri Mai) sent back.
+		owner.chakra=math.min(owner.def.Chakra or 100,owner.chakra+(tune.refund or 0))
+		if z.reflect then
+			Zones.sendBack(c,p,owner)
+			Brawler.event(c,owner,"WindReturn")
+			return
+		end
+		local d=p.position-z.origin
+		local across=Vector3.new(d.X,0,d.Z)-z.direction*(d.X*z.direction.X+d.Z*z.direction.Z)
+		local side=if across.Magnitude&gt;.2 then across.Unit else z.direction:Cross(Vector3.yAxis).Unit
+		p.remaining=math.min(p.remaining,tune.flightLeft)
+		c:redirect(p,z.direction*.5+side*.85+Vector3.new(0,.15,0),p.speed*tune.deflect)
+		c:pushImpact(p.position,"winddeflect",false,{owner=owner.id,fighter=owner.fighterId,kind=p.kind,direction=p.direction,zone=z.id})
+		Brawler.event(c,owner,"WindDeflect")
+	elseif along&gt;=.35 then
+		-- Riding it: faster and harder, on the same line.
+		c:redirect(p,nil,p.speed*tune.ride)
+		p.damage+=tune.rideDamage
+		Brawler.event(c,owner,"WindRide")
+	end
+end
+local FREE={Neutral=true,Guarding=true,Recovery=true,Startup=true,Active=true,TechniqueChannel=true,TechniqueActive=true,TechniqueRecovery=true}
+local function body(c,a,dt)
+	for _,z in c.zones do
+		if Zones.inside(z,a.root.Position) then
+			local tune=z.tune
+			if tune.carry then
+				-- The wind carries a free body downwind (a dash, a chase or a
+				-- reaction is its own motion).
+				if not a.reaction and not a.wall and not a.grabbedBy and FREE[a.state] then
+					Motor.travel(a,c,z.direction,(if a.airborne then tune.airCarry else tune.carry)*dt)
+				elseif a.state=="Rush" and a.rush and a.rush.goal and z.owner~=a and not a.rush.windBroken then
+					-- A chakra dash straight up someone's wind breaks there: it
+					-- stops in the lane and stumbles (a longer recovery). Go
+					-- round the lane, or over it.
+					local way=flat(a.rush.goal-a.root.Position)
+					if way.Magnitude&gt;.5 and way.Unit:Dot(z.direction)&lt;-.35 then
+						a.rush.windBroken=true
+						a.rush.recovery=(a.rush.recovery or .2)+tune.dashBreak
+						a.untilTime=math.min(a.untilTime,c.now)
+						c:pushImpact(a.root.Position,"windbreak",false,{owner=z.owner.id,fighter=z.owner.fighterId,victim=a.id,direction=z.direction,zone=z.id})
+						c:cue(a,"THE WIND BREAKS THE DASH",.6)
+						Brawler.event(c,z.owner,"WindBreak")
+					end
+				end
+			elseif tune.fall then
+				local v=a.reactionVelocity
+				if a.reaction and a.airborne and v and (v.Y&lt;tune.fall or a.reaction=="Launched" or a.reaction=="Juggled") then
+					-- Thrown up in it: it comes down slowly and is held while the
+					-- column stands (in reach of the wind; a substitution escapes).
+					if v.Y&lt;tune.fall then a.reactionVelocity=Vector3.new(v.X*.9,tune.fall,v.Z*.9) end
+					if a.reaction=="Launched" or a.reaction=="Juggled" then a.reactionUntil=math.max(a.reactionUntil or 0,c.now+.05) end
+				elseif not a.reaction and a.airborne and a.state~="Pursuit" and a.state~="Rush" then
+					local w=a.root.AssemblyLinearVelocity
+					if w.Y&lt;tune.hold then a.root.AssemblyLinearVelocity=Vector3.new(w.X,tune.hold,w.Z) end
+				end
+			end
+		end
+	end
+end
+-- Every frame, before the projectiles move: expiry, lanes laid by their
+-- carrier, then bodies and flights inside the zones.
+function Zones.step(c,dt)
+	local list=c.zones
+	if not list or #list==0 then return end
+	for i=#list,1,-1 do
+		local z=list[i]
+		if c.now&gt;=z.expires then
+			table.remove(list,i);c.urgent=true
+		elseif z.carrier then
+			local p=z.carrier
+			if p.dead or not table.find(c.projectiles,p) then z.carrier=nil
+			else
+				local d=p.position-z.origin
+				z.reach=math.clamp(d.X*z.direction.X+d.Z*z.direction.Z,z.reach,z.length)
+			end
+		end
+	end
+	if #list==0 then return end
+	for _,a in c.actors do
+		if a.health&gt;0 then body(c,a,dt) end
+		if c.match.phase~="Duel" then return end
+	end
+	for _,p in table.clone(c.projectiles) do
+		if not p.dead and not p.planted and (p.speed or 0)&gt;0 then
+			for _,z in list do
+				if z.tune.shape=="lane" and not z.touched[p] and Zones.inside(z,p.position) then
+					z.touched[p]=true
+					flight(c,z,p)
+					if p.dead then break end
+				end
+			end
+		end
+	end
+end
+-- What the client draws (each kind its own way).
+function Zones.snapshot(c,now)
+	local out={}
+	for _,z in c.zones or {} do
+		table.insert(out,{id=z.id,kind=z.kind,owner=z.owner.id,origin=z.origin,direction=z.direction,length=z.reach,width=z.width,
+			radius=z.radius,height=z.height,remaining=math.max(0,z.expires-now),life=z.expires-z.born,reflect=z.reflect})
+	end
+	return out
+end
+function Zones.clear(c)
+	if c.zones then table.clear(c.zones) end
+end
+return Zones
+</ProtectedString>
+        </Properties>
+      </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND65">
+  <Item class="StarterPlayer" referent="ND67">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND66">
+    <Item class="StarterPlayerScripts" referent="ND68">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND67">
+      <Item class="Folder" referent="ND69">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND68">
+        <Item class="ModuleScript" referent="ND70">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -13901,7 +14805,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND69">
+        <Item class="LocalScript" referent="ND71">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -13935,7 +14839,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND70">
+        <Item class="ModuleScript" referent="ND72">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -14085,7 +14989,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND71">
+        <Item class="ModuleScript" referent="ND73">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -14129,7 +15033,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND72">
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -14448,6 +15352,12 @@ function FX:sync(data)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
+		elseif not p.planted and entry.data.born~=p.born then
+			-- Re-based in the air (Combat:redirect: a wind lane turned it aside or
+			-- sped it up): the old leg is drawn until the visual clock reaches the
+			-- new one, so the flight bends where it bent instead of vanishing and
+			-- jumping ahead.
+			entry.previous=entry.data
 		end
 		entry.data=p;entry.missingSince=nil
 	end
@@ -14471,6 +15381,9 @@ function FX:stepProjectiles(dt)
 	local t=self:visualTime()
 	for id,entry in self.projectiles do
 		local p=entry.data
+		if entry.previous then
+			if t&lt;p.born then p=entry.previous else entry.previous=nil end
+		end
 		local age=t-p.born
 		if entry.missingSince and os.clock()-entry.missingSince&gt;.35 then
 			self:finishProjectile(id)
@@ -15749,6 +16662,8 @@ function FX:update(data,dt,folder)
 	end
 	self:stepProjectiles(dt)
 	self:hazardsStep(data)
+	-- Layers that draw from the whole snapshot (GaleFX: the zones, each kind its own way).
+	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 	self:crowdOf(folder)
 	self:ambient(dt)
 	for _,key in {"human","bot"} do
@@ -15770,11 +16685,665 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Temari (the iron fan, Kamaitachi, Kamatari, wind lanes and updrafts, gusts).
+require(script.Parent.GaleFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND73">
+        <Item class="ModuleScript" referent="ND75">
+          <Properties>
+            <string name="Name">GaleFX</string>
+            <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
+-- a heavy club in the hand for her strikes, opened moon by moon for the wind,
+-- planted beside her at the intro), the Kamaitachi scythe and Kamatari in
+-- flight, the zones (Zones.luau: wind lanes stream along their direction,
+-- updraft columns rise; never fire), her gusts, the whirlwind and her contacts
+-- in the wind's colours. One identity layer installed into Effects (like
+-- SandFX and LeeFX), plus a `frame` step that draws the snapshot's zones.
+-- Presentation only: nothing here can change gameplay.
+local Debris=game:GetService("Debris")
+
+local GaleFX={}
+local K -- Effects' helpers, handed over by install()
+GaleFX.clock=os.clock -- (headless tests drive time)
+local GALE="Gale"
+
+local WIND=Color3.fromRGB(196,255,232)
+local WIND_CORE=Color3.fromRGB(242,255,250)
+local WIND_DEEP=Color3.fromRGB(116,204,170)
+local MOON=Color3.fromRGB(146,108,204)
+local IRON=Color3.fromRGB(60,62,72)
+local IRON_EDGE=Color3.fromRGB(150,152,166)
+local PAPER=Color3.fromRGB(230,226,214)
+local DUST=Color3.fromRGB(214,206,186)
+local FIRE=Color3.fromRGB(255,150,60)
+
+local function flatUnit(v,fallback)
+	local f=Vector3.new(v.X,0,v.Z)
+	return if f.Magnitude&gt;.05 then f.Unit else (fallback or Vector3.zAxis)
+end
+local function ground(fx,position,fallback)
+	local ok,hit=pcall(K.floorUnder,fx,position,3,12)
+	return if ok and hit then hit.Position.Y else fallback
+end
+-- Thin streaks of air: the readable unit of every wind effect here.
+local function streak(parent,from,to,color,width,time,transparency)
+	local d=to-from
+	if d.Magnitude&lt;.05 then return nil end
+	local s=K.block(parent,Vector3.new(width or .1,width or .1,d.Magnitude),CFrame.lookAt(from:Lerp(to,.5),to),color or WIND,Enum.Material.Neon)
+	s.Name="WindStreak";s.Transparency=transparency or .3
+	if time then K.tween(s,time,{Transparency=1,Size=Vector3.new(.02,.02,d.Magnitude*1.2)});Debris:AddItem(s,time+.05) end
+	return s
+end
+-- A fan of streaks blown from `at` along `direction` (a cone of half angle `spread`).
+local function gustCone(fx,name,at,direction,range,spread,count,color,time)
+	local holder=K.new("Model",{Name=name},fx.folder)
+	local look=flatUnit(direction)
+	for k=1,count do
+		local a=((k-1)/math.max(1,count-1)-.5)*2*spread+(math.random()-.5)*.08
+		local dir=CFrame.fromAxisAngle(Vector3.yAxis,a):VectorToWorldSpace(look)
+		local from=at+dir*(1+math.random()*2)+Vector3.new(0,(math.random()-.5)*2.4,0)
+		streak(holder,from,from+dir*(range*(.55+math.random()*.45)),color or WIND,.12,time or .3,.25)
+	end
+	Debris:AddItem(holder,(time or .3)+.2)
+	return holder
+end
+
+-- ------------------------------------------------------------------ the fan
+-- Nine slats on one pivot (the grip), along -Y: folded onto one bar it is a
+-- heavy iron club, spread over half a circle it is the open fan with its three
+-- moons painted on the face.
+local SLATS,LENGTH=9,4.4
+local function buildFan()
+	local model=K.new("Model",{Name="TemariFan"})
+	local grip=K.block(model,Vector3.new(.3,.3,.3),CFrame.new(),IRON);grip.Name="Grip";grip.Transparency=1;grip.Anchored=false;grip.Massless=true
+	model.PrimaryPart=grip
+	local function hinge(part,c0)
+		part.Anchored=false;part.Massless=true
+		return K.new("Weld",{Name="Hinge",Part0=grip,Part1=part,C0=c0},part)
+	end
+	local slats={}
+	for i=1,SLATS do
+		local slat=K.block(model,Vector3.new(.95,LENGTH,.1),CFrame.new(),if i%2==0 then PAPER else Color3.fromRGB(238,234,224))
+		slat.Name="FanSlat"
+		table.insert(slats,{part=slat,weld=hinge(slat,CFrame.new(0,-LENGTH/2,0)),spread=(i-(SLATS+1)/2)/((SLATS-1)/2)})
+	end
+	-- Closed: the iron spine that makes it a weapon; two bands and a cap.
+	local bar=K.block(model,Vector3.new(1.05,LENGTH+.1,.42),CFrame.new(),IRON,Enum.Material.Metal);bar.Name="FanBar"
+	hinge(bar,CFrame.new(0,-LENGTH/2,0))
+	local bands={}
+	for k,y in {-.5,-LENGTH+.6} do
+		local band=K.block(model,Vector3.new(1.12,.16,.5),CFrame.new(),IRON_EDGE,Enum.Material.Metal);band.Name="FanBand"
+		hinge(band,CFrame.new(0,y,0));bands[k]=band
+	end
+	local moons={}
+	for k=1,3 do
+		local moon=K.block(model,Vector3.new(.04,1.05,1.05),CFrame.new(),MOON);moon.Name="FanMoon";moon.Shape=Enum.PartType.Cylinder;moon.Transparency=1
+		moons[k]={part=moon,weld=hinge(moon,CFrame.new()),angle=({-46,0,46})[k]}
+	end
+	return {model=model,grip=grip,slats=slats,bar=bar,bands=bands,moons=moons,open=0,moonsShown=0}
+end
+-- Open fraction 0 (closed club) .. 1 (half circle), `moons` painted moons shown.
+local function shapeFan(fan,open,moons,lit)
+	fan.open=open;fan.moonsShown=moons
+	for _,s in fan.slats do s.weld.C0=CFrame.Angles(0,0,math.rad(s.spread*82*open))*CFrame.new(0,-LENGTH/2,0) end
+	local closed=open&lt;.25
+	fan.bar.Transparency=if closed then 0 else 1
+	for _,band in fan.bands do band.Transparency=if closed then 0 else 1 end
+	for k,m in fan.moons do
+		m.weld.C0=CFrame.Angles(0,0,math.rad(m.angle*open))*CFrame.new(0,-LENGTH*.62,-.08)*CFrame.Angles(0,math.rad(90),0)
+		-- One moon per third of the opening.
+		m.part.Transparency=if k&lt;=moons and open&gt;=k/3-.02 then 0 else 1
+		m.part.Material=if lit then Enum.Material.Neon else Enum.Material.SmoothPlastic
+	end
+end
+-- Where it sits: on the back (grip over the right shoulder, across to the left
+-- hip), in the right hand (closed along the forearm, open with its face to the
+-- swing), planted beside her (the intro).
+local MOUNT={
+	back={"UpperTorso",CFrame.new(.72,1.25,.72)*CFrame.Angles(0,0,math.rad(-30))},
+	hand={"RightHand",CFrame.new(0,-.22,0)},
+	open={"RightHand",CFrame.new(0,-.22,0)*CFrame.Angles(0,math.rad(90),0)},
+	planted={"HumanoidRootPart",CFrame.new(2.4,-2.9,.2)*CFrame.Angles(0,math.rad(70),math.pi)},
+}
+GaleFX.MOUNT=MOUNT
+local CAST_MOONS={Kamaitachi=1,Cyclone=2,GreatGust=3}
+local CHANNEL={Kamaitachi=.3,Cyclone=.24,GreatGust=.5}
+-- The fan opens for the strikes that blow (the third, the pirouette, the dive, the scoop).
+local OPEN_STRIKE={Light3=1,FanPirouette=1,FanDive=1,Updraft=.6}
+local SWINGING={Startup=true,Active=true,Recovery=true}
+local CASTING={TechniqueChannel=true,TechniqueActive=true,TechniqueRecovery=true}
+-- Mount, open fraction and moons for this frame, from the snapshot alone.
+function GaleFX.fanPose(actor)
+	if (actor.health or 1)&lt;=0 then return "back",0,0 end
+	if (actor.intro or 0)&gt;0 and actor.state=="Neutral" then return "planted",1,3 end
+	local awake=(actor.awaken or 0)&gt;0
+	local cast=actor.castId
+	if cast and CAST_MOONS[cast] and CASTING[actor.state] then
+		local open=if actor.state=="TechniqueChannel" then math.clamp((actor.castElapsed or 0)/CHANNEL[cast],.15,1) else 1
+		local moons=math.max(1,math.ceil(CAST_MOONS[cast]*open-.01))
+		return "open",open,if awake then 3 else moons
+	end
+	if actor.throwKind=="Gust" and (actor.throwElapsed or 99)&gt;=0 and (actor.throwElapsed or 99)&lt;.45 then return "open",1,if awake then 3 else 1 end
+	local name=actor.attackName
+	-- (late in a recovery the arm is back on the hip: the fan is put away)
+	if name and SWINGING[actor.state] and not (actor.state=="Recovery" and (actor.attackElapsed or 0)&gt;.45) then
+		local open=OPEN_STRIKE[name] or 0
+		return if open&gt;0 then "open" else "hand",open,if open&gt;0 then 1 else 0
+	end
+	if actor.glide then return "open",1,0 end
+	return "back",0,if awake then 3 else 0
+end
+local function fanFor(fx,model)
+	fx.galeFans=fx.galeFans or setmetatable({},{__mode="k"})
+	local fan=fx.galeFans[model]
+	if fan and fan.model.Parent==model then return fan end
+	fan=buildFan()
+	fan.model.Parent=model
+	fan.carry=K.new("Weld",{Name="FanCarry",Part1=fan.grip},fan.grip)
+	fx.galeFans[model]=fan
+	return fan
+end
+local function holdFan(fx,model,actor)
+	local fan=fanFor(fx,model)
+	local mount,open,moons=GaleFX.fanPose(actor)
+	local spec=MOUNT[mount]
+	local part=model:FindFirstChild(spec[1]) or model:FindFirstChild("HumanoidRootPart")
+	if part and (fan.carry.Part0~=part or fan.mount~=mount) then
+		fan.carry.Part0=part;fan.carry.C0=spec[2]
+		-- Drawn or put away: a small gust where the fan moves.
+		if fan.mount and (mount=="back")~=(fan.mount=="back") then
+			local at=(part.CFrame*spec[2]).Position
+			K.shockRing(fx.folder,at,WIND,.4,3.2,.18)
+		end
+		fan.mount=mount
+	end
+	if math.abs(fan.open-open)&gt;.01 or fan.moonsShown~=moons or fan.lit~=((actor.awaken or 0)&gt;0) then
+		fan.lit=(actor.awaken or 0)&gt;0
+		shapeFan(fan,open,moons,fan.lit)
+	end
+	return fan
+end
+
+-- ------------------------------------------------------------------ flights
+-- Kamaitachi: a wide crescent of cutting air, as big as the server's swept
+-- radius at every moment (it grows as it flies), streaming a pale trail.
+local ARC=9
+local function buildScythe(name,color)
+	return function()
+		local model=K.new("Model",{Name=name})
+		local root=K.block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
+		for k=1,ARC do
+			local seg=K.block(model,Vector3.new(1,.08,.4),CFrame.new(),color or WIND,Enum.Material.Neon)
+			seg.Name="ScytheArc";seg.Transparency=.25+math.abs(k-(ARC+1)/2)*.07
+		end
+		local a0=K.new("Attachment",{Position=Vector3.new(-2.6,0,0)},root)
+		local a1=K.new("Attachment",{Position=Vector3.new(2.6,0,0)},root)
+		K.new("Trail",{Attachment0=a0,Attachment1=a1,Color=ColorSequence.new(color or WIND),LightEmission=.6,Transparency=K.num({{0,.5},{1,1}}),
+			Lifetime=.22,FaceCamera=true},root)
+		model.PrimaryPart=root
+		return model
+	end
+end
+local function scythePose(_,entry,p,age,look,dt)
+	local radius=(p.radius or 2)+(p.growth or 0)*math.max(0,age)
+	entry.spin=(entry.spin or 0)+dt*2
+	local i=0
+	for _,seg in entry.model:GetChildren() do
+		if seg.Name=="ScytheArc" then
+			i+=1
+			local a=math.rad(-62+(i-1)*124/(ARC-1))
+			local tilt=math.sin(entry.spin+i)*.06
+			seg.Size=Vector3.new(radius*.48,.08+radius*.02,.42)
+			seg.CFrame=look*CFrame.Angles(0,a,tilt)*CFrame.new(0,0,-radius*.85)
+		end
+	end
+	return look
+end
+-- Kamatari: the one-eyed weasel riding a giant crescent, its sickle out.
+local function buildKamatari()
+	local model=buildScythe("Kamatari",WIND_CORE)()
+	local root=model.PrimaryPart
+	local fur=Color3.fromRGB(240,236,226)
+	local parts={}
+	local body=K.block(model,Vector3.new(1.1,1,2.2),CFrame.new(0,.9,.4),fur);body.Shape=Enum.PartType.Ball;body.Name="KamatariBody";table.insert(parts,body)
+	local head=K.block(model,Vector3.new(.9,.85,.9),CFrame.new(0,1.5,-.7),fur);head.Shape=Enum.PartType.Ball;head.Name="KamatariHead";table.insert(parts,head)
+	for _,x in {-.3,.3} do table.insert(parts,K.block(model,Vector3.new(.2,.3,.12),CFrame.new(x,1.95,-.75),fur)) end
+	table.insert(parts,K.block(model,Vector3.new(.24,.06,.04),CFrame.new(-.18,1.58,-1.14),Color3.fromRGB(30,26,30))) -- the scarred eye
+	local tail=K.block(model,Vector3.new(.35,.35,1.6),CFrame.new(0,1.1,1.8)*CFrame.Angles(math.rad(-25),0,0),fur);tail.Name="KamatariTail";table.insert(parts,tail)
+	local blade=K.block(model,Vector3.new(.08,.5,2.6),CFrame.new(.9,1.3,-.6)*CFrame.Angles(0,math.rad(20),math.rad(-30)),IRON_EDGE,Enum.Material.Metal)
+	blade.Name="KamatariSickle";table.insert(parts,blade)
+	K.weldAll(root,parts)
+	return model
+end
+
+-- ------------------------------------------------------------------ zones
+-- A lane: a faint band on the floor and streaks of air running along it,
+-- downwind, at body height (the kind of zone is read at a glance: no flame).
+local LANE_STREAKS=12
+local function laneVisual(fx,z)
+	local holder=K.new("Model",{Name="WindLane"},fx.folder)
+	local y=ground(fx,z.origin+Vector3.new(0,1,0),z.origin.Y)
+	local band=K.block(holder,Vector3.new(1,.06,1),CFrame.new(),if z.reflect then MOON else WIND_DEEP);band.Name="WindBand";band.Transparency=.84
+	local streaks={}
+	for k=1,LANE_STREAKS do
+		local s=K.block(holder,Vector3.new(.09,.09,2.6),CFrame.new(),if z.reflect and k%3==0 then MOON else WIND,Enum.Material.Neon)
+		s.Name="WindStreak";s.Transparency=.4
+		table.insert(streaks,{part=s,phase=math.random(),across=(math.random()*2-1),height=.5+math.random()*4,speed=.75+math.random()*.5})
+	end
+	Debris:AddItem(holder,(z.remaining or 4)+1)
+	return {holder=holder,band=band,streaks=streaks,floor=y,shown=0}
+end
+local function laneStep(fx,v,z,dt)
+	-- The lane grows with the scythe that lays it: ease toward the reported length.
+	v.shown=v.shown+(z.length-v.shown)*math.min(1,dt*18)
+	local length=math.max(.5,v.shown)
+	local dir=flatUnit(z.direction)
+	local across=dir:Cross(Vector3.yAxis)
+	local base=Vector3.new(z.origin.X,v.floor,z.origin.Z)
+	local fade=math.clamp((z.remaining or 1)/.5,0,1)
+	v.band.Size=Vector3.new(z.width*2,.06,length)
+	v.band.CFrame=CFrame.lookAt(base+dir*length/2+Vector3.new(0,.04,0),base+dir*length/2+Vector3.new(0,.04,0)+dir)
+	v.band.Transparency=1-(.16*fade)
+	local t=GaleFX.clock()
+	for _,s in v.streaks do
+		local along=((t*s.speed*1.4+s.phase)%1)*length
+		local at=base+dir*along+across*s.across*z.width*.9+Vector3.new(0,s.height,0)
+		s.part.CFrame=CFrame.lookAt(at,at+dir)
+		-- Bright mid-lane, fading at both ends and as the lane dies.
+		local edge=math.min(along,length-along)/math.max(1,length*.2)
+		s.part.Transparency=1-(.6*math.clamp(edge,0,1)*fade)
+	end
+end
+-- A column of rising air: rings climbing and turning, streaks spiralling up.
+local function columnVisual(fx,z)
+	local holder=K.new("Model",{Name="Updraft"},fx.folder)
+	local y=ground(fx,z.origin+Vector3.new(0,1,0),z.origin.Y)
+	local rings={}
+	for k=1,3 do
+		local r=K.block(holder,Vector3.new(.08,z.radius*2,z.radius*2),CFrame.new(),WIND,Enum.Material.Neon);r.Name="UpdraftRing";r.Shape=Enum.PartType.Cylinder;r.Transparency=.6
+		table.insert(rings,{part=r,phase=k/3})
+	end
+	local spirals={}
+	for k=1,6 do
+		local s=K.block(holder,Vector3.new(.1,1.8,.1),CFrame.new(),WIND_CORE,Enum.Material.Neon);s.Name="WindStreak";s.Transparency=.4
+		table.insert(spirals,{part=s,phase=k/6})
+	end
+	K.smokePuff(fx.folder,Vector3.new(z.origin.X,y+.6,z.origin.Z),DUST,14,1.8)
+	Debris:AddItem(holder,(z.remaining or 2)+1)
+	return {holder=holder,rings=rings,spirals=spirals,floor=y}
+end
+local function columnStep(fx,v,z,dt)
+	local t=GaleFX.clock()
+	local base=Vector3.new(z.origin.X,v.floor,z.origin.Z)
+	local fade=math.clamp((z.remaining or 1)/.4,0,1)
+	local h=math.min(z.height or 16,16)
+	for _,r in v.rings do
+		local u=(t*.8+r.phase)%1
+		r.part.Size=Vector3.new(.08,z.radius*2*(1-u*.3),z.radius*2*(1-u*.3))
+		r.part.CFrame=CFrame.new(base+Vector3.new(0,.2+u*h,0))*CFrame.Angles(0,t*3,math.pi/2)
+		r.part.Transparency=1-(.4*(1-u)*fade)
+	end
+	for _,s in v.spirals do
+		local u=(t*.9+s.phase)%1
+		local a=s.phase*math.pi*2+t*5
+		local at=base+Vector3.new(math.cos(a)*z.radius*.8,.5+u*h,math.sin(a)*z.radius*.8)
+		s.part.CFrame=CFrame.new(at)*CFrame.Angles(0,-a,math.rad(18))
+		s.part.Transparency=1-(.55*(1-u)*fade)
+	end
+end
+local function frame(fx,data,dt)
+	local st=fx.galeZones
+	if not st or st.epoch~=data.epoch then
+		if st then for _,v in st.list do v.holder:Destroy() end end
+		st={epoch=data.epoch,list={}};fx.galeZones=st
+	end
+	local live={}
+	for _,z in data.zones or {} do
+		live[z.id]=true
+		local v=st.list[z.id]
+		if not v then
+			v=if z.kind=="Updraft" then columnVisual(fx,z) else laneVisual(fx,z)
+			v.kind=z.kind;st.list[z.id]=v
+		end
+		if z.kind=="Updraft" then columnStep(fx,v,z,dt) else laneStep(fx,v,z,dt) end
+	end
+	for id,v in st.list do
+		if not live[id] then
+			for _,d in v.holder:GetDescendants() do if d:IsA("BasePart") then K.tween(d,.25,{Transparency=1}) end end
+			Debris:AddItem(v.holder,.3)
+			st.list[id]=nil
+		end
+	end
+end
+
+-- ------------------------------------------------------------------ contacts
+local function windBurst(fx,at,direction,size,color)
+	local holder=K.new("Model",{Name="WindBurst"},fx.folder)
+	local look=flatUnit(direction or Vector3.zAxis)
+	for k=1,7 do
+		local a=math.rad(-70+(k-1)*140/6)
+		local dir=CFrame.fromAxisAngle(Vector3.yAxis,a):VectorToWorldSpace(look)
+		streak(holder,at+dir*.6,at+dir*(size*(1+math.random()*.5)),color or WIND,.12,.22,.2)
+	end
+	K.shockRing(holder,at,color or WIND,.6,size*2.4,.24,look)
+	Debris:AddItem(holder,.4)
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.4,.8+math.random()*.2)
+end
+local function impact(fx,data,folder)
+	local style=data.style
+	local at=data.position
+	if data.kind=="gale" or data.kind=="kamatari" then
+		-- The scythe (or Kamatari) ends: on a body, on a wall, on a guard, or in the air.
+		local big=data.kind=="kamatari"
+		local size=if style=="fade" then 1.4 elseif style=="spent" then 2 else 3
+		windBurst(fx,at,data.direction,size*(if big then 1.6 else 1),if big then WIND_CORE else WIND)
+		if style~="fade" then K.smokePuff(fx.folder,at,DUST,if big then 16 else 8,if big then 2.2 else 1.4) end
+		if style~="fade" and style~="spent" then fx:cheer(if big then 1 else .5) end
+		return true
+	end
+	if style=="gust" then
+		local reach=data.range or 18
+		gustCone(fx,"FanGust",at,data.direction or Vector3.zAxis,reach,math.rad(34),if data.heavy then 14 else 9,if data.infusion then WIND_CORE else WIND,.32)
+		K.smokePuff(fx.folder,at-Vector3.new(0,2.2,0)+flatUnit(data.direction or Vector3.zAxis)*3,DUST,8,1.3)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.45,.7)
+		return true
+	elseif style=="greatgust" then
+		local look=flatUnit(data.direction or Vector3.zAxis)
+		gustCone(fx,"GreatGust",at,look,data.range or 30,math.rad(42),22,WIND,.45)
+		K.shockRing(fx.folder,at-Vector3.new(0,2.4,0),WIND,3,(data.range or 30)*.9,.45)
+		K.smokePuff(fx.folder,at-Vector3.new(0,2.2,0)+look*6,DUST,24,2.6)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.4,1.4)
+		fx:cheer(.8)
+		return true
+	elseif style=="cyclone" then
+		local radius=data.radius or 3.4
+		if data.phase=="mark" then
+			-- The spot is marked a beat before it rises: a swirl on the floor.
+			local y=ground(fx,at,at.Y-.3)
+			local holder=K.new("Model",{Name="CycloneMark"},fx.folder)
+			local disc=K.block(holder,Vector3.new(.05,radius*2,radius*2),CFrame.new(at.X,y+.05,at.Z)*CFrame.Angles(0,0,math.pi/2),WIND_DEEP);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.6
+			for k=0,5 do
+				local a=k/6*math.pi*2
+				streak(holder,Vector3.new(at.X+math.cos(a)*radius,y+.1,at.Z+math.sin(a)*radius),Vector3.new(at.X+math.cos(a+1)*radius*.4,y+.1,at.Z+math.sin(a+1)*radius*.4),WIND,.1,data.delay or .45,.3)
+			end
+			K.tween(disc,data.delay or .45,{Transparency=.3})
+			Debris:AddItem(holder,(data.delay or .45)+.1)
+		else
+			-- It rises (or holds the scooped body): a burst of air straight up.
+			local holder=K.new("Model",{Name="CycloneRise"},fx.folder)
+			for k=0,7 do
+				local a=k/8*math.pi*2
+				local from=at+Vector3.new(math.cos(a)*radius*.7,.2,math.sin(a)*radius*.7)
+				streak(holder,from,from+Vector3.new(math.cos(a+.6),8,math.sin(a+.6)),WIND,.14,.4,.2)
+			end
+			K.shockRing(holder,at,WIND,1,radius*3,.3)
+			Debris:AddItem(holder,.5)
+			K.smokePuff(fx.folder,at,DUST,if data.phase=="rise" then 16 else 6,1.6)
+			K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.5,.6)
+		end
+		return true
+	elseif style=="windfeed" then
+		-- Fire crossing her wind flares up.
+		K.flash(fx.folder,at,FIRE,1,5,.25,.2)
+		K.shockRing(fx.folder,at,WIND,.8,5,.25,data.direction)
+		return true
+	elseif style=="winddeflect" then
+		-- A blade turned aside by a lane: a swirl, the blade tumbles out of it.
+		K.shockRing(fx.folder,at,WIND,.5,3.6,.2,data.direction)
+		pcall(fx.tumble,fx,data.kind,at,data.direction,WIND)
+		return true
+	end
+	if data.fighter~=GALE then return false end
+	if style=="awaken" then
+		-- Kirikiri Mai: the fan fully open, the moons lit, the wind around her.
+		local model=folder and folder:FindFirstChild(data.owner or "")
+		if model then fx:ghost(model,WIND,.4,.4) end
+		K.flash(fx.folder,at,WIND_CORE,2,12,.3,.15)
+		K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),MOON,3,22,.45)
+		K.shockRing(fx.folder,at-Vector3.new(0,2.4,0),WIND,3,28,.55)
+		gustCone(fx,"KirikiriMai",at,Vector3.xAxis,14,math.pi,16,WIND,.5)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.45,1.2)
+		fx:cheer(1)
+		return true
+	elseif style=="chase" then
+		-- Her wind step (or a chase): a pale copy left behind, streaks along the way.
+		local model=folder and folder:FindFirstChild(data.owner or "")
+		if model then fx:ghost(model,WIND,.25,.55) end
+		if data.to then
+			for k=1,4 do
+				local off=Vector3.new((math.random()-.5)*1.6,(math.random()-.2)*2,(math.random()-.5)*1.6)
+				streak(fx.folder,at+off,data.to+off,WIND,.1,.25,.35)
+			end
+		end
+		K.smokePuff(fx.folder,at-Vector3.new(0,2.6,0),DUST,6,1.2)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.35,1.05)
+		return true
+	elseif style=="afterimage" then
+		local model=folder and folder:FindFirstChild(data.owner or "")
+		if model then fx:ghost(model,WIND,.3,.5) end
+		return true
+	elseif style=="cast" then
+		-- The fan opens: air gathers round the hand.
+		local model=folder and folder:FindFirstChild(data.owner or "")
+		local hand=model and model:FindFirstChild("RightHand")
+		local where=if hand then hand.Position else at
+		K.shockRing(fx.folder,where,WIND,.4,4,.25)
+		return true
+	end
+	return false
+end
+
+-- ------------------------------------------------------------------ per frame
+local function fighter(fx,model,actor,_dt)
+	if not model or not actor or actor.fighterId~=GALE then return end
+	holdFan(fx,model,actor)
+	-- Her awakening mantle and speed trail take the wind's colour.
+	local aura=fx.auras and fx.auras[model]
+	if aura and aura.mantle and aura.galeMantle~=aura.mantle then
+		aura.mantle.emitter.Color=ColorSequence.new(WIND)
+		aura.mantle.light.Color=WIND
+		aura.galeMantle=aura.mantle
+	end
+	if aura and aura.trail and not aura.galeTrail then aura.trail.Color=ColorSequence.new(WIND);aura.galeTrail=true end
+end
+
+function GaleFX.install(FX,kit)
+	K=kit
+	kit.BUILD.gale=buildScythe("Kamaitachi",WIND)
+	kit.BUILD.kamatari=buildKamatari
+	FX.poses.gale=scythePose
+	FX.poses.kamatari=scythePose
+	table.insert(FX.layers,{name="Gale",impact=impact,fighter=fighter,frame=frame})
+end
+return GaleFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND76">
+          <Properties>
+            <string name="Name">GaleMotion</string>
+            <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
+-- throw overlay (the fan gust), cast poses and intro, added to the motion
+-- engine's tables by install(E) (VelmoraMotionEngine passes its STANCE, GAIT,
+-- CLIPS, THROWS, CAST, INTRO and builders). No clip of another fighter for her
+-- string, routes, heavy or air: the right hand always carries the iron fan
+-- (GaleFX draws it), so every strike is a thrust, a sweep or a chop with a
+-- long, heavy weapon, the third and the routes open it into a gust. Grabs and
+-- throws fall back to Itachi's (listed in TEMARI.md). Presentation only.
+local GaleMotion={}
+function GaleMotion.install(E)
+	local K,merge,smooth=E.K,E.merge,E.smooth
+	-- Upright and composed, weight on the back foot, left side to the opponent,
+	-- chin up; the right hand rests on the hip (the fan is on her back), the
+	-- left hand low and open in front.
+	local T={root={y=-.22,pitch=-2,yaw=26},torso={pitch=-3,yaw=-12},head={pitch=-6,yaw=-14},
+		ra={raise=-8,out=38,twist=-50,elbow=104,wrist=10},la={raise=46,out=6,twist=-14,elbow=40,wrist=-20},
+		rf={x=.18,z=.66,yaw=34},lf={x=-.06,z=-.5,yaw=-4},breath=.6,tempo=4.4}
+	E.STANCE.Gale=T
+	-- Measured steps, little bounce, no guard carried; the hand stays on the
+	-- hip until she breaks into a full run (holdRear).
+	E.GAIT.Gale={stride=.98,cadence=.92,arm=16,lean=-1,bob=.65,guard=0,holdRear=true}
+	local function t(over) return merge(T,over) end
+	local AIR={root={pitch=4},torso={pitch=6},head={pitch=-6},ra={raise=60,out=30,elbow=70},la={raise=40,out=30,elbow=60},rl={lift=50,knee=86,ankle=-10},ll={lift=30,knee=64,ankle=-10}}
+	local function air(over) return merge(AIR,over) end
+	local C={}
+	C.Light1={ -- the closed fan driven straight out like a spear
+		K(0,t({root={y=-.34,yaw=40,pitch=2},torso={yaw=18,pitch=2},ra={raise=50,out=24,twist=10,elbow=118,wrist=0},la={raise=40,out=10,elbow=50}})),
+		K(1,t({root={y=-.36,z=-.28,yaw=8,pitch=8},torso={yaw=-18,pitch=6},head={yaw=-6},ra={raise=88,out=-4,twist=0,elbow=4,wrist=0},la={raise=20,out=30,elbow=40},lf={z=-.82},rf={z=.72}}),"out"),
+		K(2,t({root={y=-.36,z=-.3,yaw=6,pitch=8},torso={yaw=-20,pitch=6},ra={raise=86,out=-6,elbow=8},la={raise=20,out=30,elbow=40},lf={z=-.82},rf={z=.72}})),
+		K(3,T),
+	}
+	C.Light2={ -- a flat sweep from the right across her front, the whole body turning
+		K(0,t({root={y=-.32,yaw=52},torso={yaw=30},ra={raise=80,out=76,twist=-6,elbow=16},la={raise=50,out=-10,elbow=70}})),
+		K(1,t({root={y=-.36,yaw=-6,pitch=6},torso={yaw=-30,pitch=4},head={yaw=8},ra={raise=86,out=-34,twist=6,elbow=10},la={raise=26,out=30,elbow=40},lf={z=-.7,x=-.1}}),"out"),
+		K(2,t({root={y=-.36,yaw=-12,pitch=6},torso={yaw=-38,pitch=4},ra={raise=84,out=-48,elbow=14},la={raise=26,out=30,elbow=40},lf={z=-.7,x=-.1}})),
+		K(3,T),
+	}
+	C.Light3={ -- both hands: the fan raised overhead opens and comes down in a gust
+		K(0,t({root={y=-.2,pitch=-8,yaw=12},torso={pitch=-14,yaw=6},head={pitch=-10},ra={raise=168,out=14,elbow=40},la={raise=160,out=-6,elbow=60}})),
+		K(1,t({root={y=-.62,z=-.4,pitch=14,yaw=0},torso={pitch=18},head={pitch=4},ra={raise=74,out=-6,elbow=8},la={raise=70,out=-14,elbow=20},lf={z=-1.1},rf={z=.9}}),"out"),
+		K(2,t({root={y=-.62,z=-.42,pitch=14},torso={pitch=20},ra={raise=68,out=-6,elbow=10},la={raise=64,out=-14,elbow=22},lf={z=-1.1},rf={z=.9}})),
+		K(3,T),
+	}
+	C.Heavy={ -- the closed fan chopped down from overhead, one hand
+		K(0,t({root={y=-.3,pitch=-6,yaw=24},torso={pitch=-10,yaw=14},ra={raise=172,out=22,elbow=46},la={raise=60,out=16,elbow=60}})),
+		K(.75,t({root={y=-.36,pitch=-8,yaw=26},torso={pitch=-12,yaw=16},ra={raise=176,out=24,elbow=52},la={raise=62,out=16,elbow=60}})),
+		K(1,t({root={y=-.8,z=-.5,pitch=22,yaw=4},torso={pitch=24,yaw=-8},head={pitch=8},ra={raise=46,out=-4,elbow=4},la={raise=10,out=40,elbow=30},lf={z=-1.2},rf={z=1.0}}),"out"),
+		K(2,t({root={y=-.8,z=-.52,pitch=22,yaw=2},torso={pitch=24,yaw=-10},ra={raise=42,out=-4,elbow=6},la={raise=10,out=40,elbow=30},lf={z=-1.2},rf={z=1.0}})),
+		K(3,T),
+	}
+	C.Updraft={ -- low, then the half-open fan scoops the body up into the rising air
+		K(0,t({root={y=-1.0,pitch=20,yaw=20},torso={pitch=14,yaw=10},ra={raise=-20,out=24,twist=-10,elbow=20},la={raise=40,out=20,elbow=50},lf={z=-.6},rf={z=.6}})),
+		K(1,t({root={y=.08,pitch=-14,yaw=-4},torso={pitch=-16,yaw=-6},head={pitch=-22},ra={raise=168,out=8,elbow=10},la={raise=-10,out=36,elbow=24},rf={toe=-20},lf={z=-.3}}),"out"),
+		K(2,t({root={y=.06,pitch=-16},torso={pitch=-18},head={pitch=-22},ra={raise=172,out=8,elbow=14},la={raise=-10,out=36,elbow=24},rf={toe=-18},lf={z=-.3}})),
+		K(3,T),
+	}
+	C.FanSlam={ -- both hands: the closed fan brought down like a beam
+		K(0,t({root={y=-.16,pitch=-10},torso={pitch=-18},head={pitch=-12},ra={raise=170,out=6,elbow=40},la={raise=166,out=-4,elbow=50}})),
+		K(1,t({root={y=-.95,z=-.3,pitch=28},torso={pitch=26},head={pitch=10},ra={raise=34,out=-8,elbow=8},la={raise=30,out=-12,elbow=14},lf={z=-1.0},rf={z=.9}}),"out"),
+		K(2,t({root={y=-.95,z=-.32,pitch=28},torso={pitch=26},ra={raise=32,out=-8,elbow=10},la={raise=28,out=-12,elbow=16},lf={z=-1.0},rf={z=.9}})),
+		K(3,T),
+	}
+	local Y=T.root.yaw
+	-- A full turn on the lead foot, the open fan held out at arm's length (each
+	-- key under half a turn from the next, so the body turns the right way).
+	local turn={
+		K(0,t({root={y=-.4,yaw=Y-30},torso={yaw=-20},ra={raise=84,out=70,elbow=14},la={raise=60,out=40,elbow=30}})),
+		K(1,t({root={y=-.48,yaw=Y+90,roll=-6},torso={yaw=10},head={yaw=-60},ra={raise=88,out=86,elbow=8},la={raise=70,out=60,elbow=20},lf={x=.3,yaw=90}}),"out"),
+		K(2,t({root={y=-.48,yaw=Y+200,roll=-6},torso={yaw=10},head={yaw=-60},ra={raise=88,out=86,elbow=8},la={raise=70,out=60,elbow=20},lf={x=.3,yaw=200}})),
+		K(2.5,t({root={y=-.36,yaw=Y+290},ra={raise=70,out=50,elbow=30},lf={x=.2,yaw=290}})),
+		K(3,merge(T,{root={yaw=Y+360}})),
+	}
+	C.FanPirouette=turn
+	C.FanBackhand={ -- the backhand: from across her body out to the right
+		K(0,t({root={y=-.32,yaw=-10},torso={yaw=-34},ra={raise=80,out=-54,twist=40,elbow=74},la={raise=40,out=24,elbow=50}})),
+		K(1,t({root={y=-.38,z=-.3,yaw=48,pitch=6},torso={yaw=30},head={yaw=-10},ra={raise=86,out=66,twist=-10,elbow=10},la={raise=30,out=-10,elbow=80},lf={z=-.8},rf={z=.8,yaw=40}}),"out"),
+		K(2,t({root={y=-.38,z=-.32,yaw=54,pitch=6},torso={yaw=34},ra={raise=84,out=70,elbow=12},la={raise=30,out=-10,elbow=80},lf={z=-.8},rf={z=.8,yaw=40}})),
+		K(3,T),
+	}
+	C.DashAttack={ -- a running thrust, the fan leading
+		K(0,t({root={y=-.7,z=.2,pitch=26,yaw=20},torso={pitch=6},ra={raise=40,out=24,twist=10,elbow=110},la={raise=70,out=-6,elbow=30},lf={z=-1.1},rf={z=1.2}})),
+		K(1,t({root={y=-.66,z=-.95,pitch=26,yaw=-6},torso={yaw=-12},head={pitch=-14},ra={raise=94,out=-4,elbow=0},la={raise=-26,out=24,elbow=30},lf={z=-1.6},rf={z=1.45,y=.2,toe=-20}}),"out"),
+		K(2,t({root={y=-.64,z=-.98,pitch=24,yaw=-8},torso={yaw=-14},ra={raise=92,out=-4,elbow=4},la={raise=-24,out=24,elbow=30},lf={z=-1.6},rf={z=1.45,y=.2,toe=-20}})),
+		K(3,T),
+	}
+	C.Riposte=C.Light1
+	C.FlyingKick={ -- out of a full run: a leaping thrust
+		K(0,t({root={y=-.5,pitch=18},ra={raise=40,out=20,elbow=110},la={raise=60,out=20,elbow=40},lf={z=-.9},rf={z=1.0}})),
+		K(1,t({root={y=-.1,z=-.8,pitch=10},torso={pitch=8},ra={raise=96,out=-4,elbow=2},la={raise=-20,out=30,elbow=20},rl={lift=40,knee=80},lf={z=-1.2,toe=-20}}),"out"),
+		K(2,t({root={y=-.12,z=-.82,pitch=10},torso={pitch=8},ra={raise=94,out=-4,elbow=4},la={raise=-20,out=30,elbow=20},rl={lift=36,knee=76},lf={z=-1.2,toe=-18}})),
+		K(3,T),
+	}
+	C.SlideSweep={ -- out of a full run: dropped low, the closed fan reaps the ankles
+		K(0,t({root={y=-.9,pitch=20,yaw=30},torso={yaw=20},ra={raise=30,out=70,elbow=20},la={raise=30,out=20,elbow=40},lf={z=-1.0},rf={z=1.1}})),
+		K(1,t({root={y=-1.15,pitch=24,yaw=-20},torso={yaw=-30,pitch=10},ra={raise=24,out=-40,elbow=10},la={raise=-10,out=40,elbow=20},lf={z=-1.3},rf={z=1.3}}),"out"),
+		K(2,t({root={y=-1.15,pitch=24,yaw=-24},torso={yaw=-34,pitch=10},ra={raise=22,out=-48,elbow=12},la={raise=-10,out=40,elbow=20},lf={z=-1.3},rf={z=1.3}})),
+		K(3,T),
+	}
+	C.WallDive={ -- off the wall: the fan first, the body behind it
+		K(0,air({root={pitch=-10},ra={raise=150,out=20,elbow=60},la={raise=100,out=30,elbow=40},rl={lift=80,knee=110},ll={lift=70,knee=100}})),
+		K(1,air({root={pitch=36},torso={pitch=20},ra={raise=100,out=-4,elbow=2},la={raise=20,out=40,elbow=30},rl={lift=10,knee=30},ll={lift=30,knee=50}}),"out"),
+		K(2,air({root={pitch=38},torso={pitch=22},ra={raise=98,out=-4,elbow=4},la={raise=20,out=40,elbow=30},rl={lift=10,knee=30},ll={lift=30,knee=50}})),
+		K(3,T),
+	}
+	C.Air1={ -- in the air: a sweep from the right
+		K(0,air({torso={yaw=-24},ra={raise=100,out=70,elbow=30}})),
+		K(1,air({torso={yaw=26,pitch=12},ra={raise=80,out=-30,elbow=10},la={raise=20,out=40,elbow=40}}),"out"),
+		K(2,air({torso={yaw=30,pitch=12},ra={raise=78,out=-40,elbow=12},la={raise=20,out=40,elbow=40}})),
+		K(3,AIR),
+	}
+	C.Air2={ -- in the air: the backhand
+		K(0,air({torso={yaw=26},ra={raise=80,out=-40,twist=30,elbow=70}})),
+		K(1,air({torso={yaw=-28,pitch=10},ra={raise=86,out=64,elbow=10},rl={lift=70,knee=60}}),"out"),
+		K(2,air({torso={yaw=-32,pitch=10},ra={raise=84,out=70,elbow=12},rl={lift=66,knee=62}})),
+		K(3,AIR),
+	}
+	C.AirDrive={ -- in the air: the fan driven straight through the body
+		K(0,air({root={pitch=-6},ra={raise=50,out=20,elbow=110},la={raise=60,out=10,elbow=60}})),
+		K(1,air({root={pitch=14},torso={pitch=12},ra={raise=92,out=-4,elbow=2},la={raise=10,out=40,elbow=30},rl={lift=20,knee=40},ll={lift=70,knee=90}}),"out"),
+		K(2,air({root={pitch=14},torso={pitch=12},ra={raise=90,out=-4,elbow=4},la={raise=10,out=40,elbow=30},rl={lift=20,knee=40},ll={lift=70,knee=90}})),
+		K(3,AIR),
+	}
+	C.FanDive={ -- in the air: the open fan beats down, the body under it is driven into the floor
+		K(0,air({root={pitch=-14},torso={pitch=-18},ra={raise=172,out=8,elbow=40},la={raise=168,out=-4,elbow=44},rl={lift=70,knee=100},ll={lift=60,knee=96}})),
+		K(1,air({root={pitch=34},torso={pitch=30},head={pitch=10},ra={raise=30,out=-6,elbow=8},la={raise=26,out=-10,elbow=12},rl={lift=10,knee=40},ll={lift=20,knee=60}}),"out"),
+		K(2,air({root={pitch=36},torso={pitch=30},ra={raise=28,out=-6,elbow=10},la={raise=24,out=-10,elbow=14},rl={lift=10,knee=40},ll={lift=20,knee=60}})),
+		K(3,AIR),
+	}
+	C.Slam={ -- the air heavy: an overhead chop that carries her down
+		K(0,air({root={pitch=-10},torso={pitch=-16},ra={raise=176,out=10,elbow=42},la={raise=80,out=30,elbow=50},rl={lift=64,knee=110},ll={lift=58,knee=100}})),
+		K(1,air({root={pitch=28},torso={pitch=40},head={pitch=12},ra={raise=40,out=-6,elbow=6},la={raise=40,out=30,elbow=30},rl={lift=-10,knee=40},ll={lift=14,knee=60}}),"out"),
+		K(2,air({root={pitch=30},torso={pitch=42},ra={raise=36,out=-6,elbow=8},la={raise=40,out=30,elbow=30},rl={lift=-10,knee=40},ll={lift=14,knee=60}})),
+		K(3,t({root={y=-.9,pitch=22},torso={pitch=18}})),
+	}
+	E.CLIPS.Gale=C
+	setmetatable(C,{__index=E.CLIPS.Mirage})
+	-- The tool: the fan flicked open from the right and swept across her front.
+	E.THROWS.Gust=function(time,release)
+		local wind={torso={yaw=34,pitch=-2},head={yaw=-16},ra={raise=86,out=74,twist=-10,elbow=30,wrist=0},la={raise=40,out=10,elbow=60}}
+		local snap={torso={yaw=-26,pitch=6},head={yaw=6},ra={raise=88,out=-30,twist=10,elbow=8,wrist=0},la={raise=30,out=30,elbow=50}}
+		if time&lt;release then return wind,smooth(time/math.max(release*.7,.02)) end
+		if time&lt;release+.28 then return snap,1 end
+		return snap,1-smooth((time-release-.28)/.17)
+	end
+	-- Casts: the fan drawn and opened (one moon, two, all three), then swung.
+	local channel={Kamaitachi=.3,GreatGust=.5,Cyclone=.24}
+	E.CAST.Kamaitachi=function(actor,base,time,state)
+		if state=="TechniqueChannel" then
+			local u=smooth(time/channel.Kamaitachi)
+			return merge(base,{root={y=-.4,yaw=30+16*u},torso={yaw=30+10*u,pitch=-4},head={yaw=-30},ra={raise=120+30*u,out=50+10*u,twist=-20,elbow=70-10*u},la={raise=60,out=-10,elbow=60},lf={z=-.7},rf={z=.8}})
+		end
+		return merge(base,{root={y=-.46,yaw=-10,pitch=8},torso={yaw=-34,pitch=6},head={yaw=4},ra={raise=88,out=-50,elbow=8},la={raise=30,out=30,elbow=40},lf={z=-.9},rf={z=.8}})
+	end
+	E.CAST.GreatGust=function(actor,base,time,state)
+		if state=="TechniqueChannel" then
+			local u=smooth(time/channel.GreatGust)
+			return merge(base,{root={y=-.5-.2*u,yaw=40+14*u},torso={yaw=36+8*u,pitch=-6},head={yaw=-36},ra={raise=140+20*u,out=40,elbow=40},la={raise=130+20*u,out=10,elbow=70},lf={z=-1.1,x=-.2},rf={z=1.0,x=.3,yaw=50}})
+		end
+		return merge(base,{root={y=-.72,z=-.3,yaw=-20,pitch=14},torso={yaw=-40,pitch=14},head={yaw=8},ra={raise=90,out=-40,elbow=8},la={raise=84,out=-20,elbow=16},lf={z=-1.2},rf={z=1.0}})
+	end
+	E.CAST.Cyclone=function(actor,base,time,state)
+		if state=="TechniqueChannel" then
+			-- The open fan held up in front, turned in the wrist: the air starts to spin.
+			return merge(base,{root={y=-.5,yaw=10},torso={yaw=-6,pitch=4},head={pitch=-6},ra={raise=110,out=10,elbow=30,wroll=(time*900)%360},la={raise=50,out=20,elbow=60},lf={z=-.8},rf={z=.7}})
+		end
+		return merge(base,{root={y=-.3,pitch=-4},torso={pitch=-8},head={pitch=-10},ra={raise=150,out=10,elbow=10},la={raise=40,out=30,elbow=50}})
+	end
+	-- The intro: the fan planted open beside her (GaleFX), her right hand on its
+	-- edge, the left on her hip, chin up.
+	E.INTRO.Gale=function(base)
+		return merge(base,{root={y=-.1,pitch=-3,yaw=10},torso={pitch=-5,yaw=-4},head={pitch=-12,yaw=-10},
+			ra={raise=72,out=60,twist=0,elbow=26,wrist=20},la={raise=-8,out=38,twist=-50,elbow=104,wrist=10},rf={x=.14,z=.3},lf={x=-.1,z=-.3}})
+	end
+end
+return GaleMotion
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -15951,7 +17520,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -16132,7 +17701,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND75">
+        <Item class="LocalScript" referent="ND79">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -16281,7 +17850,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -16581,7 +18150,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -17140,7 +18709,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -17221,6 +18790,8 @@ function UI.new(parent,send)
 	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
 	-- Rock Lee.
 	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"}
+	-- Roster wave: Temari.
+	table.insert(playable,"Gale")
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -17638,7 +19209,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -17779,7 +19350,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -18929,12 +20500,17 @@ local function techSpec(fighterId,id)
 	for _,spec in (def and def.Techniques) or {} do if spec.Id==id then return spec end end
 	return {}
 end
+-- Cast poses and intros registered by a fighter's own motion module
+-- (GaleMotion.install): CAST[techniqueId](actor,base,t,state) -&gt; spec or nil,
+-- INTRO[family intro](base) -&gt; spec.
+local CAST,INTRO={},{}
 local function castSpec(actor)
 	local id=actor.castId
 	local fighterId=actor.fighterId
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
+	if CAST[id] then return CAST[id](actor,base,t,state) end
 	if id=="Rotation" then
 		-- Eight Trigrams Rotation: a full-body spin, arms out, weight centred.
 		local spin=(t*1500)%360
@@ -19056,6 +20632,11 @@ local GAIT={
 -- his back until he breaks into a full sprint (holdRear).
 GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
+-- A fighter whose motion data lives in its own module (DEC-015: the engine
+-- offers the tables and builders, the module adds its stance, gait, clips,
+-- throw overlays, cast poses and intro). Temari first.
+require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -19831,7 +21412,9 @@ function Motion.present(char,actor,clock,dt)
 		local spec
 		-- A family may name its own intro (Rock Lee's), else its body's.
 		local body=familyOf(subject.fighterId).intro or familyOf(subject.fighterId).body
-		if body=="Leaf" then
+		if INTRO[body] then
+			spec=INTRO[body](base)
+		elseif body=="Leaf" then
 			-- Rock Lee: fired up. Upright on springy knees, the fist clenched at
 			-- shoulder height, chin up; the other hand already behind his back.
 			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
@@ -20017,7 +21600,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND81">
+  <Item class="Lighting" referent="ND85">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -20035,7 +21618,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND82">
+  <Item class="SoundService" referent="ND86">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
