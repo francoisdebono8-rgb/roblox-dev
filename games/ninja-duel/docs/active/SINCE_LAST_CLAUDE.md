@@ -18,7 +18,7 @@ Base initiale : `c38825d` ; base réactualisée après avancement de Claude : `0
 
 Reprise Claude : suivre START et la revue courante, continuer le travail autorisé ; mettre à jour le snapshot sur le vrai HEAD avant de traiter ses priorités. Ce rangement ne relance aucune ancienne mission.
 
-## INBOX-ROADMAP-20261017 — PENDING ACK Claude
+## INBOX-ROADMAP-20261017 — ACK Claude 17/10/2026 (`69808f4` ; DEC-021 appliquée dès que les 20 sont Tier A : arrêt du roster, rapport, un seul bloc à la fois)
 
 Date : 17/10/2026 ; portée : séquencement post-roster ; urgence : **ne pas interrompre le breadth pass en cours**, appliquer dès que le roster atteint 20 Tier A réellement jouables.
 
@@ -34,3 +34,11 @@ Séquence cible :
 **Premier bloc uniquement après roster 20** : corriger les bugs combat transversaux et fiabiliser chaînes, routes, launcher/air, poursuite, knockback, garde, dodge, substitution, dégâts, mort/reset ; améliorer anticipation/contact/follow-through, transitions, hit reactions et impacts ; faire passer les 20 par la même grille et Studio. Ne pas commencer en parallèle le gros chantier chakra, l’arène compétitive ou l’alpha tant que ce premier bloc n’a pas atteint ses critères de sortie.
 
 Principe de convergence : 20 stables → 20 bons en combo/animation → 20 intégrés au chakra → 20 identitaires → polish. Pas de personnage fini à 100 % isolément pendant que le reste du roster reste prototype.
+
+## PASSATION-CLAUDE-20261017-SOIR — arrêt propre demandé par l'utilisateur
+
+Branche `claude/ninja-duel-2026-10-14`, poussée. Fait ce jour (détails dans les commits et [CURRENT_STATE](CURRENT_STATE.md)) : fusions chakra2 / identité CORE4 / Naruto / Temari ; socle roster 20 (`Server/Families`, `Shared/Looks`, `Client/FamilyFX`, `Shared/Roster`, menu 5×4, `tests/Roster.spec`) ; Hinata et Kakashi ; modules par lot pré-branchés (`Shared/WaveN`, `Server/WaveNKit`, `Client/WaveNFX`) ; outil natif `tools/studio/fighter_check.py` ; corrections vues en Studio (entrave dessinée, bêtes lisibles, couloir de vent). Sélection : 10 combattants.
+
+En cours, **non fusionné** : lots 1–3 du roster 20 (Sakura, Choji, Kiba, Kimimaro / Shikamaru, Shino, Orochimaru / Haku, Zabuza, Kisame) sur les branches locales `claude/nd-r20-wave1..3` (worktrees `%LOCALAPPDATA%/Temp/ndwt/waveN`), arrêtés en WIP : état et SHA de chaque lot = dernier commit `wip(ninja-duel): roster 20 wave N` de sa branche (ce qui est fait, partiel ou absent y est listé).
+
+Reprise : fusionner chaque lot (union des lignes Roster/run.sh/build.py, `dist/` reconstruit), `tests/Roster.spec` sur toute la liste, puis `fighter_check.py` en Studio pour chaque nouveau combattant ; rejouer Itachi, Sasuke, Neji, Gaara, Lee ; revoir le couloir de Temari ; à 20 Tier A : rapport roster (tableau DEC-016/CHR-EXT-002) puis arrêt selon DEC-021.
