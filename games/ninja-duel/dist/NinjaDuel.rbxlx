@@ -1189,6 +1189,8 @@ return {
 	"Mirror","Mist","Bone",
 	-- Batch 2.
 	"Flicker","Serpent","Medic",
+	-- Batch 3.
+	"Clay","Puppet","Rinnegan","Ink",
 }
 </ProtectedString>
         </Properties>
@@ -1670,18 +1672,232 @@ return {
       <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">Wave3</string>
-          <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): this batch's shared data, merged into
--- Fighters, MoveGraphs and Attacks so parallel batches never edit the same
--- tables (docs/characters/ROSTER_20.md).
---   fighters[id]  a Fighters entry (techniques naming a Family first)
---   graphs[id]    a MoveGraphs entry (the shared directional grammar)
---   attacks(move, attacks)  optional: new strikes, built with Attacks' own
---                 move(startup, active, recovery, damage, travel, reaction,
---                 impulse, stun) and given their shape fields here
+          <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
+-- batch's shared data, merged into Fighters, MoveGraphs and Attacks (see
+-- Wave1). Young versions only: what each of them could already do then.
+local RosterMoves=require(script.Parent.RosterMoves)
+local V=Vector3.new
+
+local fighters={}
+-- Deidara (15, Iwa's Explosion Corps): moulded clay, C1 only. A zoner who
+-- fills the space: birds that fly at the body and burst, spiders that run
+-- the floor, a landmine left where the opponent will walk, and a "Katsu!"
+-- burst of clay at his feet when caught close. Clay pellets as his tool.
+-- No C2 dragon, no C4, no owl flight: later.
+fighters.Clay = {
+	Name = "Deidara", FullName = "Deidara", Age = 15, Title = "THE CLAY ARTIST", Color = { 236, 196, 90 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  heavy after one: clay pop (a blast that throws the body away)  ·  air: drive / spike / switch",
+	Description = "Explosive clay, C1: birds, spiders, a landmine, a Katsu! burst. Art is an explosion — at range.",
+	Health = 118, Chakra = 125, ChakraRegen = 8.2, Speed = 18.5, SprintScale = 1.1, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.0,
+	CombatTravel = 0.95, CombatDamage = 0.9, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 16,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	-- Two clay pellets flicked from the palm; each one pops on contact.
+	ToolMastery = { Kind = "kunai", Projectile = "clay", Count = 2, Speed = 80, Damage = 2.4, Recover = .7, Contact = { Knock = 18, Lift = 6 } },
+	-- Awakening: art is an explosion. Every blast bites deeper, the clay comes
+	-- cheaper and back sooner.
+	Awakening = { Name = "ART IS AN EXPLOSION", Speed = 1.04, Damage = 1.15, Regen = 1.3, Cooldown = 0.6, CostScale = 0.7, Color = { 255, 210, 120 } },
+	Motion = { body = "Mirage", weapons = "none", springy = false,
+		borrow = { ClayPop = "Heavy" },
+		-- Cocky and side-on, one hand in the clay pouch at the hip, the other
+		-- up with a bird already moulded in the palm.
+		stance = {root={y=-.24,pitch=0,yaw=34},torso={pitch=-2,yaw=-14},head={pitch=-6,yaw=-20},
+			ra={raise=-10,out=30,twist=-40,elbow=90,wrist=10},la={raise=70,out=-6,twist=-60,elbow=90,wrist=-20},
+			rf={x=.22,z=.62,yaw=34},lf={x=-.08,z=-.56,yaw=-6},breath=.8,tempo=5} },
+	AttackProfile = {
+		Light1={startup=.96,recovery=.94,travel=.95},Light2={startup=.98,recovery=.94,travel=.95,kind="palm"},
+		Light3={startup=1.02,recovery=1.0,impulseZ=58,kind="kick"},Heavy={startup=1.0},
+		Launcher={startup=1.0,impulseY=54},DashAttack={startup=.96},Air1={startup=.96},Air2={startup=.98},
+	},
+	Skin = { 236, 214, 190 }, Hair = { 240, 210, 110 }, Outfit = { 60, 64, 80 },
+	Techniques = {
+		{ Id = "ClayBirds", Name = "C1: Clay Birds", Family = "Projectile", Kind = "claybird", Cost = 18, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 4.5, Interruptible = true,
+			Range = 40, Speed = 54, Damage = 7, Count = 2, Spread = 0.35, Radius = 1.6, Knock = 32, Lift = 16,
+			Zone = { Radius = 4, Time = 1.6, Damage = 2, Kind = "Fire", Look = "clay" }, Hint = "Two clay birds fly at the body and burst • the blast burns a moment" },
+		{ Id = "ClaySpiders", Name = "C1: Clay Spiders", Family = "Projectile", Kind = "clayspider", Ground = true, Cost = 16, Channel = 0.26, Active = 0.06, Recovery = 0.28, Cooldown = 5, Interruptible = true,
+			Range = 30, Speed = 34, Damage = 5, Count = 3, Spread = 0.6, Radius = 1.2, Knock = 20, Lift = 30, Hint = "Three spiders run the floor and pop under the body (launches)" },
+		{ Id = "ClayMine", Name = "Clay Landmine", Family = "Zone", Kind = "clay", ZoneKind = "Fire", At = "Aim", Cost = 14, Channel = 0.2, Active = 0.1, Recovery = 0.25, Cooldown = 8, Interruptible = true,
+			Range = 26, Radius = 4.5, Time = 6, Damage = 5, Slow = { Scale = .8 }, Hint = "Clay buried where he aims • it blasts whoever stands on it" },
+		{ Id = "Katsu", Name = "Katsu!", Family = "Burst", Kind = "clay", Cost = 16, Channel = 0.06, Active = 0.2, Recovery = 0.3, Cooldown = 9, Interruptible = false,
+			Radius = 6, Clear = true, Damage = 6, Knock = 44, Lift = 14, Range = 6, Hint = "Clay at his feet bursts • a close attacker thrown far" },
+	},
+}
+
+-- Sasori (14, Suna's puppet prodigy): he barely moves; his puppets fight on
+-- chakra threads. His light string is a puppet lashing at mid range (slow
+-- but long, like Gaara's sand), everything he touches carries poison: the
+-- needle tool, a puppet thrust, Father and Mother's embrace, a rain of
+-- needles, and a puppet that takes a blow for him and bites back.
+fighters.Puppet = {
+	Name = "Sasori", FullName = "Sasori of the Red Sand", Age = 14, Title = "THE PUPPET MASTER", Color = { 176, 60, 50 },
+	Routes = "↑ puppet rising strike  ·  ↓ low puppet sweep  ·  ←→ feint step  ·  heavy after one: puppet blade (poisons)  ·  air: drive / spike / switch",
+	Description = "Puppets on chakra threads: long, slow lashes, and poison in everything they touch.",
+	Health = 118, Chakra = 120, ChakraRegen = 8, Speed = 18, SprintScale = 1.06, JumpScale = 1.0, AirControlScale = 0.95, AccelerationScale = 0.98,
+	CombatTravel = 0.6, CombatDamage = 0.92, DashScale = 0.98, GuardStrength = 0.1, PreferredRange = 11,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "shuriken", Projectile = "poisonneedle", Count = 2, Speed = 96, Damage = 1.6, Recover = .65, Contact = { Poison = { Damage = .7, Time = 2, Every = .5 } } },
+	-- Awakening: the puppet master. Every blow poisons, holds last longer,
+	-- the threads come cheaper and back sooner.
+	Awakening = { Name = "PUPPET MASTER", Speed = 1.04, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, BindScale = 1.4,
+		OnHit = { Poison = { Damage = .5, Time = 2, Every = .5 } }, Color = { 220, 90, 70 } },
+	-- Gaara's body: still and composed, his hands do the work (here, threads).
+	Motion = { body = "Sand", clips = "Sand", weapons = "none", springy = false,
+		borrow = { PuppetBlade = "Light3" },
+		-- Upright, both hands raised in front, fingers spread: the threads.
+		stance = {root={y=-.1,pitch=0,yaw=10},torso={pitch=0,yaw=-4},head={pitch=2,yaw=-6},
+			ra={raise=80,out=10,twist=10,elbow=60,wrist=-30},la={raise=76,out=-14,twist=-10,elbow=64,wrist=-30},
+			rf={x=.1,z=.3,yaw=12},lf={x=-.06,z=-.26,yaw=-4},breath=.4,tempo=3.8} },
+	-- Puppet lashes: long and narrow, slower than a fist, light.
+	AttackProfile = {
+		Light1={startup=1.6,recovery=1.35,travel=.3,range=8.5,depth=7.5,offset=4.3,width=3.6,damage=.85},
+		Light2={startup=1.6,recovery=1.35,travel=.3,range=8.5,depth=7.5,offset=4.3,width=3.6,damage=.6},
+		Light3={startup=1.7,recovery=1.4,travel=.3,range=9,depth=8,offset=4.5,width=4.4,impulseZ=54,damage=.6},
+		DashAttack={startup=1.1,travel=.8,range=8.5},Air1={startup=1.1,range=8},Air2={startup=1.1,range=8},Slam={startup=1.1},
+	},
+	Skin = { 238, 220, 204 }, Hair = { 176, 60, 50 }, Outfit = { 120, 110, 100 },
+	Techniques = {
+		{ Id = "PuppetThrust", Name = "Puppet Thrust", Family = "Projectile", Kind = "puppet", Cost = 14, Channel = 0.22, Active = 0.06, Recovery = 0.26, Cooldown = 3.5, Interruptible = true,
+			Range = 24, Speed = 66, Damage = 7, Radius = 1.6, Knock = 26, Lift = 8, Poison = { Damage = 1, Time = 3, Every = .5 }, Hint = "A puppet shot along its thread • its blade is poisoned" },
+		{ Id = "FatherMother", Name = "Father and Mother: Embrace", Family = "Projectile", Kind = "puppet", Count = 2, Spread = 0.5, Cost = 22, Channel = 0.34, Active = 0.08, Recovery = 0.3, Cooldown = 9, Interruptible = true,
+			Range = 20, Speed = 58, Damage = 3, Radius = 1.6, Bind = 1.4, Crush = 7, Hint = "Two puppets close on the body from both sides and hold it • then crush" },
+		{ Id = "NeedleRain", Name = "Poison Needle Rain", Family = "Projectile", Kind = "poisonneedle", Cost = 18, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 6, Interruptible = true,
+			Range = 30, Speed = 92, Damage = 1.2, Count = 9, Spread = 0.7, Radius = .6, Poison = { Damage = .6, Time = 2.5, Every = .5 }, Hint = "A fan of poisoned needles from a puppet's arm" },
+		{ Id = "PuppetShield", Name = "Puppet Shield", Family = "Counter", Kind = "puppet", Time = 0.9, Damage = 7, Poison = { Damage = 1, Time = 3, Every = .5 },
+			Cost = 14, Channel = 0.04, Active = 0.04, Recovery = 0.2, Cooldown = 7, Interruptible = false, Range = 6, Radius = 6,
+			Hint = "A puppet steps in front • the blow it takes is answered with a poisoned blade" },
+	},
+}
+
+-- Nagato (12, the Rinnegan child of Ame): the eyes, not the paths. He fights
+-- with the two forces: he pushes everything away from him (blades, bodies)
+-- and pulls a body to him, and he can drink the chakra round him. Still and
+-- thin, a controller. No Six Paths, no Chibaku Tensei: adult.
+fighters.Rinnegan = {
+	Name = "Nagato", FullName = "Nagato Uzumaki", Age = 12, Title = "THE RINNEGAN CHILD", Color = { 180, 150, 220 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: repelling palm (throws the body off)  ·  air: drive / spike / switch",
+	Description = "The Rinnegan: repulsion clears everything round him, attraction pulls the body in, he drinks chakra.",
+	Health = 112, Chakra = 140, ChakraRegen = 9, Speed = 18, SprintScale = 1.06, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 0.98,
+	CombatTravel = 0.95, CombatDamage = 0.9, DashScale = 1.0, GuardStrength = 0.12, PreferredRange = 10,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .75 },
+	-- Awakening: the Rinnegan open. Jutsu at half their cost and back much
+	-- sooner, chakra back fast.
+	Awakening = { Name = "RINNEGAN", Speed = 1.04, Regen = 1.6, Cooldown = 0.5, CostScale = 0.55, Color = { 200, 170, 240 } },
+	Motion = { body = "Mirage", weapons = "none", springy = false,
+		borrow = { RepellingPalm = "Light3" },
+		-- Thin and still, shoulders slightly hunched, one palm open toward the
+		-- opponent.
+		stance = {root={y=-.14,pitch=4,yaw=16},torso={pitch=6,yaw=-6},head={pitch=-4,yaw=-8},
+			ra={raise=70,out=-4,twist=0,elbow=24,wrist=-40},la={raise=10,out=10,twist=-10,elbow=20,wrist=0},
+			rf={x=.14,z=.4,yaw=18},lf={x=-.06,z=-.36,yaw=-4},breath=.5,tempo=4} },
+	AttackProfile = {
+		Light1={startup=.98,recovery=.96,kind="palm"},Light2={startup=1.0,recovery=.96,kind="palm"},
+		Light3={startup=1.04,recovery=1.0,impulseZ=56,kind="palm"},Heavy={startup=1.02,kind="palm"},
+		Launcher={startup=1.0,impulseY=54},DashAttack={startup=.98},Air1={startup=.98},Air2={startup=1.0},
+	},
+	Skin = { 240, 226, 214 }, Hair = { 170, 40, 40 }, Outfit = { 60, 60, 70 },
+	Techniques = {
+		{ Id = "Repulsion", Name = "Repulsion", Family = "Burst", Kind = "repulsion", Cost = 22, Channel = 0.1, Active = 0.2, Recovery = 0.35, Cooldown = 7, Interruptible = false,
+			Radius = 8, Clear = true, Damage = 7, Knock = 52, Lift = 14, Range = 8, Hint = "Everything round him pushed away: blades, bodies (into walls)" },
+		{ Id = "Attraction", Name = "Attraction", Family = "Projectile", Kind = "gravity", Cost = 16, Channel = 0.2, Active = 0.05, Recovery = 0.25, Cooldown = 4, Interruptible = true,
+			Range = 30, Speed = 110, Damage = 3, Radius = 1.6, Pull = 60, PullTo = 3, Hint = "The body pulled to him • then the string, or Repulsion" },
+		{ Id = "Absorb", Name = "Chakra Absorption", Family = "Burst", Kind = "gravity", Cost = 8, Channel = 0.1, Active = 0.25, Recovery = 0.25, Cooldown = 9, Interruptible = true,
+			Radius = 9, Clear = true, Damage = 2, Drain = 14, Steal = 1, Range = 9, Hint = "Jutsu in reach dissolve into him • a close body's chakra drunk" },
+	},
+}
+
+-- Killer Bee (14, the Eight-Tails' young host): a big, rhythmic brawler with
+-- a jinchūriki's body. The Lariat that flattens, the octopus' ink that
+-- sticks to the legs, a tentacle that grabs. Tough (more health, a solid
+-- guard). Awakening: the first chakra cloak. No seven swords, no full Gyūki.
+fighters.Ink = {
+	Name = "Killer Bee", FullName = "Killer Bee", Age = 14, Title = "THE EIGHT-TAILS' HOST", Color = { 230, 150, 60 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: lariat arm  ·  air: drive / spike / switch",
+	Description = "A jinchūriki's body: the Lariat, the octopus' ink, a tentacle that grabs. Heavy, rhythmic, hard to stop.",
+	Health = 150, Chakra = 115, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.1, JumpScale = 1.04, AirControlScale = 1.0, AccelerationScale = 1.02,
+	CombatTravel = 1.04, CombatDamage = 1.06, DashScale = 1.06, GuardStrength = 0.12, PreferredRange = 5,
+	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 88, Damage = 3, Recover = .75 },
+	-- Awakening: the first chakra cloak. Light blows do not stop him, a
+	-- quarter of every blow is taken by the cloak, harder and faster.
+	Awakening = { Name = "EIGHT-TAILS CLOAK", Speed = 1.1, Damage = 1.1, Regen = 1.3, Cooldown = 0.7, Buff = { Heavy = true, Armor = 0.25 }, Color = { 240, 160, 70 } },
+	Motion = { body = "Lion", weapons = "none", springy = true,
+		borrow = { LariatArm = "Heavy" },
+		-- Big and loose, bouncing to his own beat, arms wide.
+		stance = {root={y=-.4,pitch=6,yaw=20},torso={pitch=4,yaw=-8},head={pitch=-4,yaw=-10},
+			ra={raise=50,out=40,twist=20,elbow=70,wrist=0},la={raise=50,out=40,twist=-20,elbow=70,wrist=0},
+			rf={x=.3,z=.6,yaw=30},lf={x=-.2,z=-.6,yaw=-10},breath=1.4,tempo=7.5} },
+	AttackProfile = {
+		Light1={startup=.98,recovery=.96,damage=1.05},Light2={startup=1.0,recovery=.96,kind="kick",damage=1.05},
+		Light3={startup=1.04,recovery=1.0,impulseZ=62,kind="kick"},Heavy={startup=1.04},
+		Launcher={startup=1.0,impulseY=58},DashAttack={startup=.96,travel=1.08},Air1={startup=.98},Air2={startup=1.0},
+	},
+	Skin = { 120, 82, 60 }, Hair = { 236, 236, 230 }, Outfit = { 70, 76, 60 },
+	Techniques = {
+		{ Id = "Lariat", Name = "Lariat", Family = "Strike", Move = "Lariat", Cost = 18, Channel = 0.16, Active = 0.05, Recovery = 0.1, Cooldown = 6, Interruptible = true,
+			Range = 16, Damage = 15, Hint = "Charging arm across the gap • flattens the body", AI = { Min = 4, Max = 14 } },
+		{ Id = "InkMist", Name = "Octopus Ink", Family = "Zone", Kind = "ink", ZoneKind = "Ink", At = "Aim", Cost = 14, Channel = 0.2, Active = 0.1, Recovery = 0.25, Cooldown = 9, Interruptible = true,
+			Range = 22, Radius = 7, Time = 5, Damage = 1, Slow = { Scale = .62 }, Hint = "A cloud of ink: legs stuck, slowed hard while in it" },
+		{ Id = "OctoHold", Name = "Octopus Hold", Family = "Projectile", Kind = "tentacle", Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 9, Interruptible = true,
+			Range = 18, Speed = 70, Damage = 4, Radius = 1.6, Bind = 1.2, Crush = 8, Hint = "A tentacle grabs the body and holds it • then slams it" },
+	},
+}
+
+local graphs={
+	Clay={
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="ClayPop",
+		stringCancels={Katsu=true,ClayBirds=true},
+		blockCancels={Tool=true},
+		-- A zoner: rarely comes in, and never straight.
+		reengage={name="clay",speed=.95,arrive=4,angle=35,chase=.3,recovery=.2},
+	},
+	Puppet={
+		routes={up="PuppetRise",down="PuppetSweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike"},
+		heavyAfterOne="PuppetBlade",
+		stringCancels={PuppetThrust=true},
+		blockCancels={Tool=true},
+		reengage={name="puppet",speed=.9,arrive=6,angle=20,minRange=8,chase=.32,recovery=.22},
+	},
+	Rinnegan={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="RepellingPalm",
+		stringCancels={Repulsion=true,Attraction=true},
+		blockCancels={},
+		reengage={name="rinnegan",speed=.95,arrive=3.4,angle=0,chase=.3,recovery=.22},
+	},
+	Ink={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="LariatArm",
+		stringCancels={Lariat=true},
+		blockCancels={},
+		reengage={name="ink",speed=1.15,arrive=3,angle=15,chase=.26,recovery=.2},
+	},
+}
+
+local function attacks(move,list)
+	RosterMoves.add(move,list,{
+		-- Deidara: a pellet popped against the body at point blank.
+		ClayPop={{.1,.12,.34,9,2,"Knockback",V(0,14,60),.5},{contact=3.6,range=6.4,zone="body",kind="palm",side=1,twist=20,lean=14,arm=100,step=1.15}},
+		-- Sasori: the puppet's rising strike and low sweep (long, thread reach),
+		-- its poisoned blade.
+		PuppetRise={{.2,.14,.32,7,.4,"Launched",V(0,52,4),1.15},{contact=5,range=9,width=4.4,height=8,depth=8,offset=4.5,zone="chin",kind="launch",side=1,twist=10,lean=-6,arm=120,step=1}},
+		PuppetSweep={{.2,.16,.36,7,.4,"Knockdown",V(0,6,14),.66},{contact=5,range=9,width=6,height=3.5,depth=8,offset=4.5,zone="legs",kind="sweep",side=-1,twist=40,lean=10,arm=90,step=1}},
+		PuppetBlade={{.16,.14,.34,8,.4,"Knockback",V(0,10,46),.5},{contact=5,range=9,width=4,depth=8,offset=4.5,zone="body",kind="slash",side=1,twist=24,lean=8,arm=110,step=1,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
+		-- Nagato: a palm that pushes the body away.
+		RepellingPalm={{.1,.12,.34,8,2.4,"Knockback",V(0,12,66),.5},{contact=3.8,range=6.6,zone="body",kind="palm",side=1,twist=20,lean=16,arm=100,step=1.2}},
+		-- Killer Bee: the lariat arm (heavy after one) and the charging Lariat.
+		LariatArm={{.11,.14,.34,10,3.2,"Knockdown",V(0,10,40),.62},{contact=3.6,range=7,width=7,zone="head",kind="heavy",side=1,twist=50,lean=16,arm=90,step=1.3}},
+		Lariat={{.06,.22,.42,15,13,"Knockdown",V(0,14,56),.7},{contact=3.4,range=7,width=7,height=6,zone="head",kind="heavy",side=1,twist=40,lean=20,arm=90,step=1.45,breaksShield=true}},
+	})
+end
+
 return {
-	fighters={},
-	graphs={},
-	attacks=nil,
+	fighters=fighters,
+	graphs=graphs,
+	attacks=attacks,
 }
 </ProtectedString>
         </Properties>
@@ -2664,7 +2880,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">2f3d3898fb893c4353e4ddff75fe2d60bc30f2f44f72848e6076495905a9298f</string>
+          <string name="Value">93e5482b9998550f1c7dc50cb3b282c7d4ea79a530be8cfdcf92902961358d5b</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -14610,14 +14826,125 @@ return Kit
       <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">Wave3Kit</string>
-          <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's server side. Bespoke techniques
--- (only where a family is not enough) register in install(Techniques); the
--- costumes register in dress(dressers, kit) with World's helpers (wear, cyl,
--- face, hairCap, spike, rgb, A, R). Never a condition on a fighter's name in
--- the shared core: hooks and families (Server/Families).
+          <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
+-- server side. Their techniques run on the shared families; this module
+-- dresses them.
+local Base=require(script.Parent.Wave1Kit)
+local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
 local Kit={}
 function Kit.install(Techniques) end
-function Kit.dress(dressers,kit) end
+function Kit.dress(dressers,kit)
+	local wear,face,hairCap,spike,headband,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.headband,kit.rgb,kit.A,kit.R
+	local function sandals(model,def,strap)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		for _,side in {"Left","Right"} do
+			local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=strap end
+			wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		end
+	end
+	local function hideCap(model,color)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=color;cap.Transparency=1 end
+	end
+
+	-- Deidara (15): long blond hair in a high half-ponytail, a long fringe over
+	-- the left eye with the scope, Iwa's flak vest over dark clothes, clay
+	-- pouches at both hips.
+	dressers.Deidara=function(model,def)
+		local hair=rgb(240,210,110)
+		local dark=rgb(60,64,80)
+		local vest=rgb(140,120,96)
+		hideCap(model,hair)
+		face(model,rgb(70,110,170),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(.9,1.1,.24),CFrame.new(-.4,.0,-.76)*A(0,0,R(-6)),hair)
+		wear(model,"Head","Topknot",Vector3.new(.5,.5,.5),CFrame.new(0,.8,.5),hair)
+		wear(model,"Head","Tail",Vector3.new(.5,1.6,.4),CFrame.new(0,-.2,.9)*A(R(-10),0,0),hair)
+		for _,side in {-1,1} do wear(model,"Head","SideHair",Vector3.new(.22,1.6,.9),CFrame.new(side*.84,-.4,.2),hair) end
+		wear(model,"Head","Scope",Vector3.new(.3,.3,.3),CFrame.new(.62,.18,-.7),rgb(80,90,96),Enum.Material.Metal)
+		headband(model)
+		paint(model,TORSO,dark);paint(model,ARMS,dark);paint(model,LEGS,dark)
+		wear(model,"UpperTorso","Vest",Vector3.new(2.1,1.6,1.14),CFrame.new(0,-.02,0),vest)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.5,.3,1.16),CFrame.new(0,.8,.02),rgb(120,100,80))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.22,1.06),CFrame.new(0,.34,0),rgb(40,36,30))
+		for _,x in {-1.05,1.05} do wear(model,"LowerTorso","ClayPouch",Vector3.new(.36,.5,.6),CFrame.new(x,.1,0),rgb(160,130,90)) end
+		-- The mouth on the right palm (a dark slit).
+		wear(model,"RightHand","PalmMouth",Vector3.new(.3,.06,.02),CFrame.new(0,-.1,-.32),rgb(120,40,40))
+		sandals(model,def,rgb(40,40,48))
+	end
+
+	-- Sasori (14): short, untidy red hair, a calm young face, a long sand-
+	-- coloured cloak with a red scarf; the thread spools at his fingers and a
+	-- folded puppet on his back.
+	dressers.Sasori=function(model,def)
+		local hair=rgb(176,60,50)
+		local cloak=rgb(170,150,120)
+		local shade=rgb(130,112,90)
+		hideCap(model,hair)
+		face(model,rgb(120,70,50),hair)
+		hairCap(model,hair)
+		for _,s in {{Vector3.new(-.4,.7,-.4),Vector3.new(-.5,.6,-.8)},{Vector3.new(.4,.7,-.4),Vector3.new(.5,.6,-.8)},{Vector3.new(0,.8,0),Vector3.new(0,1,-.2)},{Vector3.new(0,.6,.6),Vector3.new(0,.4,1)}} do
+			spike(model,s[1],s[2],.6,.46,.4,hair)
+		end
+		paint(model,TORSO,cloak);paint(model,ARMS,cloak);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Cloak",Vector3.new(2.16,1.8,1.2),CFrame.new(0,-.06,0),cloak)
+		wear(model,"UpperTorso","Scarf",Vector3.new(1.5,.4,1.2),CFrame.new(0,.8,0),rgb(170,40,40))
+		wear(model,"LowerTorso","CloakSkirt",Vector3.new(2.2,1.3,1.22),CFrame.new(0,-.6,0),cloak)
+		-- The folded puppet on his back: a wooden torso, limbs folded on it.
+		wear(model,"UpperTorso","PuppetBack",Vector3.new(1.4,1.7,.5),CFrame.new(0,0,.86),rgb(150,110,74),Enum.Material.Wood)
+		wear(model,"UpperTorso","PuppetHead",Vector3.new(.7,.7,.5),CFrame.new(0,1.1,.86),rgb(150,110,74),Enum.Material.Wood)
+		for _,side in {"Left","Right"} do
+			wear(model,side.."Hand","ThreadRing",Vector3.new(.5,.12,.5),CFrame.new(0,-.2,0),rgb(140,190,240),Enum.Material.Neon)
+		end
+		sandals(model,def,rgb(80,60,50))
+	end
+
+	-- Nagato (12): red hair falling over one eye, thin, a plain dark long
+	-- shirt and light trousers; the Rinnegan's ringed eyes.
+	dressers.Nagato=function(model,def)
+		local hair=rgb(170,40,40)
+		hideCap(model,hair)
+		face(model,rgb(186,170,220),hair)
+		for _,p in model:GetChildren() do
+			if p.Name=="Iris" then p.Material=Enum.Material.Neon;p.Transparency=.3;p.Color=rgb(196,176,236) end
+		end
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.0,1.2,.26),CFrame.new(.3,-.06,-.76)*A(0,0,R(8)),hair)
+		for _,side in {-1,1} do wear(model,"Head","SideHair",Vector3.new(.22,1.4,1.0),CFrame.new(side*.84,-.3,.1),hair) end
+		wear(model,"Head","BackHair",Vector3.new(1.6,1.3,.3),CFrame.new(0,-.3,.74),hair)
+		paint(model,TORSO,rgb(60,60,70));paint(model,ARMS,rgb(60,60,70));paint(model,LEGS,rgb(170,166,156))
+		wear(model,"UpperTorso","Shirt",Vector3.new(2.06,1.66,1.1),CFrame.new(0,-.02,0),rgb(60,60,70))
+		wear(model,"LowerTorso","ShirtHem",Vector3.new(2.1,.7,1.12),CFrame.new(0,-.3,0),rgb(60,60,70))
+		wear(model,"UpperTorso","Collar",Vector3.new(1.3,.26,1.12),CFrame.new(0,.82,0),rgb(48,48,56))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Bandage",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,216,206))
+			wear(model,side.."LowerLeg","Wrap",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,216,206))
+		end
+		sandals(model,def,rgb(60,56,52))
+	end
+
+	-- Killer Bee (14): white hair cropped short, dark skin, sunglasses, a
+	-- white scarf, Kumo's vest worn open, the tattoo on the cheek, a big build.
+	dressers["Killer Bee"]=function(model,def)
+		local hair=rgb(236,236,230)
+		local vest=rgb(200,192,170)
+		hideCap(model,hair)
+		face(model,rgb(30,30,30),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Shades",Vector3.new(1.3,.22,.06),CFrame.new(0,.12,-.85),rgb(20,20,24),Enum.Material.Glass)
+		wear(model,"Head","Tattoo",Vector3.new(.06,.3,.3),CFrame.new(-.82,-.1,-.3),rgb(40,30,24))
+		wear(model,"Head","Headband",Vector3.new(1.66,.24,1.66),CFrame.new(0,.4,0),rgb(40,40,48))
+		wear(model,"Head","HeadbandPlate",Vector3.new(.86,.3,.06),CFrame.new(0,.4,-.85),rgb(176,184,194),Enum.Material.Metal)
+		paint(model,TORSO,rgb(70,76,60));paint(model,ARMS,Color3.fromRGB(table.unpack(def.Skin)));paint(model,LEGS,rgb(70,76,60))
+		wear(model,"UpperTorso","Vest",Vector3.new(2.2,1.7,1.2),CFrame.new(0,-.02,0),vest)
+		wear(model,"UpperTorso","Scarf",Vector3.new(1.6,.4,1.24),CFrame.new(0,.82,0),rgb(240,240,236))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.1,.26,1.1),CFrame.new(0,.34,0),rgb(40,36,30))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."UpperArm","Bulk",Vector3.new(1.1,1.0,1.1),CFrame.new(0,0,0),Color3.fromRGB(table.unpack(def.Skin)))
+			wear(model,side.."LowerArm","Band",Vector3.new(.9,.3,.9),CFrame.new(0,-.36,0),rgb(240,240,236))
+		end
+		sandals(model,def,rgb(40,40,40))
+	end
+end
 return Kit
 </ProtectedString>
         </Properties>

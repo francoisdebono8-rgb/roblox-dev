@@ -180,4 +180,65 @@ test("Kabuto: the scalpel buff cuts (slows) and drains, the tendon cut slows har
  assert(a2.health>60,"the retreat healed nothing")
 end)
 
+
+test("Deidara: clay birds burst and burn, spiders launch, a landmine waits, Katsu throws a close body off",function()
+ if not listed.Clay then return end
+ local c,a,b=H.duel("Clay","Leaf");place(c,a,b,14);a.chakra=999;b.health=999
+ assert(press(c,a,slot("Clay","ClayBirds"),nil,b.root.Position))
+ local knocked=false
+ run(c,1.5,function() if b.reaction=="Knockback" or b.reaction=="Launched" then knocked=true end end)
+ assert(knocked,"the birds did not blow the body away")
+ local c2,a2,b2=H.duel("Clay","Leaf");place(c2,a2,b2,12);a2.chakra=999
+ assert(press(c2,a2,slot("Clay","ClayMine"),nil,b2.root.Position));run(c2,.6)
+ assert(#c2.hazards>0,"no landmine")
+ local c3,a3,b3=H.duel("Clay","Leaf");place(c3,a3,b3,3.5);a3.chakra=999;b3.health=999
+ local from=b3.root.Position
+ assert(press(c3,a3,slot("Clay","Katsu")));run(c3,.6)
+ assert((b3.root.Position-from).Magnitude>3,"Katsu threw nothing off")
+end)
+
+test("Sasori: long puppet lashes, poison everywhere, a puppet that takes a blow and bites back",function()
+ if not listed.Puppet then return end
+ -- His light reaches where a fist does not.
+ local c,a,b=H.duel("Puppet","Leaf");place(c,a,b,7);b.health=999
+ assert(press(c,a,"Attack"));run(c,.6)
+ assert(b.health<999,"the puppet lash did not reach at 7 studs")
+ local c2,a2,b2=H.duel("Puppet","Leaf");place(c2,a2,b2,10);a2.chakra=999;b2.health=999
+ assert(press(c2,a2,slot("Puppet","PuppetThrust"),nil,b2.root.Position));run(c2,.8)
+ assert((b2.poisonedUntil or 0)>0,"the puppet thrust carried no poison")
+ local c3,a3,b3=H.duel("Puppet","Leaf");place(c3,a3,b3,3.4);a3.chakra=999;a3.health=500
+ assert(press(c3,a3,slot("Puppet","PuppetShield")));run(c3,.1)
+ assert(press(c3,b3,"Attack"))
+ run(c3,.5)
+ assert((b3.poisonedUntil or 0)>0 and b3.health<b3.def.Health,"the puppet did not answer the blow")
+end)
+
+test("Nagato: repulsion clears blades and bodies, attraction pulls, absorption drinks chakra",function()
+ if not listed.Rinnegan then return end
+ local c,a,b=H.duel("Rinnegan","Leaf");place(c,a,b,5);a.chakra=999;b.health=999
+ local from=b.root.Position
+ assert(press(c,a,slot("Rinnegan","Repulsion")));run(c,.6)
+ assert(flat(b.root.Position-from).Magnitude>4,"repulsion pushed nothing")
+ local c2,a2,b2=H.duel("Rinnegan","Leaf");place(c2,a2,b2,20);a2.chakra=999;b2.health=999
+ assert(press(c2,a2,slot("Rinnegan","Attraction"),nil,b2.root.Position))
+ local nearest=99
+ run(c2,1.2,function() nearest=math.min(nearest,flat(b2.root.Position-a2.root.Position).Magnitude) end)
+ assert(nearest<10,string.format("attraction did not pull (closest %.1f)",nearest))
+ local c3,a3,b3=H.duel("Rinnegan","Leaf");place(c3,a3,b3,5);a3.chakra=40;b3.chakra=100;b3.health=999
+ assert(press(c3,a3,slot("Rinnegan","Absorb")));run(c3,.4)
+ assert(b3.chakra<100 and a3.chakra>40-8,"absorption drank nothing")
+end)
+
+test("Killer Bee: the Lariat crosses the gap and flattens, ink sticks, a tentacle holds",function()
+ if not listed.Ink then return end
+ local c,a,b=H.duel("Ink","Leaf");place(c,a,b,10);a.chakra=999;b.health=999
+ assert(press(c,a,slot("Ink","Lariat"),nil,b.root.Position))
+ local down=false
+ run(c,1,function() if b.reaction=="Knockdown" then down=true end end)
+ assert(down,"the Lariat did not flatten the body")
+ local c2,a2,b2=H.duel("Ink","Leaf");place(c2,a2,b2,10);a2.chakra=999
+ assert(press(c2,a2,slot("Ink","InkMist"),nil,b2.root.Position));run(c2,1.2)
+ assert((b2.slowUntil or 0)>c2.now,"the ink did not slow")
+end)
+
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

@@ -13,4 +13,6 @@ return {
 	"Mirror","Mist","Bone",
 	-- Batch 2.
 	"Flicker","Serpent","Medic",
+	-- Batch 3.
+	"Clay","Puppet","Rinnegan","Ink",
 }

@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "eb1cad9df4c0a4a3043757ebd7b6a0fc07001fd7d0ec6da53118e956a84a8b74",
+  "sha256": "523e2bb3dc124cf4055ed776e16e7092a94b0872258c7b8f375eacb633035306",
   "sources": {
     "src/Client/BodyViews.luau": "6a00e1f47f5a69e26e5ada7d6faa897c11501add83485da8d22c90931d968078",
     "src/Client/Camera.luau": "645aa3e58d8f3613b705973a9afa1f7b7d2f9d39efc199f95a85ff0ff4b6ec1e",
@@ -75,7 +75,7 @@
     "src/Server/VelmoraHitDetection.luau": "62471b8a048374ab552e872da636f31af425b0844cd157866a80cc934b1e16fb",
     "src/Server/Wave1Kit.luau": "2a38384f2a3a207881ea6af3493e2b5a09cb32b1cf26d68cb997ab0ef2a1fea2",
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
-    "src/Server/Wave3Kit.luau": "8b2b26773f1c09573032e8d3ef8c67ec7b52ba142d5018cc4fdf172b88861098",
+    "src/Server/Wave3Kit.luau": "251bc80b90ab3d76f81cdb3b4d3693944e266a615b105a2f722efe037364bfd0",
     "src/Server/World.luau": "a0b23da0714b31c0fbb3eccc6cbd19f2a015fb67d0c6061cea918c2edaddfb0f",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
@@ -88,17 +88,17 @@
     "src/Shared/Looks.luau": "1ea1a1ae39506372c03b0c98dc83d2218057fc7ae700a4d141d30d4e9a8ff918",
     "src/Shared/MoveGraphs.luau": "60a560d402274c3e036a99a56bad065cebe6e72b55385c6a92d8034c5ed456f3",
     "src/Shared/OnlineProtocol.luau": "d297a74dc56b750386ef8c051204ad5ee7040b49d32cf0a7f4ec58fe6e22628a",
-    "src/Shared/Roster.luau": "f33bb82f8f298a39997387e2386254bacfe6834837cf86c155f5539a929d1662",
+    "src/Shared/Roster.luau": "a97d19618804bbe2f9ea57001751c1754d4d80e6d1f0d1a623aea1fc82e7c293",
     "src/Shared/RosterMoves.luau": "ba024881ff583c4444995e12df026bf3206325f236e01c7f79e0b833fb649321",
     "src/Shared/Rules.luau": "07708aa2ac82ee9803691412dbd2ceb02044f4c265a4c70425eb1f9c790d4f74",
     "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0",
     "src/Shared/Wave1.luau": "66431bf8cc77b2a3b18e92d39d2d015844ec6c77aac5df9cd233be187f14bd92",
     "src/Shared/Wave2.luau": "608dfc6f1e47cadbe681e2180b7fd740f23fe81cb2849b344105a97ad1f372ba",
-    "src/Shared/Wave3.luau": "e165f5c5943ba980a61612a512ecf56037683c20533859b4a625b7c1f8328fea"
+    "src/Shared/Wave3.luau": "c6701546bffffbb6d3b4c079983bdf0e84e6382a24c64f63050daf07b25f2a3e"
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "77a0f88eab4e3ca83a703ea7d16b015db6a4ae74045cf969b8a317c339ac41fe",
+  "buildFingerprint": "8104e6345196c85e2d4d4d9daab6aa1e9954bf42cab93d8d952e843a72429f17",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -229,11 +229,11 @@
       },
       "tests/Roster.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel roster Tier A: 8 PASS (16 fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)"
+        "summary": "NinjaDuel roster Tier A: 8 PASS (20 fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)"
       },
       "tests/Roster20.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel roster 20 (locked ten): 7 PASS (headless mechanics; feel and looks are Studio checks)"
+        "summary": "NinjaDuel roster 20 (locked ten): 11 PASS (headless mechanics; feel and looks are Studio checks)"
       }
     }
   },
