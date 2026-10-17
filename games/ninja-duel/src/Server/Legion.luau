@@ -63,13 +63,14 @@ local function persistent(c,body,dt)
 	if body.mode=="guard" and gap<=12 then body.mode="flank" end
 	local goal,speed
 	if body.mode=="guard" then
-		goal,speed=aside(c,a,body.side,2.8),28
+		-- At his side, keeping pace with him even at a sprint.
+		goal,speed=aside(c,a,body.side,2.8),math.max(28,(a.locomotion and a.locomotion.Magnitude or 0)*1.25)
 	else
 		-- Out on the opponent's flank, off the line between the two of them.
 		local line=flat(a.root.Position-b.root.Position)
 		line=if line.Magnitude>.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
 		local angle=body.side*100
-		speed=if body.rush then 46 else 34
+		speed=if body.rush then 50 else 38
 		if a.state=="Rush" and a.rush then
 			-- The pincer: Naruto comes in on one angle, the clone on the other.
 			if not body.pincer then body.pincer=true;body.nextStrike=c.now+.08 end

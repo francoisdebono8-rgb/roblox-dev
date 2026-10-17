@@ -239,7 +239,10 @@ end
 -- dispelled and the strike is spent on it, like a blocked one (the string
 -- starts over, the recovery stays short). The real fighter still takes the
 -- blow when he stands nearer in the same swing, unless it was aimed at the
--- body (Bodies.aim). Returns true when a body took the strike.
+-- body (Bodies.aim). A wide swing (Bodies.WIDE: sweeps, spinning kicks,
+-- claws) clears every enemy body it covers and still reaches the fighter.
+-- Returns true when a body took the strike.
+Bodies.WIDE=6.5
 function Bodies.strike(c,a,p)
 	local all=c.bodies
 	if not all or #all==0 or p.lost then return false end
@@ -247,16 +250,25 @@ function Bodies.strike(c,a,p)
 	local frame=p.from or a.root.CFrame
 	local box=frame*CFrame.new(0,0,-(spec.offset or 2))
 	local size=Vector3.new(spec.width or 5,spec.height or 5,spec.depth or 2)
+	local covered={}
 	local best,bestGap
 	for _,body in all do
 		if body.alive and body.owner~=a and inBox(box,size,body.position,1) then
+			table.insert(covered,body)
 			local gap=(body.position-frame.Position).Magnitude
 			if not bestGap or gap<bestGap then best,bestGap=body,gap end
 		end
 	end
 	if not best then return false end
 	local t=a.target
-	if p.aim~=best and t and t.health>0 and inBox(box,size,t.root.Position,1) and (t.root.Position-frame.Position).Magnitude<bestGap then return false end
+	local real=t~=nil and t.health>0 and inBox(box,size,t.root.Position,1)
+	if (spec.width or 5)>=Bodies.WIDE then
+		for _,body in covered do Bodies.dispel(c,body,"hit",a) end
+		if real then return false end
+		a.hitBlocked=true
+		return true
+	end
+	if p.aim~=best and real and (t.root.Position-frame.Position).Magnitude<bestGap then return false end
 	a.hitBlocked=true
 	Bodies.dispel(c,best,"hit",a)
 	return true
@@ -287,6 +299,14 @@ function Bodies.projectile(c,p,step)
 		end
 	end
 	if not hit then return false end
+	-- The real fighter nearer on the same step takes it (a clone behind him is
+	-- no shield for the blade that reaches him first).
+	local t=p.a.target
+	if t and t.health>0 then
+		local close=closestOnSegment(from,from+step,t.root.Position)
+		local d=t.root.Position-close
+		if flat(d).Magnitude<=Bodies.RADIUS+radius and math.abs(d.Y)<=Bodies.HALF+radius and (close-from).Magnitude<best then return false end
+	end
 	local volume=VOLUME[p.kind]==true
 	Bodies.dispel(c,hit,"blade",p.a,if volume then {kind=hit.kind,through=p.kind} else {projectile=p.id,blade=p.kind,direction=p.direction})
 	return not volume

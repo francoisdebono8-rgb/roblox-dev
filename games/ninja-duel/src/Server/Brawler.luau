@@ -798,7 +798,8 @@ end
 function Brawler.clash(c,a,p)
  local b=a.target
  local q=b and b.pending
- if not q or q.kind~="Brawl" or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
+ -- (A strike another body carries out, Bodies.bind, never meets a blow thrown at its owner.)
+ if not q or q.kind~="Brawl" or q.from or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
  if q.name=="Grab" or q.name=="Throw" or q.name=="ThrowUp" then return false end
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).

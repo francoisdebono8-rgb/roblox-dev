@@ -141,6 +141,14 @@ test("one blow dispels a clone: the opponent's light reaches it first, the real 
  until_(c,.5,function() return b.state=="Recovery" end,"the swing never recovered")
  assert(not b.chainOpen and (b.combo or 0)==0,"striking a clone counted as a confirmed hit")
  assert(ev(b,"BodyDispelled")==1 and ev(a,"BodyLost")==1,"the dispel was not counted")
+ -- A wide swing (Itachi's low sweep) clears the clone beside Naruto and still takes his legs.
+ local c2,x,y=H.duel("Mirage","Legion");place(c2,x,y)
+ assert(press(c2,x,"Attack"));chain(c2,x,"Itachi Light1")
+ assert(press(c2,x,"Attack"));until_(c2,.8,function() return chainOpen(c2,x) and x.attackName=="Light2" end,"Itachi: no second chain")
+ local beside=still(c2,y,y.root.Position+side(y,1)*2)
+ assert(press(c2,x,"Attack",-toward(x)));assert(x.attackName=="Sweep","fixture: Itachi's low route is "..tostring(x.attackName))
+ until_(c2,.6,function() return not beside.alive end,"the sweep went under the clone")
+ until_(c2,.6,function() return y.reaction=="Knockdown" end,"the sweep that cleared the clone missed Naruto")
 end)
 test("blades stop in a clone, jutsu go through it: a kunai is spent on the clone, a fireball puffs it and carries on",function()
  local c,a,b=H.duel("Legion","Mirage");place(c,a,b,16)
@@ -163,6 +171,11 @@ test("blades stop in a clone, jutsu go through it: a kunai is spent on the clone
  c3:projectile(m,n.root.Position,80,30,3,"kunai")
  H.step(c3,.3)
  assert(own.alive,"Naruto's own kunai dispelled his clone")
+ -- A clone right behind Naruto is no shield: on a step that reaches both, he is nearer.
+ local c4,u,w=H.duel("Legion","Mirage");place(c4,u,w,16)
+ local behind=still(c4,u,u.root.Position+V.new(0,0,1.6))
+ local blade={a=w,position=u.root.Position-V.new(0,0,.5),radius=0,growth=0,born=c4.now,kind="kunai",direction=V.zAxis,id=99}
+ assert(Bodies.projectile(c4,blade,V.new(0,0,2.6))==false and behind.alive,"a clone behind Naruto took the blade that reached him first")
 end)
 test("the lock stays on Naruto, the stick picks the clone: an opener pushed at a clone on the flank swings at it",function()
  local c,a,b=H.duel("Legion","Mirage");place(c,a,b,9)
@@ -213,6 +226,16 @@ test("the third hit comes from a clone out, from behind: judged from the clone i
  y.reaction=nil;y.reactionUntil=0;y.state="Guarding";y.guardHeld=true;y.guardPressedAt=-10;y.untilTime=c2.now
  until_(c2,.6,function() return y.impactStyle=="block" end,"his own kick was not guarded")
  assert(#clones(c2,x,true)==0,"a plain third hit made a clone")
+ -- A punch thrown at Naruto in the same instant does not "clash" with the
+ -- clone's kick from behind: the two blows are far apart.
+ local c3,m,n=opened(2,"Mirage",function(c,a) still(c,a,a.root.Position+side(a,1)*3) end)
+ assert(press(c3,m,"Attack") and m.attackName=="CloneKick")
+ H.step(c3,.06)
+ n.reaction=nil;n.reactionUntil=0;n.state="Neutral";n.untilTime=c3.now;n.comboHits=0
+ assert(press(c3,n,"Attack"),"fixture: the opponent's punch was refused")
+ local health=n.health
+ until_(c3,.6,function() return n.health<health end,"the clone's kick never landed")
+ assert(ev(m,"Clash")==0 and ev(n,"Clash")==0,"the clone's kick clashed with a punch thrown at Naruto")
 end)
 test("side after one hit: a clone strikes from that flank and the string goes on; with none out he pays 12 for one",function()
  local c,a,b=opened(1)
