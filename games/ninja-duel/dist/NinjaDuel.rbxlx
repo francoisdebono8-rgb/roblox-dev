@@ -1503,7 +1503,7 @@ local fighters={}
 -- fireball; a Sharingan genjutsu that seals jutsu for a moment. Narrow
 -- Sharingan windows (not Itachi's). No Mangekyō: that comes later.
 fighters.Flicker = {
-	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 120, 60, 70 },
+	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 214, 120, 96 },
 	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ flicker step (vanishes to the flank, the string goes on)  ·  heavy after one: flicker cut  ·  air: drive / spike / switch",
 	Description = "The fastest Uchiha: the Body Flicker from the flank and out of reach, a Katon fireball, a genjutsu that seals jutsu.",
 	Health = 122, Chakra = 120, ChakraRegen = 8.4, Speed = 20.5, SprintScale = 1.14, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.18,
@@ -2880,7 +2880,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">93e5482b9998550f1c7dc50cb3b282c7d4ea79a530be8cfdcf92902961358d5b</string>
+          <string name="Value">e0cfe088fe5646ee759b1b129145a7798bc8b92dec8632acfebdfe5eaff27482</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">

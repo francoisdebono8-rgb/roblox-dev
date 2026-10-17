@@ -11,7 +11,7 @@ local fighters={}
 -- fireball; a Sharingan genjutsu that seals jutsu for a moment. Narrow
 -- Sharingan windows (not Itachi's). No Mangekyō: that comes later.
 fighters.Flicker = {
-	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 120, 60, 70 },
+	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 214, 120, 96 },
 	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ flicker step (vanishes to the flank, the string goes on)  ·  heavy after one: flicker cut  ·  air: drive / spike / switch",
 	Description = "The fastest Uchiha: the Body Flicker from the flank and out of reach, a Katon fireball, a genjutsu that seals jutsu.",
 	Health = 122, Chakra = 120, ChakraRegen = 8.4, Speed = 20.5, SprintScale = 1.14, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.18,

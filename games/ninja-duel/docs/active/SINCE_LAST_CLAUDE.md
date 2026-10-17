@@ -43,7 +43,7 @@ Roster 20, anciens lots 1–3 (Sakura, Choji, Kiba, Kimimaro / Shikamaru, Shino,
 
 Reprise : suivre la composition verrouillée de DEC-022 et `ROSTER_20.md`, puis `tests/Roster.spec` sur toute la liste et `fighter_check.py` en Studio pour chaque nouveau combattant ; rejouer Itachi, Sasuke, Neji, Gaara, Lee ; revoir le couloir de Temari ; à 20 Tier A : rapport roster (tableau DEC-016/CHR-EXT-002) puis arrêt selon DEC-021.
 
-## INBOX-ROSTER-20261017 — NOUVELLE DÉCISION UTILISATEUR, À PRENDRE AVANT TOUT NOUVEAU LOT
+## INBOX-ROSTER-20261017 — ACK Claude 18/10 (les dix implémentés Tier A, voir CURRENT_STATE)
 
 Le roster des dix places restantes est désormais verrouillé dans **DEC-022** : **Shisui, Orochimaru, Haku, Kimimaro, Nagato, Sasori, Deidara, Killer Bee, Zabuza, Kabuto**.
 
@@ -51,7 +51,7 @@ Les anciens candidats non encore codés (Sakura, Choji, Kiba, Shikamaru, Shino, 
 
 Règle de conception : toutes les générations de Naruto sont permises pour choisir les personnages, mais chacun reste dans une **version jeune/prodige** cohérente avec ce qu'il maîtrisait alors ; pas de kit adulte final importé par défaut. Les membres d'un même clan doivent garder des boucles de jeu distinctes. Le nombre de jutsus peut être asymétrique : équilibrer les décisions utiles et l'identité, pas le nombre de techniques.
 
-## INBOX-PLAYER-EXPERIENCE-20261017 — VISION PRODUIT À ABSORBER, SANS DÉTOURNER LE BREADTH PASS
+## INBOX-PLAYER-EXPERIENCE-20261017 — ACK Claude 18/10 (lu ; non entamé, DEC-021)
 
 Décision utilisateur du 17/10 : la cible produit est maintenant beaucoup plus précise. **Ne pas interrompre le roster 20 pour construire ces systèmes immédiatement** ; les absorber dans les prochaines passes conformément à DEC-021. Les décisions normatives sont DEC-023/024 et la vision détaillée est dans `VISION.md`.
 
@@ -66,7 +66,7 @@ Compétitif : dans le tournoi/ranked principal, on ne sélectionne que des comba
 Économie future : **pay-to-time**, pas pay-to-win compétitif. Le joueur peut accélérer accès/progression/collection et acheter du statut/cosmétique ; il ne peut pas acheter un budget de tournoi supérieur. Axe produit/marketing à préserver : **« Choisis ton prodige. Maîtrise-le. Entre dans le tournoi. »**
 
 
-## INBOX-PROGRESSION-ARCH-20261017 — PENDING ACK, PRÉPARATION UNIQUEMENT
+## INBOX-PROGRESSION-ARCH-20261017 — ACK Claude 18/10 (proposition conservée, non implémentée)
 
 Demande utilisateur : [source intégrale](../archive/requests/2026-10-17-progression-mastery-architecture.md). Base auditée `b3f8ffb`. [Proposition](../systems/PROGRESSION_MASTERY_PROPOSAL.md) reliée à PROG-001/002 et DEC-024 : réutilisation SkillBuilds/ProfileRepository, schéma versionné, maîtrises par preuves, tournoi standardisé, trois mini-arbres Lee/Minato/Temari, UX et étapes.
 

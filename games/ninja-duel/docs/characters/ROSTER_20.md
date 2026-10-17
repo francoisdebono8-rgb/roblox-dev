@@ -16,20 +16,24 @@ Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROST
 | 8 | `Gale` | Temari | zoneuse vent | Zones | jouable (Studio à faire) |
 | 9 | `Lavender` | Hinata | Poing souple, défensive | Neji + Families (Buff, Burst) | Tier A, Studio vu |
 | 10 | `Copycat` | Kakashi | polyvalent / Sharingan | Families (Strike, Projectile) | Tier A, Studio vu |
-| 11 | — | Shisui | Uchiha mobilité / genjutsu | Families + identité Uchiha distincte | à faire |
-| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile serpent Pull) | à faire |
-| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile senbon, Teleport) | à faire |
-| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Projectile bone, Burst, Strike) | à faire |
-| 15 | — | Nagato | Rinnegan / contrôle / attraction-répulsion | Families + mécaniques propres | à faire |
-| 16 | — | Sasori | marionnettes / corps déporté | Bodies/Families + marionnette dédiée | à faire |
-| 17 | — | Deidara | explosifs / zoning / aérien | Families + explosifs dédiés | à faire |
-| 18 | — | Killer Bee | multi-sabres / jinchūriki jeune | Families + corps/armes dédiés | à faire |
-| 19 | `Mist` | Zabuza | arme lourde + brume | Families (Zone mist, Teleport, Strike) | à faire |
-| 20 | — | Kabuto | médical / scalpel chakra / intelligence | Families + mécaniques propres | à faire |
+| 11 | `Flicker` | Shisui | Uchiha mobilité / genjutsu | Families (Teleport ×2, Projectile fireball, Burst seal) | Tier A, Studio vu |
+| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile snake Pull/PullTo + Poison, Bind, Strike venin) | Tier A, Studio vu |
+| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile ice, Teleport InZone, Zone dôme) ; outil senbon (Slow) | Tier A, Studio vu |
+| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Buff arme, Burst Leave, Strike) ; outil os ; Armor | Tier A, Studio vu |
+| 15 | `Rinnegan` | Nagato | Rinnegan / contrôle / attraction-répulsion | Families (Burst répulsion, Projectile Pull, Burst Drain/Steal) | Tier A, Studio vu |
+| 16 | `Puppet` | Sasori | marionnettes / corps déporté | corps de Gaara (fouets longs = fils) + Families (puppet Projectile/Bind, Counter, Poison) | Tier A, Studio vu (marionnette = projectile, pas encore un corps Bodies) |
+| 17 | `Clay` | Deidara | explosifs / zoning | Families (claybird/clayspider Projectile + Zone, Zone mine, Burst Katsu) ; outil argile | Tier A, Studio vu |
+| 18 | `Ink` | Killer Bee | jinchūriki jeune, lutteur | Families (Strike Lariat, Zone encre, Projectile tentacule Bind) ; éveil manteau Armor | Tier A, Studio vu |
+| 19 | `Mist` | Zabuza | arme lourde + brume | clips de l'éventail = couperet + Families (Zone brume, Teleport InZone, Projectile Bind) | Tier A, Studio vu |
+| 20 | `Medic` | Kabuto | médical / scalpel chakra | Families (Buff OnHit, Strike Slow, Teleport Heal) | Tier A, Studio vu |
 
 > **Composition verrouillée par DEC-022 (17/10/2026).** Les anciens lots Sakura / Choji / Kiba / Shikamaru / Shino / Kisame sont abandonnés avant code pour ce roster initial. Les noms ci-dessus priment sur les anciennes notes de lots.
 >
 > **Règle de période :** les vingt peuvent venir de générations différentes, mais chaque personnage est construit dans une version **jeune/prodige**, avec les capacités réellement connues ou raisonnablement établies à ce stade. Ne pas importer son arsenal adulte final par défaut. Les Uchiha et autres familles/clans peuvent partager une base sans partager leur boucle de jeu. Le nombre de jutsus n'est pas standardisé : équilibrer la profondeur et les décisions, pas le nombre de techniques.
+
+## Champs génériques ajoutés pour les dix (18/10, données uniquement)
+
+`Families` : `Poison {Damage, Time, Every}` (dégâts dans le temps), `PullTo` (une traction ne passe jamais derrière lui), Teleport `Heal` / `InZone` (+ `ZoneName`), Burst `Leave` (zone laissée), Buff `OnHit` ; `ToolMastery.Projectile`/`Contact` (outil dessiné par un Looks, avec cavaliers) ; `Attacks.riders` (frappe propre avec Slow/Poison…) ; `Motion.borrow` (une frappe nouvelle emprunte un clip existant) ; téléportations de famille dessinées dans leur look ; arme tenue en main pendant un Buff à look lame/aiguille ; zone `spikes`. `Shared/RosterMoves` ajoute les frappes d'un lot. `tests/Roster20.spec.luau` vérifie l'invariant d'ouverture et la mécanique propre de chacun. `Server/DevRosterCheck` (Debug seulement) : passe Studio par le pipeline serveur, sans le pont MCP Windows.
 
 ## Tier A (plancher, vérifié pour chaque entrée de `Shared/Roster`)
 
