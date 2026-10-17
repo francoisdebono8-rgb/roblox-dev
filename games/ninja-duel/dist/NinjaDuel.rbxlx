@@ -917,6 +917,8 @@ return {
 	-- Deidara: moulded explosive clay.
 	claybird={shape="beast",color=rgb(240,236,222),color2=rgb(204,196,176),size={2.2,1,2.4},light=0,trail=.5,hit="burst",zone="scorch",launch="Palm",radius=1.6},
 	clayspider={shape="beast",color=rgb(236,232,218),color2=rgb(196,188,168),size={.9,.5,1},light=0,trail=0,hit="burst",zone="scorch",launch="Ground",radius=1.2},
+	-- A charge laid on the floor (a missed bird or spider, a buried mine).
+	claycharge={shape="orb",color=rgb(240,236,222),color2=rgb(255,120,60),size={.9,.6,.9},light=0,trail=0,hit="burst",zone="charge",radius=1},
 	clay={shape="orb",color=rgb(240,236,222),color2=rgb(255,190,90),size={1,1,1},light=0,trail=0,hit="burst",zone="scorch"},
 	-- Killer Bee: the Eight-Tails' ink and a tentacle.
 	ink={shape="orb",color=rgb(30,28,40),color2=rgb(60,56,80),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
@@ -1310,7 +1312,8 @@ local fighters={}
 -- Haku (15, the Land of Waves): Ice Release. Fast and light, he fights from
 -- the edge of the melee: senbon at the vital points (they slow), needles of
 -- water, a step through a mirror, and the Demonic Ice Mirrors that close a
--- dome round the opponent (his mirror step strikes harder inside it).
+-- dome round the opponent. The dome is his network: inside it the mirror
+-- step takes him from mirror to mirror round the body, a volley from each.
 fighters.Mirror = {
 	Name = "Haku", FullName = "Haku Yuki", Age = 15, Title = "THE ICE MIRROR", Color = { 150, 206, 240 },
 	Routes = "↑ rising palm  ·  ↓ low sweep  ·  ←→ ice slide (a cut that keeps the string)  ·  heavy after one: senbon to a vital point (slows)  ·  air: drive / spike / switch",
@@ -1322,7 +1325,9 @@ fighters.Mirror = {
 	ToolMastery = { Kind = "shuriken", Projectile = "senbon", Count = 3, Speed = 112, Damage = 1.4, Recover = .6, Contact = { Slow = { Scale = .85, Time = 1 } } },
 	-- Awakening: inside the mirrors. Faster legs, techniques back almost at
 	-- once, cheaper ice.
-	Awakening = { Name = "CRYSTAL ICE MIRRORS", Speed = 1.15, Regen = 1.4, Cooldown = 0.45, CostScale = 0.6, Color = { 200, 236, 255 } },
+	-- Rule: inside his dome, travel from mirror to mirror is free and comes
+	-- back at once (a storm of volleys from every side).
+	Awakening = { Name = "CRYSTAL ICE MIRRORS", Speed = 1.1, Regen = 1.3, Cooldown = 0.7, ZoneFree = true, Color = { 200, 236, 255 } },
 	Motion = { body = "Mirage", weapons = "shuriken", springy = true,
 		borrow = { SenbonStab = "Light2", IceSlide = "CircleStep" },
 		-- Light and upright, weight forward; the right hand up at the face with
@@ -1339,9 +1344,10 @@ fighters.Mirror = {
 	Techniques = {
 		{ Id = "WaterNeedles", Name = "Thousand Flying Water Needles", Family = "Projectile", Kind = "ice", Element = "Water", Cost = 16, Channel = 0.3, Active = 0.05, Recovery = 0.3, Cooldown = 4.5, Interruptible = true,
 			Range = 34, Speed = 86, Damage = 2.2, Count = 7, Spread = 0.5, Radius = .7, Slow = { Scale = .8, Time = 1.4 }, Hint = "A fan of ice needles • each one slows • hard to dodge sideways" },
-		{ Id = "MirrorStep", Name = "Ice Mirror Step", Family = "Teleport", Kind = "mirror", To = "Side", Distance = 3.4, Move = "SenbonStab", Damage = 7, InZone = 1.6, ZoneName = "mirrors",
+		{ Id = "MirrorStep", Name = "Ice Mirror Step", Family = "Teleport", Kind = "mirror", To = "Side", Distance = 3.4, Move = "SenbonStab", Damage = 7, InZone = 1.4, ZoneName = "mirrors",
+			Ring = { Look = "mirror", Volley = { Count = 3, Kind = "senbon", Damage = 2.4, Speed = 120, Slow = { Scale = .75, Time = 1.2 } } },
 			Cost = 14, Channel = 0.1, Active = 0.04, Recovery = 0.2, Cooldown = 3.6, Interruptible = true, Range = 30, Invuln = .15,
-			Hint = "Out of a mirror at his flank • senbon to a vital point • harder inside the dome", AI = { Min = 6, Max = 28 } },
+			Hint = "Outside the dome: out of a mirror at his flank, senbon to a vital point • inside it: from mirror to mirror round the body, a volley from each", AI = { Min = 6, Max = 28 } },
 		{ Id = "IceMirrors", Name = "Demonic Ice Mirrors", Family = "Zone", Kind = "mirror", ZoneKind = "Ice", At = "Target", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.2, Recovery = 0.35, Cooldown = 12, Interruptible = true,
 			Range = 30, Radius = 7.5, Time = 5.5, Damage = 3, Slow = { Scale = .72 }, Hint = "A dome of mirrors round the opponent • it slows and cuts • his mirror step strikes harder inside" },
 	},
@@ -1379,7 +1385,8 @@ fighters.Mist = {
 	Skin = { 228, 204, 182 }, Hair = { 30, 30, 34 }, Outfit = { 120, 128, 130 },
 	Techniques = {
 		{ Id = "HiddenMist", Name = "Hidden Mist", Family = "Zone", Kind = "mist", ZoneKind = "Mist", At = "Self", Element = "Water", Cost = 20, Channel = 0.4, Active = 0.2, Recovery = 0.3, Cooldown = 14, Interruptible = true,
-			Range = 16, Radius = 16, Time = 8, Damage = 0, Slow = { Scale = .86 }, Hint = "A thick mist round him • the opponent is slowed in it • the Silent Killing strikes far harder there" },
+			Range = 16, Radius = 16, Time = 8, Damage = 0, Slow = { Scale = .86 }, Shroud = true,
+			Hint = "A thick mist round him • inside it the opponent loses sight of him (he fades to a shadow, no lock) • the Silent Killing strikes far harder there" },
 		{ Id = "SilentKilling", Name = "Silent Killing", Family = "Teleport", Kind = "mist", To = "Behind", Distance = 3.6, Move = "SilentCleave", InZone = 1.7, ZoneName = "mist",
 			Cost = 22, Channel = 0.14, Active = 0.04, Recovery = 0.25, Cooldown = 6, Interruptible = true, Range = 32,
 			Hint = "Gone, then the cleaver from behind • far harder in his mist", AI = { Min = 6, Max = 30 } },
@@ -1513,7 +1520,9 @@ fighters.Flicker = {
 	Sharingan = { ParryWindow = 0.22, PerfectDodge = 0.2, Counter = 0.7 },
 	-- Awakening: the flicker becomes instant. Faster legs, the flickers back
 	-- almost at once and for half their cost, wider read windows.
-	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.2, Regen = 1.4, Cooldown = 0.35, CostScale = 0.5, Windows = 1.3, Color = { 230, 50, 60 } },
+	-- Rule: a Body Flicker whose cut lands gives the flicker back at once,
+	-- three times in a row (a chain of flank cuts no one else can do).
+	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.12, Regen = 1.3, Cooldown = 0.7, Windows = 1.2, ChainTeleport = 3, Color = { 230, 50, 60 } },
 	Motion = { body = "Lion", weapons = "kunai", springy = true,
 		borrow = { FlickerStep = "AngleStep", FlickerCut = "Light3" },
 		-- Loose and forward, almost a runner's stance: weight on the balls of
@@ -1679,10 +1688,11 @@ local RosterMoves=require(script.Parent.RosterMoves)
 local V=Vector3.new
 
 local fighters={}
--- Deidara (15, Iwa's Explosion Corps): moulded clay, C1 only. A zoner who
--- fills the space: birds that fly at the body and burst, spiders that run
--- the floor, a landmine left where the opponent will walk, and a "Katsu!"
--- burst of clay at his feet when caught close. Clay pellets as his tool.
+-- Deidara (15, Iwa's Explosion Corps): moulded clay, C1 only. His loop is
+-- set → threaten → detonate: birds and spiders that miss stay where they
+-- stop as charges, a landmine is buried where he aims; a body that steps on
+-- one is blasted, and "Katsu!" sets every one of them off from anywhere (and
+-- pops the clay at his feet). Clay pellets as his tool.
 -- No C2 dragon, no C4, no owl flight: later.
 fighters.Clay = {
 	Name = "Deidara", FullName = "Deidara", Age = 15, Title = "THE CLAY ARTIST", Color = { 236, 196, 90 },
@@ -1695,7 +1705,9 @@ fighters.Clay = {
 	ToolMastery = { Kind = "kunai", Projectile = "clay", Count = 2, Speed = 80, Damage = 2.4, Recover = .7, Contact = { Knock = 18, Lift = 6 } },
 	-- Awakening: art is an explosion. Every blast bites deeper, the clay comes
 	-- cheaper and back sooner.
-	Awakening = { Name = "ART IS AN EXPLOSION", Speed = 1.04, Damage = 1.15, Regen = 1.3, Cooldown = 0.6, CostScale = 0.7, Color = { 255, 210, 120 } },
+	-- Rule: his charges arm at once and a blast sets off every charge of his
+	-- near it (a field of clay becomes a chain).
+	Awakening = { Name = "ART IS AN EXPLOSION", Speed = 1.04, Damage = 1.1, Regen = 1.3, Cooldown = 0.7, ChainCharges = true, Color = { 255, 210, 120 } },
 	Motion = { body = "Mirage", weapons = "none", springy = false,
 		borrow = { ClayPop = "Heavy" },
 		-- Cocky and side-on, one hand in the clay pouch at the hip, the other
@@ -1712,21 +1724,29 @@ fighters.Clay = {
 	Techniques = {
 		{ Id = "ClayBirds", Name = "C1: Clay Birds", Family = "Projectile", Kind = "claybird", Cost = 18, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 4.5, Interruptible = true,
 			Range = 40, Speed = 54, Damage = 7, Count = 2, Spread = 0.35, Radius = 1.6, Knock = 32, Lift = 16,
-			Zone = { Radius = 4, Time = 1.6, Damage = 2, Kind = "Fire", Look = "clay" }, Hint = "Two clay birds fly at the body and burst • the blast burns a moment" },
+			Zone = { Radius = 4, Time = 1.6, Damage = 2, Kind = "Fire", Look = "clay" },
+			Charge = { Trigger = 2.8, Radius = 5, Damage = 7, Knock = 30, Lift = 18, Arm = .4, Life = 8, Look = "claycharge" },
+			Hint = "Two clay birds fly at the body and burst • a bird that misses lands and waits (a charge)" },
 		{ Id = "ClaySpiders", Name = "C1: Clay Spiders", Family = "Projectile", Kind = "clayspider", Ground = true, Cost = 16, Channel = 0.26, Active = 0.06, Recovery = 0.28, Cooldown = 5, Interruptible = true,
-			Range = 30, Speed = 34, Damage = 5, Count = 3, Spread = 0.6, Radius = 1.2, Knock = 20, Lift = 30, Hint = "Three spiders run the floor and pop under the body (launches)" },
-		{ Id = "ClayMine", Name = "Clay Landmine", Family = "Zone", Kind = "clay", ZoneKind = "Fire", At = "Aim", Cost = 14, Channel = 0.2, Active = 0.1, Recovery = 0.25, Cooldown = 8, Interruptible = true,
-			Range = 26, Radius = 4.5, Time = 6, Damage = 5, Slow = { Scale = .8 }, Hint = "Clay buried where he aims • it blasts whoever stands on it" },
+			Range = 30, Speed = 34, Damage = 5, Count = 3, Spread = 0.6, Radius = 1.2, Knock = 20, Lift = 30,
+			Charge = { Trigger = 2.6, Radius = 4.5, Damage = 6, Knock = 18, Lift = 34, Arm = .5, Life = 9, Look = "claycharge" },
+			Hint = "Three spiders run the floor and pop under the body (launches) • those that miss stop and wait as charges" },
+		{ Id = "ClayMine", Name = "Clay Landmine", Family = "Zone", Kind = "claycharge", At = "Aim", Cost = 12, Channel = 0.2, Active = 0.1, Recovery = 0.25, Cooldown = 5, Interruptible = true,
+			Range = 26, Radius = 3, Time = 12, Charge = { Trigger = 3, Radius = 5.5, Damage = 9, Knock = 30, Lift = 36, Arm = .6, Life = 12, Look = "claycharge" },
+			Hint = "A charge buried where he aims • it blasts whoever steps on it • Katsu! sets it off from anywhere" },
 		{ Id = "Katsu", Name = "Katsu!", Family = "Burst", Kind = "clay", Cost = 16, Channel = 0.06, Active = 0.2, Recovery = 0.3, Cooldown = 9, Interruptible = false,
-			Radius = 6, Clear = true, Damage = 6, Knock = 44, Lift = 14, Range = 6, Hint = "Clay at his feet bursts • a close attacker thrown far" },
+			Radius = 6, Clear = true, Damage = 6, Knock = 44, Lift = 14, Range = 6, Detonate = true,
+			Hint = "KATSU! Every charge he has laid goes off where it lies • and the clay at his feet bursts (a close attacker thrown far)" },
 	},
 }
 
 -- Sasori (14, Suna's puppet prodigy): he barely moves; his puppets fight on
 -- chakra threads. His light string is a puppet lashing at mid range (slow
 -- but long, like Gaara's sand), everything he touches carries poison: the
--- needle tool, a puppet thrust, Father and Mother's embrace, a rain of
--- needles, and a puppet that takes a blow for him and bites back.
+-- needle tool, his marionette (a persistent body that holds a post and
+-- strikes on its own, carries his blade from behind and his rising strike),
+-- Father and Mother's embrace, a rain of needles, a puppet that takes a blow
+-- for him and bites back. Break the marionette and he is exposed.
 fighters.Puppet = {
 	Name = "Sasori", FullName = "Sasori of the Red Sand", Age = 14, Title = "THE PUPPET MASTER", Color = { 176, 60, 50 },
 	Routes = "↑ puppet rising strike  ·  ↓ low puppet sweep  ·  ←→ feint step  ·  heavy after one: puppet blade (poisons)  ·  air: drive / spike / switch",
@@ -1734,6 +1754,8 @@ fighters.Puppet = {
 	Health = 118, Chakra = 120, ChakraRegen = 8, Speed = 18, SprintScale = 1.06, JumpScale = 1.0, AirControlScale = 0.95, AccelerationScale = 0.98,
 	CombatTravel = 0.6, CombatDamage = 0.92, DashScale = 0.98, GuardStrength = 0.1, PreferredRange = 11,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	-- The puppet (Server/Wave3Kit marionette controller, Server/Bodies).
+	Bodies = { puppet = { Max = 1, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
 	ToolMastery = { Kind = "shuriken", Projectile = "poisonneedle", Count = 2, Speed = 96, Damage = 1.6, Recover = .65, Contact = { Poison = { Damage = .7, Time = 2, Every = .5 } } },
 	-- Awakening: the puppet master. Every blow poisons, holds last longer,
 	-- the threads come cheaper and back sooner.
@@ -1755,8 +1777,10 @@ fighters.Puppet = {
 	},
 	Skin = { 238, 220, 204 }, Hair = { 176, 60, 50 }, Outfit = { 120, 110, 100 },
 	Techniques = {
-		{ Id = "PuppetThrust", Name = "Puppet Thrust", Family = "Projectile", Kind = "puppet", Cost = 14, Channel = 0.22, Active = 0.06, Recovery = 0.26, Cooldown = 3.5, Interruptible = true,
-			Range = 24, Speed = 66, Damage = 7, Radius = 1.6, Knock = 26, Lift = 8, Poison = { Damage = 1, Time = 3, Every = .5 }, Hint = "A puppet shot along its thread • its blade is poisoned" },
+		{ Id = "Marionette", Name = "Puppet: Marionette", Family = "Summon", Body = "puppet", Mode = "marionette", Life = 20, LungeName = "Puppet Lunge",
+			Lunge = { Damage = 7, Knock = 26, Lift = 8, Poison = { Damage = 1, Time = 3, Every = .5 } },
+			Cost = 18, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 3, Interruptible = true, Range = 30,
+			Hint = "His puppet on its threads: it holds a post by the opponent and strikes on its own (poison) • cast again: it lunges • one clean blow breaks it" },
 		{ Id = "FatherMother", Name = "Father and Mother: Embrace", Family = "Projectile", Kind = "puppet", Count = 2, Spread = 0.5, Cost = 22, Channel = 0.34, Active = 0.08, Recovery = 0.3, Cooldown = 9, Interruptible = true,
 			Range = 20, Speed = 58, Damage = 3, Radius = 1.6, Bind = 1.4, Crush = 7, Hint = "Two puppets close on the body from both sides and hold it • then crush" },
 		{ Id = "NeedleRain", Name = "Poison Needle Rain", Family = "Projectile", Kind = "poisonneedle", Cost = 18, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 6, Interruptible = true,
@@ -1769,7 +1793,8 @@ fighters.Puppet = {
 
 -- Nagato (12, the Rinnegan child of Ame): the eyes, not the paths. He fights
 -- with the two forces: he pushes everything away from him (blades, bodies)
--- and pulls a body to him, and he can drink the chakra round him. Still and
+-- and pulls a body to him; his absorbing seal drinks the jutsu thrown at him
+-- (a defensive window to read, not a drain button). Still and
 -- thin, a controller. No Six Paths, no Chibaku Tensei: adult.
 fighters.Rinnegan = {
 	Name = "Nagato", FullName = "Nagato Uzumaki", Age = 12, Title = "THE RINNEGAN CHILD", Color = { 180, 150, 220 },
@@ -1781,7 +1806,9 @@ fighters.Rinnegan = {
 	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .75 },
 	-- Awakening: the Rinnegan open. Jutsu at half their cost and back much
 	-- sooner, chakra back fast.
-	Awakening = { Name = "RINNEGAN", Speed = 1.04, Regen = 1.6, Cooldown = 0.5, CostScale = 0.55, Color = { 200, 170, 240 } },
+	-- Rule: Repulsion no longer destroys what it pushes: blades and jutsu go
+	-- back at their thrower.
+	Awakening = { Name = "RINNEGAN", Speed = 1.04, Regen = 1.5, Cooldown = 0.6, CostScale = 0.7, ReflectClear = true, Color = { 200, 170, 240 } },
 	Motion = { body = "Mirage", weapons = "none", springy = false,
 		borrow = { RepellingPalm = "Light3" },
 		-- Thin and still, shoulders slightly hunched, one palm open toward the
@@ -1800,8 +1827,9 @@ fighters.Rinnegan = {
 			Radius = 8, Clear = true, Damage = 7, Knock = 52, Lift = 14, Range = 8, Hint = "Everything round him pushed away: blades, bodies (into walls)" },
 		{ Id = "Attraction", Name = "Attraction", Family = "Projectile", Kind = "gravity", Cost = 16, Channel = 0.2, Active = 0.05, Recovery = 0.25, Cooldown = 4, Interruptible = true,
 			Range = 30, Speed = 110, Damage = 3, Radius = 1.6, Pull = 60, PullTo = 3, Hint = "The body pulled to him • then the string, or Repulsion" },
-		{ Id = "Absorb", Name = "Chakra Absorption", Family = "Burst", Kind = "gravity", Cost = 8, Channel = 0.1, Active = 0.25, Recovery = 0.25, Cooldown = 9, Interruptible = true,
-			Radius = 9, Clear = true, Damage = 2, Drain = 14, Steal = 1, Range = 9, Hint = "Jutsu in reach dissolve into him • a close body's chakra drunk" },
+		{ Id = "Absorb", Name = "Absorbing Seal", Family = "Buff", Kind = "gravity", Cost = 8, Channel = 0.06, Active = 0.05, Recovery = 0.15, Cooldown = 8, Interruptible = true,
+			Time = 2.5, Range = 20, Absorb = { Radius = 6.5, Chakra = 2.5, Heal = .4 }, AI = { Min = 0, Max = 40, Chance = .2 },
+			Hint = "2.5 s: every jutsu or blade that reaches him is drunk (chakra, a little health) • blows still land" },
 	},
 }
 
@@ -1855,7 +1883,10 @@ local graphs={
 	Puppet={
 		routes={up="PuppetRise",down="PuppetSweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike"},
 		heavyAfterOne="PuppetBlade",
-		stringCancels={PuppetThrust=true},
+		stringCancels={Marionette=true},
+		-- With the puppet out it carries these: the blade from behind the body,
+		-- the rising strike from under it (Server/Bodies proxy).
+		proxy={PuppetBlade={move="PuppetBlade",body="puppet"},PuppetRise={move="PuppetRise",body="puppet"}},
 		blockCancels={Tool=true},
 		reengage={name="puppet",speed=.9,arrive=6,angle=20,minRange=8,chase=.32,recovery=.22},
 	},
@@ -1883,9 +1914,9 @@ local function attacks(move,list)
 		ClayPop={{.1,.12,.34,9,2,"Knockback",V(0,14,60),.5},{contact=3.6,range=6.4,zone="body",kind="palm",side=1,twist=20,lean=14,arm=100,step=1.15}},
 		-- Sasori: the puppet's rising strike and low sweep (long, thread reach),
 		-- its poisoned blade.
-		PuppetRise={{.2,.14,.32,7,.4,"Launched",V(0,52,4),1.15},{contact=5,range=9,width=4.4,height=8,depth=8,offset=4.5,zone="chin",kind="launch",side=1,twist=10,lean=-6,arm=120,step=1}},
+		PuppetRise={{.2,.14,.32,7,.4,"Launched",V(0,52,4),1.15},{contact=5,range=9,width=4.4,height=8,depth=8,offset=4.5,zone="chin",kind="launch",side=1,twist=10,lean=-6,arm=120,step=1,proxy="under"}},
 		PuppetSweep={{.2,.16,.36,7,.4,"Knockdown",V(0,6,14),.66},{contact=5,range=9,width=6,height=3.5,depth=8,offset=4.5,zone="legs",kind="sweep",side=-1,twist=40,lean=10,arm=90,step=1}},
-		PuppetBlade={{.16,.14,.34,8,.4,"Knockback",V(0,10,46),.5},{contact=5,range=9,width=4,depth=8,offset=4.5,zone="body",kind="slash",side=1,twist=24,lean=8,arm=110,step=1,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
+		PuppetBlade={{.16,.14,.34,8,.4,"Knockback",V(0,10,46),.5},{contact=5,range=9,width=4,depth=8,offset=4.5,zone="body",kind="slash",side=1,twist=24,lean=8,arm=110,step=1,proxy="behind",riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
 		-- Nagato: a palm that pushes the body away.
 		RepellingPalm={{.1,.12,.34,8,2.4,"Knockback",V(0,12,66),.5},{contact=3.8,range=6.6,zone="body",kind="palm",side=1,twist=20,lean=16,arm=100,step=1.2}},
 		-- Killer Bee: the lariat arm (heavy after one) and the charging Lariat.
@@ -2880,7 +2911,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e0cfe088fe5646ee759b1b129145a7798bc8b92dec8632acfebdfe5eaff27482</string>
+          <string name="Value">a3faade5ce4794d1abe148c7d81399e40bd1c87cdde0a9bca014693b09e91737</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -2988,6 +3019,7 @@ local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
+local Families=require(script.Parent.Families)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -3005,8 +3037,21 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Teleport" then
 		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	elseif family=="Summon" then
+		-- Out first; once out, a lunge now and then.
+		if Bodies.count(c,a,spec.Body or "puppet")==0 then lo,hi,chance=0,40,.8 else lo,hi,chance=0,30,.25 end
 	else return false end
 	lo=rule.Min or lo;hi=rule.Max or hi;chance=rule.Chance or chance
+	-- Synergies read from data, not names: a strike that is stronger inside
+	-- his own zone is taken while the body stands in it; a burst that clears
+	-- blades answers blades flying at him; a detonation answers his own
+	-- objects lying near the body.
+	if spec.InZone and Families.inOwnZone(c,a,target) then chance=math.max(chance,.85) end
+	if family=="Burst" and spec.Clear then
+		for _,p in c.projectiles do
+			if p.a==target and (p.position-a.root.Position).Magnitude&lt;(spec.Radius or 7)+10 then lo,hi,chance=0,math.huge,math.max(chance,.7);break end
+		end
+	end
 	if rule.Punish and not opening then return false end
 	if distance&lt;lo or distance&gt;hi then return false end
 	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
@@ -3550,7 +3595,16 @@ function AI:update(now)
 	local punish=target.state=="Stunned" or target.reaction=="Bound"
 		or ((target.state=="Recovery" or target.state=="TechniqueRecovery") and distance&lt;7)
 	if self.rng:NextNumber()&lt;tune.Technique and (now&gt;=(self.techReadyAt or 0) or punish) then
-		for slot,spec in a.def.Techniques do
+		-- A kit made only of family techniques is scanned from a rotating slot
+		-- (the whole kit gets used, not slot 1 first); a kit with bespoke
+		-- techniques keeps its authored priority order.
+		local count=#a.def.Techniques
+		local rotate=true
+		for _,spec in a.def.Techniques do if not spec.Family then rotate=false end end
+		self.techStart=if rotate then ((self.techStart or 0)%math.max(count,1))+1 else 1
+		for k=0,count-1 do
+			local slot=((self.techStart+k-1)%count)+1
+			local spec=a.def.Techniques[slot]
 			local use=false; local aim=target.root.Position
 			if spec.Id=="MarkedBlade" then use=plantedSeals(a)&lt;2 and not c:markedInFlight(a) and distance&gt;8; aim=position+target.hum.MoveDirection*3
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance&gt;14 or (seal-target.root.Position).Magnitude&lt;7)
@@ -7532,7 +7586,12 @@ function Combat:stepThrow(a)
 		throw.fired+=1
 		-- Re-aim at release against the live target, unless an explicit point was
 		-- chosen: a throw tracks the opponent the arm is actually throwing at.
-		local aim=throw.aim or (a.target and a.target.root.Position) or (a.root.Position+a.root.CFrame.LookVector*20)
+		-- A point picked on or near the opponent (the mouse on his body or the
+		-- floor at his feet) means him: the blade goes to where he is now.
+		local aim=throw.aim
+		local b=a.target
+		if b and b.health&gt;0 and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude&lt;=Families.AIM_SNAP) then aim=b.root.Position end
+		aim=aim or (a.root.Position+a.root.CFrame.LookVector*20)
 		throw.fire(throw.fired,aim)
 		throw.nextRelease+=throw.interval
 	end
@@ -7558,6 +7617,8 @@ function Combat:turnToward(a,direction,dt,rate)
 	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
 end
 function Combat:faceLocked(a,dt)
+	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
+	if Families.shrouded(self,a) then return end
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude&lt;.1 then return end
 	local target=toward.Unit
@@ -7761,8 +7822,8 @@ function Combat:rush(a)
 	if self.now&lt;(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
 	local line=nil
-	if a.locked==false then
-		-- Unlocked: no homing, a straight burst along the stick (or the facing).
+	if a.locked==false or Families.shrouded(self,a) then
+		-- Unlocked (or lost in a shroud): no homing, a straight burst along the stick (or the facing).
 		local stick=Vector3.new(a.move.X,0,a.move.Z)
 		local look=a.root.CFrame.LookVector
 		line=if stick.Magnitude&gt;.2 then stick.Unit else Vector3.new(look.X,0,look.Z).Unit
@@ -8120,7 +8181,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	-- for a shorter charge, then the thrust dives at the opponent.
 	if spec.Id=="Chidori" and spec.WallCharge and a.wall then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,spec.WallCharge);variant="WallChidori" end
 	a.flashCancel=nil
-	local ok,reason=Rules.technique(a,spec,self.now,technique.check(self,a,spec,self.now))
+	local ready,why=technique.check(self,a,spec,self.now)
+	local ok,reason=Rules.technique(a,spec,self.now,ready,why)
 	if not ok then return false,reason end
 	if a.wall then Motor.detach(a,self.now,false) end
 	if spec.Mobile then
@@ -8210,6 +8272,8 @@ function Combat:updateActor(a,dt)
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
 	a.speedScale=(if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	-- Family traits that act every frame (an Absorb buff drinking blades).
+	Families.step(self,a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
@@ -8665,6 +8729,7 @@ end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
 	-- A family object that leaves a zone where it lands (an explosive tag).
+	if p.family and p.family.Charge and hit.Instance.CanCollide then Families.projectileEnd(self,p,hit.Position+hit.Normal*.4) end
 	if p.family and p.family.Zone and hit.Instance.CanCollide then
 		local z=p.family.Zone
 		local h=self:addHazard(p.a,hit.Position+hit.Normal*.6,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
@@ -8728,6 +8793,8 @@ function Combat:shurikenGeometry(a,sideSign,infused)
 	return true
 end
 function Combat:projectileExpire(p)
+	-- A family object that ends without a body may stay as a charge.
+	Families.projectileEnd(self,p,p.position)
 	if p.geometry and p.a.target and p.a.target.health&gt;0 then
 		local b=p.a.target
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})
@@ -8905,6 +8972,8 @@ function Combat:clear(preserveAnimations)
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
+		-- Every other temporary state (buffs, stances, slows, poison, windows).
+		Families.clearState(a)
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
 	Zones.clear(self)
@@ -9218,7 +9287,23 @@ return Elements
 -- (damage over time, no stagger).
 -- Teleport also reads Heal (instant, on arrival) and InZone (damage scale of
 -- its arrival strike when the target stands in one of his own zones).
--- A Buff may carry OnHit (the same rider as def.OnHit while it lasts).
+-- A Buff may carry OnHit (the same rider as def.OnHit while it lasts) and
+-- Absorb {Radius, Chakra, Heal}: while it lasts, enemy objects that come
+-- within Radius are drunk (Nagato's Preta seal).
+-- Charges (Deidara): a Projectile or a Zone with Charge {Trigger, Radius,
+-- Damage, Knock, Lift, Arm, Life, Look} leaves a planted charge (a missed
+-- spider where it stops, a buried mine) that blasts when the body steps on
+-- it once armed, or when its owner detonates (Burst Detonate=true).
+-- Awakening rules read here: ChainCharges (a blast sets off his other
+-- charges near it, charges arm at once), ReflectClear (a Clear burst sends
+-- the blades back at their thrower), ChainTeleport=N (a relocation strike
+-- that lands refreshes its own cooldown, N times in a row), ZoneFree (a Ring
+-- relocation inside his own zone costs nothing and comes back at once).
+-- Teleport Ring {Look, Volley}: inside his own zone of that look, the
+-- relocation lands on its ring behind the body and throws a Volley
+-- {Count, Kind, Damage, Speed, Slow} from there instead of the Move strike.
+-- Summon (family) Body, Mode, Life, Lunge {Damage, Knock, Lift, Poison}: a
+-- persistent body (Server/Bodies); cast again while it is out, it lunges.
 local Families={}
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Looks=require(Shared.Looks)
@@ -9235,18 +9320,50 @@ end
 Families.flat=flat
 
 -- ----------------------------------------------------------- traits
--- Active buff on a body (Buff family or an awakening that declares Buff).
-function Families.buff(a,now)
+-- Composition of a body's temporary traits (one policy for the twenty).
+-- Two layers can be active together: a technique's buff (Buff family) and
+-- the awakening's (Awakening.Buff). They are MERGED, never one hiding the
+-- other, with bounded rules:
+--   Heavy   either layer grants it;
+--   Armor   the larger of the two (never added: 0.3 + 0.12 is not 0.42);
+--   Damage, Speed   multiplied, then the whole outgoing scale including the
+--           awakening's own Damage/Speed (applied by Combat) is capped at
+--           Families.CAP (a buff inside an awakening still helps, it never
+--           runs away);
+--   Regen   the larger.
+-- def.Armor (Kimimaro's bones) is a separate, permanent trait.
+Families.CAP={Damage=1.4,Speed=1.35}
+local TRAITS={"Heavy","Armor","Damage","Speed","Regen"}
+local function layers(a,now)
 	local b=a.buff
-	if b and now&lt;b.untilT then return b.spec end
-	if (a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening.Buff then return a.def.Awakening.Buff end
-	return nil
+	local own=if b and now&lt;b.untilT then b.spec else nil
+	local awake=(a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening.Buff or nil
+	return own,awake
+end
+function Families.buff(a,now)
+	local own,awake=layers(a,now)
+	if not own then return awake end
+	if not awake then return own end
+	local merged={}
+	for _,key in TRAITS do
+		local x,y=own[key],awake[key]
+		if key=="Heavy" then merged.Heavy=(x==true or y==true) or nil
+		elseif key=="Damage" or key=="Speed" then merged[key]=if x or y then (x or 1)*(y or 1) else nil
+		elseif x or y then merged[key]=math.max(x or 0,y or 0) end
+	end
+	return merged
+end
+-- The awakening's own multiplier (Combat applies it); the buff's part is
+-- trimmed so that both together stay under the cap.
+local function capped(a,now,key,value)
+	local aw=(a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening[key] or 1
+	return math.min(value,Families.CAP[key]/aw)
 end
 -- Movement scale: buffs and slows (Combat sets speedScale every frame).
 function Families.speedScale(a,now)
 	local s=1
 	local b=Families.buff(a,now)
-	if b and b.Speed then s*=b.Speed end
+	if b and b.Speed then s*=capped(a,now,"Speed",b.Speed) end
 	if (a.slowUntil or 0)&gt;now then s*=a.slowScale or 1 end
 	return s
 end
@@ -9258,7 +9375,7 @@ end
 function Families.damageScale(attacker,victim,now)
 	local s=1
 	local b=Families.buff(attacker,now)
-	if b and b.Damage then s*=b.Damage end
+	if b and b.Damage then s*=capped(attacker,now,"Damage",b.Damage) end
 	local armor=Families.buff(victim,now)
 	if armor and armor.Armor then s*=1-armor.Armor end
 	if victim.def.Armor then s*=1-victim.def.Armor end
@@ -9269,6 +9386,35 @@ function Families.withstands(a,now,heavy,amount)
 	if heavy or amount&gt;=12 then return false end
 	local b=Families.buff(a,now)
 	return b~=nil and b.Heavy==true
+end
+-- On-hit riders (def.OnHit, a running buff's OnHit, the awakening's OnHit):
+-- merged FIELD BY FIELD, so a layer adds what it has without erasing the
+-- others' (Kabuto's scalpel drain stays when his awakening adds its slow).
+-- Where two layers carry the same rider the stronger wins: Drain/Steal/Heal
+-- the larger, Slow the lower Scale (and the longer Time), Poison the larger
+-- Damage per tick.
+local function stronger(key,x,y)
+	if x==nil then return y end
+	if y==nil then return x end
+	if key=="Slow" then
+		return {Scale=math.min(x.Scale or .8,y.Scale or .8),Time=math.max(x.Time or 1.5,y.Time or 1.5)}
+	elseif key=="Poison" then
+		return if (y.Damage or 1)&gt;(x.Damage or 1) then y else x
+	end
+	return math.max(x,y)
+end
+function Families.onHit(a,now)
+	local own=a.buff and now&lt;a.buff.untilT and a.buff.spec.OnHit or nil
+	local awake=(a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening.OnHit or nil
+	local sources={a.def.OnHit,own,awake}
+	local merged=nil
+	for _,src in sources do
+		if src then
+			merged=merged or {}
+			for key,value in src do merged[key]=stronger(key,merged[key],value) end
+		end
+	end
+	return merged
 end
 
 -- ----------------------------------------------------------- contact
@@ -9367,15 +9513,118 @@ function Families.bind(c,a,b,spec)
 	end
 end
 
+-- The zone of a's (with that look, when given) that b stands in.
+function Families.ownZone(c,a,b,look)
+	for _,h in c.hazards do
+		if h.a==a and c.now&lt;h.expires and not h.charge and (not look or h.look==look) then
+			local d=b.root.Position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude&lt;=h.radius and math.abs(d.Y)&lt;8 then return h end
+		end
+	end
+	return nil
+end
 -- Is b inside one of a's own zones (hazards he left)?
 function Families.inOwnZone(c,a,b)
 	for _,h in c.hazards do
-		if h.a==a and c.now&lt;h.expires then
+		if h.a==a and c.now&lt;h.expires and not h.charge then
 			local d=b.root.Position-h.position
 			if Vector3.new(d.X,0,d.Z).Magnitude&lt;=h.radius and math.abs(d.Y)&lt;8 then return true end
 		end
 	end
 	return false
+end
+
+-- Where a thrown technique flies, decided on its RELEASE frame, not on the
+-- press: a cast aimed at the opponent's body (the mouse on or near him) is
+-- re-aimed at where he is now, with a partial lead on his motion (spec.Lead,
+-- default .55 of the flight). The channel no longer makes every jutsu miss a
+-- body that merely walks; a late sidestep, a dash or a jump still beat it. An
+-- aim far from the body (a zone, a lane) is kept as it was.
+Families.AIM_SNAP=12
+function Families.releaseAim(c,a,pending,spec)
+	local aim=aimOf(a,pending)
+	local b=a.target
+	if not b or b.health&lt;=0 then return aim end
+	local at=b.root.Position
+	if flat(aim-at).Magnitude&gt;Families.AIM_SNAP and pending.aim then return aim end
+	local motion=b.root.AssemblyLinearVelocity
+	if motion.Magnitude&lt;.5 then motion=b.locomotion or Vector3.zero end
+	local flight=(at-a.root.Position).Magnitude/math.max(spec.Speed or 70,1)
+	return at+flat(motion)*flight*(spec.Lead or .55)
+end
+
+-- ----------------------------------------------------------- charges
+local function awakeRule(a,c,key)
+	local aw=a.def.Awakening
+	return (a.awakenUntil or 0)&gt;c.now and aw~=nil and aw[key] or nil
+end
+Families.awakeRule=awakeRule
+function Families.plant(c,a,position,charge,kindLook)
+	local floor=workspace:Raycast(position+Vector3.new(0,3,0),Vector3.new(0,-30,0),c:rayParams(true))
+	local at=if floor then floor.Position+Vector3.new(0,.5,0) else position
+	local h=c:addHazard(a,at,charge.Trigger or 2.6,charge.Life or 9,0,"Charge")
+	h.charge=charge;h.effects={charge=true}
+	h.look=charge.Look or kindLook
+	h.armedAt=if awakeRule(a,c,"ChainCharges") then c.now else c.now+(charge.Arm or .5)
+	c:pushImpact(at,"zone",false,{owner=a.id,kind=h.look,radius=h.radius,time=charge.Life or 9})
+	return h
+end
+function Families.charges(c,a)
+	local out={}
+	for _,h in c.hazards do if h.a==a and h.charge and c.now&lt;h.expires then table.insert(out,h) end end
+	return out
+end
+function Families.detonate(c,h,chained)
+	if not h.charge or c.now&gt;=h.expires then return end
+	h.expires=c.now
+	local a,z=h.a,h.charge
+	local b=a.target
+	c:pushImpact(h.position,"look",true,{owner=a.id,kind=z.Blast or "clay",radius=z.Radius or 5})
+	if b and b.health&gt;0 and c.match.phase=="Duel" then
+		local d=b.root.Position-h.position
+		if Vector3.new(d.X,0,d.Z).Magnitude&lt;=(z.Radius or 5) and math.abs(d.Y)&lt;7 then
+			c.damageTag="charge"
+			local hit=c:damage(a,b,z.Damage or 8,(z.Damage or 8)&gt;=12,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			Families.contact(c,a,b,{Knock=z.Knock or 30,Lift=z.Lift or 20},d,hit,hit and b.impactStyle=="block",b.root.Position)
+		end
+	end
+	brawler().event(c,a,"Detonation")
+	-- The awakening chains: every other charge of his near the blast goes too.
+	if awakeRule(a,c,"ChainCharges") then
+		for _,other in Families.charges(c,a) do
+			if (other.position-h.position).Magnitude&lt;=(z.Chain or 10) then
+				c:schedule(c.now+.08,function() Families.detonate(c,other,true) end)
+			end
+		end
+	end
+end
+-- A thrown object that ends without a body (Combat: surface or range end).
+function Families.projectileEnd(c,p,position)
+	local spec=p.family
+	if spec and spec.Charge and not p.planted then
+		p.planted=true
+		Families.plant(c,p.a,position,spec.Charge,p.kind)
+	end
+end
+-- Every frame, per body: an Absorb buff drinks the enemy objects near it.
+function Families.step(c,a,now)
+	local b=a.buff
+	local absorb=b and now&lt;b.untilT and b.spec.Absorb
+	if not absorb then return end
+	for i=#c.projectiles,1,-1 do
+		local p=c.projectiles[i]
+		if p.a~=a and not p.planted and (p.position-a.root.Position).Magnitude&lt;=(absorb.Radius or 6) then
+			table.remove(c.projectiles,i)
+			local worth=math.max(2,p.damage or 2)
+			a.chakra=math.min(a.def.Chakra or 100,a.chakra+worth*(absorb.Chakra or 2))
+			if absorb.Heal then a.health=math.min(a.def.Health,a.health+worth*absorb.Heal);a.hum.Health=math.max(1,a.health) end
+			c:pushImpact(p.position,"drain",false,{owner=a.id,victim=p.a.id,amount=worth,projectile=p.id,kind=p.kind})
+			c:cue(a,"ABSORBED",.5)
+			brawler().event(c,a,"Absorbed")
+		end
+	end
 end
 
 -- ----------------------------------------------------------- families
@@ -9384,7 +9633,7 @@ F.Projectile={
 	check=function() return true end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
-		local aim=aimOf(a,pending)
+		local aim=Families.releaseAim(c,a,pending,spec)
 		local kind=spec.Kind or "chakra"
 		local look=Looks[kind]
 		local launch=spec.Launch or (look and look.launch) or (if spec.Ground then "Ground" else "Palm")
@@ -9432,12 +9681,25 @@ F.Burst={
 		local look=flat(a.root.CFrame.LookVector)
 		look=unitOr(look,Vector3.zAxis)
 		if spec.Clear then
+			local reflect=awakeRule(a,c,"ReflectClear")
 			for i=#c.projectiles,1,-1 do
 				local p=c.projectiles[i]
 				if p.a~=a and not p.planted and (p.position-a.root.Position).Magnitude&lt;=reach+2 then
 					table.remove(c.projectiles,i)
 					c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
+					-- The awakening sends it back where it came from.
+					if reflect and p.a.health&gt;0 then
+						local back=c:projectile(a,p.a.root.Position,math.max(p.speed or 80,80),40,p.damage or 3,p.kind,nil,{origin=p.position,radius=p.radius})
+						back.family=p.family
+						c:cue(a,"REPELLED BACK",.5)
+					end
 				end
+			end
+		end
+		-- His own charges go off wherever they lie (Katsu!).
+		if spec.Detonate then
+			for k,h in Families.charges(c,a) do
+				c:schedule(c.now+.04*k,function() Families.detonate(c,h) end)
 			end
 		end
 		local b=a.target
@@ -9474,6 +9736,12 @@ F.Zone={
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position else aimOf(a,pending)
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
+		if spec.Charge then
+			-- A buried charge, not a field: it waits for the body or for Katsu.
+			Families.plant(c,a,position,spec.Charge,spec.Kind)
+			c:cue(a,string.upper(spec.Name),.6)
+			return
+		end
 		local h=c:addHazard(a,position,spec.Radius or 8,spec.Time or 4,spec.Damage or 3,spec.ZoneKind or "Fire")
 		h.effects=spec
 		h.look=spec.Kind
@@ -9497,8 +9765,20 @@ F.Buff={
 		brawler().event(c,a,"Buff")
 	end,
 }
+-- A relocation onto the opponent (Behind, Side, Aim) needs the body inside
+-- the technique's Range and in sight (no blinking through a wall to it); a
+-- refusal happens before any cost. A step back (Back) needs neither.
+Families.TELEPORT_SLACK=1.5
 F.Teleport={
-	check=function(c,a) return a.target~=nil and a.target.health&gt;0 end,
+	check=function(c,a,spec)
+		local b=a.target
+		if not b or b.health&lt;=0 then return false,"No target" end
+		if (spec.To or "Behind")=="Back" then return true end
+		local gap=(b.root.Position-a.root.Position).Magnitude
+		if gap&gt;(spec.Range or 30)+Families.TELEPORT_SLACK then return false,"Out of range" end
+		if not c:lineOfSight(a,b) then return false,"No line of sight" end
+		return true
+	end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local b=a.target
@@ -9507,7 +9787,14 @@ F.Teleport={
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
 		local destination
-		if to=="Behind" then destination=b.root.Position+line*d
+		-- Inside his own zone of the ring's look (Haku's dome): out of the
+		-- mirror on its far side, a volley from there, no step into melee.
+		local ring=spec.Ring and Families.ownZone(c,a,b,spec.Ring.Look)
+		if ring then
+			local around=flat(b.root.Position-ring.position)
+			local side=unitOr(line+around*.0,line)
+			destination=ring.position+side*ring.radius
+		elseif to=="Behind" then destination=b.root.Position+line*d
 		elseif to=="Side" then a.teleportSide=-(a.teleportSide or 1);destination=b.root.Position+line:Cross(Vector3.yAxis)*d*a.teleportSide
 		elseif to=="Back" then destination=from-line*d
 		else
@@ -9526,6 +9813,25 @@ F.Teleport={
 		if spec.InZone and Families.inOwnZone(c,a,b) then bonus=spec.InZone;c:cue(a,"FROM THE "..string.upper(spec.ZoneName or "zone"),.6) end
 		c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
 		c:cue(a,string.upper(spec.Name),.6)
+		if ring then
+			local v=spec.Ring.Volley or {}
+			for k=1,(v.Count or 3) do
+				c:schedule(c.now+.05*k,function()
+					if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or a.reaction then return end
+					local spread=b.root.CFrame.RightVector*((k-((v.Count or 3)+1)/2)*.9)
+					local p=c:projectile(a,b.root.Position+spread,v.Speed or 110,ring.radius*2+8,(v.Damage or 2)*bonus,v.Kind or "senbon",nil,{origin=a.root.Position+Vector3.new(0,.6,0),radius=.6})
+					p.family={Slow=v.Slow,Name=spec.Name}
+				end)
+			end
+			brawler().event(c,a,"RingStep")
+			-- The awakening: travel between his mirrors is free and immediate.
+			if awakeRule(a,c,"ZoneFree") then
+				a.chakra=math.min(a.def.Chakra or 100,a.chakra+(spec.Cost or 0))
+				a.cooldowns[spec.Id]=c.now+.35
+				c:cue(a,"MIRROR TO MIRROR",.5)
+			end
+			return
+		end
 		if spec.Move then
 			c:schedule(c.now+.06,function()
 				if a.health&lt;=0 or c.match.phase~="Duel" or a.reaction then return end
@@ -9537,6 +9843,29 @@ F.Teleport={
 				end
 			end)
 		end
+	end,
+}
+-- A persistent body of his (Server/Bodies): a puppet on its threads. Out
+-- already, the cast sends it lunging at the body instead.
+F.Summon={
+	check=function(c,a) return a.target~=nil and a.target.health&gt;0 end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local Bodies=require(script.Parent.Bodies)
+		local kind=spec.Body or "puppet"
+		local out=Bodies.of(c,a,kind)[1]
+		if out then
+			out.lunge=spec.Lunge or {};out.nextStrike=c.now
+			c:cue(a,string.upper(spec.LungeName or "LUNGE"),.6)
+			brawler().event(c,a,"BodyLunge")
+			return
+		end
+		local b=a.target
+		local line=unitOr(flat(b.root.Position-a.root.Position),flat(a.root.CFrame.LookVector).Unit)
+		local at=a.root.Position+line*3
+		local body=Bodies.spawn(c,a,{kind=kind,position=Vector3.new(at.X,c.match.origin.Y+3,at.Z),mode=spec.Mode or "marionette",life=spec.Life,delay=.8})
+		if body then body.side=if (a.summonSide or 1)&gt;0 then -1 else 1;a.summonSide=body.side end
+		c:cue(a,string.upper(spec.Name),.7)
 	end,
 }
 F.Counter={
@@ -9584,11 +9913,7 @@ end
 -- (def.OnHit: Samehada's drain, insects on the body...).
 function Families.afterHit(c,attacker,victim,amount,guarded)
 	if victim.health&lt;=0 or attacker==victim then return end
-	-- The awakening's rider wins, then a running buff's, then the fighter's own.
-	local awake=(attacker.awakenUntil or 0)&gt;c.now and attacker.def.Awakening and attacker.def.Awakening.OnHit
-	local b=attacker.buff
-	local buffed=b and c.now&lt;b.untilT and b.spec.OnHit
-	local spec=awake or buffed or attacker.def.OnHit
+	local spec=Families.onHit(attacker,c.now)
 	if not spec then return end
 	if spec.Drain then
 		local taken=math.min(victim.chakra,spec.Drain*(if guarded then .5 else 1))
@@ -9606,12 +9931,28 @@ end
 function Families.strikeHit(c,a,b,p,guarded)
 	local spec=p.family or (p.spec and p.spec.riders)
 	if not spec then return end
+	-- The awakening's chain: a relocation strike that lands gives the
+	-- relocation back at once, a few times in a row (Shisui).
+	local chain=p.family and p.family.Family=="Teleport" and not guarded and awakeRule(a,c,"ChainTeleport")
+	if chain then
+		if c.now-(a.chainTeleportAt or -10)&gt;2.5 then a.chainTeleportCount=0 end
+		if (a.chainTeleportCount or 0)&lt;chain then
+			a.chainTeleportCount=(a.chainTeleportCount or 0)+1;a.chainTeleportAt=c.now
+			a.cooldowns[p.family.Id]=c.now+.12
+			c:cue(a,"FLICKER CHAIN "..a.chainTeleportCount.."/"..chain,.5)
+			brawler().event(c,a,"ChainTeleport")
+		end
+	end
 	Families.contact(c,a,b,spec,a.root.CFrame.LookVector,not guarded,guarded,b.root.Position)
 end
 -- Combat:updateHazards, on each tick that reached the body: the zone's riders.
 function Families.zoneTick(c,h,target)
 	local z=h.effects
 	if not z then return end
+	if h.charge then
+		if c.now&gt;=(h.armedAt or 0) then Families.detonate(c,h) end
+		return
+	end
 	if z.Slow then target.slowUntil=c.now+.6;target.slowScale=z.Slow.Scale or .7 end
 	if z.Drain then
 		local taken=math.min(target.chakra,z.Drain)
@@ -9637,8 +9978,35 @@ function Families.install(Techniques,Fighters)
 		end
 	end
 end
+-- Lifecycle (Combat:clear: a new round, the result screen, a rematch, a
+-- player who leaves): every temporary state a body carries ends there, the
+-- families' own (buff, counter stance, slow, poison, the bind's look) and any
+-- `...Until` window the core or a fighter module left on the actor, so
+-- nothing of a round leaks into the next one (a buff, a dose still ticking).
+function Families.clearState(a)
+	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil
+	-- A dose already scheduled checks its serial: a new one cancels it.
+	a.poisonSerial=(a.poisonSerial or 0)+1
+	for key,value in a do
+		if type(key)=="string" and type(value)=="number" and string.sub(key,-5)=="Until" then a[key]=0 end
+	end
+end
+-- Shroud (Zabuza's Hidden Mist): a body standing inside its opponent's
+-- shroud has lost sight of him: no auto-facing on him, a chakra dash without
+-- homing, and its client draws him as a fading shadow.
+function Families.shrouded(c,a)
+	local b=a.target
+	if not b or b.health&lt;=0 then return false end
+	for _,h in c.hazards do
+		if h.a==b and c.now&lt;h.expires and h.effects and h.effects.Shroud then
+			local d=a.root.Position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude&lt;=h.radius and math.abs(d.Y)&lt;10 then return true end
+		end
+	end
+	return false
+end
 -- Snapshot: what a body carries from the families (client auras, HUD).
-function Families.snapshot(a,now)
+function Families.snapshot(a,now,c)
 	local b=a.buff
 	return {
 		buff=if b and now&lt;b.untilT then b.id else nil,
@@ -9646,6 +10014,7 @@ function Families.snapshot(a,now)
 		stance=if a.counterStance and now&lt;a.counterStance.untilT then a.counterStance.spec.Id else nil,
 		slowed=math.max(0,(a.slowUntil or 0)-now),
 		poisoned=math.max(0,(a.poisonedUntil or 0)-now),
+		shrouded=c~=nil and Families.shrouded(c,a) or nil,
 	}
 end
 return Families
@@ -10517,7 +10886,7 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Temari: the open fan holding her up in the air.
 			glide=a.gliding==true,
 			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
-			family=require(script.Parent.Families).snapshot(a,now)}
+			family=require(script.Parent.Families).snapshot(a,now,s.combat)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -14832,7 +15201,66 @@ return Kit
 local Base=require(script.Parent.Wave1Kit)
 local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
 local Kit={}
-function Kit.install(Techniques) end
+-- Sasori's puppet: a persistent body (Server/Bodies) on chakra threads. It
+-- holds a spot between him and the opponent, off the line, and strikes on
+-- its own rhythm (a poisoned blade); his heavy-after-one and his rising
+-- strike are carried out by it when it is out (MoveGraphs proxy); cast again,
+-- it lunges at the body. One clean blow breaks it (Bodies): then he is a
+-- slow lasher with no bodyguard until he makes another.
+function Kit.install(Techniques)
+	local Bodies=require(script.Parent.Bodies)
+	local Families=require(script.Parent.Families)
+	local function flat(v) return Vector3.new(v.X,0,v.Z) end
+	local function strike(c,body,b,spec)
+		local tune=Bodies.tuning(body.owner,body.kind)
+		body.state="Startup";body.action="PuppetJab";body.variant=nil;body.actionAt=c.now;body.actionSerial+=1
+		body.pendingStrike=spec or {damage=tune.Damage or 4,reach=(tune.Reach or 5.2),reaction="HitStun",push=10,up=3,stun=.34,tag="Puppet",poison=tune.Poison}
+	end
+	Bodies.controllers.marionette=function(c,body,dt)
+		local a=body.owner
+		local b=a.target
+		if not b or b.health&lt;=0 then return end
+		local tune=Bodies.tuning(a,body.kind)
+		-- A strike already thrown: its contact on its own timing.
+		if body.state=="Startup" and c.now&gt;=body.actionAt+.18 then
+			body.state="Active"
+			local s=body.pendingStrike or {}
+			if Bodies.hitFrom(c,body,b,{damage=s.damage,reach=s.reach,height=6,arc=-.2,reaction=s.reaction,push=s.push,up=s.up,stun=s.stun,tag=s.tag}) then
+				if s.poison then Families.poison(c,a,b,s.poison) end
+				require(script.Parent.Brawler).event(c,a,"PuppetHit")
+			end
+		elseif body.state=="Active" and c.now&gt;=body.actionAt+.3 then body.state="Recovery"
+		elseif body.state=="Recovery" and c.now&gt;=body.actionAt+.55 then body.state="Neutral" end
+		local goal,speed
+		if body.lunge then
+			-- Lunge: straight at the body, the blade on arrival.
+			local line=flat(body.position-b.root.Position)
+			line=if line.Magnitude&gt;.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
+			goal=b.root.Position+line*2.4;speed=78
+			if flat(body.position-goal).Magnitude&lt;1.2 and body.state=="Neutral" then
+				local l=body.lunge;body.lunge=nil
+				strike(c,body,b,{damage=l.Damage or 7,reach=5,reaction="Knockback",push=l.Knock or 26,up=l.Lift or 8,stun=.45,tag="Puppet Lunge",poison=l.Poison})
+				body.nextStrike=c.now+(tune.Every or 2.2)
+			end
+		else
+			-- Its post: between the two of them, off the line, at blade's reach.
+			local line=flat(a.root.Position-b.root.Position)
+			line=if line.Magnitude&gt;.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
+			local around=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(40*body.side)):VectorToWorldSpace(line)
+			goal=b.root.Position+around*(tune.Hold or 4.4)
+			-- On a short leash: far from him, it comes back to his side.
+			if flat(a.root.Position-b.root.Position).Magnitude&gt;(tune.Leash or 34) then goal=a.root.Position+line:Cross(Vector3.yAxis)*body.side*3 end
+			speed=tune.Speed or 30
+			if body.state=="Neutral" and c.now&gt;=body.nextStrike and flat(b.root.Position-body.position).Magnitude&lt;=(tune.Reach or 5.2)+.6 then
+				strike(c,body,b)
+				body.nextStrike=c.now+(tune.Every or 2.2)
+			end
+		end
+		goal=Vector3.new(goal.X,c.match.origin.Y+3,goal.Z)
+		Bodies.move(c,body,goal,speed,dt)
+		Bodies.face(body,b.root.Position)
+	end
+end
 function Kit.dress(dressers,kit)
 	local wear,face,hairCap,spike,headband,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.headband,kit.rgb,kit.A,kit.R
 	local function sandals(model,def,strap)
@@ -16255,6 +16683,39 @@ function BodyViews:step(view,entry,dt)
 		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
 	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
 end
+-- A puppet (Sasori's marionette) is a copy of its owner turned to wood: the
+-- body parts lacquered brown, the costume and hair hidden, a pale mask, and
+-- glowing chakra threads from the owner's fingers to its wrists.
+local BODY={Head=true,UpperTorso=true,LowerTorso=true,LeftUpperArm=true,RightUpperArm=true,LeftLowerArm=true,RightLowerArm=true,
+	LeftHand=true,RightHand=true,LeftUpperLeg=true,RightUpperLeg=true,LeftLowerLeg=true,RightLowerLeg=true,LeftFoot=true,RightFoot=true}
+function BodyViews.puppetize(model,owner)
+	if model:GetAttribute("Puppet") then return end
+	model:SetAttribute("Puppet",true)
+	model.Name="Puppet"
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
+			if BODY[d.Name] then d.Color=Color3.fromRGB(150,110,74);d.Material=Enum.Material.Wood
+			else d.Transparency=1 end
+		elseif d:IsA("Decal") then d.Transparency=1 end
+	end
+	local head=model:FindFirstChild("Head")
+	if head then
+		local mask=Instance.new("Part");mask.Name="PuppetMask";mask.Size=Vector3.new(1.1,1.2,.1);mask.Color=Color3.fromRGB(236,226,206)
+		mask.CanCollide=false;mask.CanQuery=false;mask.Massless=true;mask.CFrame=head.CFrame*CFrame.new(0,0,-.62);mask.Parent=model
+		local weld=Instance.new("WeldConstraint");weld.Part0=head;weld.Part1=mask;weld.Parent=mask
+	end
+	-- Threads: owner's hands to the puppet's wrists.
+	for _,side in {"Left","Right"} do
+		local from=owner:FindFirstChild(side.."Hand");local to=model:FindFirstChild(side.."Hand")
+		if from and to then
+			local a0=Instance.new("Attachment");a0.Name="PuppetThread";a0.Parent=from
+			local a1=Instance.new("Attachment");a1.Parent=to
+			local beam=Instance.new("Beam");beam.Attachment0=a0;beam.Attachment1=a1;beam.Width0=.06;beam.Width1=.06
+			beam.Color=ColorSequence.new(Color3.fromRGB(140,200,255));beam.LightEmission=1;beam.Transparency=NumberSequence.new(.35);beam.FaceCamera=true
+			beam.Parent=to
+		end
+	end
+end
 -- Every frame (Presentation:update): draw the live bodies, put away the rest.
 function BodyViews:update(data,dt,folder)
 	if not data or data.phase~="Duel" then
@@ -16269,6 +16730,7 @@ function BodyViews:update(data,dt,folder)
 		if not view then
 			local owner=folder and folder:FindFirstChild(entry.owner or "")
 			local model=owner and self:take(owner)
+			if model and entry.kind=="puppet" then BodyViews.puppetize(model,owner) end
 			if model then
 				view={model=model,owner=owner,pos=entry.position,look=nil,warp=entry.warp,clock={}}
 				self.views[entry.id]=view
@@ -19148,6 +19610,16 @@ function FamilyFX.install(FX,kit)
 			spike.Parent=d
 		end
 		return nil,d
+	end
+	-- A charge on the floor: a small lump of clay whose fuse glows, brighter
+	-- once armed (Families.plant).
+	ZONES.charge=function(holder,h,look)
+		local lump=block(holder.Parent,Vector3.new(.9,.5,.9),CFrame.new(holder.Position+Vector3.new(0,.25,0)),c3(look.color),Enum.Material.SmoothPlastic)
+		new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},lump)
+		local fuse=block(lump,Vector3.new(.25,.25,.25),CFrame.new(holder.Position+Vector3.new(0,.6,0)),c3(look.color2),Enum.Material.Neon)
+		new("PointLight",{Color=c3(look.color2),Brightness=1.5,Range=5,Shadows=false},fuse)
+		tween(fuse,.4,{Transparency=.6})
+		return nil,lump
 	end
 	FX.hazardBuild=function(fx,h)
 		local look=Looks[h.look or ""]
@@ -25618,8 +26090,48 @@ function M.install(FX,kit)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end
+	-- Zabuza: Kubikiribōchō leaves his back for his hands while he swings it
+	-- (the strikes are the cleaver's, not a fist's): a blade welded to the
+	-- right hand during an attack, the one on his back hidden meanwhile.
+	local BACK={Cleaver=true,CleaverHole=true,CleaverGrip=true}
+	local held=setmetatable({},{__mode="k"})
+	local function cleaver(fx,model,actor)
+		if actor.fighterId~="Mist" then return end
+		local swinging=actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery")
+		local st=held[model]
+		if not st then
+			local hand=model:FindFirstChild("RightHand")
+			if not hand then return end
+			local m=new("Model",{Name="HeldCleaver"},model)
+			local blade=block(m,Vector3.new(.16,1.5,4.4),hand.CFrame*CFrame.new(0,-.2,-2.5),Color3.fromRGB(180,188,196),Enum.Material.Metal)
+			local grip=block(m,Vector3.new(.24,.24,1.1),hand.CFrame*CFrame.new(0,-.2,-.1),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
+			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,.2,-4.1),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
+			for _,p in {blade,grip,hole} do p.Anchored=false;p.CanCollide=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
+			st={model=m,parts={blade,grip,hole},shown=nil};held[model]=st
+		end
+		if st.shown==swinging then return end
+		st.shown=swinging
+		for _,p in st.parts do p.LocalTransparencyModifier=if swinging then 0 else 1 end
+		for _,p in model:GetChildren() do if BACK[p.Name] and p:IsA("BasePart") then p.LocalTransparencyModifier=if swinging then 1 else 0 end end
+	end
+	-- Lost in Zabuza's mist (Families.shrouded on the viewer): he fades to a
+	-- shadow for the one who cannot see him.
+	local faded=setmetatable({},{__mode="k"})
+	local function shroud(fx,data,dt,folder)
+		local me,them=data.human,data.bot
+		if not me or not them or not folder then return end
+		local model=folder:FindFirstChild(them.id or "")
+		if not model then return end
+		local lost=me.family~=nil and me.family.shrouded==true
+		if (faded[model]==true)==lost then return end
+		faded[model]=lost
+		for _,p in model:GetDescendants() do
+			if p:IsA("BasePart") and p.Name~="HumanoidRootPart" then p.LocalTransparencyModifier=if lost then .82 else 0 end
+		end
+	end
 	-- Runs before FamilyFX's layer and lets it draw the zone's floor too.
-	table.insert(FX.layers,1,{name="Wave1",impact=function(fx,impact,folder)
+	table.insert(FX.layers,1,{name="Wave1",fighter=function(fx,model,actor,dt) if model then cleaver(fx,model,actor) end end,
+		frame=function(fx,data,dt,folder) shroud(fx,data,dt,folder) end,impact=function(fx,impact,folder)
 		if impact.style=="zone" and impact.kind=="mirror" then
 			mirrors(fx,impact.position,math.max(3,(impact.radius or 7)-.5),impact.time or 5)
 		elseif impact.style=="zone" and impact.kind=="mist" and (impact.radius or 0)&gt;=10 then
