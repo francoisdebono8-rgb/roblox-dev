@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Ressources gratuites R15 — combat, mouvement, animations
 
 Recherche web large effectuée le 2026-10-13 sur Creator Store, GitHub, DevForum et YouTube. Cette liste est un **catalogue de sources à auditer**, pas une autorisation d'intégrer automatiquement quoi que ce soit.

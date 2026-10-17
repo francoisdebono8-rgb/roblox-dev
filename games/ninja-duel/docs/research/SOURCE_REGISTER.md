@@ -1,16 +1,18 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Registre de sources
 
 | Source | État de revue / portée | IDs |
 |---|---|---|
-| [COMBAT_VERBS_AND_STATES.md](../../design_research/01_combat_grammar/COMBAT_VERBS_AND_STATES.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | COM-002..007, DEF-003/005 |
-| [COMBO_BUILDING_BLOCKS.md](../../design_research/01_combat_grammar/COMBO_BUILDING_BLOCKS.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | COM-002..007, DEF-003/005 |
-| [AWAKENING_DESIGN.md](../../design_research/02_character_architecture/AWAKENING_DESIGN.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | SYS-003, CHR-CORE-002 |
-| [ROSTER_ARCHETYPES_32.md](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | CHR-EXT-002, CHR-CORE-001 |
-| [SYSTEM_INTERACTION_MATRIX.md](../../design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | TOOL-006, SYS-001/002 |
-| [MOVEMENT_SOURCE_PIPELINE.md](../../design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
-| [RESEARCH_BACKLOG.md](../../design_research/04_research/RESEARCH_BACKLOG.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
-| [CLAUDE_USAGE_GUIDE.md](../../design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
-| [README.md](../../design_research/README.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
+| [COMBAT_VERBS_AND_STATES.md](../archive/design_research/01_combat_grammar/COMBAT_VERBS_AND_STATES.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | COM-002..007, DEF-003/005 |
+| [COMBO_BUILDING_BLOCKS.md](../archive/design_research/01_combat_grammar/COMBO_BUILDING_BLOCKS.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | COM-002..007, DEF-003/005 |
+| [AWAKENING_DESIGN.md](../archive/design_research/02_character_architecture/AWAKENING_DESIGN.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | SYS-003, CHR-CORE-002 |
+| [ROSTER_ARCHETYPES_32.md](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | CHR-EXT-002, CHR-CORE-001 |
+| [SYSTEM_INTERACTION_MATRIX.md](../archive/design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | TOOL-006, SYS-001/002 |
+| [MOVEMENT_SOURCE_PIPELINE.md](../archive/design_research/04_research/MOVEMENT_SOURCE_PIPELINE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
+| [RESEARCH_BACKLOG.md](../archive/design_research/04_research/RESEARCH_BACKLOG.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
+| [CLAUDE_USAGE_GUIDE.md](../archive/design_research/05_claude_handoff/CLAUDE_USAGE_GUIDE.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
+| [README.md](../archive/design_research/README.md) | READ_FOR_EXTRACTION ; propositions, pas approbation ni observation vidéo certifiée | RES-001, RES-002, CHR-CORE-002 |
 | [FREE_R15_COMBAT_MOVEMENT_RESOURCES.md](FREE_R15_COMBAT_MOVEMENT_RESOURCES.md) | WEB_SWEEP_2026-10-13 ; catalogue gratuit Creator Store/GitHub/DevForum/YouTube à auditer, avec priorités, licences connues, risques et procédure Studio. Claude doit sélectionner/adopter/rejeter, pas importer en bloc. | RES-003, MOV-001..005, COM-001..007, DEF-001..005, CAM-002, LAB-002, NET-001 |
 | [VISUAL_TECHNICAL_BENCHMARK_V1.md](VISUAL_TECHNICAL_BENCHMARK_V1.md) | ACTIVE_REFERENCE_2026-10-13 ; doctrine de benchmark : liberté Naruto RP/free-roam adaptée au 1v1, Storm pour continuité/verticalité, Shinobi Striker pour armes/outils/chakra/poursuite. Ne constitue pas une autorisation de copier assets/code. | RES-001, RES-003, MOV-001..005, COM-002..006, DEF-002..005, TOOL-002/005/006, SYS-001/002, ARENA-001/003, CAM-001/002, LAB-002 |
 | [GOLDEN_VISUAL_SET_READY.md](GOLDEN_VISUAL_SET_READY.md) | CURATED_READY_2026-10-13 ; travail de sélection déjà fait pour Claude : images intégrées par URL, vidéos et timecodes utiles, observations à regarder, adaptation Ninja Duel, grille de comparaison. Claude doit regarder/comparer/implémenter, pas recommencer la recherche au début de session. | RES-001, RES-003, MOV-001..005, COM-001..007, DEF-001..005, TOOL-001/002/005/006, SYS-001/002, ARENA-001/003, CAM-001/002, CHR-CORE-001, LAB-002 |

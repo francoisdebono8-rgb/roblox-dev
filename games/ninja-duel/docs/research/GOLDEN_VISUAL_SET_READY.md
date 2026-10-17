@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Golden Visual Set — READY FOR CLAUDE
 
 Purpose: Claude should **not start by searching for references**. This file already gives a first curated visual/technical set to look at and internalize before changing movement, taijutsu, wall/air combat, weapons/tools or camera. It is a benchmark, not a copy list.

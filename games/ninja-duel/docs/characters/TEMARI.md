@@ -1,10 +1,12 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Temari — zoning longue portée par le vent (vague d'archétypes)
 
 Code proposé : `Gale` (absent du code). IDs : CHR-EXT-002, SYS-001/002, TOOL-006, DEF-005, ARENA-001, CAM-002.
 
-> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
+> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
 >
-> **Hors du pool de 25 noms** du 2026-10-13 ([ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md), où elle figure parmi les candidats secondaires), mais nommée explicitement par la mission utilisateur du 2026-10-16, plus récente : la demande actuelle prime (priorité normative de DECISIONS).
+> **Hors du pool de 25 noms** du 2026-10-13 ([ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md), où elle figure parmi les candidats secondaires), mais nommée explicitement par la mission utilisateur du 2026-10-16, plus récente : la demande actuelle prime (priorité normative de DECISIONS).
 
 ## Stade retenu (DEC-013)
 
@@ -171,7 +173,7 @@ Temari est la seule dont les techniques **réécrivent les règles de déplaceme
 
 ## État d'implémentation (2026-10-17, convergence 3)
 
-Code de `claude/nd-vrs-temari` (base `2aba0ca`), mission [NEXT_VALIDATION_ROSTER_SCALE](../missions/NEXT_VALIDATION_ROSTER_SCALE.md) §9. Rapport, découvertes moteur et liste Studio : [TEMARI (convergence 3)](../reports/convergence3/TEMARI.md). **Validé en headless uniquement** (`tests/Temari.spec.luau`, 35 cas ; limites articulaires dans `tests/Animation.spec.luau`) : feel, lecture du vent, éventail et costume restent à juger dans Studio. Identifiant de code : **`Gale`**.
+Code de `claude/nd-vrs-temari` (base `2aba0ca`), mission [NEXT_VALIDATION_ROSTER_SCALE](../archive/missions/NEXT_VALIDATION_ROSTER_SCALE.md) §9. Rapport, découvertes moteur et liste Studio : [TEMARI (convergence 3)](../archive/reports/convergence3/TEMARI.md). **Validé en headless uniquement** (`tests/Temari.spec.luau`, 35 cas ; limites articulaires dans `tests/Animation.spec.luau`) : feel, lecture du vent, éventail et costume restent à juger dans Studio. Identifiant de code : **`Gale`**.
 
 **Implémenté et jouable (sélectionnable dans le roster)**
 - `Fighters.Gale` : HP 130, chakra 120, regen 8, vitesse 17,5, air ×1,3, `PreferredRange 16`, `Tool="Gust"` (aucune lame lancée), substitution « retraite du vent » 14 studs (`Substitution.Distance`), profil IA `Zoner` (bande de ~20 studs).

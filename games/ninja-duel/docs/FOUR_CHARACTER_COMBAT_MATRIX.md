@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Banc de test commun — Minato, Itachi, Neji, Sasuke
 
 Cette matrice décrit le runtime présent, sans nouveau design. **H** = assertion headless existante ou ajoutée, **C** = présence inspectée dans le code, **N** = jugement natif/visuel encore à réaliser. H ne prouve ni qualité des poses, ni sensation du contrôleur, ni collisions du moteur Roblox. Le roster contient également Gaara : il reste intact, hors du périmètre artistique de cette passe, et sa suite continue de tourner.
@@ -46,4 +48,4 @@ Les routes longues et l’observation native de chaque personnage restent une ch
 - [États et hooks outils](current/COMBAT_CONTRACTS.md)
 - [Mapping des 84 actions/variantes](current/MOTION_ATTACK_MAPPING.md)
 - [Inventaire machine-readable](current/COMBAT_INVENTORY.json)
-- [Handoff technique Claude](current/CLAUDE_TECHNICAL_HANDOFF.md)
+- [Handoff technique Claude](archive/current/CLAUDE_TECHNICAL_HANDOFF.md)

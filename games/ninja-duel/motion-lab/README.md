@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../docs/active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Forge Motion Lab 0.5 — bases de combat référencées
 
 Plugin local R15 : browser avec miniatures de poses, preview et comparaison A/B,

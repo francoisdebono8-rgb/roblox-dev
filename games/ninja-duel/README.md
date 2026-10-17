@@ -1,111 +1,13 @@
-# Ninja Duel — tournoi de jeunes prodiges
+# Ninja Duel
 
-Entrée unique pour une nouvelle session : [CLAUDE_START_HERE.md](CLAUDE_START_HERE.md). État et priorités : [CURRENT_STATE](docs/active/CURRENT_STATE.md) et [MASTER_BACKLOG](docs/active/MASTER_BACKLOG.md).
+Entrée Claude/Codex : [CLAUDE_START_HERE](CLAUDE_START_HERE.md).
 
-Version technique `0.13.0-arena-combo`. Ouvrir `dist/NinjaDuel.rbxlx` dans Roblox Studio puis Test. Sélectionner Minato, Itachi, Neji ou Sasuke, puis Duel ou Interactive Tutorial. Gaara reste serveur/tests et n’est pas sélectionnable dans le menu actuel. Match joueur contre IA ; validation native finale distincte des tests automatiques.
+- [État vérifié et builds](docs/active/CURRENT_STATE.md)
+- [Décisions produit](docs/active/DECISIONS.md)
+- [Backlog et critères](docs/active/MASTER_BACKLOG.md)
+- [Exécution, commandes et validation](docs/active/EXECUTION_RULES.md)
+- [Revue technique courante](docs/active/ENGINEERING_REVIEW.md)
+- [Index documentaire](docs/README.md)
+- [Ressources et licences](THIRD_PARTY.md)
 
-The build manifest records automated and native status separately (`automatedQA`, `nativeQA`, `visualAcceptance`, `controllerFeel`). Controller feel and native Studio behaviour remain human gates; open the exact normal artifact above for the final pass. Pass history and open items: `docs/reports/STABILITY_PASS.md` (0.6.0 bugs), `docs/reports/FLUIDITY_PASS.md` (0.6.1 feel), `docs/reports/ANIMATION_PASS.md` (0.7.0 body animation, reactions, impact).
-
-| Controller | Action |
-|---|---|
-| Left stick / click LS | Move / toggle sprint |
-| Right stick / click RS | Camera / lock |
-| X / Square | Light; third light finishes horizontally; throw while grabbing |
-| Y / Triangle | Heavy; launcher after two confirmed lights; air slam; upward throw |
-| A / Cross | Jump / contextual chase / mantle / wall rebound |
-| B / Circle | Directional evade / substitution after a fresh hit |
-| LB / L1; LT / L2; RT / R2 | Guard; grab; kunai/shuriken |
-| RB + A / X / Y / B | Techniques 1 / 2 / 3 / 4 |
-| D-pad up; View / touchpad | Technique 5; skip tutorial |
-| D-pad / left stick + A | Menu selection and activation |
-
-### Keyboard (grouped around WASD)
-
-| Key | Action |
-|---|---|
-| **WASD** | Move |
-| **LMB** | Light chain (third light finishes; throws while grabbing) |
-| **RMB** | Heavy — launcher after two confirmed lights, air slam, upward throw |
-| **SPACE** | Jump / wall rebound / contextual chase |
-| **Q** | Dodge (becomes substitution right after being hit) |
-| **F** | Guard (hold) |
-| **V** | Grab |
-| **R** | Kunai / shuriken |
-| **E** | Chase during the launch window; chakra dash outside it |
-| **X** | Substitution (accessible, but never next to the movement keys) |
-| **G / C** | Feint / wall detach |
-| **CTRL / SHIFT** | Sprint / lock-on |
-| **1–5 / T** | Jutsu / awakening |
-| Mouse move / wheel | Free-look when unlocked; camera distance |
-| **ESC** | Skip tutorial |
-
-Every key is declared once in `src/Shared/Controls.luau`, which also feeds the on-screen help and the tutorial copy. A key can never drive two actions; `tests/Regression.spec.luau` enforces that.
-
-Ground-to-air route: **light → light → heavy launcher → chase → air light → air light → heavy slam**. A third grounded light chooses Bangla's finisher instead. Whiffs retain recovery; substitution spends charge/chakra; knockdown has a protected wakeup.
-
-PS5 uses **□ light, △ heavy, ○ dodge / hit escape / wall-tech, × jump / chase**, **L1 guard**, **L2 grab / throw break**, **R2 tool**, **L3 sprint**, **R3 lock**. Hold **R1 + × / □ / △ / ○** for jutsu **1 / 2 / 3 / 4**; **D-pad ↑** is jutsu 5, **←** chakra dash / chase, **→** deliberate substitution, **↓** awakening. **R1 + L2** feints; **R1 + L1** detaches from a wall. Stick directions for combo branches are relative to the fighter's facing, not the screen: push toward / away / sideways relative to the opponent. Releasing × after a jutsu does not cut a jump.
-
-Existing routes (unchanged):
-
-| Context | Input (keyboard / PS5) | Existing result |
-|---|---|---|
-| Neutral | LMB / □ | Light1 → Light2 → Light3 on clean hits, neutral direction |
-| Two clean ground hits | Toward + LMB / □ | Launcher (Sasuke: LionKick + automatic shadow follow-up) |
-| Two clean ground hits | Away + LMB / □ | Sweep |
-| One clean ground hit | Side + LMB / □ | Minato AngleStep, Itachi FeintStep, Neji CircleStep, Sasuke VaultKick |
-| One clean hit | RMB / △ | Minato/Sasuke KneeStrike, Itachi CounterPalm, Neji PalmThrust |
-| Two clean hits | RMB / △ | Character launcher |
-| Launch window | E or SPACE / × or D-pad ← | Pursuit |
-| Air hit confirmed | Toward / away / side + LMB / □ | AirDrive / AirSpike / AirSwitch |
-| Airborne | RMB / △ | Slam (Sasuke after shadow follow-up: Lion Combo) |
-| Clean string | Away + R / R2 | Hop out behind the character's projectile |
-| Grab holding victim | LMB / □ or RMB / △ | Throw or upward throw |
-| Wall-run / wall splat | LMB or RMB / □ or △; Q / ○ while pinned | Existing wall dive / follow-up; timed wall-tech |
-
-These are **hit-confirmed** branches; blocked or missed lights do not open a string. Early attack presses already use the server's buffer. This input pass retains its timings and captures the movement direction together with each action, including buffered branches. Character-specific jutsu cancels and Read/Rotation counters retain their existing rules.
-
-## Build and tests
-
-Depuis la racine du repository :
-
-```
-python3 games/ninja-duel/build.py          # normal place  -> dist/NinjaDuel.rbxlx
-python3 games/ninja-duel/build.py --qa     # QA place      -> dist/NinjaDuel-QA.rbxlx
-games/ninja-duel/tests/run.sh              # every headless suite
-```
-
-`build.py` runs all headless suites against the exact sources it embeds and refuses to write an artifact if one fails; the result is recorded in `dist/NinjaDuel.json` under `automatedQA`.
-
-| Suite | Covers |
-|---|---|
-| `tests/Rules.spec.luau` | pure policy: states, costs, cooldowns, token bucket |
-| `tests/Combat.spec.luau` | combat, donour migrations, controller callbacks, choreography |
-| `tests/Sequences.spec.luau` | routes de séquences, camera, AI et joints ; matrice quatre personnages dans Preparation |
-| `tests/Regression.spec.luau` | the bugs fixed in this pass, plus a randomised soak |
-| `tests/Feedback.spec.luau` | contact feed and impact hierarchy |
-| `tests/Animation.spec.luau` | stances, directional locomotion, hit reactions, knockdown/KO, weapons, and a full-fight no-snap contract |
-
-Suites supplémentaires enregistrées dans `tests/run.sh` : Input (clavier/PS5), Branches, Phase4, Neji, Systems, Tools, Sasuke, Gaara (serveur caché), Preparation. Total actuel : 15 suites /162 cas. L’isolation normal/debug/QA ajoute 4 tests Python.
-
-The headless suites share `tests/Harness.luau`, a stubbed Roblox environment. They prove timing and state, not Studio physics, rendering or controller feel.
-
-The native suite lives in `dist/NinjaDuel-QA.rbxlx`: open it in Studio, press **Test**, and read `[NinjaDuelQA] START 0.7.0-animation` followed by one `PASS`/`FAIL` line per case and the totals. `nativeQA` stays `PENDING` in the manifest until that run is recorded on the exact artifact.
-
-## Acceptation native du normal
-
-Suivre la [matrice quatre personnages](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) : Minato, Itachi, Neji et Sasuke face à chaque IA (16 matchups). Course huit directions/orbite/sprint/stop, jump/air/ledge/wall, lock/free/swap/verticalité ; contact/whiff/light branches/heavy launcher/chase/airslam/throw ; guard/parry/dodge/substitution/counter/clash ; outils et chaque conversion de kit, ressources/awake ; KO/reset/rematch/menu/tutoriel et manette.
-
-Noter artefact/hash/HEAD, erreurs et premier échange corporel ou contrôle non convaincant. Les vieux PASS et leurs bases sont dans reports/archive ; l’état présent est CURRENT_STATE. Notices/imports : `THIRD_PARTY.md`.
-
-## Préparation technique Claude — quatre personnages
-
-Depuis `games/ninja-duel` pour les commandes ci-dessous. Voir [la matrice](docs/FOUR_CHARACTER_COMBAT_MATRIX.md) et [le handoff](docs/current/CLAUDE_TECHNICAL_HANDOFF.md).
-
-- `python3 build.py --debug` crée `dist/NinjaDuel-Debug.rbxlx` pour l’inspecteur Studio en lecture seule (F8).
-- `python3 build.py` exclut DevHooks, CombatInspector, CombatDebug et NativeQA du build normal.
-- `python3 build.py --qa` reste le build séparé de régression native ; il inclut aussi les diagnostics.
-- `lune run tools/combat_inventory.luau` régénère le mapping des actions depuis le renderer actuel.
-- `python3 -m unittest discover -s tests -p 'test_build_isolation.py'` vérifie les trois artefacts après leur build.
-- `python3 motion-lab/build.py` extrait, teste et package Motion Lab ; aucune installation/publication automatique.
-
-L’inspecteur ne crée pas de nouvel état de combat et ne modifie ni mouvements, dégâts, timings de combat, caméra, animations ou direction artistique.
+Ce README est un index ; il ne maintient aucune copie de version, roster, commandes, contrôles ou statut de publication. Les contrôles effectifs sont déclarés dans `src/Shared/Controls.luau` et présentés par le jeu.

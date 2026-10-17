@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Itachi — jeune prodige
 
 Code : `Mirage`. IDs : CHR-ITA-001/002, CHR-CORE-001/002. Les données réelles viennent de Fighters/MoveGraphs/Attacks et [inventaire](../current/COMBAT_INVENTORY.json) ; le label lore n’est pas automatiquement prouvé par le nom du move.
@@ -220,7 +222,7 @@ Sources : `Fighters.luau:55-59`, `Server/Techniques.luau`, `Server/Elements.luau
 
 ### État — convergence 2 (identité, 2026-10-16)
 
-Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement : le visuel et le ressenti restent à juger dans Studio.
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../archive/reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement : le visuel et le ressenti restent à juger dans Studio.
 
 - **Mirage refondu (kit de base)** :
   - l'image reste où il se tenait et il recule de 5,5 studs derrière elle, sur la ligne de l'adversaire ;

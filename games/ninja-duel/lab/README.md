@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../docs/active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Bibliothèque optionnelle pour Claude
 
 Aucun fichier de `lab/` n’est chargé par le jeu ni par le build. Ce sont des propositions à reprendre, adapter ou ignorer. Les noms d’attaques servent à repérer les briques existantes, sans garantir qu’une séquence soit aujourd’hui autorisée.

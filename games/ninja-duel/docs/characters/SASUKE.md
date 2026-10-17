@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Sasuke — jeune prodige
 
 Code : `Lion`. IDs : CHR-SAS-001/002, CHR-CORE-001/002. Les données réelles viennent de Fighters/MoveGraphs/Attacks et [inventaire](../current/COMBAT_INVENTORY.json) ; le label lore n’est pas automatiquement prouvé par le nom du move.
@@ -237,7 +239,7 @@ Risques de recouvrement : le feu est partagé avec Itachi (mêmes `Elements`, m�
 
 ### État — convergence 2 (identité, 2026-10-16)
 
-Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement. Fil, feu et foudre : laissés à l'agent chakra.
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../archive/reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement. Fil, feu et foudre : laissés à l'agent chakra.
 
 - **Curse Mark = le flux change** :
   - le troisième coup et l'AirDrive ne lâchent pas (chancellement, la chaîne reste ouverte, une fois par échange) ;

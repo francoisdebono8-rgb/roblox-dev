@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Ajouter un combattant jouable — le chemin de code (DEC-015)
 
 Ce guide décrit ce qu’il a réellement fallu toucher pour rendre Gaara (`Sand`) et Rock Lee (`Leaf`) jouables sur les systèmes partagés, sans copier un moteur de combat. La fiche de conception vient d’abord ([gabarit](FIGHTER_TEMPLATE.md), [vague du roster](ROSTER_WAVE_PLAN.md)) ; ce document est la liste d’intégration. Chaque étape a son test : un combattant n’est « jouable » qu’une fois sa suite dans `tests/run.sh` **et** dans `TEST_RUNNERS` de `build.py`.

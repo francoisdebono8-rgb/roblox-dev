@@ -1,8 +1,10 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Naruto — clones, rush et réserve immense (vague d'archétypes)
 
 Code proposé : `Legion` (absent du code). IDs : CHR-EXT-002, NET-001 (corps supplémentaires répliqués), AI-001, SYS-001/003, CAM-001.
 
-> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
+> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
 
 ## Stade retenu (DEC-013)
 
@@ -170,7 +172,7 @@ Naruto est le seul fighter qui **multiplie les corps réels** et dont chaque rou
 
 ## État d'implémentation (2026-10-17, convergence 3, plusieurs corps)
 
-Code de `claude/nd-vrs-naruto`. Rapport, constats moteur et liste Studio : [NARUTO (convergence 3)](../reports/convergence3/NARUTO.md). **Validé en headless uniquement** (`tests/Naruto.spec.luau`, 33 cas) : le rendu des clones, les fumées, le feel et l'équilibre restent à juger dans Studio. L'identifiant de code est **`Legion`**, comme proposé.
+Code de `claude/nd-vrs-naruto`. Rapport, constats moteur et liste Studio : [NARUTO (convergence 3)](../archive/reports/convergence3/NARUTO.md). **Validé en headless uniquement** (`tests/Naruto.spec.luau`, 33 cas) : le rendu des clones, les fumées, le feel et l'équilibre restent à juger dans Studio. L'identifiant de code est **`Legion`**, comme proposé.
 
 **Implémenté et jouable (sélectionnable dans le roster)**
 - Corps supplémentaires génériques (H12 v1) : `Server/Bodies` (clones touchables, contrôleurs, coups jugés depuis le clone, frappes et lames adverses qui les dissipent, liste `bodies` du snapshot) et `Client/BodyViews` (copie posée du modèle de Naruto). Verrouillage, cible de l'IA et caméra restent sur le vrai Naruto.

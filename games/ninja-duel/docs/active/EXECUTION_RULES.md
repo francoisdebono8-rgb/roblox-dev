@@ -1,33 +1,64 @@
 # Règles d’exécution
 
-## Reprise et approbation unique
+## Reprise et autorité
 
-Lire START → vision → décisions → état → depuis Claude → backlog → capacités. Inspecter `git status --short`, `git log`, diff depuis la dernière base enregistrée, puis les sources/specs pertinentes et l’artefact natif. Lire les détails archivés rattachés aux IDs visés, pas tout le repo sans nécessité.
+Lire START puis les six sources par rôle, enfin ENGINEERING_REVIEW. Vérifier `git status --short`, `git branch --show-current`, `git rev-parse HEAD`, `git log` et les changements depuis le dernier checkpoint du journal. Ni main ni une ancienne branche Codex n’est autoritaire par défaut. Comparer historique/diffs/décisions avant de trancher une divergence ; une date récente seule ne suffit pas. Ne pas réinitialiser ni écraser le travail de Claude.
 
-À chaque session, vérifier `git rev-parse HEAD` et `git branch --show-current`. Identifier la branche Ninja Duel actuelle autoritative ; ni main ni une branche historique ne constitue une base par défaut. Si plusieurs branches concurrentes existent, comparer leurs historiques, ancêtres communs, diffs et fichiers actifs avec les décisions utilisateur avant de choisir. Ne pas sélectionner automatiquement la branche au commit le plus récent ; signaler une divergence de scope/autorité non résolue.
+Les responsabilités et autorisations sont définies dans DECISIONS. Dans le périmètre déjà approuvé, Claude continue sans redemander une permission par bloc. Nouvelle décision uniquement pour un vrai conflit de scope/design ou une permission manquante. Codex audite le HEAD réel et ses preuves, tient la revue et les sources actives ; pas de travail gameplay parallèle implicite. Une revue ne remplace pas une autorisation produit et ne commande pas une réécriture du moteur.
 
-Comparer toujours la session courante à SINCE_LAST_CLAUDE et au Git log depuis la dernière base documentée. Intégrer tous les nouveaux commits Codex/ChatGPT faits pendant l’absence de Claude dans le diagnostic et le plan avant tout changement gameplay. Consulter CAPABILITIES_AND_TOOLS pour tout nouvel outil ou capacité ; vérifier sa disponibilité et ses limites. Ouvrir uniquement les sources/sections archivées reliées aux IDs actifs du backlog retenus, sans relecture aléatoire de toutes les archives.
+## Propriétaire unique de chaque information
 
-Proposer un plan dépendant : baseline/test/Studio ; mouvement ; contact/defense/outils ; identités des quatre personnages ; arène/caméra/présentation ; validation. Adapter l’ordre aux preuves. Expliquer IDs inclus, déjà résolus, différés, dépendances, critères et risques. Demander une seule approbation globale pour ce plan avant ses changements gameplay. Enregistrer son texte/portée et l’approbation dans le journal ; une préparation documentaire ou un ancien délai « aujourd’hui/45 min » ne vaut pas approbation.
+| Information | Destination unique |
+|---|---|
+| Intention durable / finalité | VISION |
+| Arbitrage autorisé, portée, provenance et remplacement d’une décision | DECISIONS |
+| Fait présent, version/commit, preuve et limite | CURRENT_STATE |
+| Travail et critères de clôture, IDs, priorités et dépendances | MASTER_BACKLOG |
+| Changements depuis le checkpoint, transfert de session | SINCE_LAST_CLAUDE |
+| Méthode, maintenance documentaire, outils et validation | EXECUTION_RULES |
+| Diagnostic technique présent et trois priorités | ENGINEERING_REVIEW |
 
-Après approbation, exécuter des blocs cohérents sans redemander à chaque fichier. Demander seulement une vraie décision de scope/design contradictoire, un conflit insoluble ou un blocage majeur nécessitant l’utilisateur. Les autorisations explicites de la session persistent. Le diagnostic, l’examen des sources et la construction du plan sont autonomes.
+Référencer le propriétaire au lieu de recopier ses paragraphes. START/README sont des index. Guides techniques et données générées ne définissent ni état global ni priorité. Les archives sont des références historiques non exécutables ; leurs exigences encore valables doivent être exprimées dans le backlog avant rangement. Lire seulement les sections utiles au travail courant.
 
-## Jugement et preuves
+## Validation et clôture
 
-Claude peut reprioriser, améliorer une solution, constater qu’une intention est déjà satisfaite autrement, ou rejeter une mauvaise proposition. Il doit expliquer chaque disposition dans le backlog : aucune omission silencieuse. Une adaptation Studio renseigne décision, effet, contre-jeu, preuves et source, plutôt qu’effacer l’exigence.
+Pour chaque changement player-facing : tests pertinents → build exact → ouvrir/jouer dans Studio → déclencher par vraie sélection et vrais inputs quand possible → observer en mouvement → corriger → reconstruire/rejouer l’artefact final. Une sonde/debug aide à isoler ; ni elle ni une image figée ne remplace le parcours joueur continu. Pour le roster, les critères sont dans CHR-EXT-002 ; pour le flow Roblox publié, NET-001/REL-001.
 
-Statuts : OPEN, PARTIAL, IN_PROGRESS, DONE, BLOCKED, DEFERRED, REJECTED. `IMPROVED` est un résultat enregistré avec `status: DONE` et `outcome: IMPROVED`, preuves et validation. DONE ne signifie pas automatiquement qualité visuelle ; le critère du ticket précise technique/native/humain. BLOCKED donne cause et condition de sortie ; DEFERRED donne déclencheur ; REJECTED donne justification. Les sources de recherches contiennent des candidats, pas un ensemble de fonctionnalités approuvées.
+Consigner **TECHNICAL**, **NATIVE_STUDIO**, **HUMAN_VISUAL/FEEL**, et **LIVE_ROBLOX** quand applicable : PASS/PENDING/FAIL/NOT_APPLICABLE justifié, date, commit, hash du build, scénario/inputs, outil, résultat et limite. Anciennes preuves datées non transférables au HEAD par défaut. Si seules les données/tests existent : `IMPLEMENTED / NOT YET STUDIO-VALIDATED`. Une clôture technique existante reste bornée au contrat du ticket et n’autorise aucune annonce player-facing complète ; citer le ticket de validation restant ouvert.
 
-Convention de clôture : `status: DONE` clôt seulement le critère explicitement nommé. Dans evidence, séparer **TECHNICAL**, **NATIVE_STUDIO**, **HUMAN_VISUAL** avec PASS/PENDING/FAIL/NOT_APPLICABLE justifié, artefact et preuve. `outcome: VERIFIED_TECHNICAL` signifie DONE technique uniquement ; VERIFIED_NATIVE ou VERIFIED_HUMAN indiquent la portée prouvée, sans déduire les autres dimensions. IMPROVED garde ces dimensions dans evidence. Les DONE techniques existants ne certifient ni Studio ni feel. Si un ticket couvre aussi le feel/présentation non accepté, il reste PARTIAL ; si ces critères appartiennent à un ticket lié, ce dernier reste visible et ouvert/partiel avec son ID cité. Une réussite des tests ne retire jamais l’exigence visuelle du radar.
+Backlog : OPEN/PARTIAL/IN_PROGRESS/DONE/BLOCKED/DEFERRED/REJECTED. DONE clôt son critère exact, avec preuve ; IMPROVED est un outcome de DONE, jamais une preuve esthétique. BLOCKED indique cause et condition de sortie, DEFERRED son déclencheur, REJECTED sa raison. Reproduire une ancienne régression sur la base actuelle avant réouverture. Aucun test affaibli pour obtenir PASS.
 
-Avant un bloc, prendre baseline/tests/builds concernés. Après, relancer les suites et reconstruire l’artefact exact ; enregistrer SHA256, HEAD, outil, protocole, résultat et limites. Judge le mouvement dans Studio (pieds, poids, hanches, contact, récupération), puis la caméra et le duel à la manette. Un test headless valide un contrat, pas une animation premium. Un ancien rapport n’est pas une preuve nouvelle.
+## Cycle documentaire continu
 
-Ne pas réécrire un système qui passe et répond déjà à l’intention. Reproduire les anciennes listes de bugs (attaque/saut, landing, launcher/chase, airslam, téléport/poursuite, wall dash, mash/cancel/hitstun) sur la base actuelle avant de les rouvrir. Ne pas changer silencieusement le balance ou les moteurs lors d’une passe visuelle.
+1. Capturer la demande produit datée et sa provenance (commit/source ; copie intégrale si nécessaire dans archive/requests). Ne pas inventer une approbation.
+2. Chercher une intention équivalente parmi tous les IDs, y compris DONE/DEFERRED/REJECTED. Enrichir l’existant ; scinder avec lien parent seulement si nécessaire. Ne pas dupliquer un ticket pour une nouvelle formulation.
+3. Mettre la décision durable dans DECISIONS, le travail dans MASTER_BACKLOG ; modifier CURRENT_STATE uniquement sur fait prouvé. Mettre à jour les exigences ouvertes issues d’une archive avant son déplacement.
+4. SINCE_LAST_CLAUDE est une **boîte de réception temporaire**, pas un second journal/backlog. ChatGPT/Codex y ajoute une ligne stable (date, ID, liens vers décision/ticket propriétaire, portée, urgence, accusé PENDING). Claude la vérifie **avant chaque nouveau gros bloc** ; le bloc en cours continue sauf blocker explicite. À prise en compte, Claude note ACK + commit/checkpoint, absorbe toute information encore non classée dans son propriétaire, puis retire les entrées ACK à la prochaine rotation (historique Git/archives). Ne jamais écraser les entrées PENDING concurrentes. Une nouvelle idée non arbitrée reste candidate, pas décision ni changement de plan implicite.
+5. Après audit Codex : **remplacer** ENGINEERING_REVIEW, ses six rubriques uniquement. Distinguer blocage de gate, bug reproduit, risque de lecture et simple absence de preuve. Référencer IDs/état sans réécrire le backlog. Ne pas retirer une alerte sur la seule promesse d’une correction.
+6. Avant livraison : vérifier HEAD distant à nouveau. Si Claude a avancé, comparer ses changements et réappliquer uniquement les deltas documentaires pertinents ; ne jamais forcer le push, ne jamais écraser son journal. Exécuter contrôle docs/liens, frontières et checks des consommateurs concernés. Aucun rangement non prouvé ni suppression de contenu utile.
 
-## Architecture et conservation
+## Architecture et ajouts de personnages
 
-Serveur autoritaire, données/inputs validés ; client présentation/inputs. Le jeu n’importe aucun code des plugins historiques ; plugins n’importent aucun code Ninja Duel. Motion Lab peut adapter le jeu, jamais l’inverse. Shared exige deux consommateurs réels.
+Serveur autoritaire et validation des données/inputs ; client présentation/inputs. Frontières jeu/plugins/shared/Lab dans DEC-002/003. Préserver moteurs, sécurité, coûts et contrats pendant un audit documentaire. Pas d’intégration automatique de modèles/exports/recherches. Audit de licence/sécurité isolé avant d’exécuter un modèle externe ; aucun secret ni dépendance douteuse.
 
-Avant tout déplacement/suppression : rechercher chemins, noms, imports/scripts/docs, identifier tous les consommateurs et chemins dynamiques, préserver le transversal, mettre à jour les références, tester chaque consommateur. Usage ambigu : conserver et inscrire au rapport. Aucun contenu utile supprimé avant extraction de ses exigences. Aucune installation/publication de plugin ou place implicite.
+Le backlog définit les gates des fighters. La grille de conception couvre : identité/stade sourcé, mouvement, neutral, sol/air/mur, armes/outils, jutsu, garde/parade, dodge/substitution, poursuite/relance, chakra/infusion, éveil, réactions, gameplay loops, maîtrise et signature. Justifier les omissions selon l’archétype. Réutiliser familles/hooks pour un besoin démontré ; les fiches historiques sont des candidats, pas des obligations d’implémenter tout leur contenu. Le framework technique historique et le code servent à localiser les points d’entrée, pas à fixer la stratégie produit.
 
-Clore chaque bloc par le [protocole de mise à jour](UPDATE_PROTOCOL.md). Un backlog garde les futurs besoins même si le plan présent est plus court.
+## Outils et disponibilité
+
+Depuis la racine ; Python 3, Luau/Lune à vérifier dans chaque environnement. `tests/run.sh` cherche LUAU/LUNE, NINJA_DUEL_TOOLS puis PATH. SKIPPED n’est pas PASS. Ne figer aucun nombre de suites dans un guide : lire les sorties/manifests du build courant.
+
+```sh
+bash games/ninja-duel/tests/run.sh
+python3 games/ninja-duel/build.py
+python3 games/ninja-duel/build.py --debug
+python3 games/ninja-duel/build.py --qa
+python3 -m unittest discover -s games/ninja-duel/tests -p test_build_isolation.py
+python3 tools/check_architecture.py
+python3 games/ninja-duel/tools/check_project_docs.py
+python3 games/ninja-duel/tools/check_project_docs.py --self-test
+python3 games/ninja-duel/motion-lab/build.py
+```
+
+Le normal exclut DevHooks/CombatInspector/CombatDebug/NativeQA. F8 diagnostic lecture seule et F6 outils de mise en situation appartiennent aux builds Debug/QA. Commandes détaillées : [DEVTOOLS](../tools/DEVTOOLS.md), [Studio MCP](../../tools/studio/README.md), [Lab](../../motion-lab/README.md), [formats de progression](../systems/PROGRESSION.md). Générateur `tools/combat_inventory.luau` conserve `docs/current` pour ses sorties ; snapshots à dater, pas état du produit. [Anciens contrats](../current/COMBAT_CONTRACTS.md) et mappings sont des aides de lecture à confronter au code.
+
+Windows : `core.longpaths=true`, `core.autocrlf=false`, variables NINJA_DUEL_TOOLS/LUAU/LUNE/LUAU_COMPILE vers les exécutables ; `python` si nécessaire. Studio MCP requiert le réglage et l’accès authentifié de la session. Présence d’un binaire/UI ≠ disponibilité prouvée. Publication : utiliser les permissions réelles et les gates REL-001 ; ne pas inventer PlaceID, accès API ni besoin d’action utilisateur à partir d’un vieux guide.

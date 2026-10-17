@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Contrats actuels — états, combos et outils
 
 Ce document nomme l’implémentation existante. Aucun nouvel enum de gameplay n’est introduit.

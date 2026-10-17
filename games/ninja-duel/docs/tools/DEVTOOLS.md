@@ -1,6 +1,8 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Outils de développement Studio — panneau F6, mises en situation, profiler
 
-Outils préparés par Codex (`33028b2` outils/online, `7091585` labo chakra, branche `codex/ninja-chakra-interactions`, base `4df212c`) et portés sur l’arbre courant : API `Matches:start(player,playerId,botId,training,options)`, sessions online, roster CORE4, `World.WALL_RADIUS`. Ils ne changent aucune règle de gameplay : ils appellent le moteur réel (Matches, Combat, Brawler) et observent. Rapport de portage : [DEVTOOLS_PORT](../reports/convergence2/DEVTOOLS_PORT.md).
+Outils préparés par Codex (`33028b2` outils/online, `7091585` labo chakra, branche `codex/ninja-chakra-interactions`, base `4df212c`) et portés sur l’arbre courant : API `Matches:start(player,playerId,botId,training,options)`, sessions online, roster CORE4, `World.WALL_RADIUS`. Ils ne changent aucune règle de gameplay : ils appellent le moteur réel (Matches, Combat, Brawler) et observent. Rapport de portage : [DEVTOOLS_PORT](../archive/reports/convergence2/DEVTOOLS_PORT.md).
 
 ## Où ils existent
 

@@ -1,7 +1,11 @@
-# Archives intégrales
+# Archives Ninja Duel
 
-Les missions et délais historiques, branches anciennes, rosters2/3/20 et ordres « dernière mission/aujourd’hui/45min » sont du contexte. La priorité active et le plan approuvé viennent de [START](../../CLAUDE_START_HERE.md). Aucune archive n’est une instruction indépendante de release ou reconstruction.
+Historique uniquement ; aucune instruction de ce dossier ne lance une mission ou ne remplace les [sources actives](../../CLAUDE_START_HERE.md). Les faits actuels appartiennent à CURRENT_STATE, les exigences encore ouvertes à MASTER_BACKLOG.
 
-Les contenus détaillés sont conservés, avec uniquement adaptations de chemins. Ils ont été reliés à des IDs avant clôture de la migration : [SOURCE_COVERAGE](../reports/SOURCE_COVERAGE.md). Un item déjà réalisé est clos pour son critère exact ; une intention visuelle non acceptée reste ouverte/partielle ; une proposition incompatible ou future est différée/rejetée explicitement.
+- `missions/`, `plans/`, `requests/` : textes et décisions source, avec leur contexte d’origine.
+- `reports/` : preuves datées, bornées à leurs artefacts ; [ancienne couverture des sources](reports/SOURCE_COVERAGE.md).
+- `characters/`, `combat/`, `movement/`, `systems/`, `design_research/` : spécifications/blueprints historiques ; candidats et détails de référence, pas plans actifs.
+- `current/`, `orchestration/`, `tools/` : anciens handoffs, procédures et guides remplacés.
+- `audits/2026-10-17/` : [audit](audits/2026-10-17/AUDIT.md), inventaire complet et snapshots exacts de l’ancienne couche active.
 
-`missions/` : grandes passes Claude et `legacy-v0/` : fondation, références et contrats historiques. `plans/` : roadmap hebdomadaire. `requests/` : demande utilisateur durable. BRIEF/FULL_DUEL_PLAN/PHASE_6_PLAN préexistants conservés. Les rapports restent dans reports, les blueprints riches dans characters ; design_research garde son chemin stable.
+Contenus conservés ; adaptations de liens uniquement dans les archives déplacées. Ne pas adopter leurs anciens rosters, deadlines, interdictions ou commandes sans les confronter aux sources actives et au code.

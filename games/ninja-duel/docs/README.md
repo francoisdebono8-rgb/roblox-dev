@@ -1,7 +1,11 @@
 # Documentation Ninja Duel
 
-Commencer par [CLAUDE_START_HERE](../CLAUDE_START_HERE.md). [Vision](active/VISION.md), [état](active/CURRENT_STATE.md), [backlog cumulatif](active/MASTER_BACKLOG.md), [décisions](active/DECISIONS.md), [règles](active/EXECUTION_RULES.md), [capacités](active/CAPABILITIES_AND_TOOLS.md), [depuis Claude](active/SINCE_LAST_CLAUDE.md).
+[Commencer ici](../CLAUDE_START_HERE.md). Les sept fichiers de `active/` ont chacun un rôle défini dans [EXECUTION_RULES](active/EXECUTION_RULES.md).
 
-Specs : [combat](combat/COMBAT_REQUIREMENTS.md), [movement](movement/LOCOMOTION.md), [characters](characters/CORE_ROSTER.md), [outils/chakra](systems/TOOLS_AND_CHAKRA.md), [arène/camera](systems/ARENA_CAMERA_PRESENTATION.md), [progression](systems/PROGRESSION.md), [futurs](systems/FUTURE_SYSTEMS.md). [Recherche](research/README.md) conserve les sources riches ; [tools](tools/README.md) décrit les outils disponibles.
+- `current/` : contrats et snapshots techniques ; sorties conservées pour le générateur, pas état produit.
+- `characters/`, `tools/`, `systems/PROGRESSION.md`, `tools/studio/README.md` auprès du code : guides et formats de référence.
+- `research/` : sources et propositions, jamais décisions implicites.
+- `archive/` : missions, handoffs, spécifications, recherches anciennes et preuves datées. [Index](archive/README.md).
+- Quelques anciens chemins gardent un redirect pour les commentaires du code ; aucun statut dupliqué.
 
-[current](current/README.md) conserve les chemins stables des générateurs ; [reports](reports/SOURCE_COVERAGE.md) garde les preuves datées ; [archive](archive/README.md) conserve toutes les missions détaillées. Les archives ne reprennent pas autorité à cause d’un nom CLAUDE ou d’une date récente. Les docs commerciales Forge sont hors de ce jeu, sous `docs/forge` à la racine.
+[Audit et inventaire complet du 17 octobre](archive/audits/2026-10-17/AUDIT.md). Licences : [THIRD_PARTY](../THIRD_PARTY.md).

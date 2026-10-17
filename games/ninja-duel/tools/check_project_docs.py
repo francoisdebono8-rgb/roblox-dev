@@ -10,7 +10,7 @@ from urllib.parse import unquote
 
 GAME = Path(__file__).resolve().parents[1]
 REQUIRED = ('VISION', 'CURRENT_STATE', 'MASTER_BACKLOG', 'DECISIONS',
-            'EXECUTION_RULES', 'CAPABILITIES_AND_TOOLS', 'SINCE_LAST_CLAUDE')
+            'EXECUTION_RULES', 'ENGINEERING_REVIEW', 'SINCE_LAST_CLAUDE')
 FIELDS = ('status', 'priority', 'dependencies', 'subsystem', 'character',
           'summary', 'sources', 'validation', 'evidence', 'outcome')
 STATUSES = {'OPEN', 'PARTIAL', 'IN_PROGRESS', 'DONE', 'BLOCKED', 'DEFERRED', 'REJECTED'}
@@ -101,13 +101,19 @@ def check(game=GAME):
         visited.add(key)
     for key in records:
         visit(key)
-    # Validate operational navigation. Historical source links can name unavailable
-    # external bases; they remain intact and are audited separately in the report.
-    docs = [start, game / 'README.md', game / 'CLAUDE_FINAL_PASS.md', game / 'docs/README.md']
-    for folder in ('active', 'combat', 'movement', 'characters', 'systems', 'research', 'tools'):
-        docs += list((game / 'docs' / folder).glob('*.md'))
-    docs += [game / 'docs/archive/README.md', game / 'docs/current/README.md',
-             game / 'docs/reports/SOURCE_COVERAGE.md', game / 'docs/reports/ORCHESTRATION_REFACTOR.md']
+    # Check the whole game documentation, including moved historical links.
+    actual = {p.stem for p in active.glob('*.md')}
+    if actual != set(REQUIRED):
+        errors.append('Active owners must be exactly the seven canonical documents')
+    review = active / 'ENGINEERING_REVIEW.md'
+    if review.is_file():
+        headings = re.findall(r'^## (.+)$', review.read_text(encoding='utf-8'), re.M)
+        if headings != ['BLOCKERS', 'REGRESSIONS', 'ARCHITECTURE RISKS',
+                        'PLAYER-FACING FAILURES', 'NEXT 3 PRIORITIES', 'DO NOT TOUCH']:
+            errors.append('ENGINEERING_REVIEW requires exactly six ordered sections')
+        if len(review.read_text(encoding='utf-8').splitlines()) > 60:
+            errors.append('ENGINEERING_REVIEW must stay short (maximum 60 lines)')
+    docs = sorted(game.rglob('*.md'))
     for doc in docs:
         if not doc.exists():
             errors.append('Missing navigation document: ' + str(doc.relative_to(game)))
@@ -120,7 +126,7 @@ def check(game=GAME):
             # normpath folds '..' so deep checkouts stay under the Windows path limit.
             if not Path(os.path.normpath(doc.parent / unquote(target))).exists():
                 errors.append(str(doc.relative_to(game)) + ': missing link ' + target)
-    coverage_path = game / 'docs/reports/SOURCE_COVERAGE.json'
+    coverage_path = game / 'docs/archive/reports/SOURCE_COVERAGE.json'
     try:
         coverage = json.loads(coverage_path.read_text(encoding='utf-8'))
         for entry in coverage:
@@ -173,6 +179,13 @@ def self_test(game=GAME):
                                                         'docs/active/MISSING.md')},
          None, 'missing link'),
         ('duplicate ID', {backlog: backlog_text + '\n' + first}, None, 'Duplicate backlog ID'),
+        ('invalid review sections',
+         {game / 'docs/active/ENGINEERING_REVIEW.md': '## HISTORY\n'},
+         None, 'exactly six ordered sections'),
+        ('oversized review',
+         {game / 'docs/active/ENGINEERING_REVIEW.md':
+          (game / 'docs/active/ENGINEERING_REVIEW.md').read_text(encoding='utf-8') + '\n' * 61},
+         None, 'must stay short'),
     ]
     for label, replacements, missing, expected in cases:
         def read(path, *args, **kwargs):

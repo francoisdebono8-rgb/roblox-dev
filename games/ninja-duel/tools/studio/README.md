@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../../docs/active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Native Studio QA through the Roblox Studio MCP server
 
 Tooling for observing and measuring Ninja Duel in a real Studio playtest, driven by an agent (Claude/Codex) without a human at the keyboard. Windows paths; added 2026-10-16. It is test tooling only: nothing here is built into a place.
