@@ -1187,6 +1187,8 @@ return {
 	"Legion","Gale","Lavender","Copycat",
 	-- Locked ten (DEC-022), batch 1.
 	"Mirror","Mist","Bone",
+	-- Batch 2.
+	"Flicker","Serpent","Medic",
 }
 </ProtectedString>
         </Properties>
@@ -1486,18 +1488,181 @@ return {
       <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">Wave2</string>
-          <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): this batch's shared data, merged into
--- Fighters, MoveGraphs and Attacks so parallel batches never edit the same
--- tables (docs/characters/ROSTER_20.md).
---   fighters[id]  a Fighters entry (techniques naming a Family first)
---   graphs[id]    a MoveGraphs entry (the shared directional grammar)
---   attacks(move, attacks)  optional: new strikes, built with Attacks' own
---                 move(startup, active, recovery, damage, travel, reaction,
---                 impulse, stun) and given their shape fields here
+          <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
+-- shared data, merged into Fighters, MoveGraphs and Attacks (see Wave1).
+-- Young versions only: what each of them could already do at that age.
+local RosterMoves=require(script.Parent.RosterMoves)
+local V=Vector3.new
+
+local fighters={}
+-- Shisui (13, "of the Body Flicker"): an Uchiha whose game is speed, not
+-- reads or fire-lightning rushdown. The Body Flicker is cheap and fast and
+-- strikes from the flank; a second flicker takes him out of reach; a Katon
+-- fireball; a Sharingan genjutsu that seals jutsu for a moment. Narrow
+-- Sharingan windows (not Itachi's). No Mangekyō: that comes later.
+fighters.Flicker = {
+	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 120, 60, 70 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ flicker step (vanishes to the flank, the string goes on)  ·  heavy after one: flicker cut  ·  air: drive / spike / switch",
+	Description = "The fastest Uchiha: the Body Flicker from the flank and out of reach, a Katon fireball, a genjutsu that seals jutsu.",
+	Health = 122, Chakra = 120, ChakraRegen = 8.4, Speed = 20.5, SprintScale = 1.14, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.18,
+	CombatTravel = 1.15, CombatDamage = 0.96, DashScale = 1.2, GuardStrength = 0.1, PreferredRange = 7,
+	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 100, Damage = 3, Recover = .5 },
+	Sharingan = { ParryWindow = 0.22, PerfectDodge = 0.2, Counter = 0.7 },
+	-- Awakening: the flicker becomes instant. Faster legs, the flickers back
+	-- almost at once and for half their cost, wider read windows.
+	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.2, Regen = 1.4, Cooldown = 0.35, CostScale = 0.5, Windows = 1.3, Color = { 230, 50, 60 } },
+	Motion = { body = "Lion", weapons = "kunai", springy = true,
+		borrow = { FlickerStep = "AngleStep", FlickerCut = "Light3" },
+		-- Loose and forward, almost a runner's stance: weight on the balls of
+		-- the feet, the kunai held low and back in the right hand.
+		stance = {root={y=-.46,pitch=10,yaw=24},torso={pitch=8,yaw=-8},head={pitch=-6,yaw=-12},
+			ra={raise=10,out=24,twist=20,elbow=40,wrist=0},la={raise=64,out=-12,twist=-30,elbow=86,wrist=-10},
+			rf={x=.22,z=.6,yaw=28},lf={x=-.1,z=-.64,yaw=-6},breath=1.2,tempo=8} },
+	AttackProfile = {
+		Light1={startup=.86,recovery=.86,travel=1.12},Light2={startup=.86,recovery=.86,travel=1.12,kind="slash"},
+		Light3={startup=.92,recovery=.92,impulseZ=50},Heavy={startup=.94},
+		Launcher={startup=.9,impulseY=56},DashAttack={startup=.84,travel=1.2},Air1={startup=.88},Air2={startup=.9},
+	},
+	Skin = { 230, 206, 184 }, Hair = { 24, 24, 30 }, Outfit = { 40, 44, 60 },
+	Techniques = {
+		{ Id = "BodyFlicker", Name = "Body Flicker", Family = "Teleport", Kind = "flicker", To = "Side", Distance = 3, Move = "FlickerCut", Damage = 6,
+			Cost = 10, Channel = 0.06, Active = 0.03, Recovery = 0.16, Cooldown = 1.8, Interruptible = true, Range = 34, Invuln = .12,
+			Hint = "Gone and at his flank in a blink • a cut on arrival • cheap: chain it", AI = { Min = 5, Max = 30, Chance = .4 } },
+		{ Id = "FlickerOut", Name = "Afterimage Retreat", Family = "Teleport", Kind = "flicker", To = "Back", Distance = 13,
+			Cost = 8, Channel = 0.04, Active = 0.03, Recovery = 0.12, Cooldown = 3, Interruptible = true, Range = 13, Invuln = .25,
+			Hint = "Out of reach in a blink • an afterimage takes the blow" },
+		{ Id = "ShisuiFireball", Name = "Fire Release: Great Fireball", Family = "Projectile", Kind = "fireball", Element = "Fire", Cost = 22, Channel = 0.42, Active = 0.12, Recovery = 0.34, Cooldown = 6, Interruptible = true,
+			Range = 40, Speed = 62, Damage = 11, Radius = 2.2, Knock = 30, Lift = 12, Hint = "A great fireball • throws the body back" },
+		{ Id = "ShisuiGenjutsu", Name = "Genjutsu: Sharingan", Family = "Burst", Kind = "flicker", Cost = 18, Channel = 0.12, Active = 0.1, Recovery = 0.3, Cooldown = 10, Interruptible = true,
+			Radius = 7, Arc = 0.4, Damage = 2, Seal = 2.5, Slow = { Scale = .75, Time = 2 }, Range = 7, Style = "look",
+			Hint = "Eye contact up close: the opponent's jutsu sealed 2.5 s, his legs heavy" },
+	},
+}
+
+-- Orochimaru (12, Hiruzen's genin, already a prodigy of ninjutsu): snakes
+-- from the sleeves. A shadow snake that bites and drags the body in, a pair
+-- that coil and hold it, a lunge with venom in it. Long, loose limbs (his
+-- strikes reach a little further). No Kusanagi, no body transfer: adult.
+fighters.Serpent = {
+	Name = "Orochimaru", FullName = "Orochimaru", Age = 12, Title = "THE SNAKE PRODIGY", Color = { 130, 100, 160 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  heavy after one: venom fang (poisons)  ·  air: drive / spike / switch",
+	Description = "Snakes from the sleeves: a shadow snake that drags the body in, coils that hold it, a venomous fang.",
+	Health = 130, Chakra = 130, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.08, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.0,
+	CombatTravel = 0.98, CombatDamage = 0.98, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 9,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .7 },
+	-- Awakening: the snake contract. Every blow carries venom, his coils hold
+	-- longer, his chakra comes back faster.
+	Awakening = { Name = "SNAKE CONTRACT", Speed = 1.05, Regen = 1.45, Cooldown = 0.6, BindScale = 1.4,
+		OnHit = { Poison = { Damage = .6, Time = 2, Every = .5 } }, Color = { 170, 140, 220 } },
+	Motion = { body = "Mirage", weapons = "none", springy = false,
+		borrow = { VenomFang = "Heavy" },
+		-- Low and loose, the head forward like a snake's, the arms hanging and
+		-- ready to whip out.
+		stance = {root={y=-.5,pitch=14,yaw=20},torso={pitch=12,yaw=-6},head={pitch=-14,yaw=-10},
+			ra={raise=24,out=18,twist=30,elbow=30,wrist=-20},la={raise=40,out=-6,twist=-30,elbow=46,wrist=-20},
+			rf={x=.26,z=.56,yaw=30},lf={x=-.14,z=-.62,yaw=-10},breath=.7,tempo=4} },
+	AttackProfile = {
+		Light1={startup=.96,recovery=.94,range=7,contact=4},Light2={startup=.96,recovery=.94,range=7,contact=4,kind="palm"},
+		Light3={startup=1.0,recovery=.98,range=7.2,impulseZ=50,kind="kick"},Heavy={startup=1.0,range=7.2},
+		Launcher={startup=.98,impulseY=54},DashAttack={startup=.95,travel=1.0},Air1={startup=.96},Air2={startup=.98},
+	},
+	Skin = { 236, 228, 222 }, Hair = { 24, 24, 30 }, Outfit = { 70, 78, 96 },
+	Techniques = {
+		{ Id = "ShadowSnake", Name = "Striking Shadow Snakes", Family = "Projectile", Kind = "snake", Cost = 16, Channel = 0.26, Active = 0.06, Recovery = 0.3, Cooldown = 4, Interruptible = true,
+			Range = 26, Speed = 82, Damage = 5, Radius = 1.1, Pull = 46, PullTo = 3.5, Poison = { Damage = 1, Time = 3, Every = .5 },
+			Hint = "A snake from the sleeve bites and drags the body to him • venom" },
+		{ Id = "SnakeCoil", Name = "Hidden Shadow Snake Hands", Family = "Projectile", Kind = "snakes", Count = 2, Spread = 0.2, Cost = 22, Channel = 0.34, Active = 0.08, Recovery = 0.3, Cooldown = 9, Interruptible = true,
+			Range = 20, Speed = 72, Damage = 3, Radius = 1.1, Bind = 1.3, Crush = 6, Hint = "Two snakes coil round the body and hold it • then they squeeze" },
+		{ Id = "SnakeLunge", Name = "Snake Lunge", Family = "Strike", Move = "VenomFang", Cost = 14, Channel = 0.14, Active = 0.05, Recovery = 0.1, Cooldown = 5, Interruptible = true,
+			Range = 12, Damage = 9, Poison = { Damage = 1.2, Time = 3, Every = .5 }, Hint = "A lunge with a fang in it: poison", AI = { Min = 3.5, Max = 10 } },
+	},
+}
+
+-- Kabuto (13, the spy medic): medical ninjutsu turned on the body. The
+-- chakra scalpel cuts muscles (the body slows) and drains; a scalpel strike
+-- that cuts the legs; a body flicker back that mends him on the way.
+fighters.Medic = {
+	Name = "Kabuto", FullName = "Kabuto Yakushi", Age = 13, Title = "THE SPY MEDIC", Color = { 120, 110, 160 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: scalpel slice (slows)  ·  air: drive / spike / switch",
+	Description = "Medical ninjutsu as a weapon: the chakra scalpel cuts muscles, he mends himself on the way out.",
+	Health = 130, Chakra = 125, ChakraRegen = 9, Speed = 19, SprintScale = 1.08, JumpScale = 1.02, AirControlScale = 1.0, AccelerationScale = 1.04,
+	CombatTravel = 1.02, CombatDamage = 0.92, DashScale = 1.04, GuardStrength = 0.12, PreferredRange = 4.5,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .7 },
+	-- Awakening: the medical genius. Chakra back fast, every blow cuts a
+	-- muscle (slows), techniques back sooner.
+	Awakening = { Name = "MEDICAL GENIUS", Speed = 1.05, Regen = 1.6, Cooldown = 0.6, OnHit = { Slow = { Scale = .8, Time = 1.2 } }, Color = { 120, 240, 190 } },
+	Motion = { body = "GentleFist", weapons = "palms", springy = false,
+		borrow = { ScalpelSlice = "PalmThrust" },
+		-- Calm and neat, glasses-level composure: upright, both hands open and
+		-- low, ready to cut.
+		stance = {root={y=-.26,pitch=4,yaw=22},torso={pitch=2,yaw=-8},head={pitch=0,yaw=-12},
+			ra={raise=40,out=10,twist=20,elbow=70,wrist=-10},la={raise=50,out=-10,twist=-20,elbow=80,wrist=-10},
+			rf={x=.2,z=.56,yaw=30},lf={x=-.08,z=-.56,yaw=-6},breath=.6,tempo=5} },
+	AttackProfile = {
+		Light1={startup=.92,recovery=.9,range=6.2,kind="palm"},Light2={startup=.92,recovery=.9,range=6.2,kind="palm"},
+		Light3={startup=.98,recovery=.96,impulseZ=48,kind="palm"},Heavy={startup=1.0,kind="palm"},
+		Launcher={startup=.98,impulseY=54},DashAttack={startup=.94},Air1={startup=.96},Air2={startup=.98},
+	},
+	Skin = { 236, 214, 196 }, Hair = { 200, 200, 206 }, Outfit = { 110, 84, 130 },
+	Techniques = {
+		{ Id = "ChakraScalpel", Name = "Chakra Scalpel", Family = "Buff", Kind = "scalpel", Cost = 18, Channel = 0.25, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true,
+			Time = 8, Damage = 1.1, Range = 20, OnHit = { Slow = { Scale = .72, Time = 1.6 }, Drain = 3 },
+			Hint = "Blades of chakra on his hands for 8 s: every blow cuts a muscle (slows) and drains" },
+		{ Id = "TendonCut", Name = "Scalpel: Tendon Cut", Family = "Strike", Move = "ScalpelSlice", Cost = 12, Channel = 0.12, Active = 0.05, Recovery = 0.1, Cooldown = 4.5, Interruptible = true,
+			Range = 10, Damage = 8, Slow = { Scale = .6, Time = 2.4 }, Hint = "A low cut at the legs: the body slows hard", AI = { Min = 3, Max = 9 } },
+		{ Id = "MendingRetreat", Name = "Mystical Palm Retreat", Family = "Teleport", Kind = "scalpel", To = "Back", Distance = 11, Heal = 14,
+			Cost = 20, Channel = 0.1, Active = 0.04, Recovery = 0.2, Cooldown = 11, Interruptible = true, Range = 11, Invuln = .2,
+			Hint = "A flicker out of reach, the Mystical Palm closing his wounds" },
+	},
+}
+
+local graphs={
+	Flicker={
+		routes={up="Launcher",down="Sweep",side="FlickerStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="FlickerCut",
+		stringCancels={BodyFlicker=true,FlickerOut=true},
+		blockCancels={Tool=true},
+		-- The fastest re-entry on the widest angle, never twice the same side.
+		reengage={name="flicker",speed=1.45,arrive=3,angle=55,shuffle=true,chase=.24,recovery=.14},
+	},
+	Serpent={
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="VenomFang",
+		stringCancels={ShadowSnake=true},
+		blockCancels={Tool=true},
+		reengage={name="serpent",speed=1.0,arrive=3.6,angle=25,chase=.3,recovery=.2},
+	},
+	Medic={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="ScalpelSlice",
+		stringCancels={TendonCut=true,MendingRetreat=true},
+		blockCancels={},
+		reengage={name="medic",speed=1.0,arrive=3,angle=10,chase=.3,recovery=.2},
+	},
+}
+
+local function attacks(move,list)
+	RosterMoves.add(move,list,{
+		-- Shisui: a flicker to the flank that keeps the string, the cut on arrival.
+		FlickerStep={{.07,.1,.2,6,1.2,"HitStun",V(0,0,9),.3},{contact=3.4,range=6.5,width=5,zone="body",kind="slash",side=1,twist=40,lean=10,arm=90,step=1.1,orbit=40,chain=true}},
+		FlickerCut={{.07,.12,.3,8,2.8,"Knockback",V(0,10,44),.48},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
+		-- Orochimaru: a fang lunge (venom).
+		VenomFang={{.09,.14,.32,8,3.4,"Knockback",V(0,8,40),.48},{contact=4,range=7.4,zone="body",kind="strike",side=1,twist=24,lean=26,arm=110,step=1.25,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
+		-- Kabuto: a scalpel slice at the legs (slows).
+		ScalpelSlice={{.1,.12,.32,9,3,"Knockback",V(0,8,42),.48},{contact=3.6,range=6.6,zone="legs",kind="palm",side=1,twist=20,lean=20,arm=100,step=1.2,riders={Slow={Scale=.7,Time=1.8}}}},
+	})
+end
+
 return {
-	fighters={},
-	graphs={},
-	attacks=nil,
+	fighters=fighters,
+	graphs=graphs,
+	attacks=attacks,
 }
 </ProtectedString>
         </Properties>
@@ -2499,7 +2664,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">c1f9b1f830bd00d9e3f7473e031f14699fd01c1d4175e857a5334d8f80de9c46</string>
+          <string name="Value">2f3d3898fb893c4353e4ddff75fe2d60bc30f2f44f72848e6076495905a9298f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -14331,14 +14496,113 @@ return Kit
       <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Wave2Kit</string>
-          <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's server side. Bespoke techniques
--- (only where a family is not enough) register in install(Techniques); the
--- costumes register in dress(dressers, kit) with World's helpers (wear, cyl,
--- face, hairCap, spike, rgb, A, R). Never a condition on a fighter's name in
--- the shared core: hooks and families (Server/Families).
+          <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
+-- Their techniques all run on the shared families; this module dresses them.
+local Base=require(script.Parent.Wave1Kit)
+local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
 local Kit={}
 function Kit.install(Techniques) end
-function Kit.dress(dressers,kit) end
+function Kit.dress(dressers,kit)
+	local wear,face,hairCap,spike,headband,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.headband,kit.rgb,kit.A,kit.R
+	local function sandals(model,def,strap)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		for _,side in {"Left","Right"} do
+			local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=strap end
+			wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		end
+	end
+	local function hideCap(model,color)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=color;cap.Transparency=1 end
+	end
+
+	-- Shisui (13): thick, messy black curls, the Leaf headband, the high-
+	-- collared dark Uchiha shirt with the fan on the back, a short sword
+	-- (tantō) at the small of the back, arm guards.
+	dressers.Shisui=function(model,def)
+		local hair=rgb(24,24,30)
+		local shirt=rgb(40,44,60)
+		local shade=rgb(30,32,44)
+		hideCap(model,hair)
+		face(model,rgb(40,30,30),hair)
+		hairCap(model,hair)
+		for _,s in {{Vector3.new(-.5,.7,-.2),Vector3.new(-.7,.6,-.6)},{Vector3.new(.5,.7,-.2),Vector3.new(.7,.6,-.6)},{Vector3.new(0,.8,.2),Vector3.new(0,1,.2)},
+			{Vector3.new(-.6,.4,.4),Vector3.new(-1,.2,.6)},{Vector3.new(.6,.4,.4),Vector3.new(1,.2,.6)},{Vector3.new(0,.4,.7),Vector3.new(0,0,1)}} do
+			spike(model,s[1],s[2],.8,.5,.46,hair)
+		end
+		headband(model)
+		paint(model,TORSO,shirt);paint(model,ARMS,shirt);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.4,.5,1.18),CFrame.new(0,.82,.02),shirt)
+		-- The Uchiha fan on the back: white handle, red top.
+		wear(model,"UpperTorso","FanRed",Vector3.new(.7,.5,.04),CFrame.new(0,.3,.56),rgb(200,40,40))
+		wear(model,"UpperTorso","FanWhite",Vector3.new(.7,.36,.04),CFrame.new(0,-.1,.56),rgb(240,240,236))
+		wear(model,"UpperTorso","FanHandle",Vector3.new(.14,.5,.04),CFrame.new(0,-.5,.56),rgb(240,240,236))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),rgb(20,22,28))
+		wear(model,"LowerTorso","Tanto",Vector3.new(.16,.16,1.6),CFrame.new(0,.2,.66)*A(0,R(90),R(10)),rgb(30,30,34))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","ArmGuard",Vector3.new(.86,.6,.86),CFrame.new(0,-.16,0),rgb(150,156,164),Enum.Material.Metal)
+			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(30,32,40))
+	end
+
+	-- Orochimaru (12): long straight black hair past the shoulders, pale
+	-- skin, the purple marks round the eyes, a grey-blue genin outfit with a
+	-- purple rope belt, the Leaf headband.
+	dressers.Orochimaru=function(model,def)
+		local hair=rgb(24,24,30)
+		local suit=rgb(70,78,96)
+		local shade=rgb(54,60,76)
+		hideCap(model,hair)
+		face(model,rgb(200,170,60),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.6,.36,.2),CFrame.new(0,.5,-.78),hair)
+		for _,side in {-1,1} do
+			wear(model,"Head","SideHair",Vector3.new(.22,1.8,1.1),CFrame.new(side*.84,-.4,.1),hair)
+			wear(model,"Head","EyeMark",Vector3.new(.3,.12,.03),CFrame.new(side*.26,.12,-.83),rgb(130,80,160))
+		end
+		wear(model,"Head","BackHair",Vector3.new(1.6,2,.3),CFrame.new(0,-.6,.76),hair)
+		headband(model)
+		paint(model,TORSO,suit);paint(model,ARMS,suit);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Robe",Vector3.new(2.1,1.7,1.14),CFrame.new(0,-.02,0),suit)
+		wear(model,"UpperTorso","Lapel",Vector3.new(.5,1.4,.06),CFrame.new(.3,0,-.58)*A(0,0,R(-12)),shade)
+		wear(model,"LowerTorso","Rope",Vector3.new(2.2,.4,1.2),CFrame.new(0,.3,0),rgb(110,70,150))
+		wear(model,"LowerTorso","RopeKnot",Vector3.new(.5,.5,.4),CFrame.new(0,.3,.62),rgb(110,70,150))
+		-- A small white snake curled round the left wrist.
+		wear(model,"LeftLowerArm","WristSnake",Vector3.new(.92,.2,.92),CFrame.new(0,-.36,0),rgb(236,234,228))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(40,44,52))
+	end
+
+	-- Kabuto (13): grey hair in a short ponytail, round glasses, the purple
+	-- shirt with the white collar, a dark belt with pouches, the Leaf headband.
+	dressers.Kabuto=function(model,def)
+		local hair=rgb(200,200,206)
+		local shirt=rgb(110,84,130)
+		local shade=rgb(84,64,100)
+		hideCap(model,hair)
+		face(model,rgb(40,36,40),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.6,.3,.2),CFrame.new(0,.52,-.78),hair)
+		wear(model,"Head","Tail",Vector3.new(.4,.9,.36),CFrame.new(0,-.4,.86),hair)
+		-- Round glasses: two rims and the bridge.
+		for _,side in {-1,1} do
+			wear(model,"Head","Lens",Vector3.new(.36,.3,.03),CFrame.new(side*.26,.1,-.86),rgb(220,236,240),Enum.Material.Glass)
+			wear(model,"Head","Rim",Vector3.new(.4,.34,.02),CFrame.new(side*.26,.1,-.85),rgb(60,60,66),Enum.Material.Metal)
+		end
+		wear(model,"Head","Bridge",Vector3.new(.16,.04,.03),CFrame.new(0,.14,-.87),rgb(60,60,66),Enum.Material.Metal)
+		headband(model)
+		paint(model,TORSO,shirt);paint(model,ARMS,shirt);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.5,.32,1.16),CFrame.new(0,.82,0),rgb(236,234,230))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.24,1.06),CFrame.new(0,.34,0),rgb(40,36,44))
+		for _,x in {-.6,.6} do wear(model,"LowerTorso","Pouch",Vector3.new(.4,.4,.2),CFrame.new(x,.2,-.58),rgb(60,54,66)) end
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Wrap",Vector3.new(.86,.4,.86),CFrame.new(0,-.36,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(40,36,44))
+	end
+end
 return Kit
 </ProtectedString>
         </Properties>
@@ -25021,9 +25285,9 @@ function M.install(FX,kit)
 		local at=if floor then floor.Position+Vector3.new(0,1,0) else position
 		local holder=kit.anchorPart(fx.folder,at)
 		holder.Size=Vector3.new(radius*2,4,radius*2)
-		local e=new("ParticleEmitter",{Texture=TEX.smoke,Rate=60,Lifetime=NumberRange.new(2.5,3.5),Speed=NumberRange.new(.4,1.2),SpreadAngle=Vector2.new(60,60),
+		local e=new("ParticleEmitter",{Texture=TEX.smoke,Rate=22,Lifetime=NumberRange.new(2.5,3.5),Speed=NumberRange.new(.4,1.2),SpreadAngle=Vector2.new(60,60),
 			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(Color3.fromRGB(226,232,238)),LightInfluence=1,
-			Size=num({{0,10},{1,18}}),Transparency=num({{0,1},{.2,.3},{.8,.35},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-8,8)},holder)
+			Size=num({{0,10},{1,18}}),Transparency=num({{0,1},{.2,.55},{.8,.6},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-8,8)},holder)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end

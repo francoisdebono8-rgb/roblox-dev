@@ -11,4 +11,6 @@ return {
 	"Legion","Gale","Lavender","Copycat",
 	-- Locked ten (DEC-022), batch 1.
 	"Mirror","Mist","Bone",
+	-- Batch 2.
+	"Flicker","Serpent","Medic",
 }

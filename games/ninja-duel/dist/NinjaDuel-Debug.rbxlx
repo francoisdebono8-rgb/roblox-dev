@@ -1306,6 +1306,8 @@ return {
 	"Legion","Gale","Lavender","Copycat",
 	-- Locked ten (DEC-022), batch 1.
 	"Mirror","Mist","Bone",
+	-- Batch 2.
+	"Flicker","Serpent","Medic",
 }
 </ProtectedString>
         </Properties>
@@ -1605,18 +1607,181 @@ return {
       <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">Wave2</string>
-          <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): this batch's shared data, merged into
--- Fighters, MoveGraphs and Attacks so parallel batches never edit the same
--- tables (docs/characters/ROSTER_20.md).
---   fighters[id]  a Fighters entry (techniques naming a Family first)
---   graphs[id]    a MoveGraphs entry (the shared directional grammar)
---   attacks(move, attacks)  optional: new strikes, built with Attacks' own
---                 move(startup, active, recovery, damage, travel, reaction,
---                 impulse, stun) and given their shape fields here
+          <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
+-- shared data, merged into Fighters, MoveGraphs and Attacks (see Wave1).
+-- Young versions only: what each of them could already do at that age.
+local RosterMoves=require(script.Parent.RosterMoves)
+local V=Vector3.new
+
+local fighters={}
+-- Shisui (13, "of the Body Flicker"): an Uchiha whose game is speed, not
+-- reads or fire-lightning rushdown. The Body Flicker is cheap and fast and
+-- strikes from the flank; a second flicker takes him out of reach; a Katon
+-- fireball; a Sharingan genjutsu that seals jutsu for a moment. Narrow
+-- Sharingan windows (not Itachi's). No Mangekyō: that comes later.
+fighters.Flicker = {
+	Name = "Shisui", FullName = "Shisui Uchiha", Age = 13, Title = "THE BODY FLICKER", Color = { 120, 60, 70 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ flicker step (vanishes to the flank, the string goes on)  ·  heavy after one: flicker cut  ·  air: drive / spike / switch",
+	Description = "The fastest Uchiha: the Body Flicker from the flank and out of reach, a Katon fireball, a genjutsu that seals jutsu.",
+	Health = 122, Chakra = 120, ChakraRegen = 8.4, Speed = 20.5, SprintScale = 1.14, JumpScale = 1.1, AirControlScale = 1.15, AccelerationScale = 1.18,
+	CombatTravel = 1.15, CombatDamage = 0.96, DashScale = 1.2, GuardStrength = 0.1, PreferredRange = 7,
+	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 100, Damage = 3, Recover = .5 },
+	Sharingan = { ParryWindow = 0.22, PerfectDodge = 0.2, Counter = 0.7 },
+	-- Awakening: the flicker becomes instant. Faster legs, the flickers back
+	-- almost at once and for half their cost, wider read windows.
+	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.2, Regen = 1.4, Cooldown = 0.35, CostScale = 0.5, Windows = 1.3, Color = { 230, 50, 60 } },
+	Motion = { body = "Lion", weapons = "kunai", springy = true,
+		borrow = { FlickerStep = "AngleStep", FlickerCut = "Light3" },
+		-- Loose and forward, almost a runner's stance: weight on the balls of
+		-- the feet, the kunai held low and back in the right hand.
+		stance = {root={y=-.46,pitch=10,yaw=24},torso={pitch=8,yaw=-8},head={pitch=-6,yaw=-12},
+			ra={raise=10,out=24,twist=20,elbow=40,wrist=0},la={raise=64,out=-12,twist=-30,elbow=86,wrist=-10},
+			rf={x=.22,z=.6,yaw=28},lf={x=-.1,z=-.64,yaw=-6},breath=1.2,tempo=8} },
+	AttackProfile = {
+		Light1={startup=.86,recovery=.86,travel=1.12},Light2={startup=.86,recovery=.86,travel=1.12,kind="slash"},
+		Light3={startup=.92,recovery=.92,impulseZ=50},Heavy={startup=.94},
+		Launcher={startup=.9,impulseY=56},DashAttack={startup=.84,travel=1.2},Air1={startup=.88},Air2={startup=.9},
+	},
+	Skin = { 230, 206, 184 }, Hair = { 24, 24, 30 }, Outfit = { 40, 44, 60 },
+	Techniques = {
+		{ Id = "BodyFlicker", Name = "Body Flicker", Family = "Teleport", Kind = "flicker", To = "Side", Distance = 3, Move = "FlickerCut", Damage = 6,
+			Cost = 10, Channel = 0.06, Active = 0.03, Recovery = 0.16, Cooldown = 1.8, Interruptible = true, Range = 34, Invuln = .12,
+			Hint = "Gone and at his flank in a blink • a cut on arrival • cheap: chain it", AI = { Min = 5, Max = 30, Chance = .4 } },
+		{ Id = "FlickerOut", Name = "Afterimage Retreat", Family = "Teleport", Kind = "flicker", To = "Back", Distance = 13,
+			Cost = 8, Channel = 0.04, Active = 0.03, Recovery = 0.12, Cooldown = 3, Interruptible = true, Range = 13, Invuln = .25,
+			Hint = "Out of reach in a blink • an afterimage takes the blow" },
+		{ Id = "ShisuiFireball", Name = "Fire Release: Great Fireball", Family = "Projectile", Kind = "fireball", Element = "Fire", Cost = 22, Channel = 0.42, Active = 0.12, Recovery = 0.34, Cooldown = 6, Interruptible = true,
+			Range = 40, Speed = 62, Damage = 11, Radius = 2.2, Knock = 30, Lift = 12, Hint = "A great fireball • throws the body back" },
+		{ Id = "ShisuiGenjutsu", Name = "Genjutsu: Sharingan", Family = "Burst", Kind = "flicker", Cost = 18, Channel = 0.12, Active = 0.1, Recovery = 0.3, Cooldown = 10, Interruptible = true,
+			Radius = 7, Arc = 0.4, Damage = 2, Seal = 2.5, Slow = { Scale = .75, Time = 2 }, Range = 7, Style = "look",
+			Hint = "Eye contact up close: the opponent's jutsu sealed 2.5 s, his legs heavy" },
+	},
+}
+
+-- Orochimaru (12, Hiruzen's genin, already a prodigy of ninjutsu): snakes
+-- from the sleeves. A shadow snake that bites and drags the body in, a pair
+-- that coil and hold it, a lunge with venom in it. Long, loose limbs (his
+-- strikes reach a little further). No Kusanagi, no body transfer: adult.
+fighters.Serpent = {
+	Name = "Orochimaru", FullName = "Orochimaru", Age = 12, Title = "THE SNAKE PRODIGY", Color = { 130, 100, 160 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  heavy after one: venom fang (poisons)  ·  air: drive / spike / switch",
+	Description = "Snakes from the sleeves: a shadow snake that drags the body in, coils that hold it, a venomous fang.",
+	Health = 130, Chakra = 130, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.08, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.0,
+	CombatTravel = 0.98, CombatDamage = 0.98, DashScale = 1.0, GuardStrength = 0.1, PreferredRange = 9,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .7 },
+	-- Awakening: the snake contract. Every blow carries venom, his coils hold
+	-- longer, his chakra comes back faster.
+	Awakening = { Name = "SNAKE CONTRACT", Speed = 1.05, Regen = 1.45, Cooldown = 0.6, BindScale = 1.4,
+		OnHit = { Poison = { Damage = .6, Time = 2, Every = .5 } }, Color = { 170, 140, 220 } },
+	Motion = { body = "Mirage", weapons = "none", springy = false,
+		borrow = { VenomFang = "Heavy" },
+		-- Low and loose, the head forward like a snake's, the arms hanging and
+		-- ready to whip out.
+		stance = {root={y=-.5,pitch=14,yaw=20},torso={pitch=12,yaw=-6},head={pitch=-14,yaw=-10},
+			ra={raise=24,out=18,twist=30,elbow=30,wrist=-20},la={raise=40,out=-6,twist=-30,elbow=46,wrist=-20},
+			rf={x=.26,z=.56,yaw=30},lf={x=-.14,z=-.62,yaw=-10},breath=.7,tempo=4} },
+	AttackProfile = {
+		Light1={startup=.96,recovery=.94,range=7,contact=4},Light2={startup=.96,recovery=.94,range=7,contact=4,kind="palm"},
+		Light3={startup=1.0,recovery=.98,range=7.2,impulseZ=50,kind="kick"},Heavy={startup=1.0,range=7.2},
+		Launcher={startup=.98,impulseY=54},DashAttack={startup=.95,travel=1.0},Air1={startup=.96},Air2={startup=.98},
+	},
+	Skin = { 236, 228, 222 }, Hair = { 24, 24, 30 }, Outfit = { 70, 78, 96 },
+	Techniques = {
+		{ Id = "ShadowSnake", Name = "Striking Shadow Snakes", Family = "Projectile", Kind = "snake", Cost = 16, Channel = 0.26, Active = 0.06, Recovery = 0.3, Cooldown = 4, Interruptible = true,
+			Range = 26, Speed = 82, Damage = 5, Radius = 1.1, Pull = 46, PullTo = 3.5, Poison = { Damage = 1, Time = 3, Every = .5 },
+			Hint = "A snake from the sleeve bites and drags the body to him • venom" },
+		{ Id = "SnakeCoil", Name = "Hidden Shadow Snake Hands", Family = "Projectile", Kind = "snakes", Count = 2, Spread = 0.2, Cost = 22, Channel = 0.34, Active = 0.08, Recovery = 0.3, Cooldown = 9, Interruptible = true,
+			Range = 20, Speed = 72, Damage = 3, Radius = 1.1, Bind = 1.3, Crush = 6, Hint = "Two snakes coil round the body and hold it • then they squeeze" },
+		{ Id = "SnakeLunge", Name = "Snake Lunge", Family = "Strike", Move = "VenomFang", Cost = 14, Channel = 0.14, Active = 0.05, Recovery = 0.1, Cooldown = 5, Interruptible = true,
+			Range = 12, Damage = 9, Poison = { Damage = 1.2, Time = 3, Every = .5 }, Hint = "A lunge with a fang in it: poison", AI = { Min = 3.5, Max = 10 } },
+	},
+}
+
+-- Kabuto (13, the spy medic): medical ninjutsu turned on the body. The
+-- chakra scalpel cuts muscles (the body slows) and drains; a scalpel strike
+-- that cuts the legs; a body flicker back that mends him on the way.
+fighters.Medic = {
+	Name = "Kabuto", FullName = "Kabuto Yakushi", Age = 13, Title = "THE SPY MEDIC", Color = { 120, 110, 160 },
+	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: scalpel slice (slows)  ·  air: drive / spike / switch",
+	Description = "Medical ninjutsu as a weapon: the chakra scalpel cuts muscles, he mends himself on the way out.",
+	Health = 130, Chakra = 125, ChakraRegen = 9, Speed = 19, SprintScale = 1.08, JumpScale = 1.02, AirControlScale = 1.0, AccelerationScale = 1.04,
+	CombatTravel = 1.02, CombatDamage = 0.92, DashScale = 1.04, GuardStrength = 0.12, PreferredRange = 4.5,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 90, Damage = 3, Recover = .7 },
+	-- Awakening: the medical genius. Chakra back fast, every blow cuts a
+	-- muscle (slows), techniques back sooner.
+	Awakening = { Name = "MEDICAL GENIUS", Speed = 1.05, Regen = 1.6, Cooldown = 0.6, OnHit = { Slow = { Scale = .8, Time = 1.2 } }, Color = { 120, 240, 190 } },
+	Motion = { body = "GentleFist", weapons = "palms", springy = false,
+		borrow = { ScalpelSlice = "PalmThrust" },
+		-- Calm and neat, glasses-level composure: upright, both hands open and
+		-- low, ready to cut.
+		stance = {root={y=-.26,pitch=4,yaw=22},torso={pitch=2,yaw=-8},head={pitch=0,yaw=-12},
+			ra={raise=40,out=10,twist=20,elbow=70,wrist=-10},la={raise=50,out=-10,twist=-20,elbow=80,wrist=-10},
+			rf={x=.2,z=.56,yaw=30},lf={x=-.08,z=-.56,yaw=-6},breath=.6,tempo=5} },
+	AttackProfile = {
+		Light1={startup=.92,recovery=.9,range=6.2,kind="palm"},Light2={startup=.92,recovery=.9,range=6.2,kind="palm"},
+		Light3={startup=.98,recovery=.96,impulseZ=48,kind="palm"},Heavy={startup=1.0,kind="palm"},
+		Launcher={startup=.98,impulseY=54},DashAttack={startup=.94},Air1={startup=.96},Air2={startup=.98},
+	},
+	Skin = { 236, 214, 196 }, Hair = { 200, 200, 206 }, Outfit = { 110, 84, 130 },
+	Techniques = {
+		{ Id = "ChakraScalpel", Name = "Chakra Scalpel", Family = "Buff", Kind = "scalpel", Cost = 18, Channel = 0.25, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true,
+			Time = 8, Damage = 1.1, Range = 20, OnHit = { Slow = { Scale = .72, Time = 1.6 }, Drain = 3 },
+			Hint = "Blades of chakra on his hands for 8 s: every blow cuts a muscle (slows) and drains" },
+		{ Id = "TendonCut", Name = "Scalpel: Tendon Cut", Family = "Strike", Move = "ScalpelSlice", Cost = 12, Channel = 0.12, Active = 0.05, Recovery = 0.1, Cooldown = 4.5, Interruptible = true,
+			Range = 10, Damage = 8, Slow = { Scale = .6, Time = 2.4 }, Hint = "A low cut at the legs: the body slows hard", AI = { Min = 3, Max = 9 } },
+		{ Id = "MendingRetreat", Name = "Mystical Palm Retreat", Family = "Teleport", Kind = "scalpel", To = "Back", Distance = 11, Heal = 14,
+			Cost = 20, Channel = 0.1, Active = 0.04, Recovery = 0.2, Cooldown = 11, Interruptible = true, Range = 11, Invuln = .2,
+			Hint = "A flicker out of reach, the Mystical Palm closing his wounds" },
+	},
+}
+
+local graphs={
+	Flicker={
+		routes={up="Launcher",down="Sweep",side="FlickerStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="FlickerCut",
+		stringCancels={BodyFlicker=true,FlickerOut=true},
+		blockCancels={Tool=true},
+		-- The fastest re-entry on the widest angle, never twice the same side.
+		reengage={name="flicker",speed=1.45,arrive=3,angle=55,shuffle=true,chase=.24,recovery=.14},
+	},
+	Serpent={
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="VenomFang",
+		stringCancels={ShadowSnake=true},
+		blockCancels={Tool=true},
+		reengage={name="serpent",speed=1.0,arrive=3.6,angle=25,chase=.3,recovery=.2},
+	},
+	Medic={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="ScalpelSlice",
+		stringCancels={TendonCut=true,MendingRetreat=true},
+		blockCancels={},
+		reengage={name="medic",speed=1.0,arrive=3,angle=10,chase=.3,recovery=.2},
+	},
+}
+
+local function attacks(move,list)
+	RosterMoves.add(move,list,{
+		-- Shisui: a flicker to the flank that keeps the string, the cut on arrival.
+		FlickerStep={{.07,.1,.2,6,1.2,"HitStun",V(0,0,9),.3},{contact=3.4,range=6.5,width=5,zone="body",kind="slash",side=1,twist=40,lean=10,arm=90,step=1.1,orbit=40,chain=true}},
+		FlickerCut={{.07,.12,.3,8,2.8,"Knockback",V(0,10,44),.48},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
+		-- Orochimaru: a fang lunge (venom).
+		VenomFang={{.09,.14,.32,8,3.4,"Knockback",V(0,8,40),.48},{contact=4,range=7.4,zone="body",kind="strike",side=1,twist=24,lean=26,arm=110,step=1.25,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
+		-- Kabuto: a scalpel slice at the legs (slows).
+		ScalpelSlice={{.1,.12,.32,9,3,"Knockback",V(0,8,42),.48},{contact=3.6,range=6.6,zone="legs",kind="palm",side=1,twist=20,lean=20,arm=100,step=1.2,riders={Slow={Scale=.7,Time=1.8}}}},
+	})
+end
+
 return {
-	fighters={},
-	graphs={},
-	attacks=nil,
+	fighters=fighters,
+	graphs=graphs,
+	attacks=attacks,
 }
 </ProtectedString>
         </Properties>
@@ -2618,7 +2783,7 @@ return {
       <Item class="StringValue" referent="ND21">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7f5ab753a778eee131120a13e855dc05c4b393df7d46a269c6866f4ca161935f</string>
+          <string name="Value">77a0f88eab4e3ca83a703ea7d16b015db6a4ae74045cf969b8a317c339ac41fe</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND22">
@@ -9705,6 +9870,132 @@ return Report
       </Item>
       <Item class="ModuleScript" referent="ND52">
         <Properties>
+          <string name="Name">DevRosterCheck</string>
+          <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): a native Studio pass for
+-- roster fighters through the real server pipeline (the dev hook's `act`, the
+-- same Combat:request the client remote reaches), for a Studio session driven
+-- without the Windows MCP bridge (tools/studio/fighter_check.py). From the
+-- command bar, Server side:
+--   require(game.ServerScriptService.NinjaDuelServer.DevRosterCheck)("Mirror,Mist", 1.2)
+-- For each fighter, against a frozen Rock Lee: a three-light string, the
+-- toward route after two hits, the heavy, a jump and an air strike, the tool,
+-- every technique aimed at the body, the awakening; then an AI-vs-AI duel to a
+-- KO. Prints one line per step (what it produced) and every error the Output
+-- received meanwhile. `pause` (s) leaves time to watch or capture each step.
+-- It proves the server path in the real build; real keys and the look stay
+-- checks of their own.
+local LogService=game:GetService("LogService")
+local ServerStorage=game:GetService("ServerStorage")
+return function(list,pause)
+	pause=pause or 1
+	local dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
+	local Fighters=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+	local errors={}
+	local conn=LogService.MessageOut:Connect(function(message,kind)
+		if kind==Enum.MessageType.MessageError then table.insert(errors,message) end
+	end)
+	local report={}
+	local function line(text) print("[RosterCheck] "..text);table.insert(report,text) end
+	local function state() return dev:Invoke("state") end
+	local function place(gap) dev:Invoke("move","human",Vector3.zero);dev:Invoke("place",Vector3.new(0,3,gap/2),Vector3.new(0,3,-gap/2));task.wait(.25) end
+	local function act(action,aim,stick)
+		if stick then dev:Invoke("move","human",stick) end
+		local r=dev:Invoke("act","human",action,aim)
+		if stick then dev:Invoke("move","human",Vector3.zero) end
+		return r
+	end
+	local function botPos() local s=state();return s.bot and s.bot.position end
+	for id in string.gmatch(list,"[^,%s]+") do
+		local def=Fighters[id]
+		if not def then line(id..": NO DEFINITION");continue end
+		local before=#errors
+		dev:Invoke("start",id,"Leaf")
+		local t0=os.clock()
+		repeat task.wait(.2);local r=dev:Invoke("act","human","GuardOff") until (type(r)=="table" and r.reason~="Intro") or os.clock()-t0&gt;12
+		dev:Invoke("autopilot",false);dev:Invoke("freezeBot",true);dev:Invoke("scripted",true)
+		local function reset(gap) dev:Invoke("refill");dev:Invoke("health","bot",400);dev:Invoke("health","human",def.Health);place(gap or 3.4) end
+		-- String.
+		reset(3.4)
+		local hits=0
+		local hp=state().bot.health
+		for k=1,3 do
+			act("Attack");task.wait(.42)
+			local s=state()
+			if s.bot.health&lt;hp then hits+=1;hp=s.bot.health end
+		end
+		line(string.format("%s string: %d/3 lights landed",id,hits))
+		task.wait(pause)
+		-- Toward route after two confirmed hits.
+		reset(3.4)
+		act("Attack");task.wait(.42);act("Attack");task.wait(.36)
+		local toward=(botPos()-state().human.position)*Vector3.new(1,0,1)
+		act("Attack",nil,toward.Unit)
+		task.wait(.05)
+		line(string.format("%s toward route: %s",id,tostring(state().human.attackName)))
+		task.wait(pause)
+		-- Heavy.
+		reset(3.4);act("Heavy");task.wait(.05)
+		line(string.format("%s heavy: %s",id,tostring(state().human.attackName)))
+		task.wait(pause)
+		-- Jump + air strike.
+		reset(6);act("Jump");task.wait(.2);act("Attack");task.wait(.05)
+		local s=state()
+		line(string.format("%s air: airborne=%s strike=%s",id,tostring(s.human.airborne),tostring(s.human.attackName)))
+		task.wait(pause)
+		-- Tool.
+		reset(12)
+		local r=act("Tool",botPos())
+		local kinds={}
+		for _=1,8 do task.wait(.05);for _,p in state().projectiles do kinds[p.kind]=true end end
+		local seen={}
+		for k in kinds do table.insert(seen,k) end
+		line(string.format("%s tool: ok=%s reason=%s objects=%s",id,tostring(r.ok),tostring(r.reason),table.concat(seen,"/")))
+		task.wait(pause)
+		-- Techniques.
+		for slot,spec in def.Techniques do
+			local gap=math.clamp((spec.Range or 10)*.45,3.4,14)
+			if spec.Family=="Burst" or spec.Family=="Counter" then gap=math.min(gap,(spec.Radius or 6)-1.5) end
+			reset(math.max(gap,3))
+			local hp0=state().bot.health
+			local tr=act("Technique"..slot,botPos())
+			local most,reaction,objects,hazards=0,nil,0,0
+			for _=1,30 do
+				task.wait(.05)
+				local st=state()
+				most=math.max(most,hp0-st.bot.health)
+				reaction=reaction or st.bot.reaction
+				objects=math.max(objects,#st.projectiles);hazards=math.max(hazards,st.hazards)
+			end
+			line(string.format("%s %s (%s): ok=%s reason=%s damage=%.1f reaction=%s objects=%d zones=%d",id,spec.Id,tostring(spec.Family or "own"),
+				tostring(tr.ok),tostring(tr.reason),most,tostring(reaction),objects,hazards))
+			task.wait(pause)
+		end
+		-- Awakening under the threshold.
+		reset(10)
+		dev:Invoke("health","human",def.Health*.25)
+		local ar=act("Awaken");task.wait(.6)
+		line(string.format("%s awakening: ok=%s reason=%s",id,tostring(ar.ok),tostring(ar.reason)))
+		task.wait(pause)
+		-- AI vs AI to a KO.
+		dev:Invoke("start",id,"Leaf")
+		task.wait(4)
+		dev:Invoke("freezeBot",false);dev:Invoke("scripted",false);dev:Invoke("autopilot",true)
+		local t1=os.clock()
+		local phase
+		repeat task.wait(.5);phase=state().phase until phase~="Duel" or os.clock()-t1&gt;90
+		dev:Invoke("autopilot",false)
+		line(string.format("%s AI duel vs Leaf: phase=%s after %.0f s",id,tostring(phase),os.clock()-t1))
+		local new=#errors-before
+		line(string.format("%s errors during the pass: %d%s",id,new,if new&gt;0 then " • "..errors[before+1] else ""))
+	end
+	conn:Disconnect()
+	return table.concat(report,"\n")
+end
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND53">
+        <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
 -- one rebuilds the duel through Matches:start (fresh actors and epoch, no
@@ -9799,7 +10090,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -9880,7 +10171,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -9922,7 +10213,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -10035,7 +10326,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -10506,7 +10797,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -10831,7 +11122,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -11106,7 +11397,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND59">
+      <Item class="Script" referent="ND60">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -11135,7 +11426,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -11514,7 +11805,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -11781,7 +12072,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -12119,7 +12410,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -12384,7 +12675,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -12860,7 +13151,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -13071,7 +13362,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -13274,7 +13565,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -13763,7 +14054,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -14076,7 +14367,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -15122,7 +15413,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -15222,7 +15513,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -15250,7 +15541,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -15378,7 +15669,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -15429,7 +15720,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -15564,22 +15855,121 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">Wave2Kit</string>
-          <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's server side. Bespoke techniques
--- (only where a family is not enough) register in install(Techniques); the
--- costumes register in dress(dressers, kit) with World's helpers (wear, cyl,
--- face, hairCap, spike, rgb, A, R). Never a condition on a fighter's name in
--- the shared core: hooks and families (Server/Families).
+          <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
+-- Their techniques all run on the shared families; this module dresses them.
+local Base=require(script.Parent.Wave1Kit)
+local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
 local Kit={}
 function Kit.install(Techniques) end
-function Kit.dress(dressers,kit) end
+function Kit.dress(dressers,kit)
+	local wear,face,hairCap,spike,headband,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.headband,kit.rgb,kit.A,kit.R
+	local function sandals(model,def,strap)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		for _,side in {"Left","Right"} do
+			local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=strap end
+			wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		end
+	end
+	local function hideCap(model,color)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=color;cap.Transparency=1 end
+	end
+
+	-- Shisui (13): thick, messy black curls, the Leaf headband, the high-
+	-- collared dark Uchiha shirt with the fan on the back, a short sword
+	-- (tantō) at the small of the back, arm guards.
+	dressers.Shisui=function(model,def)
+		local hair=rgb(24,24,30)
+		local shirt=rgb(40,44,60)
+		local shade=rgb(30,32,44)
+		hideCap(model,hair)
+		face(model,rgb(40,30,30),hair)
+		hairCap(model,hair)
+		for _,s in {{Vector3.new(-.5,.7,-.2),Vector3.new(-.7,.6,-.6)},{Vector3.new(.5,.7,-.2),Vector3.new(.7,.6,-.6)},{Vector3.new(0,.8,.2),Vector3.new(0,1,.2)},
+			{Vector3.new(-.6,.4,.4),Vector3.new(-1,.2,.6)},{Vector3.new(.6,.4,.4),Vector3.new(1,.2,.6)},{Vector3.new(0,.4,.7),Vector3.new(0,0,1)}} do
+			spike(model,s[1],s[2],.8,.5,.46,hair)
+		end
+		headband(model)
+		paint(model,TORSO,shirt);paint(model,ARMS,shirt);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.4,.5,1.18),CFrame.new(0,.82,.02),shirt)
+		-- The Uchiha fan on the back: white handle, red top.
+		wear(model,"UpperTorso","FanRed",Vector3.new(.7,.5,.04),CFrame.new(0,.3,.56),rgb(200,40,40))
+		wear(model,"UpperTorso","FanWhite",Vector3.new(.7,.36,.04),CFrame.new(0,-.1,.56),rgb(240,240,236))
+		wear(model,"UpperTorso","FanHandle",Vector3.new(.14,.5,.04),CFrame.new(0,-.5,.56),rgb(240,240,236))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),rgb(20,22,28))
+		wear(model,"LowerTorso","Tanto",Vector3.new(.16,.16,1.6),CFrame.new(0,.2,.66)*A(0,R(90),R(10)),rgb(30,30,34))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","ArmGuard",Vector3.new(.86,.6,.86),CFrame.new(0,-.16,0),rgb(150,156,164),Enum.Material.Metal)
+			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(30,32,40))
+	end
+
+	-- Orochimaru (12): long straight black hair past the shoulders, pale
+	-- skin, the purple marks round the eyes, a grey-blue genin outfit with a
+	-- purple rope belt, the Leaf headband.
+	dressers.Orochimaru=function(model,def)
+		local hair=rgb(24,24,30)
+		local suit=rgb(70,78,96)
+		local shade=rgb(54,60,76)
+		hideCap(model,hair)
+		face(model,rgb(200,170,60),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.6,.36,.2),CFrame.new(0,.5,-.78),hair)
+		for _,side in {-1,1} do
+			wear(model,"Head","SideHair",Vector3.new(.22,1.8,1.1),CFrame.new(side*.84,-.4,.1),hair)
+			wear(model,"Head","EyeMark",Vector3.new(.3,.12,.03),CFrame.new(side*.26,.12,-.83),rgb(130,80,160))
+		end
+		wear(model,"Head","BackHair",Vector3.new(1.6,2,.3),CFrame.new(0,-.6,.76),hair)
+		headband(model)
+		paint(model,TORSO,suit);paint(model,ARMS,suit);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Robe",Vector3.new(2.1,1.7,1.14),CFrame.new(0,-.02,0),suit)
+		wear(model,"UpperTorso","Lapel",Vector3.new(.5,1.4,.06),CFrame.new(.3,0,-.58)*A(0,0,R(-12)),shade)
+		wear(model,"LowerTorso","Rope",Vector3.new(2.2,.4,1.2),CFrame.new(0,.3,0),rgb(110,70,150))
+		wear(model,"LowerTorso","RopeKnot",Vector3.new(.5,.5,.4),CFrame.new(0,.3,.62),rgb(110,70,150))
+		-- A small white snake curled round the left wrist.
+		wear(model,"LeftLowerArm","WristSnake",Vector3.new(.92,.2,.92),CFrame.new(0,-.36,0),rgb(236,234,228))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.5,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(40,44,52))
+	end
+
+	-- Kabuto (13): grey hair in a short ponytail, round glasses, the purple
+	-- shirt with the white collar, a dark belt with pouches, the Leaf headband.
+	dressers.Kabuto=function(model,def)
+		local hair=rgb(200,200,206)
+		local shirt=rgb(110,84,130)
+		local shade=rgb(84,64,100)
+		hideCap(model,hair)
+		face(model,rgb(40,36,40),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.6,.3,.2),CFrame.new(0,.52,-.78),hair)
+		wear(model,"Head","Tail",Vector3.new(.4,.9,.36),CFrame.new(0,-.4,.86),hair)
+		-- Round glasses: two rims and the bridge.
+		for _,side in {-1,1} do
+			wear(model,"Head","Lens",Vector3.new(.36,.3,.03),CFrame.new(side*.26,.1,-.86),rgb(220,236,240),Enum.Material.Glass)
+			wear(model,"Head","Rim",Vector3.new(.4,.34,.02),CFrame.new(side*.26,.1,-.85),rgb(60,60,66),Enum.Material.Metal)
+		end
+		wear(model,"Head","Bridge",Vector3.new(.16,.04,.03),CFrame.new(0,.14,-.87),rgb(60,60,66),Enum.Material.Metal)
+		headband(model)
+		paint(model,TORSO,shirt);paint(model,ARMS,shirt);paint(model,LEGS,shade)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.5,.32,1.16),CFrame.new(0,.82,0),rgb(236,234,230))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.24,1.06),CFrame.new(0,.34,0),rgb(40,36,44))
+		for _,x in {-.6,.6} do wear(model,"LowerTorso","Pouch",Vector3.new(.4,.4,.2),CFrame.new(x,.2,-.58),rgb(60,54,66)) end
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Wrap",Vector3.new(.86,.4,.86),CFrame.new(0,-.36,0),rgb(220,220,214))
+		end
+		sandals(model,def,rgb(40,36,44))
+	end
+end
 return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's server side. Bespoke techniques
@@ -15594,7 +15984,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -16557,7 +16947,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -16785,21 +17175,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND79">
+  <Item class="StarterPlayer" referent="ND80">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND80">
+    <Item class="StarterPlayerScripts" referent="ND81">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND81">
+      <Item class="Folder" referent="ND82">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND82">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -16929,7 +17319,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -17206,7 +17596,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -17761,7 +18151,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND85">
+        <Item class="LocalScript" referent="ND86">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -17795,7 +18185,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -17945,7 +18335,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -17989,7 +18379,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -19688,7 +20078,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -20210,7 +20600,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -20688,7 +21078,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -20869,7 +21259,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -21609,7 +21999,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -21786,7 +22176,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -21967,7 +22357,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND95">
+        <Item class="LocalScript" referent="ND96">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -22116,7 +22506,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -22374,7 +22764,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -22678,7 +23068,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -23271,7 +23661,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -23873,7 +24263,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -24014,7 +24404,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -26448,7 +26838,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -26485,9 +26875,9 @@ function M.install(FX,kit)
 		local at=if floor then floor.Position+Vector3.new(0,1,0) else position
 		local holder=kit.anchorPart(fx.folder,at)
 		holder.Size=Vector3.new(radius*2,4,radius*2)
-		local e=new("ParticleEmitter",{Texture=TEX.smoke,Rate=60,Lifetime=NumberRange.new(2.5,3.5),Speed=NumberRange.new(.4,1.2),SpreadAngle=Vector2.new(60,60),
+		local e=new("ParticleEmitter",{Texture=TEX.smoke,Rate=22,Lifetime=NumberRange.new(2.5,3.5),Speed=NumberRange.new(.4,1.2),SpreadAngle=Vector2.new(60,60),
 			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(Color3.fromRGB(226,232,238)),LightInfluence=1,
-			Size=num({{0,10},{1,18}}),Transparency=num({{0,1},{.2,.3},{.8,.35},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-8,8)},holder)
+			Size=num({{0,10},{1,18}}),Transparency=num({{0,1},{.2,.55},{.8,.6},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-8,8)},holder)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end
@@ -26505,7 +26895,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -26518,7 +26908,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's own drawing, installed by
@@ -26534,7 +26924,7 @@ return M
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND105">
+  <Item class="Lighting" referent="ND106">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -26552,7 +26942,7 @@ return M
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND106">
+  <Item class="SoundService" referent="ND107">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

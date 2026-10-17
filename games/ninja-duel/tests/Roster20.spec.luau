@@ -124,4 +124,60 @@ test("Kimimaro: bone armour, finger bullets, the Larch leaves the floor spiked",
  assert(spiked,"the Larch left no spikes")
 end)
 
+
+test("Shisui: a cheap body flicker to the flank, a retreat out of reach, a genjutsu that seals",function()
+ if not listed.Flicker then return end
+ local c,a,b=H.duel("Flicker","Leaf");place(c,a,b,14);b.health=999;a.chakra=999
+ local before=b.health
+ assert(press(c,a,slot("Flicker","BodyFlicker"),nil,b.root.Position))
+ local closest=99
+ run(c,.6,function() closest=math.min(closest,flat(a.root.Position-b.root.Position).Magnitude) end)
+ assert(closest<5,"Shisui did not arrive beside the body")
+ assert(b.health<before,"the flicker cut did not land")
+ assert(Fighters.Flicker.Techniques[1].Cost<=10 and Fighters.Flicker.Techniques[1].Cooldown<=2,"the flicker is not cheap")
+ local c2,a2,b2=H.duel("Flicker","Leaf");place(c2,a2,b2,4);a2.chakra=999
+ local from=a2.root.Position
+ assert(press(c2,a2,slot("Flicker","FlickerOut"),nil,b2.root.Position));run(c2,.3)
+ assert((a2.root.Position-from).Magnitude>9,"the retreat did not take him out of reach")
+ local c3,a3,b3=H.duel("Flicker","Leaf");place(c3,a3,b3,4);a3.chakra=999;b3.health=999
+ assert(press(c3,a3,slot("Flicker","ShisuiGenjutsu"),nil,b3.root.Position));run(c3,.5)
+ assert((b3.sealedUntil or 0)>c3.now,"the genjutsu sealed nothing")
+end)
+
+test("Orochimaru: the shadow snake drags the body in (never past him) and poisons; coils hold",function()
+ if not listed.Serpent then return end
+ local c,a,b=H.duel("Serpent","Leaf");place(c,a,b,14);b.health=999;a.chakra=999
+ assert(press(c,a,slot("Serpent","ShadowSnake"),nil,b.root.Position))
+ local nearest=99
+ run(c,1.4,function() nearest=math.min(nearest,flat(b.root.Position-a.root.Position).Magnitude) end)
+ assert(nearest<9,string.format("the body was not dragged in (closest %.1f)",nearest))
+ local look=flat(a.root.CFrame.LookVector).Unit
+ assert(look:Dot(flat(b.root.Position-a.root.Position))>-1,"the snake threw the body behind him")
+ assert((b.poisonedUntil or 0)>0,"no venom")
+ local hp=b.health;run(c,1.5)
+ assert(b.health<hp,"the venom did no damage over time")
+ -- A close body is not thrown behind him.
+ local c2,a2,b2=H.duel("Serpent","Leaf");place(c2,a2,b2,4.5);a2.chakra=999
+ local fwd=flat(b2.root.Position-a2.root.Position).Unit
+ assert(press(c2,a2,slot("Serpent","ShadowSnake"),nil,b2.root.Position))
+ local behind=false
+ run(c2,1,function() if flat(b2.root.Position-a2.root.Position):Dot(fwd)<-1 then behind=true end end)
+ assert(not behind,"a close body was pulled through him")
+end)
+
+test("Kabuto: the scalpel buff cuts (slows) and drains, the tendon cut slows hard, the retreat heals",function()
+ if not listed.Medic then return end
+ local c,a,b=H.duel("Medic","Leaf");place(c,a,b,3.4);a.chakra=999;b.health=999;b.chakra=100
+ assert(press(c,a,slot("Medic","ChakraScalpel")));run(c,.6)
+ place(c,a,b,3.4)
+ b.chakra=50
+ assert(press(c,a,"Attack"));run(c,.25)
+ assert((b.slowUntil or 0)>c.now,"the scalpel did not cut a muscle")
+ assert(b.chakra<50,"the scalpel drained nothing")
+ local c2,a2,b2=H.duel("Medic","Leaf");place(c2,a2,b2,4);a2.chakra=999
+ a2.health=60;a2.hum.Health=60
+ assert(press(c2,a2,slot("Medic","MendingRetreat"),nil,b2.root.Position));run(c2,.3)
+ assert(a2.health>60,"the retreat healed nothing")
+end)
+
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))
