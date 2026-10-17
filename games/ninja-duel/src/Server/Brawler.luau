@@ -1061,8 +1061,14 @@ function Brawler.hit(c,a,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
- Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
+ -- Super armour (Families Heavy buff): a plain hit-stun strike does not stop him.
+ local Families=require(script.Parent.Families)
+ if not (spec.reaction=="HitStun" and Families.withstands(b,c.now,false,spec.damage or 0)) then
+  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
+ end
  Techniques.awakenedReact(c,a,b,p)
+ -- A family strike (Families Strike/Teleport) adds its contact fields.
+ if p.family then Families.strikeHit(c,a,b,p,false) end
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)>=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)

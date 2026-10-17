@@ -327,4 +327,78 @@ return {
 			{ Id = "Cyclone", Name = "Rising Whirlwind", Element = "Wind", Cost = 16, Channel = 0.24, Active = 0.05, Recovery = 0.3, Cooldown = 5.5, Interruptible = true, Range = 34, Damage = 6, Delay = 0.45, Radius = 3.4, Life = 2.2, Lift = 50, Hint = "A whirlwind rises where the opponent stood • keep moving" },
 		},
 	},
+	-- Roster 20 breadth pass (docs/characters/ROSTER_20.md). Tier A fighters
+	-- built on the shared families (Server/Families): data first, bespoke code
+	-- only where a mechanic needs it.
+	-- Hinata at the Chunin Exam (12): the Gentle Fist family (Neji's palms and
+	-- points) in a softer, closer and more defensive hand: Twin Lion Fists
+	-- (her palms bite harder for a while) and a protective trigram sphere.
+	Lavender = {
+		Name = "Hinata", FullName = "Hinata Hyuga", Age = 12, Title = "THE GENTLE HEIRESS", Color = { 176, 150, 226 },
+		Routes = "↑ palm heel under the chin  ·  ↓ low sweep (closes two points)  ·  ←→ circular step onto a point  ·  air: twin palms / descending palm / spinning palm",
+		Description = "The Gentle Fist, closer and softer than Neji's: palms that drain, Twin Lion Fists, a protective sphere of chakra.",
+		Health = 120, Chakra = 120, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.02, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.04,
+		CombatTravel = 1.0, CombatDamage = 0.92, DashScale = 1.0, GuardStrength = 0.12, PreferredRange = 4.5,
+		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 84, Damage = 3, Recover = .85 },
+		Byakugan = { BlindSpot = 0.9 },
+		GentleFist = { Drain = 7, GuardDrain = 3.5, RegenCut = 0.12, MaxPoints = 4, Duration = 4.5 },
+		-- Awakening: Byakugan, full resolve. No blind spot, her palms drain far
+		-- more chakra and her body takes light blows without stopping (Heavy).
+		Awakening = { Name = "BYAKUGAN • RESOLVE", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 2, Buff = { Heavy = true }, Color = { 200, 180, 255 } },
+		Motion = { body = "GentleFist", weapons = "palms", springy = false,
+			-- Her own guard: closer and more closed than Neji's, the lead palm low.
+			stance = {root={y=-.5,pitch=6,yaw=30},torso={pitch=4,yaw=-12},head={pitch=-2,yaw=-18},
+				la={raise=70,out=-14,twist=-40,elbow=40,wrist=-30},ra={raise=40,out=-10,twist=30,elbow=96,wrist=-20},
+				rf={x=.25,z=.7,yaw=40},lf={x=-.1,z=-.72,yaw=-6},breath=1,tempo=6.5} },
+		AttackProfile = {
+			Light1={startup=.9,recovery=.88,travel=1.0,range=6.2,kind="tenketsu",zone="body"},Light2={startup=.92,recovery=.88,travel=1.0,range=6.4,kind="tenketsu"},
+			Light3={startup=.98,recovery=.95,travel=1.04,impulseZ=50,kind="palm"},Heavy={startup=1.0,recovery=1.0,kind="palm"},
+			Launcher={startup=.98,travel=.95,impulseY=54},DashAttack={startup=.94,travel=1.02},
+			Air1={startup=.96},Air2={startup=.98},Slam={startup=1.0},
+		},
+		Skin = { 236, 214, 196 }, Hair = { 40, 36, 70 }, Outfit = { 214, 206, 226 },
+		Techniques = {
+			{ Id = "TwinLionFists", Name = "Twin Lion Fists", Family = "Buff", Cost = 22, Channel = 0.35, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true,
+				Time = 7, Damage = 1.25, Speed = 1.06, Range = 20, Hint = "Chakra lions on both fists: her blows hit harder for 7 s" },
+			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.2, Active = 0.06, Recovery = 0.26, Cooldown = 3.2, Interruptible = true, Flow = true, Range = 28, Speed = 92, Damage = 6, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
+			{ Id = "ProtectiveTrigrams", Name = "Protective Trigrams", Family = "Burst", Kind = "chakra", Cost = 20, Channel = 0.08, Active = 0.3, Recovery = 0.3, Cooldown = 7, Interruptible = false,
+				Radius = 7, Clear = true, Damage = 5, Knock = 34, Lift = 12, Drain = 6, Range = 7, Hint = "A sphere of palms: blades in reach are cut down, a close attacker thrown away and drained" },
+		},
+	},
+	-- Kakashi (the Copy Ninja): the all-rounder who reads and copies. One
+	-- Sharingan (smaller windows than Itachi's), the Lightning Blade, his
+	-- tracking hounds that bind, and a copied Water Dragon.
+	Copycat = {
+		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 14, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
+		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
+		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
+		Health = 135, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
+		CombatTravel = 1.06, CombatDamage = 1.02, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
+		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 92, Damage = 3, Recover = .62 },
+		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
+		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
+		-- fraction of their cost, and his hounds hold half as long again.
+		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
+		Motion = { body = "Mirage", weapons = "kunai", springy = false,
+			-- Slouched and relaxed, one hand low by the holster.
+			stance = {root={y=-.32,pitch=4,yaw=24},torso={pitch=8,yaw=-10},head={pitch=6,yaw=-14},
+				ra={raise=20,out=6,twist=10,elbow=50,wrist=0},la={raise=56,out=-20,twist=-30,elbow=80,wrist=-10},
+				rf={x=.2,z=.55,yaw=30},lf={x=-.1,z=-.55,yaw=-6},breath=.8,tempo=5} },
+		AttackProfile = {
+			Light1={startup=.92,recovery=.92,travel=1.04},Light2={startup=.94,recovery=.9,travel=1.04,kind="kick"},
+			Light3={startup=1.0,recovery=.96,impulseZ=54},Heavy={startup=.98},
+			Launcher={startup=.96,impulseY=56},DashAttack={startup=.92,travel=1.08},Air1={startup=.94},Air2={startup=.94},
+		},
+		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
+		Techniques = {
+			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
+				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
+			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
+				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
+			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+		},
+	},
 }

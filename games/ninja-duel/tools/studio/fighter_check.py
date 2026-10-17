@@ -1,0 +1,217 @@
+"""Native Studio pass for one fighter with real inputs (STUDIO_VALIDATION_RULE).
+
+Needs the Debug place open in Studio with Play running and the MCP bridge
+(mcp_bridge.py) on 127.0.0.1:8765. Starting from the select screen:
+
+  1. picks FIGHTER (left grid) and OPPONENT (right grid) with real mouse
+     clicks on the menu buttons and presses ENTER THE STAGE;
+  2. once the duel runs (bot frozen, health topped up), plays with real keys
+     and clicks: the light string, the toward route, a jump and an air strike,
+     the tool (R), every technique (1..n) at a sensible distance, and the
+     awakening (T, health lowered first);
+  3. records what the human's fighter actually did from the client snapshots
+     and takes a screenshot inside every technique.
+
+  python fighter_check.py FIGHTER [OPPONENT]      (fighter ids: Shared/Fighters)
+
+Prints one line per step (what was played, what the snapshots showed) and
+the screenshot paths. It does not judge looks or feel: look at the shots.
+"""
+import json, sys, time, urllib.request
+
+def post(obj, timeout):
+    req = urllib.request.Request('http://127.0.0.1:8765/call', json.dumps(obj).encode(), {'Content-Type': 'application/json'})
+    return json.loads(urllib.request.urlopen(req, timeout=timeout + 30).read())
+
+SID = json.loads(post({'tool': 'list_roblox_studios', 'args': {}, 'timeout': 20}, 20)['text'])['studios'][0]['id']
+
+def call(name, args, timeout=60, label=None):
+    args = dict(args); args['studio_id'] = SID
+    return post({'tool': name, 'args': args, 'timeout': timeout, 'label': label}, timeout)
+
+def luau(dm, code, timeout=60):
+    return call('execute_luau', {'code': code, 'datamodel_type': dm}, timeout)['text']
+
+def keys(actions): return call('user_keyboard_input', {'datamodel_type': 'Client', 'actions': actions}, 30)['text']
+def mouse(actions): return call('user_mouse_input', {'datamodel_type': 'Client', 'actions': actions}, 30)['text']
+def press(key): return keys([{'action': 'keyPress', 'key_code': key}])
+def click(n=1, gap=260, button='left'):
+    acts = [{'action': 'moveTo', 'x': 960, 'y': 540}]
+    for _ in range(n):
+        acts.append({'action': 'mouseButtonClick', 'mouse_button': button})
+        acts.append({'action': 'wait', 'wait_time_ms': gap})
+    return mouse(acts)
+def shot(label):
+    r = call('screen_capture', {'capture_id': 'ScreenCapture_' + label}, 60, label)
+    return r['images'][0] if r.get('images') else '(no image)'
+
+# The centre of a menu button by its text, inside the left (YOU) or right
+# (OPPONENT) half of the select screen, in screen pixels.
+FIND = '''
+local want,half=%r,%r
+local gui=game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("NinjaDuelHUD")
+if not gui then return "nohud" end
+local best
+for _,b in gui:GetDescendants() do
+	local shown=b:IsA("TextButton") and b.Text==want
+	local up=b
+	while shown and up and up~=gui do
+		if up:IsA("GuiObject") and not up.Visible then shown=false end
+		up=up.Parent
+	end
+	if shown then
+		local p=b.AbsolutePosition+b.AbsoluteSize/2
+		local mid=workspace.CurrentCamera.ViewportSize.X/2
+		if half=="any" or (half=="left" and p.X<mid) or (half=="right" and p.X>mid) then best=p end
+	end
+end
+if not best then return "missing" end
+return string.format("%%d,%%d",math.floor(best.X),math.floor(best.Y))
+'''
+def button(text, half):
+    r = luau('Client', FIND % (text, half))
+    if ',' not in r:
+        raise RuntimeError(f'menu button {text!r} ({half}): {r}')
+    x, y = r.strip().split(',')
+    return int(x), int(y)
+def press_button(text, half='any'):
+    x, y = button(text, half)
+    mouse([{'action': 'moveTo', 'x': x, 'y': y}, {'action': 'wait', 'wait_time_ms': 120},
+           {'action': 'mouseButtonClick', 'mouse_button': 'left'}, {'action': 'wait', 'wait_time_ms': 200}])
+    return x, y
+
+STAGE = '''
+local GAP=%s
+local dev=game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev",10)
+dev:Invoke("autopilot",false);dev:Invoke("freezeBot",true);dev:Invoke("scripted",false);dev:Invoke("refill")
+dev:Invoke("health","human",400);dev:Invoke("health","bot",400)
+dev:Invoke("move","human",Vector3.zero)
+dev:Invoke("place",Vector3.new(0,3,GAP/2),Vector3.new(0,3,-GAP/2))
+task.wait(.5)
+return "staged"
+'''
+RECORD = '''
+local DUR=%s
+local remote=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel"):WaitForChild("Action")
+shared.NdRec={}
+if shared.NdRecConn then shared.NdRecConn:Disconnect() end
+local last
+local conn
+conn=remote.OnClientEvent:Connect(function(data)
+	if type(data)~="table" or not data.human then return end
+	local h=data.human
+	local name=h.attackVariant or h.attackName or (if h.castId and (h.state=="TechniqueChannel" or h.state=="TechniqueActive") then "cast:"..h.castId else nil)
+		or (if h.state=="Rush" or h.state=="Pursuit" or h.state=="Dodging" then h.state else nil)
+		or (if (h.awaken or 0)>0 then "awake" else nil)
+	if name and name~=last then table.insert(shared.NdRec,name) end
+	last=name
+end)
+shared.NdRecConn=conn
+task.delay(DUR,function() conn:Disconnect() end)
+return "rec"
+'''
+INFO = '''
+local id=%r
+local F=require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters)
+local def=F[id]
+if not def then return "unknown" end
+local out={}
+for i,t in def.Techniques do table.insert(out,string.format("%%d|%%s|%%s|%%s",i,t.Id,tostring(t.Range or 10),tostring(t.Family or "-"))) end
+return def.Name.."#"..table.concat(out,";")
+'''
+DUEL = '''
+local dev=game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev",10)
+local s=dev:Invoke("state")
+return tostring(s and s.phase).."|"..tostring(s and s.human and s.human.fighterId).."|"..tostring(s and s.bot and s.bot.fighterId)
+'''
+# Point the mouse at the opponent, as a player does before a jutsu or a
+# throw (keyboard/mouse aim = mouse.Hit, Main.client send).
+AIM = '''
+local me=game:GetService("Players").LocalPlayer
+local folder=me.Character and me.Character.Parent
+local bot=folder and folder:FindFirstChild("AIFighter")
+local root=bot and bot:FindFirstChild("HumanoidRootPart")
+if not root then return "none" end
+local p,on=workspace.CurrentCamera:WorldToViewportPoint(root.Position)
+if not on then return "off" end
+return string.format("%d,%d",math.floor(p.X),math.floor(p.Y))
+'''
+def aim():
+    r = luau('Client', AIM)
+    if ',' in r:
+        x, y = r.strip().split(',')
+        mouse([{'action': 'moveTo', 'x': int(x), 'y': int(y)}, {'action': 'wait', 'wait_time_ms': 80}])
+        return f'aimed {x},{y}'
+    return 'aim ' + r
+def stage(gap): return luau('Server', STAGE % gap)
+def record(dur): return luau('Client', RECORD % dur)
+def recorded(): return luau('Client', 'return table.concat(shared.NdRec or {}," > ")')
+def server(code): return luau('Server', 'local dev=game:GetService("ServerStorage").NinjaDuelDev ' + code)
+EVENTS = 'local s=dev:Invoke("state") local t={} for k,v in s.events or {} do table.insert(t,k.."="..v) end return table.concat(t,",")'
+def events():
+    out = {}
+    for pair in server(EVENTS).strip().split(','):
+        if '=' in pair:
+            k, v = pair.split('='); out[k] = int(float(v))
+    return out
+def delta(before, after):
+    return ', '.join(f'{k}+{after[k]-before.get(k,0)}' for k in sorted(after) if after[k] > before.get(k, 0)) or 'no new event'
+
+def main():
+    fighter = sys.argv[1]
+    opponent = sys.argv[2] if len(sys.argv) > 2 else 'Mirage'
+    info = luau('Server', INFO % fighter)
+    name, techs = info.split('#')
+    oname = luau('Server', INFO % opponent).split('#')[0]
+    techniques = [t.split('|') for t in techs.split(';')] if techs else []
+    out = []
+    # 1. The menu, with the mouse (from the select screen; mid-duel the duel
+    # is restarted through the Debug tools instead, and said so).
+    try:
+        px = press_button(name.upper(), 'left')
+        ox = press_button(oname.upper(), 'right')
+        out.append(f'menu: clicked {name.upper()} at {px}, {oname.upper()} at {ox}')
+        out.append('menu shot: ' + shot(f'{fighter}_menu'))
+        press_button('ENTER THE STAGE', 'right')
+    except RuntimeError as e:
+        out.append(f'menu: not on the select screen ({e}); duel started with the Debug tools')
+        server(f'dev:Invoke("start","{fighter}","{opponent}") return 1')
+    for _ in range(40):
+        phase = luau('Server', DUEL)
+        if phase.startswith('Duel'):
+            break
+        time.sleep(.5)
+    out.append('duel: ' + phase)
+    # Wait out the intro: inputs are refused until it ends.
+    for _ in range(60):
+        r = server('local r=dev:Invoke("act","human","GuardOff") return tostring(type(r)=="table" and r.reason)')
+        if r.strip() != 'Intro':
+            break
+        time.sleep(.3)
+    # 2. Strings.
+    stage(4); record(4); click(3); time.sleep(1.6)
+    out.append('string LMBx3: ' + recorded())
+    stage(4); record(5); click(2); keys([{'action': 'keyDown', 'key_code': 'W'}]); click(1); keys([{'action': 'keyUp', 'key_code': 'W'}]); time.sleep(1.8)
+    out.append('toward route (LMB, LMB, W+LMB): ' + recorded())
+    stage(8); record(3); press('Space'); time.sleep(.18); click(1); time.sleep(1.2)
+    out.append('air (Space, LMB): ' + recorded())
+    stage(12); aim(); before = events(); record(3); press('R'); time.sleep(.3); out.append('tool shot: ' + shot(f'{fighter}_tool')); time.sleep(1)
+    out.append('tool (R): ' + recorded() + '   events: ' + delta(before, events()))
+    # 3. Techniques at a sensible distance.
+    keynames = ['One', 'Two', 'Three', 'Four', 'Five']
+    for slot, tid, rng, family in techniques:
+        gap = max(3.4, min(14.0, float(rng) * .45))
+        stage(round(gap, 1)); aimed = aim(); before = events(); record(4)
+        press(keynames[int(slot) - 1])
+        time.sleep(.45)
+        path = shot(f'{fighter}_{tid}')
+        time.sleep(1.6)
+        out.append(f'technique {slot} {tid} ({family}) at {gap:.1f}: {recorded()}   events: {delta(before, events())}   ({aimed})   shot {path}')
+    # 4. Awakening.
+    stage(10); server('dev:Invoke("health","human",20) return 1'); time.sleep(.3)
+    before = events(); record(3); press('T'); time.sleep(.5)
+    path = shot(f'{fighter}_awaken'); time.sleep(.8)
+    out.append(f'awaken (T): {recorded()}   events: {delta(before, events())}   shot {path}')
+    print('\n'.join(out))
+
+main()

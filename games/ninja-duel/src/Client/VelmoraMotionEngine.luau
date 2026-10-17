@@ -299,7 +299,8 @@ STANCE.Sand={root={y=-.06,pitch=0,yaw=6},torso={pitch=-2,yaw=-2},head={pitch=6,y
 STANCE.Leaf={root={y=-.58,pitch=8,yaw=36},torso={pitch=5,yaw=-16},head={pitch=-4,yaw=-22},
 	la={raise=92,out=-8,twist=-24,elbow=24,wrist=-30},ra={raise=-48,out=-4,twist=96,elbow=68,wrist=0},
 	rf={x=.3,z=.92,yaw=46},lf={x=-.12,z=-.88,yaw=-8},breath=1.5,tempo=8.5}
-local function stance(id) return STANCE[id] or STANCE[familyOf(id).body] or STANCE.Flashstep end
+-- A breadth-pass fighter may carry its own stance in data (Motion.stance).
+local function stance(id) return STANCE[id] or familyOf(id).stance or STANCE[familyOf(id).body] or STANCE.Flashstep end
 -- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
 local SPRINGY={Flashstep=true,Lion=true}
 local function springy(id)
@@ -1385,6 +1386,42 @@ local function castSpec(actor)
 	elseif id=="RasenganShape" then
 		-- (His clone beside him) both hands cupped over his palm, shaping it.
 		return merge(base,{root={y=-.62,pitch=16,yaw=-20},torso={pitch=12,yaw=-14},head={pitch=18,yaw=-10},ra={raise=66,out=-30,twist=40,elbow=80,wrist=-20},la={raise=70,out=-36,twist=-40,elbow=70,wrist=-20}})
+	end
+	-- A family technique (Server/Families) without its own clip: signs while it
+	-- is moulded, then the family's release shape. spec.Pose = {channel=...,
+	-- release=...} (this merge format) overrides either.
+	local spec=techSpec(fighterId,id)
+	if spec.Family then
+		local custom=spec.Pose
+		if state=="TechniqueChannel" then
+			if custom and custom.channel then return merge(base,custom.channel) end
+			return sealPose(base,t,false)
+		end
+		if custom and custom.release then return merge(base,custom.release) end
+		local family=spec.Family
+		if family=="Projectile" then
+			-- Thrust from the shoulder, weight on the front foot.
+			return merge(base,{root={y=-.55,pitch=10,yaw=-14},torso={pitch=6,yaw=-18},head={pitch=4},ra={raise=92,out=8,twist=-60,elbow=6,wrist=-50},
+				la={raise=30,out=24,elbow=60},lf={z=-1.05},rf={z=1.0,yaw=30}})
+		elseif family=="Burst" then
+			-- Low and wide, both arms flung out: the release comes from the body.
+			return merge(base,{root={y=-1.0,pitch=6},torso={pitch=4},head={pitch=-6},ra={raise=70,out=70,twist=0,elbow=14,wrist=-20},
+				la={raise=70,out=70,twist=0,elbow=14,wrist=-20},lf={x=-.35,z=-.6},rf={x=.35,z=.6}})
+		elseif family=="Zone" then
+			-- One palm pressed toward the ground, the other holding the seal.
+			return merge(base,{root={y=-1.15,pitch=24},torso={pitch=18},head={pitch=-14},ra={raise=20,out=10,twist=-40,elbow=20,wrist=-60},
+				la={raise=96,out=-34,twist=30,elbow=140,wrist=10},lf={z=-1.1},rf={z=.9}})
+		elseif family=="Buff" then
+			-- Fists down at the hips, chest up: the chakra rises around him.
+			return merge(base,{root={y=-.7,pitch=-4},torso={pitch=-10},head={pitch=-12},ra={raise=14,out=34,twist=20,elbow=40,wrist=0},
+				la={raise=14,out=34,twist=20,elbow=40,wrist=0},lf={x=-.3,z=-.3},rf={x=.3,z=.3}})
+		elseif family=="Counter" then
+			-- Open guard, hands forward: waiting for the blow.
+			return merge(base,{root={y=-.6,pitch=6},head={pitch=-4},ra={raise=52,out=-12,elbow=70,wrist=-10},la={raise=66,out=-20,elbow=60,wrist=-10}})
+		elseif family=="Teleport" then
+			-- Landed low out of the movement, already turned to the opponent.
+			return merge(base,{root={y=-1.0,pitch=18},torso={pitch=10},head={pitch=-16},ra={raise=50,out=20,elbow=80},la={raise=10,out=24,elbow=20},lf={z=-1.0},rf={z=1.0,yaw=40}})
+		end
 	end
 	return sealPose(base,t,false)
 end

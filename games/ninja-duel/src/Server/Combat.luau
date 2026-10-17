@@ -6,6 +6,9 @@ local World = require(script.Parent.World)
 local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
+-- Reusable technique families and fighter traits (roster breadth pass).
+local Families = require(script.Parent.Families)
+local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
@@ -189,6 +192,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)>self.now then return false end
+	-- A counter stance (Families Counter) answers the blow before any defence.
+	if Families.beforeHit(self,attacker,victim,readEligible) then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	-- A blade is judged from where it came from (a redirected shuriken reaches
 	-- the flank even when the thrower stands in front).
@@ -263,6 +268,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
+		-- Super armour (a Heavy buff): a light blow lands but does not stop him.
+		protected=protected or Families.withstands(victim,self.now,heavy,amount)
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
@@ -273,6 +280,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
 	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	-- Buffs and armour (Families): outgoing and incoming.
+	amount*=Families.damageScale(attacker,victim,self.now)
 	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
 	if (victim.awakenUntil or 0)>self.now and victim.def.Awakening then amount*=1+(victim.def.Awakening.Vulnerability or 0) end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
@@ -285,6 +294,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
+	-- The attacker's on-hit trait (def.OnHit: a drain, a slow).
+	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount>=12
@@ -1155,6 +1166,7 @@ function Combat:updateActor(a,dt)
 		-- Closed chakra points (Gentle Fist) slow the recovery.
 		regen*=Brawler.tenketsuRegen(a,now)
 		if (a.awakenUntil or 0)>now then regen*=a.def.Awakening.Regen or 1 end
+		regen*=Families.regenScale(a,now)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)>now then self:stepRotation(a) end
@@ -1163,8 +1175,9 @@ function Combat:updateActor(a,dt)
 		local rate=if (a.awakenUntil or 0)>now then (a.def.Awakening.ShieldRegen or 1) else 1
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
-	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale)
-	a.speedScale=(if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)
+	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
+	-- x buffs and slows, Families.speedScale)
+	a.speedScale=(if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
@@ -1546,7 +1559,7 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
-	local style=p.style or IMPACT_STYLE[p.kind] or "shuriken"
+	local style=p.style or IMPACT_STYLE[p.kind] or (if Looks[p.kind] then "look" else "shuriken")
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	-- The entry still finishes the blade on the client; it only reads as a body
 	-- hit once the defence has resolved. A blade that was evaded, parried or
@@ -1569,6 +1582,11 @@ function Combat:projectileHit(p,target,position,normal)
 		if self.match.phase~="Duel" then return end
 	end
 	local guarded=target.impactStyle=="block"
+	-- A family object's contact fields (Families.contact): bind, drain, slow...
+	if p.family then
+		Families.projectileHit(self,p,target,damaged,guarded,position)
+		if self.match.phase~="Duel" then return end
+	end
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
 			Techniques.bindInSand(self,p.a,target)
@@ -1613,7 +1631,13 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
+	-- A family object that leaves a zone where it lands (an explosive tag).
+	if p.family and p.family.Zone and hit.Instance.CanCollide then
+		local z=p.family.Zone
+		local h=self:addHazard(p.a,hit.Position+hit.Normal*.6,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
+		h.effects=z;h.look=z.Look or p.kind
+	end
 	local mastery=p.a.def.ToolMastery
 	local target=p.a.target
 	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
@@ -1788,7 +1812,9 @@ function Combat:updateHazards()
 					h.lastHit[target]=self.now
 					self.damageTag="burn"
 					-- Seen burning while the ticks land (snapshot `burning`); still no stun, no hit.
-					if self:chip(h.a,target,h.damage*0.34) then target.burnUntil=self.now+.55 end
+					if h.damage>0 and self:chip(h.a,target,h.damage*0.34) and h.kind=="Fire" then target.burnUntil=self.now+.55 end
+					-- A family zone's riders (Families.zoneTick): slow, drain, seal.
+					if h.effects and target.health>0 then Families.zoneTick(self,h,target) end
 					self.damageTag=nil
 					-- A burn that ends the duel may clear the hazard list (Combat:clear).
 					if self.match.phase~="Duel" then return end

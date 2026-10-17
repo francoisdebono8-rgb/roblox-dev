@@ -230,7 +230,9 @@ function Matches:view(s,cursor,mine,theirs)
 			-- (Lion Combo, a lotus), for its prompt.
 			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now),
 			-- Temari: the open fan holding her up in the air.
-			glide=a.gliding==true}
+			glide=a.gliding==true,
+			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
+			family=require(script.Parent.Families).snapshot(a,now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -246,7 +248,7 @@ function Matches:view(s,cursor,mine,theirs)
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane})
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane,look=h.look})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.

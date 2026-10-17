@@ -923,6 +923,9 @@ local function soften(model)
 		local mesh=Instance.new("SpecialMesh");mesh.MeshType=Enum.MeshType.Head;mesh.Scale=Vector3.new(1.24,1.26,1.24);mesh.Parent=head
 	end
 end
+-- Costumes of the roster breadth pass register here by fighter name, built
+-- from the same helpers (Server/Costumes*: install(dressers, kit)).
+World.dressers={}
 function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
@@ -932,6 +935,8 @@ function World.dress(model,def)
 	if def.Name=="Rock Lee" then dressLee(model,def) end
 	if def.Name=="Naruto" then dressNaruto(model,def) end
 	if def.Name=="Temari" then dressTemari(model,def) end
+	local custom=World.dressers[def.Name]
+	if custom then custom(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -941,6 +946,10 @@ function World.dress(model,def)
 		end
 	end
 end
+-- The breadth-pass costume modules get the costume helpers (no require back
+-- into World: one install line per module).
+local COSTUME_KIT={wear=wear,cyl=cyl,headband=headband,face=face,hairCap=hairCap,spike=spike,rgb=rgb,A=A,R=R}
+require(script.Parent.Costumes).install(World.dressers,COSTUME_KIT)
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end

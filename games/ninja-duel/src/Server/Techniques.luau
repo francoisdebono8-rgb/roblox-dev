@@ -1033,4 +1033,7 @@ require(script.Parent.Legion).install(Techniques)
 -- Temari (roster wave): her kit registers itself (techniques, the fan gust
 -- tool, the updraft payoff, Kamatari, the glide, the wind step).
 require(script.Parent.Gale).install(Techniques)
+-- Roster breadth pass: every technique that names a Family and has no
+-- bespoke entry above runs the family's (Server/Families).
+require(script.Parent.Families).install(Techniques,require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters))
 return Techniques

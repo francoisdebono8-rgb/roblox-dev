@@ -783,11 +783,122 @@ return Controls
 			{ Id = "Cyclone", Name = "Rising Whirlwind", Element = "Wind", Cost = 16, Channel = 0.24, Active = 0.05, Recovery = 0.3, Cooldown = 5.5, Interruptible = true, Range = 34, Damage = 6, Delay = 0.45, Radius = 3.4, Life = 2.2, Lift = 50, Hint = "A whirlwind rises where the opponent stood • keep moving" },
 		},
 	},
+	-- Roster 20 breadth pass (docs/characters/ROSTER_20.md). Tier A fighters
+	-- built on the shared families (Server/Families): data first, bespoke code
+	-- only where a mechanic needs it.
+	-- Hinata at the Chunin Exam (12): the Gentle Fist family (Neji's palms and
+	-- points) in a softer, closer and more defensive hand: Twin Lion Fists
+	-- (her palms bite harder for a while) and a protective trigram sphere.
+	Lavender = {
+		Name = "Hinata", FullName = "Hinata Hyuga", Age = 12, Title = "THE GENTLE HEIRESS", Color = { 176, 150, 226 },
+		Routes = "↑ palm heel under the chin  ·  ↓ low sweep (closes two points)  ·  ←→ circular step onto a point  ·  air: twin palms / descending palm / spinning palm",
+		Description = "The Gentle Fist, closer and softer than Neji's: palms that drain, Twin Lion Fists, a protective sphere of chakra.",
+		Health = 120, Chakra = 120, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.02, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.04,
+		CombatTravel = 1.0, CombatDamage = 0.92, DashScale = 1.0, GuardStrength = 0.12, PreferredRange = 4.5,
+		ComboToolCancel = true, CombatStyle = "GentleFist", Tool = "Kunai",
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 84, Damage = 3, Recover = .85 },
+		Byakugan = { BlindSpot = 0.9 },
+		GentleFist = { Drain = 7, GuardDrain = 3.5, RegenCut = 0.12, MaxPoints = 4, Duration = 4.5 },
+		-- Awakening: Byakugan, full resolve. No blind spot, her palms drain far
+		-- more chakra and her body takes light blows without stopping (Heavy).
+		Awakening = { Name = "BYAKUGAN • RESOLVE", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 2, Buff = { Heavy = true }, Color = { 200, 180, 255 } },
+		Motion = { body = "GentleFist", weapons = "palms", springy = false,
+			-- Her own guard: closer and more closed than Neji's, the lead palm low.
+			stance = {root={y=-.5,pitch=6,yaw=30},torso={pitch=4,yaw=-12},head={pitch=-2,yaw=-18},
+				la={raise=70,out=-14,twist=-40,elbow=40,wrist=-30},ra={raise=40,out=-10,twist=30,elbow=96,wrist=-20},
+				rf={x=.25,z=.7,yaw=40},lf={x=-.1,z=-.72,yaw=-6},breath=1,tempo=6.5} },
+		AttackProfile = {
+			Light1={startup=.9,recovery=.88,travel=1.0,range=6.2,kind="tenketsu",zone="body"},Light2={startup=.92,recovery=.88,travel=1.0,range=6.4,kind="tenketsu"},
+			Light3={startup=.98,recovery=.95,travel=1.04,impulseZ=50,kind="palm"},Heavy={startup=1.0,recovery=1.0,kind="palm"},
+			Launcher={startup=.98,travel=.95,impulseY=54},DashAttack={startup=.94,travel=1.02},
+			Air1={startup=.96},Air2={startup=.98},Slam={startup=1.0},
+		},
+		Skin = { 236, 214, 196 }, Hair = { 40, 36, 70 }, Outfit = { 214, 206, 226 },
+		Techniques = {
+			{ Id = "TwinLionFists", Name = "Twin Lion Fists", Family = "Buff", Cost = 22, Channel = 0.35, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true,
+				Time = 7, Damage = 1.25, Speed = 1.06, Range = 20, Hint = "Chakra lions on both fists: her blows hit harder for 7 s" },
+			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.2, Active = 0.06, Recovery = 0.26, Cooldown = 3.2, Interruptible = true, Flow = true, Range = 28, Speed = 92, Damage = 6, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
+			{ Id = "ProtectiveTrigrams", Name = "Protective Trigrams", Family = "Burst", Kind = "chakra", Cost = 20, Channel = 0.08, Active = 0.3, Recovery = 0.3, Cooldown = 7, Interruptible = false,
+				Radius = 7, Clear = true, Damage = 5, Knock = 34, Lift = 12, Drain = 6, Range = 7, Hint = "A sphere of palms: blades in reach are cut down, a close attacker thrown away and drained" },
+		},
+	},
+	-- Kakashi (the Copy Ninja): the all-rounder who reads and copies. One
+	-- Sharingan (smaller windows than Itachi's), the Lightning Blade, his
+	-- tracking hounds that bind, and a copied Water Dragon.
+	Copycat = {
+		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 14, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
+		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
+		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
+		Health = 135, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
+		CombatTravel = 1.06, CombatDamage = 1.02, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
+		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 92, Damage = 3, Recover = .62 },
+		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
+		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
+		-- fraction of their cost, and his hounds hold half as long again.
+		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
+		Motion = { body = "Mirage", weapons = "kunai", springy = false,
+			-- Slouched and relaxed, one hand low by the holster.
+			stance = {root={y=-.32,pitch=4,yaw=24},torso={pitch=8,yaw=-10},head={pitch=6,yaw=-14},
+				ra={raise=20,out=6,twist=10,elbow=50,wrist=0},la={raise=56,out=-20,twist=-30,elbow=80,wrist=-10},
+				rf={x=.2,z=.55,yaw=30},lf={x=-.1,z=-.55,yaw=-6},breath=.8,tempo=5} },
+		AttackProfile = {
+			Light1={startup=.92,recovery=.92,travel=1.04},Light2={startup=.94,recovery=.9,travel=1.04,kind="kick"},
+			Light3={startup=1.0,recovery=.96,impulseZ=54},Heavy={startup=.98},
+			Launcher={startup=.96,impulseY=56},DashAttack={startup=.92,travel=1.08},Air1={startup=.94},Air2={startup=.94},
+		},
+		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
+		Techniques = {
+			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
+				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
+			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
+				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
+			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+		},
+	},
 }
 </ProtectedString>
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND10">
+        <Properties>
+          <string name="Name">Looks</string>
+          <ProtectedString name="Source">-- How a family object looks (Families.luau, client FamilyFX): one entry per
+-- projectile/zone kind, shared by server (launch point, radius, contact
+-- style) and client (shape, colours, light, trail, contact burst).
+--
+-- shape: orb | needle | blade | wave | beast | serpent | swarm | shadow | boulder
+-- color/color2: core and edge (RGB); size: {width, height, length} in studs;
+-- light: PointLight brightness (0 = none); trail: trail width (0 = none);
+-- hit: contact burst (splash | shatter | burst | smoke | sparks | crush);
+-- zone: how a zone of that kind is drawn (mist | swarm | water | scorch | shadow | spikes).
+local function rgb(r,g,b) return {r,g,b} end
+return {
+	-- Plain moulded chakra: the neutral fallback, never a kunai.
+	chakra={shape="orb",color=rgb(150,210,255),color2=rgb(70,140,255),size={1.2,1.2,1.2},light=2,trail=.8,hit="burst",launch="Palm"},
+	water={shape="orb",color=rgb(150,214,255),color2=rgb(40,120,210),size={1.4,1.4,1.8},light=.6,trail=1,hit="splash",zone="water",launch="Palm"},
+	waterdragon={shape="serpent",color=rgb(120,196,255),color2=rgb(30,96,190),size={2.6,2.6,9},light=1,trail=2.4,hit="splash",zone="water",launch="Fireball",radius=2.4},
+	shark={shape="beast",color=rgb(92,140,196),color2=rgb(222,236,248),size={2.4,2.2,5.4},light=.4,trail=1.8,hit="splash",zone="water",launch="Fireball",radius=2.2},
+	ice={shape="blade",color=rgb(214,240,255),color2=rgb(150,206,240),size={.5,.5,3.2},light=.8,trail=.4,hit="shatter",zone="ice",launch="Palm"},
+	senbon={shape="needle",color=rgb(220,226,236),color2=rgb(170,180,196),size={.08,.08,1.6},light=0,trail=.15,hit="sparks",launch="Shuriken",radius=.45},
+	bone={shape="needle",color=rgb(240,234,214),color2=rgb(208,196,170),size={.22,.22,1.4},light=0,trail=.25,hit="sparks",launch="Palm",radius=.5},
+	shadow={shape="shadow",color=rgb(16,14,22),color2=rgb(40,34,56),size={1.6,.06,1},light=0,trail=0,hit="smoke",zone="shadow",launch="Ground",radius=1.4},
+	insects={shape="swarm",color=rgb(30,32,26),color2=rgb(70,84,50),size={3,2.4,3},light=0,trail=0,hit="smoke",zone="swarm",launch="Palm",radius=1.8},
+	hounds={shape="beast",color=rgb(150,120,90),color2=rgb(60,52,46),size={1.4,1.6,2.8},light=0,trail=.6,hit="crush",launch="Ground",radius=1.6},
+	dog={shape="beast",color=rgb(244,240,230),color2=rgb(200,170,150),size={1.3,1.5,2.4},light=0,trail=.6,hit="crush",launch="Ground",radius=1.5},
+	snakes={shape="serpent",color=rgb(96,70,120),color2=rgb(176,150,96),size={.8,.8,6},light=0,trail=.5,hit="crush",launch="Palm",radius=1},
+	tag={shape="blade",color=rgb(232,222,190),color2=rgb(190,40,36),size={.5,.04,1.1},light=0,trail=.2,hit="burst",zone="scorch",launch="Kunai",radius=.6},
+	mud={shape="wave",color=rgb(120,92,64),color2=rgb(84,64,46),size={6,3,2},light=0,trail=0,hit="crush",zone="mud",launch="Ground",radius=2.4},
+	boulder={shape="boulder",color=rgb(200,150,110),color2=rgb(150,104,72),size={5,5,5},light=0,trail=0,hit="crush",launch="Ground",radius=2.4},
+	-- Zones that are not thrown.
+	mist={shape="orb",color=rgb(226,232,238),color2=rgb(190,200,210),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
+	fist={shape="orb",color=rgb(255,190,190),color2=rgb(255,120,140),size={1.6,1.6,1.6},light=2.5,trail=0,hit="crush",zone="crater"},
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND11">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -970,11 +1081,31 @@ return {
 		blockCancels={Tool=true},
 		reengage={name="gale",reposition=true,keep=17,speed=1.0,reach=22,angle=30,side=10,chase=.26,recovery=.16},
 	},
+	-- Roster 20 breadth pass (Tier A on the shared grammar).
+	Lavender={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		onRoute={Sweep="tenketsu",AirSpike="tenketsu"},
+		heavyAfterOne="PalmThrust",
+		stringCancels={VacuumPalm=true},
+		blockCancels={},
+		-- Gentle and close: down the line, slower than Neji, from very near.
+		reengage={name="palm",speed=.95,arrive=2.8,angle=0,minRange=5,chase=.3,recovery=.2},
+	},
+	Copycat={
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="KneeStrike",
+		stringCancels={LightningBlade=true},
+		blockCancels={Tool=true},
+		-- Measured: a quick re-entry a little off the line.
+		reengage={name="copy",speed=1.1,arrive=3.2,angle=20,chase=.28,recovery=.2},
+	},
 }
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -1000,7 +1131,25 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND13">
+        <Properties>
+          <string name="Name">Roster</string>
+          <ProtectedString name="Source">-- The playable roster, in menu order: the select screen, the AI soaks and the
+-- roster-wide Tier A suite (tests/Roster.spec.luau) all read this list. A
+-- fighter is listed only once it is selectable and plays (Tier A in
+-- docs/characters/ROSTER_20.md); Fighters may hold a definition before that.
+return {
+	-- CORE4 (the first prototypes).
+	"Flashstep","Mirage","GentleFist","Lion",
+	-- The stress-test wave (DEC-015).
+	"Sand","Leaf",
+	-- Roster 20 breadth pass (ROSTER_20.md).
+	"Legion","Gale","Lavender","Copycat",
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND14">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -1043,7 +1192,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND13">
+      <Item class="ModuleScript" referent="ND15">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -2043,17 +2192,17 @@ return table.freeze({
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND14">
+      <Item class="StringValue" referent="ND16">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1448dcf561df29c89421a5a7429a8c46ee5498a1fb65c9fd8678aaedb7f3ac6b</string>
+          <string name="Value">90e8b9ec6b14b3ea6687e8a29dfc64b04a2c21e974178141fa0be19629f38279</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND15">
+      <Item class="Folder" referent="ND17">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND16">
+        <Item class="StringValue" referent="ND18">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -2080,7 +2229,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND17">
+        <Item class="StringValue" referent="ND19">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -2107,7 +2256,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND18">
+        <Item class="StringValue" referent="ND20">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -2137,15 +2286,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND19">
+  <Item class="ServerScriptService" referent="ND21">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND20">
+    <Item class="Folder" referent="ND22">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -2154,6 +2303,30 @@ local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
+-- Family techniques (roster breadth pass): when one is worth using is read
+-- from its family and its own spec.AI band, never from the fighter's name.
+local function familyWants(self,c,a,target,spec,distance,danger)
+	local rule=spec.AI or {}
+	local family=spec.Family
+	local range=spec.Range or 30
+	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
+	local lo,hi,chance
+	if family=="Projectile" then lo,hi,chance=8,math.min(range*.85,40),.45
+	elseif family=="Strike" then lo,hi,chance=3.5,math.min(range,16),if opening then .9 else .3
+	elseif family=="Burst" then lo,hi,chance=0,(spec.Radius or 7)-.5,if danger or target.state=="Rush" then .8 else .25
+	elseif family=="Zone" then
+		if spec.At=="Self" then lo,hi,chance=0,(spec.Radius or 8)+4,.35 else lo,hi,chance=6,math.min(range,34),.35 end
+	elseif family=="Buff" then lo,hi,chance=0,24,.5
+	elseif family=="Teleport" then
+		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
+	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	else return false end
+	lo=rule.Min or lo;hi=rule.Max or hi;chance=rule.Chance or chance
+	if rule.Punish and not opening then return false end
+	if distance&lt;lo or distance&gt;hi then return false end
+	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
+	return self.rng:NextNumber()&lt;chance
+end
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -2725,6 +2898,7 @@ function AI:update(now)
 			if spec.Id=="MassShadowClone" then use=distance&gt;7 and distance&lt;22 and Bodies.count(c,a,"clone")==0 and a.chakra&gt;=70 and self.rng:NextNumber()&lt;.5 end
 			if spec.Id=="CloneRasengan" then use=distance&lt;9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")&gt;0 and self.rng:NextNumber()&lt;.35)) end
+			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
@@ -2769,7 +2943,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND24">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -2875,7 +3049,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND23">
+      <Item class="ModuleScript" referent="ND25">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -2965,7 +3139,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND24">
+      <Item class="ModuleScript" referent="ND26">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -3005,7 +3179,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND25">
+      <Item class="ModuleScript" referent="ND27">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -3430,7 +3604,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND26">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -4496,8 +4670,14 @@ function Brawler.hit(c,a,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
- Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
+ -- Super armour (Families Heavy buff): a plain hit-stun strike does not stop him.
+ local Families=require(script.Parent.Families)
+ if not (spec.reaction=="HitStun" and Families.withstands(b,c.now,false,spec.damage or 0)) then
+  Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
+ end
  Techniques.awakenedReact(c,a,b,p)
+ -- A family strike (Families Strike/Teleport) adds its contact fields.
+ if p.family then Families.strikeHit(c,a,b,p,false) end
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)&gt;=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
@@ -4638,7 +4818,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -4766,7 +4946,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -5808,7 +5988,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -5836,7 +6016,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -5933,7 +6113,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -6132,7 +6312,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -6158,7 +6338,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -6169,6 +6349,9 @@ local World = require(script.Parent.World)
 local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
+-- Reusable technique families and fighter traits (roster breadth pass).
+local Families = require(script.Parent.Families)
+local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
@@ -6352,6 +6535,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)&gt;self.now then return false end
+	-- A counter stance (Families Counter) answers the blow before any defence.
+	if Families.beforeHit(self,attacker,victim,readEligible) then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
 	-- A blade is judged from where it came from (a redirected shuriken reaches
 	-- the flank even when the thrower stands in front).
@@ -6426,6 +6611,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
+		-- Super armour (a Heavy buff): a light blow lands but does not stop him.
+		protected=protected or Families.withstands(victim,self.now,heavy,amount)
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
@@ -6436,6 +6623,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
 	if (attacker.awakenUntil or 0)&gt;self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	-- Buffs and armour (Families): outgoing and incoming.
+	amount*=Families.damageScale(attacker,victim,self.now)
 	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
 	if (victim.awakenUntil or 0)&gt;self.now and victim.def.Awakening then amount*=1+(victim.def.Awakening.Vulnerability or 0) end
 	-- Combo scaling: the opening hits of a combo land in full, every later hit
@@ -6448,6 +6637,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	victim.lastHurt=self.now
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
+	-- The attacker's on-hit trait (def.OnHit: a drain, a slow).
+	Families.afterHit(self,attacker,victim,amount,guarded)
 	-- Studio tooling only: where damage comes from, to tune fight length.
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "other",hits=victim.comboHits}) end
 	victim.impactSerial=(victim.impactSerial or 0)+1; victim.impactHeavy=heavy or amount&gt;=12
@@ -7318,6 +7509,7 @@ function Combat:updateActor(a,dt)
 		-- Closed chakra points (Gentle Fist) slow the recovery.
 		regen*=Brawler.tenketsuRegen(a,now)
 		if (a.awakenUntil or 0)&gt;now then regen*=a.def.Awakening.Regen or 1 end
+		regen*=Families.regenScale(a,now)
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
 	if (a.rotationUntil or 0)&gt;now then self:stepRotation(a) end
@@ -7326,8 +7518,9 @@ function Combat:updateActor(a,dt)
 		local rate=if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.ShieldRegen or 1) else 1
 		a.shieldRegenAt=now+a.def.SandShield.Regen/rate
 	end
-	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale)
-	a.speedScale=(if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)
+	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
+	-- x buffs and slows, Families.speedScale)
+	a.speedScale=(if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
@@ -7709,7 +7902,7 @@ function Combat:igniteBlade(p)
 	return false
 end
 function Combat:projectileHit(p,target,position,normal)
-	local style=p.style or IMPACT_STYLE[p.kind] or "shuriken"
+	local style=p.style or IMPACT_STYLE[p.kind] or (if Looks[p.kind] then "look" else "shuriken")
 	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
 	-- The entry still finishes the blade on the client; it only reads as a body
 	-- hit once the defence has resolved. A blade that was evaded, parried or
@@ -7732,6 +7925,11 @@ function Combat:projectileHit(p,target,position,normal)
 		if self.match.phase~="Duel" then return end
 	end
 	local guarded=target.impactStyle=="block"
+	-- A family object's contact fields (Families.contact): bind, drain, slow...
+	if p.family then
+		Families.projectileHit(self,p,target,damaged,guarded,position)
+		if self.match.phase~="Duel" then return end
+	end
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
 			Techniques.bindInSand(self,p.a,target)
@@ -7776,7 +7974,13 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 end
 function Combat:projectileSurface(p,hit)
-	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" else "stick"
+	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
+	-- A family object that leaves a zone where it lands (an explosive tag).
+	if p.family and p.family.Zone and hit.Instance.CanCollide then
+		local z=p.family.Zone
+		local h=self:addHazard(p.a,hit.Position+hit.Normal*.6,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
+		h.effects=z;h.look=z.Look or p.kind
+	end
 	local mastery=p.a.def.ToolMastery
 	local target=p.a.target
 	-- Itachi's ricochet is decided first: a blade that bounces does not also stay.
@@ -7951,7 +8155,9 @@ function Combat:updateHazards()
 					h.lastHit[target]=self.now
 					self.damageTag="burn"
 					-- Seen burning while the ticks land (snapshot `burning`); still no stun, no hit.
-					if self:chip(h.a,target,h.damage*0.34) then target.burnUntil=self.now+.55 end
+					if h.damage&gt;0 and self:chip(h.a,target,h.damage*0.34) and h.kind=="Fire" then target.burnUntil=self.now+.55 end
+					-- A family zone's riders (Families.zoneTick): slow, drain, seal.
+					if h.effects and target.health&gt;0 then Families.zoneTick(self,h,target) end
 					self.damageTag=nil
 					-- A burn that ends the duel may clear the hazard list (Combat:clear).
 					if self.match.phase~="Duel" then return end
@@ -8021,7 +8227,117 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
+          <string name="Name">Costumes</string>
+          <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
+-- its fighter's Name and is built from World's costume helpers (kit: wear,
+-- cyl, headband, face, hairCap, spike, rgb, A, R). Young fighters (12-14),
+-- practical gear, silhouettes that read at combat distance; flat materials.
+local Costumes={}
+
+function Costumes.install(dressers,kit)
+	local wear,face,hairCap,spike,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.rgb,kit.A,kit.R
+
+	local function paint(model,names,color)
+		for _,name in names do local part=model:FindFirstChild(name);if part then part.Color=color end end
+	end
+	local ARMS={"LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm"}
+	local LEGS={"LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"}
+	local TORSO={"UpperTorso","LowerTorso"}
+	local function sandals(model,def,strap)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		for _,side in {"Left","Right"} do
+			local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=strap end
+			wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		end
+	end
+	Costumes.paint=paint;Costumes.sandals=sandals
+
+	-- Hinata (12): short dark-indigo hair with two long locks framing the face,
+	-- a pale lavender hooded jacket with a fur-trimmed hood down, navy trousers,
+	-- the headband worn round the neck, the Byakugan's pale eyes.
+	dressers.Hinata=function(model,def)
+		local hair=rgb(40,36,70)
+		local jacket=rgb(222,214,236)
+		local jacketShade=rgb(190,180,212)
+		local trousers=rgb(44,48,82)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+		face(model,rgb(214,206,240),hair)
+		for _,p in model:GetChildren() do
+			if p.Name=="Eye" then p.Color=rgb(244,242,252);p.Size=Vector3.new(.32,.2,.04) end
+			if p.Name=="Iris" then p.Material=Enum.Material.Neon;p.Transparency=.35;p.Color=rgb(206,198,240) end
+		end
+		hairCap(model,hair)
+		-- Short cut: a straight fringe and two long locks down to the chin.
+		wear(model,"Head","Fringe",Vector3.new(1.62,.3,.18),CFrame.new(0,.52,-.78),hair)
+		for _,side in {-1,1} do
+			wear(model,"Head","FaceLock",Vector3.new(.2,1.25,.32),CFrame.new(side*.78,-.22,-.5)*A(0,0,R(side*-3)),hair)
+			wear(model,"Head","SideHair",Vector3.new(.18,.9,.9),CFrame.new(side*.82,.02,.2),hair)
+		end
+		wear(model,"Head","BackHair",Vector3.new(1.66,1.1,.28),CFrame.new(0,0,.74),hair)
+		paint(model,TORSO,jacket);paint(model,ARMS,jacket);paint(model,LEGS,trousers)
+		-- The jacket: a zip, a fur trim where the hood falls, cuffs.
+		wear(model,"UpperTorso","Zip",Vector3.new(.06,1.5,.04),CFrame.new(0,-.05,-.53),jacketShade)
+		wear(model,"UpperTorso","HoodDown",Vector3.new(1.5,.5,.6),CFrame.new(0,.7,.42),jacketShade)
+		wear(model,"UpperTorso","FurTrim",Vector3.new(1.56,.2,1.12),CFrame.new(0,.86,0),rgb(238,234,226))
+		wear(model,"LowerTorso","Hem",Vector3.new(2.08,.34,1.1),CFrame.new(0,-.1,0),jacket)
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Cuff",Vector3.new(.86,.2,.86),CFrame.new(0,-.42,0),jacketShade)
+		end
+		-- The Leaf headband round her neck, the plate at her throat.
+		wear(model,"UpperTorso","NeckBand",Vector3.new(1.3,.22,1.0),CFrame.new(0,.98,0),rgb(28,36,58))
+		wear(model,"UpperTorso","NeckPlate",Vector3.new(.66,.24,.06),CFrame.new(0,.98,-.52),rgb(176,184,194),Enum.Material.Metal)
+		sandals(model,def,rgb(40,46,66))
+	end
+
+	-- Kakashi (14, the Copy Ninja): silver hair swept up and to one side, the
+	-- mask over his nose and mouth, the headband slanted over his left eye
+	-- (the Sharingan under it), a green flak vest over navy.
+	dressers.Kakashi=function(model,def)
+		local hair=rgb(214,218,222)
+		local hairShade=rgb(178,184,192)
+		local navy=rgb(40,50,72)
+		local vest=rgb(92,112,70)
+		local vestShade=rgb(70,88,54)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+		face(model,rgb(40,40,44),rgb(150,150,156))
+		hairCap(model,hair)
+		-- The hair rises in a slanted crest toward his right.
+		local spikes={{Vector3.new(0,.8,.1),Vector3.new(.5,1,.2),1.5},{Vector3.new(-.3,.75,.2),Vector3.new(.1,1,.3),1.4},{Vector3.new(.35,.65,.1),Vector3.new(.9,.7,.2),1.3},
+			{Vector3.new(-.55,.55,.2),Vector3.new(-.4,1,.4),1.1},{Vector3.new(0,.5,.6),Vector3.new(.3,.6,1),1.2},{Vector3.new(.55,.35,.3),Vector3.new(1,.25,.4),1.0}}
+		for i,s in spikes do spike(model,s[1],s[2],s[3],.5,.42,if i%2==0 then hairShade else hair) end
+		-- The mask: up over the nose, the mouth hidden.
+		wear(model,"Head","Mask",Vector3.new(1.62,.62,1.62),CFrame.new(0,-.36,-.02),navy)
+		for _,p in model:GetChildren() do if p.Name=="Mouth" then p.Transparency=1 end end
+		-- The headband slanted down over the left eye (+12 degrees of roll lowers
+		-- his left side, -X).
+		local tilt=A(0,0,R(12))
+		wear(model,"Head","Headband",Vector3.new(1.68,.26,1.68),CFrame.new(0,.26,0)*tilt,rgb(28,36,58))
+		wear(model,"Head","HeadbandPlate",Vector3.new(.9,.32,.06),CFrame.new(-.06,.24,-.86)*tilt,rgb(176,184,194),Enum.Material.Metal)
+		wear(model,"Head","LeafMark",Vector3.new(.3,.14,.02),CFrame.new(-.06,.26,-.9)*tilt,rgb(70,78,90),Enum.Material.Metal)
+		wear(model,"Head","EyeCover",Vector3.new(.42,.26,.06),CFrame.new(-.3,.1,-.83),rgb(28,36,58))
+		paint(model,TORSO,navy);paint(model,ARMS,navy);paint(model,LEGS,navy)
+		-- Flak vest with its scroll pouches, the red swirl on the shoulders skipped.
+		wear(model,"UpperTorso","Vest",Vector3.new(2.1,1.62,1.14),CFrame.new(0,-.02,0),vest)
+		wear(model,"UpperTorso","VestCollar",Vector3.new(1.5,.3,1.16),CFrame.new(0,.82,.02),vestShade)
+		for _,x in {-.5,.5} do
+			for k=0,1 do wear(model,"UpperTorso","Pouch",Vector3.new(.42,.36,.12),CFrame.new(x,-.12-k*.42,-.6),vestShade) end
+		end
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),rgb(30,34,46))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Glove",Vector3.new(.84,.4,.84),CFrame.new(0,-.36,0),rgb(30,32,40))
+			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.55,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
+		end
+		wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(30,34,46))
+		sandals(model,def,rgb(40,46,66))
+	end
+end
+return Costumes
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -8063,7 +8379,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -8176,7 +8492,417 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND39">
+        <Properties>
+          <string name="Name">Families</string>
+          <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
+--
+-- A technique that names a `Family` and has no bespoke Techniques.&lt;Id&gt; runs
+-- here, driven by its own spec fields, so a new fighter is data first. The
+-- core reads traits (buffs, on-hit riders, counter stances, zone effects)
+-- through the few hooks below and never by fighter name. Bespoke techniques
+-- (Flying Thunder God, Rotation, the Chidori...) stay in Techniques.
+--
+-- Families (spec.Family):
+--   Projectile  Kind (Looks kind), Speed, Range, Damage, Count, Spread (rad,
+--               whole fan), Radius, Growth, Launch (Combat launch point),
+--               Ground (runs along the floor from the feet), Volley (s between
+--               shots), plus the contact fields.
+--   Strike      Move (Attacks name): a strike started by the jutsu pipeline
+--               (like the Chidori thrust), Damage overrides the move's.
+--   Burst       Radius, Arc (cosine, -1 = all round), Clear (enemy objects
+--               in reach are destroyed), Style (contact style), at his feet.
+--   Zone        At ("Self" | "Aim" | "Target"), Radius, Time, Damage (tick
+--               base), ZoneKind, Slow/Drain/Seal applied per tick.
+--   Buff        Time, Speed, Damage, Armor (share of damage removed), Heavy
+--               (light strikes do not stagger), Regen, Heal (instant).
+--   Teleport    To ("Behind" | "Side" | "Back" | "Aim"), Distance, Move
+--               (strike on arrival), Invuln (s).
+--   Counter     Time (window), Damage, Swap (reappears behind), contact fields:
+--               a melee blow that meets the stance is answered.
+-- Contact fields (Projectile, Strike, Burst, Counter): Knock, Lift, React,
+-- Stun, Bind (s, held), Crush (damage when the bind ends), Drain (chakra
+-- taken), Steal (share of the drain he gains), Slow {Scale, Time}, Seal (s:
+-- techniques sealed), Pull (impulse toward him), Zone (left where it lands).
+local Families={}
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Looks=require(Shared.Looks)
+
+local function brawler() return require(script.Parent.Brawler) end
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function unitOr(v,fallback)
+	if v.Magnitude&gt;.05 then return v.Unit end
+	return fallback
+end
+local function aimOf(a,pending)
+	return pending.aim or (a.target and a.target.root.Position) or a.root.Position+a.root.CFrame.LookVector*20
+end
+Families.flat=flat
+
+-- ----------------------------------------------------------- traits
+-- Active buff on a body (Buff family or an awakening that declares Buff).
+function Families.buff(a,now)
+	local b=a.buff
+	if b and now&lt;b.untilT then return b.spec end
+	if (a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening.Buff then return a.def.Awakening.Buff end
+	return nil
+end
+-- Movement scale: buffs and slows (Combat sets speedScale every frame).
+function Families.speedScale(a,now)
+	local s=1
+	local b=Families.buff(a,now)
+	if b and b.Speed then s*=b.Speed end
+	if (a.slowUntil or 0)&gt;now then s*=a.slowScale or 1 end
+	return s
+end
+function Families.regenScale(a,now)
+	local b=Families.buff(a,now)
+	return (b and b.Regen) or 1
+end
+-- Outgoing and incoming damage: the attacker's buff, the victim's armour.
+function Families.damageScale(attacker,victim,now)
+	local s=1
+	local b=Families.buff(attacker,now)
+	if b and b.Damage then s*=b.Damage end
+	local armor=Families.buff(victim,now)
+	if armor and armor.Armor then s*=1-armor.Armor end
+	if victim.def.Armor then s*=1-victim.def.Armor end
+	return s
+end
+-- Super armour: a light blow lands (damage) but does not stagger or interrupt.
+function Families.withstands(a,now,heavy,amount)
+	if heavy or amount&gt;=12 then return false end
+	local b=Families.buff(a,now)
+	return b~=nil and b.Heavy==true
+end
+
+-- ----------------------------------------------------------- contact
+-- What a family contact does to the body it reached, once the defence has
+-- resolved (damaged: the blow landed; guarded: it met a guard).
+function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
+	if not b or b.health&lt;=0 or c.match.phase~="Duel" then return end
+	local now=c.now
+	local Brawler=brawler()
+	direction=unitOr(flat(direction or (b.root.Position-a.root.Position)),flat(a.root.CFrame.LookVector).Unit)
+	-- Chakra drained, even through a guard (half): insects, Samehada, a palm.
+	if spec.Drain and (damaged or guarded) then
+		local taken=math.min(b.chakra,spec.Drain*(if guarded then .5 else 1))
+		b.chakra-=taken
+		if spec.Steal then a.chakra=math.min(a.def.Chakra or 100,a.chakra+taken*spec.Steal) end
+		if taken&gt;0 then c:pushImpact(b.root.Position,"drain",false,{owner=a.id,victim=b.id,amount=taken}) end
+	end
+	if not damaged or guarded then return end
+	if spec.Slow then
+		b.slowUntil=now+(spec.Slow.Time or 2);b.slowScale=spec.Slow.Scale or .7
+		c:cue(b,"SLOWED",.6)
+	end
+	if spec.Seal then
+		b.sealedUntil=math.max(b.sealedUntil or 0,now+spec.Seal)
+		c:cue(b,"JUTSU SEALED",.8)
+	end
+	if spec.Zone then
+		local z=spec.Zone
+		local h=c:addHazard(a,position or b.root.Position,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
+		h.effects=z
+		h.look=z.Look
+	end
+	if spec.Bind then
+		Families.bind(c,a,b,spec)
+		return
+	end
+	if spec.Pull then
+		Brawler.react(c,b,"Knockback",-direction*spec.Pull+Vector3.yAxis*(spec.Lift or 8),spec.Stun or .45,a)
+	elseif spec.Knock or spec.Lift or spec.React then
+		local kind=spec.React or (if (spec.Lift or 0)&gt;=40 then "Launched" else "Knockback")
+		Brawler.react(c,b,kind,direction*(spec.Knock or 0)+Vector3.yAxis*(spec.Lift or 0),spec.Stun or .5,a)
+		if kind=="Knockback" and (spec.Knock or 0)&gt;=30 then
+			a.pursuitUntil=math.max(a.pursuitUntil or 0,now+.8)
+			c:cue(a,"KNOCK AWAY • E TO CHASE",.7)
+		end
+	end
+end
+-- Held where it stands (shadow, water prison, snakes, hounds): substitution
+-- escapes, as for the Sand Coffin. Crush lands when the hold ends.
+function Families.bind(c,a,b,spec)
+	if b.health&lt;=0 or (b.invulnerableUntil or 0)&gt;c.now then return end
+	local Brawler=brawler()
+	local awake=(a.awakenUntil or 0)&gt;c.now and a.def.Awakening and a.def.Awakening.BindScale or 1
+	local duration=spec.Bind*awake
+	Brawler.react(c,b,"Bound",Vector3.zero,duration,a)
+	b.boundBy=a
+	local name=string.upper(spec.Name or "BOUND")
+	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • X TO ESCAPE",.9)
+	Brawler.event(c,a,"FamilyBind")
+	if spec.Crush then
+		c:schedule(c.now+duration-.05,function()
+			if b.reaction~="Bound" or b.boundBy~=a or a.health&lt;=0 or b.health&lt;=0 then return end
+			b.boundBy=nil
+			c.damageTag=spec.Name or "bind"
+			c:damage(a,b,spec.Crush,true,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" or b.health&lt;=0 then return end
+			Brawler.react(c,b,"Knockdown",Vector3.new(0,16,0),.7,a)
+			c:pushImpact(b.root.Position,"look",true,{owner=a.id,kind=spec.Kind,victim=b.id})
+		end)
+	end
+end
+
+-- ----------------------------------------------------------- families
+local F={}
+F.Projectile={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local aim=aimOf(a,pending)
+		local kind=spec.Kind or "chakra"
+		local look=Looks[kind]
+		local launch=spec.Launch or (look and look.launch) or (if spec.Ground then "Ground" else "Palm")
+		local origin=c.launchPoint(a,launch)
+		local count=spec.Count or 1
+		local fan=spec.Spread or 0
+		local function fire(i)
+			if a.health&lt;=0 or c.match.phase~="Duel" then return end
+			local from=if (spec.Volley or 0)&gt;0 then c.launchPoint(a,launch) else origin
+			local d=aim-from
+			if spec.Ground then d=flat(d) end
+			d=unitOr(d,a.root.CFrame.LookVector)
+			local angle=if count&gt;1 then -fan/2+fan*(i-1)/(count-1) else 0
+			if angle~=0 then d=CFrame.fromAxisAngle(Vector3.yAxis,angle):VectorToWorldSpace(d) end
+			local range=spec.Range or 40
+			local p=c:projectile(a,from+d*range,spec.Speed or 70,range,spec.Damage or 4,kind,nil,{origin=from,radius=spec.Radius or (look and look.radius) or .6,growth=spec.Growth or 0})
+			p.family=spec
+		end
+		for i=1,count do
+			if (spec.Volley or 0)&gt;0 and i&gt;1 then c:schedule(c.now+spec.Volley*(i-1),function() fire(i) end) else fire(i) end
+		end
+		c:cue(a,string.upper(spec.Name),.6)
+	end,
+}
+F.Strike={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local Brawler=brawler()
+		a.stringCancel=nil
+		Brawler.start(c,a,spec.Move or "JutsuStrike")
+		if a.pending then
+			if spec.Damage then a.pending.spec.damage=spec.Damage end
+			a.pending.family=spec
+		end
+		c:pushImpact(a.root.Position,"afterimage",false,{owner=a.id,fighter=a.fighterId})
+		c:cue(a,string.upper(spec.Name),.7)
+	end,
+}
+F.Burst={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local reach=spec.Radius or 7
+		local look=flat(a.root.CFrame.LookVector)
+		look=unitOr(look,Vector3.zAxis)
+		if spec.Clear then
+			for i=#c.projectiles,1,-1 do
+				local p=c.projectiles[i]
+				if p.a~=a and not p.planted and (p.position-a.root.Position).Magnitude&lt;=reach+2 then
+					table.remove(c.projectiles,i)
+					c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
+				end
+			end
+		end
+		local b=a.target
+		if b and b.health&gt;0 then
+			local d=flat(b.root.Position-a.root.Position)
+			local inArc=d.Magnitude&lt;2 or look:Dot(d.Unit)&gt;(spec.Arc or -1)
+			if d.Magnitude&lt;=reach and math.abs(b.root.Position.Y-a.root.Position.Y)&lt;7 and inArc then
+				c.damageTag=spec.Name
+				local hit=c:damage(a,b,spec.Damage or 6,(spec.Damage or 6)&gt;=12,false)
+				c.damageTag=nil
+				if c.match.phase~="Duel" then return end
+				Families.contact(c,a,b,spec,d,hit,hit and b.impactStyle=="block",b.root.Position)
+			end
+		end
+		c:pushImpact(a.root.Position,spec.Style or "look",true,{owner=a.id,kind=spec.Kind,radius=reach,direction=look})
+		c:cue(a,string.upper(spec.Name),.6)
+	end,
+}
+F.Zone={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local at=spec.At or "Aim"
+		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position else aimOf(a,pending)
+		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
+		if floor then position=floor.Position+Vector3.new(0,.5,0) end
+		local h=c:addHazard(a,position,spec.Radius or 8,spec.Time or 4,spec.Damage or 3,spec.ZoneKind or "Fire")
+		h.effects=spec
+		h.look=spec.Kind
+		c:pushImpact(position,"zone",true,{owner=a.id,kind=spec.Kind,radius=spec.Radius or 8,time=spec.Time or 4})
+		c:cue(a,string.upper(spec.Name),.6)
+	end,
+}
+F.Buff={
+	check=function(c,a,spec,now)
+		-- Not while the same buff still runs.
+		return not (a.buff and now&lt;a.buff.untilT and a.buff.spec==spec)
+	end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		a.buff={untilT=c.now+(spec.Time or 5),spec=spec,id=spec.Id}
+		if spec.Heal then
+			a.health=math.min(a.def.Health,a.health+spec.Heal);a.hum.Health=math.max(1,a.health)
+		end
+		c:pushImpact(a.root.Position,"buff",true,{owner=a.id,kind=spec.Kind,technique=spec.Id,time=spec.Time or 5})
+		c:cue(a,string.upper(spec.Name),.8)
+		brawler().event(c,a,"Buff")
+	end,
+}
+F.Teleport={
+	check=function(c,a) return a.target~=nil and a.target.health&gt;0 end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local b=a.target
+		local to=spec.To or "Behind"
+		local d=spec.Distance or 3.2
+		local from=a.root.Position
+		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
+		local destination
+		if to=="Behind" then destination=b.root.Position+line*d
+		elseif to=="Side" then a.teleportSide=-(a.teleportSide or 1);destination=b.root.Position+line:Cross(Vector3.yAxis)*d*a.teleportSide
+		elseif to=="Back" then destination=from-line*d
+		else
+			local aim=aimOf(a,pending)
+			local off=flat(aim-from)
+			destination=from+unitOr(off,line)*math.min(off.Magnitude,d)
+		end
+		destination=Vector3.new(destination.X,from.Y,destination.Z)
+		c:relocate(a,destination)
+		local face=flat(b.root.Position-a.root.Position)
+		if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		a.teleportAt=c.now
+		if spec.Invuln then a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+spec.Invuln) end
+		c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
+		c:cue(a,string.upper(spec.Name),.6)
+		if spec.Move then
+			c:schedule(c.now+.06,function()
+				if a.health&lt;=0 or c.match.phase~="Duel" or a.reaction then return end
+				brawler().start(c,a,spec.Move)
+				if a.pending then
+					if spec.Damage then a.pending.spec.damage=spec.Damage end
+					a.pending.family=spec
+				end
+			end)
+		end
+	end,
+}
+F.Counter={
+	check=function() return true end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		a.counterStance={untilT=c.now+(spec.Time or .8),spec=spec}
+		c:pushImpact(a.root.Position,"stance",false,{owner=a.id,kind=spec.Kind,time=spec.Time or .8})
+		c:cue(a,string.upper(spec.Name),.6)
+	end,
+}
+Families.F=F
+
+-- ----------------------------------------------------------- core hooks
+-- Combat:damage, before any defence: a counter stance answers a melee blow.
+-- Returns true when the blow was taken by the stance.
+function Families.beforeHit(c,attacker,victim,readEligible)
+	local stance=victim.counterStance
+	if not stance or c.now&gt;=stance.untilT or not readEligible then return false end
+	victim.counterStance=nil
+	local spec=stance.spec
+	local Brawler=brawler()
+	if spec.Swap then
+		local line=unitOr(flat(attacker.root.Position-victim.root.Position),flat(victim.root.CFrame.LookVector).Unit)
+		local from=victim.root.Position
+		c:relocate(victim,attacker.root.Position+line*3)
+		victim.root.CFrame=CFrame.lookAt(victim.root.Position,Vector3.new(attacker.root.Position.X,victim.root.Position.Y,attacker.root.Position.Z))
+		c:pushImpact(victim.root.Position,"teleport",false,{owner=victim.id,from=from,to=victim.root.Position,kind=spec.Kind})
+	end
+	attacker.pending=nil
+	c.damageTag=spec.Name
+	local hit=c:damage(victim,attacker,spec.Damage or 8,true,false)
+	c.damageTag=nil
+	if c.match.phase~="Duel" then return true end
+	Families.contact(c,victim,attacker,spec,attacker.root.Position-victim.root.Position,hit,hit and attacker.impactStyle=="block",attacker.root.Position)
+	if hit and not spec.Bind and not spec.Knock and not spec.Lift and not spec.React then
+		Brawler.react(c,attacker,"Knockback",unitOr(flat(attacker.root.Position-victim.root.Position),Vector3.zAxis)*40+Vector3.new(0,14,0),.5,victim)
+	end
+	c:pushImpact(attacker.root.Position,"look",true,{owner=victim.id,kind=spec.Kind,victim=attacker.id})
+	c:cue(victim,string.upper(spec.Name).." • COUNTER",.8)
+	Brawler.event(c,victim,"Counter")
+	return true
+end
+-- Combat:damage, after health was taken: the attacker's on-hit trait
+-- (def.OnHit: Samehada's drain, insects on the body...).
+function Families.afterHit(c,attacker,victim,amount,guarded)
+	local trait=attacker.def.OnHit
+	if not trait or victim.health&lt;=0 or attacker==victim then return end
+	local spec=trait
+	local awake=(attacker.awakenUntil or 0)&gt;c.now and attacker.def.Awakening and attacker.def.Awakening.OnHit
+	if awake then spec=awake end
+	if spec.Drain then
+		local taken=math.min(victim.chakra,spec.Drain*(if guarded then .5 else 1))
+		victim.chakra-=taken
+		if spec.Steal then attacker.chakra=math.min(attacker.def.Chakra or 100,attacker.chakra+taken*spec.Steal) end
+		if spec.Heal and taken&gt;0 then attacker.health=math.min(attacker.def.Health,attacker.health+taken*spec.Heal);attacker.hum.Health=math.max(1,attacker.health) end
+		if taken&gt;0 then c:pushImpact(victim.root.Position,"drain",false,{owner=attacker.id,victim=victim.id,amount=taken}) end
+	end
+	if spec.Slow and not guarded then victim.slowUntil=c.now+(spec.Slow.Time or 1.5);victim.slowScale=spec.Slow.Scale or .8 end
+end
+-- Brawler.hit, after the strike's own reaction: a Strike/Teleport family move
+-- adds its contact fields.
+function Families.strikeHit(c,a,b,p,guarded)
+	local spec=p.family
+	if not spec then return end
+	Families.contact(c,a,b,spec,a.root.CFrame.LookVector,not guarded,guarded,b.root.Position)
+end
+-- Combat:updateHazards, on each tick that reached the body: the zone's riders.
+function Families.zoneTick(c,h,target)
+	local z=h.effects
+	if not z then return end
+	if z.Slow then target.slowUntil=c.now+.6;target.slowScale=z.Slow.Scale or .7 end
+	if z.Drain then
+		local taken=math.min(target.chakra,z.Drain)
+		target.chakra-=taken
+		if z.Steal then h.a.chakra=math.min(h.a.def.Chakra or 100,h.a.chakra+taken*z.Steal) end
+	end
+	if z.Seal then target.sealedUntil=math.max(target.sealedUntil or 0,c.now+z.Seal) end
+end
+-- Projectiles: a family object reports its contact (Combat:projectileHit).
+function Families.projectileHit(c,p,target,damaged,guarded,position)
+	if p.family then Families.contact(c,p.a,target,p.family,p.direction,damaged,guarded,position) end
+end
+-- Techniques: every fighter technique that names a Family and has no bespoke
+-- implementation gets the family's.
+function Families.install(Techniques,Fighters)
+	for _,def in Fighters do
+		for _,spec in def.Techniques or {} do
+			if spec.Family and not Techniques[spec.Id] then
+				local family=F[spec.Family]
+				assert(family,"Unknown technique family "..tostring(spec.Family).." for "..tostring(spec.Id))
+				Techniques[spec.Id]=family
+			end
+		end
+	end
+end
+-- Snapshot: what a body carries from the families (client auras, HUD).
+function Families.snapshot(a,now)
+	local b=a.buff
+	return {
+		buff=if b and now&lt;b.untilT then b.id else nil,
+		buffLeft=if b and now&lt;b.untilT then b.untilT-now else 0,
+		stance=if a.counterStance and now&lt;a.counterStance.untilT then a.counterStance.spec.Id else nil,
+		slowed=math.max(0,(a.slowUntil or 0)-now),
+	}
+end
+return Families
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -8501,7 +9227,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -8776,7 +9502,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND38">
+      <Item class="Script" referent="ND42">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -8804,7 +9530,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -9039,7 +9765,9 @@ function Matches:view(s,cursor,mine,theirs)
 			-- (Lion Combo, a lotus), for its prompt.
 			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now),
 			-- Temari: the open fan holding her up in the air.
-			glide=a.gliding==true}
+			glide=a.gliding==true,
+			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
+			family=require(script.Parent.Families).snapshot(a,now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -9055,7 +9783,7 @@ function Matches:view(s,cursor,mine,theirs)
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane})
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane,look=h.look})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.
@@ -9181,7 +9909,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -9448,7 +10176,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -9786,7 +10514,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -10051,7 +10779,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -10527,7 +11255,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -10738,7 +11466,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -10941,7 +11669,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -11430,7 +12158,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -11743,7 +12471,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -12781,11 +13509,14 @@ require(script.Parent.Legion).install(Techniques)
 -- Temari (roster wave): her kit registers itself (techniques, the fan gust
 -- tool, the updraft payoff, Kamatari, the glide, the wind step).
 require(script.Parent.Gale).install(Techniques)
+-- Roster breadth pass: every technique that names a Family and has no
+-- bespoke entry above runs the family's (Server/Families).
+require(script.Parent.Families).install(Techniques,require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters))
 return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -12885,7 +13616,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -12913,7 +13644,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -13041,7 +13772,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -13092,7 +13823,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -14020,6 +14751,9 @@ local function soften(model)
 		local mesh=Instance.new("SpecialMesh");mesh.MeshType=Enum.MeshType.Head;mesh.Scale=Vector3.new(1.24,1.26,1.24);mesh.Parent=head
 	end
 end
+-- Costumes of the roster breadth pass register here by fighter name, built
+-- from the same helpers (Server/Costumes*: install(dressers, kit)).
+World.dressers={}
 function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
@@ -14029,6 +14763,8 @@ function World.dress(model,def)
 	if def.Name=="Rock Lee" then dressLee(model,def) end
 	if def.Name=="Naruto" then dressNaruto(model,def) end
 	if def.Name=="Temari" then dressTemari(model,def) end
+	local custom=World.dressers[def.Name]
+	if custom then custom(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -14038,6 +14774,10 @@ function World.dress(model,def)
 		end
 	end
 end
+-- The breadth-pass costume modules get the costume helpers (no require back
+-- into World: one install line per module).
+local COSTUME_KIT={wear=wear,cyl=cyl,headband=headband,face=face,hairCap=hairCap,spike=spike,rgb=rgb,A=A,R=R}
+require(script.Parent.Costumes).install(World.dressers,COSTUME_KIT)
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end
@@ -14045,7 +14785,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -14273,21 +15013,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND55">
+  <Item class="StarterPlayer" referent="ND59">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND56">
+    <Item class="StarterPlayerScripts" referent="ND60">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND57">
+      <Item class="Folder" referent="ND61">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND58">
+        <Item class="ModuleScript" referent="ND62">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -14417,7 +15157,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND59">
+        <Item class="ModuleScript" referent="ND63">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -14694,7 +15434,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND60">
+        <Item class="ModuleScript" referent="ND64">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -15249,7 +15989,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND61">
+        <Item class="ModuleScript" referent="ND65">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -16566,6 +17306,13 @@ function FX:hazardsStep(data)
 		local key=string.format("%s:%.1f:%.1f:%.1f",tostring(h.kind),h.position.X,h.position.Y,h.position.Z)
 		live[key]=true
 		local entry=self.hazards[key]
+		-- A family zone (mist, insects, water, shadow...) has its own ground
+		-- look (FamilyFX); every other hazard is fire.
+		if not entry and h.look and FX.hazardBuild then
+			entry=FX.hazardBuild(self,h)
+			if entry then self.hazards[key]=entry end
+		end
+		if entry and entry.family then continue end
 		if not entry then
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
@@ -16585,7 +17332,9 @@ function FX:hazardsStep(data)
 		entry.emitter.Rate=(if h.remaining&lt;.4 then 25 else 60)*scale
 	end
 	for key,entry in self.hazards do
-		if not live[key] then
+		if not live[key] and entry.family then
+			FX.hazardFinish(entry);self.hazards[key]=nil
+		elseif not live[key] then
 			entry.emitter.Enabled=false;tween(entry.light,.3,{Brightness=0})
 			Debris:AddItem(entry.holder,1);self.hazards[key]=nil
 		end
@@ -16920,6 +17669,10 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Family objects of the roster breadth pass (Shared/Looks): every kind gets
+-- its own model, flight, contact and ground look; buffs and slows on bodies.
+require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
@@ -16930,7 +17683,412 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND62">
+        <Item class="ModuleScript" referent="ND66">
+          <Properties>
+            <string name="Name">FamilyFX</string>
+            <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
+-- Shared/Looks gets a real model (never the kunai fallback), its flight pose,
+-- its contact burst and, for zones, a ground look; buffs, counter stances,
+-- drains and slows show on the bodies. Installed by Effects like SandFX.
+local Debris=game:GetService("Debris")
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Looks=require(Shared.Looks)
+local Fighters=require(Shared.Fighters)
+local FamilyFX={}
+-- Studio/test switch: drawing errors surface instead of being swallowed.
+FamilyFX.strict=false
+
+local function c3(t) return Color3.fromRGB(t[1],t[2],t[3]) end
+
+function FamilyFX.install(FX,kit)
+	local new,block,tween,sound,flash,shockRing,burst,smokePuff,sparks=kit.new,kit.block,kit.tween,kit.sound,kit.flash,kit.shockRing,kit.burst,kit.smokePuff,kit.sparks
+	local num,seq,TEX,SOUND,BUILD,weldAll,floorUnder,anchorPart=kit.num,kit.seq,kit.TEX,kit.SOUND,kit.BUILD,kit.weldAll,kit.floorUnder,kit.anchorPart
+
+	local function ball(model,size,cf,color,material,transparency)
+		local p=block(model,size,cf,color,material or Enum.Material.SmoothPlastic)
+		p.Shape=Enum.PartType.Ball;p.Transparency=transparency or 0
+		return p
+	end
+	local function trail(root,width,color,lifetime)
+		if width&lt;=0 then return end
+		local a0=new("Attachment",{Position=Vector3.new(0,width*.5,.2)},root)
+		local a1=new("Attachment",{Position=Vector3.new(0,-width*.5,.2)},root)
+		new("Trail",{Attachment0=a0,Attachment1=a1,Color=ColorSequence.new(color),Lifetime=lifetime or .18,LightEmission=.4,
+			Transparency=num({{0,.35},{1,1}}),WidthScale=num({{0,1},{1,.2}}),FaceCamera=true},root)
+	end
+	local function glow(root,color,brightness,range)
+		if brightness&gt;0 then new("PointLight",{Color=color,Brightness=brightness,Range=range or 9,Shadows=false},root) end
+	end
+	local function spray(root,color,rate,size,speed)
+		local at=new("Attachment",{},root)
+		return new("ParticleEmitter",{Texture=TEX.smoke,Rate=rate,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(speed or 2,(speed or 2)*2),
+			SpreadAngle=Vector2.new(40,40),EmissionDirection=Enum.NormalId.Back,Color=ColorSequence.new(color),LightInfluence=.4,
+			Size=num({{0,size},{1,size*2.4}}),Transparency=num({{0,.35},{1,1}}),Drag=4,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-60,60)},at)
+	end
+
+	-- One builder per shape. Every model is welded to an anchored root that the
+	-- flight pose moves; sizes come from the look ({width, height, length}).
+	local SHAPES={}
+	SHAPES.orb=function(look)
+		local m=new("Model",{Name="FamilyOrb"})
+		local s=look.size
+		local core=ball(m,Vector3.new(s[1]*.55,s[2]*.55,s[3]*.55),CFrame.new(),c3(look.color2),Enum.Material.Neon,.05)
+		local shell=ball(m,Vector3.new(s[1],s[2],s[3]),CFrame.new(),c3(look.color),Enum.Material.Glass,.45)
+		weldAll(core,{shell});m.PrimaryPart=core
+		glow(core,c3(look.color),look.light)
+		trail(core,look.trail,c3(look.color))
+		spray(core,c3(look.color),30,s[1]*.35)
+		return m
+	end
+	SHAPES.needle=function(look)
+		local m=new("Model",{Name="FamilyNeedle"})
+		local s=look.size
+		local shaft=block(m,Vector3.new(s[1],s[2],s[3]),CFrame.new(),c3(look.color),Enum.Material.Metal)
+		local tip=block(m,Vector3.new(s[1]*.6,s[2]*.6,s[3]*.25),CFrame.new(0,0,-s[3]*.6),c3(look.color2),Enum.Material.Metal)
+		weldAll(shaft,{tip});m.PrimaryPart=shaft
+		trail(shaft,math.max(look.trail,.08),c3(look.color),.08)
+		return m
+	end
+	SHAPES.blade=function(look)
+		local m=new("Model",{Name="FamilyBlade"})
+		local s=look.size
+		local glass=look.hit=="shatter"
+		local body=block(m,Vector3.new(s[1],s[2],s[3]),CFrame.new(),c3(look.color),if glass then Enum.Material.Glass else Enum.Material.SmoothPlastic)
+		body.Transparency=if glass then .25 else 0
+		local edge=block(m,Vector3.new(s[1]*.5,s[2]*.5,s[3]*.4),CFrame.new(0,0,-s[3]*.55),c3(look.color2),if glass then Enum.Material.Ice else Enum.Material.SmoothPlastic,"WedgePart")
+		edge.CFrame=CFrame.new(0,0,-s[3]*.6)*CFrame.Angles(math.rad(90),0,0)
+		weldAll(body,{edge});m.PrimaryPart=body
+		glow(body,c3(look.color),look.light,6)
+		trail(body,math.max(look.trail,.1),c3(look.color),.12)
+		return m
+	end
+	SHAPES.wave=function(look)
+		local m=new("Model",{Name="FamilyWave"})
+		local s=look.size
+		local root=block(m,Vector3.new(s[1]*.4,s[2]*.4,s[3]*.4),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		root.Transparency=1
+		local parts={}
+		for i=-2,2 do
+			local h=s[2]*(1-math.abs(i)*.18)
+			local p=ball(m,Vector3.new(s[1]*.32,h,s[3]),CFrame.new(i*s[1]*.18,h*.5-s[2]*.2,math.abs(i)*.35),c3(if math.abs(i)==2 then look.color2 else look.color),Enum.Material.Slate)
+			table.insert(parts,p)
+		end
+		weldAll(root,parts);m.PrimaryPart=root
+		local e=spray(root,c3(look.color),50,s[1]*.25,4)
+		e.EmissionDirection=Enum.NormalId.Top
+		return m
+	end
+	SHAPES.beast=function(look)
+		-- A running creature read from its silhouette: body, head, snout, tail
+		-- and (for a shark) a dorsal fin; pale belly in color2.
+		local m=new("Model",{Name="FamilyBeast"})
+		local s=look.size
+		local body=ball(m,Vector3.new(s[1],s[2]*.8,s[3]*.7),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		local belly=ball(m,Vector3.new(s[1]*.8,s[2]*.45,s[3]*.6),CFrame.new(0,-s[2]*.2,0),c3(look.color2),Enum.Material.SmoothPlastic)
+		local head=ball(m,Vector3.new(s[1]*.75,s[2]*.65,s[3]*.38),CFrame.new(0,s[2]*.12,-s[3]*.42),c3(look.color),Enum.Material.SmoothPlastic)
+		local snout=ball(m,Vector3.new(s[1]*.45,s[2]*.35,s[3]*.22),CFrame.new(0,0,-s[3]*.6),c3(look.color2),Enum.Material.SmoothPlastic)
+		local tail=block(m,Vector3.new(s[1]*.15,s[2]*.5,s[3]*.35),CFrame.new(0,s[2]*.15,s[3]*.5)*CFrame.Angles(math.rad(-30),0,0),c3(look.color),Enum.Material.SmoothPlastic,"WedgePart")
+		local parts={belly,head,snout,tail}
+		if look.zone=="water" then
+			table.insert(parts,block(m,Vector3.new(s[1]*.12,s[2]*.6,s[3]*.3),CFrame.new(0,s[2]*.55,0)*CFrame.Angles(0,math.pi,0),c3(look.color),Enum.Material.SmoothPlastic,"WedgePart"))
+		else
+			for _,side in {-1,1} do
+				table.insert(parts,block(m,Vector3.new(s[1]*.18,s[2]*.32,s[3]*.12),CFrame.new(side*s[1]*.26,s[2]*.42,-s[3]*.42),c3(look.color2),Enum.Material.SmoothPlastic,"WedgePart"))
+			end
+		end
+		for _,side in {-1,1} do
+			table.insert(parts,ball(m,Vector3.new(s[1]*.1,s[1]*.1,s[1]*.06),CFrame.new(side*s[1]*.22,s[2]*.22,-s[3]*.58),Color3.fromRGB(20,18,22),Enum.Material.SmoothPlastic))
+		end
+		weldAll(body,parts);m.PrimaryPart=body
+		trail(body,look.trail,c3(look.color),.2)
+		if look.zone=="water" then spray(body,c3(look.color),40,s[1]*.4,3) else spray(body,Color3.fromRGB(150,130,110),14,s[1]*.3,2) end
+		return m
+	end
+	SHAPES.serpent=function(look)
+		local m=new("Model",{Name="FamilySerpent"})
+		local s=look.size
+		local head=ball(m,Vector3.new(s[1]*1.3,s[2]*1.1,s[1]*1.8),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		local parts={}
+		-- Segments are posed every frame along the path behind the head.
+		for i=1,6 do
+			local w=s[1]*(1-i*.11)
+			local seg=ball(m,Vector3.new(w,w,w*1.6),CFrame.new(0,0,i*s[3]/7),c3(if i%2==0 then look.color2 else look.color),Enum.Material.SmoothPlastic)
+			seg.Name="Segment"..i;seg.Anchored=true
+			table.insert(parts,seg)
+		end
+		for _,side in {-1,1} do
+			local eye=ball(m,Vector3.new(s[1]*.22,s[1]*.22,s[1]*.12),CFrame.new(side*s[1]*.4,s[2]*.25,-s[1]*.6),Color3.fromRGB(250,220,80),Enum.Material.Neon)
+			eye.Anchored=false;eye.Massless=true
+			new("WeldConstraint",{Part0=head,Part1=eye},head)
+		end
+		m.PrimaryPart=head
+		glow(head,c3(look.color),look.light)
+		if look.zone=="water" then spray(head,c3(look.color),50,s[1]*.5,4) end
+		return m
+	end
+	SHAPES.swarm=function(look)
+		local m=new("Model",{Name="FamilySwarm"})
+		local s=look.size
+		local root=block(m,Vector3.new(.4,.4,.4),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		root.Transparency=1
+		local at=new("Attachment",{},root)
+		new("ParticleEmitter",{Texture=TEX.spark,Rate=180,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(2,5),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(c3(look.color),c3(look.color2)),LightEmission=0,LightInfluence=1,Size=num({{0,.22},{1,.12}}),
+			Transparency=num({{0,0},{1,.6}}),Acceleration=Vector3.zero,Drag=2,Shape=Enum.ParticleEmitterShape.Sphere},at).ShapeStyle=Enum.ParticleEmitterShapeStyle.Volume
+		local cloud=new("ParticleEmitter",{Texture=TEX.smoke,Rate=24,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(1,2),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(c3(look.color)),LightInfluence=1,Size=num({{0,s[1]*.5},{1,s[1]*.9}}),Transparency=num({{0,.6},{1,1}})},at)
+		cloud.Name="Cloud"
+		m.PrimaryPart=root
+		return m
+	end
+	SHAPES.shadow=function(look)
+		-- A flat dark tongue running over the floor: its tip is the object, the
+		-- strip back to where it left is a beam laid on the ground.
+		local m=new("Model",{Name="FamilyShadow"})
+		local s=look.size
+		local tip=block(m,Vector3.new(s[1],s[2],s[1]*1.4),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		tip.Shape=Enum.PartType.Cylinder;tip.Size=Vector3.new(s[2],s[1]*1.2,s[1]*1.2)
+		tip.Transparency=.1
+		m.PrimaryPart=tip
+		return m
+	end
+	SHAPES.boulder=function(look)
+		local m=new("Model",{Name="FamilyBoulder"})
+		local s=look.size
+		local body=ball(m,Vector3.new(s[1],s[2],s[3]),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
+		local band=block(m,Vector3.new(s[1]*1.02,s[2]*.2,s[3]*1.02),CFrame.new(),c3(look.color2),Enum.Material.SmoothPlastic)
+		band.Shape=Enum.PartType.Cylinder;band.Size=Vector3.new(s[2]*.22,s[1]*1.02,s[3]*1.02)
+		weldAll(body,{band});m.PrimaryPart=body
+		spray(body,Color3.fromRGB(170,150,120),30,s[1]*.3,3)
+		return m
+	end
+	FamilyFX.SHAPES=SHAPES
+
+	for kind,look in Looks do
+		if not BUILD[kind] and SHAPES[look.shape] then
+			BUILD[kind]=function() return SHAPES[look.shape](look) end
+		end
+	end
+
+	-- Flight poses (FX.poses): orient, roll and animate by shape.
+	for kind,look in Looks do
+		if FX.poses[kind] then continue end
+		local shape=look.shape
+		if shape=="needle" or shape=="blade" then
+			FX.poses[kind]=function(_,entry,p,age,cf,dt)
+				entry.spin+=dt*(if shape=="needle" then 6 else 2)
+				return cf*CFrame.Angles(0,0,entry.spin)
+			end
+		elseif shape=="beast" then
+			FX.poses[kind]=function(_,entry,p,age,cf)
+				local bob=math.abs(math.sin(age*14))*.5
+				local flatLook=Vector3.new(p.direction.X,0,p.direction.Z)
+				local at=cf.Position+Vector3.new(0,bob,0)
+				return if flatLook.Magnitude&gt;.05 then CFrame.lookAt(at,at+flatLook) else cf
+			end
+		elseif shape=="serpent" then
+			FX.poses[kind]=function(_,entry,p,age,cf)
+				local back=-p.direction
+				local side=p.direction:Cross(Vector3.yAxis)
+				side=if side.Magnitude&gt;.05 then side.Unit else Vector3.xAxis
+				local length=look.size[3]
+				for i=1,6 do
+					local seg=entry.model:FindFirstChild("Segment"..i)
+					if seg then
+						local d=i*length/7
+						local wave=math.sin(age*12-i*.9)*look.size[1]*.6
+						local at=cf.Position+back*d+side*wave
+						seg.CFrame=CFrame.lookAt(at,at-back)
+					end
+				end
+				return cf*CFrame.new(math.sin(age*12)*look.size[1]*.3,0,0)
+			end
+		elseif shape=="swarm" then
+			FX.poses[kind]=function(_,entry,p,age,cf)
+				return cf*CFrame.new(math.sin(age*9)*.4,math.cos(age*7)*.3,0)
+			end
+		elseif shape=="shadow" then
+			FX.poses[kind]=function(fx,entry,p,age,cf)
+				-- Laid on the floor under the flight line; the strip follows.
+				local floor=floorUnder(fx,cf.Position,3,10)
+				local at=if floor then floor.Position+Vector3.new(0,.04,0) else cf.Position
+				if not entry.strip then
+					local start=anchorPart(entry.model,if floor then Vector3.new(p.origin.X,at.Y,p.origin.Z) else p.origin)
+					local a0=new("Attachment",{CFrame=CFrame.Angles(0,0,math.rad(90))},start)
+					local a1=new("Attachment",{CFrame=CFrame.Angles(0,0,math.rad(90))},entry.root)
+					entry.strip=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=look.size[1]*.7,Width1=look.size[1]*1.1,Color=ColorSequence.new(c3(look.color)),
+						Transparency=num({{0,.25},{1,.05}}),FaceCamera=false,LightInfluence=1,Segments=1},entry.root)
+				end
+				return CFrame.new(at)*CFrame.Angles(0,0,math.rad(90))
+			end
+		elseif shape=="boulder" then
+			FX.poses[kind]=function(_,entry,p,age,cf,dt)
+				entry.spin+=dt*10
+				return cf*CFrame.Angles(-entry.spin,0,0)
+			end
+		end
+	end
+
+	-- Contact bursts by look.
+	local function hit(fx,look,position,heavy,normal)
+		local color,edge=c3(look.color),c3(look.color2)
+		local kind=look.hit
+		local scale=if heavy then 1.4 else 1
+		if kind=="splash" then
+			burst(fx.folder,position,{Texture=TEX.smoke,Lifetime=NumberRange.new(.35,.7),Speed=NumberRange.new(12,22),SpreadAngle=Vector2.new(70,70),
+				EmissionDirection=Enum.NormalId.Top,Acceleration=Vector3.new(0,-50,0),Color=seq({{0,Color3.fromRGB(235,248,255)},{1,color}}),LightEmission=.2,
+				Size=num({{0,.9*scale},{1,2.2*scale}}),Transparency=num({{0,.1},{1,1}}),Drag=2},28)
+			shockRing(fx.folder,position-Vector3.new(0,1.5,0),edge,2,9*scale,.35)
+			sound(anchorPart(fx.folder,position),SOUND.land,.5,.7)
+		elseif kind=="shatter" then
+			burst(fx.folder,position,{Texture=TEX.spark,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(14,26),SpreadAngle=Vector2.new(180,180),
+				Acceleration=Vector3.new(0,-40,0),Color=ColorSequence.new(color),LightEmission=.6,Size=num({{0,.6},{1,.1}}),Drag=3},24)
+			flash(fx.folder,position,color,.6,3*scale,.18,.3)
+		elseif kind=="sparks" then
+			sparks(fx.folder,position,edge,10,16)
+		elseif kind=="smoke" then
+			smokePuff(fx.folder,position,color,16,1.8*scale)
+		elseif kind=="crush" then
+			smokePuff(fx.folder,position-Vector3.new(0,1.5,0),Color3.fromRGB(176,160,138),18,2.2*scale)
+			shockRing(fx.folder,position-Vector3.new(0,2,0),edge,2,10*scale,.4)
+			sound(anchorPart(fx.folder,position),SOUND.heavy,.5,.9)
+		else
+			flash(fx.folder,position,color,.8,4*scale,.2,.2)
+			burst(fx.folder,position,{Texture=TEX.spark,Lifetime=NumberRange.new(.2,.4),Speed=NumberRange.new(10,20),SpreadAngle=Vector2.new(180,180),
+				Color=ColorSequence.new(edge),LightEmission=1,Size=num({{0,.6},{1,0}}),Drag=4},16)
+		end
+	end
+
+	-- Zones on the ground (hazards with a look): drawn while they last.
+	local ZONES={}
+	ZONES.mist=function(holder,h,look)
+		return new("ParticleEmitter",{Texture=TEX.smoke,Rate=26,Lifetime=NumberRange.new(2.4,3.6),Speed=NumberRange.new(.5,1.5),SpreadAngle=Vector2.new(30,30),
+			EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(c3(look.color)),LightInfluence=1,
+			Size=num({{0,8},{1,14}}),Transparency=num({{0,1},{.25,.45},{.75,.5},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-10,10)},holder)
+	end
+	ZONES.swarm=function(holder,h,look)
+		return new("ParticleEmitter",{Texture=TEX.spark,Rate=140,Lifetime=NumberRange.new(.4,.9),Speed=NumberRange.new(2,6),SpreadAngle=Vector2.new(180,180),
+			Shape=Enum.ParticleEmitterShape.Box,Color=ColorSequence.new(c3(look.color),c3(look.color2)),LightInfluence=1,
+			Size=num({{0,.2},{1,.12}}),Transparency=num({{0,0},{1,.5}}),Drag=2},holder)
+	end
+	local function decal(holder,h,color,transparency,material)
+		local disc=block(holder.Parent,Vector3.new(.08,h.radius*2,h.radius*2),CFrame.new(holder.Position)*CFrame.Angles(0,0,math.rad(90)),color,material or Enum.Material.SmoothPlastic)
+		disc.Shape=Enum.PartType.Cylinder;disc.Transparency=1
+		tween(disc,.3,{Transparency=transparency})
+		return disc
+	end
+	ZONES.water=function(holder,h,look) local d=decal(holder,h,c3(look.color),.35,Enum.Material.Glass);d.Reflectance=.2;return nil,d end
+	ZONES.ice=function(holder,h,look) local d=decal(holder,h,c3(look.color),.2,Enum.Material.Ice);return nil,d end
+	ZONES.shadow=function(holder,h,look) local d=decal(holder,h,c3(look.color),.15);return nil,d end
+	ZONES.mud=function(holder,h,look) local d=decal(holder,h,c3(look.color),.1,Enum.Material.Mud);return nil,d end
+	ZONES.crater=function(holder,h,look) local d=decal(holder,h,Color3.fromRGB(96,78,60),.2,Enum.Material.Slate);return nil,d end
+	ZONES.scorch=function(holder,h,look)
+		local d=decal(holder,h,Color3.fromRGB(30,24,20),.3)
+		local e=new("ParticleEmitter",{Texture=TEX.fire,Rate=30,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(2,5),EmissionDirection=Enum.NormalId.Top,
+			Shape=Enum.ParticleEmitterShape.Box,Color=seq({{0,Color3.fromRGB(255,220,140)},{1,Color3.fromRGB(150,40,16)}}),LightEmission=1,LightInfluence=0,
+			Size=num({{0,1},{1,.3}}),Transparency=num({{0,.2},{1,1}})},holder)
+		return e,d
+	end
+	FX.hazardBuild=function(fx,h)
+		local look=Looks[h.look or ""]
+		if not look then return nil end
+		local draw=ZONES[look.zone or ""]
+		if not draw then return nil end
+		local floor=floorUnder(fx,h.position,3,14)
+		local at=if floor then floor.Position+Vector3.new(0,.06,0) else h.position
+		local holder=anchorPart(fx.folder,at);holder.Size=Vector3.new(h.radius*1.7,.2,h.radius*1.7)
+		local e,disc=draw(holder,h,look)
+		return {holder=holder,emitter=e,disc=disc,family=true}
+	end
+	FX.hazardFinish=function(entry)
+		if entry.emitter then entry.emitter.Enabled=false end
+		if entry.disc then tween(entry.disc,.4,{Transparency=1});Debris:AddItem(entry.disc,.5) end
+		Debris:AddItem(entry.holder,3)
+	end
+
+	-- Bodies: buff aura, counter stance ring, the dark of a slow.
+	local auras=setmetatable({},{__mode="k"})
+	local function auraOf(model)
+		local st=auras[model]
+		if st then return st end
+		st={}
+		auras[model]=st
+		return st
+	end
+	local function fighterColor(actor)
+		local def=Fighters[actor.fighterId or ""]
+		return if def and def.Color then c3(def.Color) else Color3.fromRGB(220,220,255)
+	end
+	table.insert(FX.layers,{
+		impact=function(fx,impact,folder)
+			local style=impact.style
+			if style=="look" then
+				local look=Looks[impact.kind or ""] or Looks.chakra
+				hit(fx,look,impact.position,impact.heavy,impact.normal)
+				if impact.radius then shockRing(fx.folder,impact.position-Vector3.new(0,2.4,0),c3(look.color),2,impact.radius*2,.45) end
+				return true
+			elseif style=="zone" then
+				local look=Looks[impact.kind or ""] or Looks.chakra
+				shockRing(fx.folder,impact.position,c3(look.color2),2,(impact.radius or 8)*2,.5)
+				smokePuff(fx.folder,impact.position+Vector3.new(0,1,0),c3(look.color),14,2.6)
+				return true
+			elseif style=="buff" then
+				local model=folder and folder:FindFirstChild(impact.owner or "")
+				local root=model and model:FindFirstChild("HumanoidRootPart")
+				local color=Looks[impact.kind or ""] and c3(Looks[impact.kind].color) or Color3.fromRGB(255,240,200)
+				flash(fx.folder,impact.position,color,2,9,.3,.4)
+				shockRing(fx.folder,impact.position-Vector3.new(0,2.6,0),color,3,14,.5)
+				if root then sound(root,SOUND.boom,.25,1.3) end
+				return true
+			elseif style=="stance" then
+				local color=Looks[impact.kind or ""] and c3(Looks[impact.kind].color) or Color3.fromRGB(255,255,255)
+				shockRing(fx.folder,impact.position-Vector3.new(0,2.6,0),color,7,3,impact.time or .6)
+				return true
+			elseif style=="drain" then
+				local owner=folder and folder:FindFirstChild(impact.owner or "")
+				local to=owner and owner:FindFirstChild("HumanoidRootPart")
+				burst(fx.folder,impact.position,{Texture=TEX.glow,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(4,8),SpreadAngle=Vector2.new(60,60),
+					Acceleration=if to then (to.Position-impact.position).Unit*30 else Vector3.zero,Color=ColorSequence.new(Color3.fromRGB(120,190,255)),
+					LightEmission=1,Size=num({{0,.8},{1,.1}}),Transparency=num({{0,.2},{1,1}})},10)
+				return true
+			end
+			return false
+		end,
+		fighter=function(fx,model,actor,dt)
+			if not model then return end
+			local st=auraOf(model)
+			local fam=actor.family
+			local root=model:FindFirstChild("HumanoidRootPart")
+			if not root then return end
+			local buffed=fam and fam.buff~=nil
+			if buffed and not st.aura then
+				local at=new("Attachment",{Name="FamilyAura"},root)
+				local color=fighterColor(actor)
+				st.aura=new("ParticleEmitter",{Texture=TEX.glow,Rate=26,Lifetime=NumberRange.new(.35,.6),Speed=NumberRange.new(2,4),SpreadAngle=Vector2.new(25,25),
+					EmissionDirection=Enum.NormalId.Top,Shape=Enum.ParticleEmitterShape.Cylinder,Color=ColorSequence.new(color),LightEmission=.8,LightInfluence=0,
+					Size=num({{0,1.4},{1,.2}}),Transparency=num({{0,.45},{1,1}})},at)
+				st.aura.ShapeStyle=Enum.ParticleEmitterShapeStyle.Surface
+				st.auraAt=at
+			elseif not buffed and st.aura then
+				st.aura.Enabled=false;Debris:AddItem(st.auraAt,1);st.aura=nil;st.auraAt=nil
+			end
+			local slowed=fam and (fam.slowed or 0)&gt;0
+			if slowed and not st.slow then
+				local at=new("Attachment",{Name="FamilySlow",Position=Vector3.new(0,-2.6,0)},root)
+				st.slow=new("ParticleEmitter",{Texture=TEX.smoke,Rate=14,Lifetime=NumberRange.new(.4,.7),Speed=NumberRange.new(.5,1.5),
+					Color=ColorSequence.new(Color3.fromRGB(40,36,52)),LightInfluence=1,Size=num({{0,1.2},{1,2}}),Transparency=num({{0,.5},{1,1}})},at)
+				st.slowAt=at
+			elseif not slowed and st.slow then
+				st.slow.Enabled=false;Debris:AddItem(st.slowAt,1);st.slow=nil;st.slowAt=nil
+			end
+		end,
+	})
+end
+return FamilyFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND67">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -17400,7 +18558,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND63">
+        <Item class="ModuleScript" referent="ND68">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -17581,7 +18739,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND64">
+        <Item class="ModuleScript" referent="ND69">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -18321,7 +19479,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND65">
+        <Item class="ModuleScript" referent="ND70">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -18498,7 +19656,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND66">
+        <Item class="ModuleScript" referent="ND71">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -18679,7 +19837,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND67">
+        <Item class="LocalScript" referent="ND72">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -18828,7 +19986,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND68">
+        <Item class="ModuleScript" referent="ND73">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -19086,7 +20244,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND69">
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -19390,7 +20548,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND70">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -19983,7 +21141,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND71">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -19991,6 +21149,7 @@ return SandFX
 -- value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
+local Roster=require(Shared.Roster)
 local Controls=require(Shared.Controls)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
@@ -20049,10 +21208,10 @@ function UI.new(parent,send)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
 	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,668),palette.ink,1)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,712),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/728) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/772) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
 	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
 	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
@@ -20061,10 +21220,8 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
-	-- Rock Lee, Naruto, Temari.
-	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion"}
-	table.insert(playable,"Gale")
+	-- The playable roster, in menu order (Shared/Roster).
+	local playable=table.clone(Roster)
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -20096,37 +21253,40 @@ function UI.new(parent,send)
 	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
 	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
-	-- Fighter buttons share each half of the panel, however many are playable.
-	-- During an online pick the left half is yours, the right shows the opponent's.
-	local stride=math.floor(430/#playable)
+	-- Fighter buttons: a five-wide grid on each half of the panel, however
+	-- many are playable (twenty fill four rows). During an online pick the
+	-- left half is yours, the right shows the opponent's.
+	local COLS=5
+	local function cell(i) return (i-1)%COLS*86,480+math.floor((i-1)/COLS)*26 end
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+		local x,y=cell(i)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(x,y),UDim2.fromOffset(82,22),function()
 			if self.picking then self:choose(id);return end
 			self.player=id; self:refreshSelection()
 		end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+x,y),UDim2.fromOffset(82,22),function()
 			if self.picking then return end
 			self.bot=id; self:refreshSelection()
 		end)
 	end
-	-- Six names share each half: a long one (ROCK LEE) shrinks to fit its
-	-- button, the others keep their size.
+	-- A long name (ROCK LEE, OROCHIMARU) shrinks to fit its button.
 	for _,id in playable do
 		for _,side in {"player","bot"} do
 			local b=self.selectionButtons[side..id]
 			b.TextScaled=true
-			create("UITextSizeConstraint",b,{MaxTextSize=24})
+			create("UITextSizeConstraint",b,{MaxTextSize=16})
 		end
 	end
-	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function()
+	local below=480+math.ceil(#playable/COLS)*26+8
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,below),UDim2.fromOffset(430,52),function()
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
 	end,palette.red)
-	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function()
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,below),UDim2.fromOffset(430,52),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
 	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
 	-- by code (host one, or type a friend's code and join).
-	self.onlineRow=frame(shell,UDim2.fromOffset(0,604),UDim2.fromOffset(900,40),palette.ink,1)
+	self.onlineRow=frame(shell,UDim2.fromOffset(0,below+60),UDim2.fromOffset(900,40),palette.ink,1)
 	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(290,40),function() send("Queue",{player=self.player}) end)
 	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(300,0),UDim2.fromOffset(290,40),function() send("Host",{player=self.player}) end)
 	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(600,0),Size=UDim2.fromOffset(170,40),Text="",PlaceholderText="CODE",
@@ -20138,7 +21298,7 @@ function UI.new(parent,send)
 	end)
 	self.codeBox=codeBox
 	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(780,0),UDim2.fromOffset(120,40),function() send("Join",{player=self.player,code=codeBox.Text}) end)
-	self.notice=text(shell,"",UDim2.fromOffset(0,648),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.notice=text(shell,"",UDim2.fromOffset(0,below+104),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
@@ -20583,7 +21743,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND72">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -20724,7 +21884,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND73">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -21028,7 +22188,8 @@ STANCE.Sand={root={y=-.06,pitch=0,yaw=6},torso={pitch=-2,yaw=-2},head={pitch=6,y
 STANCE.Leaf={root={y=-.58,pitch=8,yaw=36},torso={pitch=5,yaw=-16},head={pitch=-4,yaw=-22},
 	la={raise=92,out=-8,twist=-24,elbow=24,wrist=-30},ra={raise=-48,out=-4,twist=96,elbow=68,wrist=0},
 	rf={x=.3,z=.92,yaw=46},lf={x=-.12,z=-.88,yaw=-8},breath=1.5,tempo=8.5}
-local function stance(id) return STANCE[id] or STANCE[familyOf(id).body] or STANCE.Flashstep end
+-- A breadth-pass fighter may carry its own stance in data (Motion.stance).
+local function stance(id) return STANCE[id] or familyOf(id).stance or STANCE[familyOf(id).body] or STANCE.Flashstep end
 -- Gait families: springy (Minato, Sasuke) or controlled (Itachi, Neji).
 local SPRINGY={Flashstep=true,Lion=true}
 local function springy(id)
@@ -22115,6 +23276,42 @@ local function castSpec(actor)
 		-- (His clone beside him) both hands cupped over his palm, shaping it.
 		return merge(base,{root={y=-.62,pitch=16,yaw=-20},torso={pitch=12,yaw=-14},head={pitch=18,yaw=-10},ra={raise=66,out=-30,twist=40,elbow=80,wrist=-20},la={raise=70,out=-36,twist=-40,elbow=70,wrist=-20}})
 	end
+	-- A family technique (Server/Families) without its own clip: signs while it
+	-- is moulded, then the family's release shape. spec.Pose = {channel=...,
+	-- release=...} (this merge format) overrides either.
+	local spec=techSpec(fighterId,id)
+	if spec.Family then
+		local custom=spec.Pose
+		if state=="TechniqueChannel" then
+			if custom and custom.channel then return merge(base,custom.channel) end
+			return sealPose(base,t,false)
+		end
+		if custom and custom.release then return merge(base,custom.release) end
+		local family=spec.Family
+		if family=="Projectile" then
+			-- Thrust from the shoulder, weight on the front foot.
+			return merge(base,{root={y=-.55,pitch=10,yaw=-14},torso={pitch=6,yaw=-18},head={pitch=4},ra={raise=92,out=8,twist=-60,elbow=6,wrist=-50},
+				la={raise=30,out=24,elbow=60},lf={z=-1.05},rf={z=1.0,yaw=30}})
+		elseif family=="Burst" then
+			-- Low and wide, both arms flung out: the release comes from the body.
+			return merge(base,{root={y=-1.0,pitch=6},torso={pitch=4},head={pitch=-6},ra={raise=70,out=70,twist=0,elbow=14,wrist=-20},
+				la={raise=70,out=70,twist=0,elbow=14,wrist=-20},lf={x=-.35,z=-.6},rf={x=.35,z=.6}})
+		elseif family=="Zone" then
+			-- One palm pressed toward the ground, the other holding the seal.
+			return merge(base,{root={y=-1.15,pitch=24},torso={pitch=18},head={pitch=-14},ra={raise=20,out=10,twist=-40,elbow=20,wrist=-60},
+				la={raise=96,out=-34,twist=30,elbow=140,wrist=10},lf={z=-1.1},rf={z=.9}})
+		elseif family=="Buff" then
+			-- Fists down at the hips, chest up: the chakra rises around him.
+			return merge(base,{root={y=-.7,pitch=-4},torso={pitch=-10},head={pitch=-12},ra={raise=14,out=34,twist=20,elbow=40,wrist=0},
+				la={raise=14,out=34,twist=20,elbow=40,wrist=0},lf={x=-.3,z=-.3},rf={x=.3,z=.3}})
+		elseif family=="Counter" then
+			-- Open guard, hands forward: waiting for the blow.
+			return merge(base,{root={y=-.6,pitch=6},head={pitch=-4},ra={raise=52,out=-12,elbow=70,wrist=-10},la={raise=66,out=-20,elbow=60,wrist=-10}})
+		elseif family=="Teleport" then
+			-- Landed low out of the movement, already turned to the opponent.
+			return merge(base,{root={y=-1.0,pitch=18},torso={pitch=10},head={pitch=-16},ra={raise=50,out=20,elbow=80},la={raise=10,out=24,elbow=20},lf={z=-1.0},rf={z=1.0,yaw=40}})
+		end
+	end
 	return sealPose(base,t,false)
 end
 
@@ -23122,7 +24319,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND74">
+  <Item class="Lighting" referent="ND79">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -23140,7 +24337,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND75">
+  <Item class="SoundService" referent="ND80">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

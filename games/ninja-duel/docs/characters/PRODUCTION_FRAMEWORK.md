@@ -38,3 +38,7 @@ Un combattant à plusieurs corps n'ajoute pas d'acteur : `Server/Bodies` porte d
 ## 5. Vérification native (Studio, place Debug)
 
 Probes de `tools/studio/probes` : `staged_moment.luau` (une action à une distance donnée), `fx_freeze.luau` (copie figée d’un effet + caméra latérale), `ai_soak.luau` (IA contre IA, erreurs de la console), `seqrec.luau` avec les outils `user_keyboard_input` / `user_mouse_input` (vraies touches et clics). Un combattant passe en « jouable » quand son menu, ses coups, ses effets et un soak sans erreur ont été vus dans Studio ; le ressenti reste une acceptation humaine.
+
+## 6. Le chemin court du roster 20 (familles)
+
+Depuis la passe de largeur ([ROSTER_20.md](ROSTER_20.md)), un nouveau combattant commence par des **données** : une entrée `Fighters` dont les techniques nomment une `Family` (`Server/Families.luau`) avec leurs champs (portée, vitesse, `Kind` d'apparence dans `Shared/Looks.luau`, champs de contact), une entrée `MoveGraphs` sur la grammaire partagée, `Motion = {body=…, stance=…}`, un costume dans `Server/Costumes.luau`, l'Id ajouté à `Shared/Roster.luau`. Aucun code n'est requis tant qu'une famille suffit ; une mécanique propre passe par un module à lui (comme `Legion`, `Gale`) et des crochets, jamais par une condition sur son nom dans le cœur. `tests/Roster.spec.luau` vérifie le plancher Tier A pour toute la liste ; `tools/studio/fighter_check.py` le joue en Studio avec de vraies entrées.

@@ -178,4 +178,24 @@ return {
 		blockCancels={Tool=true},
 		reengage={name="gale",reposition=true,keep=17,speed=1.0,reach=22,angle=30,side=10,chase=.26,recovery=.16},
 	},
+	-- Roster 20 breadth pass (Tier A on the shared grammar).
+	Lavender={
+		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		onRoute={Sweep="tenketsu",AirSpike="tenketsu"},
+		heavyAfterOne="PalmThrust",
+		stringCancels={VacuumPalm=true},
+		blockCancels={},
+		-- Gentle and close: down the line, slower than Neji, from very near.
+		reengage={name="palm",speed=.95,arrive=2.8,angle=0,minRange=5,chase=.3,recovery=.2},
+	},
+	Copycat={
+		routes={up="Launcher",down="Sweep",side="FeintStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		heavyAfterOne="KneeStrike",
+		stringCancels={LightningBlade=true},
+		blockCancels={Tool=true},
+		-- Measured: a quick re-entry a little off the line.
+		reengage={name="copy",speed=1.1,arrive=3.2,angle=20,chase=.28,recovery=.2},
+	},
 }

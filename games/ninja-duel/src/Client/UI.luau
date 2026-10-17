@@ -3,6 +3,7 @@
 -- value comes from the snapshot.
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
+local Roster=require(Shared.Roster)
 local Controls=require(Shared.Controls)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Protocol=require(Shared.OnlineProtocol)
@@ -61,10 +62,10 @@ function UI.new(parent,send)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
 	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,668),palette.ink,1)
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,712),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/728) end
+	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/772) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
 	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
 	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
@@ -73,10 +74,8 @@ function UI.new(parent,send)
 		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
-	-- Rock Lee, Naruto, Temari.
-	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion"}
-	table.insert(playable,"Gale")
+	-- The playable roster, in menu order (Shared/Roster).
+	local playable=table.clone(Roster)
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -108,37 +107,40 @@ function UI.new(parent,send)
 	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
 	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
-	-- Fighter buttons share each half of the panel, however many are playable.
-	-- During an online pick the left half is yours, the right shows the opponent's.
-	local stride=math.floor(430/#playable)
+	-- Fighter buttons: a five-wide grid on each half of the panel, however
+	-- many are playable (twenty fill four rows). During an online pick the
+	-- left half is yours, the right shows the opponent's.
+	local COLS=5
+	local function cell(i) return (i-1)%COLS*86,480+math.floor((i-1)/COLS)*26 end
 	for i,id in playable do
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset((i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+		local x,y=cell(i)
+		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(x,y),UDim2.fromOffset(82,22),function()
 			if self.picking then self:choose(id);return end
 			self.player=id; self:refreshSelection()
 		end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+(i-1)*stride,480),UDim2.fromOffset(stride-6,40),function()
+		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+x,y),UDim2.fromOffset(82,22),function()
 			if self.picking then return end
 			self.bot=id; self:refreshSelection()
 		end)
 	end
-	-- Six names share each half: a long one (ROCK LEE) shrinks to fit its
-	-- button, the others keep their size.
+	-- A long name (ROCK LEE, OROCHIMARU) shrinks to fit its button.
 	for _,id in playable do
 		for _,side in {"player","bot"} do
 			local b=self.selectionButtons[side..id]
 			b.TextScaled=true
-			create("UITextSizeConstraint",b,{MaxTextSize=24})
+			create("UITextSizeConstraint",b,{MaxTextSize=16})
 		end
 	end
-	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,540),UDim2.fromOffset(430,52),function()
+	local below=480+math.ceil(#playable/COLS)*26+8
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,below),UDim2.fromOffset(430,52),function()
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
 	end,palette.red)
-	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,540),UDim2.fromOffset(430,52),function()
+	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,below),UDim2.fromOffset(430,52),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
 	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
 	-- by code (host one, or type a friend's code and join).
-	self.onlineRow=frame(shell,UDim2.fromOffset(0,604),UDim2.fromOffset(900,40),palette.ink,1)
+	self.onlineRow=frame(shell,UDim2.fromOffset(0,below+60),UDim2.fromOffset(900,40),palette.ink,1)
 	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(290,40),function() send("Queue",{player=self.player}) end)
 	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(300,0),UDim2.fromOffset(290,40),function() send("Host",{player=self.player}) end)
 	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(600,0),Size=UDim2.fromOffset(170,40),Text="",PlaceholderText="CODE",
@@ -150,7 +152,7 @@ function UI.new(parent,send)
 	end)
 	self.codeBox=codeBox
 	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(780,0),UDim2.fromOffset(120,40),function() send("Join",{player=self.player,code=codeBox.Text}) end)
-	self.notice=text(shell,"",UDim2.fromOffset(0,648),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.notice=text(shell,"",UDim2.fromOffset(0,below+104),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})

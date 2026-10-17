@@ -1312,6 +1312,13 @@ function FX:hazardsStep(data)
 		local key=string.format("%s:%.1f:%.1f:%.1f",tostring(h.kind),h.position.X,h.position.Y,h.position.Z)
 		live[key]=true
 		local entry=self.hazards[key]
+		-- A family zone (mist, insects, water, shadow...) has its own ground
+		-- look (FamilyFX); every other hazard is fire.
+		if not entry and h.look and FX.hazardBuild then
+			entry=FX.hazardBuild(self,h)
+			if entry then self.hazards[key]=entry end
+		end
+		if entry and entry.family then continue end
 		if not entry then
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
@@ -1331,7 +1338,9 @@ function FX:hazardsStep(data)
 		entry.emitter.Rate=(if h.remaining<.4 then 25 else 60)*scale
 	end
 	for key,entry in self.hazards do
-		if not live[key] then
+		if not live[key] and entry.family then
+			FX.hazardFinish(entry);self.hazards[key]=nil
+		elseif not live[key] then
 			entry.emitter.Enabled=false;tween(entry.light,.3,{Brightness=0})
 			Debris:AddItem(entry.holder,1);self.hazards[key]=nil
 		end
@@ -1665,6 +1674,10 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- CORE4 identity seen in play (Neji's palms and points, Minato's seals and
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Family objects of the roster breadth pass (Shared/Looks): every kind gets
+-- its own model, flight, contact and ground look; buffs and slows on bodies.
+require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

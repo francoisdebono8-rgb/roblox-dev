@@ -4,6 +4,30 @@ local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
+-- Family techniques (roster breadth pass): when one is worth using is read
+-- from its family and its own spec.AI band, never from the fighter's name.
+local function familyWants(self,c,a,target,spec,distance,danger)
+	local rule=spec.AI or {}
+	local family=spec.Family
+	local range=spec.Range or 30
+	local opening=target.state=="Recovery" or target.state=="TechniqueRecovery" or target.state=="Stunned" or target.reaction=="Bound"
+	local lo,hi,chance
+	if family=="Projectile" then lo,hi,chance=8,math.min(range*.85,40),.45
+	elseif family=="Strike" then lo,hi,chance=3.5,math.min(range,16),if opening then .9 else .3
+	elseif family=="Burst" then lo,hi,chance=0,(spec.Radius or 7)-.5,if danger or target.state=="Rush" then .8 else .25
+	elseif family=="Zone" then
+		if spec.At=="Self" then lo,hi,chance=0,(spec.Radius or 8)+4,.35 else lo,hi,chance=6,math.min(range,34),.35 end
+	elseif family=="Buff" then lo,hi,chance=0,24,.5
+	elseif family=="Teleport" then
+		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
+	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	else return false end
+	lo=rule.Min or lo;hi=rule.Max or hi;chance=rule.Chance or chance
+	if rule.Punish and not opening then return false end
+	if distance<lo or distance>hi then return false end
+	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
+	return self.rng:NextNumber()<chance
+end
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -575,6 +599,7 @@ function AI:update(now)
 			if spec.Id=="MassShadowClone" then use=distance>7 and distance<22 and Bodies.count(c,a,"clone")==0 and a.chakra>=70 and self.rng:NextNumber()<.5 end
 			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
+			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
