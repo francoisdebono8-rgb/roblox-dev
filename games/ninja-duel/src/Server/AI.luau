@@ -139,7 +139,7 @@ function AI:zone(now,distance,toward,tangent,target)
 	-- armoured); already on her, the guard takes the arrival strike.
 	if target.state=="Rush" or target.state=="Pursuit" then
 		if distance<7 and self.rng:NextNumber()<.6 then c:request(a,"Guard");self.guardUntil=now+.4;return true end
-		if distance<a.def.Gust.Range+2 and tool and self.rng:NextNumber()<.75 then
+		if distance<(a.def.Gust and a.def.Gust.Range or 18)+2 and tool and self.rng:NextNumber()<.75 then
 			a.move=Vector3.zero
 			if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
 		end
@@ -191,7 +191,7 @@ function AI:zone(now,distance,toward,tangent,target)
 	end
 	-- Hold the band: inside it she backs off at an angle (a straight backpedal
 	-- is slower than any approach), never walks into melee.
-	if distance<tune.Close+6 then
+	if distance<(tune.Keep or tune.Close+6) then
 		a.move=(-toward*.75+tangent*(self.strafeSign or 1)*.66).Unit;a.sprinting=distance<tune.Close+3
 	end
 	return true

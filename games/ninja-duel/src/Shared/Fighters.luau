@@ -242,8 +242,9 @@ return {
 		Glide = { Fall = 12 },
 		-- The wind's retreat: the kawarimi throws her further back.
 		Substitution = { Mode = "hop", Distance = 14 },
-		-- Zoner AI profile (AI:zone): the band she holds and when the body is too close.
-		Zoner = { Close = 9, Push = 12 },
+		-- Zoner AI profile (AI:zone): too close under Close (the gust under Push),
+		-- backs off at an angle under Keep (she holds ~20-40 studs).
+		Zoner = { Close = 9, Push = 12, Keep = 20 },
 		-- Awakening: Kuchiyose: Kirikiri Mai. Kamatari cuts across the arena (a
 		-- big projectile that leaves a long lane); for the rest of it her lanes
 		-- last longer, widen and send blades back at their thrower, and every

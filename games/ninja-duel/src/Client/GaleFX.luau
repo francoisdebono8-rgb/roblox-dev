@@ -131,7 +131,8 @@ function GaleFX.fanPose(actor)
 	end
 	if actor.throwKind=="Gust" and (actor.throwElapsed or 99)>=0 and (actor.throwElapsed or 99)<.45 then return "open",1,if awake then 3 else 1 end
 	local name=actor.attackName
-	if name and SWINGING[actor.state] then
+	-- (late in a recovery the arm is back on the hip: the fan is put away)
+	if name and SWINGING[actor.state] and not (actor.state=="Recovery" and (actor.attackElapsed or 0)>.45) then
 		local open=OPEN_STRIKE[name] or 0
 		return if open>0 then "open" else "hand",open,if open>0 then 1 else 0
 	end

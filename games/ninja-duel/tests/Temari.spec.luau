@@ -686,7 +686,8 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
     local stuck={}
     local t=0
     local lanes=0
-    while match.phase=="Duel" and t<150 do
+    -- (two ranged fighters, her and Gaara behind his shield, fight longer)
+    while match.phase=="Duel" and t<180 do
      one:update(c.now);two:update(c.now);H.step(c,.01);t+=.01
      for _,x in {a,b} do
       local key=x.state..":"..tostring(x.attackSerial or 0)..":"..tostring(x.castId)
@@ -704,9 +705,10 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
      if match.phase=="Duel" then
       totals.ticks+=1
       if gapOf(a,b)>=12 then totals.far+=1 end
+      if gapOf(a,b)>=20 then totals.band=(totals.band or 0)+1 end
      end
     end
-    assert(match.phase~="Duel",string.format("%s vs %s did not finish in 150 s (%.0f / %.0f health)",pair[1],pair[2],a.health,b.health))
+    assert(match.phase~="Duel",string.format("%s vs %s did not finish in 180 s (%.0f / %.0f health)",pair[1],pair[2],a.health,b.health))
     for _,x in {a,b} do
      if x.fighterId=="Gale" then
       totals.scythes+=ev(x,"Kamaitachi");totals.turned+=ev(x,"WindDeflect")+ev(x,"WindReturn")+ev(x,"GustReturn")
@@ -724,8 +726,8 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
     print(string.format("   %s vs %s: %.1f s, winner %s",pair[1],pair[2],t,tostring(match.winner)))
    end
   end
-  print(string.format("   her scythes %d, gusts %d, wind steps %d, blades turned/returned %d, %.0f%% of the time 12+ studs apart",
-   totals.scythes,totals.gusts,totals.steps,totals.turned,100*totals.far/math.max(1,totals.ticks)))
+  print(string.format("   her scythes %d, gusts %d, wind steps %d, blades turned/returned %d, %.0f%% of the time 12+ studs apart, %.0f%% 20+",
+   totals.scythes,totals.gusts,totals.steps,totals.turned,100*totals.far/math.max(1,totals.ticks),100*(totals.band or 0)/math.max(1,totals.ticks)))
   assert(totals.scythes>=20,"her bot barely used the scythe ("..totals.scythes..")")
   assert(totals.gusts>=5 and totals.steps>=3,"her bot never pushed or stepped away")
   assert(totals.far/math.max(1,totals.ticks)>=.4,"she does not hold her range")
