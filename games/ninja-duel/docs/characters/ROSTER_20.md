@@ -16,16 +16,20 @@ Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROST
 | 8 | `Gale` | Temari | zoneuse vent | Zones | jouable (Studio à faire) |
 | 9 | `Lavender` | Hinata | Poing souple, défensive | Neji + Families (Buff, Burst) | Tier A, Studio vu |
 | 10 | `Copycat` | Kakashi | polyvalent / Sharingan | Families (Strike, Projectile) | Tier A, Studio vu |
-| 11 | `Blossom` | Sakura | force / soin | Families | à faire (lot 1) |
-| 12 | `Boulder` | Choji | cogneur / transformation | Families (Buff Heavy, Strike) | à faire (lot 1) |
-| 13 | `Fang` | Kiba | rushdown + compagnon | Families (Strike, Projectile beast) | à faire (lot 1) |
-| 14 | `Shadow` | Shikamaru | pièges / entrave | Families (Projectile shadow Bind) | à faire (lot 2) |
-| 15 | `Hive` | Shino | insectes, drain, zones | Families (Zone, Projectile swarm) | à faire (lot 2) |
-| 16 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile serpent Pull) | à faire (lot 2) |
-| 17 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile senbon, Teleport) | à faire (lot 3) |
-| 18 | `Mist` | Zabuza | arme lourde + brume | Families (Zone mist, Teleport, Strike) | à faire (lot 3) |
-| 19 | `Shark` | Kisame | cogneur drain (Samehada) | Families (OnHit Drain, Projectile shark) | à faire (lot 3) |
-| 20 | `Bone` | Kimimaro | armes d'os, armure | Families (Projectile bone, Burst, Strike) | à faire (lot 3) |
+| 11 | — | Shisui | Uchiha mobilité / genjutsu | Families + identité Uchiha distincte | à faire |
+| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile serpent Pull) | à faire |
+| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile senbon, Teleport) | à faire |
+| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Projectile bone, Burst, Strike) | à faire |
+| 15 | — | Nagato | Rinnegan / contrôle / attraction-répulsion | Families + mécaniques propres | à faire |
+| 16 | — | Sasori | marionnettes / corps déporté | Bodies/Families + marionnette dédiée | à faire |
+| 17 | — | Deidara | explosifs / zoning / aérien | Families + explosifs dédiés | à faire |
+| 18 | — | Killer Bee | multi-sabres / jinchūriki jeune | Families + corps/armes dédiés | à faire |
+| 19 | `Mist` | Zabuza | arme lourde + brume | Families (Zone mist, Teleport, Strike) | à faire |
+| 20 | — | Kabuto | médical / scalpel chakra / intelligence | Families + mécaniques propres | à faire |
+
+> **Composition verrouillée par DEC-022 (17/10/2026).** Les anciens lots Sakura / Choji / Kiba / Shikamaru / Shino / Kisame sont abandonnés avant code pour ce roster initial. Les noms ci-dessus priment sur les anciennes notes de lots.
+>
+> **Règle de période :** les vingt peuvent venir de générations différentes, mais chaque personnage est construit dans une version **jeune/prodige**, avec les capacités réellement connues ou raisonnablement établies à ce stade. Ne pas importer son arsenal adulte final par défaut. Les Uchiha et autres familles/clans peuvent partager une base sans partager leur boucle de jeu. Le nombre de jutsus n'est pas standardisé : équilibrer la profondeur et les décisions, pas le nombre de techniques.
 
 ## Tier A (plancher, vérifié pour chaque entrée de `Shared/Roster`)
 
@@ -42,22 +46,22 @@ Puis en Studio (règle Studio) : `tools/studio/fighter_check.py <Id> [adversaire
 - **Costumes** : `Server/Costumes.luau` (`install(dressers, kit)`), enregistrés par nom ; `World.dress` les appelle.
 - **Menu** : `Shared/Roster.luau` est la seule liste ; la sélection affiche une grille de cinq colonnes par moitié.
 
-## Notes de reprise (17/10, relevées par le lot 2 avant code)
+## Notes de reprise (17/10, relevées par les anciens lots avant code)
 
-Constats sur le code, utiles à tous les lots :
+Ces constats techniques restent utiles au socle, mais les compositions d'anciens lots qu'ils visaient ne sont plus normatives après DEC-022 :
 
-1. `Roster.spec` refuse qu'une technique de **famille** soit refusée au lancer : une technique conditionnelle (ex. étranglement de l'ombre, seulement sur un corps qu'il tient) s'enregistre dans `WaveNKit.install` **sans** `Family`, avec `Requires="Bound"` ; il faut alors une ligne générique dans `AI.luau` (l'utiliser quand la cible est tenue par lui) et un cas `Requires=="Bound"` pour l'état « prêt » de la barre (`Matches.luau`).
+1. `Roster.spec` refuse qu'une technique de **famille** soit refusée au lancer : une technique conditionnelle s'enregistre dans `WaveNKit.install` **sans** `Family`, avec `Requires="Bound"` ; il faut alors une ligne générique dans `AI.luau` et un cas `Requires=="Bound"` pour l'état « prêt » de la barre (`Matches.luau`).
 2. `Effects.luau` enroule du fil d'acier autour de tout corps `Bound` (sauf Gaara) : une entrave de famille doit le désactiver (ex. `family.tie` dans l'instantané) et dessiner son propre lien.
 3. `Families.afterHit` sort tôt sans `def.OnHit` : `Awakening.OnHit` doit s'appliquer même sans trait de base.
 4. `Pull` est un vol de recul : sans plafond (ex. `PullTo` ≈ 3,5 studs devant lui) une cible proche est projetée derrière lui.
 5. Une ombre au sol vole 2,2 studs sous la racine : contre une cible qui bouge, rayon ≈ 1,8 et un champ générique `Steer` (réorientation via `c:redirect`) sont nécessaires.
 6. Champs génériques prévus : `Awakening.ZoneScale` (famille Zone), `Heal` optionnel sur Teleport.
 7. Un coup `heavy=true` lance le corps et casse l'entrave : dégâts non lourds pendant une entrave.
-8. Une frappe nouvelle sans clip prend le Light1 de sa famille de corps : la dessiner (lame, etc.) dans `WaveNFX` en attendant un clip.
-9. Contraintes des suites : Ids de techniques globaux et uniques ; Speed × SprintScale < 24 (`Lee.spec`) ; JumpScale borné par `Regression.spec` (vérifier la limite avant de dépasser 1,15) ; toute entrée d'`Attacks` porte side/twist/lean/arm/step (`Animation.spec`).
-10. (lot 1) `CostScale` d'éveil rembourse **toutes** les techniques (`Combat:awakenTechnique`) ; `Regen` d'un Buff agit sur le chakra, pas la santé (un soin dans la durée demande un champ générique, ex. `Mend`) ; un seul buff compte à la fois (`Families.buff` préfère le buff de technique à `Awakening.Buff`).
-11. (lot 1) Une frappe nouvelle d'`Attacks` doit aussi poser `animation/feedback/chain/air/depth/offset` (comme le bloc Naruto) ; un champ `clip` lu par le moteur de mouvement permettrait d'emprunter une animation existante au lieu du Light1.
-12. (lot 1) Un outil non kunai/shuriken est lancé comme `shuriken` ; un outil sur mesure (`Techniques.Tools`) perd les annulations de chaîne : garder `Tool="Kunai"` sauf besoin réel. L'IA de famille soignerait à pleine santé : seuil générique `spec.AI.Hurt` à prévoir.
-13. (lot 3) La famille Zone vaut `"Fire"` par défaut (`ZoneKind`/`Zone.Kind`) et une zone sans `Kind` d'apparence est dessinée en feu : toute zone non ignée doit nommer `ZoneKind` (`"Mist"`, `"Water"`…) et un `Kind` de `Looks` — défaut à revoir dans le socle.
-14. (lot 3) Une téléportation de famille est dessinée par `FX:teleport` (éclair jaune de Minato) : la couche du lot doit dessiner les siennes (glace, brume) et éteindre l'éclair.
-15. (lot 3) Champs génériques prévus : `Shroud` sur une zone (buff de son propriétaire tant qu'il s'y tient : la brume de Zabuza), `Leave` sur Burst (zone laissée même sans toucher), `Awakening.TeleportCost` (Haku).
+8. Une frappe nouvelle sans clip prend le Light1 de sa famille de corps : la dessiner dans le FX de vague en attendant un clip.
+9. Contraintes des suites : Ids de techniques globaux et uniques ; Speed × SprintScale < 24 (`Lee.spec`) ; JumpScale borné par `Regression.spec` ; toute entrée d'`Attacks` porte side/twist/lean/arm/step (`Animation.spec`).
+10. `CostScale` d'éveil rembourse **toutes** les techniques (`Combat:awakenTechnique`) ; `Regen` d'un Buff agit sur le chakra, pas la santé ; un seul buff compte à la fois (`Families.buff`).
+11. Une frappe nouvelle d'`Attacks` doit aussi poser `animation/feedback/chain/air/depth/offset` ; un champ `clip` lu par le moteur de mouvement permettrait d'emprunter une animation existante au lieu du Light1.
+12. Un outil non kunai/shuriken est lancé comme `shuriken` ; un outil sur mesure (`Techniques.Tools`) perd les annulations de chaîne : garder `Tool="Kunai"` sauf besoin réel. L'IA de famille soignerait à pleine santé : seuil générique `spec.AI.Hurt` à prévoir.
+13. La famille Zone vaut `"Fire"` par défaut (`ZoneKind`/`Zone.Kind`) et une zone sans `Kind` d'apparence est dessinée en feu : toute zone non ignée doit nommer `ZoneKind` et un `Kind` de `Looks`.
+14. Une téléportation de famille est dessinée par `FX:teleport` (éclair jaune de Minato) : chaque identité doit dessiner la sienne et éteindre l'éclair générique.
+15. Champs génériques prévus : `Shroud` sur une zone, `Leave` sur Burst, `Awakening.TeleportCost`.
