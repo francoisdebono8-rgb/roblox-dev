@@ -18,14 +18,15 @@ Zones.OBJECT=OBJECT;Zones.FIRE=FIRE;Zones.RETURN=RETURN
 --   lane    origin (on the floor), flat direction, length, half width, height
 --   column  origin (on the floor), radius, height
 -- Wind: walking into it x headwind, with it x tailwind (the stick decides);
--- a free body is carried downwind (more in the air); a blade flying up it is
+-- a free body is carried downwind (more in the air); a chakra dash straight
+-- up it breaks there (+dashBreak recovery; not the owner's); a blade flying up it is
 -- turned aside (x deflect speed, a short flight left), one riding it goes x
 -- ride faster and +rideDamage; fire crossing it grows (x feed radius, x
 -- feedDamage), whoever threw it. The owner gets `refund` chakra per blade
 -- turned aside. Updraft: a body thrown up in it falls at `fall` at most, a free
 -- airborne body is held at `hold`.
 Zones.KINDS={
-	Wind={shape="lane",height=9,headwind=.7,tailwind=1.15,carry=4,airCarry=11,deflect=.75,flightLeft=12,ride=1.4,rideDamage=1,feed=1.5,feedDamage=1.2,refund=2},
+	Wind={shape="lane",height=9,headwind=.7,tailwind=1.15,carry=4,airCarry=11,dashBreak=.25,deflect=.75,flightLeft=12,ride=1.4,rideDamage=1,feed=1.5,feedDamage=1.2,refund=2},
 	Updraft={shape="column",height=18,fall=-6,hold=-4},
 }
 local function flat(v) return Vector3.new(v.X,0,v.Z) end
@@ -140,12 +141,18 @@ local function body(c,a,dt)
 				-- reaction is its own motion).
 				if not a.reaction and not a.wall and not a.grabbedBy and FREE[a.state] then
 					Motor.travel(a,c,z.direction,(if a.airborne then tune.airCarry else tune.carry)*dt)
-				elseif a.state=="Rush" and a.rush and not a.rush.windHeld and a.rush.goal then
-					-- A chakra dash into the wind is held back (it may fall short).
+				elseif a.state=="Rush" and a.rush and a.rush.goal and z.owner~=a and not a.rush.windBroken then
+					-- A chakra dash straight up someone's wind breaks there: it
+					-- stops in the lane and stumbles (a longer recovery). Go
+					-- round the lane, or over it.
 					local way=flat(a.rush.goal-a.root.Position)
 					if way.Magnitude>.5 and way.Unit:Dot(z.direction)<-.35 then
-						a.rush.speed*=tune.headwind;a.rush.windHeld=true
-						Brawler.event(c,z.owner,"WindHold")
+						a.rush.windBroken=true
+						a.rush.recovery=(a.rush.recovery or .2)+tune.dashBreak
+						a.untilTime=math.min(a.untilTime,c.now)
+						c:pushImpact(a.root.Position,"windbreak",false,{owner=z.owner.id,fighter=z.owner.fighterId,victim=a.id,direction=z.direction,zone=z.id})
+						c:cue(a,"THE WIND BREAKS THE DASH",.6)
+						Brawler.event(c,z.owner,"WindBreak")
 					end
 				end
 			elseif tune.fall then

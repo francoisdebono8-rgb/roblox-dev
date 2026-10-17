@@ -40,6 +40,19 @@ local function laneAgainst(c,a,toward)
 	end
 	return nil
 end
+-- A straight dash at the opponent would run up an enemy lane (it breaks there).
+local function laneOnPath(c,a,target)
+	if not c.zones or #c.zones==0 then return false end
+	local from,to=a.root.Position,target.root.Position
+	local way=Vector3.new(to.X-from.X,0,to.Z-from.Z)
+	if way.Magnitude<1 then return false end
+	for _,z in c.zones do
+		if z.owner~=a and z.tune.headwind and z.direction:Dot(way.Unit)<-.35 then
+			for k=1,6 do if Zones.inside(z,from:Lerp(to,k/7)) then return true end end
+		end
+	end
+	return false
+end
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -133,6 +146,16 @@ function AI:zone(now,distance,toward,tangent,target)
 	end
 	if distance<tune.Close then
 		if hurt then return false end
+		-- A strike already coming: the guard (her fan string or a gust answers after).
+		if (target.state=="Startup" or target.state=="Active") and distance<8 and self.rng:NextNumber()<.55 then
+			c:request(a,"Guard");self.guardUntil=now+.35;return true
+		end
+		-- Walking into the fan's length: the tip first (it out-reaches a fist),
+		-- the string then throws the body back out.
+		if distance>4.6 and distance<7.6 and target.state~="Startup" and target.state~="Active" and self.rng:NextNumber()<.45 then
+			a.move=Vector3.zero
+			if press(c,a,"Attack") then return true end
+		end
 		if distance<tune.Push and tool and self.rng:NextNumber()<.55 and press(c,a,"Tool","neutral",0,target.root.Position) then return true end
 		if a.pursuitUntil<=now and self.rng:NextNumber()<.45 then
 			a.move=-toward
@@ -159,9 +182,12 @@ function AI:zone(now,distance,toward,tangent,target)
 		local roll=self.rng:NextNumber()
 		if distance<24 and threat and roll<.3 and cast("GreatGust") then return true end
 		if distance>12 and distance<34 and closing>3 and roll<.5 then
-			if cast("Cyclone",target.root.Position+(target.locomotion or Vector3.zero)*.45) then return true end
+			-- (where the body will be when the column rises: the signs, then the beat)
+			if cast("Cyclone",target.root.Position+(target.locomotion or Vector3.zero)*.69) then return true end
 		end
-		if distance>10 and distance<42 and roll<.7 and cast("Kamaitachi",lead) then return true end
+		-- (against a body coming in fast, from far enough that a dash into the
+		-- channel meets the scythe)
+		if distance>(if threat then 15 else 10) and distance<42 and roll<.7 and cast("Kamaitachi",lead) then return true end
 	end
 	-- Hold the band: inside it she backs off at an angle (a straight backpedal
 	-- is slower than any approach), never walks into melee.
@@ -520,7 +546,7 @@ function AI:update(now)
 	local theirs=(target.def.AttackProfile and target.def.AttackProfile.Light1 and target.def.AttackProfile.Light1.range or 6)
 	if theirs>reach and distance>reach-1 and distance<theirs+3 and target.state~="Startup" then
 		a.move=toward;a.sprinting=true
-		if distance>Config.Rush.MinRange+.5 and self.rng:NextNumber()<.3 and c:request(a,"Pursuit") then return end
+		if distance>Config.Rush.MinRange+.5 and self.rng:NextNumber()<.3 and not laneOnPath(c,a,target) and c:request(a,"Pursuit") then return end
 		if self.rng:NextNumber()<.2 then c:request(a,"Dodge");return end
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
@@ -531,9 +557,9 @@ function AI:update(now)
 	-- into a zoner is the slow answer).
 	local keen=.1*(DASH[a.fighterId] or 1)
 	if (self.entryUntil or 0)>now then keen*=4 elseif distance>desired+10 then keen*=2 end
-	if zoner then keen*=2.5 end
+	if zoner then keen*=1.3 end
 	if not calm and distance>dashFrom and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and target.state~="Guarding"
-		and self.rng:NextNumber()<keen then
+		and self.rng:NextNumber()<keen and not laneOnPath(c,a,target) then
 		if c:request(a,"Pursuit") then self.entryUntil=nil;return end
 	end
 	-- Sidestep cover when the direct route is obstructed.

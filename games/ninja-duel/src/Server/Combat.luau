@@ -212,6 +212,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		-- A new fighter's strike carries the flag in its own data (Attacks
 		-- breaksShield: Rock Lee's rising kick and spinning dash kick).
 		breaking=breaking or (attacker.pending~=nil and attacker.pending.kind=="Brawl" and attacker.pending.spec.breaksShield==true)
+		-- Wind scatters sand (TEMARI.md §11): a contact flagged by its source
+		-- (Combat.shieldBreak, set around the damage: Temari's scythe and gust).
+		breaking=breaking or self.shieldBreak==true
 		victim.shieldCharges=if breaking then 0 else victim.shieldCharges-1
 		victim.shieldRegenAt=self.now+shield.Regen
 		-- The sand absorbs the blow but the string keeps its rhythm: pressing on
@@ -420,8 +423,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- A flight that names its own contact (style, and reaction/impulse/stun:
-		-- Temari's wind scythe knocks away) instead of its kind's.
-		style=opts.style,stun=opts.stun,
+		-- Temari's wind scythe knocks away; breaksShield: wind scatters sand)
+		-- instead of its kind's.
+		style=opts.style,stun=opts.stun,breaksShield=opts.breaksShield,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
 		riders=opts.riders}
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
@@ -1513,9 +1517,11 @@ function Combat:projectileHit(p,target,position,normal)
 	local entry=self.impacts[#self.impacts]
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
+	self.shieldBreak=p.breaksShield
 	local damaged=self:damage(p.a,target,p.damage,false,false)
 	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
+	self.shieldBreak=nil
 	self.damageTag=nil
 	if self.match.phase~="Duel" then return end
 	-- Infused objects add their own consequence (guard crush, shock, ignition,

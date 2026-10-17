@@ -282,6 +282,12 @@ test("wind lane: a free body is carried downwind, more in the air; a body above 
  H.step(c,1)
  local carried=flat(b.root.Position-from):Dot(V.xAxis)
  assert(carried>=Zones.KINDS.Wind.carry*.8,string.format("the body drifted %.1f studs",carried))
+ -- Off the floor (a jump inside the lane) the wind takes it further.
+ b.airborne=true;c:relocate(b,b.root.Position+V.new(0,3,0))
+ local up=b.root.Position
+ Zones.step(c,.1)
+ local floating=flat(b.root.Position-up):Dot(V.xAxis)
+ assert(floating>=Zones.KINDS.Wind.airCarry*.1*.9 and floating>Zones.KINDS.Wind.carry*.1,string.format("in the air it drifted %.2f in 0.1 s",floating))
  -- Twelve studs up (a jump over the lane) the wind does not reach it.
  local c2,x,y=H.duel("Gale","Mirage");place(c2,x,y,30)
  testLane(c2,x,V.new(-40,0,y.root.Position.Z),V.xAxis)
@@ -344,6 +350,32 @@ test("wind lane: fire that crosses it grows and burns harder, even the opponent'
  assert(fed.damage>=12-.01,"the fed fire does "..fed.damage)
  assert(fed.leg==1,"the fire was fed more than once by one lane")
 end)
+test("wind lane: a chakra dash straight up it breaks in the lane and stumbles; round it, the dash arrives; her own lane never breaks her step",function()
+ local function dash(withLane,offset)
+  local c,a,b=H.duel("Lion","Gale");place(c,a,b,26);a.locked=true
+  -- Her lane blows from her down the line at him.
+  if withLane then testLane(c,b,b.root.Position+toward(b)*2+(offset or V.zero),toward(b),{width=4}) end
+  assert(press(c,a,"Pursuit"),"the dash was refused")
+  local recovery
+  until_(c,1,function() if a.state=="Recovery" then recovery=a.untilTime-c.now end return a.state~="Rush" end,"the dash never ended")
+  return gapOf(a,b),recovery,a,b
+ end
+ local free,freeRecovery=dash(false)
+ local broken,brokenRecovery,a,b=dash(true)
+ assert(free<5,"fixture: the dash did not arrive ("..free..")")
+ assert(broken>free+6,string.format("up her lane the dash still arrived (%.1f studs)",broken))
+ assert(brokenRecovery>freeRecovery+.15,"the broken dash did not stumble")
+ assert(ev(b,"WindBreak")==1,"the break was not reported to her")
+ -- A lane off to the side of the line: the dash is untouched.
+ local aside=dash(true,V.new(12,0,0))
+ assert(aside<5,"a lane beside the line broke the dash")
+ -- Her own wind step out through her own lane is never broken.
+ local c2,x,y=H.duel("Gale","Lion");place(c2,x,y,6);x.locked=true
+ testLane(c2,x,x.root.Position,toward(x),{width=6,origin=x.root.Position-toward(x)*4})
+ assert(press(c2,x,"Pursuit"),"her step was refused")
+ until_(c2,1,function() return x.state~="Rush" end,"her step never ended")
+ assert(gapOf(x,y)>=14 and ev(x,"WindBreak")==0,"her own lane broke her wind step")
+end)
 test("zones end: a lane's life, and every zone goes with a KO (Combat:clear); the snapshot lists them per kind",function()
  local c,a,b=H.duel("Gale","Mirage");place(c,a,b,20)
  testLane(c,a,V.zero,V.xAxis,{life=.5})
@@ -393,7 +425,7 @@ test("Kamaitachi: a wind scythe that knocks away (a wall splat at range) and lay
  H.step(c3,.4)
  for _,p in c3.projectiles do assert(p.kind~="gale","an interrupted channel still threw the scythe") end
 end)
-test("Great Gust: blades in the cone are blown away, fire grows, the body is thrown to a wall, a wide lane stays",function()
+test("Great Gust: blades in the cone are blown away, fire grows, the body is thrown to a wall, a wide lane stays; wind scatters a sand shield",function()
  local c,a,b=H.duel("Gale","Mirage")
  c:relocate(a,V.new(-12,3,0));c:relocate(b,V.new(6,3,0))
  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
@@ -408,6 +440,22 @@ test("Great Gust: blades in the cone are blown away, fire grows, the body is thr
  until_(c,1,function() return b.reaction=="WallSplat" end,"the body was not thrown to the wall")
  local lane=zonesOf(c,"Wind")[1]
  assert(lane and lane.width>=5 and lane.length>=28,"no wide lane")
+ -- A fireball in the cone is not blown away: it grows.
+ local c2,x,y=H.duel("Gale","Mirage");place(c2,x,y,20)
+ local fire=c2:projectile(y,x.root.Position,8,40,10,"fireball",nil,{radius=1.4,origin=y.root.Position+toward(y)*3})
+ assert(press(c2,x,slot(x,"GreatGust"),nil,y.root.Position))
+ until_(c2,.8,function() return ev(x,"GreatGust")>0 end,"no gust")
+ assert(table.find(c2.projectiles,fire) and (fire.fed or 0)>=1 and fire.damage>=12-.01,"the fire in the cone did not grow")
+ -- Wind scatters sand: Gaara's shield breaks outright under the gust (and the scythe).
+ local c3,m,n=H.duel("Gale","Sand");place(c3,m,n,16)
+ assert(n.shieldCharges==3,"fixture: no sand shield")
+ assert(press(c3,m,slot(m,"GreatGust"),nil,n.root.Position))
+ until_(c3,.8,function() return ev(m,"GreatGust")>0 end,"no gust on Gaara")
+ assert(n.shieldCharges==0,"the gust left "..n.shieldCharges.." shield charges")
+ local c4,s2,g=H.duel("Gale","Sand");place(c4,s2,g,16)
+ assert(press(c4,s2,slot(s2,"Kamaitachi"),nil,g.root.Position))
+ until_(c4,1,function() return g.shieldCharges<3 end,"the scythe never reached the shield")
+ assert(g.shieldCharges==0,"the scythe took only one charge of the shield")
 end)
 test("Rising Whirlwind: the spot is marked, a beat later the column rises; a body still there is thrown up and held, one that moved is not",function()
  local c,a,b=H.duel("Gale","Mirage");place(c,a,b,20)
@@ -505,8 +553,8 @@ test("Kirikiri Mai: Kamatari cuts across with a long lane; awakened lanes send b
  for _,p in table.clone(c2.projectiles) do c2:removeProjectile(p) end
  table.clear(c2.zones)
  H.step(c2,.5)
- Gale_lane=H.load("Server/Gale").lane(c2,x,x.root.Position+toward(x)*2,toward(x),30,3.2,3.6)
- assert(Gale_lane.reflect,"an awakened lane does not return blades")
+ local awakenedLane=H.load("Server/Gale").lane(c2,x,x.root.Position+toward(x)*2,toward(x),30,3.2,3.6)
+ assert(awakenedLane.reflect,"an awakened lane does not return blades")
  local health=y.health
  local blade=c2:projectile(y,x.root.Position,80,40,3,"kunai",nil,{radius=.3})
  until_(c2,.6,function() return not table.find(c2.projectiles,blade) end,"the blade went through")
@@ -543,7 +591,7 @@ local function seeded(fn)
  H.envBase.Random=saved
  assert(ok,err)
 end
-test("the AI zones: at range the scythe and the whirlwind, blades sent back, too close the gust or the wind step, a floating body converted at range",function()
+test("the AI zones: at range the scythe and the whirlwind, blades sent back, at the fan's length the tip, too close the gust or the wind step, a floating body converted at range",function()
  local AI=H.load("Server/AI")
  local function bot(c,a,seed,roll)
   local x=AI.new(c,a,seed)
@@ -562,8 +610,13 @@ test("the AI zones: at range the scythe and the whirlwind, blades sent back, too
  y.locomotion=toward(y)*20
  for _=1,30 do z2:update(c2.now);H.step(c2,.02);y.locomotion=toward(y)*20;if x.castId then break end end
  assert(x.castId=="Cyclone" or x.castId=="GreatGust","an approach was answered with "..tostring(x.castId))
- -- Six studs away: the gust pushes him out (or she steps away on the wind).
- local c3,m,n=H.duel("Gale","Mirage");place(c3,m,n,6);m.locked=true
+ -- Walking into the fan's length (6 studs): the tip first.
+ local c6,f,g=H.duel("Gale","Mirage");place(c6,f,g,6.5);f.locked=true
+ local z6=bot(c6,f,4,.1)
+ for _=1,10 do z6:update(c6.now);H.step(c6,.02);if f.attackName then break end end
+ assert(f.attackName=="Light1","at the fan's length the bot answered with "..tostring(f.attackName))
+ -- Inside it (3.5 studs): the gust pushes him out (or she steps away on the wind).
+ local c3,m,n=H.duel("Gale","Mirage");place(c3,m,n,3.5);m.locked=true
  local z3=bot(c3,m,7,.1)
  for _=1,20 do z3:update(c3.now);H.step(c3,.02);if ev(m,"Gust")+ev(m,"WindStep")>0 then break end end
  assert(ev(m,"Gust")+ev(m,"WindStep")>0,"too close, the bot did nothing about it")
@@ -600,6 +653,24 @@ test("the AIs that fight her: no probing at her range, and a wind lane blowing a
  local out=gapOf(a,b)
  for _=1,16 do z:update(c.now);H.step(c,.05) end
  assert(gapOf(a,b)<out-4,string.format("out of the lane he did not go in (%.1f -> %.1f)",out,gapOf(a,b)))
+end)
+test("the AIs that fight her never dash straight up her lane (it would break there); round it they still do",function()
+ local AI=H.load("Server/AI")
+ local function dashes(withLane)
+  local c,a,b=H.duel("Lion","Gale");place(c,a,b,26);a.locked=true
+  if withLane then testLane(c,b,b.root.Position+toward(b)*2,toward(b),{width=2.5}) end
+  -- (outside the lane himself, on its line further back: only the dash would cross it)
+  c:relocate(a,a.root.Position+toward(a)*-1)
+  local z=AI.new(c,a,21)
+  z.rng={NextNumber=function(_,p,q) if p and q then return p end return .001 end}
+  z.observed=b.state;z.observedAt=c.now-1;z.probing=false;z.modeUntil=c.now+30
+  -- (no blade or jutsu this second: only the way in is measured)
+  z.techReadyAt=c.now+30;a.neutralToolAt=c.now+30
+  for _=1,10 do z:update(c.now);H.step(c,.05);if ev(a,"Rush")>0 then break end end
+  return ev(a,"Rush")
+ end
+ assert(dashes(false)>0,"fixture: the bot does not dash in")
+ assert(dashes(true)==0,"the bot dashed straight up her lane")
 end)
 test("AI duels: Temari against every fighter, both ways and the mirror, to the KO without wedging; every flight stays on the path the client draws",function()
  seeded(function()

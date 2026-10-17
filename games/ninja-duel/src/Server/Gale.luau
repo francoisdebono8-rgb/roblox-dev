@@ -79,12 +79,13 @@ end
 
 -- --------------------------------------------------------------- techniques
 -- Kamaitachi: a wind scythe that knocks away (a wall behind the body splats
--- it) and leaves a lane of wind behind it, laid as it flies.
+-- it) and leaves a lane of wind behind it, laid as it flies. Wind scatters
+-- sand: it breaks Gaara's shield outright (breaksShield), as the Great Gust does.
 local function kamaitachi(c,a,pending)
 	local spec=pending.spec
 	local origin,line,direction=windLine(c,a,pending.aim,spec.Range)
 	local p=c:projectile(a,origin+line*spec.Range,spec.Speed or 74,spec.Range,spec.Damage,"gale",nil,
-		{origin=origin,radius=2.4,growth=3,reaction="Knockback",impulse=Vector3.new(0,12,46),stun=.5,style="jutsu"})
+		{origin=origin,radius=2.4,growth=3,reaction="Knockback",impulse=Vector3.new(0,12,46),stun=.5,style="jutsu",breaksShield=true})
 	lane(c,a,origin,direction,spec.Range,spec.Lane or 3.2,spec.LaneLife or 3.6,p)
 	c:cue(a,"KAMAITACHI",.6)
 	Brawler.event(c,a,"Kamaitachi")
@@ -98,9 +99,9 @@ local function greatGust(c,a,pending)
 	local blown=sweep(c,a,reach,cos,false)
 	local b=a.target
 	if b and b.health>0 and inCone(a,b.root.Position,reach,cos) and c:lineOfSight(a,b) then
-		c.damageTag="Great Gust"
+		c.damageTag="Great Gust";c.shieldBreak=true
 		local hit=c:damage(a,b,spec.Damage,false,false)
-		c.damageTag=nil
+		c.damageTag=nil;c.shieldBreak=nil
 		if c.match.phase~="Duel" then return end
 		if hit then
 			local away=flatUnit(b.root.Position-a.root.Position,look)
@@ -299,7 +300,7 @@ function Gale.summon(c,a)
 	local toward=if b then flatUnit(b.root.Position-a.root.Position,look) else look
 	local origin=a.root.Position+toward*2+Vector3.new(0,.6,0)
 	local p=c:projectile(a,origin+toward*s.Range,s.Speed,s.Range,s.Damage,"kamatari",nil,
-		{origin=origin,radius=s.Radius,growth=0,reaction="Knockdown",impulse=Vector3.new(0,16,34),stun=.8,style="jutsu",heavy=true})
+		{origin=origin,radius=s.Radius,growth=0,reaction="Knockdown",impulse=Vector3.new(0,16,34),stun=.8,style="jutsu",heavy=true,breaksShield=true})
 	lane(c,a,origin,toward,s.Range,s.Lane or 4.5,s.LaneLife or 6,p)
 	c:cue(a,"KUCHIYOSE • KIRIKIRI MAI",1.2)
 	Brawler.event(c,a,"Kamatari")
