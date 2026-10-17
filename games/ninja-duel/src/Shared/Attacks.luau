@@ -160,4 +160,40 @@ for name,shape in {
 } do
  for key,value in shape do attacks[name][key]=value end
 end
+-- Naruto (roster wave, several bodies). His own: the headbutt (heavy after
+-- one hit) and the tackle into the legs (low route). Carried out by a shadow
+-- clone (`proxy`: where the clone stands, Server/Bodies; `proxyClip`: the
+-- clone's own clip while Naruto plays the move's): the kick from behind (the
+-- third hit with a clone out), the kick up under the body (the Uzumaki
+-- Barrage) and the strike from the flank (side route, the string goes on).
+-- The Nine-Tails cloak's claws (no clones there): a rising claw and a long
+-- swipe. A clone's own jab and the barrage kick time the clients' clips.
+for name,m in {
+ Headbutt=move(.1,.1,.3,9,2.6,"HitStun",Vector3.new(0,4,14),.45),
+ Tackle=move(.12,.16,.34,8,4.5,"Knockdown",Vector3.new(0,8,22),.7),
+ CloneKick=move(.15,.14,.28,11,0,"Juggled",Vector3.new(0,26,6),.62),
+ UzumakiKick=move(.16,.14,.3,8,0,"Launched",Vector3.new(0,56,4),1.2),
+ MirrorClone=move(.11,.12,.22,6,0,"HitStun",Vector3.new(0,4,10),.36),
+ ClawRise=move(.14,.14,.26,10,2.6,"Launched",Vector3.new(0,58,6),1.2),
+ ClawSwipe=move(.1,.14,.22,8,1.6,"HitStun",Vector3.new(0,6,16),.4),
+ CloneJab=move(.22,.1,.3,4,0,"HitStun",Vector3.new(0,3,10),.32),
+ BarrageKick=move(.1,.1,.2,3,0,"Juggled",Vector3.new(0,22,2),.6),
+} do
+ m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
+ m.depth=m.range*.8;m.offset=m.range*.4
+ attacks[name]=m
+end
+for name,shape in {
+ Headbutt={contact=3.0,range=5.5,zone="head",kind="heavy",side=1,twist=6,lean=26,arm=40,step=1.2},
+ Tackle={contact=2.8,range=6.5,width=6,height=4,zone="legs",kind="sweep",side=1,twist=10,lean=40,arm=60,step=1.35},
+ CloneKick={contact=2.6,range=6,width=5.5,height=6,zone="body",kind="kick",side=1,twist=40,lean=8,arm=60,step=1,proxy="behind",proxyClip="CloneKickStrike"},
+ UzumakiKick={contact=2.4,range=6,width=5.5,height=7,zone="chin",kind="launch",side=1,twist=10,lean=-20,arm=60,step=1,proxy="under",proxyClip="UzumakiRise",breaksShield=true},
+ MirrorClone={contact=2.8,range=6,width=5.5,height=6,zone="body",kind="strike",side=-1,twist=30,lean=10,arm=90,step=1,proxy="side",proxyClip="MirrorStrike",chain=true},
+ ClawRise={contact=3.4,range=9.5,width=6,height=7,depth=8.5,offset=4.4,zone="chin",kind="launch",side=1,twist=16,lean=-24,arm=120,step=1.15,breaksShield=true},
+ ClawSwipe={contact=3.6,range=10,width=9,height=6,depth=9,offset=4.6,zone="body",kind="slash",side=-1,twist=60,lean=12,arm=100,step=1.1,chain=true},
+ CloneJab={contact=3,range=5.5,zone="head",kind="strike",side=1,twist=24,lean=10,arm=88,step=1},
+ BarrageKick={contact=2.4,range=5,zone="body",kind="kick",side=1,twist=10,lean=-10,arm=60,step=1},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
 return attacks

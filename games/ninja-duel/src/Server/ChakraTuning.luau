@@ -54,6 +54,13 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 T.Masteries.Taijutsu={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
 T.CharacterMastery.Leaf="Taijutsu"
 T.Preferred.Taijutsu={}
+-- Naruto (roster wave): no nature yet (his wind is Part II). His chakra goes
+-- into a body, not into the steel: the chord turns the thrown kunai into a
+-- shadow clone near the target (ToolMastery.Transform, Server/Bodies). With
+-- two clones already out, the same chord only reinforces the kunai.
+T.Masteries.ShadowClone={tags={},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Legion="ShadowClone"
+T.Preferred.ShadowClone={Kunai="Reinforce"}
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,

@@ -885,6 +885,133 @@ CLIPS.Leaf.LeafHeel=CLIPS.Lion.LionBarrage
 CLIPS.Leaf.LeafWhirlwind=CLIPS.Lion.Light3
 CLIPS.Leaf.GreatWhirlwind=CLIPS.Flashstep.Light3
 setmetatable(CLIPS.Leaf,{__index=CLIPS.Lion})
+-- Naruto (roster wave, several bodies) ---------------------------------------
+-- A brawler, not a prodigy of form: a low, square, loose guard with both fists
+-- up and the elbows out, a hook / straight / push kick string, the headbutt and
+-- the tackle. His clones are his own body (Client/BodyViews draws a copy of
+-- him), so the clips they play live here too: the kick from behind, the kick
+-- up under the body, the flank hook, their jab and the barrage kick. While a
+-- clone carries his route he plays his side of it (bracing, crouching to
+-- spring). Air strings and throws come from the shared families. Authored at
+-- their final size (the CORE4 passes below do not touch them).
+STANCE.Legion={root={y=-.46,pitch=12,yaw=20},torso={pitch=8,yaw=-10},head={pitch=-8,yaw=-10},
+	ra={raise=60,out=18,twist=14,elbow=108,wrist=0},la={raise=66,out=12,twist=10,elbow=98,wrist=0},
+	rf={x=.36,z=.66,yaw=30},lf={x=-.24,z=-.62,yaw=-12},breath=1.5,tempo=8}
+local NR=STANCE.Legion
+local function nr(over) return merge(NR,over) end
+local AIR_NR={root={pitch=6},torso={pitch=6},head={pitch=-8},ra={raise=50,out=30,elbow=96},la={raise=54,out=26,elbow=90},rl={lift=60,knee=100,ankle=-10},ll={lift=38,knee=80,ankle=-10}}
+CLIPS.Legion={}
+CLIPS.Legion.Light1={ -- a wide looping right hook, thrown with the shoulders
+	K(0,nr({root={yaw=34},torso={yaw=24},ra={raise=70,out=62,twist=-10,elbow=96},la={raise=60,out=10,elbow=100}})),
+	K(1,nr({root={z=-.35,yaw=-10,pitch=14},torso={yaw=-30,pitch=8},head={yaw=8},ra={raise=88,out=-6,twist=40,elbow=76,wrist=0},la={raise=52,out=14,elbow=110},rf={z=.8},lf={z=-.9}}),"out"),
+	K(2,nr({root={z=-.38,yaw=-16,pitch=14},torso={yaw=-38,pitch=8},ra={raise=84,out=-24,twist=44,elbow=80},la={raise=50,out=14,elbow=110},rf={z=.8},lf={z=-.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Light2={ -- the straight: the left fist driven out, the body behind it
+	K(0,nr({torso={yaw=16},la={raise=62,out=8,twist=10,elbow=118}})),
+	K(1,nr({root={z=-.4,yaw=-8,pitch=12},torso={yaw=-22,pitch=6},la={raise=92,out=-6,twist=-10,elbow=4,wrist=0},ra={raise=58,out=20,elbow=112}}),"out"),
+	K(2,nr({root={z=-.42,yaw=-10,pitch=12},torso={yaw=-24},la={raise=90,out=-6,twist=-10,elbow=8},ra={raise=58,out=20,elbow=112}})),
+	K(3,NR),
+}
+CLIPS.Legion.Light3={ -- a big push kick off the back leg
+	K(0,nr({root={y=-.6,z=.2,pitch=6},torso={pitch=2},ra={raise=50,out=30,elbow=90},la={raise=56,out=24,elbow=96},rl={lift=70,knee=118,ankle=-10}})),
+	K(1,nr({root={y=-.3,z=-.5,pitch=-16},torso={pitch=-8,yaw=-6},head={pitch=12},ra={raise=20,out=46,elbow=50},la={raise=70,out=20,elbow=90},rl={lift=94,out=4,knee=4,ankle=-30},lf={z=-1.0,toe=-10}}),"out"),
+	K(2,nr({root={y=-.32,z=-.52,pitch=-14},torso={pitch=-8},ra={raise=20,out=46,elbow=50},la={raise=70,out=20,elbow=90},rl={lift=90,knee=8,ankle=-28},lf={z=-1.0}})),
+	K(2.5,nr({root={y=-.5},rl={lift=40,knee=70}})),
+	K(3,NR),
+}
+CLIPS.Legion.Heavy={ -- a wound-up haymaker: everything he has in one right hand
+	K(0,nr({root={y=-.66,z=.3,yaw=40,pitch=6},torso={yaw=34,pitch=-4},ra={raise=120,out=40,twist=-20,elbow=120},la={raise=70,out=-6,elbow=70},rf={z=1.0}})),
+	K(1,nr({root={y=-.5,z=-.8,yaw=-24,pitch=24},torso={yaw=-30,pitch=14},head={yaw=12,pitch=4},ra={raise=80,out=-10,twist=30,elbow=20},la={raise=-10,out=20,elbow=90},lf={z=-1.4},rf={z=1.2}}),"out"),
+	K(2,nr({root={y=-.52,z=-.84,yaw=-28,pitch=24},torso={yaw=-34,pitch=14},ra={raise=76,out=-14,twist=30,elbow=24},la={raise=-10,out=20,elbow=90},lf={z=-1.4},rf={z=1.2}})),
+	K(3,NR),
+}
+CLIPS.Legion.Headbutt={ -- both hands on the collar, the forehead driven in
+	K(0,nr({root={y=-.4,pitch=-10,z=.2},torso={pitch=-14},head={pitch=-22},ra={raise=88,out=-10,elbow=60},la={raise=88,out=-10,elbow=60}})),
+	K(1,nr({root={y=-.5,z=-.6,pitch=26},torso={pitch=22},head={pitch=24},ra={raise=80,out=-20,elbow=70},la={raise=80,out=-20,elbow=70},lf={z=-1.1},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.5,z=-.62,pitch=24},torso={pitch=20},head={pitch=20},ra={raise=78,out=-20,elbow=72},la={raise=78,out=-20,elbow=72},lf={z=-1.1},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Tackle={ -- a low dive into the legs, the arms wide to wrap them
+	K(0,nr({root={y=-.9,pitch=30},torso={pitch=16},head={pitch=-20},ra={raise=40,out=40,elbow=60},la={raise=40,out=40,elbow=60},lf={z=-1.0},rf={z=1.0}})),
+	K(1,nr({root={y=-1.3,z=-1.0,pitch=58},torso={pitch=22},head={pitch=-34},ra={raise=110,out=30,elbow=30},la={raise=110,out=30,elbow=30},rl={lift=-20,knee=40,ankle=20},lf={z=-1.4}}),"out"),
+	K(2,nr({root={y=-1.35,z=-1.05,pitch=60},torso={pitch=22},head={pitch=-34},ra={raise=104,out=-10,elbow=60},la={raise=104,out=-10,elbow=60},rl={lift=-20,knee=40,ankle=20},lf={z=-1.4}})),
+	K(2.6,nr({root={y=-1.0,pitch=30},torso={pitch=12}})),
+	K(3,NR),
+}
+CLIPS.Legion.DashAttack={ -- out of the dash: a flying right fist, the whole body behind it
+	K(0,nr({root={y=-.6,pitch=22},ra={raise=40,out=30,elbow=110},la={raise=60,out=20,elbow=90},lf={z=-1.0},rf={z=1.0}})),
+	K(1,nr({root={y=-.4,z=-.9,pitch=20,yaw=-10},torso={yaw=-18,pitch=8},head={pitch=-10},ra={raise=92,out=-6,twist=10,elbow=4},la={raise=-10,out=30,elbow=60},lf={z=-1.5},rf={z=1.4,y=.2,toe=-20}}),"out"),
+	K(2,nr({root={y=-.42,z=-.92,pitch=20,yaw=-10},torso={yaw=-20,pitch=8},ra={raise=90,out=-6,twist=10,elbow=8},la={raise=-10,out=30,elbow=60},lf={z=-1.5},rf={z=1.4,y=.2,toe=-20}})),
+	K(3,NR),
+}
+CLIPS.Legion.Rasengan={ -- the sphere in the right palm, the whole body lunging behind it
+	K(0,nr({root={y=-.8,z=.2,pitch=18},torso={pitch=10,yaw=16},ra={raise=60,out=20,twist=-60,elbow=90,wrist=10},la={raise=40,out=30,elbow=60}})),
+	K(1,nr({root={y=-.7,z=-1.1,pitch=26,yaw=-10},torso={pitch=12,yaw=-14},head={pitch=-14},ra={raise=94,out=-4,twist=-70,elbow=6,wrist=-10},la={raise=-20,out=30,elbow=40},lf={z=-1.6},rf={z=1.3,toe=-20}}),"out"),
+	K(2,nr({root={y=-.7,z=-1.15,pitch=26,yaw=-12},torso={pitch=12,yaw=-16},ra={raise=92,out=-4,twist=-70,elbow=8},la={raise=-20,out=30,elbow=40},lf={z=-1.6},rf={z=1.3,toe=-20}})),
+	K(3,NR),
+}
+-- His side of the clone routes.
+CLIPS.Legion.CloneKick={ -- (his clone kicks from behind) he braces to meet the body coming at him
+	K(0,nr({root={y=-.5,z=.25},torso={pitch=4},ra={raise=74,out=6,elbow=100},la={raise=78,out=2,elbow=92}})),
+	K(1,nr({root={y=-.62,z=.3,pitch=14},torso={pitch=10},head={pitch=-6},ra={raise=84,out=-10,twist=20,elbow=70},la={raise=86,out=-12,twist=20,elbow=66},lf={z=-1.0},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.62,z=.3,pitch=14},torso={pitch=10},ra={raise=84,out=-10,twist=20,elbow=70},la={raise=86,out=-12,twist=20,elbow=66},lf={z=-1.0},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.UzumakiKick={ -- (a clone kicks the body up) he drops low, ready to spring after it
+	K(0,nr({root={y=-.7,pitch=14},torso={pitch=10},ra={raise=40,out=30,elbow=80},la={raise=40,out=30,elbow=80}})),
+	K(1,nr({root={y=-1.0,pitch=20},torso={pitch=12},head={pitch=-24},ra={raise=-20,out=40,elbow=40},la={raise=-20,out=40,elbow=40},lf={z=-.6},rf={z=.6}}),"out"),
+	K(2,nr({root={y=-1.0,pitch=18},torso={pitch=10},head={pitch=-30},ra={raise=-24,out=40,elbow=40},la={raise=-24,out=40,elbow=40},lf={z=-.6},rf={z=.6}})),
+	K(3,NR),
+}
+CLIPS.Legion.MirrorClone={ -- (a clone hooks from the flank) he feints the same hook on his side
+	K(0,nr({root={yaw=30,roll=6},torso={yaw=20},la={raise=70,out=50,elbow=96},ra={raise=60,out=14,elbow=104}})),
+	K(1,nr({root={yaw=-6,pitch=12,roll=-6},torso={yaw=-20},la={raise=86,out=-4,twist=40,elbow=80},ra={raise=56,out=14,elbow=110}}),"out"),
+	K(2,nr({root={yaw=-8,pitch=12},torso={yaw=-22},la={raise=84,out=-14,twist=40,elbow=82},ra={raise=56,out=14,elbow=110}})),
+	K(3,NR),
+}
+-- The clones' side (BodyViews: attackVariant of the carried move).
+CLIPS.Legion.CloneKickStrike={ -- a clone: a roundhouse into the opponent's back
+	K(0,nr({root={y=-.62,yaw=-30,pitch=6},torso={yaw=-18},ra={raise=50,out=20,elbow=100},la={raise=56,out=20,elbow=100},rl={lift=60,out=20,knee=110,ankle=-10}})),
+	K(1,nr({root={y=-.3,yaw=66,pitch=-4,roll=-18},torso={yaw=12,roll=-18},head={yaw=-36},ra={raise=-8,out=40,elbow=44},la={raise=60,out=-6,elbow=100},rl={lift=82,out=60,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
+	K(2,nr({root={y=-.32,yaw=76,pitch=-4,roll=-16},torso={yaw=14,roll=-16},ra={raise=-6,out=40,elbow=46},la={raise=60,out=-6,elbow=100},rl={lift=78,out=62,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
+	K(3,NR),
+}
+CLIPS.Legion.UzumakiRise={ -- a clone: down low under the body, one leg driven straight up
+	K(0,nr({root={y=-1.2,pitch=24},torso={pitch=14},ra={raise=30,out=40,elbow=60},la={raise=30,out=40,elbow=60},lf={z=-.4},rf={z=.5}})),
+	K(1,nr({root={y=-.1,pitch=-28},torso={pitch=-14},head={pitch=-22},ra={raise=-30,out=40,elbow=24},la={raise=-30,out=40,elbow=24},rl={lift=150,out=4,knee=4,ankle=-30},lf={z=0,toe=-24}}),"out"),
+	K(2,nr({root={y=-.06,pitch=-30},torso={pitch=-16},head={pitch=-22},ra={raise=-32,out=40,elbow=24},la={raise=-32,out=40,elbow=24},rl={lift=156,out=4,knee=6,ankle=-28},lf={z=0,toe=-20}})),
+	K(3,NR),
+}
+CLIPS.Legion.MirrorStrike=CLIPS.Legion.Light1 -- a clone hooks like him
+CLIPS.Legion.CloneJab=CLIPS.Legion.Light2 -- and jabs like him
+CLIPS.Legion.BarrageKick={ -- a clone in the air under the body: a rising kick ("U-ZU-MA")
+	K(0,merge(AIR_NR,{root={pitch=-10},rl={lift=90,knee=130},ra={raise=30,out=50,elbow=40}})),
+	K(1,merge(AIR_NR,{root={pitch=-30},torso={pitch=-12},head={pitch=-24},rl={lift=160,knee=6,ankle=-30},ll={lift=10,knee=40}}),"out"),
+	K(2,merge(AIR_NR,{root={pitch=-32},torso={pitch=-12},rl={lift=156,knee=10,ankle=-28},ll={lift=10,knee=40}})),
+	K(3,AIR_NR),
+}
+CLIPS.Legion.NarutoRendan={ -- the barrage's last word: his heel brought down from above the body
+	K(0,merge(AIR_NR,{root={pitch=-26,yaw=10},torso={pitch=-16},head={pitch=-10},rl={lift=170,out=4,knee=4,ankle=-30},ll={lift=10,knee=46},ra={raise=40,out=60,elbow=30},la={raise=40,out=60,elbow=30}})),
+	K(1,merge(AIR_NR,{root={pitch=34},torso={pitch=30},head={pitch=-14},rl={lift=10,out=4,knee=6,ankle=-10},ll={lift=-12,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}}),"out"),
+	K(2,merge(AIR_NR,{root={pitch=36},torso={pitch=32},rl={lift=8,knee=8},ll={lift=-12,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}})),
+	K(3,nr({root={y=-1.0,pitch=26},torso={pitch=22},lf={z=-.9},rf={z=.9}})),
+}
+-- The Nine-Tails cloak: no clones, a chakra claw instead.
+CLIPS.Legion.ClawRise={ -- low on all fours, then a claw ripped upward
+	K(0,nr({root={y=-1.2,pitch=34},torso={pitch=20},head={pitch=-30},ra={raise=20,out=30,elbow=40,wrist=-30},la={raise=40,out=20,elbow=40},lf={z=-.7},rf={z=.8}})),
+	K(1,nr({root={y=-.3,pitch=-10,yaw=-14},torso={pitch=-16,yaw=-20},head={pitch=-20},ra={raise=172,out=20,twist=-20,elbow=20,wrist=-20},la={raise=10,out=40,elbow=40}}),"out"),
+	K(2,nr({root={y=-.28,pitch=-12,yaw=-16},torso={pitch=-18,yaw=-22},ra={raise=168,out=24,elbow=24},la={raise=10,out=40,elbow=40}})),
+	K(3,NR),
+}
+CLIPS.Legion.ClawSwipe={ -- a long sweep of the chakra claw across the body
+	K(0,nr({root={y=-.8,yaw=50,pitch=16},torso={yaw=40,pitch=10},ra={raise=80,out=90,twist=-20,elbow=40,wrist=-30},la={raise=40,out=10,elbow=90}})),
+	K(1,nr({root={y=-.75,yaw=-40,pitch=18},torso={yaw=-44,pitch=10},head={yaw=20},ra={raise=86,out=-40,twist=30,elbow=20,wrist=-30},la={raise=30,out=30,elbow=80},lf={z=-1.1},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.75,yaw=-50,pitch=18},torso={yaw=-50,pitch=10},ra={raise=84,out=-50,twist=30,elbow=24},la={raise=30,out=30,elbow=80},lf={z=-1.1},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Riposte=CLIPS.Legion.Light2
+setmetatable(CLIPS.Legion,{__index=CLIPS.Lion})
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -1021,6 +1148,9 @@ local LEAD=.03
 -- Rock Lee's finishers ride on the Slam like the Lion Combo.
 local VARIANT_OF={Rasengan="DashAttack",RasenganDrop="Slam",LionBarrage="Slam",PrimaryLotus="Slam",HiddenLotus="Slam",LeafHeel="Slam"}
 Motion.VARIANT_OF=VARIANT_OF
+-- Naruto: the barrage's finisher rides on the Slam; a clone plays its side of
+-- a route he carries out on that route's own timing (Attacks proxyClip).
+VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF.UzumakiRise="UzumakiKick";VARIANT_OF.MirrorStrike="MirrorClone"
 local function clipName(subject)
 	return if VARIANT_OF[subject.attackVariant or ""] then subject.attackVariant else subject.attackName
 end
@@ -1238,6 +1368,18 @@ local function castSpec(actor)
 		-- Rock Lee forms no seal: a crouch wound up for the spin, then the kick
 		-- itself is the GreatWhirlwind strike.
 		return merge(base,{root={y=-1.0,pitch=16,yaw=64},torso={pitch=8,yaw=30},head={yaw=-44},la={raise=50,out=30,elbow=60},lf={z=-1.0},rf={z=.9}})
+	elseif id=="ShadowClone" or id=="MassShadowClone" then
+		-- Naruto's Kage Bunshin: one seal, the cross of both hands before the chest
+		-- (wider and lower for the multi clone).
+		local wide=id=="MassShadowClone"
+		return merge(base,{root={y=if wide then -.72 else -.46,pitch=4},torso={pitch=4},head={pitch=6},
+			ra={raise=70,out=-30,twist=40,elbow=100,wrist=10},la={raise=64,out=-34,twist=-30,elbow=96,wrist=-10},lf={z=-.6,x=-.2},rf={z=.6,x=.2}})
+	elseif id=="CloneRasengan" then
+		-- The right palm held out flat, the left hand over it: the sphere turns between.
+		return merge(base,{root={y=-.6,pitch=12,yaw=8},torso={pitch=8,yaw=-6},head={pitch=14},ra={raise=74,out=12,twist=-80,elbow=58,wrist=10},la={raise=40,out=10,elbow=60}})
+	elseif id=="RasenganShape" then
+		-- (His clone beside him) both hands cupped over his palm, shaping it.
+		return merge(base,{root={y=-.62,pitch=16,yaw=-20},torso={pitch=12,yaw=-14},head={pitch=18,yaw=-10},ra={raise=66,out=-30,twist=40,elbow=80,wrist=-20},la={raise=70,out=-36,twist=-40,elbow=70,wrist=-20}})
 	end
 	return sealPose(base,t,false)
 end
@@ -1271,6 +1413,8 @@ local GAIT={
 -- Rock Lee: long, quick and bouncy steps, leaning in; the rear hand stays behind
 -- his back until he breaks into a full sprint (holdRear).
 GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
+-- Naruto: energetic and loose, arms swinging wide, a heavy bouncing stride.
+GAIT.Legion={stride=1.1,cadence=1.05,arm=48,lean=7,bob=1.2,guard=.05}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
@@ -2052,6 +2196,10 @@ function Motion.present(char,actor,clock,dt)
 			-- shoulder height, chin up; the other hand already behind his back.
 			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
 				la={raise=70,out=30,twist=-60,elbow=128,wrist=0},rf={x=.2,z=.5},lf={x=-.1,z=-.5}})
+		elseif body=="Legion" then
+			-- Naruto: a grin and a thumb up at the opponent, the other fist on his hip.
+			spec=merge(base,{root={y=-.12,pitch=-2,yaw=14},torso={pitch=-6,yaw=-6},head={pitch=-8,yaw=-10},
+				ra={raise=96,out=10,twist=-20,elbow=40,wrist=0},la={raise=-10,out=40,twist=-40,elbow=100,wrist=0},rf={x=.2,z=.4},lf={x=-.1,z=-.4}})
 		elseif body=="Sand" then
 			-- Arms folded, chin down, perfectly still: the sand will do it.
 			spec=merge(base,{root={y=-.04,pitch=-1},head={pitch=10,yaw=0},torso={pitch=-2}})

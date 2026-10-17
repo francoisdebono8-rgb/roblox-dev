@@ -9,6 +9,7 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local Bodies=require(script.Parent.Bodies)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
@@ -240,6 +241,8 @@ function Matches:view(s,cursor,mine,theirs)
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
 	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
+		bodies=Bodies.view(s.combat),
 		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end

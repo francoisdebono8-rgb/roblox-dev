@@ -34,15 +34,18 @@ function Bangla.tryHit(c,a,p)
  -- Same donor forward volume; missing air/grab mechanics supply their bounded shape.
  local hitbox=donor.hitbox
  hitbox.Size=Vector3.new(p.spec.width or 5,p.spec.height or 5,p.spec.depth or 2)
- hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-(p.spec.offset or 2))
+ -- A strike carried out by another body (Ninja Duel Bodies: Naruto's clone)
+ -- is thrown, validated and judged from that body's frame (p.from).
+ local frame=p.from or a.root.CFrame
+ hitbox.CFrame=frame*CFrame.new(0,0,-(p.spec.offset or 2))
  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={target.model}
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05) then continue end
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05,p.from) then continue end
    donor.Hits[target.id]=true
-   local delta=a.root.Position-target.root.Position
+   local delta=frame.Position-target.root.Position
    local frontal=delta.Magnitude<.001 or target.root.CFrame.LookVector:Dot(delta.Unit)>.15
    local guarded=target.state=='Guarding' and target.chakra>0 and frontal
    local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
@@ -50,7 +53,9 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=if p.rasengan then "Rasengan" else p.name
    -- A Flow strike (chained on the beat) lands a little harder.
    local flow=if p.flow then require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Flow.Damage else 1
+   if p.from then c.hitOrigin=frame.Position end
    local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow*(p.spec.damageScale or 1),false,true)
+   if p.from then c.hitOrigin=nil end
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end

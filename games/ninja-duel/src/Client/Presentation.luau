@@ -4,10 +4,12 @@
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
+-- Bodies that are not fighters (Naruto's shadow clones).
+local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -210,6 +212,7 @@ function Presentation:update(data,dt)
  if not data.human then
   self:clearEcho()
   self.fx:update(data,dt,nil)
+  self.bodies:update(data,dt,nil)
   return
  end
  if self.epoch~=data.epoch then
@@ -290,5 +293,6 @@ function Presentation:update(data,dt)
   end
  end
  self.fx:update(data,dt,folder)
+ self.bodies:update(data,dt,folder)
 end
 return Presentation
