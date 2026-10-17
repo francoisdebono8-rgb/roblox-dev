@@ -1655,4 +1655,7 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
+require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX

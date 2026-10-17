@@ -1028,4 +1028,6 @@ function Techniques.curseDrain(c,a,dt,now)
 	a.curseHunger=rate>tune.HealthDrain
 	if rate>0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
 end
+-- Naruto (roster wave): his jutsu and his clones' behaviour (Server/Legion).
+require(script.Parent.Legion).install(Techniques)
 return Techniques

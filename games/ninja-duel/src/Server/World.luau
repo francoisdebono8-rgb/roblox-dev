@@ -799,6 +799,70 @@ local function dressLee(model,def)
 		end
 	end
 end
+-- Naruto in Part I (13, the Chunin Exam to the Valley of the End): the orange
+-- jumpsuit with blue shoulders and the white standing collar, the red Uzumaki
+-- spiral on the back, the blue-cloth headband, spiky blond hair, blue eyes,
+-- three whisker marks on each cheek, a kunai holster on the bandaged right
+-- thigh, blue sandals. A genin's kit, nothing of Part II. Flat SmoothPlastic.
+local function dressNaruto(model,def)
+	local hair=rgb(250,206,70)
+	local hairShade=rgb(226,170,40)
+	local orange=rgb(244,130,36)
+	local orangeDark=rgb(214,104,24)
+	local blue=rgb(36,52,110)
+	local cloth=rgb(40,62,140)
+	local white=rgb(238,236,228)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(60,130,230),hairShade)
+	for _,side in {-1,1} do
+		for k=0,2 do
+			wear(model,"Head","Whisker",Vector3.new(.28,.03,.02),CFrame.new(side*.46,-.14-k*.09,-.78)*A(0,0,R(side*(8-k*8))),rgb(80,58,46))
+		end
+	end
+	hairCap(model,hair)
+	-- Spikes all round, wilder than Minato's, a ragged fringe over the headband.
+	local spikes={
+		{Vector3.new(0,.82,.2),Vector3.new(0,.75,.6),.95,.6,.38},
+		{Vector3.new(-.42,.74,.25),Vector3.new(-.6,.6,.5),.9,.52,.36},
+		{Vector3.new(.42,.74,.25),Vector3.new(.6,.6,.5),.9,.52,.36},
+		{Vector3.new(0,.5,.62),Vector3.new(0,.15,1),.85,.62,.38},
+		{Vector3.new(-.5,.34,.56),Vector3.new(-.6,0,.9),.78,.5,.34},
+		{Vector3.new(.5,.34,.56),Vector3.new(.6,0,.9),.78,.5,.34},
+		{Vector3.new(-.74,.56,.05),Vector3.new(-1,.45,.2),.62,.44,.3},
+		{Vector3.new(.74,.56,.05),Vector3.new(1,.45,.2),.62,.44,.3},
+		{Vector3.new(-.3,.86,-.22),Vector3.new(-.4,1,-.2),.55,.4,.3},
+		{Vector3.new(.3,.86,-.22),Vector3.new(.4,1,-.2),.55,.4,.3},
+		{Vector3.new(0,-.1,.7),Vector3.new(0,-.6,.8),.6,.6,.3},
+		{Vector3.new(-.62,.1,.4),Vector3.new(-.9,-.2,.5),.55,.42,.28},
+		{Vector3.new(.62,.1,.4),Vector3.new(.9,-.2,.5),.55,.42,.28},
+	}
+	for index,s in spikes do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	for _,x in {-.4,-.13,.13,.4} do spike(model,Vector3.new(x,.6,-.55),Vector3.new(x*.5,-.75,-.6),.5,.4,.22,hair) end
+	headband(model,false)
+	for _,p in model:GetChildren() do if p.Name=="Headband" or p.Name=="HeadbandTail" then p.Color=cloth end end
+	-- The jumpsuit, from the collar to the ankles.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=orange end
+	end
+	wear(model,"UpperTorso","ShoulderPanel",Vector3.new(2.06,.42,1.06),CFrame.new(0,.52,0),blue)
+	for _,side in {"Left","Right"} do wear(model,side.."UpperArm","ShoulderCap",Vector3.new(.86,.4,.86),CFrame.new(0,.36,0),blue) end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.36,.42,1.1),CFrame.new(0,.86,.02),white)
+	wear(model,"UpperTorso","Zip",Vector3.new(.06,1.1,.03),CFrame.new(0,-.1,-.52),white)
+	cyl(wear(model,"UpperTorso","ZipRing",Vector3.new(.04,.2,.2),CFrame.new(0,.5,-.56)*A(0,R(90),0),white))
+	-- The red Uzumaki spiral on the back.
+	cyl(wear(model,"UpperTorso","Spiral",Vector3.new(.04,.78,.78),CFrame.new(0,-.08,.53)*A(0,R(90),0),rgb(196,40,36)))
+	cyl(wear(model,"UpperTorso","SpiralInner",Vector3.new(.045,.38,.38),CFrame.new(.06,-.06,.535)*A(0,R(90),0),orange))
+	for _,side in {"Left","Right"} do
+		wear(model,side.."LowerArm","Cuff",Vector3.new(.82,.16,.82),CFrame.new(0,-.4,0),orangeDark)
+		wear(model,side.."LowerLeg","PantCuff",Vector3.new(.86,.18,.86),CFrame.new(0,-.42,0),orangeDark)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=cloth end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.9,.42,.9),CFrame.new(0,0,0),white)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),blue)
+	wear(model,"LowerTorso","ToolPouch",Vector3.new(.66,.4,.3),CFrame.new(0,.1,.62),rgb(70,64,58))
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -813,6 +877,7 @@ function World.dress(model,def)
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	if def.Name=="Rock Lee" then dressLee(model,def) end
+	if def.Name=="Naruto" then dressNaruto(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

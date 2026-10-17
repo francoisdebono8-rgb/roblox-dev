@@ -2,6 +2,7 @@ local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
+local Bodies=require(script.Parent.Bodies)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -25,6 +26,9 @@ local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
 local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
 -- Rock Lee (stress-test wave) is the keenest of all: he never lets the body go.
 DASH.Leaf=1.6;CHASE.Leaf=.8
+-- Naruto (roster wave): rushes in almost as eagerly, from any angle, and
+-- chases every launch (his barrage needs it).
+DASH.Legion=1.5;CHASE.Legion=.8
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -386,6 +390,13 @@ function AI:update(now)
 		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
+	-- Bodies (Naruto's clones): a clone winding up a jab close by is struck
+	-- first (the stick aims the opener at it), one merely close now and then.
+	local body=not a.airborne and Bodies.threat(c,a,6.5)
+	if body and self.rng:NextNumber()<(if body.state=="Startup" then .8 else .3) then
+		local to=Vector3.new(body.position.X-a.root.Position.X,0,body.position.Z-a.root.Position.Z)
+		if to.Magnitude>.5 then a.move=to.Unit;if c:request(a,"Attack") then return end end
+	end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
 	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)
 	if distance>7 and distance<46 and a.def.Tool~="Deflect" and self.rng:NextNumber()<(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
@@ -431,6 +442,14 @@ function AI:update(now)
 			-- punishes a recovery, in line of sight; nothing he has is thrown.
 			if spec.Id=="LeafGreatWhirlwind" then use=distance>5 and distance<16 and c:lineOfSight(a,target)
 				and (target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or self.rng:NextNumber()<.4) end
+			-- Naruto (roster wave): clones out in neutral (two at most), a pair
+			-- charging from mid range, the Rasengan on an opening or with a clone
+			-- out to shape it.
+			-- (With none out, now and then he holds the single clone for the pair.)
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6) end
+			if spec.Id=="MassShadowClone" then use=distance>7 and distance<22 and Bodies.count(c,a,"clone")==0 and a.chakra>=70 and self.rng:NextNumber()<.5 end
+			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
+				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end

@@ -7,6 +7,9 @@ local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
+-- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
+-- cleared and sent with the duel (Server/Bodies).
+local Bodies = require(script.Parent.Bodies)
 local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
@@ -84,13 +87,15 @@ function Combat:lineOfSight(a,b)
 	local delta=b.root.Position-a.root.Position
 	return workspace:Raycast(a.root.Position,delta,self:rayParams(true)) == nil
 end
-function Combat:targetValid(a,b,range,facing)
+-- `from` (optional): the frame a strike is thrown from when another body
+-- carries it out (Bodies.bind); the attacker's own root otherwise.
+function Combat:targetValid(a,b,range,facing,from)
 	if not b or b.health<=0 then return false end
 	local roots={};for _,candidate in self.actors do table.insert(roots,candidate.root) end
 	local angle=math.deg(math.acos(math.clamp(facing,-1,1)))
 	-- Resolve each active-window sample against the newest recorded pose; the short
 	-- history keeps interpolation stable without freezing a target at button-down.
-	local root=HitDetection.resolve(a.root,range,angle,a.root.Position,a.root.CFrame.LookVector,self.now,roots,self.match.effects)
+	local root=HitDetection.resolve(a.root,range,angle,if from then from.Position else a.root.Position,if from then from.LookVector else a.root.CFrame.LookVector,self.now,roots,self.match.effects)
 	return root==b.root
 end
 -- Server effects are logical markers only (anchor, echo, hitbox lifetimes).
@@ -422,7 +427,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
-		riders=opts.riders}
+		riders=opts.riders,
+		-- A tool that turns into a body near its target (Bodies.transform).
+		transform=opts.transform}
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
 	-- and what it does on contact; without one the throw is the plain one.
 	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
@@ -532,7 +539,7 @@ function Combat:substitute(a)
 	if not hurt then return false,"No escape window" end
 	local attacker=a.target
 	local departure=a.root.Position
-	local destination,mode=nil,"hop"
+	local destination,mode,swap=nil,"hop",nil
 	-- Skill-build twist (SkillBuilds def.Substitution); nil for canonical kits.
 	local twist=a.def.Substitution
 	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
@@ -556,9 +563,15 @@ function Combat:substitute(a)
 				if self:openSpot(attacker,spot) then destination=spot;mode="flank";break end
 			end
 		end
+	elseif twist and twist.Mode=="clone" then
+		-- Naruto: "it was a clone!" He trades places with one of his clones
+		-- (Bodies); the body that was being hit puffs away where he stood.
+		swap=Bodies.swapWith(self,a)
+		if swap then destination=swap.position;mode="clone" end
 	end
 	if destination then
 		self:relocate(a,destination)
+		if swap then Bodies.swapped(self,swap,departure) end
 	elseif twist and twist.Mode=="burst" then
 		-- Rock Lee's Rupture: no ninjutsu, so no body swap. He stays where he is;
 		-- the kick that throws the attacker off is Techniques.rupture (below).
@@ -608,7 +621,8 @@ function Combat:substitute(a)
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP" else "SUBSTITUTION • REPOSITIONED")..extra)
+	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP"
+		elseif mode=="clone" then "SUBSTITUTION • IT WAS A CLONE!" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
 end
 -- A reappearance point next to `attacker` is usable when nothing solid fills it
@@ -725,6 +739,8 @@ function Combat:awaken(a)
 		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 		if away.Magnitude<9 and away.Magnitude>.05 then Brawler.react(self,b,"Knockback",away.Unit*34+Vector3.new(0,12,0),.45,a) end
 	end
+	-- The shockwave also blows away the enemy bodies close by (shadow clones).
+	Bodies.area(self,a,a.root.Position,9)
 	a.hitstopUntil=self.now+.12
 	self:pushImpact(a.root.Position,"awaken",true,{owner=a.id,fighter=a.fighterId})
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
@@ -863,21 +879,27 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- side only); a reserve that cannot pay refuses with a visible fizzle.
 		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
 		local infused=nil
-		if chakra then
+		-- A tool that turns into a body (ToolMastery.Transform: Naruto's kunai
+		-- into a shadow clone, Bodies.transform): the chakra chord pays for the
+		-- body instead of an infusion, while one can still be made.
+		local transform=if chakra and not wired then Bodies.transformCost(self,a,mastery) else nil
+		if chakra and not transform then
 			local why
 			infused,why=Chakra.plan(self,a,if a.def.Tool=="Sand" then "Sand" elseif mastery.Kind=="kunai" then "Kunai" else "Shuriken")
 			if not infused then Chakra.refuse(self,a);return false,why end
 			if wired and infused.mode~="conduct" then return false,"Tool recovering" end
 			if a.chakra<Chakra.cost(infused,chainCancel) then Chakra.refuse(self,a);return false,"Need chakra" end
 		end
+		if transform and a.chakra<transform+(if chainCancel then 0 else Config.ToolCost) then Chakra.refuse(self,a);return false,"Need chakra" end
 		-- A neutral throw costs a little chakra so blades pressure, not spam;
 		-- the throw that cancels a confirmed string stays free.
-		if not infused and not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
+		if not infused and not transform and not chainCancel and a.chakra<Config.ToolCost then return false,"Need chakra" end
+		if transform then a.chakra-=transform end
 		if infused then a.chakra-=Chakra.cost(infused,chainCancel) elseif not chainCancel then a.chakra-=Config.ToolCost end
 		if wired then a.pending=nil;self:setState(a,"Neutral",0) end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
 		local disengage=graph.disengage
-		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused then
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused and not transform then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
 		end
@@ -918,9 +940,9 @@ function Combat:request(a,action,aim,clientTime,opts)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused})
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused,transform=if transform then mastery.Transform else nil})
 			end})
-		self:cue(a,if infused then Chakra.label(infused) elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if infused then Chakra.label(infused) elseif transform then "KUNAI • TRANSFORMATION" elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -> technique: Minato may spend a confirmed string on Rasengan with
@@ -1043,6 +1065,9 @@ function Combat:request(a,action,aim,clientTime,opts)
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
+	-- A technique may set itself up as its channel begins (Naruto's Rasengan
+	-- calls the clone that shapes it, and its channel follows).
+	if technique.start then technique.start(self,a,a.pending);spec=a.pending.spec end
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
@@ -1063,6 +1088,12 @@ function Combat:request(a,action,aim,clientTime,opts)
 	self:effect("Channel",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(4,0.12,4),spec.Channel)
 	self:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique=spec.Id,channel=spec.Channel})
 	return true
+end
+-- Where a melee swing goes: the locked target, or the enemy body it was
+-- pushed at (Bodies.aim) while that body lives.
+function Combat.swingAt(a)
+	local body=a.pending and a.pending.aim
+	return if body and body.alive then body.position else a.target.root.Position
 end
 function Combat:updateActor(a,dt)
 	local now=self.now
@@ -1287,7 +1318,7 @@ function Combat:updateActor(a,dt)
    Motor.flight(a,self,correction)
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining>0 then
-		local toTarget=a.target.root.Position-a.root.Position
+		local toTarget=Combat.swingAt(a)-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
 		local gap=a.pending.spec.contact or 3.6
 		if flatTarget.Magnitude>gap then
@@ -1301,7 +1332,7 @@ function Combat:updateActor(a,dt)
 	end
  local attack=a.pending
  if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
-  local delta=a.target.root.Position-a.root.Position
+  local delta=Combat.swingAt(a)-a.root.Position
   local flat=Vector3.new(delta.X,0,delta.Z)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
@@ -1350,6 +1381,8 @@ function Combat:stepRotation(a)
 	-- Skill builds: a wider dome (rotationReach) and blades sent back at their
 	-- thrower (rotationReflect), both set by Techniques.Rotation from the spec.
 	local reach=a.rotationReach or Techniques.ROTATION_REACH or 7
+	-- The dome sweeps away the enemy bodies inside it (shadow clones).
+	Bodies.area(self,a,a.root.Position,reach)
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if p.a~=a and (p.position-a.root.Position).Magnitude<=reach+1.5 then
@@ -1644,6 +1677,15 @@ function Combat:updateProjectiles(dt)
 		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
+		-- Bodies (Naruto's clones): a transforming tool becomes one near its
+		-- target; an enemy body on the path puffs away and stops a blade (a
+		-- jutsu volume carries on through it).
+		if (p.transform and Bodies.transform(self,p,step)) or Bodies.projectile(self,p,step) then
+			local index=table.find(self.projectiles,p)
+			if index then table.remove(self.projectiles,index) end
+			if self.match.phase~="Duel" then return end
+			continue
+		end
 		local target=p.a.target
 		local done=false
 		-- Volumetric techniques test the body against the swept sphere, so a
@@ -1733,6 +1775,7 @@ function Combat:update(dt,now)
 	end
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
+	if self.match.phase=="Duel" then Bodies.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -1757,6 +1800,7 @@ function Combat:clear(preserveAnimations)
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
 	if self.scheduled then table.clear(self.scheduled) end
+	Bodies.clear(self)
 	self.impacts={}; self.impactSerial=0
 end
 return Combat

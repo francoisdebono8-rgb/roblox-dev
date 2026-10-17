@@ -189,6 +189,42 @@ for name,shape in {
 } do
  for key,value in shape do attacks[name][key]=value end
 end
+-- Naruto (roster wave, several bodies). His own: the headbutt (heavy after
+-- one hit) and the tackle into the legs (low route). Carried out by a shadow
+-- clone (`proxy`: where the clone stands, Server/Bodies; `proxyClip`: the
+-- clone's own clip while Naruto plays the move's): the kick from behind (the
+-- third hit with a clone out), the kick up under the body (the Uzumaki
+-- Barrage) and the strike from the flank (side route, the string goes on).
+-- The Nine-Tails cloak's claws (no clones there): a rising claw and a long
+-- swipe. A clone's own jab and the barrage kick time the clients' clips.
+for name,m in {
+ Headbutt=move(.1,.1,.3,9,2.6,"HitStun",Vector3.new(0,4,14),.45),
+ Tackle=move(.12,.16,.34,8,4.5,"Knockdown",Vector3.new(0,8,22),.7),
+ CloneKick=move(.15,.14,.28,11,0,"Juggled",Vector3.new(0,26,6),.62),
+ UzumakiKick=move(.16,.14,.3,8,0,"Launched",Vector3.new(0,56,4),1.2),
+ MirrorClone=move(.11,.12,.22,6,0,"HitStun",Vector3.new(0,4,10),.36),
+ ClawRise=move(.14,.14,.26,10,2.6,"Launched",Vector3.new(0,58,6),1.2),
+ ClawSwipe=move(.1,.14,.22,8,1.6,"HitStun",Vector3.new(0,6,16),.4),
+ CloneJab=move(.22,.1,.3,4,0,"HitStun",Vector3.new(0,3,10),.32),
+ BarrageKick=move(.1,.1,.2,3,0,"Juggled",Vector3.new(0,22,2),.6),
+} do
+ m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
+ m.depth=m.range*.8;m.offset=m.range*.4
+ attacks[name]=m
+end
+for name,shape in {
+ Headbutt={contact=3.0,range=5.5,zone="head",kind="heavy",side=1,twist=6,lean=26,arm=40,step=1.2},
+ Tackle={contact=2.8,range=6.5,width=6,height=4,zone="legs",kind="sweep",side=1,twist=10,lean=40,arm=60,step=1.35},
+ CloneKick={contact=2.6,range=6,width=5.5,height=6,zone="body",kind="kick",side=1,twist=40,lean=8,arm=60,step=1,proxy="behind",proxyClip="CloneKickStrike"},
+ UzumakiKick={contact=2.4,range=6,width=5.5,height=7,zone="chin",kind="launch",side=1,twist=10,lean=-20,arm=60,step=1,proxy="under",proxyClip="UzumakiRise",breaksShield=true},
+ MirrorClone={contact=2.8,range=6,width=5.5,height=6,zone="body",kind="strike",side=-1,twist=30,lean=10,arm=90,step=1,proxy="side",proxyClip="MirrorStrike",chain=true},
+ ClawRise={contact=3.4,range=9.5,width=6,height=7,depth=8.5,offset=4.4,zone="chin",kind="launch",side=1,twist=16,lean=-24,arm=120,step=1.15,breaksShield=true},
+ ClawSwipe={contact=3.6,range=10,width=9,height=6,depth=9,offset=4.6,zone="body",kind="slash",side=-1,twist=60,lean=12,arm=100,step=1.1,chain=true},
+ CloneJab={contact=3,range=5.5,zone="head",kind="strike",side=1,twist=24,lean=10,arm=88,step=1},
+ BarrageKick={contact=2.4,range=5,zone="body",kind="kick",side=1,twist=10,lean=-10,arm=60,step=1},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
 return attacks
 </ProtectedString>
         </Properties>
@@ -737,6 +773,53 @@ return Metrics
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
 		},
 	},
+	-- Roster wave (several bodies, hook H12): Naruto in Part I, from the Chunin
+	-- Exam to the Valley of the End (13). Shadow clones (two at most) that carry
+	-- his routes and are dispelled by one blow, a Rasengan he can only shape
+	-- with a clone, the largest reserve; the Nine-Tails chakra takes the clones
+	-- away. Server kit: Server/Bodies (the bodies), Server/Legion (his rules).
+	-- Sheet: docs/characters/NARUTO.md.
+	Legion = {
+		Name = "Naruto", FullName = "Naruto Uzumaki", Age = 13, Title = "THE NUMBER ONE SURPRISE", Color = { 255, 140, 40 },
+		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
+		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
+		Health = 140, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
+		CombatTravel = 1.05, CombatDamage = 1, DashScale = 1.05, GuardStrength = 0.08, PreferredRange = 6,
+		ComboToolCancel = true, CombatStyle = "Legion", Tool = "Kunai",
+		-- A plain kunai; with the chakra chord (Z + R) it is a clone transformed
+		-- (Bodies.transform): near the target it pops back and strikes from there.
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 84, Damage = 3, Recover = .7, Transform = "clone" },
+		-- Heavy after two clean hits is the launcher route too (the Uzumaki Barrage).
+		LauncherMove = "UzumakiKick",
+		-- Shadow clones (Server/Bodies, Server/Legion): Max at once, Cost chakra
+		-- each, Life seconds, one blow dispels them. On a flank a clone jabs the
+		-- opponent (Strike damage, Reach studs) about every Every seconds.
+		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 4, Reach = 5.4, Every = 1.9 } },
+		-- Substitution with a clone out: "it was a clone!" — he swaps places
+		-- with it and the body that was being hit puffs away.
+		Substitution = { Mode = "clone" },
+		-- Motion family: his own stance (a brawler's low open guard), gait (wide
+		-- arms, a heavy bouncing stride) and string; air strings and throws from
+		-- the shared families; a kunai shows in the hand only to throw it.
+		Motion = { body = "Legion", weapons = "palms", clips = "Legion", intro = "Legion", springy = false },
+		-- The Nine-Tails chakra (the one-tail cloak of the Valley of the End):
+		-- no clones at all (they burst; clone routes become claws, the Rasengan
+		-- needs no clone and almost no wind-up), a quicker body (every recovery
+		-- x Recovery) and harder blows.
+		Awakening = { Name = "NINE-TAILS CHAKRA", Speed = 1.15, Damage = 1.1, Regen = 1.8, Cooldown = 0.5, Recovery = 0.78, NoBodies = true, Color = { 255, 96, 40 } },
+		AttackProfile = {
+			-- A wide hook, a straight, a push kick: a brawler's string.
+			Light1={startup=.94,recovery=.96,travel=1.12,zone="head"},Light2={startup=.96,recovery=.94,travel=1.08,zone="body"},
+			Light3={startup=1.02,recovery=1.0,impulseZ=54,kind="kick"},Heavy={startup=1.0,recovery=1.04},
+			DashAttack={startup=.95,travel=1.1},Air1={startup=.95},Air2={startup=.95},
+		},
+		Skin = { 240, 204, 170 }, Hair = { 250, 206, 70 }, Outfit = { 244, 130, 36 },
+		Techniques = {
+			{ Id = "ShadowClone", Name = "Shadow Clone", Cost = 12, Channel = 0.18, Active = 0.05, Recovery = 0.12, Cooldown = 1.2, Interruptible = true, Flow = true, Range = 30, Hint = "A clone at his side (two at most) • one blow dispels it • routes, the Rasengan and the swap use them" },
+			{ Id = "CloneRasengan", Name = "Rasengan", Cost = 22, CloneCost = 12, Channel = 0.45, SoloChannel = 0.6, CloakChannel = 0.2, Active = 0.08, Recovery = 0.45, Cooldown = 6, Interruptible = true, Range = 10, Damage = 22, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
+			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+		},
+	},
 }
 </ProtectedString>
         </Properties>
@@ -877,6 +960,34 @@ return {
 		-- Relentless: the fastest re-entry of all, straight down the line, from
 		-- closer than most, and the shortest recovery after an arrival.
 		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
+	},
+	-- Naruto (roster wave, several bodies): his routes are carried out by his
+	-- shadow clones (Server/Bodies).
+	--   proxy[move]   a strike another body carries out: `move` with a free
+	--                 `body` of that kind; with none, a route that may `summon`
+	--                 one pays its cost; in the awakening its `awake` form;
+	--                 otherwise `solo`. Attacks[move].proxy: where it stands.
+	-- The third hit comes from a clone already out, from behind the opponent
+	-- (no clone: his own push kick). Toward: the Uzumaki Barrage (a clone
+	-- kicks the body up under it, two more keep it there; E, then heavy in the
+	-- air is NARUTO RENDAN). Away: a tackle into the legs (his own). Sideways:
+	-- a clone strikes from the flank the stick points at, the string goes on.
+	Legion={
+		routes={up="UzumakiKick",down="Tackle",side="MirrorClone",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		onRoute={UzumakiKick="uzumaki"},
+		heavyAfterOne="Headbutt",
+		stringCancels={CloneRasengan=true},
+		blockCancels={},
+		proxy={
+			Light3={move="CloneKick",body="clone"},
+			UzumakiKick={move="UzumakiKick",body="clone",summon=true,solo="Launcher",awake="ClawRise"},
+			MirrorClone={move="MirrorClone",body="clone",summon=true,solo="Light2",awake="ClawSwipe"},
+		},
+		airFinisher={name="NarutoRendan",cue="NARUTO UZUMAKI RENDAN",event="NarutoRendan",damage=18,impulse=Vector3.new(0,-92,8)},
+		-- Unpredictable: a quick re-entry on an angle whose side does not simply
+		-- alternate (shuffle), and a clone out on a flank rushes the other side.
+		reengage={name="legion",speed=1.2,arrive=3.2,angle=30,shuffle=true,chase=.28,recovery=.22},
 	},
 }
 </ProtectedString>
@@ -1953,7 +2064,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">06eacce8b084b9aa0b7af5437a335d304497b33ba5bd896636b35c3ea54b9e40</string>
+          <string name="Value">31d19c7cb8ff9f86ae4daf4499e3358721e46dcc68492e45c0475bad33ae4ede</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -2059,6 +2170,7 @@ SOFTWARE.
 local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
+local Bodies=require(script.Parent.Bodies)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -2082,6 +2194,9 @@ local DASH={Flashstep=1.1,Mirage=.75,GentleFist=1,Lion=1.45}
 local CHASE={Flashstep=.62,Mirage=.5,GentleFist=.58,Lion=.74}
 -- Rock Lee (stress-test wave) is the keenest of all: he never lets the body go.
 DASH.Leaf=1.6;CHASE.Leaf=.8
+-- Naruto (roster wave): rushes in almost as eagerly, from any angle, and
+-- chases every launch (his barrage needs it).
+DASH.Legion=1.5;CHASE.Legion=.8
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -2443,6 +2558,13 @@ function AI:update(now)
 		a.move=Vector3.zero;press(c,a,"Attack");return
 	end
 	if a.state~="Neutral" or a.reaction then return end
+	-- Bodies (Naruto's clones): a clone winding up a jab close by is struck
+	-- first (the stick aims the opener at it), one merely close now and then.
+	local body=not a.airborne and Bodies.threat(c,a,6.5)
+	if body and self.rng:NextNumber()&lt;(if body.state=="Startup" then .8 else .3) then
+		local to=Vector3.new(body.position.X-a.root.Position.X,0,body.position.Z-a.root.Position.Z)
+		if to.Magnitude&gt;.5 then a.move=to.Unit;if c:request(a,"Attack") then return end end
+	end
 	if a.chakra&lt;18 then a.move=-toward+tangent*0.2; return end
 	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)
 	if distance&gt;7 and distance&lt;46 and a.def.Tool~="Deflect" and self.rng:NextNumber()&lt;(if a.def.Name=="Itachi" then 0.11 else 0.09)*(if self.probing then tune.ProbeTool else 1) and target.state~="Guarding" then
@@ -2488,6 +2610,14 @@ function AI:update(now)
 			-- punishes a recovery, in line of sight; nothing he has is thrown.
 			if spec.Id=="LeafGreatWhirlwind" then use=distance&gt;5 and distance&lt;16 and c:lineOfSight(a,target)
 				and (target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or self.rng:NextNumber()&lt;.4) end
+			-- Naruto (roster wave): clones out in neutral (two at most), a pair
+			-- charging from mid range, the Rasengan on an opening or with a clone
+			-- out to shape it.
+			-- (With none out, now and then he holds the single clone for the pair.)
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance&gt;4 and distance&lt;26 and out&lt;2 and a.chakra&gt;=36 and (out&gt;0 or self.rng:NextNumber()&lt;.6) end
+			if spec.Id=="MassShadowClone" then use=distance&gt;7 and distance&lt;22 and Bodies.count(c,a,"clone")==0 and a.chakra&gt;=70 and self.rng:NextNumber()&lt;.5 end
+			if spec.Id=="CloneRasengan" then use=distance&lt;9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
+				or (Bodies.count(c,a,"clone")&gt;0 and self.rng:NextNumber()&lt;.35)) end
 			if use and c:request(a,"Technique"..slot,aim) then
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
@@ -2676,15 +2806,18 @@ function Bangla.tryHit(c,a,p)
  -- Same donor forward volume; missing air/grab mechanics supply their bounded shape.
  local hitbox=donor.hitbox
  hitbox.Size=Vector3.new(p.spec.width or 5,p.spec.height or 5,p.spec.depth or 2)
- hitbox.CFrame=a.root.CFrame*CFrame.new(0,0,-(p.spec.offset or 2))
+ -- A strike carried out by another body (Ninja Duel Bodies: Naruto's clone)
+ -- is thrown, validated and judged from that body's frame (p.from).
+ local frame=p.from or a.root.CFrame
+ hitbox.CFrame=frame*CFrame.new(0,0,-(p.spec.offset or 2))
  local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Include
  params.FilterDescendantsInstances={target.model}
  -- Touched on a teleported anchored part was unreliable; query the same volume.
  for _,hit in workspace:GetPartBoundsInBox(hitbox.CFrame,hitbox.Size,params) do
   if hit:IsDescendantOf(target.model) and not donor.Hits[target.id] then
-   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05) then continue end
+   if not c:targetValid(a,target,p.spec.range,p.spec.facing or .05,p.from) then continue end
    donor.Hits[target.id]=true
-   local delta=a.root.Position-target.root.Position
+   local delta=frame.Position-target.root.Position
    local frontal=delta.Magnitude&lt;.001 or target.root.CFrame.LookVector:Dot(delta.Unit)&gt;.15
    local guarded=target.state=='Guarding' and target.chakra&gt;0 and frontal
    local protected=target.state=='TechniqueChannel' and target.pending and not target.pending.spec.Interruptible
@@ -2692,7 +2825,9 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=if p.rasengan then "Rasengan" else p.name
    -- A Flow strike (chained on the beat) lands a little harder.
    local flow=if p.flow then require(game:GetService("ReplicatedStorage").NinjaDuel.Config).Flow.Damage else 1
+   if p.from then c.hitOrigin=frame.Position end
    local success=c:damage(a,target,damage*(a.def.CombatDamage or 1)*flow*(p.spec.damageScale or 1),false,true)
+   if p.from then c.hitOrigin=nil end
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
@@ -2764,6 +2899,431 @@ return Evade
       </Item>
       <Item class="ModuleScript" referent="ND26">
         <Properties>
+          <string name="Name">Bodies</string>
+          <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
+-- first; a puppet or a ninja hound later takes the same path. A body is a
+-- point on the stage with a small controller, a lifetime and a hit volume:
+-- one blow from the other side (a strike, a blade, a dome) dispels it.
+-- It never becomes a target, a lock-on or a camera subject: Combat keeps its
+-- two actors. Bodies only add strike origins (a blow is judged from where the
+-- body stands, through Combat hitOrigin, so a frontal guard does not cover a
+-- clone behind) and volumes the opponent's strikes and blades reach first.
+-- The client draws them from the snapshot (`bodies`, Client/BodyViews).
+--
+-- Data: Fighters[id].Bodies[kind] = {Max, Cost, Life, ...} (Max counts the
+-- persistent bodies; a body made for one strike is `ephemeral`).
+-- MoveGraphs[id].proxy[move] = {move, body, summon, solo, awake}: a strike
+-- another body carries out (Bodies.route / Bodies.bind); Attacks[move].proxy
+-- says where it stands ("behind", "side", "under").
+local Bodies={}
+Bodies.RADIUS=1.2 -- horizontal reach of a body's volume
+Bodies.HALF=2.7 -- half height around its root (feet to head)
+-- Kit hooks, filled by fighter modules (Server/Legion): a controller per
+-- mode, what a dispel of a kind does, what a transforming tool becomes.
+Bodies.controllers={}
+Bodies.onDispel={}
+Bodies.transforms={}
+-- Jutsu volumes go through a body (it puffs away, the jutsu carries on);
+-- blades stop in it.
+local VOLUME={fireball=true,phoenix=true,palm=true,wind=true,sandwave=true}
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function brawler() return require(script.Parent.Brawler) end
+local function list(c) c.bodies=c.bodies or {};return c.bodies end
+Bodies.list=list
+function Bodies.tuning(a,kind)
+	return (a.def.Bodies and a.def.Bodies[kind]) or {}
+end
+-- An awakening that takes the bodies away (Naruto's Nine-Tails cloak).
+function Bodies.blocked(c,a)
+	local tune=a.def.Awakening
+	return tune~=nil and tune.NoBodies==true and (a.awakenUntil or 0)&gt;c.now
+end
+-- Live bodies of `a` (of one kind), persistent ones only unless asked.
+function Bodies.of(c,a,kind,ephemeral)
+	local out={}
+	for _,body in c.bodies or {} do
+		if body.alive and body.owner==a and (not kind or body.kind==kind) and (ephemeral or not body.ephemeral) then table.insert(out,body) end
+	end
+	return out
+end
+function Bodies.count(c,a,kind) return #Bodies.of(c,a,kind) end
+-- A persistent body free for a job (not already carrying a strike or shaping
+-- a jutsu): the one nearest the owner's target.
+function Bodies.free(c,a,kind)
+	local best,bestGap
+	local t=a.target
+	for _,body in Bodies.of(c,a,kind) do
+		if not body.carry and body.mode~="shape" and body.mode~="spent" then
+			local gap=if t then (body.position-t.root.Position).Magnitude else 0
+			if not bestGap or gap&lt;bestGap then best,bestGap=body,gap end
+		end
+	end
+	return best
+end
+function Bodies.face(body,point)
+	local d=flat(point-body.position)
+	if d.Magnitude&gt;.1 then body.look=d.Unit end
+end
+-- Kinematic motion toward a point (bodies do not collide with fighters).
+function Bodies.move(c,body,goal,speed,dt)
+	local to=goal-body.position
+	local step=speed*dt
+	body.position=c:clamp(if to.Magnitude&lt;=step then goal else body.position+to.Unit*step)
+end
+function Bodies.spawn(c,owner,spec)
+	local kind=spec.kind or "clone"
+	if not spec.ephemeral and Bodies.count(c,owner,kind)&gt;=(Bodies.tuning(owner,kind).Max or 2) then return nil end
+	c.bodySerial=(c.bodySerial or 0)+1
+	local position=c:clamp(spec.position or owner.root.Position)
+	local look=spec.look
+	if not look then
+		local t=owner.target
+		look=flat(if t then t.root.Position-position else owner.root.CFrame.LookVector)
+		look=if look.Magnitude&gt;.1 then look.Unit else Vector3.new(0,0,-1)
+	end
+	local body={id=c.bodySerial,owner=owner,kind=kind,position=position,look=look,born=c.now,expires=c.now+(spec.life or Bodies.tuning(owner,kind).Life or 6),
+		alive=true,state=spec.state or "Neutral",action=spec.action,actionAt=c.now,actionSerial=if spec.action then 1 else 0,mode=spec.mode or "guard",
+		ephemeral=spec.ephemeral==true,velocity=Vector3.zero,airborne=spec.airborne==true,side=spec.side or 1,nextStrike=c.now+(spec.delay or 1),warp=0}
+	table.insert(list(c),body)
+	c:pushImpact(position,"body",false,{phase="appear",kind=kind,body=body.id,owner=owner.id,fighter=owner.fighterId})
+	brawler().event(c,owner,"BodySpawned")
+	return body
+end
+-- Gone in a puff of smoke. why: "hit", "blade", "area", "expire", "spent"
+-- (its strike is over), "swap" (a substitution), "cloak", "owner".
+function Bodies.dispel(c,body,why,by,extra)
+	if not body.alive then return false end
+	body.alive=false
+	local all=c.bodies
+	local index=all and table.find(all,body)
+	if index then table.remove(all,index) end
+	if body.carry then body.carry.lost=true;body.carry.from=nil;body.carry=nil end
+	local entry={phase=why or "hit",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId,by=by and by.id}
+	for k,v in extra or {} do entry[k]=v end
+	c:pushImpact(body.position,"body",why=="hit" or why=="blade",entry)
+	local hook=Bodies.onDispel[body.kind]
+	if hook then hook(c,body,why,by) end
+	local Brawler=brawler()
+	Brawler.event(c,body.owner,"BodyLost")
+	if by and by~=body.owner then
+		Brawler.event(c,by,"BodyDispelled")
+		c:cue(by,string.upper(body.kind).." DISPELLED",.5)
+	end
+	return true
+end
+-- A real relocation (a body flickering across the stage): the client snaps.
+function Bodies.warp(c,body,at)
+	c:pushImpact(body.position,"body",false,{phase="vanish",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId})
+	body.position=c:clamp(at);body.warp+=1
+	c:pushImpact(body.position,"body",false,{phase="appear",kind=body.kind,body=body.id,owner=body.owner.id,fighter=body.owner.fighterId})
+end
+-- Where a carried strike is thrown from (Attacks[move].proxy): "behind" the
+-- target (the far side from its owner), "side" (the flank the stick asked
+-- for), "under" (in close beside it, for a launcher). On the ground.
+function Bodies.place(c,a,how,side)
+	local b=a.target
+	local at=b.root.Position
+	local line=flat(at-a.root.Position)
+	line=if line.Magnitude&gt;.1 then line.Unit else flat(a.root.CFrame.LookVector).Unit
+	local right=line:Cross(Vector3.yAxis)
+	local s=if side and side~=0 then side else 1
+	local p
+	if how=="behind" then p=at+line*2.7
+	elseif how=="side" then p=at+right*s*2.9
+	else p=at-line*1.9+right*s*1.3 end
+	return c:clamp(Vector3.new(p.X,c.match.origin.Y+3,p.Z))
+end
+-- Which move a press actually starts (Brawler.start): the proxy move with
+-- the body that carries it (a free one, or "summon" for its cost), its
+-- awakened form, or the solo move when there is no body to carry it.
+function Bodies.route(c,a,name)
+	local graph=brawler().graph(a)
+	local d=graph and graph.proxy and graph.proxy[name]
+	if not d then return name end
+	if (a.awakenUntil or 0)&gt;c.now and d.awake then return d.awake end
+	if not Bodies.blocked(c,a) then
+		local free=Bodies.free(c,a,d.body)
+		if free then return d.move,free,d.body end
+		if d.summon and a.chakra&gt;=(Bodies.tuning(a,d.body).Cost or 12) then return d.move,"summon",d.body end
+	end
+	return d.solo or name
+end
+-- The strike's body goes to its spot (a summoned one appears there in a
+-- puff, an existing one runs, or flickers from far away) and the strike is
+-- judged from it: `p.from` is its frame, kept current by Bodies.step.
+function Bodies.bind(c,a,p,proxy,kind)
+	local spec=p.spec
+	p.side=if (a.angleSide or 0)~=0 then a.angleSide else 1
+	local at=Bodies.place(c,a,spec.proxy,p.side)
+	local body=proxy
+	local span=spec.startup+spec.active+spec.recovery
+	if proxy=="summon" then
+		a.chakra=math.max(0,a.chakra-(Bodies.tuning(a,kind).Cost or 12))
+		body=Bodies.spawn(c,a,{kind=kind,position=at,ephemeral=true,life=span+.6,mode="carry"})
+		if not body then p.lost=true;return nil end
+	elseif (at-body.position).Magnitude&gt;14 then
+		Bodies.warp(c,body,at)
+	end
+	body.carry=p;body.mode="carry";body.goal=at
+	body.action=p.name;body.variant=spec.proxyClip;body.actionAt=c.now;body.actionSerial+=1;body.state="Startup"
+	body.expires=math.max(body.expires,c.now+span+.6)
+	Bodies.face(body,a.target.root.Position)
+	p.body=body;p.from=CFrame.lookAt(body.position,body.position+body.look)
+	brawler().event(c,a,"BodyStrike")
+	return body
+end
+local function carry(c,body,dt)
+	local p=body.carry
+	local a=body.owner
+	local b=a.target
+	if a.pending~=p or a.health&lt;=0 or not b or b.health&lt;=0 then
+		-- The strike is over (landed, missed, or its owner was hit): spent.
+		body.carry=nil;body.mode="spent";body.state="Recovery"
+		body.expires=math.min(body.expires,c.now+.22)
+		return
+	end
+	body.state=a.state
+	if a.state=="Startup" then body.goal=Bodies.place(c,a,p.spec.proxy,p.side) end
+	Bodies.move(c,body,body.goal or body.position,90,dt)
+	Bodies.face(body,b.root.Position)
+	p.from=CFrame.lookAt(body.position,body.position+body.look)
+end
+function Bodies.step(c,dt)
+	local all=c.bodies
+	if not all or #all==0 then return end
+	for _,body in table.clone(all) do
+		if body.alive then
+			local owner=body.owner
+			if owner.health&lt;=0 or c.match.phase~="Duel" then Bodies.dispel(c,body,"owner")
+			elseif c.now&gt;=body.expires then Bodies.dispel(c,body,if body.mode=="spent" then "spent" else "expire")
+			elseif Bodies.blocked(c,owner) then Bodies.dispel(c,body,"cloak")
+			else
+				local from=body.position
+				if body.carry then carry(c,body,dt)
+				else
+					local control=Bodies.controllers[body.mode]
+					if control then control(c,body,dt) end
+				end
+				if body.alive and dt&gt;0 then body.velocity=(body.position-from)/dt end
+			end
+		end
+	end
+end
+-- A body's own blow (a clone's jab, a barrage kick), judged from where it
+-- stands and paid to its owner's account; it never touches its owner's own
+-- string (hitConfirmed) and cannot be read or parried into a stun of him.
+-- spec: damage, reach, height, arc (cosine of the half angle in front of the
+-- body), reaction, push, up, stun, tag. Returns whether it landed.
+function Bodies.hitFrom(c,body,victim,spec)
+	local owner=body.owner
+	if c.match.phase~="Duel" or not body.alive or owner.health&lt;=0 or not victim or victim.health&lt;=0 then return false end
+	local d=victim.root.Position-body.position
+	local f=flat(d)
+	if f.Magnitude&gt;(spec.reach or 5.5) or math.abs(d.Y)&gt;(spec.height or 4) then return false end
+	if f.Magnitude&gt;.5 and body.look:Dot(f.Unit)&lt;(spec.arc or .2) then return false end
+	local confirmed=owner.hitConfirmed
+	c.hitOrigin=body.position;c.damageTag=spec.tag or "Body"
+	local landed=c:damage(owner,victim,(spec.damage or 4)*(owner.def.CombatDamage or 1),false,false)
+	c.hitOrigin=nil;c.damageTag=nil
+	owner.hitConfirmed=confirmed
+	if c.match.phase~="Duel" then return landed end
+	if landed and victim.impactStyle~="block" and victim.health&gt;0 then
+		local push=if f.Magnitude&gt;.1 then f.Unit else body.look
+		brawler().react(c,victim,spec.reaction or "HitStun",push*(spec.push or 10)+Vector3.new(0,spec.up or 3,0),spec.stun or .32,owner)
+	end
+	return landed
+end
+local function inBox(box,size,point,margin)
+	local q=box:PointToObjectSpace(point)
+	return math.abs(q.X)&lt;=size.X/2+margin and math.abs(q.Y)&lt;=size.Y/2+Bodies.HALF-.7 and math.abs(q.Z)&lt;=size.Z/2+margin
+end
+-- A melee strike that reaches an enemy body first (Brawler.hit): the body is
+-- dispelled and the strike is spent on it, like a blocked one (the string
+-- starts over, the recovery stays short). The real fighter still takes the
+-- blow when he stands nearer in the same swing, unless it was aimed at the
+-- body (Bodies.aim). A wide swing (Bodies.WIDE: sweeps, spinning kicks,
+-- claws) clears every enemy body it covers and still reaches the fighter.
+-- Returns true when a body took the strike.
+Bodies.WIDE=6.5
+function Bodies.strike(c,a,p)
+	local all=c.bodies
+	if not all or #all==0 or p.lost then return false end
+	local spec=p.spec
+	local frame=p.from or a.root.CFrame
+	local box=frame*CFrame.new(0,0,-(spec.offset or 2))
+	local size=Vector3.new(spec.width or 5,spec.height or 5,spec.depth or 2)
+	local covered={}
+	local best,bestGap
+	for _,body in all do
+		if body.alive and body.owner~=a and inBox(box,size,body.position,1) then
+			table.insert(covered,body)
+			local gap=(body.position-frame.Position).Magnitude
+			if not bestGap or gap&lt;bestGap then best,bestGap=body,gap end
+		end
+	end
+	if not best then return false end
+	local t=a.target
+	local real=t~=nil and t.health&gt;0 and inBox(box,size,t.root.Position,1)
+	if (spec.width or 5)&gt;=Bodies.WIDE then
+		for _,body in covered do Bodies.dispel(c,body,"hit",a) end
+		if real then return false end
+		a.hitBlocked=true
+		return true
+	end
+	if p.aim~=best and real and (t.root.Position-frame.Position).Magnitude&lt;bestGap then return false end
+	a.hitBlocked=true
+	Bodies.dispel(c,best,"hit",a)
+	return true
+end
+local function closestOnSegment(a,b,point)
+	local ab=b-a
+	local length=ab:Dot(ab)
+	if length&lt;1e-6 then return a end
+	return a+ab*math.clamp((point-a):Dot(ab)/length,0,1)
+end
+-- A projectile's step through an enemy body (Combat:updateProjectiles): the
+-- body puffs away; a blade stops in it (true: the projectile is spent), a
+-- jutsu volume carries on (false).
+function Bodies.projectile(c,p,step)
+	local all=c.bodies
+	if not all or #all==0 or not p.a then return false end
+	local radius=(p.radius or 0)+(p.growth or 0)*math.max(0,c.now-(p.born or c.now))
+	local from=p.position
+	local hit,best
+	for _,body in all do
+		if body.alive and body.owner~=p.a then
+			local close=closestOnSegment(from,from+step,body.position)
+			local d=body.position-close
+			if flat(d).Magnitude&lt;=Bodies.RADIUS+radius and math.abs(d.Y)&lt;=Bodies.HALF+radius then
+				local along=(close-from).Magnitude
+				if not best or along&lt;best then hit,best=body,along end
+			end
+		end
+	end
+	if not hit then return false end
+	-- The real fighter nearer on the same step takes it (a clone behind him is
+	-- no shield for the blade that reaches him first).
+	local t=p.a.target
+	if t and t.health&gt;0 then
+		local close=closestOnSegment(from,from+step,t.root.Position)
+		local d=t.root.Position-close
+		if flat(d).Magnitude&lt;=Bodies.RADIUS+radius and math.abs(d.Y)&lt;=Bodies.HALF+radius and (close-from).Magnitude&lt;best then return false end
+	end
+	local volume=VOLUME[p.kind]==true
+	Bodies.dispel(c,hit,"blade",p.a,if volume then {kind=hit.kind,through=p.kind} else {projectile=p.id,blade=p.kind,direction=p.direction})
+	return not volume
+end
+-- Every enemy body of `a` within `radius` of `center` (a dome, a shockwave).
+function Bodies.area(c,a,center,radius)
+	local all=c.bodies
+	if not all or #all==0 then return 0 end
+	local count=0
+	for _,body in table.clone(all) do
+		local d=body.position-center
+		if body.alive and body.owner~=a and flat(d).Magnitude&lt;=radius+Bodies.RADIUS and math.abs(d.Y)&lt;6 then
+			Bodies.dispel(c,body,"area",a);count+=1
+		end
+	end
+	return count
+end
+-- The enemy body a string opener is pushed at: the lock stays on the real
+-- fighter, the stick picks the clone. nil when the stick points at none in
+-- reach, or points closer to the locked target.
+function Bodies.aim(c,a)
+	local all=c.bodies
+	if not all or #all==0 then return nil end
+	local stick=flat(a.move or Vector3.zero)
+	if stick.Magnitude&lt;.45 then return nil end
+	stick=stick.Unit
+	local best,bestDot
+	for _,body in all do
+		if body.alive and body.owner~=a and math.abs(body.position.Y-a.root.Position.Y)&lt;4 then
+			local d=flat(body.position-a.root.Position)
+			if d.Magnitude&gt;.5 and d.Magnitude&lt;=8 then
+				local dot=stick:Dot(d.Unit)
+				if dot&gt;=.7 and (not bestDot or dot&gt;bestDot) then best,bestDot=body,dot end
+			end
+		end
+	end
+	local t=a.target
+	if best and t then
+		local d=flat(t.root.Position-a.root.Position)
+		if d.Magnitude&gt;.5 and stick:Dot(d.Unit)&gt;bestDot then return nil end
+	end
+	return best
+end
+-- The nearest enemy body within `reach` of `a` (the AI answers it).
+function Bodies.threat(c,a,reach)
+	local best,bestGap
+	for _,body in c.bodies or {} do
+		if body.alive and body.owner~=a then
+			local gap=flat(body.position-a.root.Position).Magnitude
+			if gap&lt;=reach and math.abs(body.position.Y-a.root.Position.Y)&lt;4 and (not bestGap or gap&lt;bestGap) then best,bestGap=body,gap end
+		end
+	end
+	return best
+end
+-- Substitution by swap (Fighters[id].Substitution.Mode "clone"): the free
+-- body he trades places with, and that body left where he was hit.
+function Bodies.swapWith(c,a)
+	local best,bestGap
+	for _,body in Bodies.of(c,a) do
+		if not body.carry and body.mode~="shape" and body.mode~="spent" then
+			local gap=(body.position-a.root.Position).Magnitude
+			if gap&lt;=45 and (not bestGap or gap&lt;bestGap) then best,bestGap=body,gap end
+		end
+	end
+	return best
+end
+function Bodies.swapped(c,body,departure)
+	body.position=departure
+	return Bodies.dispel(c,body,"swap")
+end
+-- A tool that turns into a body (ToolMastery.Transform, the chakra chord):
+-- the body's cost while one can still be made, else nil.
+function Bodies.transformCost(c,a,mastery)
+	local kind=mastery and mastery.Transform
+	if not kind or not Bodies.transforms[kind] or Bodies.blocked(c,a) then return nil end
+	local tune=Bodies.tuning(a,kind)
+	if Bodies.count(c,a,kind)&gt;=(tune.Max or 2) then return nil end
+	return tune.Cost or 12
+end
+-- The transforming tool in flight: close to its target, or at the end of its
+-- flight, it becomes the body (Bodies.transforms[kind]). true: the
+-- projectile is gone.
+function Bodies.transform(c,p,step)
+	local make=Bodies.transforms[p.transform]
+	local b=p.a.target
+	if not make or not b or b.health&lt;=0 or p.a.health&lt;=0 then return false end
+	if (b.root.Position-p.position).Magnitude&gt;5.5 and p.remaining-step.Magnitude&gt;0 then return false end
+	c:pushImpact(p.position,"body",false,{phase="transform",kind=p.transform,projectile=p.id,owner=p.a.id,fighter=p.a.fighterId})
+	make(c,p)
+	return true
+end
+-- Round over, KO, a new duel: every body goes without a puff.
+function Bodies.clear(c)
+	for _,body in c.bodies or {} do body.alive=false;body.carry=nil end
+	if c.bodies then table.clear(c.bodies) end
+end
+-- The snapshot list the client draws (Matches:view).
+function Bodies.view(c)
+	local out={}
+	for _,body in c.bodies or {} do
+		if body.alive then
+			table.insert(out,{id=body.id,owner=body.owner.id,fighterId=body.owner.fighterId,kind=body.kind,position=body.position,look=body.look,
+				state=body.state,action=body.action,variant=body.variant,actionSerial=body.actionSerial,actionElapsed=c.now-(body.actionAt or c.now),
+				airborne=body.airborne,velocity=body.velocity,remaining=math.max(0,body.expires-c.now),mode=body.mode,cast=body.cast,
+				ephemeral=body.ephemeral,warp=body.warp})
+		end
+	end
+	return out
+end
+return Bodies
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND27">
+        <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
@@ -2772,10 +3332,16 @@ local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
+-- Bodies that are not actors (Naruto's shadow clones): strikes they carry
+-- out, strikes they take first, strikes aimed at them.
+local Bodies=require(script.Parent.Bodies)
 -- Adapter: reaction/air/grab mechanics missing from the donor; all strike hit
 -- volumes/damage/feedback run through Bangla. String progression is Ninja
 -- Duel's own (confirmed hits, below), no longer the donor's press counter.
 local Brawler={}
+-- A fighter module's own route payoffs (MoveGraphs onRoute kinds), e.g.
+-- Naruto's "uzumaki" (Server/Legion).
+Brawler.payoffs={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
 local TUNE=Config.Combo
 local UP=Vector3.yAxis
@@ -2976,6 +3542,13 @@ function Brawler.rushPlan(c,a,style,line)
    sign=if dir=="side" then stickSide else (a.rushSide or 1)
    -- With no side asked for, the angle alternates from one dash to the next.
    a.rushSide=-sign
+   -- (shuffle: Naruto) not a plain alternation: an irregular side, and every
+   -- third entry a wider angle.
+   if style.shuffle and dir~="side" then
+    a.rushCount=(a.rushCount or 0)+1
+    sign=if (a.rushCount*3+1)%5&lt;2 then 1 else -1
+    if a.rushCount%3==0 then angle*=1.5 end
+   end
   end
   local rad=math.rad(angle)
   r.offset=(-toward*math.cos(rad)+right*sign*math.sin(rad))*r.arrive
@@ -3065,6 +3638,10 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
+ -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
+ -- or its solo / awakened form when there is no body for it.
+ local proxy,kind
+ name,proxy,kind=Bodies.route(c,a,name)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
 	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
 	if profile then
@@ -3073,6 +3650,11 @@ function Brawler.start(c,a,name)
 		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
+ -- An awakening that quickens the body (Awakening.Recovery: Naruto's cloak).
+ local awake=a.def.Awakening
+ if awake and awake.Recovery and (a.awakenUntil or 0)&gt;c.now then spec.recovery*=awake.Recovery end
+ -- A strike that opens (no string alive) may be pushed at an enemy body.
+ local opener=not Brawler.stringAlive(c,a,spec.air==true)
  a.buffered=nil
  a.attackVariant=nil
  a.hitBlocked=false
@@ -3115,10 +3697,20 @@ function Brawler.start(c,a,name)
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  if delta.Magnitude&gt;.1 and delta.Magnitude&lt;11 and (flat:Dot(delta.Unit)&gt;.55 or a.locked) then flat=delta.Unit end
+ -- The lock stays on the real fighter, but an opener pushed at one of his
+ -- bodies (a shadow clone in reach) swings at it (Bodies.aim; Combat turns
+ -- and steps toward it).
+ local body=opener and not spec.air and Bodies.aim(c,a)
+ if body then
+  a.pending.aim=body
+  local to=body.position-a.root.Position
+  flat=Vector3.new(to.X,0,to.Z).Unit
+ end
  -- Locked on, a strike started mid-run turns into the opponent during its
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+ if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
   -- and the slam): mashed whiffs used to keep a body hovering a stud above the
@@ -3411,6 +4003,8 @@ function Brawler.routePayoff(c,a,b,p)
   c:effect("Echo",b.decoyPosition,a.color,Vector3.new(2,5,1),1.2)
   c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
   c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
+ elseif Brawler.payoffs[kind] then
+  Brawler.payoffs[kind](c,a,b,p)
  end
 end
 -- A fighter's own air finisher after the Shadow of the Dancing Leaf
@@ -3543,7 +4137,8 @@ end
 function Brawler.clash(c,a,p)
  local b=a.target
  local q=b and b.pending
- if not q or q.kind~="Brawl" or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
+ -- (A strike another body carries out, Bodies.bind, never meets a blow thrown at its owner.)
+ if not q or q.kind~="Brawl" or q.from or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
  if q.name=="Grab" or q.name=="Throw" or q.name=="ThrowUp" then return false end
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).
@@ -3703,9 +4298,14 @@ function Brawler.hit(c,a,p)
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
  end
  local success,guarded,protected
+ -- A strike carried by a body (Bodies.bind) that was dispelled on the way misses.
+ if p.lost then return false end
  if p.name~="Throw" and p.name~="ThrowUp" then
-	-- Two strikes meeting in the same instant cancel out.
-	if p.name~="Grab" and Brawler.clash(c,a,p) then return false end
+	-- An enemy body in the swing takes it first and puffs away (Bodies.strike).
+	if Bodies.strike(c,a,p) then return true end
+	-- Two strikes meeting in the same instant cancel out (a carried strike's
+	-- body is not its owner's).
+	if p.name~="Grab" and not p.from and Brawler.clash(c,a,p) then return false end
 	if p.spec.chainTool and not p.chainToolFired then
 		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
 	end
@@ -3763,7 +4363,9 @@ function Brawler.hit(c,a,p)
 	end
   return true
  end
- local forward=a.root.CFrame.LookVector
+ -- (A carried strike drives the body away from its carrier: a clone's kick
+ -- from behind sends it toward Naruto.)
+ local forward=(p.from or a.root.CFrame).LookVector
  -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer
@@ -3920,7 +4522,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND27">
+      <Item class="ModuleScript" referent="ND28">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -4048,7 +4650,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND29">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -5090,7 +5692,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">ChakraDev</string>
           <ProtectedString name="Source">-- Server-internal tool facade. Studio bindable or offline CLI, no client Remote.
@@ -5175,7 +5777,7 @@ return Dev
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -5203,7 +5805,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">ChakraLab</string>
           <ProtectedString name="Source">-- Explicit experimental sandbox: kinematic proxies, never the live projectiles.
@@ -5325,7 +5927,7 @@ return Lab
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -5422,7 +6024,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">ChakraStudioQA</string>
           <ProtectedString name="Source">-- Explicit smoke test of the chakra lab, run by dev:Invoke("interactions","qa")
@@ -5468,7 +6070,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">ChakraStudioView</string>
           <ProtectedString name="Source">-- Optional Studio proxy renderer. Only draws its own folder; no camera/UI changes.
@@ -5532,7 +6134,7 @@ return View
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -5592,6 +6194,13 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 T.Masteries.Taijutsu={tags={"body"},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
 T.CharacterMastery.Leaf="Taijutsu"
 T.Preferred.Taijutsu={}
+-- Naruto (roster wave): no nature yet (his wind is Part II). His chakra goes
+-- into a body, not into the steel: the chord turns the thrown kunai into a
+-- shadow clone near the target (ToolMastery.Transform, Server/Bodies). With
+-- two clones already out, the same chord only reinforces the kunai.
+T.Masteries.ShadowClone={tags={},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Legion="ShadowClone"
+T.Preferred.ShadowClone={Kunai="Reinforce"}
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,
@@ -5715,7 +6324,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -5741,7 +6350,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -5753,6 +6362,9 @@ local Motor = require(script.Parent.Motor)
 local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 local Brawler = require(script.Parent.Brawler)
+-- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
+-- cleared and sent with the duel (Server/Bodies).
+local Bodies = require(script.Parent.Bodies)
 local Bangla = require(script.Parent.BanglaCombat)
 local Evade = require(script.Parent.BanglaEvade)
 local HitDetection = require(script.Parent.VelmoraHitDetection)
@@ -5830,13 +6442,15 @@ function Combat:lineOfSight(a,b)
 	local delta=b.root.Position-a.root.Position
 	return workspace:Raycast(a.root.Position,delta,self:rayParams(true)) == nil
 end
-function Combat:targetValid(a,b,range,facing)
+-- `from` (optional): the frame a strike is thrown from when another body
+-- carries it out (Bodies.bind); the attacker's own root otherwise.
+function Combat:targetValid(a,b,range,facing,from)
 	if not b or b.health&lt;=0 then return false end
 	local roots={};for _,candidate in self.actors do table.insert(roots,candidate.root) end
 	local angle=math.deg(math.acos(math.clamp(facing,-1,1)))
 	-- Resolve each active-window sample against the newest recorded pose; the short
 	-- history keeps interpolation stable without freezing a target at button-down.
-	local root=HitDetection.resolve(a.root,range,angle,a.root.Position,a.root.CFrame.LookVector,self.now,roots,self.match.effects)
+	local root=HitDetection.resolve(a.root,range,angle,if from then from.Position else a.root.Position,if from then from.LookVector else a.root.CFrame.LookVector,self.now,roots,self.match.effects)
 	return root==b.root
 end
 -- Server effects are logical markers only (anchor, echo, hitbox lifetimes).
@@ -6168,7 +6782,9 @@ function Combat:projectile(a,aim,speed,range,damage,kind,onSurface,opts)
 		damage=damage,onSurface=onSurface,kind=kind,born=self.now,radius=opts.radius or 0,growth=opts.growth or 0,
 		reaction=opts.reaction,impulse=opts.impulse,explode=opts.explode,heavy=opts.heavy,
 		-- Skill-build riders (chase, chakra point, wall pin, bind): see projectileRiders.
-		riders=opts.riders}
+		riders=opts.riders,
+		-- A tool that turns into a body near its target (Bodies.transform).
+		transform=opts.transform}
 	-- A chakra plan (Chakra.plan / Chakra.innate) changes how this object flies
 	-- and what it does on contact; without one the throw is the plain one.
 	if opts.chakra then Chakra.arm(self,p,opts.chakra) end
@@ -6278,7 +6894,7 @@ function Combat:substitute(a)
 	if not hurt then return false,"No escape window" end
 	local attacker=a.target
 	local departure=a.root.Position
-	local destination,mode=nil,"hop"
+	local destination,mode,swap=nil,"hop",nil
 	-- Skill-build twist (SkillBuilds def.Substitution); nil for canonical kits.
 	local twist=a.def.Substitution
 	local seal=a.fighterId=="Flashstep" and Techniques.escapeSeal(self,a,self.now)
@@ -6302,9 +6918,15 @@ function Combat:substitute(a)
 				if self:openSpot(attacker,spot) then destination=spot;mode="flank";break end
 			end
 		end
+	elseif twist and twist.Mode=="clone" then
+		-- Naruto: "it was a clone!" He trades places with one of his clones
+		-- (Bodies); the body that was being hit puffs away where he stood.
+		swap=Bodies.swapWith(self,a)
+		if swap then destination=swap.position;mode="clone" end
 	end
 	if destination then
 		self:relocate(a,destination)
+		if swap then Bodies.swapped(self,swap,departure) end
 	elseif twist and twist.Mode=="burst" then
 		-- Rock Lee's Rupture: no ninjutsu, so no body swap. He stays where he is;
 		-- the kick that throws the attacker off is Techniques.rupture (below).
@@ -6354,7 +6976,8 @@ function Combat:substitute(a)
 	self:pushImpact(departure,"substitute",false,{owner=a.id,fighter=a.fighterId,to=a.root.Position,mode=mode})
 	self:effect("Afterimage",departure,a.color,Vector3.new(2,4,2),0.35)
 	self:effect("Substitution",a.root.Position,a.color,Vector3.new(3,4,3),0.25)
-	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP" else "SUBSTITUTION • REPOSITIONED")..extra)
+	self:cue(a,(if mode=="seal" then "SUBSTITUTION • TO THE SEAL" elseif mode=="crow" then "SUBSTITUTION • CROW CLONE" elseif mode=="flank" then "SUBSTITUTION • OUTSIDE STEP"
+		elseif mode=="clone" then "SUBSTITUTION • IT WAS A CLONE!" else "SUBSTITUTION • REPOSITIONED")..extra)
 	return true
 end
 -- A reappearance point next to `attacker` is usable when nothing solid fills it
@@ -6471,6 +7094,8 @@ function Combat:awaken(a)
 		local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 		if away.Magnitude&lt;9 and away.Magnitude&gt;.05 then Brawler.react(self,b,"Knockback",away.Unit*34+Vector3.new(0,12,0),.45,a) end
 	end
+	-- The shockwave also blows away the enemy bodies close by (shadow clones).
+	Bodies.area(self,a,a.root.Position,9)
 	a.hitstopUntil=self.now+.12
 	self:pushImpact(a.root.Position,"awaken",true,{owner=a.id,fighter=a.fighterId})
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
@@ -6609,21 +7234,27 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- side only); a reserve that cannot pay refuses with a visible fizzle.
 		local mastery=a.def.ToolMastery or {Kind="kunai",Count=1,Speed=90,Damage=3,Recover=.75}
 		local infused=nil
-		if chakra then
+		-- A tool that turns into a body (ToolMastery.Transform: Naruto's kunai
+		-- into a shadow clone, Bodies.transform): the chakra chord pays for the
+		-- body instead of an infusion, while one can still be made.
+		local transform=if chakra and not wired then Bodies.transformCost(self,a,mastery) else nil
+		if chakra and not transform then
 			local why
 			infused,why=Chakra.plan(self,a,if a.def.Tool=="Sand" then "Sand" elseif mastery.Kind=="kunai" then "Kunai" else "Shuriken")
 			if not infused then Chakra.refuse(self,a);return false,why end
 			if wired and infused.mode~="conduct" then return false,"Tool recovering" end
 			if a.chakra&lt;Chakra.cost(infused,chainCancel) then Chakra.refuse(self,a);return false,"Need chakra" end
 		end
+		if transform and a.chakra&lt;transform+(if chainCancel then 0 else Config.ToolCost) then Chakra.refuse(self,a);return false,"Need chakra" end
 		-- A neutral throw costs a little chakra so blades pressure, not spam;
 		-- the throw that cancels a confirmed string stays free.
-		if not infused and not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+		if not infused and not transform and not chainCancel and a.chakra&lt;Config.ToolCost then return false,"Need chakra" end
+		if transform then a.chakra-=transform end
 		if infused then a.chakra-=Chakra.cost(infused,chainCancel) elseif not chainCancel then a.chakra-=Config.ToolCost end
 		if wired then a.pending=nil;self:setState(a,"Neutral",0) end
 		-- Stick away + tool inside a string: hop out of it behind the throw.
 		local disengage=graph.disengage
-		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused then
+		if chainCancel and a.chainOpen and disengage and Brawler.intent(a)=="back" and not infused and not transform then
 			a.neutralToolAt=self.now+.5
 			return Brawler.disengage(self,a,disengage)
 		end
@@ -6664,9 +7295,9 @@ function Combat:request(a,action,aim,clientTime,opts)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count&gt;1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count&gt;2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused})
+				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused,transform=if transform then mastery.Transform else nil})
 			end})
-		self:cue(a,if infused then Chakra.label(infused) elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
+		self:cue(a,if infused then Chakra.label(infused) elseif transform then "KUNAI • TRANSFORMATION" elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true
 	end
 	-- Melee -&gt; technique: Minato may spend a confirmed string on Rasengan with
@@ -6789,6 +7420,9 @@ function Combat:request(a,action,aim,clientTime,opts)
 	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
+	-- A technique may set itself up as its channel begins (Naruto's Rasengan
+	-- calls the clone that shapes it, and its channel follows).
+	if technique.start then technique.start(self,a,a.pending);spec=a.pending.spec end
 	a.castId=spec.Id;a.castStarted=self.now
 	local offset=a.pending.aim-a.root.Position
 	local flat=Vector3.new(offset.X,0,offset.Z)
@@ -6809,6 +7443,12 @@ function Combat:request(a,action,aim,clientTime,opts)
 	self:effect("Channel",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(4,0.12,4),spec.Channel)
 	self:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique=spec.Id,channel=spec.Channel})
 	return true
+end
+-- Where a melee swing goes: the locked target, or the enemy body it was
+-- pushed at (Bodies.aim) while that body lives.
+function Combat.swingAt(a)
+	local body=a.pending and a.pending.aim
+	return if body and body.alive then body.position else a.target.root.Position
 end
 function Combat:updateActor(a,dt)
 	local now=self.now
@@ -7033,7 +7673,7 @@ function Combat:updateActor(a,dt)
    Motor.flight(a,self,correction)
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining&gt;0 then
-		local toTarget=a.target.root.Position-a.root.Position
+		local toTarget=Combat.swingAt(a)-a.root.Position
 		local flatTarget=Vector3.new(toTarget.X,0,toTarget.Z)
 		local gap=a.pending.spec.contact or 3.6
 		if flatTarget.Magnitude&gt;gap then
@@ -7047,7 +7687,7 @@ function Combat:updateActor(a,dt)
 	end
  local attack=a.pending
  if attack and attack.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then
-  local delta=a.target.root.Position-a.root.Position
+  local delta=Combat.swingAt(a)-a.root.Position
   local flat=Vector3.new(delta.X,0,delta.Z)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
@@ -7096,6 +7736,8 @@ function Combat:stepRotation(a)
 	-- Skill builds: a wider dome (rotationReach) and blades sent back at their
 	-- thrower (rotationReflect), both set by Techniques.Rotation from the spec.
 	local reach=a.rotationReach or Techniques.ROTATION_REACH or 7
+	-- The dome sweeps away the enemy bodies inside it (shadow clones).
+	Bodies.area(self,a,a.root.Position,reach)
 	for i=#self.projectiles,1,-1 do
 		local p=self.projectiles[i]
 		if p.a~=a and (p.position-a.root.Position).Magnitude&lt;=reach+1.5 then
@@ -7390,6 +8032,15 @@ function Combat:updateProjectiles(dt)
 		if p.kind=="shuriken" and not p.ignited and p.a.def.ToolMastery and p.a.def.ToolMastery.FireBlades then self:igniteBlade(p) end
 		local travel=math.min(p.speed*dt,p.remaining)
 		local step=p.direction*travel
+		-- Bodies (Naruto's clones): a transforming tool becomes one near its
+		-- target; an enemy body on the path puffs away and stops a blade (a
+		-- jutsu volume carries on through it).
+		if (p.transform and Bodies.transform(self,p,step)) or Bodies.projectile(self,p,step) then
+			local index=table.find(self.projectiles,p)
+			if index then table.remove(self.projectiles,index) end
+			if self.match.phase~="Duel" then return end
+			continue
+		end
 		local target=p.a.target
 		local done=false
 		-- Volumetric techniques test the body against the swept sphere, so a
@@ -7479,6 +8130,7 @@ function Combat:update(dt,now)
 	end
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
+	if self.match.phase=="Duel" then Bodies.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
@@ -7503,13 +8155,14 @@ function Combat:clear(preserveAnimations)
 	end
 	self.match.effects:ClearAllChildren(); table.clear(self.effects); table.clear(self.projectiles); table.clear(self.hazards)
 	if self.scheduled then table.clear(self.scheduled) end
+	Bodies.clear(self)
 	self.impacts={}; self.impactSerial=0
 end
 return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -7579,7 +8232,7 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">DevCommands</string>
           <ProtectedString name="Source">-- Studio tooling boundary (Codex 33028b2, ported): the F6 panel's remote and
@@ -7610,7 +8263,7 @@ return Commands
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -7898,7 +8551,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
@@ -8025,7 +8678,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">DevQA</string>
           <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
@@ -8096,7 +8749,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
@@ -8131,7 +8784,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
@@ -8227,7 +8880,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -8308,7 +8961,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -8350,7 +9003,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -8463,7 +9116,282 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND48">
+      <Item class="ModuleScript" referent="ND49">
+        <Properties>
+          <string name="Name">Legion</string>
+          <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
+-- End, 13). The shadow clones on the shared Bodies component: how a clone
+-- behaves (at his side, out on a flank, in the Uzumaki Barrage, shaping the
+-- Rasengan), his jutsu (Shadow Clone, Rasengan, Multi Shadow Clone), the
+-- transformed kunai, and the Nine-Tails chakra that takes the clones away
+-- (Bodies.blocked: the cloak has claws instead). Installed into Techniques
+-- by its last line, like a client identity layer into Effects.
+-- Sheet: docs/characters/NARUTO.md; report: docs/reports/convergence3/NARUTO.md.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Attacks=require(Shared.Attacks)
+local Bodies=require(script.Parent.Bodies)
+local Legion={}
+local CLONE="clone"
+local JAB,KICK=Attacks.CloneJab,Attacks.BarrageKick
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function brawler() return require(script.Parent.Brawler) end
+local function tune(a) return Bodies.tuning(a,CLONE) end
+local function rightOf(a)
+	local right=flat(a.root.CFrame.RightVector)
+	return if right.Magnitude&gt;.1 then right.Unit else Vector3.xAxis
+end
+-- Clones come out on alternate sides of him.
+local function nextSide(a)
+	a.cloneSide=-(a.cloneSide or -1)
+	return a.cloneSide
+end
+local function aside(c,a,side,distance)
+	local p=a.root.Position+rightOf(a)*side*(distance or 2.8)
+	return Vector3.new(p.X,c.match.origin.Y+3,p.Z)
+end
+-- The opponent is open to a clone's jab: not swinging, not in a reaction, not
+-- under wake-up cover.
+local function open(c,b)
+	if b.health&lt;=0 or b.reaction or b.groundPose or (b.invulnerableUntil or 0)&gt;c.now then return false end
+	return b.state=="Neutral" or b.state=="Guarding" or b.state=="Recovery" or b.state=="TechniqueRecovery" or b.state=="Stunned"
+end
+-- Persistent clones ---------------------------------------------------------
+-- "guard": at his side (a decoy for blades, a partner for the swap and the
+-- Rasengan) until the opponent comes close; "flank": out to the opponent's
+-- side, a jab (Attacks.CloneJab, judged from the clone) whenever the opponent
+-- is open; when Naruto dashes in, a flanking clone rushes the other side.
+local function jab(c,body,b)
+	local t=c.now-body.actionAt
+	if body.state=="Startup" and t&gt;=JAB.startup then
+		body.state="Active"
+		local reach=tune(body.owner).Reach or 5.4
+		if Bodies.hitFrom(c,body,b,{damage=tune(body.owner).Strike or 4,reach=reach+.8,arc=.2,reaction="HitStun",push=10,up=3,stun=JAB.stun,tag="Shadow Clone"}) then
+			brawler().event(c,body.owner,"CloneJab")
+		end
+	elseif body.state=="Active" and t&gt;=JAB.startup+JAB.active then body.state="Recovery"
+	elseif body.state=="Recovery" and t&gt;=JAB.startup+JAB.active+JAB.recovery then body.state="Neutral";body.action=nil end
+end
+local function persistent(c,body,dt)
+	local a=body.owner
+	local b=a.target
+	if not b or b.health&lt;=0 then return end
+	local gap=flat(b.root.Position-body.position).Magnitude
+	if body.state~="Neutral" then
+		jab(c,body,b)
+		if body.alive then Bodies.face(body,b.root.Position) end
+		return
+	end
+	if body.mode=="guard" and gap&lt;=12 then body.mode="flank" end
+	local goal,speed
+	if body.mode=="guard" then
+		-- At his side, keeping pace with him even at a sprint.
+		goal,speed=aside(c,a,body.side,2.8),math.max(28,(a.locomotion and a.locomotion.Magnitude or 0)*1.25)
+	else
+		-- Out on the opponent's flank, off the line between the two of them.
+		local line=flat(a.root.Position-b.root.Position)
+		line=if line.Magnitude&gt;.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
+		local angle=body.side*100
+		speed=if body.rush then 50 else 38
+		if a.state=="Rush" and a.rush then
+			-- The pincer: Naruto comes in on one angle, the clone on the other.
+			if not body.pincer then body.pincer=true;body.nextStrike=c.now+.08 end
+			angle=-(a.rush.side or body.side)*70;speed=80
+		else body.pincer=nil end
+		local around=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(angle)):VectorToWorldSpace(line)
+		goal=b.root.Position+around*4.2
+		goal=Vector3.new(goal.X,c.match.origin.Y+3,goal.Z)
+	end
+	Bodies.move(c,body,goal,speed,dt)
+	Bodies.face(body,b.root.Position)
+	local reach=tune(a).Reach or 5.4
+	if body.mode=="flank" and c.now&gt;=body.nextStrike and gap&lt;=reach and open(c,b) then
+		body.rush=nil
+		body.state="Startup";body.action="CloneJab";body.variant=nil;body.actionAt=c.now;body.actionSerial+=1
+		-- A clone's rhythm: not the same beat twice in a row.
+		body.nextStrike=c.now+(tune(a).Every or 1.9)*(.85+((body.id*7+body.actionSerial*3)%5)*.1)
+	end
+end
+-- Uzumaki Barrage clones: they burst out beside the launched body, kick it
+-- higher ("U-ZU-MA-") and puff away; Naruto brings the last word down.
+local function barrage(c,body,dt)
+	local b=body.owner.target
+	if not b or b.health&lt;=0 then return end
+	local around=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(body.angle or 0)):VectorToWorldSpace(body.line or Vector3.new(0,0,-1))
+	local goal=b.root.Position+around*2.3-Vector3.new(0,1.1,0)
+	body.position=c:clamp(body.position:Lerp(goal,math.min(1,dt*18)))
+	Bodies.face(body,b.root.Position)
+	if body.state=="Startup" and c.now&gt;=body.actionAt+KICK.startup then
+		body.state="Active"
+		if Bodies.hitFrom(c,body,b,{damage=KICK.damage,reach=4.8,height=6,arc=-1,reaction="Juggled",push=2,up=22,stun=KICK.stun,tag="Uzumaki Barrage"}) then
+			brawler().event(c,body.owner,"BarrageKick")
+			c:pushImpact(b.root.Position,"uzumaki",false,{owner=body.owner.id,fighter=body.owner.fighterId,syllable=body.syllable})
+		end
+	elseif body.state=="Active" and c.now&gt;=body.actionAt+KICK.startup+KICK.active then body.state="Recovery" end
+end
+-- The Rasengan's helper: beside his right hand, shaping the sphere in his
+-- palm until the release (or until it is struck: the jutsu falls apart).
+local function shape(c,body,dt)
+	local a=body.owner
+	local p=body.shaping
+	if not p or a.pending~=p or a.health&lt;=0 then
+		body.shaping=nil;body.cast=nil;body.mode="spent";body.state="Recovery"
+		body.expires=math.min(body.expires,c.now+.2)
+		return
+	end
+	local fwd=flat(a.root.CFrame.LookVector)
+	fwd=if fwd.Magnitude&gt;.1 then fwd.Unit else Vector3.new(0,0,-1)
+	local right=rightOf(a)
+	local goal=a.root.Position+right*1.9+fwd*.7
+	Bodies.move(c,body,Vector3.new(goal.X,c.match.origin.Y+3,goal.Z),60,dt)
+	body.look=-right;body.cast="RasenganShape";body.state="Neutral"
+end
+-- A clone struck while it shapes the Rasengan: the technique falls apart
+-- (the chakra is spent, the cooldown runs, a short recovery to punish).
+local function lost(c,body,why,by)
+	local a=body.owner
+	local p=body.shaping
+	if p and a.pending==p and a.state=="TechniqueChannel" and (why=="hit" or why=="blade" or why=="area") then
+		a.pending=nil;c:setState(a,"Recovery",.4)
+		c:pushImpact(a.root.Position,"rasengan",false,{phase="broken",owner=a.id,fighter=a.fighterId})
+		c:cue(a,"RASENGAN • THE CLONE WAS BROKEN",.9)
+		if by then c:cue(by,"CLONE BROKEN • NO RASENGAN",.8) end
+		brawler().event(c,a,"RasenganBroken")
+	end
+end
+-- The kunai transformed back into a clone near the target (the chakra chord
+-- on his tool): it lands on the opponent's flank and strikes at once.
+local function kunaiClone(c,p)
+	local a=p.a
+	local b=a.target
+	local at=Vector3.new(p.position.X,c.match.origin.Y+3,p.position.Z)
+	local line=flat(a.root.Position-b.root.Position)
+	local side=if line.Magnitude&gt;.1 and line.Unit:Cross(Vector3.yAxis):Dot(flat(at-b.root.Position))&gt;=0 then 1 else -1
+	local body=Bodies.spawn(c,a,{kind=CLONE,position=at,mode="flank",side=side,delay=0})
+	if body then
+		-- It pops where the kunai was and hops onto the flank before it strikes.
+		body.rush=true;body.nextStrike=c.now+.16
+		c:cue(a,"TRANSFORMATION • CLONE",.6)
+		brawler().event(c,a,"CloneKunai")
+	end
+end
+-- The Uzumaki Barrage (route payoff of the launcher route UzumakiKick): two
+-- more clones keep the body up, and the heavy after the chase is his own
+-- finisher (MoveGraphs.Legion.airFinisher: NARUTO UZUMAKI RENDAN).
+local function uzumaki(c,a,b,p)
+	a.lionUntil=c.now+2.1
+	c:cue(a,"U-ZU-MA-KI • E, THEN HEAVY: NARUTO RENDAN",1)
+	brawler().event(c,a,"UzumakiBarrage")
+	c:pushImpact(b.root.Position,"uzumaki",false,{owner=a.id,fighter=a.fighterId,syllable="U"})
+	local line=flat(a.root.Position-b.root.Position)
+	line=if line.Magnitude&gt;.1 then line.Unit else Vector3.new(0,0,-1)
+	local syllables={"ZU","MA"}
+	for k,angle in {125,-125} do
+		c:schedule(c.now+.12+k*.18,function()
+			if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+			local around=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(angle)):VectorToWorldSpace(line)
+			local body=Bodies.spawn(c,a,{kind=CLONE,position=b.root.Position+around*2.3-Vector3.new(0,1.1,0),ephemeral=true,life=.42,
+				mode="barrage",airborne=true,state="Startup",action="BarrageKick"})
+			if body then body.line=line;body.angle=angle;body.syllable=syllables[k] end
+		end)
+	end
+end
+function Legion.install(Techniques)
+	Bodies.controllers.guard=persistent
+	Bodies.controllers.flank=persistent
+	Bodies.controllers.barrage=barrage
+	Bodies.controllers.shape=shape
+	Bodies.onDispel[CLONE]=lost
+	Bodies.transforms[CLONE]=kunaiClone
+	brawler().payoffs.uzumaki=uzumaki
+	-- Kage Bunshin: one clone at his side (two at most). Near the opponent it
+	-- goes straight out to a flank.
+	local function canClone(c,a)
+		if Bodies.blocked(c,a) then c:cue(a,"NINE-TAILS CHAKRA • NO CLONES",.6);return false end
+		if Bodies.count(c,a,CLONE)&gt;=(tune(a).Max or 2) then c:cue(a,"TWO CLONES AT MOST",.6);return false end
+		return true
+	end
+	Techniques.ShadowClone={
+		check=canClone,
+		execute=function(c,a)
+			local side=nextSide(a)
+			local b=a.target
+			local near=b~=nil and b.health&gt;0 and (b.root.Position-a.root.Position).Magnitude&lt;=16
+			local body=Bodies.spawn(c,a,{kind=CLONE,position=aside(c,a,side),mode=if near then "flank" else "guard",side=side,delay=.3})
+			if not body then return end
+			c:cue(a,"SHADOW CLONE • "..Bodies.count(c,a,CLONE).." / "..(tune(a).Max or 2),.7)
+			brawler().event(c,a,"ShadowClone")
+		end,
+	}
+	-- Tajū Kage Bunshin: clones burst out on both sides at once and charge
+	-- (only with none out: it always makes the pair).
+	Techniques.MassShadowClone={
+		check=function(c,a)
+			if not canClone(c,a) then return false end
+			if Bodies.count(c,a,CLONE)&gt;0 then c:cue(a,"CLONES ALREADY OUT",.6);return false end
+			return true
+		end,
+		execute=function(c,a)
+			local made=0
+			for _,side in {1,-1} do
+				local body=Bodies.spawn(c,a,{kind=CLONE,position=aside(c,a,side,3.2),mode="flank",side=side,delay=.2})
+				if body then body.rush=true;made+=1 end
+			end
+			c:cue(a,"MULTI SHADOW CLONE",.8)
+			if made&gt;0 then brawler().event(c,a,"MassShadowClone") end
+		end,
+	}
+	-- Rasengan, Part I: he cannot shape it alone. A free clone comes to his
+	-- side and shapes it through the channel; with none he makes one for it
+	-- (CloneCost more chakra, a longer channel). Striking that clone breaks
+	-- the jutsu. In the Nine-Tails cloak: no clone, almost no wind-up.
+	Techniques.CloneRasengan={
+		check=function(c,a,spec)
+			if Bodies.blocked(c,a) or Bodies.free(c,a,CLONE) then return true end
+			return a.chakra&gt;=spec.Cost+(spec.CloneCost or 12)
+		end,
+		start=function(c,a,pending)
+			local spec=table.clone(pending.spec);pending.spec=spec
+			-- (A channel lengthened elsewhere, the tutorial's interrupt step, stays long.)
+			if Bodies.blocked(c,a) then
+				spec.Channel=math.min(spec.Channel,spec.CloakChannel or .2);pending.cloak=true
+				c:cue(a,"NINE-TAILS RASENGAN",.6)
+			else
+				local body=Bodies.free(c,a,CLONE)
+				if body then
+					c:cue(a,"RASENGAN • THE CLONE SHAPES IT",spec.Channel)
+				else
+					a.chakra=math.max(0,a.chakra-(spec.CloneCost or 12))
+					spec.Channel=math.max(spec.Channel,spec.SoloChannel or .6)
+					body=Bodies.spawn(c,a,{kind=CLONE,position=aside(c,a,1,1.9),ephemeral=true,life=spec.Channel+1})
+					c:cue(a,"RASENGAN • A CLONE FOR IT",spec.Channel)
+				end
+				if body then body.mode="shape";body.shaping=pending;body.cast="RasenganShape";body.expires=math.max(body.expires,c.now+spec.Channel+1);pending.shaper=body end
+			end
+			a.untilTime=c.now+spec.Channel
+		end,
+		execute=function(c,a,pending)
+			local shaper=pending.shaper
+			if shaper and not shaper.alive then return end
+			local Brawler=brawler()
+			Brawler.start(c,a,"DashAttack")
+			local p=a.pending
+			if not p then return end
+			p.spec=table.clone(p.spec)
+			p.spec.damage=pending.spec.Damage;p.spec.travel=10;p.spec.recovery=.45
+			p.spec.reaction="Knockback";p.spec.impulse=Vector3.new(0,22,74);p.spec.stun=.62
+			p.rasengan=true;a.travelRemaining=10
+			-- (One variant: the client draws it red in the cloak.)
+			a.attackVariant="Rasengan"
+			c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId,cloak=pending.cloak})
+			Brawler.event(c,a,"Rasengan")
+		end,
+	}
+end
+return Legion
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="ND50">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -8492,7 +9420,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -8506,6 +9434,7 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local Bodies=require(script.Parent.Bodies)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
@@ -8749,6 +9678,8 @@ function Matches:view(s,cursor,mine,theirs)
 	cursor.sentImpact=s.combat.impactSerial or 0;cursor.impactEpoch=s.epoch
 	local wins=s.wins or {}
 	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
+		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
+		bodies=Bodies.view(s.combat),
 		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end
@@ -8862,7 +9793,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -9129,7 +10060,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -9467,7 +10398,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -9732,7 +10663,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -10208,7 +11139,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -10419,7 +11350,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -10622,7 +11553,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -11111,7 +12042,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -11424,7 +12355,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -12457,11 +13388,13 @@ function Techniques.curseDrain(c,a,dt,now)
 	a.curseHunger=rate&gt;tune.HealthDrain
 	if rate&gt;0 then a.health=math.max(1,a.health-rate*dt);a.hum.Health=math.max(1,a.health) end
 end
+-- Naruto (roster wave): his jutsu and his clones' behaviour (Server/Legion).
+require(script.Parent.Legion).install(Techniques)
 return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -12561,7 +13494,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -12589,7 +13522,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -12717,7 +13650,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -12768,7 +13701,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -13572,6 +14505,70 @@ local function dressLee(model,def)
 		end
 	end
 end
+-- Naruto in Part I (13, the Chunin Exam to the Valley of the End): the orange
+-- jumpsuit with blue shoulders and the white standing collar, the red Uzumaki
+-- spiral on the back, the blue-cloth headband, spiky blond hair, blue eyes,
+-- three whisker marks on each cheek, a kunai holster on the bandaged right
+-- thigh, blue sandals. A genin's kit, nothing of Part II. Flat SmoothPlastic.
+local function dressNaruto(model,def)
+	local hair=rgb(250,206,70)
+	local hairShade=rgb(226,170,40)
+	local orange=rgb(244,130,36)
+	local orangeDark=rgb(214,104,24)
+	local blue=rgb(36,52,110)
+	local cloth=rgb(40,62,140)
+	local white=rgb(238,236,228)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(60,130,230),hairShade)
+	for _,side in {-1,1} do
+		for k=0,2 do
+			wear(model,"Head","Whisker",Vector3.new(.28,.03,.02),CFrame.new(side*.46,-.14-k*.09,-.78)*A(0,0,R(side*(8-k*8))),rgb(80,58,46))
+		end
+	end
+	hairCap(model,hair)
+	-- Spikes all round, wilder than Minato's, a ragged fringe over the headband.
+	local spikes={
+		{Vector3.new(0,.82,.2),Vector3.new(0,.75,.6),.95,.6,.38},
+		{Vector3.new(-.42,.74,.25),Vector3.new(-.6,.6,.5),.9,.52,.36},
+		{Vector3.new(.42,.74,.25),Vector3.new(.6,.6,.5),.9,.52,.36},
+		{Vector3.new(0,.5,.62),Vector3.new(0,.15,1),.85,.62,.38},
+		{Vector3.new(-.5,.34,.56),Vector3.new(-.6,0,.9),.78,.5,.34},
+		{Vector3.new(.5,.34,.56),Vector3.new(.6,0,.9),.78,.5,.34},
+		{Vector3.new(-.74,.56,.05),Vector3.new(-1,.45,.2),.62,.44,.3},
+		{Vector3.new(.74,.56,.05),Vector3.new(1,.45,.2),.62,.44,.3},
+		{Vector3.new(-.3,.86,-.22),Vector3.new(-.4,1,-.2),.55,.4,.3},
+		{Vector3.new(.3,.86,-.22),Vector3.new(.4,1,-.2),.55,.4,.3},
+		{Vector3.new(0,-.1,.7),Vector3.new(0,-.6,.8),.6,.6,.3},
+		{Vector3.new(-.62,.1,.4),Vector3.new(-.9,-.2,.5),.55,.42,.28},
+		{Vector3.new(.62,.1,.4),Vector3.new(.9,-.2,.5),.55,.42,.28},
+	}
+	for index,s in spikes do spike(model,s[1],s[2],s[3],s[4],s[5],if index%2==0 then hairShade else hair) end
+	for _,x in {-.4,-.13,.13,.4} do spike(model,Vector3.new(x,.6,-.55),Vector3.new(x*.5,-.75,-.6),.5,.4,.22,hair) end
+	headband(model,false)
+	for _,p in model:GetChildren() do if p.Name=="Headband" or p.Name=="HeadbandTail" then p.Color=cloth end end
+	-- The jumpsuit, from the collar to the ankles.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=orange end
+	end
+	wear(model,"UpperTorso","ShoulderPanel",Vector3.new(2.06,.42,1.06),CFrame.new(0,.52,0),blue)
+	for _,side in {"Left","Right"} do wear(model,side.."UpperArm","ShoulderCap",Vector3.new(.86,.4,.86),CFrame.new(0,.36,0),blue) end
+	wear(model,"UpperTorso","Collar",Vector3.new(1.36,.42,1.1),CFrame.new(0,.86,.02),white)
+	wear(model,"UpperTorso","Zip",Vector3.new(.06,1.1,.03),CFrame.new(0,-.1,-.52),white)
+	cyl(wear(model,"UpperTorso","ZipRing",Vector3.new(.04,.2,.2),CFrame.new(0,.5,-.56)*A(0,R(90),0),white))
+	-- The red Uzumaki spiral on the back.
+	cyl(wear(model,"UpperTorso","Spiral",Vector3.new(.04,.78,.78),CFrame.new(0,-.08,.53)*A(0,R(90),0),rgb(196,40,36)))
+	cyl(wear(model,"UpperTorso","SpiralInner",Vector3.new(.045,.38,.38),CFrame.new(.06,-.06,.535)*A(0,R(90),0),orange))
+	for _,side in {"Left","Right"} do
+		wear(model,side.."LowerArm","Cuff",Vector3.new(.82,.16,.82),CFrame.new(0,-.4,0),orangeDark)
+		wear(model,side.."LowerLeg","PantCuff",Vector3.new(.86,.18,.86),CFrame.new(0,-.42,0),orangeDark)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=cloth end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+	wear(model,"RightUpperLeg","ThighBandage",Vector3.new(.9,.42,.9),CFrame.new(0,0,0),white)
+	wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),blue)
+	wear(model,"LowerTorso","ToolPouch",Vector3.new(.66,.4,.3),CFrame.new(0,.1,.62),rgb(70,64,58))
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -13586,6 +14583,7 @@ function World.dress(model,def)
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	if def.Name=="Rock Lee" then dressLee(model,def) end
+	if def.Name=="Naruto" then dressNaruto(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -13604,21 +14602,151 @@ return World
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND64">
+  <Item class="StarterPlayer" referent="ND66">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND65">
+    <Item class="StarterPlayerScripts" referent="ND67">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND66">
+      <Item class="Folder" referent="ND68">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND67">
+        <Item class="ModuleScript" referent="ND69">
+          <Properties>
+            <string name="Name">BodyViews</string>
+            <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
+-- from the snapshot's `bodies`. A clone is a copy of its owner's own model
+-- (rig and costume, so it looks exactly like him), anchored at its root,
+-- carried on a smoothed track of the server positions and posed by the motion
+-- engine like a fighter (its run, its jab, its side of a carried route, the
+-- Rasengan it shapes). Copies are pooled per owner model; the puffs of smoke
+-- come from the contact feed (Client/NarutoFX). Presentation only.
+local Motion=require(script.Parent.VelmoraMotionEngine)
+local BodyViews={};BodyViews.__index=BodyViews
+BodyViews.clock=os.clock -- (headless tests drive time)
+-- A body never lags its server position by more than this before it snaps.
+local SNAP=12
+function BodyViews.new()
+	local folder=Instance.new("Folder");folder.Name="NinjaDuelBodies";folder.Parent=workspace
+	return setmetatable({folder=folder,views={},pools={},epoch=nil},BodyViews)
+end
+-- A copy of `source` that can be posed but never collides, never blocks the
+-- camera, carries no Humanoid, script, sound, light or held weapon.
+function BodyViews.copy(source)
+	local archivable=source.Archivable
+	source.Archivable=true
+	local ok,copy=pcall(function() return source:Clone() end)
+	source.Archivable=archivable
+	if not ok or not copy then return nil end
+	copy.Name="ShadowClone"
+	for _,d in copy:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.CanCollide=false;d.CanQuery=false;d.CanTouch=false;d.Massless=true;d.Anchored=false
+			d.LocalTransparencyModifier=0
+			-- The quiet tell (the deception is where blows come from, not which
+			-- body is real): a chakra copy casts no shadow, the real one does.
+			d.CastShadow=false
+		elseif d:IsA("Humanoid") or d:IsA("Sound") or d:IsA("BaseScript") or d:IsA("Highlight") or d:IsA("ParticleEmitter")
+			or d:IsA("Trail") or d:IsA("Light") or d:IsA("Beam") then
+			d:Destroy()
+		elseif d:IsA("Model") and d.Parent and d.Parent:IsA("BasePart") then
+			-- A weapon held in a hand (Motion.weapon) stays with its owner.
+			d:Destroy()
+		end
+	end
+	local root=copy:FindFirstChild("HumanoidRootPart")
+	if not root then copy:Destroy();return nil end
+	root.Anchored=true;copy.PrimaryPart=root
+	return copy
+end
+function BodyViews:take(owner)
+	local pool=self.pools[owner]
+	local model=pool and table.remove(pool)
+	if not model then model=BodyViews.copy(owner) end
+	if not model then return nil end
+	Motion.reset(model)
+	model.Parent=self.folder
+	return model
+end
+function BodyViews:release(view)
+	local model=view.model
+	model.Parent=nil
+	local pool=self.pools[view.owner] or {}
+	self.pools[view.owner]=pool
+	if #pool&lt;4 then table.insert(pool,model) else model:Destroy() end
+end
+function BodyViews:reset()
+	for id,view in self.views do view.model:Destroy();self.views[id]=nil end
+	for owner,pool in self.pools do for _,model in pool do model:Destroy() end;self.pools[owner]=nil end
+end
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+-- One body this frame: the track, then the pose.
+function BodyViews:step(view,entry,dt)
+	local now=BodyViews.clock()
+	if view.entry~=entry then
+		view.entry=entry;view.seenAt=now
+		-- A flicker across the stage (Bodies.warp) snaps instead of sliding.
+		if entry.warp~=view.warp then view.warp=entry.warp;view.pos=entry.position end
+	end
+	local velocity=entry.velocity or Vector3.zero
+	-- A short lead only: a clone dashing to its strike (90 studs/s) stops dead,
+	-- and a long extrapolation would carry it past the spot between packets.
+	local ahead=entry.position+velocity*math.min(.05,now-(view.seenAt or now))
+	if (ahead-view.pos).Magnitude&gt;SNAP then view.pos=ahead
+	else view.pos=view.pos:Lerp(ahead,1-math.exp(-18*math.max(dt,1/240))) end
+	local look=flat(entry.look or Vector3.new(0,0,-1))
+	look=if look.Magnitude&gt;.05 then look.Unit else Vector3.new(0,0,-1)
+	local drawn=view.look or look
+	drawn=drawn:Lerp(look,1-math.exp(-14*math.max(dt,1/240)))
+	view.look=if drawn.Magnitude&gt;.05 then drawn.Unit else look
+	view.model:PivotTo(CFrame.lookAt(view.pos,view.pos+view.look))
+	-- Its own clock: an action animates from the frame it was first seen.
+	local clock=view.clock
+	local serial=entry.actionSerial or 0
+	if serial~=clock.serial then clock.serial=serial;clock.at=now-math.clamp(entry.actionElapsed or 0,0,.12) end
+	if entry.cast~=clock.cast then clock.cast=entry.cast;clock.castAt=now end
+	local acting=entry.action~=nil and (entry.state=="Startup" or entry.state=="Active" or entry.state=="Recovery")
+	local visual={fighterId=entry.fighterId,health=1,airborne=entry.airborne==true,velocity=velocity,speed=flat(velocity).Magnitude,
+		state=if acting then entry.state elseif entry.cast then "TechniqueChannel" else "Neutral",
+		attackName=if acting then entry.action else nil,attackVariant=if acting then entry.variant else nil,attackSerial=serial,
+		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
+	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
+end
+-- Every frame (Presentation:update): draw the live bodies, put away the rest.
+function BodyViews:update(data,dt,folder)
+	if not data or data.phase~="Duel" then
+		for id,view in self.views do self:release(view);self.views[id]=nil end
+		return
+	end
+	if data.epoch~=self.epoch then self:reset();self.epoch=data.epoch end
+	local live={}
+	for _,entry in data.bodies or {} do
+		live[entry.id]=true
+		local view=self.views[entry.id]
+		if not view then
+			local owner=folder and folder:FindFirstChild(entry.owner or "")
+			local model=owner and self:take(owner)
+			if model then
+				view={model=model,owner=owner,pos=entry.position,look=nil,warp=entry.warp,clock={}}
+				self.views[entry.id]=view
+			end
+		end
+		if view then self:step(view,entry,dt) end
+	end
+	for id,view in self.views do
+		if not live[id] then self:release(view);self.views[id]=nil end
+	end
+end
+return BodyViews
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND70">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -13895,7 +15023,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND68">
+        <Item class="ModuleScript" referent="ND71">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -14450,7 +15578,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND69">
+        <Item class="LocalScript" referent="ND72">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -14484,7 +15612,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND70">
+        <Item class="ModuleScript" referent="ND73">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -14634,7 +15762,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND71">
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -14678,7 +15806,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND72">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -16338,11 +17466,14 @@ require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,soun
 -- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
 require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
+require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND73">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -17082,7 +18213,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -17259,7 +18390,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND75">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -17440,7 +18571,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND76">
+        <Item class="LocalScript" referent="ND79">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -17589,7 +18720,265 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND80">
+          <Properties>
+            <string name="Name">NarutoFX</string>
+            <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
+-- his shadow clones (appearing, dispelled by one blow, spent after a route,
+-- swapped in a substitution, a kunai turning back into one, burnt away by the
+-- red chakra), the Rasengan forming between his palm and the clone that
+-- shapes it, the Uzumaki Barrage called out (U-ZU-MA-KI), his orange dash,
+-- and the Nine-Tails cloak (red chakra, one tail, slit eyes). The clones'
+-- bodies themselves are Client/BodyViews. One identity layer installed into
+-- Effects (like SandFX and LeeFX). Presentation only.
+local Debris=game:GetService("Debris")
+local NarutoFX={}
+local K -- Effects' helpers, handed over by install()
+NarutoFX.clock=os.clock -- (headless tests drive time)
+local NARUTO="Legion"
+local SMOKE=Color3.fromRGB(240,240,244)
+local CHAKRA=Color3.fromRGB(255,160,70) -- his orange
+local BLUE=Color3.fromRGB(110,190,255)
+local CORE=Color3.fromRGB(235,250,255)
+local FOX=Color3.fromRGB(232,64,30) -- the Nine-Tails' red chakra
+local FOX_CORE=Color3.fromRGB(255,176,96)
+local DUST=Color3.fromRGB(206,194,168)
+local function stateOf(fx,model)
+	fx.narutoState=fx.narutoState or setmetatable({},{__mode="k"})
+	local st=fx.narutoState[model]
+	if not st then st={};fx.narutoState[model]=st end
+	return st
+end
+local function puff(fx,at,count,size,color) K.smokePuff(fx.folder,at,color or SMOKE,count,size) end
+local function sparks(fx,at,color,count,speed)
+	K.burst(fx.folder,at,{Texture=K.TEX.spark,Lifetime=NumberRange.new(.15,.35),Speed=NumberRange.new(speed or 10,(speed or 10)*1.8),SpreadAngle=Vector2.new(180,180),
+		Color=ColorSequence.new(color),LightEmission=1,Size=K.num({{0,.45},{1,0}}),Drag=5},count or 10)
+end
+-- A word called out over the fight (the barrage's syllables).
+local function call(fx,at,text,size)
+	local holder=K.anchorPart(fx.folder,at)
+	holder.Name="UzumakiCall"
+	local gui=K.new("BillboardGui",{Size=UDim2.fromOffset(size or 110,(size or 110)*.6),AlwaysOnTop=true,LightInfluence=0},holder)
+	K.new("TextLabel",{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=text,TextColor3=CHAKRA,TextStrokeTransparency=0,TextScaled=true,Font=Enum.Font.GothamBlack},gui)
+	Debris:AddItem(holder,.8)
+	return holder
+end
+
+-- ------------------------------------------------------------------ contacts
+-- A shadow clone comes or goes: always in a puff of smoke.
+local function body(fx,impact)
+	if impact.kind~="clone" then return false end
+	local at=impact.position
+	local phase=impact.phase
+	local holder=K.new("Model",{Name="ClonePuff"},fx.folder)
+	if phase=="appear" then
+		K.flash(holder,at,SMOKE,.6,3.2,.14,.35)
+		puff(fx,at,14,2)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.3,1.4)
+	elseif phase=="hit" or phase=="blade" or phase=="area" then
+		-- One blow and it is gone: a bigger puff and a dry pop.
+		K.flash(holder,at,SMOKE,.8,4.4,.16,.25)
+		K.shockRing(holder,at,SMOKE,1,7,.22)
+		puff(fx,at,22,2.6)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.hit,.35,1.6)
+		fx:cheer(.4)
+	elseif phase=="cloak" then
+		-- The red chakra burns the clones away.
+		K.flash(holder,at,FOX,.8,4,.2,.3)
+		puff(fx,at,14,2.2,Color3.fromRGB(255,190,170))
+	elseif phase=="transform" then
+		-- The kunai was a clone all along.
+		K.flash(holder,at,CHAKRA,.4,2.6,.14,.3)
+		puff(fx,at,14,2)
+		if fx.tumble then fx:tumble("kunai",at,Vector3.yAxis,nil) end
+	else
+		-- Its time is up, its strike is over, a swap, a flicker.
+		puff(fx,at,12,2)
+	end
+	Debris:AddItem(holder,.5)
+	return true
+end
+-- "It was a clone!": smoke where he was hit, smoke where he comes back (no log).
+local function swap(fx,impact)
+	puff(fx,impact.position,22,2.4)
+	if impact.to then puff(fx,impact.to,8,1.4) end
+	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.4,1.1)
+	return true
+end
+local function cast(fx,impact,folder)
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	local hand=model and model:FindFirstChild("RightHand")
+	if impact.technique=="ShadowClone" or impact.technique=="MassShadowClone" then
+		-- The cross seal: his chakra flares in his hands.
+		if hand then sparks(fx,hand.Position,CHAKRA,if impact.technique=="MassShadowClone" then 18 else 10,8) end
+		return true
+	elseif impact.technique=="CloneRasengan" then
+		if hand then sparks(fx,hand.Position,BLUE,10,6) end
+		return true
+	end
+	return false
+end
+-- The Rasengan comes apart: the clone shaping it was struck.
+local function broken(fx,impact,folder)
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	local hand=model and model:FindFirstChild("RightHand")
+	local at=if hand then hand.Position else impact.position
+	local holder=K.new("Model",{Name="RasenganBroken"},fx.folder)
+	K.flash(holder,at,BLUE,1,3.6,.18,.3)
+	sparks(fx,at,BLUE,16,14)
+	puff(fx,at,6,1,Color3.fromRGB(200,220,240))
+	Debris:AddItem(holder,.4)
+	return true
+end
+-- The release: the sphere bursts forward with him (red in the cloak).
+local function release(fx,impact,folder)
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	local tone=if impact.cloak then FOX else BLUE
+	if model then fx:ghost(model,tone,.25,.5) end
+	K.flash(fx.folder,impact.position,tone,1,4,.16,.3)
+	return true
+end
+local function speed(fx,impact,folder)
+	-- His dash: an orange afterimage and the dust his feet throw up.
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	if model then fx:ghost(model,CHAKRA,.22,.55) end
+	puff(fx,impact.position-Vector3.new(0,2.6,0),10,1.5,DUST)
+	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.4,1.05)
+	return true
+end
+local function awaken(fx,impact,folder)
+	-- The Nine-Tails chakra boils out of him.
+	local at=impact.position
+	local model=folder and folder:FindFirstChild(impact.owner or "")
+	if model then fx:ghost(model,FOX,.4,.35) end
+	local burstModel=K.new("Model",{Name="FoxBurst"},fx.folder)
+	K.flash(burstModel,at,FOX_CORE,2,10,.3,.1)
+	K.flash(burstModel,at,FOX,4,18,.5,.35)
+	Debris:AddItem(burstModel,.6)
+	K.shockRing(fx.folder,at-Vector3.new(0,2.6,0),FOX,3,26,.5)
+	puff(fx,at-Vector3.new(0,2.4,0),20,2.6,Color3.fromRGB(214,180,170))
+	K.sound(K.anchorPart(fx.folder,at),K.SOUND.boom,.5,.8)
+	fx:cheer(1)
+	return true
+end
+local function impact(fx,data,folder)
+	local style=data.style
+	if style=="body" then return body(fx,data) end
+	if data.fighter~=NARUTO then return false end
+	if style=="substitute" and data.mode=="clone" then return swap(fx,data) end
+	if style=="cast" then return cast(fx,data,folder) end
+	if style=="rasengan" then return broken(fx,data,folder) end
+	if style=="burst" then return release(fx,data,folder) end
+	if style=="uzumaki" then
+		call(fx,data.position+Vector3.new(0,2.6,0),data.syllable or "U")
+		K.shockRing(fx.folder,data.position,CHAKRA,1,8,.2)
+		return true
+	end
+	if style=="chase" or style=="afterimage" then return speed(fx,data,folder) end
+	if style=="awaken" then return awaken(fx,data,folder) end
+	return false
+end
+
+-- ------------------------------------------------------------------ per frame
+-- The Rasengan forming in his palm through the channel, chakra drawn in from
+-- the clone at his right side; the thrust itself is Effects' sphere (red in
+-- the cloak).
+local function rasengan(fx,model,actor,st)
+	local forming=actor.castId=="CloneRasengan" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive") and (actor.health or 1)&gt;0
+	local hand=model:FindFirstChild("RightHand")
+	local cloak=(actor.awaken or 0)&gt;0
+	if forming and hand then
+		if not (st.orb and st.orb.Parent) then
+			local holder=K.new("Model",{Name="RasenganForming"},fx.folder)
+			local core=K.block(holder,Vector3.one*.4,hand.CFrame,CORE,Enum.Material.Neon);core.Shape=Enum.PartType.Ball
+			local shell=K.block(holder,Vector3.one,hand.CFrame,BLUE,Enum.Material.Neon);shell.Shape=Enum.PartType.Ball;shell.Transparency=.5
+			st.orb=holder;st.core=core;st.shell=shell;st.born=NarutoFX.clock();st.wisp=nil
+		end
+		local t=NarutoFX.clock()-st.born
+		local grow=math.clamp(t/.45,.25,1)
+		local center=hand.CFrame*CFrame.new(0,-.7,-.35)
+		st.core.CFrame=center;st.core.Size=Vector3.one*.6*grow;st.core.Color=if cloak then FOX_CORE else CORE
+		st.shell.CFrame=center;st.shell.Size=Vector3.one*1.5*grow*(1+math.sin(t*40)*.06);st.shell.Color=if cloak then FOX else BLUE
+		local root=model:FindFirstChild("HumanoidRootPart")
+		local beat=math.floor(t*30)
+		if not cloak and root and beat~=st.wisp then
+			st.wisp=beat
+			local from=(root.CFrame*CFrame.new(1.6,.4,-.9)).Position
+			local wisp=K.block(fx.folder,Vector3.new(.08,.08,1.2),CFrame.lookAt(from,center.Position),BLUE,Enum.Material.Neon)
+			wisp.Name="RasenganWisp";wisp.Transparency=.3
+			K.tween(wisp,.14,{CFrame=CFrame.lookAt(center.Position,center.Position+(center.Position-from)),Transparency=1,Size=Vector3.new(.03,.03,.4)})
+			Debris:AddItem(wisp,.16)
+		end
+	elseif st.orb then
+		st.orb:Destroy();st.orb=nil
+	end
+	local sphere=fx.rasengan and fx.rasengan[model]
+	if sphere and cloak then
+		sphere.core.Color=FOX_CORE;sphere.shell.Color=FOX
+		for _,band in sphere.bands do band.Color=FOX_CORE end
+	end
+end
+-- The Nine-Tails cloak: the shared mantle burns red, one tail of red chakra
+-- waves behind his hips, the eyes turn red; his dash trail is his orange.
+local function cloak(fx,model,actor,st)
+	local aura=fx.auras and fx.auras[model]
+	local open=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
+	if aura and aura.mantle and aura.foxMantle~=aura.mantle then
+		aura.mantle.emitter.Color=ColorSequence.new(FOX);aura.mantle.light.Color=FOX;aura.foxMantle=aura.mantle
+	end
+	if aura and aura.trail and not aura.foxTrail then aura.trail.Color=ColorSequence.new(CHAKRA);aura.foxTrail=true end
+	local hips=model:FindFirstChild("LowerTorso") or model:FindFirstChild("HumanoidRootPart")
+	if open and hips and not (st.tail and st.tail.Parent) then
+		local tail=K.new("Model",{Name="FoxTail"},fx.folder)
+		local parts={}
+		for k=1,4 do
+			local p=K.block(tail,Vector3.one*(.8-k*.12),hips.CFrame,FOX,Enum.Material.Neon)
+			p.Shape=Enum.PartType.Ball;p.Transparency=.25+k*.12
+			table.insert(parts,p)
+		end
+		st.tail=tail;st.tailParts=parts
+		st.irises={}
+		for _,p in model:GetChildren() do
+			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
+		end
+	elseif not open and st.tail then
+		st.tail:Destroy();st.tail=nil
+		for _,iris in st.irises or {} do iris.part.Color=iris.color;iris.part.Material=iris.material end
+		st.irises=nil
+	end
+	if st.tail and hips then
+		local t=NarutoFX.clock()
+		for k,p in st.tailParts do
+			p.CFrame=hips.CFrame*CFrame.new(math.sin(t*6-k*.8)*.35*k,.15+k*.35,.6+k*.55)
+		end
+	end
+end
+-- Naruto Rendan: the last syllable called as the heel comes down.
+local function rendan(fx,model,actor,st)
+	if actor.attackVariant~="NarutoRendan" or actor.state~="Startup" then return end
+	local serial=actor.attackSerial or 0
+	if st.rendan==serial then return end
+	st.rendan=serial
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if root then call(fx,root.Position+Vector3.new(0,3.4,0),"KI!",150) end
+end
+local function fighter(fx,model,actor,dt)
+	if not model or not actor or actor.fighterId~=NARUTO then return end
+	local st=stateOf(fx,model)
+	rasengan(fx,model,actor,st)
+	cloak(fx,model,actor,st)
+	rendan(fx,model,actor,st)
+end
+
+function NarutoFX.install(FX,kit)
+	K=kit
+	table.insert(FX.layers,{name="Naruto",impact=impact,fighter=fighter})
+end
+return NarutoFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -17598,10 +18987,12 @@ print("[NinjaDuel] Client ready")
 local Motion=require(script.Parent.VelmoraMotionEngine)
 local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
+-- Bodies that are not fighters (Naruto's shadow clones).
+local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -17804,6 +19195,7 @@ function Presentation:update(data,dt)
  if not data.human then
   self:clearEcho()
   self.fx:update(data,dt,nil)
+  self.bodies:update(data,dt,nil)
   return
  end
  if self.epoch~=data.epoch then
@@ -17884,12 +19276,13 @@ function Presentation:update(data,dt)
   end
  end
  self.fx:update(data,dt,folder)
+ self.bodies:update(data,dt,folder)
 end
 return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -18482,7 +19875,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -18561,8 +19954,8 @@ function UI.new(parent,send)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
 	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
-	-- Rock Lee.
-	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"}
+	-- Rock Lee, Naruto.
+	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -18975,6 +20368,10 @@ function UI:render(data)
 		widget.awake.TextColor3=if tone then Color3.fromRGB(table.unpack(tone)) else palette.gold
 		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   JUTSU SEALED %.1fs",actor.sealed)
 		elseif (actor.chakraRegen or 1)&lt;1 then widget.status.Text..=string.format("   •   CHAKRA REGEN -%d%%%s",math.floor((1-actor.chakraRegen)*100+.5),if actor.tenketsuSevere then "  •  NETWORK SEALED" else "") end
+		-- Naruto: his shadow clones out (a route's own clone is not counted).
+		local clones=0
+		for _,body in data.bodies or {} do if body.owner==actor.id and body.kind=="clone" and not body.ephemeral then clones+=1 end end
+		if clones&gt;0 then widget.status.Text..="   •   CLONES "..clones end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)&gt;1 and k&lt;=(data.roundsToWin or 1)
@@ -19018,6 +20415,8 @@ function UI:render(data)
 		-- Sasuke's (and Lee's) continuations and risks must be read too: the
 		-- Dancing Leaf, the Lion Combo, the curse, a Chidori and its miss.
 		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
+		-- Naruto's clones (made, broken, swapped) and the barrage's instruction.
+		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
 	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
@@ -19075,7 +20474,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -19216,7 +20615,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND81">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -20106,6 +21505,133 @@ CLIPS.Leaf.LeafHeel=CLIPS.Lion.LionBarrage
 CLIPS.Leaf.LeafWhirlwind=CLIPS.Lion.Light3
 CLIPS.Leaf.GreatWhirlwind=CLIPS.Flashstep.Light3
 setmetatable(CLIPS.Leaf,{__index=CLIPS.Lion})
+-- Naruto (roster wave, several bodies) ---------------------------------------
+-- A brawler, not a prodigy of form: a low, square, loose guard with both fists
+-- up and the elbows out, a hook / straight / push kick string, the headbutt and
+-- the tackle. His clones are his own body (Client/BodyViews draws a copy of
+-- him), so the clips they play live here too: the kick from behind, the kick
+-- up under the body, the flank hook, their jab and the barrage kick. While a
+-- clone carries his route he plays his side of it (bracing, crouching to
+-- spring). Air strings and throws come from the shared families. Authored at
+-- their final size (the CORE4 passes below do not touch them).
+STANCE.Legion={root={y=-.46,pitch=12,yaw=20},torso={pitch=8,yaw=-10},head={pitch=-8,yaw=-10},
+	ra={raise=60,out=18,twist=14,elbow=108,wrist=0},la={raise=66,out=12,twist=10,elbow=98,wrist=0},
+	rf={x=.36,z=.66,yaw=30},lf={x=-.24,z=-.62,yaw=-12},breath=1.5,tempo=8}
+local NR=STANCE.Legion
+local function nr(over) return merge(NR,over) end
+local AIR_NR={root={pitch=6},torso={pitch=6},head={pitch=-8},ra={raise=50,out=30,elbow=96},la={raise=54,out=26,elbow=90},rl={lift=60,knee=100,ankle=-10},ll={lift=38,knee=80,ankle=-10}}
+CLIPS.Legion={}
+CLIPS.Legion.Light1={ -- a wide looping right hook, thrown with the shoulders
+	K(0,nr({root={yaw=34},torso={yaw=24},ra={raise=70,out=62,twist=-10,elbow=96},la={raise=60,out=10,elbow=100}})),
+	K(1,nr({root={z=-.35,yaw=-10,pitch=14},torso={yaw=-30,pitch=8},head={yaw=8},ra={raise=88,out=-6,twist=40,elbow=76,wrist=0},la={raise=52,out=14,elbow=110},rf={z=.8},lf={z=-.9}}),"out"),
+	K(2,nr({root={z=-.38,yaw=-16,pitch=14},torso={yaw=-38,pitch=8},ra={raise=84,out=-24,twist=44,elbow=80},la={raise=50,out=14,elbow=110},rf={z=.8},lf={z=-.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Light2={ -- the straight: the left fist driven out, the body behind it
+	K(0,nr({torso={yaw=16},la={raise=62,out=8,twist=10,elbow=118}})),
+	K(1,nr({root={z=-.4,yaw=-8,pitch=12},torso={yaw=-22,pitch=6},la={raise=92,out=-6,twist=-10,elbow=4,wrist=0},ra={raise=58,out=20,elbow=112}}),"out"),
+	K(2,nr({root={z=-.42,yaw=-10,pitch=12},torso={yaw=-24},la={raise=90,out=-6,twist=-10,elbow=8},ra={raise=58,out=20,elbow=112}})),
+	K(3,NR),
+}
+CLIPS.Legion.Light3={ -- a big push kick off the back leg
+	K(0,nr({root={y=-.6,z=.2,pitch=6},torso={pitch=2},ra={raise=50,out=30,elbow=90},la={raise=56,out=24,elbow=96},rl={lift=70,knee=118,ankle=-10}})),
+	K(1,nr({root={y=-.3,z=-.5,pitch=-16},torso={pitch=-8,yaw=-6},head={pitch=12},ra={raise=20,out=46,elbow=50},la={raise=70,out=20,elbow=90},rl={lift=94,out=4,knee=4,ankle=-30},lf={z=-1.0,toe=-10}}),"out"),
+	K(2,nr({root={y=-.32,z=-.52,pitch=-14},torso={pitch=-8},ra={raise=20,out=46,elbow=50},la={raise=70,out=20,elbow=90},rl={lift=90,knee=8,ankle=-28},lf={z=-1.0}})),
+	K(2.5,nr({root={y=-.5},rl={lift=40,knee=70}})),
+	K(3,NR),
+}
+CLIPS.Legion.Heavy={ -- a wound-up haymaker: everything he has in one right hand
+	K(0,nr({root={y=-.66,z=.3,yaw=40,pitch=6},torso={yaw=34,pitch=-4},ra={raise=120,out=40,twist=-20,elbow=120},la={raise=70,out=-6,elbow=70},rf={z=1.0}})),
+	K(1,nr({root={y=-.5,z=-.8,yaw=-24,pitch=24},torso={yaw=-30,pitch=14},head={yaw=12,pitch=4},ra={raise=80,out=-10,twist=30,elbow=20},la={raise=-10,out=20,elbow=90},lf={z=-1.4},rf={z=1.2}}),"out"),
+	K(2,nr({root={y=-.52,z=-.84,yaw=-28,pitch=24},torso={yaw=-34,pitch=14},ra={raise=76,out=-14,twist=30,elbow=24},la={raise=-10,out=20,elbow=90},lf={z=-1.4},rf={z=1.2}})),
+	K(3,NR),
+}
+CLIPS.Legion.Headbutt={ -- both hands on the collar, the forehead driven in
+	K(0,nr({root={y=-.4,pitch=-10,z=.2},torso={pitch=-14},head={pitch=-22},ra={raise=88,out=-10,elbow=60},la={raise=88,out=-10,elbow=60}})),
+	K(1,nr({root={y=-.5,z=-.6,pitch=26},torso={pitch=22},head={pitch=24},ra={raise=80,out=-20,elbow=70},la={raise=80,out=-20,elbow=70},lf={z=-1.1},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.5,z=-.62,pitch=24},torso={pitch=20},head={pitch=20},ra={raise=78,out=-20,elbow=72},la={raise=78,out=-20,elbow=72},lf={z=-1.1},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Tackle={ -- a low dive into the legs, the arms wide to wrap them
+	K(0,nr({root={y=-.9,pitch=30},torso={pitch=16},head={pitch=-20},ra={raise=40,out=40,elbow=60},la={raise=40,out=40,elbow=60},lf={z=-1.0},rf={z=1.0}})),
+	K(1,nr({root={y=-1.3,z=-1.0,pitch=58},torso={pitch=22},head={pitch=-34},ra={raise=110,out=30,elbow=30},la={raise=110,out=30,elbow=30},rl={lift=-20,knee=40,ankle=20},lf={z=-1.4}}),"out"),
+	K(2,nr({root={y=-1.35,z=-1.05,pitch=60},torso={pitch=22},head={pitch=-34},ra={raise=104,out=-10,elbow=60},la={raise=104,out=-10,elbow=60},rl={lift=-20,knee=40,ankle=20},lf={z=-1.4}})),
+	K(2.6,nr({root={y=-1.0,pitch=30},torso={pitch=12}})),
+	K(3,NR),
+}
+CLIPS.Legion.DashAttack={ -- out of the dash: a flying right fist, the whole body behind it
+	K(0,nr({root={y=-.6,pitch=22},ra={raise=40,out=30,elbow=110},la={raise=60,out=20,elbow=90},lf={z=-1.0},rf={z=1.0}})),
+	K(1,nr({root={y=-.4,z=-.9,pitch=20,yaw=-10},torso={yaw=-18,pitch=8},head={pitch=-10},ra={raise=92,out=-6,twist=10,elbow=4},la={raise=-10,out=30,elbow=60},lf={z=-1.5},rf={z=1.4,y=.2,toe=-20}}),"out"),
+	K(2,nr({root={y=-.42,z=-.92,pitch=20,yaw=-10},torso={yaw=-20,pitch=8},ra={raise=90,out=-6,twist=10,elbow=8},la={raise=-10,out=30,elbow=60},lf={z=-1.5},rf={z=1.4,y=.2,toe=-20}})),
+	K(3,NR),
+}
+CLIPS.Legion.Rasengan={ -- the sphere in the right palm, the whole body lunging behind it
+	K(0,nr({root={y=-.8,z=.2,pitch=18},torso={pitch=10,yaw=16},ra={raise=60,out=20,twist=-60,elbow=90,wrist=10},la={raise=40,out=30,elbow=60}})),
+	K(1,nr({root={y=-.7,z=-1.1,pitch=26,yaw=-10},torso={pitch=12,yaw=-14},head={pitch=-14},ra={raise=94,out=-4,twist=-70,elbow=6,wrist=-10},la={raise=-20,out=30,elbow=40},lf={z=-1.6},rf={z=1.3,toe=-20}}),"out"),
+	K(2,nr({root={y=-.7,z=-1.15,pitch=26,yaw=-12},torso={pitch=12,yaw=-16},ra={raise=92,out=-4,twist=-70,elbow=8},la={raise=-20,out=30,elbow=40},lf={z=-1.6},rf={z=1.3,toe=-20}})),
+	K(3,NR),
+}
+-- His side of the clone routes.
+CLIPS.Legion.CloneKick={ -- (his clone kicks from behind) he braces to meet the body coming at him
+	K(0,nr({root={y=-.5,z=.25},torso={pitch=4},ra={raise=74,out=6,elbow=100},la={raise=78,out=2,elbow=92}})),
+	K(1,nr({root={y=-.62,z=.3,pitch=14},torso={pitch=10},head={pitch=-6},ra={raise=84,out=-10,twist=20,elbow=70},la={raise=86,out=-12,twist=20,elbow=66},lf={z=-1.0},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.62,z=.3,pitch=14},torso={pitch=10},ra={raise=84,out=-10,twist=20,elbow=70},la={raise=86,out=-12,twist=20,elbow=66},lf={z=-1.0},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.UzumakiKick={ -- (a clone kicks the body up) he drops low, ready to spring after it
+	K(0,nr({root={y=-.7,pitch=14},torso={pitch=10},ra={raise=40,out=30,elbow=80},la={raise=40,out=30,elbow=80}})),
+	K(1,nr({root={y=-1.0,pitch=20},torso={pitch=12},head={pitch=-24},ra={raise=-20,out=40,elbow=40},la={raise=-20,out=40,elbow=40},lf={z=-.6},rf={z=.6}}),"out"),
+	K(2,nr({root={y=-1.0,pitch=18},torso={pitch=10},head={pitch=-30},ra={raise=-24,out=40,elbow=40},la={raise=-24,out=40,elbow=40},lf={z=-.6},rf={z=.6}})),
+	K(3,NR),
+}
+CLIPS.Legion.MirrorClone={ -- (a clone hooks from the flank) he feints the same hook on his side
+	K(0,nr({root={yaw=30,roll=6},torso={yaw=20},la={raise=70,out=50,elbow=96},ra={raise=60,out=14,elbow=104}})),
+	K(1,nr({root={yaw=-6,pitch=12,roll=-6},torso={yaw=-20},la={raise=86,out=-4,twist=40,elbow=80},ra={raise=56,out=14,elbow=110}}),"out"),
+	K(2,nr({root={yaw=-8,pitch=12},torso={yaw=-22},la={raise=84,out=-14,twist=40,elbow=82},ra={raise=56,out=14,elbow=110}})),
+	K(3,NR),
+}
+-- The clones' side (BodyViews: attackVariant of the carried move).
+CLIPS.Legion.CloneKickStrike={ -- a clone: a roundhouse into the opponent's back
+	K(0,nr({root={y=-.62,yaw=-30,pitch=6},torso={yaw=-18},ra={raise=50,out=20,elbow=100},la={raise=56,out=20,elbow=100},rl={lift=60,out=20,knee=110,ankle=-10}})),
+	K(1,nr({root={y=-.3,yaw=66,pitch=-4,roll=-18},torso={yaw=12,roll=-18},head={yaw=-36},ra={raise=-8,out=40,elbow=44},la={raise=60,out=-6,elbow=100},rl={lift=82,out=60,twist=-26,knee=8,ankle=-20},lf={yaw=50}}),"out"),
+	K(2,nr({root={y=-.32,yaw=76,pitch=-4,roll=-16},torso={yaw=14,roll=-16},ra={raise=-6,out=40,elbow=46},la={raise=60,out=-6,elbow=100},rl={lift=78,out=62,twist=-26,knee=12,ankle=-20},lf={yaw=60}})),
+	K(3,NR),
+}
+CLIPS.Legion.UzumakiRise={ -- a clone: down low under the body, one leg driven straight up
+	K(0,nr({root={y=-1.2,pitch=24},torso={pitch=14},ra={raise=30,out=40,elbow=60},la={raise=30,out=40,elbow=60},lf={z=-.4},rf={z=.5}})),
+	K(1,nr({root={y=-.1,pitch=-28},torso={pitch=-14},head={pitch=-22},ra={raise=-30,out=40,elbow=24},la={raise=-30,out=40,elbow=24},rl={lift=150,out=4,knee=4,ankle=-30},lf={z=0,toe=-24}}),"out"),
+	K(2,nr({root={y=-.06,pitch=-30},torso={pitch=-16},head={pitch=-22},ra={raise=-32,out=40,elbow=24},la={raise=-32,out=40,elbow=24},rl={lift=156,out=4,knee=6,ankle=-28},lf={z=0,toe=-20}})),
+	K(3,NR),
+}
+CLIPS.Legion.MirrorStrike=CLIPS.Legion.Light1 -- a clone hooks like him
+CLIPS.Legion.CloneJab=CLIPS.Legion.Light2 -- and jabs like him
+CLIPS.Legion.BarrageKick={ -- a clone in the air under the body: a rising kick ("U-ZU-MA")
+	K(0,merge(AIR_NR,{root={pitch=-10},rl={lift=90,knee=130},ra={raise=30,out=50,elbow=40}})),
+	K(1,merge(AIR_NR,{root={pitch=-30},torso={pitch=-12},head={pitch=-24},rl={lift=160,knee=6,ankle=-30},ll={lift=10,knee=40}}),"out"),
+	K(2,merge(AIR_NR,{root={pitch=-32},torso={pitch=-12},rl={lift=156,knee=10,ankle=-28},ll={lift=10,knee=40}})),
+	K(3,AIR_NR),
+}
+CLIPS.Legion.NarutoRendan={ -- the barrage's last word: his heel brought down from above the body
+	K(0,merge(AIR_NR,{root={pitch=-26,yaw=10},torso={pitch=-16},head={pitch=-10},rl={lift=170,out=4,knee=4,ankle=-30},ll={lift=10,knee=46},ra={raise=40,out=60,elbow=30},la={raise=40,out=60,elbow=30}})),
+	K(1,merge(AIR_NR,{root={pitch=34},torso={pitch=30},head={pitch=-14},rl={lift=10,out=4,knee=6,ankle=-10},ll={lift=-12,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}}),"out"),
+	K(2,merge(AIR_NR,{root={pitch=36},torso={pitch=32},rl={lift=8,knee=8},ll={lift=-12,knee=60},ra={raise=10,out=60,elbow=20},la={raise=10,out=60,elbow=20}})),
+	K(3,nr({root={y=-1.0,pitch=26},torso={pitch=22},lf={z=-.9},rf={z=.9}})),
+}
+-- The Nine-Tails cloak: no clones, a chakra claw instead.
+CLIPS.Legion.ClawRise={ -- low on all fours, then a claw ripped upward
+	K(0,nr({root={y=-1.2,pitch=34},torso={pitch=20},head={pitch=-30},ra={raise=20,out=30,elbow=40,wrist=-30},la={raise=40,out=20,elbow=40},lf={z=-.7},rf={z=.8}})),
+	K(1,nr({root={y=-.3,pitch=-10,yaw=-14},torso={pitch=-16,yaw=-20},head={pitch=-20},ra={raise=172,out=20,twist=-20,elbow=20,wrist=-20},la={raise=10,out=40,elbow=40}}),"out"),
+	K(2,nr({root={y=-.28,pitch=-12,yaw=-16},torso={pitch=-18,yaw=-22},ra={raise=168,out=24,elbow=24},la={raise=10,out=40,elbow=40}})),
+	K(3,NR),
+}
+CLIPS.Legion.ClawSwipe={ -- a long sweep of the chakra claw across the body
+	K(0,nr({root={y=-.8,yaw=50,pitch=16},torso={yaw=40,pitch=10},ra={raise=80,out=90,twist=-20,elbow=40,wrist=-30},la={raise=40,out=10,elbow=90}})),
+	K(1,nr({root={y=-.75,yaw=-40,pitch=18},torso={yaw=-44,pitch=10},head={yaw=20},ra={raise=86,out=-40,twist=30,elbow=20,wrist=-30},la={raise=30,out=30,elbow=80},lf={z=-1.1},rf={z=.9}}),"out"),
+	K(2,nr({root={y=-.75,yaw=-50,pitch=18},torso={yaw=-50,pitch=10},ra={raise=84,out=-50,twist=30,elbow=24},la={raise=30,out=30,elbow=80},lf={z=-1.1},rf={z=.9}})),
+	K(3,NR),
+}
+CLIPS.Legion.Riposte=CLIPS.Legion.Light2
+setmetatable(CLIPS.Legion,{__index=CLIPS.Lion})
 -- Taijutsu readability: on ground strikes, push hips, shoulders and the step
 -- further from the stance so the body mechanics read at fight distance.
 local EXAGGERATE,STEP=1.3,1.15
@@ -20242,6 +21768,9 @@ local LEAD=.03
 -- Rock Lee's finishers ride on the Slam like the Lion Combo.
 local VARIANT_OF={Rasengan="DashAttack",RasenganDrop="Slam",LionBarrage="Slam",PrimaryLotus="Slam",HiddenLotus="Slam",LeafHeel="Slam"}
 Motion.VARIANT_OF=VARIANT_OF
+-- Naruto: the barrage's finisher rides on the Slam; a clone plays its side of
+-- a route he carries out on that route's own timing (Attacks proxyClip).
+VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF.UzumakiRise="UzumakiKick";VARIANT_OF.MirrorStrike="MirrorClone"
 local function clipName(subject)
 	return if VARIANT_OF[subject.attackVariant or ""] then subject.attackVariant else subject.attackName
 end
@@ -20459,6 +21988,18 @@ local function castSpec(actor)
 		-- Rock Lee forms no seal: a crouch wound up for the spin, then the kick
 		-- itself is the GreatWhirlwind strike.
 		return merge(base,{root={y=-1.0,pitch=16,yaw=64},torso={pitch=8,yaw=30},head={yaw=-44},la={raise=50,out=30,elbow=60},lf={z=-1.0},rf={z=.9}})
+	elseif id=="ShadowClone" or id=="MassShadowClone" then
+		-- Naruto's Kage Bunshin: one seal, the cross of both hands before the chest
+		-- (wider and lower for the multi clone).
+		local wide=id=="MassShadowClone"
+		return merge(base,{root={y=if wide then -.72 else -.46,pitch=4},torso={pitch=4},head={pitch=6},
+			ra={raise=70,out=-30,twist=40,elbow=100,wrist=10},la={raise=64,out=-34,twist=-30,elbow=96,wrist=-10},lf={z=-.6,x=-.2},rf={z=.6,x=.2}})
+	elseif id=="CloneRasengan" then
+		-- The right palm held out flat, the left hand over it: the sphere turns between.
+		return merge(base,{root={y=-.6,pitch=12,yaw=8},torso={pitch=8,yaw=-6},head={pitch=14},ra={raise=74,out=12,twist=-80,elbow=58,wrist=10},la={raise=40,out=10,elbow=60}})
+	elseif id=="RasenganShape" then
+		-- (His clone beside him) both hands cupped over his palm, shaping it.
+		return merge(base,{root={y=-.62,pitch=16,yaw=-20},torso={pitch=12,yaw=-14},head={pitch=18,yaw=-10},ra={raise=66,out=-30,twist=40,elbow=80,wrist=-20},la={raise=70,out=-36,twist=-40,elbow=70,wrist=-20}})
 	end
 	return sealPose(base,t,false)
 end
@@ -20492,6 +22033,8 @@ local GAIT={
 -- Rock Lee: long, quick and bouncy steps, leaning in; the rear hand stays behind
 -- his back until he breaks into a full sprint (holdRear).
 GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
+-- Naruto: energetic and loose, arms swinging wide, a heavy bouncing stride.
+GAIT.Legion={stride=1.1,cadence=1.05,arm=48,lean=7,bob=1.2,guard=.05}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
@@ -21273,6 +22816,10 @@ function Motion.present(char,actor,clock,dt)
 			-- shoulder height, chin up; the other hand already behind his back.
 			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
 				la={raise=70,out=30,twist=-60,elbow=128,wrist=0},rf={x=.2,z=.5},lf={x=-.1,z=-.5}})
+		elseif body=="Legion" then
+			-- Naruto: a grin and a thumb up at the opponent, the other fist on his hip.
+			spec=merge(base,{root={y=-.12,pitch=-2,yaw=14},torso={pitch=-6,yaw=-6},head={pitch=-8,yaw=-10},
+				ra={raise=96,out=10,twist=-20,elbow=40,wrist=0},la={raise=-10,out=40,twist=-40,elbow=100,wrist=0},rf={x=.2,z=.4},lf={x=-.1,z=-.4}})
 		elseif body=="Sand" then
 			-- Arms folded, chin down, perfectly still: the sand will do it.
 			spec=merge(base,{root={y=-.04,pitch=-1},head={pitch=10,yaw=0},torso={pitch=-2}})
@@ -21454,7 +23001,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND82">
+  <Item class="Lighting" referent="ND86">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -21472,7 +23019,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND83">
+  <Item class="SoundService" referent="ND87">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

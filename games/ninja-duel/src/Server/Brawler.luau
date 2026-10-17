@@ -5,10 +5,16 @@ local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
+-- Bodies that are not actors (Naruto's shadow clones): strikes they carry
+-- out, strikes they take first, strikes aimed at them.
+local Bodies=require(script.Parent.Bodies)
 -- Adapter: reaction/air/grab mechanics missing from the donor; all strike hit
 -- volumes/damage/feedback run through Bangla. String progression is Ninja
 -- Duel's own (confirmed hits, below), no longer the donor's press counter.
 local Brawler={}
+-- A fighter module's own route payoffs (MoveGraphs onRoute kinds), e.g.
+-- Naruto's "uzumaki" (Server/Legion).
+Brawler.payoffs={}
 local airReactions={Launched=true,Juggled=true,Knockback=true,Knockdown=true,WallSplat=true,Spiked=true}
 local TUNE=Config.Combo
 local UP=Vector3.yAxis
@@ -209,6 +215,13 @@ function Brawler.rushPlan(c,a,style,line)
    sign=if dir=="side" then stickSide else (a.rushSide or 1)
    -- With no side asked for, the angle alternates from one dash to the next.
    a.rushSide=-sign
+   -- (shuffle: Naruto) not a plain alternation: an irregular side, and every
+   -- third entry a wider angle.
+   if style.shuffle and dir~="side" then
+    a.rushCount=(a.rushCount or 0)+1
+    sign=if (a.rushCount*3+1)%5<2 then 1 else -1
+    if a.rushCount%3==0 then angle*=1.5 end
+   end
   end
   local rad=math.rad(angle)
   r.offset=(-toward*math.cos(rad)+right*sign*math.sin(rad))*r.arrive
@@ -298,6 +311,10 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
+ -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
+ -- or its solo / awakened form when there is no body for it.
+ local proxy,kind
+ name,proxy,kind=Bodies.route(c,a,name)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
 	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
 	if profile then
@@ -306,6 +323,11 @@ function Brawler.start(c,a,name)
 		spec.zone=profile.zone or spec.zone;spec.kind=profile.kind or spec.kind
 		spec.chainTool=profile.chainTool;spec.depth=profile.depth or spec.depth;spec.damageScale=profile.damage;spec.offset=profile.offset or spec.offset;spec.width=profile.width or spec.width;spec.impulse=Vector3.new(spec.impulse.X,profile.impulseY or spec.impulse.Y,profile.impulseZ or spec.impulse.Z)
 	end
+ -- An awakening that quickens the body (Awakening.Recovery: Naruto's cloak).
+ local awake=a.def.Awakening
+ if awake and awake.Recovery and (a.awakenUntil or 0)>c.now then spec.recovery*=awake.Recovery end
+ -- A strike that opens (no string alive) may be pushed at an enemy body.
+ local opener=not Brawler.stringAlive(c,a,spec.air==true)
  a.buffered=nil
  a.attackVariant=nil
  a.hitBlocked=false
@@ -348,10 +370,20 @@ function Brawler.start(c,a,name)
  local flat=a.root.CFrame.LookVector*Vector3.new(1,0,1)
  local delta=a.target.root.Position-a.root.Position;delta=delta*Vector3.new(1,0,1)
  if delta.Magnitude>.1 and delta.Magnitude<11 and (flat:Dot(delta.Unit)>.55 or a.locked) then flat=delta.Unit end
+ -- The lock stays on the real fighter, but an opener pushed at one of his
+ -- bodies (a shadow clone in reach) swings at it (Bodies.aim; Combat turns
+ -- and steps toward it).
+ local body=opener and not spec.air and Bodies.aim(c,a)
+ if body then
+  a.pending.aim=body
+  local to=body.position-a.root.Position
+  flat=Vector3.new(to.X,0,to.Z).Unit
+ end
  -- Locked on, a strike started mid-run turns into the opponent during its
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+ if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
   -- and the slam): mashed whiffs used to keep a body hovering a stud above the
@@ -644,6 +676,8 @@ function Brawler.routePayoff(c,a,b,p)
   c:effect("Echo",b.decoyPosition,a.color,Vector3.new(2,5,1),1.2)
   c:pushImpact(a.root.Position,"mirage",false,{owner=a.id,fighter=a.fighterId,to=b.decoyPosition})
   c:cue(a,"ECHO LEFT",.8);c:cue(b,"MIRAGE • TRUST THE BODY",1.2)
+ elseif Brawler.payoffs[kind] then
+  Brawler.payoffs[kind](c,a,b,p)
  end
 end
 -- A fighter's own air finisher after the Shadow of the Dancing Leaf
@@ -776,7 +810,8 @@ end
 function Brawler.clash(c,a,p)
  local b=a.target
  local q=b and b.pending
- if not q or q.kind~="Brawl" or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
+ -- (A strike another body carries out, Bodies.bind, never meets a blow thrown at its owner.)
+ if not q or q.kind~="Brawl" or q.from or (b.state~="Active" and b.state~="Startup") or b.target~=a or b.hitConfirmed or a.hitConfirmed then return false end
  if q.name=="Grab" or q.name=="Throw" or q.name=="ThrowUp" then return false end
  -- Simultaneous means the two active frames start within the clash window
  -- (the other swing may be a frame or two from becoming active).
@@ -936,9 +971,14 @@ function Brawler.hit(c,a,p)
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
  end
  local success,guarded,protected
+ -- A strike carried by a body (Bodies.bind) that was dispelled on the way misses.
+ if p.lost then return false end
  if p.name~="Throw" and p.name~="ThrowUp" then
-	-- Two strikes meeting in the same instant cancel out.
-	if p.name~="Grab" and Brawler.clash(c,a,p) then return false end
+	-- An enemy body in the swing takes it first and puffs away (Bodies.strike).
+	if Bodies.strike(c,a,p) then return true end
+	-- Two strikes meeting in the same instant cancel out (a carried strike's
+	-- body is not its owner's).
+	if p.name~="Grab" and not p.from and Brawler.clash(c,a,p) then return false end
 	if p.spec.chainTool and not p.chainToolFired then
 		p.chainToolFired=true;c:projectile(a,b.root.Position,88,11,2,"needle");Brawler.event(c,a,"ChainTool")
 	end
@@ -996,7 +1036,9 @@ function Brawler.hit(c,a,p)
 	end
   return true
  end
- local forward=a.root.CFrame.LookVector
+ -- (A carried strike drives the body away from its carrier: a clone's kick
+ -- from behind sends it toward Naruto.)
+ local forward=(p.from or a.root.CFrame).LookVector
  -- Skill build (Wall Palm): the knockback of the listed moves aims at a wall
  -- in reach in front of the attacker, when there is one.
  local steer=a.def.WallSteer

@@ -74,8 +74,8 @@ function UI.new(parent,send)
 	-- Roster: the two prodigies who have arrived, and the slots still empty.
 	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
 	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
-	-- Rock Lee.
-	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"}
+	-- Rock Lee, Naruto.
+	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Legion"}
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
@@ -488,6 +488,10 @@ function UI:render(data)
 		widget.awake.TextColor3=if tone then Color3.fromRGB(table.unpack(tone)) else palette.gold
 		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   JUTSU SEALED %.1fs",actor.sealed)
 		elseif (actor.chakraRegen or 1)<1 then widget.status.Text..=string.format("   •   CHAKRA REGEN -%d%%%s",math.floor((1-actor.chakraRegen)*100+.5),if actor.tenketsuSevere then "  •  NETWORK SEALED" else "") end
+		-- Naruto: his shadow clones out (a route's own clone is not counted).
+		local clones=0
+		for _,body in data.bodies or {} do if body.owner==actor.id and body.kind=="clone" and not body.ephemeral then clones+=1 end end
+		if clones>0 then widget.status.Text..="   •   CLONES "..clones end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)>1 and k<=(data.roundsToWin or 1)
@@ -531,6 +535,8 @@ function UI:render(data)
 		-- Sasuke's (and Lee's) continuations and risks must be read too: the
 		-- Dancing Leaf, the Lion Combo, the curse, a Chidori and its miss.
 		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
+		-- Naruto's clones (made, broken, swapped) and the barrage's instruction.
+		or cue:find("CLONE") or cue:find("U-ZU-MA-KI")
 	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""

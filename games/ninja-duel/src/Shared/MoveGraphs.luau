@@ -132,4 +132,32 @@ return {
 		-- closer than most, and the shortest recovery after an arrival.
 		reengage={name="leaf",speed=1.4,arrive=3,angle=0,minRange=6,chase=.24,recovery=.16},
 	},
+	-- Naruto (roster wave, several bodies): his routes are carried out by his
+	-- shadow clones (Server/Bodies).
+	--   proxy[move]   a strike another body carries out: `move` with a free
+	--                 `body` of that kind; with none, a route that may `summon`
+	--                 one pays its cost; in the awakening its `awake` form;
+	--                 otherwise `solo`. Attacks[move].proxy: where it stands.
+	-- The third hit comes from a clone already out, from behind the opponent
+	-- (no clone: his own push kick). Toward: the Uzumaki Barrage (a clone
+	-- kicks the body up under it, two more keep it there; E, then heavy in the
+	-- air is NARUTO RENDAN). Away: a tackle into the legs (his own). Sideways:
+	-- a clone strikes from the flank the stick points at, the string goes on.
+	Legion={
+		routes={up="UzumakiKick",down="Tackle",side="MirrorClone",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		disengage="Kunai",
+		onRoute={UzumakiKick="uzumaki"},
+		heavyAfterOne="Headbutt",
+		stringCancels={CloneRasengan=true},
+		blockCancels={},
+		proxy={
+			Light3={move="CloneKick",body="clone"},
+			UzumakiKick={move="UzumakiKick",body="clone",summon=true,solo="Launcher",awake="ClawRise"},
+			MirrorClone={move="MirrorClone",body="clone",summon=true,solo="Light2",awake="ClawSwipe"},
+		},
+		airFinisher={name="NarutoRendan",cue="NARUTO UZUMAKI RENDAN",event="NarutoRendan",damage=18,impulse=Vector3.new(0,-92,8)},
+		-- Unpredictable: a quick re-entry on an angle whose side does not simply
+		-- alternate (shuffle), and a clone out on a flank rushes the other side.
+		reengage={name="legion",speed=1.2,arrive=3.2,angle=30,shuffle=true,chase=.28,recovery=.22},
+	},
 }

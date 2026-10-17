@@ -220,4 +220,51 @@ return {
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
 		},
 	},
+	-- Roster wave (several bodies, hook H12): Naruto in Part I, from the Chunin
+	-- Exam to the Valley of the End (13). Shadow clones (two at most) that carry
+	-- his routes and are dispelled by one blow, a Rasengan he can only shape
+	-- with a clone, the largest reserve; the Nine-Tails chakra takes the clones
+	-- away. Server kit: Server/Bodies (the bodies), Server/Legion (his rules).
+	-- Sheet: docs/characters/NARUTO.md.
+	Legion = {
+		Name = "Naruto", FullName = "Naruto Uzumaki", Age = 13, Title = "THE NUMBER ONE SURPRISE", Color = { 255, 140, 40 },
+		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
+		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
+		Health = 140, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
+		CombatTravel = 1.05, CombatDamage = 1, DashScale = 1.05, GuardStrength = 0.08, PreferredRange = 6,
+		ComboToolCancel = true, CombatStyle = "Legion", Tool = "Kunai",
+		-- A plain kunai; with the chakra chord (Z + R) it is a clone transformed
+		-- (Bodies.transform): near the target it pops back and strikes from there.
+		ToolMastery = { Kind = "kunai", Count = 1, Speed = 84, Damage = 3, Recover = .7, Transform = "clone" },
+		-- Heavy after two clean hits is the launcher route too (the Uzumaki Barrage).
+		LauncherMove = "UzumakiKick",
+		-- Shadow clones (Server/Bodies, Server/Legion): Max at once, Cost chakra
+		-- each, Life seconds, one blow dispels them. On a flank a clone jabs the
+		-- opponent (Strike damage, Reach studs) about every Every seconds.
+		Bodies = { clone = { Max = 2, Cost = 12, Life = 6, Strike = 4, Reach = 5.4, Every = 1.9 } },
+		-- Substitution with a clone out: "it was a clone!" — he swaps places
+		-- with it and the body that was being hit puffs away.
+		Substitution = { Mode = "clone" },
+		-- Motion family: his own stance (a brawler's low open guard), gait (wide
+		-- arms, a heavy bouncing stride) and string; air strings and throws from
+		-- the shared families; a kunai shows in the hand only to throw it.
+		Motion = { body = "Legion", weapons = "palms", clips = "Legion", intro = "Legion", springy = false },
+		-- The Nine-Tails chakra (the one-tail cloak of the Valley of the End):
+		-- no clones at all (they burst; clone routes become claws, the Rasengan
+		-- needs no clone and almost no wind-up), a quicker body (every recovery
+		-- x Recovery) and harder blows.
+		Awakening = { Name = "NINE-TAILS CHAKRA", Speed = 1.15, Damage = 1.1, Regen = 1.8, Cooldown = 0.5, Recovery = 0.78, NoBodies = true, Color = { 255, 96, 40 } },
+		AttackProfile = {
+			-- A wide hook, a straight, a push kick: a brawler's string.
+			Light1={startup=.94,recovery=.96,travel=1.12,zone="head"},Light2={startup=.96,recovery=.94,travel=1.08,zone="body"},
+			Light3={startup=1.02,recovery=1.0,impulseZ=54,kind="kick"},Heavy={startup=1.0,recovery=1.04},
+			DashAttack={startup=.95,travel=1.1},Air1={startup=.95},Air2={startup=.95},
+		},
+		Skin = { 240, 204, 170 }, Hair = { 250, 206, 70 }, Outfit = { 244, 130, 36 },
+		Techniques = {
+			{ Id = "ShadowClone", Name = "Shadow Clone", Cost = 12, Channel = 0.18, Active = 0.05, Recovery = 0.12, Cooldown = 1.2, Interruptible = true, Flow = true, Range = 30, Hint = "A clone at his side (two at most) • one blow dispels it • routes, the Rasengan and the swap use them" },
+			{ Id = "CloneRasengan", Name = "Rasengan", Cost = 22, CloneCost = 12, Channel = 0.45, SoloChannel = 0.6, CloakChannel = 0.2, Active = 0.08, Recovery = 0.45, Cooldown = 6, Interruptible = true, Range = 10, Damage = 22, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
+			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+		},
+	},
 }
