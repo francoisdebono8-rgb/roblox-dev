@@ -318,6 +318,17 @@ function FamilyFX.install(FX,kit)
 			Size=num({{0,1},{1,.3}}),Transparency=num({{0,.2},{1,1}})},holder)
 		return e,d
 	end
+	-- Bones out of the floor (Kimimaro's Dance of the Larch): a ring of spikes.
+	ZONES.spikes=function(holder,h,look)
+		local d=decal(holder,h,c3(look.color2),.6)
+		for i=1,10 do
+			local angle=i/10*math.pi*2
+			local r=h.radius*(.45+.45*((i*7)%3)/2)
+			local spike=block(holder.Parent,Vector3.new(.5,2.8,.5),CFrame.new(holder.Position+Vector3.new(math.cos(angle)*r,1.2,math.sin(angle)*r))*CFrame.Angles(math.rad(12*math.sin(angle)),0,math.rad(12*math.cos(angle))),c3(look.color),Enum.Material.SmoothPlastic)
+			spike.Parent=d
+		end
+		return nil,d
+	end
 	FX.hazardBuild=function(fx,h)
 		local look=Looks[h.look or ""]
 		if not look then return nil end
@@ -390,6 +401,19 @@ function FamilyFX.install(FX,kit)
 	table.insert(FX.layers,{
 		impact=function(fx,impact,folder)
 			local style=impact.style
+			-- A family relocation drawn in its own look (a mirror of ice, a swirl
+			-- of mist, a body flicker), never Minato's yellow flash.
+			if style=="teleport" and impact.kind and Looks[impact.kind] then
+				local look=Looks[impact.kind]
+				local color,edge=c3(look.color),c3(look.color2)
+				local from,to=impact.from or impact.position,impact.to or impact.position
+				smokePuff(fx.folder,from,color,14,2)
+				flash(fx.folder,from,edge,1,4,.18,.3)
+				smokePuff(fx.folder,to,color,10,1.6)
+				flash(fx.folder,to,edge,1.5,6,.2,.2)
+				shockRing(fx.folder,to-Vector3.new(0,2.6,0),color,2,10,.3)
+				return true
+			end
 			if style=="look" then
 				local look=Looks[impact.kind or ""] or Looks.chakra
 				hit(fx,look,impact.position,impact.heavy,impact.normal)
@@ -429,6 +453,29 @@ function FamilyFX.install(FX,kit)
 			local root=model:FindFirstChild("HumanoidRootPart")
 			if not root then return end
 			local buffed=fam and fam.buff~=nil
+			-- A buff that draws a weapon (its Kind is a blade/needle look: the
+			-- Camellia's bone sword, the chakra scalpel) holds it in the right hand.
+			local held=nil
+			if buffed then
+				local def=Fighters[actor.fighterId or ""]
+				for _,spec in (def and def.Techniques) or {} do
+					if spec.Id==fam.buff and spec.Kind and Looks[spec.Kind] and (Looks[spec.Kind].shape=="blade" or Looks[spec.Kind].shape=="needle") then held=spec.Kind end
+				end
+			end
+			if held~=st.weaponKind then
+				if st.weapon then st.weapon:Destroy();st.weapon=nil end
+				st.weaponKind=held
+				local hand=model:FindFirstChild("RightHand")
+				if held and hand then
+					local look=Looks[held]
+					local length=math.max(look.size[3]*1.6,2.2)
+					local w=block(model,Vector3.new(math.max(look.size[1],.18),math.max(look.size[2],.18),length),hand.CFrame*CFrame.new(0,-.4,-length*.5),c3(look.color),Enum.Material.Neon)
+					w.Name="FamilyWeapon";w.Anchored=false;w.CanCollide=false;w.Massless=true;w.Transparency=.1
+					new("WeldConstraint",{Part0=hand,Part1=w},w)
+					glow(w,c3(look.color2),look.light)
+					st.weapon=w
+				end
+			end
 			if buffed and not st.aura then
 				local at=new("Attachment",{Name="FamilyAura"},root)
 				local color=fighterColor(actor)

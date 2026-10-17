@@ -9,4 +9,6 @@ return {
 	"Sand","Leaf",
 	-- Roster 20 breadth pass (ROSTER_20.md).
 	"Legion","Gale","Lavender","Copycat",
+	-- Locked ten (DEC-022), batch 1.
+	"Mirror","Mist","Bone",
 }

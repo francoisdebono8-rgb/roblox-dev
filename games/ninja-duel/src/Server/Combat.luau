@@ -987,7 +987,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 			fire=function(index,target)
 				local spread=Vector3.zero
 				if count>1 then spread=a.root.CFrame.RightVector*((index-(count+1)/2)*(if count>2 then 1.6 else 1.8)) end
-				self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,if blade then "kunai" else "shuriken",nil,{chakra=infused,transform=if transform then mastery.Transform else nil})
+				-- A mastery may throw its own object (ToolMastery.Projectile: a Looks
+				-- kind such as Haku's senbon) with family contact riders (Contact).
+				local p=self:projectile(a,target+spread,mastery.Speed,range,mastery.Damage,mastery.Projectile or (if blade then "kunai" else "shuriken"),nil,{chakra=infused,transform=if transform then mastery.Transform else nil})
+				if p and mastery.Contact and not infused then p.family=mastery.Contact end
 			end})
 		self:cue(a,if infused then Chakra.label(infused) elseif transform then "KUNAI • TRANSFORMATION" elseif chainCancel then "CHAIN TOOL • KEEP PRESSURE" else (if blade then "KUNAI" else "SHURIKEN"))
 		return true

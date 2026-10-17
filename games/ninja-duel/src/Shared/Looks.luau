@@ -25,6 +25,32 @@ return {
 	tag={shape="blade",color=rgb(232,222,190),color2=rgb(190,40,36),size={.5,.04,1.1},light=0,trail=.2,hit="burst",zone="scorch",launch="Kunai",radius=.6},
 	mud={shape="wave",color=rgb(120,92,64),color2=rgb(84,64,46),size={6,3,2},light=0,trail=0,hit="crush",zone="mud",launch="Ground",radius=2.4},
 	boulder={shape="boulder",color=rgb(200,150,110),color2=rgb(150,104,72),size={5,5,5},light=0,trail=0,hit="crush",launch="Ground",radius=2.4},
+	-- Roster 20, remaining ten (DEC-022).
+	-- Shisui: the Katon fireball (drawn by Effects' own fireball builder).
+	fireball={shape="orb",color=rgb(255,160,60),color2=rgb(255,90,30),size={3,3,3},light=3,trail=1,hit="burst",zone="scorch",launch="Fireball",radius=2.2},
+	-- Orochimaru: one long shadow snake shot from the sleeve.
+	snake={shape="serpent",color=rgb(70,60,86),color2=rgb(150,132,90),size={.7,.7,7},light=0,trail=.4,hit="crush",launch="Palm",radius=1.1},
+	-- Kimimaro: a long bone drawn from the shoulder, the larch of spikes.
+	bonespear={shape="needle",color=rgb(244,238,220),color2=rgb(214,200,172),size={.45,.45,3.2},light=0,trail=.3,hit="shatter",launch="Palm",radius=.8},
+	bones={shape="needle",color=rgb(244,238,220),color2=rgb(214,200,172),size={.3,.3,2},light=0,trail=0,hit="shatter",zone="spikes",radius=1},
+	-- Nagato: the Rinnegan's pull, a ripple of bent air, and the push.
+	gravity={shape="orb",color=rgb(196,170,230),color2=rgb(120,96,170),size={1.6,1.6,1.6},light=1.2,trail=1.4,hit="burst",launch="Palm",radius=1.6},
+	repulsion={shape="orb",color=rgb(214,200,240),color2=rgb(150,126,200),size={1,1,1},light=0,trail=0,hit="burst"},
+	-- Sasori: the puppet on its threads, its poisoned needles.
+	puppet={shape="beast",color=rgb(150,110,74),color2=rgb(86,64,46),size={1.6,2.4,2.6},light=0,trail=.4,hit="crush",launch="Palm",radius=1.6},
+	poisonneedle={shape="needle",color=rgb(150,200,120),color2=rgb(80,120,60),size={.1,.1,1.4},light=0,trail=.2,hit="sparks",launch="Shuriken",radius=.5},
+	-- Deidara: moulded explosive clay.
+	claybird={shape="beast",color=rgb(240,236,222),color2=rgb(204,196,176),size={2.2,1,2.4},light=0,trail=.5,hit="burst",zone="scorch",launch="Palm",radius=1.6},
+	clayspider={shape="beast",color=rgb(236,232,218),color2=rgb(196,188,168),size={.9,.5,1},light=0,trail=0,hit="burst",zone="scorch",launch="Ground",radius=1.2},
+	clay={shape="orb",color=rgb(240,236,222),color2=rgb(255,190,90),size={1,1,1},light=0,trail=0,hit="burst",zone="scorch"},
+	-- Killer Bee: the Eight-Tails' ink and a tentacle.
+	ink={shape="orb",color=rgb(30,28,40),color2=rgb(60,56,80),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
+	tentacle={shape="serpent",color=rgb(170,96,80),color2=rgb(220,170,150),size={1.4,1.4,8},light=0,trail=.6,hit="crush",launch="Palm",radius=1.6},
+	-- Haku: a mirror of ice (the dome is drawn by Wave1FX).
+	mirror={shape="blade",color=rgb(214,240,255),color2=rgb(150,206,240),size={.2,3,2},light=.8,trail=0,hit="shatter",zone="ice"},
+	-- Kabuto: the scalpel of chakra.
+	scalpel={shape="blade",color=rgb(140,240,200),color2=rgb(60,200,150),size={.3,.06,1.2},light=1,trail=.3,hit="sparks"},
+	flicker={shape="orb",color=rgb(40,40,48),color2=rgb(230,60,60),size={1,1,1},light=0,trail=0,hit="smoke"},
 	-- Zones that are not thrown.
 	mist={shape="orb",color=rgb(226,232,238),color2=rgb(190,200,210),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
 	fist={shape="orb",color=rgb(255,190,190),color2=rgb(255,120,140),size={1.6,1.6,1.6},light=2.5,trail=0,hit="crush",zone="crater"},

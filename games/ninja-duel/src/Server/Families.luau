@@ -14,7 +14,8 @@
 --   Strike      Move (Attacks name): a strike started by the jutsu pipeline
 --               (like the Chidori thrust), Damage overrides the move's.
 --   Burst       Radius, Arc (cosine, -1 = all round), Clear (enemy objects
---               in reach are destroyed), Style (contact style), at his feet.
+--               in reach are destroyed), Style (contact style), at his feet;
+--               Leave {Radius, Time, Damage, Kind, Look}: a zone left there.
 --   Zone        At ("Self" | "Aim" | "Target"), Radius, Time, Damage (tick
 --               base), ZoneKind, Slow/Drain/Seal applied per tick.
 --   Buff        Time, Speed, Damage, Armor (share of damage removed), Heavy
@@ -26,7 +27,12 @@
 -- Contact fields (Projectile, Strike, Burst, Counter): Knock, Lift, React,
 -- Stun, Bind (s, held), Crush (damage when the bind ends), Drain (chakra
 -- taken), Steal (share of the drain he gains), Slow {Scale, Time}, Seal (s:
--- techniques sealed), Pull (impulse toward him), Zone (left where it lands).
+-- techniques sealed), Pull (impulse toward him, never past PullTo studs in
+-- front of him), Zone (left where it lands), Poison {Damage, Time, Every}
+-- (damage over time, no stagger).
+-- Teleport also reads Heal (instant, on arrival) and InZone (damage scale of
+-- its arrival strike when the target stands in one of his own zones).
+-- A Buff may carry OnHit (the same rider as def.OnHit while it lasts).
 local Families={}
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Looks=require(Shared.Looks)
@@ -103,6 +109,7 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		b.sealedUntil=math.max(b.sealedUntil or 0,now+spec.Seal)
 		c:cue(b,"JUTSU SEALED",.8)
 	end
+	if spec.Poison then Families.poison(c,a,b,spec.Poison) end
 	if spec.Zone then
 		local z=spec.Zone
 		local h=c:addHazard(a,position or b.root.Position,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
@@ -114,7 +121,11 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		return
 	end
 	if spec.Pull then
-		Brawler.react(c,b,"Knockback",-direction*spec.Pull+Vector3.yAxis*(spec.Lift or 8),spec.Stun or .45,a)
+		-- Toward him, never past PullTo studs in front of him (a close body
+		-- would otherwise be thrown behind him).
+		local gap=flat(b.root.Position-a.root.Position).Magnitude
+		local pull=math.min(spec.Pull,math.max(0,gap-(spec.PullTo or 3.5))*4.2)
+		Brawler.react(c,b,"Knockback",-direction*pull+Vector3.yAxis*(spec.Lift or 8),spec.Stun or .45,a)
 	elseif spec.Knock or spec.Lift or spec.React then
 		local kind=spec.React or (if (spec.Lift or 0)>=40 then "Launched" else "Knockback")
 		Brawler.react(c,b,kind,direction*(spec.Knock or 0)+Vector3.yAxis*(spec.Lift or 0),spec.Stun or .5,a)
@@ -122,6 +133,24 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 			a.pursuitUntil=math.max(a.pursuitUntil or 0,now+.8)
 			c:cue(a,"KNOCK AWAY • E TO CHASE",.7)
 		end
+	end
+end
+-- Poison: damage over time (needles, a puppet's blades, a snake's fangs).
+-- A fresh dose replaces the running one; it never staggers.
+function Families.poison(c,a,b,spec)
+	local every=spec.Every or .5
+	local ticks=math.max(1,math.floor((spec.Time or 3)/every))
+	b.poisonSerial=(b.poisonSerial or 0)+1
+	local serial=b.poisonSerial
+	b.poisonedUntil=c.now+ticks*every
+	c:cue(b,"POISONED",.7)
+	for i=1,ticks do
+		c:schedule(c.now+i*every,function()
+			if b.poisonSerial~=serial or b.health<=0 or a.health<=0 or c.match.phase~="Duel" then return end
+			c.damageTag="poison"
+			c:chip(a,b,(spec.Damage or 1))
+			c.damageTag=nil
+		end)
 	end
 end
 -- Held where it stands (shadow, water prison, snakes, hounds): substitution
@@ -150,6 +179,17 @@ function Families.bind(c,a,b,spec)
 			c:pushImpact(b.root.Position,"look",true,{owner=a.id,kind=spec.Kind,victim=b.id})
 		end)
 	end
+end
+
+-- Is b inside one of a's own zones (hazards he left)?
+function Families.inOwnZone(c,a,b)
+	for _,h in c.hazards do
+		if h.a==a and c.now<h.expires then
+			local d=b.root.Position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude<=h.radius and math.abs(d.Y)<8 then return true end
+		end
+	end
+	return false
 end
 
 -- ----------------------------------------------------------- families
@@ -227,6 +267,16 @@ F.Burst={
 			end
 		end
 		c:pushImpact(a.root.Position,spec.Style or "look",true,{owner=a.id,kind=spec.Kind,radius=reach,direction=look})
+		-- What the burst leaves at his feet (Leave: a zone, e.g. spiked floor).
+		if spec.Leave and c.match.phase=="Duel" then
+			local z=spec.Leave
+			local floor=workspace:Raycast(a.root.Position+Vector3.new(0,2,0),Vector3.new(0,-30,0),c:rayParams(true))
+			local at=if floor then floor.Position+Vector3.new(0,.5,0) else a.root.Position
+			local h=c:addHazard(a,at,z.Radius or 6,z.Time or 3,z.Damage or 3,z.Kind or "Spikes")
+			h.effects=z
+			h.look=z.Look
+			c:pushImpact(at,"zone",true,{owner=a.id,kind=z.Look,radius=z.Radius or 6,time=z.Time or 3})
+		end
 		c:cue(a,string.upper(spec.Name),.6)
 	end,
 }
@@ -285,6 +335,9 @@ F.Teleport={
 		if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
 		a.teleportAt=c.now
 		if spec.Invuln then a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+spec.Invuln) end
+		if spec.Heal then a.health=math.min(a.def.Health,a.health+spec.Heal);a.hum.Health=math.max(1,a.health) end
+		local bonus=1
+		if spec.InZone and Families.inOwnZone(c,a,b) then bonus=spec.InZone;c:cue(a,"FROM THE "..string.upper(spec.ZoneName or "zone"),.6) end
 		c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
 		c:cue(a,string.upper(spec.Name),.6)
 		if spec.Move then
@@ -293,6 +346,7 @@ F.Teleport={
 				brawler().start(c,a,spec.Move)
 				if a.pending then
 					if spec.Damage then a.pending.spec.damage=spec.Damage end
+					if bonus~=1 then a.pending.spec.damage=(a.pending.spec.damage or 8)*bonus end
 					a.pending.family=spec
 				end
 			end)
@@ -343,11 +397,13 @@ end
 -- Combat:damage, after health was taken: the attacker's on-hit trait
 -- (def.OnHit: Samehada's drain, insects on the body...).
 function Families.afterHit(c,attacker,victim,amount,guarded)
-	local trait=attacker.def.OnHit
-	if not trait or victim.health<=0 or attacker==victim then return end
-	local spec=trait
+	if victim.health<=0 or attacker==victim then return end
+	-- The awakening's rider wins, then a running buff's, then the fighter's own.
 	local awake=(attacker.awakenUntil or 0)>c.now and attacker.def.Awakening and attacker.def.Awakening.OnHit
-	if awake then spec=awake end
+	local b=attacker.buff
+	local buffed=b and c.now<b.untilT and b.spec.OnHit
+	local spec=awake or buffed or attacker.def.OnHit
+	if not spec then return end
 	if spec.Drain then
 		local taken=math.min(victim.chakra,spec.Drain*(if guarded then .5 else 1))
 		victim.chakra-=taken
@@ -356,11 +412,13 @@ function Families.afterHit(c,attacker,victim,amount,guarded)
 		if taken>0 then c:pushImpact(victim.root.Position,"drain",false,{owner=attacker.id,victim=victim.id,amount=taken}) end
 	end
 	if spec.Slow and not guarded then victim.slowUntil=c.now+(spec.Slow.Time or 1.5);victim.slowScale=spec.Slow.Scale or .8 end
+	-- A dose that still runs is not stacked by every light of a string.
+	if spec.Poison and not guarded and c.now>=(victim.poisonedUntil or 0) then Families.poison(c,attacker,victim,spec.Poison) end
 end
 -- Brawler.hit, after the strike's own reaction: a Strike/Teleport family move
 -- adds its contact fields.
 function Families.strikeHit(c,a,b,p,guarded)
-	local spec=p.family
+	local spec=p.family or (p.spec and p.spec.riders)
 	if not spec then return end
 	Families.contact(c,a,b,spec,a.root.CFrame.LookVector,not guarded,guarded,b.root.Position)
 end
@@ -401,6 +459,7 @@ function Families.snapshot(a,now)
 		buffLeft=if b and now<b.untilT then b.untilT-now else 0,
 		stance=if a.counterStance and now<a.counterStance.untilT then a.counterStance.spec.Id else nil,
 		slowed=math.max(0,(a.slowUntil or 0)-now),
+		poisoned=math.max(0,(a.poisonedUntil or 0)-now),
 	}
 end
 return Families
