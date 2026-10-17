@@ -1952,7 +1952,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f2a8309117407b11c3195424746b9cc518267420f875ddade5f9e5e50976ae7e</string>
+          <string name="Value">fc1fd1dbe45eae35ea959bf58c9f86abe082d09dddc9827fe2b80a725b1b3b38</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -12416,14 +12416,15 @@ local function label(target,face,text,color,font)
 	t.Font=font or Enum.Font.GothamBlack;t.TextScaled=true;t.Parent=gui
 	return gui
 end
-local function spectator(folder,at,facing,seed)
-	local parent=Instance.new("Model");parent.Name="SpectatorFigure";parent.Parent=folder
+local function spectator(folder,at,facing,seed,still)
+	local parent=Instance.new("Model");parent.Name=if still then "Spectator" else "SpectatorFigure";parent.Parent=folder
 	local tones={rgb(70,96,74),rgb(70,86,120),rgb(120,70,62),rgb(140,120,90),rgb(96,80,110),rgb(60,64,72),rgb(150,140,128),rgb(86,104,76)}
 	local skin={rgb(232,198,166),rgb(204,166,136),rgb(176,134,104)}
 	local body=deco(parent,"Spectator",Vector3.new(1.3,2.0,.9),CFrame.lookAt(at+Vector3.new(0,1.0,0),at+Vector3.new(0,1.0,0)+facing),tones[seed%#tones+1],Enum.Material.SmoothPlastic)
 	body.CastShadow=false
 	local head=deco(parent,"SpectatorHead",Vector3.new(.95,.95,.95),body.CFrame*CFrame.new(0,1.45,0),skin[seed%#skin+1],Enum.Material.SmoothPlastic,Enum.PartType.Ball)
 	head.CastShadow=false
+	if still then return end
 	deco(parent,"SpectatorHair",Vector3.new(1.0,.45,1.0),head.CFrame*CFrame.new(0,.28,.05),if seed%4==0 then rgb(220,190,120) else rgb(36,30,28),Enum.Material.SmoothPlastic).CastShadow=false
 end
 local function tree(parent,at,height,spread)
@@ -12509,34 +12510,41 @@ function World.arena(parent, origin)
 			disc(decor,"Grass tuft",1.6+((j*13+k)%4)*.9,.045,center+offset,if j%2==0 then C.grassDark else C.grass,Enum.Material.Grass)
 		end
 	end
-	-- The tall panelled wall. Each segment is a wall-run surface.
+	-- The field wall: 40 tall (about eight body heights, a long wall run), on a
+	-- dark stone base course, with pilasters and a cornice; the stands rise
+	-- behind and above it like the finals stadium's bowl. Each panel is a
+	-- wall-run surface; an invisible cap keeps bodies inside up to the old 76.
+	local wallH=40
 	local segments=116
 	local width=2*math.pi*(R+1)/segments+.3
 	for k=0,segments-1 do
 		local a=k/segments*math.pi*2
 		local dir=Vector3.new(math.sin(a),0,math.cos(a))
-		local at=origin+dir*(R+1)+Vector3.new(0,height/2,0)
-		local look=CFrame.lookAt(at,origin+Vector3.new(0,height/2,0))
-		local w=part(folder,"Boundary",Vector3.new(width,height,2),look,C.wall,Enum.Material.Concrete)
+		local at=origin+dir*(R+1)+Vector3.new(0,wallH/2,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,wallH/2,0))
+		local w=part(folder,"Boundary",Vector3.new(width,wallH,2),look,C.wall,Enum.Material.Concrete)
 		w:SetAttribute("NinjaWall",true)
-		deco(decor,"Seam",Vector3.new(.25,height,.1),look*CFrame.new(width/2,0,-1.02),C.wallSeam,Enum.Material.Concrete)
-		deco(decor,"Band",Vector3.new(width,1.2,.1),look*CFrame.new(0,height/2-6,-1.02),C.wallBand,Enum.Material.Concrete)
-		deco(decor,"Footing",Vector3.new(width,2.2,.6),look*CFrame.new(0,-height/2+1.1,-1.2),C.wallSeam,Enum.Material.Concrete)
-		-- Brick outer face and the parapet in front of the first row of seats.
-		deco(decor,"Outer face",Vector3.new(width,height,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
-		deco(decor,"Parapet",Vector3.new(width,1.2,1),look*CFrame.new(0,height/2+.6,-.4),C.brickDark,Enum.Material.Brick)
+		local cap=part(folder,"Boundary cap",Vector3.new(width,height-wallH,2),look*CFrame.new(0,(height)/2,0),C.wall,Enum.Material.SmoothPlastic)
+		cap.Transparency=1;cap.CanQuery=false;cap.CanTouch=false;cap.CastShadow=false
+		deco(decor,"Seam",Vector3.new(.25,wallH-4,.1),look*CFrame.new(width/2,2,-1.02),C.wallSeam,Enum.Material.Concrete)
+		deco(decor,"Band",Vector3.new(width,.9,.12),look*CFrame.new(0,wallH/2-12,-1.03),C.wallBand,Enum.Material.Concrete)
+		deco(decor,"Base course",Vector3.new(width,4,.7),look*CFrame.new(0,-wallH/2+2,-1.3),rgb(120,116,104),Enum.Material.Slate)
+		deco(decor,"Cornice",Vector3.new(width,1.4,1.4),look*CFrame.new(0,wallH/2-.4,-1.6),C.wallSeam,Enum.Material.Concrete)
+		if k%4==0 then deco(decor,"Pilaster",Vector3.new(2.2,wallH-4,.9),look*CFrame.new(0,2,-1.4),C.wallBand,Enum.Material.Concrete) end
+		deco(decor,"Outer face",Vector3.new(width,wallH,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
+		deco(decor,"Parapet",Vector3.new(width,1.6,1),look*CFrame.new(0,wallH/2+.8,-.2),C.brickDark,Enum.Material.Brick)
 	end
-	-- Tournament banners hang down the wall between the stands and the field.
+	-- Tournament banners hang from the cornice between the pilasters.
 	for k=0,21 do
 		local a=k/22*math.pi*2+math.pi/22
 		local dir=Vector3.new(math.sin(a),0,math.cos(a))
-		local at=origin+dir*(R-.15)+Vector3.new(0,height-13,0)
-		local look=CFrame.lookAt(at,origin+Vector3.new(0,height-13,0))
-		local cloth=deco(decor,"Wall banner",Vector3.new(6.5,18,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.Fabric)
-		deco(decor,"Banner rod",Vector3.new(7.4,.35,.35),look*CFrame.new(0,9.1,0),rgb(70,52,36),Enum.Material.Wood)
+		local at=origin+dir*(R-.35)+Vector3.new(0,wallH-9.5,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,wallH-9.5,0))
+		local cloth=deco(decor,"Wall banner",Vector3.new(5.6,15,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.SmoothPlastic)
+		deco(decor,"Banner rod",Vector3.new(6.4,.35,.35),look*CFrame.new(0,7.6,0),rgb(70,52,36),Enum.Material.Wood)
 		local gui=label(cloth,Enum.NormalId.Front,if k%3==0 then "火" elseif k%3==1 then "忍" else "試",if k%2==0 then rgb(232,226,210) else rgb(170,40,36))
 		-- Match the cloth's proportions so the character is not squashed.
-		gui.CanvasSize=Vector2.new(220,600)
+		gui.CanvasSize=Vector2.new(220,590)
 	end
 	-- Bushes along the foot of the wall.
 	for k=0,131 do
@@ -12545,57 +12553,96 @@ function World.arena(parent, origin)
 		local size=3.4+((k*41)%4)*.7
 		deco(decor,"Bush",Vector3.one*size,CFrame.new(origin+Vector3.new(math.sin(a)*r,size*.32,math.cos(a)*r)),if k%3==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
-	-- Stands crowning the wall: rising tiers full of spectators.
+	-- The bowl: seven stepped rings of seats rising back from the parapet, cut
+	-- by stone aisles, full of spectators (the front rings cheer: FX:crowdOf).
 	local seed=0
-	local top=height
-	for tier=1,4 do
-		local radius=R+3+tier*3.4
-		local steps=math.floor(radius*2*math.pi/7.2)
+	local tiers=7
+	local rise,depth=2.9,3.6
+	local function isAisle(a) return (a*12/(math.pi*2))%1&lt;.045 end
+	for tier=1,tiers do
+		local radius=R+2.6+tier*depth
+		local floorY=wallH+tier*rise
+		local steps=math.floor(radius*2*math.pi/8)
 		for k=0,steps-1 do
 			local a=k/steps*math.pi*2
-			local at=origin+Vector3.new(math.sin(a)*radius,top+tier*2.1-.6,math.cos(a)*radius)
+			local at=origin+Vector3.new(math.sin(a)*radius,floorY,math.cos(a)*radius)
 			local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
-			deco(decor,"Stand",Vector3.new(6.8,tier*2.1+1,3.6),look*CFrame.new(0,-(tier*2.1+1)/2+.8,0),if tier%2==0 then C.wood else C.woodDark,Enum.Material.Wood)
-			seed+=1
-			if seed%4~=0 then
-				local seat=look*CFrame.new(((seed*37)%5-2)*.9,.8,.4)
-				spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),seed)
+			local aisle=isAisle(a)
+			deco(decor,"Stand",Vector3.new(radius*2*math.pi/steps+.3,rise+.4,depth+.2),look*CFrame.new(0,-(rise+.4)/2,0),if aisle then C.wallBand elseif tier%2==0 then C.wood else C.woodDark,if aisle then Enum.Material.Concrete else Enum.Material.Wood)
+			if not aisle then
+				for _,x in (if tier&lt;=3 then {-2,2} else {0}) do
+					seed+=1
+					if seed%5~=0 then
+						local seat=look*CFrame.new(x+((seed*37)%3-1)*.25,0,.3)
+						spectator(decor,seat.Position,(origin-seat.Position)*Vector3.new(1,0,1),seed,tier&gt;3)
+					end
+				end
 			end
 		end
 	end
-	-- Pavilions on the stands; the Kage box is the large two-storey one (north).
-	for k=0,17 do
-		local a=k/18*math.pi*2+math.pi/18
-		local at=origin+Vector3.new(math.sin(a)*(R+20),top+5,math.cos(a)*(R+20))
-		pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
+	local backR=R+2.6+(tiers+1)*depth
+	local backTop=wallH+tiers*rise+6
+	-- The back wall of the bowl, with roofed sections over the upper rings.
+	local backSegments=96
+	for k=0,backSegments-1 do
+		local a=k/backSegments*math.pi*2
+		local at=origin+Vector3.new(math.sin(a)*backR,(wallH+backTop)/2,math.cos(a)*backR)
+		local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
+		deco(decor,"Stand back",Vector3.new(2*math.pi*backR/backSegments+.3,backTop-wallH,1.4),look,C.brick,Enum.Material.Brick)
+		if k%8&lt;4 then
+			-- An awning over the top rings, on posts, tilted toward the field.
+			local roof=look*CFrame.new(0,(backTop-wallH)/2+.6,-7)*CFrame.Angles(math.rad(-14),0,0)
+			deco(decor,"Stand roof",Vector3.new(2*math.pi*backR/backSegments+.4,.6,15),roof,rgb(96,74,62),Enum.Material.Slate)
+			if k%2==0 then deco(decor,"Roof post",Vector3.new(.6,8,.6),look*CFrame.new(0,(backTop-wallH)/2-3.4,-13.4),C.trim,Enum.Material.Wood) end
+		end
 	end
-	local kage=origin+Vector3.new(0,top+6,-(R+16))
+	-- Pavilions on the rim of the bowl.
+	for k=0,11 do
+		local a=k/12*math.pi*2+math.pi/12
+		if math.abs(math.sin(a/2))&gt;.18 then -- (the Kage box takes the north)
+			local at=origin+Vector3.new(math.sin(a)*(backR+5),backTop-.5,math.cos(a)*(backR+5))
+			pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
+		end
+	end
+	-- The Kage box (north): a two-storey pavilion built out over the upper rings,
+	-- its balcony above the field with the two Kage watching.
+	local kage=origin+Vector3.new(0,wallH+16,-(R+12))
 	local kageCF=CFrame.lookAt(kage,Vector3.new(origin.X,kage.Y,origin.Z))
+	deco(decor,"Kage base",Vector3.new(30,16,22),kageCF*CFrame.new(0,-8,4),C.brick,Enum.Material.Brick)
 	pavilion(decor,kageCF,34,16,11,2)
-	local box=deco(decor,"Kage box",Vector3.new(14,6,4),kageCF*CFrame.new(0,4,-9.6),C.trim,Enum.Material.Wood)
-	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x,1.4,-8.6)).Position,(origin-kage)*Vector3.new(1,0,1),if x&lt;0 then 5 else 2) end
-	local plaque=deco(decor,"Kage plaque",Vector3.new(4,4,.3),kageCF*CFrame.new(0,8.5,-9.9),C.plaster,Enum.Material.SmoothPlastic)
+	local box=deco(decor,"Kage box",Vector3.new(16,1,6),kageCF*CFrame.new(0,.5,-10.5),C.trim,Enum.Material.Wood)
+	deco(decor,"Kage rail",Vector3.new(16,1.6,.3),kageCF*CFrame.new(0,1.8,-13.4),C.wood,Enum.Material.Wood)
+	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x,1,-11)).Position,(origin-kage)*Vector3.new(1,0,1),if x&lt;0 then 5 else 2) end
+	local plaque=deco(decor,"Kage plaque",Vector3.new(4,4,.3),kageCF*CFrame.new(0,8.5,-8.2),C.plaster,Enum.Material.SmoothPlastic)
 	label(plaque,Enum.NormalId.Front,"火",rgb(190,40,36))
 	box.Transparency=0
-	-- Participants' balcony on the east wall, and the arena gate to the south.
-	-- The participants' balcony is a real ledge (elevation and a vertical route):
-	-- run up the wall beside it and step onto it, or drop from it into a dive.
+	-- Participants' balcony on the east wall: a real ledge (elevation and a
+	-- vertical route: run up the wall beside it and step on, or drop from it
+	-- into a dive), set in a roofed alcove with the corridor behind it.
 	local east=CFrame.lookAt(origin+Vector3.new(R-4,24,0),origin+Vector3.new(0,24,0))
 	part(folder,"Participants balcony",Vector3.new(26,1.2,8),east,C.woodDark,Enum.Material.Wood)
 	deco(decor,"Balcony rail",Vector3.new(26,1.6,.3),east*CFrame.new(0,1.4,-3.9),C.wood,Enum.Material.Wood)
 	for _,x in {-12,-4,4,12} do deco(decor,"Balcony bracket",Vector3.new(.8,3,.8),east*CFrame.new(x,-2,1.5)*CFrame.Angles(math.rad(35),0,0),C.trim,Enum.Material.Wood) end
+	deco(decor,"Balcony corridor",Vector3.new(10,8,.2),east*CFrame.new(0,4.6,3.95),rgb(34,30,28),Enum.Material.SmoothPlastic)
+	for _,x in {-13.4,13.4} do deco(decor,"Balcony side",Vector3.new(.8,11,8.4),east*CFrame.new(x,5.4,0),C.wallBand,Enum.Material.Concrete) end
+	deco(decor,"Balcony awning",Vector3.new(28.4,.8,9.4),east*CFrame.new(0,11.2,-.4)*CFrame.Angles(math.rad(-10),0,0),C.roofDark,Enum.Material.SmoothPlastic)
 	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
-	local south=CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0))
-	-- The competitors' gate: two heavy wooden doors in a dark frame.
-	deco(decor,"Gate",Vector3.new(18,16,.2),south*CFrame.new(0,0,.15),rgb(30,28,26),Enum.Material.SmoothPlastic)
-	for _,x in {-4.4,4.4} do
-		local door=south*CFrame.new(x,-.2,-.1)
-		deco(decor,"Gate door",Vector3.new(8.4,15.4,.5),door,rgb(104,72,46),Enum.Material.WoodPlanks)
-		for _,y in {-5,0,5} do deco(decor,"Gate band",Vector3.new(8.4,.4,.08),door*CFrame.new(0,y,-.29),rgb(52,50,50),Enum.Material.Metal) end
-		deco(decor,"Gate ring",Vector3.new(.7,.7,.1),door*CFrame.new(if x&lt;0 then 3.4 else -3.4,0,-.33),rgb(150,120,60),Enum.Material.Metal,Enum.PartType.Cylinder)
+	-- The competitors' gates (south and west): heavy wooden doors in a stone frame.
+	local function gate(cf)
+		deco(decor,"Gate",Vector3.new(18,16,.2),cf*CFrame.new(0,0,.15),rgb(30,28,26),Enum.Material.SmoothPlastic)
+		for _,x in {-4.4,4.4} do
+			local door=cf*CFrame.new(x,-.2,-.1)
+			deco(decor,"Gate door",Vector3.new(8.4,15.4,.5),door,rgb(104,72,46),Enum.Material.WoodPlanks)
+			for _,y in {-5,0,5} do deco(decor,"Gate band",Vector3.new(8.4,.4,.08),door*CFrame.new(0,y,-.29),rgb(52,50,50),Enum.Material.Metal) end
+			deco(decor,"Gate ring",Vector3.new(.7,.7,.1),door*CFrame.new(if x&lt;0 then 3.4 else -3.4,0,-.33),rgb(150,120,60),Enum.Material.Metal,Enum.PartType.Cylinder)
+		end
+		deco(decor,"Gate lintel",Vector3.new(22,2.4,1.6),cf*CFrame.new(0,8.8,-.6),rgb(120,116,104),Enum.Material.Slate)
+		for _,x in {-10.4,10.4} do deco(decor,"Gate post",Vector3.new(2.2,17,1.6),cf*CFrame.new(x,.4,-.6),rgb(120,116,104),Enum.Material.Slate) end
 	end
-	deco(decor,"Gate lintel",Vector3.new(21,2,.8),south*CFrame.new(0,8.6,-.2),C.trim,Enum.Material.Wood)
-	for _,x in {-10,10} do deco(decor,"Gate post",Vector3.new(1.6,16,.8),south*CFrame.new(x,0,-.2),C.trim,Enum.Material.Wood) end
+	gate(CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0)))
+	gate(CFrame.lookAt(origin+Vector3.new(-(R-.05),8,0),origin+Vector3.new(0,8,0)))
+	-- The ground outside the stadium, so it never floats in the sky.
+	part(decor,"Village ground",Vector3.new(1700,2,1700),CFrame.new(origin-Vector3.new(0,1.3,0)),C.grassDark,Enum.Material.Grass).CanCollide=false
 	-- Field trees: line of sight and something to fight around, as in the finals.
 	for _,spot in {{.55,112,38,10},{1.6,104,33,9},{2.4,110,36,9.5},{3.3,98,31,8.5},{3.9,116,40,10.5},{5.3,106,35,9.5},{6.0,92,29,8}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
@@ -12612,7 +12659,7 @@ function World.arena(parent, origin)
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
 		local a=k/48*math.pi*2+.07
-		local r=R+42+((k*53)%5)*6
+		local r=R+62+((k*53)%5)*7
 		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
 		local h=50+((k*31)%4)*7
 		deco(decor,"Forest trunk",Vector3.new(3,h,3),CFrame.new(at+Vector3.new(0,h/2,0)),C.bark,Enum.Material.Wood)
