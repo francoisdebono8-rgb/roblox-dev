@@ -41,3 +41,20 @@ Puis en Studio (règle Studio) : `tools/studio/fighter_check.py <Id> [adversaire
 - **Poses** : `VelmoraMotionEngine` donne une pose de lancer par famille (signes pendant le canal, puis projection / explosion / zone / buff / garde / arrivée) ; `spec.Pose = {channel=…, release=…}` la remplace ; `Motion.stance` (données) donne une garde propre.
 - **Costumes** : `Server/Costumes.luau` (`install(dressers, kit)`), enregistrés par nom ; `World.dress` les appelle.
 - **Menu** : `Shared/Roster.luau` est la seule liste ; la sélection affiche une grille de cinq colonnes par moitié.
+
+## Notes de reprise (17/10, relevées par le lot 2 avant code)
+
+Constats sur le code, utiles à tous les lots :
+
+1. `Roster.spec` refuse qu'une technique de **famille** soit refusée au lancer : une technique conditionnelle (ex. étranglement de l'ombre, seulement sur un corps qu'il tient) s'enregistre dans `WaveNKit.install` **sans** `Family`, avec `Requires="Bound"` ; il faut alors une ligne générique dans `AI.luau` (l'utiliser quand la cible est tenue par lui) et un cas `Requires=="Bound"` pour l'état « prêt » de la barre (`Matches.luau`).
+2. `Effects.luau` enroule du fil d'acier autour de tout corps `Bound` (sauf Gaara) : une entrave de famille doit le désactiver (ex. `family.tie` dans l'instantané) et dessiner son propre lien.
+3. `Families.afterHit` sort tôt sans `def.OnHit` : `Awakening.OnHit` doit s'appliquer même sans trait de base.
+4. `Pull` est un vol de recul : sans plafond (ex. `PullTo` ≈ 3,5 studs devant lui) une cible proche est projetée derrière lui.
+5. Une ombre au sol vole 2,2 studs sous la racine : contre une cible qui bouge, rayon ≈ 1,8 et un champ générique `Steer` (réorientation via `c:redirect`) sont nécessaires.
+6. Champs génériques prévus : `Awakening.ZoneScale` (famille Zone), `Heal` optionnel sur Teleport.
+7. Un coup `heavy=true` lance le corps et casse l'entrave : dégâts non lourds pendant une entrave.
+8. Une frappe nouvelle sans clip prend le Light1 de sa famille de corps : la dessiner (lame, etc.) dans `WaveNFX` en attendant un clip.
+9. Contraintes des suites : Ids de techniques globaux et uniques ; Speed × SprintScale < 24 (`Lee.spec`) ; JumpScale borné par `Regression.spec` (vérifier la limite avant de dépasser 1,15) ; toute entrée d'`Attacks` porte side/twist/lean/arm/step (`Animation.spec`).
+10. (lot 1) `CostScale` d'éveil rembourse **toutes** les techniques (`Combat:awakenTechnique`) ; `Regen` d'un Buff agit sur le chakra, pas la santé (un soin dans la durée demande un champ générique, ex. `Mend`) ; un seul buff compte à la fois (`Families.buff` préfère le buff de technique à `Awakening.Buff`).
+11. (lot 1) Une frappe nouvelle d'`Attacks` doit aussi poser `animation/feedback/chain/air/depth/offset` (comme le bloc Naruto) ; un champ `clip` lu par le moteur de mouvement permettrait d'emprunter une animation existante au lieu du Light1.
+12. (lot 1) Un outil non kunai/shuriken est lancé comme `shuriken` ; un outil sur mesure (`Techniques.Tools`) perd les annulations de chaîne : garder `Tool="Kunai"` sauf besoin réel. L'IA de famille soignerait à pleine santé : seuil générique `spec.AI.Hurt` à prévoir.
