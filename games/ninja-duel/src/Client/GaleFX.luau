@@ -229,7 +229,14 @@ local LANE_STREAKS=12
 local function laneVisual(fx,z)
 	local holder=K.new("Model",{Name="WindLane"},fx.folder)
 	local y=ground(fx,z.origin+Vector3.new(0,1,0),z.origin.Y)
-	local band=K.block(holder,Vector3.new(1,.06,1),CFrame.new(),if z.reflect then MOON else WIND_DEEP);band.Name="WindBand";band.Transparency=.84
+	-- The band itself stays almost invisible (seen in Studio: a translucent slab
+	-- on the floor read as a placeholder block); the ground shows the wind by
+	-- the dust it drags along the lane.
+	local band=K.block(holder,Vector3.new(1,.06,1),CFrame.new(),if z.reflect then MOON else WIND_DEEP);band.Name="WindBand";band.Transparency=1
+	K.new("ParticleEmitter",{Name="LaneDust",Texture=K.TEX.smoke,Rate=26,Lifetime=NumberRange.new(.45,.8),Speed=NumberRange.new(7,12),
+		SpreadAngle=Vector2.new(6,4),EmissionDirection=Enum.NormalId.Front,Shape=Enum.ParticleEmitterShape.Box,
+		Color=ColorSequence.new(if z.reflect then MOON else Color3.fromRGB(214,226,218)),LightInfluence=1,
+		Size=K.num({{0,.9},{1,2.4}}),Transparency=K.num({{0,1},{.25,.78},{1,1}}),Drag=2,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)},band)
 	local streaks={}
 	for k=1,LANE_STREAKS do
 		local s=K.block(holder,Vector3.new(.09,.09,2.6),CFrame.new(),if z.reflect and k%3==0 then MOON else WIND,Enum.Material.Neon)
@@ -249,7 +256,8 @@ local function laneStep(fx,v,z,dt)
 	local fade=math.clamp((z.remaining or 1)/.5,0,1)
 	v.band.Size=Vector3.new(z.width*2,.06,length)
 	v.band.CFrame=CFrame.lookAt(base+dir*length/2+Vector3.new(0,.04,0),base+dir*length/2+Vector3.new(0,.04,0)+dir)
-	v.band.Transparency=1-(.16*fade)
+	local dust=v.band:FindFirstChild("LaneDust")
+	if dust then dust.Rate=26*fade*math.clamp(length/12,.4,2) end
 	local t=GaleFX.clock()
 	for _,s in v.streaks do
 		local along=((t*s.speed*1.4+s.phase)%1)*length

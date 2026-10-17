@@ -133,6 +133,8 @@ function Families.bind(c,a,b,spec)
 	local duration=spec.Bind*awake
 	Brawler.react(c,b,"Bound",Vector3.zero,duration,a)
 	b.boundBy=a
+	-- What holds it, for the client (hounds at the legs, a shadow, coils...).
+	b.boundKind=spec.Kind or "chakra"
 	local name=string.upper(spec.Name or "BOUND")
 	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • X TO ESCAPE",.9)
 	Brawler.event(c,a,"FamilyBind")

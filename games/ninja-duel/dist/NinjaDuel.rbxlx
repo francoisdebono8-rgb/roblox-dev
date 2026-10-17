@@ -2266,7 +2266,7 @@ return {
       <Item class="StringValue" referent="ND19">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">0903ea356c1928db79f68f9461753a2ffa185e4361838d0237b7ff0dea02f0e3</string>
+          <string name="Value">9cd6c82429e1d08e9c25b2b2fd0f7da70dc0478c2971707c3f349743614b45ea</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND20">
@@ -8701,6 +8701,8 @@ function Families.bind(c,a,b,spec)
 	local duration=spec.Bind*awake
 	Brawler.react(c,b,"Bound",Vector3.zero,duration,a)
 	b.boundBy=a
+	-- What holds it, for the client (hounds at the legs, a shadow, coils...).
+	b.boundKind=spec.Kind or "chakra"
 	local name=string.upper(spec.Name or "BOUND")
 	c:cue(a,name.." • BOUND",.8);c:cue(b,"BOUND • X TO ESCAPE",.9)
 	Brawler.event(c,a,"FamilyBind")
@@ -9814,7 +9816,7 @@ function Matches:view(s,cursor,mine,theirs)
 			seals=sealList(a),splatNormal=if a.reaction=="WallSplat" then a.splatNormal else nil,
 			splatElapsed=if a.reaction=="WallSplat" then now-(a.splatAt or now) else nil,
 			counter=math.max(0,(a.counterUntil or 0)-now),warpSerial=a.warpSerial or 0,
-			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",
+			shield=a.shieldCharges or 0,shieldMax=a.def.SandShield and a.def.SandShield.Charges or 0,bound=a.reaction=="Bound",boundKind=if a.reaction=="Bound" then a.boundKind else nil,
 			awaken=math.max(0,(a.awakenUntil or 0)-now),
 			awakenReady=a.def.Awakening~=nil and not a.awakened and a.health&gt;0 and a.health&lt;=a.def.Health*Config.Awaken.Threshold,
 			-- Neji: Rotation dome, closed chakra points and sealed techniques.
@@ -17827,9 +17829,12 @@ function FamilyFX.install(FX,kit)
 	local new,block,tween,sound,flash,shockRing,burst,smokePuff,sparks=kit.new,kit.block,kit.tween,kit.sound,kit.flash,kit.shockRing,kit.burst,kit.smokePuff,kit.sparks
 	local num,seq,TEX,SOUND,BUILD,weldAll,floorUnder,anchorPart=kit.num,kit.seq,kit.TEX,kit.SOUND,kit.BUILD,kit.weldAll,kit.floorUnder,kit.anchorPart
 
+	-- An ellipsoid of the given size (a Ball part stays round at its smallest
+	-- side, which turned every beast into a small brown ball in Studio).
 	local function ball(model,size,cf,color,material,transparency)
 		local p=block(model,size,cf,color,material or Enum.Material.SmoothPlastic)
-		p.Shape=Enum.PartType.Ball;p.Transparency=transparency or 0
+		p.Transparency=transparency or 0
+		new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},p)
 		return p
 	end
 	local function trail(root,width,color,lifetime)
@@ -17902,29 +17907,43 @@ function FamilyFX.install(FX,kit)
 		return m
 	end
 	SHAPES.beast=function(look)
-		-- A running creature read from its silhouette: body, head, snout, tail
-		-- and (for a shark) a dorsal fin; pale belly in color2.
+		-- A creature read from its silhouette: a long body, the head raised
+		-- forward with a pale snout and a dark nose, ears up, four legs and a
+		-- tail for a hound; a dorsal and a tail fin, no legs, for a shark.
 		local m=new("Model",{Name="FamilyBeast"})
 		local s=look.size
-		local body=ball(m,Vector3.new(s[1],s[2]*.8,s[3]*.7),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
-		local belly=ball(m,Vector3.new(s[1]*.8,s[2]*.45,s[3]*.6),CFrame.new(0,-s[2]*.2,0),c3(look.color2),Enum.Material.SmoothPlastic)
-		local head=ball(m,Vector3.new(s[1]*.75,s[2]*.65,s[3]*.38),CFrame.new(0,s[2]*.12,-s[3]*.42),c3(look.color),Enum.Material.SmoothPlastic)
-		local snout=ball(m,Vector3.new(s[1]*.45,s[2]*.35,s[3]*.22),CFrame.new(0,0,-s[3]*.6),c3(look.color2),Enum.Material.SmoothPlastic)
-		local tail=block(m,Vector3.new(s[1]*.15,s[2]*.5,s[3]*.35),CFrame.new(0,s[2]*.15,s[3]*.5)*CFrame.Angles(math.rad(-30),0,0),c3(look.color),Enum.Material.SmoothPlastic,"WedgePart")
-		local parts={belly,head,snout,tail}
-		if look.zone=="water" then
-			table.insert(parts,block(m,Vector3.new(s[1]*.12,s[2]*.6,s[3]*.3),CFrame.new(0,s[2]*.55,0)*CFrame.Angles(0,math.pi,0),c3(look.color),Enum.Material.SmoothPlastic,"WedgePart"))
+		local w,h,l=s[1],s[2],s[3]
+		local color,pale=c3(look.color),c3(look.color2)
+		local dark=Color3.fromRGB(26,22,24)
+		local water=look.zone=="water"
+		local body=ball(m,Vector3.new(w*.8,h*.6,l*.64),CFrame.new(0,h*.08,0),color)
+		local parts={}
+		local function add(p) table.insert(parts,p);return p end
+		add(ball(m,Vector3.new(w*.64,h*.34,l*.5),CFrame.new(0,-h*.1,-l*.02),pale))
+		add(ball(m,Vector3.new(w*.62,h*.5,l*.3),CFrame.new(0,h*.34,-l*.4),color))
+		add(ball(m,Vector3.new(w*.36,h*.24,l*.22),CFrame.new(0,h*.26,-l*.56),pale))
+		add(ball(m,Vector3.new(w*.12,w*.1,w*.1),CFrame.new(0,h*.3,-l*.67),dark))
+		for _,side in {-1,1} do
+			add(ball(m,Vector3.new(w*.09,w*.09,w*.06),CFrame.new(side*w*.19,h*.46,-l*.52),dark))
+		end
+		if water then
+			add(block(m,Vector3.new(w*.1,h*.55,l*.26),CFrame.new(0,h*.5,l*.02)*CFrame.Angles(0,math.pi,0),color,Enum.Material.SmoothPlastic,"WedgePart"))
+			add(block(m,Vector3.new(w*.1,h*.7,l*.22),CFrame.new(0,h*.05,l*.46)*CFrame.Angles(0,math.pi,0),color,Enum.Material.SmoothPlastic,"WedgePart"))
+			for _,side in {-1,1} do
+				add(block(m,Vector3.new(w*.4,h*.06,l*.16),CFrame.new(side*w*.45,-h*.1,-l*.1)*CFrame.Angles(0,0,math.rad(side*-20)),color,Enum.Material.SmoothPlastic))
+			end
 		else
 			for _,side in {-1,1} do
-				table.insert(parts,block(m,Vector3.new(s[1]*.18,s[2]*.32,s[3]*.12),CFrame.new(side*s[1]*.26,s[2]*.42,-s[3]*.42),c3(look.color2),Enum.Material.SmoothPlastic,"WedgePart"))
+				add(block(m,Vector3.new(w*.12,h*.28,l*.08),CFrame.new(side*w*.17,h*.68,-l*.38),color,Enum.Material.SmoothPlastic,"WedgePart"))
+				for _,z in {-.22,.22} do
+					add(block(m,Vector3.new(w*.16,h*.46,w*.16),CFrame.new(side*w*.24,-h*.32,z*l),color,Enum.Material.SmoothPlastic))
+				end
 			end
-		end
-		for _,side in {-1,1} do
-			table.insert(parts,ball(m,Vector3.new(s[1]*.1,s[1]*.1,s[1]*.06),CFrame.new(side*s[1]*.22,s[2]*.22,-s[3]*.58),Color3.fromRGB(20,18,22),Enum.Material.SmoothPlastic))
+			add(block(m,Vector3.new(w*.1,h*.12,l*.34),CFrame.new(0,h*.3,l*.42)*CFrame.Angles(math.rad(30),0,0),color,Enum.Material.SmoothPlastic))
 		end
 		weldAll(body,parts);m.PrimaryPart=body
-		trail(body,look.trail,c3(look.color),.2)
-		if look.zone=="water" then spray(body,c3(look.color),40,s[1]*.4,3) else spray(body,Color3.fromRGB(150,130,110),14,s[1]*.3,2) end
+		trail(body,look.trail,color,.2)
+		if water then spray(body,color,40,w*.4,3) else spray(body,Color3.fromRGB(150,130,110),14,w*.3,2) end
 		return m
 	end
 	SHAPES.serpent=function(look)
@@ -18129,6 +18148,45 @@ function FamilyFX.install(FX,kit)
 		Debris:AddItem(entry.holder,3)
 	end
 
+	-- A body held by a family bind shows what holds it: beasts biting at the
+	-- legs, coils round the torso, a pool of shadow, a swarm, or a sphere of
+	-- the jutsu's substance (water prison). Anchored parts placed each frame.
+	function FamilyFX.bindVisual(fx,model,root,look)
+		local m=new("Model",{Name="FamilyBind"},fx.folder)
+		local color,edge=c3(look.color),c3(look.color2)
+		local feet=root.CFrame*CFrame.new(0,-2.5,0)
+		if look.shape=="beast" then
+			for _,side in {-1,1} do
+				local b=SHAPES.beast(look)
+				b.Name="BindBeast"
+				-- Full size, flanking the legs, turned a little inward so each
+				-- head reaches the shin from the front (facing the centre put the
+				-- heads inside the legs in Studio).
+				local cf=feet*CFrame.new(side*(.95+look.size[1]*.45),look.size[2]*.55-.3,.35)*CFrame.Angles(0,math.rad(side*-28),0)
+				b.Parent=m;b:PivotTo(cf)
+			end
+		elseif look.shape=="serpent" then
+			for k=1,3 do
+				local ring=block(m,Vector3.new(.45,3.2,3.2),root.CFrame,if k%2==0 then edge else color,Enum.Material.SmoothPlastic)
+				ring.Shape=Enum.PartType.Cylinder;ring.Name="BindCoil"
+				ring:SetAttribute("Spin",1.5+k*.4);ring:SetAttribute("Y",-1.6+k*.9)
+			end
+		elseif look.shape=="shadow" then
+			local pool=block(m,Vector3.new(.06,5.2,5.2),feet*CFrame.new(0,.05,0)*CFrame.Angles(0,0,math.rad(90)),color,Enum.Material.SmoothPlastic)
+			pool.Shape=Enum.PartType.Cylinder;pool.Transparency=.15;pool.Name="BindShadow"
+			for _,side in {-1,1} do
+				local tendril=block(m,Vector3.new(.35,2.6,.35),feet*CFrame.new(side*.5,1.3,0),color,Enum.Material.SmoothPlastic)
+				tendril.Transparency=.25;tendril.Name="BindShadow"
+			end
+		elseif look.shape=="swarm" then
+			local core=block(m,Vector3.new(.2,.2,.2),root.CFrame,color,Enum.Material.SmoothPlastic);core.Transparency=1
+			new("ParticleEmitter",{Texture=TEX.spark,Rate=200,Lifetime=NumberRange.new(.3,.6),Speed=NumberRange.new(3,6),SpreadAngle=Vector2.new(180,180),
+				Shape=Enum.ParticleEmitterShape.Sphere,Color=ColorSequence.new(color,edge),LightInfluence=1,Size=num({{0,.2},{1,.12}})},new("Attachment",{},core))
+		else
+			local shell=block(m,Vector3.new(6,7,6),root.CFrame,color,Enum.Material.Glass);shell.Shape=Enum.PartType.Ball;shell.Transparency=.55;shell.Name="BindShell"
+		end
+		return m
+	end
 	-- Bodies: buff aura, counter stance ring, the dark of a slow.
 	local auras=setmetatable({},{__mode="k"})
 	local function auraOf(model)
@@ -18194,6 +18252,20 @@ function FamilyFX.install(FX,kit)
 				st.auraAt=at
 			elseif not buffed and st.aura then
 				st.aura.Enabled=false;Debris:AddItem(st.auraAt,1);st.aura=nil;st.auraAt=nil
+			end
+			-- Held by a family bind: what holds the body shows on it.
+			local held=actor.boundKind
+			if held~=st.heldKind then
+				if st.held then st.held:Destroy();st.held=nil end
+				st.heldKind=held
+				if held and Looks[held] then st.held=FamilyFX.bindVisual(fx,model,root,Looks[held]) end
+			end
+			if st.held and st.held.Parent then
+				local t=os.clock()
+				for _,p in st.held:GetChildren() do
+					local spin=p:GetAttribute("Spin")
+					if spin then p.CFrame=root.CFrame*CFrame.new(0,p:GetAttribute("Y") or 0,0)*CFrame.Angles(0,t*spin,0)*CFrame.Angles(0,0,math.rad(90)) end
+				end
 			end
 			local slowed=fam and (fam.slowed or 0)&gt;0
 			if slowed and not st.slow then
@@ -18445,7 +18517,14 @@ local LANE_STREAKS=12
 local function laneVisual(fx,z)
 	local holder=K.new("Model",{Name="WindLane"},fx.folder)
 	local y=ground(fx,z.origin+Vector3.new(0,1,0),z.origin.Y)
-	local band=K.block(holder,Vector3.new(1,.06,1),CFrame.new(),if z.reflect then MOON else WIND_DEEP);band.Name="WindBand";band.Transparency=.84
+	-- The band itself stays almost invisible (seen in Studio: a translucent slab
+	-- on the floor read as a placeholder block); the ground shows the wind by
+	-- the dust it drags along the lane.
+	local band=K.block(holder,Vector3.new(1,.06,1),CFrame.new(),if z.reflect then MOON else WIND_DEEP);band.Name="WindBand";band.Transparency=1
+	K.new("ParticleEmitter",{Name="LaneDust",Texture=K.TEX.smoke,Rate=26,Lifetime=NumberRange.new(.45,.8),Speed=NumberRange.new(7,12),
+		SpreadAngle=Vector2.new(6,4),EmissionDirection=Enum.NormalId.Front,Shape=Enum.ParticleEmitterShape.Box,
+		Color=ColorSequence.new(if z.reflect then MOON else Color3.fromRGB(214,226,218)),LightInfluence=1,
+		Size=K.num({{0,.9},{1,2.4}}),Transparency=K.num({{0,1},{.25,.78},{1,1}}),Drag=2,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)},band)
 	local streaks={}
 	for k=1,LANE_STREAKS do
 		local s=K.block(holder,Vector3.new(.09,.09,2.6),CFrame.new(),if z.reflect and k%3==0 then MOON else WIND,Enum.Material.Neon)
@@ -18465,7 +18544,8 @@ local function laneStep(fx,v,z,dt)
 	local fade=math.clamp((z.remaining or 1)/.5,0,1)
 	v.band.Size=Vector3.new(z.width*2,.06,length)
 	v.band.CFrame=CFrame.lookAt(base+dir*length/2+Vector3.new(0,.04,0),base+dir*length/2+Vector3.new(0,.04,0)+dir)
-	v.band.Transparency=1-(.16*fade)
+	local dust=v.band:FindFirstChild("LaneDust")
+	if dust then dust.Rate=26*fade*math.clamp(length/12,.4,2) end
 	local t=GaleFX.clock()
 	for _,s in v.streaks do
 		local along=((t*s.speed*1.4+s.phase)%1)*length

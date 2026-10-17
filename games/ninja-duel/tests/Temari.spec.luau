@@ -834,7 +834,9 @@ test("client: the scythe and Kamatari fly as wind, as wide as the server's radiu
   end
   assert(streaks>=8 and named(column,"UpdraftRing")>=3,"the lane does not stream or the column does not rise")
   for _,holder in {lane,column} do
-   for _,d in holder:GetDescendants() do assert(d.ClassName~="ParticleEmitter","a zone is drawn with an emitter (fire)") end
+   -- Wind may drag dust along a lane (seen in Studio: the bare floor band read
+   -- as a slab), never flames.
+   for _,d in holder:GetDescendants() do assert(not (d.ClassName=="ParticleEmitter" and tostring(d.Texture):find("fire")),"a zone is drawn with flames") end
   end
   -- The fire hazard is still drawn as fire.
   local fire=false

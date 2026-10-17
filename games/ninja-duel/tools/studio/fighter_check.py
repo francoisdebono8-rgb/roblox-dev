@@ -100,7 +100,7 @@ local conn
 conn=remote.OnClientEvent:Connect(function(data)
 	if type(data)~="table" or not data.human then return end
 	local h=data.human
-	local name=h.attackVariant or h.attackName or (if h.castId and (h.state=="TechniqueChannel" or h.state=="TechniqueActive") then "cast:"..h.castId else nil)
+	local name=(h.attackName and (h.attackVariant or h.attackName)) or (if h.castId and (h.state=="TechniqueChannel" or h.state=="TechniqueActive") then "cast:"..h.castId else nil)
 		or (if h.state=="Rush" or h.state=="Pursuit" or h.state=="Dodging" then h.state else nil)
 		or (if (h.awaken or 0)>0 then "awake" else nil)
 	if name and name~=last then table.insert(shared.NdRec,name) end
