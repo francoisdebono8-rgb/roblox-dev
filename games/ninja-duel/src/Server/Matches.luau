@@ -218,15 +218,23 @@ function Matches:view(s,cursor,mine,theirs)
 			tenketsuPoints=if (a.tenketsuUntil or 0)>now then table.clone(a.tenketsuPoints or {}) else {},
 			tenketsuSevere=(a.tenketsuUntil or 0)>now and (a.tenketsu or 0)>=4,
 			illusionKind=if (a.illusionUntil or 0)>now then a.illusionKind else nil,
-			curseHunger=a.curseHunger==true}
+			curseHunger=a.curseHunger==true,
+			-- Chakra on the body: the lightning stun it is locked in, the
+			-- ground fire it stands in (ChakraCombat, Combat:updateHazards).
+			shocked=if (a.shockUntil or 0)>now and (a.state=="Stunned" or a.reaction=="Bound") then a.shockUntil-now else 0,
+			burning=math.max(0,(a.burnUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
 	local projectiles={}
 	for _,p in s.combat.projectiles do
 		-- infusion: the chakra nature it carries (nil: a plain object); planted:
-		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
+		-- the tool a resting point or stretched wire is drawn as, "held" for a
+		-- wire holding a body (ChakraCombat). Resting objects also carry what
+		-- they mean (mark), their surface normal, their expiry and live charge
+		-- (server clock), and a held wire the body it holds and its stake.
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,
+			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do

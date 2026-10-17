@@ -1692,7 +1692,8 @@ function Combat:updateHazards()
 				if not ray then
 					h.lastHit[target]=self.now
 					self.damageTag="burn"
-					self:chip(h.a,target,h.damage*0.34)
+					-- Seen burning while the ticks land (snapshot `burning`); still no stun, no hit.
+					if self:chip(h.a,target,h.damage*0.34) then target.burnUntil=self.now+.55 end
 					self.damageTag=nil
 					-- A burn that ends the duel may clear the hazard list (Combat:clear).
 					if self.match.phase~="Duel" then return end

@@ -85,6 +85,13 @@ local function ground(c,position)
 	local hit=workspace:Raycast(position+Vector3.new(0,1,0),Vector3.new(0,-80,0),c:rayParams(true))
 	return if hit then hit.Position else Vector3.new(position.X,c.match.origin.Y,position.Z)
 end
+-- The far end of a stretched wire (its blade); `origin` is the stake.
+local function far(w) return w.origin+w.direction*w.range end
+-- Planted metal that carries a charge: a resting chakra blade or a stretched
+-- wire (a held wire carries its own current, see Chakra.conduct).
+local function metal(q)
+	return q.planted~=nil and q.planted~="held" and not q.dead and q.tags~=nil and q.tags.metal==true
+end
 
 -- ------------------------------------------------------------- profiles
 -- A character id only selects a mastery profile; the interpreter is shared.
@@ -302,6 +309,23 @@ local function flare(s)
 		s.radius+=.6;s.damage*=1.15;s.flared=true
 	end
 end
+-- Why the dominant side won, sent with the loser's impact so the client can
+-- show it: the winner flashes in its nature's colour and keeps flying, the
+-- loser falls, burns or is cut in two. Reasons: nature (elemental
+-- precedence), cut (wind through a lighter blade), steel (reinforced steel
+-- through a small flame), volume (a jutsu swallows a tool), palm, weight,
+-- even (both fall).
+local REASON={absorb="nature",swallow="volume",swat="palm",deflect="weight",intercept="even"}
+local function explain(outcome,s,t,vs,vt,ctx,forced)
+	local reason=REASON[outcome]
+	if outcome=="pierce" then reason=if ctx.natureAdvantage then "nature" elseif vs.tags.cutting then "cut" else "steel" end
+	return {reason=reason,winner=if forced or outcome=="intercept" then nil else s.id,winnerKind=s.kind,
+		winnerNature=vs.nature or s.infusion,loserNature=vt.nature or t.infusion}
+end
+local function with(extra,more)
+	for k,v in more do extra[k]=v end
+	return extra
+end
 -- Resolve one meeting. The rules pick one outcome (exclusive group "clash");
 -- the dominant side is the rule source.
 local function settle(c,s,t,vs,vt,at,forced)
@@ -320,21 +344,22 @@ local function settle(c,s,t,vs,vt,at,forced)
 	local owner=forced or s.a
 	local dir=s.direction or (owner and owner.root.CFrame.LookVector) or Vector3.zAxis
 	local infusion=s.infusion
+	local why=explain(outcome,s,t,vs,vt,ctx,forced)
 	if outcome=="absorb" then
-		kill(c,t,at,"ember",{chakra="absorb",infusion="Fire",by=owner.id})
+		kill(c,t,at,"ember",with({chakra="absorb",infusion="Fire",by=owner.id},why))
 		if not forced then flare(s) end
 	elseif outcome=="pierce" then
-		kill(c,t,at,"deflect",{chakra="cut",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+		kill(c,t,at,"deflect",with({chakra="cut",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id},why))
 	elseif outcome=="swallow" then
 		local fire=vs.tags.fire==true
-		kill(c,t,at,if fire then "ember" else "deflect",{chakra=if fire then "burn" else "blown",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+		kill(c,t,at,if fire then "ember" else "deflect",with({chakra=if fire then "burn" else "blown",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id},why))
 	elseif outcome=="swat" then
-		kill(c,t,at,"deflect",{chakra="swat",infusion="GentleFist",direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+		kill(c,t,at,"deflect",with({chakra="swat",infusion="GentleFist",direction=dir,tumble=tumble(t.direction,dir),by=owner.id},why))
 	elseif outcome=="deflect" then
-		kill(c,t,at,"deflect",{chakra="deflect",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id})
+		kill(c,t,at,"deflect",with({chakra="deflect",infusion=infusion,direction=dir,tumble=tumble(t.direction,dir),by=owner.id},why))
 	elseif outcome=="intercept" then
 		t.dead=true
-		kill(c,s,at,"clash",{chakra="intercept",other=t.id,otherKind=t.kind,direction=dir,tumble=tumble(s.direction,t.direction),by=owner.id})
+		kill(c,s,at,"clash",with({chakra="intercept",other=t.id,otherKind=t.kind,direction=dir,tumble=tumble(s.direction,t.direction),by=owner.id},why))
 	end
 	if outcome~="pass" then
 		Brawler.event(c,owner,"ChakraClash")
@@ -367,8 +392,80 @@ local function swat(c,a)
 		end
 	end
 end
+-- ------------------------------------------------------------- conduction
+-- Metal conducts lightning. A planted blade or a stretched wire the lightning
+-- enters is charged for a while (a stretched wire only by its own thrower's
+-- lightning); the charge runs on into the planted metal touching it, and a
+-- charged object shocks the body that touches it (PointContact, WireContact).
+-- Where two metal objects are closest to each other (the arc's two ends).
+local function contact(q,r)
+	if q.planted=="wire" and r.planted=="wire" then
+		local x,y=segments(q.origin,far(q),r.origin,far(r))
+		return x,y
+	end
+	if q.planted=="wire" then return closest(q.origin,far(q),r.position),r.position end
+	if r.planted=="wire" then return q.position,closest(r.origin,far(r),q.position) end
+	return q.position,r.position
+end
+-- Who a live charge belongs to: a charged object's charger, a lightning
+-- point's thrower (a shock point is born charged), else nobody.
+local function chargerOf(q)
+	if q.tags.charged and q.chargedBy then return q.chargedBy end
+	if q.tags.shockPoint then return q.a end
+	return nil
+end
+local function electrify(c,q,by)
+	local life=if q.planted=="wire" then E.tripwire.charge else E.charge.life
+	q.charged=math.max(q.charged or 0,c.now+life);q.chargedBy=by;q.tags.charged=true
+	-- A charged wire is drawn as a lightning wire (Effects restStep).
+	if q.planted=="wire" then q.infusion="Lightning" end
+	c.urgent=true
+	Brawler.event(c,by,if q.planted=="wire" then "WireCharged" else "MetalCharged")
+end
+-- The charge runs through every planted metal object touching `source` (each
+-- once; a wire only when it is the charger's own). Returns what it reached.
+local function spread(c,source,by)
+	local seen,queue,reached={[source]=true},{source},{}
+	while #queue>0 do
+		local q=table.remove(queue,1)
+		for _,r in c.projectiles do
+			if not seen[r] and metal(r) and (r.planted~="wire" or r.a==by) then
+				local x,y=contact(q,r)
+				if (x-y).Magnitude<=E.charge.reach then
+					seen[r]=true;table.insert(queue,r);table.insert(reached,r)
+					electrify(c,r,by)
+					c:pushImpact(y,"fade",false,{owner=by.id,chakra="arc",infusion="Lightning",from=x,to=y,target=r.id})
+				end
+			end
+		end
+	end
+	if #reached>0 then record(c,"Conduct",{"metal-conducts"},{by=by.id,reached=#reached}) end
+	return reached
+end
+-- Lightning enters one object (from `from`): charged, then the metal touching it.
+local function charge(c,q,by,from)
+	electrify(c,q,by)
+	local to=if q.planted=="wire" then closest(q.origin,far(q),from or q.origin) else q.position
+	c:pushImpact(to,"fade",false,{owner=by.id,chakra="arc",infusion="Lightning",from=from or to,to=to,target=q.id})
+	c:cue(by,if q.planted=="wire" then "LIVE WIRE" else "METAL CHARGED",.6)
+	spread(c,q,by)
+end
+-- A metal object just came to rest: a lightning point charges what it
+-- touches; anything else touching a live charge is charged by it.
+local function settleMetal(c,q)
+	if q.tags.shockPoint then spread(c,q,q.a);return end
+	for _,r in c.projectiles do
+		local by=r~=q and metal(r) and chargerOf(r)
+		if by and (q.planted~="wire" or q.a==by) then
+			local x,y=contact(r,q)
+			if (x-y).Magnitude<=E.charge.reach then charge(c,q,by,x);return end
+		end
+	end
+end
+Chakra.chargerOf=chargerOf
+
 -- Wire crossed by a flying object: fire runs along it, the owner's lightning
--- charges it, wind cuts it.
+-- charges it (and the metal touching it), wind cuts it.
 local burnWire
 local function crossWire(c,p,w,at)
 	local v=view(c,p)
@@ -379,9 +476,7 @@ local function crossWire(c,p,w,at)
 	for _,name in signals do
 		if name=="wire-burn" then burnWire(c,w,p.a)
 		elseif name=="wire-charge" then
-			w.charged=c.now+E.tripwire.charge;w.tags.charged=true;w.infusion="Lightning"
-			c:pushImpact(at,"shock",false,{owner=w.a.id,chakra="wirecharge",infusion="Lightning"})
-			Brawler.event(c,w.a,"WireCharged")
+			charge(c,w,w.a,p.position)
 		elseif name=="wire-cut" then
 			kill(c,w,at,"deflect",{chakra="wirecut",infusion=p.infusion,by=p.a.id})
 			Brawler.event(c,p.a,"WireCut")
@@ -411,13 +506,21 @@ POINT["point-recover"]=function(c,q,x)
 	Brawler.event(c,x,"ChakraRecover")
 end
 POINT["point-shock"]=function(c,q,x)
-	kill(c,q,q.position,"shock",{chakra="pointshock",infusion="Lightning",victim=x.id})
+	-- The current belongs to whoever charged the metal: Sasuke's lightning in
+	-- his own point, or in the opponent's planted blade it jumped into.
+	local by=chargerOf(q) or q.a
+	kill(c,q,q.position,"shock",{chakra="pointshock",infusion="Lightning",victim=x.id,owner=by.id})
 	c.damageTag="Shock Point";c.hitOrigin=q.position
-	local hit=c:damage(q.a,x,E.shockPoint.damage,false,false)
+	local hit=c:damage(by,x,E.shockPoint.damage,false,false)
 	c.hitOrigin=nil;c.damageTag=nil
-	if hit and x.state=="Stunned" and not x.reaction then x.untilTime=math.max(x.untilTime,c.now+E.shockPoint.stun) end
-	c:cue(q.a,"SHOCK POINT",.6)
-	Brawler.event(c,q.a,"ChakraShockPoint")
+	if hit and x.state=="Stunned" and not x.reaction then
+		x.untilTime=math.max(x.untilTime,c.now+E.shockPoint.stun)
+		x.shockUntil=math.max(x.shockUntil or 0,x.untilTime)
+	end
+	c:cue(by,"SHOCK POINT",.6)
+	-- His own blade turned against him: say why.
+	if q.a==x then c:cue(x,"LIVE METAL • SHOCKED",.7) end
+	Brawler.event(c,by,"ChakraShockPoint")
 end
 POINT["point-deny"]=function(c,q,x)
 	kill(c,q,q.position,"fade",{chakra="deny",infusion=q.infusion})
@@ -430,6 +533,9 @@ local function touchPoint(c,q,x,owner)
 	local ctx={}
 	ctx[if owner then "owner" else "opponent"]=true
 	if not x.airborne then ctx.grounded=true end
+	-- A live charge that is not his own shocks him, whoever planted the blade.
+	local by=chargerOf(q)
+	if by and by~=x then ctx.chargeFoe=true end
 	local _,signals,applied=plan(c,"PointContact",{source={tags=q.tags},target={tags={actor=true}},context={tags=ctx},mastery=masteryOf(q.a)})
 	for _,name in signals do
 		local handler=POINT[name]
@@ -452,18 +558,107 @@ local function touchWire(c,w,x)
 		kill(c,w,point,"pin",{chakra="tripwire",infusion=w.infusion,from=w.origin,to=far,victim=x.id})
 		require(script.Parent.Techniques).wireBind(c,w.a,x,nil,w.direction)
 		if c.match.phase~="Duel" then return end
+		-- The wire stays tied to its stake and its blade: the body is held in
+		-- the line it walked into (the held wire runs stake -> body -> blade).
+		if x.reaction=="Bound" and x.boundBy==w.a then x.wireAnchor={from=w.origin,to=far,at=x.boundAt} end
 		if shock and x.reaction=="Bound" then
 			c.damageTag="Charged Wire";c.hitOrigin=point
 			c:damage(w.a,x,tune.shock,false,false)
 			c.hitOrigin=nil;c.damageTag=nil
 			if c.match.phase~="Duel" then return end
 			x.reactionUntil+=tune.bind
+			x.shockUntil=math.max(x.shockUntil or 0,x.reactionUntil)
 			c:pushImpact(x.root.Position,"chidori",false,{owner=w.a.id,victim=x.id,chakra="surge",infusion="Lightning",from=point,to=x.root.Position})
 		end
-		c:cue(w.a,"TRIPWIRE • 1 = DRAGON FLAME",.9)
+		-- ("WIRED": the HUD speaks it, like the Wire Trap hit's own cue.)
+		c:cue(w.a,"TRIPWIRE • WIRED • 1 = DRAGON FLAME",.9)
 		Brawler.event(c,w.a,"TripwireBind")
 	end
 	record(c,"WireContact",applied,{owner=w.a.id,actor=x.id,charged=w.charged~=nil})
+end
+-- A flying object reaches a planted blade (`touch`: it physically met it;
+-- lightning also jumps in from further away): lightning charges the metal
+-- and what touches it, anything else that met it knocks it out.
+local function metalCross(c,p,q,at,touch)
+	local v=view(c,p)
+	if not v then return end
+	local _,signals,applied=plan(c,"MetalCross",{source={tags=v.tags,toolType=v.toolType},target={tags=q.tags},context={tags={}},mastery=masteryOf(p.a)})
+	local done={}
+	for _,name in signals do
+		if name=="metal-charge" then
+			charge(c,q,p.a,at);table.insert(done,name)
+		elseif name=="point-knock" and touch then
+			kill(c,q,q.position,"deflect",{chakra="knock",tool=q.planted,infusion=q.infusion,direction=p.direction,tumble=tumble(p.direction,p.direction),by=p.a.id})
+			Brawler.event(c,p.a,"ChakraPointKnocked");table.insert(done,name)
+		end
+	end
+	if #done>0 then record(c,"MetalCross",applied,{owner=q.a.id,by=p.kind,infusion=p.infusion}) end
+end
+
+-- ------------------------------------------------------------- the held wire
+-- A wire that caught a body (a Wire Trap hit, or a stretched wire walked
+-- into) is one object for as long as the bind lasts (kind "wirehold",
+-- planted "held"): from the thrower's hand, or tied to the stake and the
+-- blade of the stretched wire (`anchored`), to the body it holds. Its life is
+-- the bind (its tension: the current tightens it), lightning charges it (the
+-- current, Chakra.conduct), fire burns it (Chakra.dragonFlame), and it goes
+-- with the bind, whatever ends it (expiry, substitution, a knockdown).
+local function heldBy(a)
+	local b=a.wireVictim
+	if b and b.reaction=="Bound" and b.boundBy==a and b.health>0 and a.health>0 then return b end
+	return nil
+end
+local function holds(c)
+	for _,a in c.actors do
+		local b=heldBy(a)
+		local w=a.heldWire
+		if w and (w.dead or w.holds~=b or w.boundAt~=(b and b.boundAt)) then w.dead=true;a.heldWire=nil;w=nil end
+		if b and not w then
+			local anchor=b.wireAnchor
+			if anchor and anchor.at~=b.boundAt then anchor=nil end
+			c.projectileSerial=(c.projectileSerial or 0)+1
+			w={id=c.projectileSerial,a=a,kind="wirehold",planted="held",holds=b,boundAt=b.boundAt,born=b.boundAt or c.now,
+				speed=0,remaining=0,damage=0,radius=0,growth=0,tags={tool=true,wire=true,metal=true},anchored=anchor~=nil}
+			if anchor then
+				-- The line it was stretched on: the stake (origin) to the blade.
+				local span=anchor.to-anchor.from
+				w.origin=anchor.from;w.position=anchor.from;w.range=span.Magnitude
+				w.direction=if span.Magnitude>.05 then span.Unit else Vector3.zAxis
+			end
+			table.insert(c.projectiles,w);a.heldWire=w;c.urgent=true
+		end
+		if w then
+			if not w.anchored then
+				-- Held in the hand: the line runs from the hand to the body.
+				local hand=c.launchPoint(a,"Kunai")
+				local span=b.root.Position-hand
+				w.origin=hand;w.position=hand;w.range=span.Magnitude
+				w.direction=if span.Magnitude>.05 then span.Unit else a.root.CFrame.LookVector
+			end
+			w.expires=b.reactionUntil
+			if w.charged and c.now>=w.charged then w.charged=nil;w.chargedBy=nil;w.tags.charged=nil;w.infusion=nil end
+		end
+	end
+end
+-- Where the current or the fire enters a held wire: the stake it is tied
+-- to, else the thrower's hand.
+local function wireStart(c,a)
+	local w=a.heldWire
+	if w and not w.dead and w.anchored then return w.origin end
+	return c.launchPoint(a,"Kunai")
+end
+-- Dragon Flame (Techniques.FireBloom on a body held by his wire): the fire
+-- runs the wire from his hand (or the stake) to the body, and the wire burns
+-- away with the bind. Presentation of an existing conversion: the damage and
+-- the knockdown stay in the technique.
+function Chakra.dragonFlame(c,a,b)
+	-- (The technique has already let go of the body: the held wire of the
+	-- last tick is the one that burns.)
+	local from=wireStart(c,a)
+	local w=a.heldWire
+	if w then w.dead=true;a.heldWire=nil end
+	c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=from,to=b.root.Position,victim=b.id,chakra="dragonflame",infusion="Fire"})
+	Brawler.event(c,a,"DragonFlameWire")
 end
 
 -- ------------------------------------------------------------- per tick
@@ -473,6 +668,7 @@ end
 -- never depends on the order of the projectile list.
 function Chakra.step(c,dt)
 	local now=c.now
+	holds(c)
 	for _,a in c.actors do
 		if a.chakraPalm and now<a.chakraPalm.untilTime and a.health>0 then swat(c,a) end
 	end
@@ -488,16 +684,22 @@ function Chakra.step(c,dt)
 				for j=1,#list do
 					local q=list[j]
 					-- Own objects never meet, except a stretched wire: the owner's
-					-- lightning charges it and his own fire runs along it.
-					if q~=p and (q.a~=p.a or q.planted=="wire") and not q.dead and not (p.clashed and p.clashed[q.id]) then
+					-- lightning charges it and his own fire runs along it. A held
+					-- wire is not in anybody's path.
+					if q~=p and (q.a~=p.a or q.planted=="wire") and q.planted~="held" and not q.dead and not (p.clashed and p.clashed[q.id]) then
 						if q.planted=="wire" then
 							local a1,b1=p.position,p.position+velocity*horizon
 							local far=q.origin+q.direction*q.range
 							local onPath,onWire,s=segments(a1,b1,q.origin,far)
-							if (onPath-onWire).Magnitude<=vp.contest+.35 then table.insert(hits,{t=s*horizon,p=p,q=q,kind="wire",at=onWire}) end
+							-- His own lightning jumps into his wire from further away.
+							local reach=if vp.tags.lightning and q.a==p.a then E.charge.arc else vp.contest+.35
+							if (onPath-onWire).Magnitude<=reach then table.insert(hits,{t=s*horizon,p=p,q=q,kind="wire",at=onWire}) end
 						elseif q.planted then
-							local t=meet(p.position,velocity,q.position,Vector3.zero,horizon,vp.contest+E.plant.contest)
-							if t then table.insert(hits,{t=t,p=p,q=q,kind="point"}) end
+							local touch=meet(p.position,velocity,q.position,Vector3.zero,horizon,vp.contest+E.plant.contest)
+							-- Lightning jumps into planted metal it flies past.
+							local arc=if vp.tags.lightning and q.tags.metal then meet(p.position,velocity,q.position,Vector3.zero,horizon,E.charge.arc) else nil
+							local t=arc or touch
+							if t then table.insert(hits,{t=t,p=p,q=q,kind="point",touch=touch~=nil}) end
 						elseif j>i and moving(q) then
 							local vq=view(c,q)
 							if vq then
@@ -527,10 +729,9 @@ function Chakra.step(c,dt)
 				local s,t,vs,vt=dominant(p,q,hit.vp,hit.vq)
 				settle(c,s,t,vs,vt,P:Lerp(Q,.5))
 			elseif hit.kind=="point" then
-				-- A planted point is contestable: any thrown object knocks it out.
-				kill(c,q,q.position,"deflect",{chakra="knock",tool=q.planted,infusion=q.infusion,direction=p.direction,tumble=tumble(p.direction,p.direction),by=p.a.id})
-				Brawler.event(c,p.a,"ChakraPointKnocked")
-				record(c,"PointKnocked",{"thrown-object-knocks-point"},{owner=q.a.id,by=p.kind})
+				-- A planted point is contestable: a thrown object knocks it out,
+				-- lightning charges it (MetalCross).
+				metalCross(c,p,q,p.position+p.direction*p.speed*hit.t,hit.touch)
 			elseif hit.kind=="wire" then
 				crossWire(c,p,q,hit.at)
 			end
@@ -541,10 +742,12 @@ function Chakra.step(c,dt)
 	for i=#list,1,-1 do
 		local q=list[i]
 		if q and q.planted and not q.dead then
-			if now>=(q.expires or 0) or q.a.health<=0 then
+			if q.planted=="held" then
+				-- (A held wire lives and goes with its bind: see holds.)
+			elseif now>=(q.expires or 0) or q.a.health<=0 then
 				kill(c,q,q.position,"fade",{chakra="expire",infusion=q.infusion})
 			elseif q.planted=="wire" then
-				if q.charged and now>=q.charged then q.charged=nil;q.tags.charged=nil;q.infusion=nil end
+				if q.charged and now>=q.charged then q.charged=nil;q.chargedBy=nil;q.tags.charged=nil;q.infusion=nil end
 				local far=q.origin+q.direction*q.range
 				for _,h in c.hazards do
 					if h.kind=="Fire" and not q.dead and (h.position-closest(q.origin,far,h.position)).Magnitude<=h.radius then burnWire(c,q,h.a) end
@@ -563,6 +766,7 @@ function Chakra.step(c,dt)
 				local x=q.a.target
 				if x and not q.dead then touchWire(c,q,x) end
 			elseif now-q.born>=E.plant.settle then
+				if q.charged and now>=q.charged then q.charged=nil;q.chargedBy=nil;q.tags.charged=nil end
 				touchPoint(c,q,q.a,true)
 				local x=q.a.target
 				if x and not q.dead then touchPoint(c,q,x,false) end
@@ -593,10 +797,21 @@ CONTACT["guard-crush"]=function(c,p,b)
 	Brawler.event(c,p.a,"GuardCrush")
 end
 CONTACT["shock"]=function(c,p,b)
-	-- Lightning locks the muscles: the hit stun lasts longer (grounded only).
-	if b.state=="Stunned" and not b.reaction then b.untilTime=math.max(b.untilTime,c.now+E.shock.stun) end
+	-- Lightning locks the muscles: the hit stun lasts longer (grounded only),
+	-- and the body says so for exactly that long (snapshot `shocked`).
+	if b.state=="Stunned" and not b.reaction then
+		b.untilTime=math.max(b.untilTime,c.now+E.shock.stun)
+		b.shockUntil=math.max(b.shockUntil or 0,b.untilTime)
+	end
 	c:pushImpact(b.root.Position,"shock",false,{owner=p.a.id,victim=b.id,chakra="shock",infusion="Lightning"})
 	Brawler.event(c,p.a,"ChakraShock")
+end
+-- The held wire glows with the current that just ran along it.
+local function wireGlow(c,a)
+	local w=a.heldWire
+	if not w or w.dead then return end
+	w.charged=math.max(w.charged or 0,c.now+E.conduct.glow);w.chargedBy=a;w.tags.charged=true;w.infusion="Lightning"
+	c.urgent=true
 end
 CONTACT["wire-surge"]=function(c,p,b)
 	-- Lightning reaching a body held by the thrower's own wire runs through it.
@@ -605,8 +820,12 @@ CONTACT["wire-surge"]=function(c,p,b)
 	c:damage(p.a,b,tune.damage,false,false)
 	c.damageTag=nil
 	if c.match.phase~="Duel" then return end
-	if b.reaction=="Bound" then b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+E.conduct.maxBind) end
-	c:pushImpact(b.root.Position,"chidori",false,{owner=p.a.id,victim=b.id,chakra="surge",infusion="Lightning",from=p.a.root.Position,to=b.root.Position})
+	if b.reaction=="Bound" then
+		b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+E.conduct.maxBind)
+		b.shockUntil=math.max(b.shockUntil or 0,b.reactionUntil)
+	end
+	wireGlow(c,p.a)
+	c:pushImpact(b.root.Position,"chidori",false,{owner=p.a.id,victim=b.id,chakra="surge",infusion="Lightning",from=p.position,to=b.root.Position})
 	Brawler.event(c,p.a,"WireSurge")
 end
 CONTACT["ignite"]=function(c,p,b)
@@ -651,16 +870,23 @@ local function plantPoint(c,p,position,normal,shock)
 	if into:Dot(normal)>-.2 then into=(into-normal*1.2).Unit end
 	c.projectileSerial=(c.projectileSerial or 0)+1
 	local tags=copy(p.tags)
+	tags.charged=nil
 	if shock then tags.shockPoint=true end
+	-- `mark`: what the point is for at a glance (client marker): a shock trap,
+	-- or a blade its thrower walks over for chakra (and the other one tramples).
 	local q={id=c.projectileSerial,a=p.a,origin=position,position=position,direction=into,speed=0,range=0,remaining=0,damage=0,
 		kind="point",planted=p.kind,born=c.now,radius=0,growth=0,expires=c.now+E.plant.life,normal=normal,
-		chakra=p.chakra,infusion=p.infusion,tags=tags,weight=p.weight,impact=p.impact,contest=E.plant.contest}
+		chakra=p.chakra,infusion=p.infusion,tags=tags,weight=p.weight,impact=p.impact,contest=E.plant.contest,
+		mark=if shock then "shock" else "refund"}
 	table.insert(c.projectiles,q)
 	local mine={}
 	for _,x in c.projectiles do if x.a==p.a and x.kind=="point" and not x.dead then table.insert(mine,x) end end
 	for i=1,#mine-E.plant.max do kill(c,mine[i],mine[i].position,"fade",{chakra="expire",infusion=mine[i].infusion}) end
 	c.urgent=true
 	Brawler.event(c,p.a,"ChakraPlant")
+	-- Metal touching metal: a lightning point charges what it lands against,
+	-- a blade landing against live metal takes its charge.
+	settleMetal(c,q)
 	return q
 end
 -- A wired shuriken that misses stays strung from where it was thrown (tied
@@ -680,6 +906,8 @@ local function stretch(c,p,position,normal)
 	c.urgent=true
 	c:cue(p.a,"WIRE STRETCHED",.8)
 	Brawler.event(c,p.a,"Tripwire")
+	-- Strung against one of his live lightning points, the wire is live too.
+	settleMetal(c,w)
 	return w
 end
 -- A chakra blade or a wire reached a wall or the floor. Returns what stayed
@@ -785,13 +1013,20 @@ function Chakra.conduct(c,a,infused)
 	local tune=E.conduct
 	committed(c,infused)
 	b.wireConducts=(b.wireConducts or 0)+1
-	local hand=c.launchPoint(a,"Kunai")
+	-- The current enters where the wire starts (his hand, or the stake of the
+	-- stretched wire that caught the body) and runs its length to the body.
+	holds(c)
+	local hand=wireStart(c,a)
 	c.damageTag="Wire Lightning";c.hitOrigin=hand
 	local hit=c:damage(a,b,tune.damage,false,false)
 	c.hitOrigin=nil;c.damageTag=nil
 	if c.match.phase~="Duel" then return true end
-	if b.reaction=="Bound" then b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+tune.maxBind) end
+	if b.reaction=="Bound" then
+		b.reactionUntil=math.min(b.reactionUntil+tune.bind,(b.boundAt or c.now)+tune.maxBind)
+		b.shockUntil=math.max(b.shockUntil or 0,b.reactionUntil)
+	end
 	if hit and b.state=="Stunned" then b.untilTime=math.max(b.untilTime,b.reactionUntil or c.now) end
+	wireGlow(c,a)
 	c:pushImpact(b.root.Position,"chidori",false,{owner=a.id,victim=b.id,chakra="conduct",infusion="Lightning",from=hand,to=b.root.Position})
 	c:cue(a,"WIRED • LIGHTNING • 1 = DRAGON FLAME",.9);c:cue(b,"WIRED • X TO ESCAPE",.9)
 	Brawler.event(c,a,"WireLightning")
