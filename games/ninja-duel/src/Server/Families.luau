@@ -286,6 +286,11 @@ end
 -- body that merely walks; a late sidestep, a dash or a jump still beat it. An
 -- aim far from the body (a zone, a lane) is kept as it was.
 Families.AIM_SNAP=12
+function Families.snapAim(a,aim)
+	local b=a.target
+	if b and b.health>0 and flat(aim-b.root.Position).Magnitude<=Families.AIM_SNAP*.5 then return b.root.Position end
+	return aim
+end
 function Families.releaseAim(c,a,pending,spec)
 	local aim=aimOf(a,pending)
 	local b=a.target
@@ -478,7 +483,9 @@ F.Zone={
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local at=spec.At or "Aim"
-		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position else aimOf(a,pending)
+		-- An aim on or near the body (the mouse at his feet) means him, now.
+		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
+			else Families.snapAim(a,aimOf(a,pending))
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
 		if spec.Charge then

@@ -163,7 +163,9 @@ local function attacks(move,list)
 	RosterMoves.add(move,list,{
 		-- Shisui: a flicker to the flank that keeps the string, the cut on arrival.
 		FlickerStep={{.07,.1,.2,6,1.2,"HitStun",V(0,0,9),.3},{contact=3.4,range=6.5,width=5,zone="body",kind="slash",side=1,twist=40,lean=10,arm=90,step=1.1,orbit=40,chain=true}},
-		FlickerCut={{.07,.12,.3,8,2.8,"Knockback",V(0,10,44),.48},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
+		-- (A stagger, not a knock-away: the body stays within a flicker's reach,
+		-- so the awakening's chain flows from flank to flank.)
+		FlickerCut={{.07,.12,.28,8,2.8,"HitStun",V(0,4,14),.5},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
 		-- Orochimaru: a fang lunge (venom).
 		VenomFang={{.09,.14,.32,8,3.4,"Knockback",V(0,8,40),.48},{contact=4,range=7.4,zone="body",kind="strike",side=1,twist=24,lean=26,arm=110,step=1.25,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
 		-- Kabuto: a scalpel slice at the legs (slows).

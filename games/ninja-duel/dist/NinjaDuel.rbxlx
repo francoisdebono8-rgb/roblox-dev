@@ -1662,7 +1662,9 @@ local function attacks(move,list)
 	RosterMoves.add(move,list,{
 		-- Shisui: a flicker to the flank that keeps the string, the cut on arrival.
 		FlickerStep={{.07,.1,.2,6,1.2,"HitStun",V(0,0,9),.3},{contact=3.4,range=6.5,width=5,zone="body",kind="slash",side=1,twist=40,lean=10,arm=90,step=1.1,orbit=40,chain=true}},
-		FlickerCut={{.07,.12,.3,8,2.8,"Knockback",V(0,10,44),.48},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
+		-- (A stagger, not a knock-away: the body stays within a flicker's reach,
+		-- so the awakening's chain flows from flank to flank.)
+		FlickerCut={{.07,.12,.28,8,2.8,"HitStun",V(0,4,14),.5},{contact=3.6,range=6.8,zone="body",kind="slash",side=1,twist=60,lean=14,arm=100,step=1.2}},
 		-- Orochimaru: a fang lunge (venom).
 		VenomFang={{.09,.14,.32,8,3.4,"Knockback",V(0,8,40),.48},{contact=4,range=7.4,zone="body",kind="strike",side=1,twist=24,lean=26,arm=110,step=1.25,riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
 		-- Kabuto: a scalpel slice at the legs (slows).
@@ -2911,7 +2913,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a3faade5ce4794d1abe148c7d81399e40bd1c87cdde0a9bca014693b09e91737</string>
+          <string name="Value">f20f9fc1736f9ce88e0debf7571c3f0ffc1e8819f34128f992d9b5016909043d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -9541,6 +9543,11 @@ end
 -- body that merely walks; a late sidestep, a dash or a jump still beat it. An
 -- aim far from the body (a zone, a lane) is kept as it was.
 Families.AIM_SNAP=12
+function Families.snapAim(a,aim)
+	local b=a.target
+	if b and b.health&gt;0 and flat(aim-b.root.Position).Magnitude&lt;=Families.AIM_SNAP*.5 then return b.root.Position end
+	return aim
+end
 function Families.releaseAim(c,a,pending,spec)
 	local aim=aimOf(a,pending)
 	local b=a.target
@@ -9733,7 +9740,9 @@ F.Zone={
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		local at=spec.At or "Aim"
-		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position else aimOf(a,pending)
+		-- An aim on or near the body (the mouse at his feet) means him, now.
+		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
+			else Families.snapAim(a,aimOf(a,pending))
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
 		if spec.Charge then
@@ -19589,7 +19598,7 @@ function FamilyFX.install(FX,kit)
 		return disc
 	end
 	ZONES.water=function(holder,h,look) local d=decal(holder,h,c3(look.color),.35,Enum.Material.Glass);d.Reflectance=.2;return nil,d end
-	ZONES.ice=function(holder,h,look) local d=decal(holder,h,c3(look.color),.2,Enum.Material.Ice);return nil,d end
+	ZONES.ice=function(holder,h,look) local d=decal(holder,h,c3(look.color),.55,Enum.Material.Ice);return nil,d end
 	ZONES.shadow=function(holder,h,look) local d=decal(holder,h,c3(look.color),.15);return nil,d end
 	ZONES.mud=function(holder,h,look) local d=decal(holder,h,c3(look.color),.1,Enum.Material.Mud);return nil,d end
 	ZONES.crater=function(holder,h,look) local d=decal(holder,h,Color3.fromRGB(96,78,60),.2,Enum.Material.Slate);return nil,d end

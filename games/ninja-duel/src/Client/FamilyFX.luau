@@ -307,7 +307,7 @@ function FamilyFX.install(FX,kit)
 		return disc
 	end
 	ZONES.water=function(holder,h,look) local d=decal(holder,h,c3(look.color),.35,Enum.Material.Glass);d.Reflectance=.2;return nil,d end
-	ZONES.ice=function(holder,h,look) local d=decal(holder,h,c3(look.color),.2,Enum.Material.Ice);return nil,d end
+	ZONES.ice=function(holder,h,look) local d=decal(holder,h,c3(look.color),.55,Enum.Material.Ice);return nil,d end
 	ZONES.shadow=function(holder,h,look) local d=decal(holder,h,c3(look.color),.15);return nil,d end
 	ZONES.mud=function(holder,h,look) local d=decal(holder,h,c3(look.color),.1,Enum.Material.Mud);return nil,d end
 	ZONES.crater=function(holder,h,look) local d=decal(holder,h,Color3.fromRGB(96,78,60),.2,Enum.Material.Slate);return nil,d end
