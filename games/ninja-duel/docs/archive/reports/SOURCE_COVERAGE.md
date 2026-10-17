@@ -2,7 +2,7 @@
 
 Index de traçabilité, pas preuve que chaque proposition research est approuvée ou chaque qualité visuelle réalisée. Chaque titre/section source est relié à des IDs ; lire la section entière avant exécution. Les IDs techniques DONE ne suppriment pas les critères visuels voisins. Les candidats adultes restent filtrés par CHR-CORE-002/DECISIONS ; fondations rollback/PvP futures par NET-001/MOV-006 ; anciens ordres de délai/publication ne commandent pas la session.
 
-Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission Phase 2 restée seule sur `main`, archivé le 2026-10-16). Les seules adaptations du contenu source sont les références et un avertissement historique du template. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
+Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission Phase 2 restée seule sur `main`, archivé le 2026-10-16). Mise à jour18/10 : le template renvoie aux vingt fiches harmonisées ; le blueprint10 détaillé est conservé dans archive/characters/2026-10-18-before-profiles, mappings conservés. Les autres adaptations du contenu source sont les références et avertissements historiques. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
 
 ## [CLAUDE_FINAL_PASS.md](../missions/CLAUDE_FINAL_PASS.md)
 
@@ -266,117 +266,117 @@ Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission 
 
 ## [FIGHTER_TEMPLATE.md](../../characters/FIGHTER_TEMPLATE.md)
 
-- L1 — Adding a prodigy — fighter template → OPS-001, OPS-002, OPS-003, ARC-002, CHR-EXT-002
-- L5 — Philosophie obligatoire → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, COM-002, SYS-003
-- L21 — Fiche moveset complète → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
-- L25 — 1. Identité → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L37 — 2. Mouvement → MOV-001, MOV-002, MOV-003, MOV-005, CHR-CORE-001
-- L53 — 3. Neutral / entrée en combat → COM-005, TOOL-005, CHR-CORE-001
-- L63 — 4. Taijutsu et combos → COM-002, COM-004, COM-005, CHR-CORE-001
-- L79 — 5. Armes et ninja tools → TOOL-002, TOOL-005, DEF-005
-- L95 — 6. Jutsus / techniques → CHR-CORE-002, SYS-001
-- L112 — 7. Garde / défense → DEF-001, DEF-003
-- L123 — 8. Esquive et substitution → DEF-002
-- L137 — 9. Rush / poursuite → COM-004, MOV-005
-- L148 — 10. Chakra → SYS-001
-- L159 — 11. Infusion / interactions de chakra → TOOL-006, SYS-001, SYS-002
-- L178 — 12. Éveil → SYS-003
-- L194 — 13. États et réactions → COM-007, FX-002
-- L212 — 14. Gameplay loop → CHR-CORE-001, COM-005
-- L223 — 15. Skill ceiling → CHR-CORE-001, BAL-001
-- L232 — 16. Signature irremplaçable → CHR-CORE-001, CHR-EXT-002
-- L239 — Exigence de différenciation → CHR-CORE-001, CHR-EXT-002
-- L257 — Mapping technique actuel → ARC-002, OPS-001
-- L280 — Validation Studio obligatoire → QA-001, CHR-CORE-001
+- L3 — Adding a prodigy — fighter template → OPS-001, OPS-002, OPS-003, ARC-002, CHR-EXT-002
+- L9 — Philosophie obligatoire → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, COM-002, SYS-003
+- L25 — Fiche moveset complète → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
+- L29 — 1. Identité → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L41 — 2. Mouvement → MOV-001, MOV-002, MOV-003, MOV-005, CHR-CORE-001
+- L57 — 3. Neutral / entrée en combat → COM-005, TOOL-005, CHR-CORE-001
+- L67 — 4. Taijutsu et combos → COM-002, COM-004, COM-005, CHR-CORE-001
+- L83 — 5. Armes et ninja tools → TOOL-002, TOOL-005, DEF-005
+- L99 — 6. Jutsus / techniques → CHR-CORE-002, SYS-001
+- L116 — 7. Garde / défense → DEF-001, DEF-003
+- L127 — 8. Esquive et substitution → DEF-002
+- L141 — 9. Rush / poursuite → COM-004, MOV-005
+- L152 — 10. Chakra → SYS-001
+- L163 — 11. Infusion / interactions de chakra → TOOL-006, SYS-001, SYS-002
+- L182 — 12. Éveil → SYS-003
+- L198 — 13. États et réactions → COM-007, FX-002
+- L216 — 14. Gameplay loop → CHR-CORE-001, COM-005
+- L227 — 15. Skill ceiling → CHR-CORE-001, BAL-001
+- L236 — 16. Signature irremplaçable → CHR-CORE-001, CHR-EXT-002
+- L243 — Exigence de différenciation → CHR-CORE-001, CHR-EXT-002
+- L261 — Mapping technique actuel → ARC-002, OPS-001
+- L284 — Validation Studio obligatoire → QA-001, CHR-CORE-001
 
-## [ROSTER_MOVESETS_10_PRODIGIES.md](../../characters/ROSTER_MOVESETS_10_PRODIGIES.md)
+## [ROSTER_MOVESETS_10_PRODIGIES.md](../characters/2026-10-18-before-profiles/ROSTER_MOVESETS_10_PRODIGIES.md)
 
-- L1 — Ninja Duel — 10-Prodigy Moveset & Awakening Blueprint → SYS-003, CHR-CORE-002
-- L7 — Shared combat grammar → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L33 — Shared ninja-tool rule → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L46 — Character design framework → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L60 — 1. Minato Namikaze — Young Prodigy → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003
-- L62 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L65 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L79 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L85 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L92 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L100 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L104 — Awakening → SYS-003, CHR-CORE-002
-- L118 — 2. Itachi Uchiha — Young Prodigy → CHR-ITA-001, CHR-ITA-002
-- L120 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L123 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L137 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L143 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L156 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L164 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L168 — Awakening → SYS-003, CHR-CORE-002
-- L179 — 3. Neji Hyuga — Gentle Fist Specialist → CHR-NEJ-001, CHR-NEJ-002
-- L181 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L184 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L199 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L205 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L208 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L216 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L224 — Awakening → SYS-003, CHR-CORE-002
-- L235 — 4. Sasuke Uchiha — Age 12–13 Prototype → CHR-SAS-001, CHR-SAS-002
-- L237 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L240 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L254 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L260 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L266 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L274 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L278 — Awakening → SYS-003, CHR-CORE-002
-- L289 — 5. Naruto Uzumaki — Unpredictable Pressure Fighter → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L291 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L294 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L308 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L314 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L317 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L325 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L329 — Awakening → SYS-003, CHR-CORE-002
-- L340 — 6. Gaara — Space-Control Fortress → CHR-EXT-001
-- L342 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L345 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L358 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L364 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L367 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L375 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L379 — Awakening → SYS-003, CHR-CORE-002
-- L390 — 7. Kakashi Hatake — Young Adaptive Genius → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L392 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L395 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L408 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L413 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L416 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L424 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L428 — Awakening → SYS-003, CHR-CORE-002
-- L438 — 8. Orochimaru — Unnatural Range Specialist → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L440 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L443 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L456 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L461 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L464 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L472 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L476 — Awakening → SYS-003, CHR-CORE-002
-- L487 — 9. Shisui Uchiha — Body Flicker Duelist → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L489 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L492 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L504 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L510 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L513 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L521 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L525 — Awakening → SYS-003, CHR-CORE-002
-- L534 — 10. Rock Lee — Pure Taijutsu Stress Test → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002, QA-001, QA-002, QA-003, QA-004
-- L536 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L541 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
-- L559 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
-- L564 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
-- L567 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L575 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L579 — Awakening → SYS-003, CHR-CORE-002
-- L590 — Roster role summary → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
-- L606 — Future implementation phase → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L5 — Ninja Duel — 10-Prodigy Moveset & Awakening Blueprint → SYS-003, CHR-CORE-002
+- L11 — Shared combat grammar → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L37 — Shared ninja-tool rule → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L50 — Character design framework → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L64 — 1. Minato Namikaze — Young Prodigy → CHR-MIN-001, CHR-MIN-002, CHR-MIN-003
+- L66 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L69 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L83 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L89 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L96 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L104 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L108 — Awakening → SYS-003, CHR-CORE-002
+- L122 — 2. Itachi Uchiha — Young Prodigy → CHR-ITA-001, CHR-ITA-002
+- L124 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L127 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L141 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L147 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L160 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L168 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L172 — Awakening → SYS-003, CHR-CORE-002
+- L183 — 3. Neji Hyuga — Gentle Fist Specialist → CHR-NEJ-001, CHR-NEJ-002
+- L185 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L188 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L203 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L209 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L212 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L220 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L228 — Awakening → SYS-003, CHR-CORE-002
+- L239 — 4. Sasuke Uchiha — Age 12–13 Prototype → CHR-SAS-001, CHR-SAS-002
+- L241 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L244 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L258 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L264 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L270 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L278 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L282 — Awakening → SYS-003, CHR-CORE-002
+- L293 — 5. Naruto Uzumaki — Unpredictable Pressure Fighter → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L295 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L298 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L312 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L318 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L321 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L329 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L333 — Awakening → SYS-003, CHR-CORE-002
+- L344 — 6. Gaara — Space-Control Fortress → CHR-EXT-001
+- L346 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L349 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L362 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L368 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L371 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L379 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L383 — Awakening → SYS-003, CHR-CORE-002
+- L394 — 7. Kakashi Hatake — Young Adaptive Genius → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L396 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L399 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L412 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L417 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L420 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L428 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L432 — Awakening → SYS-003, CHR-CORE-002
+- L442 — 8. Orochimaru — Unnatural Range Specialist → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L444 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L447 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L460 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L465 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L468 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L476 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L480 — Awakening → SYS-003, CHR-CORE-002
+- L491 — 9. Shisui Uchiha — Body Flicker Duelist → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L493 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L496 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L508 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L514 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L517 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L525 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L529 — Awakening → SYS-003, CHR-CORE-002
+- L538 — 10. Rock Lee — Pure Taijutsu Stress Test → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002, QA-001, QA-002, QA-003, QA-004
+- L540 — Identity → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L545 — Taijutsu → COM-001, COM-002, COM-003, COM-004, COM-005, COM-007, FX-002
+- L563 — Movement → MOV-001, MOV-002, MOV-003, MOV-004, MOV-005
+- L568 — Ninja tools → TOOL-001, TOOL-002, TOOL-003, TOOL-004, TOOL-005, DEF-005
+- L571 — Techniques → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L579 — Signature mechanic → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L583 — Awakening → SYS-003, CHR-CORE-002
+- L594 — Roster role summary → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
+- L610 — Future implementation phase → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
 
 ## [PUBLIC_BUILD.md](../tools/PUBLIC_BUILD.md)
 

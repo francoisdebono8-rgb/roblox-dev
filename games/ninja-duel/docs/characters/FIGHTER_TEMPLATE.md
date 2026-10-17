@@ -2,6 +2,8 @@
 
 # Adding a prodigy — fighter template
 
+Les [vingt fiches harmonisées](ROSTER_20.md) appliquent ce gabarit en huit sections compactes : version/promesse, tenue/mouvement, chakra, repères runtime, moveset/défense, techniques/période, éveil/boucles/habileté, Studio/sources. Séparer systématiquement existant, cible proposée et incertitude de période. Ne pas transformer ratings de design ou statistiques du code en faits canon. REVIEW_REQUIRED est admis quand le stade n’est pas vérifié ; ne jamais forcer une nature élémentaire pour remplir une case. Les priorités restent dans MASTER_BACKLOG.
+
 Périmètre actuel : [CORE_ROSTER](CORE_ROSTER.md). Ce template devient la **base officielle de conception d’un fighter**, pas seulement une checklist technique. Il ne déclenche pas implicitement une extension du roster : Claude l’utilise pour concevoir, comparer ou réviser un personnage quand ce travail est autorisé.
 
 ## Philosophie obligatoire

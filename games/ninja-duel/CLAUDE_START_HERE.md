@@ -20,3 +20,5 @@ Comparer Git et checkpoint avant action. Claude reste l’implémenteur principa
 Les [archives](docs/archive/README.md) sont des références historiques uniquement. Les guides techniques/recherches aident à localiser un contrat ou une source ; ils ne définissent pas une huitième vérité opérationnelle. Lire seulement ce qui est utile aux IDs traités. Mettre à jour les propriétaires concernés après chaque bloc, sans créer de nouvelle mission/handoff autonome.
 
 Avant chaque nouveau gros bloc, vérifier la boîte de réception SINCE_LAST_CLAUDE et accuser les entrées intégrées selon EXECUTION_RULES. Ne jamais traiter « le dernier fichier ajouté » comme la mission globale.
+
+Pour un lot de personnages, lire uniquement les fiches concernées via [ROSTER_20](docs/characters/ROSTER_20.md). Elles séparent cible proposée, chiffres du runtime et période à vérifier ; elles ne changent pas l’ordre des missions ni la gate Studio.

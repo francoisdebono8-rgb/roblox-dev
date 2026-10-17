@@ -70,3 +70,11 @@ Conséquence économique : la monétisation future peut être **pay-to-time** (d
 
 
 Précision utilisateur du 17 octobre, [demande architecture](../archive/requests/2026-10-17-progression-mastery-architecture.md), portée DEC-024 : **niveau 1 = identité complète, profondeur incomplète**. Les arbres ne réparent pas les kits et privilégient des décisions/variantes qualitatives ; les maîtrises mesurent fréquence, réussite, variété et contexte, jamais une preuve achetable ni un compteur de spam. Codex prépare l’architecture suivante, sans gameplay et sans détourner le roster V1 prioritaire. La [proposition spécialisée](../systems/PROGRESSION_MASTERY_PROPOSAL.md) reste **à valider** : taille des arbres, budgets et surtout prêt des prérequis de maîtrise/nodes en tournoi ne sont pas décidés par ce document. Les choix `USER DECISION REQUIRED` ne deviennent pas des règles par leur présence dans une spec.
+
+## DEC-025 — Fiches personnages et identité perceptible
+
+Demande utilisateur du **18 octobre 2026**, [texte conservé](../archive/requests/2026-10-18-character-profiles.md) : établir une fiche pour chacun des vingt personnages couvrant vêtements/silhouette, nature et usage du chakra, capacités possibles, moveset, vitesse/déplacement, réservoir, contrôle et habiletés. Le retour joueur signale combos trop similaires, dash rouge commun et identité/chakra insuffisamment perceptibles ; Shisui doit notamment évoquer mirages et mobilité particulière, pas seulement téléport/frappe.
+
+Un kit câblé ou un effet déclenché ne valide pas cette expérience. Les fiches distinguent **code actuel**, **cible de design proposée**, **preuve de période** et **validation Studio**. Ne pas confondre nature élémentaire, forme/propriété, réserve/contrôle, source bijû ou dōjutsu. Les chiffres du code ne sont pas des statistiques canon ; les valeurs de design relatives ne modifient aucun équilibrage.
+
+L’[index des vingt fiches](../characters/ROSTER_20.md) sert de référence spécialisée ; les missions/critères restent dans MASTER_BACKLOG. Cette demande autorise la préparation documentaire, pas vingt refontes simultanées ni un changement de séquence DEC-021. Les gestes précis, variantes et ratings proposés ne sont pas tous des arbitrages validés par l’utilisateur. Conserver les incertitudes d’âge/source sans modifier silencieusement le runtime.

@@ -3294,7 +3294,7 @@
   {
     "before": "games/ninja-duel/FIGHTER_TEMPLATE.md",
     "source": "games/ninja-duel/docs/characters/FIGHTER_TEMPLATE.md",
-    "sha256": "057a2d64bf9083a7c84223654984a213627347f9dcda540440d6448989e5ff90",
+    "sha256": "a1a1579e108efa0b4bc7cc80d9016d94d72f6bdf1514f106f43de9f00c711c70",
     "sections": [
       {
         "heading": "Adding a prodigy — fighter template",
@@ -3310,7 +3310,7 @@
       },
       {
         "heading": "Philosophie obligatoire",
-        "line": 7,
+        "line": 9,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3322,7 +3322,7 @@
       },
       {
         "heading": "Fiche moveset complète",
-        "line": 23,
+        "line": 25,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3332,7 +3332,7 @@
       },
       {
         "heading": "1. Identité",
-        "line": 27,
+        "line": 29,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3346,7 +3346,7 @@
       },
       {
         "heading": "2. Mouvement",
-        "line": 39,
+        "line": 41,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3358,7 +3358,7 @@
       },
       {
         "heading": "3. Neutral / entrée en combat",
-        "line": 55,
+        "line": 57,
         "backlog_ids": [
           "COM-005",
           "TOOL-005",
@@ -3368,7 +3368,7 @@
       },
       {
         "heading": "4. Taijutsu et combos",
-        "line": 65,
+        "line": 67,
         "backlog_ids": [
           "COM-002",
           "COM-004",
@@ -3379,7 +3379,7 @@
       },
       {
         "heading": "5. Armes et ninja tools",
-        "line": 81,
+        "line": 83,
         "backlog_ids": [
           "TOOL-002",
           "TOOL-005",
@@ -3389,7 +3389,7 @@
       },
       {
         "heading": "6. Jutsus / techniques",
-        "line": 97,
+        "line": 99,
         "backlog_ids": [
           "CHR-CORE-002",
           "SYS-001"
@@ -3398,7 +3398,7 @@
       },
       {
         "heading": "7. Garde / défense",
-        "line": 114,
+        "line": 116,
         "backlog_ids": [
           "DEF-001",
           "DEF-003"
@@ -3407,7 +3407,7 @@
       },
       {
         "heading": "8. Esquive et substitution",
-        "line": 125,
+        "line": 127,
         "backlog_ids": [
           "DEF-002"
         ],
@@ -3415,7 +3415,7 @@
       },
       {
         "heading": "9. Rush / poursuite",
-        "line": 139,
+        "line": 141,
         "backlog_ids": [
           "COM-004",
           "MOV-005"
@@ -3424,7 +3424,7 @@
       },
       {
         "heading": "10. Chakra",
-        "line": 150,
+        "line": 152,
         "backlog_ids": [
           "SYS-001"
         ],
@@ -3432,7 +3432,7 @@
       },
       {
         "heading": "11. Infusion / interactions de chakra",
-        "line": 161,
+        "line": 163,
         "backlog_ids": [
           "TOOL-006",
           "SYS-001",
@@ -3442,7 +3442,7 @@
       },
       {
         "heading": "12. Éveil",
-        "line": 180,
+        "line": 182,
         "backlog_ids": [
           "SYS-003"
         ],
@@ -3450,7 +3450,7 @@
       },
       {
         "heading": "13. États et réactions",
-        "line": 196,
+        "line": 198,
         "backlog_ids": [
           "COM-007",
           "FX-002"
@@ -3459,7 +3459,7 @@
       },
       {
         "heading": "14. Gameplay loop",
-        "line": 214,
+        "line": 216,
         "backlog_ids": [
           "CHR-CORE-001",
           "COM-005"
@@ -3468,7 +3468,7 @@
       },
       {
         "heading": "15. Skill ceiling",
-        "line": 225,
+        "line": 227,
         "backlog_ids": [
           "CHR-CORE-001",
           "BAL-001"
@@ -3477,7 +3477,7 @@
       },
       {
         "heading": "16. Signature irremplaçable",
-        "line": 234,
+        "line": 236,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-EXT-002"
@@ -3486,7 +3486,7 @@
       },
       {
         "heading": "Exigence de différenciation",
-        "line": 241,
+        "line": 243,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-EXT-002"
@@ -3495,7 +3495,7 @@
       },
       {
         "heading": "Mapping technique actuel",
-        "line": 259,
+        "line": 261,
         "backlog_ids": [
           "ARC-002",
           "OPS-001"
@@ -3504,7 +3504,7 @@
       },
       {
         "heading": "Validation Studio obligatoire",
-        "line": 282,
+        "line": 284,
         "backlog_ids": [
           "QA-001",
           "CHR-CORE-001"
@@ -3515,12 +3515,12 @@
   },
   {
     "before": "games/ninja-duel/ROSTER_MOVESETS_10_PRODIGIES.md",
-    "source": "games/ninja-duel/docs/characters/ROSTER_MOVESETS_10_PRODIGIES.md",
-    "sha256": "cb1f1882a388142e41d19162a8f1d29f83ba07a0aee99254c9bedd9b449dd6d3",
+    "source": "games/ninja-duel/docs/archive/characters/2026-10-18-before-profiles/ROSTER_MOVESETS_10_PRODIGIES.md",
+    "sha256": "c9e5327a6e53a131e80becb35dce61c4216b01877c3cac737ea75bd18a305667",
     "sections": [
       {
         "heading": "Ninja Duel — 10-Prodigy Moveset & Awakening Blueprint",
-        "line": 3,
+        "line": 5,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -3529,7 +3529,7 @@
       },
       {
         "heading": "Shared combat grammar",
-        "line": 9,
+        "line": 11,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -3543,7 +3543,7 @@
       },
       {
         "heading": "Shared ninja-tool rule",
-        "line": 35,
+        "line": 37,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -3556,7 +3556,7 @@
       },
       {
         "heading": "Character design framework",
-        "line": 48,
+        "line": 50,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3570,7 +3570,7 @@
       },
       {
         "heading": "1. Minato Namikaze — Young Prodigy",
-        "line": 62,
+        "line": 64,
         "backlog_ids": [
           "CHR-MIN-001",
           "CHR-MIN-002",
@@ -3580,7 +3580,7 @@
       },
       {
         "heading": "Identity",
-        "line": 64,
+        "line": 66,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3594,7 +3594,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 67,
+        "line": 69,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -3608,7 +3608,7 @@
       },
       {
         "heading": "Movement",
-        "line": 81,
+        "line": 83,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3620,7 +3620,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 87,
+        "line": 89,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -3633,7 +3633,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 94,
+        "line": 96,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3647,7 +3647,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 102,
+        "line": 104,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3661,7 +3661,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 106,
+        "line": 108,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -3670,7 +3670,7 @@
       },
       {
         "heading": "2. Itachi Uchiha — Young Prodigy",
-        "line": 120,
+        "line": 122,
         "backlog_ids": [
           "CHR-ITA-001",
           "CHR-ITA-002"
@@ -3679,7 +3679,7 @@
       },
       {
         "heading": "Identity",
-        "line": 122,
+        "line": 124,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3693,7 +3693,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 125,
+        "line": 127,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -3707,7 +3707,7 @@
       },
       {
         "heading": "Movement",
-        "line": 139,
+        "line": 141,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3719,7 +3719,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 145,
+        "line": 147,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -3732,7 +3732,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 158,
+        "line": 160,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3746,7 +3746,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 166,
+        "line": 168,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3760,7 +3760,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 170,
+        "line": 172,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -3769,7 +3769,7 @@
       },
       {
         "heading": "3. Neji Hyuga — Gentle Fist Specialist",
-        "line": 181,
+        "line": 183,
         "backlog_ids": [
           "CHR-NEJ-001",
           "CHR-NEJ-002"
@@ -3778,7 +3778,7 @@
       },
       {
         "heading": "Identity",
-        "line": 183,
+        "line": 185,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3792,7 +3792,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 186,
+        "line": 188,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -3806,7 +3806,7 @@
       },
       {
         "heading": "Movement",
-        "line": 201,
+        "line": 203,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3818,7 +3818,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 207,
+        "line": 209,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -3831,7 +3831,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 210,
+        "line": 212,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3845,7 +3845,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 218,
+        "line": 220,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3859,7 +3859,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 226,
+        "line": 228,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -3868,7 +3868,7 @@
       },
       {
         "heading": "4. Sasuke Uchiha — Age 12–13 Prototype",
-        "line": 237,
+        "line": 239,
         "backlog_ids": [
           "CHR-SAS-001",
           "CHR-SAS-002"
@@ -3877,7 +3877,7 @@
       },
       {
         "heading": "Identity",
-        "line": 239,
+        "line": 241,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3891,7 +3891,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 242,
+        "line": 244,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -3905,7 +3905,7 @@
       },
       {
         "heading": "Movement",
-        "line": 256,
+        "line": 258,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3917,7 +3917,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 262,
+        "line": 264,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -3930,7 +3930,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 268,
+        "line": 270,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3944,7 +3944,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 276,
+        "line": 278,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3958,7 +3958,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 280,
+        "line": 282,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -3967,20 +3967,6 @@
       },
       {
         "heading": "5. Naruto Uzumaki — Unpredictable Pressure Fighter",
-        "line": 291,
-        "backlog_ids": [
-          "CHR-CORE-001",
-          "CHR-CORE-002",
-          "CHR-EXT-002",
-          "CHR-MIN-002",
-          "CHR-ITA-002",
-          "CHR-NEJ-002",
-          "CHR-SAS-002"
-        ],
-        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
-      },
-      {
-        "heading": "Identity",
         "line": 293,
         "backlog_ids": [
           "CHR-CORE-001",
@@ -3994,8 +3980,22 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
+        "heading": "Identity",
+        "line": 295,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002",
+          "CHR-MIN-002",
+          "CHR-ITA-002",
+          "CHR-NEJ-002",
+          "CHR-SAS-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
         "heading": "Taijutsu",
-        "line": 296,
+        "line": 298,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4009,7 +4009,7 @@
       },
       {
         "heading": "Movement",
-        "line": 310,
+        "line": 312,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4021,7 +4021,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 316,
+        "line": 318,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4034,7 +4034,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 319,
+        "line": 321,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4048,7 +4048,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 327,
+        "line": 329,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4062,7 +4062,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 331,
+        "line": 333,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4071,7 +4071,7 @@
       },
       {
         "heading": "6. Gaara — Space-Control Fortress",
-        "line": 342,
+        "line": 344,
         "backlog_ids": [
           "CHR-EXT-001"
         ],
@@ -4079,7 +4079,7 @@
       },
       {
         "heading": "Identity",
-        "line": 344,
+        "line": 346,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4093,7 +4093,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 347,
+        "line": 349,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4107,7 +4107,7 @@
       },
       {
         "heading": "Movement",
-        "line": 360,
+        "line": 362,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4119,7 +4119,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 366,
+        "line": 368,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4132,7 +4132,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 369,
+        "line": 371,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4146,7 +4146,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 377,
+        "line": 379,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4160,7 +4160,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 381,
+        "line": 383,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4169,20 +4169,6 @@
       },
       {
         "heading": "7. Kakashi Hatake — Young Adaptive Genius",
-        "line": 392,
-        "backlog_ids": [
-          "CHR-CORE-001",
-          "CHR-CORE-002",
-          "CHR-EXT-002",
-          "CHR-MIN-002",
-          "CHR-ITA-002",
-          "CHR-NEJ-002",
-          "CHR-SAS-002"
-        ],
-        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
-      },
-      {
-        "heading": "Identity",
         "line": 394,
         "backlog_ids": [
           "CHR-CORE-001",
@@ -4196,8 +4182,22 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
+        "heading": "Identity",
+        "line": 396,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002",
+          "CHR-MIN-002",
+          "CHR-ITA-002",
+          "CHR-NEJ-002",
+          "CHR-SAS-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
         "heading": "Taijutsu",
-        "line": 397,
+        "line": 399,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4211,7 +4211,7 @@
       },
       {
         "heading": "Movement",
-        "line": 410,
+        "line": 412,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4223,7 +4223,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 415,
+        "line": 417,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4236,7 +4236,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 418,
+        "line": 420,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4250,7 +4250,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 426,
+        "line": 428,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4264,7 +4264,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 430,
+        "line": 432,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4273,20 +4273,6 @@
       },
       {
         "heading": "8. Orochimaru — Unnatural Range Specialist",
-        "line": 440,
-        "backlog_ids": [
-          "CHR-CORE-001",
-          "CHR-CORE-002",
-          "CHR-EXT-002",
-          "CHR-MIN-002",
-          "CHR-ITA-002",
-          "CHR-NEJ-002",
-          "CHR-SAS-002"
-        ],
-        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
-      },
-      {
-        "heading": "Identity",
         "line": 442,
         "backlog_ids": [
           "CHR-CORE-001",
@@ -4300,8 +4286,22 @@
         "disposition": "Scope each ID by active decisions; retain full section as detailed source"
       },
       {
+        "heading": "Identity",
+        "line": 444,
+        "backlog_ids": [
+          "CHR-CORE-001",
+          "CHR-CORE-002",
+          "CHR-EXT-002",
+          "CHR-MIN-002",
+          "CHR-ITA-002",
+          "CHR-NEJ-002",
+          "CHR-SAS-002"
+        ],
+        "disposition": "Scope each ID by active decisions; retain full section as detailed source"
+      },
+      {
         "heading": "Taijutsu",
-        "line": 445,
+        "line": 447,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4315,7 +4315,7 @@
       },
       {
         "heading": "Movement",
-        "line": 458,
+        "line": 460,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4327,7 +4327,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 463,
+        "line": 465,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4340,7 +4340,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 466,
+        "line": 468,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4354,7 +4354,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 474,
+        "line": 476,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4368,7 +4368,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 478,
+        "line": 480,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4377,7 +4377,7 @@
       },
       {
         "heading": "9. Shisui Uchiha — Body Flicker Duelist",
-        "line": 489,
+        "line": 491,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4389,7 +4389,7 @@
       },
       {
         "heading": "Identity",
-        "line": 491,
+        "line": 493,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4403,7 +4403,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 494,
+        "line": 496,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4417,7 +4417,7 @@
       },
       {
         "heading": "Movement",
-        "line": 506,
+        "line": 508,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4429,7 +4429,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 512,
+        "line": 514,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4442,7 +4442,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 515,
+        "line": 517,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4456,7 +4456,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 523,
+        "line": 525,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4470,7 +4470,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 527,
+        "line": 529,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4479,7 +4479,7 @@
       },
       {
         "heading": "10. Rock Lee — Pure Taijutsu Stress Test",
-        "line": 536,
+        "line": 538,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4497,7 +4497,7 @@
       },
       {
         "heading": "Identity",
-        "line": 538,
+        "line": 540,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4511,7 +4511,7 @@
       },
       {
         "heading": "Taijutsu",
-        "line": 543,
+        "line": 545,
         "backlog_ids": [
           "COM-001",
           "COM-002",
@@ -4525,7 +4525,7 @@
       },
       {
         "heading": "Movement",
-        "line": 561,
+        "line": 563,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -4537,7 +4537,7 @@
       },
       {
         "heading": "Ninja tools",
-        "line": 566,
+        "line": 568,
         "backlog_ids": [
           "TOOL-001",
           "TOOL-002",
@@ -4550,7 +4550,7 @@
       },
       {
         "heading": "Techniques",
-        "line": 569,
+        "line": 571,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4564,7 +4564,7 @@
       },
       {
         "heading": "Signature mechanic",
-        "line": 577,
+        "line": 579,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4578,7 +4578,7 @@
       },
       {
         "heading": "Awakening",
-        "line": 581,
+        "line": 583,
         "backlog_ids": [
           "SYS-003",
           "CHR-CORE-002"
@@ -4587,7 +4587,7 @@
       },
       {
         "heading": "Roster role summary",
-        "line": 592,
+        "line": 594,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -4597,7 +4597,7 @@
       },
       {
         "heading": "Future implementation phase",
-        "line": 608,
+        "line": 610,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",

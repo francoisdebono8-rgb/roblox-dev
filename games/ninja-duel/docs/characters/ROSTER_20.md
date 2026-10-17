@@ -1,71 +1,54 @@
-# Roster 20 — breadth pass (Tier A → B → C)
+# Roster20 — index des fiches personnages
 
-Référence technique des kits, pas propriétaire de leur acceptation. Décisions : [DECISIONS](../active/DECISIONS.md) ; statut courant et preuves : [CURRENT_STATE](../active/CURRENT_STATE.md) ; critères et priorités : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Missions originelles : références historiques dans docs/archive/missions. Les mentions « Studio » ci-dessous signalent des observations partielles, pas un PASS final Tier A.
+Version documentaire18/10/2026 ; snapshot runtime1cabd7f/bc7faa3. Une fiche par personnage, vingt IDs uniques de [Shared/Roster](../../src/Shared/Roster.luau). Intentions : [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; état : [CURRENT_STATE](../active/CURRENT_STATE.md) ; travail/critères : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Cet index ne valide ni les kits ni les propositions.
 
-## Les vingt
+**Lecture :** chaque fiche sépare vêtements/gestuelle cibles, nature et propriétés du chakra, contrôle/quantité, chiffres runtime, moveset, techniques et période, éveil/risque, habileté du joueur et scénario Studio. Les propositions sont une base de discussion/conception pour Claude ; pas vingt refontes simultanées ni ajout de boutons.
 
-| # | Id (code) | Combattant | Archétype | Famille réutilisée | État |
-|---|---|---|---|---|---|
-| 1 | `Flashstep` | Minato | mobilité / sceaux | — (CORE4) | jouable |
-| 2 | `Mirage` | Itachi | lecture / contre | — (CORE4) | jouable |
-| 3 | `GentleFist` | Neji | contrôle du chakra | — (CORE4) | jouable |
-| 4 | `Lion` | Sasuke | rushdown / feu-foudre | — (CORE4) | jouable |
-| 5 | `Sand` | Gaara | contrôleur défensif | — | jouable |
-| 6 | `Leaf` | Rock Lee | taijutsu pur | coups de Sasuke | jouable |
-| 7 | `Legion` | Naruto | corps multiples (clones) | Bodies | implémenté ; preuves Studio partielles datées dans CURRENT_STATE |
-| 8 | `Gale` | Temari | zoneuse vent | Zones | implémenté ; preuves Studio partielles datées dans CURRENT_STATE |
-| 9 | `Lavender` | Hinata | Poing souple, défensive | Neji + Families (Buff, Burst) | implémenté, Studio partiel |
-| 10 | `Copycat` | Kakashi | polyvalent / Sharingan | Families (Strike, Projectile) | implémenté, Studio partiel |
-| 11 | `Flicker` | Shisui | Uchiha mobilité / genjutsu | Families (Teleport ×2, Projectile fireball, Burst seal) | implémenté, Studio partiel |
-| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile snake Pull/PullTo + Poison, Bind, Strike venin) | implémenté, Studio partiel |
-| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile ice, Teleport InZone, Zone dôme) ; outil senbon (Slow) | implémenté, Studio partiel |
-| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Buff arme, Burst Leave, Strike) ; outil os ; Armor | implémenté, Studio partiel |
-| 15 | `Rinnegan` | Nagato | Rinnegan / contrôle / attraction-répulsion | Families (Burst répulsion, Projectile Pull, Burst Drain/Steal) | implémenté, Studio partiel |
-| 16 | `Puppet` | Sasori | marionnettes / corps déporté | corps de Gaara (fouets longs = fils) + Families (puppet Projectile/Bind, Counter, Poison) | implémenté, Studio partiel (marionnette = projectile, pas corps Bodies) |
-| 17 | `Clay` | Deidara | explosifs / zoning | Families (claybird/clayspider Projectile + Zone, Zone mine, Burst Katsu) ; outil argile | implémenté, Studio partiel |
-| 18 | `Ink` | Killer Bee | jinchūriki jeune, lutteur | Families (Strike Lariat, Zone encre, Projectile tentacule Bind) ; éveil manteau Armor | implémenté, Studio partiel |
-| 19 | `Mist` | Zabuza | arme lourde + brume | clips de l'éventail = couperet + Families (Zone brume, Teleport InZone, Projectile Bind) | implémenté, Studio partiel |
-| 20 | `Medic` | Kabuto | médical / scalpel chakra | Families (Buff OnHit, Strike Slow, Teleport Heal) | implémenté, Studio partiel |
+## Comparaison du snapshot technique
 
-> **Composition verrouillée par DEC-022 (17/10/2026).** Les anciens lots Sakura / Choji / Kiba / Shikamaru / Shino / Kisame sont abandonnés avant code pour ce roster initial. Les noms ci-dessus priment sur les anciennes notes de lots.
->
-> **Règle de période :** les vingt peuvent venir de générations différentes, mais chaque personnage est construit dans une version **jeune/prodige**, avec les capacités réellement connues ou raisonnablement établies à ce stade. Ne pas importer son arsenal adulte final par défaut. Les Uchiha et autres familles/clans peuvent partager une base sans partager leur boucle de jeu. Le nombre de jutsus n'est pas standardisé : équilibrer la profondeur et les décisions, pas le nombre de techniques.
+Speed = paramètre de marche de base ; sprint = coefficient du profil commun, pas mesure native. Réservoir et regen sont des paramètres du jeu, pas des statistiques Naruto officielles. Aucun équilibrage modifié.
 
-## Champs génériques ajoutés pour les dix (18/10, données uniquement)
+| Fiche | ID | Âge affiché | Speed | SprintScale | Chakra | Regen | Profil d’infusion actuel |
+|---|---|---:|---:|---:|---:|---:|---|
+| [Minato](MINATO.md) | `Flashstep` | 13 | 19.5 | 1.12 | 110 | 8 | `WindBlade` |
+| [Itachi](ITACHI.md) | `Mirage` | 13 | 18 | 1 | 125 | 7.2 | `FireBlade` |
+| [Neji](NEJI.md) | `GentleFist` | 13 | 18.5 | 1 | 115 | 7.6 | `GentleFist` |
+| [Sasuke](SASUKE.md) | `Lion` | 12 | 19 | 1.1 | 105 | 7.5 | `LightningWire` |
+| [Gaara](GAARA.md) | `Sand` | 12 | 16.5 | 0.85 | 130 | 7 | `Basic` |
+| [Rock Lee](ROCK_LEE.md) | `Leaf` | 13 | 20 | 1.2 | 100 | 9.5 | `Taijutsu` |
+| [Naruto](NARUTO.md) | `Legion` | 13 | 18.5 | 1.12 | 160 | 6.5 | `ShadowClone` |
+| [Temari](TEMARI.md) | `Gale` | 15 | 17.5 | 0.95 | 120 | 8 | `WindFan` |
+| [Hinata](HINATA.md) | `Lavender` | 12 | 18.5 | 1.02 | 120 | 8 | `Basic` |
+| [Kakashi](KAKASHI.md) | `Copycat` | 14 | 19 | 1.08 | 120 | 7.6 | `Basic` |
+| [Haku](HAKU.md) | `Mirror` | 15 | 20 | 1.12 | 125 | 8.4 | `Basic` |
+| [Zabuza](ZABUZA.md) | `Mist` | 14 | 18.5 | 1.1 | 110 | 7 | `Basic` |
+| [Kimimaro](KIMIMARO.md) | `Bone` | 13 | 19 | 1.1 | 105 | 7.4 | `Basic` |
+| [Shisui](SHISUI.md) | `Flicker` | 13 | 20.5 | 1.14 | 120 | 8.4 | `Basic` |
+| [Orochimaru](OROCHIMARU.md) | `Serpent` | 12 | 18.5 | 1.08 | 130 | 8 | `Basic` |
+| [Kabuto](KABUTO.md) | `Medic` | 13 | 19 | 1.08 | 125 | 9 | `Basic` |
+| [Deidara](DEIDARA.md) | `Clay` | 15 | 18.5 | 1.1 | 125 | 8.2 | `Basic` |
+| [Sasori](SASORI.md) | `Puppet` | 14 | 18 | 1.06 | 120 | 8 | `Basic` |
+| [Nagato](NAGATO.md) | `Rinnegan` | 12 | 18 | 1.06 | 140 | 9 | `Basic` |
+| [Killer Bee](KILLER_BEE.md) | `Ink` | 14 | 19 | 1.1 | 115 | 7.6 | `Basic` |
 
-`Families` : `Poison {Damage, Time, Every}` (dégâts dans le temps), `PullTo` (une traction ne passe jamais derrière lui), Teleport `Heal` / `InZone` (+ `ZoneName`), Burst `Leave` (zone laissée), Buff `OnHit` ; `ToolMastery.Projectile`/`Contact` (outil dessiné par un Looks, avec cavaliers) ; `Attacks.riders` (frappe propre avec Slow/Poison…) ; `Motion.borrow` (une frappe nouvelle emprunte un clip existant) ; téléportations de famille dessinées dans leur look ; arme tenue en main pendant un Buff à look lame/aiguille ; zone `spikes`. `Shared/RosterMoves` ajoute les frappes d'un lot. `tests/Roster20.spec.luau` vérifie l'invariant d'ouverture et la mécanique propre de chacun. `Server/DevRosterCheck` (Debug seulement) : passe Studio par le pipeline serveur, sans le pont MCP Windows.
+**Treize profils Basic**, sept mappings spécifiques. Basic n’est pas absence de chakra : les familles/jutsus peuvent déjà appliquer des effets propres. Ce mapping n’est ni l’affinité canon ni un système de maîtrise acquise. [Source ChakraTuning](../../src/Server/ChakraTuning.luau).
 
-## Portée réelle des tests
+## Distinctions à préserver
 
-`tests/Roster.spec.luau` contrôle les pièces du kit, la résolution des techniques, des chemins de combat et des appels de dessin ; `Roster20.spec` ajoute les mécaniques des dix nouveaux. Ces suites n'établissent pas seules le Tier A : nombre minimal >=8, chaîne tolérant deux touches, éveil accepté sur un bonus numérique, effet mesurable pouvant être un simple spawn. Les critères d'acceptation et leurs corrections appartiennent à QA-002 / CHR-EXT-002 du backlog.
+- Vitesse de course ≠ dash ≠ poursuite ≠ téléportation ≠ déplacement par miroir. Même moteur possible, geste/condition/coût/risque distincts.
+- Nature élémentaire ≠ propriété (renforcement/coupe) ≠ forme (Rasengan) ≠ dōjutsu ≠ kekkei genkai ≠ source bijû. Le genjutsu, le soin et le poison ne deviennent pas automatiquement des éléments.
+- Quantité de chakra ≠ contrôle ≠ coût/efficacité ≠ vitesse de recharge. Une grande barre ne rend pas excellent dans tous les domaines.
+- Les coefficients1–5 des fiches sont des cibles de rôle, pas des multiplicateurs. Une incohérence entre rôle cible et chiffres actuels devient un sujet à tester, pas un retuning automatique.
+- CANON_YOUNG exige une preuve correspondant au stade. PLAUSIBLE_YOUNG reste une hypothèse ; GAMEPLAY_LIBERTY est une adaptation déclarée. REVIEW_REQUIRED conserve le doute, REJECT_ADULT_ONLY s’applique seulement quand l’origine adulte est établie ; hors-échelle/hors-scope peuvent aussi concerner une capacité jeune.
 
-`tools/studio/fighter_check.py <Id> [adversaire]` rejoue de vraies entrées ; il peut lancer par Debug si le menu manque et ne prouve pas systématiquement les impacts outils/projectiles. `DevRosterCheck` passe par les requêtes serveur ; son saut scripté n'établit pas une frappe aérienne. Ne pas déduire sélection, contre-jeu ou feel de ces seules traces. [Audit daté](../archive/audits/2026-10-17-roster20/AUDIT.md).
+## Trous de période conservés, sans faux arbitrage
 
-## Socle commun (pas de moteur par personnage)
+Minato13/FTG-Rasengan-WindBlade, âge Itachi12/13, Hinata12/TwinLionFists-ProtectiveTrigrams, Kakashi Kannabi13/code14/ninken-dragon, Kimimaro13/référence secondaire15 et plusieurs kits pré-adultes (Orochimaru/Kabuto/Nagato/Bee/Zabuza/Deidara) nécessitent une preuve ou une liberté explicite. Les noms de capacités tardives ne changent pas automatiquement le stade choisi. Shisui : après-images anime/jeux/roman à distinguer du manga, pas import automatique de toutes ses formes.
 
-- **`Server/Families.luau`** : familles de techniques pilotées par les données (`Projectile`, `Strike`, `Burst`, `Zone`, `Buff`, `Teleport`, `Counter`) et champs de contact (`Knock`, `Lift`, `React`, `Bind`, `Crush`, `Drain`, `Steal`, `Slow`, `Seal`, `Pull`, `Zone`). Traits lus par le cœur via des crochets : `beforeHit` (posture de contre), `damageScale` (buff, armure `def.Armor`), `withstands` (super-armure `Heavy`), `afterHit` (`def.OnHit` : drain, ralentissement), `zoneTick`, `speedScale`/`regenScale`. Éveil : `Awakening.Buff`, `Awakening.OnHit`, `Awakening.BindScale`.
-- **`Shared/Looks.luau`** : l'apparence de chaque genre d'objet (forme, couleurs, lumière, traînée, impact, zone). **`Client/FamilyFX.luau`** construit les modèles (orb, needle, blade, wave, beast, serpent, swarm, shadow, boulder), leurs poses de vol, les impacts, les zones au sol, les auras de buff et de ralentissement.
-- **`AI.luau`** : `familyWants` décide d'une technique de famille par sa famille et `spec.AI` (`Min`, `Max`, `Chance`, `Punish`).
-- **Poses** : `VelmoraMotionEngine` donne une pose de lancer par famille (signes pendant le canal, puis projection / explosion / zone / buff / garde / arrivée) ; `spec.Pose = {channel=…, release=…}` la remplace ; `Motion.stance` (données) donne une garde propre.
-- **Costumes** : `Server/Costumes.luau` (`install(dressers, kit)`), enregistrés par nom ; `World.dress` les appelle.
-- **Menu** : `Shared/Roster.luau` est la seule liste ; la sélection affiche une grille de cinq colonnes par moitié.
+Les fiches non-roster Shikamaru/Kisame et les anciens pools restent des références historiques/candidats, aucune autorisation de les ajouter.
 
-## Notes de reprise (17/10, relevées par les anciens lots avant code)
+## Réemploi et provenance
 
-Ces constats techniques restent utiles au socle, mais les compositions d'anciens lots qu'ils visaient ne sont plus normatives après DEC-022 :
+Familles/traits : Families ; corps secondaires : Bodies/BodyViews ; routes : MoveGraphs/RosterMoves/Brawler ; poses : Motion/AttackProfile ; objets : Looks/FamilyFX ; chakra : ChakraTuning/ChakraCombat. [Guide d’intégration](PRODUCTION_FRAMEWORK.md), [gabarit détaillé](FIGHTER_TEMPLATE.md). Aucun moteur par fighter ni dépendance Forge/Lab ajoutée.
 
-1. `Roster.spec` refuse qu'une technique de **famille** soit refusée au lancer : une technique conditionnelle s'enregistre dans `WaveNKit.install` **sans** `Family`, avec `Requires="Bound"` ; il faut alors une ligne générique dans `AI.luau` et un cas `Requires=="Bound"` pour l'état « prêt » de la barre (`Matches.luau`).
-2. `Effects.luau` enroule du fil d'acier autour de tout corps `Bound` (sauf Gaara) : une entrave de famille doit le désactiver (ex. `family.tie` dans l'instantané) et dessiner son propre lien.
-3. `Families.afterHit` sort tôt sans `def.OnHit` : `Awakening.OnHit` doit s'appliquer même sans trait de base.
-4. `Pull` est un vol de recul : sans plafond (ex. `PullTo` ≈ 3,5 studs devant lui) une cible proche est projetée derrière lui.
-5. Une ombre au sol vole 2,2 studs sous la racine : contre une cible qui bouge, rayon ≈ 1,8 et un champ générique `Steer` (réorientation via `c:redirect`) sont nécessaires.
-6. Champs génériques prévus : `Awakening.ZoneScale` (famille Zone), `Heal` optionnel sur Teleport.
-7. Un coup `heavy=true` lance le corps et casse l'entrave : dégâts non lourds pendant une entrave.
-8. Une frappe nouvelle sans clip prend le Light1 de sa famille de corps : la dessiner dans le FX de vague en attendant un clip.
-9. Contraintes des suites : Ids de techniques globaux et uniques ; Speed × SprintScale < 24 (`Lee.spec`) ; JumpScale borné par `Regression.spec` ; toute entrée d'`Attacks` porte side/twist/lean/arm/step (`Animation.spec`).
-10. `CostScale` d'éveil rembourse **toutes** les techniques (`Combat:awakenTechnique`) ; `Regen` d'un Buff agit sur le chakra, pas la santé ; un seul buff compte à la fois (`Families.buff`).
-11. Une frappe nouvelle d'`Attacks` doit aussi poser `animation/feedback/chain/air/depth/offset` ; un champ `clip` lu par le moteur de mouvement permettrait d'emprunter une animation existante au lieu du Light1.
-12. Un outil non kunai/shuriken est lancé comme `shuriken` ; un outil sur mesure (`Techniques.Tools`) perd les annulations de chaîne : garder `Tool="Kunai"` sauf besoin réel. L'IA de famille soignerait à pleine santé : seuil générique `spec.AI.Hurt` à prévoir.
-13. La famille Zone vaut `"Fire"` par défaut (`ZoneKind`/`Zone.Kind`) et une zone sans `Kind` d'apparence est dessinée en feu : toute zone non ignée doit nommer `ZoneKind` et un `Kind` de `Looks`.
-14. Une téléportation de famille est dessinée par `FX:teleport` (éclair jaune de Minato) : chaque identité doit dessiner la sienne et éteindre l'éclair générique.
-15. Champs génériques prévus : `Shroud` sur une zone, `Leave` sur Burst, `Awakening.TeleportCost`.
+[Ancien index et fiches conservés](../archive/characters/2026-10-18-before-profiles/ROSTER_20.md). Le blueprint10 et la composition CORE4 étaient historiques : liens maintenus vers leurs archives, plus de liste concurrente à suivre.
