@@ -1311,8 +1311,11 @@ function FX:hazardsStep(data)
 			entry={holder=holder,emitter=e,light=light}
 			self.hazards[key]=entry
 		end
-		entry.light.Brightness=2.4+math.sin(os.clock()*22)*.6+math.sin(os.clock()*9)*.5
-		entry.emitter.Rate=if h.remaining<.4 then 25 else 60
+		-- Readable, not noisy: a small burning patch (a chakra blade's) flickers
+		-- with fewer flames than a Great Fireball's lane (ChakraFX marks its edge).
+		local scale=math.clamp(h.radius/4.5,.4,1)
+		entry.light.Brightness=(2.4+math.sin(os.clock()*22)*.6+math.sin(os.clock()*9)*.5)*scale
+		entry.emitter.Rate=(if h.remaining<.4 then 25 else 60)*scale
 	end
 	for key,entry in self.hazards do
 		if not live[key] then
@@ -1611,6 +1614,7 @@ function FX:update(data,dt,folder)
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
 		self:stepProjectiles(dt)
+		for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
 		return
 	end
 	self:stepProjectiles(dt)
@@ -1629,11 +1633,16 @@ function FX:update(data,dt,folder)
 			for _,layer in FX.layers do if layer.fighter then layer.fighter(self,model,actor,dt) end end
 		end
 	end
+	-- Layers that draw across the scene once per frame (ChakraFX).
+	for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Systemic chakra, the player-facing layer (planted marks, the wire, clashes, bodies).
+require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX

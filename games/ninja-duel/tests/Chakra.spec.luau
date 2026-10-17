@@ -460,6 +460,238 @@ test("rule switches: the legacy plain-blade pass is data and can be turned off f
 	assert(not pcall(Chakra.toggle,H.duel("Flashstep","Mirage"),"no-such-rule",true),"an unknown rule was toggled")
 end)
 
+-- ------------------------------------------------------------ player-facing layer
+-- (convergence 3 §4): the wire as one object, metal that conducts, meetings
+-- that explain themselves, and the state the client reads to show them.
+local function stretchedWire()
+	local c,a,b=H.duel("Lion","Flashstep")
+	place(c,a,b,V.new(0,3,16),V.new(30,3,16))
+	assert(c:request(a,slot(a,"WireTrap"),V.new(0,3,-30)),"Wire Trap refused")
+	until_(c,1.2,function() return #mine(c,a,"tripwire")>0 end,"the missed wire was not stretched")
+	return c,a,b,mine(c,a,"tripwire")[1]
+end
+-- Plant a chakra blade exactly where a test needs it (the surface rule as in play).
+local function plantAt(c,a,tool,position)
+	local p=c:projectile(a,position,90,40,2,if tool=="Kunai" then "kunai" else "shuriken",nil,{origin=position+V.new(0,.3,0),chakra=Chakra.plan(c,a,tool)})
+	c:removeProjectile(p)
+	return assert(Chakra.surface(c,p,position,V.yAxis,nil).point,"the blade did not stay planted")
+end
+local function eventCount(a,name) return (a.events or {})[name] or 0 end
+
+test("the wire is one object: Wire Trap holds the body on a line from the hand, its life is the bind, it goes with it",function()
+	local c,a,b=H.duel("Lion","Flashstep")
+	place(c,a,b,V.new(0,3,16),V.new(0,3,-16))
+	assert(c:request(a,slot(a,"WireTrap"),b.root.Position),"Wire Trap refused")
+	until_(c,.8,function() return b.reaction=="Bound" end,"the wire never bound")
+	H.step(c,.02)
+	local held=mine(c,a,"wirehold")
+	assert(#held==1,"no wire object holds the body ("..#held..")")
+	local w=held[1]
+	assert(w.planted=="held" and w.holds==b and not w.anchored,"the held wire does not say what it holds")
+	-- Its two ends: his hand and the body, wherever he moves.
+	c:relocate(a,V.new(5,3,12))
+	H.step(c,.02)
+	local hand=c.launchPoint(a,"Kunai")
+	assert((w.origin-hand).Magnitude<1e-3 and math.abs(w.range-(b.root.Position-hand).Magnitude)<1e-3,"the line does not run from the hand to the body")
+	-- Its tension is the bind: same start, same end.
+	assert(w.born==b.boundAt and math.abs(w.expires-b.reactionUntil)<1e-6,"the wire's life is not the bind")
+	until_(c,2,function() return b.reaction~="Bound" end,"the bind never ended")
+	H.step(c,.02)
+	assert(w.dead and #mine(c,a,"wirehold")==0 and a.heldWire==nil,"the held wire outlived its bind")
+	-- A substitution out of the bind takes the wire with it.
+	local c2,x,y=H.duel("Lion","Flashstep")
+	place(c2,x,y,V.new(0,3,16),V.new(0,3,-16))
+	assert(c2:request(x,slot(x,"WireTrap"),y.root.Position))
+	until_(c2,.8,function() return y.reaction=="Bound" end,"no bind")
+	H.step(c2,.02)
+	assert(#mine(c2,x,"wirehold")==1)
+	assert(c2:request(y,"Substitute"),"no substitution out of the wire")
+	H.step(c2,.02)
+	assert(#mine(c2,x,"wirehold")==0,"the wire still holds a body that substituted out")
+	-- Both conversions run the wire from the hand: the current, then the flame.
+	local c3,s,m=H.duel("Lion","Flashstep")
+	place(c3,s,m,V.new(0,3,16),V.new(0,3,-16))
+	assert(c3:request(s,slot(s,"WireTrap"),m.root.Position))
+	until_(c3,.8,function() return m.reaction=="Bound" end,"no bind")
+	H.step(c3,.02)
+	assert(chakraTool(c3,s),"no current down the wire")
+	local current=impactWith(c3,"conduct")
+	assert(current and (current.from-c3.launchPoint(s,"Kunai")).Magnitude<1e-3,"the current did not leave the hand")
+	assert(c3:request(s,slot(s,"FireBloom"),m.root.Position),"Dragon Flame refused")
+	until_(c3,.6,function() return impactWith(c3,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	local flame=impactWith(c3,"dragonflame")
+	assert(flame.style=="fire" and flame.victim==m.id and (flame.to-m.root.Position).Magnitude<3,"the flame did not end on the body")
+	H.step(c3,.02)
+	assert(#mine(c3,s,"wirehold")==0,"the wire survived the flame")
+end)
+
+test("a stretched wire that catches a body keeps its stake and its blade; the current and the flame start at the stake",function()
+	local c,a,b,w=stretchedWire()
+	local stake,tip=w.origin,w.origin+w.direction*w.range
+	local middle=w.origin+w.direction*(w.range*.5)
+	c:relocate(b,V.new(middle.X,3,middle.Z))
+	H.step(c,.03)
+	assert(b.reaction=="Bound" and a.wireVictim==b,"walking into the wire did not bind")
+	H.step(c,.02)
+	local held=mine(c,a,"wirehold")[1]
+	assert(held and held.anchored and held.holds==b,"the caught body is not held by the wire it walked into")
+	assert((held.origin-stake).Magnitude<1e-3 and (held.origin+held.direction*held.range-tip).Magnitude<1e-3,"the held wire lost its stake or its blade")
+	-- Lightning: in at the stake, along the wire, into the body; the hold tightens.
+	local before=b.reactionUntil
+	assert(chakraTool(c,a),"no current down the held wire")
+	local current=impactWith(c,"conduct")
+	assert(current and (current.from-stake).Magnitude<1e-3,"the current did not enter at the stake")
+	assert(b.reactionUntil>before and held.charged and held.charged>c.now and held.infusion=="Lightning","the current did not charge and tighten the wire")
+	assert(b.shockUntil and math.abs(b.shockUntil-b.reactionUntil)<1e-6,"the body is not shown locked for the extended hold")
+	H.step(c,T.Effects.conduct.glow+.05)
+	assert(held.charged==nil and held.infusion==nil,"the wire stays charged after the current passed")
+	-- Fire: Dragon Flame runs from the stake to the body; the wire burns away.
+	assert(c:request(a,slot(a,"FireBloom"),b.root.Position),"Dragon Flame refused")
+	until_(c,.6,function() return impactWith(c,"dragonflame")~=nil end,"the Dragon Flame did not run the wire")
+	assert((impactWith(c,"dragonflame").from-stake).Magnitude<1e-3,"the flame did not start at the stake")
+	H.step(c,.02)
+	assert(#mine(c,a,"wirehold")==0,"the wire survived the flame")
+end)
+
+test("metal conducts: Sasuke's lightning jumps into a planted kunai it flies past; its own thrower stepping on it is shocked, not refunded",function()
+	local c,m,s=H.duel("Flashstep","Lion")
+	place(c,m,s,V.new(-20,3,20),V.new(20,3,20))
+	local point=plantAt(c,m,"Kunai",V.new(0,1.9,2))
+	assert(point.mark=="refund" and not point.tags.charged,"a wind kunai planted as something else")
+	-- A lightning shuriken flies over it, out of reach of any knock.
+	local over=V.new(point.position.X,point.position.Y+2.8,point.position.Z)
+	local bolt=c:projectile(s,over+V.new(-30,0,0),92,60,2,"shuriken",nil,{origin=over+V.new(12,0,0),chakra=Chakra.plan(c,s,"Shuriken")})
+	until_(c,.3,function() return point.tags.charged==true end,"the lightning did not jump into the planted kunai")
+	assert(point.chargedBy==s and not point.dead and not bolt.dead,"the jump knocked something out")
+	local arc=impactWith(c,"arc")
+	assert(arc and arc.target==point.id and arc.infusion=="Lightning","no arc drawn into the kunai")
+	-- Minato walks onto his own blade: the current, not his chakra back.
+	H.step(c,T.Effects.plant.settle)
+	m.chakra=50
+	local health=m.health
+	c:relocate(m,V.new(point.position.X,3,point.position.Z+.5))
+	H.step(c,.03)
+	assert(point.dead and m.health<health and m.state=="Stunned","the charged kunai did not shock its own thrower")
+	assert(m.chakra<50+T.Effects.plant.refund-1e-6,"the thrower still recovered chakra from a charged blade")
+	assert(m.shockUntil and m.shockUntil>c.now and impactWith(c,"pointshock").owner==s.id,"the shock is not Sasuke's or not shown on the body")
+	-- Uncharged, the same blade is his chakra back, and the other one tramples it.
+	local c2,m2,s2=H.duel("Flashstep","Lion")
+	place(c2,m2,s2,V.new(-20,3,20),V.new(20,3,20))
+	local plain=plantAt(c2,m2,"Kunai",V.new(0,1.9,2))
+	H.step(c2,T.Effects.plant.settle)
+	m2.chakra=50
+	c2:relocate(m2,V.new(0,3,2.5))
+	H.step(c2,.03)
+	assert(plain.dead and m2.chakra>=50+T.Effects.plant.refund-1e-6 and m2.state~="Stunned","an uncharged blade no longer refunds its thrower")
+end)
+
+test("the charge runs through touching metal: a lightning point against his wire makes it live, a live wire charges the blade across it",function()
+	-- A lightning point that comes to rest against his stretched wire makes it live.
+	local c,a,_,w=stretchedWire()
+	local spot=w.origin+w.direction*(w.range*.7)
+	assert(not w.charged)
+	local point=plantAt(c,a,"Shuriken",V.new(spot.X+.8,spot.Y-.5,spot.Z))
+	assert(point.mark=="shock","a lightning blade did not rest as a shock point")
+	assert(w.charged and w.charged>c.now and w.infusion=="Lightning" and w.chargedBy==a,"the lightning point did not charge the wire it touches")
+	local seen=false
+	for _,i in c.impacts do if i.chakra=="arc" and i.target==w.id then seen=true end end
+	assert(seen,"no arc drawn from the point into the wire")
+	-- Thrown over the wire (above any crossing a plain blade would make), his
+	-- lightning jumps into it; the charge runs into Minato's kunai lying across it.
+	local c2,s2,m2,w2=stretchedWire()
+	local across=w2.origin+w2.direction*(w2.range*.85)
+	local kunai=plantAt(c2,m2,"Kunai",V.new(across.X+.6,across.Y-.4,across.Z))
+	assert(not kunai.tags.charged)
+	local cross=w2.origin+w2.direction*(w2.range*.15)
+	local high=V.new(cross.X,cross.Y+2.6,cross.Z)
+	c2:projectile(s2,high+V.new(-20,0,0),92,40,2,"shuriken",nil,{origin=high+V.new(8,0,0),chakra=Chakra.plan(c2,s2,"Shuriken")})
+	until_(c2,.3,function() return w2.charged~=nil end,"his lightning did not jump into his wire")
+	assert(kunai.tags.charged and kunai.chargedBy==s2,"the live wire did not charge the kunai lying across it")
+	assert(eventCount(s2,"MetalCharged")>=1 and eventCount(s2,"WireCharged")>=1)
+	-- The live wire is a trap: walking into it binds and shocks.
+	local middle=w2.origin+w2.direction*(w2.range*.4)
+	local health=m2.health
+	c2:relocate(m2,V.new(middle.X,3,middle.Z))
+	H.step(c2,.03)
+	assert(m2.reaction=="Bound" and m2.health<health and m2.shockUntil and m2.shockUntil>c2.now,"the live wire did not bind and shock")
+end)
+
+test("a meeting explains itself: the loser's impact names the winner, its nature and why it won",function()
+	local function clash(c,id)
+		for _,i in c.impacts do if i.projectile==id and i.reason then return i end end
+		return nil
+	end
+	local function meeting(left,right,throwLeft,throwRight)
+		local c,x,y=H.duel(left,right)
+		place(c,x,y,V.new(-12,3,0),V.new(12,3,0))
+		local p=throwLeft(c,x)
+		local q=throwRight(c,y)
+		for _=1,20 do H.step(c,.01) end
+		return c,p,q
+	end
+	local function blade(tool,kind,speed,chakra)
+		return function(c,a)
+			local toward=if a.root.Position.X<0 then 1 else -1
+			return c:projectile(a,V.new(12*toward,4,0),speed,40,3,kind,nil,{origin=V.new(-6*toward,4,0),chakra=if chakra then Chakra.plan(c,a,tool) else nil})
+		end
+	end
+	-- Wind cuts a lighter blade in its lane.
+	local c,wind,plain=meeting("Flashstep","Mirage",blade("Kunai","kunai",96,true),blade("Shuriken","shuriken",84,false))
+	local seen=clash(c,plain.id)
+	assert(seen and seen.reason=="cut" and seen.winner==wind.id and seen.winnerNature=="Wind","the cut did not name the wind kunai ("..tostring(seen and seen.reason)..")")
+	-- Fire feeds on wind: nature, both colours named.
+	local c2,fire,wind2=meeting("Mirage","Flashstep",blade("Shuriken","shuriken",84,true),blade("Kunai","kunai",96,true))
+	local absorbed=clash(c2,wind2.id)
+	assert(absorbed and absorbed.reason=="nature" and absorbed.winnerNature=="Fire" and absorbed.loserNature=="Wind","fire over wind was not explained")
+	assert(absorbed.winner==fire.id and not fire.dead,"the flame that won is not named, or did not fly on")
+	-- Reinforced steel is heavier: weight.
+	withMastery("Flashstep","Basic",function()
+		local c3,steel,light=meeting("Flashstep","Mirage",blade("Kunai","kunai",96,true),blade("Shuriken","shuriken",84,false))
+		local deflected=clash(c3,light.id)
+		assert(deflected and deflected.reason=="weight" and deflected.winner==steel.id and deflected.winnerNature=="Reinforce","weight was not explained")
+	end)
+	-- Equal steel: both fall, nobody won.
+	local c4,f4,l4=meeting("Mirage","Lion",blade("Shuriken","shuriken",88,true),blade("Shuriken","shuriken",88,true))
+	local even=clash(c4,f4.id) or clash(c4,l4.id)
+	assert(even and even.reason=="even" and even.winner==nil,"an even meeting named a winner")
+	-- A jutsu swallows a tool: volume, in the jutsu's colour.
+	local c5,i5,m5=H.duel("Mirage","Flashstep")
+	place(c5,i5,m5,V.new(-20,3,0),V.new(20,3,0))
+	local ball=c5:projectile(i5,V.new(20,3,0),54,40,16,"fireball",nil,{origin=V.new(-8,3,0),radius=2.4,growth=2.2})
+	local k5=c5:projectile(m5,V.new(-20,3,0),96,40,3,"kunai",nil,{origin=V.new(8,3,0)})
+	for _=1,20 do H.step(c5,.01) end
+	local swallowed=clash(c5,k5.id)
+	assert(swallowed and swallowed.reason=="volume" and swallowed.winner==ball.id and swallowed.winnerNature=="Fire","the swallowed kunai was not explained")
+end)
+
+test("the AI: Sasuke runs the current down the wire before the Dragon Flame, and arms his stretched wire beside the opponent",function()
+	local AI=H.load("Server/AI")
+	local c,s,m=H.duel("Lion","Flashstep")
+	place(c,s,m,V.new(0,3,16),V.new(0,3,-16))
+	assert(c:request(s,slot(s,"WireTrap"),m.root.Position))
+	until_(c,.8,function() return m.reaction=="Bound" end,"the wire never bound")
+	local bot=AI.new(c,s,7)
+	local current,flame
+	for _=1,100 do
+		bot:update(c.now);H.step(c,.01)
+		if not current and eventCount(s,"WireLightning")>0 then current=c.now end
+		if not flame and eventCount(s,"DragonFlameWire")>0 then flame=c.now end
+		if flame then break end
+	end
+	assert(current,"the AI never sent the current down the wire")
+	assert(flame and flame>=current,"the Dragon Flame did not follow the current")
+	-- His stretched wire with the opponent standing beside it: armed once.
+	local c2,s2,m2,w=stretchedWire()
+	local middle=w.origin+w.direction*(w.range*.5)
+	c2:relocate(m2,V.new(middle.X+5,3,middle.Z))
+	local bot2=AI.new(c2,s2,7)
+	for _=1,60 do
+		bot2:update(c2.now);H.step(c2,.01)
+		if w.charged then break end
+	end
+	assert(w.charged and w.charged>c2.now and w.chargedBy==s2,"the AI did not arm its stretched wire")
+end)
+
 -- Remote entry point: the real Matches validation (as in Input.spec).
 H.workspace.GetServerTimeNow=function() return 100 end
 local Matches=H.load("Server/Matches")
@@ -484,6 +716,77 @@ test("remote: the chakra flag is a validated boolean, never an infusion choice",
 	before=a.chakra
 	send(nil)
 	assert(math.abs(before-a.chakra-Config.ToolCost)<1e-6,"a plain remote throw paid chakra infusion")
+end)
+
+test("the snapshot says what a resting object is for and how long it lasts, and when a body is shocked or burning",function()
+	local function view(c,a,b)
+		local s=c.match;s.epoch=1;s.combat=c;s.human=a;s.bot=b
+		local out=Matches.view(Matches,s,s,a,b)
+		local rows={}
+		for _,row in out.projectiles do rows[row.id]=row end
+		return out,rows
+	end
+	local c,s,m=H.duel("Lion","Flashstep")
+	place(c,s,m,V.new(0,3,20),V.new(0,3,-20))
+	local shock=plantAt(c,s,"Shuriken",V.new(6,1.9,20))
+	local refund=plantAt(c,m,"Kunai",V.new(-6,1.9,-20))
+	local _,rows=view(c,s,m)
+	local trap,mine_=rows[shock.id],rows[refund.id]
+	assert(trap and trap.mark=="shock" and trap.planted=="shuriken" and trap.normal==V.yAxis,"a shock point is not said to be one")
+	assert(math.abs(trap.expires-(trap.born+T.Effects.plant.life))<1e-6,"a planted blade does not say when it goes")
+	assert(mine_ and mine_.mark=="refund" and mine_.charged==nil,"a refund point is not said to be one")
+	-- A stretched wire says when it goes and while it is charged.
+	local c2,s2,m2,w=stretchedWire()
+	local _,rows2=view(c2,s2,m2)
+	assert(rows2[w.id].expires==w.expires and rows2[w.id].charged==nil)
+	plantAt(c2,s2,"Shuriken",w.origin+w.direction*(w.range*.5)+V.new(.6,-.3,0))
+	_,rows2=view(c2,s2,m2)
+	assert(rows2[w.id].charged and rows2[w.id].charged>c2.now,"a live wire does not say so")
+	-- A held wire: the body it holds, from the hand, and its tension (the bind).
+	local c3,s3,m3=H.duel("Lion","Flashstep")
+	place(c3,s3,m3,V.new(0,3,16),V.new(0,3,-16))
+	assert(c3:request(s3,slot(s3,"WireTrap"),m3.root.Position))
+	until_(c3,.8,function() return m3.reaction=="Bound" end,"no bind")
+	H.step(c3,.02)
+	local out3,rows3=view(c3,s3,m3)
+	local held
+	for _,row in rows3 do if row.planted=="held" then held=row end end
+	assert(held and held.holds==m3.id and held.owner==s3.id and held.anchored==false,"the held wire does not say what it holds")
+	assert(math.abs(held.expires-m3.reactionUntil)<1e-6 and held.born==m3.boundAt,"the held wire does not carry its tension")
+	assert(out3.bot.shocked==0,"a bound body that took no current is shown shocked")
+	-- The current: the held body is shown locked exactly as long as the hold.
+	assert(chakraTool(c3,s3))
+	out3=view(c3,s3,m3)
+	assert(math.abs(out3.bot.shocked-(m3.reactionUntil-c3.now))<1e-6,"the shock lock is not the extended hold")
+	-- A lightning hit: shown for exactly the lengthened stun, then not at all.
+	local c4,s4,m4=H.duel("Lion","Flashstep")
+	place(c4,s4,m4,V.new(0,3,14),V.new(0,3,-14))
+	local p=c4:projectile(s4,m4.root.Position,92,62,2,"shuriken",nil,{chakra=Chakra.plan(c4,s4,"Shuriken")})
+	c4:projectileHit(p,m4,m4.root.Position,-p.direction)
+	c4:removeProjectile(p)
+	local out4=view(c4,s4,m4)
+	assert(m4.state=="Stunned" and math.abs(out4.bot.shocked-(m4.untilTime-c4.now))<1e-6,"the lengthened stun is not shown")
+	H.step(c4,T.Effects.shock.stun+.1)
+	out4=view(c4,s4,m4)
+	assert(out4.bot.shocked==0,"the shock outlived the stun")
+	local plain=c4:projectile(s4,m4.root.Position,92,62,2,"shuriken",nil,nil)
+	c4:projectileHit(plain,m4,m4.root.Position,-plain.direction)
+	c4:removeProjectile(plain)
+	assert(view(c4,s4,m4).bot.shocked==0,"a plain blade shows a shock")
+	-- Burning ground: shown while the ticks land; still no stun and no hit.
+	local c5,i5,m5=H.duel("Mirage","Flashstep")
+	place(c5,i5,m5,V.new(0,3,8),V.new(0,3,-8))
+	c5:addHazard(i5,m5.root.Position-V.new(0,2.5,0),4,1.2,10,"Fire")
+	local burning,stunned=false,false
+	for _=1,60 do
+		H.step(c5,.01)
+		if view(c5,i5,m5).bot.burning>0 then burning=true end
+		if m5.state=="Stunned" then stunned=true end
+	end
+	assert(burning and not stunned and (m5.comboHits or 0)==0,"burning is not shown, or it stunned / counted a hit")
+	c5:relocate(m5,V.new(0,3,-30))
+	H.step(c5,.7)
+	assert(view(c5,i5,m5).bot.burning==0,"the body still burns out of the fire")
 end)
 
 -- Client presentation: every chakra contact kind, planted objects and unknown
@@ -557,6 +860,124 @@ test("client: infused flights, planted objects and every chakra contact render w
 	data.projectiles={}
 	fx:sync(data)
 	for _=1,30 do fx:stepProjectiles(.05) end
+end)
+
+test("client: marks, the held wire, seals and zones, flights, winners, arcs, the Dragon Flame and bodies all draw (stub scene)",function()
+	local instance,restore=H.stubScene()
+	local ChakraFX=H.load("Client/ChakraFX")
+	local ok,err=pcall(function()
+		local FX=H.load("Client/Effects")
+		ChakraFX.strict=true
+		local clock,now=50,100
+		ChakraFX.clock=function() return clock end
+		H.workspace.GetServerTimeNow=function() return now end
+		local fx=FX.new()
+		local folder=instance("Folder")
+		local function rig(id,at)
+			local m=instance("Model");m.Name=id;m.Parent=folder
+			for _,n in {"HumanoidRootPart","UpperTorso","LowerTorso","RightHand","LeftHand","Head"} do
+				local p=instance("Part");p.Name=n;p.CFrame=H.C.lookAt(at,at-V.zAxis);p.Size=V.new(1,1,1);p.Transparency=0;p.Parent=m
+			end
+			return m
+		end
+		local A,B=rig("A",V.new(0,3,0)),rig("B",V.new(0,3,-10))
+		local function named(name,root)
+			local n=0
+			for _,d in (root or fx.folder):GetDescendants() do if d.Name==name then n+=1 end end
+			return n
+		end
+		local function lit(list)
+			local n=0
+			for _,d in list do if d.Transparency<1 then n+=1 end end
+			return n
+		end
+		local function row(t) t.speed=t.speed or 0;t.radius=t.radius or 0;t.growth=t.growth or 0;return t end
+		local data={phase="Duel",epoch=1,serverNow=100,
+			hazards={{position=V.new(0,2,4),radius=2.2,remaining=.8,kind="Fire",owner="A"}},
+			projectiles={
+				-- Infused flights (and a plain one): their own looks.
+				row({id=1,kind="kunai",origin=V.new(0,4,0),direction=-V.zAxis,speed=139,born=99.8,range=100,owner="A",radius=.25,infusion="Wind"}),
+				row({id=2,kind="kunai",origin=V.new(2,4,0),direction=-V.zAxis,speed=96,born=99.8,range=100,owner="A",radius=.25,infusion="Reinforce"}),
+				row({id=3,kind="shuriken",origin=V.new(4,4,0),direction=-V.zAxis,speed=92,born=99.8,range=100,owner="B",radius=.25,infusion="Lightning"}),
+				row({id=4,kind="shuriken",origin=V.new(6,4,0),direction=-V.zAxis,speed=84,born=99.8,range=100,owner="B"}),
+				-- Resting blades: mine, theirs, their shock trap, mine charged by them; a live stretched wire.
+				row({id=10,kind="point",planted="kunai",origin=V.new(3,1.9,3),direction=-V.yAxis,normal=V.yAxis,born=98,range=0,owner="A",infusion="Wind",mark="refund",expires=103}),
+				row({id=11,kind="point",planted="shuriken",origin=V.new(-3,1.9,3),direction=-V.yAxis,normal=V.yAxis,born=99,range=0,owner="B",infusion="Fire",mark="refund",expires=104}),
+				row({id=12,kind="point",planted="shuriken",origin=V.new(-3,4,-3),direction=V.xAxis,normal=-V.xAxis,born=99,range=0,owner="B",infusion="Lightning",mark="shock",expires=104}),
+				row({id=13,kind="point",planted="kunai",origin=V.new(3,1.9,-3),direction=-V.yAxis,normal=V.yAxis,born=99.5,range=0,owner="A",infusion="Wind",mark="refund",expires=104.5,charged=103}),
+				row({id=14,kind="tripwire",planted="wire",origin=V.new(-6,2.6,0),direction=-V.zAxis,born=99,range=12,owner="B",infusion="Lightning",expires=105,charged=102}),
+				-- Held wires: from the hand; tied to a stake and a blade, charged.
+				row({id=20,kind="wirehold",planted="held",origin=V.new(0,4,-9),direction=V.zAxis,born=99.6,range=9,owner="B",holds="A",expires=100.6,anchored=false}),
+				row({id=21,kind="wirehold",planted="held",origin=V.new(-6,2.6,6),direction=-V.zAxis,born=99.8,range=14,owner="A",holds="B",expires=101,anchored=true,charged=100.3,infusion="Lightning"}),
+			},
+			human={id="A",fighterId="Flashstep",health=100,maxHealth=125,state="Stunned",shocked=.3,burning=0,
+				seals={{id=1,surface=V.new(8,1.9,0),normal=V.yAxis,remaining=11}}},
+			bot={id="B",fighterId="Lion",health=100,maxHealth=120,state="Neutral",reaction="Bound",bound=true,shocked=0,burning=.4,seals={}}}
+		fx:sync(data)
+		for _=1,3 do fx:update(data,1/60,folder);clock+=.1 end
+		local st=fx.chakraLayer
+		-- Marks: what each resting blade is for, in its owner's colour.
+		assert(named("ChakraMark")==5,"resting objects marked: "..named("ChakraMark"))
+		-- (a diamond over his own blade, a cross of two bars over theirs)
+		assert(named("MarkPickup")==1 and named("MarkDeny")==2,"own / their blades not told apart")
+		assert(named("MarkShock")==6,"shock traps (one planted, one charged) not marked as such: "..named("MarkShock"))
+		assert(st.marks[13].meaning=="shock","his own blade charged by the other one does not read as a trap")
+		local minato=H.roblox.Color3.fromRGB(table.unpack(H.fighters.Flashstep.Color))
+		assert(st.marks[10].ticks[1].Color==minato,"the life ticks are not in the owner's colour")
+		-- Life: 5 s planted, 3 left -> five ticks of eight lit; fewer as it runs out.
+		assert(lit(st.marks[10].ticks)==5,"life ticks lit: "..lit(st.marks[10].ticks))
+		now=101;fx:update(data,1/60,folder)
+		assert(lit(st.marks[10].ticks)==4,"the life ticks do not run down")
+		now=100;fx:update(data,1/60,folder)
+		assert(named("WireEnd")==16,"the stretched wire's two ends are not marked")
+		assert(named("WireCrackle")>0,"a live stretched wire does not crackle")
+		-- The held wire: the line, its ends, tied to the stake and the blade when anchored.
+		assert(named("HeldWire")==2 and named("HeldWireSegment")==18 and named("HeldWireEnd")==2,"the held wires are not drawn")
+		assert(named("WireStake")==1 and named("WireBlade")==1,"the anchored wire lost its stake or its blade")
+		local hand=st.holds[20].segments[1]
+		local taut=hand.Transparency
+		now=100.5;fx:update(data,1/60,folder)
+		assert(st.holds[20].segments[1].Transparency>taut,"the wire does not slacken as the bind runs out")
+		now=100;fx:update(data,1/60,folder)
+		assert(st.holds[21].segments[1].Color==FX.Infusion.Lightning.core and named("WireCurrent")>0,"a charged held wire is not drawn as lightning")
+		-- Seals and burning zones count their life down too.
+		assert(named("SealTick")==8 and named("BurnEdge")==12,"seal life or burn edge missing")
+		-- Flights: the wind kunai's edges, reinforced steel's shell, lightning's arcs.
+		assert(named("WindEdge")==2 and named("SteelWeight")==1 and named("FlightArc")>0,"an infused flight looks like the plain one")
+		-- Bodies: locked by lightning, standing in fire.
+		assert(named("ShockLight",A)==1 and named("ShockArc")>0,"the shock lock is not drawn on the body")
+		assert(named("BurnFlames",B)==1,"the burning body is not drawn")
+		data.human.shocked=0;data.bot.burning=0
+		fx:update(data,1/60,folder)
+		assert(named("ShockLight",A)==0 and named("BurnFlames",B)==0,"body states outlived their snapshot")
+		-- Contacts: who won and why, lightning into metal, the Dragon Flame.
+		local before=named("WinnerFlash")
+		for i,reason in {"cut","nature","weight","steel","volume","palm","even"} do
+			fx:impact({style="deflect",position=V.new(0,4,-2),chakra="cut",projectile=4,kind="shuriken",direction=-V.zAxis,tumble=V.yAxis,
+				winner=if reason=="even" or reason=="palm" then nil else 1,winnerKind="kunai",winnerNature="Wind",loserNature="Fire",reason=reason,owner="A",serial=100+i},folder)
+		end
+		assert(named("WinnerFlash")>=before+5,"the winner does not flash")
+		assert(named("CutHalf")==2 and named("NatureVersus")==1,"a cut or a nature win is not shown")
+		fx:impact({style="deflect",position=V.new(0,4,-2),chakra="absorb",projectile=99,winner=12345,winnerNature="Fire",loserNature="Wind",reason="nature",serial=120},folder)
+		fx:impact({style="fade",position=V.new(3,1.9,3),chakra="arc",infusion="Lightning",from=V.new(3,4,3),to=V.new(3,1.9,3),target=10,owner="B",serial=121},folder)
+		assert(named("ArcFlash")==1,"lightning jumping into metal is not drawn")
+		fx:impact({style="fire",position=V.new(0,3,0),heavy=true,normal=V.yAxis,chakra="dragonflame",infusion="Fire",from=V.new(0,4,-9),to=V.new(0,3,0),victim="A",owner="B",serial=122},folder)
+		assert(named("DragonFlameRun")==1,"the Dragon Flame does not run the wire")
+		-- Rows gone: everything goes with them; a new round starts clean.
+		data.projectiles={};data.hazards={};data.human.seals={}
+		fx:update(data,1/60,folder)
+		assert(next(st.marks)==nil and next(st.holds)==nil and next(st.seals)==nil and next(st.zones)==nil,"drawings outlived their objects")
+		data.projectiles={row({id=30,kind="point",planted="kunai",origin=V.new(1,1.9,1),direction=-V.yAxis,normal=V.yAxis,born=99,range=0,owner="A",mark="refund",expires=104})}
+		fx:update(data,1/60,folder)
+		local mark=st.marks[30].model
+		data.epoch=2;fx:sync(data);fx:update(data,1/60,folder)
+		assert(mark.Parent==nil and st.marks[30]~=nil and st.marks[30].model~=mark,"a new round kept the old marks")
+		fx:update({phase="Selection"},1/60,folder)
+		assert(next(st.marks)==nil,"the menu kept the marks")
+	end)
+	ChakraFX.strict=false;ChakraFX.clock=os.clock
+	restore()
+	assert(ok,err)
 end)
 
 print("NinjaDuel chakra systemic: "..passed.." PASS (headless rules, state and timing; the look is a Studio check)")

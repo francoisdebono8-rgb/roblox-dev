@@ -1,6 +1,7 @@
 local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
 local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
+local Chakra=require(script.Parent.ChakraCombat)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -277,10 +278,36 @@ function AI:update(now)
 	if (a.lionUntil or 0)>now and a.airborne and a.state=="Neutral" then
 		press(c,a,if (a.airCombo or 0)>=1 and self.rng:NextNumber()<.7 then "Heavy" else "Attack");return
 	end
-	-- Wired opponent: Dragon Flame at once.
-	if a.wireVictim and a.wireVictim.reaction=="Bound" and a.state=="Neutral" then
-		local fire=slotOf(a,"FireBloom")
+	-- Wired opponent: the current down the wire first when the reserve pays
+	-- for both (it holds the body longer, ChakraCombat.conduct), then the
+	-- Dragon Flame along it. The current is a tool action, not a jutsu.
+	local wired=a.wireVictim
+	if wired and wired.reaction=="Bound" and wired.boundBy==a and (a.state=="Neutral" or a.state=="TechniqueRecovery") then
+		local fire,spec=slotOf(a,"FireBloom")
+		local current=Chakra.plan(c,a,"Shuriken")
+		if current and current.mode=="conduct" and (wired.wireConducts or 0)==0 and a.chakra>=Chakra.cost(current,false)+(spec and spec.Cost or 0)
+			and c:request(a,"Tool",nil,nil,{chakra=true}) then return end
 		if fire and c:request(a,fire,target.root.Position) then return end
+	end
+	-- His stretched wire with the opponent standing by it: lightning thrown
+	-- at the wire charges it (and the trap is live), once per wire.
+	if a.state=="Neutral" and not target.airborne then
+		for _,w in c.projectiles do
+			if w.a==a and w.planted=="wire" and not w.dead and not w.charged then
+				self.armed=self.armed or {}
+				local far=w.origin+w.direction*w.range
+				local ab=far-w.origin
+				local k=math.clamp((target.root.Position-w.origin):Dot(ab)/math.max(ab:Dot(ab),1e-6),0,1)
+				local spot=w.origin+ab*k
+				local gap=(target.root.Position-spot)*Vector3.new(1,0,1)
+				if not self.armed[w.id] and gap.Magnitude<8 then
+					self.armed[w.id]=true
+					local plan=Chakra.plan(c,a,"Shuriken")
+					if plan and plan.mode=="throw" and plan.tags.lightning and a.chakra>=Chakra.cost(plan,false)+10
+						and c:request(a,"Tool",spot,nil,{chakra=true}) then return end
+				end
+			end
+		end
 	end
 	-- A read that landed (Read or a caught genjutsu): cash it in.
 	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.

@@ -5,13 +5,14 @@
 -- different identities. Stats are scales on the fighter's own ToolMastery
 -- (speed, range, damage) or absolute contest values (weight, impact, contest).
 local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxSpeed=400,MaxChakra=1000,
-	Triggers={Infuse=true,ProjectileClash=true,SurfaceHit=true,Contact=true,PointContact=true,WireContact=true,WireCross=true},
+	Triggers={Infuse=true,ProjectileClash=true,SurfaceHit=true,Contact=true,PointContact=true,WireContact=true,WireCross=true,MetalCross=true},
 	Tags={tool=true,projectile=true,metal=true,blade=true,wire=true,sand=true,body=true,volume=true,actor=true,
 		solid=true,wall=true,floor=true,anchorCompatible=true,
 		chakra=true,reinforced=true,cutting=true,conductive=true,ignited=true,shockPoint=true,charged=true,
 		wind=true,fire=true,lightning=true,earth=true,marked=true,
 		guarding=true,bound=true,wired=true,airborne=true,holdingWire=true,
-		clean=true,guarded=true,heavier=true,even=true,natureAdvantage=true,plain=true,owner=true,opponent=true,grounded=true,own=true},
+		clean=true,guarded=true,heavier=true,even=true,natureAdvantage=true,plain=true,owner=true,opponent=true,grounded=true,own=true,
+		chargeFoe=true},
 	Natures={Wind={tag="wind"},Fire={tag="fire"},Lightning={tag="lightning"},Earth={tag="earth"}},
 	-- Elemental precedence between natured objects (fire feeds on wind, wind
 	-- cuts lightning, lightning breaks earth). Anything else is decided by weight.
@@ -97,9 +98,13 @@ T.Effects={
 	plant={life=5,max=4,refund=4,radius=2.4,height=4.5,settle=.5,contest=.9},
 	shockPoint={stun=.4,damage=3},
 	palm={damage=.6,travel=2.2,reach=8.5,cone=.3,drain=8,stamina=18,points=1,push=1.6},
-	conduct={damage=5,bind=.4,maxBind=2.2,uses=2},
+	conduct={damage=5,bind=.4,maxBind=2.2,uses=2,glow=.5},
 	tripwire={life=6,radius=2.7,shock=4,bind=.4,charge=4,burn=1.4,patch=4},
 	feed={damage=1.5},
+	-- Metal conducts lightning: a charged planted blade stays live `life`
+	-- seconds, and the charge runs into metal within `reach` of it; a
+	-- lightning blade jumps into metal it flies past within `arc` studs.
+	charge={life=4,reach=1.6,arc=4},
 }
 local function rule(id,trigger,priority,when,effects,extra)
 	local r={id=id,enabled=true,priority=priority,trigger=trigger,when=when,effects=effects}
@@ -155,7 +160,14 @@ rule("wire-stretches","SurfaceHit",60,{source={all={"wire"}},surface={all={"anch
 -- PointContact: a planted chakra blade is a contestable point.
 rule("owner-recovers","PointContact",50,{context={all={"owner","grounded"}}},{signal("point-recover")},{group="point"})
 rule("shock-point-trap","PointContact",60,{source={all={"shockPoint"}},context={all={"opponent","grounded"}}},{signal("point-shock")},{group="point"})
+-- A blade charged by the other fighter's lightning shocks whoever steps on
+-- it, its own thrower included (his chakra back is lost to the current).
+rule("charged-point-shocks","PointContact",70,{source={all={"charged"}},context={all={"chargeFoe","grounded"}}},{signal("point-shock")},{group="point"})
 rule("opponent-tramples","PointContact",10,{context={all={"opponent","grounded"}}},{signal("point-deny")},{group="point"})
+-- MetalCross: a flying object reaches a planted blade. Lightning jumps into
+-- the metal and charges it; anything else knocks the point out.
+rule("lightning-charges-metal","MetalCross",60,{source={all={"lightning"}},target={all={"metal"}}},{signal("metal-charge")},{group="metal"})
+rule("thrown-object-knocks-point","MetalCross",10,{},{signal("point-knock")},{group="metal"})
 -- Wire: a stretched wire binds on contact, carries fire, conducts lightning.
 rule("tripwire-binds","WireContact",50,{context={all={"opponent","grounded"}}},{signal("tripwire-bind")})
 rule("charged-wire-shocks","WireContact",60,{source={all={"charged"}},context={all={"opponent","grounded"}}},{signal("tripwire-shock")})

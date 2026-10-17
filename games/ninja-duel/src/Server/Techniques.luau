@@ -482,7 +482,8 @@ Techniques.FireBloom={check=function() return true end,execute=function(c,a,pend
 		local hit=c:damage(a,b,pending.spec.Damage,true,false)
 		c.damageTag=nil
 		if c.match.phase~="Duel" then return end
-		c:pushImpact(b.root.Position,"fire",true,{owner=a.id,normal=Vector3.yAxis,from=a.root.Position})
+		-- The flame runs the wire from the hand (or its stake) to the body.
+		require(script.Parent.ChakraCombat).dragonFlame(c,a,b)
 		if hit then
 			local away=b.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 			away=if away.Magnitude>.1 then away.Unit else a.root.CFrame.LookVector
