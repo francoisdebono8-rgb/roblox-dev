@@ -167,3 +167,20 @@ Naruto est le seul fighter qui **multiplie les corps réels** et dont chaque rou
 - Chapitres : Rendan contre Kiba, Fûma shuriken transformé, Rasengan seul en manteau, griffe de chakra.
 - Coût réseau de 2 corps supplémentaires (NET-001) et lisibilité caméra (CAM-001) ; budget de parties/clients (PERF-001).
 - Décision utilisateur sur le Rasengan : canon pour Naruto, adulte pour Minato en l'état ([MINATO](MINATO.md), labels).
+
+## État d'implémentation (2026-10-17, convergence 3, plusieurs corps)
+
+Code de `claude/nd-vrs-naruto`. Rapport, constats moteur et liste Studio : [NARUTO (convergence 3)](../reports/convergence3/NARUTO.md). **Validé en headless uniquement** (`tests/Naruto.spec.luau`, 33 cas) : le rendu des clones, les fumées, le feel et l'équilibre restent à juger dans Studio. L'identifiant de code est **`Legion`**, comme proposé.
+
+**Implémenté et jouable (sélectionnable dans le roster)**
+- Corps supplémentaires génériques (H12 v1) : `Server/Bodies` (clones touchables, contrôleurs, coups jugés depuis le clone, frappes et lames adverses qui les dissipent, liste `bodies` du snapshot) et `Client/BodyViews` (copie posée du modèle de Naruto). Verrouillage, cible de l'IA et caméra restent sur le vrai Naruto.
+- Clone d'ombre (12, 2 au plus, 6 s, un coup) : à côté de lui loin de l'adversaire, sur un flanc près de lui (un direct quand l'adversaire est ouvert, jugé depuis le flanc).
+- Routes : 3e coup par un clone dehors depuis le dos ; ←→ frappe de flanc par un clone (payé 12 sans clone dehors) qui garde la string ; ↑ (et lourd après deux coups) **Rendan Uzumaki** puis E et lourd = **NARUTO UZUMAKI RENDAN** ; ↓ tacle ; lourd après un coup = coup de tête.
+- Rasengan à deux corps (22, +12 et canal 0,6 sans clone dehors) : frapper le clone qui le façonne l'annule. Multi clone d'ombre (30, deux clones qui chargent).
+- Outil : kunai ; Z + R = kunai transformé en clone près de la cible (profil chakra `ShadowClone`). Substitution « c'était un clone ! » (échange avec un clone).
+- Éveil **CHAKRA DE KYÛBI** : plus aucun clone, griffes (↑ / ←→), Rasengan sans clone en 0,2 s, récupérations ×0,78, vitesse ×1,15.
+- Relance « legion » au côté irrégulier, tenaille d'un clone de flanc ; IA (clones, Rasengan, Rendan, kunai transformé) ; toute IA frappe un clone qui arme son coup à côté d'elle.
+- Client : posture, démarche, string et clips à lui (clips des clones compris), couche `NarutoFX`, costume Partie I, compteur de clones sur la plaque.
+
+**Fondation seulement / non implémenté**
+- Sursaut de chakra à 0 (H05), rugissement et armure du manteau (H13), locomotion à quatre appuis, tenue aux jambes (H10), tunnel, écho des frappes par le clone leurre, kunai qui redevient un clone sur un clone déjà dehors.

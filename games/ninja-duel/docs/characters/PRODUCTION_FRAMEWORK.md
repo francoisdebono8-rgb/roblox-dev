@@ -26,6 +26,10 @@ Ce guide décrit ce qu’il a réellement fallu toucher pour rendre Gaara (`Sand
   - une couche `{impact=function(fx,impact,folder) … return true end, fighter=function(fx,model,actor,dt) … end}` dans `FX.layers` : `impact` dessine ses styles de contact (et peut reprendre `awaken`/`chase`/`afterimage` aux couleurs du combattant quand `impact.fighter` est le sien) ; `fighter` tourne à chaque image pour les deux combattants (`actor.opponentFighter` est renseigné).
 - `UI.luau` : l’ajouter à `playable`.
 
+## 3 bis. Corps supplémentaires (clones, marionnettes, invocations)
+
+Un combattant à plusieurs corps n'ajoute pas d'acteur : `Server/Bodies` porte des corps légers (point au sol, contrôleur, durée, volume, dissipation en un coup) que `Combat` fait avancer, frapper et effacer. Données : `Fighters.<id>.Bodies[kind]={Max,Cost,Life,…}` ; une frappe portée par un corps se déclare dans `MoveGraphs.<id>.proxy[move]={move,body,summon,solo,awake}` et `Attacks[move].proxy` (où il se place : `behind`, `side`, `under`), elle est jugée depuis lui (`p.from`, `hitOrigin`). Le module du combattant enregistre ses contrôleurs (`Bodies.controllers[mode]`), ce que fait une dissipation (`Bodies.onDispel[kind]`), un outil qui devient un corps (`Bodies.transforms[kind]`, `ToolMastery.Transform`) et ses paiements de route (`Brawler.payoffs`) ; une technique peut préparer son canal (`technique.start`). Côté client, `Client/BodyViews` dessine chaque corps (un clone = copie posée du modèle du propriétaire) ; les fumées et effets vont dans la couche du combattant. Exemple : `Server/Legion.luau`, `Client/NarutoFX.luau`, `tests/Naruto.spec.luau`.
+
 ## 4. Tests et build
 
 - Une suite `tests/<Nom>.spec.luau` : règles du kit, IA (duels seedés contre chaque combattant, jusqu’au KO, sans blocage d’un même état > 2,5 s), et un test client sur scène simulée (`Harness.stubScene()` : projectiles dessinés avec le bon modèle, chaque style de contact dessiné, couche par image). Exemples : la fin de `Gaara.spec.luau`, `Lee.spec.luau`.
