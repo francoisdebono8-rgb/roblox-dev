@@ -584,7 +584,8 @@ return Metrics
 			-- opponent's line of sight: a swing that reaches the image is caught
 			-- (Techniques.MirageCast / whiffRead).
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 26, Channel = 0.42, Active = 0.06, Recovery = 0.2, Cooldown = 7, Interruptible = true, Flow = true, Range = 23, Requires = "Target", Hint = "His image stays, he withdraws behind it • a swing at the image is caught • trust the body" },
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Hint = "A miss leaves the lane burning" },
+			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
 		},
 	},
@@ -1944,7 +1945,7 @@ return table.freeze({
       <Item class="StringValue" referent="ND15">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a3b2fc03b380d0f071d3b000065209e898514d6b4e60cda37dd3cfddd51fdf3c</string>
+          <string name="Value">474764af665641a5e611924698485fb652861316b55b8c0b8437993154efb298</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND16">
@@ -2660,7 +2661,9 @@ function Bangla.tryHit(c,a,p)
    c.damageTag=nil
    -- The defence resolution (guard, Byakugan sight, guard break) is the truth.
    if success then guarded=target.impactStyle=='block' end
-   if success then
+   -- A Gentle Fist palm is not a punch: no donor fist burst on the body (the
+   -- client strikes the chakra point itself, IdentityFX).
+   if success and not a.def.GentleFist then
     -- Contact audio comes from the client's impact feed (VelmoraHitFeedback);
     -- a replicated server Sound here doubled every hit, out of sync.
     local vfx=if donor.action=='MegaPunch' then 'ComboPunch' else 'BasicPunch'
@@ -2670,6 +2673,8 @@ function Bangla.tryHit(c,a,p)
      if v:IsA('ParticleEmitter') then v:Emit(v:GetAttribute('EmitCount') or 1) end
     end
     Debris:AddItem(basicPunch,.25)
+   end
+   if success then
     if c.now-(a.donorLastHit or -10)&gt;2 then a.donorHitCount=0 end
     a.donorHitCount=(a.donorHitCount or 0)+1;a.donorLastHit=c.now
    end
@@ -2997,7 +3002,9 @@ function Brawler.releaseGrab(a)
  if b then b.grabbedBy=nil;b.reaction=nil;b.reactionUntil=0;a.grabVictim=nil end
  if a.grabbedBy then a.grabbedBy.grabVictim=nil;a.grabbedBy=nil end
 end
-function Brawler.react(c,a,kind,velocity,duration,source)
+-- `cause` (optional): what threw the body (a move or technique name); a wall
+-- the flight ends on reports it, so the client can say which blow did it.
+function Brawler.react(c,a,kind,velocity,duration,source,cause)
  Brawler.releaseGrab(a)
  Bangla.close(a.pending)
  -- A guard break or channel interrupt already set a longer stun: the melee
@@ -3005,7 +3012,7 @@ function Brawler.react(c,a,kind,velocity,duration,source)
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
-	 a.reactionSource=source
+	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
  Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
@@ -3181,14 +3188,16 @@ function Brawler.request(c,a,action)
  if canFlash then
   a.flashUntil=0;a.state="Neutral";a.untilTime=c.now;a.pending=nil;pending=nil
   local gap=(a.target.root.Position-a.root.Position).Magnitude
+  -- The arrival strike (Brawler.hit reads it: a chain carried through the jump).
+  local function arrival(ok) a.flashStrike=a.attackSerial;return ok end
   if action=="Heavy" then
-   if a.airborne then return Brawler.start(c,a,"Slam") end
-   return Brawler.start(c,a,"Launcher")
+   if a.airborne then return arrival(Brawler.start(c,a,"Slam")) end
+   return arrival(Brawler.start(c,a,"Launcher"))
   end
   if action=="Attack" then
-   if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return Brawler.start(c,a,"Air1") end
+   if a.airborne then Brawler.breakString(a,true);a.lastAirAttack=c.now;return arrival(Brawler.start(c,a,"Air1")) end
    Brawler.breakString(a,false);a.lastAttack=c.now
-   return Brawler.start(c,a,if gap&gt;5.5 then "DashAttack" else "Light1")
+   return arrival(Brawler.start(c,a,if gap&gt;5.5 then "DashAttack" else "Light1"))
   end
  end
  if a.state~="Neutral" and a.state~="Guarding" and not canChain and not canDash then
@@ -3424,8 +3433,10 @@ function Brawler.splat(c,a,hit)
  a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+normal)
  a.hitstopUntil=math.max(a.hitstopUntil or 0,c.now+.07)
  Brawler.event(c,a,"WallSplat")
- c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id})
  local source=a.reactionSource
+ -- `cause`/`by`: the blow that drove the body into the wall (a Vacuum Palm
+ -- reads as Neji's air pressure on the stone, not a generic wall hit).
+ c:pushImpact(hit.Position,"wall",true,{normal=normal,owner=a.id,cause=a.reactionCause,by=source and source.fighterId})
  if source and source.health&gt;0 then
   c.damageTag="wall";c:damage(source,a,tune.SplatDamage,false,false);c.damageTag=nil
   if c.match.phase~="Duel" then return end
@@ -3553,6 +3564,33 @@ end
 function Brawler.sealPoints(c,a,b)
  for _=1,a.def.GentleFist.MaxPoints do if not Brawler.closePoint(c,a,b,"body") then break end end
 end
+-- The contact entry Combat:damage pushed for a blow on `b` this very frame
+-- (a hit, a block), so the blow can say what it was. nil when there is none.
+local CONTACT={light=true,palm=true,finisher=true,launcher=true,slam=true,block=true}
+function Brawler.contactImpact(c,b)
+ local feed=c.impacts or {}
+ for i=#feed,1,-1 do
+  local entry=feed[i]
+  if entry.at~=c.now then return nil end
+  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude&lt;1 then return entry end
+ end
+ return nil
+end
+-- What a landed (or blocked) strike was, written on its contact: the move, its
+-- variant (Rasengan, a counter...), who threw it and at whom. Each fighter's
+-- client identity layer draws its own blows from it.
+function Brawler.tagContact(c,a,b,p)
+ local entry=Brawler.contactImpact(c,b)
+ if not entry then return nil end
+ entry.move=p.name;entry.variant=a.attackVariant;entry.owner=a.id;entry.fighter=a.fighterId;entry.victim=b.id
+ return entry
+end
+-- How much of its chakra recovery a body keeps under closed points (1: all).
+-- Combat regenerates with it, the snapshot shows it on the chakra bar.
+function Brawler.tenketsuRegen(a,now)
+ if (a.tenketsuUntil or 0)&lt;=now then return 1 end
+ return math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0))
+end
 -- `zone`: where the palm landed (defaults to the body's last hit zone);
 -- `palm`: a melee contact whose generic hit feedback becomes the palm's.
 function Brawler.gentleFist(c,a,b,guarded,zone,palm)
@@ -3564,17 +3602,22 @@ function Brawler.gentleFist(c,a,b,guarded,zone,palm)
  -- through a guard (full drain and a closed point).
  local through=guarded and awake and tune.GuardPoints==true
  if through then c:cue(a,"FULL FIELD • THROUGH THE GUARD",.5) end
- b.chakra=math.max(0,b.chakra-(if guarded and not through then g.GuardDrain else g.Drain)*boost)
+ local drained=(if guarded and not through then g.GuardDrain else g.Drain)*boost
+ b.chakra=math.max(0,b.chakra-drained)
+ -- The palm's own contact: even a blocked one shows the chakra it drained.
+ local entry=if palm then Brawler.contactImpact(c,b) else nil
+ if entry then entry.owner=a.id;entry.drain=drained end
  if guarded and not through then return end
  -- The contact reads as a palm on the network, not a punch: the generic light
  -- hit this blow pushed takes the palm's feedback (sound, flash, camera).
- if palm then
-  local last=c.impacts and c.impacts[#c.impacts]
-  if last and last.at==c.now and last.style=="light" and (last.position-b.root.Position).Magnitude&lt;1 then last.style="palm";last.owner=a.id end
- end
+ if entry and entry.style=="light" then entry.style="palm" end
  zone=zone or b.hitZone or "body"
  -- Byakugan Full Field: he sees the whole network, a clean palm closes two.
- for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do Brawler.closePoint(c,a,b,zone) end
+ -- The palm lands on the (first) point it closes: the client strikes there.
+ for _=1,(if awake and tune.Points and not guarded then tune.Points else 1) do
+  local point=Brawler.closePoint(c,a,b,zone)
+  if entry and point and not entry.point then entry.point=point end
+ end
  -- Full Field: a palm that breaks a jutsu being moulded cuts the flow itself.
  if awake and tune.ChannelCut and b.interruptedAt==c.now then
   b.sealedUntil=math.max(b.sealedUntil or 0,c.now+tune.ChannelCut)
@@ -3646,9 +3689,18 @@ function Brawler.hit(c,a,p)
  if p.name=="Throw" or p.name=="ThrowUp" then
   c.damageTag=p.name;success=c:damage(a,b,spec.damage*(a.def.CombatDamage or 1),false,true);c.damageTag=nil
  end
+ -- What landed (or was blocked), written on its contact for the client.
+ local contact=if success then Brawler.tagContact(c,a,b,p) else nil
  if not success or b.health&lt;=0 then return success end
  if protected then return true end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
+ -- Flying Thunder God: the arrival strike lands on a body still inside the
+ -- combo that led to the teleport. The chain went on through the relocation.
+ if contact and not guarded and a.flashStrike==a.attackSerial and (b.comboHits or 0)&gt;=2 then
+  contact.arrival=true
+  c:cue(a,"FLYING THUNDER GOD • THE CHAIN GOES ON",.8)
+  Brawler.event(c,a,"FlashChain")
+ end
  if p.flow and not guarded and b.health&gt;0 then
   a.flowStreak=(a.flowStreak or 0)+1
   b.hitstopUntil=math.max(b.hitstopUntil or 0,c.now+Config.Flow.Stop)
@@ -3685,7 +3737,7 @@ function Brawler.hit(c,a,p)
  -- Move-specific weight: a light jab must not stop the fight, a slam must land hard.
  c:applyHitstop(a,b,Brawler.stopStyle(p),false)
  if b.reaction=="WallSplat" and Brawler.wallFollow(c,a,b,p) then Brawler.event(c,a,"Hit");return true end
- Brawler.react(c,b,spec.reaction,impulse,spec.stun,a)
+ Brawler.react(c,b,spec.reaction,impulse,spec.stun,a,a.attackVariant or p.name)
  Techniques.awakenedReact(c,a,b,p)
  -- A combo that runs too long drops the body out of it (with wake-up cover).
  if (b.comboHits or 0)&gt;=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
@@ -6488,7 +6540,7 @@ function Combat:updateActor(a,dt)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
-		if (a.tenketsuUntil or 0)&gt;now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		regen*=Brawler.tenketsuRegen(a,now)
 		if (a.awakenUntil or 0)&gt;now then regen*=a.def.Awakening.Regen or 1 end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
@@ -6527,7 +6579,7 @@ function Combat:updateActor(a,dt)
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if brawl and not a.hitConfirmed then
-				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
+				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
 				Techniques.whiffRead(self,a,pending,now)
 			end
@@ -6906,7 +6958,7 @@ function Combat:projectileHit(p,target,position,normal)
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude&lt;.05 then push=p.a.root.CFrame.LookVector end
-			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a)
+			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a,"VacuumPalm")
 		elseif p.kind=="wind" then
 			target.root.AssemblyLinearVelocity=p.direction*37+Vector3.new(0,14,0)
 		elseif p.kind=="fireball" then
@@ -6960,7 +7012,8 @@ function Combat:projectileSurface(p,hit)
 		bounce.bounced=true
 		-- An infused blade keeps its chakra through the bounce (no second scaling).
 		Chakra.inherit(bounce,p)
-		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		-- The new path is shown (ricochet, to): the geometry is the threat.
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id,fighter=p.a.fighterId,ricochet=true,to=target.root.Position,direction=bounce.direction})
 		Brawler.event(self,p.a,"Ricochet")
 	end
 end
@@ -6994,7 +7047,7 @@ end
 function Combat:projectileExpire(p)
 	if p.geometry and p.a.target and p.a.target.health&gt;0 then
 		local b=p.a.target
-		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
+		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
 			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})
@@ -8033,8 +8086,37 @@ function Elements.fire(c,a,pending,now)
 	if flat.Magnitude&lt;1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
 	local drop=math.clamp(delta.Y,-flat.Magnitude*.35,flat.Magnitude*.08)
 	local target=origin+flat.Unit*spec.Range+Vector3.new(0,drop*spec.Range/math.max(flat.Magnitude,1),0)
-	c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
+	local ball=c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
+	if spec.Lane then Elements.burnLane(c,a,ball) end
 	c:cue(a,"KATON • GREAT FIREBALL")
+end
+-- Itachi's Katon is control, not only damage (spec.Lane): where the fireball
+-- passes the opponent, the ground under its path catches, patch after patch at
+-- an even spacing. The lane cuts the field beside the body that dodged it:
+-- walk round it, jump it, or take the burn (Combat:chip, it never stuns).
+local LANE={Reach=14,Spacing=5,Radius=2.4,Life=2.6,Damage=.3,Drop=24}
+Elements.LANE=LANE
+function Elements.burnLane(c,a,ball)
+	c:schedule(c.now+.03,function()
+		if c.match.phase~="Duel" or ball.dead or not table.find(c.projectiles,ball) then return end
+		local b=a.target
+		if b and b.health&gt;0 then
+			local near=Vector3.new(ball.position.X-b.root.Position.X,0,ball.position.Z-b.root.Position.Z).Magnitude&lt;=LANE.Reach
+			if near and not ball.laneNext then ball.laneNext=ball.position end
+			-- Every patch point the flight has passed since the last poll.
+			while near and ball.laneNext and (ball.position-ball.laneNext):Dot(ball.direction)&gt;=0 do
+				local floor=workspace:Raycast(ball.laneNext,Vector3.new(0,-LANE.Drop,0),c:rayParams(true))
+				if floor then
+					local patch=c:addHazard(a,floor.Position+Vector3.new(0,.5,0),LANE.Radius,LANE.Life,ball.damage*LANE.Damage,"Fire")
+					patch.lane=ball.id
+				end
+				ball.laneNext+=ball.direction*LANE.Spacing
+			end
+			-- Past the opponent: the lane is laid.
+			if not near and ball.laneNext then return end
+		end
+		Elements.burnLane(c,a,ball)
+	end)
 end
 -- Katon: Phoenix Flower. Five small flames released one after another, each
 -- re-aimed at the opponent with a lateral offset: a fan that follows the
@@ -8061,14 +8143,17 @@ function Elements.phoenix(c,a,pending,now)
 			c:schedule(now+.14+k*.07,function()
 				if a.health&lt;=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health&lt;=0 then return end
 				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
+				local blade
 				-- Skill build (Wired Flames): the hidden blades trail wire and bind.
 				if spec.WiredBlades then
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
+					blade=c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
 				else
 					-- Blades hidden in the flames come out burning: they ignite what they
 					-- touch and leave a burning point where they land (ChakraCombat).
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
+					blade=c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
 				end
+				-- The client shows the steel leaving the flames (IdentityFX).
+				blade.hidden=true
 			end)
 		end
 	end
@@ -8338,7 +8423,11 @@ function Matches:view(s,cursor,mine,theirs)
 			tenketsuPoints=if (a.tenketsuUntil or 0)&gt;now then table.clone(a.tenketsuPoints or {}) else {},
 			tenketsuSevere=(a.tenketsuUntil or 0)&gt;now and (a.tenketsu or 0)&gt;=4,
 			illusionKind=if (a.illusionUntil or 0)&gt;now then a.illusionKind else nil,
-			curseHunger=a.curseHunger==true}
+			curseHunger=a.curseHunger==true,
+			-- The share of chakra recovery the closed points leave (1: all), for
+			-- the chakra bar; the air finisher window after the Dancing Leaf
+			-- (Lion Combo, a lotus), for its prompt.
+			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -8346,11 +8435,11 @@ function Matches:view(s,cursor,mine,theirs)
 	for _,p in s.combat.projectiles do
 		-- infusion: the chakra nature it carries (nil: a plain object); planted:
 		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,hidden=p.hidden})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id})
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.
@@ -11787,7 +11876,9 @@ Techniques.BurstStrike = {
 		a.travelRemaining=10
 		if pending.variant=="FlashRasengan" then
 			-- Out of a teleport he is already beside the target: a short, fast thrust.
+			-- It is an arrival strike too (a combo carried through the jump: Brawler.hit).
 			a.pending.spec.travel=5;a.travelRemaining=5;a.pending.spec.recovery=.4
+			a.flashStrike=a.attackSerial
 		end
 		c:pushImpact(a.root.Position,"burst",false,{owner=a.id,fighter=a.fighterId})
 	end,
@@ -12053,6 +12144,18 @@ Techniques.Chidori={
 		if a.pending then a.pending.spec.damage=pending.spec.Damage end
 		c:pushImpact(a.root.Position,"chidori",true,{owner=a.id})
 		c:cue(a,"CHIDORI",.8)
+		-- The risk, said to both: a thrust that touched nothing (not even a guard)
+		-- leaves him open for its whole recovery.
+		local thrust=a.pending
+		local serial=a.attackSerial
+		if thrust then
+			c:schedule(c.now+thrust.spec.startup+thrust.spec.active+.02,function()
+				if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+				c:cue(a,"CHIDORI • MISSED • OPEN",.8)
+				if a.target and a.target.health&gt;0 then c:cue(a.target,"CHIDORI MISSED • PUNISH",.8) end
+				Brawler.event(c,a,"ChidoriMissed")
+			end)
+		end
 	end,
 }
 -- Gaara ----------------------------------------------------------------
@@ -12282,10 +12385,17 @@ Techniques.VacuumPalm={
 -- the network: every chakra point already closed adds palms, quickens them and
 -- lengthens the seal, and with all of them closed the guard has nothing left
 -- to hold the opening palm with. The victim keeps one answer: a substitution.
-local COUNTS={"2 PALMS","4 PALMS","8 PALMS","16 PALMS","32 PALMS","64 PALMS"}
 function Techniques.palmsPlan(points,seal)
 	points=math.clamp(points or 0,0,8)
 	return {strikes=7+points,interval=math.max(.1,.15-.012*points),final=2.5+.25*points,seal=(seal or 3.5)+.4*points}
+end
+-- The count called on the k-th of n palms: the six calls (2, 4, 8, 16, 32, 64)
+-- spread evenly over the flurry, the first palm already "two", 64 on the last
+-- palm only (the one that throws the body).
+function Techniques.palmCount(k,n)
+	local count=2
+	for j=2,6 do if k&gt;=math.floor(j*n/6+.5) then count=2^j end end
+	return count
 end
 Techniques.SixtyFourPalms={
 	check=function() return true end,
@@ -12318,7 +12428,10 @@ Techniques.SixtyFourPalms={
 			c:cue(a,"64 PALMS • GUARDED",.7)
 			return
 		end
-		Brawler.gentleFist(c,a,victim,false,"body")
+		-- The opening palm is a palm on the network too (no count yet).
+		Brawler.gentleFist(c,a,victim,false,"body",true)
+		local opening=Brawler.contactImpact(c,victim)
+		if opening then opening.move="SixtyFourPalms";opening.fighter=a.fighterId;opening.victim=victim.id end
 		-- Lock: Neji holds the technique, the victim is held in place.
 		local plan=Techniques.palmsPlan(points,pending.spec.Seal)
 		local strikes,interval=plan.strikes,plan.interval
@@ -12335,17 +12448,23 @@ Techniques.SixtyFourPalms={
 				c:damage(a,victim,if last then pending.spec.Damage*plan.final else pending.spec.Damage,false,false)
 				c.damageTag=nil
 				if c.match.phase~="Duel" or victim.health&lt;=0 then return end
-				Brawler.gentleFist(c,a,victim,false,"body")
-				c:pushImpact(victim.root.Position,"palm",last,{owner=a.id,direction=a.root.CFrame.LookVector})
-				c:cue(a,COUNTS[math.min(#COUNTS,k)] or "64 PALMS",.4)
+				-- One contact per palm: the blow's own entry becomes the palm, on
+				-- the point it closes, carrying the count both players read.
+				Brawler.gentleFist(c,a,victim,false,"body",true)
+				local count=Techniques.palmCount(k,strikes)
+				local entry=Brawler.contactImpact(c,victim)
+				if not entry then c:pushImpact(victim.root.Position,"palm",last,{owner=a.id});entry=c.impacts[#c.impacts] end
+				entry.style="palm";entry.heavy=last;entry.owner=a.id;entry.fighter=a.fighterId;entry.victim=victim.id;entry.move="SixtyFourPalms"
+				entry.direction=a.root.CFrame.LookVector;entry.count=count;entry.strike=k;entry.strikes=strikes;entry.final=last
+				c:cue(a,count.." PALMS",.4);c:cue(victim,count.." PALMS",.4)
 				if last then
 					victim.flurriedBy=nil
 					victim.sealedUntil=c.now+plan.seal
 					Brawler.sealPoints(c,a,victim)
 					local away=victim.root.Position-a.root.Position;away=Vector3.new(away.X,0,away.Z)
 					away=if away.Magnitude&gt;.1 then away.Unit else a.root.CFrame.LookVector
-					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a)
-					c:cue(victim,"CHAKRA POINTS SEALED",1.2)
+					Brawler.react(c,victim,"Knockback",away*46+Vector3.new(0,16,0),.6,a,"SixtyFourPalms")
+					c:cue(victim,"64 PALMS • CHAKRA POINTS SEALED",1.2)
 				else
 					victim.reactionUntil=math.max(victim.reactionUntil,c.now+interval+.15)
 				end
@@ -15387,12 +15506,16 @@ function FX:seal(owner,actor,folder)
 			local surface=info.surface
 			local normal=info.normal or Vector3.yAxis
 			if not entry then
-				local model=FX.buildKunai(true)
-				model.Parent=self.folder
-				local into=-normal
-				local tilt=(if math.abs(normal.Y)&gt;.7 then Vector3.xAxis else Vector3.yAxis)*.35
-				local axis=(into+tilt).Unit
-				model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				-- A Yellow Flash return seal is written where he stood: no kunai
+				-- was thrown there (IdentityFX draws its floor formula).
+				local model=if info.wake then nil else FX.buildKunai(true)
+				if model then
+					model.Parent=self.folder
+					local into=-normal
+					local tilt=(if math.abs(normal.Y)&gt;.7 then Vector3.xAxis else Vector3.yAxis)*.35
+					local axis=(into+tilt).Unit
+					model:PivotTo(CFrame.lookAt(surface-axis*.55,surface-axis*.55+axis))
+				end
 				local glyph=new("Model",{Name="Seal"},self.folder)
 				local base=CFrame.lookAt(surface+normal*.03,surface+normal*1.03)*CFrame.Angles(0,math.pi/2,0)
 				local disc=block(glyph,Vector3.new(.03,3.2,3.2),base,MINATO,Enum.Material.Neon);disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.8
@@ -15763,6 +15886,8 @@ function FX:update(data,dt,folder)
 			for _,layer in FX.layers do if layer.fighter then layer.fighter(self,model,actor,dt) end end
 		end
 	end
+	-- A layer may also read the whole duel once per frame (both fighters, hazards).
+	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
@@ -15770,11 +15895,755 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- CORE4 identity seen in play (Neji's palms and points, Minato's seals and
+-- chains, Itachi's reads and geometry, Sasuke's curse and Chidori).
+require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX
 </ProtectedString>
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="ND73">
+          <Properties>
+            <string name="Name">IdentityFX</string>
+            <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
+-- each of the four prodigies does differently must be seen, not read in numbers.
+-- Every cue answers a server fact (the contact feed and the snapshot).
+--   Neji    the palm lands on the very chakra point it closes (an open palm
+--           printed there, not a fist burst at the body's centre); a blocked
+--           palm still shows the chakra it drained; the closed points keep a
+--           marker readable at any distance; 64 Palms counts 2-4-8-16-32-64 over
+--           the victim for both players and the last palm throws the body; the
+--           palms stay lit while the Rotation counter is open; a body a Vacuum
+--           Palm drives into a wall leaves the air's palm print on the stone.
+--   Minato  a planted kunai, a floor formula and a body mark look apart; the
+--           arrival window rings under him; an arrival strike that carries the
+--           combo through the jump links in gold; the Rasengan grinds where it
+--           lands; Yellow Flash draws its thread back to the return seal.
+--   Itachi  the Read stance turns its tomoe at his feet; a read draws the line
+--           from his eyes to the swing and the counter window closes under him;
+--           a caught image lights the real body; ricochet and Geometry paths
+--           flash; his fire lane is one scorched strip across the field.
+--   Sasuke  the curse spreads from the neck as it takes him (across the face
+--           when it starves); the Dancing Leaf's shadow and the vault's arc; the
+--           Phoenix Flower's hidden steel glints out of the flames; a Chidori
+--           bursts along its line, or fizzles when it finds nothing.
+-- One identity layer installed into Effects (like SandFX and LeeFX): Effects
+-- only offers the registry and its helpers. Presentation only: nothing here can
+-- change gameplay.
+local Debris=game:GetService("Debris")
+
+local IdentityFX={}
+local K -- Effects' helpers, handed over by install()
+IdentityFX.clock=os.clock -- (headless tests drive time)
+
+local HYUGA=Color3.fromRGB(190,208,255)
+local HYUGA_CORE=Color3.fromRGB(240,246,255)
+local HYUGA_DEEP=Color3.fromRGB(110,140,230)
+
+local function find(folder,id) return folder and id and folder:FindFirstChild(id) end
+local function rootOf(model) return model and model:FindFirstChild("HumanoidRootPart") end
+local function flatUnit(v,fallback)
+	local f=Vector3.new(v.X,0,v.Z)
+	return if f.Magnitude&gt;.05 then f.Unit else (fallback or Vector3.zAxis)
+end
+local function stateOf(fx,model)
+	fx.identityState=fx.identityState or setmetatable({},{__mode="k"})
+	local st=fx.identityState[model]
+	if not st then st={};fx.identityState[model]=st end
+	return st
+end
+local function fade(part,time,grow)
+	K.tween(part,time,{Transparency=1,Size=part.Size*(grow or 1)})
+end
+-- A straight line of light from one point to another that fades at once: a
+-- path shown for a beat (a prediction, a ricochet, the body behind an image).
+local function streak(fx,from,to,color,width,life,name)
+	local delta=to-from
+	if delta.Magnitude&lt;.3 then return nil end
+	local line=K.block(fx.folder,Vector3.new(width,width,delta.Magnitude),CFrame.lookAt(from:Lerp(to,.5),to),color,Enum.Material.Neon)
+	line.Name=name or "Streak";line.Transparency=.15
+	K.tween(line,life,{Transparency=1,Size=Vector3.new(width*.2,width*.2,delta.Magnitude)})
+	Debris:AddItem(line,life+.05)
+	return line
+end
+
+-- ------------------------------------------------------------------- Neji
+-- An open palm laid on a point, facing `normal` (out of the body, toward the
+-- striker): the heel of the hand, four fingers and the thumb. It flares, then
+-- sinks into the body: the strike reaches the network, it does not shatter.
+local FINGERS={{-.21,.34},{-.07,.42},{.07,.44},{.21,.36}}
+local function palmPrint(fx,at,normal,scale,transparency,life)
+	local base=CFrame.lookAt(at,at+normal)
+	local model=K.new("Model",{Name="PalmPrint"},fx.folder)
+	local function piece(size,offset)
+		local p=K.block(model,size*scale,base*offset,HYUGA_CORE,Enum.Material.Neon)
+		p.Transparency=transparency
+		fade(p,life,1.3)
+	end
+	piece(Vector3.new(.62,.56,.03),CFrame.new(0,-.06*scale,0))
+	for _,f in FINGERS do piece(Vector3.new(.11,f[2],.03),CFrame.new(f[1]*scale,(.22+f[2]/2)*scale,0)) end
+	piece(Vector3.new(.12,.32,.03),CFrame.new(-.4*scale,-.02*scale,0)*CFrame.Angles(0,0,math.rad(42)))
+	Debris:AddItem(model,life+.05)
+	return model,base
+end
+-- The point that took the palm: the chakra point it closed, else the chest
+-- facing the striker. Returns the point and the outward normal.
+local function struckPoint(fx,data,folder)
+	local victim=find(folder,data.victim)
+	local striker=rootOf(find(folder,data.owner))
+	local at=nil
+	if victim and data.point then at=fx.tenketsuWorld(victim,data.point) end
+	local center=rootOf(victim)
+	local from=if striker then striker.Position elseif data.direction then (data.position-data.direction*4) else nil
+	local normal=if from then flatUnit(from-(at or data.position)) else Vector3.zAxis
+	if not at then at=(if center then center.Position else data.position)+normal*.6+Vector3.new(0,.35,0) end
+	return at,normal
+end
+-- The striking hand flares with the chakra it just released.
+local function handFlare(fx,folder,owner,at,color)
+	local model=find(folder,owner)
+	local best,gap=nil,math.huge
+	for _,name in {"RightHand","LeftHand"} do
+		local hand=model and model:FindFirstChild(name)
+		if hand then
+			local d=(hand.Position-at).Magnitude
+			if d&lt;gap then best,gap=hand,d end
+		end
+	end
+	if best then K.flash(fx.folder,best.Position,color,.2,1.3,.14,.1) end
+	return best
+end
+-- A palm on the network (the melee palms, the 64 Palms, the chakra palm).
+local function palmCue(fx,data,folder)
+	local at,normal=struckPoint(fx,data,folder)
+	local heavy=data.heavy==true
+	palmPrint(fx,at,normal,if heavy then 1.6 else 1,if heavy then 0 else .1,if heavy then .32 else .22)
+	K.flash(fx.folder,at,HYUGA_CORE,.15,if heavy then 2.4 else 1.3,.12,0)
+	-- Through the body: the chakra goes in, it does not bounce off.
+	local line=K.block(fx.folder,Vector3.new(.07,.07,1.5),CFrame.lookAt(at,at+normal)*CFrame.new(0,0,.75),HYUGA,Enum.Material.Neon)
+	line.Name="PalmThrough";line.Transparency=.2
+	fade(line,.18)
+	Debris:AddItem(line,.22)
+	K.shockRing(fx.folder,at,HYUGA,.3,if heavy then 6 else 2.6,.2,normal)
+	handFlare(fx,folder,data.owner,at,HYUGA)
+	if heavy then
+		-- The palm that throws the body: the air in front of it bursts the way it flies.
+		local along=flatUnit(data.direction or -normal,-normal)
+		K.shockRing(fx.folder,at+along*1.2,HYUGA_CORE,2,12,.3,along)
+		K.sound(K.anchorPart(fx.folder,at),K.SOUND.heavy,.4,.7)
+	end
+	return at,normal
+end
+-- A palm stopped by a guard still drains: a faint print on the guard and the
+-- chakra pulled out of the body into the striking hand.
+local function drainCue(fx,data,folder)
+	local victim=rootOf(find(folder,data.victim))
+	local striker=find(folder,data.owner)
+	if not victim then return end
+	local normal=flatUnit((rootOf(striker) or victim).Position-victim.Position)
+	local at=victim.Position+normal*1.1+Vector3.new(0,.3,0)
+	palmPrint(fx,at,normal,1.15,.55,.2)
+	local hand=handFlare(fx,folder,data.owner,at,HYUGA_DEEP)
+	local target=if hand then hand.Position else at+normal*2
+	local holder=K.new("Model",{Name="ChakraDrain"},fx.folder)
+	for k=1,math.clamp(math.floor((data.drain or 3)+.5),2,6) do
+		local start=victim.Position+Vector3.new((k%3-1)*.5,.2+(k%2)*.4,0)
+		local wisp=K.block(holder,Vector3.one*.18,CFrame.new(start),HYUGA,Enum.Material.Neon)
+		wisp.Shape=Enum.PartType.Ball;wisp.Transparency=.15
+		K.tween(wisp,.28,{CFrame=CFrame.new(target),Transparency=1,Size=Vector3.one*.06})
+	end
+	Debris:AddItem(holder,.35)
+end
+-- 64 Palms: the count every palm calls (2, 4, 8 ... 64) over the victim, the
+-- same for both players; a ring under Neji at each new call; it holds a beat
+-- on the throwing palm, then clears.
+local function countCue(fx,data,folder)
+	local victim=find(folder,data.victim)
+	local head=victim and (victim:FindFirstChild("Head") or rootOf(victim))
+	if not head then return end
+	local st=stateOf(fx,victim)
+	local board=st.palmCount
+	if not board or not board.gui.Parent then
+		local gui=K.new("BillboardGui",{Name="PalmCount",Size=UDim2.fromOffset(150,84),StudsOffset=Vector3.new(0,3.4,0),AlwaysOnTop=true,LightInfluence=0,Adornee=head},fx.folder)
+		local number=K.new("TextLabel",{Name="Count",Size=UDim2.fromScale(1,.68),BackgroundTransparency=1,Font=Enum.Font.Bangers,TextScaled=true,
+			TextColor3=HYUGA_CORE,TextStrokeColor3=Color3.fromRGB(26,34,70),TextStrokeTransparency=.1,Text=""},gui)
+		K.new("TextLabel",{Name="Palms",Position=UDim2.fromScale(0,.66),Size=UDim2.fromScale(1,.34),BackgroundTransparency=1,Font=Enum.Font.GothamBlack,TextScaled=true,
+			TextColor3=HYUGA,TextStrokeColor3=Color3.fromRGB(26,34,70),TextStrokeTransparency=.3,Text="PALMS"},gui)
+		board={gui=gui,number=number,shown=0}
+		st.palmCount=board
+	end
+	st.palmCountAt=IdentityFX.clock()
+	local count=data.count or 0
+	board.number.Text=tostring(count)
+	if count~=board.shown then
+		board.shown=count
+		-- Each new call lands a little bigger.
+		board.gui.Size=UDim2.fromOffset(150+count*.9,84+count*.5)
+		local neji=rootOf(find(folder,data.owner))
+		if neji then
+			local floor=K.floorUnder(fx,neji.Position,2,10)
+			local y=if floor then floor.Position.Y+.06 else neji.Position.Y-2.9
+			local size=3+math.log(math.max(count,2),2)*1.6
+			K.shockRing(fx.folder,Vector3.new(neji.Position.X,y,neji.Position.Z),if data.final then HYUGA_CORE else HYUGA,size*.6,size*2,.28)
+		end
+	end
+	if data.final then
+		board.number.TextColor3=Color3.fromRGB(255,255,255)
+		st.palmCountAt=IdentityFX.clock()+.6
+	end
+end
+-- Wall hit: what drove the body into the stone. Neji's air pressure (a Vacuum
+-- Palm, the twin palm, the throwing 64th) leaves a big palm print on the wall.
+local PRESSURE={VacuumPalm=true,PalmThrust=true,SixtyFourPalms=true,Light3=true,AirDrive=true}
+local function wallCue(fx,data)
+	if data.by~="GentleFist" or not PRESSURE[data.cause or ""] then return end
+	local normal=data.normal or Vector3.zAxis
+	local at=data.position+normal*.1+Vector3.new(0,.6,0)
+	palmPrint(fx,at,normal,4,.05,.45)
+	for k=1,3 do K.shockRing(fx.folder,data.position+normal*.12,HYUGA,1+k,6+k*4,.25+k*.08,normal) end
+	K.smokePuff(fx.folder,data.position+normal,Color3.fromRGB(226,232,246),14,2)
+end
+-- The twin palm out of Rotation releases the dome's chakra the palms held: a
+-- ring the size of the dome closes onto the palm and bursts out of the body.
+local function trigramRelease(fx,data,folder,at,normal)
+	local neji=rootOf(find(folder,data.owner))
+	if neji then K.shockRing(fx.folder,neji.Position-Vector3.new(0,.6,0),HYUGA,12,3,.2) end
+	K.shockRing(fx.folder,at,HYUGA_CORE,1,9,.3,normal)
+	local burst=K.new("Model",{Name="TrigramRelease"},fx.folder)
+	for k=0,7 do
+		local a=k/8*math.pi*2
+		local ray=K.block(burst,Vector3.new(.08,.08,1.4),CFrame.lookAt(at,at-normal)*CFrame.Angles(0,0,a)*CFrame.Angles(math.rad(70),0,0)*CFrame.new(0,0,-.9),HYUGA,Enum.Material.Neon)
+		ray.Transparency=.15
+		fade(ray,.22,1.5)
+	end
+	Debris:AddItem(burst,.3)
+end
+local function nejiImpact(fx,data,folder)
+	local style=data.style
+	if style=="palm" then
+		local at,normal=palmCue(fx,data,folder)
+		if data.variant=="TrigramCounter" then trigramRelease(fx,data,folder,at,normal) end
+		if data.count then countCue(fx,data,folder) end
+		-- A chakra palm (ChakraCombat) keeps its own layer on top.
+		return data.chakra==nil
+	end
+	if style=="block" and data.drain and data.fighter=="GentleFist" then drainCue(fx,data,folder);return false end
+	if style=="wall" then wallCue(fx,data);return false end
+	return false
+end
+-- Every closed point gets a marker of constant screen size, drawn over the
+-- body: the network closing reads from any distance, for both players.
+local function tenketsuMarks(fx,model,actor)
+	local aura=fx.auras and fx.auras[model]
+	if not aura or not aura.points then return end
+	local severe=actor.tenketsuSevere==true
+	for _,entry in aura.points do
+		local dot=entry.dot
+		if dot and dot.Parent then
+			local mark=entry.mark
+			if not mark or not mark.Parent then
+				local gui=K.new("BillboardGui",{Name="TenketsuMark",Size=UDim2.fromOffset(12,12),AlwaysOnTop=true,LightInfluence=0,Adornee=dot},dot)
+				local disc=K.new("Frame",{Name="Point",Size=UDim2.fromScale(1,1),BackgroundColor3=HYUGA,BorderSizePixel=0,BackgroundTransparency=.1},gui)
+				K.new("UICorner",{CornerRadius=UDim.new(1,0)},disc)
+				K.new("UIStroke",{Color=HYUGA_CORE,Thickness=1.5},disc)
+				entry.mark=gui;entry.markDisc=disc
+				mark=gui
+			end
+			entry.mark.Size=if severe then UDim2.fromOffset(16,16) else UDim2.fromOffset(12,12)
+			entry.markDisc.BackgroundColor3=if severe then HYUGA_CORE else HYUGA
+		end
+	end
+end
+-- Rotation repelled a strike: until the counter is spent, Neji's palms hold the
+-- dome's chakra (the twin palm that glides out of the spin releases it).
+local function counterGlow(fx,model,actor,st)
+	local open=actor.fighterId=="GentleFist" and (actor.counter or 0)&gt;0 and (actor.health or 1)&gt;0
+	if open and not st.counterGlow then
+		local glow={}
+		for _,name in {"RightHand","LeftHand"} do
+			local hand=model:FindFirstChild(name)
+			if hand then
+				local at=K.new("Attachment",{Name="CounterPalmGlow"},hand)
+				K.new("PointLight",{Color=HYUGA,Brightness=2.4,Range=6,Shadows=false},at)
+				K.new("ParticleEmitter",{Texture=K.TEX.glow,Rate=24,Lifetime=NumberRange.new(.12,.2),Speed=NumberRange.new(0,.5),LockedToPart=true,
+					Color=ColorSequence.new(HYUGA),LightEmission=1,LightInfluence=0,Size=K.num({{0,1},{1,.3}}),Transparency=K.num({{0,.3},{1,1}})},at)
+				table.insert(glow,at)
+			end
+		end
+		st.counterGlow=glow
+		local root=rootOf(model)
+		if root then K.shockRing(fx.folder,root.Position-Vector3.new(0,2.6,0),HYUGA,12,2,.25) end
+	elseif not open and st.counterGlow then
+		for _,at in st.counterGlow do at:Destroy() end
+		st.counterGlow=nil
+	end
+end
+-- Any body can carry closed points and a 64 Palms count; only Neji glows.
+local function networkFrame(fx,model,actor,st)
+	tenketsuMarks(fx,model,actor)
+	counterGlow(fx,model,actor,st)
+	-- A 64 Palms count left over (the flurry cut short, or the throw held its beat).
+	local board=st.palmCount
+	if board and IdentityFX.clock()-(st.palmCountAt or 0)&gt;.6 then
+		board.gui:Destroy();st.palmCount=nil
+	end
+end
+
+-- ----------------------------------------------------------------- Minato
+local MINATO=Color3.fromRGB(255,214,92)
+local MINATO_CORE=Color3.fromRGB(255,248,214)
+local WIND=Color3.fromRGB(190,255,226)
+local RASENGAN=Color3.fromRGB(150,210,255)
+local RASENGAN_CORE=Color3.fromRGB(235,250,255)
+-- Three kinds of Flying Thunder God seal, three looks (Effects draws the kunai
+-- and its disc; this adds what tells them apart):
+--   planted kunai  a thrown marked kunai stuck in a surface: a gold beacon
+--                  stands over it, seen across the stadium;
+--   floor formula  the Yellow Flash return seal written where he stood (no
+--                  kunai): the formula drawn on the floor, white-gold, turning;
+--   body mark      a seal riding on the opponent (a marked kunai that hit, the
+--                  rising kick, a wind cut): a ring of formula round the body,
+--                  seen from the front as from the back, tightening as it expires.
+local function segmentRing(parent,count,radius,size,color)
+	local parts={}
+	for _=1,count do
+		local p=K.block(parent,size,CFrame.new(),color,Enum.Material.Neon)
+		p.Transparency=.25
+		table.insert(parts,p)
+	end
+	return parts
+end
+local function placeRing(parts,center,radius,spin,tilt)
+	for i,p in parts do
+		local a=(i-1)/#parts*math.pi*2+spin
+		p.CFrame=center*CFrame.Angles(tilt or 0,a,0)*CFrame.new(0,0,-radius)
+	end
+end
+local function buildSeal(fx,info)
+	local model=K.new("Model",{Name="SealMark"},fx.folder)
+	local look={model=model}
+	if info.body then
+		look.kind="body"
+		look.ring=segmentRing(model,8,1.6,Vector3.new(.5,.09,.07),if info.wind then WIND else MINATO)
+		look.tags=segmentRing(model,3,1.75,Vector3.new(.08,.5,.08),if info.wind then WIND else MINATO_CORE)
+	elseif info.wake then
+		look.kind="floor"
+		look.ring=segmentRing(model,16,2.5,Vector3.new(.85,.04,.12),MINATO_CORE)
+		look.strokes=segmentRing(model,8,1.5,Vector3.new(.1,.04,.7),MINATO)
+		local cross={}
+		for _,yaw in {0,math.pi/2} do
+			local p=K.block(model,Vector3.new(1.4,.04,.14),CFrame.new(),MINATO_CORE,Enum.Material.Neon);p.Transparency=.2
+			table.insert(cross,{part=p,yaw=yaw})
+		end
+		look.cross=cross
+		K.flash(fx.folder,info.surface,MINATO_CORE,.6,5,.25,.2)
+	else
+		look.kind="kunai"
+		local beam=K.block(model,Vector3.new(.14,7,.14),CFrame.new(),MINATO,Enum.Material.Neon)
+		beam.Name="SealBeacon";beam.Transparency=.6
+		look.beacon=beam
+	end
+	return look
+end
+local function stepSeal(fx,folder,look,info,clock)
+	local remaining=info.remaining or 12
+	local ending=remaining&lt;1 and math.sin(clock*30)&gt;0
+	if look.kind=="body" then
+		local body=folder and folder:FindFirstChild(info.body or "")
+		local torso=body and (body:FindFirstChild("UpperTorso") or rootOf(body))
+		if not torso then return end
+		-- Round the waist, turning: wherever the camera stands it crosses the body.
+		local center=CFrame.new(torso.Position-Vector3.new(0,.35,0))
+		local radius=1.25+.45*math.clamp(remaining/1.5,0,1)
+		placeRing(look.ring,center,radius,clock*2.2)
+		placeRing(look.tags,center,radius+.15,-clock*1.4)
+		for _,p in look.ring do p.Transparency=if ending then .9 else .25 end
+	elseif look.kind=="floor" then
+		local at=info.surface+(info.normal or Vector3.yAxis)*.06
+		local base=CFrame.new(at)
+		placeRing(look.ring,base,2.5,clock*.35)
+		placeRing(look.strokes,base,1.5,-clock*.6)
+		for _,c in look.cross do c.part.CFrame=base*CFrame.Angles(0,c.yaw+clock*.35,0) end
+		local glow=if ending then .9 else .2+.15*math.sin(clock*4)
+		for _,p in look.ring do p.Transparency=glow end
+	else
+		-- The beacon stands up from the kunai, whatever surface holds it.
+		local at=info.surface+(info.normal or Vector3.yAxis)*.3
+		look.beacon.CFrame=CFrame.new(at+Vector3.new(0,3.6,0))
+		look.beacon.Transparency=if ending then .95 else .55+.15*math.sin(clock*5)
+	end
+end
+local function sealFrame(fx,model,actor,clock)
+	fx.identitySeals=fx.identitySeals or {}
+	local folder=model.Parent
+	local live={}
+	for _,info in actor.seals or {} do
+		local key=tostring(actor.id)..":"..tostring(info.id)
+		live[key]=true
+		local look=fx.identitySeals[key]
+		if not look or not look.model.Parent then look=buildSeal(fx,info);fx.identitySeals[key]=look end
+		stepSeal(fx,folder,look,info,clock)
+	end
+	local prefix=tostring(actor.id)..":"
+	for key,look in fx.identitySeals do
+		if string.sub(key,1,#prefix)==prefix and not live[key] then look.model:Destroy();fx.identitySeals[key]=nil end
+	end
+end
+-- After a teleport the arrival window is open (a strike or Rasengan cancels the
+-- recovery): a gold ring under him shrinks to nothing as it closes.
+local function arrivalRing(fx,model,actor,st,clock)
+	local root=rootOf(model)
+	if actor.flash and root and (actor.health or 1)&gt;0 then
+		if not st.arrival or not st.arrival.ring.Parent then
+			local ring=K.block(fx.folder,Vector3.new(.06,5,5),CFrame.new(),MINATO,Enum.Material.Neon)
+			ring.Name="ArrivalWindow";ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.35
+			st.arrival={ring=ring,born=clock,window=if (actor.awaken or 0)&gt;0 then .8 else .55}
+		end
+		local left=1-math.clamp((clock-st.arrival.born)/st.arrival.window,0,1)
+		local size=1+4*left
+		st.arrival.ring.Size=Vector3.new(.06,size,size)
+		st.arrival.ring.CFrame=CFrame.new(root.Position-Vector3.new(0,2.85,0))*CFrame.Angles(0,0,math.pi/2)
+	elseif st.arrival then
+		st.arrival.ring:Destroy();st.arrival=nil
+	end
+end
+-- Yellow Flash: a thin gold thread from him to his newest return seal, the way
+-- back the next jump takes (A -&gt; B -&gt; A).
+local function returnThread(fx,model,actor,st)
+	local awake=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
+	local newest=nil
+	if awake then
+		for _,info in actor.seals or {} do
+			if info.wake and info.surface and (not newest or info.id&gt;newest.id) then newest=info end
+		end
+	end
+	local torso=model:FindFirstChild("UpperTorso") or rootOf(model)
+	if newest and torso then
+		local thread=st.thread
+		if not thread or not thread.anchor.Parent then
+			if thread then thread.a0:Destroy() end
+			local anchor=K.anchorPart(fx.folder,newest.surface);anchor.Name="ReturnSeal"
+			local a0=K.new("Attachment",{Name="ReturnThread"},torso)
+			local a1=K.new("Attachment",{},anchor)
+			local beam=K.new("Beam",{Name="ReturnThread",Attachment0=a0,Attachment1=a1,Width0=.12,Width1=.3,FaceCamera=true,Segments=1,
+				Color=ColorSequence.new(MINATO),LightEmission=1,Transparency=K.num({{0,.35},{1,.55}})},anchor)
+			thread={anchor=anchor,a0=a0,beam=beam,id=newest.id}
+			st.thread=thread
+		end
+		if thread.id~=newest.id then thread.anchor.CFrame=CFrame.new(newest.surface+Vector3.new(0,.3,0));thread.id=newest.id end
+	elseif st.thread then
+		st.thread.anchor:Destroy();st.thread.a0:Destroy();st.thread=nil
+	end
+end
+-- The arrival strike landed on a body still inside the combo that led to the
+-- jump: a gold link where it lands, the chain visibly goes on.
+local function chainCue(fx,data,folder)
+	local at=data.position
+	local striker=rootOf(find(folder,data.owner))
+	local along=if striker then flatUnit(at-striker.Position) else Vector3.zAxis
+	K.shockRing(fx.folder,at,MINATO_CORE,1.5,7,.24,along)
+	K.shockRing(fx.folder,at,MINATO,3,11,.32,along)
+	K.sparks(fx.folder,at,MINATO,16,22)
+	if striker then streak(fx,striker.Position,at,MINATO,.25,.18,"ChainLink") end
+end
+-- Rasengan where it lands: the sphere grinds into the body (rings turning on
+-- every axis), not a punch flash.
+local function grindCue(fx,data)
+	local at=data.position
+	local model=K.new("Model",{Name="RasenganGrind"},fx.folder)
+	for k=1,3 do
+		local ring=K.block(model,Vector3.new(.08,1.6,1.6),CFrame.new(at)*CFrame.Angles(k*1.1,k*.7,k*1.9),if k==1 then RASENGAN_CORE else RASENGAN,Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.2
+		K.tween(ring,.32,{Size=Vector3.new(.03,5.5,5.5),Transparency=1,CFrame=ring.CFrame*CFrame.Angles(math.pi,0,0)})
+	end
+	K.flash(fx.folder,at,RASENGAN_CORE,1,5,.2,0)
+	K.sparks(fx.folder,at,RASENGAN,24,26)
+	Debris:AddItem(model,.4)
+end
+local function minatoImpact(fx,data,folder)
+	if data.arrival then chainCue(fx,data,folder) end
+	if data.variant=="Rasengan" or data.variant=="RasenganDrop" then grindCue(fx,data) end
+	return false
+end
+local function minatoFrame(fx,model,actor,st,clock)
+	sealFrame(fx,model,actor,clock)
+	arrivalRing(fx,model,actor,st,clock)
+	returnThread(fx,model,actor,st)
+end
+
+-- ----------------------------------------------------------------- Itachi
+local SHARINGAN=Color3.fromRGB(230,36,44)
+local SHARINGAN_DEEP=Color3.fromRGB(150,16,26)
+local EMBER=Color3.fromRGB(255,128,44)
+-- Read stance: three tomoe turn round his feet while the eye waits for the
+-- blow. The attacker sees it too: swinging into it is his choice.
+local function tomoeRing(fx,model,actor,st,clock)
+	local root=rootOf(model)
+	if (actor.read or 0)&gt;0 and root and (actor.health or 1)&gt;0 then
+		if not st.tomoe or not st.tomoe.model.Parent then
+			local holder=K.new("Model",{Name="ReadTomoe"},fx.folder)
+			local ring=K.block(holder,Vector3.new(.05,4.6,4.6),CFrame.new(),SHARINGAN,Enum.Material.Neon)
+			ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.7
+			local marks={}
+			for _=1,3 do
+				local head=K.block(holder,Vector3.one*.42,CFrame.new(),SHARINGAN_DEEP,Enum.Material.Neon);head.Shape=Enum.PartType.Ball
+				local tail=K.block(holder,Vector3.new(.14,.06,.5),CFrame.new(),SHARINGAN_DEEP,Enum.Material.Neon)
+				table.insert(marks,{head=head,tail=tail})
+			end
+			st.tomoe={model=holder,ring=ring,marks=marks}
+		end
+		local base=CFrame.new(root.Position-Vector3.new(0,2.85,0))
+		st.tomoe.ring.CFrame=base*CFrame.Angles(0,0,math.pi/2)
+		for k,m in st.tomoe.marks do
+			local at=base*CFrame.Angles(0,clock*3+k*2*math.pi/3,0)*CFrame.new(0,.05,-1.75)
+			m.head.CFrame=at;m.tail.CFrame=at*CFrame.new(.28,0,.12)*CFrame.Angles(0,math.rad(-50),0)
+		end
+	elseif st.tomoe then
+		st.tomoe.model:Destroy();st.tomoe=nil
+	end
+end
+-- A read paid off: a red ring under him shrinks with the counter window (the
+-- snapshot's counter is the time left), the punish is now.
+local function counterWindow(fx,model,actor,st)
+	local root=rootOf(model)
+	local left=actor.counter or 0
+	if left&gt;0 and root and (actor.health or 1)&gt;0 then
+		if not st.window or not st.window.Parent then
+			local ring=K.block(fx.folder,Vector3.new(.06,5,5),CFrame.new(),SHARINGAN,Enum.Material.Neon)
+			ring.Name="CounterWindow";ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.35
+			st.window=ring
+		end
+		local size=1+4*math.clamp(left,0,1)
+		st.window.Size=Vector3.new(.06,size,size)
+		st.window.CFrame=CFrame.new(root.Position-Vector3.new(0,2.85,0))*CFrame.Angles(0,0,math.pi/2)
+	elseif st.window then
+		st.window:Destroy();st.window=nil
+	end
+end
+local function itachiImpact(fx,data,folder)
+	local style=data.style
+	if style=="read" and data.phase~="whiff" then
+		-- He saw it coming: a line from his eyes to the body that swung.
+		local reader=find(folder,data.owner)
+		local head=reader and reader:FindFirstChild("Head")
+		local swing=rootOf(find(folder,data.victim))
+		if head and swing then
+			streak(fx,head.Position,swing.Position+Vector3.new(0,.6,0),SHARINGAN,.07,.3,"ReadLine")
+			K.flash(fx.folder,swing.Position+Vector3.new(0,.6,0),SHARINGAN,.3,2.2,.16,.25)
+		end
+	elseif style=="mirage" and data.phase=="catch" then
+		-- The image breaks: the real body behind it lights for a beat.
+		local caster=rootOf(find(folder,data.owner))
+		if caster then
+			streak(fx,data.position,caster.Position,SHARINGAN,.12,.3,"MirageReveal")
+			K.flash(fx.folder,caster.Position,SHARINGAN,.5,3.5,.2,.2)
+		end
+	elseif style=="deflect" and data.ricochet and data.to then
+		-- A ricochet: its new path flashes from the bounce to the body it seeks.
+		streak(fx,data.position,data.to,Color3.fromRGB(255,236,236),.1,.25,"RicochetPath")
+		K.shockRing(fx.folder,data.position,SHARINGAN,.5,3.2,.18,data.direction)
+	elseif style=="clash" and data.geometry and data.to then
+		-- Shuriken Geometry: the two blades' meeting sends them into the flank.
+		for _,side in {-.6,.6} do
+			local across=flatUnit(data.to-data.position):Cross(Vector3.yAxis)*side
+			streak(fx,data.position,data.to+across,Color3.fromRGB(255,236,236),.08,.25,"GeometryPath")
+		end
+	end
+	return false
+end
+-- Itachi's burning lane (Elements.burnLane): the patches of one lane share a
+-- scorched strip from the first to the last, so it reads as a line across the
+-- field, not as scattered fires.
+local function laneFrame(fx,data)
+	fx.identityLanes=fx.identityLanes or {}
+	local lanes={}
+	for _,h in data.hazards or {} do
+		if h.lane then
+			local lane=lanes[h.lane] or {}
+			table.insert(lane,h)
+			lanes[h.lane]=lane
+		end
+	end
+	for id,patches in lanes do
+		local strip=fx.identityLanes[id]
+		local first,last=patches[1].position,patches[#patches].position
+		local span=Vector3.new(last.X-first.X,0,last.Z-first.Z)
+		if #patches&gt;=2 and span.Magnitude&gt;.5 and (not strip or strip.count~=#patches or not strip.model.Parent) then
+			if strip then strip.model:Destroy() end
+			local model=K.new("Model",{Name="FireLane"},fx.folder)
+			local width=patches[1].radius*1.5
+			local along=CFrame.lookAt(first:Lerp(last,.5)-Vector3.new(0,.42,0),last-Vector3.new(0,.42,0))
+			local scorch=K.block(model,Vector3.new(width,.05,span.Magnitude+width),along,Color3.fromRGB(32,22,18),Enum.Material.Slate)
+			scorch.Transparency=.25
+			for _,side in {-1,1} do
+				local edge=K.block(model,Vector3.new(.12,.06,span.Magnitude+width*.8),along*CFrame.new(side*width*.5,.02,0),EMBER,Enum.Material.Neon)
+				edge.Transparency=.3
+			end
+			strip={model=model,count=#patches}
+			fx.identityLanes[id]=strip
+		end
+	end
+	for id,strip in fx.identityLanes do
+		if not lanes[id] then strip.model:Destroy();fx.identityLanes[id]=nil end
+	end
+end
+local function itachiFrame(fx,model,actor,st,clock)
+	tomoeRing(fx,model,actor,st,clock)
+	if actor.fighterId=="Mirage" then counterWindow(fx,model,actor,st) end
+end
+
+-- ----------------------------------------------------------------- Sasuke
+local CURSE=Color3.fromRGB(120,60,200)
+local CURSE_INK=Color3.fromRGB(14,10,18)
+local SHADOW=Color3.fromRGB(40,44,74)
+local CHIDORI=Color3.fromRGB(190,220,255)
+local CHIDORI_CORE=Color3.fromRGB(236,244,255)
+-- The cursed seal spreads out of the neck as the awakening takes him, one
+-- flame mark after another (the dress keeps three at the seal itself), and on
+-- across the face while it starves. {part, offset}: the offset's Z axis is the
+-- surface normal (front faces -Z, the left side turned a quarter).
+local SIDE=CFrame.Angles(0,math.pi/2,0)
+local CURSE_SPREAD={
+	{"Head",CFrame.new(-.77,-.12,-.3)*SIDE*CFrame.Angles(0,0,math.rad(20))},
+	{"Head",CFrame.new(-.77,.16,-.5)*SIDE*CFrame.Angles(0,0,math.rad(40))},
+	{"UpperTorso",CFrame.new(-.75,.6,-.51)*CFrame.Angles(0,0,math.rad(-15))},
+	{"Head",CFrame.new(-.5,.32,-.77)*CFrame.Angles(0,0,math.rad(55))},
+	{"UpperTorso",CFrame.new(-1.01,.35,-.15)*SIDE},
+	{"UpperTorso",CFrame.new(-.45,.25,-.51)*CFrame.Angles(0,0,math.rad(25))},
+	{"LeftUpperArm",CFrame.new(-.05,.3,-.41)},
+	{"LeftUpperArm",CFrame.new(-.41,0,-.05)*SIDE*CFrame.Angles(0,0,math.rad(15))},
+	{"LeftUpperArm",CFrame.new(-.05,-.32,-.41)},
+	-- Hunger: the curse reaches across the face.
+	{"Head",CFrame.new(-.2,.48,-.77)*CFrame.Angles(0,0,math.rad(70)),hunger=true},
+	{"Head",CFrame.new(.12,-.36,-.77)*CFrame.Angles(0,0,math.rad(-30)),hunger=true},
+}
+IdentityFX.CURSE_SPREAD=CURSE_SPREAD
+local SPREAD_STEP=.09
+local function curseSpread(fx,model,actor,st,clock)
+	local awake=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
+	if not awake then
+		if st.curse then for _,mark in st.curse.marks do mark:Destroy() end;st.curse=nil end
+		return
+	end
+	if not st.curse then
+		local marks={}
+		for i,spec in CURSE_SPREAD do
+			local body=model:FindFirstChild(spec[1])
+			if body then
+				local mark=K.block(model,Vector3.new(.12,.34,.04),body.CFrame*spec[2],CURSE_INK,Enum.Material.SmoothPlastic)
+				mark.Name="CurseSpread";mark.Anchored=false;mark.Massless=true;mark.Transparency=1
+				K.new("WeldConstraint",{Part0=body,Part1=mark},mark)
+				marks[i]=mark
+			end
+		end
+		st.curse={marks=marks,born=clock}
+	end
+	local hungry=actor.curseHunger==true
+	local pulse=math.sin(clock*18)&gt;0
+	for i,mark in st.curse.marks do
+		local spec=CURSE_SPREAD[i]
+		local shown=clock-st.curse.born&gt;=(i-1)*SPREAD_STEP and (not spec.hunger or hungry)
+		mark.Transparency=if shown then 0 else 1
+		mark.Material=if hungry and pulse then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		mark.Color=if hungry and pulse then CURSE else CURSE_INK
+	end
+end
+-- Shadow of the Dancing Leaf: a dark shadow chain glued under the rising body
+-- while he follows it up (the heavy up there is the Lion Combo); the vault kick
+-- draws its arc over the opponent.
+local function shadowLeaf(fx,model,actor,st,clock)
+	if actor.state=="Pursuit" and (actor.lion or 0)&gt;0 then
+		if clock-(st.shadowAt or -1)&gt;=.07 then st.shadowAt=clock;fx:ghost(model,SHADOW,.3,.45) end
+	end
+	local aura=fx.auras and fx.auras[model]
+	if aura and aura.trail and actor.attackName=="VaultKick" and (actor.state=="Startup" or actor.state=="Active") then aura.trail.Enabled=true end
+end
+-- Chidori: a thrust that lands bursts in lightning along its line; one that
+-- finds nothing fizzles out in front of him (the opening is his).
+local function chidoriCue(fx,data,folder)
+	local at=data.position
+	local striker=rootOf(find(folder,data.owner))
+	if striker then streak(fx,striker.Position,at,CHIDORI,.3,.22,"ChidoriLine") end
+	for k=1,4 do
+		local a=k*math.pi/2+math.random()*.6
+		fx:bolt(at,at+Vector3.new(math.cos(a)*3.2,(math.random()-.3)*2.4,math.sin(a)*3.2),CHIDORI_CORE)
+	end
+	K.flash(fx.folder,at,CHIDORI_CORE,1,7,.2,0)
+	K.shockRing(fx.folder,at,CHIDORI,2,12,.26,data.direction)
+end
+local function chidoriFizzle(fx,data)
+	local holder=K.new("Model",{Name="ChidoriFizzle"},fx.folder)
+	K.burst(holder,data.position,{Texture=K.TEX.spark,Lifetime=NumberRange.new(.2,.5),Speed=NumberRange.new(2,6),SpreadAngle=Vector2.new(60,60),
+		Color=ColorSequence.new(CHIDORI),LightEmission=1,Size=K.num({{0,.5},{1,0}}),Acceleration=Vector3.new(0,-40,0),Drag=2},18)
+	K.flash(holder,data.position,Color3.fromRGB(120,140,170),.4,2.2,.25,.4)
+	K.sound(K.anchorPart(fx.folder,data.position),K.SOUND.whoosh,.3,.5)
+	Debris:AddItem(holder,.6)
+end
+-- The steel hidden in the Phoenix Flower glints once as it leaves the flames.
+local function hiddenGlint(fx,data)
+	fx.identityGlints=fx.identityGlints or {}
+	local now=fx:visualTime()
+	for _,p in data.projectiles or {} do
+		local entry=fx.projectiles[p.id]
+		if p.hidden and entry and not fx.identityGlints[p.id] and now-p.born&gt;=.1 then
+			fx.identityGlints[p.id]=true
+			local at=entry.root.Position
+			local glint=K.new("Model",{Name="HiddenGlint"},fx.folder)
+			for _,roll in {0,math.pi/2} do
+				local ray=K.block(glint,Vector3.new(.06,1.6,.06),CFrame.new(at)*CFrame.Angles(0,0,roll+math.pi/4),Color3.fromRGB(255,255,255),Enum.Material.Neon)
+				fade(ray,.18,1.6)
+			end
+			K.flash(glint,at,Color3.fromRGB(255,250,236),.2,1.4,.12,0)
+			K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.25,2.4)
+			Debris:AddItem(glint,.25)
+		end
+	end
+end
+local function sasukeImpact(fx,data,folder)
+	if data.move=="ChidoriThrust" then
+		if data.style=="whiff" then chidoriFizzle(fx,data) elseif data.style~="block" then chidoriCue(fx,data,folder) end
+	end
+	return false
+end
+local function sasukeFrame(fx,model,actor,st,clock)
+	if actor.fighterId~="Lion" then return end
+	curseSpread(fx,model,actor,st,clock)
+	shadowLeaf(fx,model,actor,st,clock)
+end
+
+-- ------------------------------------------------------------------ layer
+local function impact(fx,data,folder)
+	if minatoImpact(fx,data,folder) then return true end
+	if itachiImpact(fx,data,folder) then return true end
+	if sasukeImpact(fx,data,folder) then return true end
+	return nejiImpact(fx,data,folder)
+end
+local function fighter(fx,model,actor,dt)
+	if not model or not actor then return end
+	local st=stateOf(fx,model)
+	local clock=IdentityFX.clock()
+	networkFrame(fx,model,actor,st)
+	if actor.fighterId=="Flashstep" or #(actor.seals or {})&gt;0 then minatoFrame(fx,model,actor,st,clock) end
+	itachiFrame(fx,model,actor,st,clock)
+	sasukeFrame(fx,model,actor,st,clock)
+end
+local function frame(fx,data,dt,folder)
+	-- A new duel numbers its projectiles from one again.
+	if fx.identityEpoch~=data.epoch then fx.identityEpoch=data.epoch;fx.identityGlints={} end
+	laneFrame(fx,data)
+	hiddenGlint(fx,data)
+end
+function IdentityFX.install(FX,kit)
+	K=kit
+	table.insert(FX.layers,{name="Identity",impact=impact,fighter=fighter,frame=frame})
+end
+IdentityFX.palmPrint=function(fx,at,normal) return palmPrint(fx,at,normal,1,.1,.22) end
+return IdentityFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -15951,7 +16820,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -16132,7 +17001,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND75">
+        <Item class="LocalScript" referent="ND76">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -16281,7 +17150,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -16581,7 +17450,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -17140,7 +18009,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND79">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -17318,6 +18187,15 @@ function UI.new(parent,send)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
+		-- Neji's chakra points closed on this fighter: four pips at the far end of
+		-- the status row (both players read them), each lit as it closes.
+		local points={}
+		for k=1,4 do
+			local pip=frame(box,UDim2.fromOffset(if right then 19+(k-1)*13 else 421-(k-1)*13,86),UDim2.fromOffset(9,9),palette.track)
+			pip.AnchorPoint=Vector2.new(.5,.5);pip.Visible=false
+			corner(pip,5)
+			points[k]=pip
+		end
 		-- Substitution charges: two diamonds, the recharging one fills up.
 		local pips={}
 		for k=1,2 do
@@ -17336,7 +18214,11 @@ function UI.new(parent,send)
 			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
 			corner(m,7);table.insert(medals,m)
 		end
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals}
+		-- The awakening while it burns: its name, the time left and what it
+		-- changes in the fight (UI.awakening), under the plate.
+		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
+		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -17493,6 +18375,73 @@ function UI.padCue(cue)
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
 	return cue
 end
+-- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
+-- pops), shown whenever the opponent fights with the Gentle Fist; the chakra
+-- bar dims with the recovery the points cost.
+local HYUGA=Color3.fromRGB(190,208,255)
+function UI.network(widget,actor,foe)
+	local count=#(actor.tenketsuPoints or {})
+	if count==0 then count=actor.tenketsu or 0 end
+	local shown=(foe and foe.fighterId=="GentleFist") or count&gt;0
+	local severe=actor.tenketsuSevere==true
+	for k,pip in widget.points do
+		pip.Visible=shown
+		pip.BackgroundColor3=if k&lt;=count then (if severe then palette.paper else HYUGA) else palette.track
+		if k&lt;=count and k&gt;widget.pointsShown then
+			pip.Size=UDim2.fromOffset(15,15)
+			Tween:Create(pip,TweenInfo.new(.22,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.fromOffset(9,9)}):Play()
+		end
+	end
+	widget.pointsShown=count
+	local regen=math.clamp(actor.chakraRegen or 1,0,1)
+	widget.chakra.BackgroundColor3=if regen&lt;1 then palette.blue:Lerp(Color3.fromRGB(112,118,138),math.min(1,(1-regen)*1.4)) else palette.blue
+end
+-- What each CORE4 awakening changes in the fight, said while it burns (a
+-- fighter without a line here shows its name and time only).
+local AWAKENED={
+	Flashstep="EACH JUMP LEAVES A RETURN SEAL  •  FLASH ONTO A LAUNCHED BODY",
+	GentleFist="NO BLIND SPOT  •  ONE PALM CLOSES TWO POINTS",
+	Mirage="HIS GUARD READS  •  A MISS NEAR HIM IS READ",
+	Lion="KICKS DO NOT LET GO  •  LAUNCHERS BECOME THE DANCING LEAF",
+}
+UI.AWAKENED=AWAKENED
+function UI.awakening(actor)
+	if (actor.awaken or 0)&lt;=0 or (actor.health or 1)&lt;=0 then return "" end
+	local def=Fighters[actor.fighterId]
+	local name=def and def.Awakening and def.Awakening.Name or "AWAKENED"
+	local line=string.format("%s  %.1fs",name,actor.awaken)
+	if actor.curseHunger then return line.."  •  HUNGRY: LAND A BLOW" end
+	return if AWAKENED[actor.fighterId] then line.."  •  "..AWAKENED[actor.fighterId] else line
+end
+-- The counter a read, a repel or a caught image opened: named, with the time
+-- it stays open (it closes fast; the HUD says how fast).
+local COUNTER_NAME={CounterPalm="COUNTER PALM",PalmThrust="TWIN PALM"}
+function UI.counterPrompt(h,pad)
+	local move=(MoveGraphs[h.fighterId] or {}).readCounter
+	local name=COUNTER_NAME[move or ""] or "COUNTER"
+	return string.format("%s — %s  %.1fs",if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light,name,h.counter or 0)
+end
+-- Contextual prompts for a conversion that is open right now (nil: none):
+-- after a teleport the arrival strike or Rasengan, after the Dancing Leaf the
+-- air finisher.
+function UI.conversion(h,pad)
+	local light=if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light
+	local heavy=if pad then Controls.PadLabel.Heavy else Controls.KeyLabel.Heavy
+	if h.flash then
+		local line=light.." — ARRIVAL STRIKE  •  "..heavy..(if h.airborne then " — SLAM" else " — LAUNCH")
+		for i,tech in h.techniques or {} do
+			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra&gt;=tech.cost and (h.sealed or 0)&lt;=0 then
+				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"
+			end
+		end
+		return line
+	end
+	if (h.lion or 0)&gt;0 and h.airborne then
+		local finisher=(MoveGraphs[h.fighterId] or {}).airFinisher
+		return heavy.." — "..(if finisher then finisher.cue else "LION COMBO")
+	end
+	return nil
+end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
@@ -17544,9 +18493,15 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
-		-- Gentle Fist effects on this fighter.
-		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
-		elseif (actor.tenketsu or 0)&gt;0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%%s",actor.tenketsu*15,if actor.tenketsuSevere then "  •  SEALED" else "") end
+		-- Gentle Fist effects on this fighter: the closed points (pips), what
+		-- they cost (the chakra bar dims, its recovery is spelled out) and the
+		-- jutsu the 64 Palms sealed.
+		UI.network(widget,actor,if actor==h then b else h)
+		widget.awake.Text=UI.awakening(actor)
+		local tone=Fighters[actor.fighterId] and Fighters[actor.fighterId].Awakening and Fighters[actor.fighterId].Awakening.Color
+		widget.awake.TextColor3=if tone then Color3.fromRGB(table.unpack(tone)) else palette.gold
+		if (actor.sealed or 0)&gt;0 then widget.status.Text..=string.format("   •   JUTSU SEALED %.1fs",actor.sealed)
+		elseif (actor.chakraRegen or 1)&lt;1 then widget.status.Text..=string.format("   •   CHAKRA REGEN -%d%%%s",math.floor((1-actor.chakraRegen)*100+.5),if actor.tenketsuSevere then "  •  NETWORK SEALED" else "") end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)&gt;1 and k&lt;=(data.roundsToWin or 1)
@@ -17587,6 +18542,9 @@ function UI:render(data)
 		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
 		-- Caught in wire or sand: the way out must be on screen.
 		or cue:find("WIRED") or cue:find("BOUND")
+		-- Sasuke's (and Lee's) continuations and risks must be read too: the
+		-- Dancing Leaf, the Lion Combo, the curse, a Chidori and its miss.
+		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
 	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
@@ -17595,21 +18553,27 @@ function UI:render(data)
 		ui.box.Visible=true
 		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
-		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost
-		ui.status.Text=if tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
-		if tech.id=="Flashstep" and #(h.seals or {})&gt;0 and tech.remaining==0 then
+		-- Sealed by the 64 Palms: every jutsu greys out and says why.
+		local sealed=(h.sealed or 0)&gt;0
+		local ready=tech.remaining==0 and tech.condition and h.chakra&gt;=tech.cost and not sealed
+		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining&gt;0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra&lt;tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		if tech.id=="Flashstep" and #(h.seals or {})&gt;0 and tech.remaining==0 and not sealed then
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count&gt;1 then "S" else "").."  •  "..ui.status.Text
 		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
-		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
+		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)&lt;.34
+	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit&gt;0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
-		elseif (h.counter or 0)&gt;0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
+		elseif (h.counter or 0)&gt;0 then UI.counterPrompt(h,pad)
+		-- The Chidori's risk, from the other side: its charge can be broken.
+		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
 		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")
@@ -17638,7 +18602,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -17779,7 +18743,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -20017,7 +20981,7 @@ return Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND81">
+  <Item class="Lighting" referent="ND82">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -20035,7 +20999,7 @@ return Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND82">
+  <Item class="SoundService" referent="ND83">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
