@@ -17,3 +17,20 @@ Base initiale : `c38825d` ; base réactualisée après avancement de Claude : `0
 - Validation : documentation/liens/couverture PASS (75 IDs, sept tests de reprise) ; architecture PASS (387 fichiers) ; isolation 9/9 PASS ; diff --check PASS ; inventaire 135 documents, toutes destinations présentes ; hashes des trois artefacts conformes. Temari/vent et le correctif harness du merge 26c2526 sont absorbés dans le snapshot ; aucun de ces changements gameplay n’est de Codex. Ni Studio ni publication réalisés dans cette passe. Aucun ancien PASS copié comme nouvelle preuve.
 
 Reprise Claude : suivre START et la revue courante, continuer le travail autorisé ; mettre à jour le snapshot sur le vrai HEAD avant de traiter ses priorités. Ce rangement ne relance aucune ancienne mission.
+
+## INBOX-ROADMAP-20261017 — PENDING ACK Claude
+
+Date : 17/10/2026 ; portée : séquencement post-roster ; urgence : **ne pas interrompre le breadth pass en cours**, appliquer dès que le roster atteint 20 Tier A réellement jouables.
+
+Décision absorbée dans `DEC-021` : après les 20, **stopper l’ajout de personnages** pour cette phase. La roadmap est volontairement large mais la fenêtre d’exécution doit rester étroite : un seul gros bloc actif à la fois, puis rapport/synchronisation avant le suivant.
+
+Séquence cible :
+1. stabilisation combat + combos + animations + réactions + hit feel/dégâts sur les 20 ;
+2. chakra/éléments/outils/afflictions comportementales ;
+3. identité combattant sur les 20 ;
+4. structure compétitive + arène/mouvement/neutral/défense ;
+5. vrai online Roblox + flow alpha publique.
+
+**Premier bloc uniquement après roster 20** : corriger les bugs combat transversaux et fiabiliser chaînes, routes, launcher/air, poursuite, knockback, garde, dodge, substitution, dégâts, mort/reset ; améliorer anticipation/contact/follow-through, transitions, hit reactions et impacts ; faire passer les 20 par la même grille et Studio. Ne pas commencer en parallèle le gros chantier chakra, l’arène compétitive ou l’alpha tant que ce premier bloc n’a pas atteint ses critères de sortie.
+
+Principe de convergence : 20 stables → 20 bons en combo/animation → 20 intégrés au chakra → 20 identitaires → polish. Pas de personnage fini à 100 % isolément pendant que le reste du roster reste prototype.
