@@ -230,7 +230,7 @@ function Matches:view(s,cursor,mine,theirs)
 	for _,p in s.combat.projectiles do
 		-- infusion: the chakra nature it carries (nil: a plain object); planted:
 		-- the tool a resting point or stretched wire is drawn as (ChakraCombat).
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted})
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,hidden=p.hidden})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do

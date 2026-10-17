@@ -81,14 +81,17 @@ function Elements.phoenix(c,a,pending,now)
 			c:schedule(now+.14+k*.07,function()
 				if a.health<=0 or a.reaction or a.state=="Stunned" or not a.target or a.target.health<=0 then return end
 				local side=a.root.CFrame.RightVector*(if k==1 then -1.5 else 1.5)
+				local blade
 				-- Skill build (Wired Flames): the hidden blades trail wire and bind.
 				if spec.WiredBlades then
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
+					blade=c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"wire",nil,{riders={bind=spec.WiredBlades}})
 				else
 					-- Blades hidden in the flames come out burning: they ignite what they
 					-- touch and leave a burning point where they land (ChakraCombat).
-					c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
+					blade=c:projectile(a,a.target.root.Position+side,90,spec.Range,2,"shuriken",nil,{chakra=Chakra.innate(c,a,"Shuriken","Fire")})
 				end
+				-- The client shows the steel leaving the flames (IdentityFX).
+				blade.hidden=true
 			end)
 		end
 	end

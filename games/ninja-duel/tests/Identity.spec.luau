@@ -1148,4 +1148,141 @@ test("HUD · a read's counter is named and timed",function()
  end)
 end)
 
+-- Sasuke (server) ----------------------------------------------------------------
+test("Sasuke · a Chidori that finds nothing tells both he is open; one that lands names itself",function()
+ local c,a,b,match=H.duel("Lion","Mirage")
+ place(c,a,b,V.new(0,3,30),V.new(0,3,-30))
+ local serial=c.impactSerial
+ local seen,feed={},{}
+ assert(c:request(a,slot(a,"Chidori"),b.root.Position),"Chidori refused")
+ for _=1,150 do H.step(c,.01);feedSince(c,serial,seen,feed) end
+ assert(b.health==b.def.Health,"setup: the thrust should miss")
+ assert(ev(a,"ChidoriMissed")==1,"the miss is not marked")
+ local toB,toA=false,false
+ for _,cue in match.cues do
+  if cue.actor==b.id and cue.message=="CHIDORI MISSED • PUNISH" then toB=true end
+  if cue.actor==a.id and cue.message:find("MISSED",1,true) then toA=true end
+ end
+ assert(toB and toA,"the miss is not said to both players")
+ local whiff
+ for _,impact in feed do if impact.style=="whiff" and impact.move=="ChidoriThrust" then whiff=impact end end
+ assert(whiff and whiff.owner==a.id,"the empty thrust does not say it was the Chidori")
+ local c2,x,y=H.duel("Lion","Mirage")
+ place(c2,x,y,V.new(0,3,4),V.new(0,3,-4))
+ local s2=c2.impactSerial
+ local seen2,feed2={},{}
+ assert(c2:request(x,slot(x,"Chidori"),y.root.Position))
+ for _=1,120 do H.step(c2,.01);feedSince(c2,s2,seen2,feed2);if y.health<y.def.Health then break end end
+ assert(y.health<y.def.Health,"setup: the thrust should land")
+ H.step(c2,.3)
+ local landed
+ for _,impact in feed2 do if impact.move=="ChidoriThrust" and impact.victim==y.id and impact.style~="whiff" then landed=impact end end
+ assert(landed and landed.owner==x.id,"the Chidori contact does not name itself")
+ assert(ev(x,"ChidoriMissed")==0,"a landed Chidori was called a miss")
+end)
+
+test("Sasuke · the Phoenix Flower's hidden blades are marked as hidden in the snapshot",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ place(c,a,b,V.new(0,3,14),V.new(0,3,-14))
+ assert(c:request(a,slot(a,"PhoenixFlower"),b.root.Position),"Phoenix Flower refused")
+ H.step(c,.62)
+ local data=Matches.view(Matches,{combat=c,epoch=1,phase="Duel",origin=V.zero,round=1,wins={},roundsToWin=1},{},a,b)
+ local hidden,flames=0,0
+ for _,p in data.projectiles do
+  if p.hidden then hidden+=1;assert(p.kind=="shuriken","a hidden blade is not steel") end
+  if p.kind=="phoenix" then flames+=1;assert(not p.hidden,"a flame is marked hidden") end
+ end
+ assert(hidden==2 and flames>=1,"the two blades in the flames are not marked ("..hidden.." hidden, "..flames.." flames)")
+end)
+
+test("Sasuke · Shadow of the Dancing Leaf: the snapshot carries the Lion Combo window",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
+ assert(view(c,a,b).lion==0,"a window before any leaf")
+ for hit=1,2 do assert(c:request(a,"Attack"));assert(chainOpen(c,a),"string broke at hit "..hit) end
+ a.intentOverride={"forward",0}
+ assert(c:request(a,"Attack"))
+ a.intentOverride=nil
+ assert(a.attackName=="LionKick","not the rising kick ("..tostring(a.attackName)..")")
+ until_(c,.6,function() return a.state=="Pursuit" end,"no Dancing Leaf")
+ local data=view(c,a,b)
+ assert(data.lion>0 and data.lion<=2.1,"the Lion Combo window is not in the snapshot ("..tostring(data.lion)..")")
+end)
+
+-- Sasuke (client) ----------------------------------------------------------------
+test("client · the curse spreads from the neck as it takes Sasuke, across the face while it starves, and recedes with it",function()
+ inScene(function(fx,folder,bodies,advance,_,IdentityFX)
+  local sasuke=actorData("A","Lion",{awaken=11})
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=sasuke,bot=actorData("B","Mirage")}
+  local function shown()
+   local count=0
+   for _,p in bodies.A:GetChildren() do if p.Name=="CurseSpread" and p.Transparency==0 then count+=1 end end
+   return count
+  end
+  fx:update(data,1/60,folder)
+  local start=shown()
+  assert(start>=1 and start<=2,"the curse appeared all at once ("..start..")")
+  advance(1.2);fx:update(data,1/60,folder)
+  local spread=shown()
+  local plain=0
+  for _,spec in IdentityFX.CURSE_SPREAD do if not spec.hunger then plain+=1 end end
+  assert(spread==plain,"the curse did not spread over the body ("..spread.." of "..plain..")")
+  sasuke.curseHunger=true;fx:update(data,1/60,folder)
+  assert(shown()==#IdentityFX.CURSE_SPREAD,"a starving curse does not reach across the face")
+  local neon=0
+  for _=1,8 do
+   advance(.05);fx:update(data,1/60,folder)
+   for _,p in bodies.A:GetChildren() do if p.Name=="CurseSpread" and p.Material==H.roblox.Enum.Material.Neon then neon+=1 end end
+  end
+  assert(neon>0,"the hungry curse does not flicker")
+  sasuke.awaken=0;fx:update(data,1/60,folder)
+  for _,p in bodies.A:GetChildren() do assert(p.Name~="CurseSpread","the curse outlived the awakening") end
+ end)
+end)
+test("client · Sasuke's Dancing Leaf leaves a shadow under the rising body; the vault kick draws its arc",function()
+ inScene(function(fx,folder,bodies,advance)
+  local sasuke=actorData("A","Lion",{state="Pursuit",lion=1.6})
+  local data={phase="Duel",epoch=1,hazards={},projectiles={},human=sasuke,bot=actorData("B","Mirage")}
+  local before=#named(fx,"Afterimage")
+  for _=1,4 do advance(.08);fx:update(data,1/60,folder) end
+  assert(#named(fx,"Afterimage")>=before+3,"no shadow chain under the rising body")
+  sasuke.state="Startup";sasuke.lion=0;sasuke.attackName="VaultKick"
+  fx:update(data,1/60,folder)
+  assert(fx.auras[bodies.A].trail.Enabled,"the vault kick draws no arc")
+ end)
+end)
+test("client · a Chidori bursts along its line where it lands and fizzles when it finds nothing; the Phoenix Flower's steel glints out of the flames",function()
+ inScene(function(fx,folder)
+  fx:impact({style="finisher",position=V.new(0,3,-3),owner="A",victim="B",fighter="Lion",move="ChidoriThrust",direction=-V.zAxis,serial=1},folder)
+  assert(#named(fx,"ChidoriLine")==1,"the Chidori does not burst along its line")
+  assert(#named(fx,"ChidoriFizzle")==0,"a landed Chidori fizzled")
+  fx:impact({style="whiff",position=V.new(0,3,-2.2),owner="A",fighter="Lion",move="ChidoriThrust",serial=2},folder)
+  assert(#named(fx,"ChidoriFizzle")==1,"an empty Chidori does not fizzle")
+  local data={phase="Duel",epoch=1,hazards={},human=actorData("A","Lion"),bot=actorData("B","Mirage"),projectiles={
+   {id=7,kind="shuriken",origin=V.new(0,4,0),direction=-V.zAxis,speed=90,born=99.7,range=56,owner="A",radius=0,growth=0,infusion="Fire",hidden=true},
+   {id=8,kind="shuriken",origin=V.new(2,4,0),direction=-V.zAxis,speed=90,born=99.7,range=56,owner="A",radius=0,growth=0,infusion="Fire"}}}
+  fx:sync(data);fx:update(data,1/60,folder)
+  assert(#named(fx,"HiddenGlint")==1,"the hidden steel does not glint (or a plain blade did)")
+  fx:update(data,1/60,folder)
+  assert(#named(fx,"HiddenGlint")==1,"the glint repeats")
+ end)
+end)
+test("HUD · Sasuke's continuations and risks are said: the Dancing Leaf, the Lion Combo prompt, the hungry curse, the Chidori charge and miss",function()
+ hudScene(function(ui)
+  local me=plate("Lion",{lion=1.4,airborne=true,cue="SHADOW OF THE DANCING LEAF • HEAVY = LION COMBO"})
+  ui:render(duelView(me,plate("Mirage")))
+  assert(ui.cue.Text==me.cue,"the Dancing Leaf is not said ("..ui.cue.Text..")")
+  assert(ui.hint.Text=="RMB — LION COMBO","the Lion Combo is not prompted ("..ui.hint.Text..")")
+  me.lion=0;me.airborne=false;me.awaken=6.5;me.curseHunger=true;me.cue="CURSE MARK • IT DOES NOT LET GO"
+  ui:render(duelView(me,plate("Mirage")))
+  assert(ui.cue.Text==me.cue,"the curse's hold is not said")
+  assert(ui.hp.awake.Text:find("CURSE MARK",1,true) and ui.hp.awake.Text:find("HUNGRY",1,true),"the hungry curse is not said ("..ui.hp.awake.Text..")")
+  -- From the other side: the charge can be broken, the miss punished.
+  local itachi=plate("Mirage",{cue="CHIDORI MISSED • PUNISH"})
+  ui:render(duelView(itachi,plate("Lion",{castId="Chidori",state="TechniqueChannel"})))
+  assert(ui.hint.Text:find("BREAK THE CHIDORI CHARGE",1,true),"the Chidori charge is not marked breakable ("..ui.hint.Text..")")
+  assert(ui.cue.Text=="CHIDORI MISSED • PUNISH","the missed Chidori is not said")
+ end)
+end)
+
 print("NinjaDuel identity pass: "..passed.." PASS")

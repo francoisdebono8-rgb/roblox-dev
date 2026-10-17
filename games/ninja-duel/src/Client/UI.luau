@@ -528,6 +528,9 @@ function UI:render(data)
 		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
 		-- Caught in wire or sand: the way out must be on screen.
 		or cue:find("WIRED") or cue:find("BOUND")
+		-- Sasuke's (and Lee's) continuations and risks must be read too: the
+		-- Dancing Leaf, the Lion Combo, the curse, a Chidori and its miss.
+		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
 	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
@@ -555,6 +558,8 @@ function UI:render(data)
 		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
 		elseif (h.counter or 0)>0 then UI.counterPrompt(h,pad)
+		-- The Chidori's risk, from the other side: its charge can be broken.
+		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
 		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")

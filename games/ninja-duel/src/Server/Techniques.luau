@@ -540,6 +540,18 @@ Techniques.Chidori={
 		if a.pending then a.pending.spec.damage=pending.spec.Damage end
 		c:pushImpact(a.root.Position,"chidori",true,{owner=a.id})
 		c:cue(a,"CHIDORI",.8)
+		-- The risk, said to both: a thrust that touched nothing (not even a guard)
+		-- leaves him open for its whole recovery.
+		local thrust=a.pending
+		local serial=a.attackSerial
+		if thrust then
+			c:schedule(c.now+thrust.spec.startup+thrust.spec.active+.02,function()
+				if a.health<=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+				c:cue(a,"CHIDORI • MISSED • OPEN",.8)
+				if a.target and a.target.health>0 then c:cue(a.target,"CHIDORI MISSED • PUNISH",.8) end
+				Brawler.event(c,a,"ChidoriMissed")
+			end)
+		end
 	end,
 }
 -- Gaara ----------------------------------------------------------------

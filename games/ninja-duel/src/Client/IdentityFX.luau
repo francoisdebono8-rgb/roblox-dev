@@ -8,6 +8,18 @@
 --           the victim for both players and the last palm throws the body; the
 --           palms stay lit while the Rotation counter is open; a body a Vacuum
 --           Palm drives into a wall leaves the air's palm print on the stone.
+--   Minato  a planted kunai, a floor formula and a body mark look apart; the
+--           arrival window rings under him; an arrival strike that carries the
+--           combo through the jump links in gold; the Rasengan grinds where it
+--           lands; Yellow Flash draws its thread back to the return seal.
+--   Itachi  the Read stance turns its tomoe at his feet; a read draws the line
+--           from his eyes to the swing and the counter window closes under him;
+--           a caught image lights the real body; ricochet and Geometry paths
+--           flash; his fire lane is one scorched strip across the field.
+--   Sasuke  the curse spreads from the neck as it takes him (across the face
+--           when it starves); the Dancing Leaf's shadow and the vault's arc; the
+--           Phoenix Flower's hidden steel glints out of the flames; a Chidori
+--           bursts along its line, or fizzles when it finds nothing.
 -- One identity layer installed into Effects (like SandFX and LeeFX): Effects
 -- only offers the registry and its helpers. Presentation only: nothing here can
 -- change gameplay.
@@ -562,10 +574,130 @@ local function itachiFrame(fx,model,actor,st,clock)
 	if actor.fighterId=="Mirage" then counterWindow(fx,model,actor,st) end
 end
 
+-- ----------------------------------------------------------------- Sasuke
+local CURSE=Color3.fromRGB(120,60,200)
+local CURSE_INK=Color3.fromRGB(14,10,18)
+local SHADOW=Color3.fromRGB(40,44,74)
+local CHIDORI=Color3.fromRGB(190,220,255)
+local CHIDORI_CORE=Color3.fromRGB(236,244,255)
+-- The cursed seal spreads out of the neck as the awakening takes him, one
+-- flame mark after another (the dress keeps three at the seal itself), and on
+-- across the face while it starves. {part, offset}: the offset's Z axis is the
+-- surface normal (front faces -Z, the left side turned a quarter).
+local SIDE=CFrame.Angles(0,math.pi/2,0)
+local CURSE_SPREAD={
+	{"Head",CFrame.new(-.77,-.12,-.3)*SIDE*CFrame.Angles(0,0,math.rad(20))},
+	{"Head",CFrame.new(-.77,.16,-.5)*SIDE*CFrame.Angles(0,0,math.rad(40))},
+	{"UpperTorso",CFrame.new(-.75,.6,-.51)*CFrame.Angles(0,0,math.rad(-15))},
+	{"Head",CFrame.new(-.5,.32,-.77)*CFrame.Angles(0,0,math.rad(55))},
+	{"UpperTorso",CFrame.new(-1.01,.35,-.15)*SIDE},
+	{"UpperTorso",CFrame.new(-.45,.25,-.51)*CFrame.Angles(0,0,math.rad(25))},
+	{"LeftUpperArm",CFrame.new(-.05,.3,-.41)},
+	{"LeftUpperArm",CFrame.new(-.41,0,-.05)*SIDE*CFrame.Angles(0,0,math.rad(15))},
+	{"LeftUpperArm",CFrame.new(-.05,-.32,-.41)},
+	-- Hunger: the curse reaches across the face.
+	{"Head",CFrame.new(-.2,.48,-.77)*CFrame.Angles(0,0,math.rad(70)),hunger=true},
+	{"Head",CFrame.new(.12,-.36,-.77)*CFrame.Angles(0,0,math.rad(-30)),hunger=true},
+}
+IdentityFX.CURSE_SPREAD=CURSE_SPREAD
+local SPREAD_STEP=.09
+local function curseSpread(fx,model,actor,st,clock)
+	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
+	if not awake then
+		if st.curse then for _,mark in st.curse.marks do mark:Destroy() end;st.curse=nil end
+		return
+	end
+	if not st.curse then
+		local marks={}
+		for i,spec in CURSE_SPREAD do
+			local body=model:FindFirstChild(spec[1])
+			if body then
+				local mark=K.block(model,Vector3.new(.12,.34,.04),body.CFrame*spec[2],CURSE_INK,Enum.Material.SmoothPlastic)
+				mark.Name="CurseSpread";mark.Anchored=false;mark.Massless=true;mark.Transparency=1
+				K.new("WeldConstraint",{Part0=body,Part1=mark},mark)
+				marks[i]=mark
+			end
+		end
+		st.curse={marks=marks,born=clock}
+	end
+	local hungry=actor.curseHunger==true
+	local pulse=math.sin(clock*18)>0
+	for i,mark in st.curse.marks do
+		local spec=CURSE_SPREAD[i]
+		local shown=clock-st.curse.born>=(i-1)*SPREAD_STEP and (not spec.hunger or hungry)
+		mark.Transparency=if shown then 0 else 1
+		mark.Material=if hungry and pulse then Enum.Material.Neon else Enum.Material.SmoothPlastic
+		mark.Color=if hungry and pulse then CURSE else CURSE_INK
+	end
+end
+-- Shadow of the Dancing Leaf: a dark shadow chain glued under the rising body
+-- while he follows it up (the heavy up there is the Lion Combo); the vault kick
+-- draws its arc over the opponent.
+local function shadowLeaf(fx,model,actor,st,clock)
+	if actor.state=="Pursuit" and (actor.lion or 0)>0 then
+		if clock-(st.shadowAt or -1)>=.07 then st.shadowAt=clock;fx:ghost(model,SHADOW,.3,.45) end
+	end
+	local aura=fx.auras and fx.auras[model]
+	if aura and aura.trail and actor.attackName=="VaultKick" and (actor.state=="Startup" or actor.state=="Active") then aura.trail.Enabled=true end
+end
+-- Chidori: a thrust that lands bursts in lightning along its line; one that
+-- finds nothing fizzles out in front of him (the opening is his).
+local function chidoriCue(fx,data,folder)
+	local at=data.position
+	local striker=rootOf(find(folder,data.owner))
+	if striker then streak(fx,striker.Position,at,CHIDORI,.3,.22,"ChidoriLine") end
+	for k=1,4 do
+		local a=k*math.pi/2+math.random()*.6
+		fx:bolt(at,at+Vector3.new(math.cos(a)*3.2,(math.random()-.3)*2.4,math.sin(a)*3.2),CHIDORI_CORE)
+	end
+	K.flash(fx.folder,at,CHIDORI_CORE,1,7,.2,0)
+	K.shockRing(fx.folder,at,CHIDORI,2,12,.26,data.direction)
+end
+local function chidoriFizzle(fx,data)
+	local holder=K.new("Model",{Name="ChidoriFizzle"},fx.folder)
+	K.burst(holder,data.position,{Texture=K.TEX.spark,Lifetime=NumberRange.new(.2,.5),Speed=NumberRange.new(2,6),SpreadAngle=Vector2.new(60,60),
+		Color=ColorSequence.new(CHIDORI),LightEmission=1,Size=K.num({{0,.5},{1,0}}),Acceleration=Vector3.new(0,-40,0),Drag=2},18)
+	K.flash(holder,data.position,Color3.fromRGB(120,140,170),.4,2.2,.25,.4)
+	K.sound(K.anchorPart(fx.folder,data.position),K.SOUND.whoosh,.3,.5)
+	Debris:AddItem(holder,.6)
+end
+-- The steel hidden in the Phoenix Flower glints once as it leaves the flames.
+local function hiddenGlint(fx,data)
+	fx.identityGlints=fx.identityGlints or {}
+	local now=fx:visualTime()
+	for _,p in data.projectiles or {} do
+		local entry=fx.projectiles[p.id]
+		if p.hidden and entry and not fx.identityGlints[p.id] and now-p.born>=.1 then
+			fx.identityGlints[p.id]=true
+			local at=entry.root.Position
+			local glint=K.new("Model",{Name="HiddenGlint"},fx.folder)
+			for _,roll in {0,math.pi/2} do
+				local ray=K.block(glint,Vector3.new(.06,1.6,.06),CFrame.new(at)*CFrame.Angles(0,0,roll+math.pi/4),Color3.fromRGB(255,255,255),Enum.Material.Neon)
+				fade(ray,.18,1.6)
+			end
+			K.flash(glint,at,Color3.fromRGB(255,250,236),.2,1.4,.12,0)
+			K.sound(K.anchorPart(fx.folder,at),K.SOUND.whoosh,.25,2.4)
+			Debris:AddItem(glint,.25)
+		end
+	end
+end
+local function sasukeImpact(fx,data,folder)
+	if data.move=="ChidoriThrust" then
+		if data.style=="whiff" then chidoriFizzle(fx,data) elseif data.style~="block" then chidoriCue(fx,data,folder) end
+	end
+	return false
+end
+local function sasukeFrame(fx,model,actor,st,clock)
+	if actor.fighterId~="Lion" then return end
+	curseSpread(fx,model,actor,st,clock)
+	shadowLeaf(fx,model,actor,st,clock)
+end
+
 -- ------------------------------------------------------------------ layer
 local function impact(fx,data,folder)
 	if minatoImpact(fx,data,folder) then return true end
 	if itachiImpact(fx,data,folder) then return true end
+	if sasukeImpact(fx,data,folder) then return true end
 	return nejiImpact(fx,data,folder)
 end
 local function fighter(fx,model,actor,dt)
@@ -575,9 +707,11 @@ local function fighter(fx,model,actor,dt)
 	networkFrame(fx,model,actor,st)
 	if actor.fighterId=="Flashstep" or #(actor.seals or {})>0 then minatoFrame(fx,model,actor,st,clock) end
 	itachiFrame(fx,model,actor,st,clock)
+	sasukeFrame(fx,model,actor,st,clock)
 end
 local function frame(fx,data,dt,folder)
 	laneFrame(fx,data)
+	hiddenGlint(fx,data)
 end
 function IdentityFX.install(FX,kit)
 	K=kit
