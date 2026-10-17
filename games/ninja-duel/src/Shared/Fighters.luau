@@ -1,4 +1,4 @@
-return {
+local Fighters = {
 	Flashstep = {
 		Name = "Minato", FullName = "Minato Namikaze", Age = 13, Title = "THE FAST PRODIGY", Color = { 82, 177, 244 },
 		Routes = "↑ rising kick (seals the body: 2 follows it up)  ·  ↓ spinning leg sweep (plants a marked kunai)  ·  ←→ angle step  ·  air: push kick / axe kick / flash switch",
@@ -402,3 +402,8 @@ return {
 		},
 	},
 }
+-- Roster 20 batches keep their fighters in their own data modules.
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+	for id,def in wave.fighters or {} do Fighters[id]=def end
+end
+return Fighters

@@ -30,7 +30,7 @@
 --                  or dodge aborts the dash), commit + past (the line is fixed
 --                  after `commit` s and aims `past` studs through the body),
 --                  dashDamage (the arrival strike). `name` reaches the client.
-return {
+local Graphs = {
 	Flashstep={
 		routes={up="Launcher",down="Sweep",side="AngleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
 		disengage="Kunai",
@@ -199,3 +199,8 @@ return {
 		reengage={name="copy",speed=1.1,arrive=3.2,angle=20,chase=.28,recovery=.2},
 	},
 }
+-- Roster 20 batches keep their move graphs in their own data modules.
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+	for id,graph in wave.graphs or {} do Graphs[id]=graph end
+end
+return Graphs

@@ -1035,5 +1035,6 @@ require(script.Parent.Legion).install(Techniques)
 require(script.Parent.Gale).install(Techniques)
 -- Roster breadth pass: every technique that names a Family and has no
 -- bespoke entry above runs the family's (Server/Families).
+for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit)} do kit.install(Techniques) end
 require(script.Parent.Families).install(Techniques,require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters))
 return Techniques

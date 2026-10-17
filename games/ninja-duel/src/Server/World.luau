@@ -950,6 +950,7 @@ end
 -- into World: one install line per module).
 local COSTUME_KIT={wear=wear,cyl=cyl,headband=headband,face=face,hairCap=hairCap,spike=spike,rgb=rgb,A=A,R=R}
 require(script.Parent.Costumes).install(World.dressers,COSTUME_KIT)
+for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit)} do kit.dress(World.dressers,COSTUME_KIT) end
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end

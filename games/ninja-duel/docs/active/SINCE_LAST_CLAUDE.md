@@ -2,7 +2,7 @@
 
 Propriétaire unique : entrées temporaires à prendre en compte, puis absorber/accuser selon EXECUTION_RULES. Faits actuels dans [CURRENT_STATE](CURRENT_STATE.md), décisions dans [DECISIONS](DECISIONS.md), tâches dans [MASTER_BACKLOG](MASTER_BACKLOG.md). Ancien journal intégral du 12–16 octobre : [archive](../archive/audits/2026-10-17/before-active/SINCE_LAST_CLAUDE.md).
 
-## INBOX-DOC-20261017 — PENDING ACK Claude
+## INBOX-DOC-20261017 — ACK Claude 17/10/2026 (checkpoint `fb47e88`, absorbé : START, revue, état et backlog suivis ; roster 20 poursuivi par CHR-EXT-002)
 
 Date : 17/10/2026 ; portée : organisation documentaire uniquement ; urgence : lire avant le prochain gros bloc, sans interrompre l’implémentation en cours.
 

@@ -1,6 +1,6 @@
 # Roster 20 — breadth pass (Tier A → B → C)
 
-Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../missions/ROSTER_20_BREADTH_PASS.md). Règle Studio : [`docs/missions/STUDIO_VALIDATION_RULE.md`](../missions/STUDIO_VALIDATION_RULE.md). Suite : [`docs/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md`](../missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md).
+Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROSTER_20_BREADTH_PASS.md). Règle Studio : [`docs/missions/STUDIO_VALIDATION_RULE.md`](../archive/missions/STUDIO_VALIDATION_RULE.md). Suite : [`docs/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md`](../archive/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md).
 
 ## Les vingt
 
