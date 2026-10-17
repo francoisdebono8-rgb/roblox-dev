@@ -29,7 +29,8 @@ function Kit.install(Techniques)
 			body.state="Active"
 			local s=body.pendingStrike or {}
 			if Bodies.hitFrom(c,body,b,{damage=s.damage,reach=s.reach,height=6,arc=-.2,reaction=s.reaction,push=s.push,up=s.up,stun=s.stun,tag=s.tag}) then
-				if s.poison then Families.poison(c,a,b,s.poison) end
+				-- A guard that held takes the chip, never the venom.
+				if s.poison and b.impactStyle~="block" then Families.poison(c,a,b,s.poison) end
 				require(script.Parent.Brawler).event(c,a,"PuppetHit")
 			end
 		elseif body.state=="Active" and c.now>=body.actionAt+.3 then body.state="Recovery"

@@ -72,7 +72,7 @@ fighters.Puppet = {
 	CombatTravel = 0.6, CombatDamage = 0.92, DashScale = 0.98, GuardStrength = 0.1, PreferredRange = 11,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 	-- The puppet (Server/Wave3Kit marionette controller, Server/Bodies).
-	Bodies = { puppet = { Max = 1, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
+	Bodies = { puppet = { Max = 1, Persist = true, Life = 20, Every = 2.2, Reach = 5.2, Damage = 4, Hold = 4.4, Speed = 30, Leash = 34, Poison = { Damage = .6, Time = 2, Every = .5 } } },
 	ToolMastery = { Kind = "shuriken", Projectile = "poisonneedle", Count = 2, Speed = 96, Damage = 1.6, Recover = .65, Contact = { Poison = { Damage = .7, Time = 2, Every = .5 } } },
 	-- Awakening: the puppet master. Every blow poisons, holds last longer,
 	-- the threads come cheaper and back sooner.

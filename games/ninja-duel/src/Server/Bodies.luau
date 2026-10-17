@@ -10,6 +10,8 @@
 --
 -- Data: Fighters[id].Bodies[kind] = {Max, Cost, Life, ...} (Max counts the
 -- persistent bodies; a body made for one strike is `ephemeral`).
+-- Persist=true: a body that carried a strike returns to its own controller
+-- instead of being spent (a marionette, not a one-strike clone).
 -- MoveGraphs[id].proxy[move] = {move, body, summon, solo, awake}: a strike
 -- another body carries out (Bodies.route / Bodies.bind); Attacks[move].proxy
 -- says where it stands ("behind", "side", "under").
@@ -162,6 +164,9 @@ function Bodies.bind(c,a,p,proxy,kind)
 	elseif (at-body.position).Magnitude>14 then
 		Bodies.warp(c,body,at)
 	end
+	-- A persistent body that keeps its own job after the strike (tuning
+	-- Persist: Sasori's marionette) goes back to it; others are spent.
+	if proxy~="summon" and Bodies.tuning(a,body.kind).Persist and body.mode~="carry" then body.resume=body.mode end
 	body.carry=p;body.mode="carry";body.goal=at
 	body.action=p.name;body.variant=spec.proxyClip;body.actionAt=c.now;body.actionSerial+=1;body.state="Startup"
 	body.expires=math.max(body.expires,c.now+span+.6)
@@ -175,8 +180,16 @@ local function carry(c,body,dt)
 	local a=body.owner
 	local b=a.target
 	if a.pending~=p or a.health<=0 or not b or b.health<=0 then
-		-- The strike is over (landed, missed, or its owner was hit): spent.
-		body.carry=nil;body.mode="spent";body.state="Recovery"
+		-- The strike is over (landed, missed, or its owner was hit): spent,
+		-- unless it is a persistent body back to its own job (Persist).
+		body.carry=nil;body.state="Recovery"
+		if body.resume and a.health>0 and not body.ephemeral then
+			body.mode=body.resume;body.resume=nil
+			body.actionAt=c.now;body.nextStrike=math.max(body.nextStrike or 0,c.now+.6)
+			c:schedule(c.now+.25,function() if body.alive and body.mode~="carry" and body.state=="Recovery" then body.state="Neutral" end end)
+			return
+		end
+		body.resume=nil;body.mode="spent"
 		body.expires=math.min(body.expires,c.now+.22)
 		return
 	end
