@@ -1,0 +1,12 @@
+from pathlib import Path
+exec(Path('/tmp/ninja_incremental_native.py').read_text().split("print('FINGERPRINT_EDIT'")[0])
+print('CAPTURE',luau('Client','local r=game:GetService("ReplicatedStorage").NinjaDuel.Action if shared.IncrementalConn then shared.IncrementalConn:Disconnect() end shared.IncrementalConn=r.OnClientEvent:Connect(function(d) if type(d)=="table" then shared.IncrementalLast=d end end) return "ready"'),flush=True)
+def snapshot(label):
+ print(label,luau('Client','local d=shared.IncrementalLast or {} local list={} for _,b in d.bodies or {} do table.insert(list,b.kind..":"..tostring(b.action)..":"..tostring(b.state)) end return game:GetService("HttpService"):JSONEncode({phase=d.phase,human=d.human and d.human.fighterId,attack=d.human and d.human.attackName,bodies=list,humanFamily=d.human and d.human.family,botFamily=d.bot and d.bot.family})'),flush=True)
+print('START',server('return dev:Invoke("start","Puppet","Leaf")'),flush=True);time.sleep(2);stage(7)
+press('One');time.sleep(1.2);snapshot('PUPPET_BEFORE');print('SHOT',shot('incremental_puppet_before'),flush=True)
+record(3);click(1);time.sleep(.18);click(1,button='right');time.sleep(1.4);snapshot('PUPPET_AFTER');print('MOVES',recorded(),flush=True);print('SHOT',shot('incremental_puppet_after'),flush=True)
+print('BRUME_START',server('return dev:Invoke("start","Rinnegan","Mist")'),flush=True);time.sleep(2);stage(8)
+print('BRUME_CAST',server('return game:GetService("HttpService"):JSONEncode(dev:Invoke("act","bot","Technique1"))'),flush=True);time.sleep(1)
+snapshot('BRUME_SNAPSHOT');print('BRUME_CAMERA',luau('Client','local cam=workspace.CurrentCamera local d=shared.IncrementalLast local p=game:GetService("Players").LocalPlayer local m=p.Character.Parent:FindFirstChild(d.bot.id or "AIFighter") local part=m and m:FindFirstChild("UpperTorso") return "enemyAlpha="..tostring(part and part.LocalTransparencyModifier).." cam="..tostring(cam.CFrame.LookVector).." bot="..tostring(d.bot.position)'),flush=True);print('SHOT',shot('incremental_mist'),flush=True)
+print('RESTORE',server('return dev:Invoke("selection")'),flush=True)

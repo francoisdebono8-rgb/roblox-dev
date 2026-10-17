@@ -1,0 +1,39 @@
+FINGERPRINT_EDIT fdba31aba1328dc62426f8e4ffd0fadfbb383d593ef68def532d8b7006f09194
+PLAY {'text': 'Game Started', 'images': [], 'error': False}
+CAPTURE ready
+START true
+PUPPET_BEFORE {"botFamily":{"slowed":0,"buffLeft":0,"poisoned":2},"bodies":["puppet:PuppetJab:Active"],"phase":"Duel","human":"Puppet","humanFamily":{"slowed":0,"buffLeft":0,"poisoned":0}}
+SHOT /tmp/ninja-duel-shots/incremental_puppet_before_1792277726557.jpg
+PUPPET_AFTER {"botFamily":{"slowed":0,"buffLeft":0,"poisoned":1.8662450313568116},"bodies":["puppet:PuppetJab:Recovery"],"phase":"Duel","human":"Puppet","humanFamily":{"slowed":0,"buffLeft":0,"poisoned":0}}
+MOVES Light1 > Heavy
+SHOT /tmp/ninja-duel-shots/incremental_puppet_after_1792277731066.jpg
+BRUME_START true
+BRUME_CAST {"ok":true}
+BRUME_SNAPSHOT {"botFamily":{"slowed":0,"buffLeft":0,"poisoned":0},"bodies":[],"phase":"Duel","human":"Rinnegan","humanFamily":{"slowed":0.4831221103668213,"poisoned":0,"buffLeft":0,"shrouded":true}}
+BRUME_CAMERA enemyAlpha=0.8199999928474426 cam=-0.2861296832561493, -0.4155266582965851, -0.8634045124053955 bot=0, 3, -4
+SHOT /tmp/ninja-duel-shots/incremental_mist_1792277736387.jpg
+RESTORE true
+PROXY_START true
+PROXY_ACTIONS {"state":"Recovery","chain":true,"combo":1,"first":{"ok":true},"second":{"ok":true}}
+PROXY_MOVES Light1 > PuppetBlade
+PROXY_BODIES []
+PROXY_SHOT /tmp/ninja-duel-shots/incremental_proxy_consumed_1792277755945.jpg
+CLEANUP true
+SHISUI_START true
+SHISUI_CHAIN 1 {"human":"Neutral","health":394.24,"events":{"TechniqueResolved":1,"Hit":1,"FlickerCut":1,"Technique":1,"ChainTeleport":1,"Awaken":1,"Damage":1}}
+SHISUI_CHAIN 2 {"human":"Neutral","health":388.48,"events":{"TechniqueResolved":2,"Hit":2,"FlickerCut":2,"Technique":2,"ChainTeleport":2,"Awaken":1,"Damage":2}}
+SHISUI_CHAIN 3 {"human":"Neutral","health":383.4112,"events":{"TechniqueResolved":3,"Hit":3,"FlickerCut":3,"Technique":3,"ChainTeleport":3,"Awaken":1,"Damage":3}}
+SHISUI_CHAIN 4 {"human":"Neutral","health":379.03360000000006,"events":{"TechniqueResolved":4,"Hit":4,"FlickerCut":4,"Technique":4,"ChainTeleport":3,"Awaken":1,"Damage":4}}
+SHISUI_MOVES awake > cast:BodyFlicker > FlickerCut > awake > cast:BodyFlicker > FlickerCut > awake > cast:BodyFlicker > FlickerCut > awake > cast:BodyFlicker > FlickerCut > awake
+SHISUI_SHOT /tmp/ninja-duel-shots/incremental_shisui_chain_1792277914574.jpg
+NAGATO_START true
+ABSORB_TOOL {"ok":false,"reason":"Nothing to deflect"}
+ABSORB_RESULT {"hp":400,"events":{"Technique":1,"TechniqueResolved":1,"Buff":1},"chakra":139}
+ABSORB_SHOT /tmp/ninja-duel-shots/incremental_absorb_1792277919895.jpg
+RETURN true
+ABSORB_RETEST_SETUP Leaf has no projectile tool; prior attempt does not validate absorption
+ABSORB_RETEST_START true
+ABSORB_RETEST_TOOL {"ok":true}
+ABSORB_RETEST_RESULT {"hp":112,"events":{"Technique":1,"TechniqueResolved":1,"Absorbed":2,"Buff":1},"chakra":140}
+ABSORB_RETEST_SHOT /tmp/ninja-duel-shots/incremental_absorb_retest_1792277932544.jpg
+RETURN_SELECTION true

@@ -1,0 +1,13 @@
+from pathlib import Path
+exec(Path('/tmp/ninja_incremental_native.py').read_text().split("print('FINGERPRINT_EDIT'")[0])
+press('F8')
+print('SHISUI_START',server('return dev:Invoke("start","Flicker","Leaf")'),flush=True);time.sleep(2);stage(10)
+server('dev:Invoke("health","human",20) return true');press('T');time.sleep(.5);stage(10);record(7)
+for k in range(4):
+ press('One');time.sleep(.7)
+ print('SHISUI_CHAIN',k+1,server('local s=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode({health=s.bot.health,events=s.events,human=s.human.state})'),flush=True)
+print('SHISUI_MOVES',recorded(),flush=True);print('SHISUI_SHOT',shot('incremental_shisui_chain'),flush=True)
+print('NAGATO_START',server('return dev:Invoke("start","Rinnegan","Leaf")'),flush=True);time.sleep(2);stage(10);press('Three');time.sleep(.25)
+print('ABSORB_TOOL',server('local s=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode(dev:Invoke("act","bot","Tool",s.human.position))'),flush=True);time.sleep(.4)
+print('ABSORB_RESULT',server('local s=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode({events=s.events,hp=s.human.health,chakra=s.human.chakra})'),flush=True);print('ABSORB_SHOT',shot('incremental_absorb'),flush=True)
+print('RETURN',server('return dev:Invoke("selection")'),flush=True)

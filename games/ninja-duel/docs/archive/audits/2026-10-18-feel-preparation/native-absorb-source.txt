@@ -1,0 +1,8 @@
+from pathlib import Path
+exec(Path('/tmp/ninja_incremental_native.py').read_text().split("print('FINGERPRINT_EDIT'")[0])
+print('ABSORB_RETEST_SETUP','Leaf has no projectile tool; prior attempt does not validate absorption',flush=True)
+print('ABSORB_RETEST_START',server('return dev:Invoke("start","Rinnegan","Lion")'),flush=True);time.sleep(2);stage(12);press('Three');time.sleep(.25)
+print('ABSORB_RETEST_TOOL',server('local s=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode(dev:Invoke("act","bot","Tool",s.human.position))'),flush=True);time.sleep(.5)
+print('ABSORB_RETEST_RESULT',server('local s=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode({events=s.events,hp=s.human.health,chakra=s.human.chakra})'),flush=True)
+print('ABSORB_RETEST_SHOT',shot('incremental_absorb_retest'),flush=True)
+print('RETURN_SELECTION',server('return dev:Invoke("selection")'),flush=True)

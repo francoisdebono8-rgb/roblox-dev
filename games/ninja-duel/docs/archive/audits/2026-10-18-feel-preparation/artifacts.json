@@ -1,0 +1,24 @@
+{
+  "sourceCommit": "bc7faa3ad28b3dc5504559a99ded339d967dae0c",
+  "studioId": "4b8a532b-b221-448e-a070-a8b46d842727",
+  "artifacts": {
+    "NinjaDuel": {
+      "sha256": "a71d1146c911630600745d9e6d9954e7ef89530f2bc7f709ec6248f7a42577eb",
+      "fingerprint": "f20f9fc1736f9ce88e0debf7571c3f0ffc1e8819f34128f992d9b5016909043d",
+      "sourceEquality": "PASS",
+      "nativeQA": "PENDING"
+    },
+    "NinjaDuel-Debug": {
+      "sha256": "b3ed842e0d611069fd266e978c9523997d9b4b28ebe312432266985d64712ddc",
+      "fingerprint": "fdba31aba1328dc62426f8e4ffd0fadfbb383d593ef68def532d8b7006f09194",
+      "sourceEquality": "PASS",
+      "nativeQA": "PENDING"
+    },
+    "NinjaDuel-QA": {
+      "sha256": "108ad0b27528b5a4821acf297a767ef41b6c4b14c25f4cefbf1ec03d813c5795",
+      "fingerprint": "690c5c3cc4278962b13301e728ba257c9d16d8d8d2bb8cf4d8e98890d9a5aee5",
+      "sourceEquality": "PASS",
+      "nativeQA": "PENDING"
+    }
+  }
+}

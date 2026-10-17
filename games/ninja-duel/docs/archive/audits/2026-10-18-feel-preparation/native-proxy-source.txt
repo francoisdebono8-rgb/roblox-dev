@@ -1,0 +1,9 @@
+from pathlib import Path
+exec(Path('/tmp/ninja_incremental_native.py').read_text().split("print('FINGERPRINT_EDIT'")[0])
+print('PROXY_START',server('return dev:Invoke("start","Puppet","Leaf")'),flush=True);time.sleep(2);stage(7);press('One');time.sleep(.9)
+record(4)
+print('PROXY_ACTIONS',server('local x=dev:Invoke("act","human","Attack") local st for i=1,100 do task.wait(.01) st=dev:Invoke("state") if st.human.chainOpen then break end end local y=dev:Invoke("act","human","Heavy") return game:GetService("HttpService"):JSONEncode({first=x,second=y,state=st.human.state,chain=st.human.chainOpen,combo=st.human.combo})'),flush=True)
+time.sleep(1.5);print('PROXY_MOVES',recorded(),flush=True)
+print('PROXY_BODIES',luau('Client','local d=shared.IncrementalLast local t={} for _,b in d.bodies or {} do table.insert(t,b.kind..":"..tostring(b.action)) end return game:GetService("HttpService"):JSONEncode(t)'),flush=True)
+print('PROXY_SHOT',shot('incremental_proxy_consumed'),flush=True)
+print('CLEANUP',server('return dev:Invoke("selection")'),flush=True)

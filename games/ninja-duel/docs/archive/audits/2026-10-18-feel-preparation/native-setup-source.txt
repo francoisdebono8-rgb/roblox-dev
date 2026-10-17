@@ -1,0 +1,5 @@
+from pathlib import Path
+src=Path('/tmp/ninja_roster20_native.py').read_text().split('for fighter in [')[0].replace('7fde5ca2-dade-4333-ae35-f96dba349abe','4b8a532b-b221-448e-a070-a8b46d842727')
+exec(src)
+print('FINGERPRINT_EDIT',luau('Edit','return game:GetService("ReplicatedStorage").NinjaDuel.BuildFingerprint.Value'),flush=True)
+print('PLAY',call('start_stop_play',{'is_start':True}),flush=True)

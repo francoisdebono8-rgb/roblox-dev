@@ -1,0 +1,59 @@
+local H=require("./Harness")
+local F=H.load("Server/Families")
+local Bodies=H.load("Server/Bodies")
+local V=H.V
+local function step(c,t) for _=1,math.ceil(t/.01) do H.step(c,.01) end end
+local function place(c,a,b,g)
+ c:relocate(a,V.new(0,3,g/2));c:relocate(b,V.new(0,3,-g/2));a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+end
+-- A persistent puppet is consumed by carrying its owner's route.
+do
+ local c,a,b=H.duel("Puppet","Leaf");place(c,a,b,7);a.chakra=999;b.health=999
+ assert(c:request(a,"Technique1"));step(c,.9)
+ local body=Bodies.of(c,a,"puppet")[1];assert(body)
+ print("PUPPET_BEFORE",Bodies.count(c,a,"puppet"),body.mode,body.expires-c.now)
+ H.load("Server/Brawler").start(c,a,"PuppetBlade");step(c,1.2)
+ print("PUPPET_AFTER_PROXY",Bodies.count(c,a,"puppet"),body.alive,body.mode)
+end
+-- Does a cleanly held frontal guard prevent the autonomous puppet's poison?
+do
+ local c,a,b=H.duel("Puppet","Leaf");place(c,a,b,12);a.chakra=999;b.health=999
+ assert(c:request(a,"Technique1"));step(c,1)
+ local body=Bodies.of(c,a,"puppet")[1];assert(body)
+ body.position=b.root.Position+V.new(0,0,4);body.look=(b.root.Position-body.position).Unit
+ b.root.CFrame=H.C.lookAt(b.root.Position,body.position)
+ assert(c:request(b,"Guard"));step(c,.3)
+ body.position=b.root.Position+V.new(0,0,4);body.look=(b.root.Position-body.position).Unit;body.nextStrike=c.now
+ Bodies.controllers.marionette(c,body,.01);step(c,.2)
+ print("PUPPET_GUARD",b.impactStyle,"poisonUntil",(b.poisonedUntil or 0)-c.now,"hp",b.health)
+end
+-- The right snap at press can be lost merely by walking during a long channel.
+do
+ local c,a,b=H.duel("Mirror","Leaf");place(c,a,b,16)
+ local initial=b.root.Position
+ c:relocate(b,initial+V.new(13,0,0));b.locomotion=V.new(18,0,0)
+ local aim=F.releaseAim(c,a,{aim=initial},{Speed=86})
+ print("RELEASE_MOVED13",tostring(aim),"target",tostring(b.root.Position))
+end
+-- Same source spell while shrouded still reacquires the invisible target.
+do
+ local c,a,b=H.duel("Mist","Rinnegan");place(c,a,b,10);a.chakra=999
+ assert(c:request(a,"Technique1"));step(c,.8)
+ print("SHROUDED",F.shrouded(c,b),"reaim",tostring(F.releaseAim(c,b,{aim=a.root.Position},b.def.Techniques[2])))
+end
+-- Range of the newly planted aimed mine.
+do
+ local c,a,b=H.duel("Clay","Leaf");place(c,a,b,10);a.chakra=100
+ local at=a.root.Position+V.new(0,0,-100)
+ local ok,why=c:request(a,"Technique3",at);step(c,.5)
+ local h=F.charges(c,a)[1]
+ print("MINE_RANGE100",ok,tostring(why),h and (h.position-a.root.Position).Magnitude,"declared",a.def.Techniques[3].Range,"spent",100-a.chakra)
+end
+-- The target leaves reach during the channel.
+do
+ local c,a,b=H.duel("Mist","Leaf");place(c,a,b,20);a.chakra=100
+ local from=a.root.Position
+ local ok,why=c:request(a,"Technique2",b.root.Position)
+ c:relocate(b,b.root.Position+V.new(100,0,0));step(c,.3)
+ print("TELEPORT_RELEASE_RANGE",ok,tostring(why),"moved",(a.root.Position-from).Magnitude)
+end
