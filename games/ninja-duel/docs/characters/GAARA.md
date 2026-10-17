@@ -1,8 +1,10 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Gaara — forteresse de sable (vague d'archétypes)
 
 Code : `Sand` — **existe côté serveur avec 10 tests, caché du menu** (DEC-001, CHR-EXT-001). IDs : CHR-EXT-001, CHR-EXT-002, CHR-CORE-002 (labels), SYS-003, DEF-005.
 
-> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Code lu sur `c2d797c` : `fichier:ligne` indicatif, le nom de fonction fait foi ; chemins relatifs à `games/ninja-duel/src/`. **EXISTE** = code réel ; **MANQUE** = écart au [gabarit](FIGHTER_TEMPLATE.md) ; **PROPOSÉ** = candidat non implémenté ; **DÉCISION** = absence volontaire. Valeurs proposées = points de départ à régler en natif. Sources canon « à vérifier » non confirmées. Plan d'ensemble : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks `H01…H17` : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
+> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Code lu sur `c2d797c` : `fichier:ligne` indicatif, le nom de fonction fait foi ; chemins relatifs à `games/ninja-duel/src/`. **EXISTE** = code réel ; **MANQUE** = écart au [gabarit](FIGHTER_TEMPLATE.md) ; **PROPOSÉ** = candidat non implémenté ; **DÉCISION** = absence volontaire. Valeurs proposées = points de départ à régler en natif. Sources canon « à vérifier » non confirmées. Plan d'ensemble : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks `H01…H17` : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
 
 ## Stade retenu (DEC-013)
 

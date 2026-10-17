@@ -452,7 +452,7 @@ Do not spend the whole phase building a generic framework.
 
 At the end of your Studio work, create:
 
-`games/ninja-duel/docs/reports/VISION_GAP.md`
+`games/ninja-duel/docs/archive/reports/VISION_GAP.md`
 
 This should be a serious design/development assessment, not filler.
 

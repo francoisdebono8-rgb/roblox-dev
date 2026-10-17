@@ -1,29 +1,18 @@
-# Carte technique actuelle
+# Carte technique — navigation
 
-```text
-games/ninja-duel/
-  CLAUDE_START_HERE.md         entrée unique
-  src/Shared/                 Config, Fighters, MoveGraphs, Attacks, Rules, Controls
-  src/Server/                 Combat/Brawler/Motor/Techniques/Matches/World/AI, autorité
-  src/Client/                 Input/UI/Camera/Presentation/Effects, présentation
-  tests/                      suites headless + isolation build
-  tools/                      inventaire combat, vérification docs, dev.py (CLI outils), studio/ (sondes MCP)
-  lab/                        propositions de combat inertes (catalogue, templates), jamais buildées
-  build.py ; dist/             normal/debug/QA et manifests ; outils Dev* et labo chakra = Debug/QA seulement
-  motion-lab/                  ForgeMotionLab/Modules, adapter, tests, build, dist
-  design_research/             sources riches, conservées
-  docs/active/                 décisions/état/backlog/journal/règles/outils
-  docs/combat/ ; movement/     specs d’intentions et validations
-  docs/characters/ ; systems/  quatre kits, outils, arène et futurs
-  docs/research/ ; tools/      registres et capacité réelle
-  docs/current/               contrats/inventaire/mapping stables pour générateurs
-  docs/reports/               preuves datées ; pas ordres de mission
-  docs/archive/               missions/plans/requests intégrales
-plugins/*                     Forge historique et Forge Playground
-docs/forge/                   documentation commerciale/branding Forge
-shared/                       composants vraiment transversaux, non déplacés
-```
+Les rôles et règles sont dans [EXECUTION_RULES](../active/EXECUTION_RULES.md), l’état dans [CURRENT_STATE](../active/CURRENT_STATE.md).
 
-Frontières vérifiées par `tools/check_architecture.py` : aucun code Forge importé/embarqué dans Ninja Duel ; aucun code Ninja Duel dans plugins ; adapter Lab→jeu autorisé, jeu→Lab interdit. Les modules Bangla/Velmora/Place1 dans src sont réellement utilisés par le runtime ; leur nom d’origine ne les rend pas obsolètes. Aucun déplacement code partagé pendant l’orchestration.
+| Chemin sous games/ninja-duel | Contenu |
+|---|---|
+| src/Shared | Définitions et règles communes du jeu |
+| src/Server | Moteurs et autorité serveur |
+| src/Client | Inputs et présentation |
+| tests, build.py, dist | Suites, construction et artefacts/manifests |
+| tools, tools/studio | Diagnostics, génération et sondes |
+| motion-lab, lab | Laboratoire et données expérimentales |
+| docs/active | Sept sources opérationnelles |
+| docs/current | Contrats/snapshots, chemins des générateurs |
+| docs/research, docs/tools, docs/systems/PROGRESSION.md | Références non normatives |
+| docs/archive | Historique, anciennes specs, preuves datées et audits |
 
-Lire [capacités](../active/CAPABILITIES_AND_TOOLS.md) pour commandes et limites. Le [maintenance source](MAINTENANCE_BACKLOG_SOURCE.md) est historique ; ses idées OPS-002/003/ARC-002 sont filtrées dans le backlog, pas une mission active séparée.
+Les noms Bangla/Velmora/Place1 désignent des composants consommés par le runtime ; leur nom historique ne justifie pas un retrait.

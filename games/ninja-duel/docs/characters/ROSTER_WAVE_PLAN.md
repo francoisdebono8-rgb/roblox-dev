@@ -1,11 +1,13 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Plan de vague du roster — architecture à ~20 fighters
 
-> Plan Claude du 2026-10-16 (CHR-EXT-001/002, mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Documentation et conception seulement : aucun code, aucune valeur validée en natif. Code lu sur `c2d797c`. Le pool de 25 noms du 2026-10-13 et les familles d'archétypes viennent de [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) ; le contrat de fiche est [FIGHTER_TEMPLATE](FIGHTER_TEMPLATE.md) ; les hooks `H01…H17` sont décrits dans [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md). Le menu prévoit déjà 20 emplacements (`ROSTER_SLOTS=20`, `Client/UI.luau:56`).
+> Plan Claude du 2026-10-16 (CHR-EXT-001/002, mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Documentation et conception seulement : aucun code, aucune valeur validée en natif. Code lu sur `c2d797c`. Le pool de 25 noms du 2026-10-13 et les familles d'archétypes viennent de [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) ; le contrat de fiche est [FIGHTER_TEMPLATE](FIGHTER_TEMPLATE.md) ; les hooks `H01…H17` sont décrits dans [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md). Le menu prévoit déjà 20 emplacements (`ROSTER_SLOTS=20`, `Client/UI.luau:56`).
 
 ## 1. Principes
 
 - **Un fighter = un système éprouvé ou tordu.** La popularité ne qualifie pas ; chaque fiche nomme le système qu'elle met à l'épreuve.
-- **Grammaire commune, expression distincte** (DEC-006) : ~70 % partagé, ~30 % propre ([ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)).
+- **Grammaire commune, expression distincte** (DEC-006) : ~70 % partagé, ~30 % propre ([ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)).
 - **Stade, pas âge** (DEC-013) : racines d'identité présentes, échelle adulte/endgame absente ; labels DEC-005 par capacité.
 - **Jouable pour éprouver le moteur** ≠ terminé : périmètre minimal de chaque fiche + duels IA contre tout le roster + test sans jutsu + 30 s de déplacement et 60 s de combat observés en natif ([FIGHTER_TEMPLATE](FIGHTER_TEMPLATE.md), validation Studio). DEC-012 rend chaque fighter de la vague sélectionnable **quand** il atteint ce seuil (proposition de définition, à confirmer).
 
@@ -126,7 +128,7 @@ Ordre fixé par **dépendances et coût**, pas par popularité : chaque phase co
 5. **Relation à l'outil déclarée** : maîtrise (règle propre), secondaire (générique assumé), remplacé (action contextuelle sur R), aucun. Jamais « le même kunai avec d'autres chiffres ».
 6. **Twist défensif** (H17) : chaque fighter change par une règle au moins un verbe parmi substitution, perfect dodge, parry, garde. Substitution `hop` pure : 3 fighters au plus sur 20, chacun justifié (aujourd'hui Neji, Sasuke, Shikamaru).
 7. **3 à 4 techniques** en base (le 5e emplacement reste libre pour la Copie ou la progression) ; chacune interagit avec au moins un autre système (route, outil, zone, état, autre technique) ; aucune technique « dégâts seulement ».
-8. **Éveil à règles** : au moins deux règles modifiées ([AWAKENING_DESIGN](../../design_research/02_character_architecture/AWAKENING_DESIGN.md)), un contre-jeu nommé, une sortie/risque ; multiplicateur de dégâts ≤ ×1.08.
+8. **Éveil à règles** : au moins deux règles modifiées ([AWAKENING_DESIGN](../archive/design_research/02_character_architecture/AWAKENING_DESIGN.md)), un contre-jeu nommé, une sortie/risque ; multiplicateur de dégâts ≤ ×1.08.
 9. **Signature transversale** : elle touche au moins trois couches (mouvement, taijutsu, outil, technique, défense, IA, HUD).
 10. **Test sans jutsu** : duel headless avec `match.techniquesDisabled` (`Server/Combat.luau:744`) où l'événement signature apparaît encore, ou décision écrite dans la fiche (Naruto, comme le Sharingan d'Itachi) ; reconnaissance native (CHR-CORE-001).
 11. **L'IA exerce la signature** : un test vérifie que l'IA déclenche l'événement signature (compteurs `Brawler.event`) contre chaque adversaire.
@@ -134,7 +136,7 @@ Ordre fixé par **dépendances et coût**, pas par popularité : chaque phase co
 13. **Ne jamais muter `a.def`** (table partagée entre acteurs, duels miroirs) : état et modificateurs par acteur.
 14. **Lore avant code** : label par capacité (DEC-005/DEC-013), échelle adulte rejetée, réductions d'échelle écrites.
 15. **Registre des recouvrements** (§7) tenu à jour : tout nouveau recouvrement nomme la règle qui sépare les deux fighters avant implémentation.
-16. **Contrôle final** ([ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)) : si deux fighters répondent presque pareil à au moins 8 des 12 axes de différenciation du gabarit, l'un est redessiné.
+16. **Contrôle final** ([ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md)) : si deux fighters répondent presque pareil à au moins 8 des 12 axes de différenciation du gabarit, l'un est redessiné.
 
 ## 7. Registre des recouvrements
 

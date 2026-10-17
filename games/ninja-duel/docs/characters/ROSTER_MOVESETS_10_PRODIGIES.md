@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Ninja Duel — 10-Prodigy Moveset & Awakening Blueprint
 
 This document is the gameplay roster base for future implementation. It is not the final balance sheet yet. The goal is to define a common combat grammar, then make every fighter interpret that grammar differently through movement, taijutsu, ninja-tool mastery, signature mechanics, techniques and awakening.

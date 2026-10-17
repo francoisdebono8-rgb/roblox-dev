@@ -1,6 +1,8 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Hooks moteur partagés de la vague d'archétypes
 
-> Synthèse Claude du 2026-10-16 (CHR-EXT-002, mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18). Conception, rien n'est implémenté. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Chaque hook est construit **une fois**, en données d'abord, par son premier utilisateur, puis étendu ; pas de framework avant deux besoins réels (DEC-006, ARC-002). Fiches : [NARUTO](NARUTO.md), [GAARA](GAARA.md), [ROCK_LEE](ROCK_LEE.md), [KAKASHI](KAKASHI.md), [TEMARI](TEMARI.md), [SHIKAMARU](SHIKAMARU.md), [HAKU](HAKU.md), [KISAME](KISAME.md) ; ordre de construction : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md).
+> Synthèse Claude du 2026-10-16 (CHR-EXT-002, mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18). Conception, rien n'est implémenté. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Chaque hook est construit **une fois**, en données d'abord, par son premier utilisateur, puis étendu ; pas de framework avant deux besoins réels (DEC-006, ARC-002). Fiches : [NARUTO](NARUTO.md), [GAARA](GAARA.md), [ROCK_LEE](ROCK_LEE.md), [KAKASHI](KAKASHI.md), [TEMARI](TEMARI.md), [SHIKAMARU](SHIKAMARU.md), [HAKU](HAKU.md), [KISAME](KISAME.md) ; ordre de construction : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md).
 
 ## Classement par nombre de fighters de la vague qui en ont besoin
 

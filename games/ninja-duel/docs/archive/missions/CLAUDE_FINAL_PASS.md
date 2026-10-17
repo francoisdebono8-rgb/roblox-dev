@@ -1,6 +1,6 @@
 # Claude Mission — Four-Character Final Combat Pass
 
-Technical preparation handoff: [docs/current/CLAUDE_TECHNICAL_HANDOFF.md](../../current/CLAUDE_TECHNICAL_HANDOFF.md). Read the four-character matrix, state/tool contracts and exact motion mapping before artistic iteration. The technical pass did not approve visual/game-feel gates.
+Technical preparation handoff: [docs/current/CLAUDE_TECHNICAL_HANDOFF.md](../current/CLAUDE_TECHNICAL_HANDOFF.md). Read the four-character matrix, state/tool contracts and exact motion mapping before artistic iteration. The technical pass did not approve visual/game-feel gates.
 
 ## Operating mode
 

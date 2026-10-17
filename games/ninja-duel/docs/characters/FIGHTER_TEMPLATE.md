@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Adding a prodigy — fighter template
 
 Périmètre actuel : [CORE_ROSTER](CORE_ROSTER.md). Ce template devient la **base officielle de conception d’un fighter**, pas seulement une checklist technique. Il ne déclenche pas implicitement une extension du roster : Claude l’utilise pour concevoir, comparer ou réviser un personnage quand ce travail est autorisé.

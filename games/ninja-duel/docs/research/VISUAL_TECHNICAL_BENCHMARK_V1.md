@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Visual + Technical Benchmark V1 — freedom, movement, combat, weapons
 
 Purpose: give Claude concrete external reference targets for *feel* and *freedom*, not permission to copy code/assets/movesets. Ninja Duel stays a focused 1v1 game with a compact input grammar. The useful question is always: **what principle makes this feel like free shinobi movement/combat, and how do we adapt that principle to a readable 1v1 duel?**

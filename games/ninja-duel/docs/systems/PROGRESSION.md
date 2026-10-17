@@ -1,6 +1,8 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Progression par arbres de compétences — référence données
 
-IDs PROG-001 (arbres), PROG-002 (budgets classés), PROG-003 (IA à budget). Rapport, preuves et décisions : [PROGRESSION_FOUNDATION](../reports/PROGRESSION_FOUNDATION.md). Tout est serveur ; aucun module client ne lit ces données aujourd’hui.
+IDs PROG-001 (arbres), PROG-002 (budgets classés), PROG-003 (IA à budget). Rapport, preuves et décisions : [PROGRESSION_FOUNDATION](../archive/reports/PROGRESSION_FOUNDATION.md). Tout est serveur ; aucun module client ne lit ces données aujourd’hui.
 
 Règle de fond : le fighter à 0 SP est exactement le kit de [Fighters](../../src/Shared/Fighters.luau) + [MoveGraphs](../../src/Shared/MoveGraphs.luau). Un nœud approfondit une mécanique existante ; un nœud **majeur** ajoute une règle, une route ou un comportement absent du kit de base (ce que le joueur FAIT ou VOIT), jamais un simple chiffre.
 

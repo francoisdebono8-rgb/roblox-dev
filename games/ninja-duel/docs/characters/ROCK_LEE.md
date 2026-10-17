@@ -1,8 +1,10 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Rock Lee — taijutsu pur (vague d'archétypes)
 
 Code proposé : `Lotus` (absent du code). IDs : CHR-EXT-002, CHR-CORE-001 (référence « reconnaissable sans jutsu »), COM-002, SYS-003, DEF-002, DEF-005.
 
-> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
+> Fiche de conception Claude du 2026-10-16 (mission [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) §18–21, DEC-012/DEC-013). Rien n'est implémenté ; valeurs = points de départ à régler en natif. Code lu sur `c2d797c` (chemins relatifs à `games/ninja-duel/src/`, le nom de fonction fait foi). Sources canon « à vérifier » non confirmées. Plan : [ROSTER_WAVE_PLAN](ROSTER_WAVE_PLAN.md) ; hooks : [ROSTER_WAVE_HOOKS](ROSTER_WAVE_HOOKS.md).
 
 ## Stade retenu (DEC-013)
 
@@ -10,7 +12,7 @@ Code proposé : `Lotus` (absent du code). IDs : CHR-EXT-002, CHR-CORE-001 (réf�
 
 ## Pourquoi il mérite une place (système éprouvé)
 
-1. **La grammaire commune sans ninjutsu** : Lee répond à la question de [ROSTER_ARCHETYPES_32](../../design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) « le moteur est-il amusant sans spectacle de jutsu ? ». Il est le test de CHR-CORE-001 à l'état pur.
+1. **La grammaire commune sans ninjutsu** : Lee répond à la question de [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md) « le moteur est-il amusant sans spectacle de jutsu ? ». Il est le test de CHR-CORE-001 à l'état pur.
 2. **Vitesse extrême** : met à l'épreuve le plafonnement de `Motor.step` (qui **ignore `a.speedScale`**, `Server/Motor.luau:220-221`, alors que `Place1Movement` l'applique, `:187` : les bonus de vitesse d'éveil existants semblent écrêtés au sol — lecture de code, à confirmer), la validation de coup à haute vitesse, la caméra et, plus tard, la prédiction réseau.
 3. **Chaînes M1 propres à un fighter** : la string commune est figée à 3 coups (`Shared/BanglaCombo.luau:3`) ; Lee en a 4 (H02).
 4. **PV comme ressource** (portes) et **substitution remplacée** : il ne peut pas faire de ninjutsu, donc pas de kawarimi → il tord la règle universelle de défense.
@@ -178,7 +180,7 @@ Lee est le seul fighter dont **la puissance se gagne en se déplaçant** (Élan)
 
 ## État d'implémentation (2026-10-16, test de charge DEC-015)
 
-Code de `claude/nd-ccc2-lee`, bâti sur les règles intégrées (modèle combo confirmé, relance, chakra systémique, couche identité). Rapport, découvertes moteur et liste Studio : [ROCK_LEE_STRESS_TEST](../reports/convergence2/ROCK_LEE_STRESS_TEST.md). **Validé en headless uniquement** (`tests/Lee.spec.luau`, 24 cas ; limites articulaires dans `tests/Animation.spec.luau`) : le feel, la lecture des coups et le costume restent à juger dans Studio. L'identifiant de code est **`Leaf`** (la fiche proposait `Lotus`).
+Code de `claude/nd-ccc2-lee`, bâti sur les règles intégrées (modèle combo confirmé, relance, chakra systémique, couche identité). Rapport, découvertes moteur et liste Studio : [ROCK_LEE_STRESS_TEST](../archive/reports/convergence2/ROCK_LEE_STRESS_TEST.md). **Validé en headless uniquement** (`tests/Lee.spec.luau`, 24 cas ; limites articulaires dans `tests/Animation.spec.luau`) : le feel, la lecture des coups et le costume restent à juger dans Studio. L'identifiant de code est **`Leaf`** (la fiche proposait `Lotus`).
 
 **Implémenté et jouable (sélectionnable dans le roster)**
 - `Fighters.Leaf` : HP 125, chakra 100, regen 9,5, vitesse 20 (sprint ×1,12, accélération ×1,22), `PreferredRange 4,5`, frappes plus rapides (×0,85–0,9) et plus légères ; aucun élément, aucun projectile, aucun outil lancé.

@@ -1,3 +1,5 @@
+> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+
 # Minato — jeune prodige
 
 Code : `Flashstep`. IDs : CHR-MIN-001/002/003, CHR-CORE-001/002. Les données réelles viennent de Fighters/MoveGraphs/Attacks et [inventaire](../current/COMBAT_INVENTORY.json) ; le label lore n’est pas automatiquement prouvé par le nom du move.
@@ -182,7 +184,7 @@ Points à vérifier : numéros de chapitres/épisodes cités (sauf Kakashi Gaide
 
 ### État — convergence 2 (identité, 2026-10-16)
 
-Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement.
+Code de `claude/nd-ccc2-identity` ; détails, tests et poses demandées : [IDENTITY_JUTSU](../archive/reports/convergence2/IDENTITY_JUTSU.md). Validé en headless uniquement.
 
 - **Wind Cut refondu (même slot)** :
   - lancé en courant ;

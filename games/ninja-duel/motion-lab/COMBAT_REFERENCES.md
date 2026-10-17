@@ -1,3 +1,5 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../docs/active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Références consultées — bibliothèque commune 0.5
 
 Recherche externe effectuée sur les textes originaux et des ressources de coaches.

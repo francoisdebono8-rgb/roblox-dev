@@ -1,6 +1,8 @@
+> Référence technique/recherche, non normative. État, priorités et règles : [sources actives](../active/EXECUTION_RULES.md). Les commandes, exemples et anciens constats ci-dessous se vérifient sur le HEAD courant.
+
 # Recherche — sources intégrales et propositions
 
-RES-001/002/003. Les documents riches restent dans [design_research](../../design_research/README.md) : aucune synthèse active ne remplace les grammaires, archétypes, interactions ou détails de mouvement qu’ils contiennent. Le [registre](SOURCE_REGISTER.md) distingue source fournie et review faite. Lire les passages reliés au ticket avant toute implémentation.
+RES-001/002/003. Les documents riches restent dans [design_research](../archive/design_research/README.md) : aucune synthèse active ne remplace les grammaires, archétypes, interactions ou détails de mouvement qu’ils contiennent. Le [registre](SOURCE_REGISTER.md) distingue source fournie et review faite. Lire les passages reliés au ticket avant toute implémentation.
 
 Pipeline obligatoire : anime/manga officiel à l’âge cible > jeux officiels > films/OVA appropriés > fan de qualité > AI inspiration uniquement. Capture character/source/version/âge, scene/timecode, mouvement exact, état initial, contact, pieds/mécanique du corps, réaction, résultat/followup, label lore, brique commune/expression, autres partageurs, input/camera/air/wall/risque.
 
