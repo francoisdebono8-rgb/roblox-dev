@@ -267,4 +267,64 @@ return {
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
 		},
 	},
+	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke
+	-- retrieval (15). A long-range zoner: she does not close the distance, she
+	-- paints it. Her wind leaves lanes (Zones) that slow the way up, carry the
+	-- way down and turn blades aside; the iron fan pushes and sends blades back.
+	-- Sheet: docs/characters/TEMARI.md (implementation state at its end).
+	Gale = {
+		Name = "Temari", FullName = "Temari of the Sand", Age = 15, Title = "THE WIND FAN", Color = { 168, 140, 214 },
+		Routes = "↑ Updraft: the fan scoops the body into rising air (convert at range: Kamaitachi or Gust)  ·  ↓ Fan Slam  ·  ←→ Fan Pirouette: a full turn, the gust throws the body aside  ·  air: drive / Fan Dive",
+		Description = "The wind fan: she paints the distance. Wind lanes slow, carry and turn blades aside; the fan pushes and sends them back. Hold the range or be caught.",
+		Health = 130, Chakra = 120, ChakraRegen = 8, Speed = 17.5, SprintScale = 0.95, JumpScale = 1.0, AirControlScale = 1.3, AccelerationScale = 0.95,
+		CombatTravel = 0.55, CombatDamage = 1, DashScale = 1, GuardStrength = 0.1, PreferredRange = 16,
+		ComboToolCancel = true, CombatStyle = "Wind", Tool = "Gust",
+		-- Heavy after two clean hits is the scoop into the updraft.
+		LauncherMove = "Updraft",
+		-- Motion family (VelmoraMotionEngine.familyOf, GaleMotion): her own
+		-- stance, gait, clips and intro; the iron fan is drawn by GaleFX (on the
+		-- back at rest, in the hand for her strikes, opened for the wind).
+		Motion = { body = "Gale", weapons = "none", clips = "Gale", intro = "Gale", springy = false },
+		-- Her tool is the fan, not a blade (Gale.gust): a cone of wind that
+		-- pushes the body out and sends the blades in it back at their thrower;
+		-- fire in it grows. With the chakra modifier (Wind) it reaches further
+		-- and leaves a short lane. Inside a clean string it is free; away + tool
+		-- there hops her back behind it.
+		Gust = { Range = 18, Cone = 0.8, Push = 40, GuardPush = 2, Recover = 0.55, Release = 0.1, Infused = 1.35, Lane = 3, LaneLife = 2.6, Hop = 6 },
+		-- Holding jump in the air: the open fan carries her (fall capped).
+		Glide = { Fall = 12 },
+		-- The wind's retreat: the kawarimi throws her further back.
+		Substitution = { Mode = "hop", Distance = 14 },
+		-- Zoner AI profile (AI:zone): too close under Close (the gust under Push),
+		-- backs off at an angle under Keep (she holds ~20-40 studs).
+		Zoner = { Close = 9, Push = 12, Keep = 20 },
+		-- Awakening: Kuchiyose: Kirikiri Mai. Kamatari cuts across the arena (a
+		-- big projectile that leaves a long lane); for the rest of it her lanes
+		-- last longer, widen and send blades back at their thrower, and every
+		-- gust leaves a lane. No damage multiplier; when it ends the fan stays
+		-- shut for FanClosed seconds (no technique).
+		Awakening = { Name = "KIRIKIRI MAI", Speed = 1.06, Regen = 1.4, Cooldown = 0.7, LaneLife = 1.5, LaneWidth = 1.3, Reflect = true, GustReach = 1.4, GustLane = true, FanClosed = 3,
+			Summon = { Speed = 105, Range = 90, Damage = 15, Radius = 2.8, Lane = 4.5, LaneLife = 6 }, Color = { 196, 255, 232 } },
+		AttackProfile = {
+			-- The closed fan is a long iron club: further reach, a larger contact
+			-- distance (she stops further away), slower and lighter than fists.
+			Light1={startup=1.05,recovery=1.0,travel=.8,range=7.5,depth=5.4,offset=3.4,width=3.6,contact=5,damage=.9,kind="strike"},
+			Light2={startup=1.1,recovery=1.0,travel=.8,range=7.6,depth=5.2,offset=3.4,width=8,contact=5,damage=.7,kind="slash"},
+			-- The third opens the fan: a gust that throws the body away (the string makes distance).
+			Light3={startup=1.12,recovery=1.05,travel=.6,range=7.8,depth=5.8,offset=3.6,width=7,contact=5,impulseZ=70,impulseY=16,damage=.55,kind="palm"},
+			Heavy={startup=1.05,range=7.6,depth=5.4,offset=3.4,contact=5,kind="heavy"},
+			DashAttack={travel=.85,range=7.5,contact=4.6},Air1={range=7,contact=4.6},Air2={range=7,contact=4.6},
+		},
+		Skin = { 240, 214, 188 }, Hair = { 226, 196, 120 }, Outfit = { 186, 170, 204 },
+		Techniques = {
+			-- The fan opens on the first moon: a wind scythe that leaves a lane of
+			-- wind behind it (Zones "Wind": carried by the scythe as it flies).
+			{ Id = "Kamaitachi", Name = "Kamaitachi", Element = "Wind", Cost = 12, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 2.8, Interruptible = true, Range = 46, Speed = 74, Damage = 8, Lane = 4, LaneLife = 3.6, Hint = "A wind scythe • its lane slows the way up, carries the way down, turns blades aside • knocks away (walls)" },
+			-- Three moons: a wide gust that blows the blades away, throws the body
+			-- (to a wall when one is behind it) and leaves a wide lane.
+			{ Id = "GreatGust", Name = "Great Gust", Element = "Wind", Cost = 22, Channel = 0.5, Active = 0.2, Recovery = 0.42, Cooldown = 7, Interruptible = true, Range = 30, Cone = 0.74, Damage = 9, Push = 58, Lane = 5, LaneLife = 4.2, Hint = "Three moons: blades blown away, the body thrown back • a wide lane stays" },
+			-- A whirlwind rises where the opponent stood a beat ago (Zones "Updraft").
+			{ Id = "Cyclone", Name = "Rising Whirlwind", Element = "Wind", Cost = 16, Channel = 0.24, Active = 0.05, Recovery = 0.3, Cooldown = 5.5, Interruptible = true, Range = 34, Damage = 6, Delay = 0.45, Radius = 3.4, Life = 2.2, Lift = 50, Hint = "A whirlwind rises where the opponent stood • keep moving" },
+		},
+	},
 }

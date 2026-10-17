@@ -3,6 +3,7 @@ local Techniques=require(script.Parent.Techniques)
 local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
+local Zones=require(script.Parent.Zones)
 local AI={}; AI.__index=AI
 function AI.new(combat,actor,seed)
 	return setmetatable({combat=combat,actor=actor,nextTick=0,observed=nil,observedAt=0,guardUntil=0,rng=Random.new(seed or 23)},AI)
@@ -29,6 +30,34 @@ DASH.Leaf=1.6;CHASE.Leaf=.8
 -- Naruto (roster wave): rushes in almost as eagerly, from any angle, and
 -- chases every launch (his barrage needs it).
 DASH.Legion=1.5;CHASE.Legion=.8
+-- Temari (roster wave) re-enters at her range (the wind step) and rarely
+-- chases: her conversions are at range (AI:zone).
+DASH.Gale=.35;CHASE.Gale=.25
+-- A wind lane (Zones) the body stands in that blows against its way to the
+-- opponent: the side to step out of it, else nil.
+local function laneAgainst(c,a,toward)
+	for _,z in c.zones or {} do
+		if z.owner~=a and z.tune.headwind and z.direction:Dot(toward)<-.4 and Zones.inside(z,a.root.Position) then
+			local d=a.root.Position-z.origin
+			local across=Vector3.new(d.X,0,d.Z)-z.direction*(d.X*z.direction.X+d.Z*z.direction.Z)
+			return if across.Magnitude>.3 then across.Unit else z.direction:Cross(Vector3.yAxis).Unit
+		end
+	end
+	return nil
+end
+-- A straight dash at the opponent would run up an enemy lane (it breaks there).
+local function laneOnPath(c,a,target)
+	if not c.zones or #c.zones==0 then return false end
+	local from,to=a.root.Position,target.root.Position
+	local way=Vector3.new(to.X-from.X,0,to.Z-from.Z)
+	if way.Magnitude<1 then return false end
+	for _,z in c.zones do
+		if z.owner~=a and z.tune.headwind and z.direction:Dot(way.Unit)<-.35 then
+			for k=1,6 do if Zones.inside(z,from:Lerp(to,k/7)) then return true end end
+		end
+	end
+	return false
+end
 local function plantedSeals(a)
 	local count=0
 	for _,entry in a.anchors or {} do if not entry.actor then count+=1 end end
@@ -89,6 +118,89 @@ function AI:defend(now)
 	end
 	return false
 end
+-- A zoner (def.Zoner: Temari). The distance is hers: too close, the fan pushes
+-- the body out or she steps back on the wind (else the fan string makes the
+-- distance); a body thrown or held up in the air is converted at range, never
+-- chased; at range the scythe, a whirlwind where the body is going, the Great
+-- Gust at an approach or at blades, and no walking into melee. Same costs and
+-- windows as the player. True when it decided this tick.
+function AI:zone(now,distance,toward,tangent,target)
+	local c,a=self.combat,self.actor
+	local tune=a.def.Zoner
+	if a.state=="Rush" then return true end
+	if a.reaction or a.airborne or a.state~="Neutral" then return false end
+	local function cast(id,aim)
+		local slot=slotOf(a,id)
+		if slot and c:request(a,slot,aim or target.root.Position) then self.techReadyAt=now+.5+self.rng:NextNumber()*.9;return true end
+		return false
+	end
+	local tool=now>=(a.neutralToolAt or 0) and a.chakra>=Config.ToolCost
+	local closing=(target.locomotion or Vector3.zero):Dot(-toward)
+	local threat=target.state=="Rush" or target.state=="Pursuit" or closing>6
+	local hurt=target.reaction~=nil or target.state=="Stunned"
+	-- Where the body will be when the wind gets there (a scythe at ~74 studs/s).
+	local lead=target.root.Position+(target.locomotion or Vector3.zero)*math.min(.5,distance/74)*.8
+	-- A dash or a chase at her: the gust stops it in the air (it is not
+	-- armoured); already on her, the guard takes the arrival strike.
+	if target.state=="Rush" or target.state=="Pursuit" then
+		if distance<7 and self.rng:NextNumber()<.6 then c:request(a,"Guard");self.guardUntil=now+.4;return true end
+		if distance<(a.def.Gust and a.def.Gust.Range or 18)+2 and tool and self.rng:NextNumber()<.75 then
+			a.move=Vector3.zero
+			if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+		end
+	end
+	if distance<tune.Close then
+		if hurt then return false end
+		-- A strike already coming: the guard (her fan string or a gust answers after).
+		if (target.state=="Startup" or target.state=="Active") and distance<8 and self.rng:NextNumber()<.55 then
+			c:request(a,"Guard");self.guardUntil=now+.35;return true
+		end
+		-- Walking into the fan's length: the tip first (it out-reaches a fist),
+		-- the string then throws the body back out.
+		if distance>4.6 and distance<7.6 and target.state~="Startup" and target.state~="Active" and self.rng:NextNumber()<.45 then
+			a.move=Vector3.zero
+			if press(c,a,"Attack") then return true end
+		end
+		if distance<tune.Push and tool and self.rng:NextNumber()<.55 and press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+		if a.pursuitUntil<=now and self.rng:NextNumber()<.45 then
+			a.move=-toward
+			if press(c,a,"Pursuit","back",0) then return true end
+		end
+		return false
+	end
+	local floating=target.reaction=="Launched" or target.reaction=="Juggled" or (target.reaction=="Knockback" and target.airborne)
+	local sight=c:lineOfSight(a,target)
+	if floating and sight and distance<32 then
+		if cast("Kamaitachi") then return true end
+		if distance<17 and tool and press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+	end
+	-- Blades coming at her: the gust sends them back.
+	if tool and Techniques.bladeIncoming(c,a,{Radius=6,Reach=16}) and self.rng:NextNumber()<.55 then
+		if press(c,a,"Tool","neutral",0,target.root.Position) then return true end
+	end
+	-- Coming in fast inside her band: out on the wind before the body arrives.
+	if threat and distance<tune.Close+5 and a.pursuitUntil<=now and self.rng:NextNumber()<.35 then
+		a.move=-toward
+		if press(c,a,"Pursuit","back",0) then return true end
+	end
+	if now>=(self.techReadyAt or 0) and sight and target.state~="Defeated" then
+		local roll=self.rng:NextNumber()
+		if distance<24 and threat and roll<.3 and cast("GreatGust") then return true end
+		if distance>12 and distance<34 and closing>3 and roll<.5 then
+			-- (where the body will be when the column rises: the signs, then the beat)
+			if cast("Cyclone",target.root.Position+(target.locomotion or Vector3.zero)*.69) then return true end
+		end
+		-- (against a body coming in fast, from far enough that a dash into the
+		-- channel meets the scythe)
+		if distance>(if threat then 15 else 10) and distance<42 and roll<.7 and cast("Kamaitachi",lead) then return true end
+	end
+	-- Hold the band: inside it she backs off at an angle (a straight backpedal
+	-- is slower than any approach), never walks into melee.
+	if distance<(tune.Keep or tune.Close+6) then
+		a.move=(-toward*.75+tangent*(self.strafeSign or 1)*.66).Unit;a.sprinting=distance<tune.Close+3
+	end
+	return true
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
@@ -118,6 +230,11 @@ function AI:update(now)
 		-- A probe often resolves into an entry: the press opens with a dash.
 		if wasProbing and not self.probing then self.entryUntil=now+1.2 end
 	end
+	-- Against a zoner (a far longer preferred range than ours: Temari) waiting
+	-- at range is losing: no probing, weave on the way in, dash from further,
+	-- step out of a wind lane that blows against the approach (below).
+	local zoner=(target.def.PreferredRange or 7)>=14 and (a.def.PreferredRange or 7)<12 and not a.def.Zoner
+	if zoner then self.probing=false end
 	local downed=target.reaction=="Knockdown" or target.reaction=="Wakeup" or (target.reaction=="Knockback" and target.airborne==false)
 	if downed and not self.wasDowned and a.pursuitUntil<=now then self.breathUntil=now+.35+self.rng:NextNumber()*.5 end
 	self.wasDowned=downed
@@ -147,9 +264,12 @@ function AI:update(now)
 	-- steps. Two sprinting fighters offset the same way (velocity turns at a
 	-- bounded rate) orbit each other forever instead of meeting.
 	local lateral=self.strafeAmount or .5
-	if radial>0 and not calm then lateral*=if distance>desired+8 then 0 else .35 end
+	if radial>0 and not calm then lateral*=if zoner then .8 elseif distance>desired+8 then 0 else .35 end
 	if holding then lateral=0 end
 	a.move=(toward*radial+tangent*(self.strafeSign or 1)*lateral)
+	-- Standing in a wind lane that blows against the way in: out of it sideways.
+	local outOfLane=radial>0 and laneAgainst(c,a,toward)
+	if outOfLane then a.move=outOfLane+toward*.25;Brawler.event(c,a,"LaneAvoid") end
 	-- Space is a resource: backing off drifts toward the open middle, so the
 	-- wall is a choice (wall run, splat) and not where every retreat ends.
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
@@ -208,6 +328,8 @@ function AI:update(now)
 	local entering=distance<8.5 and (self.lastDistance or 99)>=8.5 and closing>4
 	self.lastDistance=distance
 	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	-- A zoner plays her own range game (AI:zone) before any melee logic.
+	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then
 		local roll=self.rng:NextNumber()
 		if roll<tune.ReadGuard then
@@ -339,7 +461,10 @@ function AI:update(now)
 			if slot and c:request(a,slot) then return end
 		end
 	end
-	if a.pursuitUntil>now and distance>8 and distance<Config.PursuitRange and self.rng:NextNumber()<(CHASE[a.fighterId] or .58) then
+	-- A body launched straight up above him is out of reach too: the flat
+	-- distance stays short while it rises (Naruto's barrage, a pillar).
+	local above=target.airborne and target.root.Position.Y-a.root.Position.Y>4
+	if a.pursuitUntil>now and (distance>8 or above) and distance<Config.PursuitRange and self.rng:NextNumber()<(CHASE[a.fighterId] or .58) then
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then
@@ -470,7 +595,7 @@ function AI:update(now)
 	local theirs=(target.def.AttackProfile and target.def.AttackProfile.Light1 and target.def.AttackProfile.Light1.range or 6)
 	if theirs>reach and distance>reach-1 and distance<theirs+3 and target.state~="Startup" then
 		a.move=toward;a.sprinting=true
-		if distance>Config.Rush.MinRange+.5 and self.rng:NextNumber()<.3 and c:request(a,"Pursuit") then return end
+		if distance>Config.Rush.MinRange+.5 and self.rng:NextNumber()<.3 and not laneOnPath(c,a,target) and c:request(a,"Pursuit") then return end
 		if self.rng:NextNumber()<.2 then c:request(a,"Dodge");return end
 	end
 	if distance>6 and distance<17 and self.rng:NextNumber()<0.1 then c:request(a,"Jump") end
@@ -481,8 +606,9 @@ function AI:update(now)
 	-- into a zoner is the slow answer).
 	local keen=.1*(DASH[a.fighterId] or 1)
 	if (self.entryUntil or 0)>now then keen*=4 elseif distance>desired+10 then keen*=2 end
+	if zoner then keen*=1.3 end
 	if not calm and distance>dashFrom and distance<44 and target.state~="Startup" and target.state~="TechniqueChannel" and target.state~="Guarding"
-		and self.rng:NextNumber()<keen then
+		and self.rng:NextNumber()<keen and not laneOnPath(c,a,target) then
 		if c:request(a,"Pursuit") then self.entryUntil=nil;return end
 	end
 	-- Sidestep cover when the direct route is obstructed.

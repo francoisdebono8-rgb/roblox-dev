@@ -99,6 +99,8 @@ TEST_RUNNERS=[('lune','tests/Input.spec.luau'),('luau','tests/Rules.spec.luau'),
 TEST_RUNNERS.append(('lune','tests/Identity.spec.luau'))
 # Roster wave: Naruto, several bodies (Server/Bodies, Server/Legion, BodyViews, NarutoFX).
 TEST_RUNNERS.append(('lune','tests/Naruto.spec.luau'))
+# Roster wave: Temari (wind zones, the fan, the zoner AI).
+TEST_RUNNERS.append(('lune','tests/Temari.spec.luau'))
 def run_automated():
     tool={}
     import os

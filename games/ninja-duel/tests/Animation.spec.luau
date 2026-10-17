@@ -63,7 +63,7 @@ local function body(actor,overrides)
 end
 
 test("every pose stays inside human joint limits",function()
- for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"} do
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Gale"} do
   local c,a=H.duel(fighter,if fighter=="Flashstep" then "Mirage" else "Flashstep")
   local actors={
    body(a,{}),
@@ -129,7 +129,7 @@ end)
 test("every strike of every fighter stays finite and inside joint limits through its timeline",function()
  local names={"LionBarrage","Rasengan","RasenganDrop","PrimaryLotus","HiddenLotus","LeafHeel"}
  for name in H.Attacks do table.insert(names,name) end
- for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"} do
+ for _,fighter in {"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf","Gale"} do
   local c,a=H.duel(fighter,"Mirage")
   for _,name in names do
    Motion.reset(a.model)

@@ -13,6 +13,7 @@ local Bodies=require(script.Parent.Bodies)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
+local Zones=require(script.Parent.Zones)
 local Matches={}; Matches.__index=Matches
 -- Skill builds (PROG-001..003) are resolved and validated here, on the server:
 -- a spec is {nodes={...}, unlocked={[id]=true}} (unlocked = the profile's set)
@@ -227,7 +228,9 @@ function Matches:view(s,cursor,mine,theirs)
 			-- The share of chakra recovery the closed points leave (1: all), for
 			-- the chakra bar; the air finisher window after the Dancing Leaf
 			-- (Lion Combo, a lotus), for its prompt.
-			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now)}
+			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now),
+			-- Temari: the open fan holding her up in the air.
+			glide=a.gliding==true}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -255,7 +258,8 @@ function Matches:view(s,cursor,mine,theirs)
 	return {phase=s.phase,epoch=s.epoch,winner=s.winner and (if s.winner==mine.id then "PlayerFighter" else "AIFighter"),tutorial=Tutorial.snapshot(s),origin=s.origin,human=data(mine),bot=data(theirs),impacts=feed,impactSerial=s.combat.impactSerial or 0,
 		-- Bodies that are not fighters (Naruto's shadow clones), drawn by Client/BodyViews.
 		bodies=Bodies.view(s.combat),
-		projectiles=projectiles,hazards=hazards,serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
+		-- zones: wind lanes and updrafts (Zones.snapshot), drawn per kind by the client.
+		projectiles=projectiles,hazards=hazards,zones=Zones.snapshot(s.combat,now),serverNow=now,intro=math.max(0,(s.introUntil or 0)-now),ko=s.finishing==true,
 		round=s.round or 1,wins={human=wins[mine.id] or 0,bot=wins[theirs.id] or 0},roundsToWin=s.roundsToWin or 1,matchPoint=s.matchPoint}
 end
 function Matches:request(player,payload)

@@ -1030,4 +1030,7 @@ function Techniques.curseDrain(c,a,dt,now)
 end
 -- Naruto (roster wave): his jutsu and his clones' behaviour (Server/Legion).
 require(script.Parent.Legion).install(Techniques)
+-- Temari (roster wave): her kit registers itself (techniques, the fan gust
+-- tool, the updraft payoff, Kamatari, the glide, the wind step).
+require(script.Parent.Gale).install(Techniques)
 return Techniques

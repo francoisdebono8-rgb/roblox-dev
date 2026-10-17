@@ -314,6 +314,12 @@ function FX:sync(data)
 			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
 				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
 			end
+		elseif not p.planted and entry.data.born~=p.born then
+			-- Re-based in the air (Combat:redirect: a wind lane turned it aside or
+			-- sped it up): the old leg is drawn until the visual clock reaches the
+			-- new one, so the flight bends where it bent instead of vanishing and
+			-- jumping ahead.
+			entry.previous=entry.data
 		end
 		entry.data=p;entry.missingSince=nil
 	end
@@ -337,6 +343,9 @@ function FX:stepProjectiles(dt)
 	local t=self:visualTime()
 	for id,entry in self.projectiles do
 		local p=entry.data
+		if entry.previous then
+			if t<p.born then p=entry.previous else entry.previous=nil end
+		end
 		local age=t-p.born
 		if entry.missingSince and os.clock()-entry.missingSince>.35 then
 			self:finishProjectile(id)
@@ -1623,6 +1632,8 @@ function FX:update(data,dt,folder)
 	end
 	self:stepProjectiles(dt)
 	self:hazardsStep(data)
+	-- Layers that draw from the whole snapshot (GaleFX: the zones, each kind its own way).
+	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 	self:crowdOf(folder)
 	self:ambient(dt)
 	for _,key in {"human","bot"} do
@@ -1657,5 +1668,8 @@ require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,so
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Naruto (clone puffs, the Rasengan shaped with a clone, the barrage, the Nine-Tails cloak).
 require(script.Parent.NarutoFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- Temari (the iron fan, Kamaitachi, Kamatari, wind lanes and updrafts, gusts).
+require(script.Parent.GaleFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 return FX

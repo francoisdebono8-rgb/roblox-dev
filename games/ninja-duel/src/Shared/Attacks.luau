@@ -70,6 +70,16 @@ local attacks={
  LeafWhirlwind=move(.12,.16,.24,7,1.4,"HitStun",Vector3.new(0,5,14),.38),
  GreatWhirlwind=move(.06,.24,.36,9,14,"Knockback",Vector3.new(0,16,54),.55),
  DeflectKick=move(.05,.18,.3,4,0,"HitStun",Vector3.new(0,4,10),.3),
+ -- Temari (roster wave): the iron fan. The Updraft scoops the body into
+ -- rising air (Gale.updraft holds it there), the Fan Slam brings the closed fan
+ -- down, the Fan Pirouette throws the body aside (lateral), the backhand pushes
+ -- away, the Fan Dive blows a body in the air down into the floor. Shapes and
+ -- tags at the end of this file.
+ Updraft=move(.15,.15,.3,8,1.5,"Launched",Vector3.new(0,46,3),1.25),
+ FanSlam=move(.16,.14,.36,9,1.4,"Knockdown",Vector3.new(0,6,12),.7),
+ FanPirouette=move(.12,.18,.3,7,.8,"Knockback",Vector3.new(0,8,34),.42),
+ FanBackhand=move(.1,.14,.32,9,1.6,"Knockback",Vector3.new(0,12,52),.5),
+ FanDive=move(.1,.14,.26,7,1.5,"Spiked",Vector3.new(0,-70,4),.9),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
 for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
@@ -193,6 +203,18 @@ for name,shape in {
  ClawSwipe={contact=3.6,range=10,width=9,height=6,depth=9,offset=4.6,zone="body",kind="slash",side=-1,twist=60,lean=12,arm=100,step=1.1,chain=true},
  CloneJab={contact=3,range=5.5,zone="head",kind="strike",side=1,twist=24,lean=10,arm=88,step=1},
  BarrageKick={contact=2.4,range=5,zone="body",kind="kick",side=1,twist=10,lean=-10,arm=60,step=1},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
+-- Temari's fan moves: a reach of their own (contact: she stays further out),
+-- the zone and kind the body answers, the air flag of the Fan Dive and the
+-- lateral push of the pirouette (Brawler.hit: thrown aside, not away).
+for name,shape in {
+ Updraft={contact=4.8,range=7.5,width=6,height=8,zone="chin",kind="launch",side=1,twist=12,lean=-28,arm=120,step=1.1,breaksShield=true},
+ FanSlam={contact=4.8,range=7.6,width=5,height=7,zone="head",kind="heavy",side=1,twist=10,lean=30,arm=120,step=1.15},
+ FanPirouette={contact=4.6,range=7.6,width=8.5,height=6,zone="body",kind="palm",side=1,twist=90,lean=6,arm=80,step=1.0,lateral=true},
+ FanBackhand={contact=4.8,range=7.6,width=6,height=6,zone="body",kind="slash",side=-1,twist=50,lean=10,arm=96,step=1.15},
+ FanDive={contact=4.2,range=7.5,width=6,height=8,zone="head",kind="spike",side=1,twist=10,lean=40,arm=120,step=1,air=true},
 } do
  for key,value in shape do attacks[name][key]=value end
 end

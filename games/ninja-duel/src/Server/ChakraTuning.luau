@@ -62,6 +62,15 @@ T.Preferred.Taijutsu={}
 T.Masteries.ShadowClone={tags={},levels={Wind=0,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
 T.CharacterMastery.Legion="ShadowClone"
 T.Preferred.ShadowClone={Kunai="Reinforce"}
+-- Temari (roster wave): wind through the iron fan. Her tool is not thrown; the
+-- chakra modifier on it (Gale.gust) is a Wind infusion of the fan: a longer
+-- gust that leaves a short lane. Her Kamaitachi and Kamatari meet other
+-- flights as cutting wind volumes (they blow blades away, fire feeds on them).
+T.Objects.Fan={toolType="Fan",tags={"tool","wind"},canLaunch=false,infusions={Wind=true},stats={weight=3,impact=1},caps={weight=8,impact=4},radius=1,visual="target"}
+T.Masteries.WindFan={tags={"wind"},levels={Wind=3,Fire=0,Lightning=0,GentleFist=0,Seal=0}}
+T.CharacterMastery.Gale="WindFan"
+T.Preferred.WindFan={Fan="Wind"}
+T.ObjectOf.gale="WindCut";T.ObjectOf.kamatari="WindCut"
 local O=T.Objects
 local function tool(toolType,tags,infusions,weight,impact,contest,visual)
 	return {toolType=toolType,tags=tags,canLaunch=true,infusions=infusions,

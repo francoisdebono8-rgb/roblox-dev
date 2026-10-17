@@ -209,6 +209,11 @@ local function buildRig(folder,def,cf,name)
  -- Stand in for humanoid locomotion: the harness has no physics solver, so a
  -- Move request advances the root by WalkSpeed. Tests must not teleport around
  -- the systems they are checking.
+ -- Over one frame, as the real Humanoid does: movement asks twice a frame
+ -- (Place1Movement, then Motor.step's clamp) and the last request wins; a
+ -- duel's rigs read its clock (Harness.duel) for the frame length. Before, every
+ -- request moved the root by 1/60 s on 0.01 s steps: walking and sprinting ran
+ -- 3.3x faster than the dashes, chases and flights around them.
  function hum:Move(direction)
   self.MoveDirection=direction or V.zero
   -- Kinetic motion (Motor.move: chase, dash, slam drift) already moved the root
@@ -216,11 +221,19 @@ local function buildRig(folder,def,cf,name)
   -- second time made Motor.move believe a live solver ran and stop integrating,
   -- which dropped every vertical chase headlessly.
   if model.kineticMoved then model.kineticMoved=nil;return end
-  local speed=self.WalkSpeed or 0
-  if speed>0 and self.MoveDirection.Magnitude>0.01 then
-   local delta=self.MoveDirection.Unit*speed*Harness.stepDelta
-   rootPart.CFrame=roblox.CFrame.new(rootPart.Position+delta)*rootPart.CFrame.Rotation
+  local dt=Harness.stepDelta
+  local start=rootPart.Position
+  local now=self.clock and self.clock()
+  if now then
+   if self.frameAt~=now then self.lastFrame=self.frameAt;self.frameAt=now;self.frameStart=start
+   elseif self.frameEnd and (start-self.frameEnd).Magnitude<1e-6 then start=self.frameStart end
+   if self.lastFrame then dt=math.clamp(now-self.lastFrame,0,.1) end
   end
+  local speed=self.WalkSpeed or 0
+  local target=start
+  if speed>0 and self.MoveDirection.Magnitude>0.01 then target=start+self.MoveDirection.Unit*speed*dt end
+  rootPart.CFrame=roblox.CFrame.new(target)*rootPart.CFrame.Rotation
+  self.frameEnd=target
  end
  function hum:ChangeState(state) self.nativeState=state end
  function hum:GetState() return self.nativeState or roblox.Enum.HumanoidStateType.Running end
@@ -327,6 +340,7 @@ function Harness.duel(first,second,kits)
  local function actor(id,key,z)
   local position=V.new(0,3,z)
   local model,hum,root,joints=buildRig(folder,fighters[key],C.lookAt(position,V.new(0,3,-z)),id)
+  hum.clock=function() return c.now end
   return c:add(id,model,hum,root,joints,key,kits and kits[id])
  end
  local a,b=actor("A",first,2.5),actor("B",second,-2.5)

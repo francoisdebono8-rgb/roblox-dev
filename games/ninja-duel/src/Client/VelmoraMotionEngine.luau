@@ -1275,12 +1275,17 @@ local function techSpec(fighterId,id)
 	for _,spec in (def and def.Techniques) or {} do if spec.Id==id then return spec end end
 	return {}
 end
+-- Cast poses and intros registered by a fighter's own motion module
+-- (GaleMotion.install): CAST[techniqueId](actor,base,t,state) -> spec or nil,
+-- INTRO[family intro](base) -> spec.
+local CAST,INTRO={},{}
 local function castSpec(actor)
 	local id=actor.castId
 	local fighterId=actor.fighterId
 	local base=stance(fighterId)
 	local t=actor.castElapsed or 0
 	local state=actor.state
+	if CAST[id] then return CAST[id](actor,base,t,state) end
 	if id=="Rotation" then
 		-- Eight Trigrams Rotation: a full-body spin, arms out, weight centred.
 		local spin=(t*1500)%360
@@ -1416,6 +1421,11 @@ GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 -- Naruto: energetic and loose, arms swinging wide, a heavy bouncing stride.
 GAIT.Legion={stride=1.1,cadence=1.05,arm=48,lean=7,bob=1.2,guard=.05}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
+-- A fighter whose motion data lives in its own module (DEC-015: the engine
+-- offers the tables and builders, the module adds its stance, gait, clips,
+-- throw overlays, cast poses and intro). Temari first.
+require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -2191,7 +2201,9 @@ function Motion.present(char,actor,clock,dt)
 		local spec
 		-- A family may name its own intro (Rock Lee's), else its body's.
 		local body=familyOf(subject.fighterId).intro or familyOf(subject.fighterId).body
-		if body=="Leaf" then
+		if INTRO[body] then
+			spec=INTRO[body](base)
+		elseif body=="Leaf" then
 			-- Rock Lee: fired up. Upright on springy knees, the fist clenched at
 			-- shoulder height, chin up; the other hand already behind his back.
 			spec=merge(base,{root={y=-.2,pitch=-2,yaw=20},torso={pitch=-6,yaw=-8},head={pitch=-10,yaw=-14},
