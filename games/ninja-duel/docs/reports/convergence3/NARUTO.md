@@ -36,7 +36,7 @@ Branche `claude/nd-vrs-naruto`, base `2aba0ca` (`claude/ninja-duel-2026-10-14`).
 | Costume Partie I (combinaison orange, épaules bleues, col blanc, spirale rouge, bandeau bleu, moustaches, cheveux en pics) ; SmoothPlastic, aucun Fabric | `World.dressNaruto` | « his costume » |
 | Sélectionnable ; compteur « CLONES n » sur sa plaque ; cues de clone et de rafale affichées | `UI.luau` | « he is selectable » |
 
-Duels IA du dernier passage (une seule graine par ordre : échantillon minuscule, aucun réglage d'équilibre fait) : Naruto gagne 8 sur 12 ; il perd contre Gaara dans les deux ordres, contre Minato et Sasuke quand ils commencent. 95 clones créés, 60 dissipés par les adversaires, 20 routes, 3 Rendan.
+Duels IA de la suite (une seule graine par ordre : échantillon minuscule, aucun réglage d'équilibre fait) : Naruto gagne 7 sur 12 ; il perd contre Gaara dans les deux ordres, contre Minato, Itachi et Lee quand ils commencent. 87 clones créés, 59 dissipés par les adversaires, 14 routes, 3 Rendan. Endurance hors suite (script jetable, quatre graines × treize paires dont le miroir, 52 duels jusqu'au KO) : **aucune erreur, aucun blocage, aucun corps laissé après un KO, jamais plus de deux clones** ; 199 clones d'ombre, 34 multi clones, 61 kunai transformés, 43 Rasengan (3 cassés), 35 rafales, 23 Rendan.
 
 ## Ce que le test de charge a cassé (corrections génériques)
 

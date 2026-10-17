@@ -105,7 +105,7 @@ function Bodies.dispel(c,body,why,by,extra)
 	Brawler.event(c,body.owner,"BodyLost")
 	if by and by~=body.owner then
 		Brawler.event(c,by,"BodyDispelled")
-		c:cue(by,"CLONE DISPELLED",.5)
+		c:cue(by,string.upper(body.kind).." DISPELLED",.5)
 	end
 	return true
 end

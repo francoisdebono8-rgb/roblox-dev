@@ -418,7 +418,8 @@ function AI:update(now)
 			-- Naruto (roster wave): clones out in neutral (two at most), a pair
 			-- charging from mid range, the Rasengan on an opening or with a clone
 			-- out to shape it.
-			if spec.Id=="ShadowClone" then use=distance>4 and distance<26 and Bodies.count(c,a,"clone")<2 and a.chakra>=36 end
+			-- (With none out, now and then he holds the single clone for the pair.)
+			if spec.Id=="ShadowClone" then local out=Bodies.count(c,a,"clone");use=distance>4 and distance<26 and out<2 and a.chakra>=36 and (out>0 or self.rng:NextNumber()<.6) end
 			if spec.Id=="MassShadowClone" then use=distance>7 and distance<22 and Bodies.count(c,a,"clone")==0 and a.chakra>=70 and self.rng:NextNumber()<.5 end
 			if spec.Id=="CloneRasengan" then use=distance<9 and (target.state=="Recovery" or target.state=="Stunned" or target.state=="TechniqueRecovery"
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end

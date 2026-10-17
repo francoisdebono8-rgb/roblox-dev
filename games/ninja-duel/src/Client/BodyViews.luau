@@ -27,6 +27,9 @@ function BodyViews.copy(source)
 		if d:IsA("BasePart") then
 			d.CanCollide=false;d.CanQuery=false;d.CanTouch=false;d.Massless=true;d.Anchored=false
 			d.LocalTransparencyModifier=0
+			-- The quiet tell (the deception is where blows come from, not which
+			-- body is real): a chakra copy casts no shadow, the real one does.
+			d.CastShadow=false
 		elseif d:IsA("Humanoid") or d:IsA("Sound") or d:IsA("BaseScript") or d:IsA("Highlight") or d:IsA("ParticleEmitter")
 			or d:IsA("Trail") or d:IsA("Light") or d:IsA("Beam") then
 			d:Destroy()
@@ -70,7 +73,9 @@ function BodyViews:step(view,entry,dt)
 		if entry.warp~=view.warp then view.warp=entry.warp;view.pos=entry.position end
 	end
 	local velocity=entry.velocity or Vector3.zero
-	local ahead=entry.position+velocity*math.min(.12,now-(view.seenAt or now))
+	-- A short lead only: a clone dashing to its strike (90 studs/s) stops dead,
+	-- and a long extrapolation would carry it past the spot between packets.
+	local ahead=entry.position+velocity*math.min(.05,now-(view.seenAt or now))
 	if (ahead-view.pos).Magnitude>SNAP then view.pos=ahead
 	else view.pos=view.pos:Lerp(ahead,1-math.exp(-18*math.max(dt,1/240))) end
 	local look=flat(entry.look or Vector3.new(0,0,-1))

@@ -437,6 +437,11 @@ test("Multi Shadow Clone: two clones burst out on both sides and charge; refused
  still(c,a,a.root.Position+side(a,1)*3);still(c,a,a.root.Position+side(a,-1)*3)
  local ok=press(c,a,slot(a,"MassShadowClone"))
  assert(not ok,"Multi Shadow Clone made clones past the cap")
+ -- It always makes the pair: with one clone already out it is refused, nothing paid.
+ local c2,x,y=H.duel("Legion","Mirage");place(c2,x,y,14)
+ still(c2,x,x.root.Position+side(x,1)*3)
+ local chakra=x.chakra
+ assert(not press(c2,x,slot(x,"MassShadowClone")) and x.chakra==chakra,"Multi Shadow Clone ran (or was paid) with a clone already out")
 end)
 -- Awakening: the Nine-Tails chakra ------------------------------------------------
 test("the Nine-Tails chakra: only under 35%; the clones burst, no clone comes back, the clone routes become claws",function()
@@ -961,7 +966,10 @@ test("client: each clone is drawn as a posed copy of his own model, follows its 
   assert(view.model:FindFirstChildOfClass("Humanoid")==nil,"the copy kept a Humanoid")
   assert(view.model:FindFirstChild("RightHand"):FindFirstChild("Kunai")==nil,"the copy kept a weapon from his hand")
   for _,d in view.model:GetDescendants() do
-   if d:IsA("BasePart") then assert(d.CanCollide==false and d.CanQuery==false,"a copied part can collide or block the camera") end
+   if d:IsA("BasePart") then
+    assert(d.CanCollide==false and d.CanQuery==false,"a copied part can collide or block the camera")
+    assert(d.CastShadow==false,"a clone casts a shadow (the real Naruto's tell is gone)")
+   end
   end
   assert(view.model.PrimaryPart.Anchored,"the copy's root is not anchored")
   assert((view.model.PrimaryPart.Position-entry.position).Magnitude<.6,"the copy does not stand where the clone is")

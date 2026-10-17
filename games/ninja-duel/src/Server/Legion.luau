@@ -201,9 +201,14 @@ function Legion.install(Techniques)
 			brawler().event(c,a,"ShadowClone")
 		end,
 	}
-	-- Tajū Kage Bunshin: clones burst out on both sides at once and charge.
+	-- Tajū Kage Bunshin: clones burst out on both sides at once and charge
+	-- (only with none out: it always makes the pair).
 	Techniques.MassShadowClone={
-		check=canClone,
+		check=function(c,a)
+			if not canClone(c,a) then return false end
+			if Bodies.count(c,a,CLONE)>0 then c:cue(a,"CLONES ALREADY OUT",.6);return false end
+			return true
+		end,
 		execute=function(c,a)
 			local made=0
 			for _,side in {1,-1} do
