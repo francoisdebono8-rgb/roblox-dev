@@ -1,0 +1,7 @@
+CAMERA 1406, 496 mouse=717,255
+TOOLBEGIN staged
+TOOLSERVER {"ok":true}
+TOOLSTATE {"events":{"TechniqueResolved":3,"Route":1,"Buff":1,"Air1":1,"Light3":1,"Awaken":1,"LaunchHit":1,"Launcher":1,"Hit":7,"ScalpelSlice":1,"RouteUp":1,"Technique":3,"Light1":2,"Light2":2,"Damage":8},"now":1792267985.827028,"hazards":0,"phase":"Duel","bot":{"combo":0,"velocity":null,"flash":false,"untilIn":-0.10126709938049317,"hitZone":"legs","chakra":100,"subCharges":2,"hitKind":"palm","comboHits":1,"state":"Neutral","airborne":false,"health":397,"position":null,"wall":false,"seals":0,"chainOpen":false,"airHold":0},"human":{"subCharges":2,"airborne":false,"combo":0,"position":null,"velocity":null,"comboHits":0,"flash":false,"state":"Neutral","chakra":125,"health":400,"untilIn":-119.82958102226258,"wall":false,"seals":0,"chainOpen":false,"airHold":0},"projectiles":[]}
+SELECTION true
+MENU /tmp/ninja-duel-shots/audit_roster20_menu_1792267987263.jpg
+BUTTONS ||||||||||||||||||||MINATO|MINATO|ITACHI|ITACHI|NEJI|NEJI|SASUKE|SASUKE|GAARA|GAARA|ROCK LEE|ROCK LEE|NARUTO|NARUTO|TEMARI|TEMARI|HINATA|HINATA|KAKASHI|KAKASHI|HAKU|HAKU|ZABUZA|ZABUZA|KIMIMARO|KIMIMARO|SHISUI|SHISUI|OROCHIMARU|OROCHIMARU|KABUTO|KABUTO|DEIDARA|DEIDARA|SASORI|SASORI|NAGATO|NAGATO|KILLER BEE|KILLER BEE|ENTER THE STAGE|TRAINING (TUTORIAL)|ONLINE DUEL|HOST PRIVATE DUEL|JOIN|REMATCH|RETURN TO THE ROSTER|CANCEL

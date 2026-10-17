@@ -1,0 +1,5 @@
+AUDIT_TELEPORT_RANGE Flicker declared 34 start 120 accepted true end 15.13169002532959
+AUDIT_TELEPORT_RANGE Mirror declared 30 start 120 accepted true end 4.011082172393799
+AUDIT_TELEPORT_RANGE Mist declared 32 start 120 accepted true end 9.816282272338867
+AUDIT_REAL_RESET round 2 buffAfterNewRoundIntro true damageScale 1.22
+AUDIT_PUPPET_COUNTER victimHp 117 poison true

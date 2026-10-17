@@ -1,6 +1,6 @@
 # Roster 20 — breadth pass (Tier A → B → C)
 
-Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROSTER_20_BREADTH_PASS.md). Règle Studio : [`docs/missions/STUDIO_VALIDATION_RULE.md`](../archive/missions/STUDIO_VALIDATION_RULE.md). Suite : [`docs/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md`](../archive/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md).
+Référence technique des kits, pas propriétaire de leur acceptation. Décisions : [DECISIONS](../active/DECISIONS.md) ; statut courant et preuves : [CURRENT_STATE](../active/CURRENT_STATE.md) ; critères et priorités : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Missions originelles : références historiques dans docs/archive/missions. Les mentions « Studio » ci-dessous signalent des observations partielles, pas un PASS final Tier A.
 
 ## Les vingt
 
@@ -12,20 +12,20 @@ Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROST
 | 4 | `Lion` | Sasuke | rushdown / feu-foudre | — (CORE4) | jouable |
 | 5 | `Sand` | Gaara | contrôleur défensif | — | jouable |
 | 6 | `Leaf` | Rock Lee | taijutsu pur | coups de Sasuke | jouable |
-| 7 | `Legion` | Naruto | corps multiples (clones) | Bodies | jouable (Studio à faire) |
-| 8 | `Gale` | Temari | zoneuse vent | Zones | jouable (Studio à faire) |
-| 9 | `Lavender` | Hinata | Poing souple, défensive | Neji + Families (Buff, Burst) | Tier A, Studio vu |
-| 10 | `Copycat` | Kakashi | polyvalent / Sharingan | Families (Strike, Projectile) | Tier A, Studio vu |
-| 11 | `Flicker` | Shisui | Uchiha mobilité / genjutsu | Families (Teleport ×2, Projectile fireball, Burst seal) | Tier A, Studio vu |
-| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile snake Pull/PullTo + Poison, Bind, Strike venin) | Tier A, Studio vu |
-| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile ice, Teleport InZone, Zone dôme) ; outil senbon (Slow) | Tier A, Studio vu |
-| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Buff arme, Burst Leave, Strike) ; outil os ; Armor | Tier A, Studio vu |
-| 15 | `Rinnegan` | Nagato | Rinnegan / contrôle / attraction-répulsion | Families (Burst répulsion, Projectile Pull, Burst Drain/Steal) | Tier A, Studio vu |
-| 16 | `Puppet` | Sasori | marionnettes / corps déporté | corps de Gaara (fouets longs = fils) + Families (puppet Projectile/Bind, Counter, Poison) | Tier A, Studio vu (marionnette = projectile, pas encore un corps Bodies) |
-| 17 | `Clay` | Deidara | explosifs / zoning | Families (claybird/clayspider Projectile + Zone, Zone mine, Burst Katsu) ; outil argile | Tier A, Studio vu |
-| 18 | `Ink` | Killer Bee | jinchūriki jeune, lutteur | Families (Strike Lariat, Zone encre, Projectile tentacule Bind) ; éveil manteau Armor | Tier A, Studio vu |
-| 19 | `Mist` | Zabuza | arme lourde + brume | clips de l'éventail = couperet + Families (Zone brume, Teleport InZone, Projectile Bind) | Tier A, Studio vu |
-| 20 | `Medic` | Kabuto | médical / scalpel chakra | Families (Buff OnHit, Strike Slow, Teleport Heal) | Tier A, Studio vu |
+| 7 | `Legion` | Naruto | corps multiples (clones) | Bodies | implémenté ; preuves Studio partielles datées dans CURRENT_STATE |
+| 8 | `Gale` | Temari | zoneuse vent | Zones | implémenté ; preuves Studio partielles datées dans CURRENT_STATE |
+| 9 | `Lavender` | Hinata | Poing souple, défensive | Neji + Families (Buff, Burst) | implémenté, Studio partiel |
+| 10 | `Copycat` | Kakashi | polyvalent / Sharingan | Families (Strike, Projectile) | implémenté, Studio partiel |
+| 11 | `Flicker` | Shisui | Uchiha mobilité / genjutsu | Families (Teleport ×2, Projectile fireball, Burst seal) | implémenté, Studio partiel |
+| 12 | `Serpent` | Orochimaru | serpents, allonge, saisie | Families (Projectile snake Pull/PullTo + Poison, Bind, Strike venin) | implémenté, Studio partiel |
+| 13 | `Mirror` | Haku | projectiles / miroirs | Families (Projectile ice, Teleport InZone, Zone dôme) ; outil senbon (Slow) | implémenté, Studio partiel |
+| 14 | `Bone` | Kimimaro | armes d'os, armure | Families (Buff arme, Burst Leave, Strike) ; outil os ; Armor | implémenté, Studio partiel |
+| 15 | `Rinnegan` | Nagato | Rinnegan / contrôle / attraction-répulsion | Families (Burst répulsion, Projectile Pull, Burst Drain/Steal) | implémenté, Studio partiel |
+| 16 | `Puppet` | Sasori | marionnettes / corps déporté | corps de Gaara (fouets longs = fils) + Families (puppet Projectile/Bind, Counter, Poison) | implémenté, Studio partiel (marionnette = projectile, pas corps Bodies) |
+| 17 | `Clay` | Deidara | explosifs / zoning | Families (claybird/clayspider Projectile + Zone, Zone mine, Burst Katsu) ; outil argile | implémenté, Studio partiel |
+| 18 | `Ink` | Killer Bee | jinchūriki jeune, lutteur | Families (Strike Lariat, Zone encre, Projectile tentacule Bind) ; éveil manteau Armor | implémenté, Studio partiel |
+| 19 | `Mist` | Zabuza | arme lourde + brume | clips de l'éventail = couperet + Families (Zone brume, Teleport InZone, Projectile Bind) | implémenté, Studio partiel |
+| 20 | `Medic` | Kabuto | médical / scalpel chakra | Families (Buff OnHit, Strike Slow, Teleport Heal) | implémenté, Studio partiel |
 
 > **Composition verrouillée par DEC-022 (17/10/2026).** Les anciens lots Sakura / Choji / Kiba / Shikamaru / Shino / Kisame sont abandonnés avant code pour ce roster initial. Les noms ci-dessus priment sur les anciennes notes de lots.
 >
@@ -35,11 +35,11 @@ Directive : [`docs/missions/ROSTER_20_BREADTH_PASS.md`](../archive/missions/ROST
 
 `Families` : `Poison {Damage, Time, Every}` (dégâts dans le temps), `PullTo` (une traction ne passe jamais derrière lui), Teleport `Heal` / `InZone` (+ `ZoneName`), Burst `Leave` (zone laissée), Buff `OnHit` ; `ToolMastery.Projectile`/`Contact` (outil dessiné par un Looks, avec cavaliers) ; `Attacks.riders` (frappe propre avec Slow/Poison…) ; `Motion.borrow` (une frappe nouvelle emprunte un clip existant) ; téléportations de famille dessinées dans leur look ; arme tenue en main pendant un Buff à look lame/aiguille ; zone `spikes`. `Shared/RosterMoves` ajoute les frappes d'un lot. `tests/Roster20.spec.luau` vérifie l'invariant d'ouverture et la mécanique propre de chacun. `Server/DevRosterCheck` (Debug seulement) : passe Studio par le pipeline serveur, sans le pont MCP Windows.
 
-## Tier A (plancher, vérifié pour chaque entrée de `Shared/Roster`)
+## Portée réelle des tests
 
-`tests/Roster.spec.luau` échoue tant qu'un combattant listé manque d'une pièce : définition complète, implémentation pour chaque technique, éveil qui change le jeu, famille de mouvement, graphe (routes, réengagement), trois légers qui touchent, lourd, route vers l'avant, frappe aérienne après un saut, outil, chaque technique qui résout et produit un effet mesurable, éveil qui s'ouvre, duel IA jusqu'au KO sans blocage avec usage des techniques, sélection au menu, costume propre (≥ 8 pièces), chaque objet de famille dessiné avec son propre modèle.
+`tests/Roster.spec.luau` contrôle les pièces du kit, la résolution des techniques, des chemins de combat et des appels de dessin ; `Roster20.spec` ajoute les mécaniques des dix nouveaux. Ces suites n'établissent pas seules le Tier A : nombre minimal >=8, chaîne tolérant deux touches, éveil accepté sur un bonus numérique, effet mesurable pouvant être un simple spawn. Les critères d'acceptation et leurs corrections appartiennent à QA-002 / CHR-EXT-002 du backlog.
 
-Puis en Studio (règle Studio) : `tools/studio/fighter_check.py <Id> [adversaire]` — choix au menu à la souris, chaîne, route, air, outil, chaque technique en visant l'adversaire à la souris, éveil, captures ; et `ai_soak.luau` sans erreur.
+`tools/studio/fighter_check.py <Id> [adversaire]` rejoue de vraies entrées ; il peut lancer par Debug si le menu manque et ne prouve pas systématiquement les impacts outils/projectiles. `DevRosterCheck` passe par les requêtes serveur ; son saut scripté n'établit pas une frappe aérienne. Ne pas déduire sélection, contre-jeu ou feel de ces seules traces. [Audit daté](../archive/audits/2026-10-17-roster20/AUDIT.md).
 
 ## Socle commun (pas de moteur par personnage)
 

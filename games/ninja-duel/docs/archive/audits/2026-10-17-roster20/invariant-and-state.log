@@ -1,0 +1,7 @@
+AUDIT_INVARIANT 180 PASS across 20 fighters x 3 directions x neutral/whiff/buffered-block
+AUDIT_BUFF_AWAKE Camellia active true Heavy false Armor 0 expected awake Heavy true Armor .3
+AUDIT_CLEAR Bone buffPersists true stancePersists false
+AUDIT_CLEAR Medic buffPersists true stancePersists false
+AUDIT_CLEAR Puppet buffPersists false stancePersists true
+AUDIT_CLEAR_STATUS slowPersists 0.4 poisonVisualPersists 3
+AUDIT_COMPLETE

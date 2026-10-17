@@ -1,0 +1,43 @@
+local H=require("./Harness")
+local F=H.load("Server/Families")
+local R=H.load("Shared/Roster")
+local Matches=H.load("Server/Matches")
+local AI=H.load("Server/AI")
+local function step(c,t) for _=1,math.ceil(t/.01) do H.step(c,.01) end end
+local function place(c,a,b,gap)
+ c:relocate(a,H.V.new(0,3,gap/2));c:relocate(b,H.V.new(0,3,-gap/2))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+end
+local n=0
+for _,id in R do
+ for _,dir in {"forward","back","side"} do
+  for _,mode in {"neutral","whiff","blocked"} do
+   local c,a,b=H.duel(id,"Leaf");place(c,a,b,if mode=="whiff" then 50 else 3.4);b.health=999
+   if mode=="blocked" then assert(c:request(b,"Guard")) end
+   local v=if dir=="forward" then -H.V.zAxis elseif dir=="back" then H.V.zAxis else H.V.xAxis
+   a.move=v;assert(c:request(a,"Attack"));a.move=H.V.zero
+   assert(a.attackName=="Light1",id..mode..dir.." opener="..tostring(a.attackName))
+   if mode~="neutral" then
+    a.move=v;c:request(a,"Attack");a.move=H.V.zero;step(c,1.2)
+    assert((a.events.Route or 0)==0,id..mode..dir.." special route without contact")
+   end
+   n+=1
+  end
+ end
+end
+print("AUDIT_INVARIANT",n,"PASS across 20 fighters x 3 directions x neutral/whiff/buffered-block")
+local c,a,b=H.duel("Bone","Leaf");a.chakra=999;assert(c:request(a,"Technique1"));step(c,.5)
+a.health=20;a.hum.Health=20;assert(c:request(a,"Awaken"));step(c,.2)
+print("AUDIT_BUFF_AWAKE","Camellia active",a.buff~=nil,"Heavy",F.buff(a,c.now).Heavy==true,"Armor",F.buff(a,c.now).Armor or 0,"expected awake Heavy true Armor .3")
+local observed={}
+for _,id in {"Bone","Medic","Puppet"} do
+ local c1,a1,b1=H.duel(id,"Leaf");a1.chakra=999
+ assert(c1:request(a1,if id=="Puppet" then "Technique4" else "Technique1"));step(c1,.35)
+ local buff=F.buff(a1,c1.now);local stance=a1.counterStance
+ c1:clear(true)
+ print("AUDIT_CLEAR",id,"buffPersists",F.buff(a1,c1.now)~=nil,"stancePersists",a1.counterStance~=nil)
+end
+local c2,a2,b2=H.duel("Serpent","Leaf");F.poison(c2,a2,b2,{Damage=1,Time=3,Every=.5});b2.slowUntil=c2.now+8;b2.slowScale=.4
+c2:clear(true)
+print("AUDIT_CLEAR_STATUS","slowPersists",F.speedScale(b2,c2.now),"poisonVisualPersists",F.snapshot(b2,c2.now).poisoned)
+print("AUDIT_COMPLETE")

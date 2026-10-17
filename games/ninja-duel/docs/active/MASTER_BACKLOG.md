@@ -29,11 +29,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - priority: P0
 - dependencies: QA-002, QA-003
 - subsystem: qa
-- character: CORE4
+- character: ALL
 - summary: Validation Studio du build courant, roster réel et contrôles
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Commit/hash exacts ; vraie sélection et inputs ; neutral, chaîne, routes, outils, jutsu, défense, relance, air/mur, éveil, KO, reset/rematch. Étendre la couverture au roster courant (ancienne matrice 4×4 historique). Par nouveau fighter au moins un duel IA ; couverture diversifiée des familles puis matchups à risque ; manette réelle et acceptation humaine distinctes.
-- evidence: 2026-10-16 : Studio piloté par le serveur MCP officiel (réglage Assistant-ExternalMCPEnabled activé avec accord utilisateur ; pont et sondes dans tools/studio). Mesures natives sur les artefacts debug exacts (sauts, sprint, rush, caméra, sauts d’image, rotations, flashs) consignées dans tools/studio/README.md et le journal. Restent : 16 matchups, manette réelle, acceptation humaine. 2026-10-17 (Claude) : outil `tools/studio/fighter_check.py` (sélection au menu à la souris, vraies touches, souris sur l'adversaire pour les jutsu, événements serveur par étape, captures) ; passes complètes Hinata, Kakashi (`8aa34c1`), Naruto, Temari, Minato (Debug `dd5fa46`) ; Itachi interrompue ; Sasuke/Neji/Gaara/Lee à rejouer sur le HEAD courant.
+- evidence: 17/10 Codex de33f3d : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). MCP connecté et passe à vraies touches des dix nouveaux sur Debug067b732 ; final ne change que couleur Shisui, mais gate native finale non close. Sélection réelle complète, impacts outils/projectiles, états combinés, anciens et manette physique restent à prouver. Preuves Claude antérieures conservées dans le snapshot de l’audit.
 - outcome: PENDING
 
 ## QA-002 — Contrats headless existants
@@ -45,8 +45,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - character: ALL
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md)
-- validation: 15 suites /162 cas passent sur sources actuelles
-- evidence: tests/run.sh : 162 PASS (2026-10-16 : Input.spec par DEC-011, Regression +9 cas saut, audit combat/défense et cues manette) ; ne valide pas feel
+- validation: 27 suites actuelles passent sur sources exactes ; contrats roster exact20, trois hits réels, effet de contact et éveil comportemental explicites. Préserver tests des vingt neutral/whiff/block/buffer.
+- evidence: 17/10 Codex de33f3d : 27 suites /489 cas PASS (Lune0.10.5, Luau0.743), plus180 sondes invariant PASS ; [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Suite actuelle permissive sur Tier A : amélioration des critères requise, sans invalider les PASS techniques existants.
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -68,11 +68,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - priority: P1
 - dependencies: QA-001
 - subsystem: qa
-- character: CORE4
+- character: ALL
 - summary: Reproduire séquences anormales et cycle de match
 - sources: [COMBAT_REQUIREMENTS](../archive/combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md)
 - validation: Jumpattack/attackjump/launcher-chase/airslam/walldash/teleport/mash/hitstun/cancel/landing ; mort reset rematch sans fuite
-- evidence: Regression/Sequences/Preparation passent ; scène native à documenter
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md), Camellia survit au vrai resetRound (round2 DamageScale1.22) ; buff masque Heavy/Armor éveillés ; téléports30–34 acceptés depuis120. Corriger lifecycle et composition avant feel, ajouter régressions ; ces politiques préexistaient aux lots, aucune nouvelle régression ancienne attribuée sans preuve.
 - outcome: PENDING
 
 ## QA-005 — Contrôles natifs Mac/PC/manette puis périmètre mobile
@@ -443,7 +443,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Awake modifie des règles et respecte la jeunesse
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Deux modifications de règles compréhensibles proposées/testées par kit ; labels lore ; pas boost statistique seul
-- evidence: Awake et fenêtres existantes ; 2026-10-16 fiches : les quatre éveils sont surtout des multiplicateurs (Minato : stats + cooldowns ×0,4 ; Itachi : fenêtres ×1,5 ; Neji : sans angle mort + drain ×1,8 ; Sasuke : stats + perte de PV) ; une proposition d’éveil « à règle » par fiche, non implémentée 2026-10-16 : le bonus de vitesse d’éveil était annulé au sol (`Motor.step` bridait la locomotion à la vitesse de base après que le mouvement l’avait demandé) → limite multipliée par `speedScale` ; test Regression (échoue sur l’ancien code : 19,5 contre 19,5).
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Haku/Shisui/Deidara/Nagato ont des éveils exclusivement numériques ; Kimimaro a Heavy/Armor mais Camellia peut les masquer. Clôturer bug de composition au premier bloc combat ; définir les règles manquantes au bloc identité de DEC-021.
 - outcome: PENDING
 - acceptance: Chaque éveil change au moins une règle/route/ressource/défense avec coût et contre-jeu visibles ; pas simple multiplicateur.
 
@@ -570,11 +570,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - priority: P1
 - dependencies: QA-001, RES-001
 - subsystem: character
-- character: CORE4
+- character: ALL
 - summary: Quatre identités reconnaissables sans jutsu
 - sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md)
 - validation: Mouvement, garde, distance, rythme, outil, conversions distinguent quatre en duel ; preuve native/lore pertinente
-- evidence: Code et profils existent ; 2026-10-16 : fiches FIGHTER_TEMPLATE complètes des quatre (MINATO/ITACHI/NEJI/SASUKE.md) avec table de différenciation. Risques confirmés : Sasuke hérite de 12 clips de Minato (Launcher, KneeStrike, air ×5, Slam, Grab/Throw/ThrowUp, WallDive) et partage sa famille de gait ; Neji hérite de 7 clips d’Itachi ; GuardStrength et CombatStyle ne sont lus nulle part. NATIVE_STUDIO et HUMAN_VISUAL PENDING 2026-10-16 soir : passe identité CORE4 fusionnée (`1a6fb94`) — image Mirage qui trompe vraiment (vue côté victime en Studio), Read visible, Wind Cut refait (tranche horizontale vue en Studio), points de tenketsu suivis, éveils qui changent les règles ; poses d’identité (`d2676c7`, Animation.spec)
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Hors jutsu beaucoup de clips/graphes hérités ; Zabuza arme au dos, Sasori sans corps distant, Deidara sans détonation liée, Nagato absorption abstraite. Passe de signatures après le bloc combat selon DEC-021 ; pas vingt refontes en parallèle.
 - outcome: PENDING
 - acceptance: Minato : marques/angles/chaînes FTG ; Itachi : lecture/leurre/shuriken/feu ; Neji : paumes/tenketsu/Rotation ; Sasuke : kicks/air/fil/Chidori/risque maudit. Vérifier quatre couches : règle, corps, feedback et conséquence de route.
 
@@ -606,7 +606,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## CHR-EXT-002 — 20 personnages — breadth-first Tier A, puis Tier B/C
 
-- status: IN_PROGRESS
+- status: PARTIAL
 - priority: P1
 - dependencies: QA-001
 - subsystem: roster
@@ -614,7 +614,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: 20 personnages jouables en breadth-first, puis identité et polish par vagues
 - sources: [Décision roster](DECISIONS.md#dec-016--20-jouables-breadth-first) ; [texte utilisateur archivé](../archive/missions/ROSTER_20_BREADTH_PASS.md)
 - validation: Tier A pour chacun des 20 : sélection dans le build, stance/locomotion, chaîne légère, lourd, route directionnelle, route air ou alternative justifiée, outil, 2–3 jutsu, défense, relance pertinente, éveil qui change une règle, IA basique, aucun placeholder cassé. Chaque kit joué dans Studio avec au moins un matchup IA. Tier B ensuite : 2–3 mécaniques identitaires, rythme, signature, éveil et feedback lisibles. Tier C : animation/VFX/audio/caméra/balance/online par familles. Réutiliser les familles ; pas vingt clones ni extension au-delà de 20. Tenir ici le tableau des 20, famille, particularités, état Tier A/B et preuves natives.
-- evidence: Base 04d6eb0 : huit entrées sélectionnables dans UI (CORE4, Sand, Leaf, Legion, Gale) ; Naruto intégré par caef06f, rapport uniquement headless. Les 12 places restantes ne sont pas implémentées sur ce HEAD. Anciennes fiches et pool 25/~32 conservés comme candidats, pas liste imposée. Claude choisit les 14 au-delà des six initiaux selon iconicité/diversité ; Naruto et Temari occupent désormais deux de ces places ; Temari intégrée par 26c2526, uniquement headless. Aucun nouveau Tier A validé par cet audit documentaire. 17/10, Claude, `8aa34c1` + lots : socle de familles (`Server/Families`, `Shared/Looks`, `Client/FamilyFX`, `Shared/Roster`, menu grille 5×4) et `tests/Roster.spec` (plancher Tier A pour toute la liste) ; Hinata (`Lavender`) et Kakashi (`Copycat`) TECHNICAL PASS et NATIVE_STUDIO partiel (`tools/studio/fighter_check.py` : sélection souris, chaîne, route, air, chaque jutsu en visant à la souris, éveil, captures ; lien d'entrave des chiens encore invisible). Choix des 20 et lots (fichiers `Shared/WaveN`, `Server/WaveNKit`, `Client/WaveNFX`) : [ROSTER_20](../characters/ROSTER_20.md). HUMAN_VISUAL/FEEL : PENDING. 18/10, Claude : **20/20 Tier A** — les dix de DEC-022 ajoutés en trois lots (`5a9c1d3`, `92137c2`, `067b732` et suivants), `Roster.spec` 20 combattants + `Roster20.spec` PASS ; Studio Mac (Debug) : menu à 20, vraies entrées sur Haku/Shisui/Deidara, `DevRosterCheck` sur les dix (0 erreur). Tier B/C, feel et équilibrage fin : PENDING. DEC-021 s'applique désormais (arrêt du roster).
+- evidence: 17/10 Codex de33f3d : vingt entrées câblées, breadth pass terminé ; [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Nouveaux : 2PASS/8WEAK/0BROKEN au sens fondation V1. Contrat Tier A non entièrement clos (quatre éveils numériques, états/portées, native final incomplet). Arrêt des ajouts selon DEC-021, convergence combat sur20 ; détails de kits dans ROSTER_20 comme référence spécialisée.
 - outcome: PENDING
 
 ## ARENA-001 — Échelle utile et exploitation murs/cover
@@ -782,11 +782,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - priority: P2
 - dependencies: QA-001
 - subsystem: balance
-- character: CORE4
+- character: ALL
 - summary: Balance humain et durée sans inflation HP
 - sources: [FUTURE_SYSTEMS](../archive/systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Seeds/sim distinctes des duels humains ; diversité routes/defense, pas augmenter HP pour masquer manque de décisions
-- evidence: Simulation disponible ; durée AI historique45–70s pas vérité joueur
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). HP400 du pilote sert uniquement à éviter le KO pendant la capture ; aucune conclusion de balance. Mesurer létalité/neutral à HP produit après corrections, adversaire mobile/garde et matchups réciproques ; pas inflation HP comme cache-misère.
 - outcome: PENDING
 
 ## AI-001 — IA comprend les conversions tactiques utiles
@@ -795,11 +795,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - priority: P2
 - dependencies: QA-001
 - subsystem: ai
-- character: CORE4
+- character: ALL
 - summary: IA comprend les conversions tactiques utiles
 - sources: [FUTURE_SYSTEMS](../archive/systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
 - validation: Mesurer planification wall/seal/angle/outil et sorties sans triche ni spam
-- evidence: AI fonctionne ; reports limites planification non clôturés. 2026-10-16 rythme du neutre ([rapport](../archive/reports/convergence/NEUTRAL_RHYTHM.md)) : jutsus espacés, lectures d’entrée en portée, feintes d’approche, strafe engagé, retour au neutre, replis vers le centre. NATIVE_STUDIO 60 s : techniques Minato 27→18, parades 1→5 / 0→4, feintes 0→8 / 1→6, corps à corps 46 %→23 %, conversions murales présentes ; headless 12 affrontements : techniques 16,3→10,3/min, outils 7,5→11,0/min. TECHNICAL PASS (Regression 23). HUMAN_VISUAL PENDING
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Ring headless20 matchups voisins PASS ; aucune preuve exhaustive des synergies. Prévoir matchups réciproques miroirs/brume/poison/buffs/counter, ancien clones/vent ; lenteur Sasori vs Lee90s signalée par Claude à reproduire.
 - outcome: PENDING
 - acceptance: Éprouver murs, hauteur, outils/chakra, corps secondaires, identité, éveil et disengage dans des matchs variés ; aucun accès injustifié aux intentions du joueur.
 
@@ -948,7 +948,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ## ARC-002 — Architecture roster — hooks démontrés, pas de branches par nom en cascade
 
-- status: OPEN
+- status: PARTIAL
 - priority: P1
 - dependencies: QA-001
 - subsystem: architecture
@@ -956,7 +956,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Hooks et familles pilotés par les besoins des 20 fighters
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md)
 - validation: Quand plusieurs fighters forcent les mêmes conditionnels centraux, extraire le besoin démontré en hook/trait/module neutre (hit, défense, outil, route, éveil, mouvement, ressource, projectile, présentation). Préserver contrats et autorité serveur ; aucune réécriture générique anticipée ; vérifier cleanup et snapshots des corps secondaires.
-- evidence: FIGHTER_TEMPLATE conservé ; pas de nécessité démontrée
+- evidence: 17/10 Codex : [audit roster20](../archive/audits/2026-10-17-roster20/AUDIT.md). Les trois lots réutilisent familles et hooks sans cascade de noms dans le cœur. Risques démontrés : état persistant, priorité buff/éveil/OnHit, portée Teleport. Corriger ces contrats localement et protéger anciens consommateurs ; aucune justification de refonte globale.
 - outcome: PENDING
 
 ## PROG-001 — Arbres et maîtrises — préparer la phase suivante

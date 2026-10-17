@@ -1,0 +1,9 @@
+PICK (440, 310) (742, 293) (853, 358)
+AIM aimed 766,272
+RAY mouse=766,272 hit=3.509545087814331, 0, 0.32714271545410156 target=0, 3, -5 object=Training floor
+BEFORE 400
+FLIGHT projectiles=0 throw=nil hp=400
+AFTER 400
+NEEDLES 400
+SCREEN /tmp/ninja-duel-shots/audit_haku_real_menu_and_tool_1792268019118.jpg
+CLEANUP true

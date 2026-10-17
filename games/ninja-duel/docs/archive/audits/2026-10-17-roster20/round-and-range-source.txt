@@ -1,0 +1,19 @@
+local H=require("./Harness")
+local F=H.load("Server/Families")
+local M=H.load("Server/Matches")
+local function step(c,t)for _=1,math.ceil(t/.01)do H.step(c,.01)end end
+for _,id in {"Flicker","Mirror","Mist"}do
+ local c,a,b=H.duel(id,"Leaf");c:relocate(a,H.V.new(0,3,60));c:relocate(b,H.V.new(0,3,-60));a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);a.chakra=999
+ local slot=if id=="Flicker" then 1 else 2
+ local spec=a.def.Techniques[slot];local before=(a.root.Position-b.root.Position).Magnitude
+ local ok,reason=c:request(a,"Technique"..slot,b.root.Position);step(c,.5)
+ print("AUDIT_TELEPORT_RANGE",id,"declared",spec.Range,"start",before,"accepted",ok,"end",(a.root.Position-b.root.Position).Magnitude)
+end
+local c,a,b,s=H.duel("Bone","Leaf");a.chakra=999
+assert(c:request(a,"Technique1"));step(c,.4)
+s.combat=c;s.epoch=1;s.round=1
+c.now+=1.9;M.resetRound({},s);step(c,1.8)
+print("AUDIT_REAL_RESET","round",s.round,"buffAfterNewRoundIntro",F.buff(a,c.now)~=nil,"damageScale",F.damageScale(a,b,c.now))
+local c2,a2,b2=H.duel("Puppet","Leaf");a2.chakra=999;assert(c2:request(a2,"Technique4"));step(c2,.1)
+assert(c2:request(b2,"Attack"));step(c2,.6)
+print("AUDIT_PUPPET_COUNTER","victimHp",b2.health,"poison",(b2.poisonedUntil or 0)>c2.now)

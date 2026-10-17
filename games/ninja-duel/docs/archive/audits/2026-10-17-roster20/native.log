@@ -1,0 +1,133 @@
+AUDIT_NATIVE_BEGIN Flicker
+menu: not on the select screen (menu button 'SHISUI' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Flicker_tool_1792267502720.jpg
+tool (R):    events: no new event
+technique 1 BodyFlicker (Teleport) at 14.0: cast:BodyFlicker > FlickerCut   events: Damage+1, FlickerCut+1, Hit+1, Technique+1, TechniqueResolved+1   (aimed 735,231)   shot /tmp/ninja-duel-shots/Flicker_BodyFlicker_1792267506638.jpg
+technique 2 FlickerOut (Teleport) at 5.9: cast:FlickerOut   events: Technique+1, TechniqueResolved+1   (aimed 704,252)   shot /tmp/ninja-duel-shots/Flicker_FlickerOut_1792267511432.jpg
+technique 3 ShisuiFireball (Projectile) at 14.0: cast:ShisuiFireball   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 734,233)   shot /tmp/ninja-duel-shots/Flicker_ShisuiFireball_1792267516252.jpg
+technique 4 ShisuiGenjutsu (Burst) at 3.4: cast:ShisuiGenjutsu   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 712,262)   shot /tmp/ninja-duel-shots/Flicker_ShisuiGenjutsu_1792267521099.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Flicker_awaken_1792267525923.jpg
+AUDIT_NATIVE_END Flicker
+AUDIT_NATIVE_BEGIN Serpent
+menu: not on the select screen (menu button 'OROCHIMARU' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Serpent_tool_1792267543941.jpg
+tool (R):    events: no new event
+technique 1 ShadowSnake (Projectile) at 11.7: cast:ShadowSnake   events: Technique+1, TechniqueResolved+1   (aimed 732,235)   shot /tmp/ninja-duel-shots/Serpent_ShadowSnake_1792267547876.jpg
+technique 2 SnakeCoil (Projectile) at 9.0: cast:SnakeCoil   events: Technique+1, TechniqueResolved+1   (aimed 728,240)   shot /tmp/ninja-duel-shots/Serpent_SnakeCoil_1792267552412.jpg
+technique 3 SnakeLunge (Strike) at 5.4: cast:SnakeLunge > VenomFang   events: Damage+1, Hit+1, Technique+1, TechniqueResolved+1, VenomFang+1   (aimed 720,251)   shot /tmp/ninja-duel-shots/Serpent_SnakeLunge_1792267557191.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Serpent_awaken_1792267561963.jpg
+AUDIT_NATIVE_END Serpent
+AUDIT_NATIVE_BEGIN Mirror
+menu: not on the select screen (menu button 'HAKU' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Mirror_tool_1792267580395.jpg
+tool (R):    events: no new event
+technique 1 WaterNeedles (Projectile) at 14.0: cast:WaterNeedles   events: Technique+1, TechniqueResolved+1   (aimed 735,231)   shot /tmp/ninja-duel-shots/Mirror_WaterNeedles_1792267584335.jpg
+technique 2 MirrorStep (Teleport) at 13.5: cast:MirrorStep > SenbonStab   events: Damage+1, Hit+1, SenbonStab+1, Technique+1, TechniqueResolved+1   (aimed 734,233)   shot /tmp/ninja-duel-shots/Mirror_MirrorStep_1792267588856.jpg
+technique 3 IceMirrors (Zone) at 13.5: cast:IceMirrors   events: Technique+1, TechniqueResolved+1   (aimed 717,231)   shot /tmp/ninja-duel-shots/Mirror_IceMirrors_1792267593664.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Mirror_awaken_1792267598578.jpg
+AUDIT_NATIVE_END Mirror
+AUDIT_NATIVE_BEGIN Bone
+menu: not on the select screen (menu button 'KIMIMARO' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Bone_tool_1792267616572.jpg
+tool (R):    events: no new event
+technique 1 Camellia (Buff) at 9.0: cast:Camellia   events: Buff+1, Technique+1, TechniqueResolved+1   (aimed 728,240)   shot /tmp/ninja-duel-shots/Bone_Camellia_1792267620486.jpg
+technique 2 Larch (Burst) at 3.4: cast:Larch   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 714,260)   shot /tmp/ninja-duel-shots/Bone_Larch_1792267625322.jpg
+technique 3 Willow (Strike) at 6.3: cast:Willow > WillowCut   events: Damage+1, Hit+1, Technique+1, TechniqueResolved+1, WillowCut+1   (aimed 721,249)   shot /tmp/ninja-duel-shots/Bone_Willow_1792267630141.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Bone_awaken_1792267634945.jpg
+AUDIT_NATIVE_END Bone
+AUDIT_NATIVE_BEGIN Rinnegan
+menu: not on the select screen (menu button 'NAGATO' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Rinnegan_tool_1792267652971.jpg
+tool (R):    events: no new event
+technique 1 Repulsion (Burst) at 3.6: cast:Repulsion   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 715,259)   shot /tmp/ninja-duel-shots/Rinnegan_Repulsion_1792267657213.jpg
+technique 2 Attraction (Projectile) at 13.5: cast:Attraction   events: Technique+1, TechniqueResolved+1   (aimed 731,237)   shot /tmp/ninja-duel-shots/Rinnegan_Attraction_1792267662069.jpg
+technique 3 Absorb (Burst) at 4.0: cast:Absorb   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 716,258)   shot /tmp/ninja-duel-shots/Rinnegan_Absorb_1792267666953.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Rinnegan_awaken_1792267671754.jpg
+AUDIT_NATIVE_END Rinnegan
+AUDIT_NATIVE_BEGIN Puppet
+menu: not on the select screen (menu button 'SASORI' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > PuppetRise
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Puppet_tool_1792267689836.jpg
+tool (R):    events: no new event
+technique 1 PuppetThrust (Projectile) at 10.8: cast:PuppetThrust   events: Technique+1, TechniqueResolved+1   (aimed 731,236)   shot /tmp/ninja-duel-shots/Puppet_PuppetThrust_1792267693803.jpg
+technique 2 FatherMother (Projectile) at 9.0: cast:FatherMother   events: Technique+1, TechniqueResolved+1   (aimed 728,240)   shot /tmp/ninja-duel-shots/Puppet_FatherMother_1792267698368.jpg
+technique 3 NeedleRain (Projectile) at 13.5: cast:NeedleRain   events: Technique+1, TechniqueResolved+1   (aimed 734,231)   shot /tmp/ninja-duel-shots/Puppet_NeedleRain_1792267703696.jpg
+technique 4 PuppetShield (Counter) at 3.4: cast:PuppetShield   events: Technique+1, TechniqueResolved+1   (aimed 713,261)   shot /tmp/ninja-duel-shots/Puppet_PuppetShield_1792267708845.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Puppet_awaken_1792267714133.jpg
+AUDIT_NATIVE_END Puppet
+AUDIT_NATIVE_BEGIN Clay
+menu: not on the select screen (menu button 'DEIDARA' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Clay_tool_1792267732541.jpg
+tool (R):    events: no new event
+technique 1 ClayBirds (Projectile) at 14.0: cast:ClayBirds   events: Technique+1, TechniqueResolved+1   (aimed 735,231)   shot /tmp/ninja-duel-shots/Clay_ClayBirds_1792267736746.jpg
+technique 2 ClaySpiders (Projectile) at 13.5: cast:ClaySpiders   events: Technique+1, TechniqueResolved+1   (aimed 734,232)   shot /tmp/ninja-duel-shots/Clay_ClaySpiders_1792267741547.jpg
+technique 3 ClayMine (Zone) at 11.7: cast:ClayMine   events: Technique+1, TechniqueResolved+1   (aimed 732,235)   shot /tmp/ninja-duel-shots/Clay_ClayMine_1792267746308.jpg
+technique 4 Katsu (Burst) at 3.4: cast:Katsu   events: Damage+1, Technique+1, TechniqueResolved+1   (aimed 713,261)   shot /tmp/ninja-duel-shots/Clay_Katsu_1792267751333.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Clay_awaken_1792267756336.jpg
+AUDIT_NATIVE_END Clay
+AUDIT_NATIVE_BEGIN Ink
+menu: not on the select screen (menu button 'KILLER BEE' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Ink_tool_1792267774471.jpg
+tool (R):    events: no new event
+technique 1 Lariat (Strike) at 7.2: cast:Lariat > Lariat   events: Damage+1, Hit+1, Lariat+1, Technique+1, TechniqueResolved+1   (aimed 725,244)   shot /tmp/ninja-duel-shots/Ink_Lariat_1792267778807.jpg
+technique 2 InkMist (Zone) at 9.9: cast:InkMist   events: Technique+1, TechniqueResolved+1   (aimed 725,245)   shot /tmp/ninja-duel-shots/Ink_InkMist_1792267783431.jpg
+technique 3 OctoHold (Projectile) at 8.1: cast:OctoHold   events: Technique+1, TechniqueResolved+1   (aimed 727,242)   shot /tmp/ninja-duel-shots/Ink_OctoHold_1792267788081.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Ink_awaken_1792267793027.jpg
+AUDIT_NATIVE_END Ink
+AUDIT_NATIVE_BEGIN Mist
+menu: not on the select screen (menu button 'ZABUZA' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > CleaverRise
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Mist_tool_1792267811287.jpg
+tool (R):    events: no new event
+technique 1 HiddenMist (Zone) at 7.2: cast:HiddenMist   events: Technique+1, TechniqueResolved+1   (aimed 725,244)   shot /tmp/ninja-duel-shots/Mist_HiddenMist_1792267815654.jpg
+technique 2 SilentKilling (Teleport) at 14.0: cast:SilentKilling > SilentCleave   events: Damage+1, Hit+1, SilentCleave+1, Technique+1, TechniqueResolved+1   (aimed 735,230)   shot /tmp/ninja-duel-shots/Mist_SilentKilling_1792267820868.jpg
+technique 3 WaterPrison (Projectile) at 7.2: cast:WaterPrison   events: Technique+1, TechniqueResolved+1   (aimed 682,253)   shot /tmp/ninja-duel-shots/Mist_WaterPrison_1792267825826.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Mist_awaken_1792267830908.jpg
+AUDIT_NATIVE_END Mist
+AUDIT_NATIVE_BEGIN Medic
+menu: not on the select screen (menu button 'KABUTO' (left): missing); duel started with the Debug tools
+duel: Duel|nil|nil
+string LMBx3: Light1 > Light2 > Light3
+toward route (LMB, LMB, W+LMB): Light1 > Light2 > Launcher
+air (Space, LMB): Air1
+tool shot: /tmp/ninja-duel-shots/Medic_tool_1792267849093.jpg
+tool (R):    events: no new event
+technique 1 ChakraScalpel (Buff) at 9.0: cast:ChakraScalpel   events: Buff+1, Technique+1, TechniqueResolved+1   (aimed 728,240)   shot /tmp/ninja-duel-shots/Medic_ChakraScalpel_1792267853161.jpg
+technique 2 TendonCut (Strike) at 4.5: cast:TendonCut > ScalpelSlice   events: Damage+1, Hit+1, ScalpelSlice+1, Technique+1, TechniqueResolved+1   (aimed 718,255)   shot /tmp/ninja-duel-shots/Medic_TendonCut_1792267858121.jpg
+technique 3 MendingRetreat (Teleport) at 5.0: cast:MendingRetreat   events: Technique+1, TechniqueResolved+1   (aimed 717,255)   shot /tmp/ninja-duel-shots/Medic_MendingRetreat_1792267862850.jpg
+awaken (T): awake   events: Awaken+1   shot /tmp/ninja-duel-shots/Medic_awaken_1792267867792.jpg
+AUDIT_NATIVE_END Medic

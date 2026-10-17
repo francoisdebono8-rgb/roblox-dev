@@ -1,0 +1,11 @@
+from pathlib import Path
+exec(Path('/tmp/ninja_roster20_native.py').read_text().split('for fighter in [')[0])
+print('PICK',press_button('HAKU','left'),press_button('ROCK LEE','right'),press_button('ENTER THE STAGE','right'),flush=True)
+time.sleep(2);stage(10);print('AIM',aim(),flush=True)
+print('RAY',luau('Client','local p=game:GetService("Players").LocalPlayer local m=p:GetMouse() local b=p.Character.Parent.AIFighter.HumanoidRootPart return "mouse="..m.X..","..m.Y.." hit="..tostring(m.Hit.Position).." target="..tostring(b.Position).." object="..tostring(m.Target)'),flush=True)
+print('BEFORE',server('local s=dev:Invoke("state") return s.bot.health'),flush=True)
+press('R');time.sleep(.15);print('FLIGHT',server('local s=dev:Invoke("state") return "projectiles="..#s.projectiles.." throw="..tostring(s.human.throwing).." hp="..s.bot.health'),flush=True)
+time.sleep(.8);print('AFTER',server('local s=dev:Invoke("state") return s.bot.health'),flush=True)
+stage(10);aim();press('One');time.sleep(.9);print('NEEDLES',server('local s=dev:Invoke("state") return s.bot.health'),flush=True)
+print('SCREEN',shot('audit_haku_real_menu_and_tool'),flush=True)
+print('CLEANUP',server('return dev:Invoke("selection")'),flush=True)

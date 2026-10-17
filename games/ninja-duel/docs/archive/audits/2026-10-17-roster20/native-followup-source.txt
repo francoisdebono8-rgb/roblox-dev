@@ -1,0 +1,11 @@
+from pathlib import Path
+src=Path('/tmp/ninja_roster20_native.py').read_text();exec(src[:src.index('for fighter in ')])
+print('CAMERA',luau('Client','local p=workspace.CurrentCamera.ViewportSize local m=game:GetService("Players").LocalPlayer:GetMouse() return tostring(p).." mouse="..tostring(m.X)..","..tostring(m.Y)'),flush=True)
+print('TOOLBEGIN',stage(4),flush=True)
+print('TOOLSERVER',server('local st=dev:Invoke("state") return game:GetService("HttpService"):JSONEncode(dev:Invoke("act","human","Tool",st.bot.position))'),flush=True)
+time.sleep(.4)
+print('TOOLSTATE',server('return game:GetService("HttpService"):JSONEncode(dev:Invoke("state"))'),flush=True)
+print('SELECTION',server('return dev:Invoke("selection")'),flush=True)
+time.sleep(1)
+print('MENU',shot('audit_roster20_menu'),flush=True)
+print('BUTTONS',luau('Client','local g=game:GetService("Players").LocalPlayer.PlayerGui.NinjaDuelHUD local t={} for _,b in g:GetDescendants() do if b:IsA("TextButton") and b.Visible then table.insert(t,b.Text) end end return table.concat(t,"|")'),flush=True)

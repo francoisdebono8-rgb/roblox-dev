@@ -1,0 +1,27 @@
+Rules        PASS  NinjaDuel pure policy: 7 PASS
+Input        PASS  NinjaDuel input/PS5: 16 PASS (callbacks + remote validation; hardware feel not simulated)
+Combat       PASS  NinjaDuel headless combat/migration: 17 PASS (geometry adapter; native QA still required)
+Sequences    PASS  NinjaDuel sequence replay: 15 PASS (headless geometry adapter; native QA still required)
+Regression   PASS  NinjaDuel regressions: 28 PASS
+Feedback     PASS  NinjaDuel feedback policy: 5 PASS
+Animation    PASS  NinjaDuel animation presentation: 14 PASS
+Branches     PASS  NinjaDuel move graphs: 13 PASS
+ComboModel   PASS  NinjaDuel combo model: 25 PASS
+Phase4       PASS  NinjaDuel phase 4 depth: 19 PASS
+Neji         PASS  NinjaDuel Neji prototype: 8 PASS
+Identity     PASS  NinjaDuel identity pass: 57 PASS
+Systems      PASS  NinjaDuel final systems: 5 PASS
+Tools        PASS  NinjaDuel shared tools: 4 PASS
+Chakra       PASS  NinjaDuel chakra systemic: 25 PASS (headless rules, state and timing; the look is a Studio check)
+Sasuke       PASS  NinjaDuel Sasuke prototype: 7 PASS
+Gaara        PASS  NinjaDuel Gaara prototype: 13 PASS
+Lee          PASS  NinjaDuel Rock Lee stress test: 26 PASS
+Naruto       PASS  NinjaDuel Naruto (several bodies): 33 PASS
+Temari       PASS  NinjaDuel Temari: 35 PASS
+Roster       PASS  NinjaDuel roster Tier A: 8 PASS (20 fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)
+Roster20     PASS  NinjaDuel roster 20 (locked ten): 11 PASS (headless mechanics; feel and looks are Studio checks)
+Online       PASS  NinjaDuel online 1v1: 17 PASS (server lifecycle/authority; replication, latency and two-client Studio still required)
+Progression  PASS  NinjaDuel progression: 49 PASS (headless: tree data, validation and combat hooks; Studio feel not judged)
+Profiles     PASS  NinjaDuel progression profiles: 11 PASS (in-memory store; real DataStore adapter not exercised)
+Preparation  PASS  NinjaDuel technical preparation: 7 PASS
+DevInfra     PASS  NinjaDuel dev tools: 14 PASS (chakra lab gated: runtime modules absent)
