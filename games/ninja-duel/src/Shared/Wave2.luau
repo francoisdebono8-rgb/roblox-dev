@@ -21,7 +21,9 @@ fighters.Flicker = {
 	Sharingan = { ParryWindow = 0.22, PerfectDodge = 0.2, Counter = 0.7 },
 	-- Awakening: the flicker becomes instant. Faster legs, the flickers back
 	-- almost at once and for half their cost, wider read windows.
-	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.2, Regen = 1.4, Cooldown = 0.35, CostScale = 0.5, Windows = 1.3, Color = { 230, 50, 60 } },
+	-- Rule: a Body Flicker whose cut lands gives the flicker back at once,
+	-- three times in a row (a chain of flank cuts no one else can do).
+	Awakening = { Name = "SHUNSHIN NO SHISUI", Speed = 1.12, Regen = 1.3, Cooldown = 0.7, Windows = 1.2, ChainTeleport = 3, Color = { 230, 50, 60 } },
 	Motion = { body = "Lion", weapons = "kunai", springy = true,
 		borrow = { FlickerStep = "AngleStep", FlickerCut = "Light3" },
 		-- Loose and forward, almost a runner's stance: weight on the balls of

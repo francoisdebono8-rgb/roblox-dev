@@ -32,7 +32,23 @@
 -- (damage over time, no stagger).
 -- Teleport also reads Heal (instant, on arrival) and InZone (damage scale of
 -- its arrival strike when the target stands in one of his own zones).
--- A Buff may carry OnHit (the same rider as def.OnHit while it lasts).
+-- A Buff may carry OnHit (the same rider as def.OnHit while it lasts) and
+-- Absorb {Radius, Chakra, Heal}: while it lasts, enemy objects that come
+-- within Radius are drunk (Nagato's Preta seal).
+-- Charges (Deidara): a Projectile or a Zone with Charge {Trigger, Radius,
+-- Damage, Knock, Lift, Arm, Life, Look} leaves a planted charge (a missed
+-- spider where it stops, a buried mine) that blasts when the body steps on
+-- it once armed, or when its owner detonates (Burst Detonate=true).
+-- Awakening rules read here: ChainCharges (a blast sets off his other
+-- charges near it, charges arm at once), ReflectClear (a Clear burst sends
+-- the blades back at their thrower), ChainTeleport=N (a relocation strike
+-- that lands refreshes its own cooldown, N times in a row), ZoneFree (a Ring
+-- relocation inside his own zone costs nothing and comes back at once).
+-- Teleport Ring {Look, Volley}: inside his own zone of that look, the
+-- relocation lands on its ring behind the body and throws a Volley
+-- {Count, Kind, Damage, Speed, Slow} from there instead of the Move strike.
+-- Summon (family) Body, Mode, Life, Lunge {Damage, Knock, Lift, Poison}: a
+-- persistent body (Server/Bodies); cast again while it is out, it lunges.
 local Families={}
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Looks=require(Shared.Looks)
@@ -242,10 +258,20 @@ function Families.bind(c,a,b,spec)
 	end
 end
 
+-- The zone of a's (with that look, when given) that b stands in.
+function Families.ownZone(c,a,b,look)
+	for _,h in c.hazards do
+		if h.a==a and c.now<h.expires and not h.charge and (not look or h.look==look) then
+			local d=b.root.Position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude<=h.radius and math.abs(d.Y)<8 then return h end
+		end
+	end
+	return nil
+end
 -- Is b inside one of a's own zones (hazards he left)?
 function Families.inOwnZone(c,a,b)
 	for _,h in c.hazards do
-		if h.a==a and c.now<h.expires then
+		if h.a==a and c.now<h.expires and not h.charge then
 			local d=b.root.Position-h.position
 			if Vector3.new(d.X,0,d.Z).Magnitude<=h.radius and math.abs(d.Y)<8 then return true end
 		end
@@ -270,6 +296,80 @@ function Families.releaseAim(c,a,pending,spec)
 	if motion.Magnitude<.5 then motion=b.locomotion or Vector3.zero end
 	local flight=(at-a.root.Position).Magnitude/math.max(spec.Speed or 70,1)
 	return at+flat(motion)*flight*(spec.Lead or .55)
+end
+
+-- ----------------------------------------------------------- charges
+local function awakeRule(a,c,key)
+	local aw=a.def.Awakening
+	return (a.awakenUntil or 0)>c.now and aw~=nil and aw[key] or nil
+end
+Families.awakeRule=awakeRule
+function Families.plant(c,a,position,charge,kindLook)
+	local floor=workspace:Raycast(position+Vector3.new(0,3,0),Vector3.new(0,-30,0),c:rayParams(true))
+	local at=if floor then floor.Position+Vector3.new(0,.5,0) else position
+	local h=c:addHazard(a,at,charge.Trigger or 2.6,charge.Life or 9,0,"Charge")
+	h.charge=charge;h.effects={charge=true}
+	h.look=charge.Look or kindLook
+	h.armedAt=if awakeRule(a,c,"ChainCharges") then c.now else c.now+(charge.Arm or .5)
+	c:pushImpact(at,"zone",false,{owner=a.id,kind=h.look,radius=h.radius,time=charge.Life or 9})
+	return h
+end
+function Families.charges(c,a)
+	local out={}
+	for _,h in c.hazards do if h.a==a and h.charge and c.now<h.expires then table.insert(out,h) end end
+	return out
+end
+function Families.detonate(c,h,chained)
+	if not h.charge or c.now>=h.expires then return end
+	h.expires=c.now
+	local a,z=h.a,h.charge
+	local b=a.target
+	c:pushImpact(h.position,"look",true,{owner=a.id,kind=z.Blast or "clay",radius=z.Radius or 5})
+	if b and b.health>0 and c.match.phase=="Duel" then
+		local d=b.root.Position-h.position
+		if Vector3.new(d.X,0,d.Z).Magnitude<=(z.Radius or 5) and math.abs(d.Y)<7 then
+			c.damageTag="charge"
+			local hit=c:damage(a,b,z.Damage or 8,(z.Damage or 8)>=12,false)
+			c.damageTag=nil
+			if c.match.phase~="Duel" then return end
+			Families.contact(c,a,b,{Knock=z.Knock or 30,Lift=z.Lift or 20},d,hit,hit and b.impactStyle=="block",b.root.Position)
+		end
+	end
+	brawler().event(c,a,"Detonation")
+	-- The awakening chains: every other charge of his near the blast goes too.
+	if awakeRule(a,c,"ChainCharges") then
+		for _,other in Families.charges(c,a) do
+			if (other.position-h.position).Magnitude<=(z.Chain or 10) then
+				c:schedule(c.now+.08,function() Families.detonate(c,other,true) end)
+			end
+		end
+	end
+end
+-- A thrown object that ends without a body (Combat: surface or range end).
+function Families.projectileEnd(c,p,position)
+	local spec=p.family
+	if spec and spec.Charge and not p.planted then
+		p.planted=true
+		Families.plant(c,p.a,position,spec.Charge,p.kind)
+	end
+end
+-- Every frame, per body: an Absorb buff drinks the enemy objects near it.
+function Families.step(c,a,now)
+	local b=a.buff
+	local absorb=b and now<b.untilT and b.spec.Absorb
+	if not absorb then return end
+	for i=#c.projectiles,1,-1 do
+		local p=c.projectiles[i]
+		if p.a~=a and not p.planted and (p.position-a.root.Position).Magnitude<=(absorb.Radius or 6) then
+			table.remove(c.projectiles,i)
+			local worth=math.max(2,p.damage or 2)
+			a.chakra=math.min(a.def.Chakra or 100,a.chakra+worth*(absorb.Chakra or 2))
+			if absorb.Heal then a.health=math.min(a.def.Health,a.health+worth*absorb.Heal);a.hum.Health=math.max(1,a.health) end
+			c:pushImpact(p.position,"drain",false,{owner=a.id,victim=p.a.id,amount=worth,projectile=p.id,kind=p.kind})
+			c:cue(a,"ABSORBED",.5)
+			brawler().event(c,a,"Absorbed")
+		end
+	end
 end
 
 -- ----------------------------------------------------------- families
@@ -326,12 +426,25 @@ F.Burst={
 		local look=flat(a.root.CFrame.LookVector)
 		look=unitOr(look,Vector3.zAxis)
 		if spec.Clear then
+			local reflect=awakeRule(a,c,"ReflectClear")
 			for i=#c.projectiles,1,-1 do
 				local p=c.projectiles[i]
 				if p.a~=a and not p.planted and (p.position-a.root.Position).Magnitude<=reach+2 then
 					table.remove(c.projectiles,i)
 					c:pushImpact(p.position,"deflect",false,{projectile=p.id,kind=p.kind,owner=p.a.id})
+					-- The awakening sends it back where it came from.
+					if reflect and p.a.health>0 then
+						local back=c:projectile(a,p.a.root.Position,math.max(p.speed or 80,80),40,p.damage or 3,p.kind,nil,{origin=p.position,radius=p.radius})
+						back.family=p.family
+						c:cue(a,"REPELLED BACK",.5)
+					end
 				end
+			end
+		end
+		-- His own charges go off wherever they lie (Katsu!).
+		if spec.Detonate then
+			for k,h in Families.charges(c,a) do
+				c:schedule(c.now+.04*k,function() Families.detonate(c,h) end)
 			end
 		end
 		local b=a.target
@@ -368,6 +481,12 @@ F.Zone={
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position else aimOf(a,pending)
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
+		if spec.Charge then
+			-- A buried charge, not a field: it waits for the body or for Katsu.
+			Families.plant(c,a,position,spec.Charge,spec.Kind)
+			c:cue(a,string.upper(spec.Name),.6)
+			return
+		end
 		local h=c:addHazard(a,position,spec.Radius or 8,spec.Time or 4,spec.Damage or 3,spec.ZoneKind or "Fire")
 		h.effects=spec
 		h.look=spec.Kind
@@ -413,7 +532,14 @@ F.Teleport={
 		local from=a.root.Position
 		local line=unitOr(flat(b.root.Position-from),flat(a.root.CFrame.LookVector).Unit)
 		local destination
-		if to=="Behind" then destination=b.root.Position+line*d
+		-- Inside his own zone of the ring's look (Haku's dome): out of the
+		-- mirror on its far side, a volley from there, no step into melee.
+		local ring=spec.Ring and Families.ownZone(c,a,b,spec.Ring.Look)
+		if ring then
+			local around=flat(b.root.Position-ring.position)
+			local side=unitOr(line+around*.0,line)
+			destination=ring.position+side*ring.radius
+		elseif to=="Behind" then destination=b.root.Position+line*d
 		elseif to=="Side" then a.teleportSide=-(a.teleportSide or 1);destination=b.root.Position+line:Cross(Vector3.yAxis)*d*a.teleportSide
 		elseif to=="Back" then destination=from-line*d
 		else
@@ -432,6 +558,25 @@ F.Teleport={
 		if spec.InZone and Families.inOwnZone(c,a,b) then bonus=spec.InZone;c:cue(a,"FROM THE "..string.upper(spec.ZoneName or "zone"),.6) end
 		c:pushImpact(destination,"teleport",false,{owner=a.id,from=from,to=destination,kind=spec.Kind})
 		c:cue(a,string.upper(spec.Name),.6)
+		if ring then
+			local v=spec.Ring.Volley or {}
+			for k=1,(v.Count or 3) do
+				c:schedule(c.now+.05*k,function()
+					if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or a.reaction then return end
+					local spread=b.root.CFrame.RightVector*((k-((v.Count or 3)+1)/2)*.9)
+					local p=c:projectile(a,b.root.Position+spread,v.Speed or 110,ring.radius*2+8,(v.Damage or 2)*bonus,v.Kind or "senbon",nil,{origin=a.root.Position+Vector3.new(0,.6,0),radius=.6})
+					p.family={Slow=v.Slow,Name=spec.Name}
+				end)
+			end
+			brawler().event(c,a,"RingStep")
+			-- The awakening: travel between his mirrors is free and immediate.
+			if awakeRule(a,c,"ZoneFree") then
+				a.chakra=math.min(a.def.Chakra or 100,a.chakra+(spec.Cost or 0))
+				a.cooldowns[spec.Id]=c.now+.35
+				c:cue(a,"MIRROR TO MIRROR",.5)
+			end
+			return
+		end
 		if spec.Move then
 			c:schedule(c.now+.06,function()
 				if a.health<=0 or c.match.phase~="Duel" or a.reaction then return end
@@ -443,6 +588,29 @@ F.Teleport={
 				end
 			end)
 		end
+	end,
+}
+-- A persistent body of his (Server/Bodies): a puppet on its threads. Out
+-- already, the cast sends it lunging at the body instead.
+F.Summon={
+	check=function(c,a) return a.target~=nil and a.target.health>0 end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		local Bodies=require(script.Parent.Bodies)
+		local kind=spec.Body or "puppet"
+		local out=Bodies.of(c,a,kind)[1]
+		if out then
+			out.lunge=spec.Lunge or {};out.nextStrike=c.now
+			c:cue(a,string.upper(spec.LungeName or "LUNGE"),.6)
+			brawler().event(c,a,"BodyLunge")
+			return
+		end
+		local b=a.target
+		local line=unitOr(flat(b.root.Position-a.root.Position),flat(a.root.CFrame.LookVector).Unit)
+		local at=a.root.Position+line*3
+		local body=Bodies.spawn(c,a,{kind=kind,position=Vector3.new(at.X,c.match.origin.Y+3,at.Z),mode=spec.Mode or "marionette",life=spec.Life,delay=.8})
+		if body then body.side=if (a.summonSide or 1)>0 then -1 else 1;a.summonSide=body.side end
+		c:cue(a,string.upper(spec.Name),.7)
 	end,
 }
 F.Counter={
@@ -508,12 +676,28 @@ end
 function Families.strikeHit(c,a,b,p,guarded)
 	local spec=p.family or (p.spec and p.spec.riders)
 	if not spec then return end
+	-- The awakening's chain: a relocation strike that lands gives the
+	-- relocation back at once, a few times in a row (Shisui).
+	local chain=p.family and p.family.Family=="Teleport" and not guarded and awakeRule(a,c,"ChainTeleport")
+	if chain then
+		if c.now-(a.chainTeleportAt or -10)>2.5 then a.chainTeleportCount=0 end
+		if (a.chainTeleportCount or 0)<chain then
+			a.chainTeleportCount=(a.chainTeleportCount or 0)+1;a.chainTeleportAt=c.now
+			a.cooldowns[p.family.Id]=c.now+.12
+			c:cue(a,"FLICKER CHAIN "..a.chainTeleportCount.."/"..chain,.5)
+			brawler().event(c,a,"ChainTeleport")
+		end
+	end
 	Families.contact(c,a,b,spec,a.root.CFrame.LookVector,not guarded,guarded,b.root.Position)
 end
 -- Combat:updateHazards, on each tick that reached the body: the zone's riders.
 function Families.zoneTick(c,h,target)
 	local z=h.effects
 	if not z then return end
+	if h.charge then
+		if c.now>=(h.armedAt or 0) then Families.detonate(c,h) end
+		return
+	end
 	if z.Slow then target.slowUntil=c.now+.6;target.slowScale=z.Slow.Scale or .7 end
 	if z.Drain then
 		local taken=math.min(target.chakra,z.Drain)
@@ -552,8 +736,22 @@ function Families.clearState(a)
 		if type(key)=="string" and type(value)=="number" and string.sub(key,-5)=="Until" then a[key]=0 end
 	end
 end
+-- Shroud (Zabuza's Hidden Mist): a body standing inside its opponent's
+-- shroud has lost sight of him: no auto-facing on him, a chakra dash without
+-- homing, and its client draws him as a fading shadow.
+function Families.shrouded(c,a)
+	local b=a.target
+	if not b or b.health<=0 then return false end
+	for _,h in c.hazards do
+		if h.a==b and c.now<h.expires and h.effects and h.effects.Shroud then
+			local d=a.root.Position-h.position
+			if Vector3.new(d.X,0,d.Z).Magnitude<=h.radius and math.abs(d.Y)<10 then return true end
+		end
+	end
+	return false
+end
 -- Snapshot: what a body carries from the families (client auras, HUD).
-function Families.snapshot(a,now)
+function Families.snapshot(a,now,c)
 	local b=a.buff
 	return {
 		buff=if b and now<b.untilT then b.id else nil,
@@ -561,6 +759,7 @@ function Families.snapshot(a,now)
 		stance=if a.counterStance and now<a.counterStance.untilT then a.counterStance.spec.Id else nil,
 		slowed=math.max(0,(a.slowUntil or 0)-now),
 		poisoned=math.max(0,(a.poisonedUntil or 0)-now),
+		shrouded=c~=nil and Families.shrouded(c,a) or nil,
 	}
 end
 return Families

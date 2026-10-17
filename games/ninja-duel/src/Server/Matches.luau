@@ -232,7 +232,7 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Temari: the open fan holding her up in the air.
 			glide=a.gliding==true,
 			-- Family buffs, counter stances and slows (Server/Families), for auras and the plate.
-			family=require(script.Parent.Families).snapshot(a,now)}
+			family=require(script.Parent.Families).snapshot(a,now,s.combat)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.

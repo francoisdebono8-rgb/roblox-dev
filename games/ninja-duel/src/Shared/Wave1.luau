@@ -12,7 +12,8 @@ local fighters={}
 -- Haku (15, the Land of Waves): Ice Release. Fast and light, he fights from
 -- the edge of the melee: senbon at the vital points (they slow), needles of
 -- water, a step through a mirror, and the Demonic Ice Mirrors that close a
--- dome round the opponent (his mirror step strikes harder inside it).
+-- dome round the opponent. The dome is his network: inside it the mirror
+-- step takes him from mirror to mirror round the body, a volley from each.
 fighters.Mirror = {
 	Name = "Haku", FullName = "Haku Yuki", Age = 15, Title = "THE ICE MIRROR", Color = { 150, 206, 240 },
 	Routes = "↑ rising palm  ·  ↓ low sweep  ·  ←→ ice slide (a cut that keeps the string)  ·  heavy after one: senbon to a vital point (slows)  ·  air: drive / spike / switch",
@@ -24,7 +25,9 @@ fighters.Mirror = {
 	ToolMastery = { Kind = "shuriken", Projectile = "senbon", Count = 3, Speed = 112, Damage = 1.4, Recover = .6, Contact = { Slow = { Scale = .85, Time = 1 } } },
 	-- Awakening: inside the mirrors. Faster legs, techniques back almost at
 	-- once, cheaper ice.
-	Awakening = { Name = "CRYSTAL ICE MIRRORS", Speed = 1.15, Regen = 1.4, Cooldown = 0.45, CostScale = 0.6, Color = { 200, 236, 255 } },
+	-- Rule: inside his dome, travel from mirror to mirror is free and comes
+	-- back at once (a storm of volleys from every side).
+	Awakening = { Name = "CRYSTAL ICE MIRRORS", Speed = 1.1, Regen = 1.3, Cooldown = 0.7, ZoneFree = true, Color = { 200, 236, 255 } },
 	Motion = { body = "Mirage", weapons = "shuriken", springy = true,
 		borrow = { SenbonStab = "Light2", IceSlide = "CircleStep" },
 		-- Light and upright, weight forward; the right hand up at the face with
@@ -41,9 +44,10 @@ fighters.Mirror = {
 	Techniques = {
 		{ Id = "WaterNeedles", Name = "Thousand Flying Water Needles", Family = "Projectile", Kind = "ice", Element = "Water", Cost = 16, Channel = 0.3, Active = 0.05, Recovery = 0.3, Cooldown = 4.5, Interruptible = true,
 			Range = 34, Speed = 86, Damage = 2.2, Count = 7, Spread = 0.5, Radius = .7, Slow = { Scale = .8, Time = 1.4 }, Hint = "A fan of ice needles • each one slows • hard to dodge sideways" },
-		{ Id = "MirrorStep", Name = "Ice Mirror Step", Family = "Teleport", Kind = "mirror", To = "Side", Distance = 3.4, Move = "SenbonStab", Damage = 7, InZone = 1.6, ZoneName = "mirrors",
+		{ Id = "MirrorStep", Name = "Ice Mirror Step", Family = "Teleport", Kind = "mirror", To = "Side", Distance = 3.4, Move = "SenbonStab", Damage = 7, InZone = 1.4, ZoneName = "mirrors",
+			Ring = { Look = "mirror", Volley = { Count = 3, Kind = "senbon", Damage = 2.4, Speed = 120, Slow = { Scale = .75, Time = 1.2 } } },
 			Cost = 14, Channel = 0.1, Active = 0.04, Recovery = 0.2, Cooldown = 3.6, Interruptible = true, Range = 30, Invuln = .15,
-			Hint = "Out of a mirror at his flank • senbon to a vital point • harder inside the dome", AI = { Min = 6, Max = 28 } },
+			Hint = "Outside the dome: out of a mirror at his flank, senbon to a vital point • inside it: from mirror to mirror round the body, a volley from each", AI = { Min = 6, Max = 28 } },
 		{ Id = "IceMirrors", Name = "Demonic Ice Mirrors", Family = "Zone", Kind = "mirror", ZoneKind = "Ice", At = "Target", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.2, Recovery = 0.35, Cooldown = 12, Interruptible = true,
 			Range = 30, Radius = 7.5, Time = 5.5, Damage = 3, Slow = { Scale = .72 }, Hint = "A dome of mirrors round the opponent • it slows and cuts • his mirror step strikes harder inside" },
 	},
@@ -81,7 +85,8 @@ fighters.Mist = {
 	Skin = { 228, 204, 182 }, Hair = { 30, 30, 34 }, Outfit = { 120, 128, 130 },
 	Techniques = {
 		{ Id = "HiddenMist", Name = "Hidden Mist", Family = "Zone", Kind = "mist", ZoneKind = "Mist", At = "Self", Element = "Water", Cost = 20, Channel = 0.4, Active = 0.2, Recovery = 0.3, Cooldown = 14, Interruptible = true,
-			Range = 16, Radius = 16, Time = 8, Damage = 0, Slow = { Scale = .86 }, Hint = "A thick mist round him • the opponent is slowed in it • the Silent Killing strikes far harder there" },
+			Range = 16, Radius = 16, Time = 8, Damage = 0, Slow = { Scale = .86 }, Shroud = true,
+			Hint = "A thick mist round him • inside it the opponent loses sight of him (he fades to a shadow, no lock) • the Silent Killing strikes far harder there" },
 		{ Id = "SilentKilling", Name = "Silent Killing", Family = "Teleport", Kind = "mist", To = "Behind", Distance = 3.6, Move = "SilentCleave", InZone = 1.7, ZoneName = "mist",
 			Cost = 22, Channel = 0.14, Active = 0.04, Recovery = 0.25, Cooldown = 6, Interruptible = true, Range = 32,
 			Hint = "Gone, then the cleaver from behind • far harder in his mist", AI = { Min = 6, Max = 30 } },

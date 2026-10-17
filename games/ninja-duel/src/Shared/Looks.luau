@@ -42,6 +42,8 @@ return {
 	-- Deidara: moulded explosive clay.
 	claybird={shape="beast",color=rgb(240,236,222),color2=rgb(204,196,176),size={2.2,1,2.4},light=0,trail=.5,hit="burst",zone="scorch",launch="Palm",radius=1.6},
 	clayspider={shape="beast",color=rgb(236,232,218),color2=rgb(196,188,168),size={.9,.5,1},light=0,trail=0,hit="burst",zone="scorch",launch="Ground",radius=1.2},
+	-- A charge laid on the floor (a missed bird or spider, a buried mine).
+	claycharge={shape="orb",color=rgb(240,236,222),color2=rgb(255,120,60),size={.9,.6,.9},light=0,trail=0,hit="burst",zone="charge",radius=1},
 	clay={shape="orb",color=rgb(240,236,222),color2=rgb(255,190,90),size={1,1,1},light=0,trail=0,hit="burst",zone="scorch"},
 	-- Killer Bee: the Eight-Tails' ink and a tentacle.
 	ink={shape="orb",color=rgb(30,28,40),color2=rgb(60,56,80),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},

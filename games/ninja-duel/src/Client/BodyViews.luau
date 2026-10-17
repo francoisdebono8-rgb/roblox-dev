@@ -96,6 +96,39 @@ function BodyViews:step(view,entry,dt)
 		castId=if acting then nil else entry.cast,castElapsed=now-(clock.castAt or now)}
 	view.phase=Motion.present(view.model,visual,{attackElapsed=if acting then now-clock.at else 0,reactionElapsed=0},dt)
 end
+-- A puppet (Sasori's marionette) is a copy of its owner turned to wood: the
+-- body parts lacquered brown, the costume and hair hidden, a pale mask, and
+-- glowing chakra threads from the owner's fingers to its wrists.
+local BODY={Head=true,UpperTorso=true,LowerTorso=true,LeftUpperArm=true,RightUpperArm=true,LeftLowerArm=true,RightLowerArm=true,
+	LeftHand=true,RightHand=true,LeftUpperLeg=true,RightUpperLeg=true,LeftLowerLeg=true,RightLowerLeg=true,LeftFoot=true,RightFoot=true}
+function BodyViews.puppetize(model,owner)
+	if model:GetAttribute("Puppet") then return end
+	model:SetAttribute("Puppet",true)
+	model.Name="Puppet"
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" then
+			if BODY[d.Name] then d.Color=Color3.fromRGB(150,110,74);d.Material=Enum.Material.Wood
+			else d.Transparency=1 end
+		elseif d:IsA("Decal") then d.Transparency=1 end
+	end
+	local head=model:FindFirstChild("Head")
+	if head then
+		local mask=Instance.new("Part");mask.Name="PuppetMask";mask.Size=Vector3.new(1.1,1.2,.1);mask.Color=Color3.fromRGB(236,226,206)
+		mask.CanCollide=false;mask.CanQuery=false;mask.Massless=true;mask.CFrame=head.CFrame*CFrame.new(0,0,-.62);mask.Parent=model
+		local weld=Instance.new("WeldConstraint");weld.Part0=head;weld.Part1=mask;weld.Parent=mask
+	end
+	-- Threads: owner's hands to the puppet's wrists.
+	for _,side in {"Left","Right"} do
+		local from=owner:FindFirstChild(side.."Hand");local to=model:FindFirstChild(side.."Hand")
+		if from and to then
+			local a0=Instance.new("Attachment");a0.Name="PuppetThread";a0.Parent=from
+			local a1=Instance.new("Attachment");a1.Parent=to
+			local beam=Instance.new("Beam");beam.Attachment0=a0;beam.Attachment1=a1;beam.Width0=.06;beam.Width1=.06
+			beam.Color=ColorSequence.new(Color3.fromRGB(140,200,255));beam.LightEmission=1;beam.Transparency=NumberSequence.new(.35);beam.FaceCamera=true
+			beam.Parent=to
+		end
+	end
+end
 -- Every frame (Presentation:update): draw the live bodies, put away the rest.
 function BodyViews:update(data,dt,folder)
 	if not data or data.phase~="Duel" then
@@ -110,6 +143,7 @@ function BodyViews:update(data,dt,folder)
 		if not view then
 			local owner=folder and folder:FindFirstChild(entry.owner or "")
 			local model=owner and self:take(owner)
+			if model and entry.kind=="puppet" then BodyViews.puppetize(model,owner) end
 			if model then
 				view={model=model,owner=owner,pos=entry.position,look=nil,warp=entry.warp,clock={}}
 				self.views[entry.id]=view

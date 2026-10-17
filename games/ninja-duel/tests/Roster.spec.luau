@@ -335,7 +335,7 @@ test("presentation: selectable in the menu, a costume of its own, every family o
   end
  end)
  restore()
- assert(cok,cerr)
+ assert(cok,tostring(cerr))
 end)
 
 print(string.format("NinjaDuel roster Tier A: %d PASS (%d fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)",passed,#Roster))

@@ -197,23 +197,48 @@ test("Deidara: clay birds burst and burn, spiders launch, a landmine waits, Kats
  assert((b3.root.Position-from).Magnitude>3,"Katsu threw nothing off")
 end)
 
-test("Sasori: long puppet lashes, poison everywhere, a puppet that takes a blow and bites back",function()
+test("Sasori: long lashes; a marionette that holds a post, strikes on its own, carries his blade and breaks",function()
  if not listed.Puppet then return end
+ local Bodies=H.load("Server/Bodies")
  -- His light reaches where a fist does not.
  local c,a,b=H.duel("Puppet","Leaf");place(c,a,b,7);b.health=999
  assert(press(c,a,"Attack"));run(c,.6)
  assert(b.health<999,"the puppet lash did not reach at 7 studs")
- local c2,a2,b2=H.duel("Puppet","Leaf");place(c2,a2,b2,10);a2.chakra=999;b2.health=999
- assert(press(c2,a2,slot("Puppet","PuppetThrust"),nil,b2.root.Position));run(c2,.8)
- assert((b2.poisonedUntil or 0)>0,"the puppet thrust carried no poison")
- local c3,a3,b3=H.duel("Puppet","Leaf");place(c3,a3,b3,3.4);a3.chakra=999;a3.health=500
- assert(press(c3,a3,slot("Puppet","PuppetShield")));run(c3,.1)
- assert(press(c3,b3,"Attack"))
- run(c3,.5)
- assert((b3.poisonedUntil or 0)>0 and b3.health<b3.def.Health,"the puppet did not answer the blow")
+ -- The marionette: out, at its post by the body, striking on its own with poison.
+ local c2,a2,b2=H.duel("Puppet","Leaf");place(c2,a2,b2,12);a2.chakra=999;b2.health=999
+ assert(press(c2,a2,slot("Puppet","Marionette"),nil,b2.root.Position));run(c2,.5)
+ local puppet=Bodies.of(c2,a2,"puppet")[1]
+ assert(puppet,"no marionette came out")
+ run(c2,3.5)
+ assert(flat(puppet.position-b2.root.Position).Magnitude<7,"the marionette did not take its post by the body")
+ assert(b2.health<999 and (b2.poisonedUntil or 0)>0,"the marionette never struck (with poison) on its own")
+ -- Cast again: it lunges.
+ local hp=b2.health;a2.cooldowns={}
+ assert(press(c2,a2,slot("Puppet","Marionette"),nil,b2.root.Position))
+ local lunged=false
+ run(c2,1.2,function() if b2.reaction=="Knockback" then lunged=true end end)
+ assert(lunged and b2.health<hp,"the second cast did not send it lunging")
+ -- His heavy after one is carried by the puppet (from behind the body).
+ local c3,a3,b3=H.duel("Puppet","Leaf");place(c3,a3,b3,7);a3.chakra=999;b3.health=999
+ assert(press(c3,a3,slot("Puppet","Marionette"),nil,b3.root.Position));run(c3,.8)
+ assert(press(c3,a3,"Attack"))
+ for _=1,90 do H.step(c3,.01);if a3.state=="Recovery" and a3.chainOpen==true and c3.now>=(a3.chainAt or 0) then break end end
+ assert(press(c3,a3,"Heavy"))
+ assert(a3.attackName=="PuppetBlade" and a3.pending and a3.pending.body~=nil,"the blade was not carried by the marionette")
+ -- One clean blow breaks it.
+ local c4,a4,b4=H.duel("Puppet","Leaf");place(c4,a4,b4,6);a4.chakra=999
+ assert(press(c4,a4,slot("Puppet","Marionette"),nil,b4.root.Position));run(c4,.3)
+ local p4=Bodies.of(c4,a4,"puppet")[1];assert(p4)
+ Bodies.dispel(c4,p4,"hit",b4)
+ assert(#Bodies.of(c4,a4,"puppet")==0,"the marionette survived a blow")
+ -- The shield still answers a blow with a poisoned blade.
+ local c5,a5,b5=H.duel("Puppet","Leaf");place(c5,a5,b5,3.4);a5.chakra=999;a5.health=500
+ assert(press(c5,a5,slot("Puppet","PuppetShield")));run(c5,.1)
+ assert(press(c5,b5,"Attack"));run(c5,.5)
+ assert((b5.poisonedUntil or 0)>0 and b5.health<b5.def.Health,"the puppet shield did not answer the blow")
 end)
 
-test("Nagato: repulsion clears blades and bodies, attraction pulls, absorption drinks chakra",function()
+test("Nagato: repulsion clears blades and bodies, attraction pulls, the absorbing seal drinks a jutsu thrown at him",function()
  if not listed.Rinnegan then return end
  local c,a,b=H.duel("Rinnegan","Leaf");place(c,a,b,5);a.chakra=999;b.health=999
  local from=b.root.Position
@@ -224,9 +249,15 @@ test("Nagato: repulsion clears blades and bodies, attraction pulls, absorption d
  local nearest=99
  run(c2,1.2,function() nearest=math.min(nearest,flat(b2.root.Position-a2.root.Position).Magnitude) end)
  assert(nearest<10,string.format("attraction did not pull (closest %.1f)",nearest))
- local c3,a3,b3=H.duel("Rinnegan","Leaf");place(c3,a3,b3,5);a3.chakra=40;b3.chakra=100;b3.health=999
- assert(press(c3,a3,slot("Rinnegan","Absorb")));run(c3,.4)
- assert(b3.chakra<100 and a3.chakra>40-8,"absorption drank nothing")
+ -- The absorbing seal: a jutsu thrown into it is drunk (no damage, chakra back).
+ local c3,a3,b3=H.duel("Rinnegan","Copycat");place(c3,a3,b3,14);a3.chakra=40;b3.chakra=999;a3.health=100
+ assert(press(c3,a3,slot("Rinnegan","Absorb")));run(c3,.1)
+ local chakra=a3.chakra
+ assert(c3:request(b3,"Technique3",a3.root.Position)) -- Kakashi's Water Dragon
+ run(c3,1.5)
+ assert(a3.health>=100,"the dragon was not absorbed (it hurt him)")
+ assert(a3.chakra>chakra,"absorbing gave no chakra back")
+ assert(((a3.events or {}).Absorbed or 0)>=1,"nothing was absorbed")
 end)
 
 test("Killer Bee: the Lariat crosses the gap and flattens, ink sticks, a tentacle holds",function()
@@ -239,6 +270,100 @@ test("Killer Bee: the Lariat crosses the gap and flattens, ink sticks, a tentacl
  local c2,a2,b2=H.duel("Ink","Leaf");place(c2,a2,b2,10);a2.chakra=999
  assert(press(c2,a2,slot("Ink","InkMist"),nil,b2.root.Position));run(c2,1.2)
  assert((b2.slowUntil or 0)>c2.now,"the ink did not slow")
+end)
+
+
+test("awakenings: each of the twenty changes a rule of play, not only numbers",function()
+ -- A rule: a field the core or a family reads as behaviour (not a multiplier).
+ local RULES={"Buff","OnHit","NoBlindSpot","FlashWake","FlashPursuit","GuardRead","WhiffRead","CursedLeaf","NoBodies","BindScale","Extension",
+  "ShieldRegen","Drain","HealthDrain","Reflect","GustLane","FanClosed","Summon","ChainTeleport","ZoneFree","ChainCharges","ReflectClear","BloodChakra"}
+ local Roster=H.load("Shared/Roster")
+ for _,id in Roster do
+  local aw=Fighters[id].Awakening
+  local found=nil
+  for _,k in RULES do if aw[k]~=nil then found=k;break end end
+  assert(found,id..": the awakening only changes numbers")
+ end
+end)
+
+test("Shisui's awakening: a flicker cut that lands gives the flicker back, three times in a row",function()
+ if not listed.Flicker then return end
+ local c,a,b=H.duel("Flicker","Leaf");place(c,a,b,10);a.chakra=999;b.health=999
+ a.health=a.def.Health*.2
+ assert(press(c,a,"Awaken"));run(c,.5)
+ local s=slot("Flicker","BodyFlicker")
+ local chained=0
+ for k=1,4 do
+  place(c,a,b,10)
+  local ok,why=press(c,a,s,nil,b.root.Position)
+  if ok then chained+=1 else print("   chain stop: "..tostring(why)) end
+  run(c,.85)
+ end
+ assert(chained>=4,"the flicker chain broke after "..chained)
+ local c2,a2,b2=H.duel("Flicker","Leaf");place(c2,a2,b2,10);a2.chakra=999;b2.health=999
+ assert(press(c2,a2,s,nil,b2.root.Position));run(c2,.85);place(c2,a2,b2,10)
+ assert(not press(c2,a2,s,nil,b2.root.Position),"outside the awakening the flicker has no chain")
+end)
+
+test("Haku: inside his dome the mirror step goes from mirror to mirror with a volley; awakened it is free",function()
+ if not listed.Mirror then return end
+ local c,a,b=H.duel("Mirror","Leaf");place(c,a,b,12);a.chakra=999;b.health=999
+ assert(press(c,a,slot("Mirror","IceMirrors"),nil,b.root.Position));run(c,1.4)
+ a.cooldowns={}
+ local chakra=a.chakra
+ assert(press(c,a,slot("Mirror","MirrorStep"),nil,b.root.Position))
+ local thrown=0
+ run(c,.5,function() for _,p in c.projectiles do if p.a==a and p.kind=="senbon" then thrown=math.max(thrown,1) end end end)
+ assert(((a.events or {}).RingStep or 0)>=1 and thrown>=1,"no mirror-to-mirror volley inside the dome")
+ local gap=flat(a.root.Position-b.root.Position).Magnitude
+ assert(gap>4,"he stepped into melee instead of onto a mirror ("..gap..")")
+ -- Awakened: the same step comes back at once and costs nothing.
+ a.health=a.def.Health*.2;a.cooldowns={}
+ assert(press(c,a,"Awaken"));run(c,.5)
+ -- (the awakening's burst may have pushed him: back into the dome's centre)
+ for _,h in c.hazards do if h.a==a and h.look=="mirror" then c:relocate(b,h.position+V.new(0,2.5,0)) end end
+ local before=a.chakra
+ assert(press(c,a,slot("Mirror","MirrorStep"),nil,b.root.Position));run(c,.5)
+ assert(a.chakra>=before-1,"the mirror step still cost chakra awakened")
+ assert(press(c,a,slot("Mirror","MirrorStep"),nil,b.root.Position),"the mirror step did not come back at once")
+end)
+
+test("Deidara: a missed bird/spider stays as a charge, a body stepping on it is blasted, Katsu detonates from anywhere",function()
+ if not listed.Clay then return end
+ local F=H.load("Server/Families")
+ -- A mine laid, Katsu from far away: it goes off under the body.
+ local c,a,b=H.duel("Clay","Leaf");place(c,a,b,14);a.chakra=999;b.health=999
+ -- (buried beside the body, out of its trigger, inside its blast)
+ assert(press(c,a,slot("Clay","ClayMine"),nil,b.root.Position+V.new(4,0,0)));run(c,.9)
+ assert(#F.charges(c,a)==1,"no charge buried")
+ b.health=999
+ local hp=b.health
+ a.cooldowns={}
+ assert(press(c,a,slot("Clay","Katsu")));run(c,.6)
+ assert(b.health<hp,"Katsu did not set the buried charge off")
+ assert(#F.charges(c,a)==0,"the charge survived its detonation")
+ -- A spider that misses waits; walking onto it blasts.
+ local c2,a2,b2=H.duel("Clay","Leaf");place(c2,a2,b2,10);a2.chakra=999;b2.health=999
+ c2:relocate(b2,V.new(30,3,0))
+ assert(press(c2,a2,slot("Clay","ClaySpiders"),nil,a2.root.Position+V.new(0,0,-20)));run(c2,1.6)
+ local laid=F.charges(c2,a2)
+ assert(#laid>=1,"missed spiders left no charge")
+ c2:relocate(b2,laid[1].position+V.new(0,2.5,0));b2.health=999
+ run(c2,1.2)
+ assert(b2.health<999,"stepping on a charge did nothing")
+end)
+
+
+test("Zabuza: inside his mist the opponent loses sight of him (shrouded: no lock, no homing)",function()
+ if not listed.Mist then return end
+ local F=H.load("Server/Families")
+ local c,a,b=H.duel("Mist","Leaf");place(c,a,b,8);a.chakra=999
+ assert(not F.shrouded(c,b),"shrouded before any mist")
+ assert(press(c,a,slot("Mist","HiddenMist")));run(c,1.2)
+ assert(F.shrouded(c,b),"the opponent in his mist still sees him")
+ assert(not F.shrouded(c,a),"Zabuza is lost in his own mist")
+ c:relocate(b,V.new(0,3,-60));run(c,.1)
+ assert(not F.shrouded(c,b),"shrouded outside the mist")
 end)
 
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

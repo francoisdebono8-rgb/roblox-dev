@@ -22,6 +22,9 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Teleport" then
 		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	elseif family=="Summon" then
+		-- Out first; once out, a lunge now and then.
+		if Bodies.count(c,a,spec.Body or "puppet")==0 then lo,hi,chance=0,40,.8 else lo,hi,chance=0,30,.25 end
 	else return false end
 	lo=rule.Min or lo;hi=rule.Max or hi;chance=rule.Chance or chance
 	-- Synergies read from data, not names: a strike that is stronger inside

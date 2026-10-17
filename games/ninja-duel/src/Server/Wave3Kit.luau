@@ -4,7 +4,66 @@
 local Base=require(script.Parent.Wave1Kit)
 local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
 local Kit={}
-function Kit.install(Techniques) end
+-- Sasori's puppet: a persistent body (Server/Bodies) on chakra threads. It
+-- holds a spot between him and the opponent, off the line, and strikes on
+-- its own rhythm (a poisoned blade); his heavy-after-one and his rising
+-- strike are carried out by it when it is out (MoveGraphs proxy); cast again,
+-- it lunges at the body. One clean blow breaks it (Bodies): then he is a
+-- slow lasher with no bodyguard until he makes another.
+function Kit.install(Techniques)
+	local Bodies=require(script.Parent.Bodies)
+	local Families=require(script.Parent.Families)
+	local function flat(v) return Vector3.new(v.X,0,v.Z) end
+	local function strike(c,body,b,spec)
+		local tune=Bodies.tuning(body.owner,body.kind)
+		body.state="Startup";body.action="PuppetJab";body.variant=nil;body.actionAt=c.now;body.actionSerial+=1
+		body.pendingStrike=spec or {damage=tune.Damage or 4,reach=(tune.Reach or 5.2),reaction="HitStun",push=10,up=3,stun=.34,tag="Puppet",poison=tune.Poison}
+	end
+	Bodies.controllers.marionette=function(c,body,dt)
+		local a=body.owner
+		local b=a.target
+		if not b or b.health<=0 then return end
+		local tune=Bodies.tuning(a,body.kind)
+		-- A strike already thrown: its contact on its own timing.
+		if body.state=="Startup" and c.now>=body.actionAt+.18 then
+			body.state="Active"
+			local s=body.pendingStrike or {}
+			if Bodies.hitFrom(c,body,b,{damage=s.damage,reach=s.reach,height=6,arc=-.2,reaction=s.reaction,push=s.push,up=s.up,stun=s.stun,tag=s.tag}) then
+				if s.poison then Families.poison(c,a,b,s.poison) end
+				require(script.Parent.Brawler).event(c,a,"PuppetHit")
+			end
+		elseif body.state=="Active" and c.now>=body.actionAt+.3 then body.state="Recovery"
+		elseif body.state=="Recovery" and c.now>=body.actionAt+.55 then body.state="Neutral" end
+		local goal,speed
+		if body.lunge then
+			-- Lunge: straight at the body, the blade on arrival.
+			local line=flat(body.position-b.root.Position)
+			line=if line.Magnitude>.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
+			goal=b.root.Position+line*2.4;speed=78
+			if flat(body.position-goal).Magnitude<1.2 and body.state=="Neutral" then
+				local l=body.lunge;body.lunge=nil
+				strike(c,body,b,{damage=l.Damage or 7,reach=5,reaction="Knockback",push=l.Knock or 26,up=l.Lift or 8,stun=.45,tag="Puppet Lunge",poison=l.Poison})
+				body.nextStrike=c.now+(tune.Every or 2.2)
+			end
+		else
+			-- Its post: between the two of them, off the line, at blade's reach.
+			local line=flat(a.root.Position-b.root.Position)
+			line=if line.Magnitude>.1 then line.Unit else flat(-b.root.CFrame.LookVector).Unit
+			local around=CFrame.fromAxisAngle(Vector3.yAxis,math.rad(40*body.side)):VectorToWorldSpace(line)
+			goal=b.root.Position+around*(tune.Hold or 4.4)
+			-- On a short leash: far from him, it comes back to his side.
+			if flat(a.root.Position-b.root.Position).Magnitude>(tune.Leash or 34) then goal=a.root.Position+line:Cross(Vector3.yAxis)*body.side*3 end
+			speed=tune.Speed or 30
+			if body.state=="Neutral" and c.now>=body.nextStrike and flat(b.root.Position-body.position).Magnitude<=(tune.Reach or 5.2)+.6 then
+				strike(c,body,b)
+				body.nextStrike=c.now+(tune.Every or 2.2)
+			end
+		end
+		goal=Vector3.new(goal.X,c.match.origin.Y+3,goal.Z)
+		Bodies.move(c,body,goal,speed,dt)
+		Bodies.face(body,b.root.Position)
+	end
+end
 function Kit.dress(dressers,kit)
 	local wear,face,hairCap,spike,headband,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.headband,kit.rgb,kit.A,kit.R
 	local function sandals(model,def,strap)

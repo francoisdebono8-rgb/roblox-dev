@@ -329,6 +329,16 @@ function FamilyFX.install(FX,kit)
 		end
 		return nil,d
 	end
+	-- A charge on the floor: a small lump of clay whose fuse glows, brighter
+	-- once armed (Families.plant).
+	ZONES.charge=function(holder,h,look)
+		local lump=block(holder.Parent,Vector3.new(.9,.5,.9),CFrame.new(holder.Position+Vector3.new(0,.25,0)),c3(look.color),Enum.Material.SmoothPlastic)
+		new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},lump)
+		local fuse=block(lump,Vector3.new(.25,.25,.25),CFrame.new(holder.Position+Vector3.new(0,.6,0)),c3(look.color2),Enum.Material.Neon)
+		new("PointLight",{Color=c3(look.color2),Brightness=1.5,Range=5,Shadows=false},fuse)
+		tween(fuse,.4,{Transparency=.6})
+		return nil,lump
+	end
 	FX.hazardBuild=function(fx,h)
 		local look=Looks[h.look or ""]
 		if not look then return nil end

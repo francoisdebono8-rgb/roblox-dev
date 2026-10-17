@@ -534,6 +534,8 @@ function Combat:turnToward(a,direction,dt,rate)
 	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
 end
 function Combat:faceLocked(a,dt)
+	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
+	if Families.shrouded(self,a) then return end
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude<.1 then return end
 	local target=toward.Unit
@@ -737,8 +739,8 @@ function Combat:rush(a)
 	if self.now<(a.rushReadyAt or 0) then return false,"Cooldown" end
 	local gap=(a.target.root.Position-a.root.Position).Magnitude
 	local line=nil
-	if a.locked==false then
-		-- Unlocked: no homing, a straight burst along the stick (or the facing).
+	if a.locked==false or Families.shrouded(self,a) then
+		-- Unlocked (or lost in a shroud): no homing, a straight burst along the stick (or the facing).
 		local stick=Vector3.new(a.move.X,0,a.move.Z)
 		local look=a.root.CFrame.LookVector
 		line=if stick.Magnitude>.2 then stick.Unit else Vector3.new(look.X,0,look.Z).Unit
@@ -1187,6 +1189,8 @@ function Combat:updateActor(a,dt)
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
 	a.speedScale=(if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	-- Family traits that act every frame (an Absorb buff drinking blades).
+	Families.step(self,a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
@@ -1642,6 +1646,7 @@ end
 function Combat:projectileSurface(p,hit)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
 	-- A family object that leaves a zone where it lands (an explosive tag).
+	if p.family and p.family.Charge and hit.Instance.CanCollide then Families.projectileEnd(self,p,hit.Position+hit.Normal*.4) end
 	if p.family and p.family.Zone and hit.Instance.CanCollide then
 		local z=p.family.Zone
 		local h=self:addHazard(p.a,hit.Position+hit.Normal*.6,z.Radius or 6,z.Time or 3,z.Damage or 4,z.Kind or "Fire")
@@ -1705,6 +1710,8 @@ function Combat:shurikenGeometry(a,sideSign,infused)
 	return true
 end
 function Combat:projectileExpire(p)
+	-- A family object that ends without a body may stay as a charge.
+	Families.projectileEnd(self,p,p.position)
 	if p.geometry and p.a.target and p.a.target.health>0 then
 		local b=p.a.target
 		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})

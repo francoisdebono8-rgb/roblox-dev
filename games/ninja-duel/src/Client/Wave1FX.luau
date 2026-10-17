@@ -38,8 +38,48 @@ function M.install(FX,kit)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end
+	-- Zabuza: Kubikiribōchō leaves his back for his hands while he swings it
+	-- (the strikes are the cleaver's, not a fist's): a blade welded to the
+	-- right hand during an attack, the one on his back hidden meanwhile.
+	local BACK={Cleaver=true,CleaverHole=true,CleaverGrip=true}
+	local held=setmetatable({},{__mode="k"})
+	local function cleaver(fx,model,actor)
+		if actor.fighterId~="Mist" then return end
+		local swinging=actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery")
+		local st=held[model]
+		if not st then
+			local hand=model:FindFirstChild("RightHand")
+			if not hand then return end
+			local m=new("Model",{Name="HeldCleaver"},model)
+			local blade=block(m,Vector3.new(.16,1.5,4.4),hand.CFrame*CFrame.new(0,-.2,-2.5),Color3.fromRGB(180,188,196),Enum.Material.Metal)
+			local grip=block(m,Vector3.new(.24,.24,1.1),hand.CFrame*CFrame.new(0,-.2,-.1),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
+			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,.2,-4.1),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
+			for _,p in {blade,grip,hole} do p.Anchored=false;p.CanCollide=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
+			st={model=m,parts={blade,grip,hole},shown=nil};held[model]=st
+		end
+		if st.shown==swinging then return end
+		st.shown=swinging
+		for _,p in st.parts do p.LocalTransparencyModifier=if swinging then 0 else 1 end
+		for _,p in model:GetChildren() do if BACK[p.Name] and p:IsA("BasePart") then p.LocalTransparencyModifier=if swinging then 1 else 0 end end
+	end
+	-- Lost in Zabuza's mist (Families.shrouded on the viewer): he fades to a
+	-- shadow for the one who cannot see him.
+	local faded=setmetatable({},{__mode="k"})
+	local function shroud(fx,data,dt,folder)
+		local me,them=data.human,data.bot
+		if not me or not them or not folder then return end
+		local model=folder:FindFirstChild(them.id or "")
+		if not model then return end
+		local lost=me.family~=nil and me.family.shrouded==true
+		if (faded[model]==true)==lost then return end
+		faded[model]=lost
+		for _,p in model:GetDescendants() do
+			if p:IsA("BasePart") and p.Name~="HumanoidRootPart" then p.LocalTransparencyModifier=if lost then .82 else 0 end
+		end
+	end
 	-- Runs before FamilyFX's layer and lets it draw the zone's floor too.
-	table.insert(FX.layers,1,{name="Wave1",impact=function(fx,impact,folder)
+	table.insert(FX.layers,1,{name="Wave1",fighter=function(fx,model,actor,dt) if model then cleaver(fx,model,actor) end end,
+		frame=function(fx,data,dt,folder) shroud(fx,data,dt,folder) end,impact=function(fx,impact,folder)
 		if impact.style=="zone" and impact.kind=="mirror" then
 			mirrors(fx,impact.position,math.max(3,(impact.radius or 7)-.5),impact.time or 5)
 		elseif impact.style=="zone" and impact.kind=="mist" and (impact.radius or 0)>=10 then
