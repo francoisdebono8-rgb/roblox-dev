@@ -1,95 +1,161 @@
-# Haku Yuki — fiche de référence
+# Haku — Character V1 Combat Bible
 
-ID runtime **`Mirror`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Mirror`**, âge affiché15 ; mouvement/clip effectif `Mirage`, armes déclarées `shuriken`. Techniques présentes : `WaterNeedles`, `MirrorStep`, `IceMirrors`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`IceSlide`, up=`Launcher`. [Données](../../src/Shared/Wave1.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Pays des Vagues ; âge15 runtime.
+**Écart décisif :** Ring/ZoneFree et dôme réels, corps Mirage avec senbon comme outils surtout → glace et précision dans les déplacements/contacts ordinaires.
 
-**Signature irremplaçable :** Construire un espace de miroirs puis changer l’origine des salves pour déplacer l’attention adverse.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. [Source officielle des miroirs](https://naruto-official.com/fr/anime/naruto1/list/01_238) ; [source secondaire Eau/Vent](https://naruto.fandom.com/wiki/Haku), période de chaque détail à confirmer. Exclusions/point de période : Réseau de miroirs physiques cassables/HP : candidat historique, pas implémenté ni demandé pour cette passe. Aucun gel/stun infini.
 
-**Faiblesse/contre-jeu :** Hors dôme, coût d’installation et assaut direct ; une issue du dispositif doit rester lisible.
+**Tenue/silhouette :** Kimono/tunique vert doux avec bord clair, longs cheveux noirs attachés, masque de chasseur selon choix de visibilité ; senbon aux doigts, gestes fins.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Kimono/tunique vert doux avec bord clair, longs cheveux noirs attachés, masque de chasseur selon choix de visibilité ; senbon aux doigts, gestes fins.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course légère et appuis fins ; déplacement entre miroirs uniquement dans le dispositif prévu ; hors dôme, pas de téléport gratuit vers tout le monde.
+**Coudre les angles avec senbon, petits appuis de glace et sorties de miroir, sans devenir un mage immobile.**
 
-**Air, poursuite, réception et mur :** Air : tir d’angle et retour vers le dispositif ; mur : miroir/angle sous règle autorisée, pas surface mondiale téléportable. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Hyôton, kekkei genkai combinant Eau/Vent ; ne pas donner automatiquement toutes les techniques Suiton/Fûton. Ice n’est pas un simple skin bleu de Fire.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Doigts tiennent senbon, bras près du corps. |
+| Jambes / centre de gravité | Pied avant léger, centre souple. |
+| Avance | Pas glissés courts, talon effleure sol. |
+| Recul | Retrait en diagonale, senbon en couverture. |
+| Strafe | Pied dessine arc, corps reste trois-quarts. |
+| Sprint | Course fine avec membres rapprochés. |
+| Dash / rush | Petite glisse sur appui glacé, se termine en pied planté. |
+| Saut | Saut léger genou bas. |
+| Chute | Bras rassemblés, aiguille prête. |
+| Landing | Petit pic au pied se brise, pas dalle massive. |
+| Garde | Senbon/avant-bras détournent, pas bouclier géant. |
+| Esquive | Déport souple, mince plaque sous pied seulement en appui. |
+| Réaction légère | Épaule se dérobe au vrai hit sans annuler dégâts. |
+| Réaction lourde | Glisse interrompue, genou au sol. |
+| Knockdown / get-up | Chute souple puis appui de main et vrai relevé. |
 
-**Réserve, efficacité et faible chakra :** Réserve moyenne à élevée, contrôle très fin ; coût du dôme et des traversées structure le combat, dépendance à sa zone. À sec : senbon et mobilité corporelle.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Senbon rapides, visée de points et ralentissement borné ; source réelle de la volée dans le dôme.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Droite, senbon au contact | Pique oblique vers épaule | Pas intérieur0.25, lame courte seulement | 3.1 | 0.11/0.05/0.18 | léger : Toucher précis, ne tire pas sept projectiles. |
+| L2 | Gauche, paume et petit pic | Intérieur→avant-bras, pic naît au poignet | Glisse latérale0.4 sur plaque qui casse | 3.3 | 0.16/0.05/0.17 | fluide : Changer l’angle par contact. |
+| L3 | Droite, senbon traversant de sortie | Épaule→extérieur pendant retrait | Pied extérieur freine, petit éclat marque appui | 3.5 | 0.19/0.06/0.28 | accent fin : Séparer sans grande frappe de pied. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 15 |
-| Santé | 115 |
-| Réservoir de chakra | 125 |
-| Paramètre ChakraRegen | 8.4 |
-| Speed de base | 20 |
-| Coefficient SprintScale | 1.12 |
-| JumpScale / AirControlScale | 1.08 / 1.12 |
-| AccelerationScale | 1.12 |
-| Distance préférée configurée | 11 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave1.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 3/5, Ninjutsu 5/5, Genjutsu 1/5, Contrôle 5/5, Outils/armes 4/5, Endurance 3/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : poignet prend appui, petit pic oblique soulève le pied adverse puis paume guide ; un launcher local. |
+| Side après1hit | Un hit : glisse latérale et touche senbon, pic s’efface après le contact. |
+| Away après2hits | Deux hits : pique basse puis retrait sur appui glacé, pas zone ralentissante infinie. |
+| Air après1hit aérien | Hit air : senbon de corps, down pique dirigée au sol, side change d’angle vers miroir valide seulement si engagé. |
+| Launcher | Pic unique au pied adverse + paume, pas pilier massif. |
+| Air continuation | Un coup rapproché puis salve depuis miroir si vraie destination ; deux contacts air au plus. |
+| Finisher | Pique de séparation ou volée de miroir selon position, pas les deux. |
+| Wall / sortie de mur | Miroir peut fournir une destination locale visible, aucun point libre dans toute l’arène. |
 
-**Chaîne légère représentative :** Pique senbon → frappe précise → poussée courte de séparation ; pas grands coups de pied lourds empruntés sans adaptation.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher léger/contrôle ; bas : déséquilibre à la senbon ; côté : IceSlide à distinguer d’une glissade commune ; lourd = SenbonStab précis.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Esquive propre et défense par distance ; miroir ne donne pas invulnérabilité passive universelle. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Avant-bras gauche s’appuie sur une courte pointe, main droite projette le senbon en poussée courte ; portée3.8, préparation lisible, faible poussée physique ; pas gros maillet de glace.
 
-**Outils :** Senbon rapides, visée de points et ralentissement borné ; source réelle de la volée dans le dôme.
+**A/C/R de départ pour Heavy : .25/.06/.32s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`IceSlide`, up=`Launcher` ; lourd après un hit : `SenbonStab`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Garde fine et esquive sur appui court ; contre par angle senbon. Miroir est une destination choisie, pas invulnérabilité de dodge universelle.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `WaterNeedles` — Thousand Flying Water Needles : A fan of ice needles • each one slows • hard to dodge sideways | 16 | 0.3/0.05/0.3 | 4.5 | 34 | REVIEW_REQUIRED (technique d’aiguilles d’eau ; représentation glacée du runtime à préciser) |
-| `MirrorStep` — Ice Mirror Step : Outside the dome: out of a mirror at his flank, senbon to a vital point • inside it: from mirror to mirror round the body, a volley from each | 14 | 0.1/0.04/0.2 | 3.6 | 30 | CANON_YOUNG (déplacement entre miroirs), GAMEPLAY_LIBERTY hors dôme |
-| `IceMirrors` — Demonic Ice Mirrors : A dome of mirrors round the opponent • it slows and cuts • his mirror step strikes harder inside | 28 | 0.55/0.2/0.35 | 12 | 30 | CANON_YOUNG (dôme ; géométrie de jeu) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Senbon aux doigts, glace sur les transitions et appuis ; aucun gel gratuit depuis une trace. Le dôme est un dispositif d’angles, pas la totalité du personnage.
 
-**Éveil actuellement nommé :** `CRYSTAL ICE MIRRORS`. **Cible/contrat :** ZoneFree/Ring déjà présents : traversées/volées particulières dans la zone ; pas ajout d’un nouveau moteur de miroirs.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Construire un espace de miroirs puis changer l’origine des salves pour déplacer l’attention adverse.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Esquive propre et défense par distance ; miroir ne donne pas invulnérabilité passive universelle. Réserve moyenne à élevée, contrôle très fin ; coût du dôme et des traversées structure le combat, dépendance à sa zone. À sec : senbon et mobilité corporelle.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : senbon/dôme. Intermédiaire : changer l’angle. Expert : décider quand rester dans le dispositif ou abandonner une zone devenue dangereuse.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Réseau de miroirs physiques cassables/HP : candidat historique, pas implémenté ni demandé pour cette passe. Aucun gel/stun infini.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Même duel dedans/dehors le dôme ; arrivée et volée partent du miroir cohérent ; faible chakra doit réduire ses options sans casser le taijutsu.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Miroirs | Slot dôme existant | Signe court, mains encadrent le premier appui | Zone de destinations/angles de volée | Sortir/contourner et couvrir destination | RingStep réel, pas réseau moteur à réinventer |
+| Traversée/volée | MirrorStep conservé | Corps entre/sort au plan du miroir choisi | Change origine du tir | Attendre l’arrivée, attaque de zone | Finisher ou reposition, pas deux chaînes |
+| Senbon à distance | Slot aiguilles | Un bras lance pendant autre garde | Force garde/déplacement | Garde et déplacement transversal | Ouverture à confirmer |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-[Source officielle des miroirs](https://naruto-official.com/fr/anime/naruto1/list/01_238) ; [source secondaire Eau/Vent](https://naruto.fandom.com/wiki/Haku), période de chaque détail à confirmer.
+ZoneFree : circulation plus libre uniquement dans son dôme, ressource/délai existants ; hors dispositif revient au corps léger.
 
-[Ancienne fiche conservée](../archive/characters/2026-10-18-before-profiles/HAKU.md) : détails historiques et candidats non repris sans validation. Les anciens noms/valeurs/plans ne remplacent pas cette séparation cible/existant.
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Corps et aiguille ensemble.
+- Glace petite hors signature.
+- Appui se forme avant poussée.
+- Le miroir a un plan d’entrée.
+- Source de volée visible.
+- Pas de mains de mage immobile.
+- Départ et frein fluides.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F2 fluidité / appui local**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 pique ; L2 paume/pic ; L3 sortie senbon ; Heavy appui/pique ; transition miroir.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L4-A** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Ring/ZoneFree et dôme réels, corps Mirage avec senbon comme outils surtout → glace et précision dans les déplacements/contacts ordinaires.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L4-A** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

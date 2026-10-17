@@ -1,93 +1,160 @@
-# Kimimaro Kaguya — fiche de référence
+# Kimimaro — Character V1 Combat Bible
 
-ID runtime **`Bone`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Bone`**, âge affiché13 ; mouvement/clip effectif `Lion`, armes déclarées `none`. Techniques présentes : `Camellia`, `Larch`, `Willow`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CamelliaArc`, up=`Launcher`. [Données](../../src/Shared/Wave1.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Prodige Kaguya ; âge13 runtime alors que sa période de combat connue est fréquemment donnée15 : REVIEW_REQUIRED, pas correction d’âge silencieuse.
+**Écart décisif :** Buff lame et clips Lion présents, composition réparée → squelette vivant dans coups/garde/réactions, pas épée claire sur brawler.
 
-**Signature irremplaçable :** Entrer en danse d’os, choisir toucher précis ou trade défensif puis sortir de pression.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. [Source secondaire Kimimaro](https://naruto.fandom.com/wiki/Kimimaro) — signale15, à recouper avant arbitrage de période. Exclusions/point de période : Guerre/Edo, forêt géante d’os ; danses nommées et marque à13 restent à sourcer.
 
-**Faiblesse/contre-jeu :** Portée relative, timing des buffs et punition des engagements ; adversaire doit voir quand l’armure change.
+**Tenue/silhouette :** Tunique claire, ceinture violette, pantalon sombre, cheveux blancs séparés et marques rouges ; os émergeant du corps sous geste cohérent.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tunique claire, ceinture violette, pantalon sombre, cheveux blancs séparés et marques rouges ; os émergeant du corps sous geste cohérent.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Déplacements fluides proches, pivots sans lourde inertie ; esquive par angle autour d’une lame d’os ; pas apparition instantanée générique.
+**Faire naître l’arme au moment où le squelette frappe, garde ou change d’appui.**
 
-**Air, poursuite, réception et mur :** Air : percer puis atterrir proprement ; mur : angle court/anti-poursuite, pas forêt d’os mondiale. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Shikotsumyaku = capacité héréditaire corporelle, pas élément Os ni Terre. La modification du corps et la marque maudite restent distinctes.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Mains souples, coudes légèrement ouverts. |
+| Jambes / centre de gravité | Pieds en décalage, centre bas mobile. |
+| Avance | Avance par glissés d’escrime sans arme longue fixe. |
+| Recul | Retrait de hanche, radius près du torse. |
+| Strafe | Pivots souples, pointes restent courtes. |
+| Sprint | Course fluide, os ne traînent pas au sol. |
+| Dash / rush | Entrée de coude, pointe naît pendant l’impulsion. |
+| Saut | Saut compact, genoux sous corps. |
+| Chute | Bras serrés pour éviter silhouette hérissée permanente. |
+| Landing | Petits appuis d’os se retirent aussitôt. |
+| Garde | Radius/ulna sortent brièvement entre bras et impact. |
+| Esquive | Rotation de bassin, côtes protègent le côté exposé. |
+| Réaction légère | Os court au point frappé, vrai recul de l’épaule. |
+| Réaction lourde | Protection se fend/replie, genou cède. |
+| Knockdown / get-up | Chute latérale, un avant-bras protège puis pointes disparaissent au relevé. |
 
-**Réserve, efficacité et faible chakra :** Réserve moyenne, bon contrôle corporel ; arme/armure ont une fenêtre, pas un bonus permanent empilé. À sec : taijutsu compact et allonge déjà présente.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Os en main et petits projectiles d’os, pas kunai repeints sans pose appropriée.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Droite, direct de phalanges | Poing centre→sternum, phalanges prolongent de0.3 | Pas avant0.4, coude près côte | 3.2 | 0.12/0.05/0.18 | court : Le corps crée le tranchant pendant l’impact. |
+| L2 | Gauche, coude osseux | Extérieur→côtes en rotation de hanche | Pivot pied droit30°, excroissance apparaît avant contact | 3.3 | 0.18/0.06/0.21 | retard→sec : Punir rapprochement, pas deuxième coup d’épée. |
+| L3 | Jambe arrière, kick circulaire bref | Hanche→épaule, petites pointes tibia | Pivot90° puis réception visible | 3.9 | 0.22/0.07/0.30 | fouet→frein : Déséquilibrer puis rétracter les pointes. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 13 |
-| Santé | 140 |
-| Réservoir de chakra | 105 |
-| Paramètre ChakraRegen | 7.4 |
-| Speed de base | 19 |
-| Coefficient SprintScale | 1.1 |
-| JumpScale / AirControlScale | 1.04 / 1 |
-| AccelerationScale | 1.04 |
-| Distance préférée configurée | 5 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave1.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 5/5, Ninjutsu 3/5, Genjutsu 1/5, Contrôle 4/5, Outils/armes 3/5, Endurance 4/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : avant-bras osseux monte sous garde puis pointe locale porte la cible ; pas lame longue uppercut. |
+| Side après1hit | Un hit : coude de flanc et arc de hanche, os suit membre réel. |
+| Away après2hits | Deux hits : jambe fauche, pointes brèves au tibia ; pas forêt au sol. |
+| Air après1hit aérien | Hit air : genou/pointe courte ; down talon osseux, side changement de hanche. |
+| Launcher | Paume/coude montant avec extension brève de l’os, élévation bornée. |
+| Air continuation | Un genou puis talon ; pointes ne font pas de hits supplémentaires automatiques. |
+| Finisher | Poussée osseuse qui se rétracte, ou danse longue choisie à la place. |
+| Wall / sortie de mur | Coude/pointe contre appui de mur, retour du corps ; pas terrain hérissé permanent. |
 
-**Chaîne légère représentative :** Pique d’os → coupe courte → poussée de séparation ; différence avec Zabuza par poids faible et vitesse de main.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher d’os ; bas : balayage compact ; côté : CamelliaArc ; lourd : BoneThrust. Camellia renforce une intention d’escrime, pas toutes les statistiques sans signe.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Armure du corps et gestion du trade ; Larch repousse au bon timing ; super-armure ne rend pas invincible. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Coudes se croisent, côte/avant-bras forme une garde offensive puis épaule pousse. Portée3.8 ; masse vient du corps et de l’expansion osseuse ; recovery replie les pointes. Ce n’est pas une épée blanche tenue en idle.
 
-**Outils :** Os en main et petits projectiles d’os, pas kunai repeints sans pose appropriée.
+**A/C/R de départ pour Heavy : .28/.08/.36s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CamelliaArc`, up=`Launcher` ; lourd après un hit : `BoneThrust`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Radius/ulna protègent une garde normale ; côtes sortent brièvement sur réaction, pas contre-dégâts passifs garantis ; esquive de hanche, contre au coude.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `Camellia` — Dance of the Camellia : A bone sword drawn from the palm: his blows hit harder for 8 s | 18 | 0.3/0.05/0.2 | 14 | 20 | REVIEW_REQUIRED (technique et âge exact) |
-| `Larch` — Dance of the Larch : Bones burst from his whole body • blades cut down, a close attacker thrown off • the floor stays spiked | 20 | 0.1/0.25/0.32 | 8 | 6.5 | REVIEW_REQUIRED (technique et âge exact) |
-| `Willow` — Dance of the Willow : A lunge of bone blades across the gap | 16 | 0.18/0.05/0.1 | 5 | 14 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Phalanges, coude, tibia, côtes synchronisés aux phases. Une longue lame extraite uniquement dans Camellia/Willow ; pas rendre toutes les Lights dépendantes de cette lame.
 
-**Éveil actuellement nommé :** `DANCE OF THE CLEMATIS`. **Cible/contrat :** Camellia et éveil composés ont été corrigés ; rendre Heavy/Armor perceptibles et nettoyer au round.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Entrer en danse d’os, choisir toucher précis ou trade défensif puis sortir de pression.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Armure du corps et gestion du trade ; Larch repousse au bon timing ; super-armure ne rend pas invincible. Réserve moyenne, bon contrôle corporel ; arme/armure ont une fenêtre, pas un bonus permanent empilé. À sec : taijutsu compact et allonge déjà présente.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : lance d’os. Intermédiaire : Camellia/trade. Expert : provoquer une pression puis Larch et conversion courte.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Guerre/Edo, forêt géante d’os ; danses nommées et marque à13 restent à sourcer.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Camellia→éveil dans les deux ordres ; coup léger reçu vs gros contrôle ; low-chakra et reset sans effet résiduel.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Danse longue | Camellia/Willow choisis | Extraction visible puis poignée réelle | Change temporairement l’allonge de certaines frappes | Whiff/entrée sous lame | Fin d’arme retourne au corps, pas buff qui écrase éveil |
+| Larch défensive | Slot burst existant | Côtes/pointes partent du torse au moment d’un arrêt | Dégage l’espace proche | Bait et attendre la rétraction | Une sortie/contre, pas dommage permanent |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-[Source secondaire Kimimaro](https://naruto.fandom.com/wiki/Kimimaro) — signale15, à recouper avant arbitrage de période.
+Armure/Heavy composés existants : gagne un trade bref mais ses pointes réagissent et sa récupération reste exposée. Pas invulnérabilité ni forêt géante.
+
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Os naît sur le membre.
+- Apparition précède contact.
+- Rétraction visible.
+- Pas posture de Jedi.
+- Pointes courtes dans les Lights.
+- Arme longue réservée à une danse.
+- Réaction garde le corps vulnérable.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F5 squelette actif**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 phalanges ; L2 coude ; L3 tibia tournant ; Heavy côtes/avant-bras ; apparition-rétraction en garde.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L4-A** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Buff lame et clips Lion présents, composition réparée → squelette vivant dans coups/garde/réactions, pas épée claire sur brawler.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L4-A** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

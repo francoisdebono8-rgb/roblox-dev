@@ -1,93 +1,161 @@
-# Nagato Uzumaki — fiche de référence
+# Nagato — Character V1 Combat Bible
 
-ID runtime **`Rinnegan`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Rinnegan`**, âge affiché12 ; mouvement/clip effectif `Mirage`, armes déclarées `none`. Techniques présentes : `Repulsion`, `Attraction`, `Absorb`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CircleStep`, up=`Launcher`. [Données](../../src/Shared/Wave3.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Enfant entraîné par Jiraiya, âge12 runtime ; répulsion/attraction/absorption de combat à12 non prouvées ici, convention V1 à arbitrer.
+**Écart décisif :** Absorb/ReflectClear réels ; famille Mirage et RepellingPalm emprunté masquent la gestuelle → paumes et transitions de forces locales.
 
-**Signature irremplaçable :** Attirer pour forcer une décision, repousser l’engagement ou lire un projectile pour l’absorber.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. Exclusions/point de période : SixPaths, corps Pain, ChibakuTensei, invocation géante, RinneRebirth ; l’existence du Rinnegan ne valide pas leur maîtrise à12.
 
-**Faiblesse/contre-jeu :** Lecture ratée, melee sous absorption, cooldown et corps exposé ; absorption ne doit pas tout annuler.
+**Tenue/silhouette :** Tenue simple d’orphelin d’Ame, cheveux roux, corps fin, yeux Rinnegan visibles ; pas robe Pain/Akatsuki ni récepteurs du corps de Yahiko.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tenue simple d’orphelin d’Ame, cheveux roux, corps fin, yeux Rinnegan visibles ; pas robe Pain/Akatsuki ni récepteurs du corps de Yahiko.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course sobre, peu de déplacements explosifs ; maintenir la distance par technique engagée, pas même dash rouge de mêlée.
+**Déplacer le rapport de forces par de petites paumes et de grands changements de distance, avec un corps fragile et minimal.**
 
-**Air, poursuite, réception et mur :** Air : anti-air/poussée limitée puis sol ; mur : repoussement avec vraie collision, pas téléportation. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Rinnegan = dōjutsu, pas nature Gravité. Les cinq natures connues à une période ultérieure ne donnent pas cinq jutsus actifs à cet enfant ; rester sur fonctions du kit sous label de période.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Mains ouvertes près du ventre, épaules relâchées. |
+| Jambes / centre de gravité | Base étroite, centre stable. |
+| Avance | Petits pas droits sans rebond. |
+| Recul | Recule lentement en gardant paumes visibles. |
+| Strafe | Pivot court sur pied arrière. |
+| Sprint | Course sobre sans vigueur de lutteur. |
+| Dash / rush | Court glissé corporel, pas téléportation. |
+| Saut | Saut modéré, mains équilibrent. |
+| Chute | Paumes se rapprochent pour protéger. |
+| Landing | Pieds proches puis genoux absorbent. |
+| Garde | Mains ouvertes dévient, pas barrière permanente. |
+| Esquive | Un pas sec suffit, corps reste dans l’espace. |
+| Réaction légère | Épaule/poignet cèdent et main tombe. |
+| Réaction lourde | Torse plie franchement, perd sa ligne de paume. |
+| Knockdown / get-up | Chute fragile, relève au genou avant paume. |
 
-**Réserve, efficacité et faible chakra :** Réserve élevée cible, contrôle et canalisation encore coûteux ; attraction/répulsion/absorption sont des choix concurrents, pas une économie positive infinie.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Kunai secondaire et paumes ; pas projectiles gravitationnels rendus comme simples boules de feu violettes.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Gauche, paume de mesure | Bas→sternum | Pas court0.25, doigts ouverts | 3.0 | 0.15/0.06/0.21 | mesuré : Prendre une lecture au contact. |
+| L2 | Droite, paume d’appel | Extérieur→bras, bref tirage vers lui | Bassin recule0.2 pendant main ramène | 3.3 | 0.22/0.06/0.20 | aspire→pause : Ramener l’appui, pas projectile de gravité. |
+| L3 | Gauche, paume de rejet | Centre→torse, petite poussée de force | Pied avant ancré, corps presque immobile | 3.6 | 0.26/0.08/0.34 | accent unique : Écarter vers neutral ; pas kick final. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 12 |
-| Santé | 112 |
-| Réservoir de chakra | 140 |
-| Paramètre ChakraRegen | 9 |
-| Speed de base | 18 |
-| Coefficient SprintScale | 1.06 |
-| JumpScale / AirControlScale | 1 / 1 |
-| AccelerationScale | 0.98 |
-| Distance préférée configurée | 10 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave3.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 2/5, Ninjutsu 5/5, Genjutsu 2/5, Contrôle 4/5, Outils/armes 2/5, Endurance 3/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : paume accompagne une impulsion locale sous le centre, launcher modeste. |
+| Side après1hit | Un hit : main attire l’épaule sur un pas latéral ; force agit seulement après contact réel. |
+| Away après2hits | Deux hits : deux paumes repoussent et petit recul, pas deuxième aspiration en chaîne. |
+| Air après1hit aérien | Hit air : une paume de maintien puis rejet vers sol ; pas gymnastique de pied. |
+| Launcher | Impulsion locale, corps reste bas et lit l’élévation. |
+| Air continuation | Paume courte puis repoussement terminal, aucun re-launch par Attraction. |
+| Finisher | Repulsion ou rejet de paume, termine l’échange et expose cooldown. |
+| Wall / sortie de mur | Repoussement vers mur existant ; au rebond ne recharge pas Attraction gratuitement. |
 
-**Chaîne légère représentative :** Paume courte → déviation → RepellingPalm de séparation ; le corps reste fragile si la technique est baitée.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher de paume ; bas : dégagement bas ; côté : cercle prudent ; lourd : RepellingPalm. Attraction rapproche avant une décision, pas auto-combo garanti.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Absorb fenêtre2.5s et Repulsion ; melee reste dangereux ; son reflet d’éveil conserve un trajet et une propriété cohérents. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Deux mains s’ouvrent depuis sternum et poussent sur un pied fixe ; portée4.0, très peu de translation. L’anticipation est l’ouverture des doigts/épaules ; si raté, les bras restent ouverts.
 
-**Outils :** Kunai secondaire et paumes ; pas projectiles gravitationnels rendus comme simples boules de feu violettes.
+**A/C/R de départ pour Heavy : .31/.08/.38s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CircleStep`, up=`Launcher` ; lourd après un hit : `RepellingPalm`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Garde sobre, esquive d’un pas ; Absorb défend les projectiles, jamais les poings. Contre par rejet après lecture, pas aura omnidirectionnelle toujours active.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `Repulsion` — Repulsion : Everything round him pushed away: blades, bodies (into walls) | 22 | 0.1/0.2/0.35 | 7 | 8 | REVIEW_REQUIRED (technique et âge exact) |
-| `Attraction` — Attraction : The body pulled to him • then the string, or Repulsion | 16 | 0.2/0.05/0.25 | 4 | 30 | REVIEW_REQUIRED (technique et âge exact) |
-| `Absorb` — Absorbing Seal : 2.5 s: every jutsu or blade that reaches him is drunk (chakra, a little health) • blows still land | 8 | 0.06/0.05/0.15 | 8 | 20 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Forces locales dans paumes/transitions ; pas obligation de consommer un gros jutsu pour chaque geste et pas de seconde hitbox invisible.
 
-**Éveil actuellement nommé :** `RINNEGAN`. **Cible/contrat :** ReflectClear existant, Absorbed2 observé en Studio : montrer fenêtre et renvoi ; pas nouvelle mécanique de ressources.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Attirer pour forcer une décision, repousser l’engagement ou lire un projectile pour l’absorber.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Absorb fenêtre2.5s et Repulsion ; melee reste dangereux ; son reflet d’éveil conserve un trajet et une propriété cohérents. Réserve élevée cible, contrôle et canalisation encore coûteux ; attraction/répulsion/absorption sont des choix concurrents, pas une économie positive infinie.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : repousser. Intermédiaire : choisir attirer/absorber. Expert : lire la source et forcer une mauvaise réponse adverse.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** SixPaths, corps Pain, ChibakuTensei, invocation géante, RinneRebirth ; l’existence du Rinnegan ne valide pas leur maîtrise à12.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Absorb contre projectile puis coup de poing ; fermeture de fenêtre visible ; repoussement vers mur sans perte de contrôle de caméra.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Attraction | Signature actuelle | Une main appelle, pied arrière se place | Ramène une cible dans une vraie portée | LOS/portée, garde/contre selon état | Une paume ou rejet, pas boucle attraction-repulsion infinie |
+| Répulsion | Signature actuelle | Deux paumes s’ouvrent et corps s’ancre | Dégage corps/projectiles proches | Hors rayon, bait et fin de fenêtre | Finisher/retour neutral |
+| Absorption | Buff actuel | Mains ouvertes près poitrine, stance fixe | Fenêtre contre objets, récompense bornée | Melee et fermeture de fenêtre | Une reprise ensuite, pas attaque absorbante permanente |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-Provenance du stade et de chaque technique jeune encore à compléter par chapitre/épisode/source primaire ; le runtime et les choix de design ne valent pas preuve canon.
+ReflectClear renvoie au lieu de détruire : nouvelle lecture de projectile, même fragilité de corps. Ne donne ni corps Pain ni tous les chemins.
+
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Minimum de gestes.
+- Paumes toujours ouvertes.
+- Force suit une intention de main.
+- Aucune rotation de brawler.
+- Le corps souffre vraiment au hit.
+- Répulsion ne cache pas l’appui.
+- Une pause lisible entre tirer et pousser.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F8 mains de forces**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 mesure ; L2 appel ; L3 rejet ; Heavy double paume ; transition attraction/rejet.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L3-B** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Absorb/ReflectClear réels ; famille Mirage et RepellingPalm emprunté masquent la gestuelle → paumes et transitions de forces locales.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L3-B** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

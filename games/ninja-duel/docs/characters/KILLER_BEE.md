@@ -1,93 +1,164 @@
-# Killer Bee — fiche de référence
+# Killer Bee — Character V1 Combat Bible
 
-ID runtime **`Ink`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Ink`**, âge affiché14 ; mouvement/clip effectif `Lion`, armes déclarées `none`. Techniques présentes : `Lariat`, `InkMist`, `OctoHold`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CircleStep`, up=`Launcher`. [Données](../../src/Shared/Wave3.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Bee jinchûriki jeune ; âge14 runtime. Lariat, encre/tentacule et contrôle du manteau à14 demandent validation de période.
+**Écart décisif :** Runtime Ink = lutteur sans armes, trois jutsus et famille Lion ; contredit le kenjutsu requis → plus gros chantier de rig/chaîne/poses, conserver Lariat comme option.
 
-**Signature irremplaçable :** Entrer au corps, forcer garde ou recul, convertir en lariat/prise puis maintenir une pression lisible.
+**Stade, source et extrapolation :** **EXTRAPOLATION_AUTORISÉE_PAR_BRIEF** : Le brief exige le multi-sabres dès V1 jeune. La référence officielle illustre son kenjutsu à sept lames à une période ultérieure ; ce n’est pas une preuve de cette maîtrise à14. [Référence de période](https://naruto-official.com/news/01_1316). Hors périmètre : Gyûki géant, Bijûdama de terrain, Samehada et tout contrôle adulte parfait. L’ancienne exclusion des sept sabres est remplacée par ce brief.
 
-**Faiblesse/contre-jeu :** Engagement du lariat, distance longue et adversaire qui dévie ; garde ne doit pas être ignorée par tous les coups.
+**Tenue/silhouette :** Tenue d’entraînement de Kumo jeune, cheveux courts, sept fourreaux/points de rangement identifiables ; armes de longueur proportionnée au jeune rig. La silhouette montre les prises de coude/genou sans armure de prime.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tenue d’entraînement de Kumo proposée, cheveux blonds courts, signes distinctifs et épaules de lutteur ; pas équipement adulte complet à sept sabres.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course puissante et centre bas, prise d’élan lisible pour Lariat ; dash physique engagé, aura uniquement sous manteau approprié.
+**Faire lire une lame et frapper d’une autre configuration du corps, avec un kenjutsu multi-sabres rythmé et exposé s’il est mal engagé.**
 
-**Air, poursuite, réception et mur :** Air : interception/retombée lourde ; mur : pression d’épaule et sortie au corps, pas vol. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Raiton candidat à confirmer pour ce stade ; chakra de Gyûki = source spéciale, encre/tentacule = capacités associées, pas élément Encre.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Deux sabres aux mains, troisième retenu sous coude ; autres au fourreau. |
+| Jambes / centre de gravité | Base large mais mobile, poids alterné. |
+| Avance | Pas dans la ligne de lame, genoux souples. |
+| Recul | Recul en garde croisée, lames ne traversent pas le torse. |
+| Strafe | Pied glisse pendant échange de prises. |
+| Sprint | Course garde deux lames stables, autres rangées. |
+| Dash / rush | Entrée d’épaule sous une lame couvrante. |
+| Saut | Saut court, armes rapprochées avant décollage. |
+| Chute | Lames se referment vers l’extérieur, pas pointe vers soi. |
+| Landing | Pieds larges et sabres en barrage, aucun hit gratuit. |
+| Garde | Deux lames croisées devant épaule. |
+| Esquive | Petit pivot qui change lame exposée. |
+| Réaction légère | Bras touché cède, autres lames restent rangées. |
+| Réaction lourde | Configuration se défait visiblement, vrai recul. |
+| Knockdown / get-up | Armes se rangent/écartent puis roulade, pas sept lames flottantes. |
 
-**Réserve, efficacité et faible chakra :** Réserve cible élevée mais accès à la source spéciale borné ; fort effort physique, manteau à fenêtre. À sec : lutte/pression physique, pas de bijû gratuit.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Outils simples secondaires ; encre gêne lecture/placement et tentacule immobilise brièvement sous règle, pas sept sabres ajoutés.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Sabre main droite | Diagonale hanche droite→épaule gauche adverse | Pas intérieur0.45, lame gauche reste en garde | 4.2 | 0.16/0.06/0.20 | sec : Faire lire la lame principale. |
+| L2 | Sabre sous coude gauche | Coupe inverse extérieur→côtes pendant rotation retour | Pivot60°, main gauche reçoit une poignée ; pas tour complet | 4.0 | 0.23/0.06/0.18 | retard court→claque : Contact d’un angle impossible au sabreur classique. |
+| L3 | Sabre retenu derrière genou droit | Balayage horizontal bas→flanc | Petit kick de hanche ; lame dirigée hors jambe, reprise main à l’arrêt | 4.4 | 0.12/0.07/0.34 | accent syncopé : Troisième configuration visible, pas multiplication de hitboxes. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 14 |
-| Santé | 150 |
-| Réservoir de chakra | 115 |
-| Paramètre ChakraRegen | 7.6 |
-| Speed de base | 19 |
-| Coefficient SprintScale | 1.1 |
-| JumpScale / AirControlScale | 1.04 / 1 |
-| AccelerationScale | 1.02 |
-| Distance préférée configurée | 5 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave3.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 5/5, Ninjutsu 3/5, Genjutsu 1/5, Contrôle 3/5, Outils/armes 3/5, Endurance 5/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : lame de coude rabat garde puis épaule/jambe soulève, launcher multi-configuration. |
+| Side après1hit | Un hit : échange lame main/coude et pas dehors ; un seul tranchant de contact, pas doublehit simultané. |
+| Away après2hits | Deux hits : lame en barrage et kick de retrait avec sabre de genou, configuration se ferme. |
+| Air après1hit aérien | Hit air : deux lames rapprochées, un contact puis side change la main active ; down abat le sabre, pas lancer de toutes les armes. |
+| Launcher | Poussée de bras/lame depuis un appui de lutteur, pas uppercut de boxe. |
+| Air continuation | Une coupe de retour puis finisher à deux lames ; sabre de jambe rangé avant réception. |
+| Finisher | Deux lames croisent en grand X, puis Bee se découvre pendant reprise de prise. |
+| Wall / sortie de mur | Lame garde le flanc au mur, appui de pied change le corps ; aucun sabre traverse surface. |
 
-**Chaîne légère représentative :** Contact d’épaule → crochet au corps → bras/lariat de séparation ; rythme de lutteur distinct d’un kick fighter.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher de bras ; bas : fauchage ; côté : pas de lutte/pivot ; lourd : LariatArm. La prise doit changer positions et risque, pas nom d’attaque seulement.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Garde forte et trade sous manteau ; saisie/punition de Lariat raté restent possibles. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Garde croisée ouvre en X, poids avance d’épaule, deux lames suivent des plans distincts mais un seul accent de dégâts ; portée4.8. Reprise de configuration longue si whiff.
 
-**Outils :** Outils simples secondaires ; encre gêne lecture/placement et tentacule immobilise brièvement sous règle, pas sept sabres ajoutés.
+**A/C/R de départ pour Heavy : .30/.09/.42s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`CircleStep`, up=`Launcher` ; lourd après un hit : `LariatArm`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Garde multi-lames, esquive de pivot, contre par lame non attendue ; garde réussie adverse arrête réellement un contact. Lariat raté laisse une punition.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `Lariat` — Lariat : Charging arm across the gap • flattens the body | 18 | 0.16/0.05/0.1 | 6 | 16 | REVIEW_REQUIRED (technique et âge exact) |
-| `InkMist` — Octopus Ink : A cloud of ink: legs stuck, slowed hard while in it | 14 | 0.2/0.1/0.25 | 9 | 22 | REVIEW_REQUIRED (technique et âge exact) |
-| `OctoHold` — Octopus Hold : A tentacle grabs the body and holds it • then slams it | 22 | 0.3/0.08/0.3 | 9 | 18 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Exigence V1 : sept sabres physiques portés, au moins trois prises/configurations actives visibles dans L1–L3 (mains, coude, genou). Les autres restent rangés selon phase ; pas sept scripts/collisions par frame. Multi-lames enfant = extrapolation explicite autorisée par ce brief, remplace ancienne exclusion documentaire.
 
-**Éveil actuellement nommé :** `EIGHT-TAILS CLOAK`. **Cible/contrat :** EightTailsCloak Heavy/Armor existant : fenêtre de trade lisible, pas transformation géante.
+**Configurations d’attache minimales :** A = deux lames en mains, troisième sous coude gauche, quatre autres rangées physiquement. L1 touche avec la main droite ; transition L1→L2 échange lame de main gauche et lame de coude avec un bref croisement visible, L2 touche depuis le coude ; transition L2→L3 conduit la lame libérée jusqu’à l’arrière du genou droit, pointe orientée hors du corps, L3 touche par ce nouveau levier. Pendant sa récupération la main libre récupère cette lame et rend la configuration A (les identités des trois lames peuvent permuter). Aucun objet ne saute d’attache après son contact, aucun tranchant actif traverse le propre torse. Les quatre lames rangées ne créent pas de dégâts ; elles restent des armes du set, leur utilisation simultanée complète n’est pas nécessaire pour reconnaître le multi-sabres dès V1. Heavy croisé et Lariat utilisent une configuration de rangement déterministe, pas un bouton de sélection de lame.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Entrer au corps, forcer garde ou recul, convertir en lariat/prise puis maintenir une pression lisible.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle défensive/faible chakra :** Garde forte et trade sous manteau ; saisie/punition de Lariat raté restent possibles. Réserve cible élevée mais accès à la source spéciale borné ; fort effort physique, manteau à fenêtre. À sec : lutte/pression physique, pas de bijû gratuit.
+## 8. Pouvoirs intégrés aux gestes
 
-**Plafond de maîtrise du joueur :** Débutant : entrer/lariat. Intermédiaire : lire garde/esquive. Expert : choisir trade, prise ou arrêt d’élan.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Hors kit / incohérences de période à résoudre :** Sept sabres, Gyûki complet, Bijûdama géante et contrôle parfait adulte ; capacités précoces en review.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-## 8. Acceptation Studio et sources
+## 9. Signature abilities strictement nécessaires
 
-**Scénario distinctif :** Comparer Bee/Lee sans jutsu : poids vs cadence ; bait de Lariat et punition ; manteau augmente capacité de trade sans effacer garde/substitution.
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Changement de configuration | Intégré Light/Side/Heavy, pas nouveau bouton | Reprise poignées mains→coude→genou au bon accent | Change angle et rythme au corps-à-corps | Lire pied/hanche, punir échange de prise | Une route puis finisher |
+| Lariat | Signature conservée | Lames rangées avant bras/épaule engagés | Punition de course, garde de sortie | Esquive et whiff long | Finisher alternatif, pas cumul automatique |
+| Manteau partiel | État spécial actuel | Corps se tasse, arme garde priorité de silhouette | Permet trade limité | Gros contrôle/temps mort de reprise | Pas bijû complet |
 
-Provenance du stade et de chaque technique jeune encore à compléter par chapitre/épisode/source primaire ; le runtime et les choix de design ne valent pas preuve canon.
+## 10. Awakening / état spécial
+
+Heavy/Armor partiel : permet de maintenir une configuration contre un léger impact, mais une interruption forte la casse. Pas tous les sabres plus tentacules autonomes plus invulnérabilité.
+
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Trois prises visibles minimum.
+- Sept armes portées, pas sept hits.
+- Coude et genou expliquent le tranchant.
+- Un échange de prise a un temps mort.
+- Rythme irrégulier lisible.
+- Lames restent hors du propre corps.
+- Lariat range les lames.
+- Pas Lee avec lames collées.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F4 configurations de lames**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 lame main ; L2 lame coude ; L3 lame genou ; Heavy X ; reprise/rangement de configuration.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L7-B** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Runtime Ink = lutteur sans armes, trois jutsus et famille Lion ; contredit le kenjutsu requis → plus gros chantier de rig/chaîne/poses, conserver Lariat comme option.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L7-B** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

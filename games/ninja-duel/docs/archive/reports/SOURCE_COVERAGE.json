@@ -3293,12 +3293,12 @@
   },
   {
     "before": "games/ninja-duel/FIGHTER_TEMPLATE.md",
-    "source": "games/ninja-duel/docs/characters/FIGHTER_TEMPLATE.md",
-    "sha256": "a1a1579e108efa0b4bc7cc80d9016d94d72f6bdf1514f106f43de9f00c711c70",
+    "source": "games/ninja-duel/docs/archive/characters/2026-10-18-superseded-profiles/FIGHTER_TEMPLATE.md",
+    "sha256": "cae5e7a48d88a1ddc1a1f8723ba53de7a803aafc50db8ce26a2f55d5432df4db",
     "sections": [
       {
         "heading": "Adding a prodigy — fighter template",
-        "line": 3,
+        "line": 5,
         "backlog_ids": [
           "OPS-001",
           "OPS-002",
@@ -3310,7 +3310,7 @@
       },
       {
         "heading": "Philosophie obligatoire",
-        "line": 9,
+        "line": 11,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3322,7 +3322,7 @@
       },
       {
         "heading": "Fiche moveset complète",
-        "line": 25,
+        "line": 27,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3332,7 +3332,7 @@
       },
       {
         "heading": "1. Identité",
-        "line": 29,
+        "line": 31,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-CORE-002",
@@ -3346,7 +3346,7 @@
       },
       {
         "heading": "2. Mouvement",
-        "line": 41,
+        "line": 43,
         "backlog_ids": [
           "MOV-001",
           "MOV-002",
@@ -3358,7 +3358,7 @@
       },
       {
         "heading": "3. Neutral / entrée en combat",
-        "line": 57,
+        "line": 59,
         "backlog_ids": [
           "COM-005",
           "TOOL-005",
@@ -3368,7 +3368,7 @@
       },
       {
         "heading": "4. Taijutsu et combos",
-        "line": 67,
+        "line": 69,
         "backlog_ids": [
           "COM-002",
           "COM-004",
@@ -3379,7 +3379,7 @@
       },
       {
         "heading": "5. Armes et ninja tools",
-        "line": 83,
+        "line": 85,
         "backlog_ids": [
           "TOOL-002",
           "TOOL-005",
@@ -3389,7 +3389,7 @@
       },
       {
         "heading": "6. Jutsus / techniques",
-        "line": 99,
+        "line": 101,
         "backlog_ids": [
           "CHR-CORE-002",
           "SYS-001"
@@ -3398,7 +3398,7 @@
       },
       {
         "heading": "7. Garde / défense",
-        "line": 116,
+        "line": 118,
         "backlog_ids": [
           "DEF-001",
           "DEF-003"
@@ -3407,7 +3407,7 @@
       },
       {
         "heading": "8. Esquive et substitution",
-        "line": 127,
+        "line": 129,
         "backlog_ids": [
           "DEF-002"
         ],
@@ -3415,7 +3415,7 @@
       },
       {
         "heading": "9. Rush / poursuite",
-        "line": 141,
+        "line": 143,
         "backlog_ids": [
           "COM-004",
           "MOV-005"
@@ -3424,7 +3424,7 @@
       },
       {
         "heading": "10. Chakra",
-        "line": 152,
+        "line": 154,
         "backlog_ids": [
           "SYS-001"
         ],
@@ -3432,7 +3432,7 @@
       },
       {
         "heading": "11. Infusion / interactions de chakra",
-        "line": 163,
+        "line": 165,
         "backlog_ids": [
           "TOOL-006",
           "SYS-001",
@@ -3442,7 +3442,7 @@
       },
       {
         "heading": "12. Éveil",
-        "line": 182,
+        "line": 184,
         "backlog_ids": [
           "SYS-003"
         ],
@@ -3450,7 +3450,7 @@
       },
       {
         "heading": "13. États et réactions",
-        "line": 198,
+        "line": 200,
         "backlog_ids": [
           "COM-007",
           "FX-002"
@@ -3459,7 +3459,7 @@
       },
       {
         "heading": "14. Gameplay loop",
-        "line": 216,
+        "line": 218,
         "backlog_ids": [
           "CHR-CORE-001",
           "COM-005"
@@ -3468,7 +3468,7 @@
       },
       {
         "heading": "15. Skill ceiling",
-        "line": 227,
+        "line": 229,
         "backlog_ids": [
           "CHR-CORE-001",
           "BAL-001"
@@ -3477,7 +3477,7 @@
       },
       {
         "heading": "16. Signature irremplaçable",
-        "line": 236,
+        "line": 238,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-EXT-002"
@@ -3486,7 +3486,7 @@
       },
       {
         "heading": "Exigence de différenciation",
-        "line": 243,
+        "line": 245,
         "backlog_ids": [
           "CHR-CORE-001",
           "CHR-EXT-002"
@@ -3495,7 +3495,7 @@
       },
       {
         "heading": "Mapping technique actuel",
-        "line": 261,
+        "line": 263,
         "backlog_ids": [
           "ARC-002",
           "OPS-001"
@@ -3504,7 +3504,7 @@
       },
       {
         "heading": "Validation Studio obligatoire",
-        "line": 284,
+        "line": 286,
         "backlog_ids": [
           "QA-001",
           "CHR-CORE-001"

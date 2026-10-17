@@ -48,6 +48,8 @@ Ordre cible après roster 20 : **(1) stabilisation combat + combo/animation/réa
 
 ## DEC-022 — Composition verrouillée des 10 prochaines places et règle « version jeune »
 
+**Composition historique remplacée par DEC-026 pour la cible de design.** Le runtime conserve encore les anciennes entrées tant que la migration n’est pas faite. La règle de stade reste applicable avec l’extrapolation raisonnable précisée par DEC-026.
+
 Décision utilisateur du **17 octobre 2026** : les dix places restantes du roster initial sont désormais **verrouillées** sur **Shisui, Orochimaru, Haku, Kimimaro, Nagato, Sasori, Deidara, Killer Bee, Zabuza et Kabuto**. Elles remplacent les lots prévus Sakura/Choji/Kiba/Shikamaru/Shino/Kisame et toute autre proposition non encore codée. Ne pas commencer ces anciens lots.
 
 La sélection peut venir de **toutes les époques de Naruto**, mais chaque combattant est représenté dans une **version jeune/prodige cohérente avec ce qu’il savait réellement faire à ce stade**, pas avec l’arsenal de sa version adulte finale. Ne pas importer par défaut les pouvoirs adultes pour rendre un kit plus spectaculaire. La profondeur peut venir du corps, des armes, du mouvement, des transformations déjà acquises, des ressources et des interactions système.
@@ -73,8 +75,22 @@ Précision utilisateur du 17 octobre, [demande architecture](../archive/requests
 
 ## DEC-025 — Fiches personnages et identité perceptible
 
+**Format et roster des premières fiches remplacés par DEC-026.** La demande d’identité perceptible reste valide ; les anciennes fiches sont historiques.
+
 Demande utilisateur du **18 octobre 2026**, [texte conservé](../archive/requests/2026-10-18-character-profiles.md) : établir une fiche pour chacun des vingt personnages couvrant vêtements/silhouette, nature et usage du chakra, capacités possibles, moveset, vitesse/déplacement, réservoir, contrôle et habiletés. Le retour joueur signale combos trop similaires, dash rouge commun et identité/chakra insuffisamment perceptibles ; Shisui doit notamment évoquer mirages et mobilité particulière, pas seulement téléport/frappe.
 
 Un kit câblé ou un effet déclenché ne valide pas cette expérience. Les fiches distinguent **code actuel**, **cible de design proposée**, **preuve de période** et **validation Studio**. Ne pas confondre nature élémentaire, forme/propriété, réserve/contrôle, source bijû ou dōjutsu. Les chiffres du code ne sont pas des statistiques canon ; les valeurs de design relatives ne modifient aucun équilibrage.
 
 L’[index des vingt fiches](../characters/ROSTER_20.md) sert de référence spécialisée ; les missions/critères restent dans MASTER_BACKLOG. Cette demande autorise la préparation documentaire, pas vingt refontes simultanées ni un changement de séquence DEC-021. Les gestes précis, variantes et ratings proposés ne sont pas tous des arbitrages validés par l’utilisateur. Conserver les incertitudes d’âge/source sans modifier silencieusement le runtime.
+
+## DEC-026 — Roster cible et Character V1 Combat Bibles
+
+Décision utilisateur du **18 octobre 2026**, [brief intégral](../archive/requests/2026-10-18-character-v1-combat-bibles.md). Cible de design : **Itachi, Shisui, Sasuke, Madara enfant, Hashirama enfant, Hiruzen enfant, Minato, Kakashi, Naruto, Gaara, Rock Lee, Neji, Haku, Kimimaro, Nagato, Orochimaru, Sasori, Deidara, Killer Bee, Zabuza**. Madara/Hashirama/Hiruzen remplacent Hinata/Temari/Kabuto dans la cible ; ne pas confondre cette décision avec une migration déjà faite du runtime. Remplace la composition de DEC-022 et les premières fiches DEC-025 sur ces points.
+
+**V1 personnage = identité complète par corps, mouvements, animations, coups/combos, réactions/défense, armes physiques/naturelles et signatures fondamentales.** HUD masqué, reconnaissance en quelques secondes. Les vingt ne doivent pas partager jab→jab→kick avec seulement des jutsus différents. Les pouvoirs dans les gestes (os, sable, clones, forces, mirages) et armes fondamentales font déjà partie de V1. En revanche arbre complet, maîtrise acquise, chakra global final, armes globales finales, sound/VFX/balance finaux ne sont pas requis. Cela précise/remplace l’ancien plancher TierA de DEC-016 et le placement de l’identité fondamentale après les systèmes finaux ; conserver de DEC-021 le travail breadth-first, un gros bloc à la fois et rapport/synchronisation.
+
+Concept : grands prodiges de générations différentes vers12–14ans ; canon principal d’abord, puis anime/romans/databooks/statements, puis extrapolation fan cohérente déclarée quand l’enfance est peu documentée. Pas d’arsenal adulte importé, mais ne pas dépouiller les prodiges de leur identité. Madara n’est pas EMS/Rinnegan, Hashirama n’est pas sa prime, Hiruzen n’a pas tous les jutsus. **Bee multi-sabres** est exigé par le brief malgré l’ancienne exclusion documentaire ; **Kimimaro squelette qui fabrique ses armes dans les gestes**, pas Jedi à lame blanche. Sasori alterne maître/puppet, Deidara pose/repousse, Nagato minimise ses gestes, Shisui porte Shunshin dans le corps entier, Gaara reste calme et Naruto intègre ses clones aux routes.
+
+Livrable documentaire : vingt [Combat Bibles](../characters/ROSTER_20.md), douze rubriques de chorégraphie et appendices A–E (réemploi, unités uniques, priorité de design, actuel→cible, lots proposés). Moteurs/hooks restent communs ; aucune branche spéciale avant premier hit confirmé ; contre-jeu, anti-infini et manette obligatoires. Viser réemploi réel sans uniformiser le rendu, pas300animations uniques. Les temps/portées/chorégraphies proposés sont des cibles de production à tester, pas équilibre final ni faits canon.
+
+**Mission Codex = design uniquement.** Ne pas interrompre le bloc Claude en cours, coder les fighters, migrer les IDs/menu, reconstruire les builds ou lancer les hooks futurs. Audit initial code sur le vrai HEAD ; les trois nouveaux absents sont marqués absents. Tâches/ordre d’ouverture dans MASTER_BACKLOG, état/proof dans CURRENT_STATE ; les lots de design ne deviennent pas tous actifs simultanément.

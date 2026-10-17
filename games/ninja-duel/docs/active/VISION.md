@@ -87,3 +87,7 @@ Formulation courte : **A systemic 3D ninja arena fighter where simple inputs unl
 Axe d’expérience : **Choisis ton prodige. Maîtrise-le. Entre dans le tournoi.**
 
 Le jalon produit est le roster jouable en breadth-first, puis une alpha publique comme terrain de développement en conditions réelles. Les chiffres, arbitrages et limites en vigueur appartiennent à [DECISIONS](DECISIONS.md), les critères de réalisation au [backlog](MASTER_BACKLOG.md), les preuves à [CURRENT_STATE](CURRENT_STATE.md). Les anciennes ambitions de League/Path et de plus grand roster ne constituent pas un périmètre supplémentaire.
+
+## Jalon Character V1
+
+Selon DEC-026, l’identité corporelle complète vient avant les systèmes globaux finaux : les vingt prodiges cibles doivent être reconnaissables HUD masqué par leur déplacement, leurs Light chains/Heavy, leurs armes/pouvoirs physiques, leur défense et leurs réactions. Les moteurs restent communs ; leur expression ne doit pas devenir une même chaîne répétée. Les signatures renforcent une boucle déjà incarnée. Ce jalon n’attend ni arbre/maîtrise, ni chakra/armes globaux finaux, ni son/VFX/balance finaux. Les éléments fondamentaux (clones dans routes, os dans coups, sable actif, Shunshin dans transitions) font déjà partie de V1. Composition et décisions dans DECISIONS, détails dans les Combat Bibles, priorités dans MASTER_BACKLOG.

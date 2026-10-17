@@ -2,7 +2,7 @@
 
 Index de traçabilité, pas preuve que chaque proposition research est approuvée ou chaque qualité visuelle réalisée. Chaque titre/section source est relié à des IDs ; lire la section entière avant exécution. Les IDs techniques DONE ne suppriment pas les critères visuels voisins. Les candidats adultes restent filtrés par CHR-CORE-002/DECISIONS ; fondations rollback/PvP futures par NET-001/MOV-006 ; anciens ordres de délai/publication ne commandent pas la session.
 
-Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission Phase 2 restée seule sur `main`, archivé le 2026-10-16). Mise à jour18/10 : le template renvoie aux vingt fiches harmonisées ; le blueprint10 détaillé est conservé dans archive/characters/2026-10-18-before-profiles, mappings conservés. Les autres adaptations du contenu source sont les références et avertissements historiques. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
+Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission Phase 2 restée seule sur `main`, archivé le 2026-10-16). Mise à jour18/10 : l’ancien template des systèmes globaux est conservé dans archive/characters/2026-10-18-superseded-profiles ; le nouveau contrat V1 suit DEC-026 ; le blueprint10 détaillé est conservé dans archive/characters/2026-10-18-before-profiles, mappings conservés. Les autres adaptations du contenu source sont les références et avertissements historiques. Aucun chapitre supprimé. Le [registre machine](SOURCE_COVERAGE.json) conserve source ancienne/nouvelle, hash et section/IDs. Les sources design_research et archives préexistantes gardent leurs chemins. Les anciens rapports sont des preuves de leurs versions ; QA-001 réclame le natif actuel.
 
 ## [CLAUDE_FINAL_PASS.md](../missions/CLAUDE_FINAL_PASS.md)
 
@@ -264,30 +264,30 @@ Les 38 documents déplacés gardent leur contenu détaillé (le 38e, la mission 
 - L41 — Day 7 — balance and release → BAL-001, REL-001, OPS-002
 - L46 — After the week — the rest of the ten → CHR-EXT-001, NET-001, UX-002, PERF-001, BAL-001, REL-001
 
-## [FIGHTER_TEMPLATE.md](../../characters/FIGHTER_TEMPLATE.md)
+## [FIGHTER_TEMPLATE.md](../characters/2026-10-18-superseded-profiles/FIGHTER_TEMPLATE.md)
 
-- L3 — Adding a prodigy — fighter template → OPS-001, OPS-002, OPS-003, ARC-002, CHR-EXT-002
-- L9 — Philosophie obligatoire → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, COM-002, SYS-003
-- L25 — Fiche moveset complète → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
-- L29 — 1. Identité → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
-- L41 — 2. Mouvement → MOV-001, MOV-002, MOV-003, MOV-005, CHR-CORE-001
-- L57 — 3. Neutral / entrée en combat → COM-005, TOOL-005, CHR-CORE-001
-- L67 — 4. Taijutsu et combos → COM-002, COM-004, COM-005, CHR-CORE-001
-- L83 — 5. Armes et ninja tools → TOOL-002, TOOL-005, DEF-005
-- L99 — 6. Jutsus / techniques → CHR-CORE-002, SYS-001
-- L116 — 7. Garde / défense → DEF-001, DEF-003
-- L127 — 8. Esquive et substitution → DEF-002
-- L141 — 9. Rush / poursuite → COM-004, MOV-005
-- L152 — 10. Chakra → SYS-001
-- L163 — 11. Infusion / interactions de chakra → TOOL-006, SYS-001, SYS-002
-- L182 — 12. Éveil → SYS-003
-- L198 — 13. États et réactions → COM-007, FX-002
-- L216 — 14. Gameplay loop → CHR-CORE-001, COM-005
-- L227 — 15. Skill ceiling → CHR-CORE-001, BAL-001
-- L236 — 16. Signature irremplaçable → CHR-CORE-001, CHR-EXT-002
-- L243 — Exigence de différenciation → CHR-CORE-001, CHR-EXT-002
-- L261 — Mapping technique actuel → ARC-002, OPS-001
-- L284 — Validation Studio obligatoire → QA-001, CHR-CORE-001
+- L5 — Adding a prodigy — fighter template → OPS-001, OPS-002, OPS-003, ARC-002, CHR-EXT-002
+- L11 — Philosophie obligatoire → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, COM-002, SYS-003
+- L27 — Fiche moveset complète → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002
+- L31 — 1. Identité → CHR-CORE-001, CHR-CORE-002, CHR-EXT-002, CHR-MIN-002, CHR-ITA-002, CHR-NEJ-002, CHR-SAS-002
+- L43 — 2. Mouvement → MOV-001, MOV-002, MOV-003, MOV-005, CHR-CORE-001
+- L59 — 3. Neutral / entrée en combat → COM-005, TOOL-005, CHR-CORE-001
+- L69 — 4. Taijutsu et combos → COM-002, COM-004, COM-005, CHR-CORE-001
+- L85 — 5. Armes et ninja tools → TOOL-002, TOOL-005, DEF-005
+- L101 — 6. Jutsus / techniques → CHR-CORE-002, SYS-001
+- L118 — 7. Garde / défense → DEF-001, DEF-003
+- L129 — 8. Esquive et substitution → DEF-002
+- L143 — 9. Rush / poursuite → COM-004, MOV-005
+- L154 — 10. Chakra → SYS-001
+- L165 — 11. Infusion / interactions de chakra → TOOL-006, SYS-001, SYS-002
+- L184 — 12. Éveil → SYS-003
+- L200 — 13. États et réactions → COM-007, FX-002
+- L218 — 14. Gameplay loop → CHR-CORE-001, COM-005
+- L229 — 15. Skill ceiling → CHR-CORE-001, BAL-001
+- L238 — 16. Signature irremplaçable → CHR-CORE-001, CHR-EXT-002
+- L245 — Exigence de différenciation → CHR-CORE-001, CHR-EXT-002
+- L263 — Mapping technique actuel → ARC-002, OPS-001
+- L286 — Validation Studio obligatoire → QA-001, CHR-CORE-001
 
 ## [ROSTER_MOVESETS_10_PRODIGIES.md](../characters/2026-10-18-before-profiles/ROSTER_MOVESETS_10_PRODIGIES.md)
 

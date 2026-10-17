@@ -21,4 +21,4 @@ Les [archives](docs/archive/README.md) sont des références historiques uniquem
 
 Avant chaque nouveau gros bloc, vérifier la boîte de réception SINCE_LAST_CLAUDE et accuser les entrées intégrées selon EXECUTION_RULES. Ne jamais traiter « le dernier fichier ajouté » comme la mission globale.
 
-Pour un lot de personnages, lire uniquement les fiches concernées via [ROSTER_20](docs/characters/ROSTER_20.md). Elles séparent cible proposée, chiffres du runtime et période à vérifier ; elles ne changent pas l’ordre des missions ni la gate Studio.
+Pour un lot de personnages, lire DEC-026 puis uniquement les Combat Bibles V1 concernées via [ROSTER_20](docs/characters/ROSTER_20.md). Le roster cible17+3 diffère du runtime courant ; les premières fiches de61eb585 sont remplacées. Les bibles fixent la chorégraphie cible et réservent les systèmes futurs ; elles ne prouvent pas une migration faite ni un PASS Studio et n’interrompent pas le bloc en cours.

@@ -1,300 +1,50 @@
-> Documentation spécialisée de référence ; état dans [CURRENT_STATE](../active/CURRENT_STATE.md), travail et critères dans [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). Les anciennes propositions et statuts ci-dessous ne fixent pas les priorités globales.
+# Character V1 — contrat de chorégraphie
 
-# Adding a prodigy — fighter template
+Référence de design liée à [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles), pas huitième source opérationnelle. [Vingt bibles](ROSTER_20.md). Ancien [gabarit complet des futurs systèmes](../archive/characters/2026-10-18-superseded-profiles/FIGHTER_TEMPLATE.md) conservé ; il n’est pas la définition de la V1 actuelle.
 
-Les [vingt fiches harmonisées](ROSTER_20.md) appliquent ce gabarit en huit sections compactes : version/promesse, tenue/mouvement, chakra, repères runtime, moveset/défense, techniques/période, éveil/boucles/habileté, Studio/sources. Séparer systématiquement existant, cible proposée et incertitude de période. Ne pas transformer ratings de design ou statistiques du code en faits canon. REVIEW_REQUIRED est admis quand le stade n’est pas vérifié ; ne jamais forcer une nature élémentaire pour remplir une case. Les priorités restent dans MASTER_BACKLOG.
+## Définition et portée
 
-Périmètre actuel : [CORE_ROSTER](CORE_ROSTER.md). Ce template devient la **base officielle de conception d’un fighter**, pas seulement une checklist technique. Il ne déclenche pas implicitement une extension du roster : Claude l’utilise pour concevoir, comparer ou réviser un personnage quand ce travail est autorisé.
+V1 = identité dans corps/mouvement/animations/contacts/combos/défense, armes fondamentales et signatures nécessaires. HUD masqué, reconnaissance en quelques secondes. Exclure arbre complet, maîtrise acquise, chakra global final, armes globales finales, sound/VFX/balance compétitifs finaux. Des pouvoirs locaux dans les gestes, comme os/mirage/clone/sable, font déjà partie de V1 ; ne pas les repousser au chantier chakra final.
 
-## Philosophie obligatoire
+Le roster cible diffère du build :17 combattants conservés, Madara/Hashirama/Hiruzen enfants à concevoir, Hinata/Temari/Kabuto hors cible. Ne pas modifier Roster/IDs/menu pendant une mission documentaire.
 
-Un personnage Ninja Duel ne doit jamais se résumer à `4 jutsus + une string M1`.
+## Les douze rubriques obligatoires
 
-Chaque fighter doit exister à travers la même grammaire commune — mouvement, neutral, taijutsu, défense, outils, chakra, air, murs, substitution — puis **interpréter cette grammaire à sa manière**.
+1. Combat identity et décision propre.
+2. Silhouette : idle/bras/jambes/centre, avant/arrière/strafe/sprint/dash/saut/chute/landing/garde/dodge, réactions légère/lourde et get-up.
+3. Chaque Light : membre/arme, trajet, appui/translation, distance, rythme/phases et intention.
+4. Forward/Side/Away/Air, launcher/continuation/finisher et mur si pertinent.
+5. Heavy distinct, anticipation et récupération punissables.
+6. Défense et retour au neutral.
+7. Arme physique dans la chaîne, prises et rangement cohérents.
+8. Pouvoir dans les gestes, source de hit et fin lors d’interruption.
+9. Seulement signatures fondamentales : activation/corps/comportement/usage/contre/conversion.
+10. État spécial changeant une règle, entrée/sortie et risque.
+11. Cinq à dix règles d’animation propres.
+12. Points d’extension futurs sans les implémenter.
 
-Le principe directeur est :
+Appendices A–E : réemploi, unités uniques, priorité, actuel→cible et lot proposé. Une donnée cible n’est pas un fait du runtime ni une validation canon/Studio.
 
-`universal system -> character interpretation -> player mastery`
+## Grammaire, manette et anti-infini
 
-Exemples : tout le monde peut esquiver, mais Shisui le fait par burst/afterimage, Neji par lecture et footwork, Gaara par défense de sable/minimal displacement, Lee par pure vitesse corporelle. Tout le monde peut utiliser des outils compatibles, mais Itachi maîtrise la géométrie des projectiles, Minato transforme les kunai marqués en réseau spatial, Sasuke combine wire/fire/lightning et Neji les garde secondaires.
+Light = LMB/□, Heavy = RMB/△ ; directions relatives à l’adversaire. Avant hit confirmé, toute direction+Light reste L1. Side après1hit ; Forward/Away après2 ; branche air après contact air. Aucun nouveau bouton nécessaire pour une lame, un os, un clone ou un mirage. R1 + face utilise les signatures ; les sous-gestes de prise suivent le clip/état, pas un mini-clavier supplémentaire.
 
-La profondeur doit venir de **timing + direction + position + état + contexte air/mur + outil + chakra + lecture adverse**, pas d’un clavier rempli de boutons.
+V1 cible : une branche sol, une poursuite, deux contacts air puis finisher/neutral ; signature de conversion remplace la fin. Scaling/compteurs/escape communs, pas reset caché par proxy/zone/objet. Coup autonome/poison ne confirme pas un nouveau combo du maître. Bloc, whiff, invulnérabilité, corps disparu et LOS restent respectés.
 
-Un move n’est pas validé parce qu’il existe. S’il reste « danseur », illisible, sans fonction claire ou sans appui/contact crédible, Claude peut le rejeter ou le reconstruire.
+## Contrat de clip/contact
 
-## Fiche moveset complète
+Repère gauche/droite du personnage. Pied pivot planté avant extension ; anticipation lisible ; moment de contact aligné sur le membre/objet réel ; réaction depuis source réelle ; recovery qui restitue garde/neutral. Les phases A/C/R des fiches sont des points de départ d’auteur en secondes, à confronter aux règles serveur et au rig ; pas promesse de frames/balance finale.
 
-Chaque fighter doit répondre à toutes les sections ci-dessous. Une case vide est une décision consciente, pas un oubli.
+Corps physiques secondaires ont propriétaire/source/lifecycle, objets/armes ont attaches et configuration ; jamais dégâts depuis VFX seul. Le réseau envoie les états nécessaires, le client présente ; pas d’autorité client sur hit ou branche. Le serveur ne doit pas attribuer deux dégâts pour deux lames dessinées au même accent.
 
-### 1. Identité
-- fantasy du personnage et stade jeune choisi ;
-- rôle de combat ;
-- rythme ;
-- distance préférée ;
-- forces / faiblesse principale ;
-- signature mécanique ;
-- question unique à laquelle son gameplay répond ;
-- label lore par capacité : `CANON_YOUNG`, `PLAUSIBLE_YOUNG`, `GAMEPLAY_LIBERTY`, `REJECT_ADULT_ONLY`.
+**État spécial de départ partagé :** [Config.Awaken](../../src/Shared/Config.luau) : seuil35%HP, durée12s, une activation par match et condition libre ; [Combat.awaken](../../src/Server/Combat.luau) gère entrée/recharge/recovery. Garder ce socle pour les trois nouveaux ; la règle particulière de la bible remplace un simple bonus, elle ne crée pas une nouvelle mécanique de déblocage. Coût/durée finaux ne sont pas une tâche de cette mission documentaire.
 
-Le stade jeune n’est pas un âge uniforme pour tout le roster. Prendre le **pic jeune/prodige cohérent** où l’identité future existe déjà, sans importer l’arsenal adulte complet.
+## Budget et réemploi
 
-### 2. Mouvement
-Définir le ressenti et l’usage de :
-- idle / stance ;
-- run ;
-- sprint ;
-- strafe / lateral run ;
-- changement de direction ;
-- dash / rush ;
-- jump / air control / landing ;
-- pursuit ;
-- disengage / reposition ;
-- wall entry / wall-run / wall exit ;
-- éventuel mouvement signature.
+Cinq unités prioritaires par fighter : trois contacts Light, Heavy, un geste signature/transitoire. Environ100 unités de contact pour20, dont beaucoup déjà présentes, pas100nouveaux assets obligatoires. Les bases de locomotion/réactions/air partagent des courbes entre familles ; corps et accessoires sont retargetés, avec pauses/appuis différents. Budget de planification inférieur à200unités d’auteur y compris bases/réactions et exceptions ; mesurer l’inventaire réel avant création, pas imposer300animations uniques.
 
-La locomotion doit déjà être agréable sans combattre. Appuis, cadence, transfert de poids, posture, bras, centre de gravité et caméra doivent expliquer la vitesse.
+Aucun compromis sur les silhouettes irréductibles : multi-lames Bee, couperet Zabuza, os vivants Kimimaro, deux-corps Sasori/Naruto, sable Gaara et trajectoires Shisui/Haku. Réemployer une fonction de clip ne justifie pas d’importer le même kick terminal partout.
 
-### 3. Neutral / entrée en combat
-Décrire :
-- comment le personnage ferme la distance ;
-- comment il maintient sa distance ;
-- comment il force une réaction ;
-- son poke principal ;
-- son outil de lecture/feinte ;
-- comment il sort d’un échange ;
-- ce qu’un adversaire doit respecter avant même le premier combo.
+## Gates du lot
 
-### 4. Taijutsu et combos
-La grammaire de base reste compacte mais contextuelle :
-- neutral string ;
-- `up` : launcher / route verticale ;
-- `down` : sweep / slam / low route ;
-- `left/right` : side route, angle change, grab ou conversion propre au perso ;
-- air neutral / air up / air down / air side ;
-- wall route ;
-- pursuit route ;
-- finisher ;
-- cancel windows ;
-- side-switch / orbit si pertinent ;
-- grab / catch / throw / micro-clash si identitaire.
-
-Chaque coup doit avoir une fonction : opener, pressure, counter, spacing, knockback, launcher, sweep, pursuit, side-switch, finisher, defensive conversion, wall conversion, aerial conversion. Éviter les spins gratuits et la chorégraphie sans fonction.
-
-### 5. Armes et ninja tools
-Définir :
-- kunai ;
-- shuriken ;
-- arme spécifique ;
-- wire / tags / smoke si pertinent ;
-- tool while moving ;
-- tool -> melee ;
-- melee -> tool ;
-- tool -> pursuit ;
-- projectile collisions / deflections ;
-- outil planté dans mur/sol si utile ;
-- usage offensif, défensif, setup ou range bridge.
-
-Une arme ne doit pas être « le même combo avec un mesh différent ». Elle doit changer corps, portée, timing, angle, recovery ou conversion.
-
-### 6. Jutsus / techniques
-Pour chaque technique :
-- fonction de gameplay ;
-- coût chakra ;
-- startup / channel ;
-- active ;
-- recovery ;
-- cooldown si nécessaire ;
-- portée ;
-- mouvement autorisé pendant l’usage ;
-- counterplay ;
-- conversions possibles ;
-- interaction air / mur / terrain / outil ;
-- raison lore.
-
-Limiter la quantité brute. Une technique utile dans plusieurs contextes vaut mieux que cinq boutons redondants.
-
-### 7. Garde / défense
-Définir l’interprétation du personnage pour :
-- guard normal ;
-- timed deflect / parry ;
-- perfect dodge ;
-- counter ;
-- anti-air ;
-- defense on wall / in air ;
-- guard break vulnerability ;
-- strike clash / weapon clash si pertinent.
-
-### 8. Esquive et substitution
-Définir séparément :
-- dodge simple ;
-- directional dodge ;
-- perfect dodge window ;
-- substitution / kawarimi ;
-- coût / charge / cooldown ;
-- destination ;
-- fenêtre de punish ou de bait ;
-- retour au neutral ;
-- twist propre au personnage.
-
-La substitution est un anti-combo lisible et maîtrisable, pas un bouton gratuit qui efface toute erreur.
-
-### 9. Rush / poursuite
-Définir :
-- offensive dash ;
-- gap closer ;
-- chase après launcher ;
-- air pursuit ;
-- wall pursuit ;
-- tool-assisted pursuit ;
-- re-entry après disengage ;
-- moyen adverse de casser la poursuite.
-
-### 10. Chakra
-Définir :
-- réserve ;
-- recharge active/passive ;
-- vitesse de recharge ;
-- état low chakra ;
-- conséquence sur mouvement, défense et jutsu ;
-- éventuelle spécialité du personnage : grosse réserve, contrôle précis, coût réduit ciblé, drain, etc.
-
-Le chakra est un système, pas seulement une barre de mana.
-
-### 11. Infusion / interactions de chakra
-Utiliser la formule :
-
-`Object + Chakra Property/Nature + Trigger/Context -> Result`
-
-Pour chaque fighter, décider ce qui est pertinent parmi :
-- reinforcement du corps ;
-- arme ;
-- kunai/shuriken ;
-- wire ;
-- environnement ;
-- marque/seal ;
-- nature élémentaire ;
-- clash/interception.
-
-Exemples génériques : wind + kunai -> vitesse/coupe ; lightning + métal/wire -> conductivité ; fire + projectile -> ignition ; seal + kunai marqué -> destination FTG.
-
-Ne pas forcer une infusion à tous les personnages. La règle commune existe ; chacun l’exploite selon son identité.
-
-### 12. Éveil
-Un awakening doit **modifier la manière de jouer**, pas seulement `+20% damage`.
-
-Définir :
-- condition ;
-- coût ;
-- durée ;
-- nouvelles règles ;
-- mouvements / cancels / propriétés ajoutés ;
-- changement de mobilité ;
-- changement de chakra ;
-- contrepartie / risque ;
-- sortie de l’éveil.
-
-Le stade reste celui du jeune prodige : pas de pouvoir adulte/endgame non justifié.
-
-### 13. États et réactions
-Définir quelles routes exploitent ou créent :
-- stagger ;
-- off-balance ;
-- guard-open ;
-- launch ;
-- falling ;
-- wall-splat ;
-- grounded ;
-- recovering ;
-- grabbed ;
-- weapon clash ;
-- chakra/resource disruption si pertinent.
-
-Combat grammar cible :
-
-`contact -> state change -> transition -> character-specific conversion`
-
-### 14. Gameplay loop
-Écrire une boucle représentative en une ligne, par exemple :
-
-`probe -> force dodge -> angle change -> short taijutsu -> tool cancel -> pursuit -> wall conversion -> disengage`
-
-Puis au moins :
-- une boucle agressive ;
-- une boucle défensive ;
-- une boucle low-chakra ;
-- une boucle air/wall si le personnage la privilégie.
-
-### 15. Skill ceiling
-Décrire explicitement :
-- ce que fait un débutant ;
-- ce qu’apprend un intermédiaire ;
-- ce qu’un expert fait différemment ;
-- quelles décisions/timings/positions séparent réellement ces niveaux.
-
-Le skill ceiling doit venir de maîtrise et de lecture, pas uniquement de mémorisation de longs inputs.
-
-### 16. Signature irremplaçable
-Répondre :
-
-> Pourquoi ce fighter ne pourrait-il pas être remplacé par un autre personnage avec les mêmes stats et quatre jutsus différents ?
-
-Si la réponse n’est pas claire, le design n’est pas terminé.
-
-## Exigence de différenciation
-
-Avant validation, comparer le fighter aux personnages existants :
-- neutral ;
-- movement identity ;
-- taijutsu silhouette ;
-- launcher ;
-- pursuit ;
-- wall use ;
-- air use ;
-- standard tools ;
-- chakra use ;
-- defense ;
-- awakening ;
-- signature rule-bending.
-
-Deux personnages peuvent partager des systèmes, mais pas produire la même expérience avec des VFX différents.
-
-## Mapping technique actuel
-
-| Layer | Where | What to write |
-|---|---|---|
-| Identity & stats | `../../src/Shared/Fighters.luau` | `Name`, `FullName`, `Age`, `Title`, `Color`, `Description`, `Routes`, health/chakra/speed scales, `PreferredRange` |
-| Taijutsu timing | `Fighters.<id>.AttackProfile` | `startup`, `recovery`, `travel`, `range`, hitbox, damage, impulses |
-| Combo grammar | `../../src/Shared/MoveGraphs.luau` | `routes`, air routes, side routes, disengage, payoffs, cancels, read counter |
-| New strikes | `../../src/Shared/Attacks.luau` | timing + motion + `ZONE` / `KIND` + hitbox + reactions |
-| Route payoffs | `Brawler.routePayoff` | character-specific conversion kinds |
-| Ninja tools | `Fighters.<id>.ToolMastery` | kind/count/speed/damage/recover + mastery flags |
-| Techniques | `Fighters.<id>.Techniques` + `../../src/Server/Techniques.luau` | cost/channel/active/recovery/cooldown/range + execution |
-| Signature / passive | Combat / Brawler hook | data-driven when possible |
-| Awakening | `Fighters.<id>.Awakening` | rule changes, not only numeric buffs |
-| Body: stance & gait | `../../src/Client/VelmoraMotionEngine.luau` | stance/gait/stride/cadence/lean/guard |
-| Body: clips | same file | attack/contact/recovery clips; no fallback accepted as final identity proof |
-| Technique poses | `castSpec` | channel/release pose |
-| Effects | `../../src/Client/Effects.luau` | signature + impact + projectile visuals |
-| Camera | `../../src/Client/Camera.luau` | bounded support for impact/speed/verticality |
-| AI | `../../src/Server/AI.luau` | use rules that exercise actual identity |
-| Tests | `tests/<Name>.spec.luau` | signature mechanics + state integrity + matchup checks |
-
-Ces chemins reflètent l’architecture actuelle et doivent être vérifiés au moment de l’implémentation. Ne pas préserver un ancien point de branchement s’il a été remplacé proprement.
-
-## Validation Studio obligatoire
-
-Un fighter n’est pas « terminé » parce que ses tests passent.
-
-Minimum :
-1. 30 secondes de déplacement seul agréables et identitaires ;
-2. simple punch / kick crédibles image par image autour du contact ;
-3. neutral -> défense -> outil -> re-entry sans coupure visible ;
-4. routes ground / air / wall testées ;
-5. substitution / dodge / guard / counter lisibles ;
-6. chakra et low-chakra réellement ressentis ;
-7. arme/outils changent le gameplay si le personnage les maîtrise ;
-8. awakening change les décisions ;
-9. comparaison avec le golden visual set et les références R15 ;
-10. aucune motion « danseuse » conservée simplement parce qu’elle existait déjà.
-
-Linked active work: CHR-CORE-001/002, current CHR-* identity tickets, MOV-001..005, COM-001..007, DEF-001..005, TOOL-001..006, SYS-001..003, ARENA-001/003, CAM-001/002, RES-001/003, LAB-002.
+Tests pertinents → build exact → séquence continue native → comparaison avant/après HUD masqué → correction → commit et état/proof. Comparer au voisin de famille, au même adversaire et sur garde/whiff/KO/reset ; manette séparée si matériel disponible. Une régression partagée bloque le lot. Ni compilation, ni spawn, ni belle image ne valident le feel.

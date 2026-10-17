@@ -46,7 +46,7 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - summary: Contrats headless existants
 - sources: [PROJECT_STRUCTURE](../tools/PROJECT_STRUCTURE.md); [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md); [ORCHESTRATION_REFACTOR](../archive/reports/ORCHESTRATION_REFACTOR.md)
 - validation: 27 suites actuelles passent sur sources exactes ; contrats roster exact20, trois hits réels, effet de contact et éveil comportemental explicites. Préserver tests des vingt neutral/whiff/block/buffer.
-- evidence: 18/10 Codex bc7faa3 : 28 suites/500 cas PASS Lune0.10.5/Luau0.743 ; gates roster durcies et Convergence6 cas ajoutés par Claude. [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). Les sondes edge ciblées trouvent encore des contrats non couverts ; PASS technique ne vaut pas feel.
+- evidence: 18/10 Codex41364ed : 28 suites/503 cas PASS Lune0.10.5/Luau0.743 ; Convergence9cas dont trois régressions M1 ajoutées par Claude, gates roster préservées. [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). Les sondes edge ciblées trouvent encore des contrats non couverts ; PASS technique ne vaut pas feel.
 - outcome: VERIFIED_TECHNICAL
 
 ## QA-003 — Builds normal/debug/QA isolés
@@ -78,9 +78,11 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 
 ### Préparation incrémentale du 18/10 — petits commits Claude
 
-Ordre courant M1→M7 sur la base bc7faa3 ; recontrôler HEAD et les deltas avant action. Le bloc déjà en cours reste prioritaire sauf défaut bloquant ci-dessous. Preuves datées : [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). Pas de travaux parallèles ni nouveaux kits. Chaque mission se clôt par tests pertinents → build final → scénarios Studio → commit et preuve exacte. Les limites de tests natifs/humains restent explicites.
+**Mise à jour DEC-026 :** corrections de combat en cours à poursuivre, sans interruption par la mission de design. M1 est corrigé en source par41364ed, avec trois tests ciblés ; sa gate native reste ouverte. M2–M3 restent les défauts ciblés ; M4–M7 sont des gates de convergence du runtime existant et ne clôturent pas la nouvelle V1 corporelle ni la migration de roster. Avant d’ouvrir une grosse passe identité, prendre les bibles et leur sous-lot ciblé. Ne pas appliquer les premières fiches20 ni l’ancien concept Bee sans armes/Kimimaro lame permanente.
 
-**M1 — Marionnette persistante et garde honnête** (QA-004, ARC-002). Deux corrections : (1) après une route proxy/son interruption, restituer le mode/contrôle d'un corps persistant au lieu de le convertir en corps spent consommable ; (2) ne pas appliquer le poison du jab autonome à une garde réussie. Points d'entrée : Bodies.bind/carry/hitFrom et Wave3Kit.strike/controller. Préserver le contrat de retour existant de hitFrom et les clones éphémères Naruto ; donnée/contrat neutre plutôt que nom de fighter dans le cœur. Ajouter régressions ciblées qui reproduisent les deux logs actuels.
+Ordre courant : validation native M1 livré, puis M2→M7 ; base source41364ed, preuves natives bc7faa3 ; recontrôler HEAD et les deltas avant action. Le bloc déjà en cours reste prioritaire sauf défaut bloquant ci-dessous. Preuves datées : [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). Pas de travaux parallèles ni nouveaux kits. Chaque mission se clôt par tests pertinents → build final → scénarios Studio → commit et preuve exacte. Les limites de tests natifs/humains restent explicites.
+
+**M1 — Marionnette persistante et garde honnête** — SOURCE LIVRÉE par Claude (`41364ed`), trois tests de régression ajoutés ; scénarios natifs ci-dessous encore à valider. Ne pas réimplémenter. (QA-004, ARC-002). Deux corrections : (1) après une route proxy/son interruption, restituer le mode/contrôle d'un corps persistant au lieu de le convertir en corps spent consommable ; (2) ne pas appliquer le poison du jab autonome à une garde réussie. Points d'entrée : Bodies.bind/carry/hitFrom et Wave3Kit.strike/controller. Préserver le contrat de retour existant de hitFrom et les clones éphémères Naruto ; donnée/contrat neutre plutôt que nom de fighter dans le cœur. Ajouter régressions ciblées qui reproduisent les deux logs actuels.
 
 Scénarios Studio (5) : **S1** invoquer Sasori, L1 confirmé→RMB/PuppetBlade puis attendre2s : même marionnette encore contrôlée et active ; **S2** L1→L2→avant+Light/PuppetRise puis attendre2s : corps conservé, launcher/poursuite restent possibles ; **S3** interrompre Sasori pendant route : aucun corps zombie, contrat persistant restauré si corps non détruit ; **S4** adversaire face à la marionnette, garde tenue avant jab : block/chip autorisé, zéro poison nouveau ; retirer garde, jab suivant = poison ; **S5** Naruto route portée + destruction de marionnette par ennemi + KO/reset : les clones consommables disparaissent comme avant, la marionnette détruite ne ressuscite pas, aucun résidu de round.
 
@@ -237,7 +239,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - subsystem: combat
 - character: CORE4
 - summary: Synchroniser corps, contact, cible et réaction
-- sources: [COMBAT_REQUIREMENTS](../archive/combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
+- sources: [COMBAT_REQUIREMENTS](../archive/combat/COMBAT_REQUIREMENTS.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH](../archive/missions/CLAUDE_PHASE_4_GAMEFEEL_ARENA_DEPTH.md); [CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS](../archive/missions/CLAUDE_ARENA_SCALE_COMBO_FREEDOM_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
 - validation: Moment d’impact coïncide visuellement avec hitbox/réaction ; zone touchée cohérente ; VFX ne masque pas défaut ; preuve native
 - evidence: Mécanismes Combat/Brawler/MoveGraphs partiels ; 2026-10-16 : le recul redémarre à chaque nouveau contact même si le type de réaction se répète (Light1→Light2, Air1→Air2) et le début de frappe part en snapshot urgent (plus d’impact qui précède l’animation). Constat non corrigé : un coup qui ne pose que Stunned (kunai, shuriken, hazard) n’a pas de pose de recul. TECHNICAL compile + suites PASS ; NATIVE_STUDIO et HUMAN_VISUAL PENDING 2026-10-16 NATIVE_STUDIO ([contact et réactions](../archive/reports/convergence/CONTACT_AND_REACTIONS.md), chronophotographie) : les corps se chevauchaient pendant les chaînes (avancée stoppée à 2,6 studs, recul d’un coup léger ~0,5 stud ; têtes à 1,4) → distance de contact par frappe (3,6 poings, 4,0 pieds), boîte de touche des coups légers alignée, recul léger ~0,9 stud ; même scénario : bassins 3,0 → 3,65, têtes 1,44 → 2,04, 3/3 coups touchés. Réactions debout lisibles (plancher de force, flexion/hanches/tête). TECHNICAL PASS (Regression 25). HUMAN_VISUAL PENDING
 - outcome: PENDING
@@ -447,9 +449,9 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - subsystem: chakra
 - character: CORE4
 - summary: Faire du chakra une décision contextuelle
-- sources: [TOOLS_AND_CHAKRA](../archive/systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../archive/design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md)
+- sources: [TOOLS_AND_CHAKRA](../archive/systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../archive/design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
 - validation: Coût, recharge, infusion, déclencheur, opportunité et contre-jeu mesurés ; éviter barre cosmétique
-- evidence: 18/10 : extraction du mapping ChakraTuning au runtimebc7faa3 : sept profils spécifiques, treize Basic. Cela ne signifie pas absence de jutsus/effets propres ; les fiches distinguent nature, forme, contrôle, quantité, coût et faible réserve. Couche chakra complète non close. Paramètres et interactions proposés à vérifier selon DEC-021, pas de changement runtime dans cette passe.
+- evidence: 18/10 DEC-026 : chakra global final différé après V1corporelle ; ne pas différer pour autant os/mirage/sable/clones/forces élémentaires nécessaires aux gestes de base. Sept profils d’infusion spécifiques/treize Basic dans l’ancien roster courant ; aucun mapping ou runtime changé. Les bibles réservent tags/coûts/points de contact futurs sans système global nouveau.
 - outcome: PENDING
 - acceptance: Chakra + action existante ; changer un comportement (trajectoire, stabilité, garde, conduction, brûlure, persistance ou ancrage), pas seulement dégâts. Contrôler fil tenu/planté, courant puis Dragon Flame, rencontres de projectiles, lisibilité et nettoyage.
 
@@ -597,7 +599,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: Code et profils existent ; 2026-10-16 fiche : signature LionKick → ShadowLeaf (chasse gratuite) → Lion Combo, fil → Dragon Flame, Chidori 34 chakra ; manques : Heavy après 2 coups lance le Launcher générique sans ShadowLeaf, counterUntil du Sharingan sans readCounter, aucune interaction murale propre (la matrice annonce Chidori/wire au mur, absent du code), Curse Mark purement numérique. NATIVE_STUDIO PENDING
 - outcome: PENDING
 
-## CHR-CORE-001 — Quatre identités reconnaissables sans jutsu
+## CHR-CORE-001 — Vingt identités corporelles V1 reconnaissables HUD masqué
 
 - status: PARTIAL
 - priority: P1
@@ -605,11 +607,18 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - subsystem: character
 - character: ALL
 - summary: Quatre identités reconnaissables sans jutsu
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md)
-- validation: Sur les20, comparer tenue/silhouette, stance, marche/sprint/dash, trois légers/lourd/routes, défense et outils sans jutsu ; reconnaître une logique distincte même sans nom/couleur/aura. Puis observer la signature en duel continu. Fiches20 = cibles proposées, pas vingt missions simultanées ; sorties Studio exactes et feel humain distincts.
-- evidence: 18/10 : demande joueur DEC-025 et vingt fiches harmonisées (vêtements, chakra, moveset, habiletés, chiffres runtime, limites et scénarios). Shisui : mirages/trajectoire cible distincts du FTG, chaîne actuelle conservée. Runtime inchangé ; aucune nouvelle identité validée par la documentation. M1–M7 de QA-004 restent la préparation des petits commits.
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
+- validation: DEC-026 : identité V1 du corps entier, pas seulement jutsus ; vingt cibles avec Light1–3 physiques propres, Heavy, branches, armes/pouvoirs fondamentaux dans les gestes, locomotion/défense/réactions distinctes. HUD masqué, reconnaissance native rapide ; conserver counterplay, manette et invariant avant hit. Réemploi des phases/hooks sans uniformiser les silhouettes. Les systèmes globaux finaux ne sont pas prérequis.
+- evidence: 18/10, base41364ed (M1 inclus ; native bc7faa3) : vingt Combat Bibles écrites (12rubriques + A–E).17 cibles codées +3absentes ; ancien roster corrigé. Bee réel multi-lames et Kimimaro os vivants remplacent anciens concepts. Audit ciblé des sources/clip families, pas nouveau PASS Studio des gestes. Les premiers profils de61eb585 sont archivés, pas design à exécuter.
 - outcome: PENDING
 - acceptance: Minato : marques/angles/chaînes FTG ; Itachi : lecture/leurre/shuriken/feu ; Neji : paumes/tenketsu/Rotation ; Sasuke : kicks/air/fil/Chidori/risque maudit. Vérifier quatre couches : règle, corps, feedback et conséquence de route.
+
+
+### Ouverture des lots V1 après le bloc en cours
+
+Référence des lots proposés : [ROSTER_20, E](../characters/ROSTER_20.md#e-claude-execution-batches). Ne pas les lancer tous. Un sous-lot charge1–2bibles, conserve les handlers corrects et livre corps/Light/Heavy puis routes/signature dans des commits cohérents, avec avant/après natif. Dépendances : contrats lifecycle/contact/portées avant multi-corps ; attaches de couperet avant configurations Bee ; pouvoir corporel local avant Hashirama ; les trois nouveaux après socles éprouvés. À chaque rapport, ajuster le sous-lot suivant selon résultat réel. La priorité de design (plus gros manque) n’est pas une déclaration de P0 runtime.
+
+Sortie commune : trois Lights/Heavy physiques distincts, branche seulement après confirmation, une séquence sol→air→neutral continue, défense/réactions cohérentes, arme/pouvoir fondamental présent hors signature, manette et contre-jeu, zéro boucle de relaunch. Pas besoin de systèmes finaux. La migration17+3et le menu final appartiennent à CHR-EXT-002/L9 ; pas à la mission documentaire.
 
 ## CHR-CORE-002 — Revue lore par capacité
 
@@ -619,9 +628,9 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - subsystem: character
 - character: CORE4
 - summary: Revue lore par capacité
-- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md)
-- validation: Chaque proposition/kit documente label canonical jeune/plausible/liberté/rejet adulte avec source exacte ; preuve native/lore pertinente
-- evidence: 18/10 : vingt fiches séparent état actuel/cible/capacité sourcée/review de période. Conflits préservés : Minato13, Itachi12/13, Hinata12/techniques tardives, Kakashi13/14, Kimimaro13/15, capacités de plusieurs jeunes prodiges non attestées. Sources primaires ponctuelles + sources secondaires signalées ; pas de certification exhaustive ni changement d’âge implicite.
+- sources: [CORE_ROSTER](../characters/CORE_ROSTER.md); [ROSTER_MOVESETS_10_PRODIGIES](../characters/ROSTER_MOVESETS_10_PRODIGIES.md); [CLAUDE_PHASE_3_YOUTH_TOURNAMENT](../archive/missions/CLAUDE_PHASE_3_YOUTH_TOURNAMENT.md); [README](../research/README.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
+- validation: Lire source primaire quand disponible puis préciser médium/extrapolation. Concept12–14 raisonnable et identité impressionnante, sans kit adulte complet ; Bee multi-lames enfant et pouvoirs locaux des trois nouveaux sont extrapolations explicites autorisées par le brief, pas faits canon inventés. Les âges du runtime restent inchangés dans la préparation.
+- evidence: 18/10 : sources officielles pour enfance Madara/Hashirama, Hiruzen/Enma adulte et Bee7lames tardif vérifiées ; ne prouvent pas ces arsenaux à12–14. Les bibles séparent référence, extrapolation et exclusions. Précision chorégraphique = design, pas canon automatiquement certifié.
 - outcome: PENDING
 
 ## CHR-EXT-001 — Gaara — finir la validation du kit sélectionnable
@@ -637,17 +646,17 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: Serveur + 10 tests existent ; 2026-10-16 DEC-012 : Gaara fait partie de la première vague d’archétypes à rendre jouable pour éprouver le moteur (zoning défensif / sable) 2026-10-16 (DEC-015) : Gaara sélectionnable des deux côtés (`545bc3d`) avec sa propre famille de mouvement (bras croisés, pas courts sans course ninja, fouets de sable lancés de la main, pilier paume levée, aucune arme en main) au lieu des visuels de Minato ; vu en Studio (menu, chaîne de fouets). PARTIAL : pas encore d’effet de sable sur les fouets ni d’acceptation humaine 2026-10-16 soir : couche client SandFX (`4dbccbe`, `15008c9`) — les projectiles de sable n’étaient plus des kunai, bouclier/flicker/cercueil/mur du Désert/fouets/pilier/charges dessinés ; vu en Studio sur images figées. PARTIAL : pas d’acceptation humaine en mouvement
 - outcome: PENDING
 
-## CHR-EXT-002 — 20 personnages — breadth-first Tier A, puis Tier B/C
+## CHR-EXT-002 — Roster cible V1 — 17 conservés et trois nouveaux, migration puis validation
 
 - status: PARTIAL
 - priority: P1
 - dependencies: QA-001
 - subsystem: roster
 - character: ROSTER20
-- summary: 20 personnages jouables en breadth-first, puis identité et polish par vagues
-- sources: [Décision roster](DECISIONS.md#dec-016--20-jouables-breadth-first) ; [texte utilisateur archivé](../archive/missions/ROSTER_20_BREADTH_PASS.md)
-- validation: Tier A pour chacun des 20 : sélection dans le build, stance/locomotion, chaîne légère, lourd, route directionnelle, route air ou alternative justifiée, outil, 2–3 jutsu, défense, relance pertinente, éveil qui change une règle, IA basique, aucun placeholder cassé. Chaque kit joué dans Studio avec au moins un matchup IA. Tier B ensuite : 2–3 mécaniques identitaires, rythme, signature, éveil et feedback lisibles. Tier C : animation/VFX/audio/caméra/balance/online par familles. Réutiliser les familles ; pas vingt clones ni extension au-delà de 20. Tenir ici le tableau des 20, famille, particularités, état Tier A/B et preuves natives.
-- evidence: 18/10 : vingt toujours présents ; nouvelles règles d’identité implémentées par137cd0a, suites durcies PASS. [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md). M1–M7 sous QA-004 pour stabiliser et valider le bloc combat, aucune extension du roster.
+- summary: Roster cible DEC-026 :17conservés + Madara/Hashirama/Hiruzen enfants, V1 corporelle puis enrichissements ultérieurs
+- sources: [Décision roster](DECISIONS.md#dec-016--20-jouables-breadth-first) ; [texte utilisateur archivé](../archive/missions/ROSTER_20_BREADTH_PASS.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
+- validation: Cible DEC-026 de20bibles : garder17existants, construire3nouveaux sans moteur parallèle, puis migration atomique de sélection/IDs/tests vers20cibles. Hinata/Temari/Kabuto hors cible mais modules non effacés sans revue des consommateurs. V1 exige corps/mouvement/Light/Heavy/routes/défense/armes/signatures reconnaissables en Studio HUD masqué, pas simple badge TierA headless. Arbre/maîtrise/chakra global/armes globales/son/VFX/balance finaux exclus de cette gate.
+- evidence: 18/10 : build réel toujours20anciensIDs ;17dans cible, Madara/Hashirama/Hiruzen absents des définitions/graphes/clips. Vingt bibles nouvelles disponibles, aucune migration ou implémentation par Codex. La table de lotsL2–L9 est proposition de préparation, pas20missions ouvertes.
 - outcome: PENDING
 
 ## ARENA-001 — Échelle utile et exploitation murs/cover

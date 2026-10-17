@@ -1,93 +1,161 @@
-# Zabuza Momochi — fiche de référence
+# Zabuza — Character V1 Combat Bible
 
-ID runtime **`Mist`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Mist`**, âge affiché14 ; mouvement/clip effectif `Gale`, armes déclarées `none`. Techniques présentes : `HiddenMist`, `SilentKilling`, `WaterPrison`. Routes : airDown=`CleaverDive`, airUp=`AirDrive`, down=`CleaverDrop`, side=`CleaverArc`, up=`CleaverRise`. [Données](../../src/Shared/Wave1.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Épéiste jeune, âge14 runtime ; possession/maîtrise du couperet et des techniques exactes à cet âge = REVIEW_REQUIRED.
+**Écart décisif :** Cleaver main et brume ajoutés, clips Gale empruntés → masses/arcs/reprises physiques de couperet sur chaîne et défense.
 
-**Signature irremplaçable :** Masquer la lecture de sa position puis engager une coupe lourde depuis un angle préparé.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. Exclusions/point de période : Arsenal Suiton adulte géant, invisibilité absolue, téléport à travers murs ; techniques à14 non certifiées par l’apparence.
 
-**Faiblesse/contre-jeu :** Whiff de lame, sortie de brume, punition des longues récupérations ; brume n’efface pas la défense adverse.
+**Tenue/silhouette :** Tenue de mission de Kiri sobre, bouche bandée, cheveux courts noirs, grands avant-bras et couperet ; silhouette d’épéiste, pas cape de déserteur adulte imposée.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tenue de mission de Kiri sobre, bouche bandée, cheveux courts noirs, grands avant-bras et couperet ; silhouette d’épéiste, pas cape de déserteur adulte imposée.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course engagée au poids de la lame, freinages plus longs ; pivots qui déplacent le couperet ; SilentKilling sous condition, distinct d’un dash corporel.
+**Faire sentir le couperet à chaque appui, puis utiliser la brume pour masquer le départ d’une attaque lourde.**
 
-**Air, poursuite, réception et mur :** Air : CleaverDive engagé ; mur : compression d’angle et rejet, pas pirouettes légères de Temari malgré clips hérités. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Suiton pour brume/prison ; le couperet et le meurtre silencieux sont des capacités physiques/tactiques. Brume n’est pas un genjutsu générique.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Couperet pointe basse en diagonale, main arrière au manche. |
+| Jambes / centre de gravité | Pieds larges, bassin porte le poids. |
+| Avance | Avance par poussée de jambe, lame suit un retard. |
+| Recul | Recule en ramenant manche au centre. |
+| Strafe | Pivote autour du manche, pas de petits bonds. |
+| Sprint | Course lourde, lame près du flanc. |
+| Dash / rush | Entrée du manche/pommeau, pas téléport de brawler. |
+| Saut | Saut puissant mais faible finesse. |
+| Chute | Lame revient près corps pour ne pas tirer le bras. |
+| Landing | Un pied lourd puis second verrouille, genoux cèdent. |
+| Garde | Plat/épaisseur lame en protection, visage reste lisible. |
+| Esquive | Pas extérieur pour éviter de lever la masse inutilement. |
+| Réaction légère | Épaule et manche reculent ensemble. |
+| Réaction lourde | Lame tire bas, ouvre une vraie fenêtre. |
+| Knockdown / get-up | Couperet repose puis il se relève au manche, pas flip aérien. |
 
-**Réserve, efficacité et faible chakra :** Réserve moyenne ; choix entre maintenir avantage de brume et payer l’engagement. À sec : arme lourde et marche de pression, pas disparition répétée.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Couperet et outil secondaire ordinaire ; il ne doit pas laisser l’arme au dos pendant que sa hitbox frappe.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Manche/poignée, deux mains | Court estoc vers sternum | Pas intérieur0.35, lame reste en diagonale haute | 3.2 | 0.12/0.06/0.23 | bref : Survivre à portée où la lame serait trop longue. |
+| L2 | Couperet, arc horizontal | Droite→gauche au niveau côtes | Pivot de hanche60°, pied arrière rattrape | 5.5 | 0.28/0.09/0.30 | charge→large : Imposer une vraie allonge. |
+| L3 | Couperet, revers descendant | Gauche haute→hanche opposée | Poids tombe sur pied avant, frein de lame visible | 5.8 | 0.32/0.10/0.40 | lent→lourd : Finir et payer l’inertie, pas repasser instantanément. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 14 |
-| Santé | 150 |
-| Réservoir de chakra | 110 |
-| Paramètre ChakraRegen | 7 |
-| Speed de base | 18.5 |
-| Coefficient SprintScale | 1.1 |
-| JumpScale / AirControlScale | 1 / 0.95 |
-| AccelerationScale | 0.98 |
-| Distance préférée configurée | 6.5 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave1.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 4/5, Ninjutsu 4/5, Genjutsu 1/5, Contrôle 3/5, Outils/armes 4/5, Endurance 4/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : manche relève l’avant-bras adverse puis lame monte depuis hanche, launcher lourd. |
+| Side après1hit | Un hit : pied extérieur et arc de lame couvrant le flanc, pas pirouette d’éventail. |
+| Away après2hits | Deux hits : taille basse de recul, pointe garde l’espace puis revient. |
+| Air après1hit aérien | Hit air : frappe courte au plat/manche ; down CleaverDive engagé, side changement de côté limité par poids. |
+| Launcher | CleaverRise avec poussage des jambes, lame suit le bassin. |
+| Air continuation | Un impact de plat puis taille descendante terminale ; pas série de grands tours. |
+| Finisher | Couperet finit au sol/près sol puis reprise du manche obligatoire. |
+| Wall / sortie de mur | Corps bloque une sortie et lame couvre ; splat existant sans barrage à travers mur. |
 
-**Chaîne légère représentative :** Talon/manche de placement → coupe horizontale → taille lourde de sortie ; arme tenue à la source du contact.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : CleaverRise ; bas : CleaverDrop ; côté : CleaverArc ; lourd après un hit = CleaverHilt. Allonge et récupération donnent sa cadence.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Garde au couperet et perte de lecture adverse dans brume ; préserver le contre-jeu manuel et restaurer correctement lock/visée à la sortie. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Couperet charge au-dessus de l’épaule, pied arrière pousse et lame descend en diagonale ; portée6, anticipation plus longue du roster armes. Whiff amène la pointe bas et impose reprise visible.
 
-**Outils :** Couperet et outil secondaire ordinaire ; il ne doit pas laisser l’arme au dos pendant que sa hitbox frappe.
+**A/C/R de départ pour Heavy : .42/.10/.52s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`CleaverDive`, airUp=`AirDrive`, down=`CleaverDrop`, side=`CleaverArc`, up=`CleaverRise` ; lourd après un hit : `CleaverHilt`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Bloque avec l’arme, petit retrait de hanche puis contre de poignée ; flanc/saisie punissent la garde lourde. Brume modifie perception, jamais inertie annulée.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `HiddenMist` — Hidden Mist : A thick mist round him • inside it the opponent loses sight of him (he fades to a shadow, no lock) • the Silent Killing strikes far harder there | 20 | 0.4/0.2/0.3 | 14 | 16 | REVIEW_REQUIRED (technique et âge exact) |
-| `SilentKilling` — Silent Killing : Gone, then the cleaver from behind • far harder in his mist | 22 | 0.14/0.04/0.25 | 6 | 32 | REVIEW_REQUIRED (technique et âge exact) |
-| `WaterPrison` — Water Prison : Short range: a sphere of water holds the body • then it bursts | 24 | 0.3/0.06/0.3 | 10 | 16 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Kubikiribōchō en mains de la garde à recovery, poignées pour près et tranchant pour loin. Reposition de lame fait partie du coût ; pas mesh au dos ou clip d’éventail réutilisé tel quel.
 
-**Éveil actuellement nommé :** `DEMON OF THE MIST`. **Cible/contrat :** DemonOfMist/Heavy existant : une pression lourde mieux incarnée, sans immunité complète aux contrôles.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Masquer la lecture de sa position puis engager une coupe lourde depuis un angle préparé.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Garde au couperet et perte de lecture adverse dans brume ; préserver le contre-jeu manuel et restaurer correctement lock/visée à la sortie. Réserve moyenne ; choix entre maintenir avantage de brume et payer l’engagement. À sec : arme lourde et marche de pression, pas disparition répétée.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : allonge. Intermédiaire : brume→angle. Expert : retarder une coupe et punir l’orientation adverse.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Arsenal Suiton adulte géant, invisibilité absolue, téléport à travers murs ; techniques à14 non certifiées par l’apparence.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Dans/hors brume, vérifier caméra/aim ; garder puis faire whiff une coupe ; lame/main/contact et recovery doivent coïncider.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Brume | HiddenMist actuel | Couperet baisse pendant signe, reprend garde ensuite | Cache partiellement départ et affaiblit lecture | Sortir du rayon, visée manuelle/zone | Prépare un angle, pas hit garanti |
+| Assassinat silencieux | SilentKilling actuel borné | Arrivée avec lame préparée et vrai poids | Punit orientation dans brume | Couverture de destination/garde/portée | Une coupe puis récupération |
+| Prison d’eau | Signature retenue option de prise | Une main garde l’entrave, autre ne swing pas librement | Courte capture qui coûte une disponibilité | Éviter prise/substitution | Un finisher borné |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-Provenance du stade et de chaque technique jeune encore à compléter par chapitre/épisode/source primaire ; le runtime et les choix de design ne valent pas preuve canon.
+DemonOfMist/Heavy : stabilise une coupe contre petit contact, pas annulation de récupération ni invisibilité absolue.
+
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Poids précède la lame.
+- Main suit poignée.
+- Manche utile à courte portée.
+- Recovery reprend la masse.
+- Aucun fan spin recyclé tel quel.
+- Garde au plat clairement distincte.
+- Brume laisse lire le vrai contact.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F4 masse de couperet**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 poignée ; L2 arc ; L3 revers lourd ; Heavy diagonal ; garde/reprise couperet.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L7-A** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Cleaver main et brume ajoutés, clips Gale empruntés → masses/arcs/reprises physiques de couperet sur chaîne et défense.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L7-A** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

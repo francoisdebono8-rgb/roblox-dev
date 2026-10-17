@@ -1,95 +1,160 @@
-# Naruto Uzumaki — fiche de référence
+# Naruto — Character V1 Combat Bible
 
-ID runtime **`Legion`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Legion`**, âge affiché13 ; mouvement/clip effectif `Legion`, armes déclarées `palms`. Techniques présentes : `ShadowClone`, `CloneRasengan`, `MassShadowClone`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Tackle`, side=`MirrorClone`, up=`UzumakiKick`. [Données](../../src/Shared/Fighters.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Fin PartieI, Rasengan appris avec clone ; âge13 runtime.
+**Écart décisif :** Bodies/proxies et Rasengan aidé déjà substantiels ; continuer leur intégration, corriger décalages caméra/contact plutôt que refaire système de clones.
 
-**Signature irremplaçable :** Créer plusieurs origines de menace, forcer un choix puis préparer un Rasengan aidé.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. [Source officielle fin PartieI](https://naruto-official.com/en/news/01_1296), [Rasengan puis évolution Vent](https://naruto-official.com/fr/news/01_1521). Exclusions/point de période : Rasenshuriken, mode ermite, KCM et formes de guerre ; pas d’amélioration Fûton de son Rasengan PartieI.
 
-**Faiblesse/contre-jeu :** Clones fragiles, préparation interrompue, dépense inefficace et vraies ouvertures du corps principal.
+**Tenue/silhouette :** Veste orange/bleu, col clair, bandeau et cheveux blonds courts ; attitude inclinée et expressive ; clones portent la même silhouette.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Veste orange/bleu, col clair, bandeau et cheveux blonds courts ; attitude inclinée et expressive ; clones portent la même silhouette.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course insistante et appuis moins raffinés ; rush corporel avec clones qui changent l’origine des coups ; manteau autorisé seulement dans son état spécial.
+**Déborder par plusieurs origines de coups tout en gardant un vrai corps impulsif et une préparation lisible.**
 
-**Air, poursuite, réception et mur :** Air : clone porteur et poursuite ; mur : point d’attaque d’un clone sans traversée gratuite du décor. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Fûton latent à distinguer de sa maîtrise : pas de jutsu Vent actif dans ce stade. Rasengan = forme sans nature ajoutée ; Kyûbi = source particulière, pas un élément.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Poings un peu bas, épaules en avant. |
+| Jambes / centre de gravité | Base large, poids saute légèrement d’un pied à l’autre. |
+| Avance | Avance avec intention entière du corps. |
+| Recul | Recule moins proprement, reprend vite une base. |
+| Strafe | Pas larges, tête précède le pivot. |
+| Sprint | Course insistante et basse. |
+| Dash / rush | Rush oblique, clone couvre l’autre côté seulement si engagé. |
+| Saut | Saut ample, genou monte. |
+| Chute | Bras cherchent l’équilibre, pas flottement. |
+| Landing | Deux pieds un peu décalés, bassin rebondit puis se fixe. |
+| Garde | Avant-bras hauts, coude laisse une vraie ouverture. |
+| Esquive | Petit bond de retrait, clone pas gratuit. |
+| Réaction légère | Tête part et il refixe l’adversaire. |
+| Réaction lourde | Torse plie, pied arrière traîne. |
+| Knockdown / get-up | Chute expressive, roule puis se relève au poing. |
 
-**Réserve, efficacité et faible chakra :** Plus grande réserve cible, contrôle moins efficace que Neji/Kabuto ; clones et répétition consomment, Rasengan demande préparation. À sec : bagarre/outils, pas clones gratuits.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Kunai, transformation kunai→clone déjà particulière ; pas infusion Vent avancée au prétexte de l’affinité future.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`ShadowClone`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Droite, crochet compact | Extérieur→joue/épaule | Pas avant0.5 et poids d’épaule | 3.2 | 0.16/0.07/0.20 | franc : Prendre contact avec le vrai corps. |
+| L2 | Gauche, direct de corps | Centre→abdomen | Pied arrière rejoint0.4 | 3.1 | 0.14/0.06/0.21 | pressant : Fixer l’attention sur Naruto. |
+| L3 | Clone au flanc, pied ; sinon Naruto pousse | Côté opposé→épaule | Naruto sort0.4 ; clone avance depuis vrai poste | 3.5 du porteur | 0.24/0.07/0.32 | léger retard : Changer l’origine du troisième contact sans coup invisible. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 13 |
-| Santé | 140 |
-| Réservoir de chakra | 160 |
-| Paramètre ChakraRegen | 6.5 |
-| Speed de base | 18.5 |
-| Coefficient SprintScale | 1.12 |
-| JumpScale / AirControlScale | 1.1 / 1 |
-| AccelerationScale | 1.08 |
-| Distance préférée configurée | 6 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Fighters.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 3/5, Ninjutsu 4/5, Genjutsu 1/5, Contrôle 2/5, Outils/armes 3/5, Endurance 5/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : clone placé sous la cible frappe vers haut, Naruto choisit poursuite ; proxy existant. |
+| Side après1hit | Un hit : Naruto se décale, clone arrive du flanc choisi et repart ; pas double hit simultané garanti. |
+| Away après2hits | Deux hits : Naruto fait tackle bas pendant clone protège la sortie ; une seule hitbox de branche. |
+| Air après1hit aérien | Hit air : vrai Naruto frappe puis clone porte le second angle si disponible ; route ne recrée pas un clone gratuit. |
+| Launcher | UzumakiKick/barrage à échelle commune, clone distinct et détruisible. |
+| Air continuation | Un coup corps puis un porté par clone, finisher NarutoRendan ; sans clone version solo cohérente. |
+| Finisher | Rasengan aidé ou NarutoRendan ; le clone de préparation doit pouvoir être interrompu. |
+| Wall / sortie de mur | Clone utilise un vrai poste proche mur ; aucun coup depuis intérieur de décor. |
 
-**Chaîne légère représentative :** Poing d’entrée → coup au corps → coup de pied/attaque de clone depuis autre angle ; le vrai Naruto reste la cible clairement identifiée.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : UzumakiKick ; bas : Tackle ; côté : MirrorClone ; lourd : Headbutt. Convertir par corps présent, pas simple double VFX de la même hitbox.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Garde simple, substitution/échange avec clone si autorisé par le kit ; clone dissipable et vraie santé unique. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Naruto charge son front/épaule pour un coup de tête court, bras gardent le corps adverse ; portée3.1 et risque net. Un clone peut couvrir la sortie mais ne crée pas un autre heavy autonome.
 
-**Outils :** Kunai, transformation kunai→clone déjà particulière ; pas infusion Vent avancée au prétexte de l’affinité future.
+**A/C/R de départ pour Heavy : .28/.08/.36s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Tackle`, side=`MirrorClone`, up=`UzumakiKick` ; lourd après un hit : `Headbutt`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Bloc d’avant-bras moins raffiné, dodge corporel ; contre par retour impulsif. Substitution peut échanger avec corps valide selon hook, jamais effacer gratuitement une mauvaise lecture.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `ShadowClone` — Shadow Clone : A clone at his side (two at most) • one blow dispels it • routes, the Rasengan and the swap use them | 12 | 0.18/0.05/0.12 | 1.2 | 30 | CANON_YOUNG (clones) |
-| `CloneRasengan` — Rasengan : A clone shapes it at his side • strike the clone and it fails • ends a clean string | 22 | 0.45/0.08/0.45 | 6 | 10 | CANON_YOUNG (Rasengan aidé) |
-| `MassShadowClone` — Multi Shadow Clone : Clones burst out on both sides and charge | 30 | 0.3/0.08/0.2 | 10 | 26 | CANON_YOUNG (concept ; plafond GAMEPLAY_LIBERTY) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Corps secondaires au sein des routes et outils transformés existants ; main et clone montrent qui attaque. Faux Naruto ne remplace pas la cible de caméra sans règle explicite.
 
-**Éveil actuellement nommé :** `NINE-TAILS CHAKRA`. **Cible/contrat :** Chakra Kyûbi : changement corporel qui peut retirer les clones, pas réserve infinie ni bijû géant.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Créer plusieurs origines de menace, forcer un choix puis préparer un Rasengan aidé.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Garde simple, substitution/échange avec clone si autorisé par le kit ; clone dissipable et vraie santé unique. Plus grande réserve cible, contrôle moins efficace que Neji/Kabuto ; clones et répétition consomment, Rasengan demande préparation. À sec : bagarre/outils, pas clones gratuits.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : clones/pression. Intermédiaire : Rasengan préparé. Expert : choisir origine et sacrifice des clones.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Rasenshuriken, mode ermite, KCM et formes de guerre ; pas d’amélioration Fûton de son Rasengan PartieI.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Détruire le clone qui aide au Rasengan doit avoir une conséquence ; lire vrai corps et origine secondaire ; comparer low-chakra à Neji sans gonfler HP.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Clones limités | Signature existante | Signe visible puis fumée courte de lecture | Corps persistants fragiles à postes distincts | Les détruire ouvre le vrai corps | Portent branches avec budget commun |
+| Rasengan aidé | Signature actuelle | Clone façonne, vrai Naruto porte la poussée | Finisher préparé à deux corps | Frapper le clone/whiff | Pas disponibilité instantanée universelle |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-[Source officielle fin PartieI](https://naruto-official.com/en/news/01_1296), [Rasengan puis évolution Vent](https://naruto-official.com/fr/news/01_1521).
+Chakra Kyûbi : corps plus animal et griffes, perd les routes de clones comme dans la logique actuelle ; changement de règle plutôt que clones plus manteau plus tout.
 
-[Ancienne fiche conservée](../archive/characters/2026-10-18-before-profiles/NARUTO.md) : détails historiques et candidats non repris sans validation. Les anciens noms/valeurs/plans ne remplacent pas cette séparation cible/existant.
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Vrai corps identifiable.
+- Clones ont de vrais appuis.
+- Espacer les contacts.
+- Poids de poings, pas escrime.
+- Fumée ne masque pas le hit.
+- Aucune attaque depuis décor.
+- Gestes plus expressifs que Minato.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F7 corps secondaires**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 crochet ; L2 direct ; L3 split Naruto/clone ; Heavy tête ; transition façonnage Rasengan.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P2**, lot proposé **L5** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Bodies/proxies et Rasengan aidé déjà substantiels ; continuer leur intégration, corriger décalages caméra/contact plutôt que refaire système de clones.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L5** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

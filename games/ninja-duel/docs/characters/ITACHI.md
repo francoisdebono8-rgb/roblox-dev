@@ -1,97 +1,161 @@
-# Itachi Uchiha — fiche de référence
+# Itachi — Character V1 Combat Bible
 
-ID runtime **`Mirage`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Mirage`**, âge affiché13 ; mouvement/clip effectif `Mirage`, armes déclarées `famille native`. Techniques présentes : `Read`, `NeedleFan`, `MirageCast`, `FireBloom`, `PhoenixFlower`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`FeintStep`, up=`Launcher`. [Données](../../src/Shared/Fighters.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Itachi jeune/prodige ; âge13 runtime. La fiche historique proposait12 : conflit conservé, pas changement d’âge silencieux.
+**Écart décisif :** Read/ricochet/genjutsu déjà là ; jabs/kick Mirage et héritages air restent trop brawler → mains de contrôle, invitation/réponse visible.
 
-**Signature irremplaçable :** Faire agir l’autre puis frapper sa réponse, à travers lecture et géométrie de projectiles.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. Exclusions/point de période : Susanoo/Amaterasu/Tsukuyomi non requis pour V1 ; leur disponibilité jeune n’est pas résolue par la seule étiquette13. Ne pas importer son kit adulte.
 
-**Faiblesse/contre-jeu :** Corps à corps prolongé et erreurs de lecture ; illusion lisible/contrable et budget limité.
+**Tenue/silhouette :** Tenue Uchiha bleu très sombre, col haut, emblème clan discret, bandeau ; posture calme et shuriken à portée de main. Tenue de mission jeune, sans cape Akatsuki.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tenue Uchiha bleu très sombre, col haut, emblème clan discret, bandeau ; posture calme et shuriken à portée de main. Tenue de mission jeune, sans cape Akatsuki.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Petits pas glissés mais pieds plantés, changements d’angle mesurés ; esquive courte qui laisse éventuellement une image trompeuse, distincte d’un FTG de Minato.
+**Inviter une réponse, la lire puis la punir avec un geste plus petit que celui de l’adversaire.**
 
-**Air, poursuite, réception et mur :** Air : volées contrôlées et sortie ; mur : ricochet de shuriken et angle de retour, pas avantage aérien permanent. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Katon pour les techniques de feu ; genjutsu/Sharingan = manipulation/perception, pas une variante de feu. Les autres natures ne sont pas requises pour ce kit jeune.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Buste presque vertical, main gauche ouverte, droite près des shuriken. |
+| Jambes / centre de gravité | Pied gauche avancé, poids centré légèrement arrière. |
+| Avance | Demi-pas silencieux, épaules stables. |
+| Recul | Pied arrière recule avant transfert du bassin. |
+| Strafe | Croise peu les pieds, pivote autour du regard. |
+| Sprint | Bras bas, accélération contenue plutôt que bonds. |
+| Dash / rush | Court décalage oblique, vraie translation lisible. |
+| Saut | Genoux relevés sans écarter les bras. |
+| Chute | Main libre surveille le sol, silhouette compacte. |
+| Landing | Avant-pied puis talon, relève immédiatement le regard. |
+| Garde | Avant-bras gauche ferme la ligne, droite reste disponible. |
+| Esquive | Épaule s’efface, pied arrière replace la garde. |
+| Réaction légère | Tête/épaule absorbent, pas de pirouette. |
+| Réaction lourde | Bassin cède, deux pas pour retrouver l’axe. |
+| Knockdown / get-up | Chute de côté, appui de paume puis relève courte. |
 
-**Réserve, efficacité et faible chakra :** Réserve moyenne, précision et efficacité élevées ; le regard, les feintes et la géométrie offrent des choix plutôt que du spam. À sec : shuriken, angles et punition de whiff.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Shuriken, trajectoires retardées/ricochets et outils cachés ; origine et collision visibles ; les tirs de feu doivent changer l’espace.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`FireBlade`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Gauche, tranchant de main | Extérieur→intérieur sur poignet/épaule | Pied avant +0.3, hanche presque fixe | 3.0 | 0.12/0.05/0.20 | court : Écarter la garde, main droite toujours armée. |
+| L2 | Droite, talon de paume | Centre→sternum sous la main gauche | Pivot arrière +0.4, aucune rotation complète | 3.2 | 0.14/0.05/0.18 | léger délai puis sec : Déplacer le poids adverse et préparer la lecture. |
+| L3 | Gauche, paume puis retrait | Oblique haut→bas sur épaule | Pied arrière retire0.6 pendant la poussée | 3.3 | 0.22/0.06/0.30 | retenu→net : Créer l’espace de shuriken ; termine sans tourner le dos. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 13 |
-| Santé | 145 |
-| Réservoir de chakra | 125 |
-| Paramètre ChakraRegen | 7.2 |
-| Speed de base | 18 |
-| Coefficient SprintScale | 1 |
-| JumpScale / AirControlScale | 0.98 / 0.95 |
-| AccelerationScale | 0.98 |
-| Distance préférée configurée | 10 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Fighters.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 4/5, Ninjutsu 4/5, Genjutsu 5/5, Contrôle 5/5, Outils/armes 5/5, Endurance 3/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : poignet gauche contrôle puis paume droite monte sous le bras ; launcher court, pas coup de pied générique. |
+| Side après1hit | Un hit : pied arrière passe de30° sur le flanc, main gauche mime une frappe, droite touche le bras ; coûte la branche. |
+| Away après2hits | Deux hits : fauche basse intérieure puis retrait de hanche ; pas de nouvelle chaîne gratuite. |
+| Air après1hit aérien | Premier hit air : paume courte de côté ; vers adversaire = pousser, away = rabattre au sol, side = petit croisement borné. |
+| Launcher | Paume montante sous garde ouverte, élévation faible mais suffisante pour une poursuite. |
+| Air continuation | Une paume aérienne puis frappe de tranche descendante ; pas jonglage de shuriken infini. |
+| Finisher | Paume de recul couverte d’un unique lancer ; le lancer remplace la fin, ne recommence pas L1. |
+| Wall / sortie de mur | Près du mur : déviation contre l’épaule et recul de face ; le ricochet d’outil reste une signature. |
 
-**Chaîne légère représentative :** Déviation de main → frappe courte au corps → recul/pivot ; un geste minimal prépare l’outil plutôt qu’un long tourbillon.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher après ouverture ; bas : balayage de punition ; côté : feinte qui invite une réponse. Read et contre exigent une lecture, pas une attaque automatique.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Lecture, déviation, esquive parfaite et contre court ; erreur de lecture exposée. Un genjutsu laisse une information exploitable, pas un stun inévitable. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Main gauche intercepte ; paume droite traverse court vers épaule, bassin avance0.5 puis se retire. Portée3.5 ; anticipation calme mais visible ; récupération ouverte si whiff.
 
-**Outils :** Shuriken, trajectoires retardées/ricochets et outils cachés ; origine et collision visibles ; les tirs de feu doivent changer l’espace.
+**A/C/R de départ pour Heavy : .24/.07/.34s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`FeintStep`, up=`Launcher` ; lourd après un hit : `CounterPalm`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Bloque d’une main, esquive en déplaçant la ligne des épaules, contre paume après Read réussi ; revenir à portée de shuriken. Substitution = système commun, aucune double invulnérabilité.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `Read` — Sharingan Read : Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter | 14 | 0.1/1/0.2 | 3.6 | 10 | REVIEW_REQUIRED (technique et âge exact) |
-| `NeedleFan` — Shadow Shuriken : Five blades, then two hidden ones aimed at the dodge | 18 | 0.26/0.08/0.26 | 3.6 | 56 | REVIEW_REQUIRED (technique et âge exact) |
-| `MirageCast` — Genjutsu: Mirage : His image stays, he withdraws behind it • a swing at the image is caught • trust the body | 26 | 0.42/0.06/0.2 | 7 | 23 | REVIEW_REQUIRED (technique et âge exact) |
-| `FireBloom` — Great Fireball : Where it passes him the ground burns: a lane that cuts his path | 26 | 0.55/0.42/0.36 | 5.5 | 76 | REVIEW_REQUIRED (technique et âge exact) |
-| `PhoenixFlower` — Phoenix Flower : Five small flames fanned at the opponent • pressure | 20 | 0.3/0.32/0.3 | 5 | 60 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Shuriken présents dans la main libre dès les Lights. Un lancer couvert est une sortie choisie ; pas pluie automatique à chaque contact.
 
-**Éveil actuellement nommé :** `SHARINGAN FOCUS`. **Cible/contrat :** GuardRead/WhiffRead/Windows existants : avantage de lecture perceptible, pas bouton de défense absolue.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Faire agir l’autre puis frapper sa réponse, à travers lecture et géométrie de projectiles.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Lecture, déviation, esquive parfaite et contre court ; erreur de lecture exposée. Un genjutsu laisse une information exploitable, pas un stun inévitable. Réserve moyenne, précision et efficacité élevées ; le regard, les feintes et la géométrie offrent des choix plutôt que du spam. À sec : shuriken, angles et punition de whiff.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : Read au bon moment. Intermédiaire : feinte→shuriken. Expert : ricochet/retard et lecture du choix adverse.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Susanoo/Amaterasu/Tsukuyomi non requis pour V1 ; leur disponibilité jeune n’est pas résolue par la seule étiquette13. Ne pas importer son kit adulte.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Duel sans feu : le reconnaître par retrait/lecture/outils ; montrer un Read baité puis puni ; un ricochet atteint le flanc, une trajectoire anticipée est esquivable.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Lecture Sharingan | Technique1, stance brève | Main gauche invite, tête ne bouge presque pas | Lit une attaque frontale et donne une seule riposte | Feinte, saisie ou attente battent la lecture | Riposte paume ou sortie, pas les deux |
+| Géométrie des shuriken | Outil/cancel existant | Main droite lance, gauche guide un second angle | Deux trajectoires provoquent un détour/ricochet | Corps mobile et couverture du décor | Le tir de flanc peut ouvrir, jamais auto-confirmer un combo de corps |
+| Katon de fermeture | Signature feu choisie | Un signe bref, pied arrière ancré | Coupe une ligne de fuite après retrait | Canalisation punissable, esquive latérale | Remplace le finisher, pas une couche permanente |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-Provenance du stade et de chaque technique jeune encore à compléter par chapitre/épisode/source primaire ; le runtime et les choix de design ne valent pas preuve canon.
+Lecture focalisée : une défense réussie permet une sortie d’angle couverte, pas défense automatique. Conserver GuardRead/WhiffRead s’ils remplissent cette règle ; aucune capacité Mangekyō ajoutée.
 
-[Ancienne fiche conservée](../archive/characters/2026-10-18-before-profiles/ITACHI.md) : détails historiques et candidats non repris sans validation. Les anciens noms/valeurs/plans ne remplacent pas cette séparation cible/existant.
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Économie du torse.
+- Une main reste disponible.
+- Aucun tour complet sans raison.
+- Feinte identifiable au ralenti.
+- Regard précède déplacement.
+- Pose calme après impact.
+- Le shuriken quitte réellement les doigts.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F1 lecture compacte**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 déviation ; L2 paume ; L3 retrait couvert ; Heavy paume traversante ; transition Read→riposte.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P2**, lot proposé **L2-A** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+Read/ricochet/genjutsu déjà là ; jabs/kick Mirage et héritages air restent trop brawler → mains de contrôle, invitation/réponse visible.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L2-A** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).

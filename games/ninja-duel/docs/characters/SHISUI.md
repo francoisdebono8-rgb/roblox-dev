@@ -1,94 +1,161 @@
-# Shisui Uchiha — fiche de référence
+# Shisui — Character V1 Combat Bible
 
-ID runtime **`Flicker`** · version documentaire du **18/10/2026** · données lues au HEAD **`1cabd7f`** (runtime `bc7faa3`). [Index/comparaison](ROSTER_20.md) · [contrat commun](FIGHTER_TEMPLATE.md).
+**Design cible, pas implémentation.** Révision18/10/2026, audit du HEAD `41364ed` (M1 inclus ; dernière preuve native `bc7faa3`). [Roster cible / A–E globaux](ROSTER_20.md) · [contrat V1](FIGHTER_TEMPLATE.md) · [DEC-026](../active/DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles). Claude garde le bloc en cours ; cette bible ne lance aucun travail concurrent.
 
-**Portée :** intention utilisateur et méthode dans [DEC-025](../active/DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible). Cette fiche propose la cible détaillée ; elle n’annonce ni validation lore complète, ni implémentation, ni autorisation de nouvelle passe. Priorités/acceptation : [MASTER_BACKLOG](../active/MASTER_BACKLOG.md). État global : [CURRENT_STATE](../active/CURRENT_STATE.md).
+## Audit initial — ce qui existe réellement
 
-## 1. Version et promesse
+**Présent sous `Flicker`**, âge affiché13 ; mouvement/clip effectif `Lion`, armes déclarées `kunai`. Techniques présentes : `BodyFlicker`, `FlickerOut`, `ShisuiFireball`, `ShisuiGenjutsu`. Routes : airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`FlickerStep`, up=`Launcher`. [Données](../../src/Shared/Wave2.luau), [graphe](../../src/Shared/MoveGraphs.luau), [moteur de poses](../../src/Client/VelmoraMotionEngine.luau). Les noms de routes ne prouvent ni leur chorégraphie ni le feel ; seules les observations datées de CURRENT_STATE sont des preuves natives.
 
-Shisui jeune ; âge13 runtime non certifié par cette fiche. Distinguer manga, romans, anime et jeux pour chaque capacité.
+**Écart décisif :** ChainTeleport natif fonctionne ; corps Lion et FlickerStep emprunté ne donnent pas Shunshin partout → rafales, fausses continuités et coups courts cohérents.
 
-**Signature irremplaçable :** Demande utilisateur : des mirages et déplacements particuliers. Candidat concret : après-images non autonomes qui prolongent brièvement le trajet/feinte ; seule la position réelle porte le hit. Coût, durée et nombre restent à régler, pas des clones Naruto avec dégâts.
+**Stade, source et extrapolation :** **Période cible de design : jeune/prodige, environ12–14ans, pas une égalisation de puissance adulte.** Les âges du runtime15 chez Haku/Deidara restent des faits du build, pas un arbitrage canon de cette bible. Après-images : interprétation anime/perception adaptée en traces sans dégâts ; référence de médium à confirmer, pas canon manga automatique. Les gestes précis, rythmes, distances et traductions corporelles ci-dessous sont des **GAMEPLAY_LIBERTY de conception** retenues pour cette V1 ; les techniques de période non attestée restent signalées, sans effacer la fantasy du prodige. [Source secondaire Shisui](https://naruto.fandom.com/wiki/Shisui_Uchiha) — distingue après-images anime et variantes jeux ; référence primaire/âge à confirmer. Exclusions/point de période : Kotoamatsukami, Susanoo et variantes jeux/OVA hors scopeV1 ; pas les déclarer tous adultes par erreur. Après-images anime = support séparé à confirmer, pas canon manga automatique.
 
-**Faiblesse/contre-jeu :** Lecture adverse du vrai départ/arrêt, attaque de zone, garde qui couvre l’arrivée et chakra épuisé ; aucune invisibilité absolue.
+**Tenue/silhouette :** Tenue Uchiha sombre à col haut, touches vertes sobres, cheveux noirs courts, bandeau et petit tantō si validé par référence ; posture mobile, pas robe Akatsuki.
 
-## 2. Tenue, silhouette et mouvement — cible
+Les choix de corps/gestes et de signatures de cette bible forment le design V1 proposé à exécuter quand le lot sera ouvert. Les temps/portées sont les cibles de départ de la chorégraphie, pas un équilibrage compétitif final. Aucune validation Studio des nouveaux gestes n’est annoncée.
 
-**Vêtements/armes visibles :** Tenue Uchiha sombre à col haut, touches vertes sobres, cheveux noirs courts, bandeau et petit tantō si validé par référence ; posture mobile, pas robe Akatsuki.
+## 1. Combat identity
 
-**Course, sprint, strafe, dash et esquive :** Course nerveuse, accélération courte, freinage et rupture d’angle ; cible produit : rafales courtes traçables et après-images liées au trajet, retour du vrai corps lisible. Distinguer cette mobilité d’un warp vers marque de Minato.
+**Changer d’angle par rafales de Shunshin, laisser une fausse continuité puis frapper depuis la vraie position.**
 
-**Air, poursuite, réception et mur :** Air : croisement bref puis retour, pas vol ; mur : rebond/angle qui laisse une trace de départ, sans ignorer obstacles. Une réception ramène à des appuis stables ; la caméra ne doit pas masquer la source d’un coup.
+Test : HUD/nom/couleur de joueur masqués, le reconnaître par appuis, gestes et origine du contact. La signature complète l’échange, elle ne remplace pas trois attaques génériques.
 
-## 3. Chakra — distinguer nature, contrôle et quantité
+## 2. Silhouette corporelle
 
-**Nature/capacité particulière proposée :** Katon et genjutsu comme candidats du kit ; le Shunshin n’est ni FTG ni automatiquement Fûton. Les mirages sont une interprétation de vitesse/perception, pas un nouvel élément.
+| État | Direction pour pose et transition |
+|---|---|
+| Idle / bras | Torse incliné, main droite près du tantō, gauche flottante. |
+| Jambes / centre de gravité | Pieds en décalage, poids sur avant-pied sans saut permanent. |
+| Avance | Deux pas courts puis accélération. |
+| Recul | Retrait diagonal plutôt que marche arrière longue. |
+| Strafe | Hanches réorientent avant tête, épaules suivent. |
+| Sprint | Foulée rapide basse, bras coupent peu l’air. |
+| Dash / rush | Rafale de trajet court, trace qui s’éteint derrière lui. |
+| Saut | Départ compact avec genou guidant le côté. |
+| Chute | Corps oblique, arme près du torse. |
+| Landing | Pied extérieur freine puis bassin se recentre. |
+| Garde | Tantō/avant-bras ferme une ligne étroite. |
+| Esquive | Petit Shunshin tangent ; vrai corps reste traçable. |
+| Réaction légère | Glissement d’appui, tête ne disparaît pas gratuitement. |
+| Réaction lourde | Rafale interrompue, corps trébuche sans faux dodge. |
+| Knockdown / get-up | Roule épaule puis reprend un angle, pas teleport get-up. |
 
-**Réserve, efficacité et faible chakra :** Réserve moyenne, contrôle et dépense de burst élevés ; budget des feintes/angles plutôt que chakra infini. À sec : déplacement corporel rapide, aucun mirage offensif gratuit.
+Réactions reçues = vrais dégâts/states communs, avec interprétation corporelle ci-dessus ; aucune esquive/invulnérabilité implicite parce qu’une animation paraît agile. L’appui et la protection s’ouvrent effectivement sur une réaction lourde.
 
-**Interaction concrète à rendre perceptible :** Tantō/kunai/shuriken avec rôle court ; feu force la réaction à distance, genjutsu ouvre une lecture au lieu de remplacer tout le combat.
+## 3. Light chain — contacts physiques
 
-Le profil d’infusion actuel est **`Basic`**, d’après [ChakraTuning](../../src/Server/ChakraTuning.luau). Ce nom décrit l’interpréteur actuel, pas toutes ses capacités ni une maîtrise acquise par le joueur. Un fallback Basic n’annule pas ses jutsus ; il signale l’absence de spécialisation explicite dans ce mapping.
+Repère : droite/gauche = corps de l’attaquant ; direction décrite face à l’adversaire. Distances en studs du rig actuel jusqu’au point de contact, pas rayon d’une sphère invisible. A/C/R = anticipation / fenêtre de contact / récupération, en secondes, **cibles initiales à tester**. Le serveur reste autoritaire ; la phase C et le vrai membre/objet coïncident. Le récepteur réagit selon la zone touchée, pas par le même grand recul sur tous les L1.
 
-## 4. Repères du build actuel — pas des stats canon
+| Hit | Membre / arme | Trajectoire | Appuis / déplacement du corps | Distance | A/C/R | Rythme / intention |
+|---|---|---|---|---:|---|---|
+| L1 | Droite, tantō revers | Hanche gauche→côte droite adverse | Pas intérieur0.5, torse tourne30° | 3.4 | 0.10/0.05/0.18 | sec : Entrer sans promettre téléport gratuit. |
+| L2 | Gauche, paume et tranche courte | Main libre vers bras, lame revient extérieure | Demi-pas latéral0.6 dans la même continuité | 3.2 | 0.18/0.05/0.16 | pause courte→claque : Déplacer attention vers la trace du pas précédent. |
+| L3 | Droite, coupe de déséquilibre | Extérieur→épaule, pas de grand kick | Rafale oblique0.8 puis pied frein visible | 3.7 | 0.12/0.06/0.28 | accéléré→arrêt : Finir sur un angle choisi, récupération réelle. |
 
-| Paramètre runtime | Valeur brute |
-|---|---:|
-| Âge affiché | 13 |
-| Santé | 122 |
-| Réservoir de chakra | 120 |
-| Paramètre ChakraRegen | 8.4 |
-| Speed de base | 20.5 |
-| Coefficient SprintScale | 1.14 |
-| JumpScale / AirControlScale | 1.1 / 1.15 |
-| AccelerationScale | 1.18 |
-| Distance préférée configurée | 7 |
+**Transitions :** L1 rend une pose intermédiaire où la garde, le bras libre et le pied pivot restent lisibles ; L2 n’oblige pas à finir ; L3 non branché termine, avec récupération/retour en garde. Aucun reset gratuit de combo par apparition d’une arme, pose d’objet ou coup autonome d’un corps secondaire. Sur garde/whiff : pas d’ouverture de branche directionnelle ni auto-poursuite.
 
-Sources : [définition](../../src/Shared/Wave2.luau), [mouvement](../../src/Server/Motor.luau), [régénération](../../src/Server/Combat.luau). Speed est une base en studs/s, pas une vitesse native mesurée ; le sprint dépend du profil de mouvement et des états, **pas simplement Speed×SprintScale**. Regen est également modulée en combat. Ne pas retuner ces nombres sur la seule lecture de la fiche.
+## 4. Branches de combo
 
-**Habiletés cibles relatives (1–5, proposition de design, aucun multiplicateur runtime ni score officiel) :** Taijutsu 5/5, Ninjutsu 4/5, Genjutsu 4/5, Contrôle 5/5, Outils/armes 4/5, Endurance 3/5. Les axes désignent des spécialisations, pas un total de puissance à maximiser ; Lee1 en ninjutsu ne signifie pas absence de chakra.
+Invariant serveur : **avant premier hit confirmé, Light reste L1 quelle que soit la direction tenue**. Side seulement après1hit ; Forward/Away après2hits ; branche air après1contact aérien. Le symbole direction est relatif à l’adversaire, pas au nord de la carte.
 
-## 5. Moveset et défense — cible à confronter au kit
+| Branche / rôle | Chorégraphie et sortie |
+|---|---|
+| Forward après2hits | Deux hits : pas intérieur puis genou/coupe montante ; un Shunshin court suit le déplacement réel, sans nouveau hit automatique. |
+| Side après1hit | Un hit : dash tangent de30–45° et coupe courte ; après-image reste au départ0.2–0.35s, aucun faux corps ne touche. |
+| Away après2hits | Deux hits : coupe basse de freinage puis recul de face ; une trace s’éteint à l’ancienne position. |
+| Air après1hit aérien | Hit air : frappe de tantō courte ; side recroise sur un trajet borné, down coupe vers sol ; aucun warp mondial. |
+| Launcher | Genou montant qui soulève pendant que tantō garde la ligne ; choix sol ou poursuite. |
+| Air continuation | Une reprise par rafale aérienne puis coupe descendante ; pas retour au launcher. |
+| Finisher | Coupe croisée de flanc, trace poursuit brièvement l’ancienne direction ; vrai corps s’arrête en garde. |
+| Wall / sortie de mur | Rebond corporel sur mur visible ; conserve trajectoire et collision, pas traversée. |
 
-**Chaîne légère représentative :** Coupe courte/paume d’entrée → angle de flanc → frappe de déséquilibre ; les appuis trompent avant le jutsu, pas la même chaîne de boxe.
+**Borne V1 anti-infini :** une branche sol consomme sa continuation, au plus une poursuite puis deux contacts air avant finisher/neutral. Une signature de conversion remplace la fin, ne remet pas le budget à zéro ; un rebond de mur n’accorde pas un nouveau launcher. Réutiliser les fenêtres/compteurs/scaling du moteur ; vérifier s’ils suffisent avant tout hook local. Pas nouveau système de combo parallèle.
 
-**Routes :** Haut : launcher court ; bas : coupe basse de désengagement ; côté : FlickerStep avec feinte d’angle ; lourd : FlickerCut. Départ direction+Light avant hit reste Light1.
+## 5. Heavy propre
 
-**Garde, parade, esquive/substitution et reprise :** Esquive et lecture Sharingan ; un mirage peut attirer une réponse mais n’absorbe pas indéfiniment les attaques et ne garantit pas une contre-attaque. La substitution garde coût, charges, fenêtre et destination autorisés du système commun ; aucun échappatoire gratuit implicite.
+Le pied arrière charge, lame tenue court ; coupe traversante épaule→hanche et frein du pied extérieur. Portée4 ; trace en retard sur trajet, pas hitbox fantôme. Whiff laisse le bras ouvert.
 
-**Outils :** Tantō/kunai/shuriken avec rôle court ; feu force la réaction à distance, genjutsu ouvre une lecture au lieu de remplacer tout le combat.
+**A/C/R de départ pour Heavy : .22/.07/.32s**, cible de chorégraphie à éprouver, pas équilibre final.
 
-**Routes réellement déclarées :** airDown=`AirSpike`, airSide=`AirSwitch`, airUp=`AirDrive`, down=`Sweep`, side=`FlickerStep`, up=`Launcher` ; lourd après un hit : `FlickerCut`. [MoveGraphs](../../src/Shared/MoveGraphs.luau). Ces noms ne prouvent pas les animations ni les contacts. Invariant : avant premier hit confirmé, direction+Light ne déclenche aucune route spéciale.
+Pose de charge distincte du launcher ; le joueur peut lire l’engagement. Heavy neutral et Heavy après hit réutilisent les mêmes points d’appui mais la version après confirmation peut raccourcir l’anticipation selon fenêtres communes. Une garde tient/rompt selon les règles, pas selon une nouvelle exception nominative.
 
-## 6. Techniques présentes et admissibilité de période
+## 6. Défense
 
-Snapshot du kit actuel ; temps = **channel / active / recovery**, en secondes. Coûts/cooldowns/portées sont configurés, pas validés par cette documentation. REVIEW_REQUIRED signifie provenance/période non établie ici ; ne pas désactiver la technique sur ce seul label.
+Garde étroite ; dodge tangent du vrai corps ; contre après feinte lue, pas attaque depuis une image. Substitution distincte du Shunshin normal ; get-up reste physique.
 
-| Technique / fonction actuelle | Coût | C/A/R | CD | Portée | Statut de période |
-|---|---:|---|---:|---:|---|
-| `BodyFlicker` — Body Flicker : Gone and at his flank in a blink • a cut on arrival • cheap: chain it | 10 | 0.06/0.03/0.16 | 1.8 | 34 | REVIEW_REQUIRED (technique et âge exact) |
-| `FlickerOut` — Afterimage Retreat : Out of reach in a blink • an afterimage takes the blow | 8 | 0.04/0.03/0.12 | 3 | 13 | REVIEW_REQUIRED (technique et âge exact) |
-| `ShisuiFireball` — Fire Release: Great Fireball : A great fireball • throws the body back | 22 | 0.42/0.12/0.34 | 6 | 40 | REVIEW_REQUIRED (technique et âge exact) |
-| `ShisuiGenjutsu` — Genjutsu: Sharingan : Eye contact up close: the opponent's jutsu sealed 2.5 s, his legs heavy | 18 | 0.12/0.1/0.3 | 10 | 7 | REVIEW_REQUIRED (technique et âge exact) |
+Tester : garde tenue, parade ratée, dodge baité, reprise après knockdown. La garde adverse reste une réponse valable ; le déséquilibre n’est pas une permission de toucher depuis n’importe où. Les réactions de famille restent partagées mécaniquement mais avec poses locales.
 
-**Capacités possibles / limites :** les variantes de mouvement, routes et chakra décrites ici sont des **GAMEPLAY_LIBERTY proposées** lorsqu’aucune source de période ne les atteste ; une possibilité n’est pas un bouton supplémentaire à implémenter. Préférer faire mieux fonctionner une interaction existante avant d’ajouter un jutsu.
+## 7. Armes intégrées au corps-à-corps
 
-## 7. Éveil, boucles et habileté du joueur
+Tantō/kunai vrais dans les attaques ; après-images attachées au trajet, une seule origine serveur de dégâts. Vitesse corporelle différente du FTG préparé de Minato.
 
-**Éveil actuellement nommé :** `SHUNSHIN NO SHISUI`. **Cible/contrat :** ChainTeleport est déjà réel (4casts/4hits/3refreshs vus en Studio). Il n’implémente pas à lui seul la fantasy de mirages : conserver la chaîne, compléter mouvement/perception quand la passe est autorisée.
+**Contrat de présentation/contact :** équiper/ranger/prolonger un objet à un marqueur d’action, choisir le bon point d’origine de hit, garder une seule comptabilité du contact. Le modèle ne doit ni apparaître après l’impact ni rester collé dans une mauvaise prise. Équipement V1 fixe et points d’attache suffisent ; système armes global et inventaire futur exclus.
 
-**Boucle agressive :** approche propre au personnage → ouverture/hit confirmé → route utile → choix outil/jutsu ou sortie ; priorité : Demande utilisateur : des mirages et déplacements particuliers. Candidat concret : après-images non autonomes qui prolongent brièvement le trajet/feinte ; seule la position réelle porte le hit. Coût, durée et nombre restent à régler, pas des clones Naruto avec dégâts.
+## 8. Pouvoirs intégrés aux gestes
 
-**Boucle défensive/faible chakra :** Esquive et lecture Sharingan ; un mirage peut attirer une réponse mais n’absorbe pas indéfiniment les attaques et ne garantit pas une contre-attaque. Réserve moyenne, contrôle et dépense de burst élevés ; budget des feintes/angles plutôt que chakra infini. À sec : déplacement corporel rapide, aucun mirage offensif gratuit.
+Les pouvoirs/corps/objets décrits dans L1–L3 et les branches font partie de l’identité de base : ils ne sont pas différés au système chakra final. Ils utilisent les familles/traits/corps actuels et des limites locales explicites ; ils ne donnent pas de dégâts bonus simplement parce qu’une trace/épine/clone est visible. Un effet de contact intégré exige le même hit confirmé et la même vérification de garde que le contact physique.
 
-**Plafond de maîtrise du joueur :** Débutant : coupe et sortie. Intermédiaire : feinte d’angle. Expert : faire répondre à une trace puis frapper depuis un vrai angle choisi.
+**Sans signature disponible :** conserver cette silhouette, les trois gestes et leurs intentions ; ne pas retomber sur jab→jab→kick. **Interrompu :** annuler les contacts futurs et rendre une pose vulnérable, ranger/rétracter ce qui doit l’être ; aucun corps/objet zombie au round suivant.
 
-**Hors kit / incohérences de période à résoudre :** Kotoamatsukami, Susanoo et variantes jeux/OVA hors scopeV1 ; pas les déclarer tous adultes par erreur. Après-images anime = support séparé à confirmer, pas canon manga automatique.
+## 9. Signature abilities strictement nécessaires
 
-## 8. Acceptation Studio et sources
+Les signatures ci-dessous complètent la boucle. Ce n’est pas la liste de tout l’arsenal adulte et ce n’est pas une obligation de garder tous les anciens slots. Les slots actuels non retenus ne sont pas supprimés par Codex : écart à traiter par Claude dans le lot ouvert et à consigner. Activation par les actions/manette existantes, pas une nouvelle touche par sous-geste.
 
-**Scénario distinctif :** Comparer Shisui/Minato/Lee sans jutsu et mêmes couleurs désactivées ; mirage suit un trajet puis disparaît, aucun hit depuis un faux corps ; garde/whiff ne rendent pas sa chaîne.
+| Signature | Activation | Mouvement du corps | Comportement / usage tactique | Contre-jeu | Conversion autorisée |
+|---|---|---|---|---|---|
+| Rafale de Shunshin | Dash/dodge existant contextualisé | Bassin part puis pied de frein final visible | Deux orientations possibles, une trace non offensive | Zone, garde orientée et arrêt exposé | Transition après hit, pas ouverture directionnelle spéciale |
+| Coupe de flanc | BodyFlicker conservé | Départ/arrivée avec pose de coupe cohérente | Punit une orientation depuis une vraie portée | Garde/whiff ne rendent pas la chaîne | Éveil autorise répétition bornée existante |
+| Feinte de perception | Jutsu genjutsu existant | Main libre ferme le champ puis pas latéral | Une fausse continuité brève invite une réponse | Attendre/zone/viser le vrai déplacement | Une ouverture à lire, pas stun gratuit |
 
-Puis jouer en continu :20s sans jutsu pour reconnaître silhouette/déplacements/contacts ; séquence garde/whiff/hit ; faible chakra puis éveil ; KO/reset. Ne pas replacer les acteurs entre tous les coups et ne pas annoncer un PASS sur un simple spawn. Comparer au fighter le plus proche et garder une faiblesse perceptible. Preuves datées par build dans CURRENT_STATE/rapports, pas badge inventé dans cette fiche.
+## 10. Awakening / état spécial
 
-[Source secondaire Shisui](https://naruto.fandom.com/wiki/Shisui_Uchiha) — distingue après-images anime et variantes jeux ; référence primaire/âge à confirmer.
+Conserver ChainTeleport : trois refreshs sur coupes touchées, zéro sur garde/whiff. Les rafales montrent trois reprises puis fin lisible ; traces ne deviennent pas clones combattants.
+
+Condition/durée/coût du build restent le point de départ jusqu’au lot de tuning autorisé. Entrée/sortie par geste et état lisibles, pas simple aura plus rouge. Arrêt au KO/reset, aucune combinaison de buff ne masque une règle. Si le stade ne justifie pas un éveil canon, la focalisation technique décrite est une **GAMEPLAY_LIBERTY**, pas un pouvoir adulte affirmé.
+
+## 11. Animation language
+
+- Une trajectoire réelle par déplacement.
+- Frein et réapparition visibles.
+- Traces ne portent aucun hit.
+- Rafale brève puis immobilité.
+- Petites rotations, pas ballet360°.
+- Lame suit la main.
+- Shunshin touche aussi les transitions, pas seulement un bouton.
+
+L’animateur livre préparation/contact/reprise et appuis, pas seulement une pose spectaculaire. Un calage sur les phases communes est permis ; importer exactement la chaîne visible d’un autre fighter ne l’est pas. Les lames/volumes suivent leur source ; le mouvement caméra n’ajoute pas d’impact fictif.
+
+## 12. Hooks futurs — hors V1
+
+| Système futur | Extension réservée, sans la construire maintenant |
+|---|---|
+| Chakra | Coût/état de l’action et source du contact exposés ; infusion/économie globale finales ultérieures. |
+| Nature / propriété | Tag de contact et point d’origine séparés du clip ; nature ≠ forme/dōjutsu/corps. Ne pas ajouter toutes les affinités adultes. |
+| Outils | Fenêtres de main libre, départ et fin du lancer déjà lisibles ; variété/maîtrise globales ultérieures. |
+| Armes | Attaches fixes/configurations V1 déclarées ; aucun inventaire, loot ou moteur universel d’armes. |
+| Arbre | Identifiants stables des actions ; l’identité fondamentale ne sera jamais retirée pour la vendre en nœuds. Aucun arbre dessiné ici. |
+| Maîtrise | Événements qualifiés existants pourront être lus plus tard ; zéro XP/compteur/règle d’acquisition ajouté à la V1. |
+
+## A. Animation reuse matrix — part locale
+
+Famille de base : **F2 rafales tangentes**. Partager le rig, les phases startup/active/recovery, transitions d’appui, contrôles/collision et courbes de réaction ; adapter pose/portée/prise/origine de contact. Même mécanisme ≠ même silhouette. Voir [matrice globale A](ROSTER_20.md#a-animation-reuse-matrix).
+
+## B. Unique animation requirements
+
+L1 revers ; L2 décalage-paume ; L3 coupe freinée ; Heavy croisé ; transition rafale/trace sur locomotion.
+
+Cinq unités d’auteur prioritaires (L1/L2/L3/Heavy + un geste signature/transitoire), pas cinq nouveaux assets Roblox obligatoires ; variations de routes dérivent de ces appuis avec marqueurs distincts. Si le clip actuel satisfait déjà le brief, le garder et prouver à l’image. Réactions/get-up s’appuient sur la famille avec pose finale propre.
+
+## C. Implementation priority
+
+**Priorité de design P1**, lot proposé **L2-B** ; ce n’est pas la priorité d’un bug P0 runtime. Les corrections Claude déjà en cours continuent. Ordre d’ouverture et dépendances dans MASTER_BACKLOG ; [table globale C](ROSTER_20.md#c-implementation-priority).
+
+## D. Current-vs-target gap
+
+ChainTeleport natif fonctionne ; corps Lion et FlickerStep emprunté ne donnent pas Shunshin partout → rafales, fausses continuités et coups courts cohérents.
+
+**Vérification Studio du lot :** (1)20s HUD masqué sans signatures, locomotion/garde/réactions ; (2)L1–L3→branche→air/finisher sans replacement ; (3)neutral directionnel/garde/whiff ne déclenchent pas de route ; (4)Heavy raté puis punition et substitution ; (5)signature intégrée, interruption, KO/reset ; (6)contre un adversaire mobile à la manette. Montrer avant/après et un consommateur ancien du hook partagé. Ne pas clôturer par headless, spawn ou screenshot isolé.
+
+## E. Claude execution batch — prise en main
+
+Lot proposé **L2-B** : lire cette bible, le contrat commun et les seuls hooks concernés ; traiter d’abord les cinq unités B et l’intégration physique, ensuite les branches/signatures. Ne pas construire les hooks futurs de §12. Un commit cohérent par paquet : corps/Lights/Heavy, puis routes/signature, puis correctifs/rapport Studio si nécessaire ; pas vingt contextes à charger. [Lots globaux E](ROSTER_20.md#e-claude-execution-batches).
