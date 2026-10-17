@@ -959,21 +959,21 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - evidence: FIGHTER_TEMPLATE conservé ; pas de nécessité démontrée
 - outcome: PENDING
 
-## PROG-001 — Prodigy League / Shinobi Path
+## PROG-001 — Arbres et maîtrises — préparer la phase suivante
 
 - status: PARTIAL
 - priority: P1
 - dependencies: QA-001
 - subsystem: progression
 - character: ALL
-- summary: Prodigy League / Shinobi Path
-- sources: [FUTURE_SYSTEMS](../archive/systems/FUTURE_SYSTEMS.md); [ROADMAP_WEEK](../archive/plans/ROADMAP_WEEK.md); [ROSTER_ARCHETYPES_32](../archive/design_research/02_character_architecture/ROSTER_ARCHETYPES_32.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
-- validation: Activation explicite, scope progression/compétition et interaction duel documentés
-- evidence: 2026-10-16 DEC-012 : fondation de progression par arbres de compétences par fighter ouverte ; règle : chaque nœud majeur change ce que le joueur peut FAIRE ou VOIR, pas « +2 % dégâts » ; le fighter de base reste complet. Fondations Codex à auditer (`29a9ec1` : ProfileSchema, ProfileRepository, CharacterProgression…). Sous-tickets PROG-002 (budgets classés) et PROG-003 (IA à budget) 2026-10-16 fondation livrée (merge `5c6f3be`, [rapport](../archive/reports/PROGRESSION_FOUNDATION.md), [système](../systems/PROGRESSION.md)) : arbres CORE4 (75 nœuds dont 35 majeurs, tous câblés et testés avec/sans), builds validés côté serveur sur des copies bornées (jamais dégâts ni vitesse), 0 SP = fighter actuel tick pour tick, profil v1 (SP gagnés, nœuds débloqués, 8 builds) et dépôt à verrou de session réutilisant `29a9ec1` sans l’économie. TECHNICAL PASS (Progression 49, Profiles 11). NATIVE_STUDIO et HUMAN_VISUAL PENDING ; pas d’UI de build, persistance non branchée au jeu
+- summary: Arbres par personnage et maîtrises par pratique — architecture préparatoire
+- sources: [DEC-024](DECISIONS.md#dec-024--progression-double-et-tournoi-standardisé) ; [Proposition à valider](../systems/PROGRESSION_MASTERY_PROPOSAL.md) ; [demande intégrale](../archive/requests/2026-10-17-progression-mastery-architecture.md) ; [fondation historique](../archive/reports/PROGRESSION_FOUNDATION.md)
+- validation: Après validation produit et au bon moment de DEC-021 : identité niveau1 complète, compilation serveur bornée, acquisition/performance séparées, maîtrises qualifiées non spammables et non achetables, profils versionnés migrés sans perte. Trois pilotes Lee/Minato/Temari avant extension aux vingt ; Studio obligatoire. Le livrable architecture seul ne clôt pas le système.
+- evidence: Audit Codex b3f8ffb (17/10) : 75 nodes CORE4/35 majeurs/10 stat, validation SkillBuilds et profils V1 réutilisables ; pas de mastery acquise ni host de persistance. Proposition spécialisée livrée (modèle, politiques, risques, trois mini-arbres et étapes), non approuvée. tests/run.sh tenté mais Luau/Lune absents ; aucun nouveau PASS gameplay ni Studio.
 - outcome: PENDING
-- acceptance: Développer les personnages définis ; pas de shinobi personnel. Fondation CORE4 intégrée sans UI/persistance live prouvées. Les anciens chiffres d’économie/arbre restent candidats quand non décidés ; progression complète non bloquante pour alpha.
+- acceptance: Priorité Claude inchangée : roster V1 et séquence DEC-021. Aucune implémentation autorisée par la proposition. Les chiffres historiques de branche/arbre ne fixent pas le nouveau produit ; pas de remplacement du kit de base par des nodes.
 
-## PROG-002 — Budgets de points de compétence actifs en classé
+## PROG-002 — Tournoi — budget standard, droits et maîtrises à arbitrer
 
 - status: PARTIAL
 - priority: P2
@@ -981,9 +981,9 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - subsystem: progression
 - character: ALL
 - summary: Budgets de points de compétence actifs en classé
-- sources: [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md)
-- validation: Brackets configurables (ex. 50 / 80 / 100 / 120+ SP) ; dans une file à N SP chaque joueur n’active que N points quel que soit son total débloqué ; builds d’exemple valides et rejet serveur des builds hors budget ; « la progression donne plus de choix de build, pas plus de puissance dans un même bracket »
-- evidence: 2026-10-16 DEC-012 : ouvert par la mission ; architecture/config d’abord, UI classée finale plus tard 2026-10-16 (merge `5c6f3be`) : brackets 50 / 80 / 100 / 120+ en données, `SkillBuilds.admit` refuse tout build hors budget, verrouillé ou invalide (jamais rogné), build d’exemple par bracket et par fighter. TECHNICAL PASS. File classée à brancher sur NET-001
+- sources: [DEC-024](DECISIONS.md#dec-024--progression-double-et-tournoi-standardisé) ; [proposition T1/P2](../systems/PROGRESSION_MASTERY_PROPOSAL.md#tournoi-standardisé)
+- validation: Même arbre, fighter possédé vérifié serveur, budget temporaire identique, presets tournoi distincts des droits permanents, snapshot verrouillé et aucune puissance payée. Avant code, USER DECISION REQUIRED T1 : catalogue de nodes et conditions de maîtrise prêtés ou gating de pratique conservé ; P2 : budget/format du lancement. Puis flow réel Online/Roblox selon NET-001.
+- evidence: SkillBuilds.admit sait valider un budget et les unlocked, mais Online:fight passe aucun kit et ne vérifie pas le roster possédé. Budgets 50/80/100/150 fermé sont config existante, pas nouveau choix produit. Proposition de politique prêtée non validée ; tests headless historiques ne prouvent pas tournoi intégré.
 - outcome: PENDING
 
 ## PROG-003 — IA à builds de budget cohérents

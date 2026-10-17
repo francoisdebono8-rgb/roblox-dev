@@ -64,3 +64,10 @@ Progression : **deux couches complémentaires**. (1) arbre propre à chaque comb
 Compétitif : dans le tournoi/ranked principal, on ne sélectionne que des combattants débloqués sur son compte, mais chaque combattant reçoit un **budget de points standardisé** dans son arbre. La progression permanente ne donne donc pas plus de puissance en tournoi. Le main expérimenté gagne par connaissance de son personnage, de ses builds et des matchups. Plusieurs builds tournoi sauvegardables ; événements spéciaux pouvant ouvrir tout le roster.
 
 Économie future : **pay-to-time**, pas pay-to-win compétitif. Le joueur peut accélérer accès/progression/collection et acheter du statut/cosmétique ; il ne peut pas acheter un budget de tournoi supérieur. Axe produit/marketing à préserver : **« Choisis ton prodige. Maîtrise-le. Entre dans le tournoi. »**
+
+
+## INBOX-PROGRESSION-ARCH-20261017 — PENDING ACK, PRÉPARATION UNIQUEMENT
+
+Demande utilisateur : [source intégrale](../archive/requests/2026-10-17-progression-mastery-architecture.md). Base auditée `b3f8ffb`. [Proposition](../systems/PROGRESSION_MASTERY_PROPOSAL.md) reliée à PROG-001/002 et DEC-024 : réutilisation SkillBuilds/ProfileRepository, schéma versionné, maîtrises par preuves, tournoi standardisé, trois mini-arbres Lee/Minato/Temari, UX et étapes.
+
+**Ne pas interrompre le roster V1 ni modifier le gameplay pour cette inbox.** Aucun design proposé n’est validé par sa livraison. T1 (prêt de nodes/prérequis de maîtrise en tournoi), P1 (progression/déblocages) et P2 (format/budget) portent USER DECISION REQUIRED. Le niveau1 complet et la preuve de maîtrise non achetable sont précisés dans DEC-024. À reprise : accuser réception et garder la proposition comme préparation de la phase ultérieure, pas comme chantier parallèle.
