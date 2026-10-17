@@ -1086,7 +1086,7 @@ function Combat:updateActor(a,dt)
 	if a.state~="TechniqueChannel" and a.state~="Stunned" then
 		local regen=a.def.ChakraRegen or Config.ChakraRegen
 		-- Closed chakra points (Gentle Fist) slow the recovery.
-		if (a.tenketsuUntil or 0)>now then regen*=math.max(.2,1-(a.tenketsuCut or .15)*(a.tenketsu or 0)) end
+		regen*=Brawler.tenketsuRegen(a,now)
 		if (a.awakenUntil or 0)>now then regen*=a.def.Awakening.Regen or 1 end
 		a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+regen*dt)
 	end
@@ -1125,7 +1125,7 @@ function Combat:updateActor(a,dt)
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if brawl and not a.hitConfirmed then
-				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false)
+				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
 				Techniques.whiffRead(self,a,pending,now)
 			end
@@ -1504,7 +1504,7 @@ function Combat:projectileHit(p,target,position,normal)
 			-- Vacuum Palm: a wall of air that carries the body away.
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
-			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a)
+			Brawler.react(self,target,"Knockback",push.Unit*54+Vector3.new(0,12,0),.5,p.a,"VacuumPalm")
 		elseif p.kind=="wind" then
 			target.root.AssemblyLinearVelocity=p.direction*37+Vector3.new(0,14,0)
 		elseif p.kind=="fireball" then
@@ -1558,7 +1558,8 @@ function Combat:projectileSurface(p,hit)
 		bounce.bounced=true
 		-- An infused blade keeps its chakra through the bounce (no second scaling).
 		Chakra.inherit(bounce,p)
-		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id})
+		-- The new path is shown (ricochet, to): the geometry is the threat.
+		self:pushImpact(hit.Position,"deflect",false,{owner=p.a.id,fighter=p.a.fighterId,ricochet=true,to=target.root.Position,direction=bounce.direction})
 		Brawler.event(self,p.a,"Ricochet")
 	end
 end
@@ -1592,7 +1593,7 @@ end
 function Combat:projectileExpire(p)
 	if p.geometry and p.a.target and p.a.target.health>0 then
 		local b=p.a.target
-		self:pushImpact(p.position,"clash",false,{owner=p.a.id,direction=p.direction})
+		self:pushImpact(p.position,"clash",false,{owner=p.a.id,fighter=p.a.fighterId,direction=p.direction,geometry=true,to=b.root.Position})
 		for k=1,2 do
 			local aim=b.root.Position+Vector3.new(0,(k-1.5)*.8,0)
 			local redirected=self:projectile(p.a,aim,88,18,2.5,"shuriken",nil,{origin=p.position,chakra=p.geometry.chakra})

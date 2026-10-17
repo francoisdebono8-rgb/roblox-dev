@@ -173,6 +173,15 @@ function UI.new(parent,send)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
+		-- Neji's chakra points closed on this fighter: four pips at the far end of
+		-- the status row (both players read them), each lit as it closes.
+		local points={}
+		for k=1,4 do
+			local pip=frame(box,UDim2.fromOffset(if right then 19+(k-1)*13 else 421-(k-1)*13,86),UDim2.fromOffset(9,9),palette.track)
+			pip.AnchorPoint=Vector2.new(.5,.5);pip.Visible=false
+			corner(pip,5)
+			points[k]=pip
+		end
 		-- Substitution charges: two diamonds, the recharging one fills up.
 		local pips={}
 		for k=1,2 do
@@ -191,7 +200,11 @@ function UI.new(parent,send)
 			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
 			corner(m,7);table.insert(medals,m)
 		end
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals}
+		-- The awakening while it burns: its name, the time left and what it
+		-- changes in the fight (UI.awakening), under the plate.
+		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
+		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -348,6 +361,73 @@ function UI.padCue(cue)
 	cue=cue:gsub("• 1 = ","• "..Controls.TechniquePad[1].." = ")
 	return cue
 end
+-- A plate's chakra network (Neji): four pips, lit per closed point (a fresh one
+-- pops), shown whenever the opponent fights with the Gentle Fist; the chakra
+-- bar dims with the recovery the points cost.
+local HYUGA=Color3.fromRGB(190,208,255)
+function UI.network(widget,actor,foe)
+	local count=#(actor.tenketsuPoints or {})
+	if count==0 then count=actor.tenketsu or 0 end
+	local shown=(foe and foe.fighterId=="GentleFist") or count>0
+	local severe=actor.tenketsuSevere==true
+	for k,pip in widget.points do
+		pip.Visible=shown
+		pip.BackgroundColor3=if k<=count then (if severe then palette.paper else HYUGA) else palette.track
+		if k<=count and k>widget.pointsShown then
+			pip.Size=UDim2.fromOffset(15,15)
+			Tween:Create(pip,TweenInfo.new(.22,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Size=UDim2.fromOffset(9,9)}):Play()
+		end
+	end
+	widget.pointsShown=count
+	local regen=math.clamp(actor.chakraRegen or 1,0,1)
+	widget.chakra.BackgroundColor3=if regen<1 then palette.blue:Lerp(Color3.fromRGB(112,118,138),math.min(1,(1-regen)*1.4)) else palette.blue
+end
+-- What each CORE4 awakening changes in the fight, said while it burns (a
+-- fighter without a line here shows its name and time only).
+local AWAKENED={
+	Flashstep="EACH JUMP LEAVES A RETURN SEAL  •  FLASH ONTO A LAUNCHED BODY",
+	GentleFist="NO BLIND SPOT  •  ONE PALM CLOSES TWO POINTS",
+	Mirage="HIS GUARD READS  •  A MISS NEAR HIM IS READ",
+	Lion="KICKS DO NOT LET GO  •  LAUNCHERS BECOME THE DANCING LEAF",
+}
+UI.AWAKENED=AWAKENED
+function UI.awakening(actor)
+	if (actor.awaken or 0)<=0 or (actor.health or 1)<=0 then return "" end
+	local def=Fighters[actor.fighterId]
+	local name=def and def.Awakening and def.Awakening.Name or "AWAKENED"
+	local line=string.format("%s  %.1fs",name,actor.awaken)
+	if actor.curseHunger then return line.."  •  HUNGRY: LAND A BLOW" end
+	return if AWAKENED[actor.fighterId] then line.."  •  "..AWAKENED[actor.fighterId] else line
+end
+-- The counter a read, a repel or a caught image opened: named, with the time
+-- it stays open (it closes fast; the HUD says how fast).
+local COUNTER_NAME={CounterPalm="COUNTER PALM",PalmThrust="TWIN PALM"}
+function UI.counterPrompt(h,pad)
+	local move=(MoveGraphs[h.fighterId] or {}).readCounter
+	local name=COUNTER_NAME[move or ""] or "COUNTER"
+	return string.format("%s — %s  %.1fs",if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light,name,h.counter or 0)
+end
+-- Contextual prompts for a conversion that is open right now (nil: none):
+-- after a teleport the arrival strike or Rasengan, after the Dancing Leaf the
+-- air finisher.
+function UI.conversion(h,pad)
+	local light=if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light
+	local heavy=if pad then Controls.PadLabel.Heavy else Controls.KeyLabel.Heavy
+	if h.flash then
+		local line=light.." — ARRIVAL STRIKE  •  "..heavy..(if h.airborne then " — SLAM" else " — LAUNCH")
+		for i,tech in h.techniques or {} do
+			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra>=tech.cost and (h.sealed or 0)<=0 then
+				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"
+			end
+		end
+		return line
+	end
+	if (h.lion or 0)>0 and h.airborne then
+		local finisher=(MoveGraphs[h.fighterId] or {}).airFinisher
+		return heavy.." — "..(if finisher then finisher.cue else "LION COMBO")
+	end
+	return nil
+end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
@@ -399,9 +479,15 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
-		-- Gentle Fist effects on this fighter.
-		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA SEALED %.1fs",actor.sealed)
-		elseif (actor.tenketsu or 0)>0 then widget.status.Text..=string.format("   •   CHAKRA POINTS -%d%%%s",actor.tenketsu*15,if actor.tenketsuSevere then "  •  SEALED" else "") end
+		-- Gentle Fist effects on this fighter: the closed points (pips), what
+		-- they cost (the chakra bar dims, its recovery is spelled out) and the
+		-- jutsu the 64 Palms sealed.
+		UI.network(widget,actor,if actor==h then b else h)
+		widget.awake.Text=UI.awakening(actor)
+		local tone=Fighters[actor.fighterId] and Fighters[actor.fighterId].Awakening and Fighters[actor.fighterId].Awakening.Color
+		widget.awake.TextColor3=if tone then Color3.fromRGB(table.unpack(tone)) else palette.gold
+		if (actor.sealed or 0)>0 then widget.status.Text..=string.format("   •   JUTSU SEALED %.1fs",actor.sealed)
+		elseif (actor.chakraRegen or 1)<1 then widget.status.Text..=string.format("   •   CHAKRA REGEN -%d%%%s",math.floor((1-actor.chakraRegen)*100+.5),if actor.tenketsuSevere then "  •  NETWORK SEALED" else "") end
 		local won=if actor==h then (data.wins and data.wins.human or 0) else (data.wins and data.wins.bot or 0)
 		for k,m in widget.medals do
 			m.Visible=(data.roundsToWin or 1)>1 and k<=(data.roundsToWin or 1)
@@ -442,6 +528,9 @@ function UI:render(data)
 		or cue:find("FLOW") or cue:find("AWAKEN") or cue:find("THROW BREAK") or cue:find("KNOCK AWAY") or cue:find("RIPOSTE")
 		-- Caught in wire or sand: the way out must be on screen.
 		or cue:find("WIRED") or cue:find("BOUND")
+		-- Sasuke's (and Lee's) continuations and risks must be read too: the
+		-- Dancing Leaf, the Lion Combo, the curse, a Chidori and its miss.
+		or cue:find("DANCING LEAF") or cue:find("LION") or cue:find("CURSE") or cue:find("CHIDORI") or cue:find("PUNISH") or cue:find("LOTUS")
 	if loud and pad then cue=UI.padCue(cue) end
 	self.cue.Text=if loud then cue else ""
 	self.channel.Text=""
@@ -450,21 +539,27 @@ function UI:render(data)
 		ui.box.Visible=true
 		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
-		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost
-		ui.status.Text=if tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
-		if tech.id=="Flashstep" and #(h.seals or {})>0 and tech.remaining==0 then
+		-- Sealed by the 64 Palms: every jutsu greys out and says why.
+		local sealed=(h.sealed or 0)>0
+		local ready=tech.remaining==0 and tech.condition and h.chakra>=tech.cost and not sealed
+		ui.status.Text=if sealed then string.format("SEALED  •  %.1fs",h.sealed) elseif tech.remaining>0 then string.format("%.1fs",tech.remaining) elseif not tech.condition then "NEEDS A SEAL / TARGET" elseif h.chakra<tech.cost then "NEED CHAKRA" else tech.cost.." CHAKRA"
+		if tech.id=="Flashstep" and #(h.seals or {})>0 and tech.remaining==0 and not sealed then
 			local count=#(h.seals or {})
 			ui.status.Text=count.." SEAL"..(if count>1 then "S" else "").."  •  "..ui.status.Text
 		end
 		ui.box.BackgroundTransparency=if ready then .05 else .35
 		ui.title.TextColor3=if ready then palette.paper else palette.muted
-		ui.cool.Size=UDim2.fromScale(1,math.clamp(tech.remaining/6,0,1))
+		ui.cool.Size=UDim2.fromScale(1,math.clamp(math.max(tech.remaining/6,if sealed then h.sealed/5 else 0),0,1))
 	end
 	for i=#h.techniques+1,5 do self.techniqueButtons[i].box.Visible=false end
 	local techOpen=h.reaction=="WallSplat" and (h.splatElapsed or 9)<.34
+	local conversion=UI.conversion(h,pad)
 	self.hint.Text=if techOpen then (if pad then "○ — WALL TECH" else "Q — WALL TECH")
+		elseif conversion then conversion
 		elseif b.reaction=="WallSplat" and h.pursuit>0 then (if pad then "× — PURSUE  •  △ — WALL BOUNCE" else Controls.KeyLabel.Pursuit.." — PURSUE  •  RMB — WALL BOUNCE")
-		elseif (h.counter or 0)>0 then (if pad then "□ — COUNTER" else "LMB — COUNTER")
+		elseif (h.counter or 0)>0 then UI.counterPrompt(h,pad)
+		-- The Chidori's risk, from the other side: its charge can be broken.
+		elseif b.castId=="Chidori" and b.state=="TechniqueChannel" then (if pad then Controls.PadLabel.Light else Controls.KeyLabel.Light).." — BREAK THE CHIDORI CHARGE"
 		elseif h.awakenReady then (if pad then "D-PAD ↓ — AWAKEN" else "T — AWAKEN")
 		elseif h.wall then (if pad then "× — REBOUND  •  R1 + L1 — DETACH" else "SPACE — REBOUND  •  C — DETACH")
 		elseif h.state=="Startup" and h.attackName=="Heavy" then (if pad then "R1 + L2 — FEINT" else "G — FEINT")

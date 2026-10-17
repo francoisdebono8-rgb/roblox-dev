@@ -222,7 +222,11 @@ function Matches:view(s,cursor,mine,theirs)
 			-- Chakra on the body: the lightning stun it is locked in, the
 			-- ground fire it stands in (ChakraCombat, Combat:updateHazards).
 			shocked=if (a.shockUntil or 0)>now and (a.state=="Stunned" or a.reaction=="Bound") then a.shockUntil-now else 0,
-			burning=math.max(0,(a.burnUntil or 0)-now)}
+			burning=math.max(0,(a.burnUntil or 0)-now),
+			-- The share of chakra recovery the closed points leave (1: all), for
+			-- the chakra bar; the air finisher window after the Dancing Leaf
+			-- (Lion Combo, a lotus), for its prompt.
+			chakraRegen=require(script.Parent.Brawler).tenketsuRegen(a,now),lion=math.max(0,(a.lionUntil or 0)-now)}
 	end
 	-- Live projectiles: straight constant-speed flights the client reproduces
 	-- exactly on the shared server clock, so blades and fire never stutter.
@@ -234,11 +238,11 @@ function Matches:view(s,cursor,mine,theirs)
 		-- they mean (mark), their surface normal, their expiry and live charge
 		-- (server clock), and a held wire the body it holds and its stake.
 		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,
-			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored})
+			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored,hidden=p.hidden})
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id})
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.
