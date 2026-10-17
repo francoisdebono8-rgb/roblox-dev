@@ -50,3 +50,17 @@ Le roster des dix places restantes est désormais verrouillé dans **DEC-022** :
 Les anciens candidats non encore codés (Sakura, Choji, Kiba, Shikamaru, Shino, Kisame) sortent du roster initial. Ne pas relancer leurs lots.
 
 Règle de conception : toutes les générations de Naruto sont permises pour choisir les personnages, mais chacun reste dans une **version jeune/prodige** cohérente avec ce qu'il maîtrisait alors ; pas de kit adulte final importé par défaut. Les membres d'un même clan doivent garder des boucles de jeu distinctes. Le nombre de jutsus peut être asymétrique : équilibrer les décisions utiles et l'identité, pas le nombre de techniques.
+
+## INBOX-PLAYER-EXPERIENCE-20261017 — VISION PRODUIT À ABSORBER, SANS DÉTOURNER LE BREADTH PASS
+
+Décision utilisateur du 17/10 : la cible produit est maintenant beaucoup plus précise. **Ne pas interrompre le roster 20 pour construire ces systèmes immédiatement** ; les absorber dans les prochaines passes conformément à DEC-021. Les décisions normatives sont DEC-023/024 et la vision détaillée est dans `VISION.md`.
+
+Expérience cible : le joueur n’arrive pas dans une ville Roblox générique ni dans un menu abstrait. Il entre dans une **enceinte compacte de tournoi des jeunes prodiges**, ambiance salle d’examen avant l’épreuve. Le monde relie entraînement, progression, classement, tournoi et présence sociale, mais ne crée jamais du temps mort : un joueur habitué doit pouvoir se battre presque immédiatement.
+
+Première session : courte intro → choix du premier prodige parmi une sélection de départ → tuto combat utile → duel IA → retour libre au hub. Aucun système de quêtes artificielles type « tue cinq bandits ». Practice, progression, tournoi et menus doivent rester accessibles sans friction.
+
+Progression : **deux couches complémentaires**. (1) arbre propre à chaque combattant, points investis dans des choix réels de gameplay ; (2) maîtrises gagnées par pratique pertinente, qualité et variété d’usage. Les maîtrises peuvent ouvrir/conditionner des variantes ou nœuds avancés mais ne doivent jamais devenir un compteur de spam. La salle d’entraînement sert réellement à tester, apprendre, développer une maîtrise et essayer les 20 combattants même non possédés.
+
+Compétitif : dans le tournoi/ranked principal, on ne sélectionne que des combattants débloqués sur son compte, mais chaque combattant reçoit un **budget de points standardisé** dans son arbre. La progression permanente ne donne donc pas plus de puissance en tournoi. Le main expérimenté gagne par connaissance de son personnage, de ses builds et des matchups. Plusieurs builds tournoi sauvegardables ; événements spéciaux pouvant ouvrir tout le roster.
+
+Économie future : **pay-to-time**, pas pay-to-win compétitif. Le joueur peut accélérer accès/progression/collection et acheter du statut/cosmétique ; il ne peut pas acheter un budget de tournoi supérieur. Axe produit/marketing à préserver : **« Choisis ton prodige. Maîtrise-le. Entre dans le tournoi. »**
