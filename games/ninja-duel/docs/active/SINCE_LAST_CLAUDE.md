@@ -39,6 +39,14 @@ Principe de convergence : 20 stables → 20 bons en combo/animation → 20 inté
 
 Branche `claude/ninja-duel-2026-10-14`, poussée. Fait ce jour (détails dans les commits et [CURRENT_STATE](CURRENT_STATE.md)) : fusions chakra2 / identité CORE4 / Naruto / Temari ; socle roster 20 (`Server/Families`, `Shared/Looks`, `Client/FamilyFX`, `Shared/Roster`, menu 5×4, `tests/Roster.spec`) ; Hinata et Kakashi ; modules par lot pré-branchés (`Shared/WaveN`, `Server/WaveNKit`, `Client/WaveNFX`) ; outil natif `tools/studio/fighter_check.py` ; corrections vues en Studio (entrave dessinée, bêtes lisibles, couloir de vent). Sélection : 10 combattants.
 
-Roster 20, lots 1–3 (Sakura, Choji, Kiba, Kimimaro / Shikamaru, Shino, Orochimaru / Haku, Zabuza, Kisame) : **arrêtés avant code**, rien à fusionner (worktrees vides retirés). Leurs constats sur le code commun et les plans de kits sont dans les [notes de reprise](../characters/ROSTER_20.md#notes-de-reprise-1710-relevées-par-le-lot-2-avant-code) ; relancer chaque lot depuis le HEAD courant.
+Roster 20, anciens lots 1–3 (Sakura, Choji, Kiba, Kimimaro / Shikamaru, Shino, Orochimaru / Haku, Zabuza, Kisame) : **arrêtés avant code**, rien à fusionner (worktrees vides retirés). Leurs constats sur le code commun restent utiles dans les [notes de reprise](../characters/ROSTER_20.md#notes-de-reprise-1710-relevees-par-les-anciens-lots-avant-code), mais leur composition n'est plus normative après DEC-022.
 
-Reprise : relancer les lots (fichiers `WaveN` pré-branchés), fusionner chacun (union des lignes Roster/run.sh/build.py, `dist/` reconstruit), `tests/Roster.spec` sur toute la liste, puis `fighter_check.py` en Studio pour chaque nouveau combattant ; rejouer Itachi, Sasuke, Neji, Gaara, Lee ; revoir le couloir de Temari ; à 20 Tier A : rapport roster (tableau DEC-016/CHR-EXT-002) puis arrêt selon DEC-021.
+Reprise : suivre la composition verrouillée de DEC-022 et `ROSTER_20.md`, puis `tests/Roster.spec` sur toute la liste et `fighter_check.py` en Studio pour chaque nouveau combattant ; rejouer Itachi, Sasuke, Neji, Gaara, Lee ; revoir le couloir de Temari ; à 20 Tier A : rapport roster (tableau DEC-016/CHR-EXT-002) puis arrêt selon DEC-021.
+
+## INBOX-ROSTER-20261017 — NOUVELLE DÉCISION UTILISATEUR, À PRENDRE AVANT TOUT NOUVEAU LOT
+
+Le roster des dix places restantes est désormais verrouillé dans **DEC-022** : **Shisui, Orochimaru, Haku, Kimimaro, Nagato, Sasori, Deidara, Killer Bee, Zabuza, Kabuto**.
+
+Les anciens candidats non encore codés (Sakura, Choji, Kiba, Shikamaru, Shino, Kisame) sortent du roster initial. Ne pas relancer leurs lots.
+
+Règle de conception : toutes les générations de Naruto sont permises pour choisir les personnages, mais chacun reste dans une **version jeune/prodige** cohérente avec ce qu'il maîtrisait alors ; pas de kit adulte final importé par défaut. Les membres d'un même clan doivent garder des boucles de jeu distinctes. Le nombre de jutsus peut être asymétrique : équilibrer les décisions utiles et l'identité, pas le nombre de techniques.
