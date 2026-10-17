@@ -752,6 +752,59 @@ local function dressLee(model,def)
 		end
 	end
 end
+-- Temari between the Chunin Exam and the Sasuke retrieval (15, roster wave):
+-- sandy hair in four short spiky tufts, the Sand headband on the forehead, the
+-- light lilac short kimono with a crimson obi, fishnet at the elbows and knees,
+-- bare legs and sandals. The iron fan is not costume: GaleFX carries it (on the
+-- back at rest, in the hand for the fight). All flat SmoothPlastic.
+local function dressTemari(model,def)
+	local hair=rgb(226,196,120)
+	local hairShade=rgb(196,164,92)
+	local kimono=rgb(186,170,204)
+	local kimonoShade=rgb(160,144,182)
+	local obi=rgb(176,40,52)
+	local mesh=rgb(62,62,70)
+	local skin=Color3.fromRGB(table.unpack(def.Skin))
+	local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
+	face(model,rgb(52,112,96),hairShade)
+	hairCap(model,hair)
+	-- Four short tufts at the back, two each side, pointing out and down.
+	for _,s in {{Vector3.new(-.55,.3,.5),Vector3.new(-.75,.35,.6)},{Vector3.new(.55,.3,.5),Vector3.new(.75,.35,.6)},
+		{Vector3.new(-.5,-.25,.6),Vector3.new(-.7,-.45,.55)},{Vector3.new(.5,-.25,.6),Vector3.new(.7,-.45,.55)}} do
+		local lock=spike(model,s[1],s[2],.95,.5,.32,hair)
+		if lock then lock.Name="TemariPonytail" end
+		local tie=wear(model,"Head","HairTie",Vector3.new(.2,.2,.2),CFrame.new(s[1]),rgb(60,46,40))
+		if tie then tie.Shape=Enum.PartType.Ball end
+	end
+	-- A fringe parted to the side, short locks framing the face.
+	for _,x in {-.4,-.08,.26} do spike(model,Vector3.new(x,.62,-.56),Vector3.new(x*.4-.1,-.75,-.55),.48,.4,.22,hair) end
+	for _,side in {-1,1} do wear(model,"Head","Bang",Vector3.new(.18,.7,.32),CFrame.new(side*.8,.1,-.4)*A(R(4),0,R(side*4)),hair) end
+	-- The Sand headband on the forehead.
+	wear(model,"Head","Headband",Vector3.new(1.66,.24,1.66),CFrame.new(0,.36,0),rgb(40,40,48))
+	wear(model,"Head","HeadbandPlate",Vector3.new(.86,.3,.06),CFrame.new(0,.36,-.85),rgb(176,184,194),Enum.Material.Metal)
+	wear(model,"Head","SandMark",Vector3.new(.26,.12,.02),CFrame.new(0,.37,-.89),rgb(70,78,90),Enum.Material.Metal)
+	-- The kimono: top, short sleeves, the skirt over the thighs, the crossed collar.
+	for _,name in {"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftUpperLeg","RightUpperLeg"} do
+		local part=model:FindFirstChild(name);if part then part.Color=kimono end
+	end
+	wear(model,"UpperTorso","KimonoCollar",Vector3.new(.08,1.0,.04),CFrame.new(-.18,.25,-.53)*A(0,0,R(-28)),kimonoShade)
+	wear(model,"UpperTorso","KimonoCollar",Vector3.new(.08,1.0,.04),CFrame.new(.18,.25,-.53)*A(0,0,R(28)),kimonoShade)
+	wear(model,"LowerTorso","KimonoSkirt",Vector3.new(2.16,1.35,1.2),CFrame.new(0,-.62,0),kimono)
+	wear(model,"LowerTorso","KimonoHem",Vector3.new(2.2,.1,1.24),CFrame.new(0,-1.3,0),kimonoShade)
+	-- The crimson obi and its knot at the back.
+	wear(model,"LowerTorso","Obi",Vector3.new(2.12,.5,1.12),CFrame.new(0,.36,0),obi)
+	wear(model,"LowerTorso","ObiKnot",Vector3.new(.7,.42,.3),CFrame.new(0,.38,.66),obi)
+	for _,side in {"Left","Right"} do
+		wear(model,side.."UpperArm","Sleeve",Vector3.new(.9,.5,.9),CFrame.new(0,.25,0),kimono)
+		local armLow=model:FindFirstChild(side.."LowerArm");if armLow then armLow.Color=skin end
+		local legLow=model:FindFirstChild(side.."LowerLeg");if legLow then legLow.Color=skin end
+		-- Fishnet at the elbows and knees.
+		wear(model,side.."LowerArm","Fishnet",Vector3.new(.8,.36,.8),CFrame.new(0,.3,0),mesh)
+		wear(model,side.."LowerLeg","Fishnet",Vector3.new(.84,.4,.84),CFrame.new(0,.36,0),mesh)
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=rgb(44,46,62) end
+		wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+	end
+end
 local function soften(model)
 	local head=model:FindFirstChild("Head")
 	if head and not head:FindFirstChildOfClass("SpecialMesh") then
@@ -766,6 +819,7 @@ function World.dress(model,def)
 	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
 	if def.Name=="Rock Lee" then dressLee(model,def) end
+	if def.Name=="Temari" then dressTemari(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

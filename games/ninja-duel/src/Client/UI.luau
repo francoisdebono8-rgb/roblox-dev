@@ -76,6 +76,8 @@ function UI.new(parent,send)
 	-- CORE4, then the stress-test fighters of the next wave (DEC-015): Gaara,
 	-- Rock Lee.
 	local playable={"Flashstep","Mirage","GentleFist","Lion","Sand","Leaf"}
+	-- Roster wave: Temari.
+	table.insert(playable,"Gale")
 	for index=1,ROSTER_SLOTS do
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)

@@ -140,6 +140,13 @@ local function body(c,a,dt)
 				-- reaction is its own motion).
 				if not a.reaction and not a.wall and not a.grabbedBy and FREE[a.state] then
 					Motor.travel(a,c,z.direction,(if a.airborne then tune.airCarry else tune.carry)*dt)
+				elseif a.state=="Rush" and a.rush and not a.rush.windHeld and a.rush.goal then
+					-- A chakra dash into the wind is held back (it may fall short).
+					local way=flat(a.rush.goal-a.root.Position)
+					if way.Magnitude>.5 and way.Unit:Dot(z.direction)<-.35 then
+						a.rush.speed*=tune.headwind;a.rush.windHeld=true
+						Brawler.event(c,z.owner,"WindHold")
+					end
 				end
 			elseif tune.fall then
 				local v=a.reactionVelocity

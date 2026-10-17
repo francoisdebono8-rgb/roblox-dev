@@ -265,7 +265,7 @@ return {
 		Techniques = {
 			-- The fan opens on the first moon: a wind scythe that leaves a lane of
 			-- wind behind it (Zones "Wind": carried by the scythe as it flies).
-			{ Id = "Kamaitachi", Name = "Kamaitachi", Element = "Wind", Cost = 14, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 3.4, Interruptible = true, Range = 46, Speed = 74, Damage = 7, Lane = 3.2, LaneLife = 3.6, Hint = "A wind scythe • its lane slows the way up, carries the way down, turns blades aside • knocks away (walls)" },
+			{ Id = "Kamaitachi", Name = "Kamaitachi", Element = "Wind", Cost = 12, Channel = 0.3, Active = 0.06, Recovery = 0.3, Cooldown = 2.8, Interruptible = true, Range = 46, Speed = 74, Damage = 7, Lane = 3.2, LaneLife = 3.6, Hint = "A wind scythe • its lane slows the way up, carries the way down, turns blades aside • knocks away (walls)" },
 			-- Three moons: a wide gust that blows the blades away, throws the body
 			-- (to a wall when one is behind it) and leaves a wide lane.
 			{ Id = "GreatGust", Name = "Great Gust", Element = "Wind", Cost = 22, Channel = 0.5, Active = 0.2, Recovery = 0.42, Cooldown = 7, Interruptible = true, Range = 30, Cone = 0.74, Damage = 9, Push = 58, Lane = 5, LaneLife = 4.2, Hint = "Three moons: blades blown away, the body thrown back • a wide lane stays" },

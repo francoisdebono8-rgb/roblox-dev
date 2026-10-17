@@ -84,7 +84,7 @@ local function kamaitachi(c,a,pending)
 	local spec=pending.spec
 	local origin,line,direction=windLine(c,a,pending.aim,spec.Range)
 	local p=c:projectile(a,origin+line*spec.Range,spec.Speed or 74,spec.Range,spec.Damage,"gale",nil,
-		{origin=origin,radius=1.8,growth=.9,reaction="Knockback",impulse=Vector3.new(0,12,46),stun=.5,style="jutsu"})
+		{origin=origin,radius=2.4,growth=3,reaction="Knockback",impulse=Vector3.new(0,12,46),stun=.5,style="jutsu"})
 	lane(c,a,origin,direction,spec.Range,spec.Lane or 3.2,spec.LaneLife or 3.6,p)
 	c:cue(a,"KAMAITACHI",.6)
 	Brawler.event(c,a,"Kamaitachi")
