@@ -60,7 +60,8 @@ test("the roster lists every playable fighter once, each with a definition",func
   assert(not seen[id],id.." is listed twice");seen[id]=true
   assert(Fighters[id],id.." has no definition in Fighters")
  end
- assert(#Roster>=8,"the roster lost fighters ("..#Roster..")")
+ -- The locked roster (DEC-016/DEC-022): exactly twenty, no more, no fewer.
+ assert(#Roster==20,"the roster has "..#Roster.." fighters, not 20")
  print("   "..#Roster.." playable: "..table.concat(Roster,", "))
 end)
 
@@ -105,7 +106,7 @@ test("play: three lights land, the heavy starts, the toward route is the fighter
    if b.health<before or (b.comboHits or 0)>=k then hits+=1 end
    if k<3 then place(c,a,b,if id=="Sand" then 7 else 3.4) end
   end
-  assert(hits>=2,id..": the light string landed "..hits.." of 3")
+  assert(hits==3,id..": the light string landed "..hits.." of 3")
   -- Heavy from neutral.
   local c2,a2,b2=H.duel(id,partner(id));place(c2,a2,b2,3.4)
   assert(press(c2,a2,"Heavy"),id..": heavy refused")

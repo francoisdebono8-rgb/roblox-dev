@@ -4,6 +4,7 @@ local Brawler=require(script.Parent.Brawler)
 local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
+local Families=require(script.Parent.Families)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -23,6 +24,16 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
 	else return false end
 	lo=rule.Min or lo;hi=rule.Max or hi;chance=rule.Chance or chance
+	-- Synergies read from data, not names: a strike that is stronger inside
+	-- his own zone is taken while the body stands in it; a burst that clears
+	-- blades answers blades flying at him; a detonation answers his own
+	-- objects lying near the body.
+	if spec.InZone and Families.inOwnZone(c,a,target) then chance=math.max(chance,.85) end
+	if family=="Burst" and spec.Clear then
+		for _,p in c.projectiles do
+			if p.a==target and (p.position-a.root.Position).Magnitude<(spec.Radius or 7)+10 then lo,hi,chance=0,math.huge,math.max(chance,.7);break end
+		end
+	end
 	if rule.Punish and not opening then return false end
 	if distance<lo or distance>hi then return false end
 	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
@@ -566,7 +577,16 @@ function AI:update(now)
 	local punish=target.state=="Stunned" or target.reaction=="Bound"
 		or ((target.state=="Recovery" or target.state=="TechniqueRecovery") and distance<7)
 	if self.rng:NextNumber()<tune.Technique and (now>=(self.techReadyAt or 0) or punish) then
-		for slot,spec in a.def.Techniques do
+		-- A kit made only of family techniques is scanned from a rotating slot
+		-- (the whole kit gets used, not slot 1 first); a kit with bespoke
+		-- techniques keeps its authored priority order.
+		local count=#a.def.Techniques
+		local rotate=true
+		for _,spec in a.def.Techniques do if not spec.Family then rotate=false end end
+		self.techStart=if rotate then ((self.techStart or 0)%math.max(count,1))+1 else 1
+		for k=0,count-1 do
+			local slot=((self.techStart+k-1)%count)+1
+			local spec=a.def.Techniques[slot]
 			local use=false; local aim=target.root.Position
 			if spec.Id=="MarkedBlade" then use=plantedSeals(a)<2 and not c:markedInFlight(a) and distance>8; aim=position+target.hum.MoveDirection*3
 			elseif spec.Id=="Flashstep" then local seal=Techniques.sealOf(c,a,now);use=seal~=nil and (distance>14 or (seal-target.root.Position).Magnitude<7)

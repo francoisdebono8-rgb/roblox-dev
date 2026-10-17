@@ -503,7 +503,12 @@ function Combat:stepThrow(a)
 		throw.fired+=1
 		-- Re-aim at release against the live target, unless an explicit point was
 		-- chosen: a throw tracks the opponent the arm is actually throwing at.
-		local aim=throw.aim or (a.target and a.target.root.Position) or (a.root.Position+a.root.CFrame.LookVector*20)
+		-- A point picked on or near the opponent (the mouse on his body or the
+		-- floor at his feet) means him: the blade goes to where he is now.
+		local aim=throw.aim
+		local b=a.target
+		if b and b.health>0 and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude<=Families.AIM_SNAP) then aim=b.root.Position end
+		aim=aim or (a.root.Position+a.root.CFrame.LookVector*20)
 		throw.fire(throw.fired,aim)
 		throw.nextRelease+=throw.interval
 	end

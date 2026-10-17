@@ -253,13 +253,32 @@ function Families.inOwnZone(c,a,b)
 	return false
 end
 
+-- Where a thrown technique flies, decided on its RELEASE frame, not on the
+-- press: a cast aimed at the opponent's body (the mouse on or near him) is
+-- re-aimed at where he is now, with a partial lead on his motion (spec.Lead,
+-- default .55 of the flight). The channel no longer makes every jutsu miss a
+-- body that merely walks; a late sidestep, a dash or a jump still beat it. An
+-- aim far from the body (a zone, a lane) is kept as it was.
+Families.AIM_SNAP=12
+function Families.releaseAim(c,a,pending,spec)
+	local aim=aimOf(a,pending)
+	local b=a.target
+	if not b or b.health<=0 then return aim end
+	local at=b.root.Position
+	if flat(aim-at).Magnitude>Families.AIM_SNAP and pending.aim then return aim end
+	local motion=b.root.AssemblyLinearVelocity
+	if motion.Magnitude<.5 then motion=b.locomotion or Vector3.zero end
+	local flight=(at-a.root.Position).Magnitude/math.max(spec.Speed or 70,1)
+	return at+flat(motion)*flight*(spec.Lead or .55)
+end
+
 -- ----------------------------------------------------------- families
 local F={}
 F.Projectile={
 	check=function() return true end,
 	execute=function(c,a,pending)
 		local spec=pending.spec
-		local aim=aimOf(a,pending)
+		local aim=Families.releaseAim(c,a,pending,spec)
 		local kind=spec.Kind or "chakra"
 		local look=Looks[kind]
 		local launch=spec.Launch or (look and look.launch) or (if spec.Ground then "Ground" else "Palm")

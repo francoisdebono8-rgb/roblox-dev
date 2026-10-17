@@ -120,4 +120,31 @@ test("reach: a targeted relocation respects Range and sight, refused before any 
  assert(c:request(a,slot("Flicker","FlickerOut")),"the retreat was refused far away")
 end)
 
+
+test("impact: every thrown technique of the twenty reaches a still, a walking and a guarding body",function()
+ local Roster=H.load("Shared/Roster")
+ for _,id in Roster do
+  for i,spec in Fighters[id].Techniques do
+   if spec.Family=="Projectile" then
+    for _,mode in {"still","walking","guarding"} do
+     -- A slow runner on the floor (hounds at 50) can be outwalked: that is its counterplay.
+     if mode=="walking" and spec.Ground and (spec.Speed or 70)<55 then continue end
+     local c,a,b=H.duel(id,"Leaf")
+     local gap=math.clamp((spec.Range or 20)*.5,8,16)
+     place(c,a,b,V.new(0,3,gap/2),V.new(0,3,-gap/2));a.chakra=999;b.health=999
+     if mode=="guarding" then assert(c:request(b,"Guard")) end
+     assert(c:request(a,"Technique"..i,b.root.Position),id..": "..spec.Id.." refused")
+     local reached=false
+     for _=1,150 do
+      if mode=="walking" then b.move=V.new(1,0,0) end
+      H.step(c,.01)
+      if b.health<999 or b.impactStyle=="block" or b.reaction then reached=true end
+     end
+     assert(reached,id..": "..spec.Id.." never reached a "..mode.." body")
+    end
+   end
+  end
+ end
+end)
+
 print(string.format("NinjaDuel convergence (lifecycle, composition, reach): %d PASS (headless)",passed))
