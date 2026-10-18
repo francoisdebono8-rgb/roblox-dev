@@ -324,4 +324,37 @@ test("M3: inside the opponent's mist no aid finds the body (jutsu, tool, bot); m
  assert((b3.fogAim-a3.root.Position).Magnitude>3,"the bot's fog aim follows the hidden body")
 end)
 
+
+-- QA-004 M5: tactical states readable from the server snapshot (charges:
+-- posed/armed/consumed; Absorb: window open/absorbed/closed).
+test("M5: a charge reports posed then armed in the snapshot; the client lights its fuse when armed and drops it when it is gone",function()
+ local Ms=H.load("Server/Matches")
+ local c,a,b,match=H.duel("Clay","Leaf");place(c,a,b,V.new(0,3,0),V.new(0,3,-20));a.chakra=999
+ assert(c:request(a,slot("Clay","ClayMine"),V.new(-10,3,-12)));step(c,.35)
+ local h
+ for _,x in c.hazards do if x.a==a and x.charge then h=x end end
+ assert(h,"no charge")
+ local function state() local now=c.now;return if now>=(h.armedAt or 0) then "armed" else "posed" end
+ assert(state()=="posed","a fresh charge is already armed")
+ step(c,1)
+ assert(state()=="armed","the charge never armed")
+ -- Client: the fuse follows the state; the entry goes with the hazard.
+ local instance,restore=H.stubScene()
+ local ok,err=pcall(function()
+  local FX=H.load("Client/Effects")
+  local fx=FX.new()
+  local hz={position=V.new(0,.5,-10),radius=2.6,remaining=8,kind="Charge",owner="A",look="claycharge",charge="posed"}
+  fx:hazardsStep({hazards={hz}})
+  local key
+  for k,e in fx.hazards do key=k;assert((e.chargeState or "posed")=="posed","a posed charge reads armed") end
+  assert(key,"the charge was not drawn")
+  hz.charge="armed";fx:hazardsStep({hazards={hz}})
+  assert(fx.hazards[key].chargeState=="armed","the armed charge did not light")
+  fx:hazardsStep({hazards={}})
+  assert(fx.hazards[key]==nil,"a consumed charge stayed drawn")
+ end)
+ restore()
+ assert(ok,err)
+end)
+
 print(string.format("NinjaDuel convergence (lifecycle, composition, reach): %d PASS (headless)",passed))

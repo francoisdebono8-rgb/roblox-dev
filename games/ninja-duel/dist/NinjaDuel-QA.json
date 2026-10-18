@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "c792a463e8d39b244bcbc47bffad0728cf3403d536682e47c0e62c95950f7273",
+  "sha256": "2486ea3c2fccdec7e68dade7160397114be14e1eeaea6e405680f9f8f5e73348",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -9,8 +9,8 @@
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
     "src/Client/DevClient.luau": "b2fc3715b57a141984bec45ee5777a5f8e5eedff3a4ac1e936b542afa807731f",
     "src/Client/DevVolumes.luau": "1b557735b22d3dde87a14d9b8adcba8374012f2204916e66d7ad65aff52e007f",
-    "src/Client/Effects.luau": "586afac37a7a1a06484f2eaf8dc950cfd09a7785fa8f69a1df16831724d08c32",
-    "src/Client/FamilyFX.luau": "045c7f1b417bb40b1c9667ee7cf33a669aa9d794f33db80eefca48c8a65a84a5",
+    "src/Client/Effects.luau": "149083ba27b96aeb56a978619ae44e4387ba39a30f4098e8698c5a1c547cc3f9",
+    "src/Client/FamilyFX.luau": "44b314f991eb2e153062441ba52053c90b054f254481d1c67bed248799516c3f",
     "src/Client/GaleFX.luau": "9fc4738f9982d99debdc5e74aa351f399f74cf574170b562db65a04dfdd06074",
     "src/Client/GaleMotion.luau": "1b9bc2f85d3a171dbaf1ce5ed3ce1ebc4b47104353752347ec2110d1abdf2df2",
     "src/Client/IdentityFX.luau": "130b20fc677d50db7bf1c9a0d78a3cdb1a52b69c9658a95f47af6c2a279daa3c",
@@ -46,7 +46,7 @@
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
-    "src/Server/DevGateCheck.luau": "09a12a5727e8c8adc3e513bbad5c70322003d7b7452c2ebeae98259f33f7c6a4",
+    "src/Server/DevGateCheck.luau": "1ebd3ce861d6ce5a71e5ffd0ee66fac6d7eb6509e0bf4c537caa9f5c907e01d8",
     "src/Server/DevHooks.luau": "15510d3615eafd46a0792318665ae6514f915d72165d83d0d42decfc26277ff0",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
@@ -60,7 +60,7 @@
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
-    "src/Server/Matches.luau": "95d01982957e2943c35027c0a0049179fd92efdc2043838ca5ed8bca66ba5d15",
+    "src/Server/Matches.luau": "588867369dd1135810cb428ae968253128f879710721d4667236784aef9d62f2",
     "src/Server/Motor.luau": "62bdda23174b2f0eef1827d4e2cffe4f2c7e3e5f86774896fd13a9df9cf50552",
     "src/Server/NativeQA.luau": "5830c6bc049fd12f835baf4f961756d308cefd2785c30d72dba92a43811407c1",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
@@ -100,7 +100,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "97630c1be700e0ba85e9510f6c42c8826b72c6db0719ed14df89f9204b877624",
+  "buildFingerprint": "814c10ef02f33ed8c05d93a956540e6eacc79aebb5473148cc3ab2fb46b8e6d3",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -239,7 +239,7 @@
       },
       "tests/Convergence.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel convergence (lifecycle, composition, reach): 12 PASS (headless)"
+        "summary": "NinjaDuel convergence (lifecycle, composition, reach): 13 PASS (headless)"
       }
     }
   },

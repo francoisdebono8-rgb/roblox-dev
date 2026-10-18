@@ -235,7 +235,44 @@ S.S17=function()
 	for k,v in a.events or {} do if string.sub(k,1,5)=="Cast:" and v>0 then distinct+=1;table.insert(casts,string.sub(k,6).."×"..v) end end
 	return distinct>=1,string.format("duel %.0fs phase=%s • distinct techniques=%d (%s)",os.clock()-t,tostring(s.phase),distinct,table.concat(casts,", "))
 end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"}}
+-- M5 ----------------------------------------------------------------------
+-- S18: a mine set 8 studs in front of the player, posed then armed (watch the
+-- fuse light), then the body walks on it: one detonation, the charge gone.
+S.S18=function()
+	local c,a,b=start("Clay","Leaf");place(c,a,b,Vector3.new(0,3,6),Vector3.new(0,3,-12));a.chakra=999
+	local o=c.match.origin
+	c:request(a,(slot("Clay","ClayMine")),o+Vector3.new(-6,3,-2))
+	task.wait(.3)
+	local h
+	for _,x in c.hazards do if x.a==a and x.charge then h=x end end
+	if not h then return false,"no charge" end
+	local posed=c.now<(h.armedAt or 0)
+	task.wait(1.6)
+	local armed=c.now>=(h.armedAt or 0)
+	local before=(a.events or {}).Detonation or 0
+	c:relocate(b,h.position+Vector3.new(0,2.5,0));task.wait(.8)
+	local after=(a.events or {}).Detonation or 0
+	local gone=c.now>=h.expires
+	return posed and armed and after==before+1 and gone,string.format("posed at 0.3s=%s • armed at 1.9s=%s • detonations=%d • gone=%s",tostring(posed),tostring(armed),after-before,tostring(gone))
+end
+-- S20/S21: Nagato opens Absorb (watch the sphere), a kunai thrown into it is
+-- swallowed (reward: chakra), melee still lands; after it closes a kunai hits.
+S.S20=function()
+	local c,a,b=start("Rinnegan","Copycat");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-14));a.chakra=40;b.chakra=999
+	c:request(a,(slot("Rinnegan","Absorb")));task.wait(.2)
+	local chakra=a.chakra
+	b.neutralToolAt=0;c:request(b,"Tool",a.root.Position);task.wait(.6)
+	local absorbed=((a.events or {}).Absorbed or 0)>0 and a.chakra>chakra
+	place(c,a,b,Vector3.new(0,3,1.7),Vector3.new(0,3,-1.7))
+	local hp=a.health;c:request(b,"Attack");task.wait(.4)
+	local melee=a.health<hp
+	task.wait(2.2)
+	local closed=not (a.buff and c.now<a.buff.untilT)
+	place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-14))
+	hp=a.health;b.neutralToolAt=0;b.chakra=999;c:request(b,"Tool",a.root.Position);task.wait(.8)
+	return absorbed and melee and closed,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)

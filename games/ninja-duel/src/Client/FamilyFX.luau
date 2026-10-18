@@ -331,13 +331,36 @@ function FamilyFX.install(FX,kit)
 	end
 	-- A charge on the floor: a small lump of clay whose fuse glows, brighter
 	-- once armed (Families.plant).
+	-- A buried clay charge (QA-004 M5): posed, the fuse is dark; armed (the
+	-- server's armedAt), it glows and a thin ring shows the trigger radius;
+	-- consumed or expired, it goes with the hazard (detonation draws its blast).
 	ZONES.charge=function(holder,h,look)
 		local lump=block(holder.Parent,Vector3.new(.9,.5,.9),CFrame.new(holder.Position+Vector3.new(0,.25,0)),c3(look.color),Enum.Material.SmoothPlastic)
 		new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},lump)
-		local fuse=block(lump,Vector3.new(.25,.25,.25),CFrame.new(holder.Position+Vector3.new(0,.6,0)),c3(look.color2),Enum.Material.Neon)
-		new("PointLight",{Color=c3(look.color2),Brightness=1.5,Range=5,Shadows=false},fuse)
-		tween(fuse,.4,{Transparency=.6})
+		local fuse=block(lump,Vector3.new(.25,.25,.25),CFrame.new(holder.Position+Vector3.new(0,.6,0)),Color3.fromRGB(70,60,52),Enum.Material.SmoothPlastic)
+		fuse.Name="Fuse"
+		local light=new("PointLight",{Color=c3(look.color2),Brightness=0,Range=5,Shadows=false},fuse)
+		local ring=block(lump,Vector3.new(.06,h.radius*2,h.radius*2),CFrame.new(holder.Position+Vector3.new(0,.05,0))*CFrame.Angles(0,0,math.rad(90)),c3(look.color2),Enum.Material.Neon)
+		ring.Shape=Enum.PartType.Cylinder;ring.Transparency=1;ring.Name="TriggerRing"
 		return nil,lump
+	end
+	FX.hazardUpdate=function(entry,h)
+		if not h.charge or not entry.disc then return end
+		local lump=entry.disc
+		entry.chargeState=entry.chargeState or "posed"
+		if h.charge=="armed" and entry.chargeState~="armed" then
+			entry.chargeState="armed"
+			local fuse=lump:FindFirstChild("Fuse")
+			if fuse then fuse.Material=Enum.Material.Neon;fuse.Color=Color3.fromRGB(255,120,60);local l=fuse:FindFirstChildOfClass("PointLight");if l then l.Brightness=1.6 end end
+			local ring=lump:FindFirstChild("TriggerRing")
+			if ring then ring.Transparency=.85 end
+		end
+		-- Armed: a slow pulse (readable without F8, never a flashing light).
+		if h.charge=="armed" then
+			local fuse=lump:FindFirstChild("Fuse")
+			local l=fuse and fuse:FindFirstChildOfClass("PointLight")
+			if l then l.Brightness=1.2+math.sin(os.clock()*6)*.5 end
+		end
 	end
 	FX.hazardBuild=function(fx,h)
 		local look=Looks[h.look or ""]
@@ -452,6 +475,11 @@ function FamilyFX.install(FX,kit)
 				burst(fx.folder,impact.position,{Texture=TEX.glow,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(4,8),SpreadAngle=Vector2.new(60,60),
 					Acceleration=if to then (to.Position-impact.position).Unit*30 else Vector3.zero,Color=ColorSequence.new(Color3.fromRGB(120,190,255)),
 					LightEmission=1,Size=num({{0,.8},{1,.1}}),Transparency=num({{0,.2},{1,1}})},10)
+				-- An object swallowed by an absorbing window: the reward reads on him.
+				if impact.projectile and to then
+					flash(fx.folder,to.Position,Color3.fromRGB(196,170,230),1,5,.25,.3)
+					shockRing(fx.folder,to.Position-Vector3.new(0,2.6,0),Color3.fromRGB(196,170,230),1.5,7,.3)
+				end
 				return true
 			end
 			return false
@@ -463,6 +491,27 @@ function FamilyFX.install(FX,kit)
 			local root=model:FindFirstChild("HumanoidRootPart")
 			if not root then return end
 			local buffed=fam and fam.buff~=nil
+			-- An absorbing window (a Buff with Absorb: Nagato's seal), QA-004 M5:
+			-- open, a faint sphere of its radius round him; closed, it folds in
+			-- with a ring, so the end of the window reads without F8.
+			local absorbSpec=nil
+			if buffed then
+				local def=Fighters[actor.fighterId or ""]
+				for _,spec in (def and def.Techniques) or {} do if spec.Id==fam.buff and spec.Absorb then absorbSpec=spec end end
+			end
+			if absorbSpec and not st.absorb then
+				local look=Looks[absorbSpec.Kind or "chakra"] or Looks.chakra
+				local r=(absorbSpec.Absorb.Radius or 6)
+				local sphere=block(fx.folder,Vector3.new(r*2,r*2,r*2),root.CFrame,c3(look.color),Enum.Material.ForceField)
+				new("SpecialMesh",{MeshType=Enum.MeshType.Sphere},sphere)
+				sphere.Name="AbsorbWindow";sphere.Transparency=.55
+				st.absorb=sphere;st.absorbColor=c3(look.color)
+			elseif not absorbSpec and st.absorb then
+				local sphere=st.absorb;st.absorb=nil
+				tween(sphere,.25,{Size=Vector3.new(.5,.5,.5),Transparency=1});Debris:AddItem(sphere,.3)
+				shockRing(fx.folder,root.Position-Vector3.new(0,2.6,0),st.absorbColor,6,1,.25)
+			end
+			if st.absorb then st.absorb.CFrame=root.CFrame end
 			-- A buff that draws a weapon (its Kind is a blade/needle look: the
 			-- Camellia's bone sword, the chakra scalpel) holds it in the right hand.
 			local held=nil

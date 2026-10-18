@@ -49,3 +49,5 @@ Ink         0.56  37.7  26.7  0.48  0.48  0.32/ 14.8    3    33s  4/3 W
 Natif (Studio Mac, Debug, DevGateCheck S15, 18/10 02:16) : Lion L3 push 24.2 / react 0.49 s, heavy push 25.3 / 0.93 s ; Mist L3 27.7 / 0.48, heavy 25.4 / 0.95 ; Puppet L3 23.1 / 0.49, heavy 25.4 / 0.93 ; Ink L3 26.9 / 0.48, heavy 18.9 / 0.90 — cohérent avec la grille headless. S16/S17 natifs : non obtenus (écran du Mac éteint pendant l'exécution).
 
 Constats (à traiter en M6, pas ici) : la réaction du 3e léger dure 0,48 s pour les vingt (même Knockback) ; Sasuke et Lee refusent E après leur launcher (Committed : leur route a sa propre poursuite) ; Sand/Puppet : chaîne plus lente (0,76–0,82 s) par conception.
+
+Complément natif (18/10 02:29, Debug M5, DevGateCheck) : S16 PASS — Flicker, Bone, Clay : launcher, E accepté, Air1/Air2/Air1 acceptés, 3 coups aériens, retour au sol ; S17 PASS — Killer Bee en duel IA 60 s : 3 techniques distinctes comptées par événements (Lariat ×2, InkMist ×1, OctoHold ×1), duel encore en cours à 60 s.

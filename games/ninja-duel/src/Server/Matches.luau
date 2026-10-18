@@ -248,7 +248,9 @@ function Matches:view(s,cursor,mine,theirs)
 	end
 	local hazards={}
 	for _,h in s.combat.hazards do
-		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane,look=h.look})
+		-- A buried charge says whether it is armed yet (QA-004 M5: posed → armed).
+		table.insert(hazards,{position=h.position,radius=h.radius,remaining=math.max(0,h.expires-now),kind=h.kind,owner=h.a.id,lane=h.lane,look=h.look,
+			charge=if h.charge then (if now>=(h.armedAt or 0) then "armed" else "posed") else nil})
 	end
 	-- Only contacts the client has not been sent yet; remotes are ordered and
 	-- reliable, and the client still filters by serial.

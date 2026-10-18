@@ -1318,7 +1318,10 @@ function FX:hazardsStep(data)
 			entry=FX.hazardBuild(self,h)
 			if entry then self.hazards[key]=entry end
 		end
-		if entry and entry.family then continue end
+		if entry and entry.family then
+			if FX.hazardUpdate then FX.hazardUpdate(entry,h) end
+			continue
+		end
 		if not entry then
 			local floor=floorUnder(self,h.position,3,14)
 			local at=if floor then floor.Position else h.position
