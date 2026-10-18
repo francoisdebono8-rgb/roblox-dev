@@ -449,4 +449,45 @@ for _,id in {"Rival","Sapling","Professor"} do
  end)
 end
 
+
+-- Identity pass L7-A (bible ZABUZA.md): the cleaver is in the body, not a
+-- borrowed fan. Own clips for the five authored units and the routes, the
+-- bible's A/C/R and reaches, the heavy after one is the same diagonal, the
+-- handle answers a held guard, the away route backs off.
+test("Zabuza (L7-A): own cleaver clips, the bible's timings and reaches, handle riposte, low cut that backs off",function()
+ if not listed.Mist then return end
+ local Motion=H.load("Client/VelmoraMotionEngine")
+ local clips=Motion.CLIPS.Mist
+ assert(clips,"no clip table of his own")
+ for _,name in {"Light1","Light2","Light3","Heavy","CleaverRise","CleaverArc","CleaverDrop","CleaverHilt","SilentCleave","CleaverDive","Air1","Air2"} do
+  assert(rawget(clips,name),"Zabuza has no clip of his own for "..name)
+ end
+ assert(Motion.familyOf("Mist").clips=="Mist","his clips still point at "..tostring(Motion.familyOf("Mist").clips))
+ assert(Motion.familyOf("Mist").guard,"no guard of his own (blade held flat)")
+ local B=H.load("Server/Brawler")
+ local A=H.load("Shared/Attacks")
+ local prof=Fighters.Mist.AttackProfile
+ local want={Light1={.12,.06,.23,3.2},Light2={.28,.09,.30,5.5},Light3={.32,.10,.40,5.8},Heavy={.42,.10,.52,6}}
+ for name,w in want do
+  local base=A[name];local p=prof[name]
+  local st,ac,re=base.startup*(p.startup or 1),base.active*(p.active or 1),base.recovery*(p.recovery or 1)
+  assert(math.abs(st-w[1])<.015 and math.abs(ac-w[2])<.015 and math.abs(re-w[3])<.02,string.format("%s A/C/R %.2f/%.2f/%.2f (bible %.2f/%.2f/%.2f)",name,st,ac,re,w[1],w[2],w[3]))
+  assert(p.contact==w[4],name.." contact "..tostring(p.contact).." (bible "..w[4]..")")
+ end
+ -- Heavy after one confirmed hit: the same diagonal, no separate move.
+ local c,a,b=H.duel("Mist","Leaf");place(c,a,b,3.2);b.health=999
+ confirm(c,a)
+ assert(press(c,a,"Heavy"));assert(a.attackName=="Heavy","heavy after one was "..tostring(a.attackName))
+ -- The handle answers a held guard.
+ assert(MoveGraphs.Mist.riposte=="CleaverHilt","his riposte is not the handle")
+ -- Away after two: the low cut backs him off.
+ local c2,a2,b2=H.duel("Mist","Leaf");place(c2,a2,b2,3.2);b2.health=999
+ confirm(c2,a2);confirm(c2,a2)
+ local from=a2.root.Position
+ assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))
+ assert(a2.attackName=="CleaverDrop","away after two was "..tostring(a2.attackName))
+ run(c2,.7)
+ assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the low cut did not back him off")
+end)
+
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

@@ -1470,6 +1470,9 @@ require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,T
 -- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): their own clips.
 require(script.Parent.Wave4Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
 	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
+-- Batch 1 bodies authored from their bibles (Zabuza first).
+require(script.Parent.Wave1Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -1972,7 +1975,12 @@ end
 local function guardTargets(fighterId,impact)
 	local absorbed=math.clamp((impact or 0)/.18,0,1)
 	local base=stance(fighterId)
-	-- Crossed forearms in front of the face, weight down, braced.
+	-- A fighter may guard with what it carries (Motion.guard: Zabuza's blade
+	-- held flat across); otherwise crossed forearms, weight down, braced.
+	local own=familyOf(fighterId).guard
+	if own then
+		return build(merge(merge(base,own),{root={pitch=(own.root and own.root.pitch or 6)-6*absorbed,z=.2*absorbed}})),RATE.guard
+	end
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
 end

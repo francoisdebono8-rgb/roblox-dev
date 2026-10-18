@@ -1497,7 +1497,7 @@ fighters.Mirror = {
 -- (much harder while the body stands in his mist) and the Water Prison.
 fighters.Mist = {
 	Name = "Zabuza", FullName = "Zabuza Momochi", Age = 14, Title = "THE DEMON OF THE MIST", Color = { 120, 150, 170 },
-	Routes = "↑ cleaver rising cut  ·  ↓ cleaver brought down  ·  ←→ wide arc that throws aside  ·  heavy after one: the hilt  ·  air: drive / cleaver dive",
+	Routes = "↑ cleaver rise from the hip  ·  ↓ low cut backing off  ·  ←→ arc covering the flank  ·  held guard: handle riposte  ·  air: flat strike / cleaver dive",
 	Description = "Kubikiribōchō: slow, long and heavy. The Hidden Mist, the Silent Killing out of it, the Water Prison.",
 	Health = 150, Chakra = 110, ChakraRegen = 7, Speed = 18.5, SprintScale = 1.1, JumpScale = 1.0, AirControlScale = 0.95, AccelerationScale = 0.98,
 	CombatTravel = 0.92, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.08, PreferredRange = 6.5,
@@ -1507,19 +1507,26 @@ fighters.Mist = {
 	Awakening = { Name = "DEMON OF THE MIST", Speed = 1.06, Damage = 1.12, Regen = 1.2, Cooldown = 0.7, Buff = { Heavy = true }, Color = { 170, 210, 230 } },
 	-- The closed-fan clips are a long heavy weapon swung two-handed: the
 	-- cleaver's (GaleFX draws the fan for Temari only).
-	Motion = { body = "Mirage", clips = "Gale", weapons = "none", springy = false,
-		borrow = { CleaverRise = "Updraft", CleaverDrop = "FanSlam", CleaverArc = "FanPirouette", CleaverHilt = "FanBackhand", CleaverDive = "FanDive", SilentCleave = "Heavy" },
-		-- Tall and loose, the cleaver's weight on the right shoulder, the left
-		-- hand forward in the one-handed seal.
-		stance = {root={y=-.3,pitch=2,yaw=28},torso={pitch=4,yaw=-12},head={pitch=0,yaw=-14},
-			ra={raise=120,out=24,twist=-40,elbow=120,wrist=0},la={raise=60,out=-10,twist=-20,elbow=70,wrist=-10},
-			rf={x=.24,z=.7,yaw=34},lf={x=-.12,z=-.66,yaw=-6},breath=.6,tempo=4.2} },
+	-- Bible ZABUZA.md (DEC-026): his own clips (Client/Wave1Motion), the
+	-- cleaver in both hands from the guard to the recovery (Wave1FX).
+	Motion = { body = "Mirage", clips = "Mist", weapons = "none", springy = false,
+		-- Feet wide, the pelvis carries the weight; the point low on the
+		-- diagonal, the rear hand on the handle.
+		stance = {root={y=-.58,pitch=6,yaw=26},torso={pitch=6,yaw=-10},head={pitch=-4,yaw=-14},
+			ra={raise=46,out=-16,twist=-10,elbow=20,wrist=0},la={raise=52,out=-30,twist=-10,elbow=58,wrist=-10},
+			rf={x=.34,z=.72,yaw=30},lf={x=-.22,z=-.7,yaw=-8},breath=.55,tempo=3.8},
+		-- The guard: the blade held flat across, the face still readable.
+		guard = {root={y=-.66,pitch=6},torso={pitch=4,yaw=-6},head={pitch=4},
+			ra={raise=96,out=-30,twist=60,elbow=70,wrist=0},la={raise=100,out=-50,twist=50,elbow=84,wrist=-10}} },
+	-- Bible §3/§5 A/C/R: L1 handle .12/.06/.23 at 3.2, L2 edge .28/.09/.30
+	-- at 5.5, L3 reverse .32/.10/.40 at 5.8, Heavy .42/.10/.52 at 6 (the
+	-- multipliers are those seconds over the base strike's).
 	AttackProfile = {
-		Light1={startup=1.08,recovery=1.04,travel=.85,range=7.6,depth=5.6,offset=3.6,width=5,contact=4.8,damage=1.05,kind="slash"},
-		Light2={startup=1.1,recovery=1.04,travel=.85,range=7.6,depth=5.6,offset=3.6,width=7,contact=4.8,damage=1.05,kind="slash"},
-		Light3={startup=1.14,recovery=1.08,travel=.8,range=8,depth=6,offset=3.8,width=7,contact=4.8,impulseZ=64,kind="slash"},
-		Heavy={startup=1.1,range=8,depth=6,offset=3.8,contact=4.8,kind="heavy"},
-		DashAttack={travel=.9,range=7.6,contact=4.6},Air1={range=7.2,contact=4.6},Air2={range=7.2,contact=4.6},
+		Light1={startup=1.33,active=.5,recovery=.82,travel=.9,range=5.4,depth=4,offset=2.6,width=4.5,contact=3.2,damage=.9,zone="body",kind="strike"},
+		Light2={startup=2.8,active=.75,recovery=1.11,travel=.8,range=7.6,depth=5.8,offset=3.6,width=8.5,contact=5.5,damage=1.15,zone="body",kind="slash"},
+		Light3={startup=2.67,active=.71,recovery=1.67,travel=.8,range=8,depth=6,offset=3.8,width=7,contact=5.8,impulseZ=64,damage=1.1,kind="slash"},
+		Heavy={startup=1.4,active=.59,recovery=1.0,range=8.2,depth=6.2,offset=3.9,contact=6,kind="heavy"},
+		DashAttack={travel=.9,range=6,contact=3.4,kind="strike"},Air1={range=7,contact=4.4,kind="strike"},Air2={range=7.2,contact=4.6,kind="slash"},
 	},
 	Skin = { 228, 204, 182 }, Hair = { 30, 30, 34 }, Outfit = { 120, 128, 130 },
 	Techniques = {
@@ -1588,7 +1595,9 @@ local graphs={
 	},
 	Mist={
 		routes={up="CleaverRise",down="CleaverDrop",side="CleaverArc",airUp="AirDrive",airDown="CleaverDive"},
-		heavyAfterOne="CleaverHilt",
+		-- Bible §5/§6: the heavy after one is the same diagonal (no separate
+		-- move); a held guard is answered with the handle.
+		riposte="CleaverHilt",
 		stringCancels={SilentKilling=true},
 		blockCancels={},
 		-- Unhurried: walks the body down, straight in, slower than most.
@@ -1612,8 +1621,8 @@ local function attacks(move,list)
 		IceSlide={{.1,.14,.24,6,3.2,"HitStun",V(0,4,12),.38},{contact=3.4,range=6.5,width=5,zone="legs",kind="slash",side=1,twist=40,lean=16,arm=80,step=1.1,orbit=30,chain=true}},
 		-- Zabuza: the cleaver. Long reach (he stops further out), slow, heavy.
 		CleaverRise={{.17,.15,.32,9,1.4,"Launched",V(0,52,6),1.2},{contact=4.8,range=8,width=6,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-26,arm=120,step=1.1,breaksShield=true}},
-		CleaverDrop={{.18,.14,.38,11,1.4,"Knockdown",V(0,6,14),.72},{contact=4.8,range=8,width=5,height=7,zone="head",kind="heavy",side=1,twist=10,lean=32,arm=124,step=1.15}},
-		CleaverArc={{.13,.18,.3,8,.8,"Knockback",V(0,8,38),.44},{contact=4.6,range=8.2,width=9,height=6,zone="body",kind="slash",side=1,twist=92,lean=6,arm=84,step=1.0,lateral=true}},
+		CleaverDrop={{.16,.14,.38,9,.4,"Knockdown",V(0,6,16),.66},{contact=4.6,range=8,width=7,height=3.5,zone="legs",kind="sweep",side=1,twist=30,lean=20,arm=80,step=.9,retreat=1.4}},
+		CleaverArc={{.13,.18,.3,7,.8,"HitStun",V(0,5,14),.4},{contact=4.6,range=8.2,width=9,height=6,zone="body",kind="slash",side=1,twist=60,lean=6,arm=84,step=1.0,chain=true,orbit=18}},
 		CleaverHilt={{.1,.12,.32,9,1.6,"Knockback",V(0,12,50),.5},{contact=4.2,range=7,width=6,zone="body",kind="heavy",side=-1,twist=48,lean=12,arm=96,step=1.15}},
 		CleaverDive={{.11,.14,.26,8,1.5,"Spiked",V(0,-72,4),.9},{contact=4.4,range=7.8,width=6,height=8,zone="head",kind="spike",side=1,twist=10,lean=42,arm=124,step=1,air=true}},
 		SilentCleave={{.08,.16,.36,13,1.2,"Knockdown",V(0,10,30),.7},{contact=4.4,range=8,width=7,height=7,zone="body",kind="heavy",side=1,twist=60,lean=24,arm=120,step=1.2}},
@@ -3271,7 +3280,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">622599951c2dd1e46d208791d6146b37f8d8dadaac8ad553f4d51e9ff6665f02</string>
+          <string name="Value">0255a0d4360508aa467900f7eb33dc8751ebe12bcedd781e64d1491906ae06e8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -27771,6 +27780,9 @@ require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,T
 -- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): their own clips.
 require(script.Parent.Wave4Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
 	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
+-- Batch 1 bodies authored from their bibles (Zabuza first).
+require(script.Parent.Wave1Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -28273,7 +28285,12 @@ end
 local function guardTargets(fighterId,impact)
 	local absorbed=math.clamp((impact or 0)/.18,0,1)
 	local base=stance(fighterId)
-	-- Crossed forearms in front of the face, weight down, braced.
+	-- A fighter may guard with what it carries (Motion.guard: Zabuza's blade
+	-- held flat across); otherwise crossed forearms, weight down, braced.
+	local own=familyOf(fighterId).guard
+	if own then
+		return build(merge(merge(base,own),{root={pitch=(own.root and own.root.pitch or 6)-6*absorbed,z=.2*absorbed}})),RATE.guard
+	end
 	return build(merge(base,{root={y=-.6,pitch=8-6*absorbed,z=.2*absorbed},torso={pitch=10-10*absorbed,yaw=-4},head={pitch=10},
 		ra={raise=92,out=-34,twist=42,elbow=112,wrist=-10},la={raise=96,out=-30,twist=40,elbow=108,wrist=-10}})),RATE.guard
 end
@@ -28786,27 +28803,27 @@ function M.install(FX,kit)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end
-	-- Zabuza: Kubikiribōchō leaves his back for his hands while he swings it
-	-- (the strikes are the cleaver's, not a fist's): a blade welded to the
-	-- right hand during an attack, the one on his back hidden meanwhile.
+	-- Zabuza: Kubikiribōchō in his hands from the guard to the recovery
+	-- (bible ZABUZA.md §7): a blade welded to the right hand for the whole
+	-- duel, the one on his back hidden; the edge trail only in live frames.
 	local BACK={Cleaver=true,CleaverHole=true,CleaverGrip=true}
 	local held=setmetatable({},{__mode="k"})
 	local function cleaver(fx,model,actor)
 		if actor.fighterId~="Mist" then return end
-		local swinging=actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery")
+		local swinging=(actor.health or 1)&gt;0
 		local st=held[model]
 		if not st then
 			local hand=model:FindFirstChild("RightHand")
 			if not hand then return end
 			local m=new("Model",{Name="HeldCleaver"},model)
-			local blade=block(m,Vector3.new(.16,1.5,4.4),hand.CFrame*CFrame.new(0,-.2,-2.5),Color3.fromRGB(180,188,196),Enum.Material.Metal)
-			local grip=block(m,Vector3.new(.24,.24,1.1),hand.CFrame*CFrame.new(0,-.2,-.1),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
-			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,.2,-4.1),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
+			local blade=block(m,Vector3.new(.16,4.4,1.5),hand.CFrame*CFrame.new(0,-3.0,-.35),Color3.fromRGB(180,188,196),Enum.Material.Metal)
+			local grip=block(m,Vector3.new(.24,1.1,.24),hand.CFrame*CFrame.new(0,-.25,0),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
+			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,-4.6,-.55),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
 			for _,p in {blade,grip,hole} do p.Anchored=false;p.CanCollide=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
 			-- The arc the edge cuts while the strike is live (QA-004 M6: the hit
 			-- reads as coming from the blade, not from his fist).
-			local a0=new("Attachment",{Position=Vector3.new(0,-.6,-2.1)},blade)
-			local a1=new("Attachment",{Position=Vector3.new(0,-.6,2.1)},blade)
+			local a0=new("Attachment",{Position=Vector3.new(0,-2.1,-.6)},blade)
+			local a1=new("Attachment",{Position=Vector3.new(0,2.1,-.6)},blade)
 			local trail=new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.14,Color=ColorSequence.new(Color3.fromRGB(226,236,244)),LightEmission=.5,
 				Transparency=num({{0,.35},{1,1}}),FaceCamera=false,Enabled=false},blade)
 			st={model=m,parts={blade,grip,hole},shown=nil,trail=trail};held[model]=st
@@ -28849,6 +28866,132 @@ return M
         </Item>
         <Item class="ModuleScript" referent="ND108">
           <Properties>
+            <string name="Name">Wave1Motion</string>
+            <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
+-- Zabuza (docs/characters/ZABUZA.md §2–§7, §11, B): Kubikiribōchō held in
+-- both hands from the guard to the recovery (Wave1FX welds it to the right
+-- hand; the left hand rides the handle). The weight goes first, the blade
+-- follows; the handle works close, the edge works far; every recovery takes
+-- the mass back. No fan clip any more.
+-- Keys as in Wave4Motion: 0 wind-up, 1 contact ("out"), 2 end of the live
+-- window, 3 back to the stance (the server's startup/active/recovery set
+-- their length). What is not authored (throws, grab, wall dive) falls back
+-- to Itachi's body (Mirage). Presentation only.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Wave1Motion={}
+function Wave1Motion.install(E)
+	local K,merge=E.K,E.merge
+	local AIR={root={pitch=4},torso={pitch=6},head={pitch=-6},ra={raise=70,out=10,elbow=60},la={raise=66,out=-10,elbow=70},rl={lift=50,knee=86,ankle=-10},ll={lift=30,knee=64,ankle=-10}}
+	local function clip(T,keys)
+		local out={}
+		for i,k in keys do
+			local at,pose,ease=k[1],k[2],k[3]
+			out[i]=K(at,if pose=="T" then T elseif pose.air then merge(AIR,pose.air) else merge(T,pose),ease)
+		end
+		return out
+	end
+	-- The left hand stays on the handle unless a gesture lets it go.
+	local function both(ra,extra)
+		local la={raise=ra.raise-4,out=(ra.out or 0)-14,twist=(ra.twist or 0),elbow=(ra.elbow or 0)+16,wrist=-10}
+		local pose={ra=ra,la=la}
+		for key,value in extra or {} do pose[key]=value end
+		return pose
+	end
+
+	local Z=Fighters.Mist.Motion.stance
+	local C={}
+	-- L1: the handle, short, into the sternum; the blade stays high on the diagonal.
+	C.Light1=clip(Z,{
+		{0,both({raise=60,out=10,twist=-10,elbow=96},{root={y=-.6,yaw=30,z=.1},torso={yaw=14}})},
+		{1,both({raise=86,out=-6,twist=-10,elbow=24},{root={y=-.62,z=-.35,yaw=20,pitch=6},torso={yaw=-4,pitch=6},lf={z=-.85}}),"out"},
+		{2,both({raise=84,out=-6,twist=-10,elbow=28},{root={y=-.62,z=-.36,yaw=20,pitch=6},torso={yaw=-6,pitch=6},lf={z=-.85}})},
+		{3,"T"}})
+	-- L2: the edge, a horizontal arc right to left at the ribs, 60° of hip.
+	C.Light2=clip(Z,{
+		{0,both({raise=86,out=70,twist=-30,elbow=30},{root={y=-.62,yaw=58},torso={yaw=44,pitch=2},head={yaw=-30}})},
+		{.7,both({raise=88,out=74,twist=-30,elbow=30},{root={y=-.64,yaw=62},torso={yaw=48,pitch=2},head={yaw=-32}})},
+		{1,both({raise=90,out=-58,twist=20,elbow=12},{root={y=-.6,z=-.25,yaw=-4,pitch=4},torso={yaw=-40,pitch=4},head={yaw=-6},rf={z=.5,yaw=10}}),"out"},
+		{2,both({raise=88,out=-64,twist=20,elbow=14},{root={y=-.6,z=-.26,yaw=-6,pitch=4},torso={yaw=-44,pitch=4},rf={z=.5,yaw=10}})},
+		{3,"T"}})
+	-- L3: the reverse cut from high left down to the opposite hip; the weight
+	-- falls on the front foot and the blade visibly brakes.
+	C.Light3=clip(Z,{
+		{0,both({raise=156,out=-40,twist=40,elbow=40},{root={y=-.5,yaw=-20,pitch=-4},torso={yaw=-34,pitch=-6},head={pitch=-6}})},
+		{.75,both({raise=162,out=-42,twist=40,elbow=44},{root={y=-.48,yaw=-22,pitch=-6},torso={yaw=-36,pitch=-8}})},
+		{1,both({raise=26,out=46,twist=-20,elbow=10},{root={y=-.86,z=-.45,yaw=24,pitch=16},torso={yaw=26,pitch=18},head={pitch=8},lf={z=-1.05},rf={z=.8}}),"out"},
+		{2,both({raise=20,out=50,twist=-20,elbow=12},{root={y=-.9,z=-.46,yaw=26,pitch=18},torso={yaw=28,pitch=20},lf={z=-1.05},rf={z=.8}})},
+		{2.6,both({raise=22,out=48,twist=-20,elbow=16},{root={y=-.84,z=-.4,yaw=24,pitch=14},torso={yaw=24,pitch=16},lf={z=-1.0},rf={z=.8}})},
+		{3,"T"}})
+	-- Heavy: the cleaver charged over the shoulder, the rear foot pushes, a
+	-- long diagonal down; the point ends low and must be taken back.
+	C.Heavy=clip(Z,{
+		{0,both({raise=172,out=26,twist=-20,elbow=76},{root={y=-.62,yaw=44,pitch=-4,z=.15},torso={yaw=36,pitch=-6},head={yaw=-26},rf={z=.95}})},
+		{.8,both({raise=176,out=28,twist=-20,elbow=80},{root={y=-.66,yaw=48,pitch=-6,z=.18},torso={yaw=40,pitch=-8},head={yaw=-28},rf={z=1.0}})},
+		{1,both({raise=34,out=-44,twist=24,elbow=8},{root={y=-.88,z=-.7,yaw=-12,pitch=18},torso={yaw=-34,pitch=18},head={pitch=8},lf={z=-1.15},rf={z=.85}}),"out"},
+		{2,both({raise=24,out=-48,twist=24,elbow=10},{root={y=-.92,z=-.72,yaw=-14,pitch=20},torso={yaw=-36,pitch=20},lf={z=-1.15},rf={z=.85}})},
+		{2.6,both({raise=26,out=-46,twist=24,elbow=14},{root={y=-.86,z=-.64,yaw=-12,pitch=16},torso={yaw=-32,pitch=16},lf={z=-1.1},rf={z=.85}})},
+		{3,"T"}})
+	-- Forward after two: the handle lifts the forearm, then the blade rises from the hip; the legs push.
+	C.CleaverRise=clip(Z,{
+		{0,both({raise=100,out=-10,twist=10,elbow=96},{root={y=-.95,pitch=14,yaw=16},torso={pitch=10,yaw=10}})},
+		{1,both({raise=170,out=14,twist=-10,elbow=14},{root={y=-.15,z=-.3,pitch=-10,yaw=12},torso={pitch=-12,yaw=-6},head={pitch=-16},rf={toe=-20}}),"out"},
+		{2,both({raise=172,out=14,twist=-10,elbow=16},{root={y=-.15,z=-.32,pitch=-12,yaw=12},torso={pitch=-14,yaw=-6},head={pitch=-16},rf={toe=-18}})},
+		{3,"T"}})
+	-- Side after one: the outer foot steps and the edge covers the flank (not a pirouette).
+	C.CleaverArc=clip(Z,{
+		{0,both({raise=80,out=-60,twist=30,elbow=30},{root={y=-.66,yaw=-36},torso={yaw=-40},lf={x=.45}})},
+		{1,both({raise=84,out=64,twist=-30,elbow=12},{root={y=-.66,yaw=40,pitch=4},torso={yaw=44,pitch=4},head={yaw=-34},lf={x=.7,z=-.6}}),"out"},
+		{2,both({raise=82,out=68,twist=-30,elbow=14},{root={y=-.66,yaw=42,pitch=4},torso={yaw=46,pitch=4},lf={x=.7,z=-.6}})},
+		{3,"T"}})
+	-- Away after two: a low cut as he backs off, the point keeps the space then returns.
+	C.CleaverDrop=clip(Z,{
+		{0,both({raise=60,out=40,twist=-20,elbow=30},{root={y=-.7,yaw=30},torso={yaw=24,pitch=6}})},
+		{1,both({raise=12,out=-44,twist=30,elbow=8},{root={y=-1.05,z=.35,yaw=-10,pitch=22},torso={yaw=-30,pitch=16},lf={z=-.5},rf={z=1.2}}),"out"},
+		{2,both({raise=14,out=-40,twist=30,elbow=10},{root={y=-1.0,z=.4,yaw=-8,pitch=20},torso={yaw=-28,pitch=14},lf={z=-.5},rf={z=1.25}})},
+		{3,"T"}})
+	-- The handle answers a held guard (riposte), and the heavy after one keeps it.
+	C.CleaverHilt=clip(Z,{
+		{0,both({raise=70,out=20,twist=-20,elbow=100},{root={y=-.58,yaw=34,z=.1},torso={yaw=20}})},
+		{1,both({raise=92,out=-10,twist=-10,elbow=14},{root={y=-.6,z=-.4,yaw=12,pitch=8},torso={yaw=-12,pitch=8},lf={z=-.9}}),"out"},
+		{2,both({raise=90,out=-10,twist=-10,elbow=16},{root={y=-.6,z=-.42,yaw=10,pitch=8},torso={yaw=-14,pitch=8},lf={z=-.9}})},
+		{3,"T"}})
+	-- Silent Killing: arrival with the blade already up, the weight behind it.
+	C.SilentCleave=clip(Z,{
+		{0,both({raise=168,out=20,twist=-20,elbow=60},{root={y=-.6,yaw=40},torso={yaw=34,pitch=-6}})},
+		{1,both({raise=30,out=-40,twist=24,elbow=8},{root={y=-.86,z=-.6,yaw=-10,pitch=18},torso={yaw=-30,pitch=18},lf={z=-1.1}}),"out"},
+		{2,both({raise=24,out=-44,twist=24,elbow=10},{root={y=-.9,z=-.62,yaw=-12,pitch=20},torso={yaw=-32,pitch=20},lf={z=-1.1}})},
+		{3,"T"}})
+	-- Air: a short strike of the flat, then the descending terminal cut.
+	C.Air1=clip(Z,{
+		{0,{air={torso={yaw=24},ra={raise=110,out=40,elbow=60},la={raise=104,out=26,elbow=76}}}},
+		{1,{air={torso={yaw=-20,pitch=10},ra={raise=86,out=-30,elbow=12},la={raise=80,out=-44,elbow=28}}},"out"},
+		{2,{air={torso={yaw=-22,pitch=10},ra={raise=84,out=-32,elbow=14},la={raise=78,out=-46,elbow=30}}}},
+		{3,{air={}}}})
+	C.Air2=clip(Z,{
+		{0,{air={root={pitch=-8},torso={pitch=-12},ra={raise=168,out=10,elbow=50},la={raise=162,out=-4,elbow=66}}}},
+		{1,{air={root={pitch=24},torso={pitch=24},ra={raise=40,out=-10,elbow=8},la={raise=36,out=-24,elbow=24}}},"out"},
+		{2,{air={root={pitch=26},torso={pitch=24},ra={raise=38,out=-10,elbow=10},la={raise=34,out=-24,elbow=26}}}},
+		{3,{air={}}}})
+	C.CleaverDive=clip(Z,{
+		{0,{air={root={pitch=-14},torso={pitch=-18},ra={raise=176,out=8,elbow=40},la={raise=170,out=-6,elbow=56}}}},
+		{1,{air={root={pitch=34},torso={pitch=30},ra={raise=30,out=-6,elbow=8},la={raise=26,out=-20,elbow=24}}},"out"},
+		{2,{air={root={pitch=36},torso={pitch=30},ra={raise=28,out=-6,elbow=10},la={raise=24,out=-20,elbow=26}}}},
+		{3,{air={}}}})
+	C.Slam=C.CleaverDive
+	-- Dash strike: the handle first (an entry, not a brawler's dive).
+	C.DashAttack=C.CleaverHilt
+	E.CLIPS.Mist=C
+	setmetatable(C,{__index=E.CLIPS.Mirage})
+	-- A heavy run: shorter stride, little bounce, the blade near the flank.
+	E.GAIT.Mist={stride=.9,cadence=.86,arm=6,lean=4,bob=.9,guard=.6,holdRear=false}
+end
+return Wave1Motion
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND109">
+          <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
 -- Effects like SandFX: projectile builders (kit.BUILD[kind]), FX.poses[kind],
@@ -28860,7 +29003,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's own drawing, installed by
@@ -28873,7 +29016,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -29016,7 +29159,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -29232,7 +29375,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND112">
+  <Item class="Lighting" referent="ND113">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -29250,7 +29393,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND113">
+  <Item class="SoundService" referent="ND114">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

@@ -38,27 +38,27 @@ function M.install(FX,kit)
 		task.delay(math.max(.3,time-1),function() if e.Parent then e.Enabled=false end end)
 		Debris:AddItem(holder,time+3.5)
 	end
-	-- Zabuza: Kubikiribōchō leaves his back for his hands while he swings it
-	-- (the strikes are the cleaver's, not a fist's): a blade welded to the
-	-- right hand during an attack, the one on his back hidden meanwhile.
+	-- Zabuza: Kubikiribōchō in his hands from the guard to the recovery
+	-- (bible ZABUZA.md §7): a blade welded to the right hand for the whole
+	-- duel, the one on his back hidden; the edge trail only in live frames.
 	local BACK={Cleaver=true,CleaverHole=true,CleaverGrip=true}
 	local held=setmetatable({},{__mode="k"})
 	local function cleaver(fx,model,actor)
 		if actor.fighterId~="Mist" then return end
-		local swinging=actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery")
+		local swinging=(actor.health or 1)>0
 		local st=held[model]
 		if not st then
 			local hand=model:FindFirstChild("RightHand")
 			if not hand then return end
 			local m=new("Model",{Name="HeldCleaver"},model)
-			local blade=block(m,Vector3.new(.16,1.5,4.4),hand.CFrame*CFrame.new(0,-.2,-2.5),Color3.fromRGB(180,188,196),Enum.Material.Metal)
-			local grip=block(m,Vector3.new(.24,.24,1.1),hand.CFrame*CFrame.new(0,-.2,-.1),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
-			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,.2,-4.1),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
+			local blade=block(m,Vector3.new(.16,4.4,1.5),hand.CFrame*CFrame.new(0,-3.0,-.35),Color3.fromRGB(180,188,196),Enum.Material.Metal)
+			local grip=block(m,Vector3.new(.24,1.1,.24),hand.CFrame*CFrame.new(0,-.25,0),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
+			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,-4.6,-.55),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
 			for _,p in {blade,grip,hole} do p.Anchored=false;p.CanCollide=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
 			-- The arc the edge cuts while the strike is live (QA-004 M6: the hit
 			-- reads as coming from the blade, not from his fist).
-			local a0=new("Attachment",{Position=Vector3.new(0,-.6,-2.1)},blade)
-			local a1=new("Attachment",{Position=Vector3.new(0,-.6,2.1)},blade)
+			local a0=new("Attachment",{Position=Vector3.new(0,-2.1,-.6)},blade)
+			local a1=new("Attachment",{Position=Vector3.new(0,2.1,-.6)},blade)
 			local trail=new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.14,Color=ColorSequence.new(Color3.fromRGB(226,236,244)),LightEmission=.5,
 				Transparency=num({{0,.35},{1,1}}),FaceCamera=false,Enabled=false},blade)
 			st={model=m,parts={blade,grip,hole},shown=nil,trail=trail};held[model]=st

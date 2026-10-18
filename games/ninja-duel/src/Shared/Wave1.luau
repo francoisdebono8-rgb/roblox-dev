@@ -58,7 +58,7 @@ fighters.Mirror = {
 -- (much harder while the body stands in his mist) and the Water Prison.
 fighters.Mist = {
 	Name = "Zabuza", FullName = "Zabuza Momochi", Age = 14, Title = "THE DEMON OF THE MIST", Color = { 120, 150, 170 },
-	Routes = "↑ cleaver rising cut  ·  ↓ cleaver brought down  ·  ←→ wide arc that throws aside  ·  heavy after one: the hilt  ·  air: drive / cleaver dive",
+	Routes = "↑ cleaver rise from the hip  ·  ↓ low cut backing off  ·  ←→ arc covering the flank  ·  held guard: handle riposte  ·  air: flat strike / cleaver dive",
 	Description = "Kubikiribōchō: slow, long and heavy. The Hidden Mist, the Silent Killing out of it, the Water Prison.",
 	Health = 150, Chakra = 110, ChakraRegen = 7, Speed = 18.5, SprintScale = 1.1, JumpScale = 1.0, AirControlScale = 0.95, AccelerationScale = 0.98,
 	CombatTravel = 0.92, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.08, PreferredRange = 6.5,
@@ -68,19 +68,26 @@ fighters.Mist = {
 	Awakening = { Name = "DEMON OF THE MIST", Speed = 1.06, Damage = 1.12, Regen = 1.2, Cooldown = 0.7, Buff = { Heavy = true }, Color = { 170, 210, 230 } },
 	-- The closed-fan clips are a long heavy weapon swung two-handed: the
 	-- cleaver's (GaleFX draws the fan for Temari only).
-	Motion = { body = "Mirage", clips = "Gale", weapons = "none", springy = false,
-		borrow = { CleaverRise = "Updraft", CleaverDrop = "FanSlam", CleaverArc = "FanPirouette", CleaverHilt = "FanBackhand", CleaverDive = "FanDive", SilentCleave = "Heavy" },
-		-- Tall and loose, the cleaver's weight on the right shoulder, the left
-		-- hand forward in the one-handed seal.
-		stance = {root={y=-.3,pitch=2,yaw=28},torso={pitch=4,yaw=-12},head={pitch=0,yaw=-14},
-			ra={raise=120,out=24,twist=-40,elbow=120,wrist=0},la={raise=60,out=-10,twist=-20,elbow=70,wrist=-10},
-			rf={x=.24,z=.7,yaw=34},lf={x=-.12,z=-.66,yaw=-6},breath=.6,tempo=4.2} },
+	-- Bible ZABUZA.md (DEC-026): his own clips (Client/Wave1Motion), the
+	-- cleaver in both hands from the guard to the recovery (Wave1FX).
+	Motion = { body = "Mirage", clips = "Mist", weapons = "none", springy = false,
+		-- Feet wide, the pelvis carries the weight; the point low on the
+		-- diagonal, the rear hand on the handle.
+		stance = {root={y=-.58,pitch=6,yaw=26},torso={pitch=6,yaw=-10},head={pitch=-4,yaw=-14},
+			ra={raise=46,out=-16,twist=-10,elbow=20,wrist=0},la={raise=52,out=-30,twist=-10,elbow=58,wrist=-10},
+			rf={x=.34,z=.72,yaw=30},lf={x=-.22,z=-.7,yaw=-8},breath=.55,tempo=3.8},
+		-- The guard: the blade held flat across, the face still readable.
+		guard = {root={y=-.66,pitch=6},torso={pitch=4,yaw=-6},head={pitch=4},
+			ra={raise=96,out=-30,twist=60,elbow=70,wrist=0},la={raise=100,out=-50,twist=50,elbow=84,wrist=-10}} },
+	-- Bible §3/§5 A/C/R: L1 handle .12/.06/.23 at 3.2, L2 edge .28/.09/.30
+	-- at 5.5, L3 reverse .32/.10/.40 at 5.8, Heavy .42/.10/.52 at 6 (the
+	-- multipliers are those seconds over the base strike's).
 	AttackProfile = {
-		Light1={startup=1.08,recovery=1.04,travel=.85,range=7.6,depth=5.6,offset=3.6,width=5,contact=4.8,damage=1.05,kind="slash"},
-		Light2={startup=1.1,recovery=1.04,travel=.85,range=7.6,depth=5.6,offset=3.6,width=7,contact=4.8,damage=1.05,kind="slash"},
-		Light3={startup=1.14,recovery=1.08,travel=.8,range=8,depth=6,offset=3.8,width=7,contact=4.8,impulseZ=64,kind="slash"},
-		Heavy={startup=1.1,range=8,depth=6,offset=3.8,contact=4.8,kind="heavy"},
-		DashAttack={travel=.9,range=7.6,contact=4.6},Air1={range=7.2,contact=4.6},Air2={range=7.2,contact=4.6},
+		Light1={startup=1.33,active=.5,recovery=.82,travel=.9,range=5.4,depth=4,offset=2.6,width=4.5,contact=3.2,damage=.9,zone="body",kind="strike"},
+		Light2={startup=2.8,active=.75,recovery=1.11,travel=.8,range=7.6,depth=5.8,offset=3.6,width=8.5,contact=5.5,damage=1.15,zone="body",kind="slash"},
+		Light3={startup=2.67,active=.71,recovery=1.67,travel=.8,range=8,depth=6,offset=3.8,width=7,contact=5.8,impulseZ=64,damage=1.1,kind="slash"},
+		Heavy={startup=1.4,active=.59,recovery=1.0,range=8.2,depth=6.2,offset=3.9,contact=6,kind="heavy"},
+		DashAttack={travel=.9,range=6,contact=3.4,kind="strike"},Air1={range=7,contact=4.4,kind="strike"},Air2={range=7.2,contact=4.6,kind="slash"},
 	},
 	Skin = { 228, 204, 182 }, Hair = { 30, 30, 34 }, Outfit = { 120, 128, 130 },
 	Techniques = {
@@ -149,7 +156,9 @@ local graphs={
 	},
 	Mist={
 		routes={up="CleaverRise",down="CleaverDrop",side="CleaverArc",airUp="AirDrive",airDown="CleaverDive"},
-		heavyAfterOne="CleaverHilt",
+		-- Bible §5/§6: the heavy after one is the same diagonal (no separate
+		-- move); a held guard is answered with the handle.
+		riposte="CleaverHilt",
 		stringCancels={SilentKilling=true},
 		blockCancels={},
 		-- Unhurried: walks the body down, straight in, slower than most.
@@ -173,8 +182,8 @@ local function attacks(move,list)
 		IceSlide={{.1,.14,.24,6,3.2,"HitStun",V(0,4,12),.38},{contact=3.4,range=6.5,width=5,zone="legs",kind="slash",side=1,twist=40,lean=16,arm=80,step=1.1,orbit=30,chain=true}},
 		-- Zabuza: the cleaver. Long reach (he stops further out), slow, heavy.
 		CleaverRise={{.17,.15,.32,9,1.4,"Launched",V(0,52,6),1.2},{contact=4.8,range=8,width=6,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-26,arm=120,step=1.1,breaksShield=true}},
-		CleaverDrop={{.18,.14,.38,11,1.4,"Knockdown",V(0,6,14),.72},{contact=4.8,range=8,width=5,height=7,zone="head",kind="heavy",side=1,twist=10,lean=32,arm=124,step=1.15}},
-		CleaverArc={{.13,.18,.3,8,.8,"Knockback",V(0,8,38),.44},{contact=4.6,range=8.2,width=9,height=6,zone="body",kind="slash",side=1,twist=92,lean=6,arm=84,step=1.0,lateral=true}},
+		CleaverDrop={{.16,.14,.38,9,.4,"Knockdown",V(0,6,16),.66},{contact=4.6,range=8,width=7,height=3.5,zone="legs",kind="sweep",side=1,twist=30,lean=20,arm=80,step=.9,retreat=1.4}},
+		CleaverArc={{.13,.18,.3,7,.8,"HitStun",V(0,5,14),.4},{contact=4.6,range=8.2,width=9,height=6,zone="body",kind="slash",side=1,twist=60,lean=6,arm=84,step=1.0,chain=true,orbit=18}},
 		CleaverHilt={{.1,.12,.32,9,1.6,"Knockback",V(0,12,50),.5},{contact=4.2,range=7,width=6,zone="body",kind="heavy",side=-1,twist=48,lean=12,arm=96,step=1.15}},
 		CleaverDive={{.11,.14,.26,8,1.5,"Spiked",V(0,-72,4),.9},{contact=4.4,range=7.8,width=6,height=8,zone="head",kind="spike",side=1,twist=10,lean=42,arm=124,step=1,air=true}},
 		SilentCleave={{.08,.16,.36,13,1.2,"Knockdown",V(0,10,30),.7},{contact=4.4,range=8,width=7,height=7,zone="body",kind="heavy",side=1,twist=60,lean=24,arm=120,step=1.2}},
