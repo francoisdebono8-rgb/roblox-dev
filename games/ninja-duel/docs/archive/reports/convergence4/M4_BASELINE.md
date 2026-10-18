@@ -51,3 +51,28 @@ Natif (Studio Mac, Debug, DevGateCheck S15, 18/10 02:16) : Lion L3 push 24.2 / r
 Constats (à traiter en M6, pas ici) : la réaction du 3e léger dure 0,48 s pour les vingt (même Knockback) ; Sasuke et Lee refusent E après leur launcher (Committed : leur route a sa propre poursuite) ; Sand/Puppet : chaîne plus lente (0,76–0,82 s) par conception.
 
 Complément natif (18/10 02:29, Debug M5, DevGateCheck) : S16 PASS — Flicker, Bone, Clay : launcher, E accepté, Air1/Air2/Air1 acceptés, 3 coups aériens, retour au sol ; S17 PASS — Killer Bee en duel IA 60 s : 3 techniques distinctes comptées par événements (Lariat ×2, InkMist ×1, OctoHold ×1), duel encore en cours à 60 s.
+
+Après M6 (hitstop par nature de coup, traînée du couperet) : grille headless inchangée sur str/dmg3/push/react/whiff/heavy/conv (les durées de duels IA varient avec le timing).
+```
+fighter      str  dmg3  push react whiff       heavy conv      ko/tech
+Flashstep   0.51  34.7  22.4  0.48  0.46  0.30/ 14.0    3    16s  2/1 W
+Mirage      0.56  38.2  25.8  0.48  0.47  0.30/ 15.4    3    18s  2/1 W
+GentleFist  0.55  33.0  23.2  0.48  0.47  0.31/ 13.3    3    23s  3/1 W
+Lion        0.56  36.5  24.1  0.48  0.48  0.30/ 14.7    3    16s  2/2 W
+Sand        0.82  18.9  24.1  0.48  0.70  0.27/  9.0    3    30s  3/3 W
+Leaf        0.52  27.9  24.9  0.48  0.46  0.27/ 14.0    3    14s  2/1 W
+Legion      0.56  34.7  23.2  0.48  0.48  0.30/ 14.0    3    19s  3/2 L
+Gale        0.59  22.6  30.1  0.48  0.50  0.32/ 14.0    3    19s  3/1 W
+Lavender    0.55  31.9  21.5  0.48  0.46  0.30/ 12.9    3    17s  1/1 L
+Copycat     0.55  35.4  23.2  0.48  0.47  0.30/ 14.3    3    23s  4/2 W
+Mirror      0.53  31.2  20.6  0.48  0.45  0.29/ 12.6    3    11s  1/1 W
+Mist        0.59  39.8  27.5  0.48  0.52  0.33/ 15.7    3    16s  1/1 W
+Bone        0.55  34.7  22.4  0.48  0.47  0.30/ 14.0    3    25s  4/3 W
+Flicker     0.53  33.3  21.5  0.48  0.45  0.29/ 13.4    3    16s  3/3 W
+Serpent     0.55  34.0  21.5  0.48  0.48  0.30/ 13.7    3    17s  3/2 L
+Medic       0.55  31.9  20.6  0.48  0.47  0.30/ 12.9    3    22s  3/2 W
+Clay        0.56  31.2  24.9  0.48  0.48  0.30/ 12.6    3    19s  2/1 W
+Puppet      0.76  20.3  23.2  0.48  0.65  0.30/ 12.9    3    33s  6/2 W
+Rinnegan    0.56  31.2  24.1  0.48  0.48  0.31/ 12.6    3    18s  2/1 L
+Ink         0.56  37.7  26.7  0.48  0.48  0.32/ 14.8    3    26s  4/2 W
+```

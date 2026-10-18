@@ -357,4 +357,18 @@ test("M5: a charge reports posed then armed in the snapshot; the client lights i
  assert(ok,err)
 end)
 
+
+-- QA-004 M6: a fighter's own heavy blows and routes carry weight (hitstop)
+-- like the shared grammar's, by what they are; lights stay light.
+test("M6: the roster's own heavies, launchers and slams weigh like the shared ones; a light stays without stop",function()
+ local B=H.load("Server/Brawler")
+ local A=H.load("Shared/Attacks")
+ local function style(name) return B.stopStyle({name=name,spec=A[name]}) end
+ for name,want in {Slam="slam",Launcher="launcher",Heavy="finisher",Light3="finisher",Light1="light",Air1="air",
+  CleaverDrop="finisher",CleaverRise="launcher",CleaverDive="slam",SilentCleave="finisher",LariatArm="finisher",Lariat="finisher",
+  PuppetRise="launcher",PuppetSweep="finisher",BoneThrust="finisher",Updraft="launcher",FanSlam="finisher",FanDive="slam",IceSlide="light",FlickerStep="light"} do
+  if A[name] then assert(style(name)==want,name.." weighs "..style(name).." (expected "..want..")") end
+ end
+end)
+
 print(string.format("NinjaDuel convergence (lifecycle, composition, reach): %d PASS (headless)",passed))

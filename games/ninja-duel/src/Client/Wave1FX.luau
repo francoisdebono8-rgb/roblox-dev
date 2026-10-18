@@ -55,8 +55,15 @@ function M.install(FX,kit)
 			local grip=block(m,Vector3.new(.24,.24,1.1),hand.CFrame*CFrame.new(0,-.2,-.1),Color3.fromRGB(60,46,36),Enum.Material.SmoothPlastic)
 			local hole=block(m,Vector3.new(.18,.5,.5),hand.CFrame*CFrame.new(0,.2,-4.1),Color3.fromRGB(30,30,34),Enum.Material.SmoothPlastic)
 			for _,p in {blade,grip,hole} do p.Anchored=false;p.CanCollide=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
-			st={model=m,parts={blade,grip,hole},shown=nil};held[model]=st
+			-- The arc the edge cuts while the strike is live (QA-004 M6: the hit
+			-- reads as coming from the blade, not from his fist).
+			local a0=new("Attachment",{Position=Vector3.new(0,-.6,-2.1)},blade)
+			local a1=new("Attachment",{Position=Vector3.new(0,-.6,2.1)},blade)
+			local trail=new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.14,Color=ColorSequence.new(Color3.fromRGB(226,236,244)),LightEmission=.5,
+				Transparency=num({{0,.35},{1,1}}),FaceCamera=false,Enabled=false},blade)
+			st={model=m,parts={blade,grip,hole},shown=nil,trail=trail};held[model]=st
 		end
+		st.trail.Enabled=swinging and actor.state=="Active"
 		if st.shown==swinging then return end
 		st.shown=swinging
 		for _,p in st.parts do p.LocalTransparencyModifier=if swinging then 0 else 1 end

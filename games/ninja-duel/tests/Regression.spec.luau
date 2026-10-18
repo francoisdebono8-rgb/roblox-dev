@@ -486,14 +486,20 @@ test("AI neutral rhythm: paced jutsu, reads into melee range, step-in feints",fu
    if accepted and string.match(action,"^Technique") then
     local t=actor.target
     local gap=((t.root.Position-actor.root.Position)*V.new(1,0,1)).Magnitude
-    local punish=t.state=="Stunned" or t.reaction=="Bound" or ((t.state=="Recovery" or t.state=="TechniqueRecovery") and gap<7)
+    -- A jutsu that ends a combo on a body still reacting (Minato's plunging
+    -- Rasengan on a juggled body, the arrival Rasengan) is a conversion, not a
+    -- fresh neutral jutsu (QA-004 M6: hitstop weights shifted this seed's
+    -- timing and exposed the old classification).
+    local punish=t.state=="Stunned" or t.reaction~=nil or ((t.state=="Recovery" or t.state=="TechniqueRecovery") and gap<7)
     -- Minato's teleport onto his own flying/planted seal, and the strike that
     -- lands on arrival, finish a kunai conversion: not fresh neutral jutsu.
     local spec=actor.def.Techniques[tonumber(string.match(action,"%d+"))]
     local conversion=spec and (spec.Id=="Flashstep" or (teleported[actor] and self.now-teleported[actor]<.8))
     if spec and spec.Id=="Flashstep" then teleported[actor]=self.now end
     if not punish and not conversion and last[actor] then worstGap=math.min(worstGap,self.now-last[actor]) end
-    if not conversion then last[actor]=self.now;techniques+=1 else conversions+=1 end
+    if not conversion then techniques+=1 else conversions+=1 end
+    -- Only a neutral jutsu starts the pacing window the next one is measured from.
+    if not conversion and not punish then last[actor]=self.now end
    end
    if accepted and action=="Guard" then guards+=1 end
    return accepted,reason

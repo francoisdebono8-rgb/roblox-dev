@@ -720,11 +720,17 @@ function Brawler.airFinisher(c,a,f)
  c:cue(a,use.cue or "AIR FINISHER",.9);Brawler.event(c,a,use.event or "AirFinisher")
  return ok
 end
+-- The weight of a contact (Combat.Hitstop). By name for the shared grammar,
+-- and by what the strike is (Attacks kind / reaction) for a fighter's own
+-- routes and heavies (QA-004 M6): a cleaver brought down, a lariat or a
+-- launcher of the roster weighed nothing before (every unnamed move was a
+-- light, no stop at all).
 function Brawler.stopStyle(p)
- if p.name=="Slam" then return "slam" end
- if p.name=="Launcher" or p.name=="ThrowUp" then return "launcher" end
- if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" then return "finisher" end
- if p.spec and p.spec.air then return "air" end
+ local spec=p.spec or {}
+ if p.name=="Slam" or spec.kind=="slam" or spec.kind=="spike" then return "slam" end
+ if p.name=="Launcher" or p.name=="ThrowUp" or spec.kind=="launch" then return "launcher" end
+ if p.name=="Heavy" or p.name=="Throw" or p.name=="Light3" or spec.kind=="heavy" or spec.reaction=="Knockdown" then return "finisher" end
+ if spec.air then return "air" end
  return "light"
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
