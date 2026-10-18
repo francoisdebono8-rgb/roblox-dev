@@ -490,4 +490,40 @@ test("Zabuza (L7-A): own cleaver clips, the bible's timings and reaches, handle 
  assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the low cut did not back him off")
 end)
 
+test("Killer Bee (L7-B): own blade clips, the bible's timings and reaches, elbow riposte, knee kick that backs off",function()
+ if not listed.Ink then return end
+ local Motion=H.load("Client/VelmoraMotionEngine")
+ local clips=Motion.CLIPS.Ink
+ assert(clips,"no clip table of his own")
+ for _,name in {"Light1","Light2","Light3","Heavy","BladeLift","BladeSwap","KneeKick","ElbowCut","BladeFall","Air1","Air2","DashAttack"} do
+  assert(rawget(clips,name),"Bee has no clip of his own for "..name)
+ end
+ assert(Motion.familyOf("Ink").clips=="Ink","his clips still point at "..tostring(Motion.familyOf("Ink").clips))
+ assert(Motion.familyOf("Ink").guard,"no guard of his own (two blades crossed)")
+ local A=H.load("Shared/Attacks")
+ local prof=Fighters.Ink.AttackProfile
+ local want={Light1={.16,.06,.20,4.2},Light2={.23,.06,.18,4.0},Light3={.12,.07,.34,4.4},Heavy={.30,.09,.42,4.8}}
+ for name,w in want do
+  local base=A[name];local p=prof[name]
+  local st,ac,re=base.startup*(p.startup or 1),base.active*(p.active or 1),base.recovery*(p.recovery or 1)
+  assert(math.abs(st-w[1])<.015 and math.abs(ac-w[2])<.015 and math.abs(re-w[3])<.02,string.format("%s A/C/R %.2f/%.2f/%.2f (bible %.2f/%.2f/%.2f)",name,st,ac,re,w[1],w[2],w[3]))
+  assert(p.contact==w[4],name.." contact "..tostring(p.contact).." (bible "..w[4]..")")
+ end
+ local G=MoveGraphs.Ink
+ assert(G.riposte=="ElbowCut","his riposte is not the elbow blade")
+ assert(G.routes.up=="BladeLift" and G.routes.side=="BladeSwap" and G.routes.down=="KneeKick" and G.routes.airDown=="BladeFall","routes are not the bible's")
+ -- Heavy after one confirmed hit: the same X, no separate move.
+ local c,a,b=H.duel("Ink","Leaf");place(c,a,b,3.2);b.health=999
+ confirm(c,a)
+ assert(press(c,a,"Heavy"));assert(a.attackName=="Heavy","heavy after one was "..tostring(a.attackName))
+ -- Away after two: the knee-blade kick backs him off.
+ local c2,a2,b2=H.duel("Ink","Leaf");place(c2,a2,b2,3.2);b2.health=999
+ confirm(c2,a2);confirm(c2,a2)
+ local from=a2.root.Position
+ assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))
+ assert(a2.attackName=="KneeKick","away after two was "..tostring(a2.attackName))
+ run(c2,.7)
+ assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the knee kick did not back him off")
+end)
+
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

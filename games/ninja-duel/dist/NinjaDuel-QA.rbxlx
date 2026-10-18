@@ -1989,8 +1989,8 @@ fighters.Rinnegan = {
 -- guard). Awakening: the first chakra cloak. No seven swords, no full Gyūki.
 fighters.Ink = {
 	Name = "Killer Bee", FullName = "Killer Bee", Age = 14, Title = "THE EIGHT-TAILS' HOST", Color = { 230, 150, 60 },
-	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: lariat arm  ·  air: drive / spike / switch",
-	Description = "A jinchūriki's body: the Lariat, the octopus' ink, a tentacle that grabs. Heavy, rhythmic, hard to stop.",
+	Routes = "↑ elbow beats the guard, the blade lifts  ·  ↓ barred blades, knee-blade kick backing off  ·  ←→ grips change, one edge  ·  held guard: the elbow blade  ·  air: X finisher / blade down / switch",
+	Description = "Seven blades and a rhythm of his own: hand, elbow, knee. The Lariat, the octopus' ink, a tentacle that grabs.",
 	Health = 150, Chakra = 115, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.1, JumpScale = 1.04, AirControlScale = 1.0, AccelerationScale = 1.02,
 	CombatTravel = 1.04, CombatDamage = 1.06, DashScale = 1.06, GuardStrength = 0.12, PreferredRange = 5,
 	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
@@ -1998,16 +1998,28 @@ fighters.Ink = {
 	-- Awakening: the first chakra cloak. Light blows do not stop him, a
 	-- quarter of every blow is taken by the cloak, harder and faster.
 	Awakening = { Name = "EIGHT-TAILS CLOAK", Speed = 1.1, Damage = 1.1, Regen = 1.3, Cooldown = 0.7, Buff = { Heavy = true, Armor = 0.25 }, Color = { 240, 160, 70 } },
-	Motion = { body = "Lion", weapons = "none", springy = true,
-		borrow = { LariatArm = "Heavy" },
-		-- Big and loose, bouncing to his own beat, arms wide.
-		stance = {root={y=-.4,pitch=6,yaw=20},torso={pitch=4,yaw=-8},head={pitch=-4,yaw=-10},
-			ra={raise=50,out=40,twist=20,elbow=70,wrist=0},la={raise=50,out=40,twist=-20,elbow=70,wrist=0},
-			rf={x=.3,z=.6,yaw=30},lf={x=-.2,z=-.6,yaw=-10},breath=1.4,tempo=7.5} },
+	-- Bible KILLER_BEE.md (DEC-026): his own clips (Client/Wave3Motion) and
+	-- seven blades in configurations (Wave3FX): two in the hands, one under
+	-- the left elbow, the rest sheathed; the elbow blade moves behind the
+	-- right knee for the third light.
+	Motion = { body = "Lion", clips = "Ink", weapons = "none", springy = false,
+		-- Wide base but mobile, the weight alternating; a blade in each hand,
+		-- the right point low ahead, the left one higher.
+		stance = {root={y=-.5,pitch=6,yaw=18},torso={pitch=4,yaw=-6},head={pitch=-4,yaw=-10},
+			ra={raise=40,out=10,twist=0,elbow=40,wrist=0},la={raise=36,out=26,twist=-20,elbow=52,wrist=0},
+			rf={x=.4,z=.55,yaw=24},lf={x=-.35,z=-.55,yaw=-10},breath=.9,tempo=6},
+		-- The guard: two blades crossed in front of the shoulder.
+		guard = {root={y=-.62,pitch=6},torso={pitch=4,yaw=-4},head={pitch=4},
+			ra={raise=118,out=-40,twist=40,elbow=40},la={raise=112,out=-44,twist=40,elbow=44}} },
 	AttackProfile = {
-		Light1={startup=.98,recovery=.96,damage=1.05},Light2={startup=1.0,recovery=.96,kind="kick",damage=1.05},
-		Light3={startup=1.04,recovery=1.0,impulseZ=62,kind="kick"},Heavy={startup=1.04},
-		Launcher={startup=1.0,impulseY=58},DashAttack={startup=.96,travel=1.08},Air1={startup=.98},Air2={startup=1.0},
+		-- Bible §3/§5 A/C/R and contact distances (studs to the blade's
+		-- contact): L1 hand .16/.06/.20 at 4.2, L2 elbow .23/.06/.18 at 4.0,
+		-- L3 knee .12/.07/.34 at 4.4, Heavy X .30/.09/.42 at 4.8.
+		Light1={startup=1.78,active=.5,recovery=.71,range=6.2,depth=4.4,offset=3,width=5,contact=4.2,zone="body",kind="slash",damage=1.0},
+		Light2={startup=2.3,active=.5,recovery=.67,range=6,depth=4.2,offset=2.9,width=5.5,contact=4.0,zone="body",kind="slash",damage=1.05},
+		Light3={startup=1.0,active=.5,recovery=1.42,range=6.4,depth=4.6,offset=3.1,width=6,contact=4.4,zone="legs",kind="slash",impulseZ=58},
+		Heavy={startup=1.0,active=.53,recovery=.81,range=6.8,depth=5,offset=3.3,width=6.5,contact=4.8,kind="heavy"},
+		DashAttack={startup=.96,travel=1.08,contact=3.6,kind="strike"},Air1={contact=4,kind="slash"},Air2={contact=4.2,kind="slash"},
 	},
 	Skin = { 120, 82, 60 }, Hair = { 236, 236, 230 }, Outfit = { 70, 76, 60 },
 	Techniques = {
@@ -2049,9 +2061,11 @@ local graphs={
 		reengage={name="rinnegan",speed=.95,arrive=3.4,angle=0,chase=.3,recovery=.22},
 	},
 	Ink={
-		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		routes={up="BladeLift",down="KneeKick",side="BladeSwap",airUp="AirDrive",airDown="BladeFall",airSide="AirSwitch"},
 		disengage="Kunai",
-		heavyAfterOne="LariatArm",
+		-- Bible §5/§6: the heavy after one is the same X; a held guard is
+		-- answered by the blade under the elbow.
+		riposte="ElbowCut",
 		stringCancels={Lariat=true},
 		blockCancels={},
 		reengage={name="ink",speed=1.15,arrive=3,angle=15,chase=.26,recovery=.2},
@@ -2069,7 +2083,13 @@ local function attacks(move,list)
 		PuppetBlade={{.16,.14,.34,8,.4,"Knockback",V(0,10,46),.5},{contact=5,range=9,width=4,depth=8,offset=4.5,zone="body",kind="slash",side=1,twist=24,lean=8,arm=110,step=1,proxy="behind",riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
 		-- Nagato: a palm that pushes the body away.
 		RepellingPalm={{.1,.12,.34,8,2.4,"Knockback",V(0,12,66),.5},{contact=3.8,range=6.6,zone="body",kind="palm",side=1,twist=20,lean=16,arm=100,step=1.2}},
-		-- Killer Bee: the lariat arm (heavy after one) and the charging Lariat.
+		-- Killer Bee: the blades in their grips (bible KILLER_BEE.md §4/§6), the
+		-- old lariat arm (kept, no longer routed) and the charging Lariat.
+		BladeLift={{.15,.14,.32,8,1.4,"Launched",V(0,54,6),1.2},{contact=4.2,range=7,width=5.5,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-20,arm=120,step=1.1,breaksShield=true}},
+		KneeKick={{.13,.14,.36,8,.4,"Knockdown",V(0,8,22),.62},{contact=4.2,range=6.6,width=6,height=4,zone="legs",kind="sweep",side=1,twist=36,lean=-6,arm=80,step=.9,retreat=1.4}},
+		BladeSwap={{.12,.12,.28,6,.8,"HitStun",V(0,4,12),.38},{contact=4.0,range=6.6,width=7,height=6,zone="body",kind="slash",side=1,twist=60,lean=6,arm=84,step=1.0,chain=true,orbit=22}},
+		ElbowCut={{.08,.12,.3,8,1.6,"Knockback",V(0,10,46),.5},{contact=3.8,range=6,width=6,zone="body",kind="slash",side=-1,twist=50,lean=10,arm=90,step=1.15}},
+		BladeFall={{.11,.14,.26,8,1.5,"Spiked",V(0,-70,4),.9},{contact=4,range=7,width=5.5,height=8,zone="head",kind="spike",side=1,twist=10,lean=40,arm=124,step=1,air=true}},
 		LariatArm={{.11,.14,.34,10,3.2,"Knockdown",V(0,10,40),.62},{contact=3.6,range=7,width=7,zone="head",kind="heavy",side=1,twist=50,lean=16,arm=90,step=1.3}},
 		Lariat={{.06,.22,.42,15,13,"Knockdown",V(0,14,56),.7},{contact=3.4,range=7,width=7,height=6,zone="head",kind="heavy",side=1,twist=40,lean=20,arm=90,step=1.45,breaksShield=true}},
 	})
@@ -3280,7 +3300,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9e3d982c7367c4fe5ad48946a612100afe51a5d40abb7a1a79a7748b3a361e74</string>
+          <string name="Value">4784f4d23072f582901109b6ea388a8ab2e57236b0ee0064b132d984c00c8020</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -28257,6 +28277,9 @@ require(script.Parent.Wave4Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,
 -- Batch 1 bodies authored from their bibles (Zabuza first).
 require(script.Parent.Wave1Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
 	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
+-- Batch 3 bodies authored from their bibles (Killer Bee first).
+require(script.Parent.Wave3Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -29480,17 +29503,234 @@ return M
         <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">Wave3FX</string>
-            <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's own drawing, installed by
--- Effects like SandFX: projectile builders (kit.BUILD[kind]), FX.poses[kind],
--- and layers in FX.layers ({impact=..., fighter=..., step=..., frame=...}).
--- Most objects need nothing here: Shared/Looks + Client/FamilyFX draw them.
+            <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
+-- drawing, installed by Effects like SandFX: projectile builders
+-- (kit.BUILD[kind]), FX.poses[kind], and layers in FX.layers
+-- ({impact=..., fighter=..., step=..., frame=...}). Most objects need nothing
+-- here: Shared/Looks + Client/FamilyFX draw them.
 local M={}
-function M.install(FX,kit) end
+function M.install(FX,kit)
+	local new,block,num=kit.new,kit.block,kit.num
+	-- Killer Bee's seven blades (bible KILLER_BEE.md §7): configuration A =
+	-- a blade in each hand (continuing the forearm, as Wave3Motion authors
+	-- them) and one under the left elbow; four sheathed on the back. For L3
+	-- and the knee kick the elbow blade rides behind the right knee, point
+	-- out of the body. Lariat / KO: everything goes back to the sheaths (the
+	-- three spare ones fill). Presentation only: the server's single contact
+	-- is unchanged, no blade adds a hitbox.
+	local STEEL=Color3.fromRGB(206,212,220)
+	local GRIP=Color3.fromRGB(40,36,40)
+	local SHEATH=Color3.fromRGB(70,48,34)
+	local KNEE={Light3=true,KneeKick=true}
+	local ELBOW={Light2=true,ElbowCut=true}
+	local BOTH={Heavy=true,Air2=true}
+	local STOW={Lariat=true,LariatArm=true}
+	local held=setmetatable({},{__mode="k"})
+	local function weld(part0,parts)
+		for _,p in parts do p.Anchored=false;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true;new("WeldConstraint",{Part0=part0,Part1=p},p) end
+	end
+	local function show(parts,on) for _,p in parts do p.LocalTransparencyModifier=if on then 0 else 1 end end
+	local function trail(blade,from,to)
+		local a0=new("Attachment",{Position=from},blade)
+		local a1=new("Attachment",{Position=to},blade)
+		return new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.12,Color=ColorSequence.new(Color3.fromRGB(236,240,248)),LightEmission=.5,
+			Transparency=num({{0,.35},{1,1}}),FaceCamera=false,Enabled=false},blade)
+	end
+	local function handBlade(m,hand)
+		local cf=hand.CFrame
+		local blade=block(m,Vector3.new(.08,2.4,.26),cf*CFrame.new(0,-1.55,-.04),STEEL,Enum.Material.Metal)
+		local guard=block(m,Vector3.new(.34,.08,.34),cf*CFrame.new(0,-.36,0),GRIP,Enum.Material.Metal)
+		local grip=block(m,Vector3.new(.16,.6,.16),cf*CFrame.new(0,-.05,0),GRIP,Enum.Material.SmoothPlastic)
+		weld(hand,{blade,guard,grip})
+		return {blade,guard,grip},trail(blade,Vector3.new(0,-1.1,0),Vector3.new(0,1.1,0))
+	end
+	local function blades(model)
+		local rh,lh=model:FindFirstChild("RightHand"),model:FindFirstChild("LeftHand")
+		local la,rl=model:FindFirstChild("LeftLowerArm"),model:FindFirstChild("RightLowerLeg")
+		local torso=model:FindFirstChild("UpperTorso")
+		if not (rh and lh and la and rl and torso) then return nil end
+		local m=new("Model",{Name="SevenBlades"},model)
+		local st={}
+		st.right,st.rightTrail=handBlade(m,rh)
+		st.left,st.leftTrail=handBlade(m,lh)
+		-- Under the left elbow: along the forearm, past the elbow, tilted out.
+		local e=block(m,Vector3.new(.08,2.1,.24),la.CFrame*CFrame.new(0,.75,.26)*CFrame.Angles(math.rad(14),0,0),STEEL,Enum.Material.Metal)
+		weld(la,{e})
+		st.elbow={e};st.elbowTrail=trail(e,Vector3.new(0,-1,0),Vector3.new(0,1,0))
+		-- Behind the right knee, the point out to the side.
+		local k=block(m,Vector3.new(2.1,.24,.08),rl.CFrame*CFrame.new(1.2,.3,.24),STEEL,Enum.Material.Metal)
+		local kg=block(m,Vector3.new(.3,.3,.14),rl.CFrame*CFrame.new(.2,.3,.24),GRIP,Enum.Material.SmoothPlastic)
+		weld(rl,{k,kg})
+		st.knee={k,kg};st.kneeTrail=trail(k,Vector3.new(-1,0,0),Vector3.new(1,0,0))
+		-- Seven sheaths fanned on the back; the last three are filled only
+		-- while the hand/elbow blades are put away.
+		st.sheaths={};st.spare={}
+		for i=1,7 do
+			local x=(i-4)*.18
+			local cf=torso.CFrame*CFrame.new(x,.15,.58)*CFrame.Angles(0,0,math.rad((i-4)*9))
+			local s=block(m,Vector3.new(.14,2.2,.16),cf,SHEATH,Enum.Material.Wood)
+			local h=block(m,Vector3.new(.12,.42,.12),cf*CFrame.new(0,1.3,0),GRIP,Enum.Material.SmoothPlastic)
+			weld(torso,{s})
+			weld(torso,{h})
+			table.insert(st.sheaths,s)
+			if i&gt;=5 then table.insert(st.spare,h) end
+		end
+		return st
+	end
+	local function sevenBlades(model,actor)
+		if actor.fighterId~="Ink" then return end
+		local st=held[model]
+		if st==nil then st=blades(model) or false;held[model]=st end
+		if not st then return end
+		local a=actor.attackName
+		local stow=(actor.health or 1)&lt;=0 or (a~=nil and STOW[a]==true)
+		local knee=not stow and a~=nil and KNEE[a]==true
+		local config=if stow then "stow" elseif knee then "knee" else "A"
+		local live=actor.state=="Active" and a~=nil
+		st.rightTrail.Enabled=live and not stow and not KNEE[a] and not ELBOW[a]
+		st.leftTrail.Enabled=live and BOTH[a]==true
+		st.elbowTrail.Enabled=live and ELBOW[a]==true
+		st.kneeTrail.Enabled=live and knee
+		if st.config==config then return end
+		st.config=config
+		show(st.right,not stow);show(st.left,not stow)
+		show(st.elbow,config=="A");show(st.knee,knee)
+		show(st.spare,stow)
+	end
+	table.insert(FX.layers,{name="Wave3",fighter=function(fx,model,actor,dt) if model then sevenBlades(model,actor) end end})
+end
 return M
 </ProtectedString>
           </Properties>
         </Item>
         <Item class="ModuleScript" referent="ND112">
+          <Properties>
+            <string name="Name">Wave3Motion</string>
+            <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
+-- Killer Bee (docs/characters/KILLER_BEE.md §2–§7, §11, B): a young
+-- swordsman with seven blades. Configuration A = a blade in each hand and a
+-- third held under the left elbow, four (seven when he stows) sheathed on
+-- the back (Wave3FX draws and moves them). Each light strikes from another
+-- grip: L1 the right hand, L2 the elbow, L3 the back of the right knee; the
+-- heavy opens two blades in an X. The hand blades continue the forearm, so
+-- these arm angles are the blades' angles.
+-- Keys as in Wave1Motion: 0 wind-up, 1 contact ("out"), 2 end of the live
+-- window, 3 back to the stance. What is not authored (throws, grab, wall
+-- dive) falls back to the Lion body. Presentation only.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Wave3Motion={}
+function Wave3Motion.install(E)
+	local K,merge=E.K,E.merge
+	local AIR={root={pitch=4},torso={pitch=6},head={pitch=-6},ra={raise=70,out=10,elbow=50},la={raise=66,out=10,elbow=60},rl={lift=50,knee=86,ankle=-10},ll={lift=30,knee=64,ankle=-10}}
+	local function clip(T,keys)
+		local out={}
+		for i,k in keys do
+			local at,pose,ease=k[1],k[2],k[3]
+			out[i]=K(at,if pose=="T" then T elseif pose.air then merge(AIR,pose.air) else merge(T,pose),ease)
+		end
+		return out
+	end
+	-- The off blade keeps a guard while the other one works.
+	local RGUARD={raise=96,out=-14,twist=10,elbow=50}
+	local LGUARD={raise=92,out=-18,twist=10,elbow=56}
+
+	local B=Fighters.Ink.Motion.stance
+	local C={}
+	-- L1: the right-hand blade on the diagonal, right hip to the opposite
+	-- shoulder; an inner step; the left blade stays up.
+	C.Light1=clip(B,{
+		{0,{ra={raise=14,out=44,twist=-10,elbow=14},la=LGUARD,root={y=-.56,yaw=30},torso={yaw=18}}},
+		{1,{ra={raise=126,out=-36,twist=20,elbow=10},la=LGUARD,root={y=-.52,z=-.45,yaw=8,pitch=6},torso={yaw=-22,pitch=4},lf={z=-.75}},"out"},
+		{2,{ra={raise=128,out=-38,twist=20,elbow=12},la=LGUARD,root={y=-.52,z=-.46,yaw=6,pitch=6},torso={yaw=-24,pitch=4},lf={z=-.75}}},
+		{3,"T"}})
+	-- L2: the blade under the left elbow, a reverse cut from outside to the
+	-- ribs on the way back (60° of pivot, not a full turn); the left hand has
+	-- taken the other grip and the elbow leads.
+	C.Light2=clip(B,{
+		{0,{la={raise=84,out=-56,twist=20,elbow=124},ra=RGUARD,root={y=-.6,yaw=52},torso={yaw=36},head={yaw=-28}}},
+		{.7,{la={raise=86,out=-58,twist=20,elbow=126},ra=RGUARD,root={y=-.62,yaw=56},torso={yaw=40},head={yaw=-30}}},
+		{1,{la={raise=88,out=54,twist=-10,elbow=120},ra=RGUARD,root={y=-.56,z=-.3,yaw=-8,pitch=4},torso={yaw=-38,pitch=4},head={yaw=-4},rf={z=.45,yaw=12}},"out"},
+		{2,{la={raise=86,out=58,twist=-10,elbow=120},ra=RGUARD,root={y=-.56,z=-.3,yaw=-10,pitch=4},torso={yaw=-40,pitch=4},rf={z=.45,yaw=12}}},
+		{3,"T"}})
+	-- L3: the freed blade rides behind the right knee, point out of the body;
+	-- a small hip kick swings it flat into the flank, the hand takes it back.
+	C.Light3=clip(B,{
+		{0,{ra=RGUARD,la=LGUARD,root={y=-.5,yaw=-30,roll=6},torso={yaw=-10},rl={lift=30,out=6,knee=104,ankle=-10},lf={z=-.3,yaw=-30}}},
+		{1,{ra={raise=70,out=30,elbow=40},la={raise=80,out=-20,elbow=60},root={y=-.42,yaw=44,roll=-14},torso={yaw=18,roll=-12},head={yaw=-34},rl={lift=56,out=64,twist=-20,knee=92,ankle=-14},lf={z=-.3,yaw=36}},"out"},
+		{2,{ra={raise=70,out=30,elbow=40},la={raise=80,out=-20,elbow=60},root={y=-.44,yaw=54,roll=-12},torso={yaw=20,roll=-10},rl={lift=52,out=66,twist=-20,knee=94,ankle=-14},lf={z=-.3,yaw=44}}},
+		{2.5,{ra={raise=40,out=10,elbow=60},root={y=-.52,yaw=30},rl={lift=20,out=14,knee=70},lf={z=-.3,yaw=24}}},
+		{3,"T"}})
+	-- Heavy: the crossed guard opens in an X, the shoulder carries the
+	-- weight; two blades on distinct planes, one accent. A long take-back.
+	C.Heavy=clip(B,{
+		{0,{ra={raise=150,out=-40,twist=20,elbow=24},la={raise=146,out=-40,twist=20,elbow=26},root={y=-.62,pitch=-4,z=.12},torso={pitch=-8},head={pitch=-6}}},
+		{.8,{ra={raise=156,out=-44,twist=20,elbow=26},la={raise=150,out=-44,twist=20,elbow=28},root={y=-.64,pitch=-6,z=.14},torso={pitch=-10}}},
+		{1,{ra={raise=50,out=56,twist=-10,elbow=4},la={raise=64,out=52,twist=-10,elbow=6},root={y=-.78,z=-.6,pitch=16,yaw=10},torso={pitch=14,yaw=8},head={pitch=6},lf={z=-1.0},rf={z=.8}},"out"},
+		{2,{ra={raise=44,out=60,twist=-10,elbow=6},la={raise=58,out=56,twist=-10,elbow=8},root={y=-.8,z=-.62,pitch=18,yaw=10},torso={pitch=16,yaw=8},lf={z=-1.0},rf={z=.8}}},
+		{2.6,{ra={raise=50,out=50,twist=-10,elbow=14},la={raise=60,out=46,twist=-10,elbow=16},root={y=-.74,z=-.54,pitch=14,yaw=8},torso={pitch=12},lf={z=-.95},rf={z=.8}}},
+		{3,"T"}})
+	-- Forward after two: the elbow blade beats the guard down, then the
+	-- shoulder and the right blade lift the body (a wrestler's push, not an uppercut).
+	C.BladeLift=clip(B,{
+		{0,{la={raise=70,out=-36,elbow=126},ra={raise=30,out=20,elbow=30},root={y=-.95,pitch=16,yaw=14},torso={pitch=12,yaw=10}}},
+		{1,{la={raise=118,out=10,elbow=100},ra={raise=168,out=10,twist=-10,elbow=8},root={y=-.2,z=-.35,pitch=-10,yaw=6},torso={pitch=-12,yaw=-6},head={pitch=-16},rf={toe=-20}},"out"},
+		{2,{la={raise=120,out=10,elbow=100},ra={raise=170,out=10,twist=-10,elbow=10},root={y=-.2,z=-.36,pitch=-12,yaw=6},torso={pitch=-14,yaw=-6},rf={toe=-18}}},
+		{3,"T"}})
+	-- Side after one: the hand and elbow blades change places, the outer foot
+	-- steps out; one edge makes the contact.
+	C.BladeSwap=clip(B,{
+		{0,{ra={raise=92,out=-50,twist=20,elbow=22},la={raise=70,out=-30,elbow=110},root={y=-.56,yaw=-30},torso={yaw=-34},lf={x=.4}}},
+		{1,{ra={raise=90,out=62,twist=-20,elbow=8},la={raise=86,out=-20,elbow=120},root={y=-.56,yaw=38,pitch=4},torso={yaw=42,pitch=4},head={yaw=-30},lf={x=.7,z=-.5}},"out"},
+		{2,{ra={raise=88,out=66,twist=-20,elbow=10},la={raise=86,out=-20,elbow=120},root={y=-.56,yaw=40,pitch=4},torso={yaw=44,pitch=4},lf={x=.7,z=-.5}}},
+		{3,"T"}})
+	-- Away after two: blades barred across, a retreating kick that puts the
+	-- knee blade between them; the configuration closes.
+	C.KneeKick=clip(B,{
+		{0,{ra={raise=104,out=-40,twist=30,elbow=60},la={raise=100,out=-40,twist=30,elbow=64},root={y=-.6,yaw=-20},rl={lift=40,knee=110,ankle=-10}}},
+		{1,{ra={raise=104,out=-40,twist=30,elbow=60},la={raise=100,out=-40,twist=30,elbow=64},root={y=-.4,z=.35,yaw=36,pitch=-6,roll=-10},torso={yaw=12,pitch=-6},rl={lift=88,out=40,twist=-20,knee=66,ankle=-20},lf={z=.1,yaw=30}},"out"},
+		{2,{ra={raise=102,out=-40,twist=30,elbow=62},la={raise=98,out=-40,twist=30,elbow=66},root={y=-.42,z=.4,yaw=40,pitch=-6,roll=-8},rl={lift=84,out=42,twist=-20,knee=70},lf={z=.12,yaw=34}}},
+		{3,"T"}})
+	-- The blade nobody expected answers a held guard: the elbow.
+	C.ElbowCut=clip(B,{
+		{0,{la={raise=82,out=-50,twist=20,elbow=130},ra=RGUARD,root={y=-.58,yaw=40},torso={yaw=30}}},
+		{1,{la={raise=90,out=46,twist=-10,elbow=124},ra=RGUARD,root={y=-.56,z=-.4,yaw=-6,pitch=6},torso={yaw=-34,pitch=6},lf={z=-.85}},"out"},
+		{2,{la={raise=88,out=48,twist=-10,elbow=124},ra=RGUARD,root={y=-.56,z=-.42,yaw=-8,pitch=6},torso={yaw=-36,pitch=6},lf={z=-.85}}},
+		{3,"T"}})
+	-- Air: one return cut, then the finisher — two blades crossing in a big X.
+	C.Air1=clip(B,{
+		{0,{air={torso={yaw=24},ra={raise=140,out=30,elbow=10},la={raise=96,out=-20,elbow=50}}}},
+		{1,{air={torso={yaw=-20,pitch=10},ra={raise=50,out=-30,elbow=8},la={raise=96,out=-20,elbow=50}}},"out"},
+		{2,{air={torso={yaw=-22,pitch=10},ra={raise=48,out=-32,elbow=10},la={raise=96,out=-20,elbow=50}}}},
+		{3,{air={}}}})
+	C.Air2=clip(B,{
+		{0,{air={root={pitch=-8},torso={pitch=-10},ra={raise=160,out=44,elbow=8},la={raise=158,out=44,elbow=8}}}},
+		{1,{air={root={pitch=20},torso={pitch=20},ra={raise=60,out=-44,elbow=4},la={raise=56,out=-44,elbow=4}}},"out"},
+		{2,{air={root={pitch=22},torso={pitch=20},ra={raise=56,out=-46,elbow=6},la={raise=52,out=-46,elbow=6}}}},
+		{3,{air={}}}})
+	-- Air down: the blade brought down (not every weapon thrown).
+	C.BladeFall=clip(B,{
+		{0,{air={root={pitch=-14},torso={pitch=-16},ra={raise=174,out=8,elbow=10},la={raise=110,out=-20,elbow=50}}}},
+		{1,{air={root={pitch=32},torso={pitch=28},ra={raise=36,out=-6,elbow=4},la={raise=80,out=-20,elbow=50}}},"out"},
+		{2,{air={root={pitch=34},torso={pitch=28},ra={raise=34,out=-6,elbow=6},la={raise=78,out=-20,elbow=52}}}},
+		{3,{air={}}}})
+	C.Slam=C.BladeFall
+	-- Dash strike: a shoulder entry under a covering blade.
+	C.DashAttack=clip(B,{
+		{0,{la={raise=112,out=-40,twist=20,elbow=60},ra={raise=30,out=10,elbow=40},root={y=-.7,pitch=20},torso={pitch=14,yaw=-10}}},
+		{1,{la={raise=112,out=-40,twist=20,elbow=60},ra={raise=96,out=10,elbow=6},root={y=-.62,z=-.55,pitch=20,yaw=-16},torso={pitch=14,yaw=-24},lf={z=-1.0}},"out"},
+		{2,{la={raise=110,out=-40,twist=20,elbow=62},ra={raise=94,out=10,elbow=8},root={y=-.62,z=-.56,pitch=20,yaw=-16},torso={pitch=14,yaw=-24},lf={z=-1.0}}},
+		{3,"T"}})
+	E.CLIPS.Ink=C
+	setmetatable(C,{__index=E.CLIPS.Lion})
+	-- Wide but mobile, the weight alternates; two blades steady while running.
+	E.GAIT.Ink={stride=1.0,cadence=1.04,arm=4,lean=6,bob=1.1,guard=.6,holdRear=false}
+end
+return Wave3Motion
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -29633,7 +29873,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -29849,7 +30089,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND114">
+  <Item class="Lighting" referent="ND115">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -29867,7 +30107,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND115">
+  <Item class="SoundService" referent="ND116">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

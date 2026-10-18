@@ -156,8 +156,8 @@ fighters.Rinnegan = {
 -- guard). Awakening: the first chakra cloak. No seven swords, no full Gyūki.
 fighters.Ink = {
 	Name = "Killer Bee", FullName = "Killer Bee", Age = 14, Title = "THE EIGHT-TAILS' HOST", Color = { 230, 150, 60 },
-	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ circle step  ·  heavy after one: lariat arm  ·  air: drive / spike / switch",
-	Description = "A jinchūriki's body: the Lariat, the octopus' ink, a tentacle that grabs. Heavy, rhythmic, hard to stop.",
+	Routes = "↑ elbow beats the guard, the blade lifts  ·  ↓ barred blades, knee-blade kick backing off  ·  ←→ grips change, one edge  ·  held guard: the elbow blade  ·  air: X finisher / blade down / switch",
+	Description = "Seven blades and a rhythm of his own: hand, elbow, knee. The Lariat, the octopus' ink, a tentacle that grabs.",
 	Health = 150, Chakra = 115, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.1, JumpScale = 1.04, AirControlScale = 1.0, AccelerationScale = 1.02,
 	CombatTravel = 1.04, CombatDamage = 1.06, DashScale = 1.06, GuardStrength = 0.12, PreferredRange = 5,
 	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
@@ -165,16 +165,28 @@ fighters.Ink = {
 	-- Awakening: the first chakra cloak. Light blows do not stop him, a
 	-- quarter of every blow is taken by the cloak, harder and faster.
 	Awakening = { Name = "EIGHT-TAILS CLOAK", Speed = 1.1, Damage = 1.1, Regen = 1.3, Cooldown = 0.7, Buff = { Heavy = true, Armor = 0.25 }, Color = { 240, 160, 70 } },
-	Motion = { body = "Lion", weapons = "none", springy = true,
-		borrow = { LariatArm = "Heavy" },
-		-- Big and loose, bouncing to his own beat, arms wide.
-		stance = {root={y=-.4,pitch=6,yaw=20},torso={pitch=4,yaw=-8},head={pitch=-4,yaw=-10},
-			ra={raise=50,out=40,twist=20,elbow=70,wrist=0},la={raise=50,out=40,twist=-20,elbow=70,wrist=0},
-			rf={x=.3,z=.6,yaw=30},lf={x=-.2,z=-.6,yaw=-10},breath=1.4,tempo=7.5} },
+	-- Bible KILLER_BEE.md (DEC-026): his own clips (Client/Wave3Motion) and
+	-- seven blades in configurations (Wave3FX): two in the hands, one under
+	-- the left elbow, the rest sheathed; the elbow blade moves behind the
+	-- right knee for the third light.
+	Motion = { body = "Lion", clips = "Ink", weapons = "none", springy = false,
+		-- Wide base but mobile, the weight alternating; a blade in each hand,
+		-- the right point low ahead, the left one higher.
+		stance = {root={y=-.5,pitch=6,yaw=18},torso={pitch=4,yaw=-6},head={pitch=-4,yaw=-10},
+			ra={raise=40,out=10,twist=0,elbow=40,wrist=0},la={raise=36,out=26,twist=-20,elbow=52,wrist=0},
+			rf={x=.4,z=.55,yaw=24},lf={x=-.35,z=-.55,yaw=-10},breath=.9,tempo=6},
+		-- The guard: two blades crossed in front of the shoulder.
+		guard = {root={y=-.62,pitch=6},torso={pitch=4,yaw=-4},head={pitch=4},
+			ra={raise=118,out=-40,twist=40,elbow=40},la={raise=112,out=-44,twist=40,elbow=44}} },
 	AttackProfile = {
-		Light1={startup=.98,recovery=.96,damage=1.05},Light2={startup=1.0,recovery=.96,kind="kick",damage=1.05},
-		Light3={startup=1.04,recovery=1.0,impulseZ=62,kind="kick"},Heavy={startup=1.04},
-		Launcher={startup=1.0,impulseY=58},DashAttack={startup=.96,travel=1.08},Air1={startup=.98},Air2={startup=1.0},
+		-- Bible §3/§5 A/C/R and contact distances (studs to the blade's
+		-- contact): L1 hand .16/.06/.20 at 4.2, L2 elbow .23/.06/.18 at 4.0,
+		-- L3 knee .12/.07/.34 at 4.4, Heavy X .30/.09/.42 at 4.8.
+		Light1={startup=1.78,active=.5,recovery=.71,range=6.2,depth=4.4,offset=3,width=5,contact=4.2,zone="body",kind="slash",damage=1.0},
+		Light2={startup=2.3,active=.5,recovery=.67,range=6,depth=4.2,offset=2.9,width=5.5,contact=4.0,zone="body",kind="slash",damage=1.05},
+		Light3={startup=1.0,active=.5,recovery=1.42,range=6.4,depth=4.6,offset=3.1,width=6,contact=4.4,zone="legs",kind="slash",impulseZ=58},
+		Heavy={startup=1.0,active=.53,recovery=.81,range=6.8,depth=5,offset=3.3,width=6.5,contact=4.8,kind="heavy"},
+		DashAttack={startup=.96,travel=1.08,contact=3.6,kind="strike"},Air1={contact=4,kind="slash"},Air2={contact=4.2,kind="slash"},
 	},
 	Skin = { 120, 82, 60 }, Hair = { 236, 236, 230 }, Outfit = { 70, 76, 60 },
 	Techniques = {
@@ -216,9 +228,11 @@ local graphs={
 		reengage={name="rinnegan",speed=.95,arrive=3.4,angle=0,chase=.3,recovery=.22},
 	},
 	Ink={
-		routes={up="Launcher",down="Sweep",side="CircleStep",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		routes={up="BladeLift",down="KneeKick",side="BladeSwap",airUp="AirDrive",airDown="BladeFall",airSide="AirSwitch"},
 		disengage="Kunai",
-		heavyAfterOne="LariatArm",
+		-- Bible §5/§6: the heavy after one is the same X; a held guard is
+		-- answered by the blade under the elbow.
+		riposte="ElbowCut",
 		stringCancels={Lariat=true},
 		blockCancels={},
 		reengage={name="ink",speed=1.15,arrive=3,angle=15,chase=.26,recovery=.2},
@@ -236,7 +250,13 @@ local function attacks(move,list)
 		PuppetBlade={{.16,.14,.34,8,.4,"Knockback",V(0,10,46),.5},{contact=5,range=9,width=4,depth=8,offset=4.5,zone="body",kind="slash",side=1,twist=24,lean=8,arm=110,step=1,proxy="behind",riders={Poison={Damage=1,Time=2.5,Every=.5}}}},
 		-- Nagato: a palm that pushes the body away.
 		RepellingPalm={{.1,.12,.34,8,2.4,"Knockback",V(0,12,66),.5},{contact=3.8,range=6.6,zone="body",kind="palm",side=1,twist=20,lean=16,arm=100,step=1.2}},
-		-- Killer Bee: the lariat arm (heavy after one) and the charging Lariat.
+		-- Killer Bee: the blades in their grips (bible KILLER_BEE.md §4/§6), the
+		-- old lariat arm (kept, no longer routed) and the charging Lariat.
+		BladeLift={{.15,.14,.32,8,1.4,"Launched",V(0,54,6),1.2},{contact=4.2,range=7,width=5.5,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-20,arm=120,step=1.1,breaksShield=true}},
+		KneeKick={{.13,.14,.36,8,.4,"Knockdown",V(0,8,22),.62},{contact=4.2,range=6.6,width=6,height=4,zone="legs",kind="sweep",side=1,twist=36,lean=-6,arm=80,step=.9,retreat=1.4}},
+		BladeSwap={{.12,.12,.28,6,.8,"HitStun",V(0,4,12),.38},{contact=4.0,range=6.6,width=7,height=6,zone="body",kind="slash",side=1,twist=60,lean=6,arm=84,step=1.0,chain=true,orbit=22}},
+		ElbowCut={{.08,.12,.3,8,1.6,"Knockback",V(0,10,46),.5},{contact=3.8,range=6,width=6,zone="body",kind="slash",side=-1,twist=50,lean=10,arm=90,step=1.15}},
+		BladeFall={{.11,.14,.26,8,1.5,"Spiked",V(0,-70,4),.9},{contact=4,range=7,width=5.5,height=8,zone="head",kind="spike",side=1,twist=10,lean=40,arm=124,step=1,air=true}},
 		LariatArm={{.11,.14,.34,10,3.2,"Knockdown",V(0,10,40),.62},{contact=3.6,range=7,width=7,zone="head",kind="heavy",side=1,twist=50,lean=16,arm=90,step=1.3}},
 		Lariat={{.06,.22,.42,15,13,"Knockdown",V(0,14,56),.7},{contact=3.4,range=7,width=7,height=6,zone="head",kind="heavy",side=1,twist=40,lean=20,arm=90,step=1.45,breaksShield=true}},
 	})
