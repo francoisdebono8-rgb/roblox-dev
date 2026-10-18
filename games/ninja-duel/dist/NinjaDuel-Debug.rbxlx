@@ -3032,7 +3032,7 @@ return {
       <Item class="StringValue" referent="ND21">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">9b4cfb6032d559f151e5617ece2be80d7e3bc47363a653fcb9a0c550481564d6</string>
+          <string name="Value">2dc36969acd151fbfafb375f9f0519f64fe0ccbbed3b2000e07ffbb7700502d2</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND22">
@@ -9935,7 +9935,78 @@ S.S20=function()
 	hp=a.health;b.neutralToolAt=0;b.chakra=999;c:request(b,"Tool",a.root.Position);task.wait(.8)
 	return absorbed and melee and closed,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
 end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"}}
+-- M7 ----------------------------------------------------------------------
+-- One continuous sequence per fighter, no refill, no replacement after the
+-- start (QA-004 M7): walk in, light, light, toward+light (its route), chase
+-- (E), air strikes, land, step out, tool, every technique it can pay for in
+-- turn (a refused one is logged with its reason), a guard that holds a blow,
+-- then a KO and the next round: nothing of the first round left over (buff,
+-- stance, slow, poison, zones/charges of his, bodies, cooldowns).
+local Roster=require(game:GetService("ReplicatedStorage").NinjaDuel.Roster)
+local Rules=require(game:GetService("ReplicatedStorage").NinjaDuel.Rules)
+local function Rules_canAct(a,c) return Rules.canAct(a,c.now) end
+local function seq(id)
+	local c,a,b,s=start(id,"Leaf")
+	place(c,a,b,Vector3.new(0,3,7),Vector3.new(0,3,-7))
+	dev:Invoke("health","bot",250)
+	local log={}
+	local function note(k,v) table.insert(log,k.."="..tostring(v)) end
+	-- In reach (the human's own walking is the client's: placed, not walked).
+	local reach=((a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.contact) or 3.4)
+	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
+	local t=os.clock()
+	local hp=b.health
+	confirmOne(c,a);confirmOne(c,a)
+	note("lights",string.format("%.0f",hp-b.health))
+	a.move=flat(b.root.Position-a.root.Position).Unit;local ok,why=c:request(a,"Attack");a.move=Vector3.zero
+	note("route",if ok then a.attackName else why)
+	task.wait(.4)
+	ok,why=c:request(a,"Pursuit");note("E",if ok then "ok" else why);task.wait(.45)
+	local airHits,before=0,b.health
+	for _=1,2 do c:request(a,"Attack");task.wait(.33);if b.health&lt;before then airHits+=1;before=b.health end end
+	note("air",airHits)
+	t=os.clock();repeat task.wait() until (not a.airborne and Rules_canAct(a,c)) or os.clock()-t&gt;3
+	-- Step out and throw.
+	local away=flat(a.root.Position-b.root.Position);away=if away.Magnitude&gt;.1 then away.Unit else Vector3.zAxis
+	c:relocate(a,b.root.Position+away*12+Vector3.new(0,.1,0));task.wait(.2)
+	ok,why=c:request(a,"Tool",b.root.Position);note("tool",if ok then "ok" else why);task.wait(.8)
+	-- Every technique, as the reserve allows.
+	local casts={}
+	for slot,spec in a.def.Techniques do
+		t=os.clock();repeat task.wait() until (Rules_canAct(a,c) and a.state=="Neutral") or os.clock()-t&gt;2.5
+		local gap=math.clamp((spec.Range or 10)*.45,3.4,14)
+		if spec.Family=="Burst" or spec.Family=="Counter" then gap=math.min(gap,(spec.Radius or 6)-1.5) end
+		local d=flat(a.root.Position-b.root.Position).Magnitude
+		local dir=flat(a.root.Position-b.root.Position);dir=if dir.Magnitude&gt;.1 then dir.Unit else Vector3.zAxis
+		if math.abs(d-gap)&gt;2 then c:relocate(a,b.root.Position+dir*math.max(gap,3)+Vector3.new(0,.1,0));task.wait(.15) end
+		local r1,r2=c:request(a,"Technique"..slot,b.root.Position)
+		table.insert(casts,spec.Id..":"..(if r1 then "ok" else tostring(r2)))
+		task.wait(1.2)
+	end
+	note("jutsu",table.concat(casts,","))
+	-- Defence: the bot throws a light at a raised guard.
+	t=os.clock();repeat task.wait() until (Rules_canAct(a,c) and a.state=="Neutral") or os.clock()-t&gt;3
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
+	c:request(a,"Guard");task.wait(.1)
+	local hpA=a.health
+	c:request(b,"Attack");task.wait(.5)
+	note("guard",string.format("held=%s chip=%.1f",tostring(a.impactStyle=="block" or (hpA-a.health)&lt;3),hpA-a.health))
+	c:request(a,"GuardOff")
+	-- KO and the next round.
+	dev:Invoke("ko","bot")
+	t=os.clock();repeat task.wait(.2) until s.round and s.round&gt;=2 and s.phase=="Duel" or os.clock()-t&gt;10
+	local c2=s.combat
+	local mine=0
+	for _,h in c2.hazards do if h.a==a then mine+=1 end end
+	local bodies=#(c2.bodies or {})
+	local leftover=(a.buff~=nil) or (a.counterStance~=nil) or ((a.slowUntil or 0)&gt;c2.now) or ((a.poisonedUntil or 0)&gt;c2.now) or mine&gt;0 or bodies&gt;0
+	note("reset",string.format("round=%s clean=%s",tostring(s.round),tostring(not leftover)))
+	return not leftover,table.concat(log," ")
+end
+for _,id in Roster do S["Q:"..id]=function() return seq(id) end end
+local everyone={}
+for _,id in Roster do table.insert(everyone,"Q:"..id) end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"},M7=everyone}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
