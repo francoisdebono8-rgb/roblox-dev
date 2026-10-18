@@ -9,7 +9,7 @@ local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -204,6 +204,20 @@ local function clockFor(self,key,actor,now)
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
 end
+-- A landing belongs to one body. Opponent landings must never bend the
+-- player's knees; keep a local phase so compression releases before neutral.
+function Presentation:landing(key,actor,previous,now)
+ if previous and previous.airborne and not actor.airborne then
+  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true}
+ end
+ local landing=self.landings[key]
+ if not landing then return false,0,false end
+ if actor.airborne or now>=landing.at+landing.duration then
+  self.landings[key]=nil
+  return false,0,false
+ end
+ return true,math.clamp((now-landing.at)/landing.duration,0,1),landing.strong
+end
 function Presentation:update(data,dt)
  dt=math.max(dt or 1/60,.001)
  -- One presentation tick per rendered frame; every pose below reads this clock.
@@ -219,7 +233,7 @@ function Presentation:update(data,dt)
   -- Character switch, rematch or a fresh duel: the only place a hard reset is
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
-  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth)
+  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -246,10 +260,7 @@ function Presentation:update(data,dt)
    -- Take-off and get-up sounds, from the state change itself.
    if previous and not previous.airborne and actor.airborne and root and root.AssemblyLinearVelocity.Y>15 and not actor.reaction then self.fx:jumpSound(root.Position) end
    if previous and previous.reaction=="Wakeup" and actor.reaction~="Wakeup" and root then self.fx:getUpSound(root.Position) end
-   if previous and previous.airborne and not actor.airborne then
-    -- Landing compression lasts a few frames; a soft landing barely shows.
-    self.landingUntil=now+(if actor.landStrong then .22 else .1)
-   end
+   local landing,landingPhase,landingStrong=self:landing(key,actor,previous,now)
    -- Health lost without a new contact (burn, sand): a slow drain such as the
    -- curse mark (~0.1 HP per snapshot) is not a hit and spawns nothing.
    if previous and actor.health<=previous.health-1 and actor.impactSerial==(previous.impactSerial or -1) then
@@ -262,7 +273,11 @@ function Presentation:update(data,dt)
    -- Locomotion is posed from the rig's live velocity, not a 10 Hz value.
    local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
-   if tracked and velocity then velocity=Vector3.new(tracked.X,velocity.Y,tracked.Z) end
+   if tracked and velocity then
+    -- Wall motion is positioned by the server with zero assembly velocity.
+    -- Its vertical cadence must follow the drawn track as well as its X/Z.
+    velocity=Vector3.new(tracked.X,if actor.wall then tracked.Y else velocity.Y,tracked.Z)
+   end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
    local speed=math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
@@ -273,7 +288,7 @@ function Presentation:update(data,dt)
    visual.speed=speed
    visual.reactionElapsed=clock.reactionElapsed
    visual.attackElapsed=clock.attackElapsed
-   visual.landing=self.landingUntil~=nil and now<self.landingUntil
+   visual.landing=landing;visual.landingPhase=landingPhase;visual.landStrong=landingStrong
    visual.intro=data.intro
    local other=if key=="human" then "bot" else "human"
    visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)

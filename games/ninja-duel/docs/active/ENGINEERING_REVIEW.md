@@ -4,7 +4,7 @@ Audit Codex `5bb52fd..aeff49a`, 18/10. Aucun P0 gameplay reproduit. **P1 : la cl
 
 ## REGRESSIONS
 
-Aucune nouvelle régression gameplay reproduite ; 28 suites/508 cas et neuf tests d’isolation PASS. Ne pas rouvrir M1–M3 depuis l’ancienne revue. P2 : QA embarque un DevGateCheck antérieur au HEAD ; Debug concorde. P2 : S20 n’assert pas les dégâts du kunai après fermeture (rejeu Codex :3.0, comportement actuel correct).
+Passe R15 utilisateur : deux modules client, 28 suites/511 cas par variante et neuf tests d’isolation PASS ; réception croisée corrigée, relâchement et cadence murale améliorés. [Preuves natives finales](../archive/reports/r15-2026-10-18/REPORT.md). Ne pas rouvrir M1–M3 depuis l’ancienne revue. Ancien P2 QA périmé résolu par reconstruction des trois variantes R15 ; les hashes source concordent. P2 : S20 n’assert pas les dégâts du kunai après fermeture (rejeu Codex :3.0, comportement actuel correct).
 
 ## ARCHITECTURE RISKS
 
@@ -22,4 +22,4 @@ Les progrès tactiques/poids ne valident pas vingt identités V1. M7 replace les
 
 ## DO NOT TOUCH
 
-Codex n’a modifié ni gameplay, ni tests, ni builds. Préserver M1–M6 livrés et les contrats communs. Pas hub/arbre/progression ni migration prématurée17+3. Les vingt de M7 sont les anciens IDs ; cible et extrapolations des bibles inchangées.
+Intervention R15 ponctuelle autorisée : présentation uniquement, trois tests et trois builds reconstruits. Aucun serveur/kit/graphe changé ; brouillon Wave4 préservé. Préserver M1–M6 livrés et les contrats communs. Pas hub/arbre/progression ni migration prématurée17+3. Les vingt de M7 sont les anciens IDs ; cible et extrapolations des bibles inchangées.

@@ -27,3 +27,7 @@ Mise à jour de base : M1 de Claude `41364ed` intégré avant publication de ces
 ## INBOX-AUDIT-5bb52fd-aeff49a — PENDING ACK Claude
 
 Audit incrémental demandé par l’utilisateur : [ENGINEERING_REVIEW](ENGINEERING_REVIEW.md), [preuves et trois missions](../archive/audits/2026-10-18-5bb52fd-aeff49a/AUDIT.md), corrections de gate sous QA-004. M5/M6 préservés ; M7 ne peut plus être considéré clos sur son seul PASS. Aucun gameplay Codex. Avant prochain lot identité, fiabiliser verdict/négatifs/S20 puis rebuild/rejeu exact ; pas de nouvelle décision produit.
+
+## INBOX-R15-20261018 — PENDING ACK Claude
+
+Demande directe utilisateur autorisant Codex à améliorer visuellement les R15 : MOV-005 reçoit une passe client limitée (horloge de réception par acteur, détente progressive, cadence murale sur vitesse dessinée). [Rapport / hashes / preuves](../archive/reports/r15-2026-10-18/REPORT.md). Trois builds et511cas PASS par variante ; Debug exact vérifié en Studio. Aucun nouveau kit/serveur/graphe. Brouillon ND-Debug-new3 restauré en conservant Wave4 ; fusionner ses hooks sans perdre cette passe. Réserves M7/S20 précédentes maintenues ; ancien QA périmé résolu par rebuild, pas par changement de gate.

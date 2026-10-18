@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "2ea69f5a9ddd294f04f2450c16b19d97dca1301f425c7c06714415f36990be1c",
+  "sha256": "cc2e33d505d55f5cb89908819153896c0ea48beda8f07d6ddbbe7ef6958d295d",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -18,11 +18,11 @@
     "src/Client/LeeFX.luau": "3f45ced5aa86dc552a07c0802c33e6dcb6a05019da3bd4768585cefeef07e159",
     "src/Client/Main.client.luau": "a45525940ccbe971c1d7e8a49fcbf762719a22078c71541da64b065b902a7f43",
     "src/Client/NarutoFX.luau": "46d003643be7269e8c2cd023c5b6eb1be696d777a6320b90f68d9125ff67b437",
-    "src/Client/Presentation.luau": "56a2a54558ad5b2c1e317becca26c6d469f5816d5eece6a29b1fed15c06b72b9",
+    "src/Client/Presentation.luau": "8c197668284dc5f01c512cbe7647e656b3ab260a04d8d124f684dc0564773727",
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "615e5183c8cc30ebb5908382ad0e44c0a2caa0fdf4e65226366bf110202c2dfa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
-    "src/Client/VelmoraMotionEngine.luau": "b602a8969a8145122f6466ac565b2cd7733e77aa5e5a3c71666743fc8394cece",
+    "src/Client/VelmoraMotionEngine.luau": "cfa601f923bb71a71239be3eec067cb101180f2c64dbbfac31bce71b547f1b7f",
     "src/Client/Wave1FX.luau": "da8687cc3733cfd48b858b1d07370824d4a98649e21066f78c3908f2fd86d0bc",
     "src/Client/Wave2FX.luau": "201da5528a60236e6e480d6a02e64013025d98c2b82b196be9cc1bbed3770747",
     "src/Client/Wave3FX.luau": "faa2bf2411b47149e1e09d1a73df0e111b5d14f03c6dbee2293ca5cf26a6820d",
@@ -99,7 +99,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "2dc36969acd151fbfafb375f9f0519f64fe0ccbbed3b2000e07ffbb7700502d2",
+  "buildFingerprint": "ea3b2dc525073dbc3167811a752c7a6333ab765dcafa74224e1293592dfe765b",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -154,7 +154,7 @@
       },
       "tests/Animation.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel animation presentation: 14 PASS"
+        "summary": "NinjaDuel animation presentation: 17 PASS"
       },
       "tests/Branches.spec.luau": {
         "exit": 0,

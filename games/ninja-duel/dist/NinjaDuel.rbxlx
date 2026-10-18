@@ -2913,7 +2913,7 @@ return {
       <Item class="StringValue" referent="ND20">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">302d3c5927b3096cb88266456a8dbcaaa7707e01dccc01dd16db77dd8d134465</string>
+          <string name="Value">cc28f26fd0343160e0cb892fd682c545139990c8dc0e0e49290de410dafab762</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND21">
@@ -22138,7 +22138,7 @@ local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -22333,6 +22333,20 @@ local function clockFor(self,key,actor,now)
  clock.reactionElapsed=if actor.reaction then now-clock.reactionAt else 0
  return clock
 end
+-- A landing belongs to one body. Opponent landings must never bend the
+-- player's knees; keep a local phase so compression releases before neutral.
+function Presentation:landing(key,actor,previous,now)
+ if previous and previous.airborne and not actor.airborne then
+  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true}
+ end
+ local landing=self.landings[key]
+ if not landing then return false,0,false end
+ if actor.airborne or now&gt;=landing.at+landing.duration then
+  self.landings[key]=nil
+  return false,0,false
+ end
+ return true,math.clamp((now-landing.at)/landing.duration,0,1),landing.strong
+end
 function Presentation:update(data,dt)
  dt=math.max(dt or 1/60,.001)
  -- One presentation tick per rendered frame; every pose below reads this clock.
@@ -22348,7 +22362,7 @@ function Presentation:update(data,dt)
   -- Character switch, rematch or a fresh duel: the only place a hard reset is
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
-  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth)
+  table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -22375,10 +22389,7 @@ function Presentation:update(data,dt)
    -- Take-off and get-up sounds, from the state change itself.
    if previous and not previous.airborne and actor.airborne and root and root.AssemblyLinearVelocity.Y&gt;15 and not actor.reaction then self.fx:jumpSound(root.Position) end
    if previous and previous.reaction=="Wakeup" and actor.reaction~="Wakeup" and root then self.fx:getUpSound(root.Position) end
-   if previous and previous.airborne and not actor.airborne then
-    -- Landing compression lasts a few frames; a soft landing barely shows.
-    self.landingUntil=now+(if actor.landStrong then .22 else .1)
-   end
+   local landing,landingPhase,landingStrong=self:landing(key,actor,previous,now)
    -- Health lost without a new contact (burn, sand): a slow drain such as the
    -- curse mark (~0.1 HP per snapshot) is not a hit and spawns nothing.
    if previous and actor.health&lt;=previous.health-1 and actor.impactSerial==(previous.impactSerial or -1) then
@@ -22391,7 +22402,11 @@ function Presentation:update(data,dt)
    -- Locomotion is posed from the rig's live velocity, not a 10 Hz value.
    local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
-   if tracked and velocity then velocity=Vector3.new(tracked.X,velocity.Y,tracked.Z) end
+   if tracked and velocity then
+    -- Wall motion is positioned by the server with zero assembly velocity.
+    -- Its vertical cadence must follow the drawn track as well as its X/Z.
+    velocity=Vector3.new(tracked.X,if actor.wall then tracked.Y else velocity.Y,tracked.Z)
+   end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
    local speed=math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
@@ -22402,7 +22417,7 @@ function Presentation:update(data,dt)
    visual.speed=speed
    visual.reactionElapsed=clock.reactionElapsed
    visual.attackElapsed=clock.attackElapsed
-   visual.landing=self.landingUntil~=nil and now&lt;self.landingUntil
+   visual.landing=landing;visual.landingPhase=landingPhase;visual.landStrong=landingStrong
    visual.intro=data.intro
    local other=if key=="human" then "bot" else "human"
    visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
@@ -25546,12 +25561,16 @@ end
 -- Running up a wall with chakra: the body stands out from the surface, feet on
 -- it, chest to the sky, legs cycling up the wall.
 local function wallTargets(char,actor,dt)
-	local s=stateOf(char)
-	s.phase=(s.phase+(dt or 1/60)*3.2)%1
-	local swing=math.sin(s.phase*math.pi*2)
-	return build({root={z=1.35,pitch=-78},torso={pitch=10},head={pitch=40},
-		ra={raise=-50+swing*20,out=16,elbow=20},la={raise=-50-swing*20,out=16,elbow=20},
-		rl={lift=40+swing*36,knee=50-swing*30},ll={lift=40-swing*36,knee=50+swing*30}}),RATE.wall
+ local s=stateOf(char)
+ local speed=(actor.velocity or Vector3.zero).Magnitude
+ local drive=math.clamp(speed/12,0,1)
+ -- Distance-driven cadence: planted support at rest, alternating knee drive
+ -- while climbing. The server's wall/root trajectory is never changed here.
+ s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*math.clamp(speed/6,0,4))%1
+ local swing=math.sin(s.wallPhase*math.pi*2)*drive
+ return build({root={z=1.35,pitch=-78,y=-.05*math.abs(swing)},torso={pitch=10,yaw=-swing*4},head={pitch=40,yaw=swing*3},
+  ra={raise=-38+swing*18,out=18,elbow=34-swing*12},la={raise=-38-swing*18,out=18,elbow=34+swing*12},
+  rl={lift=32+swing*30,knee=52-swing*28,ankle=-10-swing*6},ll={lift=32-swing*30,knee=52+swing*28,ankle=-10+swing*6}}),RATE.wall
 end
 local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
@@ -26150,15 +26169,19 @@ function Motion.present(char,actor,clock,dt)
 		return "attack"
 	end
 	if subject.landing then
+  -- Load quickly, then release progressively into gait/guard. Holding the
+  -- deepest crouch until the flag disappears used to pop the body upright.
+  local phase=subject.landingPhase
+  local load=if phase==nil then 1 elseif phase&lt;.25 then .55+.45*smooth(phase/.25) else 1-smooth((phase-.25)/.75)
 		if not subject.landStrong and not subject.airborne and (subject.speed or 0)&gt;6 then
 			-- A running landing keeps its stride and momentum: the hips absorb the
 			-- drop for a few frames instead of the body stopping in a crouch.
 			local final=table.clone(base)
-			final.Root=(base.Root or IDENTITY)*CF(0,-.3,0)*ANG(rad(-7),0,0)
+			final.Root=(base.Root or IDENTITY)*CF(0,-.3*load,0)*ANG(rad(-7*load),0,0)
 			apply(char,final,baseRate or RATE.locomotion,dt)
 			return "landing"
 		end
-		local targets,rate=landTargets(subject.fighterId,if subject.landStrong then 1 else .45)
+		local targets,rate=landTargets(subject.fighterId,(if subject.landStrong then 1 else .45)*load)
 		apply(char,targets,rate,dt)
 		return "landing"
 	end

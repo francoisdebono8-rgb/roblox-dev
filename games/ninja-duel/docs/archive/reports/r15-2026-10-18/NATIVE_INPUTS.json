@@ -1,0 +1,20 @@
+{
+  "jump": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"projectiles\":[],\"human\":{\"subCharges\":2,\"airHold\":0,\"combo\":0,\"seals\":0,\"velocity\":\"-4.348429203033447, 3.906142234802246, -19.008975982666016\",\"comboHits\":0,\"flash\":false,\"state\":\"Neutral\",\"health\":125,\"airborne\":true,\"position\":\"-3.465109348297119, 14.040433883666992, -3.4646711349487305\",\"wall\":false,\"untilIn\":-39.91537308692932,\"chainOpen\":false,\"chakra\":110},\"events\":{\"Flow\":6,\"LaunchHit\":1,\"Launcher\":1,\"RushArrive\":1,\"WallConvert\":1,\"Light3\":2,\"Light2\":3,\"Chase\":1,\"Hit\":10,\"Heavy\":1,\"Dodge\":1,\"Rush\":1,\"Light1\":8,\"Reengage\":2,\"Damage\":11},\"hazards\":0,\"phase\":\"Duel\",\"bot\":{\"combo\":0,\"velocity\":\"0, 0, 0\",\"flash\":false,\"untilIn\":-55.14711093902588,\"hitZone\":\"body\",\"chakra\":125,\"subCharges\":2,\"hitKind\":\"kick\",\"comboHits\":0,\"state\":\"Neutral\",\"seals\":0,\"airborne\":false,\"position\":\"0, 3, -8\",\"wall\":false,\"health\":145,\"chainOpen\":false,\"airHold\":0},\"now\":1792288012.6531,\"botEvents\":{\"GeometryHit\":1,\"Geometry\":1,\"WallSplat\":1}}"
+      }
+    ],
+    "isError": false
+  },
+  "combo": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"projectiles\":[],\"human\":{\"chakra\":110,\"subCharges\":2,\"seals\":1,\"combo\":0,\"health\":125,\"velocity\":\"0, 0, 0\",\"comboHits\":0,\"flash\":false,\"state\":\"Neutral\",\"wall\":false,\"airborne\":false,\"position\":\"1.4066162109375, 3, -0.9777124524116516\",\"anchor\":\"-30.7874698638916, 3, -1.8436301946640015\",\"untilIn\":-0.38300013542175295,\"chainOpen\":false,\"airHold\":0},\"events\":{\"Flow\":7,\"TechniqueResolved\":4,\"Cast:Flashstep\":1,\"Light3\":3,\"Chase\":1,\"Dodge\":1,\"Cast:MarkedBlade\":2,\"Reengage\":2,\"Damage\":20,\"KneeStrike\":1,\"RushArrive\":1,\"WallConvert\":2,\"Cast:BurstStrike\":1,\"Heavy\":1,\"DashAttack\":1,\"Launcher\":1,\"LaunchHit\":1,\"Hit\":17,\"Technique\":4,\"Light1\":11,\"Light2\":4,\"Rush\":1},\"hazards\":0,\"phase\":\"Duel\",\"bot\":{\"combo\":0,\"velocity\":\"0, 0, 0\",\"flash\":false,\"untilIn\":-0.7497491836547852,\"hitZone\":\"body\",\"chakra\":125,\"subCharges\":2,\"hitKind\":\"kick\",\"comboHits\":3,\"state\":\"Neutral\",\"seals\":0,\"airborne\":false,\"position\":\"-2.0442371368408203, 3, -24.962980270385742\",\"wall\":false,\"health\":114.16,\"chainOpen\":false,\"airHold\":0},\"now\":1792288023.785654,\"botEvents\":{\"GeometryHit\":1,\"Geometry\":1,\"WallSplat\":2}}"
+      }
+    ],
+    "isError": false
+  }
+}

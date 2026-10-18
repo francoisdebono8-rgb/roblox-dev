@@ -1777,12 +1777,16 @@ end
 -- Running up a wall with chakra: the body stands out from the surface, feet on
 -- it, chest to the sky, legs cycling up the wall.
 local function wallTargets(char,actor,dt)
-	local s=stateOf(char)
-	s.phase=(s.phase+(dt or 1/60)*3.2)%1
-	local swing=math.sin(s.phase*math.pi*2)
-	return build({root={z=1.35,pitch=-78},torso={pitch=10},head={pitch=40},
-		ra={raise=-50+swing*20,out=16,elbow=20},la={raise=-50-swing*20,out=16,elbow=20},
-		rl={lift=40+swing*36,knee=50-swing*30},ll={lift=40-swing*36,knee=50+swing*30}}),RATE.wall
+ local s=stateOf(char)
+ local speed=(actor.velocity or Vector3.zero).Magnitude
+ local drive=math.clamp(speed/12,0,1)
+ -- Distance-driven cadence: planted support at rest, alternating knee drive
+ -- while climbing. The server's wall/root trajectory is never changed here.
+ s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*math.clamp(speed/6,0,4))%1
+ local swing=math.sin(s.wallPhase*math.pi*2)*drive
+ return build({root={z=1.35,pitch=-78,y=-.05*math.abs(swing)},torso={pitch=10,yaw=-swing*4},head={pitch=40,yaw=swing*3},
+  ra={raise=-38+swing*18,out=18,elbow=34-swing*12},la={raise=-38-swing*18,out=18,elbow=34+swing*12},
+  rl={lift=32+swing*30,knee=52-swing*28,ankle=-10-swing*6},ll={lift=32-swing*30,knee=52+swing*28,ankle=-10+swing*6}}),RATE.wall
 end
 local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
@@ -2381,15 +2385,19 @@ function Motion.present(char,actor,clock,dt)
 		return "attack"
 	end
 	if subject.landing then
+  -- Load quickly, then release progressively into gait/guard. Holding the
+  -- deepest crouch until the flag disappears used to pop the body upright.
+  local phase=subject.landingPhase
+  local load=if phase==nil then 1 elseif phase<.25 then .55+.45*smooth(phase/.25) else 1-smooth((phase-.25)/.75)
 		if not subject.landStrong and not subject.airborne and (subject.speed or 0)>6 then
 			-- A running landing keeps its stride and momentum: the hips absorb the
 			-- drop for a few frames instead of the body stopping in a crouch.
 			local final=table.clone(base)
-			final.Root=(base.Root or IDENTITY)*CF(0,-.3,0)*ANG(rad(-7),0,0)
+			final.Root=(base.Root or IDENTITY)*CF(0,-.3*load,0)*ANG(rad(-7*load),0,0)
 			apply(char,final,baseRate or RATE.locomotion,dt)
 			return "landing"
 		end
-		local targets,rate=landTargets(subject.fighterId,if subject.landStrong then 1 else .45)
+		local targets,rate=landTargets(subject.fighterId,(if subject.landStrong then 1 else .45)*load)
 		apply(char,targets,rate,dt)
 		return "landing"
 	end

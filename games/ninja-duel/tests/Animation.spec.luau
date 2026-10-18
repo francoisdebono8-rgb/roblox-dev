@@ -569,4 +569,43 @@ test("identity poses: tenketsu weight, exposed swing, dash brake, counter glide,
  assert(math.deg(math.abs(tx-sx)+math.abs(ty-sy))>15,"Wind Cut is still the overhand throw")
 end)
 
+test("landing clocks belong to each fighter and release on expiry, takeoff and epoch",function()
+ local P=H.load("Client/Presentation")
+ local p={landings={}}
+ local air={airborne=true};local floor={airborne=false,landStrong=true}
+ local on,phase,strong=P.landing(p,"bot",floor,air,10)
+ assert(on and phase==0 and strong,"hard landing was not captured")
+ assert(not P.landing(p,"human",floor,floor,10.02),"opponent landing bent the grounded player")
+ local active,u=P.landing(p,"bot",floor,floor,10.11)
+ assert(active and math.abs(u-.5)<.001,"landing recovery does not advance")
+ assert(not P.landing(p,"bot",floor,floor,10.23),"landing outlived its compression")
+ P.landing(p,"human",floor,air,11)
+ assert(not P.landing(p,"human",air,floor,11.02),"a new jump retained grounded compression")
+ P.landing(p,"bot",floor,air,12);table.clear(p.landings)
+ assert(not P.landing(p,"bot",floor,floor,12.01),"round reset retained a landing")
+end)
+
+test("a landing unloads the hips progressively before the flag ends",function()
+ local c,a=H.duel("Flashstep","Mirage")
+ local function height(phase)
+  Motion.reset(a.model)
+  for _=1,35 do frame(a.model,body(a,{landing=true,landStrong=true,landingPhase=phase,velocity=V.zero}),{},1/60) end
+  return a.model.joints.Root.Transform.Position.Y
+ end
+ local impact,recover=height(.25),height(.95)
+ assert(recover-impact>.5,"the deepest landing is still held until neutral")
+end)
+
+test("wall support freezes without travel and cycles when the body climbs",function()
+ local c,a=H.duel("Flashstep","Mirage")
+ local actor=body(a,{wall=true,velocity=V.zero})
+ for _=1,50 do frame(a.model,actor,{},1/60) end
+ local before=snapshot(a.model)
+ for _=1,30 do frame(a.model,actor,{},1/60) end
+ assert(maxDelta(before,snapshot(a.model))<.1,"stationary wall feet still pedal")
+ actor.velocity=V.new(0,12,0)
+ for _=1,8 do frame(a.model,actor,{},1/60) end
+ assert(maxDelta(before,snapshot(a.model))>5,"climbing has no knee drive")
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

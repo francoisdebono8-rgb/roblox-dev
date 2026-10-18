@@ -189,6 +189,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - validation: Impulsion, ascension/apogée/chute, appui mur, rebond, poursuite, récupération et corps lisibles sans snap ; comparaison native avant/après
 - evidence: 2026-10-16 NATIVE_STUDIO (debug, mesuré) : saut debout 19,6 studs/0,53 s → 16,4/0,94 s ; saut en course vitesse à l’atterrissage 36→14 avant, 36→19 après ; saut sprint 69→20 avant, 69→50 après. TECHNICAL PASS (Regression). Silhouette ([audit visuel](../archive/reports/convergence/VISUAL_AUDIT.md)) : bond en ciseaux dès la vitesse de course (avant : seulement au-delà de ~30 studs/s), sauts latéral et arrière lisibles, réception en course sans arrêt-accroupi (le bassin absorbe, la foulée continue). Anticipation encore absente. HUMAN_VISUAL PENDING
 - outcome: PENDING
+- update: 18/10 Codex, autorisation utilisateur ponctuelle : réceptions isolées/relâchées et mouvement mural lié à la vitesse dessinée livrés ; deux modules client, 511cas PASS par variante et trois nouveaux tests ciblés. Rejeu natif sur Debug final, clavier/souris et mur. [Preuves et limites](../archive/reports/r15-2026-10-18/REPORT.md). Pas clôture de toute la locomotion ni des vingt identités ; préserver les hooks Wave4 du brouillon Claude.
 - acceptance: Saut neutre/avec élan/sprint, air control et momentum conservés, approche mur/rebond/mantle/detach, réception faible/grande hauteur et reprise sans pause ; comparer avant/après natif.
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient
