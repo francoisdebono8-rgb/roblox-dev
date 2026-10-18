@@ -691,6 +691,24 @@ function Families.beforeHit(c,attacker,victim,readEligible)
 		c:pushImpact(victim.root.Position,"teleport",false,{owner=victim.id,from=from,to=victim.root.Position,kind=spec.Kind})
 	end
 	attacker.pending=nil
+	-- A stance answered by a real strike (Counter Move: Madara's pommel,
+	-- Hashirama's shoulder, Hiruzen's point): the blow is turned aside, the
+	-- attacker staggers, and the answer is a strike of his body that must
+	-- still land (it opens a string like a riposte).
+	if spec.Move then
+		Brawler.react(c,attacker,"HitStun",Vector3.zero,.42,victim)
+		c:pushImpact(victim.root.Position:Lerp(attacker.root.Position,.5),"clash",true,{direction=flat(attacker.root.Position-victim.root.Position)})
+		c:pushImpact(victim.root.Position,"look",true,{owner=victim.id,kind=spec.Kind,victim=attacker.id})
+		c:cue(victim,string.upper(spec.Name).." • COUNTER",.8)
+		Brawler.event(c,victim,"Counter")
+		c:schedule(c.now+.04,function()
+			if victim.health<=0 or attacker.health<=0 or c.match.phase~="Duel" or victim.reaction then return end
+			victim.state="Neutral";victim.untilTime=c.now;victim.guardHeld=false;victim.evade=nil
+			Brawler.breakString(victim,false);victim.lastAttack=c.now
+			Brawler.start(c,victim,Brawler.riposteMove(c,victim,spec.Move))
+		end)
+		return true
+	end
 	c.damageTag=spec.Name
 	local hit=c:damage(victim,attacker,spec.Damage or 8,true,false)
 	c.damageTag=nil

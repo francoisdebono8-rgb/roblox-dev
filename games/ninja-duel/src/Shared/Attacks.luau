@@ -219,7 +219,7 @@ for name,shape in {
  for key,value in shape do attacks[name][key]=value end
 end
 -- Roster 20 batches add their strikes from their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
  if wave.attacks then wave.attacks(move,attacks) end
 end
 return attacks

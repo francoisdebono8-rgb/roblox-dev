@@ -56,4 +56,13 @@ return {
 	-- Zones that are not thrown.
 	mist={shape="orb",color=rgb(226,232,238),color2=rgb(190,200,210),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
 	fist={shape="orb",color=rgb(255,190,190),color2=rgb(255,120,140),size={1.6,1.6,1.6},light=2.5,trail=0,hit="crush",zone="crater"},
+	-- DEC-026 newcomers (Wave4). Hashirama's contact root runs the floor from
+	-- his hand; the short Katon breath of Madara and Hiruzen (a cone drawn by
+	-- Wave4FX); the stances: Madara's read (the blade turned flat), the young
+	-- wood guard, Hiruzen's lever.
+	root={shape="serpent",color=rgb(120,84,50),color2=rgb(150,190,90),size={.9,.9,4},light=0,trail=0,hit="crush",launch="Ground",radius=1.5},
+	firebreath={shape="orb",color=rgb(255,170,70),color2=rgb(255,90,30),size={2,2,2},light=3,trail=0,hit="burst",zone="scorch"},
+	swordread={shape="blade",color=rgb(220,60,60),color2=rgb(200,206,214),size={.2,.06,2.4},light=0,trail=0,hit="sparks"},
+	woodguard={shape="blade",color=rgb(150,110,70),color2=rgb(110,160,80),size={.6,.6,1.6},light=0,trail=0,hit="crush"},
+	staffread={shape="blade",color=rgb(232,200,120),color2=rgb(90,64,40),size={.2,.2,4},light=0,trail=0,hit="sparks"},
 }

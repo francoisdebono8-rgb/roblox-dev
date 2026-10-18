@@ -270,7 +270,7 @@ S.S20=function()
 	local closed=not (a.buff and c.now<a.buff.untilT)
 	place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-14))
 	hp=a.health;b.neutralToolAt=0;b.chakra=999;c:request(b,"Tool",a.root.Position);task.wait(.8)
-	return absorbed and melee and closed,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
+	return absorbed and melee and closed and hp-a.health>0,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
 end
 -- M7 ----------------------------------------------------------------------
 -- One continuous sequence per fighter, no refill, no replacement after the
@@ -287,7 +287,13 @@ local function seq(id)
 	place(c,a,b,Vector3.new(0,3,7),Vector3.new(0,3,-7))
 	dev:Invoke("health","bot",250)
 	local log={}
+	local fails={}
 	local function note(k,v) table.insert(log,k.."="..tostring(v)) end
+	-- Every contract is mandatory (Codex audit 5bb52fd..aeff49a, F1): a step
+	-- that is refused, whiffs or times out fails the sequence.
+	local function need(k,ok) if not ok then table.insert(fails,k) end end
+	local MoveGraphs=require(game:GetService("ReplicatedStorage").NinjaDuel.MoveGraphs)
+	local graph=MoveGraphs[id] or {}
 	-- In reach (the human's own walking is the client's: placed, not walked).
 	local reach=((a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.contact) or 3.4)
 	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
@@ -295,18 +301,32 @@ local function seq(id)
 	local hp=b.health
 	confirmOne(c,a);confirmOne(c,a)
 	note("lights",string.format("%.0f",hp-b.health))
+	need("lights",hp-b.health>0 and (b.comboHits or 0)>=2)
 	a.move=flat(b.root.Position-a.root.Position).Unit;local ok,why=c:request(a,"Attack");a.move=Vector3.zero
 	note("route",if ok then a.attackName else why)
+	-- The toward route of its own graph (or the launcher it names, or the
+	-- proxy that carries it).
+	local up=graph.routes and graph.routes.up
+	local proxy=graph.proxy and up and graph.proxy[up]
+	local expected={[up or ""]=true,[a.def.LauncherMove or ""]=true,[(proxy and proxy.move) or ""]=true,[(proxy and proxy.solo) or ""]=true}
+	need("route",ok and expected[a.attackName or "?"]==true)
 	task.wait(.4)
 	ok,why=c:request(a,"Pursuit");note("E",if ok then "ok" else why);task.wait(.45)
+	-- A route that chases by itself (Sasuke's Lion Kick, Lee's Rising Wind)
+	-- refuses E as Committed; any other refusal fails.
+	local selfChase=graph.onRoute and up and graph.onRoute[up]~=nil
+	need("E",ok or (selfChase and why=="Committed"))
 	local airHits,before=0,b.health
 	for _=1,2 do c:request(a,"Attack");task.wait(.33);if b.health<before then airHits+=1;before=b.health end end
 	note("air",airHits)
+	need("air",airHits>=1)
 	t=os.clock();repeat task.wait() until (not a.airborne and Rules_canAct(a,c)) or os.clock()-t>3
 	-- Step out and throw.
 	local away=flat(a.root.Position-b.root.Position);away=if away.Magnitude>.1 then away.Unit else Vector3.zAxis
 	c:relocate(a,b.root.Position+away*12+Vector3.new(0,.1,0));task.wait(.2)
 	ok,why=c:request(a,"Tool",b.root.Position);note("tool",if ok then "ok" else why);task.wait(.8)
+	-- Lee's tool is a deflecting kick: with nothing thrown at him it refuses.
+	need("tool",ok or (a.def.Tool=="Deflect" and why=="Nothing to deflect"))
 	-- Every technique, as the reserve allows.
 	local casts={}
 	for slot,spec in a.def.Techniques do
@@ -316,9 +336,19 @@ local function seq(id)
 		local d=flat(a.root.Position-b.root.Position).Magnitude
 		local dir=flat(a.root.Position-b.root.Position);dir=if dir.Magnitude>.1 then dir.Unit else Vector3.zAxis
 		if math.abs(d-gap)>2 then c:relocate(a,b.root.Position+dir*math.max(gap,3)+Vector3.new(0,.1,0));task.wait(.15) end
+		local hpT,evT=b.health,0
+		for _,v in a.events or {} do evT+=v end
 		local r1,r2=c:request(a,"Technique"..slot,b.root.Position)
-		table.insert(casts,spec.Id..":"..(if r1 then "ok" else tostring(r2)))
-		task.wait(1.2)
+		local effect=false
+		local t1=os.clock()
+		repeat
+			task.wait()
+			local ev=0;for _,v in a.events or {} do ev+=v end
+			if b.health<hpT or b.reaction or a.buff or a.counterStance or #c.hazards>0 or #(c.bodies or {})>0 or ev>evT+1 then effect=true end
+		until os.clock()-t1>1.2
+		table.insert(casts,spec.Id..":"..(if r1 then (if effect then "ok" else "noeffect") else tostring(r2)))
+		-- A technique that needs a setup (Minato's seal) may refuse with its reason.
+		need(spec.Id,(r1 and effect) or (not r1 and spec.Requires~=nil))
 	end
 	note("jutsu",table.concat(casts,","))
 	-- Defence: the bot throws a light at a raised guard.
@@ -326,8 +356,11 @@ local function seq(id)
 	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
 	c:request(a,"Guard");task.wait(.1)
 	local hpA=a.health
-	c:request(b,"Attack");task.wait(.5)
-	note("guard",string.format("held=%s chip=%.1f",tostring(a.impactStyle=="block" or (hpA-a.health)<3),hpA-a.health))
+	local hit=c:request(b,"Attack")
+	local blocked=false
+	local t2=os.clock();repeat task.wait();if (a.riposteUntil or 0)>c.now or a.impactStyle=="block" then blocked=true end until blocked or os.clock()-t2>.6
+	note("guard",string.format("solicited=%s blocked=%s chip=%.1f",tostring(hit),tostring(blocked),hpA-a.health))
+	need("guard",hit and blocked)
 	c:request(a,"GuardOff")
 	-- KO and the next round.
 	dev:Invoke("ko","bot")
@@ -337,13 +370,107 @@ local function seq(id)
 	for _,h in c2.hazards do if h.a==a then mine+=1 end end
 	local bodies=#(c2.bodies or {})
 	local leftover=(a.buff~=nil) or (a.counterStance~=nil) or ((a.slowUntil or 0)>c2.now) or ((a.poisonedUntil or 0)>c2.now) or mine>0 or bodies>0
-	note("reset",string.format("round=%s clean=%s",tostring(s.round),tostring(not leftover)))
-	return not leftover,table.concat(log," ")
+	local cools=0
+	for _,v in a.cooldowns or {} do if v>c2.now then cools+=1 end end
+	for _,v in b.cooldowns or {} do if v>c2.now then cools+=1 end end
+	local theirs=(b.buff~=nil) or ((b.slowUntil or 0)>c2.now) or ((b.poisonedUntil or 0)>c2.now) or b.reaction=="Bound"
+	note("reset",string.format("round=%s phase=%s clean=%s cooldowns=%d",tostring(s.round),tostring(s.phase),tostring(not leftover and not theirs),cools))
+	need("reset",(s.round or 0)>=2 and s.phase=="Duel" and not leftover and not theirs and cools==0)
+	if #fails>0 then table.insert(log,"FAILED["..table.concat(fails,",").."]") end
+	return #fails==0,table.concat(log," ")
 end
 for _,id in Roster do S["Q:"..id]=function() return seq(id) end end
 local everyone={}
 for _,id in Roster do table.insert(everyone,"Q:"..id) end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"},M7=everyone}
+-- NEW (DEC-026 newcomers, Shared/RosterStaging): the M7 sequence for each,
+-- then its own body checks in the native world: side after one and away
+-- after two are its own routes, a clean block is answered with its own
+-- riposte gesture, its counter stance answers a blow with a strike that
+-- lands, and (Madara, Hiruzen) the Katon cone burns ahead and not at the flank.
+local Staging=require(game:GetService("ReplicatedStorage").NinjaDuel.RosterStaging)
+local MoveGraphs=require(game:GetService("ReplicatedStorage").NinjaDuel.MoveGraphs)
+local function body(id)
+	local log={}
+	local pass=true
+	local function check(name,ok,detail) table.insert(log,name.."="..(if ok then "ok" else "NO").."("..tostring(detail)..")");pass=pass and ok end
+	local g=MoveGraphs[id]
+	local c,a,b=start(id,"Leaf")
+	local reach=a.def.AttackProfile.Light1.contact
+	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
+	confirmOne(c,a)
+	a.move=a.root.CFrame.RightVector;c:request(a,"Attack");a.move=Vector3.zero
+	check("side",a.attackName==g.routes.side,a.attackName)
+	task.wait(1.2)
+	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
+	confirmOne(c,a);confirmOne(c,a)
+	a.move=flat(a.root.Position-b.root.Position).Unit;c:request(a,"Attack");a.move=Vector3.zero
+	check("away",a.attackName==g.routes.down,a.attackName)
+	task.wait(1.4)
+	-- Riposte: the bot strikes a raised guard.
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
+	c:request(a,"Guard");task.wait(.25)
+	c:request(b,"Attack")
+	local t=os.clock();repeat task.wait() until a.impactStyle=="block" or os.clock()-t>.6
+	c:request(a,"Attack")
+	check("riposte",a.attackName==g.riposte,a.attackName)
+	task.wait(1.2)
+	-- Counter stance.
+	local counter
+	for i,spec in a.def.Techniques do if spec.Family=="Counter" then counter=i end end
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8));dev:Invoke("refill")
+	c:request(a,"Technique"..counter);task.wait(.12)
+	local hp=b.health
+	c:request(b,"Attack")
+	t=os.clock();repeat task.wait() until a.attackName==a.def.Techniques[counter].Move or os.clock()-t>.8
+	local answered=a.attackName
+	task.wait(.7)
+	check("counter",answered==a.def.Techniques[counter].Move and b.health<hp,string.format("%s dmg=%.1f",tostring(answered),hp-b.health))
+	-- Katon cone.
+	for i,spec in a.def.Techniques do
+		if spec.Family=="Burst" and spec.Arc then
+			task.wait(1);dev:Invoke("refill")
+			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			hp=b.health;c:request(a,"Technique"..i,b.root.Position);task.wait(.9)
+			local front=hp-b.health
+			task.wait(spec.Cooldown+.2);dev:Invoke("refill")
+			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			c:relocate(b,a.root.Position+a.root.CFrame.RightVector*7);task.wait(.15)
+			hp=b.health;c:request(a,"Technique"..i,a.root.Position+a.root.CFrame.LookVector*8);task.wait(.9)
+			check("katon",front>0 and hp-b.health==0,string.format("front=%.1f flank=%.1f",front,hp-b.health))
+		end
+	end
+	return pass,table.concat(log," ")
+end
+local newcomers={}
+for _,id in Staging do
+	S["Q:"..id]=function() return seq(id) end
+	S["N:"..id]=function() return body(id) end
+	table.insert(newcomers,"Q:"..id);table.insert(newcomers,"N:"..id)
+end
+-- Negative controls (Codex F1): the verdict must fail when a contract is
+-- broken. NEG1 refuses the human's every Attack (no string, no route, no air);
+-- NEG2 has the bot never strike the raised guard. Both must print FAIL.
+local Combat=require(script.Parent.Combat)
+local function withRefusal(filter,fn)
+	local orig=Combat.request
+	Combat.request=function(self,actor,action,...)
+		if filter(actor,action) then return false,"Injected refusal" end
+		return orig(self,actor,action,...)
+	end
+	local ok,pass,detail=pcall(fn)
+	Combat.request=orig
+	if not ok then error(pass) end
+	return pass,detail
+end
+S.NEG1=function()
+	local pass,detail=withRefusal(function(actor,action) return actor.fighterId=="Mirage" and action=="Attack" end,function() return seq("Mirage") end)
+	return not pass,"control (must fail): verdict="..(if pass then "PASS" else "FAIL").." • "..tostring(detail)
+end
+S.NEG2=function()
+	local pass,detail=withRefusal(function(actor,action) return actor.fighterId=="Leaf" and action=="Attack" end,function() return seq("Mirage") end)
+	return not pass,"control (must fail): verdict="..(if pass then "PASS" else "FAIL").." • "..tostring(detail)
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"},M7=everyone,NEW=newcomers,NEG={"NEG1","NEG2"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)

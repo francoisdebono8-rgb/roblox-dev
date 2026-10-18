@@ -248,7 +248,7 @@ for name,shape in {
  for key,value in shape do attacks[name][key]=value end
 end
 -- Roster 20 batches add their strikes from their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
  if wave.attacks then wave.attacks(move,attacks) end
 end
 return attacks
@@ -982,7 +982,7 @@ return Metrics
 	},
 }
 -- Roster 20 batches keep their fighters in their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
 	for id,def in wave.fighters or {} do Fighters[id]=def end
 end
 return Fighters
@@ -1050,6 +1050,15 @@ return {
 	-- Zones that are not thrown.
 	mist={shape="orb",color=rgb(226,232,238),color2=rgb(190,200,210),size={1,1,1},light=0,trail=0,hit="smoke",zone="mist"},
 	fist={shape="orb",color=rgb(255,190,190),color2=rgb(255,120,140),size={1.6,1.6,1.6},light=2.5,trail=0,hit="crush",zone="crater"},
+	-- DEC-026 newcomers (Wave4). Hashirama's contact root runs the floor from
+	-- his hand; the short Katon breath of Madara and Hiruzen (a cone drawn by
+	-- Wave4FX); the stances: Madara's read (the blade turned flat), the young
+	-- wood guard, Hiruzen's lever.
+	root={shape="serpent",color=rgb(120,84,50),color2=rgb(150,190,90),size={.9,.9,4},light=0,trail=0,hit="crush",launch="Ground",radius=1.5},
+	firebreath={shape="orb",color=rgb(255,170,70),color2=rgb(255,90,30),size={2,2,2},light=3,trail=0,hit="burst",zone="scorch"},
+	swordread={shape="blade",color=rgb(220,60,60),color2=rgb(200,206,214),size={.2,.06,2.4},light=0,trail=0,hit="sparks"},
+	woodguard={shape="blade",color=rgb(150,110,70),color2=rgb(110,160,80),size={.6,.6,1.6},light=0,trail=0,hit="crush"},
+	staffread={shape="blade",color=rgb(232,200,120),color2=rgb(90,64,40),size={.2,.2,4},light=0,trail=0,hit="sparks"},
 }
 </ProtectedString>
         </Properties>
@@ -1259,7 +1268,7 @@ local Graphs = {
 	},
 }
 -- Roster 20 batches keep their move graphs in their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
 	for id,graph in wave.graphs or {} do Graphs[id]=graph end
 end
 return Graphs
@@ -1299,19 +1308,20 @@ return table.freeze({
 -- roster-wide Tier A suite (tests/Roster.spec.luau) all read this list. A
 -- fighter is listed only once it is selectable and plays (Tier A in
 -- docs/characters/ROSTER_20.md); Fighters may hold a definition before that.
+-- DEC-026 target roster (17 kept + 3 newcomers). Hinata (Lavender), Temari
+-- (Gale) and Kabuto (Medic) leave the menu; their code and suites stay.
 return {
 	-- CORE4 (the first prototypes).
 	"Flashstep","Mirage","GentleFist","Lion",
 	-- The stress-test wave (DEC-015).
 	"Sand","Leaf",
-	-- Roster 20 breadth pass (ROSTER_20.md).
-	"Legion","Gale","Lavender","Copycat",
-	-- Locked ten (DEC-022), batch 1.
+	-- Roster 20 breadth pass.
+	"Legion","Copycat",
 	"Mirror","Mist","Bone",
-	-- Batch 2.
-	"Flicker","Serpent","Medic",
-	-- Batch 3.
+	"Flicker","Serpent",
 	"Clay","Puppet","Rinnegan","Ink",
+	-- DEC-026 newcomers: Madara, Hashirama, Hiruzen as children (Shared/Wave4).
+	"Rival","Sapling","Professor",
 }
 </ProtectedString>
         </Properties>
@@ -1347,6 +1357,16 @@ return RosterMoves
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND16">
+        <Properties>
+          <string name="Name">RosterStaging</string>
+          <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children, Shared/Wave4).
+-- In the menu since the 17+3 migration (Shared/Roster); this list stays the
+-- set the native gate (Server/DevGateCheck, group NEW) runs its body checks on.
+return {"Rival","Sapling","Professor"}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND17">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -1389,7 +1409,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1414,7 +1434,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">Wave1</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (DEC-022): Haku, Zabuza, Kimimaro. This batch's shared
@@ -1613,7 +1633,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">Wave2</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
@@ -1799,7 +1819,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">Wave3</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
@@ -2043,6 +2063,225 @@ local function attacks(move,list)
 		-- Killer Bee: the lariat arm (heavy after one) and the charging Lariat.
 		LariatArm={{.11,.14,.34,10,3.2,"Knockdown",V(0,10,40),.62},{contact=3.6,range=7,width=7,zone="head",kind="heavy",side=1,twist=50,lean=16,arm=90,step=1.3}},
 		Lariat={{.06,.22,.42,15,13,"Knockdown",V(0,14,56),.7},{contact=3.4,range=7,width=7,height=6,zone="head",kind="heavy",side=1,twist=40,lean=20,arm=90,step=1.45,breaksShield=true}},
+	})
+end
+
+return {
+	fighters=fighters,
+	graphs=graphs,
+	attacks=attacks,
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND22">
+        <Properties>
+          <string name="Name">Wave4</string>
+          <ProtectedString name="Source">-- DEC-026 newcomers: Madara, Hashirama and Hiruzen as children (the three
+-- Combat Bibles docs/characters/{MADARA,HASHIRAMA,HIRUZEN}_CHILD.md). This
+-- batch's shared data, merged into Fighters, MoveGraphs and Attacks like
+-- Wave1..3. Staged (Shared/RosterStaging) until the 17+3 menu migration.
+--
+-- Each one is built from the body first: own lights with the bible's reach
+-- and A/C/R (AttackProfile, A = startup, C = active, R = recovery; the
+-- multipliers below are those seconds over the base strike's), own routes,
+-- own heavy, own riposte gesture (MoveGraphs riposte) and a riposte the
+-- awakening changes (Awakening.Riposte, Brawler). The weapon is real and
+-- drawn on the body (Client/Wave4FX): Madara's short sword, the wood that
+-- sheathes Hashirama's forearms while he strikes, Hiruzen's staff. No adult
+-- power: no Susanoo or Sharingan beyond a read, no forest, no Enma.
+local RosterMoves=require(script.Parent.RosterMoves)
+local V=Vector3.new
+
+local fighters={}
+-- Madara (12–13, the Uchiha prodigy): a short sword drawn from the left hip
+-- and a heavier base than Sasuke, no body flicker. Cuts at an angle, the
+-- pommel inside, the reverse cut that sends the body off; a frontal read
+-- answered with the pommel; a short Katon breath. Awakening: the young
+-- Sharingan's focus (a parry opens an angled cut).
+fighters.Rival = {
+	Name = "Madara", FullName = "Madara Uchiha (child)", Age = 13, Title = "THE UCHIHA PRODIGY", Color = { 60, 70, 120 },
+	Routes = "↑ quillon rise  ·  ↓ heel + blade barrier  ·  ←→ guard cut  ·  air: shoulder cut / pommel down  ·  parry: pommel riposte",
+	Description = "A short sword and a heavy base: angled cuts, the pommel inside, a read answered with the pommel, a short Katon breath.",
+	Health = 128, Chakra = 120, ChakraRegen = 8, Speed = 19, SprintScale = 1.08, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.0,
+	CombatTravel = 1.0, CombatDamage = 1.04, DashScale = 1.0, GuardStrength = 0.14, PreferredRange = 4.5,
+	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 92, Damage = 3, Recover = .7 },
+	-- Awakening (GAMEPLAY_LIBERTY: a young Sharingan's focus, not the EMS):
+	-- the riposte of a clean parry becomes an angled cut round the guard.
+	Awakening = { Name = "YOUNG SHARINGAN", Speed = 1.04, Damage = 1.05, Riposte = { any = "SharinganCut" }, Color = { 220, 50, 50 } },
+	Motion = { body = "Lion", clips = "Rival", weapons = "none", springy = false,
+		-- Side-on and planted, the right hand on the hilt at the left hip, the
+		-- left hand open in front of the chest.
+		stance = {root={y=-.42,pitch=4,yaw=30},torso={pitch=3,yaw=-12},head={pitch=-4,yaw=-18},
+			ra={raise=30,out=-30,twist=40,elbow=96,wrist=0},la={raise=58,out=-4,twist=-20,elbow=60,wrist=-20},
+			rf={x=.24,z=.66,yaw=30},lf={x=-.1,z=-.6,yaw=-8},breath=.7,tempo=4.8} },
+	-- Bible §3/§5: L1 .18/.07/.22 at 3.8, L2 .12/.06/.18 at 3.0, L3 .28/.08/.36
+	-- at 4.2, heavy .32/.09/.42 at 4.5.
+	AttackProfile = {
+		Light1={startup=2.0,active=.58,recovery=.79,contact=3.8,range=6.8,zone="body",kind="slash"},
+		Light2={startup=1.2,active=.5,recovery=.67,contact=3.0,range=6,zone="body",kind="palm"},
+		Light3={startup=2.33,active=.57,recovery=1.5,contact=4.2,range=7.2,zone="body",kind="slash",impulseZ=56},
+		Heavy={startup=1.07,active=.53,recovery=.81,contact=4.5,range=7.5,kind="slash"},
+		Launcher={startup=1.0}, DashAttack={startup=1.0,kind="slash"}, Air1={startup=1.0,kind="slash"}, Air2={startup=1.0,kind="slash"},
+	},
+	Skin = { 236, 214, 196 }, Hair = { 24, 24, 30 }, Outfit = { 40, 46, 84 },
+	Techniques = {
+		{ Id = "UchihaRead", Name = "Rising Uchiha Read", Family = "Counter", Kind = "swordread", Time = 0.5, Move = "PommelRiposte",
+			Cost = 12, Channel = 0.04, Active = 0.04, Recovery = 0.22, Cooldown = 6, Interruptible = false, Range = 6, Radius = 6,
+			Hint = "0.5 s frontal stance: the blow it reads is answered with the pommel • a feint or a whiff wastes it" },
+		{ Id = "UchihaKaton", Name = "Katon: Short Breath", Family = "Burst", Kind = "firebreath", Element = "Fire", Cost = 18, Channel = 0.35, Active = 0.12, Recovery = 0.4, Cooldown = 7, Interruptible = true,
+			Radius = 10, Arc = 0.55, Damage = 9, Knock = 30, Lift = 8, Range = 10,
+			Hint = "A short cone of fire, 10 studs ahead • ends a string instead of the finisher • open on the sides" },
+	},
+}
+
+-- Hashirama (12–13, the Senju child): a wrestler who advances on his feet;
+-- small wooden grips are born inside his gestures (the forearm sheath of a
+-- strike, a stump under the launcher, a root at the contact point). A short
+-- root that holds a moment, a guard of young wood that breaks after one
+-- answer. Awakening: controlled growth (a parry sends the root to the point
+-- of contact). No forest, no healing.
+fighters.Sapling = {
+	Name = "Hashirama", FullName = "Hashirama Senju (child)", Age = 13, Title = "THE SENJU SAPLING", Color = { 150, 90, 50 },
+	Routes = "↑ stump lift  ·  ↓ root brake  ·  ←→ wrestling step  ·  air: palm / stomp  ·  parry: shoulder riposte",
+	Description = "A wrestler on his feet: palms that take a grip, a sheath of wood on the forearm, a root that holds a moment.",
+	Health = 140, Chakra = 120, ChakraRegen = 8, Speed = 18.5, SprintScale = 1.06, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
+	CombatTravel = 1.0, CombatDamage = 1.04, DashScale = 0.98, GuardStrength = 0.16, PreferredRange = 3.6,
+	ComboToolCancel = true, CombatStyle = "Angles", Tool = "Kunai",
+	ToolMastery = { Kind = "kunai", Count = 1, Speed = 86, Damage = 3, Recover = .8 },
+	Awakening = { Name = "CONTROLLED GROWTH", Speed = 1.02, Damage = 1.05, Riposte = { any = "RootRise" }, Color = { 120, 200, 90 } },
+	Motion = { body = "Lion", clips = "Sapling", weapons = "none", springy = false,
+		-- Square, low and wide like a wrestler, both open hands forward.
+		stance = {root={y=-.6,pitch=10,yaw=14},torso={pitch=8,yaw=-4},head={pitch=-8,yaw=-6},
+			ra={raise=60,out=10,twist=0,elbow=70,wrist=-10},la={raise=66,out=-6,twist=0,elbow=64,wrist=-10},
+			rf={x=.34,z=.5,yaw=20},lf={x=-.26,z=-.5,yaw=-10},breath=1.0,tempo=4.4} },
+	-- Bible §3/§5: L1 .17/.07/.22 at 3.2, L2 .22/.08/.23 at 3.5, L3 .28/.09/.36
+	-- at 3.7, heavy .34/.09/.42 at 4.
+	AttackProfile = {
+		Light1={startup=1.89,active=.58,recovery=.79,contact=3.2,range=6.2,zone="body",kind="palm"},
+		Light2={startup=2.2,active=.67,recovery=.85,contact=3.5,range=6.5,zone="body",kind="strike"},
+		Light3={startup=2.33,active=.64,recovery=1.5,contact=3.7,range=6.7,zone="body",kind="palm",impulseZ=58},
+		Heavy={startup=1.13,active=.53,recovery=.81,contact=4,range=7,kind="palm"},
+		Launcher={startup=1.0}, DashAttack={startup=1.0,kind="palm"}, Air1={startup=1.0,kind="palm"}, Air2={startup=1.0,kind="palm"},
+	},
+	Skin = { 214, 170, 130 }, Hair = { 26, 22, 20 }, Outfit = { 150, 74, 46 },
+	Techniques = {
+		{ Id = "ContactRoot", Name = "Wood: Contact Root", Family = "Projectile", Kind = "root", Ground = true, Cost = 16, Channel = 0.25, Active = 0.06, Recovery = 0.3, Cooldown = 6, Interruptible = true,
+			Range = 6, Speed = 44, Damage = 4, Radius = 1.5, Bind = 0.6, AI = { Min = 2, Max = 5.5, Chance = .45 },
+			Hint = "A root under the hand runs to the body (6 studs) and holds it a moment • jump or step before it" },
+		{ Id = "WoodGuard", Name = "Young Wood Guard", Family = "Counter", Kind = "woodguard", Time = 0.6, Move = "ShoulderRiposte",
+			Cost = 12, Channel = 0.04, Active = 0.04, Recovery = 0.22, Cooldown = 7, Interruptible = false, Range = 6, Radius = 6,
+			Hint = "Forearms crossed, the wood takes one frontal blow and breaks • a shoulder answers it" },
+	},
+}
+
+-- Hiruzen (12–13, the professor as a student): a plain staff held in both
+-- hands, the right end for the right distance. The point to measure, the
+-- heel to punish the step in, the lever to change the distance; a lever that
+-- deflects a frontal into a thrust, a shuriken to close a line while he
+-- backs off, a short Katon. Awakening: ease of grip (after a parry the
+-- direction picks the end). No Enma, no five natures.
+fighters.Professor = {
+	Name = "Hiruzen", FullName = "Hiruzen Sarutobi (child)", Age = 13, Title = "THE YOUNG PROFESSOR", Color = { 190, 140, 60 },
+	Routes = "↑ staff lever  ·  ↓ heel + retreat  ·  ←→ grip switch  ·  air: thrust / beat down  ·  parry: thrust (awake: the end you choose)",
+	Description = "A staff in both hands: the point measures, the heel punishes, the lever changes the distance; a shuriken, a short Katon.",
+	Health = 122, Chakra = 125, ChakraRegen = 8.4, Speed = 19, SprintScale = 1.08, JumpScale = 1.0, AirControlScale = 1.0, AccelerationScale = 1.0,
+	CombatTravel = 0.95, CombatDamage = 1.0, DashScale = 1.0, GuardStrength = 0.14, PreferredRange = 5,
+	ComboToolCancel = true, CombatStyle = "Control", Tool = "Shuriken",
+	-- One hand leaves the staff for a flat shuriken, no homing.
+	ToolMastery = { Kind = "shuriken", Count = 1, Speed = 96, Damage = 2.4, Recover = .6 },
+	Awakening = { Name = "EASE OF GRIP", Speed = 1.03, Cooldown = 0.85, Riposte = { any = "StaffThrust", side = "GripSwitch", back = "HeelSweep" }, Color = { 240, 200, 110 } },
+	Motion = { body = "Mirage", clips = "Professor", weapons = "none", springy = false,
+		-- The staff across the body, left hand forward, right hand back at the
+		-- hip, the point low toward the opponent.
+		stance = {root={y=-.36,pitch=4,yaw=34},torso={pitch=2,yaw=-14},head={pitch=-4,yaw=-22},
+			ra={raise=20,out=10,twist=-20,elbow=80,wrist=0},la={raise=56,out=-20,twist=-10,elbow=40,wrist=0},
+			rf={x=.22,z=.64,yaw=34},lf={x=-.08,z=-.58,yaw=-6},breath=.6,tempo=4.6} },
+	-- Bible §3/§5: L1 .13/.05/.20 at 4.2, L2 .20/.06/.18 at 3.7, L3 .22/.07/.30
+	-- at 4.5, heavy .28/.08/.36 at 5.
+	AttackProfile = {
+		Light1={startup=1.44,active=.42,recovery=.71,contact=4.2,range=7.4,zone="body",kind="strike"},
+		Light2={startup=2.0,active=.5,recovery=.67,contact=3.7,range=6.8,zone="body",kind="slash"},
+		Light3={startup=1.83,active=.5,recovery=1.25,contact=4.5,range=7.6,zone="body",kind="palm",impulseZ=46},
+		Heavy={startup=.93,active=.47,recovery=.69,contact=5,range=8,kind="slash"},
+		Launcher={startup=1.0}, DashAttack={startup=1.0,kind="strike"}, Air1={startup=1.0,kind="strike"}, Air2={startup=1.0,kind="slash"},
+	},
+	Skin = { 230, 196, 160 }, Hair = { 92, 64, 40 }, Outfit = { 176, 134, 70 },
+	Techniques = {
+		{ Id = "StaffLeverRead", Name = "Defensive Lever", Family = "Counter", Kind = "staffread", Time = 0.5, Move = "StaffThrust",
+			Cost = 12, Channel = 0.04, Active = 0.04, Recovery = 0.22, Cooldown = 6, Interruptible = false, Range = 6, Radius = 6,
+			Hint = "0.5 s: the staff turns a frontal blow aside and the point answers • a feint, the flank or a grab beat it" },
+		{ Id = "TrainingKaton", Name = "Katon: Training Breath", Family = "Burst", Kind = "firebreath", Element = "Fire", Cost = 18, Channel = 0.35, Active = 0.12, Recovery = 0.4, Cooldown = 7, Interruptible = true,
+			Radius = 10, Arc = 0.6, Damage = 8, Knock = 32, Lift = 6, Range = 10,
+			Hint = "The staff at his side, a sign, a short breath of fire • closes one line, open on the sides" },
+	},
+}
+
+local graphs={
+	Rival={
+		routes={up="QuillonRise",down="HeelBarrier",side="GuardCut",airUp="AirDrive",airDown="PommelDrop",airSide="AirSwitch"},
+		disengage="Kunai",
+		riposte="PommelRiposte",
+		stringCancels={UchihaKaton=true},
+		blockCancels={Tool=true},
+		reengage={name="rival",speed=1.0,arrive=3.8,angle=20,chase=.3,recovery=.22},
+	},
+	Sapling={
+		routes={up="StumpRise",down="RootBrake",side="WrestleStep",airUp="AirDrive",airDown="PalmStomp",airSide="AirSwitch"},
+		disengage="Kunai",
+		riposte="ShoulderRiposte",
+		stringCancels={ContactRoot=true},
+		blockCancels={},
+		reengage={name="sapling",speed=.95,arrive=3.2,angle=0,chase=.32,recovery=.24},
+	},
+	Professor={
+		routes={up="StaffLever",down="HeelSweep",side="GripSwitch",airUp="AirDrive",airDown="StaffBeat",airSide="AirSwitch"},
+		disengage="Shuriken",
+		riposte="StaffThrust",
+		stringCancels={TrainingKaton=true},
+		blockCancels={Tool=true},
+		reengage={name="professor",speed=.95,arrive=4.4,angle=25,chase=.3,recovery=.22},
+	},
+}
+
+local function attacks(move,list)
+	RosterMoves.add(move,list,{
+		-- Madara. Forward after two: the quillon catches the guard, a short
+		-- rising cut lifts (his launcher, not a knee). Side after one: an outer
+		-- step and a cut on the guarding arm (the string goes on). Away after
+		-- two: a low heel, the blade held across as he backs off. Air down: the
+		-- pommel brought down. The pommel riposte (read, parry) and the
+		-- awakening's angled cut round the guard.
+		QuillonRise={{.16,.14,.3,8,2.6,"Launched",V(0,56,6),1.18},{contact=3.8,range=7,width=5,height=7,zone="chin",kind="launch",side=1,twist=10,lean=-8,arm=130,step=1.05}},
+		GuardCut={{.1,.12,.22,6,1,"HitStun",V(0,4,10),.34},{contact=3.8,range=6.8,width=6,zone="body",kind="slash",side=-1,twist=40,lean=8,arm=100,step=1,chain=true,orbit=20}},
+		HeelBarrier={{.12,.14,.34,7,.6,"Knockdown",V(0,6,22),.64},{contact=3.4,range=6.6,width=6,height=3.5,zone="legs",kind="sweep",side=1,twist=30,lean=10,arm=60,step=.9,retreat=.8}},
+		PommelDrop={{.09,.12,.24,7,2,"Spiked",V(0,-72,6),.9},{contact=3,range=6,zone="head",kind="spike",side=1,twist=10,lean=30,arm=100,step=1,air=true}},
+		PommelRiposte={{.05,.12,.26,8,1.8,"Knockback",V(0,10,40),.48},{contact=3,range=5.8,zone="body",kind="palm",side=-1,twist=20,lean=12,arm=80,step=1.1}},
+		SharinganCut={{.05,.12,.24,9,1.4,"HitStun",V(0,5,12),.42},{contact=3.8,range=6.8,width=6.5,zone="body",kind="slash",side=-1,twist=60,lean=8,arm=110,step=1.05,lateral=true,orbit=24}},
+		-- Hashirama. Forward after two: the shoulder pushes the body onto a low
+		-- stump that lifts it (one local launcher, no tree). Side after one:
+		-- the hand fixes the arm, a wrestler's step to the side (a root follows
+		-- only the contact point). Away after two: he lets go, palm to the
+		-- ground, a low root brakes the chase. Air down: a stomp. The shoulder
+		-- riposte, and the awakening's root at the point of contact.
+		StumpRise={{.18,.14,.3,8,2.4,"Launched",V(0,54,4),1.2},{contact=3.2,range=6.4,width=5.5,height=7,zone="chin",kind="launch",side=1,twist=16,lean=14,arm=60,step=1.1}},
+		WrestleStep={{.1,.12,.22,6,.8,"HitStun",V(0,3,9),.36},{contact=3.0,range=6,width=6,zone="body",kind="palm",side=1,twist=50,lean=10,arm=70,step=1,chain=true,orbit=18,lateral=true}},
+		RootBrake={{.14,.14,.34,7,.4,"Knockdown",V(0,6,18),.66},{contact=3.4,range=6.6,width=6,height=3.5,zone="legs",kind="sweep",side=-1,twist=20,lean=30,arm=40,step=.9}},
+		PalmStomp={{.1,.12,.24,7,2,"Spiked",V(0,-74,4),.9},{contact=3,range=6,zone="head",kind="spike",side=1,twist=0,lean=34,arm=90,step=1,air=true}},
+		ShoulderRiposte={{.05,.12,.28,8,2.2,"Knockback",V(0,10,44),.5},{contact=2.8,range=5.6,width=6,zone="body",kind="heavy",side=1,twist=30,lean=22,arm=40,step=1.2}},
+		RootRise={{.06,.14,.28,8,0,"Launched",V(0,52,4),1.15},{contact=3.4,range=7,width=5,height=7,zone="legs",kind="launch",side=1,twist=0,lean=20,arm=40,step=.9}},
+		-- Hiruzen. Forward after two: the point slipped under the arm, then the
+		-- lever lifts (his launcher). Side after one: the hands swap on the
+		-- staff, the heel strikes from the other side (the string goes on).
+		-- Away after two: a low heel strike and a step back, the point still
+		-- covering. Air down: the staff beaten down. The thrust that answers
+		-- a lever or a parry.
+		StaffLever={{.16,.14,.3,8,2.4,"Launched",V(0,54,6),1.18},{contact=4.4,range=7.6,width=5,height=7,zone="chin",kind="launch",side=1,twist=14,lean=-10,arm=120,step=1.05}},
+		GripSwitch={{.1,.12,.22,6,.6,"HitStun",V(0,4,10),.34},{contact=4.0,range=7.2,width=6,zone="body",kind="slash",side=-1,twist=50,lean=6,arm=100,step=1,chain=true,orbit=26}},
+		HeelSweep={{.12,.14,.34,7,0,"Knockdown",V(0,6,20),.62},{contact=4.2,range=7.4,width=6,height=3.5,zone="legs",kind="sweep",side=-1,twist=30,lean=16,arm=80,step=.8,retreat=1.6}},
+		StaffBeat={{.09,.12,.24,7,2,"Spiked",V(0,-72,6),.9},{contact=3.8,range=7,zone="head",kind="spike",side=1,twist=10,lean=30,arm=150,step=1,air=true}},
+		StaffThrust={{.05,.1,.26,8,2.2,"Knockback",V(0,8,40),.46},{contact=4.4,range=7.6,width=4,zone="body",kind="strike",side=1,twist=10,lean=10,arm=90,step=1.15}},
 	})
 end
 
@@ -3029,17 +3268,17 @@ return {
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND21">
+      <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">96030e60be149eec2963a1742161c29a7c5640964258e396cecdcf493d0a1ca5</string>
+          <string name="Value">8bf05236278d81371a08e9c7c919e22992eac2865060f106e8f474728562a354</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND22">
+      <Item class="Folder" referent="ND24">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND23">
+        <Item class="StringValue" referent="ND25">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -3066,7 +3305,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND24">
+        <Item class="StringValue" referent="ND26">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -3093,7 +3332,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND25">
+        <Item class="StringValue" referent="ND27">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -3123,15 +3362,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND26">
+  <Item class="ServerScriptService" referent="ND28">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND27">
+    <Item class="Folder" referent="ND29">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND28">
+      <Item class="ModuleScript" referent="ND30">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -3806,7 +4045,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND29">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -3912,7 +4151,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -4002,7 +4241,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -4042,7 +4281,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -4480,7 +4719,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -4511,6 +4750,21 @@ end
 -- one (Combat:add), otherwise the canonical MoveGraphs entry.
 function Brawler.graph(a)
  return a.graph or MoveGraphs[a.fighterId]
+end
+-- The strike a riposte (or a counter stance's answer) comes out as: the
+-- fighter's own gesture (MoveGraphs riposte: Madara's pommel, Hashirama's
+-- shoulder, Hiruzen's point), and while awake the one Awakening.Riposte
+-- names for the stick held now (forward/back/side, `any` otherwise).
+function Brawler.riposteMove(c,a,base)
+ local graph=Brawler.graph(a) or {}
+ local move=base or graph.riposte or "Riposte"
+ local aw=a.def.Awakening
+ if aw and aw.Riposte and (a.awakenUntil or 0)&gt;c.now then
+  local dir=Brawler.intent(a)
+  local pick=(dir and aw.Riposte[dir]) or aw.Riposte.any
+  if pick and Attacks[pick] then move=pick;Brawler.event(c,a,"AwakenedRiposte") end
+ end
+ return if Attacks[move] then move else "Riposte"
 end
 function Brawler.free(a,now)
  return a.reaction==nil or now&gt;=(a.reactionUntil or 0)
@@ -4931,7 +5185,7 @@ function Brawler.request(c,a,action)
   a.riposteUntil=0;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
   Brawler.breakString(a,false);a.lastAttack=c.now
   c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
-  return Brawler.start(c,a,"Riposte")
+  return Brawler.start(c,a,Brawler.riposteMove(c,a))
  end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
@@ -5545,6 +5799,12 @@ function Brawler.hit(c,a,p)
  local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
+ -- A strike that backs off as it lands (Attacks retreat, studs: Madara's heel
+ -- with the blade held across, Hiruzen's heel with the point covering).
+ if spec.retreat then
+  local away=a.root.Position-b.root.Position;away=Vector3.new(away.X,0,away.Z)
+  a.hop={direction=if away.Magnitude&gt;.1 then away.Unit else -a.root.CFrame.LookVector,remaining=spec.retreat,speed=26}
+ end
  Brawler.routePayoff(c,a,b,p)
  -- Awakening rules on a landed strike (Techniques.awakenedHit/awakenedReact).
  local Techniques=require(script.Parent.Techniques)
@@ -5701,7 +5961,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -5829,7 +6089,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -6871,7 +7131,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">ChakraDev</string>
           <ProtectedString name="Source">-- Server-internal tool facade. Studio bindable or offline CLI, no client Remote.
@@ -6956,7 +7216,7 @@ return Dev
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -6984,7 +7244,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">ChakraLab</string>
           <ProtectedString name="Source">-- Explicit experimental sandbox: kinematic proxies, never the live projectiles.
@@ -7106,7 +7366,7 @@ return Lab
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -7203,7 +7463,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">ChakraStudioQA</string>
           <ProtectedString name="Source">-- Explicit smoke test of the chakra lab, run by dev:Invoke("interactions","qa")
@@ -7249,7 +7509,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">ChakraStudioView</string>
           <ProtectedString name="Source">-- Optional Studio proxy renderer. Only draws its own folder; no camera/UI changes.
@@ -7313,7 +7573,7 @@ return View
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -7512,7 +7772,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -7538,7 +7798,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -9447,7 +9707,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">CombatInspector</string>
           <ProtectedString name="Source">-- Read-only QA projection. Never imported by combat, movement or Motion Lab.
@@ -9517,7 +9777,7 @@ return Inspector
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -9627,7 +9887,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">DevCommands</string>
           <ProtectedString name="Source">-- Studio tooling boundary (Codex 33028b2, ported): the F6 panel's remote and
@@ -9658,7 +9918,7 @@ return Commands
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">DevGateCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): QA-004 gate scenarios run
@@ -9933,7 +10193,7 @@ S.S20=function()
 	local closed=not (a.buff and c.now&lt;a.buff.untilT)
 	place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-14))
 	hp=a.health;b.neutralToolAt=0;b.chakra=999;c:request(b,"Tool",a.root.Position);task.wait(.8)
-	return absorbed and melee and closed,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
+	return absorbed and melee and closed and hp-a.health&gt;0,string.format("kunai absorbed (+chakra)=%s • melee still lands=%s • window closed=%s • kunai after close dmg=%.1f",tostring(absorbed),tostring(melee),tostring(closed),hp-a.health)
 end
 -- M7 ----------------------------------------------------------------------
 -- One continuous sequence per fighter, no refill, no replacement after the
@@ -9950,7 +10210,13 @@ local function seq(id)
 	place(c,a,b,Vector3.new(0,3,7),Vector3.new(0,3,-7))
 	dev:Invoke("health","bot",250)
 	local log={}
+	local fails={}
 	local function note(k,v) table.insert(log,k.."="..tostring(v)) end
+	-- Every contract is mandatory (Codex audit 5bb52fd..aeff49a, F1): a step
+	-- that is refused, whiffs or times out fails the sequence.
+	local function need(k,ok) if not ok then table.insert(fails,k) end end
+	local MoveGraphs=require(game:GetService("ReplicatedStorage").NinjaDuel.MoveGraphs)
+	local graph=MoveGraphs[id] or {}
 	-- In reach (the human's own walking is the client's: placed, not walked).
 	local reach=((a.def.AttackProfile and a.def.AttackProfile.Light1 and a.def.AttackProfile.Light1.contact) or 3.4)
 	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
@@ -9958,18 +10224,32 @@ local function seq(id)
 	local hp=b.health
 	confirmOne(c,a);confirmOne(c,a)
 	note("lights",string.format("%.0f",hp-b.health))
+	need("lights",hp-b.health&gt;0 and (b.comboHits or 0)&gt;=2)
 	a.move=flat(b.root.Position-a.root.Position).Unit;local ok,why=c:request(a,"Attack");a.move=Vector3.zero
 	note("route",if ok then a.attackName else why)
+	-- The toward route of its own graph (or the launcher it names, or the
+	-- proxy that carries it).
+	local up=graph.routes and graph.routes.up
+	local proxy=graph.proxy and up and graph.proxy[up]
+	local expected={[up or ""]=true,[a.def.LauncherMove or ""]=true,[(proxy and proxy.move) or ""]=true,[(proxy and proxy.solo) or ""]=true}
+	need("route",ok and expected[a.attackName or "?"]==true)
 	task.wait(.4)
 	ok,why=c:request(a,"Pursuit");note("E",if ok then "ok" else why);task.wait(.45)
+	-- A route that chases by itself (Sasuke's Lion Kick, Lee's Rising Wind)
+	-- refuses E as Committed; any other refusal fails.
+	local selfChase=graph.onRoute and up and graph.onRoute[up]~=nil
+	need("E",ok or (selfChase and why=="Committed"))
 	local airHits,before=0,b.health
 	for _=1,2 do c:request(a,"Attack");task.wait(.33);if b.health&lt;before then airHits+=1;before=b.health end end
 	note("air",airHits)
+	need("air",airHits&gt;=1)
 	t=os.clock();repeat task.wait() until (not a.airborne and Rules_canAct(a,c)) or os.clock()-t&gt;3
 	-- Step out and throw.
 	local away=flat(a.root.Position-b.root.Position);away=if away.Magnitude&gt;.1 then away.Unit else Vector3.zAxis
 	c:relocate(a,b.root.Position+away*12+Vector3.new(0,.1,0));task.wait(.2)
 	ok,why=c:request(a,"Tool",b.root.Position);note("tool",if ok then "ok" else why);task.wait(.8)
+	-- Lee's tool is a deflecting kick: with nothing thrown at him it refuses.
+	need("tool",ok or (a.def.Tool=="Deflect" and why=="Nothing to deflect"))
 	-- Every technique, as the reserve allows.
 	local casts={}
 	for slot,spec in a.def.Techniques do
@@ -9979,9 +10259,19 @@ local function seq(id)
 		local d=flat(a.root.Position-b.root.Position).Magnitude
 		local dir=flat(a.root.Position-b.root.Position);dir=if dir.Magnitude&gt;.1 then dir.Unit else Vector3.zAxis
 		if math.abs(d-gap)&gt;2 then c:relocate(a,b.root.Position+dir*math.max(gap,3)+Vector3.new(0,.1,0));task.wait(.15) end
+		local hpT,evT=b.health,0
+		for _,v in a.events or {} do evT+=v end
 		local r1,r2=c:request(a,"Technique"..slot,b.root.Position)
-		table.insert(casts,spec.Id..":"..(if r1 then "ok" else tostring(r2)))
-		task.wait(1.2)
+		local effect=false
+		local t1=os.clock()
+		repeat
+			task.wait()
+			local ev=0;for _,v in a.events or {} do ev+=v end
+			if b.health&lt;hpT or b.reaction or a.buff or a.counterStance or #c.hazards&gt;0 or #(c.bodies or {})&gt;0 or ev&gt;evT+1 then effect=true end
+		until os.clock()-t1&gt;1.2
+		table.insert(casts,spec.Id..":"..(if r1 then (if effect then "ok" else "noeffect") else tostring(r2)))
+		-- A technique that needs a setup (Minato's seal) may refuse with its reason.
+		need(spec.Id,(r1 and effect) or (not r1 and spec.Requires~=nil))
 	end
 	note("jutsu",table.concat(casts,","))
 	-- Defence: the bot throws a light at a raised guard.
@@ -9989,8 +10279,11 @@ local function seq(id)
 	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
 	c:request(a,"Guard");task.wait(.1)
 	local hpA=a.health
-	c:request(b,"Attack");task.wait(.5)
-	note("guard",string.format("held=%s chip=%.1f",tostring(a.impactStyle=="block" or (hpA-a.health)&lt;3),hpA-a.health))
+	local hit=c:request(b,"Attack")
+	local blocked=false
+	local t2=os.clock();repeat task.wait();if (a.riposteUntil or 0)&gt;c.now or a.impactStyle=="block" then blocked=true end until blocked or os.clock()-t2&gt;.6
+	note("guard",string.format("solicited=%s blocked=%s chip=%.1f",tostring(hit),tostring(blocked),hpA-a.health))
+	need("guard",hit and blocked)
 	c:request(a,"GuardOff")
 	-- KO and the next round.
 	dev:Invoke("ko","bot")
@@ -10000,13 +10293,107 @@ local function seq(id)
 	for _,h in c2.hazards do if h.a==a then mine+=1 end end
 	local bodies=#(c2.bodies or {})
 	local leftover=(a.buff~=nil) or (a.counterStance~=nil) or ((a.slowUntil or 0)&gt;c2.now) or ((a.poisonedUntil or 0)&gt;c2.now) or mine&gt;0 or bodies&gt;0
-	note("reset",string.format("round=%s clean=%s",tostring(s.round),tostring(not leftover)))
-	return not leftover,table.concat(log," ")
+	local cools=0
+	for _,v in a.cooldowns or {} do if v&gt;c2.now then cools+=1 end end
+	for _,v in b.cooldowns or {} do if v&gt;c2.now then cools+=1 end end
+	local theirs=(b.buff~=nil) or ((b.slowUntil or 0)&gt;c2.now) or ((b.poisonedUntil or 0)&gt;c2.now) or b.reaction=="Bound"
+	note("reset",string.format("round=%s phase=%s clean=%s cooldowns=%d",tostring(s.round),tostring(s.phase),tostring(not leftover and not theirs),cools))
+	need("reset",(s.round or 0)&gt;=2 and s.phase=="Duel" and not leftover and not theirs and cools==0)
+	if #fails&gt;0 then table.insert(log,"FAILED["..table.concat(fails,",").."]") end
+	return #fails==0,table.concat(log," ")
 end
 for _,id in Roster do S["Q:"..id]=function() return seq(id) end end
 local everyone={}
 for _,id in Roster do table.insert(everyone,"Q:"..id) end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"},M7=everyone}
+-- NEW (DEC-026 newcomers, Shared/RosterStaging): the M7 sequence for each,
+-- then its own body checks in the native world: side after one and away
+-- after two are its own routes, a clean block is answered with its own
+-- riposte gesture, its counter stance answers a blow with a strike that
+-- lands, and (Madara, Hiruzen) the Katon cone burns ahead and not at the flank.
+local Staging=require(game:GetService("ReplicatedStorage").NinjaDuel.RosterStaging)
+local MoveGraphs=require(game:GetService("ReplicatedStorage").NinjaDuel.MoveGraphs)
+local function body(id)
+	local log={}
+	local pass=true
+	local function check(name,ok,detail) table.insert(log,name.."="..(if ok then "ok" else "NO").."("..tostring(detail)..")");pass=pass and ok end
+	local g=MoveGraphs[id]
+	local c,a,b=start(id,"Leaf")
+	local reach=a.def.AttackProfile.Light1.contact
+	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
+	confirmOne(c,a)
+	a.move=a.root.CFrame.RightVector;c:request(a,"Attack");a.move=Vector3.zero
+	check("side",a.attackName==g.routes.side,a.attackName)
+	task.wait(1.2)
+	place(c,a,b,Vector3.new(0,3,reach/2),Vector3.new(0,3,-reach/2))
+	confirmOne(c,a);confirmOne(c,a)
+	a.move=flat(a.root.Position-b.root.Position).Unit;c:request(a,"Attack");a.move=Vector3.zero
+	check("away",a.attackName==g.routes.down,a.attackName)
+	task.wait(1.4)
+	-- Riposte: the bot strikes a raised guard.
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
+	c:request(a,"Guard");task.wait(.25)
+	c:request(b,"Attack")
+	local t=os.clock();repeat task.wait() until a.impactStyle=="block" or os.clock()-t&gt;.6
+	c:request(a,"Attack")
+	check("riposte",a.attackName==g.riposte,a.attackName)
+	task.wait(1.2)
+	-- Counter stance.
+	local counter
+	for i,spec in a.def.Techniques do if spec.Family=="Counter" then counter=i end end
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8));dev:Invoke("refill")
+	c:request(a,"Technique"..counter);task.wait(.12)
+	local hp=b.health
+	c:request(b,"Attack")
+	t=os.clock();repeat task.wait() until a.attackName==a.def.Techniques[counter].Move or os.clock()-t&gt;.8
+	local answered=a.attackName
+	task.wait(.7)
+	check("counter",answered==a.def.Techniques[counter].Move and b.health&lt;hp,string.format("%s dmg=%.1f",tostring(answered),hp-b.health))
+	-- Katon cone.
+	for i,spec in a.def.Techniques do
+		if spec.Family=="Burst" and spec.Arc then
+			task.wait(1);dev:Invoke("refill")
+			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			hp=b.health;c:request(a,"Technique"..i,b.root.Position);task.wait(.9)
+			local front=hp-b.health
+			task.wait(spec.Cooldown+.2);dev:Invoke("refill")
+			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			c:relocate(b,a.root.Position+a.root.CFrame.RightVector*7);task.wait(.15)
+			hp=b.health;c:request(a,"Technique"..i,a.root.Position+a.root.CFrame.LookVector*8);task.wait(.9)
+			check("katon",front&gt;0 and hp-b.health==0,string.format("front=%.1f flank=%.1f",front,hp-b.health))
+		end
+	end
+	return pass,table.concat(log," ")
+end
+local newcomers={}
+for _,id in Staging do
+	S["Q:"..id]=function() return seq(id) end
+	S["N:"..id]=function() return body(id) end
+	table.insert(newcomers,"Q:"..id);table.insert(newcomers,"N:"..id)
+end
+-- Negative controls (Codex F1): the verdict must fail when a contract is
+-- broken. NEG1 refuses the human's every Attack (no string, no route, no air);
+-- NEG2 has the bot never strike the raised guard. Both must print FAIL.
+local Combat=require(script.Parent.Combat)
+local function withRefusal(filter,fn)
+	local orig=Combat.request
+	Combat.request=function(self,actor,action,...)
+		if filter(actor,action) then return false,"Injected refusal" end
+		return orig(self,actor,action,...)
+	end
+	local ok,pass,detail=pcall(fn)
+	Combat.request=orig
+	if not ok then error(pass) end
+	return pass,detail
+end
+S.NEG1=function()
+	local pass,detail=withRefusal(function(actor,action) return actor.fighterId=="Mirage" and action=="Attack" end,function() return seq("Mirage") end)
+	return not pass,"control (must fail): verdict="..(if pass then "PASS" else "FAIL").." • "..tostring(detail)
+end
+S.NEG2=function()
+	local pass,detail=withRefusal(function(actor,action) return actor.fighterId=="Leaf" and action=="Attack" end,function() return seq("Mirage") end)
+	return not pass,"control (must fail): verdict="..(if pass then "PASS" else "FAIL").." • "..tostring(detail)
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"},M5={"S18","S20"},M7=everyone,NEW=newcomers,NEG={"NEG1","NEG2"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
@@ -10028,7 +10415,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">DevHooks</string>
           <ProtectedString name="Source">-- Studio-only playtest hooks. A BindableFunction in ServerStorage lets a Studio
@@ -10330,7 +10717,7 @@ return DevHooks
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">DevProfiler</string>
           <ProtectedString name="Source">-- Studio profiler (Codex 33028b2, ported): instance-level instrumentation,
@@ -10457,7 +10844,7 @@ return Profiler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">DevQA</string>
           <ProtectedString name="Source">-- Native smoke of the Studio dev tools themselves (Codex 33028b2, ported).
@@ -10528,7 +10915,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">DevReport</string>
           <ProtectedString name="Source">-- Profiler report export (Codex 33028b2, ported). Roblox truncates long Output
@@ -10563,7 +10950,7 @@ return Report
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">DevRosterCheck</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES): a native Studio pass for
@@ -10689,7 +11076,7 @@ end
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">DevScenarios</string>
           <ProtectedString name="Source">-- Explicit QA setups (Codex 33028b2, ported to the current Matches API). Each
@@ -10785,7 +11172,7 @@ return Scenarios
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">DevTools</string>
           <ProtectedString name="Source">-- Studio dev-tool dispatcher (Codex 33028b2, ported): shared by the F6 panel
@@ -10866,7 +11253,7 @@ return Tools
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -10908,7 +11295,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -11021,7 +11408,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -11717,6 +12104,24 @@ function Families.beforeHit(c,attacker,victim,readEligible)
 		c:pushImpact(victim.root.Position,"teleport",false,{owner=victim.id,from=from,to=victim.root.Position,kind=spec.Kind})
 	end
 	attacker.pending=nil
+	-- A stance answered by a real strike (Counter Move: Madara's pommel,
+	-- Hashirama's shoulder, Hiruzen's point): the blow is turned aside, the
+	-- attacker staggers, and the answer is a strike of his body that must
+	-- still land (it opens a string like a riposte).
+	if spec.Move then
+		Brawler.react(c,attacker,"HitStun",Vector3.zero,.42,victim)
+		c:pushImpact(victim.root.Position:Lerp(attacker.root.Position,.5),"clash",true,{direction=flat(attacker.root.Position-victim.root.Position)})
+		c:pushImpact(victim.root.Position,"look",true,{owner=victim.id,kind=spec.Kind,victim=attacker.id})
+		c:cue(victim,string.upper(spec.Name).." • COUNTER",.8)
+		Brawler.event(c,victim,"Counter")
+		c:schedule(c.now+.04,function()
+			if victim.health&lt;=0 or attacker.health&lt;=0 or c.match.phase~="Duel" or victim.reaction then return end
+			victim.state="Neutral";victim.untilTime=c.now;victim.guardHeld=false;victim.evade=nil
+			Brawler.breakString(victim,false);victim.lastAttack=c.now
+			Brawler.start(c,victim,Brawler.riposteMove(c,victim,spec.Move))
+		end)
+		return true
+	end
 	c.damageTag=spec.Name
 	local hit=c:damage(victim,attacker,spec.Damage or 8,true,false)
 	c.damageTag=nil
@@ -11848,7 +12253,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -12173,7 +12578,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -12448,7 +12853,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND61">
+      <Item class="Script" referent="ND63">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">workspace:SetAttribute("NinjaDuelDebug",true)
@@ -12478,7 +12883,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -12859,7 +13264,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -13126,7 +13531,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">NativeQA</string>
           <ProtectedString name="Source">-- Test-only module omitted from playable artifact.
@@ -13599,7 +14004,7 @@ return QA
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -13937,7 +14342,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -14202,7 +14607,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -14678,7 +15083,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -14889,7 +15294,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -15092,7 +15497,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -15581,7 +15986,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -15894,7 +16299,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -16934,13 +17339,13 @@ require(script.Parent.Legion).install(Techniques)
 require(script.Parent.Gale).install(Techniques)
 -- Roster breadth pass: every technique that names a Family and has no
 -- bespoke entry above runs the family's (Server/Families).
-for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit)} do kit.install(Techniques) end
+for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit),require(script.Parent.Wave4Kit)} do kit.install(Techniques) end
 require(script.Parent.Families).install(Techniques,require(game:GetService("ReplicatedStorage").NinjaDuel.Fighters))
 return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -17040,7 +17445,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -17068,7 +17473,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -17196,7 +17601,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -17247,7 +17652,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -17382,7 +17787,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -17496,7 +17901,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND81">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -17682,7 +18087,114 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND80">
+      <Item class="ModuleScript" referent="ND82">
+        <Properties>
+          <string name="Name">Wave4Kit</string>
+          <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
+-- server side. Their techniques run on the shared families (Counter with a
+-- real answering strike, Burst arcs, a ground Projectile); this module only
+-- dresses them. The weapons in their hands are drawn by Client/Wave4FX.
+local Base=require(script.Parent.Wave1Kit)
+local paint,ARMS,LEGS,TORSO=Base.paint,Base.ARMS,Base.LEGS,Base.TORSO
+local Kit={}
+function Kit.install(Techniques) end
+function Kit.dress(dressers,kit)
+	local wear,face,hairCap,spike,rgb,A,R=kit.wear,kit.face,kit.hairCap,kit.spike,kit.rgb,kit.A,kit.R
+	local function sandals(model,def,strap)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		for _,side in {"Left","Right"} do
+			local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=strap end
+			wear(model,side.."Foot","Toes",Vector3.new(.7,.16,.34),CFrame.new(0,.1,-.42),skin)
+		end
+	end
+	local function hideCap(model,color)
+		local cap=model:FindFirstChild("Hair");if cap then cap.Color=color;cap.Transparency=1 end
+	end
+
+	-- Madara (13): navy tunic with a short collar, dark trousers, short messy
+	-- black hair, light arm guards; the short sword's scabbard at the left
+	-- hip (the blade itself is in his hand while he strikes, Wave4FX).
+	dressers.Madara=function(model,def)
+		local hair=rgb(24,24,30)
+		local navy=rgb(40,46,84)
+		local dark=rgb(30,30,36)
+		hideCap(model,hair)
+		face(model,rgb(30,30,34),hair)
+		hairCap(model,hair)
+		for _,s in {{Vector3.new(-.5,.6,-.3),Vector3.new(-.7,.2,-.6)},{Vector3.new(.5,.6,-.3),Vector3.new(.7,.2,-.6)},{Vector3.new(0,.8,-.2),Vector3.new(.2,.5,-.9)},
+			{Vector3.new(-.4,.5,.5),Vector3.new(-.8,-.2,.8)},{Vector3.new(.4,.5,.5),Vector3.new(.8,-.2,.8)},{Vector3.new(0,.5,.7),Vector3.new(0,-.4,1)}} do
+			spike(model,s[1],s[2],.7,.5,.4,hair)
+		end
+		paint(model,TORSO,navy);paint(model,ARMS,navy);paint(model,LEGS,dark)
+		wear(model,"UpperTorso","Tunic",Vector3.new(2.08,1.62,1.12),CFrame.new(0,-.02,0),navy)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.3,.34,1.14),CFrame.new(0,.82,.04),rgb(34,38,70))
+		-- The fan crest on the back (a white disc over a red one).
+		wear(model,"UpperTorso","CrestRed",Vector3.new(.8,.56,.04),CFrame.new(0,.26,.58),rgb(190,40,40))
+		wear(model,"UpperTorso","CrestWhite",Vector3.new(.6,.42,.04),CFrame.new(0,.1,.59),rgb(236,236,236))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.04,.22,1.06),CFrame.new(0,.34,0),rgb(90,40,40))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","ArmGuard",Vector3.new(.66,.8,.66),CFrame.new(0,-.05,0),rgb(70,74,86),Enum.Material.Metal)
+		end
+		wear(model,"LowerTorso","Scabbard",Vector3.new(.2,.24,2.6),CFrame.new(-1.02,.1,.2)*A(R(28),0,0),rgb(30,26,26))
+		wear(model,"LowerTorso","Hilt",Vector3.new(.18,.18,.8),CFrame.new(-1.02,.7,-1.0)*A(R(28),0,0),rgb(60,40,30))
+		sandals(model,def,rgb(30,30,36))
+	end
+
+	-- Hashirama (13): a brick-brown short-sleeved tunic, dark trousers, black
+	-- hair of a young length tied at the nape, bare forearms (the wood
+	-- sheathes them when he strikes, Wave4FX).
+	dressers.Hashirama=function(model,def)
+		local hair=rgb(26,22,20)
+		local tunic=rgb(150,74,46)
+		local dark=rgb(46,40,36)
+		local skin=Color3.fromRGB(table.unpack(def.Skin))
+		hideCap(model,hair)
+		face(model,rgb(60,40,30),hair)
+		hairCap(model,hair)
+		wear(model,"Head","Fringe",Vector3.new(1.6,.4,.3),CFrame.new(0,.48,-.78),hair)
+		wear(model,"Head","NapeTie",Vector3.new(.4,.4,.4),CFrame.new(0,-.1,.92),hair)
+		wear(model,"Head","NapeTail",Vector3.new(.36,1.0,.3),CFrame.new(0,-.7,.9)*A(R(-8),0,0),hair)
+		paint(model,TORSO,tunic);paint(model,LEGS,dark)
+		paint(model,{"LeftUpperArm","RightUpperArm"},tunic);paint(model,{"LeftLowerArm","RightLowerArm"},skin)
+		wear(model,"UpperTorso","Tunic",Vector3.new(2.1,1.64,1.14),CFrame.new(0,-.02,0),tunic)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.4,.26,1.16),CFrame.new(0,.82,.02),rgb(120,56,36))
+		wear(model,"LowerTorso","Sash",Vector3.new(2.08,.3,1.08),CFrame.new(0,.32,0),rgb(70,96,60))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Wrap",Vector3.new(.64,.24,.64),CFrame.new(0,-.36,0),rgb(220,210,190))
+		end
+		sandals(model,def,rgb(60,46,36))
+	end
+
+	-- Hiruzen (13): an earth-ochre tunic, short dark trousers, bandaged
+	-- forearms, short brown hair brushed up, a young face; the dark wooden
+	-- staff is in his hands (Wave4FX).
+	dressers.Hiruzen=function(model,def)
+		local hair=rgb(92,64,40)
+		local ochre=rgb(176,134,70)
+		local dark=rgb(54,48,40)
+		hideCap(model,hair)
+		face(model,rgb(80,60,40),hair)
+		hairCap(model,hair)
+		for _,s in {{Vector3.new(-.4,.8,-.3),Vector3.new(-.5,1.3,-.4)},{Vector3.new(0,.9,-.3),Vector3.new(0,1.4,-.4)},{Vector3.new(.4,.8,-.3),Vector3.new(.5,1.3,-.4)},
+			{Vector3.new(-.3,.8,.3),Vector3.new(-.4,1.2,.5)},{Vector3.new(.3,.8,.3),Vector3.new(.4,1.2,.5)}} do
+			spike(model,s[1],s[2],.45,.42,.36,hair)
+		end
+		paint(model,TORSO,ochre);paint(model,ARMS,ochre);paint(model,LEGS,dark)
+		wear(model,"UpperTorso","Tunic",Vector3.new(2.08,1.62,1.12),CFrame.new(0,-.02,0),ochre)
+		wear(model,"UpperTorso","Collar",Vector3.new(1.4,.26,1.14),CFrame.new(0,.82,.02),rgb(140,104,54))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.04,.22,1.06),CFrame.new(0,.34,0),rgb(60,46,30))
+		wear(model,"LowerTorso","ShurikenPouch",Vector3.new(.5,.4,.4),CFrame.new(.9,.1,.5),rgb(70,60,46))
+		for _,side in {"Left","Right"} do
+			wear(model,side.."LowerArm","Bandage",Vector3.new(.66,.9,.66),CFrame.new(0,-.04,0),rgb(232,226,210))
+		end
+		sandals(model,def,rgb(50,42,34))
+	end
+end
+return Kit
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND83">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -18637,7 +19149,7 @@ end
 -- into World: one install line per module).
 local COSTUME_KIT={wear=wear,cyl=cyl,headband=headband,face=face,hairCap=hairCap,spike=spike,rgb=rgb,A=A,R=R}
 require(script.Parent.Costumes).install(World.dressers,COSTUME_KIT)
-for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit)} do kit.dress(World.dressers,COSTUME_KIT) end
+for _,kit in {require(script.Parent.Wave1Kit),require(script.Parent.Wave2Kit),require(script.Parent.Wave3Kit),require(script.Parent.Wave4Kit)} do kit.dress(World.dressers,COSTUME_KIT) end
 function World.pose(a,now,dt)
  Animation.step(a,now)
 end
@@ -18645,7 +19157,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND81">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -18873,21 +19385,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND82">
+  <Item class="StarterPlayer" referent="ND85">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND83">
+    <Item class="StarterPlayerScripts" referent="ND86">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND84">
+      <Item class="Folder" referent="ND87">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -19051,7 +19563,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -19342,7 +19854,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -19897,7 +20409,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND88">
+        <Item class="LocalScript" referent="ND91">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -19931,7 +20443,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -20081,7 +20593,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -20125,7 +20637,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -21813,7 +22325,7 @@ require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,so
 require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Roster 20 batches: their own drawing (most of it is FamilyFX's).
-for _,name in {"Wave1FX","Wave2FX","Wave3FX"} do
+for _,name in {"Wave1FX","Wave2FX","Wave3FX","Wave4FX"} do
 	require(script.Parent[name]).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 		smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 end
@@ -21827,7 +22339,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -22408,7 +22920,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -22886,7 +23398,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -23067,7 +23579,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -23807,7 +24319,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -23984,7 +24496,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -24165,7 +24677,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND98">
+        <Item class="LocalScript" referent="ND101">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -24314,7 +24826,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -24572,7 +25084,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -24891,7 +25403,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -25484,7 +25996,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -26086,7 +26598,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -26227,7 +26739,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -26553,6 +27065,8 @@ local function i(over) return merge(I,over) end
 local N=STANCE.GentleFist
 local function n(over) return merge(N,over) end
 local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={},Sand={}}
+-- Read-only view for the headless suites (which clips a fighter authors).
+Motion.CLIPS=CLIPS
 -- Gaara ---------------------------------------------------------------
 -- He barely moves: one hand unfolds and flicks the sand out, then folds back.
 local G=STANCE.Sand
@@ -27697,6 +28211,9 @@ local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Fla
 -- throw overlays, cast poses and intro). Temari first.
 require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
 	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
+-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): their own clips.
+require(script.Parent.Wave4Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	dt=dt or 1/60
@@ -28669,7 +29186,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -28773,7 +29290,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -28786,7 +29303,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Haku, Zabuza, Kisame): the batch's own drawing, installed by
@@ -28799,10 +29316,366 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
+        <Item class="ModuleScript" referent="ND111">
+          <Properties>
+            <string name="Name">Wave4FX</string>
+            <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
+-- their bodies fight with, installed by Effects. Presentation only; the
+-- server's strike is the contact.
+--   Madara: the short sword leaves the scabbard for his right hand while he
+--     strikes or guards (a trail on the live edge); the hilt at the hip hides.
+--   Hashirama: a sheath of wood grows over the forearms while a strike is
+--     live, and the small grips his routes name (a stump under the launcher,
+--     a low root for the brake, the awakening's root at the contact point).
+--   Hiruzen: the dark staff, always in his hands.
+--   Both Katon breaths: a short cone of fire ahead of the caster.
+local Debris=game:GetService("Debris")
+local M={}
+function M.install(FX,kit)
+	local new,block,tween,flash,shockRing,num,TEX,smokePuff=kit.new,kit.block,kit.tween,kit.flash,kit.shockRing,kit.num,kit.TEX,kit.smokePuff
+	local held=setmetatable({},{__mode="k"})
+	local function weld(hand,parts)
+		for _,p in parts do p.Anchored=false;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true;new("WeldConstraint",{Part0=hand,Part1=p},p) end
+	end
+	local function live(actor) return actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active" or actor.state=="Recovery") end
+	local function show(parts,on) for _,p in parts do p.LocalTransparencyModifier=if on then 0 else 1 end end
+	local function trail(blade,from,to,color)
+		local a0=new("Attachment",{Position=from},blade)
+		local a1=new("Attachment",{Position=to},blade)
+		return new("Trail",{Attachment0=a0,Attachment1=a1,Lifetime=.12,Color=ColorSequence.new(color),LightEmission=.5,
+			Transparency=num({{0,.35},{1,1}}),FaceCamera=false,Enabled=false},blade)
+	end
+
+	local function sword(model,actor)
+		local st=held[model]
+		if not st then
+			local hand=model:FindFirstChild("RightHand")
+			if not hand then return end
+			local m=new("Model",{Name="HeldSword"},model)
+			local cf=hand.CFrame
+			local blade=block(m,Vector3.new(.1,.28,2.5),cf*CFrame.new(0,-.2,-1.75),Color3.fromRGB(200,206,214),Enum.Material.Metal)
+			local guard=block(m,Vector3.new(.5,.12,.12),cf*CFrame.new(0,-.2,-.45),Color3.fromRGB(50,44,40),Enum.Material.Metal)
+			local grip=block(m,Vector3.new(.16,.16,.7),cf*CFrame.new(0,-.2,0),Color3.fromRGB(60,40,30),Enum.Material.SmoothPlastic)
+			weld(hand,{blade,guard,grip})
+			st={parts={blade,guard,grip},trail=trail(blade,Vector3.new(0,0,-1.2),Vector3.new(0,0,1.2),Color3.fromRGB(230,236,244)),shown=nil};held[model]=st
+		end
+		local drawn=live(actor) or actor.state=="Guarding" or actor.state=="TechniqueChannel"
+		st.trail.Enabled=actor.state=="Active" and actor.attackName~=nil
+		if st.shown==drawn then return end
+		st.shown=drawn
+		show(st.parts,drawn)
+		local hilt=model:FindFirstChild("Hilt")
+		if hilt and hilt:IsA("BasePart") then hilt.LocalTransparencyModifier=if drawn then 1 else 0 end
+	end
+
+	local function staff(model,actor)
+		local st=held[model]
+		if not st then
+			local hand=model:FindFirstChild("RightHand")
+			if not hand then return end
+			local m=new("Model",{Name="HeldStaff"},model)
+			local cf=hand.CFrame
+			local pole=block(m,Vector3.new(.22,.22,5.4),cf*CFrame.new(0,-.2,-.7),Color3.fromRGB(70,50,36),Enum.Material.Wood)
+			local cap1=block(m,Vector3.new(.26,.26,.2),cf*CFrame.new(0,-.2,-3.35),Color3.fromRGB(40,32,26),Enum.Material.SmoothPlastic)
+			local cap2=block(m,Vector3.new(.26,.26,.2),cf*CFrame.new(0,-.2,1.95),Color3.fromRGB(40,32,26),Enum.Material.SmoothPlastic)
+			weld(hand,{pole,cap1,cap2})
+			st={trail=trail(pole,Vector3.new(0,0,-2.6),Vector3.new(0,0,-1.2),Color3.fromRGB(236,220,190))};held[model]=st
+		end
+		st.trail.Enabled=actor.state=="Active" and actor.attackName~=nil
+	end
+
+	local WOOD=Color3.fromRGB(132,96,60)
+	local LEAF=Color3.fromRGB(110,160,80)
+	local function grip(fx,at,height,width,time)
+		local floor=kit.floorUnder(fx,at,3,14)
+		local base=if floor then floor.Position else at-Vector3.new(0,2.8,0)
+		local stump=block(fx.folder,Vector3.new(width,.2,width),CFrame.new(base),WOOD,Enum.Material.Wood)
+		stump.Shape=Enum.PartType.Cylinder;stump.CFrame=CFrame.new(base)*CFrame.Angles(0,0,math.rad(90))
+		tween(stump,.12,{Size=Vector3.new(height,width,width),CFrame=CFrame.new(base+Vector3.new(0,height/2,0))*CFrame.Angles(0,0,math.rad(90))})
+		local bud=block(fx.folder,Vector3.new(.4,.4,.4),CFrame.new(base+Vector3.new(width*.4,height*.8,0)),LEAF,Enum.Material.Grass)
+		task.delay(time,function()
+			if stump.Parent then tween(stump,.25,{Size=Vector3.new(.2,width,width),CFrame=CFrame.new(base)*CFrame.Angles(0,0,math.rad(90)),Transparency=1}) end
+			if bud.Parent then tween(bud,.2,{Transparency=1}) end
+		end)
+		Debris:AddItem(stump,time+.4);Debris:AddItem(bud,time+.4)
+		smokePuff(fx.folder,base+Vector3.new(0,.4,0),Color3.fromRGB(150,120,90),6,1.2)
+	end
+	local GRIPS={StumpRise={reach=3.2,height=2.6,width=1.6,time=.7},RootRise={reach=3.4,height=3.2,width=1.2,time=.8},RootBrake={reach=2.4,height=1,width=.9,time=1.1}}
+	local function wood(fx,model,actor)
+		local st=held[model]
+		if not st then
+			local sheaths={}
+			for _,side in {"Left","Right"} do
+				local arm=model:FindFirstChild(side.."LowerArm")
+				if arm then
+					local s=block(model,Vector3.new(.74,1.0,.74),arm.CFrame*CFrame.new(0,-.05,0),WOOD,Enum.Material.Wood)
+					weld(arm,{s});table.insert(sheaths,s)
+				end
+			end
+			if #sheaths==0 then return end
+			st={parts=sheaths,shown=nil,serial=nil};held[model]=st
+		end
+		local on=actor.state=="Active" and actor.attackName~=nil
+		if st.shown~=on then st.shown=on;show(st.parts,on) end
+		-- The grip a route grows, once per strike, as its contact opens.
+		local key=actor.state=="Active" and actor.attackName and GRIPS[actor.attackName] and (actor.attackName..tostring(actor.attackSerial or actor.attackAt or ""))
+		if key and key~=st.serial then
+			st.serial=key
+			local root=model:FindFirstChild("HumanoidRootPart")
+			local g=GRIPS[actor.attackName]
+			if root then grip(fx,root.Position+root.CFrame.LookVector*g.reach,g.height,g.width,g.time) end
+		elseif not key and actor.state~="Active" then st.serial=nil end
+	end
+
+	local function breath(fx,position,direction,reach)
+		local look=if direction and direction.Magnitude&gt;.1 then direction.Unit else Vector3.zAxis
+		local from=position+Vector3.new(0,1.2,0)+look*1.2
+		local holder=kit.anchorPart(fx.folder,from)
+		holder.CFrame=CFrame.lookAt(from,from+look)
+		local e=new("ParticleEmitter",{Texture=TEX.glow,Rate=260,Lifetime=NumberRange.new(.22,.32),Speed=NumberRange.new(reach*2.6,reach*3.2),
+			SpreadAngle=Vector2.new(22,22),EmissionDirection=Enum.NormalId.Front,LightEmission=1,
+			Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(255,240,180)),ColorSequenceKeypoint.new(.4,Color3.fromRGB(255,150,50)),ColorSequenceKeypoint.new(1,Color3.fromRGB(150,40,20))}),
+			Size=num({{0,.8},{.6,3.2},{1,4}}),Transparency=num({{0,.1},{.7,.4},{1,1}}),Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-90,90)},holder)
+		local light=new("PointLight",{Color=Color3.fromRGB(255,150,60),Brightness=3,Range=reach*1.6},holder)
+		task.delay(.3,function() if e.Parent then e.Enabled=false end;if light.Parent then tween(light,.25,{Brightness=0}) end end)
+		Debris:AddItem(holder,1)
+		flash(fx.folder,from,Color3.fromRGB(255,170,70),1,5,.2,.3)
+	end
+
+	table.insert(FX.layers,1,{name="Wave4",fighter=function(fx,model,actor,dt)
+		if not model then return end
+		if actor.fighterId=="Rival" then sword(model,actor)
+		elseif actor.fighterId=="Professor" then staff(model,actor)
+		elseif actor.fighterId=="Sapling" then wood(fx,model,actor) end
+	end,impact=function(fx,impact,folder)
+		if impact.style=="look" and impact.kind=="firebreath" and impact.radius then
+			breath(fx,impact.position,impact.direction,impact.radius)
+			return true
+		end
+		return false
+	end})
+end
+return M
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND112">
+          <Properties>
+            <string name="Name">Wave4Motion</string>
+            <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
+-- (bibles docs/characters/{MADARA,HASHIRAMA,HIRUZEN}_CHILD.md §3–§6, §11).
+-- Added to the motion engine's clip table by install(E), like GaleMotion.
+-- Keys: 0 wind-up, 1 contact ("out"), 2 end of the live window, 3 back to the
+-- stance; the server's startup/active/recovery set how long each takes, so
+-- the contact frame is the strike's. What they do not author (throws, grabs,
+-- dash strike, wall dive) falls back to their body family's clips.
+-- Presentation only.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Wave4Motion={}
+function Wave4Motion.install(E)
+	local K,merge=E.K,E.merge
+	local AIR={root={pitch=4},torso={pitch=6},head={pitch=-6},ra={raise=60,out=30,elbow=70},la={raise=40,out=30,elbow=60},rl={lift=50,knee=86,ankle=-10},ll={lift=30,knee=64,ankle=-10}}
+	local function air(over) return merge(AIR,over) end
+	local function clip(T,keys)
+		local out={}
+		for i,k in keys do
+			local at,pose,ease=k[1],k[2],k[3]
+			out[i]=K(at,if pose=="T" then T elseif pose.air then air(pose.air) else merge(T,pose),ease)
+		end
+		return out
+	end
+
+	-- Madara: the right hand is the sword hand (Wave4FX), the left is free.
+	local M=Fighters.Rival.Motion.stance
+	local C={}
+	C.Light1=clip(M,{ -- right short sword, diagonal from high right to the left hip
+		{0,{root={y=-.46,yaw=40},torso={yaw=26,pitch=-4},ra={raise=150,out=46,twist=-20,elbow=50,wrist=0},la={raise=50,out=-10,elbow=60}}},
+		{1,{root={y=-.52,z=-.3,yaw=2,pitch=8},torso={yaw=-30,pitch=8},head={yaw=-6},ra={raise=40,out=-46,twist=30,elbow=10},la={raise=30,out=24,elbow=50},lf={z=-.8},rf={z=.7}},"out"},
+		{2,{root={y=-.52,z=-.32,yaw=0,pitch=8},torso={yaw=-34,pitch=8},ra={raise=36,out=-50,twist=30,elbow=12},la={raise=30,out=24,elbow=50},lf={z=-.8},rf={z=.7}}},
+		{3,"T"}})
+	C.Light2=clip(M,{ -- the sword hand drawn back, the left palm (pommel side) into the sternum
+		{0,{root={y=-.44,yaw=34},torso={yaw=22},ra={raise=40,out=30,elbow=96},la={raise=60,out=10,elbow=100,wrist=-10}}},
+		{1,{root={y=-.48,z=-.26,yaw=10,pitch=6},torso={yaw=-18,pitch=6},ra={raise=30,out=40,elbow=100},la={raise=88,out=-6,elbow=6,wrist=-40},lf={z=-.72}},"out"},
+		{2,{root={y=-.48,z=-.28,yaw=8,pitch=6},torso={yaw=-20,pitch=6},ra={raise=30,out=40,elbow=100},la={raise=86,out=-6,elbow=8,wrist=-40},lf={z=-.72}}},
+		{3,"T"}})
+	C.Light3=clip(M,{ -- the reverse cut, hip to shoulder, on a 60° pivot
+		{0,{root={y=-.6,yaw=-20},torso={yaw=-40,pitch=6},ra={raise=20,out=-50,twist=40,elbow=30},la={raise=40,out=30,elbow=60}}},
+		{1,{root={y=-.48,z=-.4,yaw=50,pitch=-2},torso={yaw=30,pitch=-4},head={yaw=-20},ra={raise=150,out=60,twist=-20,elbow=10},la={raise=20,out=-10,elbow=70},lf={z=-.9},rf={z=.8,yaw=50}},"out"},
+		{2,{root={y=-.48,z=-.42,yaw=54,pitch=-2},torso={yaw=34,pitch=-4},ra={raise=154,out=62,twist=-20,elbow=12},la={raise=20,out=-10,elbow=70},lf={z=-.9},rf={z=.8,yaw=50}}},
+		{3,"T"}})
+	C.Heavy=clip(M,{ -- the shoulder charges in behind a big diagonal
+		{0,{root={y=-.7,yaw=50,pitch=6},torso={yaw=36,pitch=8},ra={raise=160,out=30,elbow=60},la={raise=70,out=-20,elbow=80}}},
+		{.75,{root={y=-.74,yaw=54,pitch=6},torso={yaw=40,pitch=8},ra={raise=166,out=32,elbow=64},la={raise=70,out=-20,elbow=80}}},
+		{1,{root={y=-.8,z=-.6,yaw=-10,pitch=16},torso={yaw=-34,pitch=14},head={pitch=6},ra={raise=30,out=-50,elbow=6},la={raise=20,out=30,elbow=40},lf={z=-1.1},rf={z=.9}},"out"},
+		{2,{root={y=-.8,z=-.62,yaw=-12,pitch=16},torso={yaw=-36,pitch=14},ra={raise=28,out=-52,elbow=8},la={raise=20,out=30,elbow=40},lf={z=-1.1},rf={z=.9}}},
+		{3,"T"}})
+	C.QuillonRise=clip(M,{ -- the quillon catches the guard low, then a short rising cut
+		{0,{root={y=-.9,pitch=16,yaw=20},torso={pitch=10,yaw=10},ra={raise=40,out=-20,twist=30,elbow=40},la={raise=70,out=-10,elbow=40}}},
+		{1,{root={y=-.2,z=-.3,pitch=-10,yaw=10},torso={pitch=-12},head={pitch=-16},ra={raise=168,out=10,elbow=10},la={raise=20,out=30,elbow=40},rf={toe=-20}},"out"},
+		{2,{root={y=-.2,z=-.32,pitch=-12,yaw=10},torso={pitch=-14},head={pitch=-16},ra={raise=172,out=10,elbow=12},la={raise=20,out=30,elbow=40},rf={toe=-18}}},
+		{3,"T"}})
+	C.GuardCut=clip(M,{ -- an outer step and a cut on the guarding arm
+		{0,{root={y=-.5,yaw=60},torso={yaw=40},ra={raise=110,out=60,twist=-20,elbow=40},la={raise=50,out=-10,elbow=60},lf={x=.4}}},
+		{1,{root={y=-.5,yaw=-10,pitch=6},torso={yaw=-30,pitch=6},ra={raise=80,out=-30,twist=20,elbow=10},la={raise=20,out=30,elbow=40},lf={x=.6,z=-.7}},"out"},
+		{2,{root={y=-.5,yaw=-14,pitch=6},torso={yaw=-32,pitch=6},ra={raise=78,out=-34,twist=20,elbow=12},la={raise=20,out=30,elbow=40},lf={x=.6,z=-.7}}},
+		{3,"T"}})
+	C.HeelBarrier=clip(M,{ -- a low heel to the shin, the blade held across as he backs off
+		{0,{root={y=-.6,pitch=-4,yaw=20},ra={raise=80,out=-60,twist=60,elbow=30},la={raise=40,out=30,elbow=60},rl={lift=50,knee=90}}},
+		{1,{root={y=-.62,pitch=-8,yaw=10},torso={pitch=-6},ra={raise=84,out=-64,twist=60,elbow=20},la={raise=30,out=40,elbow=50},rl={lift=40,knee=10,ankle=30}},"out"},
+		{2,{root={y=-.62,pitch=-8,yaw=10},torso={pitch=-6},ra={raise=84,out=-64,twist=60,elbow=20},la={raise=30,out=40,elbow=50},rl={lift=36,knee=14,ankle=30}}},
+		{3,"T"}})
+	C.PommelRiposte=clip(M,{ -- the pommel punched straight in off the parry
+		{0,{root={y=-.46,yaw=30},torso={yaw=16},ra={raise=60,out=10,elbow=110},la={raise=60,out=-10,elbow=60}}},
+		{1,{root={y=-.5,z=-.3,yaw=6,pitch=6},torso={yaw=-16,pitch=6},ra={raise=88,out=-6,elbow=8},la={raise=30,out=30,elbow=50},lf={z=-.8}},"out"},
+		{2,{root={y=-.5,z=-.32,yaw=4,pitch=6},torso={yaw=-18,pitch=6},ra={raise=86,out=-6,elbow=10},la={raise=30,out=30,elbow=50},lf={z=-.8}}},
+		{3,"T"}})
+	C.SharinganCut=clip(M,{ -- awake: round the guard, a cut at an angle
+		{0,{root={y=-.5,yaw=-30},torso={yaw=-30},ra={raise=100,out=-40,twist=40,elbow=40},la={raise=50,out=20,elbow=60}}},
+		{1,{root={y=-.52,yaw=70,pitch=6},torso={yaw=36,pitch=6},head={yaw=-30},ra={raise=90,out=70,twist=-30,elbow=8},la={raise=20,out=-10,elbow=70},lf={x=.5,z=-.6}},"out"},
+		{2,{root={y=-.52,yaw=74,pitch=6},torso={yaw=38,pitch=6},ra={raise=88,out=74,twist=-30,elbow=10},la={raise=20,out=-10,elbow=70},lf={x=.5,z=-.6}}},
+		{3,"T"}})
+	C.Air1=clip(M,{ -- in the air: one shoulder cut
+		{0,{air={torso={yaw=26},ra={raise=150,out=40,elbow=50}}}},
+		{1,{air={torso={yaw=-26,pitch=12},ra={raise=40,out=-40,elbow=10},la={raise=20,out=40,elbow=40}}},"out"},
+		{2,{air={torso={yaw=-28,pitch=12},ra={raise=36,out=-44,elbow=12},la={raise=20,out=40,elbow=40}}}},
+		{3,{air={}}}})
+	C.PommelDrop=clip(M,{ -- in the air: the pommel brought down on the head
+		{0,{air={root={pitch=-10},torso={pitch=-14},ra={raise=170,out=10,elbow=60}}}},
+		{1,{air={root={pitch=30},torso={pitch=30},ra={raise=40,out=-6,elbow=20}}},"out"},
+		{2,{air={root={pitch=32},torso={pitch=30},ra={raise=36,out=-6,elbow=22}}}},
+		{3,{air={}}}})
+	E.CLIPS.Rival=C
+	setmetatable(C,{__index=E.CLIPS.Lion})
+
+	-- Hashirama: open hands, a wrestler's base; the wood (Wave4FX) covers the
+	-- forearm while a strike is live.
+	local H=Fighters.Sapling.Motion.stance
+	local S={}
+	S.Light1=clip(H,{ -- left wrestler's palm, low to the sternum, fingers after the arm
+		{0,{root={y=-.72,pitch=12,yaw=20},torso={yaw=14},la={raise=20,out=10,elbow=90},ra={raise=50,out=20,elbow=80}}},
+		{1,{root={y=-.64,z=-.3,pitch=10,yaw=4},torso={yaw=-16,pitch=8},la={raise=80,out=-10,elbow=10,wrist=-40},ra={raise=50,out=20,elbow=80},lf={z=-.75}},"out"},
+		{2,{root={y=-.64,z=-.32,pitch=10,yaw=2},torso={yaw=-18,pitch=8},la={raise=78,out=-10,elbow=14,wrist=-40},ra={raise=50,out=20,elbow=80},lf={z=-.75}}},
+		{3,"T"}})
+	S.Light2=clip(H,{ -- right forearm from outside onto the shoulder, the hip turning
+		{0,{root={y=-.62,yaw=40},torso={yaw=40},ra={raise=90,out=80,elbow=100},la={raise=60,out=-10,elbow=70}}},
+		{1,{root={y=-.66,yaw=-10,pitch=10},torso={yaw=-30,pitch=8},ra={raise=90,out=-20,elbow=92},la={raise=40,out=20,elbow=70}},"out"},
+		{2,{root={y=-.66,yaw=-12,pitch=10},torso={yaw=-32,pitch=8},ra={raise=88,out=-24,elbow=92},la={raise=40,out=20,elbow=70}}},
+		{3,"T"}})
+	S.Light3=clip(H,{ -- both palms into the chest, the whole weight forward
+		{0,{root={y=-.8,z=.2,pitch=6},torso={pitch=4},ra={raise=60,out=10,elbow=120},la={raise=60,out=-10,elbow=120}}},
+		{1,{root={y=-.6,z=-.6,pitch=14},torso={pitch=12},head={pitch=-6},ra={raise=88,out=6,elbow=6,wrist=-50},la={raise=88,out=-6,elbow=6,wrist=-50},lf={z=-1.1},rf={z=.8}},"out"},
+		{2,{root={y=-.6,z=-.62,pitch=14},torso={pitch=12},ra={raise=86,out=6,elbow=8,wrist=-50},la={raise=86,out=-6,elbow=8,wrist=-50},lf={z=-1.1},rf={z=.8}}},
+		{3,"T"}})
+	S.Heavy=clip(H,{ -- the two forearms come together at the hips, then drive
+		{0,{root={y=-.92,pitch=14},torso={pitch=10},ra={raise=60,out=-30,elbow=110},la={raise=60,out=-30,elbow=110}}},
+		{.75,{root={y=-.96,pitch=16},torso={pitch=12},ra={raise=62,out=-32,elbow=114},la={raise=62,out=-32,elbow=114}}},
+		{1,{root={y=-.66,z=-.6,pitch=12},torso={pitch=8},ra={raise=90,out=-6,elbow=24},la={raise=90,out=-6,elbow=24},lf={z=-1.1},rf={z=.9}},"out"},
+		{2,{root={y=-.66,z=-.62,pitch=12},torso={pitch=8},ra={raise=88,out=-6,elbow=26},la={raise=88,out=-6,elbow=26},lf={z=-1.1},rf={z=.9}}},
+		{3,"T"}})
+	S.StumpRise=clip(H,{ -- the shoulder drives the body onto a low stump that lifts it
+		{0,{root={y=-.9,pitch=20,yaw=-30},torso={yaw=-40,pitch=14},ra={raise=30,out=-10,elbow=110},la={raise=40,out=10,elbow=100}}},
+		{1,{root={y=-.3,z=-.3,pitch=-6,yaw=0},torso={pitch=-10},head={pitch=-14},ra={raise=140,out=10,elbow=20},la={raise=140,out=-10,elbow=20}},"out"},
+		{2,{root={y=-.3,z=-.32,pitch=-8},torso={pitch=-12},ra={raise=144,out=10,elbow=22},la={raise=144,out=-10,elbow=22}}},
+		{3,"T"}})
+	S.WrestleStep=clip(H,{ -- the hand fixes the arm, a wrestler's step to the side
+		{0,{root={y=-.66,yaw=20},la={raise=85,out=10,elbow=30,wrist=-20},ra={raise=50,out=30,elbow=90}}},
+		{1,{root={y=-.7,yaw=60,pitch=8},torso={yaw=40},la={raise=80,out=-30,elbow=60},ra={raise=70,out=-20,elbow=40},lf={x=-.6,z=-.5}},"out"},
+		{2,{root={y=-.7,yaw=62,pitch=8},torso={yaw=42},la={raise=78,out=-30,elbow=62},ra={raise=70,out=-20,elbow=40},lf={x=-.6,z=-.5}}},
+		{3,"T"}})
+	S.RootBrake=clip(H,{ -- he lets go, a palm to the ground, a low root brakes the chase
+		{0,{root={y=-.8,pitch=10},la={raise=60,out=10,elbow=80},ra={raise=60,out=-10,elbow=80}}},
+		{1,{root={y=-1.2,pitch=30},torso={pitch=20},head={pitch=-20},la={raise=40,out=-10,elbow=6,wrist=-60},ra={raise=20,out=30,elbow=30},lf={z=-.9},rf={z=.9}},"out"},
+		{2,{root={y=-1.2,pitch=30},torso={pitch=20},la={raise=38,out=-10,elbow=8,wrist=-60},ra={raise=20,out=30,elbow=30},lf={z=-.9},rf={z=.9}}},
+		{3,"T"}})
+	S.ShoulderRiposte=clip(H,{ -- the blow taken, the shoulder answers
+		{0,{root={y=-.8,yaw=40},torso={yaw=50,pitch=10},ra={raise=40,out=-20,elbow=120},la={raise=40,out=-20,elbow=120}}},
+		{1,{root={y=-.7,z=-.5,yaw=-30,pitch=16},torso={yaw=-50,pitch=14},ra={raise=30,out=-20,elbow=120},la={raise=50,out=20,elbow=100},lf={z=-1.0},rf={z=.8}},"out"},
+		{2,{root={y=-.7,z=-.52,yaw=-32,pitch=16},torso={yaw=-52,pitch=14},ra={raise=30,out=-20,elbow=120},la={raise=50,out=20,elbow=100},lf={z=-1.0},rf={z=.8}}},
+		{3,"T"}})
+	S.RootRise=clip(H,{ -- awake: the palm to the floor, the root rises at the point of contact
+		{0,{root={y=-1.1,pitch=26},torso={pitch=18},la={raise=30,out=-10,elbow=6,wrist=-60},ra={raise=40,out=30,elbow=40}}},
+		{1,{root={y=-.4,pitch=-4},torso={pitch=-6},head={pitch=-14},la={raise=130,out=-10,elbow=10,wrist=-20},ra={raise=60,out=30,elbow=40}},"out"},
+		{2,{root={y=-.4,pitch=-4},torso={pitch=-6},la={raise=132,out=-10,elbow=12},ra={raise=60,out=30,elbow=40}}},
+		{3,"T"}})
+	S.Air1=clip(H,{ -- in the air: a palm coming down
+		{0,{air={ra={raise=150,out=20,elbow=60}}}},
+		{1,{air={torso={pitch=14},ra={raise=60,out=-6,elbow=10,wrist=-50}}},"out"},
+		{2,{air={torso={pitch=14},ra={raise=58,out=-6,elbow=12,wrist=-50}}}},
+		{3,{air={}}}})
+	S.PalmStomp=clip(H,{ -- in the air: the heel stamps down
+		{0,{air={root={pitch=-10},rl={lift=90,knee=110},ll={lift=60,knee=90}}}},
+		{1,{air={root={pitch=10},rl={lift=-10,knee=6,ankle=20},ll={lift=40,knee=80},ra={raise=100,out=40},la={raise=100,out=40}}},"out"},
+		{2,{air={root={pitch=10},rl={lift=-10,knee=8,ankle=20},ll={lift=40,knee=80},ra={raise=100,out=40},la={raise=100,out=40}}}},
+		{3,{air={}}}})
+	E.CLIPS.Sapling=S
+	setmetatable(S,{__index=E.CLIPS.Lion})
+
+	-- Hiruzen: the staff in both hands (Wave4FX welds it to the right).
+	local P=Fighters.Professor.Motion.stance
+	local Q={}
+	Q.Light1=clip(P,{ -- a short thrust of the point, centre to shoulder
+		{0,{root={y=-.4,yaw=40},torso={yaw=10},ra={raise=40,out=20,elbow=110},la={raise=60,out=-30,elbow=60}}},
+		{1,{root={y=-.44,z=-.35,yaw=20,pitch=6},torso={yaw=-10,pitch=4},ra={raise=86,out=-4,elbow=6},la={raise=80,out=-30,elbow=30},lf={z=-.8}},"out"},
+		{2,{root={y=-.44,z=-.36,yaw=18,pitch=6},torso={yaw=-12,pitch=4},ra={raise=84,out=-4,elbow=8},la={raise=80,out=-30,elbow=30},lf={z=-.8}}},
+		{3,"T"}})
+	Q.Light2=clip(P,{ -- the heel swung back across at the forearm, the hands changing
+		{0,{root={y=-.4,yaw=10},torso={yaw=-30},ra={raise=90,out=-50,twist=60,elbow=60},la={raise=70,out=10,elbow=60}}},
+		{1,{root={y=-.44,yaw=60,pitch=4},torso={yaw=30,pitch=4},head={yaw=-30},ra={raise=88,out=50,twist=-60,elbow=20},la={raise=80,out=20,elbow=40}},"out"},
+		{2,{root={y=-.44,yaw=62,pitch=4},torso={yaw=32,pitch=4},ra={raise=86,out=52,twist=-60,elbow=22},la={raise=80,out=20,elbow=40}}},
+		{3,"T"}})
+	Q.Light3=clip(P,{ -- the lever: from under, then up and aside
+		{0,{root={y=-.8,pitch=14,yaw=20},torso={pitch=8},ra={raise=10,out=30,elbow=40},la={raise=40,out=-10,elbow=60}}},
+		{1,{root={y=-.3,z=-.4,yaw=10},torso={pitch=-6,yaw=-14},ra={raise=120,out=40,elbow=10},la={raise=100,out=-20,elbow=30},lf={z=-.9}},"out"},
+		{2,{root={y=-.3,z=-.42,yaw=8},torso={pitch=-6,yaw=-16},ra={raise=122,out=42,elbow=12},la={raise=100,out=-20,elbow=30},lf={z=-.9}}},
+		{3,"T"}})
+	Q.Heavy=clip(P,{ -- the staff brought to the hip, a short two-handed arc to the shoulder
+		{0,{root={y=-.6,yaw=60},torso={yaw=40},ra={raise=20,out=60,twist=-30,elbow=60},la={raise=40,out=30,elbow=70}}},
+		{.75,{root={y=-.64,yaw=64},torso={yaw=44},ra={raise=18,out=62,twist=-30,elbow=62},la={raise=40,out=30,elbow=70}}},
+		{1,{root={y=-.5,z=-.5,yaw=0,pitch=8},torso={yaw=-30,pitch=6},ra={raise=110,out=-20,elbow=10},la={raise=96,out=-30,elbow=30},lf={z=-1.0},rf={z=.8}},"out"},
+		{2,{root={y=-.5,z=-.52,yaw=-2,pitch=8},torso={yaw=-32,pitch=6},ra={raise=108,out=-22,elbow=12},la={raise=96,out=-30,elbow=30},lf={z=-1.0},rf={z=.8}}},
+		{3,"T"}})
+	Q.StaffLever=clip(P,{ -- the point under the arm, then the lever lifts
+		{0,{root={y=-.9,pitch=16},torso={pitch=10},ra={raise=0,out=20,elbow=30},la={raise=30,out=-10,elbow=50}}},
+		{1,{root={y=-.1,z=-.3,pitch=-10},torso={pitch=-12},head={pitch=-16},ra={raise=160,out=10,elbow=20},la={raise=140,out=-10,elbow=30},rf={toe=-20}},"out"},
+		{2,{root={y=-.1,z=-.32,pitch=-12},torso={pitch=-14},ra={raise=162,out=10,elbow=22},la={raise=142,out=-10,elbow=30},rf={toe=-18}}},
+		{3,"T"}})
+	Q.GripSwitch=clip(P,{ -- the hands swap on the staff, the heel from the other side
+		{0,{root={y=-.44,yaw=-20},torso={yaw=-20},ra={raise=60,out=-60,twist=70,elbow=50},la={raise=60,out=20,elbow=50}}},
+		{1,{root={y=-.48,yaw=80,pitch=4},torso={yaw=40},head={yaw=-40},ra={raise=80,out=60,twist=-40,elbow=16},la={raise=70,out=30,elbow=40},lf={x=.5,z=-.6}},"out"},
+		{2,{root={y=-.48,yaw=82,pitch=4},torso={yaw=42},ra={raise=78,out=62,twist=-40,elbow=18},la={raise=70,out=30,elbow=40},lf={x=.5,z=-.6}}},
+		{3,"T"}})
+	Q.HeelSweep=clip(P,{ -- low, the heel of the staff at the ankles, then a step back
+		{0,{root={y=-.9,pitch=16,yaw=40},torso={yaw=30},ra={raise=-10,out=40,twist=-40,elbow=20},la={raise=30,out=10,elbow=60}}},
+		{1,{root={y=-1.1,pitch=20,yaw=-10},torso={yaw=-30,pitch=10},ra={raise=-10,out=-40,twist=40,elbow=20},la={raise=20,out=30,elbow=50},lf={z=-1.0},rf={z=1.0}},"out"},
+		{2,{root={y=-1.1,pitch=20,yaw=-12},torso={yaw=-32,pitch=10},ra={raise=-10,out=-44,twist=40,elbow=22},la={raise=20,out=30,elbow=50},lf={z=-1.0},rf={z=1.0}}},
+		{3,"T"}})
+	Q.StaffThrust=clip(P,{ -- the point answers: one straight thrust
+		{0,{root={y=-.46,yaw=44,z=.1},torso={yaw=14},ra={raise=50,out=20,elbow=110},la={raise=60,out=-30,elbow=60}}},
+		{1,{root={y=-.5,z=-.45,yaw=16,pitch=8},torso={yaw=-12,pitch=6},ra={raise=88,out=-4,elbow=4},la={raise=84,out=-30,elbow=24},lf={z=-.95},rf={z=.8}},"out"},
+		{2,{root={y=-.5,z=-.46,yaw=14,pitch=8},torso={yaw=-14,pitch=6},ra={raise=86,out=-4,elbow=6},la={raise=84,out=-30,elbow=24},lf={z=-.95},rf={z=.8}}},
+		{3,"T"}})
+	Q.Air1=clip(P,{ -- in the air: a short thrust
+		{0,{air={ra={raise=50,out=20,elbow=110},la={raise=60,out=-20,elbow=60}}}},
+		{1,{air={torso={pitch=10},ra={raise=90,out=-4,elbow=4},la={raise=80,out=-20,elbow=30}}},"out"},
+		{2,{air={torso={pitch=10},ra={raise=88,out=-4,elbow=6},la={raise=80,out=-20,elbow=30}}}},
+		{3,{air={}}}})
+	Q.StaffBeat=clip(P,{ -- in the air: the staff beaten down
+		{0,{air={root={pitch=-12},torso={pitch=-16},ra={raise=172,out=8,elbow=40},la={raise=160,out=-6,elbow=50}}}},
+		{1,{air={root={pitch=30},torso={pitch=28},ra={raise=40,out=-6,elbow=8},la={raise=36,out=-10,elbow=14}}},"out"},
+		{2,{air={root={pitch=32},torso={pitch=28},ra={raise=38,out=-6,elbow=10},la={raise=34,out=-10,elbow=16}}}},
+		{3,{air={}}}})
+	E.CLIPS.Professor=Q
+	setmetatable(Q,{__index=E.CLIPS.Mirage})
+end
+return Wave4Motion
+</ProtectedString>
+          </Properties>
+        </Item>
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND108">
+  <Item class="Lighting" referent="ND113">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -28820,7 +29693,7 @@ return M
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND109">
+  <Item class="SoundService" referent="ND114">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

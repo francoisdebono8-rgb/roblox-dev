@@ -1683,7 +1683,7 @@ require(script.Parent.IdentityFX).install(FX,{new=new,block=block,tween=tween,so
 require(script.Parent.FamilyFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Roster 20 batches: their own drawing (most of it is FamilyFX's).
-for _,name in {"Wave1FX","Wave2FX","Wave3FX"} do
+for _,name in {"Wave1FX","Wave2FX","Wave3FX","Wave4FX"} do
 	require(script.Parent[name]).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 		smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 end

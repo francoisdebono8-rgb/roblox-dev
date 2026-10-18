@@ -36,7 +36,7 @@ local function slot(id,tech)
  for i,spec in Fighters[id].Techniques do if spec.Id==tech then return "Technique"..i,spec end end
  error(id.." has no "..tech)
 end
-local NEW={"Mirror","Mist","Bone","Flicker","Serpent","Medic","Clay","Puppet","Rinnegan","Ink"}
+local NEW={"Mirror","Mist","Bone","Flicker","Serpent","Medic","Clay","Puppet","Rinnegan","Ink","Rival","Sapling","Professor"}
 local listed={}
 for _,id in Roster do listed[id]=true end
 local function each(fn) for _,id in NEW do if listed[id] then fn(id) end end end
@@ -276,7 +276,9 @@ end)
 test("awakenings: each of the twenty changes a rule of play, not only numbers",function()
  -- A rule: a field the core or a family reads as behaviour (not a multiplier).
  local RULES={"Buff","OnHit","NoBlindSpot","FlashWake","FlashPursuit","GuardRead","WhiffRead","CursedLeaf","NoBodies","BindScale","Extension",
-  "ShieldRegen","Drain","HealthDrain","Reflect","GustLane","FanClosed","Summon","ChainTeleport","ZoneFree","ChainCharges","ReflectClear","BloodChakra"}
+  "ShieldRegen","Drain","HealthDrain","Reflect","GustLane","FanClosed","Summon","ChainTeleport","ZoneFree","ChainCharges","ReflectClear","BloodChakra",
+  -- DEC-026 newcomers: the awakening changes the riposte a parry opens (Brawler.riposteMove).
+  "Riposte"}
  local Roster=H.load("Shared/Roster")
  for _,id in Roster do
   local aw=Fighters[id].Awakening
@@ -365,5 +367,78 @@ test("Zabuza: inside his mist the opponent loses sight of him (shrouded: no lock
  c:relocate(b,V.new(0,3,-60));run(c,.1)
  assert(not F.shrouded(c,b),"shrouded outside the mist")
 end)
+
+
+-- DEC-026 newcomers (Shared/Wave4): their own body before any jutsu — own
+-- side/away routes, a clean block answered with their own riposte gesture,
+-- a counter stance answered by a strike that must land, a Katon cone that
+-- burns ahead and not at the flank, and an awakening that changes the riposte.
+local function confirm(c,a)
+ assert(press(c,a,"Attack"))
+ for _=1,90 do H.step(c,.01);if a.state=="Recovery" and a.chainOpen==true and c.now>=(a.chainAt or 0) then break end end
+end
+for _,id in {"Rival","Sapling","Professor"} do
+ test(Fighters[id] and (Fighters[id].Name..": own routes, own riposte, a counter that answers with a strike, an awakened riposte") or id,function()
+  if not listed[id] then return end
+  local g=MoveGraphs[id]
+  local reach=Fighters[id].AttackProfile.Light1.contact
+  -- Side after one, away after two: its own moves.
+  local c,a,b=H.duel(id,"Leaf");place(c,a,b,reach);b.health=999
+  confirm(c,a)
+  assert(press(c,a,"Attack",a.root.CFrame.RightVector))
+  assert(a.attackName==g.routes.side,id..": side after one gave "..tostring(a.attackName))
+  local c2,a2,b2=H.duel(id,"Leaf");place(c2,a2,b2,reach);b2.health=999
+  confirm(c2,a2);confirm(c2,a2)
+  assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))
+  assert(a2.attackName==g.routes.down,id..": away after two gave "..tostring(a2.attackName))
+  -- A guard that held: the next press is its own riposte.
+  local c3,a3,b3=H.duel(id,"Leaf");place(c3,a3,b3,1.8)
+  assert(press(c3,a3,"Guard"));run(c3,.25)
+  assert(press(c3,b3,"Attack"))
+  local blocked=false
+  for _=1,60 do H.step(c3,.01);if (a3.riposteUntil or 0)>c3.now then blocked=true;break end end
+  assert(blocked,id..": the guard took nothing")
+  press(c3,a3,"Attack")
+  assert(a3.attackName==g.riposte,id..": the riposte was "..tostring(a3.attackName).." (expected "..tostring(g.riposte)..")")
+  -- Counter stance: the blow is turned aside, a strike of its body answers and lands.
+  local counter,cspec
+  for i,spec in Fighters[id].Techniques do if spec.Family=="Counter" then counter,cspec="Technique"..i,spec end end
+  assert(counter and cspec.Move,id..": no counter stance with an answer")
+  local c4,a4,b4=H.duel(id,"Leaf");place(c4,a4,b4,1.8);a4.chakra=999;b4.health=999
+  assert(press(c4,a4,counter));run(c4,.1)
+  assert(press(c4,b4,"Attack"))
+  local answered=false
+  run(c4,1,function() if a4.attackName==cspec.Move then answered=true end end)
+  assert(answered,id..": the stance did not answer with "..cspec.Move)
+  assert(b4.health<999,id..": the counter's answer did not land")
+  assert(a4.health==a4.def.Health,id..": the read blow still hurt")
+  -- Katon (Madara, Hiruzen): ahead, not at the flank.
+  for i,spec in Fighters[id].Techniques do
+   if spec.Family=="Burst" and spec.Arc then
+    local c5,a5,b5=H.duel(id,"Leaf");place(c5,a5,b5,4);a5.chakra=999;b5.health=999
+    assert(press(c5,a5,"Technique"..i,nil,b5.root.Position));run(c5,.9)
+    assert(b5.health<999,id..": the Katon missed a body in front")
+    local c6,a6,b6=H.duel(id,"Leaf");place(c6,a6,b6,4);a6.chakra=999;b6.health=999
+    c6:relocate(b6,a6.root.Position+a6.root.CFrame.RightVector*7)
+    assert(press(c6,a6,"Technique"..i,nil,a6.root.Position+a6.root.CFrame.LookVector*8));run(c6,.9)
+    assert(b6.health==999,id..": the Katon burned a body at the flank")
+   end
+  end
+  -- Awakened: the riposte becomes the awakening's.
+  local aw=Fighters[id].Awakening.Riposte
+  if aw then
+   local c7,a7,b7=H.duel(id,"Leaf");place(c7,a7,b7,1.8)
+   a7.health=a7.def.Health*.2
+   assert(press(c7,a7,"Awaken"));run(c7,.6)
+   assert((a7.awakenUntil or 0)>c7.now,id..": no awakening")
+   place(c7,a7,b7,1.8)
+   assert(press(c7,a7,"Guard"));run(c7,.25)
+   assert(press(c7,b7,"Attack"))
+   for _=1,60 do H.step(c7,.01);if (a7.riposteUntil or 0)>c7.now then break end end
+   press(c7,a7,"Attack")
+   assert(a7.attackName==aw.any,id..": the awakened riposte was "..tostring(a7.attackName))
+  end
+ end)
+end
 
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

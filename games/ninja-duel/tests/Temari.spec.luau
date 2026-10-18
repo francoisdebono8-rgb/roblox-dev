@@ -1107,7 +1107,14 @@ test("her costume builds: four sandy tufts, the Sand headband, the lilac kimono 
  end
  assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(186,170,204),"the kimono is not lilac")
 end)
-test("she is selectable: her roster slot and both buttons, and the duel starts with her",function()
+test("out of the menu since DEC-026 (17+3): no slot, her kit stays playable through the dev path",function()
+ local Roster=H.load("Shared/Roster")
+ for _,id in Roster do assert(id~="Gale","Temari is still in the menu after the DEC-026 migration") end
+ local c,a=H.duel("Gale","Leaf")
+ assert(a.def.Name=="Temari","her definition is gone")
+end)
+test("(historical, before DEC-026) she was selectable — skipped: out of the menu",function()
+ if true then return end
  H.envBase.UDim2=H.roblox.UDim2;H.envBase.UDim=H.roblox.UDim
  H.workspace.CurrentCamera={ViewportSize=H.roblox.Vector2.new(1600,900),GetPropertyChangedSignal=function() return {Connect=function() end} end}
  H.workspace.GetAttribute=function() return nil end

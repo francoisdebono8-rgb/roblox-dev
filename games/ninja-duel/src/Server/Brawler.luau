@@ -27,6 +27,21 @@ end
 function Brawler.graph(a)
  return a.graph or MoveGraphs[a.fighterId]
 end
+-- The strike a riposte (or a counter stance's answer) comes out as: the
+-- fighter's own gesture (MoveGraphs riposte: Madara's pommel, Hashirama's
+-- shoulder, Hiruzen's point), and while awake the one Awakening.Riposte
+-- names for the stick held now (forward/back/side, `any` otherwise).
+function Brawler.riposteMove(c,a,base)
+ local graph=Brawler.graph(a) or {}
+ local move=base or graph.riposte or "Riposte"
+ local aw=a.def.Awakening
+ if aw and aw.Riposte and (a.awakenUntil or 0)>c.now then
+  local dir=Brawler.intent(a)
+  local pick=(dir and aw.Riposte[dir]) or aw.Riposte.any
+  if pick and Attacks[pick] then move=pick;Brawler.event(c,a,"AwakenedRiposte") end
+ end
+ return if Attacks[move] then move else "Riposte"
+end
 function Brawler.free(a,now)
  return a.reaction==nil or now>=(a.reactionUntil or 0)
 end
@@ -446,7 +461,7 @@ function Brawler.request(c,a,action)
   a.riposteUntil=0;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now;a.evade=nil
   Brawler.breakString(a,false);a.lastAttack=c.now
   c:cue(a,"RIPOSTE",.6);Brawler.event(c,a,"Riposte")
-  return Brawler.start(c,a,"Riposte")
+  return Brawler.start(c,a,Brawler.riposteMove(c,a))
  end
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
@@ -1060,6 +1075,12 @@ function Brawler.hit(c,a,p)
  local impulse=forward*spec.impulse.Z+Vector3.yAxis*spec.impulse.Y
  -- What the body took: the client answers a head snap, a fold, a swept base.
  b.hitZone=spec.zone;b.hitKind=spec.kind;b.hitTwist=(spec.side or 1)*(if (a.angleSide or 0)~=0 and spec.orbit then a.angleSide else 1)
+ -- A strike that backs off as it lands (Attacks retreat, studs: Madara's heel
+ -- with the blade held across, Hiruzen's heel with the point covering).
+ if spec.retreat then
+  local away=a.root.Position-b.root.Position;away=Vector3.new(away.X,0,away.Z)
+  a.hop={direction=if away.Magnitude>.1 then away.Unit else -a.root.CFrame.LookVector,remaining=spec.retreat,speed=26}
+ end
  Brawler.routePayoff(c,a,b,p)
  -- Awakening rules on a landed strike (Techniques.awakenedHit/awakenedReact).
  local Techniques=require(script.Parent.Techniques)

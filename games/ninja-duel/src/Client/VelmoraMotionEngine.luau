@@ -321,6 +321,8 @@ local function i(over) return merge(I,over) end
 local N=STANCE.GentleFist
 local function n(over) return merge(N,over) end
 local CLIPS={Flashstep={},Mirage={},GentleFist={},Lion={},Sand={}}
+-- Read-only view for the headless suites (which clips a fighter authors).
+Motion.CLIPS=CLIPS
 -- Gaara ---------------------------------------------------------------
 -- He barely moves: one hand unfolds and flicks the sand out, then folds back.
 local G=STANCE.Sand
@@ -1464,6 +1466,9 @@ local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Fla
 -- offers the tables and builders, the module adds its stance, gait, clips,
 -- throw overlays, cast poses and intro). Temari first.
 require(script.Parent.GaleMotion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
+	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
+-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): their own clips.
+require(script.Parent.Wave4Motion).install({STANCE=STANCE,GAIT=GAIT,CLIPS=CLIPS,THROWS=THROWS,CAST=CAST,INTRO=INTRO,
 	K=K,merge=merge,smooth=smooth,mixPart=mixPart,sealPose=sealPose})
 local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local root=char:FindFirstChild("HumanoidRootPart")

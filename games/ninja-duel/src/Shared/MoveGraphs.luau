@@ -200,7 +200,7 @@ local Graphs = {
 	},
 }
 -- Roster 20 batches keep their move graphs in their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
 	for id,graph in wave.graphs or {} do Graphs[id]=graph end
 end
 return Graphs

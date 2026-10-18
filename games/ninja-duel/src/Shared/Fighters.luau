@@ -403,7 +403,7 @@ local Fighters = {
 	},
 }
 -- Roster 20 batches keep their fighters in their own data modules.
-for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3)} do
+for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
 	for id,def in wave.fighters or {} do Fighters[id]=def end
 end
 return Fighters
