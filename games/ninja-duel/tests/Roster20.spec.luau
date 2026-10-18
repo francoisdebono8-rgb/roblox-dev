@@ -422,6 +422,14 @@ for _,id in {"Rival","Sapling","Professor"} do
     c6:relocate(b6,a6.root.Position+a6.root.CFrame.RightVector*7)
     assert(press(c6,a6,"Technique"..i,nil,a6.root.Position+a6.root.CFrame.LookVector*8));run(c6,.9)
     assert(b6.health==999,id..": the Katon burned a body at the flank")
+    -- Aimed at the body, which side-steps during the channel: the cone stays
+    -- where it was aimed (the caster's auto-facing does not swing it).
+    local c8,a8,b8=H.duel(id,"Leaf");place(c8,a8,b8,4);a8.chakra=999;b8.health=999
+    assert(press(c8,a8,"Technique"..i,nil,b8.root.Position))
+    c8:relocate(b8,a8.root.Position+a8.root.CFrame.RightVector*7)
+    a8.root.CFrame=H.C.lookAt(a8.root.Position,b8.root.Position)
+    run(c8,.9)
+    assert(b8.health==999,id..": the Katon swung onto a body that side-stepped")
    end
   end
   -- Awakened: the riposte becomes the awakening's.

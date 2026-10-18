@@ -434,6 +434,13 @@ F.Burst={
 		local reach=spec.Radius or 7
 		local look=flat(a.root.CFrame.LookVector)
 		look=unitOr(look,Vector3.zAxis)
+		-- A cone (Arc) goes where it was aimed at the press: the channel's
+		-- auto-facing must not swing it onto a body that side-stepped (a
+		-- short Katon is open on the sides).
+		if spec.Arc and pending.aim then
+			look=unitOr(flat(pending.aim-a.root.Position),look)
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+		end
 		if spec.Clear then
 			local reflect=awakeRule(a,c,"ReflectClear")
 			for i=#c.projectiles,1,-1 do

@@ -3152,7 +3152,7 @@ return {
       <Item class="StringValue" referent="ND22">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">69141d706f3f6954028de9c53acd7044568536721caf5be5c9353fd57177c7e1</string>
+          <string name="Value">bba737572c34058971cbd853a87d94de1058a51dfe0a6f9375f4b448fb46abe3</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND23">
@@ -9975,6 +9975,13 @@ F.Burst={
 		local reach=spec.Radius or 7
 		local look=flat(a.root.CFrame.LookVector)
 		look=unitOr(look,Vector3.zAxis)
+		-- A cone (Arc) goes where it was aimed at the press: the channel's
+		-- auto-facing must not swing it onto a body that side-stepped (a
+		-- short Katon is open on the sides).
+		if spec.Arc and pending.aim then
+			look=unitOr(flat(pending.aim-a.root.Position),look)
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+		end
 		if spec.Clear then
 			local reflect=awakeRule(a,c,"ReflectClear")
 			for i=#c.projectiles,1,-1 do

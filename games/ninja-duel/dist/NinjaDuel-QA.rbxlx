@@ -3271,7 +3271,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">8bf05236278d81371a08e9c7c919e22992eac2865060f106e8f474728562a354</string>
+          <string name="Value">aba0c6f28c574cf2e42097033f733a0d2bcb492dbdff5db85ff5c612b47787b9</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -10240,7 +10240,12 @@ local function seq(id)
 	local selfChase=graph.onRoute and up and graph.onRoute[up]~=nil
 	need("E",ok or (selfChase and why=="Committed"))
 	local airHits,before=0,b.health
-	for _=1,2 do c:request(a,"Attack");task.wait(.33);if b.health&lt;before then airHits+=1;before=b.health end end
+	-- Each air strike gets its own time to land (Gaara's lashes are slow).
+	for _=1,2 do
+		c:request(a,"Attack")
+		local ta=os.clock();repeat task.wait() until b.health&lt;before or os.clock()-ta&gt;.6
+		if b.health&lt;before then airHits+=1;before=b.health end
+	end
 	note("air",airHits)
 	need("air",airHits&gt;=1)
 	t=os.clock();repeat task.wait() until (not a.airborne and Rules_canAct(a,c)) or os.clock()-t&gt;3
@@ -10277,11 +10282,27 @@ local function seq(id)
 	-- Defence: the bot throws a light at a raised guard.
 	t=os.clock();repeat task.wait() until (Rules_canAct(a,c) and a.state=="Neutral") or os.clock()-t&gt;3
 	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
-	c:request(a,"Guard");task.wait(.1)
+	-- His own bodies (Sasori's marionette) step out of this check: it is about
+	-- his guard, and a marionette that keeps jabbing would keep the bot reacting.
+	for _,body in Bodies.of(c,a) do Bodies.dispel(c,body,"expire") end
+	-- The bot must be free to strike (its last technique may still hold it:
+	-- a water prison, coils, a tentacle, a mist it cannot see through).
+	t=os.clock();repeat task.wait() until (b.reaction==nil and Rules_canAct(b,c)) or os.clock()-t&gt;4
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
+	-- Held past the parry window, so the blow meets a plain guard (a parry is
+	-- its own scenario); a parry, or a sand shield taking it, counts as held.
+	c:request(a,"Guard");task.wait(.35)
 	local hpA=a.health
+	local ev=a.events or {}
+	local guardHits,shield=ev.GuardHit or 0,ev.SandShield or 0
 	local hit=c:request(b,"Attack")
 	local blocked=false
-	local t2=os.clock();repeat task.wait();if (a.riposteUntil or 0)&gt;c.now or a.impactStyle=="block" then blocked=true end until blocked or os.clock()-t2&gt;.6
+	local t2=os.clock()
+	repeat
+		task.wait()
+		local e=a.events or {}
+		if (a.riposteUntil or 0)&gt;c.now or a.impactStyle=="block" or b.state=="Stunned" or (e.GuardHit or 0)&gt;guardHits or (e.SandShield or 0)&gt;shield then blocked=true end
+	until blocked or os.clock()-t2&gt;.6
 	note("guard",string.format("solicited=%s blocked=%s chip=%.1f",tostring(hit),tostring(blocked),hpA-a.health))
 	need("guard",hit and blocked)
 	c:request(a,"GuardOff")
@@ -10357,8 +10378,11 @@ local function body(id)
 			local front=hp-b.health
 			task.wait(spec.Cooldown+.2);dev:Invoke("refill")
 			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			-- The aim is taken before the body moves to the flank (the caster's
+			-- auto-facing turns him toward it within a frame).
+			local ahead=a.root.Position+a.root.CFrame.LookVector*8
 			c:relocate(b,a.root.Position+a.root.CFrame.RightVector*7);task.wait(.15)
-			hp=b.health;c:request(a,"Technique"..i,a.root.Position+a.root.CFrame.LookVector*8);task.wait(.9)
+			hp=b.health;c:request(a,"Technique"..i,ahead);task.wait(.9)
 			check("katon",front&gt;0 and hp-b.health==0,string.format("front=%.1f flank=%.1f",front,hp-b.health))
 		end
 	end
@@ -11847,6 +11871,13 @@ F.Burst={
 		local reach=spec.Radius or 7
 		local look=flat(a.root.CFrame.LookVector)
 		look=unitOr(look,Vector3.zAxis)
+		-- A cone (Arc) goes where it was aimed at the press: the channel's
+		-- auto-facing must not swing it onto a body that side-stepped (a
+		-- short Katon is open on the sides).
+		if spec.Arc and pending.aim then
+			look=unitOr(flat(pending.aim-a.root.Position),look)
+			a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
+		end
 		if spec.Clear then
 			local reflect=awakeRule(a,c,"ReflectClear")
 			for i=#c.projectiles,1,-1 do

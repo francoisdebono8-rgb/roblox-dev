@@ -317,7 +317,12 @@ local function seq(id)
 	local selfChase=graph.onRoute and up and graph.onRoute[up]~=nil
 	need("E",ok or (selfChase and why=="Committed"))
 	local airHits,before=0,b.health
-	for _=1,2 do c:request(a,"Attack");task.wait(.33);if b.health<before then airHits+=1;before=b.health end end
+	-- Each air strike gets its own time to land (Gaara's lashes are slow).
+	for _=1,2 do
+		c:request(a,"Attack")
+		local ta=os.clock();repeat task.wait() until b.health<before or os.clock()-ta>.6
+		if b.health<before then airHits+=1;before=b.health end
+	end
 	note("air",airHits)
 	need("air",airHits>=1)
 	t=os.clock();repeat task.wait() until (not a.airborne and Rules_canAct(a,c)) or os.clock()-t>3
@@ -354,11 +359,27 @@ local function seq(id)
 	-- Defence: the bot throws a light at a raised guard.
 	t=os.clock();repeat task.wait() until (Rules_canAct(a,c) and a.state=="Neutral") or os.clock()-t>3
 	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
-	c:request(a,"Guard");task.wait(.1)
+	-- His own bodies (Sasori's marionette) step out of this check: it is about
+	-- his guard, and a marionette that keeps jabbing would keep the bot reacting.
+	for _,body in Bodies.of(c,a) do Bodies.dispel(c,body,"expire") end
+	-- The bot must be free to strike (its last technique may still hold it:
+	-- a water prison, coils, a tentacle, a mist it cannot see through).
+	t=os.clock();repeat task.wait() until (b.reaction==nil and Rules_canAct(b,c)) or os.clock()-t>4
+	place(c,a,b,Vector3.new(0,3,1.8),Vector3.new(0,3,-1.8))
+	-- Held past the parry window, so the blow meets a plain guard (a parry is
+	-- its own scenario); a parry, or a sand shield taking it, counts as held.
+	c:request(a,"Guard");task.wait(.35)
 	local hpA=a.health
+	local ev=a.events or {}
+	local guardHits,shield=ev.GuardHit or 0,ev.SandShield or 0
 	local hit=c:request(b,"Attack")
 	local blocked=false
-	local t2=os.clock();repeat task.wait();if (a.riposteUntil or 0)>c.now or a.impactStyle=="block" then blocked=true end until blocked or os.clock()-t2>.6
+	local t2=os.clock()
+	repeat
+		task.wait()
+		local e=a.events or {}
+		if (a.riposteUntil or 0)>c.now or a.impactStyle=="block" or b.state=="Stunned" or (e.GuardHit or 0)>guardHits or (e.SandShield or 0)>shield then blocked=true end
+	until blocked or os.clock()-t2>.6
 	note("guard",string.format("solicited=%s blocked=%s chip=%.1f",tostring(hit),tostring(blocked),hpA-a.health))
 	need("guard",hit and blocked)
 	c:request(a,"GuardOff")
@@ -434,8 +455,11 @@ local function body(id)
 			local front=hp-b.health
 			task.wait(spec.Cooldown+.2);dev:Invoke("refill")
 			place(c,a,b,Vector3.new(0,3,4),Vector3.new(0,3,-4))
+			-- The aim is taken before the body moves to the flank (the caster's
+			-- auto-facing turns him toward it within a frame).
+			local ahead=a.root.Position+a.root.CFrame.LookVector*8
 			c:relocate(b,a.root.Position+a.root.CFrame.RightVector*7);task.wait(.15)
-			hp=b.health;c:request(a,"Technique"..i,a.root.Position+a.root.CFrame.LookVector*8);task.wait(.9)
+			hp=b.health;c:request(a,"Technique"..i,ahead);task.wait(.9)
 			check("katon",front>0 and hp-b.health==0,string.format("front=%.1f flank=%.1f",front,hp-b.health))
 		end
 	end

@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "4fe05b49acd014c9b348809c29f628707b844023dda41de56d9ae7de3e7e219c",
+  "sha256": "859b570c323e1a8c72adb92ca9e739efcf616c51e0d35cfbb932f278d6cd636f",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -48,7 +48,7 @@
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
-    "src/Server/DevGateCheck.luau": "a8f2a0d2b027b911f6f1607871aa771a6b3e775f516d68b308c3410017f25996",
+    "src/Server/DevGateCheck.luau": "f5057f028beea4c3243c38353d847b0075269c22b5f16360d89ff54807bf84e6",
     "src/Server/DevHooks.luau": "15510d3615eafd46a0792318665ae6514f915d72165d83d0d42decfc26277ff0",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
@@ -58,7 +58,7 @@
     "src/Server/DevTools.luau": "236e99a62784326654e56d11efa4d51582260441f226c5d5986a0697ed879a2b",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "09a6caa466191d08519946bcffa3068931e7ebdb98592d2d5f5b7be63daa9ae4",
-    "src/Server/Families.luau": "28742db5d44025281f94c3ef0e2932a62fd84a9028c1012bb69fd9af60ea16a4",
+    "src/Server/Families.luau": "4a16af8ba0eaa5c887dc54293f6f5914561f254affb29e04a0b24945935bdb20",
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
@@ -104,7 +104,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "9bfdc935048556ad04f7c3d9cdc8609d6efd2047659ae4644de124949d10ede8",
+  "buildFingerprint": "622599951c2dd1e46d208791d6146b37f8d8dadaac8ad553f4d51e9ff6665f02",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
