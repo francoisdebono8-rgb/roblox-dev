@@ -151,6 +151,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - outcome: PENDING
 - acceptance: Pied d’appui, poussée, cadence/amplitude liées à vitesse, hanches et poids ; sprint nettement distinct de course par corps/accélération/caméra bornée, pas WalkSpeed/FOV seuls.
 
+- evidence_addendum: 18/10 passe utilisateur R15 commun, base b445df5 : alternance corporelle en strafe et reset des appuis corrigés, sortie de course sans saut du pied, roulis latéral réduit. [Rapport et preuves](../archive/reports/r15-common-2026-10-18/REPORT.md). Trois tests nouveaux, trois builds/28 suites PASS ; sondes natives ciblées et parcours clavier/souris partiel. Pas de clôture globale MOV-001..005 ni de feel humain.
+
 ## MOV-003 — Vraie course latérale et changement de direction
 
 - status: PARTIAL

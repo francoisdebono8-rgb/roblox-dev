@@ -1,0 +1,20 @@
+{
+  "nativeComparison": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"after\":{\"lateralMin\":-1,\"lateralMax\":1,\"runExitFootJump\":0,\"resetFootError\":9.536743306171047e-8},\"before\":{\"lateralMin\":0,\"lateralMax\":0,\"runExitFootJump\":0.8716274499893189,\"resetFootError\":1.1478346586227418}}"
+      }
+    ],
+    "isError": false
+  },
+  "realInputs": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"maxY\":13.707035064697266,\"last\":{\"t\":12.012638249987504,\"p\":{\"1\":-1.4868539571762086,\"3\":-11.978921890258789,\"2\":2.9997432231903078}},\"minX\":-6.008800983428955,\"minY\":2.790532112121582,\"first\":{\"t\":0.11598804168170318,\"p\":{\"1\":0,\"3\":6,\"2\":3}},\"frames\":716,\"maxX\":0}"
+      }
+    ],
+    "isError": false
+  }
+}

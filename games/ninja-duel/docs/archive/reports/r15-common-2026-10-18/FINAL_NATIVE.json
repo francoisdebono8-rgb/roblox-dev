@@ -1,0 +1,20 @@
+{
+  "combat": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"events\":{\"Hit\":3,\"Light2\":1,\"Light1\":1,\"Light3\":1,\"Damage\":3},\"now\":1792332366.699449,\"hazards\":0,\"phase\":\"Duel\",\"bot\":{\"combo\":0,\"velocity\":\"0, 0, 0\",\"flash\":false,\"untilIn\":-0.4681520462036133,\"hitZone\":\"body\",\"chakra\":125,\"subCharges\":2,\"hitKind\":\"kick\",\"comboHits\":3,\"reaction\":\"Knockback\",\"state\":\"Neutral\",\"seals\":0,\"airborne\":true,\"position\":\"-3.0329909324645996, 3, -23.20807647705078\",\"wall\":false,\"health\":114.16,\"chainOpen\":false,\"airHold\":0},\"human\":{\"subCharges\":2,\"airHold\":0,\"combo\":0,\"seals\":0,\"velocity\":\"0, 0, 0\",\"comboHits\":0,\"flash\":false,\"state\":\"Neutral\",\"health\":125,\"airborne\":false,\"position\":\"1.4344052076339722, 3, 0.6756023168563843\",\"wall\":false,\"untilIn\":-0.10076498985290528,\"chainOpen\":false,\"chakra\":110},\"projectiles\":[]}"
+      }
+    ],
+    "isError": false
+  },
+  "inputs": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"maxY\":14.490909576416016,\"last\":{\"y\":3,\"t\":4.8343275416700639,\"x\":1.4344050884246827,\"z\":0.6756022572517395},\"minX\":-5.316120624542236,\"fingerprint\":\"55c5eec4b25178ce004cebdf632825ab918166d27ce5275fb0ba591e0ac6d4f5\",\"maxX\":1.4738383293151856,\"frames\":73,\"minY\":2.9286818504333498}"
+      }
+    ],
+    "isError": false
+  }
+}

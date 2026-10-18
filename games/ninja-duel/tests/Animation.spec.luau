@@ -456,6 +456,57 @@ test("planted feet stay put in the world while walking, strafing, stopping and t
  assert(worstReach<2.2,string.format("a foot was left %.2f studs from its hip",worstReach))
 end)
 
+test("lateral steps carry alternating upper-body counter-motion",function()
+ local root={CFrame=H.C.new(0,3,0),FindFirstChild=function() return nil end}
+ local char={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then root else nil end}
+ local low,high=math.huge,-math.huge
+ for _=1,180 do
+  local velocity=V.new(12,0,0)
+  root.CFrame+=velocity/60
+  Motion.tick(1/60)
+  local _,_,_,swing=Motion._stepFeet(char,{rf={},lf={}},velocity,1/60)
+  low=math.min(low,swing);high=math.max(high,swing)
+ end
+ assert(low<-.1 and high>.1,"strafe has no alternating counter-motion: "..low.." / "..high)
+end)
+
+test("leaving a run preserves the airborne foot before settling",function()
+ local root={CFrame=H.C.new(0,3,0)}
+ local char={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then root else nil end}
+ local base={rf={},lf={}}
+ local before
+ for _=1,120 do
+  root.CFrame+=V.new(0,0,-30/60)
+  Motion.tick(1/60)
+  local r,l=Motion._stepFeet(char,base,V.new(0,0,-30),1/60)
+  if r.y>.6 or l.y>.6 then before={r,l};break end
+ end
+ assert(before,"run never lifted a foot")
+ local r,l=Motion._stepFeet(char,base,V.zero,0,"attack")
+ for index,f in {r,l} do
+  local prev=before[index]
+  assert((V.new(f.x,f.y,f.z)-V.new(prev.x,prev.y,prev.z)).Magnitude<.001,"run exit snapped the foot to the floor")
+ end
+ for _=1,30 do Motion.tick(1/60);r,l=Motion._stepFeet(char,base,V.zero,1/60) end
+ assert(math.abs(r.y)<.001 and math.abs(l.y)<.001,"feet did not settle after stopping")
+end)
+
+test("a hard reset forgets old foot anchors and swing progress",function()
+ local root={CFrame=H.C.new(0,3,0),FindFirstChild=function() return nil end}
+ local char={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then root else nil end}
+ local base={rf={x=.2,z=.7},lf={x=-.1,z=-.7}}
+ for _=1,35 do
+  root.CFrame+=V.new(20/60,0,0)
+  Motion.tick(1/60);Motion._stepFeet(char,base,V.new(20,0,0),1/60)
+ end
+ Motion.reset(char)
+ local r,l=Motion._stepFeet(char,base,V.zero,1/60)
+ for side,f in {rf=r,lf=l} do
+  assert(math.abs(f.x-base[side].x)<.001 and math.abs(f.z-base[side].z)<.001,"reset kept an old foot anchor")
+  assert(math.abs(f.y)<.001 and f.toe==0,"reset kept a foot in flight")
+ end
+end)
+
 test("a palm, a chakra-point hit and a side kick each land differently on the body",function()
  -- Convergence 2 (phase 7): every standing hit used to answer with the same
  -- fold whatever struck it (a Gentle Fist palm read as a jab to the face).
