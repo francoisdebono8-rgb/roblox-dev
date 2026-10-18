@@ -286,7 +286,9 @@ end
 -- body that merely walks; a late sidestep, a dash or a jump still beat it. An
 -- aim far from the body (a zone, a lane) is kept as it was.
 Families.AIM_SNAP=12
-function Families.snapAim(a,aim)
+function Families.snapAim(a,aim,c)
+	-- Lost in the opponent's shroud: no aid finds the body for him.
+	if c and Families.shrouded(c,a) then return aim end
 	local b=a.target
 	if b and b.health>0 and flat(aim-b.root.Position).Magnitude<=Families.AIM_SNAP*.5 then return b.root.Position end
 	return aim
@@ -295,6 +297,8 @@ function Families.releaseAim(c,a,pending,spec)
 	local aim=aimOf(a,pending)
 	local b=a.target
 	if not b or b.health<=0 then return aim end
+	-- In his shroud: the aim as given, no snap onto the body, no lead.
+	if Families.shrouded(c,a) then return pending.aim or a.root.Position+a.root.CFrame.LookVector*20 end
 	local at=b.root.Position
 	if flat(aim-at).Magnitude>Families.AIM_SNAP and pending.aim then return aim end
 	local motion=b.root.AssemblyLinearVelocity
@@ -510,7 +514,7 @@ F.Zone={
 		local at=spec.At or "Aim"
 		-- An aim on or near the body (the mouse at his feet) means him, now.
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
-			else Families.snapAim(a,aimOf(a,pending))
+			else Families.snapAim(a,aimOf(a,pending),c)
 		if at~="Self" then position=Families.placeWithin(c,a,position,(spec.Range or 30)+(if at=="Target" then Families.TELEPORT_SLACK else 0)) end
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
@@ -775,7 +779,7 @@ end
 -- `...Until` window the core or a fighter module left on the actor, so
 -- nothing of a round leaks into the next one (a buff, a dose still ticking).
 function Families.clearState(a)
-	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil
+	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil;a.fogAim=nil
 	-- A dose already scheduled checks its serial: a new one cancels it.
 	a.poisonSerial=(a.poisonSerial or 0)+1
 	for key,value in a do
@@ -783,8 +787,14 @@ function Families.clearState(a)
 	end
 end
 -- Shroud (Zabuza's Hidden Mist): a body standing inside its opponent's
--- shroud has lost sight of him: no auto-facing on him, a chakra dash without
--- homing, and its client draws him as a fading shadow.
+-- shroud has lost sight of him (QA-004 M3, one contract): no auto-facing on
+-- him, a chakra dash without homing, no snap/lead of a jutsu or a tool onto
+-- him (Families.releaseAim/snapAim, Combat throw release), its camera stops
+-- following him (Client/Camera, the lock preference itself is kept) and its
+-- client draws him as a fading shadow. The bot has no exemption: while lost
+-- it aims where it last saw him (AI, a.fogAim). Manual inputs are untouched:
+-- a press or a mouse aim still goes exactly where it was given. His own
+-- shroud never hides anything from him.
 function Families.shrouded(c,a)
 	local b=a.target
 	if not b or b.health<=0 then return false end

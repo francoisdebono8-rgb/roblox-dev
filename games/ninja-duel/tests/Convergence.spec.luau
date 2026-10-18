@@ -283,4 +283,45 @@ test("M2: a relocation is not followed past its Range or sight at the release; a
  assert(c4:request(a4,slot("Flicker","FlickerOut")),"the afterimage retreat was refused at long range")
 end)
 
+
+-- QA-004 M3: one shroud contract — the aids that find the body stop inside
+-- Zabuza's mist, for the player and the bot alike; manual aims are untouched.
+test("M3: inside the opponent's mist no aid finds the body (jutsu, tool, bot); manual aims stay exact; Zabuza is not blinded by his own mist",function()
+ local c,a,b=H.duel("Mist","Copycat");place(c,a,b,V.new(0,3,0),V.new(0,3,-6));a.chakra=999;b.chakra=999
+ assert(c:request(a,slot("Mist","HiddenMist")));step(c,.9)
+ assert(F.shrouded(c,b),"Kakashi inside the mist is not lost")
+ assert(not F.shrouded(c,a),"Zabuza is lost in his own mist")
+ -- A jutsu aim near the body is not snapped or led onto him.
+ local given=a.root.Position+V.new(3,0,0)
+ local aim=F.releaseAim(c,b,{aim=given},{Speed=70})
+ assert((aim-given).Magnitude<.01,"a jutsu aim inside the mist was snapped onto Zabuza")
+ assert((F.snapAim(b,given,c)-given).Magnitude<.01,"a zone aim inside the mist was snapped onto Zabuza")
+ -- Outside the mist the same aim snaps (the aid itself is kept).
+ local c2,a2,b2=H.duel("Mist","Leaf");place(c2,a2,b2,V.new(0,3,0),V.new(0,3,-6))
+ local snapped=F.snapAim(b2,a2.root.Position+V.new(3,0,0),c2)
+ assert((snapped-a2.root.Position).Magnitude<.01,"outside the mist the aim no longer snaps")
+ -- A thrown tool released inside the mist goes where it was aimed.
+ b.cooldowns={};b.neutralToolAt=0
+ local wide=a.root.Position+V.new(4,0,0)
+ local tok,twhy=c:request(b,"Tool",wide)
+ assert(tok,"tool refused: "..tostring(twhy))
+ local dir
+ for _=1,40 do H.step(c,.01);for _,p in c.projectiles do if p.a==b then dir=p.direction end end;if dir then break end end
+ assert(dir,"no tool thrown")
+ local toBody=(a.root.Position-b.root.Position).Unit
+ local toAim=(wide-b.root.Position).Unit
+ assert(dir:Dot(toAim)>dir:Dot(toBody),"the tool inside the mist homed onto the body")
+ -- The bot has no exemption: lost, it aims where it last saw him.
+ local AI=H.load("Server/AI")
+ local c3,a3,b3=H.duel("Mist","Leaf");place(c3,a3,b3,V.new(0,3,0),V.new(0,3,-6));a3.chakra=999
+ local bot=AI.new(c3,b3,5)
+ bot:update(c3.now);step(c3,.3)
+ local seen=a3.root.Position
+ assert(c3:request(a3,slot("Mist","HiddenMist")));step(c3,.9)
+ c3:relocate(a3,V.new(8,3,-2));c3:relocate(b3,V.new(0,3,-6))
+ bot.nextTick=0;bot:update(c3.now)
+ assert(b3.fogAim~=nil,"the bot lost in the mist kept a perfect aim (shrouded="..tostring(F.shrouded(c3,b3)).." hz="..#c3.hazards.." phase="..c3.match.phase.." b="..tostring(b3.root.Position)..")")
+ assert((b3.fogAim-a3.root.Position).Magnitude>3,"the bot's fog aim follows the hidden body")
+end)
+
 print(string.format("NinjaDuel convergence (lifecycle, composition, reach): %d PASS (headless)",passed))

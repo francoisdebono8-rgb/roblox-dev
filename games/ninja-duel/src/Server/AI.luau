@@ -244,6 +244,9 @@ function AI:update(now)
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
 	if now<self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	-- No exemption from a shroud: lost in it, the bot aims at where it last saw him.
+	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position
+	else a.fogAim=nil;self.lastSeen=target.root.Position end
 	if a.state~="Rush" then self.feinted=nil end
 	if self:defend(now) then return end
 	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.

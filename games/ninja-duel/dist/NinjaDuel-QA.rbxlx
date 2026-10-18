@@ -3032,7 +3032,7 @@ return {
       <Item class="StringValue" referent="ND21">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ed774b90cafb2b67c4c21176ea738b2a7f6e8add398e9fa422f7ced228f48b7c</string>
+          <string name="Value">8f2dd183b02408945bffbf7dedad2e43d05e320d8fa648614b9595c71c138106</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND22">
@@ -3380,6 +3380,9 @@ function AI:update(now)
 	if c.match.phase~="Duel" or a.health&lt;=0 or target.health&lt;=0 then a.move=Vector3.zero; return end
 	if now&lt;self.nextTick then return end
 	self.nextTick=now+tune.Tick
+	-- No exemption from a shroud: lost in it, the bot aims at where it last saw him.
+	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position
+	else a.fogAim=nil;self.lastSeen=target.root.Position end
 	if a.state~="Rush" then self.feinted=nil end
 	if self:defend(now) then return end
 	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.
@@ -8041,7 +8044,7 @@ function Combat:stepThrow(a)
 		-- floor at his feet) means him: the blade goes to where he is now.
 		local aim=throw.aim
 		local b=a.target
-		if b and b.health&gt;0 and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude&lt;=Families.AIM_SNAP) then aim=b.root.Position end
+		if b and b.health&gt;0 and not Families.shrouded(self,a) and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude&lt;=Families.AIM_SNAP) then aim=b.root.Position end
 		aim=aim or (a.root.Position+a.root.CFrame.LookVector*20)
 		throw.fire(throw.fired,aim)
 		throw.nextRelease+=throw.interval
@@ -8371,6 +8374,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.finishing then return false,"Intro" end
 	-- The press carries its own stick (Matches:act): remember it as intent.
 	Brawler.observe(self,a)
+	-- A bot lost in a shroud aims where it last saw the body (set by AI).
+	if a.fogAim and aim and (action=="Tool" or string.sub(action,1,9)=="Technique") then aim=a.fogAim end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
@@ -9796,7 +9801,38 @@ S.S10=function()
 	return arrived and back and not far and a2.chakra&lt;=chakra and mist,string.format("flicker in range arrived=%s • retreat at 80=%s • kill at 90 refused=%s (%s) • mist Self=%s",
 		tostring(arrived),tostring(back),tostring(not far),tostring(why),tostring(mist))
 end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"}}
+-- M3 ----------------------------------------------------------------------
+local Families=require(script.Parent.Families)
+-- S11/S13: the player (Copycat) stands in the bot Zabuza's mist; Zabuza steps
+-- sideways three times (watch the camera: it must not follow him), then the
+-- player leaves the mist (the lock comes back).
+S.S11=function()
+	local c,a,b=start("Copycat","Mist");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-8));b.chakra=999
+	c:request(b,(slot("Mist","HiddenMist")));task.wait(1)
+	local lost=Families.shrouded(c,a)
+	local o=c.match.origin
+	for k=1,3 do c:relocate(b,o+Vector3.new(k%2==0 and -7 or 7,3,-8+k));task.wait(1.6) end
+	local stillLost=Families.shrouded(c,a)
+	c:relocate(a,o+Vector3.new(0,3,30));task.wait(1.5)
+	local found=not Families.shrouded(c,a)
+	return lost and stillLost and found,string.format("player lost in mist=%s (after 3 side steps=%s) • out of it, found again=%s",tostring(lost),tostring(stillLost),tostring(found))
+end
+-- S12/S14: inside the mist a manual tool aim goes where it was given (no
+-- homing); Zabuza in his own mist is not lost; the bot lost aims at its memory.
+S.S12=function()
+	local c,a,b=start("Copycat","Mist");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-8));b.chakra=999
+	c:request(b,(slot("Mist","HiddenMist")));task.wait(1)
+	a.neutralToolAt=0;a.chakra=999
+	local wide=b.root.Position+Vector3.new(5,0,0)
+	local ok=c:request(a,"Tool",wide)
+	local dir
+	for _=1,30 do task.wait();for _,p in c.projectiles do if p.a==a then dir=p.direction end end;if dir then break end end
+	local toAim,toBody=(wide-a.root.Position).Unit,(b.root.Position-a.root.Position).Unit
+	local manual=dir~=nil and dir:Dot(toAim)&gt;dir:Dot(toBody)
+	local zabuzaSees=not Families.shrouded(c,b)
+	return ok and manual and zabuzaSees,string.format("tool thrown=%s goes to the given aim=%s • Zabuza lost in his own mist=%s",tostring(ok),tostring(manual),tostring(not zabuzaSees))
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
@@ -11102,7 +11138,9 @@ end
 -- body that merely walks; a late sidestep, a dash or a jump still beat it. An
 -- aim far from the body (a zone, a lane) is kept as it was.
 Families.AIM_SNAP=12
-function Families.snapAim(a,aim)
+function Families.snapAim(a,aim,c)
+	-- Lost in the opponent's shroud: no aid finds the body for him.
+	if c and Families.shrouded(c,a) then return aim end
 	local b=a.target
 	if b and b.health&gt;0 and flat(aim-b.root.Position).Magnitude&lt;=Families.AIM_SNAP*.5 then return b.root.Position end
 	return aim
@@ -11111,6 +11149,8 @@ function Families.releaseAim(c,a,pending,spec)
 	local aim=aimOf(a,pending)
 	local b=a.target
 	if not b or b.health&lt;=0 then return aim end
+	-- In his shroud: the aim as given, no snap onto the body, no lead.
+	if Families.shrouded(c,a) then return pending.aim or a.root.Position+a.root.CFrame.LookVector*20 end
 	local at=b.root.Position
 	if flat(aim-at).Magnitude&gt;Families.AIM_SNAP and pending.aim then return aim end
 	local motion=b.root.AssemblyLinearVelocity
@@ -11326,7 +11366,7 @@ F.Zone={
 		local at=spec.At or "Aim"
 		-- An aim on or near the body (the mouse at his feet) means him, now.
 		local position=if at=="Self" then a.root.Position elseif at=="Target" and a.target then a.target.root.Position
-			else Families.snapAim(a,aimOf(a,pending))
+			else Families.snapAim(a,aimOf(a,pending),c)
 		if at~="Self" then position=Families.placeWithin(c,a,position,(spec.Range or 30)+(if at=="Target" then Families.TELEPORT_SLACK else 0)) end
 		local floor=workspace:Raycast(position+Vector3.new(0,4,0),Vector3.new(0,-30,0),c:rayParams(true))
 		if floor then position=floor.Position+Vector3.new(0,.5,0) end
@@ -11591,7 +11631,7 @@ end
 -- `...Until` window the core or a fighter module left on the actor, so
 -- nothing of a round leaks into the next one (a buff, a dose still ticking).
 function Families.clearState(a)
-	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil
+	a.buff=nil;a.counterStance=nil;a.slowScale=nil;a.boundKind=nil;a.teleportSide=nil;a.fogAim=nil
 	-- A dose already scheduled checks its serial: a new one cancels it.
 	a.poisonSerial=(a.poisonSerial or 0)+1
 	for key,value in a do
@@ -11599,8 +11639,14 @@ function Families.clearState(a)
 	end
 end
 -- Shroud (Zabuza's Hidden Mist): a body standing inside its opponent's
--- shroud has lost sight of him: no auto-facing on him, a chakra dash without
--- homing, and its client draws him as a fading shadow.
+-- shroud has lost sight of him (QA-004 M3, one contract): no auto-facing on
+-- him, a chakra dash without homing, no snap/lead of a jutsu or a tool onto
+-- him (Families.releaseAim/snapAim, Combat throw release), its camera stops
+-- following him (Client/Camera, the lock preference itself is kept) and its
+-- client draws him as a fading shadow. The bot has no exemption: while lost
+-- it aims where it last saw him (AI, a.fogAim). Manual inputs are untouched:
+-- a press or a mouse aim still goes exactly where it was given. His own
+-- shroud never hides anything from him.
 function Families.shrouded(c,a)
 	local b=a.target
 	if not b or b.health&lt;=0 then return false end
@@ -18944,6 +18990,18 @@ function Camera:update(data,dt)
 	local bot=folder and folder:FindFirstChild(data.bot.id or "AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
 	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
+	-- Lost in the opponent's shroud (snapshot family.shrouded, QA-004 M3): the
+	-- lens stops following him. It keeps the last place it saw him for its
+	-- framing and turns like an unlocked camera; the lock preference itself
+	-- (self.locked) is untouched and comes back as soon as he is seen again.
+	local lost=data.human.family~=nil and data.human.family.shrouded==true
+	if lost then
+		if not self.lostFrom then self.lostFrom=self.lastSeen or target;self.fogYaw=self.boomAngle end
+		target=self.lostFrom
+	else
+		self.lostFrom=nil;self.fogYaw=nil;self.lastSeen=target
+	end
+	local follow=self.locked and not lost
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 	if flat.Magnitude&lt;.01 then flat=-Vector3.zAxis end
 	local separation=flat.Magnitude
@@ -18961,8 +19019,10 @@ function Camera:update(data,dt)
 	-- bounded angular speed rather than staying on the old side.
 	local behind=-flat.Unit
 	local desiredAngle
-	if self.locked then
+	if follow then
 		desiredAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
+	elseif lost and self.locked then
+		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
 		desiredAngle=self.yaw
 	end
@@ -18994,7 +19054,7 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
+	if not follow then targetFocus=a+Vector3.new(0,1.6,0) end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus

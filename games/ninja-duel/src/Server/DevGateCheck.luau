@@ -144,7 +144,38 @@ S.S10=function()
 	return arrived and back and not far and a2.chakra<=chakra and mist,string.format("flicker in range arrived=%s • retreat at 80=%s • kill at 90 refused=%s (%s) • mist Self=%s",
 		tostring(arrived),tostring(back),tostring(not far),tostring(why),tostring(mist))
 end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"}}
+-- M3 ----------------------------------------------------------------------
+local Families=require(script.Parent.Families)
+-- S11/S13: the player (Copycat) stands in the bot Zabuza's mist; Zabuza steps
+-- sideways three times (watch the camera: it must not follow him), then the
+-- player leaves the mist (the lock comes back).
+S.S11=function()
+	local c,a,b=start("Copycat","Mist");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-8));b.chakra=999
+	c:request(b,(slot("Mist","HiddenMist")));task.wait(1)
+	local lost=Families.shrouded(c,a)
+	local o=c.match.origin
+	for k=1,3 do c:relocate(b,o+Vector3.new(k%2==0 and -7 or 7,3,-8+k));task.wait(1.6) end
+	local stillLost=Families.shrouded(c,a)
+	c:relocate(a,o+Vector3.new(0,3,30));task.wait(1.5)
+	local found=not Families.shrouded(c,a)
+	return lost and stillLost and found,string.format("player lost in mist=%s (after 3 side steps=%s) • out of it, found again=%s",tostring(lost),tostring(stillLost),tostring(found))
+end
+-- S12/S14: inside the mist a manual tool aim goes where it was given (no
+-- homing); Zabuza in his own mist is not lost; the bot lost aims at its memory.
+S.S12=function()
+	local c,a,b=start("Copycat","Mist");place(c,a,b,Vector3.new(0,3,0),Vector3.new(0,3,-8));b.chakra=999
+	c:request(b,(slot("Mist","HiddenMist")));task.wait(1)
+	a.neutralToolAt=0;a.chakra=999
+	local wide=b.root.Position+Vector3.new(5,0,0)
+	local ok=c:request(a,"Tool",wide)
+	local dir
+	for _=1,30 do task.wait();for _,p in c.projectiles do if p.a==a then dir=p.direction end end;if dir then break end end
+	local toAim,toBody=(wide-a.root.Position).Unit,(b.root.Position-a.root.Position).Unit
+	local manual=dir~=nil and dir:Dot(toAim)>dir:Dot(toBody)
+	local zabuzaSees=not Families.shrouded(c,b)
+	return ok and manual and zabuzaSees,string.format("tool thrown=%s goes to the given aim=%s • Zabuza lost in his own mist=%s",tostring(ok),tostring(manual),tostring(not zabuzaSees))
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)

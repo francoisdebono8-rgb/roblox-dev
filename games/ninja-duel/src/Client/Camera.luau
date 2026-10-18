@@ -110,6 +110,18 @@ function Camera:update(data,dt)
 	local bot=folder and folder:FindFirstChild(data.bot.id or "AIFighter")
 	local b=bot and bot:FindFirstChild("HumanoidRootPart")
 	local target=(presentation and presentation:visualRoot("bot")) or (if b then b.Position else data.bot.position)
+	-- Lost in the opponent's shroud (snapshot family.shrouded, QA-004 M3): the
+	-- lens stops following him. It keeps the last place it saw him for its
+	-- framing and turns like an unlocked camera; the lock preference itself
+	-- (self.locked) is untouched and comes back as soon as he is seen again.
+	local lost=data.human.family~=nil and data.human.family.shrouded==true
+	if lost then
+		if not self.lostFrom then self.lostFrom=self.lastSeen or target;self.fogYaw=self.boomAngle end
+		target=self.lostFrom
+	else
+		self.lostFrom=nil;self.fogYaw=nil;self.lastSeen=target
+	end
+	local follow=self.locked and not lost
 	local flat=Vector3.new(target.X-a.X,0,target.Z-a.Z)
 	if flat.Magnitude<.01 then flat=-Vector3.zAxis end
 	local separation=flat.Magnitude
@@ -127,8 +139,10 @@ function Camera:update(data,dt)
 	-- bounded angular speed rather than staying on the old side.
 	local behind=-flat.Unit
 	local desiredAngle
-	if self.locked then
+	if follow then
 		desiredAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
+	elseif lost and self.locked then
+		desiredAngle=self.fogYaw or self.boomAngle or 0
 	else
 		desiredAngle=self.yaw
 	end
@@ -160,7 +174,7 @@ function Camera:update(data,dt)
 		self.lead=(self.lead or Vector3.zero):Lerp(lead,1-math.exp(-dt*4))
 		targetFocus+=self.lead
 	end
-	if not self.locked then targetFocus=a+Vector3.new(0,1.6,0) end
+	if not follow then targetFocus=a+Vector3.new(0,1.6,0) end
 	local focusRate=if aerial or pursuit then 13 else 9
 	self.focus=if self.focus then self.focus:Lerp(targetFocus,1-math.exp(-dt*focusRate)) else targetFocus
 	local focus=self.focus

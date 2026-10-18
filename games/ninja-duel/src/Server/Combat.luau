@@ -507,7 +507,7 @@ function Combat:stepThrow(a)
 		-- floor at his feet) means him: the blade goes to where he is now.
 		local aim=throw.aim
 		local b=a.target
-		if b and b.health>0 and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude<=Families.AIM_SNAP) then aim=b.root.Position end
+		if b and b.health>0 and not Families.shrouded(self,a) and (not aim or Vector3.new(aim.X-b.root.Position.X,0,aim.Z-b.root.Position.Z).Magnitude<=Families.AIM_SNAP) then aim=b.root.Position end
 		aim=aim or (a.root.Position+a.root.CFrame.LookVector*20)
 		throw.fire(throw.fired,aim)
 		throw.nextRelease+=throw.interval
@@ -837,6 +837,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.finishing then return false,"Intro" end
 	-- The press carries its own stick (Matches:act): remember it as intent.
 	Brawler.observe(self,a)
+	-- A bot lost in a shroud aims where it last saw the body (set by AI).
+	if a.fogAim and aim and (action=="Tool" or string.sub(action,1,9)=="Technique") then aim=a.fogAim end
 	if action=="GuardOff" then
 		Defense.guard(a,false,self.now)
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
