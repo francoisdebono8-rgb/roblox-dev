@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "f379fd031c26fa59547a3acd97296ab9d29b4a423aafb20f797e2c43235d7a5f",
+  "sha256": "c792a463e8d39b244bcbc47bffad0728cf3403d536682e47c0e62c95950f7273",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -42,11 +42,11 @@
     "src/Server/ChakraStudioView.luau": "966d7c5d04a9195b2bcdfcf89405c016ea209b797f07b33830e765d4f3e93bed",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "a52677b7298b20d8abe0b2f59c7770c3ec4a6113b8ee74b2c5798d02978ede26",
+    "src/Server/Combat.luau": "3990197d36d5259c18a639e2959d06a662d4d9da24d2984a4e1407001bde214b",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
-    "src/Server/DevGateCheck.luau": "45ca1585849ead047a13e7b48ed5aea1da8c103199dab21176a7270aa5cf609e",
+    "src/Server/DevGateCheck.luau": "09a12a5727e8c8adc3e513bbad5c70322003d7b7452c2ebeae98259f33f7c6a4",
     "src/Server/DevHooks.luau": "15510d3615eafd46a0792318665ae6514f915d72165d83d0d42decfc26277ff0",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
@@ -100,7 +100,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "8f2dd183b02408945bffbf7dedad2e43d05e320d8fa648614b9595c71c138106",
+  "buildFingerprint": "97630c1be700e0ba85e9510f6c42c8826b72c6db0719ed14df89f9204b877624",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

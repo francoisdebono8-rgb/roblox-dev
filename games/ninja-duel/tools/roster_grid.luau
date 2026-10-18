@@ -4,12 +4,18 @@
 -- Columns:
 --   str   time from the first press to the third light's contact (s)
 --   dmg3  damage of the three lights
---   push  how far the third light sends the body (studs)
+--   push  how far the third light sends the body: from its position at the
+--         third contact to its furthest point before the reaction ends (studs)
+--   react time from the third contact to the end of its reaction (s)
 --   whiff commitment of a whiffed Light1 (s until he can act again)
 --   heavy heavy's startup (s) and damage
---   conv  launcher → chase (E) → air strike: air hits landed (0..3)
---   ko    AI duel vs Leaf: seconds to the KO / techniques used (distinct)
+--   conv  launcher → chase (E) → air strike: air hits landed (0..3); with
+--         CONV=1 in the environment, every request of it is listed (ok/why)
+--   ko    AI duel vs Leaf: seconds to the KO / techniques used (distinct
+--         techniques counted by their Cast:<Id> events, not by cooldowns)
+-- Instrumentation only: no tuning is read from or written to the game.
 local H=require("../tests/Harness")
+local process=require("@lune/process")
 local V=H.V
 local Roster=H.load("Shared/Roster")
 local Rules=H.load("Shared/Rules")
@@ -27,23 +33,30 @@ H.envBase.Random={new=function(seed)
 	local function roll() state=(1103515245*state+12345)%2147483648;return state/2147483648 end
 	return {NextNumber=function(_,x,y) local r=roll();if x and y then return x+(y-x)*r end return r end,NextInteger=function(_,x,y) return math.floor(x+(y-x+1)*roll()) end}
 end}
-print(string.format("%-10s %5s %5s %5s %5s %11s %4s %12s","fighter","str","dmg3","push","whiff","heavy","conv","ko/tech"))
+print(string.format("%-10s %5s %5s %5s %5s %5s %11s %4s %12s","fighter","str","dmg3","push","react","whiff","heavy","conv","ko/tech"))
 for _,id in Roster do
 	-- String.
 	local c,a,b=H.duel(id,"Leaf");place(c,a,b,if id=="Sand" or id=="Puppet" then 7 else 3.4);b.health=999
 	local t0=c.now
 	local contact3=nil
+	local from,push,reactEnd=nil,0,nil
+	local function watch()
+		if not contact3 and b.health<999 and (b.comboHits or 0)>=3 then contact3=c.now-t0;from=b.root.Position end
+		if from then
+			push=math.max(push,flat(b.root.Position-from).Magnitude)
+			if not reactEnd and b.reaction==nil then reactEnd=c.now-t0 end
+		end
+	end
 	for k=1,3 do
 		c:request(a,"Attack")
 		run(c,.9,function()
-			if k==3 and not contact3 and b.health<999 and (b.comboHits or 0)>=3 then contact3=c.now-t0 end
+			watch()
 			return a.state=="Recovery" and a.chainOpen==true and c.now>=(a.chainAt or 0)
 		end)
 	end
-	local from=b.root.Position
-	run(c,.8)
+	run(c,1.5,function() watch();return reactEnd~=nil end)
 	local dmg3=999-b.health
-	local push=flat(b.root.Position-from).Magnitude
+	local react=if reactEnd and contact3 then reactEnd-contact3 else nil
 	-- Whiff.
 	local c2,a2,b2=H.duel(id,"Leaf");place(c2,a2,b2,30)
 	c2:request(a2,"Attack")
@@ -64,25 +77,27 @@ for _,id in Roster do
 	run(c4,.35)
 	local launched=b4.reaction=="Launched" or b4.airborne
 	local airHits=0
+	local log={}
 	if launched then
-		c4:request(a4,"Pursuit");run(c4,.45)
+		local ok,why=c4:request(a4,"Pursuit");table.insert(log,"E="..(if ok then "ok" else tostring(why)));run(c4,.45)
 		local before=b4.health
-		for _=1,3 do
-			c4:request(a4,"Attack");run(c4,.35)
+		for k=1,3 do
+			ok,why=c4:request(a4,"Attack");table.insert(log,"A"..k.."="..(if ok then tostring(a4.attackName) else tostring(why)));run(c4,.35)
 			if b4.health<before then airHits+=1;before=b4.health end
 		end
 	end
+	if process and process.env and process.env.CONV=="1" then print("   conv "..id..": "..table.concat(log," ")) end
 	-- AI duel.
 	local c5,x,y,match=H.duel(id,"Leaf");place(c5,x,y,14)
 	local one,two=AI.new(c5,x,7),AI.new(c5,y,9)
 	local t=0
 	while match.phase=="Duel" and t<120 do one:update(c5.now);two:update(c5.now);H.step(c5,.01);t+=.01 end
 	local used,distinct=0,0
-	for k,v in x.events or {} do if k=="Technique" then used=v end end
-	local seen={}
-	for _,spec in x.def.Techniques do if (x.cooldowns[spec.Id] or 0)>0 then seen[spec.Id]=true end end
-	for _ in seen do distinct+=1 end
-	print(string.format("%-10s %5s %5.1f %5.1f %5.2f %5s/%5.1f %4s %5.0fs %2d/%d %s",id,contact3 and string.format("%.2f",contact3) or "--",dmg3,push,whiff,
+	for k,v in x.events or {} do
+		if k=="Technique" then used=v end
+		if string.sub(k,1,5)=="Cast:" and v>0 then distinct+=1 end
+	end
+	print(string.format("%-10s %5s %5.1f %5.1f %5s %5.2f %5s/%5.1f %4s %5.0fs %2d/%d %s",id,contact3 and string.format("%.2f",contact3) or "--",dmg3,push,react and string.format("%.2f",react) or "--",whiff,
 		hs and string.format("%.2f",hs) or "--",heavyDmg,launched and tostring(airHits) or "noL",t,used,distinct,if match.winner then (match.winner==x.id and "W" or "L") else "-"))
 end
 H.envBase.Random=saved

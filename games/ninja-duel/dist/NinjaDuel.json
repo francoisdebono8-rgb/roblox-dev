@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "db599a5db365e208aff96979c31d5f9f1baa96c194de6b183f31f0bd741ad5ea",
+  "sha256": "b6ef30d2da5a7e44251c38c67ed5a76760a77ec4081ef75ef12f2270fb8205ca",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -35,7 +35,7 @@
     "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "a52677b7298b20d8abe0b2f59c7770c3ec4a6113b8ee74b2c5798d02978ede26",
+    "src/Server/Combat.luau": "3990197d36d5259c18a639e2959d06a662d4d9da24d2984a4e1407001bde214b",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "09a6caa466191d08519946bcffa3068931e7ebdb98592d2d5f5b7be63daa9ae4",
@@ -81,7 +81,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "d65e215faffb7c08eb82ce03ef79365547aea8c7dff30e306a48d912d3a5eb36",
+  "buildFingerprint": "80ac2093c8bf1b4277cbc99ad5b5e93aa63b553d7844c1744ac9a1e0fe6881c7",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

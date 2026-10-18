@@ -1108,7 +1108,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- A thrown technique (Minato's marked kunai): chakra and cooldown are
 		-- committed now, but the body stays in Neutral so the legs keep moving
 		-- while the arm throws; the payoff fires on the release frame.
-		Brawler.event(self,a,"Technique"); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
+		Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); a.chakra-=spec.Cost; a.cooldowns[spec.Id]=self.now+spec.Cooldown; a.guardHeld=false
 		-- Same for a thrown technique: no guard pose (and guard speed) without a guard.
 		if a.state=="Guarding" then self:setState(a,"Neutral",0) end
 		self:awakenTechnique(a,spec)
@@ -1122,7 +1122,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 		self:cue(a,spec.Name,.6)
 		return true
 	end
-	Brawler.event(self,a,"Technique"); Rules.reserve(a,spec,self.now); a.guardHeld=false
+	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	self:awakenTechnique(a,spec)
 	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan

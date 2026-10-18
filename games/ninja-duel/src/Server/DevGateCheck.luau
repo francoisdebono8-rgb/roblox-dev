@@ -175,7 +175,67 @@ S.S12=function()
 	local zabuzaSees=not Families.shrouded(c,b)
 	return ok and manual and zabuzaSees,string.format("tool thrown=%s goes to the given aim=%s • Zabuza lost in his own mist=%s",tostring(ok),tostring(manual),tostring(not zabuzaSees))
 end
-local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"}}
+-- M4 ----------------------------------------------------------------------
+-- Native baseline of the grid's measures (no tuning). S15: third light then
+-- heavy on a body at its HP: distance/time from each contact to the end of
+-- its reaction. S16: L1, L2, toward+L (launcher), E, three air strikes, in one
+-- sequence without refill or replacement; every request logged. S17: an AI
+-- duel; distinct techniques counted by Cast:<Id> events.
+local function measure(c,a,b,action,stick)
+	local hp=b.health
+	if stick then a.move=stick end
+	local ok,why=c:request(a,action);a.move=Vector3.zero
+	local t0=os.clock();local from,at,push,done=nil,nil,0,nil
+	repeat
+		task.wait()
+		if not from and b.health<hp then from=b.root.Position;at=os.clock() end
+		if from then push=math.max(push,flat(b.root.Position-from).Magnitude);if b.reaction==nil then done=os.clock() end end
+	until done or os.clock()-t0>2.5
+	return ok,why,from~=nil,push,(done and at) and done-at or -1
+end
+S.S15=function()
+	local out={}
+	for _,id in {"Lion","Mist","Puppet","Ink"} do
+		local c,a,b=start(id,"Leaf");place(c,a,b,Vector3.new(0,3,(id=="Puppet" and 3.5) or 1.7),Vector3.new(0,3,-((id=="Puppet" and 3.5) or 1.7)))
+		confirmOne(c,a);confirmOne(c,a)
+		local _,_,hit3,push3,react3=measure(c,a,b,"Attack")
+		task.wait(.6);place(c,a,b,Vector3.new(0,3,1.7),Vector3.new(0,3,-1.7))
+		local _,_,hitH,pushH,reactH=measure(c,a,b,"Heavy")
+		table.insert(out,string.format("%s L3 hit=%s push=%.1f react=%.2fs • heavy hit=%s push=%.1f react=%.2fs",id,tostring(hit3),push3,react3,tostring(hitH),pushH,reactH))
+	end
+	return true,table.concat(out," | ")
+end
+S.S16=function()
+	local out={}
+	for _,id in {"Flicker","Bone","Clay"} do
+		local c,a,b=start(id,"Leaf");place(c,a,b,Vector3.new(0,3,1.7),Vector3.new(0,3,-1.7))
+		local log={}
+		confirmOne(c,a);confirmOne(c,a)
+		a.move=flat(b.root.Position-a.root.Position).Unit
+		local ok,why=c:request(a,"Attack");a.move=Vector3.zero
+		table.insert(log,"up="..(if ok then tostring(a.attackName) else tostring(why)))
+		task.wait(.35)
+		ok,why=c:request(a,"Pursuit");table.insert(log,"E="..(if ok then "ok" else tostring(why)));task.wait(.45)
+		local before=b.health;local air=0
+		for k=1,3 do
+			ok,why=c:request(a,"Attack");table.insert(log,"A"..k.."="..(if ok then tostring(a.attackName) else tostring(why)));task.wait(.35)
+			if b.health<before then air+=1;before=b.health end
+		end
+		local t=os.clock();repeat task.wait() until (not a.airborne and not b.airborne) or os.clock()-t>3
+		table.insert(out,id.." "..table.concat(log," ").." air hits="..air.." landed="..tostring(not a.airborne))
+	end
+	return true,table.concat(out," | ")
+end
+S.S17=function()
+	local c,a,b,s=start("Ink","Leaf")
+	dev:Invoke("freezeBot",false);dev:Invoke("scripted",false);dev:Invoke("autopilot",true)
+	local t=os.clock();repeat task.wait(.5) until s.phase~="Duel" or os.clock()-t>60
+	dev:Invoke("autopilot",false)
+	local casts,distinct={},0
+	for k,v in a.events or {} do if string.sub(k,1,5)=="Cast:" and v>0 then distinct+=1;table.insert(casts,string.sub(k,6).."×"..v) end end
+	return distinct>=1,string.format("duel %.0fs phase=%s • distinct techniques=%d (%s)",os.clock()-t,tostring(s.phase),distinct,table.concat(casts,", "))
+end
+local GROUPS={M1={"S1","S2","S3","S4","S5"},M2={"S6","S8","S10"},M3={"S11","S12"},M4={"S15","S16","S17"}}
 
 return function(list)
 	dev=ServerStorage:WaitForChild("NinjaDuelDev",10)
