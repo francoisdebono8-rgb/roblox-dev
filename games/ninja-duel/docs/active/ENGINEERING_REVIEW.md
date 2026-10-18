@@ -1,25 +1,25 @@
 ## BLOCKERS
 
-Audit de design Codex18/10 sur41364ed (M1 inclus ; dernière preuve native bc7faa3). Aucun nouveau P0 runtime déclaré. **Cible remplacée :17présents +3absents** (Madara/Hashirama/Hiruzen) ; Hinata/Temari/Kabuto restent dans le code mais hors design. Ne pas traiter l’ancien roster comme cible. [État](CURRENT_STATE.md), DEC-026.
+Audit Codex `5bb52fd..aeff49a`, 18/10. Aucun P0 gameplay reproduit. **P1 : la clôture M7/QA-004 n’est pas fiable** : son verdict ne teste que les résidus du reset, pas la réussite de la séquence. Logs Studio présents : PASS avec lights=0, route=Light1 et air=0. Une passe ultérieure correcte existe ; elle ne répare pas le faux positif. [Preuves et missions](../archive/audits/2026-10-18-5bb52fd-aeff49a/AUDIT.md).
 
 ## REGRESSIONS
 
-Aucun gameplay changé par Codex. M1 de Claude (`41364ed`) corrige en source le puppet consommé et le poison sur garde, avec trois régressions ciblées ajoutées ; 28suites/503cas PASS réexécutés par Codex. Preuve native de ce delta attendue. Restent pose de charge hors portée et téléport release. Les PASS existants de corps/techniques ne valident pas les nouvelles chorégraphies ; pas de faux PASS Studio ou migration annoncée.
+Aucune nouvelle régression gameplay reproduite ; 28 suites/508 cas et neuf tests d’isolation PASS. Ne pas rouvrir M1–M3 depuis l’ancienne revue. P2 : QA embarque un DevGateCheck antérieur au HEAD ; Debug concorde. P2 : S20 n’assert pas les dégâts du kunai après fermeture (rejeu Codex :3.0, comportement actuel correct).
 
 ## ARCHITECTURE RISKS
 
-Bee exige configurations de lames, Kimimaro apparitions osseuses, Sasori/Naruto alternance de corps : réutiliser attaches/phases/traits/Bodies et source autoritaire du hit. Pas moteur de personnage/armes/chakra parallèle. Même clip/mécanisme ≠ même expression. Budget d’auteur par famille, pas300animations uniques. Trois nouveaux sans IDs imposés avant implantation.
+M5 utilise snapshot/buff serveur, M6 réutilise kind/reaction/air et le couperet existant : pas moteur parallèle. Gates positives seules et chaîne QA qui ignore les échecs créent une confiance excessive. Préserver invariants de confirmation et exceptions de poursuite Lion/Leaf ; éviter une infrastructure QA générique.
 
 ## PLAYER-FACING FAILURES
 
-V1 n’est plus « trois jutsus sur une chaîne générique ». Corps Lion/Mirage/Gale/Sand prêtés masquent trop Bee/Kimimaro/Zabuza/Sasori/Shisui/Haku/Nagato/Deidara. Les20bibles décrivent chaque contact, appui, branche, Heavy, défense/réaction et signature ; cela reste du design non joué, pas une correction accomplie.
+Les progrès tactiques/poids ne valident pas vingt identités V1. M7 replace les acteurs entre étapes malgré la mention « sans replacement » ; vraie séquence continue, S19/S21 complet/S23/S24, manette/feel restent à prouver. Aucun nouveau PASS visuel ou live Roblox Codex.
 
 ## NEXT 3 PRIORITIES
 
-1. Claude continue son bloc de corrections actuel ; aucune interruption ou implémentation concurrente Codex.
-2. Avant grosse identité : lire DEC-026 et le seul sous-lot des [bibles/A–E](../characters/ROSTER_20.md), critères CHR-CORE-001/002. Corps/armes/pouvoirs fondamentaux avant systèmes globaux finaux.
-3. Après socles éprouvés et3nouveaux jouables : migration atomique17+3 puis gate native/HUD masqué/manette ; CHR-EXT-002. Dépendances et ouverture dans MASTER_BACKLOG, pas tous les lots à la fois.
+1. Claude : rendre M7 fail-closed et ses exceptions explicites ; négatifs ciblés ; ajouter l’assert post-fermeture S20. Points précis dans le rapport, QA-004.
+2. Reconstruire normal/Debug/QA après correction, vérifier source-hashes/fingerprint et rejouer M7 corrigé ; corriger la portée du rapport.
+3. Valider S22–S24 aux vraies touches sur le build final, puis ouvrir un petit lot des bibles DEC-026 via MASTER_BACKLOG, pas une nouvelle passe globale.
 
 ## DO NOT TOUCH
 
-Aucun runtime, roster code/menu/ID, test gameplay, build ou asset modifié ici. Ne pas importer primes adultes ; extrapolations de prodiges déclarées (dont Bee multi-sabres exigé). Ne pas rouvrir systèmes futurs, arbre/maîtrise/chakra/armes globaux. Préserver code Claude et anciens profils en archive ; une bible de design n’est pas preuve de canon ni de feel.
+Codex n’a modifié ni gameplay, ni tests, ni builds. Préserver M1–M6 livrés et les contrats communs. Pas hub/arbre/progression ni migration prématurée17+3. Les vingt de M7 sont les anciens IDs ; cible et extrapolations des bibles inchangées.

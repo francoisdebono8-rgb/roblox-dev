@@ -1,0 +1,32 @@
+[GateCheck] Q:Flashstep PASS • lights=0 route=Light1 E=Too close air=2 tool=ok jutsu=MarkedBlade:ok,Flashstep:ok,BurstStrike:ok,Quickstep:ok,WindCut:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:Mirage PASS • lights=0 route=Light1 E=ok air=2 tool=ok jutsu=Read:ok,NeedleFan:ok,MirageCast:ok,FireBloom:ok,PhoenixFlower:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:GentleFist PASS • lights=0 route=Light1 E=Too close air=2 tool=ok jutsu=Rotation:ok,VacuumPalm:ok,SixtyFourPalms:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:Lion PASS • lights=0 route=Light1 E=Too close air=2 tool=ok jutsu=FireBloom:ok,PhoenixFlower:ok,WireTrap:ok,Chidori:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Sand PASS • lights=0 route=Light1 E=Committed air=0 tool=ok jutsu=SandCoffin:ok,SandShuriken:ok,DesertWave:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Leaf PASS • lights=0 route=Light1 E=Too close air=2 tool=ok jutsu=LeafGreatWhirlwind:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Legion PASS • lights=0 route=Light1 E=Too close air=2 tool=ok jutsu=ShadowClone:ok,CloneRasengan:ok,MassShadowClone:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[NinjaDuel] BUILD 2dc36969acd151fbfafb375f9f0519f64fe0ccbbed3b2000e07ffbb7700502d2
+[GateCheck] Q:Flashstep PASS • lights=16 route=Launcher E=ok air=2 tool=ok jutsu=MarkedBlade:ok,Flashstep:ok,BurstStrike:ok,Quickstep:ok,WindCut:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Mirage PASS • lights=20 route=Launcher E=ok air=2 tool=ok jutsu=Read:ok,NeedleFan:ok,MirageCast:ok,FireBloom:ok,PhoenixFlower:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:GentleFist PASS • lights=16 route=Launcher E=ok air=2 tool=ok jutsu=Rotation:ok,VacuumPalm:ok,SixtyFourPalms:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Lion PASS • lights=17 route=LionKick E=Committed air=2 tool=ok jutsu=FireBloom:ok,PhoenixFlower:ok,WireTrap:ok,Chidori:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Sand PASS • lights=10 route=SandPillar E=ok air=2 tool=ok jutsu=SandCoffin:ok,SandShuriken:ok,DesertWave:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Leaf PASS • lights=14 route=LeafRising E=Committed air=2 tool=Nothing to deflect jutsu=LeafGreatWhirlwind:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:Legion PASS • lights=16 route=UzumakiKick E=ok air=2 tool=ok jutsu=ShadowClone:ok,CloneRasengan:ok,MassShadowClone:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Gale PASS • lights=13 route=Updraft E=ok air=2 tool=ok jutsu=Kamaitachi:ok,GreatGust:ok,Cyclone:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Lavender PASS • lights=15 route=Launcher E=ok air=2 tool=ok jutsu=TwinLionFists:ok,VacuumPalm:ok,ProtectiveTrigrams:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Copycat PASS • lights=17 route=Launcher E=ok air=2 tool=ok jutsu=LightningBlade:ok,TrackingFang:ok,WaterDragon:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Mirror PASS • lights=15 route=Launcher E=ok air=2 tool=ok jutsu=WaterNeedles:ok,MirrorStep:ok,IceMirrors:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Mist PASS • lights=19 route=CleaverRise E=ok air=2 tool=ok jutsu=HiddenMist:ok,SilentKilling:ok,WaterPrison:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Bone PASS • lights=16 route=Launcher E=ok air=2 tool=ok jutsu=Camellia:ok,Larch:ok,Willow:ok guard=held=true chip=1.1 reset=round=2 clean=true
+[GateCheck] Q:Flicker PASS • lights=16 route=Launcher E=ok air=2 tool=ok jutsu=BodyFlicker:ok,FlickerOut:ok,ShisuiFireball:ok,ShisuiGenjutsu:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Serpent PASS • lights=16 route=Launcher E=ok air=2 tool=ok jutsu=ShadowSnake:ok,SnakeCoil:ok,SnakeLunge:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Medic PASS • lights=15 route=Launcher E=ok air=2 tool=ok jutsu=ChakraScalpel:ok,TendonCut:ok,MendingRetreat:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Clay PASS • lights=15 route=Launcher E=ok air=2 tool=ok jutsu=ClayBirds:ok,ClaySpiders:ok,ClayMine:ok,Katsu:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] Q:Puppet PASS • lights=10 route=PuppetRise E=ok air=2 tool=ok jutsu=Marionette:ok,FatherMother:ok,NeedleRain:ok,PuppetShield:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:Rinnegan PASS • lights=15 route=Launcher E=ok air=2 tool=ok jutsu=Repulsion:ok,Attraction:ok,Absorb:ok guard=held=true chip=1.2 reset=round=2 clean=true
+[GateCheck] Q:Ink PASS • lights=18 route=Launcher E=ok air=2 tool=ok jutsu=Lariat:ok,InkMist:ok,OctoHold:ok guard=held=true chip=0.0 reset=round=2 clean=true
+[GateCheck] errors in Output during the run: 0
+
+Codex S20 via installed DevHooks:
+[GateCheck] S20 PASS • kunai absorbed (+chakra)=true • melee still lands=true • window closed=true • kunai after close dmg=3.0
