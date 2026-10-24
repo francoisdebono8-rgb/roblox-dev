@@ -536,6 +536,7 @@ end
 function Combat:faceLocked(a,dt)
 	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
 	if Families.shrouded(self,a) then return end
+	if not a.airborne then a.airFace=nil end
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude<.1 then return end
 	local target=toward.Unit
@@ -550,6 +551,12 @@ function Combat:faceLocked(a,dt)
 		committed=a.sprinting or (a.awayHeld or 0)>.3 or (distance>16 and along<.55)
 		-- Close in and retreating a step: a backpedal keeps the chest on them.
 		if along<-.5 and distance<10 and not a.sprinting then committed=false end
+		-- Movement overhaul (Studio, real keys): a jump away from or around a
+		-- close opponent keeps the chest on them through the air, so the back
+		-- flip / side flip leaving contact does not twist round mid-air.
+		-- Decided near the opponent, held for the whole airtime.
+		if a.airborne and along<.55 and distance<16 and not a.sprinting then a.airFace=true end
+		if a.airFace and along<.55 then committed=false end
 		if committed then
 			local look=if distance<12 then .45 else .2
 			desired=(moveDir+target*look).Unit
@@ -1275,6 +1282,17 @@ function Combat:updateActor(a,dt)
 		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
 		a.guardHeld=true;self:setState(a,"Guarding",0)
 	end
+	-- Movement overhaul (Studio): out of a running strike the body slides on
+	-- through its recovery, the speed fading, instead of standing dead still;
+	-- the recovery's commitment (no new action) is unchanged.
+	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+		local carry=a.strikeCarry
+		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
+		-- Never into the opponent: the slide stops short of a body ahead.
+		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
+		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude<4.5 and ahead:Dot(carry.dir)>0
+		if not blocked then Motor.travel(a,self,carry.dir,carry.slide*dt) end
+	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
 		a.hop.remaining-=step
@@ -1887,7 +1905,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.evadeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.evade=nil;a.evadeCarry=nil;a.strikeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil

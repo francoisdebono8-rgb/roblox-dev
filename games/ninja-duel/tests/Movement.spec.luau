@@ -158,4 +158,36 @@ test("a dodge hands its momentum back: the run continues out of it",function()
  assert((a.locomotion or V.zero).Magnitude<1,"the body keeps gliding after a dodge with no input")
 end)
 
+test("an opening light in a full sprint is the running strike, carried by the run; walking or mid-string it is not",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(-60,3,0));c:relocate(b,V.new(40,3,0))
+ a.move=V.new(1,0,0);a.sprinting=true
+ local n=0
+ repeat H.step(c,.01);n+=1 until (a.locomotion or V.zero).Magnitude>=30 or n>300
+ assert((a.locomotion or V.zero).Magnitude>=30,"never reached sprint speed")
+ local from=a.root.Position
+ assert(c:request(a,"Attack"))
+ -- The fighter's own running entry (Lee: the flying kick), not the plain opener.
+ assert(a.attackName and a.attackName~="Light1","a sprinting light was "..tostring(a.attackName))
+ for _=1,25 do H.step(c,.01) end
+ local moved=V.new(a.root.Position.X-from.X,0,a.root.Position.Z-from.Z).Magnitude
+ assert(moved>=6,string.format("the running strike stopped the run (%.1f studs in the swing)",moved))
+ -- After the recovery the run picks up from part of its speed, not from a stand.
+ -- Through the recovery the body slides on (no dead stop).
+ local n2=0
+ repeat H.step(c,.01);n2+=1 until a.state=="Recovery" or n2>100
+ local slideFrom=a.root.Position
+ repeat H.step(c,.01);n2+=1 until a.state=="Neutral" or n2>200
+ local slid=V.new(a.root.Position.X-slideFrom.X,0,a.root.Position.Z-slideFrom.Z).Magnitude
+ assert(slid>=2,string.format("the body stood still through the recovery (%.1f studs)",slid))
+ H.step(c,.01)
+ assert((a.locomotion or V.zero).Magnitude>=18,string.format("the run restarted from a stand after the strike (%.1f)",(a.locomotion or V.zero).Magnitude))
+ -- Walking: the plain opener.
+ local c2,a2,b2=H.duel("Leaf","Mirage")
+ c2:relocate(a2,V.new(-60,3,0));c2:relocate(b2,V.new(40,3,0))
+ a2.move=V.new(1,0,0);a2.sprinting=false
+ for _=1,60 do H.step(c2,.01) end
+ assert(c2:request(a2,"Attack"));assert(a2.attackName=="Light1","a walking light was "..tostring(a2.attackName))
+end)
+
 print(string.format("NinjaDuel movement overhaul: %d PASS (headless; the look and feel are Studio checks)",passed))

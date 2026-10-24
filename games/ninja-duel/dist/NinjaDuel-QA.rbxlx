@@ -1148,6 +1148,8 @@ local Graphs = {
 		reengage={name="palm",speed=1.02,arrive=2.9,angle=0,minRange=5,chase=.3,recovery=.18},
 	},
 	Lion={
+		-- Out of a full sprint: the flying kick (Brawler running taijutsu).
+		runStrike="FlyingKick",
 		routes={up="LionKick",down="Sweep",side="VaultKick",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
 		disengage="Shuriken",
 		-- The rising kick is followed into the air at once (Shadow of the
@@ -1179,6 +1181,8 @@ local Graphs = {
 	-- string going instead of ending it. Sideways: the Leaf Whirlwind, a wide
 	-- spinning kick that catches a side step instead of taking an angle.
 	Leaf={
+		-- Out of a full sprint: the flying kick (Brawler running taijutsu).
+		runStrike="FlyingKick",
 		routes={up="LeafRising",down="LeafHurricane",side="LeafWhirlwind",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
 		onRoute={LeafRising="shadowLeaf"},
 		heavyAfterOne="KneeStrike",
@@ -3339,7 +3343,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">47d74e4232bb38f9a5b23a06f74cfe8939a00e91b2fda47687ea55f4111cdaf7</string>
+          <string name="Value">05f9ac1490136722f73427f2da385ee4daedab5488a8ba1fbe807343f1a51948</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -4325,7 +4329,15 @@ function Evade.begin(a,c)
  -- flows back into the run (or an attack) instead of stopping dead.
  local v=a.root.AssemblyLinearVelocity
  local entry=math.max(Vector3.new(v.X,0,v.Z).Magnitude,(a.locomotion or Vector3.zero).Magnitude)
- a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry}
+ -- Locked near the opponent, a side or back dodge is a sidestep / hop away
+ -- that keeps the chest on them (Studio: turning into it made every dodge read
+ -- as a forward dash, and hid the acrobatic bodies' cartwheel / handspring).
+ local keep=false
+ if a.locked~=false and a.target and a.target.root then
+  local to=a.target.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+  keep=to.Magnitude&lt;40 and to.Magnitude&gt;.1 and direction:Dot(to.Unit)&lt;.5
+ end
+ a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry,keep=keep}
 end
 -- Exit with momentum: at least a running pace along the dodge, at most the
 -- sprint, never more than it came in with plus a run (no free speed). Called
@@ -4359,7 +4371,7 @@ function Evade.step(a,c,travel)
   travel(a,c,delta,delta.Magnitude)
   -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
-  if e.direction.Magnitude&gt;.1 then c:turnToward(a,e.direction,dt,900) end
+  if e.direction.Magnitude&gt;.1 and not e.keep then c:turnToward(a,e.direction,dt,900) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else Evade.finish(a) end
 end
@@ -5136,6 +5148,9 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
+ -- Any new strike drops a pending running-strike hand-back (it is for the
+ -- run after the swing, not for the next blow of a string).
+ a.strikeCarry=nil
  -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
  -- or its solo / awakened form when there is no body for it.
  local proxy,kind
@@ -5346,11 +5361,27 @@ function Brawler.request(c,a,action)
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
  end
  if action=="ThrowUp" then return false,"No grab" end
- -- Running taijutsu: out of a full sprint the strike becomes a flying kick
- -- and the heavy a sliding sweep.
- if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude&gt;30 then
-  if action=="Attack" then return Brawler.start(c,a,"FlyingKick") end
-  if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
+ -- Running taijutsu: out of a full sprint the opening strike is the
+ -- fighter's own running entry (its DashAttack: Bee's shoulder, Kimimaro's
+ -- elbow, Zabuza's handle...; MoveGraphs runStrike names a kicker's flying
+ -- kick) and the heavy a sliding sweep. Movement overhaul (Studio, real
+ -- keys): the swing carries the run's speed and, after its recovery, hands
+ -- part of it back so the run continues (the heavy pays more). Openers only:
+ -- the confirmed-hit invariant is untouched.
+ if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude&gt;28 and (action=="Attack" or action=="Heavy") then
+  local runSpeed=a.locomotion.Magnitude
+  local runGraph=Brawler.graph(a) or {}
+  local name=if action=="Heavy" then "SlideSweep" else (runGraph.runStrike or "DashAttack")
+  if not Attacks[name] then name="FlyingKick" end
+  local ok=Brawler.start(c,a,name)
+  local p=a.pending
+  if ok~=false and p and p.kind=="Brawl" then
+   local need=runSpeed*(p.spec.travelTime or .22)*.85
+   if need&gt;p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .45 else .7),at=c.now}
+   Brawler.event(c,a,"RunningStrike")
+  end
+  return ok
  end
  local graph=Brawler.graph(a) or {}
  local routes=graph.routes or {}
@@ -8425,6 +8456,7 @@ end
 function Combat:faceLocked(a,dt)
 	-- Lost in the opponent's shroud: no auto-facing on a body he cannot see.
 	if Families.shrouded(self,a) then return end
+	if not a.airborne then a.airFace=nil end
 	local toward=a.target.root.Position-a.root.Position;toward=Vector3.new(toward.X,0,toward.Z)
 	if toward.Magnitude&lt;.1 then return end
 	local target=toward.Unit
@@ -8439,6 +8471,12 @@ function Combat:faceLocked(a,dt)
 		committed=a.sprinting or (a.awayHeld or 0)&gt;.3 or (distance&gt;16 and along&lt;.55)
 		-- Close in and retreating a step: a backpedal keeps the chest on them.
 		if along&lt;-.5 and distance&lt;10 and not a.sprinting then committed=false end
+		-- Movement overhaul (Studio, real keys): a jump away from or around a
+		-- close opponent keeps the chest on them through the air, so the back
+		-- flip / side flip leaving contact does not twist round mid-air.
+		-- Decided near the opponent, held for the whole airtime.
+		if a.airborne and along&lt;.55 and distance&lt;16 and not a.sprinting then a.airFace=true end
+		if a.airFace and along&lt;.55 then committed=false end
 		if committed then
 			local look=if distance&lt;12 then .45 else .2
 			desired=(moveDir+target*look).Unit
@@ -9164,6 +9202,17 @@ function Combat:updateActor(a,dt)
 		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
 		a.guardHeld=true;self:setState(a,"Guarding",0)
 	end
+	-- Movement overhaul (Studio): out of a running strike the body slides on
+	-- through its recovery, the speed fading, instead of standing dead still;
+	-- the recovery's commitment (no new action) is unchanged.
+	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+		local carry=a.strikeCarry
+		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
+		-- Never into the opponent: the slide stops short of a body ahead.
+		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
+		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude&lt;4.5 and ahead:Dot(carry.dir)&gt;0
+		if not blocked then Motor.travel(a,self,carry.dir,carry.slide*dt) end
+	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
 		a.hop.remaining-=step
@@ -9776,7 +9825,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.evadeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.evade=nil;a.evadeCarry=nil;a.strikeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
@@ -14658,6 +14707,14 @@ local function updateMovement(deltaTime)
 	if a.evadeCarry and not blocked then
 		if grounded then groundLocomotion=horizontalOf(a.evadeCarry) end
 		a.evadeCarry=nil
+	end
+	-- The same hand-back after a running strike, only if the stick still
+	-- pushes the run on (letting go stops as usual).
+	-- (Studio: a flying kick ends a hair off the ground, so the hand-back
+	-- waits for the feet, up to a moment, instead of being dropped.)
+	if a.strikeCarry and not blocked and (grounded or c.now&gt;(a.strikeCarry.at or 0)+1.2) then
+		local carry=a.strikeCarry;a.strikeCarry=nil
+		if grounded and horizontalOf(a.move).Magnitude&gt;.05 and carry.dir then groundLocomotion=horizontalOf(carry.dir)*carry.speed end
 	end
 	if grounded then
 		local input=horizontalOf(a.move)
@@ -28650,11 +28707,14 @@ local function chooseTrick(char,actor,s,fromWall)
 	end
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local flatV=planar(v)
-	if not root or flatV.Magnitude&lt;14 then return nil end
+	-- Studio (real keys): a sprint always faces its travel, so leaving contact
+	-- backward is a locked backpedal (~14 studs/s) and a side jump a strafe
+	-- (~17): the thresholds sit under those, above a standing hop's drift.
+	if not root or flatV.Magnitude&lt;9 then return nil end
 	local lv=root.CFrame:VectorToObjectSpace(flatV.Unit)
 	local forward,side=-lv.Z,lv.X
 	if forward&lt;-.55 and level&gt;=TRICK_AT.back then return {axis="pitch",sign=-1,dur=dur,at=elapsedTime,kind="back"} end
-	if math.abs(side)&gt;.6 and level&gt;=TRICK_AT.side then return {axis="roll",sign=if side&gt;0 then 1 else -1,dur=dur,at=elapsedTime,kind="side"} end
+	if math.abs(side)&gt;.6 and flatV.Magnitude&gt;=12 and level&gt;=TRICK_AT.side then return {axis="roll",sign=if side&gt;0 then 1 else -1,dur=dur,at=elapsedTime,kind="side"} end
 	-- A front flip only on a launched jump chained off a landing, and never two
 	-- in a row: leap, flip, leap... (most long jumps stay leaps, as in the references).
 	if forward&gt;.6 and flatV.Magnitude&gt;=28 and level&gt;=TRICK_AT.front and elapsedTime-(s.landedAt or -9)&lt;.45 and not s.lastJumpFlipped then

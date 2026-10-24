@@ -322,9 +322,9 @@ test("taijutsu routes: heavy after one clean strike differs per prodigy",functio
  end
 end)
 
-test("running taijutsu: out of a sprint, strike = flying kick, heavy = sliding sweep",function()
- for _,pair in {{"Attack","FlyingKick","Knockback"},{"Heavy","SlideSweep","Knockdown"}} do
-  local c,a,b=H.duel("Mirage","Flashstep")
+test("running taijutsu: out of a sprint, strike = the fighter's running entry (Lee: flying kick), heavy = sliding sweep",function()
+ for _,pair in {{"Attack","DashAttack","HitStun","Mirage"},{"Attack","FlyingKick","Knockback","Leaf"},{"Heavy","SlideSweep","Knockdown","Mirage"}} do
+  local c,a,b=H.duel(pair[4],"Flashstep")
   place(c,a,b,V.new(0,3,9),V.new(0,3,-2))
   a.sprinting=true;a.locomotion=a.root.CFrame.LookVector*40
   assert(c:request(a,pair[1]))

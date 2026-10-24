@@ -315,11 +315,14 @@ test("route table, ground: base string, routes with their payoffs, running attac
    assert((n.tenketsu or 0)>=points+2,"Neji's sweep did not close two points ("..tostring(n.tenketsu)..")")
   end
   -- Running attacks out of a sprint.
-  for _,pair in {{"Attack","FlyingKick","Knockback"},{"Heavy","SlideSweep","Knockdown"}} do
+  -- Movement overhaul: the sprint strike is the fighter's own running entry
+  -- (MoveGraphs runStrike, else its DashAttack); the heavy a sliding sweep.
+  local runStrike=(H.load("Shared/MoveGraphs")[id] or {}).runStrike or "DashAttack"
+  for _,pair in {{"Attack",runStrike},{"Heavy","SlideSweep","Knockdown"}} do
    local c4,p,q=H.duel(id,"Mirage");place(c4,p,q,11)
    p.sprinting=true;p.locomotion=p.root.CFrame.LookVector*40
    assert(press(c4,p,pair[1]));assert(p.attackName==pair[2],id..": sprint "..pair[1].." is "..tostring(p.attackName))
-   until_(c4,.7,function() return q.reaction==pair[3] end,id..": "..pair[2].." did not land")
+   until_(c4,.7,function() return if pair[3] then q.reaction==pair[3] else q.reaction~=nil end,id..": "..pair[2].." did not land")
   end
   -- Tool branch: a blade inside a clean string keeps the pressure.
   local c5,t,u=opened(id,1)

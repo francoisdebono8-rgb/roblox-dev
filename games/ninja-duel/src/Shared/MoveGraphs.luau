@@ -80,6 +80,8 @@ local Graphs = {
 		reengage={name="palm",speed=1.02,arrive=2.9,angle=0,minRange=5,chase=.3,recovery=.18},
 	},
 	Lion={
+		-- Out of a full sprint: the flying kick (Brawler running taijutsu).
+		runStrike="FlyingKick",
 		routes={up="LionKick",down="Sweep",side="VaultKick",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
 		disengage="Shuriken",
 		-- The rising kick is followed into the air at once (Shadow of the
@@ -111,6 +113,8 @@ local Graphs = {
 	-- string going instead of ending it. Sideways: the Leaf Whirlwind, a wide
 	-- spinning kick that catches a side step instead of taking an angle.
 	Leaf={
+		-- Out of a full sprint: the flying kick (Brawler running taijutsu).
+		runStrike="FlyingKick",
 		routes={up="LeafRising",down="LeafHurricane",side="LeafWhirlwind",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
 		onRoute={LeafRising="shadowLeaf"},
 		heavyAfterOne="KneeStrike",

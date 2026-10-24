@@ -326,6 +326,9 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
+ -- Any new strike drops a pending running-strike hand-back (it is for the
+ -- run after the swing, not for the next blow of a string).
+ a.strikeCarry=nil
  -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
  -- or its solo / awakened form when there is no body for it.
  local proxy,kind
@@ -536,11 +539,27 @@ function Brawler.request(c,a,action)
   a.grabCooldown=c.now+1.4;return Brawler.start(c,a,"Grab")
  end
  if action=="ThrowUp" then return false,"No grab" end
- -- Running taijutsu: out of a full sprint the strike becomes a flying kick
- -- and the heavy a sliding sweep.
- if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude>30 then
-  if action=="Attack" then return Brawler.start(c,a,"FlyingKick") end
-  if action=="Heavy" then return Brawler.start(c,a,"SlideSweep") end
+ -- Running taijutsu: out of a full sprint the opening strike is the
+ -- fighter's own running entry (its DashAttack: Bee's shoulder, Kimimaro's
+ -- elbow, Zabuza's handle...; MoveGraphs runStrike names a kicker's flying
+ -- kick) and the heavy a sliding sweep. Movement overhaul (Studio, real
+ -- keys): the swing carries the run's speed and, after its recovery, hands
+ -- part of it back so the run continues (the heavy pays more). Openers only:
+ -- the confirmed-hit invariant is untouched.
+ if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude>28 and (action=="Attack" or action=="Heavy") then
+  local runSpeed=a.locomotion.Magnitude
+  local runGraph=Brawler.graph(a) or {}
+  local name=if action=="Heavy" then "SlideSweep" else (runGraph.runStrike or "DashAttack")
+  if not Attacks[name] then name="FlyingKick" end
+  local ok=Brawler.start(c,a,name)
+  local p=a.pending
+  if ok~=false and p and p.kind=="Brawl" then
+   local need=runSpeed*(p.spec.travelTime or .22)*.85
+   if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .45 else .7),at=c.now}
+   Brawler.event(c,a,"RunningStrike")
+  end
+  return ok
  end
  local graph=Brawler.graph(a) or {}
  local routes=graph.routes or {}

@@ -1779,11 +1779,14 @@ local function chooseTrick(char,actor,s,fromWall)
 	end
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local flatV=planar(v)
-	if not root or flatV.Magnitude<14 then return nil end
+	-- Studio (real keys): a sprint always faces its travel, so leaving contact
+	-- backward is a locked backpedal (~14 studs/s) and a side jump a strafe
+	-- (~17): the thresholds sit under those, above a standing hop's drift.
+	if not root or flatV.Magnitude<9 then return nil end
 	local lv=root.CFrame:VectorToObjectSpace(flatV.Unit)
 	local forward,side=-lv.Z,lv.X
 	if forward<-.55 and level>=TRICK_AT.back then return {axis="pitch",sign=-1,dur=dur,at=elapsedTime,kind="back"} end
-	if math.abs(side)>.6 and level>=TRICK_AT.side then return {axis="roll",sign=if side>0 then 1 else -1,dur=dur,at=elapsedTime,kind="side"} end
+	if math.abs(side)>.6 and flatV.Magnitude>=12 and level>=TRICK_AT.side then return {axis="roll",sign=if side>0 then 1 else -1,dur=dur,at=elapsedTime,kind="side"} end
 	-- A front flip only on a launched jump chained off a landing, and never two
 	-- in a row: leap, flip, leap... (most long jumps stay leaps, as in the references).
 	if forward>.6 and flatV.Magnitude>=28 and level>=TRICK_AT.front and elapsedTime-(s.landedAt or -9)<.45 and not s.lastJumpFlipped then

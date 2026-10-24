@@ -11,7 +11,15 @@ function Evade.begin(a,c)
  -- flows back into the run (or an attack) instead of stopping dead.
  local v=a.root.AssemblyLinearVelocity
  local entry=math.max(Vector3.new(v.X,0,v.Z).Magnitude,(a.locomotion or Vector3.zero).Magnitude)
- a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry}
+ -- Locked near the opponent, a side or back dodge is a sidestep / hop away
+ -- that keeps the chest on them (Studio: turning into it made every dodge read
+ -- as a forward dash, and hid the acrobatic bodies' cartwheel / handspring).
+ local keep=false
+ if a.locked~=false and a.target and a.target.root then
+  local to=a.target.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+  keep=to.Magnitude<40 and to.Magnitude>.1 and direction:Dot(to.Unit)<.5
+ end
+ a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry,keep=keep}
 end
 -- Exit with momentum: at least a running pace along the dodge, at most the
 -- sprint, never more than it came in with plus a run (no free speed). Called
@@ -45,7 +53,7 @@ function Evade.step(a,c,travel)
   travel(a,c,delta,delta.Magnitude)
   -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
-  if e.direction.Magnitude>.1 then c:turnToward(a,e.direction,dt,900) end
+  if e.direction.Magnitude>.1 and not e.keep then c:turnToward(a,e.direction,dt,900) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else Evade.finish(a) end
 end

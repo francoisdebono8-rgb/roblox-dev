@@ -191,6 +191,14 @@ local function updateMovement(deltaTime)
 		if grounded then groundLocomotion=horizontalOf(a.evadeCarry) end
 		a.evadeCarry=nil
 	end
+	-- The same hand-back after a running strike, only if the stick still
+	-- pushes the run on (letting go stops as usual).
+	-- (Studio: a flying kick ends a hair off the ground, so the hand-back
+	-- waits for the feet, up to a moment, instead of being dropped.)
+	if a.strikeCarry and not blocked and (grounded or c.now>(a.strikeCarry.at or 0)+1.2) then
+		local carry=a.strikeCarry;a.strikeCarry=nil
+		if grounded and horizontalOf(a.move).Magnitude>.05 and carry.dir then groundLocomotion=horizontalOf(carry.dir)*carry.speed end
+	end
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
