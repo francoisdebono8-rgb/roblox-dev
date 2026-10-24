@@ -585,16 +585,19 @@ end)
 test("mashed air whiffs fall back to the floor (no hover)",function()
  -- Each air swing renewed the air hold, so mashing at nothing kept a body
  -- hovering just above the floor (seen in an AI duel: four seconds).
+ -- Movement overhaul: a swing with nobody in reach holds nothing at all (the
+ -- jump keeps its momentum and Studio gravity brings it down); the harness
+ -- has no gravity, so the property is checked on the hold itself.
  local c,a,b=H.duel("GentleFist","Flashstep")
  engage(c,a,b,24)
  assert(c:request(a,"Jump"),"jump refused")
  for _=1,8 do H.step(c,.02) end
  local t=0
- while t<2.5 and a.airborne do
+ while t<1.5 and a.airborne do
   c:request(a,"Attack")
+  assert((a.airHold or 0)<=c.now,string.format("mashing air whiffs out of reach held the body (%.2f s in)",t))
   H.step(c,.02);t+=.02
  end
- assert(not a.airborne,"mashing air whiffs kept the body airborne for 2.5 s")
 end)
 test("burning ground chips health without stunning or counting combo hits",function()
  -- Each burn tick went through Combat:damage: a body in the fire was stunned

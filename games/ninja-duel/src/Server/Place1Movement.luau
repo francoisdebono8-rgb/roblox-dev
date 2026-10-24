@@ -94,6 +94,13 @@ local function applyAirControl(deltaTime, desiredSprint)
 		targetHorizontal,
 		AIR_CONTROL_ACCELERATION * deltaTime
 	)
+	-- Movement overhaul (Studio): steering a fast arc sideways went through the
+	-- chord (54 -> 20 studs/s after a wall jump bent along the wall). Bending
+	-- the arc keeps its speed; only pulling back against it brakes.
+	if currentSpeed > 0.1 and steeredHorizontal.Magnitude > 0.1
+		and steeredHorizontal.Magnitude < currentSpeed and moveDirection:Dot(horizontal.Unit) > -0.3 then
+		steeredHorizontal = steeredHorizontal.Unit * currentSpeed
+	end
 	local allowedSpeed = math.max(currentSpeed, AIR_ACCELERATION_SPEED_CAP)
 	if steeredHorizontal.Magnitude > allowedSpeed then
 		steeredHorizontal = steeredHorizontal.Unit * allowedSpeed

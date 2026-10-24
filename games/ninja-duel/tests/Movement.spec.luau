@@ -158,6 +158,27 @@ test("a dodge hands its momentum back: the run continues out of it",function()
  assert((a.locomotion or V.zero).Magnitude<1,"the body keeps gliding after a dodge with no input")
 end)
 
+test("a back dodge near them keeps the chest on them; running off, it is a dash along the run",function()
+ local function dodgeAway(gap,walk)
+  local c,a,b=H.duel("Leaf","Mirage")
+  c:relocate(b,V.new(0,3,0));c:relocate(a,V.new(0,3,gap))
+  a.root.CFrame=H.roblox.CFrame.lookAt(a.root.Position,V.new(0,3,0))
+  a.move=V.new(0,0,1)
+  for _=1,math.floor(walk/.01) do H.step(c,.01) end
+  assert(c:request(a,"Dodge"),"dodge refused")
+  local keep=a.evade and a.evade.keep
+  local n=0
+  repeat H.step(c,.01);n+=1 until a.state~="Dodging" or n>60
+  local to=(b.root.Position-a.root.Position)*V.new(1,0,1)
+  return keep,a.root.CFrame.LookVector:Dot(to.Unit)
+ end
+ local keep,face=dodgeAway(12,.12)
+ assert(keep,"a back dodge close in did not keep the chest on them")
+ assert(face>.7,string.format("the back dodge turned away from them (%.2f)",face))
+ local keep2=dodgeAway(30,.6)
+ assert(not keep2,"running off (committed facing), the dodge still turned back to them")
+end)
+
 test("an opening light in a full sprint is the running strike, carried by the run; walking or mid-string it is not",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(-60,3,0));c:relocate(b,V.new(40,3,0))
@@ -188,6 +209,81 @@ test("an opening light in a full sprint is the running strike, carried by the ru
  a2.move=V.new(1,0,0);a2.sprinting=false
  for _=1,60 do H.step(c2,.01) end
  assert(c2:request(a2,"Attack"));assert(a2.attackName=="Light1","a walking light was "..tostring(a2.attackName))
+end)
+
+test("a jump-in air strike with nobody in reach rides the leap: no hold",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(-60,3,0));c:relocate(b,V.new(60,3,0))
+ a.move=V.new(1,0,0);a.sprinting=true
+ local n=0
+ repeat H.step(c,.01);n+=1 until (a.locomotion or V.zero).Magnitude>=30 or n>300
+ assert(c:request(a,"Jump"),"jump refused")
+ for _=1,10 do H.step(c,.01) end
+ local before=(a.locomotion or V.zero).Magnitude
+ assert(c:request(a,"Attack"))
+ assert(a.attackName=="Air1" or (a.attackName or ""):find("Air"),"no air strike ("..tostring(a.attackName)..")")
+ assert((a.airHold or 0)<=c.now,"the out-of-reach air strike froze the leap")
+ -- (The brake itself is a physics effect: measured in Studio, see
+ -- docs/movement/MOVEMENT_OVERHAUL_AUDIT.md; the harness has no air velocity.)
+ local _=before
+end)
+
+test("walls: a shallow entry runs along the wall, a steep one climbs; the wall jump keeps the run along it",function()
+ -- Real wall planes (Harness.addWall: x = X, facing -X), the server's own step.
+ local function enter(dir,speed)
+  H.clearWalls();local part=H.addWall(10)
+  local c,a,b=H.duel("Leaf","Mirage")
+  c:relocate(a,V.new(8,3,0));c:relocate(b,V.new(-40,3,60))
+  a.move=V.zero;H.step(c,.01) -- the movement donors exist after a step
+  a.locomotion=dir*speed;a.move=dir
+  H.step(c,.01)
+  return c,a,part
+ end
+ -- Shallow (45 degrees in): a run along the wall from the entry speed.
+ local c,a=enter(V.new(1,0,-1).Unit,50)
+ assert(a.wall and a.wall.mode=="run","a shallow entry did not run along the wall ("..tostring(a.wall and a.wall.mode)..")")
+ local z0,y0=a.root.Position.Z,a.root.Position.Y
+ -- Studio: the courtyard wall is a ring of segments; crossing a seam onto the
+ -- next segment is the same wall, not a fall off it.
+ H.clearWalls();H.addWall(10)
+ for _=1,20 do H.step(c,.01) end
+ assert(a.wall~=nil,"the run fell off at a wall seam")
+ assert(a.root.Position.Z<z0-5,string.format("the run did not travel along the wall (%.1f studs)",z0-a.root.Position.Z))
+ assert(a.root.Position.Y>y0+1,"the run stayed on the floor (no arc up the wall)")
+ local early=a.wall.motion and V.new(a.wall.motion.X,0,a.wall.motion.Z).Magnitude or 0
+ for _=1,40 do H.step(c,.01) end
+ local late=a.wall and a.wall.motion and V.new(a.wall.motion.X,0,a.wall.motion.Z).Magnitude or 0
+ assert(early>late,string.format("the wall run does not lose speed (%.1f -> %.1f)",early,late))
+ -- The wall jump keeps most of the run along the wall.
+ assert(a.wall,"the run ended before the jump")
+ local runSpeed=late
+ assert(c:request(a,"Jump") and a.wall==nil,"no wall jump")
+ local v=a.root.AssemblyLinearVelocity
+ assert(-v.Z>=runSpeed*.7,string.format("the wall jump dropped the run along the wall (%.1f of %.1f)",-v.Z,runSpeed))
+ assert(v.Y>20 and v.X<-10,"the wall jump does not leave the wall upward and outward")
+ -- Steep (straight in): a climb, as high as the entry speed carries.
+ local function climb(speed)
+  local c2,a2=enter(V.new(1,0,0),speed)
+  assert(a2.wall and a2.wall.mode=="climb","a straight entry did not climb")
+  local top=a2.root.Position.Y
+  for _=1,300 do H.step(c2,.01);top=math.max(top,a2.root.Position.Y);if not a2.wall then break end end
+  return top
+ end
+ local fast,slow=climb(54),climb(19)
+ assert(fast>slow+3,string.format("the climb height does not follow the entry speed (%.1f vs %.1f)",fast,slow))
+ H.clearWalls()
+end)
+
+test("the client draws a wall run as a run leaning into the wall, not the climb turned sideways",function()
+ local c,a=H.duel("Leaf","Mirage")
+ Motion.reset(a.model)
+ for _=1,30 do frame(a.model,body(a,{wall=true,wallMode="run",wallSide=1,airborne=true,velocity=V.new(0,0,-30),speed=30})) end
+ local run=a.model.joints.Root.Transform
+ Motion.reset(a.model)
+ for _=1,30 do frame(a.model,body(a,{wall=true,airborne=true,velocity=V.new(0,12,0),speed=12})) end
+ local climb=a.model.joints.Root.Transform
+ assert(upY(run)>.6,string.format("the wall run is not upright (up.y %.2f)",upY(run)))
+ assert(upY(climb)<.5,string.format("the climb is not lying on the wall (up.y %.2f)",upY(climb)))
 end)
 
 print(string.format("NinjaDuel movement overhaul: %d PASS (headless; the look and feel are Studio checks)",passed))

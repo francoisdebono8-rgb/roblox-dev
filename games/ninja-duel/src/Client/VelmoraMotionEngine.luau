@@ -1914,6 +1914,18 @@ local function wallTargets(char,actor,dt)
   ra={raise=-38+swing*18,out=18,elbow=34-swing*12},la={raise=-38-swing*18,out=18,elbow=34+swing*12},
   rl={lift=32+swing*30,knee=52-swing*28,ankle=-10-swing*6},ll={lift=32-swing*30,knee=52+swing*28,ankle=-10+swing*6}}),RATE.wall
 end
+-- Running along a wall (movement overhaul, brief §9): upright, leaning into
+-- the wall (wallSide +1 = the wall on the right), legs and arms in a running
+-- cycle; not the climbing pose turned sideways.
+local function wallRunTargets(char,actor,dt)
+	local s=stateOf(char)
+	s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*3.4)%1
+	local swing=math.sin(s.wallPhase*math.pi*2)
+	local side=actor.wallSide or 1
+	return build({root={roll=side*26,pitch=10,y=-.15},torso={roll=side*6,pitch=6,yaw=-swing*6},head={roll=-side*14,pitch=-6},
+		ra={raise=-30+swing*44,out=16,elbow=70},la={raise=-30-swing*44,out=16,elbow=70},
+		rl={lift=40-swing*46,knee=60+swing*30,ankle=-10},ll={lift=40+swing*46,knee=60-swing*30,ankle=-10}}),RATE.wall
+end
 local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
 	s.phase=(s.phase+(dt or 1/60)*3)%1
@@ -2445,7 +2457,7 @@ function Motion.present(char,actor,clock,dt)
 		return "chase"
 	end
 	if subject.wall then
-		local targets,rate=wallTargets(char,subject,dt)
+		local targets,rate=if subject.wallMode=="run" then wallRunTargets(char,subject,dt) else wallTargets(char,subject,dt)
 		apply(char,targets,rate,dt)
 		return "wall"
 	end

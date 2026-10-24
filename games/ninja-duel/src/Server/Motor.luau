@@ -32,8 +32,27 @@ function Motor.detach(a,now,rebound)
 	if not wall then return false end
 	a.wall=nil; a.wallNext=now+Config.Wall.ReattachDelay
 	if rebound then a.wallJumpUntil=now+0.22 end
-	if rebound and a.parkourDonor then a.parkourDonor.rebound(wall.normal)
- else a.root.AssemblyLinearVelocity=wall.normal*12+UP*8 end
+	-- Movement overhaul (Studio): the wall step pins the velocity to zero, so
+	-- the hop's tangential carry was always nothing. Hand it the wall motion
+	-- first: a wall jump keeps the run along the wall.
+	if rebound and wall.motion then a.root.AssemblyLinearVelocity=wall.motion end
+	if rebound and a.parkourDonor then
+		local hopped=a.parkourDonor.rebound(wall.normal)
+		if hopped and wall.mode=="run" and wall.motion then
+			-- Off a run (Studio): the donor hop keeps a capped ~15 studs/s along
+			-- the wall; the ninja jump keeps most of the run's own speed instead.
+			local v=a.root.AssemblyLinearVelocity
+			local run=Vector3.new(wall.motion.X,0,wall.motion.Z)*.85
+			local flatV=Vector3.new(v.X,0,v.Z)
+			local tangential=flatV-wall.normal*flatV:Dot(wall.normal)
+			if run.Magnitude>tangential.Magnitude then a.root.AssemblyLinearVelocity=v-tangential+run end
+		end
+	elseif wall.mode=="run" and wall.motion then
+		-- Running off the end of a wall run: the stride continues along it.
+		local along=Vector3.new(wall.motion.X,0,wall.motion.Z)
+		a.root.AssemblyLinearVelocity=along+wall.normal*6+UP*math.max(0,wall.motion.Y)
+		a.locomotion=along
+	else a.root.AssemblyLinearVelocity=wall.normal*12+UP*8 end
 	a.airborne=true
 	return true
 end
@@ -44,8 +63,18 @@ function Motor.tryWall(a,c,now)
  local _,parkour=donor(a,c)
  local hit=parkour.wallSurface()
 	if not hit or not hit.Instance:GetAttribute("NinjaWall") or math.abs(hit.Normal.Y)>0.18 then return false end
-	if heading.Unit:Dot(-hit.Normal)<0.45 then return false end
-	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime}
+	local into=heading.Unit:Dot(-hit.Normal)
+	if into<0.45 then return false end
+	-- Movement overhaul: the entry decides the run. A shallow entry runs
+	-- along the wall from its own speed (losing it gradually); a steep one
+	-- runs up it, as high as the entry speed carries (brief §9).
+	local v=a.root.AssemblyLinearVelocity
+	local entry=math.max(Vector3.new(v.X,0,v.Z).Magnitude,(a.locomotion or Vector3.zero).Magnitude)
+	local mode=if into<0.8 then "run" else "climb"
+	local along=heading-hit.Normal*heading:Dot(hit.Normal)
+	a.wall={part=hit.Instance,normal=hit.Normal,untilTime=now+Config.Wall.MaxTime,mode=mode,startAt=now,
+		speed=math.max(entry,Config.Wall.SideSpeed),tangent=if along.Magnitude>.05 then along.Unit else nil,
+		rise=math.clamp(entry*.55,12,34)}
 	a.airborne=true;a.airDodgeUsed=false
 	c:cue(a,"WALL RUN • SPACE REBOUND / C DETACH",0.8)
 	return true
@@ -59,20 +88,52 @@ function Motor.stepWall(a,c,dt,now)
 	local p=RaycastParams.new();p.FilterType=Enum.RaycastFilterType.Exclude
 	p.FilterDescendantsInstances={a.model,c.match.effects};p.RespectCanCollide=true
 	local hit=workspace:Raycast(a.root.Position, -wall.normal*Config.Wall.Detect,p)
-	if not hit or hit.Instance~=wall.part or hit.Normal:Dot(wall.normal)<0.72 then
+	if not hit or hit.Normal:Dot(wall.normal)<0.72 or (hit.Instance~=wall.part and not hit.Instance:GetAttribute("NinjaWall")) then
 		Motor.detach(a,now,false);return false
 	end
+	-- Studio: the courtyard wall is a ring of segments. Running along it crosses
+	-- seams; the next segment (same family, a few degrees off) is the same wall.
+	if hit.Instance~=wall.part then wall.part=hit.Instance;wall.normal=hit.Normal end
 	local into=math.max(0,flat(a.move):Dot(-wall.normal))
 	local side=flat(a.move)+wall.normal*into
 	local motion=side*Config.Wall.SideSpeed+UP*Config.Wall.RiseSpeed*math.max(0.2,into)
+	local t=now-(wall.startAt or now)
+	if wall.mode=="run" and wall.tangent then
+		-- Along the wall (re-projected on its surface: the arena wall curves),
+		-- the speed fading, a small arc up then down; spent, the body drops.
+		local n=hit.Normal
+		local tangent=wall.tangent-n*wall.tangent:Dot(n)
+		tangent=if tangent.Magnitude>.05 then tangent.Unit else wall.tangent
+		wall.tangent=tangent
+		local speed=wall.speed*math.exp(-.9*t)
+		if speed<14 or (t>.35 and Motor.grounded(a,c)) then Motor.detach(a,now,false);return false end
+		-- Studio: from a ground entry the old +8 arc never left the floor (a lean
+		-- along the ground; the humanoid snaps back near the floor). A real arc up,
+		-- then down as the speed runs out.
+		motion=tangent*speed+UP*math.max(-12,26-28*t)
+	elseif wall.mode=="climb" then
+		-- Up the wall as high as the entry carried it, sideways a little;
+		-- out of speed, the body falls off.
+		local rise=(wall.rise or Config.Wall.RiseSpeed)-20*t
+		if rise<-6 then Motor.detach(a,now,false);return false end
+		motion=side*Config.Wall.SideSpeed*.5+UP*rise
+	end
+	wall.motion=motion
 	local target=hit.Position+wall.normal*Config.Wall.Clearance+motion*dt
 	if target.Y>wall.part.Position.Y+wall.part.Size.Y*0.5+1 then Motor.detach(a,now,true);return false end
 	local obstacle=workspace:Raycast(a.root.Position,target-a.root.Position,p)
-	if obstacle and obstacle.Instance~=wall.part then Motor.detach(a,now,false);return false end
-	a.root.CFrame=CFrame.lookAt(c:clamp(target),c:clamp(target)-wall.normal)
+	if obstacle and obstacle.Instance~=wall.part and not obstacle.Instance:GetAttribute("NinjaWall") then Motor.detach(a,now,false);return false end
+	if wall.mode=="run" and wall.tangent then
+		-- Running along it: the body faces the run, its side to the wall.
+		local at=c:clamp(target)
+		a.root.CFrame=CFrame.lookAt(at,at+wall.tangent)
+		wall.side=if hit.Normal:Dot(a.root.CFrame.RightVector)<0 then 1 else -1
+	else
+		a.root.CFrame=CFrame.lookAt(c:clamp(target),c:clamp(target)-wall.normal)
+	end
 	a.root.AssemblyLinearVelocity=Vector3.zero
 	a.hum.AutoRotate=false;a.hum:Move(Vector3.zero,false)
-	a.locomotion=side*Config.Wall.SideSpeed
+	a.locomotion=Vector3.new(motion.X,0,motion.Z)
 	return true
 end
 function Motor.travel(a,c,direction,distance)
@@ -227,6 +288,13 @@ function Motor.step(a,c,dt,now)
  elseif a.state=="TechniqueChannel" then limit=Config.ChannelSpeed
  elseif a.state=="Stunned" or a.state=="Defeated" or a.state=="Dodging" or a.state=="Pursuit" or a.state=="Rush" then limit=0
  elseif a.state~="Neutral" then limit=profile.AttackWalkSpeed end
+ -- Movement overhaul (Studio, real keys): a jump-in air strike with no air
+ -- hold (nobody in reach) rides the leap: the attack walk cap braked a
+ -- sprint leap from ~52 to ~12 studs/s mid-swing. It keeps its speed, never
+ -- gains any.
+ if a.airborne and (a.airHold or 0)<=now and ((a.pending and a.pending.spec and a.pending.spec.air) or (a.state=="Recovery" and a.airSwingUsed)) then
+  limit=math.max(limit,(a.locomotion or Vector3.zero).Magnitude)
+ end
  if a.aimIntent then
   -- Chase and slam supply their own continuous motion for this frame.
   Motor.move(a,c,a.aimIntent,dt)

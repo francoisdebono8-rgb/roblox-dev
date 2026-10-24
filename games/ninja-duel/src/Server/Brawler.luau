@@ -409,7 +409,14 @@ function Brawler.start(c,a,name)
   -- and the slam): mashed whiffs used to keep a body hovering a stud above the
   -- floor indefinitely (an AI duel showed four seconds of Air1/Air2 over a
   -- knocked-down opponent).
-  if name=="Slam" or not a.airSwingUsed or (a.airCombo or 0)>=1 then
+  -- Movement overhaul (Studio, real keys): a jump-in swing with nobody in
+  -- reach keeps the jump's momentum and gravity (a sprint leap's air light
+  -- froze at the apex, 58 studs/s to 0); the hold is for an air string at a
+  -- body in reach.
+  local tgt=a.target and a.target.root
+  local gap=tgt and (tgt.Position-a.root.Position)
+  local inReach=gap~=nil and Vector3.new(gap.X,0,gap.Z).Magnitude<=(spec.range or 5)+4 and math.abs(gap.Y)<10
+  if name=="Slam" or (a.airCombo or 0)>=1 or (not a.airSwingUsed and inReach) then
    a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
   end
   a.airSwingUsed=true

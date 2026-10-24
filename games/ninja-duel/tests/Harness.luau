@@ -31,6 +31,7 @@ local function fakePart(position)
  p.attributes={}
  function p:GetAttribute(key) return self.attributes[key] end
  function p:SetAttribute(key,value) self.attributes[key]=value end
+ function p:GetFullName() return self.Name end
  function p:IsDescendantOf(other)
   local cursor=self
   while type(cursor)=="table" do
@@ -65,6 +66,8 @@ Harness.walls={}
 function Harness.addWall(x)
  local part=fakePart(V.new(x+1,20,0));part.Name="Boundary";part.Size=V.new(2,40,400);part.Anchored=true
  part.attributes.NinjaWall=true
+ -- A real parent (the donor parkour walks the ancestry for NoParkour flags).
+ part.Parent={Name="Courtyard",GetAttribute=function() return nil end}
  table.insert(Harness.walls,{x=x,part=part})
  return part
 end

@@ -17,7 +17,9 @@ function Evade.begin(a,c)
  local keep=false
  if a.locked~=false and a.target and a.target.root then
   local to=a.target.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
-  keep=to.Magnitude<40 and to.Magnitude>.1 and direction:Dot(to.Unit)<.5
+  -- Not out of a committed run away (sprint, or travel facing the way it goes,
+  -- Combat:faceLocked): running off, the dodge stays a dash along the run.
+  keep=to.Magnitude<40 and to.Magnitude>.1 and direction:Dot(to.Unit)<.5 and not a.sprinting and not a.facingCommitted
  end
  a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry,keep=keep}
 end
@@ -53,7 +55,13 @@ function Evade.step(a,c,travel)
   travel(a,c,delta,delta.Magnitude)
   -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
-  if e.direction.Magnitude>.1 and not e.keep then c:turnToward(a,e.direction,dt,900) end
+  if e.direction.Magnitude>.1 and not e.keep then c:turnToward(a,e.direction,dt,900)
+  elseif e.keep and a.target and a.target.root then
+   -- Chest held on them through the sidestep / hop away (small corrections).
+   local to=a.target.root.Position-rootPart.Position
+   to=Vector3.new(to.X,0,to.Z)
+   if to.Magnitude>.1 then c:turnToward(a,to,dt,900) end
+  end
   rootPart.AssemblyLinearVelocity=Vector3.zero
  else Evade.finish(a) end
 end
