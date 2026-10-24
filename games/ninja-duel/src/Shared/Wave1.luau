@@ -16,7 +16,7 @@ local fighters={}
 -- step takes him from mirror to mirror round the body, a volley from each.
 fighters.Mirror = {
 	Name = "Haku", FullName = "Haku Yuki", Age = 15, Title = "THE ICE MIRROR", Color = { 150, 206, 240 },
-	Routes = "↑ rising palm  ·  ↓ low sweep  ·  ←→ ice slide (a cut that keeps the string)  ·  heavy after one: senbon to a vital point (slows)  ·  air: drive / spike / switch",
+	Routes = "↑ ice spike under the foot, the palm guides  ·  ↓ low senbon, backing off on ice  ·  ←→ ice slide and a senbon touch  ·  held guard: senbon to a vital point  ·  air: senbon / senbon dive / switch",
 	Description = "Ice Release: senbon at the vital points, needles of water, the mirror step and the Demonic Ice Mirrors.",
 	Health = 115, Chakra = 125, ChakraRegen = 8.4, Speed = 20, SprintScale = 1.12, JumpScale = 1.08, AirControlScale = 1.12, AccelerationScale = 1.12,
 	CombatTravel = 1.06, CombatDamage = 0.9, DashScale = 1.12, GuardStrength = 0.1, PreferredRange = 11,
@@ -28,17 +28,27 @@ fighters.Mirror = {
 	-- Rule: inside his dome, travel from mirror to mirror is free and comes
 	-- back at once (a storm of volleys from every side).
 	Awakening = { Name = "CRYSTAL ICE MIRRORS", Speed = 1.1, Regen = 1.3, Cooldown = 0.7, ZoneFree = true, Color = { 200, 236, 255 } },
-	Motion = { body = "Mirage", weapons = "shuriken", springy = true,
-		borrow = { SenbonStab = "Light2", IceSlide = "CircleStep" },
-		-- Light and upright, weight forward; the right hand up at the face with
-		-- senbon between the fingers, the left open low.
-		stance = {root={y=-.28,pitch=4,yaw=30},torso={pitch=2,yaw=-10},head={pitch=-2,yaw=-16},
-			ra={raise=96,out=-8,twist=40,elbow=118,wrist=-10},la={raise=30,out=-16,twist=-20,elbow=40,wrist=-20},
-			rf={x=.2,z=.62,yaw=36},lf={x=-.08,z=-.6,yaw=-6},breath=.9,tempo=6.8} },
+	-- Bible HAKU.md (DEC-026): his own clips (Client/Wave1Motion); senbon
+	-- held between the fingers and ice born at the wrist and under the feet
+	-- in the transitions (Wave1FX). The dome stays his signature.
+	Motion = { body = "Mirage", clips = "Mirror", weapons = "none", springy = false,
+		-- Fingers on the senbon, arms close to the body, a light front foot,
+		-- three-quarter on.
+		stance = {root={y=-.34,pitch=4,yaw=32},torso={pitch=2,yaw=-10},head={pitch=-2,yaw=-16},
+			ra={raise=70,out=-6,twist=30,elbow=104,wrist=-10},la={raise=36,out=-10,twist=-10,elbow=70,wrist=-10},
+			rf={x=.22,z=.6,yaw=34},lf={x=-.08,z=-.58,yaw=-6},breath=.8,tempo=6},
+		-- The guard: a forearm and the senbon turn the blow aside (no giant shield).
+		guard = {root={y=-.46,pitch=4},torso={pitch=4,yaw=-12},head={pitch=4},
+			ra={raise=96,out=-36,twist=50,elbow=96},la={raise=60,out=-10,twist=10,elbow=96}} },
 	AttackProfile = {
-		Light1={startup=.88,recovery=.88,travel=1.06},Light2={startup=.9,recovery=.88,travel=1.06,kind="palm"},
-		Light3={startup=.96,recovery=.95,impulseZ=48,kind="kick"},Heavy={startup=.96},
-		Launcher={startup=.94,impulseY=54},DashAttack={startup=.88,travel=1.1},Air1={startup=.9},Air2={startup=.92},
+		-- Bible §3/§5 A/C/R and contact distances: L1 senbon .11/.05/.18 at 3.1,
+		-- L2 palm + wrist spike .16/.05/.17 at 3.3, L3 exiting senbon
+		-- .19/.06/.28 at 3.5, Heavy forearm on a spike + senbon push .25/.06/.32 at 3.8.
+		Light1={startup=1.22,active=.42,recovery=.64,travel=1.06,range=5.1,depth=3.5,offset=2.3,width=3.6,contact=3.1,zone="body",kind="strike"},
+		Light2={startup=1.6,active=.42,recovery=.63,travel=1.06,range=5.3,depth=3.7,offset=2.4,width=4.2,contact=3.3,zone="body",kind="palm"},
+		Light3={startup=1.58,active=.43,recovery=1.17,range=5.5,depth=3.9,offset=2.5,width=4.4,contact=3.5,zone="body",kind="strike",impulseZ=48},
+		Heavy={startup=.83,active=.35,recovery=.62,range=5.8,depth=4.1,offset=2.7,width=4.4,contact=3.8,kind="heavy"},
+		Launcher={startup=.94,impulseY=54},DashAttack={startup=.88,travel=1.1,contact=3.2,kind="strike"},Air1={contact=3.2,kind="strike"},Air2={contact=3.4,kind="strike"},
 	},
 	Skin = { 238, 220, 204 }, Hair = { 30, 30, 36 }, Outfit = { 110, 140, 112 },
 	Techniques = {
@@ -108,7 +118,7 @@ fighters.Mist = {
 -- floor spiked, the Willow is a lunge of bone blades. He takes less damage.
 fighters.Bone = {
 	Name = "Kimimaro", FullName = "Kimimaro Kaguya", Age = 13, Title = "THE LAST KAGUYA", Color = { 236, 230, 212 },
-	Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ camellia arc (keeps the string)  ·  heavy after one: bone thrust  ·  air: drive / spike / switch",
+	Routes = "↑ bone forearm rises under the guard  ·  ↓ shin reap backing off  ·  ←→ flank elbow, hip arc  ·  held guard: the bone elbow  ·  air: knee / bone heel / switch",
 	Description = "Shikotsumyaku: bones as blades and armour. Finger bullets, the Camellia sword, the Larch, the Willow.",
 	Health = 140, Chakra = 105, ChakraRegen = 7.4, Speed = 19, SprintScale = 1.1, JumpScale = 1.04, AirControlScale = 1.0, AccelerationScale = 1.04,
 	CombatTravel = 1.02, CombatDamage = 1.0, DashScale = 1.04, GuardStrength = 0.1, PreferredRange = 5,
@@ -120,17 +130,29 @@ fighters.Bone = {
 	-- Awakening: the Kaguya bloodline unleashed. Bone armour over the body (a
 	-- third of every blow, light blows do not stop him) and a deeper bite.
 	Awakening = { Name = "DANCE OF THE CLEMATIS", Speed = 1.04, Damage = 1.1, Regen = 1.2, Cooldown = 0.7, Buff = { Armor = 0.3, Heavy = true }, Color = { 246, 240, 222 } },
-	Motion = { body = "Lion", weapons = "none", springy = false,
-		borrow = { BoneThrust = "Heavy", CamelliaArc = "Light3", WillowCut = "DashAttack" },
-		-- A dancer's guard: upright and calm, the right arm forward along the
-		-- line (the bone blade from the palm), the left back.
-		stance = {root={y=-.36,pitch=2,yaw=34},torso={pitch=0,yaw=-14},head={pitch=-2,yaw=-20},
-			ra={raise=84,out=-4,twist=0,elbow=20,wrist=0},la={raise=20,out=26,twist=-10,elbow=50,wrist=0},
-			rf={x=.26,z=.72,yaw=40},lf={x=-.1,z=-.7,yaw=-6},breath=.6,tempo=5} },
+	-- Bible KIMIMARO.md (DEC-026): his own clips (Client/Wave1Motion); the
+	-- skeleton lives in the blows (Wave1FX): knuckles, elbow, shin and the
+	-- forearm bones grow before the contact and retract after it. The long
+	-- bone sword is the Camellia's only.
+	Motion = { body = "Lion", clips = "Bone", weapons = "none", springy = false,
+		-- Soft hands, elbows a little open, feet offset, the centre low and
+		-- mobile (no blade held out: not a Jedi stance).
+		stance = {root={y=-.5,pitch=6,yaw=24},torso={pitch=4,yaw=-8},head={pitch=-4,yaw=-12},
+			ra={raise=50,out=10,twist=10,elbow=70,wrist=0},la={raise=42,out=14,twist=10,elbow=80,wrist=0},
+			rf={x=.3,z=.55,yaw=30},lf={x=-.2,z=-.6,yaw=-8},breath=.7,tempo=5},
+		-- The guard: the forearms up and crossed, radius and ulna out between
+		-- the arms and the blow.
+		guard = {root={y=-.6,pitch=6},torso={pitch=6,yaw=-4},head={pitch=6},
+			ra={raise=84,out=-30,twist=40,elbow=112},la={raise=80,out=-30,twist=40,elbow=116}} },
 	AttackProfile = {
-		Light1={startup=.94,recovery=.92,range=6.6,kind="slash"},Light2={startup=.94,recovery=.92,range=6.6,kind="slash"},
-		Light3={startup=1.0,recovery=.96,impulseZ=52},Heavy={startup=1.0,range=7},
-		Launcher={startup=.98,impulseY=56},DashAttack={startup=.94,travel=1.06},Air1={startup=.94},Air2={startup=.96},
+		-- Bible §3/§5 A/C/R and contact distances: L1 knuckles .12/.05/.18 at
+		-- 3.2, L2 bone elbow .18/.06/.21 at 3.3, L3 round kick with shin spurs
+		-- .22/.07/.30 at 3.9, Heavy crossed forearms + shoulder .28/.08/.36 at 3.8.
+		Light1={startup=1.33,active=.42,recovery=.64,range=5.2,depth=3.6,offset=2.4,width=4,contact=3.2,zone="body",kind="strike"},
+		Light2={startup=1.8,active=.5,recovery=.78,range=5.3,depth=3.7,offset=2.4,width=4.5,contact=3.3,zone="body",kind="strike"},
+		Light3={startup=1.83,active=.5,recovery=1.25,range=5.9,depth=4.2,offset=2.8,width=5.5,contact=3.9,zone="body",kind="kick",impulseZ=52},
+		Heavy={startup=.93,active=.47,recovery=.69,range=5.8,depth=4.1,offset=2.7,width=5,contact=3.8,kind="heavy"},
+		Launcher={startup=.98,impulseY=56},DashAttack={startup=.94,travel=1.06,contact=3.4,kind="strike"},Air1={contact=3.4,kind="kick"},Air2={contact=3.6,kind="kick"},
 	},
 	Skin = { 240, 226, 212 }, Hair = { 236, 234, 228 }, Outfit = { 236, 232, 224 },
 	Techniques = {
@@ -146,9 +168,11 @@ fighters.Bone = {
 
 local graphs={
 	Mirror={
-		routes={up="Launcher",down="Sweep",side="IceSlide",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		routes={up="FrostLift",down="SenbonLow",side="IceSlide",airUp="AirDrive",airDown="SenbonDive",airSide="AirSwitch"},
 		disengage="Kunai",
-		heavyAfterOne="SenbonStab",
+		-- Bible §5/§6: the heavy after one is the same push; a held guard is
+		-- answered by the senbon's angle (to a vital point).
+		riposte="SenbonStab",
 		stringCancels={MirrorStep=true,WaterNeedles=true},
 		blockCancels={Tool=true},
 		-- Never straight in: a quick re-entry at a wide angle.
@@ -165,9 +189,11 @@ local graphs={
 		reengage={name="mist",speed=.92,arrive=4.2,angle=0,minRange=6,chase=.3,recovery=.24},
 	},
 	Bone={
-		routes={up="Launcher",down="Sweep",side="CamelliaArc",airUp="AirDrive",airDown="AirSpike",airSide="AirSwitch"},
+		routes={up="BoneRise",down="BoneReap",side="CamelliaArc",airUp="AirDrive",airDown="BoneHeel",airSide="AirSwitch"},
 		disengage="Kunai",
-		heavyAfterOne="BoneThrust",
+		-- Bible §5/§6: the heavy after one is the same crossed forearms; a held
+		-- guard is answered with the bone elbow.
+		riposte="BoneElbow",
 		stringCancels={Willow=true,Larch=true},
 		blockCancels={},
 		reengage={name="bone",speed=1.05,arrive=3,angle=12,chase=.28,recovery=.2},
@@ -179,7 +205,13 @@ local function attacks(move,list)
 		-- Haku: a senbon driven into a vital point (the body slows), and a
 		-- low sliding cut on a skin of ice that keeps the string.
 		SenbonStab={{.08,.1,.3,7,2.6,"HitStun",V(0,4,12),.44},{contact=3.4,range=6.4,zone="head",kind="strike",side=-1,twist=34,lean=12,arm=96,step=1.1,riders={Slow={Scale=.7,Time=1.8}}}},
-		IceSlide={{.1,.14,.24,6,3.2,"HitStun",V(0,4,12),.38},{contact=3.4,range=6.5,width=5,zone="legs",kind="slash",side=1,twist=40,lean=16,arm=80,step=1.1,orbit=30,chain=true}},
+		IceSlide={{.1,.14,.24,6,3.2,"HitStun",V(0,4,12),.38},{contact=3.3,range=5.6,width=5,zone="body",kind="strike",side=1,twist=40,lean=10,arm=80,step=1.1,orbit=30,chain=true}},
+		-- Haku's routes (bible HAKU.md §4): one ice spike under the foot and
+		-- the palm guides (a local launcher), a low senbon then a retreat on
+		-- ice, the senbon driven down from the air.
+		FrostLift={{.14,.14,.32,8,1.4,"Launched",V(0,52,6),1.2},{contact=3.4,range=5.8,width=5,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-16,arm=110,step=1.1,breaksShield=true}},
+		SenbonLow={{.12,.12,.34,7,.4,"Knockdown",V(0,6,14),.6},{contact=3.4,range=5.8,width=5,height=3.5,zone="legs",kind="sweep",side=1,twist=30,lean=18,arm=70,step=.9,retreat=1.5}},
+		SenbonDive={{.1,.14,.26,7,1.5,"Spiked",V(0,-68,4),.9},{contact=3.4,range=6,width=5,height=8,zone="head",kind="spike",side=1,twist=10,lean=36,arm=120,step=1,air=true}},
 		-- Zabuza: the cleaver. Long reach (he stops further out), slow, heavy.
 		CleaverRise={{.17,.15,.32,9,1.4,"Launched",V(0,52,6),1.2},{contact=4.8,range=8,width=6,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-26,arm=120,step=1.1,breaksShield=true}},
 		CleaverDrop={{.16,.14,.38,9,.4,"Knockdown",V(0,6,16),.66},{contact=4.6,range=8,width=7,height=3.5,zone="legs",kind="sweep",side=1,twist=30,lean=20,arm=80,step=.9,retreat=1.4}},
@@ -190,7 +222,14 @@ local function attacks(move,list)
 		-- Kimimaro: bone through the guard's gap, the camellia's arc that
 		-- keeps the string, and the willow's lunge.
 		BoneThrust={{.1,.12,.32,10,3.2,"Knockback",V(0,10,58),.5},{contact=3.8,range=7,zone="body",kind="heavy",side=1,twist=24,lean=22,arm=110,step=1.25}},
-		CamelliaArc={{.1,.14,.24,6,1.6,"HitStun",V(0,4,12),.38},{contact=3.6,range=6.8,width=8,zone="body",kind="slash",side=1,twist=70,lean=8,arm=96,step=1.05,orbit=24,chain=true}},
+		CamelliaArc={{.1,.14,.24,6,1.6,"HitStun",V(0,4,12),.38},{contact=3.4,range=5.6,width=6,zone="body",kind="strike",side=-1,twist=60,lean=8,arm=96,step=1.05,orbit=24,chain=true}},
+		-- Kimimaro's routes (bible KIMIMARO.md §4/§6): the forearm bone that
+		-- rises under the guard, the reaping shin that backs off, the bone
+		-- elbow that answers a guard, the bone heel from the air.
+		BoneRise={{.14,.14,.32,8,1.4,"Launched",V(0,54,6),1.2},{contact=3.4,range=5.8,width=5,height=8,zone="chin",kind="launch",side=1,twist=14,lean=-20,arm=120,step=1.1,breaksShield=true}},
+		BoneReap={{.13,.14,.36,8,.4,"Knockdown",V(0,6,16),.66},{contact=3.8,range=6,width=6,height=3.5,zone="legs",kind="sweep",side=1,twist=40,lean=12,arm=80,step=.9,retreat=1.3}},
+		BoneElbow={{.08,.12,.3,8,1.6,"Knockback",V(0,10,46),.5},{contact=3.2,range=5.4,width=5,zone="body",kind="strike",side=-1,twist=50,lean=12,arm=90,step=1.15}},
+		BoneHeel={{.11,.14,.26,8,1.5,"Spiked",V(0,-70,4),.9},{contact=3.6,range=6.2,width=5,height=8,zone="head",kind="spike",side=1,twist=10,lean=40,arm=124,step=1,air=true}},
 		WillowCut={{.05,.22,.42,12,10,"Knockback",V(0,12,52),.55},{contact=3.6,range=7,width=5,zone="body",kind="heavy",side=1,twist=20,lean=30,arm=110,step=1.4}},
 	})
 end

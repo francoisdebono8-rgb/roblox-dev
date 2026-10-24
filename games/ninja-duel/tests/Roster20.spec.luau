@@ -526,4 +526,72 @@ test("Killer Bee (L7-B): own blade clips, the bible's timings and reaches, elbow
  assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the knee kick did not back him off")
 end)
 
+test("Kimimaro (L4-A): own bone clips, the bible's timings and reaches, bone-elbow riposte, shin reap that backs off",function()
+ if not listed.Bone then return end
+ local Motion=H.load("Client/VelmoraMotionEngine")
+ local clips=Motion.CLIPS.Bone
+ assert(clips,"no clip table of his own")
+ for _,name in {"Light1","Light2","Light3","Heavy","BoneRise","CamelliaArc","BoneReap","BoneElbow","BoneHeel","WillowCut","Air1","Air2","DashAttack"} do
+  assert(rawget(clips,name),"Kimimaro has no clip of his own for "..name)
+ end
+ assert(Motion.familyOf("Bone").clips=="Bone","his clips still point at "..tostring(Motion.familyOf("Bone").clips))
+ assert(Motion.familyOf("Bone").guard,"no guard of his own (forearm bones)")
+ local A=H.load("Shared/Attacks")
+ local prof=Fighters.Bone.AttackProfile
+ local want={Light1={.12,.05,.18,3.2},Light2={.18,.06,.21,3.3},Light3={.22,.07,.30,3.9},Heavy={.28,.08,.36,3.8}}
+ for name,w in want do
+  local base=A[name];local p=prof[name]
+  local st,ac,re=base.startup*(p.startup or 1),base.active*(p.active or 1),base.recovery*(p.recovery or 1)
+  assert(math.abs(st-w[1])<.015 and math.abs(ac-w[2])<.015 and math.abs(re-w[3])<.02,string.format("%s A/C/R %.2f/%.2f/%.2f (bible %.2f/%.2f/%.2f)",name,st,ac,re,w[1],w[2],w[3]))
+  assert(p.contact==w[4],name.." contact "..tostring(p.contact).." (bible "..w[4]..")")
+ end
+ local G=MoveGraphs.Bone
+ assert(G.riposte=="BoneElbow","his riposte is not the bone elbow")
+ assert(G.routes.up=="BoneRise" and G.routes.side=="CamelliaArc" and G.routes.down=="BoneReap" and G.routes.airDown=="BoneHeel","routes are not the bible's")
+ local c,a,b=H.duel("Bone","Leaf");place(c,a,b,3.0);b.health=999
+ confirm(c,a)
+ assert(press(c,a,"Heavy"));assert(a.attackName=="Heavy","heavy after one was "..tostring(a.attackName))
+ local c2,a2,b2=H.duel("Bone","Leaf");place(c2,a2,b2,3.0);b2.health=999
+ confirm(c2,a2);confirm(c2,a2)
+ local from=a2.root.Position
+ assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))
+ assert(a2.attackName=="BoneReap","away after two was "..tostring(a2.attackName))
+ run(c2,.7)
+ assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the reap did not back him off")
+end)
+
+test("Haku (L4-A): own senbon clips, the bible's timings and reaches, senbon riposte, low senbon that backs off",function()
+ if not listed.Mirror then return end
+ local Motion=H.load("Client/VelmoraMotionEngine")
+ local clips=Motion.CLIPS.Mirror
+ assert(clips,"no clip table of his own")
+ for _,name in {"Light1","Light2","Light3","Heavy","FrostLift","IceSlide","SenbonLow","SenbonStab","SenbonDive","Air1","DashAttack"} do
+  assert(rawget(clips,name),"Haku has no clip of his own for "..name)
+ end
+ assert(Motion.familyOf("Mirror").clips=="Mirror","his clips still point at "..tostring(Motion.familyOf("Mirror").clips))
+ assert(Motion.familyOf("Mirror").guard,"no guard of his own (forearm and senbon)")
+ local A=H.load("Shared/Attacks")
+ local prof=Fighters.Mirror.AttackProfile
+ local want={Light1={.11,.05,.18,3.1},Light2={.16,.05,.17,3.3},Light3={.19,.06,.28,3.5},Heavy={.25,.06,.32,3.8}}
+ for name,w in want do
+  local base=A[name];local p=prof[name]
+  local st,ac,re=base.startup*(p.startup or 1),base.active*(p.active or 1),base.recovery*(p.recovery or 1)
+  assert(math.abs(st-w[1])<.015 and math.abs(ac-w[2])<.015 and math.abs(re-w[3])<.02,string.format("%s A/C/R %.2f/%.2f/%.2f (bible %.2f/%.2f/%.2f)",name,st,ac,re,w[1],w[2],w[3]))
+  assert(p.contact==w[4],name.." contact "..tostring(p.contact).." (bible "..w[4]..")")
+ end
+ local G=MoveGraphs.Mirror
+ assert(G.riposte=="SenbonStab","his riposte is not the senbon")
+ assert(G.routes.up=="FrostLift" and G.routes.side=="IceSlide" and G.routes.down=="SenbonLow" and G.routes.airDown=="SenbonDive","routes are not the bible's")
+ local c,a,b=H.duel("Mirror","Leaf");place(c,a,b,3.0);b.health=999
+ confirm(c,a)
+ assert(press(c,a,"Heavy"));assert(a.attackName=="Heavy","heavy after one was "..tostring(a.attackName))
+ local c2,a2,b2=H.duel("Mirror","Leaf");place(c2,a2,b2,3.0);b2.health=999
+ confirm(c2,a2);confirm(c2,a2)
+ local from=a2.root.Position
+ assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))
+ assert(a2.attackName=="SenbonLow","away after two was "..tostring(a2.attackName))
+ run(c2,.7)
+ assert(flat(a2.root.Position-b2.root.Position).Magnitude>flat(from-b2.root.Position).Magnitude,"the low senbon did not back him off")
+end)
+
 print(string.format("NinjaDuel roster 20 (locked ten): %d PASS (headless mechanics; feel and looks are Studio checks)",passed))

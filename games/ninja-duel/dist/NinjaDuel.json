@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "ae3701bdfc39165c0221f8ae12838a9d169280bb108f8d87bd4048e301a26f38",
+  "sha256": "00533749fa99cc57910099df070a862a5358f5cc83dea17bb7ef45507d300538",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -20,8 +20,8 @@
     "src/Client/UI.luau": "615e5183c8cc30ebb5908382ad0e44c0a2caa0fdf4e65226366bf110202c2dfa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
     "src/Client/VelmoraMotionEngine.luau": "40706e9614fc1aadd74a8816ee33fbf65496fad7e81bad4cfa9963f4646440ec",
-    "src/Client/Wave1FX.luau": "ec6c0a3f2309ae688ddeae9a7d47037cebe675a31d8cc14bc68a53dcf79ae502",
-    "src/Client/Wave1Motion.luau": "9d2aa8846f2aefc94877db74ddd4c32d0fabff1ccfcd01dddd759ab6b173e58f",
+    "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
+    "src/Client/Wave1Motion.luau": "cc1a082bdf6a8d65ec1637962136d7fba2b6f333b0a14f82dbd46637f9513954",
     "src/Client/Wave2FX.luau": "201da5528a60236e6e480d6a02e64013025d98c2b82b196be9cc1bbed3770747",
     "src/Client/Wave3FX.luau": "dc405755d53b76189b4b04e782697008d4f55f6198c0d8b005ec5bd8407b955f",
     "src/Client/Wave3Motion.luau": "5010f78fd7b83577f08323fd5f25d33ef7b3bb9a5b27e669ba419c35b5eb793c",
@@ -81,14 +81,14 @@
     "src/Shared/RosterStaging.luau": "ca70b3f34cb58ff208bb5fc5cbdaf88b7a01f00fdf20bb463d6d862c0d02498f",
     "src/Shared/Rules.luau": "07708aa2ac82ee9803691412dbd2ceb02044f4c265a4c70425eb1f9c790d4f74",
     "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0",
-    "src/Shared/Wave1.luau": "f36d38930c46aab82d1c29e5a965965bee63a354fd72d3ffb3ef922233757b58",
+    "src/Shared/Wave1.luau": "b550affe8f95cb8e14475c1a834ba8c30dbee5e22f0231813389a8029a44c714",
     "src/Shared/Wave2.luau": "a38051ac7cab73c757e0a57d5f0969730b1d48ace5846094dadbc4c422979987",
     "src/Shared/Wave3.luau": "0110e4f77e3dcf86bcfe97e1fa3a5c66469dc49d83a7d53d42d0017b58156600",
     "src/Shared/Wave4.luau": "8e7e6a4da1eed328bdd8ec66a1e591c4fe53ab7017c7a60b6fa2a07842898a8e"
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "45f4dc3f045afde0ccec32614b31805ecf2ea3b9ffcdee99b2c63fabbae0e700",
+  "buildFingerprint": "217c2e049bbfb72ab2f99862c181a5fcfea1b10d646fc88ca68ac770410aeff4",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -114,122 +114,9 @@
     18342131933
   ],
   "automatedQA": {
-    "status": "PASS",
-    "failed": [],
-    "suites": {
-      "tests/Input.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel input/PS5: 16 PASS (callbacks + remote validation; hardware feel not simulated)"
-      },
-      "tests/Rules.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel pure policy: 7 PASS"
-      },
-      "tests/Combat.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel headless combat/migration: 17 PASS (geometry adapter; native QA still required)"
-      },
-      "tests/Sequences.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel sequence replay: 15 PASS (headless geometry adapter; native QA still required)"
-      },
-      "tests/Regression.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel regressions: 28 PASS"
-      },
-      "tests/Feedback.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel feedback policy: 5 PASS"
-      },
-      "tests/Animation.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel animation presentation: 20 PASS"
-      },
-      "tests/Branches.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel move graphs: 13 PASS"
-      },
-      "tests/Phase4.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel phase 4 depth: 19 PASS"
-      },
-      "tests/Neji.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Neji prototype: 8 PASS"
-      },
-      "tests/Systems.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel final systems: 5 PASS"
-      },
-      "tests/Tools.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel shared tools: 4 PASS"
-      },
-      "tests/Sasuke.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Sasuke prototype: 7 PASS"
-      },
-      "tests/Gaara.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Gaara prototype: 13 PASS"
-      },
-      "tests/Lee.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Rock Lee stress test: 26 PASS"
-      },
-      "tests/Online.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel online 1v1: 17 PASS (server lifecycle/authority; replication, latency and two-client Studio still required)"
-      },
-      "tests/Progression.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel progression: 49 PASS (headless: tree data, validation and combat hooks; Studio feel not judged)"
-      },
-      "tests/Profiles.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel progression profiles: 11 PASS (in-memory store; real DataStore adapter not exercised)"
-      },
-      "tests/Preparation.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel technical preparation: 7 PASS"
-      },
-      "tests/DevInfra.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel dev tools: 14 PASS (chakra lab gated: runtime modules absent)"
-      },
-      "tests/ComboModel.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel combo model: 25 PASS"
-      },
-      "tests/Chakra.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel chakra systemic: 25 PASS (headless rules, state and timing; the look is a Studio check)"
-      },
-      "tests/Identity.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel identity pass: 57 PASS"
-      },
-      "tests/Naruto.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Naruto (several bodies): 33 PASS"
-      },
-      "tests/Temari.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel Temari: 36 PASS"
-      },
-      "tests/Roster.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel roster Tier A: 8 PASS (20 fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)"
-      },
-      "tests/Roster20.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel roster 20 (locked ten): 21 PASS (headless mechanics; feel and looks are Studio checks)"
-      },
-      "tests/Convergence.spec.luau": {
-        "exit": 0,
-        "summary": "NinjaDuel convergence (lifecycle, composition, reach): 14 PASS (headless)"
-      }
-    }
+    "status": "SKIPPED",
+    "reason": "luau/lune not available in this environment",
+    "suites": {}
   },
   "nativeQA": "PENDING",
   "visualAcceptance": "PENDING",
