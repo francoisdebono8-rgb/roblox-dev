@@ -1262,7 +1262,11 @@ function Combat:updateActor(a,dt)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
- if a.state~="Dodging" then a.evade=nil end
+ -- A dodge that ends free hands its speed back (Evade.finish); one cut by a
+ -- hit, an attack or a technique simply stops.
+ if a.state~="Dodging" and a.evade then
+  if a.state=="Neutral" and not a.reaction then Evade.finish(a) else a.evade=nil end
+ end
 	self:stepThrow(a)
 	-- A guard key still held through a hit, a recovery or a throw comes back up
 	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
@@ -1883,7 +1887,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.evade=nil;a.evadeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil

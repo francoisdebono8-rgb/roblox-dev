@@ -185,6 +185,12 @@ local function updateMovement(deltaTime)
 	end
 
 	local desiredWalkSpeed = (sprinting and SPRINT_SPEED or WALK_SPEED)*(a.speedScale or 1)
+	-- A finished dodge hands its exit speed to the ground locomotion (the
+	-- velocity it left the body with), so the next step continues it.
+	if a.evadeCarry and not blocked then
+		if grounded then groundLocomotion=horizontalOf(a.evadeCarry) end
+		a.evadeCarry=nil
+	end
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero

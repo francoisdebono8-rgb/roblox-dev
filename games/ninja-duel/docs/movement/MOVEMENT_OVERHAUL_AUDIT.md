@@ -30,8 +30,25 @@ Mission: [2026-10-24-movement-overhaul-reference](../archive/requests/2026-10-24
 
 `observed element -> mechanical principle -> current Ninja Duel state -> adaptation proposed`
 
+Videos watched 24/10 (contact sheets at 2–3 fps, then 6–15 fps on the key moments). User's note: the flips are not only evasions; they illustrate how the whole movement reads as ninja, especially in video 1.
+
 | Observed (video, timecode) | Principle | Current state | Proposed adaptation |
 |---|---|---|---|
-| _pending videos_ | | | |
+| V1 0:00.6–0:01.6, 0:04–0:06: low crouched base, the body leans hard into each short burst, arms trail behind, then plants low | Weight goes first; the centre stays low between bursts | Gait is upright-ish; burst exists on the server (BurstWindow) but the body barely leans | Later pass: deeper lean on burst and on the start of a sprint (gait), not in this first commit |
+| V1 0:07.9–0:08.3: mid-run front flip, body upside down, comes out straight into a strike on the opponent | A rotation carries travel into the attack: the flip is the approach | No travel rotation exists; jumps only lean | **Front flip on a chained launched jump** (second sprint jump soon after a landing), only for acrobatic fighters |
+| V1 0:22.4–0:23.2: after the exchange, a high back flip out of contact, full 360°, then a crouched landing, arms spread | Leaving contact is a readable arc; the landing absorbs low with arms out for balance | Backward jump = sit back with the guard up; landing = generic crouch | **Back flip on a backward jump with momentum**; **ninja landing** (deep crouch, arms out) after a trick |
+| V1 0:26.1–0:26.6: burst, then a sideways cartwheel (body horizontal) and a low recovery | Changing angle is done with the whole body | Side dodge = a lean and a slide | **Side flip / cartwheel on a side jump with momentum**, and **cartwheel / back handspring on side / back dodges** for the most acrobatic fighters |
+| V2 0:00–0:00.7: running straight up a building, body perpendicular to the wall, then a flip over the top edge onto the roof | The wall exit is a rotation that turns vertical travel back into horizontal travel | Wall cling exits with a plain rebound | **Wall flip on leaving a wall** (rebound or top) |
+| V2 0:01–0:09: rooftop to rooftop: takeoff from the running stride, long arcs with arms back and legs tucked, a burst in the air, landing straight back into the run | Momentum is kept from run to jump to landing; most long jumps are NOT flips | Server already keeps takeoff momentum and the running landing keeps the stride; air pose already sweeps the arms back on a running jump | Keep: plain long jumps stay leaps. Flips are reserved to the contexts above so they stay meaningful |
+| V2 0:17–0:29: running up a slope with chakra feet, fighting on the move | Locomotion and combat share the same stride | Dodge zeroes velocity, so a dodge breaks the run | **Dodge keeps its momentum** on exit (server), so dodge → run / dodge → attack flows |
+
+Who flips (brief §17): an `acro` level per fighter in the motion engine's data (like GAIT). Lee, Sasuke, Minato, Naruto, Shisui highest; Itachi, Nagato, Sasori, Zabuza, Gaara low (Gaara never). Below a fighter's threshold the same context keeps the existing lean, so not everyone is equally acrobatic.
 
 Planned order (brief §22) once the map exists: continuity -> momentum -> jump/landing -> dodge/dash -> wall-run/wall-jump -> moving attacks -> polish -> camera -> per-fighter expression -> VFX. Everything stays inside the existing systems above (no second locomotion engine), with server combat authority and the confirmed-hit invariant preserved.
+
+## Pass 1 — delivered (24/10)
+
+- **Client body** (`Client/VelmoraMotionEngine.luau`, acrobatics block): per-fighter `ACRO` level (data, like GAIT) and per-trick thresholds `TRICK_AT`. A tracker (`trickStep`, every presented frame) notices takeoffs from the ground or from a wall and landings, and picks: back flip (backward jump with momentum), side flip (side jump with momentum), front flip (sprint jump chained off a landing within 0.45 s, never twice in a row), wall flip (leaving a wall). Duration from the real airtime (0.36–0.62 s). The body tucks at the top (side flip: arms open) and turns 360° around a pivot near the belly; any strike, technique, hit, dodge or chase cancels it at once. After a flip: the ninja landing (deep crouch on spread feet, arms out). Dodges: cartwheel (side) or back handspring (back) from level 0.75; forward stays a low slip. Presentation only.
+- **Server momentum** (`Server/BanglaEvade.luau` `Evade.finish`, `Place1Movement`, `Combat`): a dodge that ends free hands its speed back (at least a running pace along the dodge, at most the sprint, never more than it came in with plus a run), so dodge → run / dodge → attack no longer stops dead. Without input the carry fades in a few frames.
+- **Tests**: `tests/Movement.spec.luau` (9 cases, including a control: without the server change the run drops to ~10 studs/s at the dodge exit).
+- **Not yet done** (next passes, brief order): sprint-start lean and lower ninja run; air attacks that use the takeoff momentum; landing variants by fall weight; wall-run horizontal vs vertical and tangential wall-jump; per-fighter dash expression; camera. Studio check of pass 1 pending.

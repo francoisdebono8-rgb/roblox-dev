@@ -3339,7 +3339,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">cf7b1fb620becfc03a26ea232db600eb5a7b6ed2e70c25ccd2df9fbdd657a1de</string>
+          <string name="Value">47d74e4232bb38f9a5b23a06f74cfe8939a00e91b2fda47687ea55f4111cdaf7</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -4320,7 +4320,25 @@ function Evade.begin(a,c)
  local direction=if a.move.Magnitude&gt;.1 then a.move.Unit else a.root.CFrame.RightVector
  local evadeDistance=14*(a.def.DashScale or 1)
  local evadeDuration=.32
- a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction}
+ -- Movement overhaul (docs/movement/MOVEMENT_OVERHAUL_AUDIT.md): the speed the
+ -- body had going in is handed back on the way out, so a dodge inside a run
+ -- flows back into the run (or an attack) instead of stopping dead.
+ local v=a.root.AssemblyLinearVelocity
+ local entry=math.max(Vector3.new(v.X,0,v.Z).Magnitude,(a.locomotion or Vector3.zero).Magnitude)
+ a.evade={startPosition=a.root.Position,targetPosition=a.root.Position+direction*evadeDistance,startTime=c.now,duration=evadeDuration,direction=direction,entry=entry}
+end
+-- Exit with momentum: at least a running pace along the dodge, at most the
+-- sprint, never more than it came in with plus a run (no free speed). Called
+-- when the evade runs out and when the dodge state ends first.
+function Evade.finish(a)
+ local e=a.evade;if not e then return end
+ a.evade=nil
+ local walk=(a.def.Speed or 18)
+ local carry=math.min(math.max(e.entry or 0,walk),walk+(e.entry or 0),45*(a.def.SprintScale or 1))
+ local out=e.direction*carry
+ a.evadeCarry=out
+ local v=a.root.AssemblyLinearVelocity
+ a.root.AssemblyLinearVelocity=Vector3.new(out.X,v.Y,out.Z)
 end
 function Evade.step(a,c,travel)
  local e=a.evade;if not e then return end
@@ -4343,7 +4361,7 @@ function Evade.step(a,c,travel)
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
   if e.direction.Magnitude&gt;.1 then c:turnToward(a,e.direction,dt,900) end
   rootPart.AssemblyLinearVelocity=Vector3.zero
- else a.evade=nil end
+ else Evade.finish(a) end
 end
 return Evade
 </ProtectedString>
@@ -9133,7 +9151,11 @@ function Combat:updateActor(a,dt)
 		end
 	end
 	if self.match.phase~="Duel" then a.hum:Move(Vector3.zero); return end
- if a.state~="Dodging" then a.evade=nil end
+ -- A dodge that ends free hands its speed back (Evade.finish); one cut by a
+ -- hit, an attack or a technique simply stops.
+ if a.state~="Dodging" and a.evade then
+  if a.state=="Neutral" and not a.reaction then Evade.finish(a) else a.evade=nil end
+ end
 	self:stepThrow(a)
 	-- A guard key still held through a hit, a recovery or a throw comes back up
 	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
@@ -9754,7 +9776,7 @@ function Combat:clear(preserveAnimations)
 		Bangla.close(a.pending); Motor.reset(a);
 		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
-		a.evade=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
+		a.evade=nil;a.evadeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
 		a.rotationUntil=0;a.flurryUntil=0;a.sealedUntil=0;a.tenketsu=0;a.tenketsuUntil=0
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
@@ -14631,6 +14653,12 @@ local function updateMovement(deltaTime)
 	end
 
 	local desiredWalkSpeed = (sprinting and SPRINT_SPEED or WALK_SPEED)*(a.speedScale or 1)
+	-- A finished dodge hands its exit speed to the ground locomotion (the
+	-- velocity it left the body with), so the next step continues it.
+	if a.evadeCarry and not blocked then
+		if grounded then groundLocomotion=horizontalOf(a.evadeCarry) end
+		a.evadeCarry=nil
+	end
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
@@ -28592,6 +28620,85 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
 end
+-- ------------------------------------------------------------ acrobatics
+-- Movement overhaul (docs/movement/MOVEMENT_OVERHAUL_AUDIT.md, reference
+-- videos of 24/10): full-body rotations are part of the ninja's travel, not
+-- decoration. The context picks them (takeoff direction and speed, a chained
+-- launched jump, leaving a wall, a dodge) and each fighter's acrobatic level
+-- decides who does them: below the threshold the same context keeps the
+-- plain lean. Presentation only: the server trajectory is never touched.
+local ACRO={Leaf=1,Lion=.85,Flicker=.85,Flashstep=.8,Legion=.8,Mirror=.7,Rival=.65,Bone=.6,Copycat=.55,Ink=.55,
+	GentleFist=.5,Professor=.5,Serpent=.45,Sapling=.45,Clay=.4,Mirage=.35,Puppet=.2,Mist=.15,Rinnegan=.1,Sand=0}
+-- Minimum level per trick: a back flip out of contact, a side flip on a side
+-- jump, a front flip on a chained sprint jump, a flip off a wall, a cartwheel
+-- or back handspring as a dodge.
+local TRICK_AT={back=.5,side=.6,front=.7,wall=.4,dodge=.75}
+local DODGE_TIME=.32
+local function acroOf(id) return ACRO[id or ""] or .5 end
+Motion.ACRO=ACRO
+Motion.TRICK_AT=TRICK_AT
+local function chooseTrick(char,actor,s,fromWall)
+	local level=acroOf(actor.fighterId)
+	local v=actor.velocity or Vector3.zero
+	-- Only a real takeoff turns: walking off a ledge or being knocked up does not.
+	if not fromWall and v.Y&lt;12 then return nil end
+	local air=2*math.max(v.Y,10)/math.max(workspace.Gravity,1)
+	local dur=math.clamp(air*.72,.36,.62)
+	if fromWall then
+		if level&lt;TRICK_AT.wall then return nil end
+		return {axis="pitch",sign=-1,dur=math.clamp(air*.7,.36,.55),at=elapsedTime,kind="wall"}
+	end
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local flatV=planar(v)
+	if not root or flatV.Magnitude&lt;14 then return nil end
+	local lv=root.CFrame:VectorToObjectSpace(flatV.Unit)
+	local forward,side=-lv.Z,lv.X
+	if forward&lt;-.55 and level&gt;=TRICK_AT.back then return {axis="pitch",sign=-1,dur=dur,at=elapsedTime,kind="back"} end
+	if math.abs(side)&gt;.6 and level&gt;=TRICK_AT.side then return {axis="roll",sign=if side&gt;0 then 1 else -1,dur=dur,at=elapsedTime,kind="side"} end
+	-- A front flip only on a launched jump chained off a landing, and never two
+	-- in a row: leap, flip, leap... (most long jumps stay leaps, as in the references).
+	if forward&gt;.6 and flatV.Magnitude&gt;=28 and level&gt;=TRICK_AT.front and elapsedTime-(s.landedAt or -9)&lt;.45 and not s.lastJumpFlipped then
+		return {axis="pitch",sign=1,dur=dur,at=elapsedTime,kind="front"}
+	end
+	return nil
+end
+-- Called once per presented frame: notices takeoffs (from the ground or a
+-- wall) and landings, and cancels a rotation the moment the body commits to
+-- something else (a strike, a technique, a dodge, a chase, a hit).
+local function trickStep(char,actor)
+	local s=stateOf(char)
+	local onWall=actor.wall==true
+	local air=actor.airborne==true and not onWall and actor.reaction==nil and (actor.health or 1)&gt;0
+	if air and (not s.inAir or s.onWall) then
+		s.trick=chooseTrick(char,actor,s,s.onWall==true)
+		if not s.onWall then s.lastJumpFlipped=s.trick~=nil and s.trick.kind=="front" end
+	elseif not air and s.inAir and not onWall then
+		s.landedAt=elapsedTime
+		if s.trick then s.trickEndAt=elapsedTime end
+		s.trick=nil
+	end
+	s.inAir=air;s.onWall=onWall
+	local tr=s.trick
+	if tr then
+		local committed=actor.attackName~=nil or actor.castId~=nil or actor.reaction~=nil
+			or actor.state=="Dodging" or actor.state=="Pursuit" or actor.state=="Rush"
+		if committed then s.trick=nil
+		elseif elapsedTime-tr.at&gt;=tr.dur then s.trick=nil;s.trickEndAt=elapsedTime end
+	end
+	return s.trick
+end
+Motion.trickOf=function(char) return stateOf(char).trick end
+-- The rotation itself, about a pivot near the belly so the body turns around
+-- its own centre; eased in and out, fastest at the top of the arc.
+local function rotate(targets,axis,sign,p,lift)
+	local e=smooth(p)
+	local angle=rad(360*e)*sign
+	local turn=if axis=="pitch" then ANG(-angle,0,0) else ANG(0,0,-angle)
+	local pivot=CF(0,.35,0)
+	local out=table.clone(targets)
+	out.Root=CF(0,(lift or 0)*math.sin(math.pi*p),0)*pivot*turn*pivot:Inverse()*(targets.Root or IDENTITY)
+	return out
+end
 local function airTargets(char,actor,fighterId)
 	local rise=(actor.velocity and actor.velocity.Y or 0)/70
 	local minato=springy(fighterId)
@@ -28638,6 +28745,26 @@ local function airTargets(char,actor,fighterId)
 		spec.la.raise+=(-52-spec.la.raise)*travel;spec.la.elbow+=(16-spec.la.elbow)*travel
 		spec.rl.lift+=(68-spec.rl.lift)*travel;spec.rl.knee+=(70-spec.rl.knee)*travel
 		spec.ll.lift+=(-36-spec.ll.lift)*travel;spec.ll.knee+=(28-spec.ll.knee)*travel
+	end
+	local tr=stateOf(char).trick
+	if tr then
+		-- A flip: the body gathers into a tuck at the top of the rotation (a
+		-- side flip opens the arms instead), then opens again for the landing.
+		local p=math.clamp((elapsedTime-tr.at)/tr.dur,0,1)
+		local w=math.sin(math.pi*p)
+		local function to(part,key,value) part[key]=(part[key] or 0)+(value-(part[key] or 0))*w end
+		if tr.axis=="pitch" then
+			to(spec.ra,"raise",64);to(spec.ra,"out",14);to(spec.ra,"elbow",104)
+			to(spec.la,"raise",60);to(spec.la,"out",14);to(spec.la,"elbow",108)
+			to(spec.rl,"lift",118);to(spec.rl,"knee",140);to(spec.ll,"lift",108);to(spec.ll,"knee",142)
+		else
+			to(spec.ra,"raise",10);to(spec.ra,"out",86);to(spec.ra,"elbow",12)
+			to(spec.la,"raise",10);to(spec.la,"out",86);to(spec.la,"elbow",12)
+			spec.rl.out=(spec.rl.out or 0)+30*w;spec.ll.out=(spec.ll.out or 0)+30*w
+			to(spec.rl,"lift",40);to(spec.rl,"knee",50);to(spec.ll,"lift",20);to(spec.ll,"knee",40)
+		end
+		spec.root.pitch=spec.root.pitch*(1-w);spec.root.roll=(spec.root.roll or 0)*(1-w)
+		return rotate(build(spec),tr.axis,tr.sign,p,.25),RATE.attack
 	end
 	return build(spec),RATE.air
 end
@@ -28853,6 +28980,22 @@ local function dodgeTargets(char,actor,t)
 	local forward=math.clamp(-localMotion.Z/14,-1,1)
 	local side=math.clamp(localMotion.X/14,-1,1)
 	local push=1-smooth(math.clamp((t or 1)/DASH_PUSH,0,1))
+	-- The most acrobatic bodies turn a side dodge into a cartwheel and a back
+	-- dodge into a back handspring (hands toward the floor, legs over); the
+	-- others keep the low slide. Forward stays a low slip off the line.
+	if acroOf(actor.fighterId)&gt;=TRICK_AT.dodge and (math.abs(side)&gt;math.abs(forward)*.8 or forward&lt;-.3) then
+		local p=math.clamp((t or 0)/DODGE_TIME,0,1)
+		local w=math.sin(math.pi*p)
+		if math.abs(side)&gt;math.abs(forward)*.8 then
+			local s=if side&lt;0 then -1 else 1
+			local spec={root={y=-.4},torso={},head={},ra={raise=170*w,out=40,elbow=10},la={raise=170*w,out=40,elbow=10},
+				rl={lift=10,out=40+40*w,knee=10},ll={lift=10,out=40+40*w,knee=10}}
+			return rotate(build(spec),"roll",s,p,.4),RATE.attack
+		end
+		local spec={root={y=-.5},torso={pitch=-10*w},head={pitch=20*w},ra={raise=150+20*w,out=24,elbow=10},la={raise=150+20*w,out=24,elbow=10},
+			rl={lift=40*w,knee=30},ll={lift=60*w,knee=50}}
+		return rotate(build(spec),"pitch",-1,p,.4),RATE.attack
+	end
 	local glide,load
 	if math.abs(side)&gt;math.abs(forward)*.8 then
 		local s=if side&lt;0 then -1 else 1
@@ -28873,9 +29016,14 @@ local function dodgeTargets(char,actor,t)
 	if push&lt;=0 then return build(glide),RATE.defense end
 	return blend(build(glide),build(load),push),RATE.defense*1.4
 end
-local function landTargets(fighterId,strength)
+local function landTargets(fighterId,strength,ninja)
 	local base=stance(fighterId)
 	local absorb=math.clamp(strength,0,1)
+	if ninja then
+		return build(merge(base,{root={y=base.root.y-1.05*absorb,pitch=base.root.pitch+22*absorb},torso={pitch=base.torso.pitch+16*absorb},head={pitch=-14*absorb},
+			ra={raise=34,out=72*absorb+(base.ra.out or 0)*(1-absorb),elbow=18,twist=0},la={raise=30,out=70*absorb+(base.la.out or 0)*(1-absorb),elbow=20,twist=0},
+			rf={x=(base.rf and base.rf.x or 0)+.35*absorb},lf={x=(base.lf and base.lf.x or 0)-.35*absorb}})),RATE.defense
+	end
 	return build(merge(base,{root={y=base.root.y-.75*absorb,pitch=base.root.pitch+14*absorb},torso={pitch=base.torso.pitch+12*absorb},
 		ra={raise=base.ra.raise-10*absorb,out=base.ra.out+18*absorb},la={raise=base.la.raise-10*absorb,out=base.la.out+18*absorb}})),RATE.defense
 end
@@ -29102,6 +29250,7 @@ function Motion.present(char,actor,clock,dt)
 		return "ko"
 	end
 	local memo=stateOf(char)
+	trickStep(char,subject)
 	if subject.state~=memo.lastState then
 		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end
 		memo.lastState=subject.state
@@ -29261,6 +29410,14 @@ function Motion.present(char,actor,clock,dt)
   -- deepest crouch until the flag disappears used to pop the body upright.
   local phase=subject.landingPhase
   local load=if phase==nil then 1 elseif phase&lt;.25 then .55+.45*smooth(phase/.25) else 1-smooth((phase-.25)/.75)
+		-- Coming out of a flip: the ninja landing, low on spread feet with the
+		-- arms out for balance (the references' crouched touch-down), then the
+		-- run picks up from it; the server keeps the travel meanwhile.
+		if elapsedTime-(memo.trickEndAt or -9)&lt;.6 then
+			local targets,rate=landTargets(subject.fighterId,load,true)
+			apply(char,targets,rate,dt)
+			return "landing"
+		end
 		if not subject.landStrong and not subject.airborne and (subject.speed or 0)&gt;6 then
 			-- A running landing keeps its stride and momentum: the hips absorb the
 			-- drop for a few frames instead of the body stopping in a crouch.
