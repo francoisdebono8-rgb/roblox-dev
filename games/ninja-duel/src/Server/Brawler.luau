@@ -1202,9 +1202,28 @@ function Brawler.step(c,a,dt)
     velocity=Vector3.new(0,math.max(velocity.Y-30*dt,-11),0)
     local hit=Motor.flight(a,c,velocity*dt)
     if hit and hit.Normal.Y>.5 then velocity=Vector3.zero;a.airborne=false;a.landedAt=c.now end
+   elseif airReactions[a.reaction] and not a.airborne and velocity.Y<=0 then
+    -- Down on the floor (landed, or thrown along it): no more flight, a short
+    -- skid on the back that dies out instead of gliding at standing height.
+    local skid=Vector3.new(velocity.X,0,velocity.Z)
+    if skid.Magnitude>.05 then Motor.travel(a,c,skid,skid.Magnitude*dt) end
+    velocity=skid*math.exp(-dt*7)
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
+    -- The real floor sits three studs under the root and the swept ray only
+    -- reaches 1.4 past the frame's travel: a low flight (a knockback along the
+    -- ground, a spike from close above) never touched it, so the body glided
+    -- at standing height for the whole reaction and a spike never bounced.
+    if not hit and velocity.Y<0 then
+     local params=c:rayParams(true);params.RespectCanCollide=true
+     local floor=workspace:Raycast(a.root.Position,Vector3.new(0,-3.6,0),params)
+     if floor and floor.Normal.Y>.5 then
+      -- Set down on the floor itself, not left hanging where the probe caught it.
+      a.root.CFrame=CFrame.new(Vector3.new(a.root.Position.X,floor.Position.Y+3,a.root.Position.Z))*a.root.CFrame.Rotation
+      hit=floor
+     end
+    end
     if hit then
      if hit.Normal.Y>.5 and velocity.Y<0 and a.reaction=="Spiked" and not a.groundBounced then
       -- Ground bounce: the spike drives the body into the floor and it pops
@@ -1222,7 +1241,8 @@ function Brawler.step(c,a,dt)
       -- presentation plays the grounded pose instead of an air reaction.
       a.airborne=false
       a.landedAt=c.now
-      velocity=Vector3.zero
+      -- A body thrown along the floor keeps some of its run as a skid.
+      velocity=Vector3.new(velocity.X,0,velocity.Z)*.6
      elseif math.abs(hit.Normal.Y)<.3 and Brawler.splatSurface(hit.Instance) and -velocity:Dot(hit.Normal)>=Config.Wall.SplatSpeed and (a.wallSplats or 0)<2 then
       Brawler.splat(c,a,hit)
       if c.match.phase~="Duel" or not a.reaction then return true end

@@ -58,9 +58,11 @@ local function newGround() return groundPart end
 -- Shared world stub: raycasts return real ground at Y=0 so grounded logic works.
 local workspace={Gravity=140}
 Harness.workspace=workspace
--- Floor plane at y=0. A swept ray answers when the body's swept extent reaches
--- the plane, matching how the real arena floor stops a descending root.
-local FLOOR_REACH=1.9
+-- Floor plane at y=0, exactly where the Studio arena floor is (a standing root
+-- sits 3 studs above it, measured in Studio). A ray answers only when it really
+-- reaches the plane: the old 1.9-stud reach let a short swept ray "land" a low
+-- body that in Studio never touched the floor and glided at standing height.
+local FLOOR_REACH=0
 -- Optional vertical walls for wall-combat specs: planes x = X facing -X.
 Harness.walls={}
 function Harness.addWall(x)

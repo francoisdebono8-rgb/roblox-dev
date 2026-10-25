@@ -61,6 +61,21 @@ test("a knockback takes the body off its feet: thrown back nearly flat while it 
  assert(lowest<.75,string.format("the knocked-back body stays upright (up.y %.2f)",lowest))
 end)
 
+test("a body knocked along the floor lands and skids to a stop (no glide at standing height)",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(0,3,4));c:relocate(b,V.new(0,3,0))
+ local Brawler=H.load("Server/Brawler")
+ b.hitFrom=V.new(0,0,1)
+ Brawler.react(c,b,"Knockback",V.new(0,4,-30),.6,a)
+ local start=b.root.Position
+ local last,lastStep=start,0
+ for _=1,36 do H.step(c,1/60);lastStep=(b.root.Position-last).Magnitude;last=b.root.Position end
+ assert(b.airborne==false,"the thrown body never touched the floor")
+ local went=(b.root.Position-start).Magnitude
+ assert(went<12,string.format("the body glided %.1f studs along the floor",went))
+ assert(lastStep<30/60*.5,"the body still slides at full speed at the end of the throw")
+end)
+
 test("a strike already out is committed: it does not steer onto a body that slipped aside",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(0,3,7));c:relocate(b,V.new(0,3,0))

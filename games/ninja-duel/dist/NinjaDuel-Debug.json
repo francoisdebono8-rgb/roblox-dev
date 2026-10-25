@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "63ec2bba383e6a3ba30dd9ef5d2e56b29d379f1e2970337cf312a958fcd51e4e",
+  "sha256": "7db2ecac3ab2059db4ab1c9b4b437c3c2dcb8345777142ca8bf045ea3aeac66d",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -35,7 +35,7 @@
     "src/Server/BanglaCombat.luau": "2cfde6dddc151ca93d3d4cc1e1e931945795a4e03c9725e5559a93eec2880c55",
     "src/Server/BanglaEvade.luau": "238403f2d75432fa6a2f4ea4867d4a34b0bc4548bed163a271f633d926e17504",
     "src/Server/Bodies.luau": "b5f7a27c31ebf20e0bc00f0193f543a7a2be2d62be653b4e6955fe00a133f9a2",
-    "src/Server/Brawler.luau": "fb8b82f4a204ac7c6243bf600b28d20058780200d9ca58240388a040fc0ee4e3",
+    "src/Server/Brawler.luau": "70ddc3353346d3afdaa24980bbf9d4f405d815a87ec05cd91e3ff09f0f3fa54c",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "41f7c6ffa540a81801474ab5e20671063cebf75f238b0313b8fc95a8fcab4395",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -106,7 +106,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "294080ab99a1a52d52c58825d2c335696195a7f3e13223a46a6814bbf2df53eb",
+  "buildFingerprint": "3a00ac1a2cbe9682cc52a3e97571c2e7ab185d49ab2525fd04402e51978994e0",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

@@ -129,7 +129,9 @@ end)
 test("Desert Wave swallows blades and throws a close attacker away",function()
  local c,a,b=H.duel("Sand","Mirage")
  place(c,a,b,V.new(0,3,3),V.new(0,3,-3))
- c:projectile(b,a.root.Position,60,30,3,"shuriken")
+ -- A slow blade still in front of him when the sand rises (a fast one has
+ -- already flown past by then; the harness floor used to eat it early).
+ c:projectile(b,a.root.Position,15,30,3,"shuriken")
  assert(c:request(a,"Technique3"),"Desert Wave refused")
  until_(c,.8,function() return b.reaction=="Knockback" end,"the close attacker was not thrown away")
  for _,p in c.projectiles do assert(p.a~=b,"a blade survived the wave") end
