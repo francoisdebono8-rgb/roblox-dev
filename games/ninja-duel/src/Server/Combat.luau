@@ -642,6 +642,10 @@ function Combat:substitute(a)
 			if moved<2 then moved=Motor.travel(a,self,-side,hop) end
 		end
 		if moved<2 then return false,"Escape blocked" end
+		-- The hop is a substitution, not a run: the client cuts to the new spot
+		-- (free fights in Studio: drawn as an 8-stud slide with a 180 degree spin
+		-- over three frames).
+		a.warpSerial=(a.warpSerial or 0)+1
 	end
 	if attacker then
 		local face=attacker.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
@@ -1405,7 +1409,9 @@ function Combat:updateActor(a,dt)
 		-- straight lunge at the opponent's body.
 		local delta=a.target.root.Position-a.root.Position
 		local flat=Vector3.new(delta.X,0,delta.Z)
-		if flat.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		-- (Free fights: the dive snapped 125-165 degrees off the wall in one
+		-- frame; the crouched beat now swings the body round.)
+		if flat.Magnitude>.1 then self:turnToward(a,flat,dt,2400) end
 		if a.state=="Active" and delta.Magnitude>2.8 then
 			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
 		end
@@ -1431,7 +1437,10 @@ function Combat:updateActor(a,dt)
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude<10 and self:lineOfSight(a,a.target) then
 		 local horizontal=Vector3.new(delta.X,0,delta.Z)
-		 local planar=if horizontal.Magnitude>2.7 then horizontal.Unit*math.min(horizontal.Magnitude-2.7,30*dt) else Vector3.zero
+		 -- Arm's length, as on the ground (free fights: an air string held the
+		 -- bodies 2.7 studs apart, inside a juggled body and its held blade).
+		 local reach=a.pending.spec.contact or 3.6
+		 local planar=if horizontal.Magnitude>reach then horizontal.Unit*math.min(horizontal.Magnitude-reach,30*dt) else Vector3.zero
 		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
 		 if math.abs(delta.Y)<.45 then vertical=0 end
 		 local correction=planar+Vector3.new(0,vertical,0)
@@ -1459,7 +1468,8 @@ function Combat:updateActor(a,dt)
   local flat=Vector3.new(delta.X,0,delta.Z)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
-  if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) then
+  -- (The wall dive owns its own turn, above.)
+  if flat.Magnitude>2 and flat.Magnitude<(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then

@@ -2592,6 +2592,22 @@ function Motion.present(char,actor,clock,dt)
 		-- contact should have been, hips dropped and forward, chest over the
 		-- front foot, then hauls itself back. Planted feet stay planted (they
 		-- are solved against the hips as drawn).
+		-- Combat convergence (free fights: a punch drove the fist through the
+		-- opponent's head when he had stepped in under arm's length). The swing
+		-- keeps its shape; the hips and chest give way back by the missing
+		-- distance so the blow lands on the body, not inside it. Planted feet
+		-- stay planted.
+		local rootPart=char:FindFirstChild("HumanoidRootPart")
+		if subject.lookAt and rootPart and not subject.airborne and weight>0 then
+			local to=subject.lookAt-rootPart.Position
+			local along=-rootPart.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z)).Z
+			local short=math.clamp(3.4-along,0,1.2)
+			if along>0 and short>0 and math.abs(to.Y)<3 then
+				local w=short*weight
+				final.Root=CF(0,0,.65*w)*(final.Root or IDENTITY)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(9*w),0,0)
+			end
+		end
 		if subject.whiffed and not subject.airborne then
 			local phase=attackPhase(name,subject.attackElapsed or 0,subject.fighterId)
 			local w=smooth(math.clamp((phase-2)/.12,0,1))*(1-smooth(math.clamp((phase-2.45)/.4,0,1)))

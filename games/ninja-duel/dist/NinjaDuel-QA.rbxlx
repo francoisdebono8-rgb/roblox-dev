@@ -3343,7 +3343,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">43beb9c5605e30f353c69a34d3601180662a3a27f47166a763869403c0e184d8</string>
+          <string name="Value">10a2cf12dbada6be3fa0d34dfd323c449d6388655879fbf56c8f542f5f74368f</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -5323,7 +5323,11 @@ function Brawler.request(c,a,action)
   -- angle the guard has to read.
   local wall=a.wall
   Motor.detach(a,c.now,false)
-  if wall.mode~="run" and (action=="Attack" or action=="Heavy") then
+  local diving=(action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health&gt;0
+   and (a.target.root.Position-a.root.Position).Magnitude&lt;=Config.Wall.DiveRange
+  -- (A dive swings round off the wall over its crouched beat, Combat's
+  -- WallDive step; free fights showed the one-frame turn as a 125-165 degree snap.)
+  if wall.mode~="run" and (action=="Attack" or action=="Heavy") and not diving then
    -- Movement overhaul (Studio): a strike off a climb swung at the wall itself
    -- (the body still faced it). It springs off: the body turns out, toward
    -- the opponent when they are on this side of the wall.
@@ -5334,8 +5338,7 @@ function Brawler.request(c,a,action)
    end
    if out.Magnitude&gt;.05 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+out.Unit) end
   end
-  if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health&gt;0
-   and (a.target.root.Position-a.root.Position).Magnitude&lt;=Config.Wall.DiveRange then
+  if diving then
    return Brawler.start(c,a,"WallDive")
   end
  end
@@ -8625,6 +8628,10 @@ function Combat:substitute(a)
 			if moved&lt;2 then moved=Motor.travel(a,self,-side,hop) end
 		end
 		if moved&lt;2 then return false,"Escape blocked" end
+		-- The hop is a substitution, not a run: the client cuts to the new spot
+		-- (free fights in Studio: drawn as an 8-stud slide with a 180 degree spin
+		-- over three frames).
+		a.warpSerial=(a.warpSerial or 0)+1
 	end
 	if attacker then
 		local face=attacker.root.Position-a.root.Position;face=Vector3.new(face.X,0,face.Z)
@@ -9388,7 +9395,9 @@ function Combat:updateActor(a,dt)
 		-- straight lunge at the opponent's body.
 		local delta=a.target.root.Position-a.root.Position
 		local flat=Vector3.new(delta.X,0,delta.Z)
-		if flat.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+flat) end
+		-- (Free fights: the dive snapped 125-165 degrees off the wall in one
+		-- frame; the crouched beat now swings the body round.)
+		if flat.Magnitude&gt;.1 then self:turnToward(a,flat,dt,2400) end
 		if a.state=="Active" and delta.Magnitude&gt;2.8 then
 			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
 		end
@@ -9414,7 +9423,10 @@ function Combat:updateActor(a,dt)
   local delta=a.target.root.Position-a.root.Position
   if delta.Magnitude&lt;10 and self:lineOfSight(a,a.target) then
 		 local horizontal=Vector3.new(delta.X,0,delta.Z)
-		 local planar=if horizontal.Magnitude&gt;2.7 then horizontal.Unit*math.min(horizontal.Magnitude-2.7,30*dt) else Vector3.zero
+		 -- Arm's length, as on the ground (free fights: an air string held the
+		 -- bodies 2.7 studs apart, inside a juggled body and its held blade).
+		 local reach=a.pending.spec.contact or 3.6
+		 local planar=if horizontal.Magnitude&gt;reach then horizontal.Unit*math.min(horizontal.Magnitude-reach,30*dt) else Vector3.zero
 		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
 		 if math.abs(delta.Y)&lt;.45 then vertical=0 end
 		 local correction=planar+Vector3.new(0,vertical,0)
@@ -9442,7 +9454,8 @@ function Combat:updateActor(a,dt)
   local flat=Vector3.new(delta.X,0,delta.Z)
   -- A locked strike starting up to 11 studs out turns into the opponent here
   -- (Brawler.start no longer snaps the body round in one frame).
-  if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) then
+  -- (The wall dive owns its own turn, above.)
+  if flat.Magnitude&gt;2 and flat.Magnitude&lt;(if a.state=="Startup" and a.locked then 11 else 9) and attack.name~="WallDive" then
    local tangent=Vector3.new(-flat.Z,0,flat.X).Unit
    local spec=attack.spec
    if spec.orbit and a.state~="Recovery" then
@@ -29756,6 +29769,22 @@ function Motion.present(char,actor,clock,dt)
 		-- contact should have been, hips dropped and forward, chest over the
 		-- front foot, then hauls itself back. Planted feet stay planted (they
 		-- are solved against the hips as drawn).
+		-- Combat convergence (free fights: a punch drove the fist through the
+		-- opponent's head when he had stepped in under arm's length). The swing
+		-- keeps its shape; the hips and chest give way back by the missing
+		-- distance so the blow lands on the body, not inside it. Planted feet
+		-- stay planted.
+		local rootPart=char:FindFirstChild("HumanoidRootPart")
+		if subject.lookAt and rootPart and not subject.airborne and weight&gt;0 then
+			local to=subject.lookAt-rootPart.Position
+			local along=-rootPart.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z)).Z
+			local short=math.clamp(3.4-along,0,1.2)
+			if along&gt;0 and short&gt;0 and math.abs(to.Y)&lt;3 then
+				local w=short*weight
+				final.Root=CF(0,0,.65*w)*(final.Root or IDENTITY)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(9*w),0,0)
+			end
+		end
 		if subject.whiffed and not subject.airborne then
 			local phase=attackPhase(name,subject.attackElapsed or 0,subject.fighterId)
 			local w=smooth(math.clamp((phase-2)/.12,0,1))*(1-smooth(math.clamp((phase-2.45)/.4,0,1)))

@@ -145,6 +145,75 @@ test("a whiff over-reaches: the swing that met nothing carries the body past the
  assert(whiffZ>landedZ+.25,string.format("the whiffed body does not carry forward (%.2f vs %.2f)",whiffZ,landedZ))
 end)
 
+test("a substitution hop is a cut for the client (warp), not an 8-stud slide",function()
+ local c,a,b=H.duel("Leaf","Mist")
+ c:relocate(a,V.new(0,3,3));c:relocate(b,V.new(0,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ assert(c:request(a,"Attack"))
+ local n=0
+ repeat H.step(c,.01);n+=1 until b.reaction or n>60
+ assert(b.reaction,"setup: the jab never landed")
+ local warp=b.warpSerial or 0
+ local from=b.root.Position
+ assert(c:request(b,"Substitute"),"no substitution")
+ assert((b.root.Position-from).Magnitude>4,"setup: the substitution did not hop")
+ assert((b.warpSerial or 0)>warp,"the hop is not marked as a cut")
+end)
+
+test("a wall dive turns off the wall at a bounded rate (no 160 degree snap)",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ local wall=H.addWall(14)
+ c:relocate(a,V.new(12,16,0));c:relocate(b,V.new(-8,3,0))
+ -- Facing the wall, as during a wall run.
+ a.root.CFrame=H.C.lookAt(a.root.Position,a.root.Position+V.new(1,0,0))
+ a.wall={part=wall,normal=-V.xAxis,untilTime=c.now+1};a.airborne=true
+ local before=a.root.CFrame.LookVector
+ assert(c:request(a,"Attack"),"dive refused")
+ assert(a.attackName=="WallDive","setup: not a dive")
+ local most=0
+ for _=1,10 do
+  H.step(c,.01)
+  most=math.max(most,math.deg(math.acos(math.clamp(a.root.CFrame.LookVector:Dot(before),-1,1))))
+  before=a.root.CFrame.LookVector
+ end
+ local final=a.root.CFrame.LookVector
+ H.clearWalls()
+ assert(most<=2400*.01+1,string.format("the dive snapped %.0f degrees in 10 ms",most))
+ assert(final.X<0,"the dive never turned toward the opponent")
+end)
+
+test("an air string keeps arm's length: the bodies (and a held blade) do not interpenetrate",function()
+ local c,a,b=H.duel("Leaf","Mist")
+ c:relocate(a,V.new(0,14,5.5));c:relocate(b,V.new(0,14,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ a.airborne=true
+ local Brawler=H.load("Server/Brawler")
+ Brawler.react(c,b,"Juggled",V.new(0,2,0),1.2,a)
+ assert(c:request(a,"Attack"),"setup: no air swing")
+ local closest=99
+ for _=1,30 do
+  H.step(c,.01)
+  b.reactionVelocity=V.new(0,0,0)
+  local d=a.root.Position-b.root.Position
+  if math.abs(d.Y)<3 then closest=math.min(closest,V.new(d.X,0,d.Z).Magnitude) end
+ end
+ assert(closest>=3.2,string.format("the air swing pulled the body to %.2f studs root to root",closest))
+end)
+
+test("a punch at a body that stepped inside arm's length gives way instead of going through it",function()
+ local function reach(gap)
+  local c,x=H.duel("Flashstep","Mirage")
+  Motion.reset(x.model)
+  local root=x.model:FindFirstChild("HumanoidRootPart")
+  local at=root.Position+root.CFrame.LookVector*gap
+  for _=1,10 do frame(x.model,body(x,{lookAt=at})) end
+  for i=1,10 do frame(x.model,body(x,{state="Active",attackName="Light1",attackElapsed=.1+i/200,lookAt=at})) end
+  return x.model.joints.Root.Transform.Position.Z
+ end
+ local far,close=reach(5),reach(2.4)
+ assert(close>far+.4,string.format("the hips do not give way at close range (%.2f vs %.2f)",close,far))
+end)
+
 test("a strike already out is committed: it does not steer onto a body that slipped aside",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(0,3,7));c:relocate(b,V.new(0,3,0))

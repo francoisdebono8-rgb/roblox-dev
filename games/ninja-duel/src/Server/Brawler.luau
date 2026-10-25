@@ -487,7 +487,11 @@ function Brawler.request(c,a,action)
   -- angle the guard has to read.
   local wall=a.wall
   Motor.detach(a,c.now,false)
-  if wall.mode~="run" and (action=="Attack" or action=="Heavy") then
+  local diving=(action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health>0
+   and (a.target.root.Position-a.root.Position).Magnitude<=Config.Wall.DiveRange
+  -- (A dive swings round off the wall over its crouched beat, Combat's
+  -- WallDive step; free fights showed the one-frame turn as a 125-165 degree snap.)
+  if wall.mode~="run" and (action=="Attack" or action=="Heavy") and not diving then
    -- Movement overhaul (Studio): a strike off a climb swung at the wall itself
    -- (the body still faced it). It springs off: the body turns out, toward
    -- the opponent when they are on this side of the wall.
@@ -498,8 +502,7 @@ function Brawler.request(c,a,action)
    end
    if out.Magnitude>.05 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+out.Unit) end
   end
-  if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health>0
-   and (a.target.root.Position-a.root.Position).Magnitude<=Config.Wall.DiveRange then
+  if diving then
    return Brawler.start(c,a,"WallDive")
   end
  end
