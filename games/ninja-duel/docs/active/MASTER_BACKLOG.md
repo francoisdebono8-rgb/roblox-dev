@@ -446,6 +446,58 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: ChakraCombat/ChakraTuning intégrés ; 738b449 ajoute fil-objet, conduction métal et feedback des objets. Rapport convergence3/CHAKRA_PLAYER_LAYER : headless uniquement ; tailles, lisibilité, cadence et interactions réelles restent à vérifier dans Studio.
 - outcome: PENDING
 
+## EMB-001 — Ninja Embodiment — le joueur devient le ninja (parent)
+
+- status: IN_PROGRESS
+- priority: P0
+- dependencies: EMB-002, EMB-003, SYS-001, SYS-002, EMB-004
+- subsystem: combat
+- character: ALL
+- summary: Ninja Embodiment — le joueur devient le ninja (parent)
+- sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
+- validation: Sasuke, Minato, Kimimaro passent le test de liberté 3 min et le Boxer Test en Studio ; transfert prouvé sur Gaara, Haku/Itachi, Zabuza, Lee, Neji, Naruto ; autorité serveur, builds, online et plafonds de performance tenus.
+- evidence: 25/10 audit Studio : victime verrouillée 22–49 % du temps, 68–93 % de frappes universelles, 0 usage de mur, chakra modificateur 0–8/45 s ; Boxer Test FAIL (Sasuke–Minato).
+- outcome: PENDING
+
+## EMB-002 — Résolveur d’action contextuel universel
+
+- status: IN_PROGRESS
+- priority: P0
+- dependencies: QA-001
+- subsystem: combat
+- character: ALL
+- summary: Résolveur d’action contextuel universel
+- sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
+- validation: La même entrée produit des frappes différentes selon vitesse, angle, support, altitude, montée/descente, forme/arme, posture adverse, monde ; déclaré en données par fighter ; la chaîne Light1→2→3 cesse d’être le squelette dominant (part mesurée en combat libre).
+- evidence: 25/10 : Attack = compteur Light1→2→3 ; contexte limité à sprint>28, arrivée, mur, air, riposte.
+- outcome: PENDING
+
+## EMB-003 — Agence du défenseur et verrous mérités
+
+- status: IN_PROGRESS
+- priority: P0
+- dependencies: QA-001
+- subsystem: defense
+- character: ALL
+- summary: Agence du défenseur et verrous mérités
+- sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
+- validation: Hitstun ordinaire court ; dérive aérienne hors vrai verrou ; tech sol/mur ; récupération dirigée ; whiff punissable ; verrous longs réservés aux états mérités (launcher, bind, garde brisée, piège, contre, mur, ressource). Temps verrouillé et verrous >1,2 s mesurés en combat libre.
+- evidence: 25/10 : verrous de 2–4 s, victime sans choix hors substitution.
+- outcome: PENDING
+
+## EMB-004 — Monde réactif : matériaux, intégrité, mémoire du combat
+
+- status: OPEN
+- priority: P1
+- dependencies: SYS-002, ARENA-001
+- subsystem: arena
+- character: ALL
+- summary: Monde réactif : matériaux, intégrité, mémoire du combat
+- sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
+- validation: Couche serveur matériau × type de contact × élément × palier d’énergie → fissure/casse/marque/encastrement ; objets cassables autorisés, traces bornées et répliquées ; aucune destruction par technique. L’arène raconte un combat de 3 min.
+- evidence: 25/10 : arène statique, wall splat seul contact.
+- outcome: PENDING
+
 ## SYS-001 — Faire du chakra une décision contextuelle
 
 - status: PARTIAL
@@ -456,7 +508,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: Faire du chakra une décision contextuelle
 - sources: [TOOLS_AND_CHAKRA](../archive/systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../archive/design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md); [LIVE_AUTONOMY_ADDENDUM](../archive/missions/LIVE_AUTONOMY_ADDENDUM.md) ; [Fiches20 / DEC-025](DECISIONS.md#dec-025--fiches-personnages-et-identité-perceptible) ; [index fiches](../characters/ROSTER_20.md) ; [DEC-026 / bibles V1](DECISIONS.md#dec-026--roster-cible-et-character-v1-combat-bibles) ; [A–E et bibles](../characters/ROSTER_20.md)
 - validation: Coût, recharge, infusion, déclencheur, opportunité et contre-jeu mesurés ; éviter barre cosmétique
-- evidence: 18/10 DEC-026 : chakra global final différé après V1corporelle ; ne pas différer pour autant os/mirage/sable/clones/forces élémentaires nécessaires aux gestes de base. Sept profils d’infusion spécifiques/treize Basic dans l’ancien roster courant ; aucun mapping ou runtime changé. Les bibles réservent tags/coûts/points de contact futurs sans système global nouveau.
+- evidence: 25/10 DEC-027 : devient le langage de chakra universel (mouvement, saut, mur, corps, défense, objet, élément, état soutenu, perception, construit), maîtrise par fighter ([audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)). 18/10 DEC-026 : chakra global final différé après V1corporelle ; ne pas différer pour autant os/mirage/sable/clones/forces élémentaires nécessaires aux gestes de base. Sept profils d’infusion spécifiques/treize Basic dans l’ancien roster courant ; aucun mapping ou runtime changé. Les bibles réservent tags/coûts/points de contact futurs sans système global nouveau.
 - outcome: PENDING
 - acceptance: Chakra + action existante ; changer un comportement (trajectoire, stabilité, garde, conduction, brûlure, persistance ou ancrage), pas seulement dégâts. Contrôler fil tenu/planté, courant puis Dragon Flame, rencontres de projectiles, lisibilité et nettoyage.
 
@@ -470,7 +522,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: Interactions élémentaires/environnement ciblées
 - sources: [TOOLS_AND_CHAKRA](../archive/systems/TOOLS_AND_CHAKRA.md); [SYSTEM_INTERACTION_MATRIX](../archive/design_research/03_system_interactions/SYSTEM_INTERACTION_MATRIX.md); [CLAUDE_FINAL_PASS](../archive/missions/CLAUDE_FINAL_PASS.md); [COMBAT_CONVERGENCE_ONLINE_ROSTER](../archive/missions/COMBAT_CONVERGENCE_ONLINE_ROSTER.md); [CORE_COMBAT_CONVERGENCE_2](../archive/missions/CORE_COMBAT_CONVERGENCE_2.md)
 - validation: Documenter interactions réellement existantes, prototypes et conditions ; pas full matrix forcée
-- evidence: Elements + System interactions ; couverture non exhaustive
+- evidence: Elements + System interactions ; couverture non exhaustive. 25/10 DEC-027 : porté par EMB-004 (couche monde/matériaux universelle).
 - outcome: PENDING
 
 ## SYS-003 — Awake modifie des règles et respecte la jeunesse
