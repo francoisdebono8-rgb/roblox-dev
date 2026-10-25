@@ -108,7 +108,7 @@ Contraintes respectées :
 ## 6. Tests
 
 - Suite complète PASS (30 suites) après chaque lot.
-- `CombatFeel` compte 13 cas, dont 7 contrôlés par mutation. Le cas « réaction maintenue » échoue sans la traîne ; « dérapage au sol » échoue sans le correctif (17,7 studs glissés) ; les deux cas dash échouent sans freinage (1,04 et 2,30 studs) ; « whiff » échoue sans le geste.
+- `CombatFeel` compte 18 cas, dont 12 contrôlés par mutation (le message du lot 6 annonce 19 cas : c'est 17 à ce stade). Le cas « réaction maintenue » échoue sans la traîne ; « dérapage au sol » échoue sans le correctif (17,7 studs glissés) ; les deux cas dash échouent sans freinage (1,04 et 2,30 studs) ; « whiff » échoue sans le geste.
 - Les deux cas de dash ajoutent à la main l'avance du solveur, que le harness n'a pas.
 - Le harness fidèle au sol a fait apparaître cinq échecs, tous des bugs réels en Studio ou des tests qui dépendaient du faux sol :
   - rebond du spike dans Branches, ComboModel et Progression ;
@@ -139,6 +139,43 @@ Contraintes respectées :
 **Gameplay**
 - Le dérapage au sol raccourcit fortement les knockbacks (de ~18 studs à ~5 au ras du sol), donc moins de murs atteints. C'est plus juste physiquement, mais c'est un changement de jeu à confirmer manette en main.
 
+## 7 bis. Combats libres IA contre IA (lots 6–7, demande du 25/10 au soir)
+
+Banc Studio : deux IA, chakra plein, jutsus permis, 25 paires sur 20 à 25 s. Pour chaque frame serveur, le banc relève :
+- écart entre racines ;
+- vol au ras du sol ;
+- grands pas et rotations ;
+- états bloqués ;
+- sorties d'arène ;
+- dégâts.
+
+Côté client, avec le rendu actif :
+- caméra de profil sur les deux corps ;
+- enregistreur image par image ;
+- mesure d'interpénétration pièce par pièce (centres de torse et de tête ; mains et pieds dans le torse ou la tête de l'autre).
+
+Défauts trouvés et corrigés :
+
+| Vu | Correctif |
+|---|---|
+| La substitution standard glissait de 8 studs en tournant de 180° sur trois frames | Marquée comme coupe (`warpSerial`) |
+| Plongeon depuis un mur : 125–165° en une frame | Rotation sur la préparation (2400 °/s), un seul propriétaire |
+| Chaîne aérienne tenue à 2,7 studs : le corps jonglé et le couperet de Zabuza traversaient Lee | Tenue à la distance de contact (3,6) |
+| Coup de Minato à travers la tête d'Itachi ; dash attack : torses à moins de 1,4 stud pendant une douzaine de frames | Le client recule les hanches du frappeur du manque (portée de la main à 3,9 ; poitrine à 2,6 de l'adversaire), pieds plantés conservés |
+| Main du corps frappé dans la tête du frappeur (réaction tête, bras projetés vers l'avant) | Bras ouverts sur les côtés |
+| Projection arrière de Neji : Hinata à 0,46 stud, à travers lui | Un stick tiré en arrière projette sur ce côté |
+
+Mesures :
+- Écart sous 2 studs : 0 frame dans 24 des 25 paires. Seule exception, la projection arrière, depuis corrigée.
+- Les chaînes aériennes connectent toujours (AirHit 4/2, 5/0, 1/0 sur trois paires après le correctif).
+- Le Mac s'est remis en veille avant la mesure client après les correctifs du lot 7 : l'effet sur les torses et les mains n'est pas encore mesuré à l'écran.
+
+Non retenus comme défauts :
+- les téléports voulus (Flashstep, Silent Killing, Body Flicker, arrivée des lotus) ;
+- les vols bas de 0,1–0,2 s des knockbacks peu levés, qui atterrissent bien ;
+- la perte de 884 PV de Nagato, un artefact du banc : ses 999 PV de test sont ramenés au maximum par un soin ;
+- les à-coups serveur vus pendant le traçage, causés par le traceur lui-même (aucune frame au-dessus de 40 ms sans lui).
+
 ## 8. Commits
 
 - `e3b2932` — lot 1
@@ -147,3 +184,5 @@ Contraintes respectées :
 - `1758922` — lot 3
 - `01388bd` — lot 4
 - `307f731` — lot 5
+- `a921c9b` — lot 6 (combats libres)
+- `48cb469` — lot 7 (combats libres, pièce par pièce)
