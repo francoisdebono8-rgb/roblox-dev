@@ -286,4 +286,110 @@ test("the client draws a wall run as a run leaning into the wall, not the climb 
  assert(upY(climb)<.5,string.format("the climb is not lying on the wall (up.y %.2f)",upY(climb)))
 end)
 
+test("an airborne reaction hands its residual trajectory back when hitstun ends",function()
+ local Brawler=H.load("Server/Brawler")
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(-20,15,0));c:relocate(b,V.new(20,3,0))
+ a.airborne=true
+ Brawler.react(c,a,"Launched",V.new(24,30,0),.3,b,"Launcher")
+ H.step(c,.29)
+ local residual=a.reactionVelocity
+ assert(residual and residual.X>20,"no residual trajectory to hand back")
+ H.step(c,.02)
+ assert(a.reaction==nil,"reaction duration changed")
+ assert(a.airborne and a.root.AssemblyLinearVelocity.X>20,"recovery restarted from rest in mid-air")
+ assert(a.root.AssemblyLinearVelocity.Y<=residual.Y,"handoff granted another upward impulse")
+end)
+
+test("body clearance resolves at the same rate at 30, 60 and 120 updates per second",function()
+ local smallest,largest=math.huge,0
+ for _,hz in {30,60,120} do
+  local c,a,b=H.duel("Leaf","Mirage")
+  c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,1))
+  for _=1,hz/10 do c:separate(1/hz) end
+  local gap=(b.root.Position-a.root.Position).Magnitude
+  smallest=math.min(smallest,gap);largest=math.max(largest,gap)
+ end
+ assert(largest-smallest<.001,"body clearance changes with update frequency")
+ assert(smallest>=2.99 and largest<=3.001,"clearance under/overshot its body width")
+end)
+
+test("ordinary running openers inherit a bounded step and leave recovery travel",function()
+ local c,a,b=H.duel("Mirage","Leaf")
+ c:relocate(a,V.new(-50,3,0));c:relocate(b,V.new(50,3,0))
+ a.move=V.xAxis
+ H.step(c,.6)
+ assert(c:request(a,"Attack"))
+ assert(a.attackName=="Light1","a normal run changed the selected attack")
+ local carry=a.strikeCarry
+ assert(carry and carry.entry and carry.remaining<=2.4,"missing bounded entry carry")
+ local from=a.root.Position
+ local budget=a.pending.spec.travel
+ repeat H.step(c,.01) until a.state=="Recovery"
+ local recoveryStart=a.root.Position
+ repeat H.step(c,.01) until a.state=="Neutral"
+ assert((a.root.Position-recoveryStart).Magnitude>.015,"no exit step through the recovery")
+ assert((a.root.Position-from).Magnitude<=budget+1.5,"entry carry stacked an extra lunge")
+ a.move=V.zero;H.step(c,1)
+ assert(a.strikeCarry==nil and a.locomotion.Magnitude<.1,"entry carry did not finish")
+ -- A hit interrupts it, rather than restoring an old attack's run later.
+ c:relocate(a,V.new(-50,3,0));a.move=V.xAxis;H.step(c,.5)
+ assert(c:request(a,"Attack"));assert(a.strikeCarry)
+ H.load("Server/Brawler").react(c,a,"HitStun",V.zero,.2,b,"Light1")
+ assert(a.strikeCarry==nil,"a hit retained the interrupted strike's carry")
+end)
+
+test("a dodged air opener releases its hold without restoring a second jump",function()
+ local Brawler=H.load("Server/Brawler")
+ local c,a,b=H.duel("Mirage","Leaf")
+ c:relocate(a,V.new(0,12,0));c:relocate(b,V.new(0,12,-6))
+ a.airborne=true;a.root.AssemblyLinearVelocity=V.new(20,12,0)
+ assert(Brawler.start(c,a,"Air1"))
+ assert(a.pending.airEntry and a.airHold>c.now,"opener did not establish its air meeting window")
+ H.step(c,.02)
+ c:relocate(b,V.new(50,12,-6))
+ H.step(c,.02)
+ assert(a.airHold<=c.now and not a.pending.airEntry,"a departed target left the attacker hovering")
+ assert(a.root.AssemblyLinearVelocity.X>=19 and a.root.AssemblyLinearVelocity.Y<12,"lost trajectory or refreshed takeoff")
+ assert(a.airSwingUsed,"releasing the hold reset air-string safety")
+ assert(not a.hitConfirmed,"releasing the hold fabricated a contact")
+end)
+
+test("an active strike commits its facing while authored orbit routes still turn",function()
+ local Brawler=H.load("Server/Brawler")
+ local function crossing(move)
+  local c,a,b=H.duel("Mirage","Leaf")
+  c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-6))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  b.invulnerableUntil=c.now+5
+  assert(Brawler.start(c,a,move))
+  repeat H.step(c,.01) until a.state=="Active"
+  local face=a.root.CFrame.LookVector
+  local travel=a.travelDirection
+  c:relocate(b,a.root.Position+V.xAxis*6)
+  H.step(c,.02)
+  return face:Dot(a.root.CFrame.LookVector),travel:Dot(a.travelDirection)
+ end
+ local facing,travel=crossing("Light1")
+ assert(facing>.999 and travel>.999,"active whiff turned magnetically after a crossing target")
+ local orbit=crossing("FeintStep")
+ assert(orbit<.99,"committing ordinary strikes disabled the explicit orbit route")
+end)
+
+test("body sweep blocks high-speed crossings but preserves escape, tangents and vertical clearance",function()
+ local Motor=H.load("Server/Motor")
+ local c,a,b=H.duel("Flashstep","Mirage")
+ c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(0,3,-5))
+ local d=Motor.clearance(a,V.new(0,0,-12))
+ assert(math.abs(d.Z+2.2)<.001,"a pursuit crosses the defender")
+ assert(Motor.clearance(a,V.new(4,0,0))==V.new(4,0,0),"lateral movement was blocked")
+ c:relocate(a,V.new(0,3,-3))
+ assert(Motor.clearance(a,V.new(0,0,4))==V.new(0,0,4),"overlap cannot escape")
+ assert(Motor.clearance(a,V.new(0,0,-4)).Magnitude<.001,"overlap can deepen")
+ c:relocate(a,V.new(0,8,0))
+ assert(Motor.clearance(a,V.new(0,0,-12)).Z==-12,"a jump over an opponent was blocked")
+ c:relocate(a,V.new(0,3,0));a.pending={spec={orbit=true}}
+ assert(Motor.clearance(a,V.new(0,0,-12)).Z==-12,"authored side switch was blocked")
+end)
+
 print(string.format("NinjaDuel movement overhaul: %d PASS (headless; the look and feel are Studio checks)",passed))

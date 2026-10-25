@@ -9,7 +9,7 @@ local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},frames={},pendingImpacts={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -19,9 +19,9 @@ end
 -- The replicated root of a server-owned fighter only moves every other
 -- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
 -- body drawn on it advances in jerks. Each fighter is instead drawn on a short
--- interpolated track of its replicated positions, a fixed ~45 ms behind: the
+-- interpolated track of its replicated positions, a fixed ~60 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
-local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=Effects.DELAY,45,12,8
 local function yawOf(cf)
 	local look=cf.LookVector
 	return math.atan2(-look.X,-look.Z)
@@ -110,26 +110,65 @@ function Presentation:smoothStep(data,dt)
 		end
 	end
 end
--- Contact feed straight from the server: play the impact on the frame the hit
--- happened, so sound and VFX never lead or lag the animation.
-function Presentation:impacts(data,camera)
- -- Projectiles first, so a contact in the same packet can finish its blade.
- if data.phase=="Duel" then self.fx:sync(data) end
- if not data.impacts then return end
- -- The server restarts its contact serial with every duel.
- if self.impactEpoch~=data.epoch then self.impactEpoch=data.epoch;self.impactSerial=0 end
+-- Gameplay/UI receive the newest authority immediately. Body states, released
+-- objects and contact accents share the same short render timeline instead of
+-- showing the recoil before the blade has left the throwing hand.
+function Presentation:receive(data)
+ if self.receivedEpoch~=data.epoch then
+  self.receivedEpoch=data.epoch;table.clear(self.frames);table.clear(self.pendingImpacts)
+  self.impactEpoch=data.epoch;self.impactSerial=0
+ end
+ local frames=self.frames
+ local newest=frames[#frames]
+ if data.phase~="Duel" and data.phase~="Result" then table.clear(frames)
+ elseif not newest or not data.serverNow or not newest.serverNow or data.serverNow>newest.serverNow then
+  table.insert(frames,data)
+  while #frames>8 do table.remove(frames,1) end
+ end
+ self:impacts(data)
+end
+function Presentation:frameData(latest,at)
+ if (latest.phase~="Duel" and latest.phase~="Result") or latest.epoch~=self.receivedEpoch then return latest end
+ at=at or self.fx:visualTime()
+ local chosen=self.frames[1] or latest
+ for _,snap in self.frames do
+  if not snap.serverNow or snap.serverNow<=at then chosen=snap else break end
+ end
+ return chosen
+end
+function Presentation:impacts(data)
+ -- Stage flights on receipt. Their activation and the queued contact use the
+ -- visual clock, including an announced-and-hit blade in the same packet.
+ if data.phase=="Duel" or data.phase=="Result" then self.fx:sync(data) end
+ if self.impactEpoch~=data.epoch then
+  self.impactEpoch=data.epoch;self.impactSerial=0;table.clear(self.pendingImpacts)
+ end
+ if data.phase~="Duel" and data.phase~="Result" then table.clear(self.pendingImpacts);return end
  local serial=data.impactSerial or 0
  if serial<=self.impactSerial then return end
- local character=game:GetService("Players").LocalPlayer.Character
- local folder=character and character.Parent
- for _,impact in data.impacts do
+ for _,impact in data.impacts or {} do
   if impact.serial==nil or impact.serial>self.impactSerial then
-   Feedback.impact(impact.style or "light",impact.position)
-   self.fx:impact(impact,folder)
-   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+   table.insert(self.pendingImpacts,impact)
   end
  end
  self.impactSerial=serial
+ -- A disconnected/paused renderer must not accumulate unbounded effects.
+ while #self.pendingImpacts>96 do table.remove(self.pendingImpacts,1) end
+end
+function Presentation:flushImpacts(data,camera,at)
+ if data.epoch~=self.impactEpoch or (data.phase~="Duel" and data.phase~="Result") then return end
+ local character=game:GetService("Players").LocalPlayer.Character
+ local folder=character and character.Parent
+ local now=at or self.fx:visualTime()
+ local keep={}
+ for _,impact in self.pendingImpacts do
+  if not impact.at or impact.at<=now then
+   Feedback.impact(impact.style or "light",impact.position)
+   self.fx:impact(impact,folder)
+   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+  else table.insert(keep,impact) end
+ end
+ self.pendingImpacts=keep
 end
 -- Genjutsu image. The server says who is deceived (illusion + decoy on that
 -- actor). Seen by the deceived player, the image IS Itachi: a frozen copy in
@@ -244,6 +283,8 @@ function Presentation:update(data,dt)
  local bot=Presentation.opponent(data,folder)
  self.botModel=bot
  local models={human=character,bot=bot}
+ local visualActors={}
+ local visualNow=self.fx:visualTime()
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
@@ -274,12 +315,12 @@ function Presentation:update(data,dt)
    local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
    if tracked and velocity then
-    -- Wall motion is positioned by the server with zero assembly velocity.
-    -- Its vertical cadence must follow the drawn track as well as its X/Z.
-    velocity=Vector3.new(tracked.X,if actor.wall then tracked.Y else velocity.Y,tracked.Z)
+    -- Root travel and pose share one timeline, including jump/fall Y.
+    -- Current assembly velocity can already be landing while the drawn body rises.
+    velocity=tracked
    end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
-   local speed=math.max(actor.speed or 0,planar)
+   local speed=if tracked then planar else math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
    -- a late packet cannot make the body replay its wind-up.
    local visual=table.clone(actor)
@@ -290,24 +331,28 @@ function Presentation:update(data,dt)
    visual.attackElapsed=clock.attackElapsed
    visual.landing=landing;visual.landingPhase=landingPhase;visual.landStrong=landingStrong
    visual.intro=data.intro
+   if data.serverNow then
+    visual.attackElapsed=math.max(0,(actor.attackElapsed or 0)+visualNow-data.serverNow)
+    visual.reactionElapsed=math.max(0,(actor.reactionElapsed or 0)+visualNow-data.serverNow)
+   end
    local other=if key=="human" then "bot" else "human"
    visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
    -- Throws and casts run on the shared server clock (slightly behind, like the
    -- projectiles), so the blade leaves the hand on the frame it starts flying.
    if data.serverNow then
-    local visualNow=workspace:GetServerTimeNow()-Effects.DELAY
     if actor.throwElapsed then visual.throwElapsed=visualNow-(data.serverNow-actor.throwElapsed) end
-    if actor.castElapsed then visual.castElapsed=workspace:GetServerTimeNow()-(data.serverNow-actor.castElapsed) end
-    if actor.channel then visual.channel=math.max(0,actor.channel-(workspace:GetServerTimeNow()-data.serverNow)) end
+    if actor.castElapsed then visual.castElapsed=visualNow-(data.serverNow-actor.castElapsed) end
+    if actor.channel then visual.channel=math.max(0,actor.channel-(visualNow-data.serverNow)) end
    end
+   visualActors[key]=visual
    Motion.weapon(model,visual)
    self.presented=self.presented or {}
-   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
+   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,if data.serverNow then nil else clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end
  end
- self.fx:update(data,dt,folder)
+ self.fx:update(data,dt,folder,visualActors)
  self.bodies:update(data,dt,folder)
 end
 return Presentation

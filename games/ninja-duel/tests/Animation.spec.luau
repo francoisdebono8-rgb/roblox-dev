@@ -659,4 +659,89 @@ test("wall support freezes without travel and cycles when the body climbs",funct
  assert(maxDelta(before,snapshot(a.model))>5,"climbing has no knee drive")
 end)
 
+
+test("successive dodges each begin with their own push and body cycle",function()
+ local _,a=H.duel("Leaf","Mirage")
+ local side=a.root.CFrame.RightVector*30
+ local function dodge()
+  local low=1
+  for _=1,19 do
+   frame(a.model,body(a,{state="Dodging",velocity=side}),{},1/60)
+   low=math.min(low,a.model.joints.Root.Transform:VectorToObjectSpace(AXIS_Y).Y)
+  end
+  return low
+ end
+ for _=1,30 do frame(a.model,body(a,{state="Neutral",velocity=V.zero}),{},1/60) end
+ local first=dodge()
+ for _=1,30 do frame(a.model,body(a,{state="Neutral",velocity=V.zero}),{},1/60) end
+ local second=dodge()
+ assert(first<.2 and second<.2,string.format("repeat dodge skipped its body cycle (%.2f / %.2f)",first,second))
+end)
+
+test("moving guard and channel retain stepping support beneath their upper body",function()
+ for _,state in {"Guarding","TechniqueChannel"} do
+  local _,a=H.duel("Mirage","Flashstep")
+  local velocity=a.root.CFrame.LookVector*6
+  local actor=body(a,{state=state,velocity=velocity,castId=if state=="TechniqueChannel" then "FireBloom" else nil,castElapsed=.2,channel=.3})
+  for _=1,60 do a.root.CFrame+=velocity/60;frame(a.model,actor,{},1/60) end
+  local before=snapshot(a.model)
+  local hipChange=0
+  for _=1,60 do
+   a.root.CFrame+=velocity/60;frame(a.model,actor,{},1/60)
+   for _,key in {"LeftHip","RightHip","LeftKnee","RightKnee"} do
+    hipChange=math.max(hipChange,maxDelta({[key]=before[key]},{[key]=a.model.joints[key].Transform}))
+   end
+  end
+  assert(hipChange>5,state.." drags fixed legs under a moving root")
+ end
+end)
+
+test("standing hit recovery returns to the fighter's living stance",function()
+ local _,a=H.duel("GentleFist","Mirage")
+ local idle=body(a,{state="Neutral",velocity=V.zero})
+ for _=1,45 do frame(a.model,idle,{},1/60) end
+ local own=snapshot(a.model)
+ local hit=body(a,{state="Stunned",reaction="HitStun",reactionElapsed=.35,hitKind="strike",velocity=V.zero})
+ for _=1,45 do frame(a.model,hit,{},1/60) end
+ local after=snapshot(a.model)
+ for _,key in {"RightShoulder","LeftShoulder","RightElbow","LeftElbow"} do
+  assert(maxDelta({[key]=own[key]},{[key]=after[key]})<2,"hit recovery lost the fighter's guard at "..key)
+ end
+ -- A block reaction exits back into the actual raised guard, not into
+ -- locomotion's hands-down pose while the player still holds defense.
+ Motion.reset(a.model)
+ for _=1,45 do Motion.tick(1/60);Motion.guard(a.model,0,a.fighterId,1/60) end
+ local guard=snapshot(a.model)
+ local blocked=body(a,{state="Stunned",reaction="GuardStun",reactionElapsed=.6,velocity=V.zero})
+ for _=1,45 do frame(a.model,blocked,{},1/60) end
+ for _,key in {"RightShoulder","LeftShoulder","RightElbow","LeftElbow"} do
+  assert(maxDelta({[key]=guard[key]},{[key]=a.model.joints[key].Transform})<2,"block recovery lowered "..key)
+ end
+end)
+
+test("a stopped wall run keeps support instead of pedalling",function()
+ local _,a=H.duel("Flashstep","Mirage")
+ local actor=body(a,{wall=true,wallMode="run",wallSide=1,airborne=true,velocity=V.zero})
+ for _=1,50 do frame(a.model,actor,{},1/60) end
+ local still=snapshot(a.model)
+ for _=1,30 do frame(a.model,actor,{},1/60) end
+ assert(maxDelta(still,snapshot(a.model))<.1,"a motionless wall run keeps cycling")
+ actor.velocity=V.new(0,0,-24)
+ local stride=0
+ for _=1,30 do frame(a.model,actor,{},1/60);stride=math.max(stride,maxDelta(still,snapshot(a.model))) end
+ assert(stride>5,"travelling along the wall has no stride")
+end)
+
+test("Sasuke prepares the shuriken in the hand that performs its release",function()
+ local _,a=H.duel("Lion","Mirage")
+ local lookup=a.model.FindFirstChild
+ local selected
+ a.model.FindFirstChild=function(self,name)
+  if name=="LeftHand" or name=="RightHand" then selected=name end
+  return lookup(self,name)
+ end
+ Motion.weapon(a.model,body(a,{state="Neutral",throwKind="Shuriken",throwElapsed=.02,throwRelease=.1}))
+ assert(selected=="LeftHand","Sasuke's held blade is on "..tostring(selected).." but his release uses the left arm")
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

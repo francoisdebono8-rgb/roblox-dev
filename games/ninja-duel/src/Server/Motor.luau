@@ -136,6 +136,35 @@ function Motor.stepWall(a,c,dt,now)
 	a.locomotion=Vector3.new(motion.X,0,motion.Z)
 	return true
 end
+-- Sweep the body against its opponent before committing an action step.
+-- A near miss retains its lateral travel; existing penetration may escape.
+-- Grabs and authored orbit routes own their deliberate close choreography.
+function Motor.clearance(a,delta)
+ local b=a.target
+ if not b or not b.root or b.health<=0 or a.grabVictim or a.grabbedBy
+  or (a.pending and a.pending.spec and a.pending.spec.orbit) then return delta end
+ local offset=flat(a.root.Position-b.root.Position)
+ local step=flat(delta)
+ local size=step:Dot(step)
+ if size<.000001 or offset:Dot(step)>=0 then return delta end
+ local radius=2.8
+ local gap=offset.Magnitude
+ local t=0
+ if gap>=radius then
+  local dot=offset:Dot(step)
+  local disc=dot*dot-size*(gap*gap-radius*radius)
+  if disc<=0 then return delta end
+  t=(-dot-math.sqrt(disc))/size
+  if t<0 or t>1 then return delta end
+ end
+ if math.abs(a.root.Position.Y+delta.Y*t-b.root.Position.Y)>3.2 then return delta end
+ local contact=offset+step*t
+ local normal=if contact.Magnitude>.001 then contact.Unit else -step.Unit
+ local rest=step*(1-t)
+ rest-=normal*math.min(0,rest:Dot(normal))
+ local allowed=step*t+rest
+ return Vector3.new(allowed.X,delta.Y,allowed.Z)
+end
 function Motor.travel(a,c,direction,distance)
 	local v=flat(direction)
 	if v.Magnitude<0.01 or distance<=0 then return 0 end
@@ -146,7 +175,7 @@ function Motor.travel(a,c,direction,distance)
 	params.RespectCanCollide=true
 	local hit=workspace:Raycast(start,vector,params)
 	local advance=if hit then math.max(0,hit.Distance-2.1) else vector.Magnitude
-	local target=c:clamp(start+v.Unit*advance)
+	local target=c:clamp(start+Motor.clearance(a,v.Unit*advance))
 	a.root.CFrame=CFrame.new(target)*a.root.CFrame.Rotation
 	return (target-start).Magnitude
 end
@@ -156,7 +185,7 @@ function Motor.flight(a,c,delta)
  local params=c:rayParams(true);params.RespectCanCollide=true
  local hit=workspace:Raycast(a.root.Position,delta.Unit*(delta.Magnitude+1.4),params)
  local movement=if hit then delta.Unit*math.max(0,hit.Distance-1.4) else delta
- local target=c:clamp(a.root.Position+movement)
+ local target=c:clamp(a.root.Position+Motor.clearance(a,movement))
  -- Root centre stays above the floor; actor body geometry is cosmetic.
  a.root.CFrame=CFrame.new(target)*a.root.CFrame.Rotation
  a.root.AssemblyLinearVelocity=Vector3.zero
@@ -186,6 +215,7 @@ function Motor.move(a,c,aim,dt)
 		approach(velocity.X,desired.X,accel*dt),
 		approach(velocity.Y,desired.Y,accel*dt),
 		approach(velocity.Z,desired.Z,accel*dt))
+	target=Motor.clearance(a,target*dt)/math.max(dt,.0001)
 	local floor=c.match and c.match.origin.Y+3 or -math.huge
 	-- With Studio physics live, the velocity set last frame has already moved the
 	-- root; integrating it by hand as well doubled rush/chase speed and made them
@@ -320,6 +350,10 @@ function Motor.step(a,c,dt,now)
   end
  end
 	 if locomotion.Magnitude>limit then locomotion=locomotion.Unit*limit end
+	 locomotion=Motor.clearance(a,locomotion*dt)/math.max(dt,.0001)
+	 local physical=a.root.AssemblyLinearVelocity
+	 local safe=Motor.clearance(a,physical*dt)/math.max(dt,.0001)
+	 if (safe-physical).Magnitude>.001 then a.root.AssemblyLinearVelocity=safe end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
 	 a.hum:Move(if locomotion.Magnitude>.01 then locomotion.Unit else Vector3.zero,false)

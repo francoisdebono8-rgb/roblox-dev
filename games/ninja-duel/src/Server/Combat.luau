@@ -491,6 +491,7 @@ function Combat:beginThrow(a,spec)
 	a.throwing={kind=spec.kind,started=self.now,release=self.now+spec.release,nextRelease=self.now+spec.release,
 		count=spec.count or 1,fired=0,interval=spec.interval or .07,aim=spec.aim,fire=spec.fire,serial=a.throwSerial}
 	a.throwKind=spec.kind;a.throwStarted=self.now;a.throwRelease=spec.release
+	a.throwCount=spec.count or 1;a.throwInterval=spec.interval or .07
 	self.urgent=true
 end
 function Combat:stepThrow(a)
@@ -1221,12 +1222,16 @@ function Combat:updateActor(a,dt)
 			-- the authored active duration.
 			self:setState(a,"Active",if pending.slamWindow and pending.slamWindow>0 then pending.slamWindow else pending.spec.active)
 			a.activeAt=now
+			if pending.kind=="Brawl" then
+				pending.face=a.root.CFrame.LookVector;pending.travelDirection=a.travelDirection
+			end
 		elseif a.state=="Active" then
 			Bangla.close(pending)
 			-- The swing's own contact (Brawler.step), never a blade or a burn that
 			-- landed while it was out.
 			local brawl=pending~=nil and pending.kind=="Brawl"
 			a.hitConfirmed=brawl and pending.contact==true
+			if brawl and not a.hitConfirmed then Brawler.releaseAirEntry(self,a,pending) end
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if brawl and not a.hitConfirmed then
@@ -1285,13 +1290,26 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
-	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+	if a.strikeCarry and a.state~="Neutral" and a.state~="Startup" and a.state~="Active" and a.state~="Recovery" then a.strikeCarry=nil end
+	if a.strikeCarry and not a.reaction and a.strikeCarry.dir
+		and (a.state=="Recovery" or (a.strikeCarry.entry and (a.state=="Startup" or a.state=="Active"))) then
 		local carry=a.strikeCarry
 		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude<4.5 and ahead:Dot(carry.dir)>0
-		if not blocked then Motor.travel(a,self,carry.dir,carry.slide*dt) end
+		if not blocked then
+			local step=carry.slide*dt
+			if carry.entry then
+				local reserve=if a.state=="Recovery" then 0 else carry.reserve or 0
+				step=math.min(step,carry.remaining or 0,math.max(0,(a.travelRemaining or 0)-reserve))
+			end
+			local moved=Motor.travel(a,self,carry.dir,step)
+			if carry.entry then
+				carry.remaining=math.max(0,(carry.remaining or 0)-moved)
+				a.travelRemaining=math.max(0,a.travelRemaining-moved)
+			end
+		end
 	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
@@ -1306,6 +1324,12 @@ function Combat:updateActor(a,dt)
 		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
 	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
+	local airOpening=a.pending
+	if airOpening and airOpening.airEntry and not airOpening.contact then
+		local to=a.target.root.Position-a.root.Position
+		local inReach=Vector3.new(to.X,0,to.Z).Magnitude<=(airOpening.spec.range or 5)+4 and math.abs(to.Y)<10
+		if not inReach or not self:lineOfSight(a,a.target) then Brawler.releaseAirEntry(self,a,airOpening) end
+	end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
@@ -1366,7 +1390,7 @@ function Combat:updateActor(a,dt)
 			local committed=r.line~=nil or (r.commitAt~=nil and now>=r.commitAt)
 			local face=if committed then toGoal elseif toTarget.Magnitude>.1 then toTarget else toGoal
 			if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
-			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=r.arrive) then a.untilTime=math.min(a.untilTime,now)
+			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=math.max(r.arrive,3)+.05) then a.untilTime=math.min(a.untilTime,now)
 			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
 		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
@@ -1414,8 +1438,12 @@ function Combat:updateActor(a,dt)
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
-			if flatTarget.Magnitude>.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
+			if flatTarget.Magnitude>.1 then
+				if a.state=="Startup" or a.pending.spec.orbit then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit
+				elseif a.pending.travelDirection then a.travelDirection=a.pending.travelDirection end
+			end
+			local reserve=if a.strikeCarry and a.strikeCarry.entry then a.strikeCarry.reserve or 0 else 0
+			local distance=math.min(math.max(0,a.travelRemaining-reserve),a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
@@ -1438,7 +1466,7 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   self:turnToward(a,flat,dt,1080)
+   self:turnToward(a,if a.state=="Active" and not spec.orbit then (attack.face or flat) else flat,dt,1080)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
@@ -1865,14 +1893,15 @@ function Combat:updateHazards()
 end
 -- Bodies do not collide physically (that made fighters climb each other);
 -- two grounded fighters closer than a body width are eased apart instead.
-function Combat:separate()
+function Combat:separate(dt)
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health<=0 or b.health<=0 or a.grabVictim or b.grabVictim then return end
 	local delta=b.root.Position-a.root.Position
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
 	if gap>=3 or math.abs(delta.Y)>4 then return end
-	local push=math.min(3-gap,.35)*.5
+	-- Same clearance rate as 60 Hz, independent of the server update rate.
+	local push=math.min(3-gap,21*math.max(0,dt or 1/60))*.5
 	local dir=if gap>.05 then flat.Unit else a.root.CFrame.RightVector
 	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
 end
@@ -1887,7 +1916,7 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
-	if self.match.phase=="Duel" then self:separate() end
+	if self.match.phase=="Duel" then self:separate(dt) end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
@@ -1903,7 +1932,7 @@ function Combat:clear(preserveAnimations)
 		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end
 		Bangla.close(a.pending); Motor.reset(a);
-		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
+		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.reactionPullTo=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health>0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.evadeCarry=nil;a.strikeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil

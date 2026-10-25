@@ -105,6 +105,7 @@ TEST_RUNNERS.append(('lune','tests/Temari.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Roster.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Roster20.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Convergence.spec.luau'))
+TEST_RUNNERS.extend([('lune','tests/Movement.spec.luau'),('lune','tests/PresentationContinuity.spec.luau'),('lune','tests/EffectsContinuity.spec.luau')])
 def run_automated():
     tool={}
     import os

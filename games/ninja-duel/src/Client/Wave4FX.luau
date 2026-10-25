@@ -38,7 +38,7 @@ function M.install(FX,kit)
 			weld(hand,{blade,guard,grip})
 			st={parts={blade,guard,grip},trail=trail(blade,Vector3.new(0,0,-1.2),Vector3.new(0,0,1.2),Color3.fromRGB(230,236,244)),shown=nil};held[model]=st
 		end
-		local drawn=live(actor) or actor.state=="Guarding" or actor.state=="TechniqueChannel"
+		local drawn=not actor.toolThrowActive and (live(actor) or actor.state=="Guarding" or actor.state=="TechniqueChannel")
 		st.trail.Enabled=actor.state=="Active" and actor.attackName~=nil
 		if st.shown==drawn then return end
 		st.shown=drawn

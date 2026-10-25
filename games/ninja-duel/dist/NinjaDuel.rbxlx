@@ -3224,7 +3224,7 @@ return {
       <Item class="StringValue" referent="ND22">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3db84873f6f36bfeed5d38c1c6be16fccc0d83ba3cf945e6771ac5f3f2d79429</string>
+          <string name="Value">9a1327baae2f3e5616d7c7bad7c4f8b6f4f3ddd03217be1bb8edeb609e794471</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND23">
@@ -5019,11 +5019,14 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
+ -- Physical impulses continue after stun; bounded pulls explicitly finish at
+ -- rest, rather than carrying their victim through the caster afterwards.
+ a.reactionPullTo=nil
 	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
  Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
- a.locomotion=Vector3.zero
+ a.locomotion=Vector3.zero;a.strikeCarry=nil
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then
   a.invulnerableUntil=c.now+duration+.24
@@ -5035,10 +5038,23 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  if kind=="WallSplat" then a.groundPose="Splat" end
  if not airReactions[kind] then a.groundPose=nil end
 end
+-- An unconfirmed jump-in may suspend briefly to meet a body, but losing that
+-- body cannot turn a missed strike into a hover. Return the takeoff trajectory,
+-- aged by gravity, without granting another jump or resetting air-string limits.
+function Brawler.releaseAirEntry(c,a,p)
+ if not p or not p.airEntry then return end
+ local v=p.airEntry;p.airEntry=nil
+ local age=math.max(0,c.now-(p.airEntryAt or c.now))
+ v=Vector3.new(v.X,v.Y-Config.Movement.FallbackGravity*age,v.Z)
+ a.airHold=c.now
+ a.root.AssemblyLinearVelocity=v;a.locomotion=Vector3.new(v.X,0,v.Z)
+end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
  -- Any new strike drops a pending running-strike hand-back (it is for the
  -- run after the swing, not for the next blow of a string).
+ local entryState=a.state
+ local entry=a.locomotion or Vector3.zero
  a.strikeCarry=nil
  -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
  -- or its solo / awakened form when there is no body for it.
@@ -5114,6 +5130,16 @@ function Brawler.start(c,a,name)
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+ -- A normal running opener keeps a small part of its actual entry step. It
+ -- spends the authored travel budget (Combat), never adds a second lunge or
+ -- allows fresh steering during recovery. Full sprint entries keep their
+ -- existing, explicit running-strike contract below.
+ if opener and entryState=="Neutral" and not a.airborne and not spec.air
+  and not proxy and (name=="Light1" or name=="Heavy") and entry.Magnitude&gt;4 then
+  local speed=math.min(entry.Magnitude,a.def.Speed or 18)
+  a.strikeCarry={dir=entry.Unit,speed=speed*.6,slide=speed,at=c.now,
+   remaining=math.min(spec.travel,speed*.13,2.4),reserve=math.min(.5,spec.travel*.15),entry=true}
+ end
  if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
@@ -5129,6 +5155,9 @@ function Brawler.start(c,a,name)
   local inReach=gap~=nil and Vector3.new(gap.X,0,gap.Z).Magnitude&lt;=(spec.range or 5)+4 and math.abs(gap.Y)&lt;10
   if name=="Slam" or (a.airCombo or 0)&gt;=1 or (not a.airSwingUsed and inReach) then
    a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+   if spec.air and name~="Slam" and name~="WallDive" and (a.airCombo or 0)==0 then
+    a.pending.airEntry=a.root.AssemblyLinearVelocity;a.pending.airEntryAt=c.now
+   end
   end
   a.airSwingUsed=true
  end
@@ -5883,7 +5912,14 @@ function Brawler.step(c,a,dt)
     a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
-    a.reaction=nil;a.reactionVelocity=nil
+    -- Controlled reactions move the root with swept travel while its physical
+    -- velocity is zero. When control returns in air, continue that trajectory
+    -- instead of restarting gravity from a motionless body.
+    if a.airborne and a.reactionVelocity then
+     local v=if a.reactionPullTo then Vector3.zero else a.reactionVelocity
+     a.root.AssemblyLinearVelocity=v;a.locomotion=Vector3.new(v.X,0,v.Z)
+    end
+    a.reaction=nil;a.reactionVelocity=nil;a.reactionPullTo=nil
     -- Fully recovered: drop the grounded presentation state with it.
     a.groundPose=nil
    end
@@ -5898,7 +5934,21 @@ function Brawler.step(c,a,dt)
     if hit and hit.Normal.Y&gt;.5 then velocity=Vector3.zero;a.airborne=false;a.landedAt=c.now end
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
-    local hit=Motor.flight(a,c,velocity*dt)
+    local delta=velocity*dt
+    -- A pull has a destination, unlike a blow that throws the body away.
+    -- Clamp each step before the source's clearance radius; tuning the
+    -- initial speed alone did not stop a long pull passing through him.
+    local source=a.reactionSource
+    if a.reactionPullTo and source and source.root then
+     local to=source.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+     local planar=Vector3.new(delta.X,0,delta.Z)
+     local remaining=math.max(0,to.Magnitude-a.reactionPullTo)
+     if planar.Magnitude&gt;remaining and planar:Dot(to)&gt;0 then
+      delta=(if planar.Magnitude&gt;.001 then planar.Unit*remaining else Vector3.zero)+Vector3.new(0,delta.Y,0)
+      velocity=Vector3.new(0,velocity.Y,0)
+     end
+    end
+    local hit=Motor.flight(a,c,delta)
     if hit then
      if hit.Normal.Y&gt;.5 and velocity.Y&lt;0 and a.reaction=="Spiked" and not a.groundBounced then
       -- Ground bounce: the spike drives the body into the floor and it pops
@@ -7990,6 +8040,7 @@ function Combat:beginThrow(a,spec)
 	a.throwing={kind=spec.kind,started=self.now,release=self.now+spec.release,nextRelease=self.now+spec.release,
 		count=spec.count or 1,fired=0,interval=spec.interval or .07,aim=spec.aim,fire=spec.fire,serial=a.throwSerial}
 	a.throwKind=spec.kind;a.throwStarted=self.now;a.throwRelease=spec.release
+	a.throwCount=spec.count or 1;a.throwInterval=spec.interval or .07
 	self.urgent=true
 end
 function Combat:stepThrow(a)
@@ -8720,12 +8771,16 @@ function Combat:updateActor(a,dt)
 			-- the authored active duration.
 			self:setState(a,"Active",if pending.slamWindow and pending.slamWindow&gt;0 then pending.slamWindow else pending.spec.active)
 			a.activeAt=now
+			if pending.kind=="Brawl" then
+				pending.face=a.root.CFrame.LookVector;pending.travelDirection=a.travelDirection
+			end
 		elseif a.state=="Active" then
 			Bangla.close(pending)
 			-- The swing's own contact (Brawler.step), never a blade or a burn that
 			-- landed while it was out.
 			local brawl=pending~=nil and pending.kind=="Brawl"
 			a.hitConfirmed=brawl and pending.contact==true
+			if brawl and not a.hitConfirmed then Brawler.releaseAirEntry(self,a,pending) end
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
 			if brawl and not a.hitConfirmed then
@@ -8784,13 +8839,26 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
-	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+	if a.strikeCarry and a.state~="Neutral" and a.state~="Startup" and a.state~="Active" and a.state~="Recovery" then a.strikeCarry=nil end
+	if a.strikeCarry and not a.reaction and a.strikeCarry.dir
+		and (a.state=="Recovery" or (a.strikeCarry.entry and (a.state=="Startup" or a.state=="Active"))) then
 		local carry=a.strikeCarry
 		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude&lt;4.5 and ahead:Dot(carry.dir)&gt;0
-		if not blocked then Motor.travel(a,self,carry.dir,carry.slide*dt) end
+		if not blocked then
+			local step=carry.slide*dt
+			if carry.entry then
+				local reserve=if a.state=="Recovery" then 0 else carry.reserve or 0
+				step=math.min(step,carry.remaining or 0,math.max(0,(a.travelRemaining or 0)-reserve))
+			end
+			local moved=Motor.travel(a,self,carry.dir,step)
+			if carry.entry then
+				carry.remaining=math.max(0,(carry.remaining or 0)-moved)
+				a.travelRemaining=math.max(0,a.travelRemaining-moved)
+			end
+		end
 	end
 	if a.hop then
 		local step=math.min(a.hop.remaining,a.hop.speed*dt)
@@ -8805,6 +8873,12 @@ function Combat:updateActor(a,dt)
 		elseif a.state~="TechniqueChannel" and a.state~="TechniqueActive" then a.castFace=nil end
 	end
 	if Brawler.step(self,a,dt) then World.pose(a,now,dt); return end
+	local airOpening=a.pending
+	if airOpening and airOpening.airEntry and not airOpening.contact then
+		local to=a.target.root.Position-a.root.Position
+		local inReach=Vector3.new(to.X,0,to.Z).Magnitude&lt;=(airOpening.spec.range or 5)+4 and math.abs(to.Y)&lt;10
+		if not inReach or not self:lineOfSight(a,a.target) then Brawler.releaseAirEntry(self,a,airOpening) end
+	end
 	if a.locked and (a.state=="Neutral" or a.state=="Guarding") then
 		a.hum.AutoRotate=false
 		self:faceLocked(a,dt)
@@ -8865,7 +8939,7 @@ function Combat:updateActor(a,dt)
 			local committed=r.line~=nil or (r.commitAt~=nil and now&gt;=r.commitAt)
 			local face=if committed then toGoal elseif toTarget.Magnitude&gt;.1 then toTarget else toGoal
 			if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
-			if toGoal.Magnitude&lt;.6 or (not r.line and toTarget.Magnitude&lt;=r.arrive) then a.untilTime=math.min(a.untilTime,now)
+			if toGoal.Magnitude&lt;.6 or (not r.line and toTarget.Magnitude&lt;=math.max(r.arrive,3)+.05) then a.untilTime=math.min(a.untilTime,now)
 			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
 		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
@@ -8913,8 +8987,12 @@ function Combat:updateActor(a,dt)
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
-			if flatTarget.Magnitude&gt;.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
-			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
+			if flatTarget.Magnitude&gt;.1 then
+				if a.state=="Startup" or a.pending.spec.orbit then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit
+				elseif a.pending.travelDirection then a.travelDirection=a.pending.travelDirection end
+			end
+			local reserve=if a.strikeCarry and a.strikeCarry.entry then a.strikeCarry.reserve or 0 else 0
+			local distance=math.min(math.max(0,a.travelRemaining-reserve),a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
 	end
@@ -8937,7 +9015,7 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   self:turnToward(a,flat,dt,1080)
+   self:turnToward(a,if a.state=="Active" and not spec.orbit then (attack.face or flat) else flat,dt,1080)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
@@ -9364,14 +9442,15 @@ function Combat:updateHazards()
 end
 -- Bodies do not collide physically (that made fighters climb each other);
 -- two grounded fighters closer than a body width are eased apart instead.
-function Combat:separate()
+function Combat:separate(dt)
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health&lt;=0 or b.health&lt;=0 or a.grabVictim or b.grabVictim then return end
 	local delta=b.root.Position-a.root.Position
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
 	if gap&gt;=3 or math.abs(delta.Y)&gt;4 then return end
-	local push=math.min(3-gap,.35)*.5
+	-- Same clearance rate as 60 Hz, independent of the server update rate.
+	local push=math.min(3-gap,21*math.max(0,dt or 1/60))*.5
 	local dir=if gap&gt;.05 then flat.Unit else a.root.CFrame.RightVector
 	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
 end
@@ -9386,7 +9465,7 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
-	if self.match.phase=="Duel" then self:separate() end
+	if self.match.phase=="Duel" then self:separate(dt) end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
@@ -9402,7 +9481,7 @@ function Combat:clear(preserveAnimations)
 		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end
 		Bangla.close(a.pending); Motor.reset(a);
-		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
+		Brawler.releaseGrab(a); a.reaction=nil; a.reactionVelocity=nil; a.reactionPullTo=nil; a.buffered=nil; a.airHold=0; a.pursuitUntil=0; a.chainOpen=false
 		a.state=if a.health&gt;0 then "Neutral" else "Defeated";Defense.guard(a,false,self.now);a.readUntil=0;a.bonusUntil=0;a.dodgeUntil=0;a.invulnerableUntil=0;a.travelRemaining=0
 		a.evade=nil;a.evadeCarry=nil;a.strikeCarry=nil;a.donorHitCount=0;a.donorLastHit=nil; a.combo=0;a.lastAttack=-10;a.throwing=nil;a.castId=nil;a.flashUntil=0;a.hop=nil;a.counterUntil=0;a.hitBlocked=false;
 		a.anchors={};a.comboHits=0;a.comboDamage=0;a.splatAt=nil;a.splatPins=0;a.flashCancel=nil
@@ -9898,6 +9977,7 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		local gap=flat(b.root.Position-a.root.Position).Magnitude
 		local pull=math.min(spec.Pull,math.max(0,gap-(spec.PullTo or 3.5))*4.2)
 		Brawler.react(c,b,"Knockback",-direction*pull+Vector3.yAxis*(spec.Lift or 8),spec.Stun or .45,a)
+		b.reactionPullTo=spec.PullTo or 3.5
 	elseif spec.Knock or spec.Lift or spec.React then
 		local kind=spec.React or (if (spec.Lift or 0)&gt;=40 then "Launched" else "Knockback")
 		Brawler.react(c,b,kind,direction*(spec.Knock or 0)+Vector3.yAxis*(spec.Lift or 0),spec.Stun or .5,a)
@@ -11374,6 +11454,7 @@ function Matches:view(s,cursor,mine,theirs)
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
+			throwCount=a.throwCount or 1,throwInterval=a.throwInterval or .07,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
 			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)&gt;now,lookVector=a.root.CFrame.LookVector,
@@ -11692,6 +11773,35 @@ function Motor.stepWall(a,c,dt,now)
 	a.locomotion=Vector3.new(motion.X,0,motion.Z)
 	return true
 end
+-- Sweep the body against its opponent before committing an action step.
+-- A near miss retains its lateral travel; existing penetration may escape.
+-- Grabs and authored orbit routes own their deliberate close choreography.
+function Motor.clearance(a,delta)
+ local b=a.target
+ if not b or not b.root or b.health&lt;=0 or a.grabVictim or a.grabbedBy
+  or (a.pending and a.pending.spec and a.pending.spec.orbit) then return delta end
+ local offset=flat(a.root.Position-b.root.Position)
+ local step=flat(delta)
+ local size=step:Dot(step)
+ if size&lt;.000001 or offset:Dot(step)&gt;=0 then return delta end
+ local radius=2.8
+ local gap=offset.Magnitude
+ local t=0
+ if gap&gt;=radius then
+  local dot=offset:Dot(step)
+  local disc=dot*dot-size*(gap*gap-radius*radius)
+  if disc&lt;=0 then return delta end
+  t=(-dot-math.sqrt(disc))/size
+  if t&lt;0 or t&gt;1 then return delta end
+ end
+ if math.abs(a.root.Position.Y+delta.Y*t-b.root.Position.Y)&gt;3.2 then return delta end
+ local contact=offset+step*t
+ local normal=if contact.Magnitude&gt;.001 then contact.Unit else -step.Unit
+ local rest=step*(1-t)
+ rest-=normal*math.min(0,rest:Dot(normal))
+ local allowed=step*t+rest
+ return Vector3.new(allowed.X,delta.Y,allowed.Z)
+end
 function Motor.travel(a,c,direction,distance)
 	local v=flat(direction)
 	if v.Magnitude&lt;0.01 or distance&lt;=0 then return 0 end
@@ -11702,7 +11812,7 @@ function Motor.travel(a,c,direction,distance)
 	params.RespectCanCollide=true
 	local hit=workspace:Raycast(start,vector,params)
 	local advance=if hit then math.max(0,hit.Distance-2.1) else vector.Magnitude
-	local target=c:clamp(start+v.Unit*advance)
+	local target=c:clamp(start+Motor.clearance(a,v.Unit*advance))
 	a.root.CFrame=CFrame.new(target)*a.root.CFrame.Rotation
 	return (target-start).Magnitude
 end
@@ -11712,7 +11822,7 @@ function Motor.flight(a,c,delta)
  local params=c:rayParams(true);params.RespectCanCollide=true
  local hit=workspace:Raycast(a.root.Position,delta.Unit*(delta.Magnitude+1.4),params)
  local movement=if hit then delta.Unit*math.max(0,hit.Distance-1.4) else delta
- local target=c:clamp(a.root.Position+movement)
+ local target=c:clamp(a.root.Position+Motor.clearance(a,movement))
  -- Root centre stays above the floor; actor body geometry is cosmetic.
  a.root.CFrame=CFrame.new(target)*a.root.CFrame.Rotation
  a.root.AssemblyLinearVelocity=Vector3.zero
@@ -11742,6 +11852,7 @@ function Motor.move(a,c,aim,dt)
 		approach(velocity.X,desired.X,accel*dt),
 		approach(velocity.Y,desired.Y,accel*dt),
 		approach(velocity.Z,desired.Z,accel*dt))
+	target=Motor.clearance(a,target*dt)/math.max(dt,.0001)
 	local floor=c.match and c.match.origin.Y+3 or -math.huge
 	-- With Studio physics live, the velocity set last frame has already moved the
 	-- root; integrating it by hand as well doubled rush/chase speed and made them
@@ -11876,6 +11987,10 @@ function Motor.step(a,c,dt,now)
   end
  end
 	 if locomotion.Magnitude&gt;limit then locomotion=locomotion.Unit*limit end
+	 locomotion=Motor.clearance(a,locomotion*dt)/math.max(dt,.0001)
+	 local physical=a.root.AssemblyLinearVelocity
+	 local safe=Motor.clearance(a,physical*dt)/math.max(dt,.0001)
+	 if (safe-physical).Magnitude&gt;.001 then a.root.AssemblyLinearVelocity=safe end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
 	 a.hum:Move(if locomotion.Magnitude&gt;.01 then locomotion.Unit else Vector3.zero,false)
@@ -18543,12 +18658,38 @@ end
 function FX.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelFX";folder.Parent=workspace
 	return setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
-		clock=0,cache={}},FX)
+		clock=0,cache={},finishedFlights={},finishedOrder={}},FX)
+end
+-- These effects are parented to a fighter rather than the world FX folder.
+-- Tear down only our own attachments, never the rig's authored eyes or veins.
+local function clearAura(model,aura)
+	if aura.trail then
+		aura.trail.Enabled=false
+		if aura.trail.Attachment0 then aura.trail.Attachment0:Destroy() end
+		if aura.trail.Attachment1 then aura.trail.Attachment1:Destroy() end
+		aura.trail:Destroy()
+	end
+	if aura.eyeLight then aura.eyeLight:Destroy() end
+	for _,name in {"mantle","chidori"} do
+		local state=aura[name]
+		if state and state.attachment then state.attachment:Destroy() end
+	end
+	if aura.mouthAttachment then aura.mouthAttachment:Destroy() end
+	for _,name in {"binding","dome"} do
+		local state=aura[name]
+		if state and state.holder then state.holder:Destroy() end
+	end
+	for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+	if (aura.wear or 0)&gt;0 then
+		for _,part in model:GetDescendants() do if part.Name=="BattleWear" then part:Destroy() end end
+	end
 end
 function FX:reset()
 	self.folder:ClearAllChildren()
 	table.clear(self.projectiles);table.clear(self.stuck);table.clear(self.seals);table.clear(self.hazards);table.clear(self.rasengan)
-	for _,aura in self.auras do if aura.trail then aura.trail.Enabled=false end end
+	table.clear(self.finishedFlights);table.clear(self.finishedOrder)
+	for model,aura in self.auras do clearAura(model,aura) end
+	table.clear(self.auras)
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
@@ -18576,6 +18717,39 @@ local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() 
 		local flames=at and at:FindFirstChild("Flames");if flames then flames.Rate=60 end
 		return model
 	end}
+-- A flight is staged off-scene: even an invisible fireball must not emit
+-- particles, light, trail or sound before the throwing arm releases it.
+local function stageFlight(entry)
+	entry.parts={};entry.switches={}
+	for _,d in entry.model:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(entry.parts,d);d.LocalTransparencyModifier=1
+		elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+			-- Infusion emitters are deliberately built disabled and become live
+			-- with the flight; other switches keep their authored on/off state.
+			local infusionEmitter=entry.decor and table.find(entry.decor.emitters or {},d)~=nil
+			table.insert(entry.switches,{object=d,enabled=d.Enabled~=false or infusionEmitter==true});d.Enabled=false
+		end
+	end
+	entry.hidden=true
+end
+local function showFlight(entry,visible)
+	if entry.hidden==not visible then return end
+	entry.hidden=not visible
+	for _,p in entry.parts do p.LocalTransparencyModifier=if visible then 0 else 1 end
+	for _,v in entry.switches do v.object.Enabled=visible and v.enabled end
+end
+local function releaseSound(entry)
+	if entry.released then return end
+	entry.released=true
+	local kind=entry.data.kind
+	if kind=="fireball" then sound(entry.root,SOUND.boom,.35,.55)
+	elseif kind=="phoenix" then sound(entry.root,SOUND.whoosh,.25,.7)
+	elseif kind=="palm" then sound(entry.root,SOUND.whoosh,.45,.6)
+	elseif kind=="kunai" or kind=="marked" or kind=="shuriken" or kind=="wire" then
+		sound(entry.root,SOUND.whoosh,.28,if kind=="shuriken" then 1.5 else 1.25)
+	end
+end
 -- Snapshot sync: create visuals for newly announced projectiles, mark the ones
 -- the server no longer reports.
 function FX:sync(data)
@@ -18584,6 +18758,7 @@ function FX:sync(data)
 	if data.human and data.bot then self.fighterIds={data.human.id,data.bot.id} end
 	local live={}
 	for _,p in data.projectiles or {} do
+		if self.finishedFlights[p.id] then continue end
 		live[p.id]=true
 		local entry=self.projectiles[p.id]
 		if not entry and p.planted then
@@ -18596,7 +18771,6 @@ function FX:sync(data)
 		elseif not entry then
 			local build=BUILD[p.kind] or BUILD.kunai
 			local model=build()
-			model.Parent=self.folder
 			local root=model.PrimaryPart
 			-- Chakra infusion: the object itself looks reinforced / windy / burning /
 			-- charged (decorations only; the flight is the server's).
@@ -18611,7 +18785,7 @@ function FX:sync(data)
 			if p.kind=="wire" then
 				-- Ninja wire: a thin line from the thrower's hand to the blade.
 				local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
-				local hand=owner and owner:FindFirstChild("RightHand")
+				local hand=owner and owner:FindFirstChild("LeftHand")
 				if hand then
 					local a0=new("Attachment",{Name="WireStart"},hand)
 					local a1=new("Attachment",{Name="WireEnd"},root)
@@ -18621,16 +18795,11 @@ function FX:sync(data)
 			end
 			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true,decor=if type(decor)=="table" then decor else nil}
 			self.projectiles[p.id]=entry
-			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
-			if p.kind=="fireball" then
-				sound(root,SOUND.boom,.35,.55)
-			elseif p.kind=="phoenix" then
-				sound(root,SOUND.whoosh,.25,.7)
-			elseif p.kind=="palm" then
-				sound(root,SOUND.whoosh,.45,.6)
-			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
-				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
-			end
+			stageFlight(entry)
+			-- Position the complete model before it enters the live scene. Welds
+			-- no longer spend a frame at the builders' local origin.
+			model:PivotTo(CFrame.lookAt(p.origin,p.origin+p.direction))
+			model.Parent=self.folder
 		elseif not p.planted and entry.data.born~=p.born then
 			-- Re-based in the air (Combat:redirect: a wind lane turned it aside or
 			-- sped it up): the old leg is drawn until the visual clock reaches the
@@ -18645,13 +18814,20 @@ function FX:sync(data)
 	end
 end
 function FX:finishProjectile(id)
+	if id==nil then return nil end
+	-- A repeated/stale snapshot must not resurrect a flight after its contact.
+	-- Keep bounded per-duel tombstones even when contact arrived before spawn.
+	if not self.finishedFlights[id] then
+		self.finishedFlights[id]=true;table.insert(self.finishedOrder,id)
+		if #self.finishedOrder&gt;256 then self.finishedFlights[table.remove(self.finishedOrder,1)]=nil end
+	end
 	local entry=self.projectiles[id]
 	if not entry then return nil end
 	self.projectiles[id]=nil
 	local root=entry.root
 	-- Let a trail finish fading instead of cutting it.
 	for _,d in entry.model:GetDescendants() do
-		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
+		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") or d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then d.Enabled=false end
 	end
 	Debris:AddItem(entry.model,.6)
 	return entry,root
@@ -18671,12 +18847,6 @@ function FX:stepProjectiles(dt)
 		if entry.static then
 			pcall(self.restStep,self,entry)
 			continue
-		end
-		local hidden=age&lt;0
-		if hidden~=entry.hidden then
-			entry.hidden=hidden
-			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
-			if entry.decor then for _,e in entry.decor.emitters do e.Enabled=not hidden end end
 		end
 		if entry.decor and entry.decor.light then
 			local look=entry.decor.look
@@ -18720,6 +18890,9 @@ function FX:stepProjectiles(dt)
 			cf=look
 		end
 		entry.root.CFrame=cf
+		local visible=age&gt;=0
+		showFlight(entry,visible)
+		if visible then releaseSound(entry) end
 	end
 end
 
@@ -19764,7 +19937,7 @@ function FX:fighter(model,actor,dt)
 		local light=new("PointLight",{Color=tone,Brightness=2.5,Range=12,Shadows=false},at)
 		aura.mantle={attachment=at,emitter=e,light=light}
 	elseif not awake and aura.mantle then
-		aura.mantle.emitter.Enabled=false
+		aura.mantle.emitter.Enabled=false;aura.mantle.light.Enabled=false
 		Debris:AddItem(aura.mantle.attachment,1)
 		aura.mantle=nil
 	end
@@ -19805,7 +19978,7 @@ function FX:fighter(model,actor,dt)
 		aura.chidori={attachment=at,emitter=e,core=core,light=light}
 		sound(hand,SOUND.whoosh,.5,2.6)
 	elseif not chidori and aura.chidori then
-		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
+		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false;aura.chidori.light.Enabled=false
 		Debris:AddItem(aura.chidori.attachment,.4)
 		aura.chidori=nil
 	end
@@ -19881,8 +20054,13 @@ function FX:fighter(model,actor,dt)
 	elseif orb then
 		self.rasengan[model]=nil
 		orb.emitter.Enabled=false
-		flash(self.folder,orb.core.Position,Color3.fromRGB(170,220,255),1.5,5,.2,.2)
-		orb.holder:Destroy()
+		-- Losing the charge is not a confirmed hit. Only the impact feed may
+		-- make the contact flash; an interrupted hand orb simply dissipates.
+		for _,part in orb.holder:GetDescendants() do
+			if part:IsA("BasePart") then tween(part,.1,{Transparency=1})
+			elseif part:IsA("PointLight") then part.Enabled=false end
+		end
+		Debris:AddItem(orb.holder,.12)
 	end
 	-- Katon: embers gather at the mouth during the hand signs, then the breath.
 	if actor.fighterId=="Mirage" then
@@ -19890,7 +20068,8 @@ function FX:fighter(model,actor,dt)
 		local casting=(actor.castId=="FireBloom" or actor.castId=="PhoenixFlower") and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
 		if casting and head then
 			if not aura.mouth then
-				local at=new("Attachment",{Position=Vector3.new(0,-.25,-.8)},head)
+				local at=new("Attachment",{Name="FireBreath",Position=Vector3.new(0,-.25,-.8)},head)
+				aura.mouthAttachment=at
 				aura.mouth=new("ParticleEmitter",{Texture=TEX.fire,Rate=0,Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(4,10),
 					SpreadAngle=Vector2.new(18,18),EmissionDirection=Enum.NormalId.Front,Color=seq({{0,Color3.fromRGB(255,230,150)},{1,Color3.fromRGB(255,90,30)}}),
 					LightEmission=1,LightInfluence=0,Size=num({{0,.6},{1,1.6}}),Transparency=num({{0,.2},{1,1}})},at)
@@ -19951,8 +20130,11 @@ function FX:ambient(dt)
 		self.cheering=active
 	end
 end
-function FX:update(data,dt,folder)
+function FX:update(data,dt,folder,visualActors)
 	self.fighters=folder
+	for model,aura in self.auras do
+		if not model.Parent then clearAura(model,aura);self.auras[model]=nil end
+	end
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
 		self:stepProjectiles(dt)
@@ -19966,9 +20148,13 @@ function FX:update(data,dt,folder)
 	self:crowdOf(folder)
 	self:ambient(dt)
 	for _,key in {"human","bot"} do
-		local actor=data[key]
+		local actor=visualActors and visualActors[key] or data[key]
 		if actor then
 			actor.intro=data.intro
+   local elapsed=actor.throwElapsed or 99
+   actor.toolThrowActive=actor.throwKind~=nil and elapsed&gt;=0
+    and elapsed&lt;(actor.throwRelease or .1)+math.max(0,(actor.throwCount or 1)-1)*(actor.throwInterval or .08)+.18
+    and not actor.reaction and actor.state~="Dodging"
 			local other=data[if key=="human" then "bot" else "human"]
 			actor.opponentFighter=other and other.fighterId
 			self:seal(actor.id or key,actor,folder)
@@ -19979,8 +20165,6 @@ function FX:update(data,dt,folder)
 	end
 	-- Layers that draw across the scene once per frame (ChakraFX).
 	for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
-	-- A layer may also read the whole duel once per frame (both fighters, hazards).
-	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
@@ -22400,15 +22584,17 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
 	if data.epoch~=current.epoch then camera.locked=true end
 	data.gamepad=input.pad
-	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
+	current=data; presentation.receivedAt=os.clock(); presentation:receive(data); ui:render(data)
 end)
 local nextMove=0
 RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
 	-- Last moment before the frame is drawn: the replicated roots have their
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
-	presentation:smoothStep(current,dt)
-	presentation:update(current,dt)
-	camera:update(current,dt)
+	local visual=presentation:frameData(current)
+ presentation:smoothStep(visual,dt)
+ presentation:update(visual,dt)
+ presentation:flushImpacts(visual,camera)
+ camera:update(visual,dt)
 	if current.phase=="Duel" and os.clock()&gt;=nextMove then
 		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
 	end
@@ -22773,7 +22959,7 @@ local BodyViews=require(script.Parent.BodyViews)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
-	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
+	return setmetatable({last={},recoil={},impactSerial=0,impactEpoch=nil,clocks={},landings={},frames={},pendingImpacts={},botModel=nil,fx=Effects.new(),bodies=BodyViews.new(),smooth={}},Presentation)
 end
 -- The opponent's body in the viewer's duel folder: the server names it by the
 -- id it sends as data.bot.id ("AIFighter" against the AI, a duelist online).
@@ -22783,9 +22969,9 @@ end
 -- The replicated root of a server-owned fighter only moves every other
 -- rendered frame (physics replication at ~30 Hz against a 60 Hz render), so a
 -- body drawn on it advances in jerks. Each fighter is instead drawn on a short
--- interpolated track of its replicated positions, a fixed ~45 ms behind: the
+-- interpolated track of its replicated positions, a fixed ~60 ms behind: the
 -- motion is continuous every frame. A real teleport still snaps.
-local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=.045,45,12,8
+local TRACK_DELAY,TRACK_SNAP,TRACK_MAX,TRACK_SAMPLES=Effects.DELAY,45,12,8
 local function yawOf(cf)
 	local look=cf.LookVector
 	return math.atan2(-look.X,-look.Z)
@@ -22874,26 +23060,65 @@ function Presentation:smoothStep(data,dt)
 		end
 	end
 end
--- Contact feed straight from the server: play the impact on the frame the hit
--- happened, so sound and VFX never lead or lag the animation.
-function Presentation:impacts(data,camera)
- -- Projectiles first, so a contact in the same packet can finish its blade.
- if data.phase=="Duel" then self.fx:sync(data) end
- if not data.impacts then return end
- -- The server restarts its contact serial with every duel.
- if self.impactEpoch~=data.epoch then self.impactEpoch=data.epoch;self.impactSerial=0 end
+-- Gameplay/UI receive the newest authority immediately. Body states, released
+-- objects and contact accents share the same short render timeline instead of
+-- showing the recoil before the blade has left the throwing hand.
+function Presentation:receive(data)
+ if self.receivedEpoch~=data.epoch then
+  self.receivedEpoch=data.epoch;table.clear(self.frames);table.clear(self.pendingImpacts)
+  self.impactEpoch=data.epoch;self.impactSerial=0
+ end
+ local frames=self.frames
+ local newest=frames[#frames]
+ if data.phase~="Duel" and data.phase~="Result" then table.clear(frames)
+ elseif not newest or not data.serverNow or not newest.serverNow or data.serverNow&gt;newest.serverNow then
+  table.insert(frames,data)
+  while #frames&gt;8 do table.remove(frames,1) end
+ end
+ self:impacts(data)
+end
+function Presentation:frameData(latest,at)
+ if (latest.phase~="Duel" and latest.phase~="Result") or latest.epoch~=self.receivedEpoch then return latest end
+ at=at or self.fx:visualTime()
+ local chosen=self.frames[1] or latest
+ for _,snap in self.frames do
+  if not snap.serverNow or snap.serverNow&lt;=at then chosen=snap else break end
+ end
+ return chosen
+end
+function Presentation:impacts(data)
+ -- Stage flights on receipt. Their activation and the queued contact use the
+ -- visual clock, including an announced-and-hit blade in the same packet.
+ if data.phase=="Duel" or data.phase=="Result" then self.fx:sync(data) end
+ if self.impactEpoch~=data.epoch then
+  self.impactEpoch=data.epoch;self.impactSerial=0;table.clear(self.pendingImpacts)
+ end
+ if data.phase~="Duel" and data.phase~="Result" then table.clear(self.pendingImpacts);return end
  local serial=data.impactSerial or 0
  if serial&lt;=self.impactSerial then return end
- local character=game:GetService("Players").LocalPlayer.Character
- local folder=character and character.Parent
- for _,impact in data.impacts do
+ for _,impact in data.impacts or {} do
   if impact.serial==nil or impact.serial&gt;self.impactSerial then
-   Feedback.impact(impact.style or "light",impact.position)
-   self.fx:impact(impact,folder)
-   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+   table.insert(self.pendingImpacts,impact)
   end
  end
  self.impactSerial=serial
+ -- A disconnected/paused renderer must not accumulate unbounded effects.
+ while #self.pendingImpacts&gt;96 do table.remove(self.pendingImpacts,1) end
+end
+function Presentation:flushImpacts(data,camera,at)
+ if data.epoch~=self.impactEpoch or (data.phase~="Duel" and data.phase~="Result") then return end
+ local character=game:GetService("Players").LocalPlayer.Character
+ local folder=character and character.Parent
+ local now=at or self.fx:visualTime()
+ local keep={}
+ for _,impact in self.pendingImpacts do
+  if not impact.at or impact.at&lt;=now then
+   Feedback.impact(impact.style or "light",impact.position)
+   self.fx:impact(impact,folder)
+   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+  else table.insert(keep,impact) end
+ end
+ self.pendingImpacts=keep
 end
 -- Genjutsu image. The server says who is deceived (illusion + decoy on that
 -- actor). Seen by the deceived player, the image IS Itachi: a frozen copy in
@@ -23008,6 +23233,8 @@ function Presentation:update(data,dt)
  local bot=Presentation.opponent(data,folder)
  self.botModel=bot
  local models={human=character,bot=bot}
+ local visualActors={}
+ local visualNow=self.fx:visualTime()
  for key,model in models do
   local actor=data[key];local previous=self.last[key]
   if model and actor then
@@ -23038,12 +23265,12 @@ function Presentation:update(data,dt)
    local tracked=self:visualVelocity(key)
    local velocity=if root then root.AssemblyLinearVelocity else actor.velocity
    if tracked and velocity then
-    -- Wall motion is positioned by the server with zero assembly velocity.
-    -- Its vertical cadence must follow the drawn track as well as its X/Z.
-    velocity=Vector3.new(tracked.X,if actor.wall then tracked.Y else velocity.Y,tracked.Z)
+    -- Root travel and pose share one timeline, including jump/fall Y.
+    -- Current assembly velocity can already be landing while the drawn body rises.
+    velocity=tracked
    end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
-   local speed=math.max(actor.speed or 0,planar)
+   local speed=if tracked then planar else math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
    -- a late packet cannot make the body replay its wind-up.
    local visual=table.clone(actor)
@@ -23054,24 +23281,28 @@ function Presentation:update(data,dt)
    visual.attackElapsed=clock.attackElapsed
    visual.landing=landing;visual.landingPhase=landingPhase;visual.landStrong=landingStrong
    visual.intro=data.intro
+   if data.serverNow then
+    visual.attackElapsed=math.max(0,(actor.attackElapsed or 0)+visualNow-data.serverNow)
+    visual.reactionElapsed=math.max(0,(actor.reactionElapsed or 0)+visualNow-data.serverNow)
+   end
    local other=if key=="human" then "bot" else "human"
    visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
    -- Throws and casts run on the shared server clock (slightly behind, like the
    -- projectiles), so the blade leaves the hand on the frame it starts flying.
    if data.serverNow then
-    local visualNow=workspace:GetServerTimeNow()-Effects.DELAY
     if actor.throwElapsed then visual.throwElapsed=visualNow-(data.serverNow-actor.throwElapsed) end
-    if actor.castElapsed then visual.castElapsed=workspace:GetServerTimeNow()-(data.serverNow-actor.castElapsed) end
-    if actor.channel then visual.channel=math.max(0,actor.channel-(workspace:GetServerTimeNow()-data.serverNow)) end
+    if actor.castElapsed then visual.castElapsed=visualNow-(data.serverNow-actor.castElapsed) end
+    if actor.channel then visual.channel=math.max(0,actor.channel-(visualNow-data.serverNow)) end
    end
+   visualActors[key]=visual
    Motion.weapon(model,visual)
    self.presented=self.presented or {}
-   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
+   self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,if data.serverNow then nil else clock,dt)),tostring(visual.health),tostring(visual.state))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end
  end
- self.fx:update(data,dt,folder)
+ self.fx:update(data,dt,folder,visualActors)
  self.bodies:update(data,dt,folder)
 end
 return Presentation
@@ -26168,6 +26399,21 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
 end
+-- A moving guard/channel keeps its authored upper body and attitude while
+-- sharing locomotion's world-planted support. Static poses stay authored.
+local function movingSupport(targets,support,fighterId)
+	local out=table.clone(targets)
+	local feet=targets.__feet
+	if feet and support.__feet then
+		out.__feet=table.clone(feet)
+		for side in feet do
+			if support.__feet[side] then out.__feet[side]=support.__feet[side] end
+		end
+	end
+	out.Root=(support.Root or IDENTITY)*rootCFOf(stance(fighterId)):Inverse()*(targets.Root or IDENTITY)
+	return out
+end
+
 -- ------------------------------------------------------------ acrobatics
 -- Movement overhaul (docs/movement/MOVEMENT_OVERHAUL_AUDIT.md, reference
 -- videos of 24/10): full-body rotations are part of the ninja's travel, not
@@ -26338,8 +26584,10 @@ end
 -- cycle; not the climbing pose turned sideways.
 local function wallRunTargets(char,actor,dt)
 	local s=stateOf(char)
-	s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*3.4)%1
-	local swing=math.sin(s.wallPhase*math.pi*2)
+	local speed=planar(actor.velocity).Magnitude
+	local drive=math.clamp(speed/10,0,1)
+	s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*math.clamp(speed/8,0,4))%1
+	local swing=math.sin(s.wallPhase*math.pi*2)*drive
 	local side=actor.wallSide or 1
 	return build({root={roll=side*26,pitch=10,y=-.15},torso={roll=side*6,pitch=6,yaw=-swing*6},head={roll=-side*14,pitch=-6},
 		ra={raise=-30+swing*44,out=16,elbow=70},la={raise=-30-swing*44,out=16,elbow=70},
@@ -26598,6 +26846,7 @@ end
 local weapons=setmetatable({},{__mode="k"})
 local MELEE={Lion={},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
+	model:PivotTo(hand.CFrame*c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
 	root.Anchored=false;root.Massless=true
@@ -26624,8 +26873,11 @@ local function weaponsFor(char,fighterId)
 	local kind=familyOf(fighterId).weapons
 	local minato=kind=="kunai"
 	local palms=kind=="palms"
-	if kind=="none" then return items end
-	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
+	local mastery=(Fighters[fighterId] or {}).ToolMastery
+ local tool=mastery and not mastery.Projectile and mastery.Kind
+ if kind=="none" and not tool then return items end
+ if kind=="none" then kind=if tool=="kunai" then "palms" else "shuriken";palms=kind=="palms" end
+	local hand=char:FindFirstChild(if kind=="shuriken" or kind=="wire" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
@@ -26667,10 +26919,18 @@ function Motion.weapon(char,actor)
 	local throwElapsed=actor.throwElapsed or 99
 	local releaseAt=actor.throwRelease or .1
 	local holding=throwKind~=nil and throwElapsed&gt;=0 and throwElapsed&lt;releaseAt
-	if throwKind=="Shuriken" and throwElapsed&gt;=releaseAt and throwElapsed&lt;releaseAt+.08 then holding=throwElapsed&gt;=releaseAt+.03 end
+	local count=actor.throwCount or (if throwKind=="Shuriken" then 2 else 1)
+ local interval=actor.throwInterval or .08
+ if throwElapsed&gt;=releaseAt and count&gt;1 then
+  local elapsed=throwElapsed-releaseAt
+  holding=elapsed&lt;(count-1)*interval and elapsed%interval&gt;=math.min(.025,interval*.5)
+ end
+ if actor.reaction or (actor.health or 1)&lt;=0 or actor.state=="Dodging" then holding=false end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
 	if kind=="none" then
-		-- (no hand weapon: the sand does the work)
+		-- Family melee objects stay independent; ordinary tools still occupy a hand.
+  setVisible(items.throw,holding and throwKind=="Kunai")
+  setVisible(items.shuriken,holding and throwKind=="Shuriken")
 	elseif kind=="palms" then
 		setVisible(items.throw,holding and throwKind=="Kunai")
 	elseif minato then
@@ -26734,13 +26994,28 @@ function Motion.defense(char,actor,dt)
 	elseif actor.reaction then
 		-- Standing hit: the feet stay planted and stagger-step as the body is
 		-- pushed, instead of sliding with it.
-		local feet=nil
+		local feet,support=nil,nil
 		if not actor.airborne then
-			local velocity=planar(actor.velocity)
-			local rf,lf=stepFeet(char,stateOf(char),stance(actor.fighterId),velocity,velocity.Magnitude,dt,"react")
-			feet={rf=rf,lf=lf}
+			support=locomotionTargets(char,actor,actor.fighterId,dt,nil,"react")
+			feet={}
+			for side,f in support.__feet or {} do
+				feet[if side=="R" then "rf" else "lf"]={x=f.ankle.X-(if side=="R" then .5 else -.5),y=f.ankle.Y-ANKLE_Y,z=f.ankle.Z,yaw=f.yaw,toe=f.toe}
+			end
 		end
 		targets,rate=reactionTargets(actor,feet)
+		if support and (actor.reaction=="HitStun" or actor.reaction=="GuardStun") then
+			if actor.reaction=="GuardStun" then
+				local guard=guardTargets(actor.fighterId,0)
+				if planar(actor.velocity).Magnitude&gt;1.2 then guard=movingSupport(guard,support,actor.fighterId) end
+				guard=table.clone(guard);guard.__feet=support.__feet;support=guard
+			end
+			-- Keep the sharp impact, then leave it in the fighter's living
+			-- guard/gait rather than the rig's generic upright pose.
+			local duration=reactionDuration[actor.reaction] or .24
+			local exit=smooth(math.clamp(((actor.reactionElapsed or 0)-duration*.45)/(duration*.55),0,1))
+			targets=table.clone(blend(targets,support,exit))
+			targets.__feet=support.__feet
+		end
 	else
 		return
 	end
@@ -26815,6 +27090,9 @@ function Motion.present(char,actor,clock,dt)
 	local memo=stateOf(char)
 	trickStep(char,subject)
 	if subject.state~=memo.lastState then
+		-- Defense may not run during the intervening locomotion/attack.
+		-- Every new dodge owns its own push-off and rotation clock.
+		if subject.state=="Dodging" then memo.dashAt=elapsedTime end
 		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end
 		memo.lastState=subject.state
 	end
@@ -26882,6 +27160,10 @@ function Motion.present(char,actor,clock,dt)
 	end
 	if subject.state=="Guarding" then
 		local targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+		if not subject.airborne and planar(subject.velocity).Magnitude&gt;1.2 then
+			local support=locomotionTargets(char,subject,subject.fighterId,dt,nil,"guard")
+			targets=movingSupport(targets,support,subject.fighterId)
+		end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
@@ -26914,6 +27196,8 @@ function Motion.present(char,actor,clock,dt)
 			if subject.airborne then
 				-- Keep the legs of the air pose; the upper body casts.
 				for key in JOINTS do if not UPPER[key] and key~="Root" then targets[key]=base[key] end end
+			elseif planar(subject.velocity).Magnitude&gt;1.2 then
+				targets=movingSupport(targets,base,subject.fighterId)
 			end
 			local slip=memo.slipAt and elapsedTime-memo.slipAt
 			if slip and slip&lt;.14 and subject.castId=="Read" then
@@ -27081,7 +27365,7 @@ function M.install(FX,kit)
 	local held=setmetatable({},{__mode="k"})
 	local function cleaver(fx,model,actor)
 		if actor.fighterId~="Mist" then return end
-		local swinging=(actor.health or 1)&gt;0
+		local swinging=(actor.health or 1)&gt;0 and not actor.toolThrowActive
 		local st=held[model]
 		if not st then
 			local hand=model:FindFirstChild("RightHand")
@@ -27642,7 +27926,7 @@ function M.install(FX,kit)
 		if st==nil then st=blades(model) or false;held[model]=st end
 		if not st then return end
 		local a=actor.attackName
-		local stow=(actor.health or 1)&lt;=0 or (a~=nil and STOW[a]==true)
+		local stow=(actor.health or 1)&lt;=0 or actor.toolThrowActive or (a~=nil and STOW[a]==true)
 		local knee=not stow and a~=nil and KNEE[a]==true
 		local config=if stow then "stow" elseif knee then "knee" else "A"
 		local live=actor.state=="Active" and a~=nil
@@ -27832,7 +28116,7 @@ function M.install(FX,kit)
 			weld(hand,{blade,guard,grip})
 			st={parts={blade,guard,grip},trail=trail(blade,Vector3.new(0,0,-1.2),Vector3.new(0,0,1.2),Color3.fromRGB(230,236,244)),shown=nil};held[model]=st
 		end
-		local drawn=live(actor) or actor.state=="Guarding" or actor.state=="TechniqueChannel"
+		local drawn=not actor.toolThrowActive and (live(actor) or actor.state=="Guarding" or actor.state=="TechniqueChannel")
 		st.trail.Enabled=actor.state=="Active" and actor.attackName~=nil
 		if st.shown==drawn then return end
 		st.shown=drawn

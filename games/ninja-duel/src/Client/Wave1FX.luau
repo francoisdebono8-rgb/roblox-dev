@@ -45,7 +45,7 @@ function M.install(FX,kit)
 	local held=setmetatable({},{__mode="k"})
 	local function cleaver(fx,model,actor)
 		if actor.fighterId~="Mist" then return end
-		local swinging=(actor.health or 1)>0
+		local swinging=(actor.health or 1)>0 and not actor.toolThrowActive
 		local st=held[model]
 		if not st then
 			local hand=model:FindFirstChild("RightHand")

@@ -325,17 +325,19 @@ test("presentation: selectable in the menu, a costume of its own, every family o
   local FX=H.load("Client/Effects")
   local fx=FX.new()
   local folder=instance("Folder")
+  local flightId=900
   for _,id in Roster do
    for _,spec in Fighters[id].Techniques do
     if spec.Family=="Projectile" then
      local kind=spec.Kind or "chakra"
      assert(FamilyFX.SHAPES[Looks[kind].shape],id..": no shape for "..kind)
-     local p={id=900,kind=kind,origin=V.new(0,3,0),direction=-V.zAxis,speed=50,born=99.9,range=30,owner="A",radius=1}
+     flightId+=1
+     local p={id=flightId,kind=kind,origin=V.new(0,3,0),direction=-V.zAxis,speed=50,born=99.9,range=30,owner="A",radius=1}
      fx:sync({epoch=1,projectiles={p}})
-     local entry=fx.projectiles[900]
+     local entry=fx.projectiles[flightId]
      assert(entry and entry.model and entry.model.Name~="Kunai",id..": "..kind.." drawn as "..tostring(entry and entry.model and entry.model.Name))
      fx:stepProjectiles(1/60)
-     fx:impact({style="look",kind=kind,position=V.new(0,3,-5),projectile=900,serial=1},folder)
+     fx:impact({style="look",kind=kind,position=V.new(0,3,-5),projectile=flightId,serial=1},folder)
      fx:sync({epoch=1,projectiles={}})
     end
    end

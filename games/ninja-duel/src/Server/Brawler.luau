@@ -308,11 +308,14 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
  a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
+ -- Physical impulses continue after stun; bounded pulls explicitly finish at
+ -- rest, rather than carrying their victim through the caster afterwards.
+ a.reactionPullTo=nil
 	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
  Brawler.resetStrings(a);a.rush=nil;a.arrivalRecovery=nil;a.rushArriveUntil=0
- a.locomotion=Vector3.zero
+ a.locomotion=Vector3.zero;a.strikeCarry=nil
  if airReactions[kind] then a.airborne=true end
  if kind=="Knockdown" then
   a.invulnerableUntil=c.now+duration+.24
@@ -324,10 +327,23 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  if kind=="WallSplat" then a.groundPose="Splat" end
  if not airReactions[kind] then a.groundPose=nil end
 end
+-- An unconfirmed jump-in may suspend briefly to meet a body, but losing that
+-- body cannot turn a missed strike into a hover. Return the takeoff trajectory,
+-- aged by gravity, without granting another jump or resetting air-string limits.
+function Brawler.releaseAirEntry(c,a,p)
+ if not p or not p.airEntry then return end
+ local v=p.airEntry;p.airEntry=nil
+ local age=math.max(0,c.now-(p.airEntryAt or c.now))
+ v=Vector3.new(v.X,v.Y-Config.Movement.FallbackGravity*age,v.Z)
+ a.airHold=c.now
+ a.root.AssemblyLinearVelocity=v;a.locomotion=Vector3.new(v.X,0,v.Z)
+end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
  -- Any new strike drops a pending running-strike hand-back (it is for the
  -- run after the swing, not for the next blow of a string).
+ local entryState=a.state
+ local entry=a.locomotion or Vector3.zero
  a.strikeCarry=nil
  -- A strike another body may carry out (MoveGraphs proxy: Naruto's clones),
  -- or its solo / awakened form when there is no body for it.
@@ -403,6 +419,16 @@ function Brawler.start(c,a,name)
  -- startup (Combat:turnToward, bounded rate) instead of snapping in one frame.
 	local side=a.root.CFrame.RightVector*(spec.angle or 0)
 	a.travelDirection=(flat+side).Unit;a.state="Startup";a.untilTime=c.now+spec.startup
+ -- A normal running opener keeps a small part of its actual entry step. It
+ -- spends the authored travel budget (Combat), never adds a second lunge or
+ -- allows fresh steering during recovery. Full sprint entries keep their
+ -- existing, explicit running-strike contract below.
+ if opener and entryState=="Neutral" and not a.airborne and not spec.air
+  and not proxy and (name=="Light1" or name=="Heavy") and entry.Magnitude>4 then
+  local speed=math.min(entry.Magnitude,a.def.Speed or 18)
+  a.strikeCarry={dir=entry.Unit,speed=speed*.6,slide=speed,at=c.now,
+   remaining=math.min(spec.travel,speed*.13,2.4),reserve=math.min(.5,spec.travel*.15),entry=true}
+ end
  if proxy then Bodies.bind(c,a,a.pending,proxy,kind) end
  if spec.air or name=="Slam" then
   -- The air hold carries a string that works (or the first swing of a jump,
@@ -418,6 +444,9 @@ function Brawler.start(c,a,name)
   local inReach=gap~=nil and Vector3.new(gap.X,0,gap.Z).Magnitude<=(spec.range or 5)+4 and math.abs(gap.Y)<10
   if name=="Slam" or (a.airCombo or 0)>=1 or (not a.airSwingUsed and inReach) then
    a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+   if spec.air and name~="Slam" and name~="WallDive" and (a.airCombo or 0)==0 then
+    a.pending.airEntry=a.root.AssemblyLinearVelocity;a.pending.airEntryAt=c.now
+   end
   end
   a.airSwingUsed=true
  end
@@ -1172,7 +1201,14 @@ function Brawler.step(c,a,dt)
     a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
-    a.reaction=nil;a.reactionVelocity=nil
+    -- Controlled reactions move the root with swept travel while its physical
+    -- velocity is zero. When control returns in air, continue that trajectory
+    -- instead of restarting gravity from a motionless body.
+    if a.airborne and a.reactionVelocity then
+     local v=if a.reactionPullTo then Vector3.zero else a.reactionVelocity
+     a.root.AssemblyLinearVelocity=v;a.locomotion=Vector3.new(v.X,0,v.Z)
+    end
+    a.reaction=nil;a.reactionVelocity=nil;a.reactionPullTo=nil
     -- Fully recovered: drop the grounded presentation state with it.
     a.groundPose=nil
    end
@@ -1187,7 +1223,21 @@ function Brawler.step(c,a,dt)
     if hit and hit.Normal.Y>.5 then velocity=Vector3.zero;a.airborne=false;a.landedAt=c.now end
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
-    local hit=Motor.flight(a,c,velocity*dt)
+    local delta=velocity*dt
+    -- A pull has a destination, unlike a blow that throws the body away.
+    -- Clamp each step before the source's clearance radius; tuning the
+    -- initial speed alone did not stop a long pull passing through him.
+    local source=a.reactionSource
+    if a.reactionPullTo and source and source.root then
+     local to=source.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+     local planar=Vector3.new(delta.X,0,delta.Z)
+     local remaining=math.max(0,to.Magnitude-a.reactionPullTo)
+     if planar.Magnitude>remaining and planar:Dot(to)>0 then
+      delta=(if planar.Magnitude>.001 then planar.Unit*remaining else Vector3.zero)+Vector3.new(0,delta.Y,0)
+      velocity=Vector3.new(0,velocity.Y,0)
+     end
+    end
+    local hit=Motor.flight(a,c,delta)
     if hit then
      if hit.Normal.Y>.5 and velocity.Y<0 and a.reaction=="Spiked" and not a.groundBounced then
       -- Ground bounce: the spike drives the body into the floor and it pops

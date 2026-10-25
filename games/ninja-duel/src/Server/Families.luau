@@ -203,6 +203,7 @@ function Families.contact(c,a,b,spec,direction,damaged,guarded,position)
 		local gap=flat(b.root.Position-a.root.Position).Magnitude
 		local pull=math.min(spec.Pull,math.max(0,gap-(spec.PullTo or 3.5))*4.2)
 		Brawler.react(c,b,"Knockback",-direction*pull+Vector3.yAxis*(spec.Lift or 8),spec.Stun or .45,a)
+		b.reactionPullTo=spec.PullTo or 3.5
 	elseif spec.Knock or spec.Lift or spec.React then
 		local kind=spec.React or (if (spec.Lift or 0)>=40 then "Launched" else "Knockback")
 		Brawler.react(c,b,kind,direction*(spec.Knock or 0)+Vector3.yAxis*(spec.Lift or 0),spec.Stun or .5,a)

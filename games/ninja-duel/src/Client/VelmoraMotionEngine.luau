@@ -1749,6 +1749,21 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	spec.rf=rf;spec.lf=lf
 	return build(spec),(if sprint then RATE.chase else RATE.locomotion)
 end
+-- A moving guard/channel keeps its authored upper body and attitude while
+-- sharing locomotion's world-planted support. Static poses stay authored.
+local function movingSupport(targets,support,fighterId)
+	local out=table.clone(targets)
+	local feet=targets.__feet
+	if feet and support.__feet then
+		out.__feet=table.clone(feet)
+		for side in feet do
+			if support.__feet[side] then out.__feet[side]=support.__feet[side] end
+		end
+	end
+	out.Root=(support.Root or IDENTITY)*rootCFOf(stance(fighterId)):Inverse()*(targets.Root or IDENTITY)
+	return out
+end
+
 -- ------------------------------------------------------------ acrobatics
 -- Movement overhaul (docs/movement/MOVEMENT_OVERHAUL_AUDIT.md, reference
 -- videos of 24/10): full-body rotations are part of the ninja's travel, not
@@ -1919,8 +1934,10 @@ end
 -- cycle; not the climbing pose turned sideways.
 local function wallRunTargets(char,actor,dt)
 	local s=stateOf(char)
-	s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*3.4)%1
-	local swing=math.sin(s.wallPhase*math.pi*2)
+	local speed=planar(actor.velocity).Magnitude
+	local drive=math.clamp(speed/10,0,1)
+	s.wallPhase=((s.wallPhase or 0)+math.min(dt or 1/60,.1)*math.clamp(speed/8,0,4))%1
+	local swing=math.sin(s.wallPhase*math.pi*2)*drive
 	local side=actor.wallSide or 1
 	return build({root={roll=side*26,pitch=10,y=-.15},torso={roll=side*6,pitch=6,yaw=-swing*6},head={roll=-side*14,pitch=-6},
 		ra={raise=-30+swing*44,out=16,elbow=70},la={raise=-30-swing*44,out=16,elbow=70},
@@ -2179,6 +2196,7 @@ end
 local weapons=setmetatable({},{__mode="k"})
 local MELEE={Lion={},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
+	model:PivotTo(hand.CFrame*c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
 	root.Anchored=false;root.Massless=true
@@ -2205,8 +2223,11 @@ local function weaponsFor(char,fighterId)
 	local kind=familyOf(fighterId).weapons
 	local minato=kind=="kunai"
 	local palms=kind=="palms"
-	if kind=="none" then return items end
-	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
+	local mastery=(Fighters[fighterId] or {}).ToolMastery
+ local tool=mastery and not mastery.Projectile and mastery.Kind
+ if kind=="none" and not tool then return items end
+ if kind=="none" then kind=if tool=="kunai" then "palms" else "shuriken";palms=kind=="palms" end
+	local hand=char:FindFirstChild(if kind=="shuriken" or kind=="wire" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
 		Effects=Effects or require(script.Parent.Effects)
@@ -2248,10 +2269,18 @@ function Motion.weapon(char,actor)
 	local throwElapsed=actor.throwElapsed or 99
 	local releaseAt=actor.throwRelease or .1
 	local holding=throwKind~=nil and throwElapsed>=0 and throwElapsed<releaseAt
-	if throwKind=="Shuriken" and throwElapsed>=releaseAt and throwElapsed<releaseAt+.08 then holding=throwElapsed>=releaseAt+.03 end
+	local count=actor.throwCount or (if throwKind=="Shuriken" then 2 else 1)
+ local interval=actor.throwInterval or .08
+ if throwElapsed>=releaseAt and count>1 then
+  local elapsed=throwElapsed-releaseAt
+  holding=elapsed<(count-1)*interval and elapsed%interval>=math.min(.025,interval*.5)
+ end
+ if actor.reaction or (actor.health or 1)<=0 or actor.state=="Dodging" then holding=false end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
 	if kind=="none" then
-		-- (no hand weapon: the sand does the work)
+		-- Family melee objects stay independent; ordinary tools still occupy a hand.
+  setVisible(items.throw,holding and throwKind=="Kunai")
+  setVisible(items.shuriken,holding and throwKind=="Shuriken")
 	elseif kind=="palms" then
 		setVisible(items.throw,holding and throwKind=="Kunai")
 	elseif minato then
@@ -2315,13 +2344,28 @@ function Motion.defense(char,actor,dt)
 	elseif actor.reaction then
 		-- Standing hit: the feet stay planted and stagger-step as the body is
 		-- pushed, instead of sliding with it.
-		local feet=nil
+		local feet,support=nil,nil
 		if not actor.airborne then
-			local velocity=planar(actor.velocity)
-			local rf,lf=stepFeet(char,stateOf(char),stance(actor.fighterId),velocity,velocity.Magnitude,dt,"react")
-			feet={rf=rf,lf=lf}
+			support=locomotionTargets(char,actor,actor.fighterId,dt,nil,"react")
+			feet={}
+			for side,f in support.__feet or {} do
+				feet[if side=="R" then "rf" else "lf"]={x=f.ankle.X-(if side=="R" then .5 else -.5),y=f.ankle.Y-ANKLE_Y,z=f.ankle.Z,yaw=f.yaw,toe=f.toe}
+			end
 		end
 		targets,rate=reactionTargets(actor,feet)
+		if support and (actor.reaction=="HitStun" or actor.reaction=="GuardStun") then
+			if actor.reaction=="GuardStun" then
+				local guard=guardTargets(actor.fighterId,0)
+				if planar(actor.velocity).Magnitude>1.2 then guard=movingSupport(guard,support,actor.fighterId) end
+				guard=table.clone(guard);guard.__feet=support.__feet;support=guard
+			end
+			-- Keep the sharp impact, then leave it in the fighter's living
+			-- guard/gait rather than the rig's generic upright pose.
+			local duration=reactionDuration[actor.reaction] or .24
+			local exit=smooth(math.clamp(((actor.reactionElapsed or 0)-duration*.45)/(duration*.55),0,1))
+			targets=table.clone(blend(targets,support,exit))
+			targets.__feet=support.__feet
+		end
 	else
 		return
 	end
@@ -2396,6 +2440,9 @@ function Motion.present(char,actor,clock,dt)
 	local memo=stateOf(char)
 	trickStep(char,subject)
 	if subject.state~=memo.lastState then
+		-- Defense may not run during the intervening locomotion/attack.
+		-- Every new dodge owns its own push-off and rotation clock.
+		if subject.state=="Dodging" then memo.dashAt=elapsedTime end
 		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end
 		memo.lastState=subject.state
 	end
@@ -2463,6 +2510,10 @@ function Motion.present(char,actor,clock,dt)
 	end
 	if subject.state=="Guarding" then
 		local targets,rate=guardTargets(subject.fighterId,subject.guardImpact)
+		if not subject.airborne and planar(subject.velocity).Magnitude>1.2 then
+			local support=locomotionTargets(char,subject,subject.fighterId,dt,nil,"guard")
+			targets=movingSupport(targets,support,subject.fighterId)
+		end
 		apply(char,targets,rate,dt)
 		return "guard"
 	end
@@ -2495,6 +2546,8 @@ function Motion.present(char,actor,clock,dt)
 			if subject.airborne then
 				-- Keep the legs of the air pose; the upper body casts.
 				for key in JOINTS do if not UPPER[key] and key~="Root" then targets[key]=base[key] end end
+			elseif planar(subject.velocity).Magnitude>1.2 then
+				targets=movingSupport(targets,base,subject.fighterId)
 			end
 			local slip=memo.slipAt and elapsedTime-memo.slipAt
 			if slip and slip<.14 and subject.castId=="Read" then

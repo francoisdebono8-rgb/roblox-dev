@@ -226,12 +226,38 @@ end
 function FX.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelFX";folder.Parent=workspace
 	return setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
-		clock=0,cache={}},FX)
+		clock=0,cache={},finishedFlights={},finishedOrder={}},FX)
+end
+-- These effects are parented to a fighter rather than the world FX folder.
+-- Tear down only our own attachments, never the rig's authored eyes or veins.
+local function clearAura(model,aura)
+	if aura.trail then
+		aura.trail.Enabled=false
+		if aura.trail.Attachment0 then aura.trail.Attachment0:Destroy() end
+		if aura.trail.Attachment1 then aura.trail.Attachment1:Destroy() end
+		aura.trail:Destroy()
+	end
+	if aura.eyeLight then aura.eyeLight:Destroy() end
+	for _,name in {"mantle","chidori"} do
+		local state=aura[name]
+		if state and state.attachment then state.attachment:Destroy() end
+	end
+	if aura.mouthAttachment then aura.mouthAttachment:Destroy() end
+	for _,name in {"binding","dome"} do
+		local state=aura[name]
+		if state and state.holder then state.holder:Destroy() end
+	end
+	for part,color in aura.cloth or {} do if part.Parent then part.Color=color end end
+	if (aura.wear or 0)>0 then
+		for _,part in model:GetDescendants() do if part.Name=="BattleWear" then part:Destroy() end end
+	end
 end
 function FX:reset()
 	self.folder:ClearAllChildren()
 	table.clear(self.projectiles);table.clear(self.stuck);table.clear(self.seals);table.clear(self.hazards);table.clear(self.rasengan)
-	for _,aura in self.auras do if aura.trail then aura.trail.Enabled=false end end
+	table.clear(self.finishedFlights);table.clear(self.finishedOrder)
+	for model,aura in self.auras do clearAura(model,aura) end
+	table.clear(self.auras)
 end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
@@ -259,6 +285,39 @@ local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() 
 		local flames=at and at:FindFirstChild("Flames");if flames then flames.Rate=60 end
 		return model
 	end}
+-- A flight is staged off-scene: even an invisible fireball must not emit
+-- particles, light, trail or sound before the throwing arm releases it.
+local function stageFlight(entry)
+	entry.parts={};entry.switches={}
+	for _,d in entry.model:GetDescendants() do
+		if d:IsA("BasePart") then
+			table.insert(entry.parts,d);d.LocalTransparencyModifier=1
+		elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") or d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+			-- Infusion emitters are deliberately built disabled and become live
+			-- with the flight; other switches keep their authored on/off state.
+			local infusionEmitter=entry.decor and table.find(entry.decor.emitters or {},d)~=nil
+			table.insert(entry.switches,{object=d,enabled=d.Enabled~=false or infusionEmitter==true});d.Enabled=false
+		end
+	end
+	entry.hidden=true
+end
+local function showFlight(entry,visible)
+	if entry.hidden==not visible then return end
+	entry.hidden=not visible
+	for _,p in entry.parts do p.LocalTransparencyModifier=if visible then 0 else 1 end
+	for _,v in entry.switches do v.object.Enabled=visible and v.enabled end
+end
+local function releaseSound(entry)
+	if entry.released then return end
+	entry.released=true
+	local kind=entry.data.kind
+	if kind=="fireball" then sound(entry.root,SOUND.boom,.35,.55)
+	elseif kind=="phoenix" then sound(entry.root,SOUND.whoosh,.25,.7)
+	elseif kind=="palm" then sound(entry.root,SOUND.whoosh,.45,.6)
+	elseif kind=="kunai" or kind=="marked" or kind=="shuriken" or kind=="wire" then
+		sound(entry.root,SOUND.whoosh,.28,if kind=="shuriken" then 1.5 else 1.25)
+	end
+end
 -- Snapshot sync: create visuals for newly announced projectiles, mark the ones
 -- the server no longer reports.
 function FX:sync(data)
@@ -267,6 +326,7 @@ function FX:sync(data)
 	if data.human and data.bot then self.fighterIds={data.human.id,data.bot.id} end
 	local live={}
 	for _,p in data.projectiles or {} do
+		if self.finishedFlights[p.id] then continue end
 		live[p.id]=true
 		local entry=self.projectiles[p.id]
 		if not entry and p.planted then
@@ -279,7 +339,6 @@ function FX:sync(data)
 		elseif not entry then
 			local build=BUILD[p.kind] or BUILD.kunai
 			local model=build()
-			model.Parent=self.folder
 			local root=model.PrimaryPart
 			-- Chakra infusion: the object itself looks reinforced / windy / burning /
 			-- charged (decorations only; the flight is the server's).
@@ -294,7 +353,7 @@ function FX:sync(data)
 			if p.kind=="wire" then
 				-- Ninja wire: a thin line from the thrower's hand to the blade.
 				local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
-				local hand=owner and owner:FindFirstChild("RightHand")
+				local hand=owner and owner:FindFirstChild("LeftHand")
 				if hand then
 					local a0=new("Attachment",{Name="WireStart"},hand)
 					local a1=new("Attachment",{Name="WireEnd"},root)
@@ -304,16 +363,11 @@ function FX:sync(data)
 			end
 			entry={data=p,model=model,root=root,spin=math.random()*math.pi*2,hidden=true,decor=if type(decor)=="table" then decor else nil}
 			self.projectiles[p.id]=entry
-			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
-			if p.kind=="fireball" then
-				sound(root,SOUND.boom,.35,.55)
-			elseif p.kind=="phoenix" then
-				sound(root,SOUND.whoosh,.25,.7)
-			elseif p.kind=="palm" then
-				sound(root,SOUND.whoosh,.45,.6)
-			elseif p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire" then
-				sound(root,SOUND.whoosh,.28,if p.kind=="shuriken" then 1.5 else 1.25)
-			end
+			stageFlight(entry)
+			-- Position the complete model before it enters the live scene. Welds
+			-- no longer spend a frame at the builders' local origin.
+			model:PivotTo(CFrame.lookAt(p.origin,p.origin+p.direction))
+			model.Parent=self.folder
 		elseif not p.planted and entry.data.born~=p.born then
 			-- Re-based in the air (Combat:redirect: a wind lane turned it aside or
 			-- sped it up): the old leg is drawn until the visual clock reaches the
@@ -328,13 +382,20 @@ function FX:sync(data)
 	end
 end
 function FX:finishProjectile(id)
+	if id==nil then return nil end
+	-- A repeated/stale snapshot must not resurrect a flight after its contact.
+	-- Keep bounded per-duel tombstones even when contact arrived before spawn.
+	if not self.finishedFlights[id] then
+		self.finishedFlights[id]=true;table.insert(self.finishedOrder,id)
+		if #self.finishedOrder>256 then self.finishedFlights[table.remove(self.finishedOrder,1)]=nil end
+	end
 	local entry=self.projectiles[id]
 	if not entry then return nil end
 	self.projectiles[id]=nil
 	local root=entry.root
 	-- Let a trail finish fading instead of cutting it.
 	for _,d in entry.model:GetDescendants() do
-		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
+		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") or d:IsA("Trail") or d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then d.Enabled=false end
 	end
 	Debris:AddItem(entry.model,.6)
 	return entry,root
@@ -354,12 +415,6 @@ function FX:stepProjectiles(dt)
 		if entry.static then
 			pcall(self.restStep,self,entry)
 			continue
-		end
-		local hidden=age<0
-		if hidden~=entry.hidden then
-			entry.hidden=hidden
-			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
-			if entry.decor then for _,e in entry.decor.emitters do e.Enabled=not hidden end end
 		end
 		if entry.decor and entry.decor.light then
 			local look=entry.decor.look
@@ -403,6 +458,9 @@ function FX:stepProjectiles(dt)
 			cf=look
 		end
 		entry.root.CFrame=cf
+		local visible=age>=0
+		showFlight(entry,visible)
+		if visible then releaseSound(entry) end
 	end
 end
 
@@ -1447,7 +1505,7 @@ function FX:fighter(model,actor,dt)
 		local light=new("PointLight",{Color=tone,Brightness=2.5,Range=12,Shadows=false},at)
 		aura.mantle={attachment=at,emitter=e,light=light}
 	elseif not awake and aura.mantle then
-		aura.mantle.emitter.Enabled=false
+		aura.mantle.emitter.Enabled=false;aura.mantle.light.Enabled=false
 		Debris:AddItem(aura.mantle.attachment,1)
 		aura.mantle=nil
 	end
@@ -1488,7 +1546,7 @@ function FX:fighter(model,actor,dt)
 		aura.chidori={attachment=at,emitter=e,core=core,light=light}
 		sound(hand,SOUND.whoosh,.5,2.6)
 	elseif not chidori and aura.chidori then
-		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
+		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false;aura.chidori.light.Enabled=false
 		Debris:AddItem(aura.chidori.attachment,.4)
 		aura.chidori=nil
 	end
@@ -1564,8 +1622,13 @@ function FX:fighter(model,actor,dt)
 	elseif orb then
 		self.rasengan[model]=nil
 		orb.emitter.Enabled=false
-		flash(self.folder,orb.core.Position,Color3.fromRGB(170,220,255),1.5,5,.2,.2)
-		orb.holder:Destroy()
+		-- Losing the charge is not a confirmed hit. Only the impact feed may
+		-- make the contact flash; an interrupted hand orb simply dissipates.
+		for _,part in orb.holder:GetDescendants() do
+			if part:IsA("BasePart") then tween(part,.1,{Transparency=1})
+			elseif part:IsA("PointLight") then part.Enabled=false end
+		end
+		Debris:AddItem(orb.holder,.12)
 	end
 	-- Katon: embers gather at the mouth during the hand signs, then the breath.
 	if actor.fighterId=="Mirage" then
@@ -1573,7 +1636,8 @@ function FX:fighter(model,actor,dt)
 		local casting=(actor.castId=="FireBloom" or actor.castId=="PhoenixFlower") and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive")
 		if casting and head then
 			if not aura.mouth then
-				local at=new("Attachment",{Position=Vector3.new(0,-.25,-.8)},head)
+				local at=new("Attachment",{Name="FireBreath",Position=Vector3.new(0,-.25,-.8)},head)
+				aura.mouthAttachment=at
 				aura.mouth=new("ParticleEmitter",{Texture=TEX.fire,Rate=0,Lifetime=NumberRange.new(.15,.3),Speed=NumberRange.new(4,10),
 					SpreadAngle=Vector2.new(18,18),EmissionDirection=Enum.NormalId.Front,Color=seq({{0,Color3.fromRGB(255,230,150)},{1,Color3.fromRGB(255,90,30)}}),
 					LightEmission=1,LightInfluence=0,Size=num({{0,.6},{1,1.6}}),Transparency=num({{0,.2},{1,1}})},at)
@@ -1634,8 +1698,11 @@ function FX:ambient(dt)
 		self.cheering=active
 	end
 end
-function FX:update(data,dt,folder)
+function FX:update(data,dt,folder,visualActors)
 	self.fighters=folder
+	for model,aura in self.auras do
+		if not model.Parent then clearAura(model,aura);self.auras[model]=nil end
+	end
 	if not data or data.phase~="Duel" then
 		if self.epoch~=nil and data and data.phase=="Selection" then self.epoch=nil;self:reset() end
 		self:stepProjectiles(dt)
@@ -1649,9 +1716,13 @@ function FX:update(data,dt,folder)
 	self:crowdOf(folder)
 	self:ambient(dt)
 	for _,key in {"human","bot"} do
-		local actor=data[key]
+		local actor=visualActors and visualActors[key] or data[key]
 		if actor then
 			actor.intro=data.intro
+   local elapsed=actor.throwElapsed or 99
+   actor.toolThrowActive=actor.throwKind~=nil and elapsed>=0
+    and elapsed<(actor.throwRelease or .1)+math.max(0,(actor.throwCount or 1)-1)*(actor.throwInterval or .08)+.18
+    and not actor.reaction and actor.state~="Dodging"
 			local other=data[if key=="human" then "bot" else "human"]
 			actor.opponentFighter=other and other.fighterId
 			self:seal(actor.id or key,actor,folder)
@@ -1662,8 +1733,6 @@ function FX:update(data,dt,folder)
 	end
 	-- Layers that draw across the scene once per frame (ChakraFX).
 	for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
-	-- A layer may also read the whole duel once per frame (both fighters, hazards).
-	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

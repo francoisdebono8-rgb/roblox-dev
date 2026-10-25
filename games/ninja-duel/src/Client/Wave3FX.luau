@@ -78,7 +78,7 @@ function M.install(FX,kit)
 		if st==nil then st=blades(model) or false;held[model]=st end
 		if not st then return end
 		local a=actor.attackName
-		local stow=(actor.health or 1)<=0 or (a~=nil and STOW[a]==true)
+		local stow=(actor.health or 1)<=0 or actor.toolThrowActive or (a~=nil and STOW[a]==true)
 		local knee=not stow and a~=nil and KNEE[a]==true
 		local config=if stow then "stow" elseif knee then "knee" else "A"
 		local live=actor.state=="Active" and a~=nil
