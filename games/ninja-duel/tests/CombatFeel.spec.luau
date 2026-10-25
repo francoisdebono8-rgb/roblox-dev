@@ -1,4 +1,4 @@
--- Combat convergence breakthrough (docs/active/NEXT_MISSION_COMBAT_CONVERGENCE_BREAKTHROUGH.md):
+-- Combat convergence breakthrough (docs/archive/requests/2026-10-25-combat-convergence-breakthrough.md):
 -- the systemic fixes found in Studio frame-by-frame strips, held headless.
 -- The look itself is judged in Studio; these guard the mechanics under it.
 local H=require("./Harness")
