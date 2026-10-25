@@ -4,6 +4,7 @@ local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
+local WorldReaction=require(script.Parent.WorldReaction)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -935,6 +936,8 @@ end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
 function Brawler.splatSurface(part)
+ -- (A broken one is a stump or a mound now: nothing to be slammed into.)
+ if part:GetAttribute("WorldState")=="Broken" then return false end
  return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
 end
 -- Wall splat: a body carried into a wall hard enough sticks to it for a
@@ -1397,17 +1400,27 @@ function Brawler.step(c,a,dt)
       velocity=Vector3.new(velocity.X*.3,30,velocity.Z*.3)
       c:pushImpact(a.root.Position-Vector3.new(0,2.6,0),"groundbounce",true,{victim=a.id})
       Brawler.event(c,a,"GroundBounce")
+      -- The floor keeps the spike (EMB-004): a crater where the body went in.
+      WorldReaction.landing(c,a,hit,-velocity.Y)
       a.reactionVelocity=velocity;return true
      end
      if hit.Normal.Y>.5 and velocity.Y<0 then
       if a.reaction=="Spiked" then a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionUntil=c.now+.6;a.invulnerableUntil=c.now+.85 end
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
+      WorldReaction.landing(c,a,hit,-velocity.Y)
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
       a.airborne=false;a.airRecoverUsed=false;a.airStringHits=0
       a.landedAt=c.now
       -- A body thrown along the floor keeps some of its run as a skid.
       velocity=Vector3.new(velocity.X,0,velocity.Z)*.6
+     elseif math.abs(hit.Normal.Y)<.3 and WorldReaction.body(c,a,hit,-velocity:Dot(hit.Normal),velocity) and hit.Instance:GetAttribute("WorldState")=="Broken" then
+      -- (EMB-004) The surface gave way under the body: the tree falls, the
+      -- boulder bursts, and the body carries on through with what is left of
+      -- its flight instead of sticking to it.
+      velocity*=Config.World.SmashCarry
+      Brawler.event(c,a,"SmashThrough")
+      if a.reactionSource then Brawler.event(c,a.reactionSource,"WorldBreak") end
      elseif math.abs(hit.Normal.Y)<.3 and Brawler.splatSurface(hit.Instance) and -velocity:Dot(hit.Normal)>=Config.Wall.SplatSpeed and (a.wallSplats or 0)<2 then
       Brawler.splat(c,a,hit)
       if c.match.phase~="Duel" or not a.reaction then return true end

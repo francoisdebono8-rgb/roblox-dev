@@ -31,7 +31,7 @@ local SOUND={
 	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -842,6 +842,21 @@ function FX:impact(impact,folder)
 			Debris:AddItem(chip,.5)
 		end
 		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
+	elseif style=="worldbreak" then
+		-- (EMB-004) A tree going down or a boulder bursting: the server already
+		-- changed the arena; this is the dust and the pieces flying off it.
+		local wood=impact.material=="wood"
+		local tone=if wood then Color3.fromRGB(120,88,58) else Color3.fromRGB(150,144,132)
+		local out=impact.direction or Vector3.xAxis
+		smokePuff(self.folder,position,if wood then Color3.fromRGB(176,156,124) else Color3.fromRGB(190,184,170),20,2.8)
+		shockRing(self.folder,position,Color3.fromRGB(236,226,200),2,14,.3,-out)
+		for k=1,8 do
+			local piece=block(self.folder,if wood then Vector3.new(.25,.25,1.3) else Vector3.new(.6,.45,.5),CFrame.new(position)*CFrame.Angles(math.random()*6,math.random()*6,0),tone,if wood then Enum.Material.Wood else Enum.Material.Slate)
+			local fly=(out+Vector3.new((math.random()-.5)*1.6,math.random()*1.2,(math.random()-.5)*1.6)).Unit
+			tween(piece,.6,{CFrame=piece.CFrame+fly*(4+math.random()*5)+Vector3.new(0,-2,0),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+			Debris:AddItem(piece,.65)
+		end
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.6,.6)
 	elseif style=="walltech" then
 		local model=modelFor(folder,impact.owner)
 		if model then self:ghost(model,Color3.fromRGB(220,230,255),.2,.55) end

@@ -10,6 +10,7 @@ local Techniques = require(script.Parent.Techniques)
 local Families = require(script.Parent.Families)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
+local WorldReaction = require(script.Parent.WorldReaction)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
 local Bodies = require(script.Parent.Bodies)
@@ -1254,6 +1255,8 @@ function Combat:updateActor(a,dt)
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
 				Techniques.whiffRead(self,a,pending,now)
+				-- A swing that met the world instead of a body marks it (EMB-004).
+				WorldReaction.strike(self,a,pending)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -1753,6 +1756,8 @@ function Combat:projectileSurface(p,hit)
 	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
 	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	-- The surface keeps it (EMB-004): a hole in the trunk, a scorch on the stone.
+	if hit.Instance.CanCollide and not bounceFrom then WorldReaction.projectile(self,p,hit) end
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
@@ -1902,6 +1907,16 @@ end
 function Combat:updateHazards()
 	for i=#self.hazards,1,-1 do
 		local h=self.hazards[i]
+		if not h.worldMarked then
+			-- An elemental zone marks the ground under it once (EMB-004). "Fire"
+			-- is also the default kind of a generic family zone: a family zone
+			-- marks by its declared Element (or an explicit Fire kind) only.
+			h.worldMarked=true
+			local fx=h.effects
+			local element=if fx then (fx.Element and string.lower(fx.Element)) or (fx.Kind=="Fire" and "fire") or nil
+				elseif h.kind=="Fire" then "fire" else nil
+			if element then WorldReaction.zone(self,h.position,h.radius,element) end
+		end
 		if self.now>=h.expires or h.a.health<=0 then table.remove(self.hazards,i)
 		else
 			local target=h.a.target

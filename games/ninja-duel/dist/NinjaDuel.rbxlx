@@ -466,6 +466,16 @@ return {
 	-- body after AirHits blows in one air time.
 	Agency = {Stand = 0.45, Min = 0.12, Air = 0.35, AirHits = 4, Launched = 0.72, GuardCost = 10, StepCost = 6, AirCost = 8,
 		Tech = 0.3, TechDistance = 4.5, AirLift = 16, AirPush = 10},
+	-- Ninja Embodiment (EMB-004, Server/WorldReaction): the reactive arena.
+	-- Budgets (server parts, replicated): MaxScars marks (oldest out, a mark
+	-- close to one of its kind deepens it), MaxRubble pieces, MaxEmbeds blade
+	-- facts. Energies: a body (studs/s x BodyEnergy), a projectile (damage x
+	-- ProjectileEnergy), a strike that met the world (damage x StrikeEnergy),
+	-- a zone (radius x ZoneEnergy); below MinEnergy nothing is marked.
+	World = {MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
+		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
+		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
+		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
@@ -3364,7 +3374,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">ef04f82d3f00eae66ded05998c4186f59410a645063154686732ca1c88bca1c7</string>
+          <string name="Value">e2a3a658f85235a0c3239cc353baad3fd5a085d71d48f19de407dc47f996fa30</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -4911,6 +4921,7 @@ local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
+local WorldReaction=require(script.Parent.WorldReaction)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -5842,6 +5853,8 @@ end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
 function Brawler.splatSurface(part)
+ -- (A broken one is a stump or a mound now: nothing to be slammed into.)
+ if part:GetAttribute("WorldState")=="Broken" then return false end
  return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
 end
 -- Wall splat: a body carried into a wall hard enough sticks to it for a
@@ -6304,17 +6317,27 @@ function Brawler.step(c,a,dt)
       velocity=Vector3.new(velocity.X*.3,30,velocity.Z*.3)
       c:pushImpact(a.root.Position-Vector3.new(0,2.6,0),"groundbounce",true,{victim=a.id})
       Brawler.event(c,a,"GroundBounce")
+      -- The floor keeps the spike (EMB-004): a crater where the body went in.
+      WorldReaction.landing(c,a,hit,-velocity.Y)
       a.reactionVelocity=velocity;return true
      end
      if hit.Normal.Y&gt;.5 and velocity.Y&lt;0 then
       if a.reaction=="Spiked" then a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionUntil=c.now+.6;a.invulnerableUntil=c.now+.85 end
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
+      WorldReaction.landing(c,a,hit,-velocity.Y)
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
       a.airborne=false;a.airRecoverUsed=false;a.airStringHits=0
       a.landedAt=c.now
       -- A body thrown along the floor keeps some of its run as a skid.
       velocity=Vector3.new(velocity.X,0,velocity.Z)*.6
+     elseif math.abs(hit.Normal.Y)&lt;.3 and WorldReaction.body(c,a,hit,-velocity:Dot(hit.Normal),velocity) and hit.Instance:GetAttribute("WorldState")=="Broken" then
+      -- (EMB-004) The surface gave way under the body: the tree falls, the
+      -- boulder bursts, and the body carries on through with what is left of
+      -- its flight instead of sticking to it.
+      velocity*=Config.World.SmashCarry
+      Brawler.event(c,a,"SmashThrough")
+      if a.reactionSource then Brawler.event(c,a.reactionSource,"WorldBreak") end
      elseif math.abs(hit.Normal.Y)&lt;.3 and Brawler.splatSurface(hit.Instance) and -velocity:Dot(hit.Normal)&gt;=Config.Wall.SplatSpeed and (a.wallSplats or 0)&lt;2 then
       Brawler.splat(c,a,hit)
       if c.match.phase~="Duel" or not a.reaction then return true end
@@ -7907,6 +7930,7 @@ local Techniques = require(script.Parent.Techniques)
 local Families = require(script.Parent.Families)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
+local WorldReaction = require(script.Parent.WorldReaction)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
 local Bodies = require(script.Parent.Bodies)
@@ -9151,6 +9175,8 @@ function Combat:updateActor(a,dt)
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
 				Techniques.whiffRead(self,a,pending,now)
+				-- A swing that met the world instead of a body marks it (EMB-004).
+				WorldReaction.strike(self,a,pending)
 			end
 			local recovery=if pending then pending.spec.recovery else .22
 			a.pending=nil; self:setState(a,"Recovery",recovery)
@@ -9650,6 +9676,8 @@ function Combat:projectileSurface(p,hit)
 	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
 	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
 	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	-- The surface keeps it (EMB-004): a hole in the trunk, a scorch on the stone.
+	if hit.Instance.CanCollide and not bounceFrom then WorldReaction.projectile(self,p,hit) end
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
 	if p.kind=="phoenix" then self:addHazard(p.a,hit.Position+hit.Normal*1.2,3.4,1.8,p.damage*.6,"Fire") end
 	if self.match.phase~="Duel" then return end
@@ -9799,6 +9827,16 @@ end
 function Combat:updateHazards()
 	for i=#self.hazards,1,-1 do
 		local h=self.hazards[i]
+		if not h.worldMarked then
+			-- An elemental zone marks the ground under it once (EMB-004). "Fire"
+			-- is also the default kind of a generic family zone: a family zone
+			-- marks by its declared Element (or an explicit Fire kind) only.
+			h.worldMarked=true
+			local fx=h.effects
+			local element=if fx then (fx.Element and string.lower(fx.Element)) or (fx.Kind=="Fire" and "fire") or nil
+				elseif h.kind=="Fire" then "fire" else nil
+			if element then WorldReaction.zone(self,h.position,h.radius,element) end
+		end
 		if self.now&gt;=h.expires or h.a.health&lt;=0 then table.remove(self.hazards,i)
 		else
 			local target=h.a.target
@@ -16645,6 +16683,10 @@ local function tree(parent,at,height,spread)
 	-- Field trees: a real trunk (cover and line of sight) under a loose crown.
 	local trunk=part(parent,"Field tree",Vector3.new(2.6,height,2.6),CFrame.new(at+Vector3.new(0,height/2,0)),PALETTE.bark,Enum.Material.Wood)
 	trunk.Shape=Enum.PartType.Block
+	-- (EMB-004) The trunk carries its crown and branches (they fall with it)
+	-- and may break.
+	trunk:SetAttribute("WorldBreakable",true)
+	parent=trunk
 	local crown=deco(parent,"Crown",Vector3.new(spread*2,spread*1.4,spread*2),CFrame.new(at+Vector3.new(0,height+spread*.3,0)),PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	crown.Size=Vector3.one*spread*1.9
 	for k=0,4 do
@@ -16866,9 +16908,11 @@ function World.arena(parent, origin)
 	for _,spot in {{1.5,40,1.1},{4.6,36,1.1},{.2,70,1.4},{2.9,64,1.3},{5.7,62,1.3}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2*spot[3],math.cos(spot[1])*spot[2])
 		local k=spot[3]
-		part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
-		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
-		deco(decor,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
+		local cover=part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
+		-- (EMB-004) A boulder may shatter; its cap and chip go with it.
+		cover:SetAttribute("WorldBreakable",true)
+		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
+		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
@@ -17544,6 +17588,448 @@ return World
       </Item>
       <Item class="ModuleScript" referent="ND69">
         <Properties>
+          <string name="Name">WorldReaction</string>
+          <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
+--
+-- One shared rule for every contact with the world: a body thrown into a tree,
+-- a spike into the floor, a fireball on a boulder, a blade into a trunk, a heavy
+-- strike that met a wall instead of a body, a burning zone on the grass. Each is
+-- an `impact` with a position, a surface, an energy and a contact kind (blunt,
+-- slash, pierce, blast, energy) plus an optional element. The surface's
+-- material class decides the answer (a crater in earth, a crack in stone, a cut
+-- or a hole in wood, a scorch under fire), wears the part's integrity, and a
+-- breakable part that runs out of it breaks (a tree falls, a boulder shatters).
+--
+-- Nothing here names a fighter or a technique: a new technique gets world
+-- reactions by declaring its contact kind / element (spec.world, p.world), or
+-- by default from its strike kind or projectile kind.
+--
+-- Authority and budget: the server owns every scar and break; scars are plain
+-- anchored non-colliding parts in the match folder (they replicate on their
+-- own and survive round resets: the arena keeps the fight's memory for the
+-- whole match), bounded by Config.World.MaxScars (oldest first out), merged
+-- into a nearby scar of the same kind instead of stacking, and the rubble of
+-- breaks is bounded by Config.World.MaxRubble. A new match builds a new arena.
+local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
+
+local WorldReaction={}
+
+local TUNE=Config.World
+
+-- Material classes (Enum.Material name -&gt; class). A part may override with the
+-- WorldMaterial attribute.
+WorldReaction.Materials={
+	Grass="earth",LeafyGrass="earth",Ground="earth",Mud="earth",Sand="earth",Snow="earth",
+	Wood="wood",WoodPlanks="wood",
+	Slate="stone",Rock="stone",Basalt="stone",Granite="stone",Concrete="stone",Brick="stone",Cobblestone="stone",
+	Pavement="stone",Limestone="stone",Sandstone="stone",Marble="stone",CrackedLava="stone",
+	Ice="brittle",Glass="brittle",Neon="brittle",
+	Metal="metal",DiamondPlate="metal",CorrodedMetal="metal",
+}
+-- Per class: base integrity (a 2.6-stud-thick part; scaled by its thickness),
+-- the scar colors, and how the class takes each contact kind:
+--   wear: integrity lost per unit of energy; scar: the mark it leaves.
+WorldReaction.Classes={
+	earth={integrity=math.huge,dark=Color3.fromRGB(88,70,52),burn=Color3.fromRGB(34,30,26),
+		blunt={wear=0,scar="crater"},slash={wear=0,scar="furrow"},pierce={wear=0,scar="puncture"},
+		blast={wear=0,scar="crater"},energy={wear=0,scar="trench"}},
+	wood={integrity=120,dark=Color3.fromRGB(62,44,30),burn=Color3.fromRGB(26,22,20),
+		blunt={wear=.8,scar="crack"},slash={wear=1,scar="cut"},pierce={wear=.25,scar="puncture"},
+		blast={wear=1.1,scar="splinter"},energy={wear=1.4,scar="hole"}},
+	stone={integrity=200,dark=Color3.fromRGB(84,80,74),burn=Color3.fromRGB(40,38,36),
+		blunt={wear=.7,scar="crack"},slash={wear=.35,scar="scratch"},pierce={wear=.08,scar="chip"},
+		blast={wear=.8,scar="crater"},energy={wear=1,scar="gouge"}},
+	brittle={integrity=30,dark=Color3.fromRGB(180,200,210),burn=Color3.fromRGB(60,60,60),
+		blunt={wear=1.4,scar="crack"},slash={wear=1,scar="crack"},pierce={wear=1,scar="crack"},
+		blast={wear=1.6,scar="crack"},energy={wear=1.6,scar="crack"}},
+	metal={integrity=math.huge,dark=Color3.fromRGB(70,70,74),burn=Color3.fromRGB(30,30,32),
+		blunt={wear=0,scar="dent"},slash={wear=0,scar="scratch"},pierce={wear=0,scar=nil},
+		blast={wear=0,scar="dent"},energy={wear=0,scar="gouge"}},
+}
+-- Elements add their own mark and wear on top of the contact.
+--   fire: scorches anything, burns wood faster; lightning: chars and drills;
+--   wind: cuts; water: darkens (wet) and puts out nothing here (no fire state).
+WorldReaction.Elements={
+	fire={scar="scorch",wear={wood=1.6,earth=0,stone=.4,brittle=1,metal=0}},
+	lightning={scar="char",wear={wood=1.3,earth=0,stone=1.1,brittle=1.5,metal=0}},
+	wind={scar="cut",wear={wood=.8,earth=0,stone=.3,brittle=1,metal=0}},
+	water={scar="wet",wear={wood=0,earth=0,stone=0,brittle=0,metal=0}},
+}
+-- Strike kinds (Attacks spec.kind) -&gt; contact kind.
+WorldReaction.StrikeKinds={slash="slash",tenketsu="pierce",palm="blunt",kick="blunt",strike="blunt",heavy="blunt",
+	launch="blunt",sweep="blunt",spike="blunt"}
+-- Projectile kinds -&gt; contact kind and element (a family projectile declares
+-- its own with spec.World / p.world).
+WorldReaction.Projectiles={
+	shuriken={contact="pierce"},kunai={contact="pierce"},marked={contact="pierce"},needle={contact="pierce"},
+	senbon={contact="pierce"},tool={contact="pierce"},wire={contact="slash"},bone={contact="pierce"},
+	fireball={contact="blast",element="fire"},phoenix={contact="blast",element="fire"},
+	wind={contact="slash",element="wind"},gale={contact="slash",element="wind"},kamatari={contact="slash",element="wind"},
+	palm={contact="blunt"},sand={contact="blunt"},
+}
+
+-- ------------------------------------------------------------------ records
+local function state(c)
+	local w=c.world
+	if not w then
+		w={parts=setmetatable({},{__mode="k"}),scars={},rubble={},embeds={},
+			stats={impacts=0,scars=0,merged=0,breaks=0,smash=0,embeds=0}}
+		c.world=w
+	end
+	return w
+end
+WorldReaction.state=state
+
+function WorldReaction.classOf(part)
+	local declared=part:GetAttribute("WorldMaterial")
+	if declared and WorldReaction.Classes[declared] then return declared end
+	local name=part.Material and part.Material.Name or "Plastic"
+	return WorldReaction.Materials[name]
+end
+-- Thickness factor: a thin plank breaks sooner than a trunk, a big boulder later.
+local function thickness(part)
+	local s=part.Size
+	local thin=math.min(s.X,s.Y,s.Z)
+	return math.clamp(thin/2.6,.6,2.2)
+end
+function WorldReaction.record(c,part)
+	local w=state(c)
+	local rec=w.parts[part]
+	if rec then return rec end
+	local class=WorldReaction.classOf(part)
+	if not class then return nil end
+	local base=WorldReaction.Classes[class].integrity
+	local max=if base==math.huge then math.huge else base*thickness(part)
+	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
+	w.parts[part]=rec
+	return rec
+end
+
+-- ------------------------------------------------------------------ scars
+local function folderOf(c)
+	local w=state(c)
+	if w.folder and w.folder.Parent then return w.folder end
+	local root=c.match and (c.match.folder or (c.match.effects and c.match.effects.Parent))
+	if not root then return nil end
+	local f=Instance.new("Folder");f.Name="WorldMemory";f.Parent=root
+	w.folder=f
+	return f
+end
+-- A deterministic "random" from a position (the same impact draws the same
+-- crack on every server; nothing about the world uses math.random).
+local function hash(v)
+	local x=math.sin(v.X*12.9898+v.Y*78.233+v.Z*37.719)*43758.5453
+	return x-math.floor(x)
+end
+-- An orthonormal frame on the surface: X along the normal.
+local function surfaceFrame(position,normal,along)
+	local n=if normal.Magnitude&gt;.01 then normal.Unit else Vector3.yAxis
+	local t=along and (along-n*along:Dot(n)) or nil
+	if not t or t.Magnitude&lt;.05 then
+		t=n:Cross(if math.abs(n.Y)&lt;.9 then Vector3.yAxis else Vector3.xAxis)
+	end
+	t=t.Unit
+	return CFrame.fromMatrix(position,n,t)
+end
+-- Scar shapes: size grows with energy, capped per kind.
+local SHAPES={
+	crater={round=true,depth=.1,grow=1/22,min=.9,max=4.5},
+	trench={round=false,depth=.1,grow=1/16,min=1.2,max=6,width=.9},
+	furrow={round=false,depth=.08,grow=1/14,min=1.4,max=5,width=.35},
+	puncture={round=true,depth=.08,grow=0,min=.35,max=.5},
+	crack={round=false,depth=.06,grow=1/14,min=1,max=4.2,width=.18,cross=true},
+	cut={round=false,depth=.06,grow=1/12,min=1.2,max=4.5,width=.14},
+	scratch={round=false,depth=.05,grow=1/18,min=.8,max=3,width=.08},
+	splinter={round=true,depth=.12,grow=1/26,min=.8,max=2.4},
+	hole={round=true,depth=.14,grow=1/30,min=.7,max=2},
+	chip={round=true,depth=.06,grow=0,min=.4,max=.6},
+	gouge={round=true,depth=.12,grow=1/26,min=.7,max=2.4},
+	dent={round=true,depth=.05,grow=1/30,min=.6,max=1.8},
+	scorch={round=true,depth=.04,grow=1/14,min=1.4,max=7,burn=true,transparency=.12},
+	char={round=true,depth=.04,grow=1/18,min=1,max=4,burn=true,transparency=.08},
+	wet={round=true,depth=.03,grow=1/12,min=1.6,max=6,transparency=.45},
+}
+WorldReaction.Shapes=SHAPES
+local function scarSize(kind,energy)
+	local s=SHAPES[kind]
+	return math.clamp(s.min+energy*s.grow,s.min,s.max)
+end
+local function evict(list,max)
+	while #list&gt;max do
+		local old=table.remove(list,1)
+		if old.part then old.part:Destroy() end
+	end
+end
+local function draw(scar,class)
+	local s=SHAPES[scar.kind]
+	local p=scar.part
+	local palette=WorldReaction.Classes[class] or WorldReaction.Classes.stone
+	if s.round then
+		p.Shape=Enum.PartType.Cylinder
+		p.Size=Vector3.new(s.depth,scar.size,scar.size)
+		p.CFrame=scar.frame
+	else
+		p.Shape=Enum.PartType.Block
+		p.Size=Vector3.new(s.depth,s.width or .2,scar.size)
+		p.CFrame=scar.frame
+	end
+	p.Color=if scar.kind=="wet" then Color3.fromRGB(40,52,64) elseif s.burn then palette.burn else palette.dark
+	p.Transparency=s.transparency or 0
+end
+-- Leave (or deepen) a scar. Returns the scar entry.
+function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
+	if not SHAPES[kind] then return nil end
+	local w=state(c)
+	-- The same mark close to an old one deepens it instead of stacking parts.
+	for k=#w.scars,1,-1 do
+		local old=w.scars[k]
+		if old.kind==kind and old.surface==surface and (old.position-position).Magnitude&lt;math.max(.8,old.size*.45) then
+			old.size=math.min(SHAPES[kind].max,old.size+math.max(.15,scarSize(kind,energy)*.25))
+			old.marks+=1
+			if old.part then draw(old,old.class) end
+			w.stats.merged+=1
+			-- Most recent stays last: it is the freshest memory.
+			table.remove(w.scars,k);table.insert(w.scars,old)
+			return old
+		end
+	end
+	local folder=folderOf(c)
+	local lift=SHAPES[kind].depth*.5+.01
+	local frame=surfaceFrame(position+normal*lift,normal,along)
+	if not SHAPES[kind].round and not along then
+		-- An unaimed crack runs in a direction drawn from where it is.
+		frame=frame*CFrame.Angles(math.pi*2*hash(position),0,0)
+	end
+	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now}
+	if folder then
+		local p=Instance.new("Part")
+		p.Name="Scar "..kind;p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
+		p.Material=Enum.Material.SmoothPlastic
+		p.TopSurface=Enum.SurfaceType.Smooth;p.BottomSurface=Enum.SurfaceType.Smooth
+		entry.part=p
+		draw(entry,class)
+		p:SetAttribute("WorldScar",kind)
+		p.Parent=folder
+		if SHAPES[kind].cross then
+			-- A crack branches once (a second thin line, same part budget: it
+			-- is drawn as a child of the first and leaves with it).
+			local branch=Instance.new("Part")
+			branch.Name="Scar branch";branch.Anchored=true;branch.CanCollide=false;branch.CanQuery=false;branch.CanTouch=false;branch.CastShadow=false
+			branch.Size=Vector3.new(p.Size.X,p.Size.Y,p.Size.Z*.55);branch.Color=p.Color;branch.Material=p.Material
+			branch.CFrame=frame*CFrame.Angles(.5+hash(position+Vector3.one)*.6,0,0)*CFrame.new(0,0,p.Size.Z*.22)
+			branch.Parent=p
+		end
+	end
+	table.insert(w.scars,entry)
+	w.stats.scars+=1
+	evict(w.scars,TUNE.MaxScars)
+	return entry
+end
+
+-- ------------------------------------------------------------------ breaks
+local function rubble(c,at,size,color,material,direction)
+	local w=state(c)
+	local folder=folderOf(c)
+	if not folder then return end
+	for k=1,TUNE.RubblePerBreak do
+		local h=hash(at+Vector3.new(k,k*2,k*3))
+		local a=(k/TUNE.RubblePerBreak+h*.3)*math.pi*2
+		local r=size*(.5+h*.7)
+		local push=direction*size*.6
+		local s=size*(.22+h*.18)
+		local p=Instance.new("Part")
+		p.Name="Rubble";p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
+		p.Size=Vector3.new(s,s*.7,s*.9);p.Color=color;p.Material=material
+		p.CFrame=CFrame.new(Vector3.new(at.X+math.cos(a)*r+push.X,at.Y+s*.3,at.Z+math.sin(a)*r+push.Z))*CFrame.Angles(h*3,a,h*2)
+		p.Parent=folder
+		table.insert(w.rubble,{part=p})
+	end
+	evict(w.rubble,TUNE.MaxRubble)
+end
+-- A tall part (a trunk) falls away from the blow; a squat one (a boulder)
+-- shatters into a low mound. Either way what is left is low: it no longer
+-- hides a body, stops a blade at head height or takes a wall splat.
+function WorldReaction.breakPart(c,part,rec,at,direction)
+	local w=state(c)
+	rec.state="Broken";rec.integrity=0
+	part:SetAttribute("WorldState","Broken");part:SetAttribute("WorldIntegrity",0)
+	w.stats.breaks+=1
+	-- The marks it carried belonged to the old shape: they go with it (the
+	-- rubble and the stump are its memory now).
+	for k=#w.scars,1,-1 do
+		local scar=w.scars[k]
+		if scar.surface==part then
+			if scar.part then scar.part:Destroy() end
+			table.remove(w.scars,k)
+		end
+	end
+	local flat=Vector3.new(direction.X,0,direction.Z)
+	flat=if flat.Magnitude&gt;.05 then flat.Unit else Vector3.xAxis
+	local size,cf=part.Size,part.CFrame
+	local bottom=cf.Position.Y-size.Y/2
+	if size.Y&gt;math.max(size.X,size.Z)*2 then
+		local cut=TUNE.StumpHeight
+		local base=Vector3.new(cf.Position.X,bottom,cf.Position.Z)
+		part.Size=Vector3.new(size.X,cut,size.Z)
+		part.CFrame=CFrame.new(base+Vector3.new(0,cut/2,0))*cf.Rotation
+		-- The rest of the trunk (and everything it carries) tips over the cut.
+		local pivot=CFrame.new(base+Vector3.new(0,cut,0))
+		local axis=Vector3.yAxis:Cross(flat).Unit
+		local fall=pivot*CFrame.fromAxisAngle(axis,math.rad(84))*pivot:Inverse()
+		local log=Instance.new("Part")
+		log.Name="Fallen "..part.Name;log.Anchored=true;log.CanCollide=false;log.CanQuery=false;log.CanTouch=false
+		log.Size=Vector3.new(size.X,size.Y-cut,size.Z);log.Color=part.Color;log.Material=part.Material
+		log.CFrame=fall*CFrame.new(base+Vector3.new(0,cut+(size.Y-cut)/2,0))
+		log.Parent=folderOf(c) or part
+		for _,child in part:GetChildren() do
+			if child:IsA("BasePart") then child.CFrame=fall*child.CFrame;child.CanCollide=false end
+		end
+		WorldReaction.scar(c,"crater",nil,base+flat*(size.Y*.55),Vector3.yAxis,40,flat,"earth")
+	else
+		local keep=TUNE.MoundShare
+		part.Size=Vector3.new(size.X*.9,size.Y*keep,size.Z*.9)
+		part.CFrame=CFrame.new(Vector3.new(cf.Position.X,bottom+size.Y*keep/2,cf.Position.Z))*cf.Rotation
+		for _,child in part:GetChildren() do
+			if child:IsA("BasePart") then
+				child.Size*=.55;child.CanCollide=false
+				child.CFrame=CFrame.new(Vector3.new(child.Position.X,bottom+child.Size.Y*.4,child.Position.Z)+flat*size.X*.4)*child.CFrame.Rotation
+			end
+		end
+	end
+	part.Color=WorldReaction.Classes[rec.class].dark:Lerp(rec.color,.5)
+	rubble(c,Vector3.new(at.X,bottom,at.Z),math.max(1,math.min(size.X,size.Z)*.5),part.Color,part.Material,flat)
+	c:pushImpact(at,"worldbreak",true,{normal=-flat,material=rec.class,direction=flat})
+end
+
+-- ------------------------------------------------------------------ impacts
+-- hit: {part, position, normal, energy, contact, element, direction, source}
+-- Returns {class, scar, wear, state, broken} or nil (no material: a body, a
+-- prop without a class, or too little energy to mark anything).
+function WorldReaction.impact(c,hit)
+	local part=hit.part
+	if not part or not part.Parent or part:GetAttribute("WorldScar") then return nil end
+	local rec=WorldReaction.record(c,part)
+	if not rec then return nil end
+	local w=state(c)
+	local energy=hit.energy or 0
+	local contact=hit.contact or "blunt"
+	local profile=WorldReaction.Classes[rec.class]
+	local answer=profile[contact] or profile.blunt
+	local element=hit.element and WorldReaction.Elements[hit.element]
+	w.stats.impacts+=1
+	if energy&lt;TUNE.MinEnergy then return nil end
+	local normal=hit.normal or Vector3.yAxis
+	local position=hit.position
+	local direction=hit.direction or -normal
+	-- The mark of the contact, then the mark of the element.
+	local scar=answer.scar
+	local entry=nil
+	if scar then entry=WorldReaction.scar(c,scar,part,position,normal,energy,if contact=="slash" or contact=="energy" then direction else nil,rec.class) end
+	if element and element.scar then WorldReaction.scar(c,element.scar,part,position+normal*.02,normal,energy,nil,rec.class) end
+	if contact=="pierce" and (rec.class=="wood" or rec.class=="earth") then
+		-- A blade that stays: a world fact (an anchor a technique can read).
+		table.insert(w.embeds,{position=position,normal=normal,part=part,owner=hit.source,at=c.now})
+		w.stats.embeds+=1
+		while #w.embeds&gt;TUNE.MaxEmbeds do table.remove(w.embeds,1) end
+	end
+	-- Wear.
+	local wear=energy*answer.wear
+	if element then wear+=energy*(element.wear[rec.class] or 0)*.5 end
+	local result={class=rec.class,scar=scar,element=hit.element,wear=wear,state=rec.state,broken=false}
+	if rec.state=="Broken" or rec.max==math.huge or wear&lt;=0 then return result end
+	rec.integrity=math.max(0,rec.integrity-wear)
+	local share=rec.integrity/rec.max
+	part:SetAttribute("WorldIntegrity",math.floor(share*100+.5)/100)
+	if rec.state=="Intact" and share&lt;=TUNE.CrackedShare then
+		rec.state="Cracked";part:SetAttribute("WorldState","Cracked")
+		part.Color=rec.color:Lerp(profile.dark,.35)
+	end
+	if share&lt;=0 then
+		if rec.breakable then
+			WorldReaction.breakPart(c,part,rec,position,direction)
+			result.broken=true
+		else
+			-- A structural surface (the stadium wall, the floor) never goes:
+			-- it keeps a sliver and carries its marks.
+			rec.integrity=rec.max*.02
+		end
+	end
+	result.state=rec.state
+	return result
+end
+
+-- ------------------------------------------------------------------ hooks
+-- A body carried into a surface (a wall splat, a knockback into a tree).
+-- `velocity` (optional): the body's flight, the way a broken trunk falls.
+-- Returns the impact result.
+function WorldReaction.body(c,a,hit,speed,velocity)
+	if speed&lt;TUNE.BodySpeed then return nil end
+	-- A body pressed against the same surface frame after frame hit it once.
+	if a.worldHitPart==hit.Instance and c.now-(a.worldHitAt or -1)&lt;TUNE.BodyRepeat then return nil end
+	a.worldHitPart=hit.Instance;a.worldHitAt=c.now
+	local energy=speed*TUNE.BodyEnergy
+	local result=WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact="blunt",
+		direction=if velocity and velocity.Magnitude&gt;.1 then velocity.Unit else -hit.Normal,source=a.reactionSource and a.reactionSource.id})
+	if result and result.broken then state(c).stats.smash+=1 end
+	return result
+end
+-- A body slammed onto the floor (spike, landed slam).
+function WorldReaction.landing(c,a,hit,fall)
+	if fall&lt;TUNE.LandingSpeed then return nil end
+	if a.worldHitPart==hit.Instance and c.now-(a.worldHitAt or -1)&lt;TUNE.BodyRepeat then return nil end
+	a.worldHitPart=hit.Instance;a.worldHitAt=c.now
+	return WorldReaction.impact(c,{part=hit.Instance,position=Vector3.new(a.root.Position.X,hit.Position.Y,a.root.Position.Z),normal=hit.Normal,
+		energy=fall*TUNE.BodyEnergy,contact="blunt",source=a.reactionSource and a.reactionSource.id})
+end
+-- A projectile reached a surface.
+function WorldReaction.projectile(c,p,hit)
+	local declared=p.world or (p.family and p.family.World) or WorldReaction.Projectiles[p.kind]
+	local contact=declared and declared.contact or (if (p.radius or 0)&gt;1.2 then "blunt" else "pierce")
+	local element=(declared and declared.element) or (if p.infusion and WorldReaction.Elements[p.infusion] then p.infusion else nil)
+	local energy=(p.damage or 2)*TUNE.ProjectileEnergy+(p.radius or 0)*6
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact=contact,element=element,
+		direction=p.direction,source=p.a and p.a.id})
+end
+-- A strike whose swing met no body: if the world is in front of it, the world
+-- takes it (a heavy blow into a trunk, a lightning thrust into stone).
+function WorldReaction.strike(c,a,pending)
+	local spec=pending.spec or {}
+	local declared=spec.world
+	if declared==false then return nil end
+	local reach=(spec.contact or 3.6)+(spec.range or 4)*.4
+	local look=a.root.CFrame.LookVector
+	local from=a.root.Position+Vector3.new(0,.6,0)
+	local hit=workspace:Raycast(from,look*reach,c:rayParams(true))
+	if not hit or math.abs(hit.Normal.Y)&gt;.6 then return nil end
+	local contact=(declared and declared.contact) or WorldReaction.StrikeKinds[spec.kind or ""] or "blunt"
+	local heavy=Config.World.HeavyKinds[spec.kind or ""] or spec.reaction=="Knockdown" or spec.reaction=="Launched"
+	local energy=(spec.damage or 4)*TUNE.StrikeEnergy*(if heavy then 1.6 else 1)
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=energy,contact=contact,
+		element=(declared and declared.element) or spec.element,direction=look,source=a.id})
+end
+-- A burning (or otherwise elemental) zone marks the ground under it.
+function WorldReaction.zone(c,position,radius,element)
+	if not WorldReaction.Elements[element or ""] then return nil end
+	local hit=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-8,0),c:rayParams(true))
+	if not hit then return nil end
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element})
+end
+-- What the world still remembers (inspect, audit, perception later).
+function WorldReaction.summary(c)
+	local w=state(c)
+	local cracked,broken=0,0
+	for _,rec in w.parts do
+		if rec.state=="Cracked" then cracked+=1 elseif rec.state=="Broken" then broken+=1 end
+	end
+	return {scars=#w.scars,rubble=#w.rubble,embeds=#w.embeds,cracked=cracked,broken=broken,stats=table.clone(w.stats)}
+end
+
+return WorldReaction
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND70">
+        <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
 -- (which only burn): pieces of the arena that rewrite movement and flight for
@@ -17770,21 +18256,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND70">
+  <Item class="StarterPlayer" referent="ND71">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND71">
+    <Item class="StarterPlayerScripts" referent="ND72">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND72">
+      <Item class="Folder" referent="ND73">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND73">
+        <Item class="ModuleScript" referent="ND74">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -17948,7 +18434,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -18012,7 +18498,7 @@ local IMPULSE={
  whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
- slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
+ slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
 function Camera:impulse(style,role)
 	local spec=IMPULSE[style] or IMPULSE.light
@@ -18239,7 +18725,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND75">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -18794,7 +19280,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -18830,7 +19316,7 @@ local SOUND={
 	getUp="rbxasset://sounds/action_get_up.mp3",
 }
 -- Contacts that bring the crowd to its feet, by strength.
-local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,walltech=.5,repel=.9,trigram=.7}
+local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
 -- Visual time runs a hair behind the server clock, like the bodies, so a blade
 -- leaves the throwing hand on the frame the arm releases it.
@@ -19641,6 +20127,21 @@ function FX:impact(impact,folder)
 			Debris:AddItem(chip,.5)
 		end
 		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
+	elseif style=="worldbreak" then
+		-- (EMB-004) A tree going down or a boulder bursting: the server already
+		-- changed the arena; this is the dust and the pieces flying off it.
+		local wood=impact.material=="wood"
+		local tone=if wood then Color3.fromRGB(120,88,58) else Color3.fromRGB(150,144,132)
+		local out=impact.direction or Vector3.xAxis
+		smokePuff(self.folder,position,if wood then Color3.fromRGB(176,156,124) else Color3.fromRGB(190,184,170),20,2.8)
+		shockRing(self.folder,position,Color3.fromRGB(236,226,200),2,14,.3,-out)
+		for k=1,8 do
+			local piece=block(self.folder,if wood then Vector3.new(.25,.25,1.3) else Vector3.new(.6,.45,.5),CFrame.new(position)*CFrame.Angles(math.random()*6,math.random()*6,0),tone,if wood then Enum.Material.Wood else Enum.Material.Slate)
+			local fly=(out+Vector3.new((math.random()-.5)*1.6,math.random()*1.2,(math.random()-.5)*1.6)).Unit
+			tween(piece,.6,{CFrame=piece.CFrame+fly*(4+math.random()*5)+Vector3.new(0,-2,0),Transparency=1},Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+			Debris:AddItem(piece,.65)
+		end
+		sound(anchorPart(self.folder,position),SOUND.whoosh,.6,.6)
 	elseif style=="walltech" then
 		local model=modelFor(folder,impact.owner)
 		if model then self:ghost(model,Color3.fromRGB(220,230,255),.2,.55) end
@@ -20528,7 +21029,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -21109,7 +21610,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND79">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -21587,7 +22088,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -21768,7 +22269,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -22508,7 +23009,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND81">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -22685,7 +23186,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND82">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -22866,7 +23367,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND83">
+        <Item class="LocalScript" referent="ND84">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -23015,7 +23516,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -23273,7 +23774,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -23592,7 +24093,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -24185,7 +24686,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -24787,7 +25288,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -24928,7 +25429,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -27643,7 +28144,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -27857,7 +28358,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -28158,7 +28659,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -28171,7 +28672,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -28274,7 +28775,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -28401,7 +28902,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -28544,7 +29045,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -28760,7 +29261,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND97">
+  <Item class="Lighting" referent="ND98">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -28778,7 +29279,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND98">
+  <Item class="SoundService" referent="ND99">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

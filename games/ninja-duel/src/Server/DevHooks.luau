@@ -261,6 +261,9 @@ function DevHooks.install(matches)
 			return out
 		elseif op=="inspect" then
 			return Inspector.snapshot(s)
+		elseif op=="world" then
+			-- What the arena remembers (EMB-004): marks, breaks, embedded blades.
+			return require(script.Parent.WorldReaction).summary(c)
 		elseif op=="trace" then
 			local trace=traces[s];local entries={}
 			if trace then for _,entry in trace.entries do table.insert(entries,table.clone(entry)) end end

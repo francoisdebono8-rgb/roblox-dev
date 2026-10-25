@@ -48,6 +48,16 @@ return {
 	-- body after AirHits blows in one air time.
 	Agency = {Stand = 0.45, Min = 0.12, Air = 0.35, AirHits = 4, Launched = 0.72, GuardCost = 10, StepCost = 6, AirCost = 8,
 		Tech = 0.3, TechDistance = 4.5, AirLift = 16, AirPush = 10},
+	-- Ninja Embodiment (EMB-004, Server/WorldReaction): the reactive arena.
+	-- Budgets (server parts, replicated): MaxScars marks (oldest out, a mark
+	-- close to one of its kind deepens it), MaxRubble pieces, MaxEmbeds blade
+	-- facts. Energies: a body (studs/s x BodyEnergy), a projectile (damage x
+	-- ProjectileEnergy), a strike that met the world (damage x StrikeEnergy),
+	-- a zone (radius x ZoneEnergy); below MinEnergy nothing is marked.
+	World = {MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
+		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
+		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
+		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.

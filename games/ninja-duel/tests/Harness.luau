@@ -54,6 +54,9 @@ Harness.fakePart=fakePart
 -- Real BasePart stand-in for the floor so attribute/descendant APIs behave.
 local groundPart=fakePart(V.new(0,-1,0))
 groundPart.Name="Ground";groundPart.Size=V.new(300,2,300);groundPart.Anchored=true
+-- Packed earth, as the Studio field (the reactive world reads the material).
+groundPart.Material=roblox.Enum.Material.Grass
+Harness.ground=groundPart
 local function newGround() return groundPart end
 -- Shared world stub: raycasts return real ground at Y=0 so grounded logic works.
 local workspace={Gravity=140}
@@ -78,10 +81,13 @@ local floorRaycast
 function workspace:Raycast(origin,delta,params)
  local floor=floorRaycast(origin,delta,params)
  for _,w in Harness.walls do
-  if delta.X>0 and origin.X<=w.x and origin.X+delta.X>=w.x then
+  if delta.X>0 and origin.X<=w.x and origin.X+delta.X>=w.x and w.part.Parent then
    local t=(w.x-origin.X)/delta.X
    local hit={Position=origin+delta*t,Normal=-V.xAxis,Distance=(delta*t).Magnitude,Instance=w.part}
-   if not floor or hit.Distance<floor.Distance then floor=hit end
+   -- Only within the part's height (a broken trunk is a low stump).
+   local top=w.part.CFrame.Position.Y+w.part.Size.Y/2
+   local bottom=w.part.CFrame.Position.Y-w.part.Size.Y/2
+   if hit.Position.Y<=top and hit.Position.Y>=bottom and (not floor or hit.Distance<floor.Distance) then floor=hit end
   end
  end
  return floor

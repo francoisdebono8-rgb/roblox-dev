@@ -61,6 +61,10 @@ local function tree(parent,at,height,spread)
 	-- Field trees: a real trunk (cover and line of sight) under a loose crown.
 	local trunk=part(parent,"Field tree",Vector3.new(2.6,height,2.6),CFrame.new(at+Vector3.new(0,height/2,0)),PALETTE.bark,Enum.Material.Wood)
 	trunk.Shape=Enum.PartType.Block
+	-- (EMB-004) The trunk carries its crown and branches (they fall with it)
+	-- and may break.
+	trunk:SetAttribute("WorldBreakable",true)
+	parent=trunk
 	local crown=deco(parent,"Crown",Vector3.new(spread*2,spread*1.4,spread*2),CFrame.new(at+Vector3.new(0,height+spread*.3,0)),PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	crown.Size=Vector3.one*spread*1.9
 	for k=0,4 do
@@ -282,9 +286,11 @@ function World.arena(parent, origin)
 	for _,spot in {{1.5,40,1.1},{4.6,36,1.1},{.2,70,1.4},{2.9,64,1.3},{5.7,62,1.3}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2*spot[3],math.cos(spot[1])*spot[2])
 		local k=spot[3]
-		part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
-		deco(decor,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
-		deco(decor,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
+		local cover=part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
+		-- (EMB-004) A boulder may shatter; its cap and chip go with it.
+		cover:SetAttribute("WorldBreakable",true)
+		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
+		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do

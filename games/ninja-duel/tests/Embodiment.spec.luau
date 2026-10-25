@@ -172,4 +172,122 @@ test("a body in an air string rights itself past its share; the string drops it 
  assert(limited,"the air string never dropped the body ("..tostring(y.airStringHits).." air hits)")
 end)
 
+-- EMB-004 -------------------------------------------------------------------
+local World=H.load("Server/WorldReaction")
+local Enum=require("@lune/roblox").Enum
+local function surface(material,size,breakable)
+ local part=H.fakePart(V.new(10,size.Y/2,0))
+ part.Size=size;part.Anchored=true;part.Material=Enum.Material[material];part.Name="Prop"
+ part.Parent={Name="Arena"}
+ if breakable then part:SetAttribute("WorldBreakable",true) end
+ return part
+end
+local function hitOn(part,energy,contact,element,at)
+ return {part=part,position=at or V.new(8.7,3,0),normal=V.new(-1,0,0),energy=energy,contact=contact,element=element,direction=V.new(1,0,0)}
+end
+
+test("the material decides the mark, the same blow twice deepens one mark",function()
+ local c=H.duel("Flashstep","Mirage")
+ local wood,stone,earth=surface("Wood",V.new(2.6,30,2.6)),surface("Slate",V.new(7,4,4)),H.ground
+ assert(World.impact(c,hitOn(wood,30,"blunt")).scar=="crack")
+ assert(World.impact(c,hitOn(wood,30,"pierce",nil,V.new(8.7,6,0))).scar=="puncture")
+ assert(World.impact(c,hitOn(stone,30,"pierce")).scar=="chip")
+ local fire=World.impact(c,hitOn(stone,40,"blast","fire",V.new(8.7,1,1)))
+ assert(fire.scar=="crater" and fire.element=="fire")
+ assert(World.impact(c,{part=earth,position=V.new(0,0,0),normal=V.yAxis,energy=50,contact="blunt"}).scar=="crater")
+ local w=World.state(c)
+ local kinds={}
+ for _,scar in w.scars do kinds[scar.kind]=(kinds[scar.kind] or 0)+1 end
+ assert(kinds.crack==1 and kinds.puncture==1 and kinds.chip==1 and kinds.crater==2 and kinds.scorch==1,"marks: crack "..tostring(kinds.crack).." puncture "..tostring(kinds.puncture).." chip "..tostring(kinds.chip).." crater "..tostring(kinds.crater).." scorch "..tostring(kinds.scorch))
+ -- A blade that stays in wood is a world fact; in stone it is not.
+ assert(#w.embeds==1 and w.embeds[1].part==wood,"embeds")
+ -- The same blow at the same place: one deeper mark, not two parts.
+ local before=#w.scars
+ local first=World.impact(c,hitOn(wood,30,"blunt"))
+ assert(#w.scars==before and w.stats.merged>=1,"the repeated blow stacked a new mark")
+ -- Too little energy marks nothing.
+ assert(World.impact(c,hitOn(stone,2,"blunt",nil,V.new(8.7,2,-1)))==nil)
+end)
+
+test("the arena's memory is bounded: oldest marks leave first",function()
+ local c=H.duel("Flashstep","Mirage")
+ local Config=H.load("Shared/Config")
+ local parts={}
+ for k=1,Config.World.MaxScars+12 do
+  World.impact(c,{part=H.ground,position=V.new(k*6,0,0),normal=V.yAxis,energy=40,contact="blunt"})
+ end
+ local w=World.state(c)
+ assert(#w.scars==Config.World.MaxScars,"scar count "..#w.scars)
+ assert(w.scars[1].position.X>12*6,"the oldest marks were kept")
+ assert(w.stats.scars==Config.World.MaxScars+12)
+end)
+
+test("a breakable trunk cracks, then falls; the stadium wall only carries its marks",function()
+ local c=H.duel("Flashstep","Mirage")
+ local Brawler=H.load("Server/Brawler")
+ local trunk=surface("Wood",V.new(2.6,30,2.6),true);trunk.Name="Field tree"
+ local wall=surface("Concrete",V.new(2,40,60));wall:SetAttribute("NinjaWall",true)
+ local states={}
+ for k=1,12 do
+  local r=World.impact(c,hitOn(trunk,60,"blunt"))
+  states[r.state]=true
+  if r.broken then break end
+ end
+ assert(states.Cracked and trunk:GetAttribute("WorldState")=="Broken","the trunk never broke")
+ assert(trunk.Size.Y<3 and not Brawler.splatSurface(trunk),"the stump still takes a splat")
+ assert(World.state(c).stats.breaks==1)
+ for _,scar in World.state(c).scars do assert(scar.surface~=trunk,"a mark of the standing trunk floats where it was") end
+ for _=1,40 do World.impact(c,hitOn(wall,80,"blast")) end
+ assert(wall:GetAttribute("WorldState")=="Cracked","the wall broke or never cracked: "..tostring(wall:GetAttribute("WorldState")))
+end)
+
+test("a body thrown into a worn tree goes through it; into a sound one, it splats and marks it",function()
+ local Brawler=H.load("Server/Brawler")
+ local Config=H.load("Shared/Config")
+ local function throw(worn)
+  H.clearWalls()
+  local c,a,b=H.duel("Lion","Mirage")
+  local tree=H.addWall(8)
+  tree.Name="Field tree";tree.Material=Enum.Material.Wood;tree.Size=V.new(2.6,30,2.6);tree.CFrame=H.C.new(V.new(9.3,15,0))
+  tree:SetAttribute("NinjaWall",nil);tree:SetAttribute("WorldBreakable",true)
+  if worn then local rec=World.record(c,tree);rec.integrity=8 end
+  c:relocate(a,V.new(-3,3,0));c:relocate(b,V.new(2,7,0))
+  b.airborne=true
+  Brawler.react(c,b,"Knockback",V.new(44,8,0),.8,a)
+  local through=false
+  for k=1,60 do H.step(c,.01);if b.root.Position.X>9.5 then through=true;break end;if b.reaction=="WallSplat" then break end end
+  H.clearWalls()
+  return c,b,tree,through
+ end
+ local c1,b1,tree1,through1=throw(false)
+ assert(b1.reaction=="WallSplat" and not through1,"a sound tree did not stop the body ("..tostring(b1.reaction)..")")
+ assert(#World.state(c1).scars>=1 and World.record(c1,tree1).integrity<World.record(c1,tree1).max,"the splat left no mark")
+ local c2,b2,tree2,through2=throw(true)
+ assert(tree2:GetAttribute("WorldState")=="Broken","the worn tree held")
+ assert(through2 and b2.reaction~="WallSplat","the body did not carry on through ("..tostring(b2.reaction)..")")
+ assert(c2.match.events.SmashThrough==1,"no SmashThrough event")
+end)
+
+test("blades, fire and a swing that met the world leave their own marks",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ local trunk=surface("Wood",V.new(2.6,30,2.6),true)
+ local hit={Instance=trunk,Position=V.new(8.7,3,0),Normal=V.new(-1,0,0)}
+ assert(World.projectile(c,{kind="kunai",damage=2,a=a,direction=V.new(1,0,0)},hit).scar=="puncture")
+ local fire=World.projectile(c,{kind="fireball",damage=12,radius=2.4,a=a,direction=V.new(1,0,0)},{Instance=trunk,Position=V.new(8.7,5,0),Normal=V.new(-1,0,0)})
+ assert(fire.element=="fire" and fire.wear>fire.wear*0+30,"a fireball barely touched the trunk")
+ -- A declared world contact wins (a family projectile, a technique).
+ assert(World.projectile(c,{kind="anything",world={contact="energy",element="lightning"},damage=8,a=a},{Instance=trunk,Position=V.new(8.7,8,0),Normal=V.new(-1,0,0)}).scar=="hole")
+ -- A swing that whiffs into a wall in front of it.
+ H.clearWalls()
+ local wall=H.addWall(2.2);wall.Material=Enum.Material.Concrete
+ c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(-40,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,V.new(5,3,0))
+ a.target=b
+ local before=World.state(c).stats.impacts
+ assert(c:request(a,"Attack"))
+ for _=1,80 do H.step(c,.01) end
+ H.clearWalls()
+ assert(World.state(c).stats.impacts>before,"the whiffed swing never met the wall")
+end)
+
 print(string.format("NinjaDuel embodiment: %d PASS (headless; the freedom is a Studio check)",passed))

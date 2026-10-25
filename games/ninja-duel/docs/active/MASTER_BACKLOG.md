@@ -487,7 +487,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 
 ## EMB-004 — Monde réactif : matériaux, intégrité, mémoire du combat
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: SYS-002, ARENA-001
 - subsystem: arena
@@ -495,7 +495,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: Monde réactif : matériaux, intégrité, mémoire du combat
 - sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
 - validation: Couche serveur matériau × type de contact × élément × palier d’énergie → fissure/casse/marque/encastrement ; objets cassables autorisés, traces bornées et répliquées ; aucune destruction par technique. L’arène raconte un combat de 3 min.
-- evidence: 25/10 : arène statique, wall splat seul contact.
+- evidence: 25/10 : arène statique, wall splat seul contact. Lot 2 ([progression](../reports/ninja-embodiment-2026-10-25/PROGRESS.md#lot-2--reactive-world-emb-004)) : `Server/WorldReaction` — classe matériau × contact × élément × énergie → marque/usure/Cracked/Broken, corps, chutes, projectiles, frappes dans le vide et zones élémentaires branchés sans gestionnaire par technique ; arbres et rochers cassables, budgets 48/24/16. Studio : arbre fissuré puis traversé par un corps, rocher brisé par trois Boules de feu ; combats IA 40 s : 0–31 impacts mais l'IA n'amène jamais le combat vers le décor (perception/IA monde restent ouvertes).
 - outcome: PENDING
 
 ## SYS-001 — Faire du chakra une décision contextuelle
