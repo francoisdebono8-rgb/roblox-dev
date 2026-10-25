@@ -1,25 +1,25 @@
 ## BLOCKERS
 
-Audit Codex `5bb52fd..aeff49a`, 18/10. Aucun P0 gameplay reproduit. **P1 : la clôture M7/QA-004 n’est pas fiable** : son verdict ne teste que les résidus du reset, pas la réussite de la séquence. Logs Studio présents : PASS avec lights=0, route=Light1 et air=0. Une passe ultérieure correcte existe ; elle ne répare pas le faux positif. [Preuves et missions](../archive/audits/2026-10-18-5bb52fd-aeff49a/AUDIT.md).
+25/10, source `a014262` intégrant `fe09024`. Gate finale native bloquée : `execute_luau` refusé par contrôle automatique d'approbation, limite d'utilisation atteinte. Aucune conclusion d'insécurité ; aucun contournement. [Preuves et portée](../archive/reports/fight-continuity-2026-10-25/REPORT.md). Pas de clôture du brief de rupture visuelle.
 
 ## REGRESSIONS
 
-Passe R15 utilisateur : deux modules client, 28 suites/511 cas par variante et neuf tests d’isolation PASS ; réception croisée corrigée, relâchement et cadence murale améliorés. [Preuves natives finales](../archive/reports/r15-2026-10-18/REPORT.md). Ne pas rouvrir M1–M3 depuis l’ancienne revue. Ancien P2 QA périmé résolu par reconstruction des trois variantes R15 ; les hashes source concordent. P2 : S20 n’assert pas les dégâts du kunai après fermeture (rejeu Codex :3.0, comportement actuel correct).
+31suites/563cas PASS sur normal/Debug/QA fusionnés. Régression de durée de ruée Sasuke détectée pendant la passe puis corrigée en accordant arrivée et séparation des corps ; assertions existantes conservées. Le vieux constat M7 du18/10 n'est pas réaffirmé : upstream a durci cette gate depuis.
 
 ## ARCHITECTURE RISKS
 
-M5 utilise snapshot/buff serveur, M6 réutilise kind/reaction/air et le couperet existant : pas moteur parallèle. Gates positives seules et chaîne QA qui ignore les échecs créent une confiance excessive. Préserver invariants de confirmation et exceptions de poursuite Lion/Leaf ; éviter une infrastructure QA générique.
+Réemploi de Motor/Brawler/Combat et Velmora, pas moteur parallèle. Les exceptions de saisie/orbite restent explicites. Autorité serveur inchangée ; délai visuel distinct des inputs/UI. Buffers bornés. Réseau à deux clients et latence ne sont pas validés par ces tests.
 
 ## PLAYER-FACING FAILURES
 
-Les progrès tactiques/poids ne valident pas vingt identités V1. M7 replace les acteurs entre étapes malgré la mention « sans replacement » ; vraie séquence continue, S19/S21 complet/S23/S24, manette/feel restent à prouver. Aucun nouveau PASS visuel ou live Roblox Codex.
+Baseline A :11/180 échantillons avec gap<2studs ; A–E +Lee A pré-fusion:0 dans chaque séquence. Ce résultat ne prouve ni absence de tout clipping de membre ni qualité des vingt fighters. Réactions, pieds, outils naturels et cadence des clashes nécessitent le rejeu normal-speed final. Screenshots pré-fusion ne sont pas des preuves finales.
 
 ## NEXT 3 PRIORITIES
 
-1. Claude : rendre M7 fail-closed et ses exceptions explicites ; négatifs ciblés ; ajouter l’assert post-fermeture S20. Points précis dans le rapport, QA-004.
-2. Reconstruire normal/Debug/QA après correction, vérifier source-hashes/fingerprint et rejouer M7 corrigé ; corriger la portée du rapport.
-3. Valider S22–S24 aux vraies touches sur le build final, puis ouvrir un petit lot des bibles DEC-026 via MASTER_BACKLOG, pas une nouvelle passe globale.
+1. Rejouer A–E +Lee/Itachi/Sasuke sur le Debug fusionné, observer frames et vraies entrées ; QA-001.
+2. Confronter le combat normal-speed à la vidéo, corriger seulement les défauts reproduits d'appui/contact/récupération ; MOV-004/005 et COM-003/005.
+3. Valider les cycles naturels/armes restantes puis deux clients/latence/manette, sans extrapoler un PASS roster ; TOOL-002/005 et NET-001.
 
 ## DO NOT TOUCH
 
-Intervention R15 ponctuelle autorisée : présentation uniquement, trois tests et trois builds reconstruits. Aucun serveur/kit/graphe changé ; brouillon Wave4 préservé. Préserver M1–M6 livrés et les contrats communs. Pas hub/arbre/progression ni migration prématurée17+3. Les vingt de M7 sont les anciens IDs ; cible et extrapolations des bibles inchangées.
+Préserver passes Movement1–4, kits/graphes, moteur de confirmation, safety réseau, séparation jeu/plugins/Lab et travail local Forge. DEC-027 autorise cette implémentation ponctuelle ; aucune publication, nouveau roster ou caméra spectaculaire.

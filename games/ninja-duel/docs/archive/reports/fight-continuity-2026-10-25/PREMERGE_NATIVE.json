@@ -1,0 +1,294 @@
+{
+  "results": [
+    {
+      "fighters": [
+        "Flashstep",
+        "Mirage"
+      ],
+      "scenario": "A",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 0,
+      "events": {
+        "Flow": 14,
+        "Clash": 1,
+        "Light3": 4,
+        "Chase": 7,
+        "AirDrive": 2,
+        "Dodge": 1,
+        "Reengage": 7,
+        "Damage": 26,
+        "GuardHit": 4,
+        "Air1": 4,
+        "Route": 4,
+        "Guard": 10,
+        "Air2": 1,
+        "Launcher": 2,
+        "DashAttack": 4,
+        "Light2": 7,
+        "RouteUp": 2,
+        "Hit": 22,
+        "LaunchHit": 2,
+        "ComboLimit": 3,
+        "AirHit": 2,
+        "Light1": 5
+      },
+      "botEvents": {
+        "Clash": 1,
+        "Light1": 4,
+        "Evaded": 3,
+        "Damage": 2
+      },
+      "accepted": {
+        "humanGuard": 10,
+        "humanJump": 2,
+        "humanTool": 2,
+        "botGuardOff": 1,
+        "humanGuardOff": 6,
+        "humanDodge": 1,
+        "botAttack": 4,
+        "humanAttack": 32,
+        "humanPursuit": 7
+      },
+      "minGap": 2.8841028213500977,
+      "samples": 182
+    },
+    {
+      "fighters": [
+        "Flashstep",
+        "Mirage"
+      ],
+      "scenario": "B",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 0,
+      "events": {
+        "Flow": 2,
+        "TechniqueResolved": 3,
+        "Cast:Flashstep": 1,
+        "Light3": 1,
+        "Chase": 1,
+        "Cast:MarkedBlade": 2,
+        "Light2": 1,
+        "Dodge": 2,
+        "Hit": 3,
+        "Technique": 3,
+        "Light1": 7,
+        "Reengage": 1,
+        "Damage": 10
+      },
+      "botEvents": {
+        "TechniqueResolved": 2,
+        "ReadSuccess": 1,
+        "Technique": 2,
+        "Light1": 1,
+        "ReadSlip": 1,
+        "Cast:Read": 2
+      },
+      "accepted": {
+        "humanTechnique1": 2,
+        "humanTechnique2": 1,
+        "botGuardOff": 1,
+        "humanTool": 5,
+        "botAttack": 1,
+        "botTool": 3,
+        "humanGuardOff": 1,
+        "botTechnique1": 2,
+        "humanPursuit": 1,
+        "humanAttack": 9,
+        "humanDodge": 2
+      },
+      "minGap": 2.9121623039245605,
+      "samples": 182
+    },
+    {
+      "fighters": [
+        "Flashstep",
+        "Mirage"
+      ],
+      "scenario": "C",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 0,
+      "events": {
+        "Flow": 8,
+        "Light3": 1,
+        "Chase": 5,
+        "AirDrive": 3,
+        "RouteUp": 2,
+        "Reengage": 7,
+        "Damage": 29,
+        "Air1": 4,
+        "Route": 5,
+        "RushArrive": 2,
+        "AirHit": 3,
+        "Rush": 2,
+        "DashAttack": 4,
+        "LaunchHit": 2,
+        "Hit": 15,
+        "Light2": 17,
+        "Light1": 13,
+        "Launcher": 2,
+        "ComboLimit": 14
+      },
+      "botEvents": {
+        "Evaded": 14
+      },
+      "accepted": {
+        "botGuardOff": 1,
+        "humanPursuit": 7,
+        "humanAttack": 45,
+        "humanGuardOff": 1
+      },
+      "minGap": 2.9333114624023438,
+      "samples": 182
+    },
+    {
+      "fighters": [
+        "Flashstep",
+        "Mirage"
+      ],
+      "scenario": "D",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 29,
+      "events": {
+        "Flow": 8,
+        "Air1": 3,
+        "Light3": 4,
+        "Chase": 4,
+        "DashAttack": 2,
+        "Hit": 12,
+        "Light2": 4,
+        "Light1": 5,
+        "Reengage": 4,
+        "Damage": 12
+      },
+      "botEvents": {
+        "ChainTool": 2,
+        "Light3": 1,
+        "Light2": 2,
+        "DashAttack": 1,
+        "Hit": 5,
+        "Chase": 1,
+        "Light1": 1,
+        "Reengage": 1,
+        "Damage": 7
+      },
+      "accepted": {
+        "botGuardOff": 1,
+        "humanGuardOff": 1,
+        "humanJump": 3,
+        "botPursuit": 1,
+        "humanPursuit": 4,
+        "humanAttack": 19,
+        "botAttack": 5
+      },
+      "minGap": 2.841278076171875,
+      "samples": 181
+    },
+    {
+      "fighters": [
+        "Flashstep",
+        "Mirage"
+      ],
+      "scenario": "E",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 0,
+      "events": {
+        "Flow": 4,
+        "Clash": 13,
+        "Light3": 2,
+        "Light2": 2,
+        "DashAttack": 2,
+        "Chase": 2,
+        "Dodge": 4,
+        "Hit": 7,
+        "Light1": 21,
+        "Reengage": 2,
+        "Damage": 7
+      },
+      "botEvents": {
+        "ChainTool": 1,
+        "Clash": 13,
+        "Light3": 1,
+        "Light2": 2,
+        "Substitute": 2,
+        "Hit": 3,
+        "Light1": 16,
+        "Dodge": 1,
+        "Damage": 4
+      },
+      "accepted": {
+        "botDodge": 3,
+        "botGuardOff": 1,
+        "humanGuardOff": 1,
+        "botAttack": 19,
+        "humanDodge": 4,
+        "humanAttack": 27,
+        "humanPursuit": 2
+      },
+      "minGap": 2.995861768722534,
+      "samples": 182
+    },
+    {
+      "fighters": [
+        "Leaf",
+        "Mirage"
+      ],
+      "scenario": "A",
+      "overlaps": 0,
+      "fingerprint": "4f0094ad025ed6704793326803c09478a3fd1b5a51e530d594f09ddcc2cc9965",
+      "done": true,
+      "walls": 0,
+      "events": {
+        "Flow": 11,
+        "Clash": 1,
+        "Light3": 4,
+        "Chase": 5,
+        "AirDrive": 2,
+        "Dodge": 1,
+        "Reengage": 5,
+        "Damage": 21,
+        "GuardHit": 4,
+        "Air1": 4,
+        "Route": 4,
+        "AirHit": 2,
+        "Guard": 9,
+        "DashAttack": 3,
+        "LeafRising": 2,
+        "Light2": 6,
+        "Hit": 20,
+        "RouteUp": 2,
+        "ComboLimit": 1,
+        "LaunchHit": 2,
+        "Light1": 4
+      },
+      "botEvents": {
+        "Clash": 1,
+        "Light1": 4,
+        "Evaded": 1,
+        "Damage": 2
+      },
+      "accepted": {
+        "botGuardOff": 1,
+        "humanGuard": 9,
+        "humanJump": 1,
+        "humanGuardOff": 6,
+        "humanDodge": 1,
+        "humanPursuit": 5,
+        "humanAttack": 25,
+        "botAttack": 4
+      },
+      "minGap": 2.903055429458618,
+      "samples": 183
+    }
+  ],
+  "done": false
+}

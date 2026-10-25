@@ -35,3 +35,8 @@ Demande directe utilisateur autorisant Codex à améliorer visuellement les R15 
 ## INBOX-R15-COMMON-20261018 — PENDING ACK Claude
 
 Passe client directement demandée par l’utilisateur : branche `codex/ninja-r15-common-pass`, base distante `b445df5`. [Rapport](../archive/reports/r15-common-2026-10-18/REPORT.md), suivi MOV-002 et CURRENT_STATE. Un module, pas de kit/serveur/graphes ; préserve les clips Wave1/3/4. Préserver les corrections ciblées de pas/strafe/reset dans les prochains lots V1 et rejouer leurs scénarios lors des prochaines intégrations. Les gates visuelles/humaines des vingt restent ouvertes. Ne pas interrompre le sous-lot roster en cours.
+
+
+## INBOX-CONTINUITY-20261025 — PENDING ACK Claude
+
+Demande utilisateur d'implémentation, DEC-027 ; source `a014262`, branche `codex/ninja-fight-continuity`, intégration de `fe09024` préservée. [Rapport](../archive/reports/fight-continuity-2026-10-25/REPORT.md), tickets MOV-004/005, COM-003/004/005, TOOL-002/005, QA-001.31suites/563cas PASS sur les trois variantes. Rejeu final natif indisponible à cause du contrôle automatique d'approbation (quota), donc pas de clôture visuelle. Préserver les deux passes réunies ; reprendre la gate sur le fingerprint final. Le brief ajouté dans docs/active a été déplacé sans changement de contenu vers archive/requests pour restaurer les sept propriétaires, sans supprimer ses exigences.

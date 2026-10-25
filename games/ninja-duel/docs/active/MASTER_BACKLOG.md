@@ -36,6 +36,8 @@ Avant tout nouvel ID, rechercher une intention équivalente dans le backlog, y c
 - evidence: 18/10 : Studio exact bc7faa3 ouvert et MCP connecté (fingerprint fdba31ab…f09194) ; vérifications natives ciblées dans [audit incrémental](../archive/audits/2026-10-18-feel-preparation/AUDIT.md), aucune nouvelle validation exhaustive20. Préparation M4/M7 sous QA-004 ; conserver limites hardware/feel.
 - outcome: PENDING
 
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
+
 ## QA-002 — Contrats headless existants
 
 - status: DONE
@@ -153,6 +155,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 
 - evidence_addendum: 18/10 passe utilisateur R15 commun, base b445df5 : alternance corporelle en strafe et reset des appuis corrigés, sortie de course sans saut du pied, roulis latéral réduit. [Rapport et preuves](../archive/reports/r15-common-2026-10-18/REPORT.md). Trois tests nouveaux, trois builds/28 suites PASS ; sondes natives ciblées et parcours clavier/souris partiel. Pas de clôture globale MOV-001..005 ni de feel humain.
 
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
+
 ## MOV-003 — Vraie course latérale et changement de direction
 
 - status: PARTIAL
@@ -179,6 +183,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: Animation/renderer/IK existent, aucune acceptation native actuelle 2026-10-16 : outil de chronophotographie Studio (poses de 6–9 instants côte à côte, distances par image) ; premier usage sur la chaîne de Minato ([rapport](../archive/reports/convergence/CONTACT_AND_REACTIONS.md)) 2026-10-16 : poursuite en bond vertical après un lanceur, clips recalés sur le temps serveur, entrée des coups enchaînés adoucie et coups tournants bras serrés (pire saut de main par chaîne : Sasuke 3,1→1,8, Minato 2,9→2,1 studs/image) ; familles de mouvement pour les nouveaux combattants 2026-10-16 soir : poses d’identité (glissade du Read, retrait du Mirage, contres glissés, posture tenketsu, Curse Mark, freinage de fin de dash, arrivée aérienne Yellow Flash) ; attaques aériennes martelées qui faisaient planer au ras du sol corrigées (`885fdbc`, Regression.spec)
 - outcome: PENDING
 
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
+
 ## MOV-005 — Transitions air, landing et mur cohérentes
 
 - status: IN_PROGRESS
@@ -194,6 +200,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - update: 18/10 Codex, autorisation utilisateur ponctuelle : réceptions isolées/relâchées et mouvement mural lié à la vitesse dessinée livrés ; deux modules client, 511cas PASS par variante et trois nouveaux tests ciblés. Rejeu natif sur Debug final, clavier/souris et mur. [Preuves et limites](../archive/reports/r15-2026-10-18/REPORT.md). Pas clôture de toute la locomotion ni des vingt identités ; préserver les hooks Wave4 du brouillon Claude.
 - acceptance: Saut neutre/avec élan/sprint, air control et momentum conservés, approche mur/rebond/mantle/detach, réception faible/grande hauteur et reprise sans pause ; comparer avant/après natif.
 - evidence_addendum: 25/10 Movement Overhaul passes 1–4 : NATIVE_STUDIO mesuré (route §20 continue, 4 fighters ; murs course/montée, wall-jump tangentiel 62→54, Light aérien sans gel 62→57, réceptions sans arrêt). [Rapport](../reports/movement-overhaul-2026-10-25/REPORT.md). HUMAN_VISUAL/FEEL PENDING ; pas de clôture.
+
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient
 
@@ -249,6 +257,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - outcome: PENDING
 - acceptance: Appui → hanche → torse → membre → impact → réaction → recovery ; pas de corps imbriqués, glissade ou root déplacé sous un corps figé ; observation en mouvement, pas particules masquantes.
 
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
+
 ## COM-004 — Conversions air/mur et branches libres
 
 - status: PARTIAL
@@ -261,6 +271,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - validation: Réaction→poursuite→conversion, drive/spike/side switch/wallpin/bounce/tech ; choisir poursuivre ou sortir ; whiff puni ; preuve native
 - evidence: 2026-10-16 NATIVE_STUDIO : Motor.move intégré une seule fois quand le solveur Studio est actif (f895158) — rush scripté : sauts du corps 1,1 % jusqu’à 3–4 studs → 0,4 % ; Regression +1. Restent : à-coups de l’IA en l’air pendant ses techniques aériennes, rotations instantanées (AI.luau facing, lock au départ d’une frappe) — mesurés, non corrigés
 - outcome: PENDING
+
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
 
 ## COM-005 — Transitions, cancels et décisions entre combos
 
@@ -275,6 +287,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: Mécanismes partiels ; 2026-10-16 : chainOpen/recoveryCancelAt ne fuient plus (f93d866). Mission 2026-10-16 : construire une vraie couche de neutral (approche, retraite, repositionnement latéral, feinte, sonde, outil, pression projectile, garde, parade, esquive, perfect dodge, contre, substitution, clash, reset) avec des phases et des échanges courts 2026-10-16 soir : réengagement unique (poursuite dans une fenêtre, dash chakra hors fenêtre) ; NATIVE_STUDIO : arrivée à 3,0 studs pour les quatre après correction du glissement post-arrivée (`6b98e28`, Regression.spec), probe `reengage.luau`
 - outcome: PENDING
 - acceptance: Premier hit confirmé ouvre la chaîne ; whiff/buffer ne consomme pas un pas ; double tap, intention directionnelle tardive/relâchée, rotation caméra, poursuite, cancel, substitution et garde brisée sans état fantôme.
+
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
 
 ## COM-006 — Grabs et micro-conflits physiques
 
@@ -393,6 +407,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: Minato body/surface/in-flight marks ; pas inventaire générique prouvé
 - outcome: PENDING
 
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
+
 ## TOOL-003 — Fil puis DragonFlame technique
 
 - status: DONE
@@ -431,6 +447,8 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - validation: Draw/grip/release, throw pendant run/air/dodge, retour contact et conversion distincts par personnage
 - evidence: Tools et routes existent ; 2026-10-16 : un lancer (outil ou kunai marqué) depuis la garde la baisse — plus de lancer en garde pleine ni de « fausse garde » ; la garde revient après le lancer si la touche est tenue. TECHNICAL PASS ; transitions corporelles NATIVE_STUDIO PENDING
 - outcome: PENDING
+
+- evidence_addendum: 25/10, DEC-027 : [passe de continuité](../archive/reports/fight-continuity-2026-10-25/REPORT.md), source a014262. Tests fusionnés PASS ; preuves natives pré-fusion explicitement bornées. Rejeu final Studio bloqué par quota du contrôle automatique, acceptation visuelle/humaine ouverte ; statut global conservé.
 
 ## TOOL-006 — Prototype ciblé objet + chakra + déclencheur → résultat
 

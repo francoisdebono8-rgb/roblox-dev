@@ -94,3 +94,10 @@ Concept : grands prodiges de générations différentes vers12–14ans ; canon p
 Livrable documentaire : vingt [Combat Bibles](../characters/ROSTER_20.md), douze rubriques de chorégraphie et appendices A–E (réemploi, unités uniques, priorité de design, actuel→cible, lots proposés). Moteurs/hooks restent communs ; aucune branche spéciale avant premier hit confirmé ; contre-jeu, anti-infini et manette obligatoires. Viser réemploi réel sans uniformiser le rendu, pas300animations uniques. Les temps/portées/chorégraphies proposés sont des cibles de production à tester, pas équilibre final ni faits canon.
 
 **Mission Codex = design uniquement.** Ne pas interrompre le bloc Claude en cours, coder les fighters, migrer les IDs/menu, reconstruire les builds ou lancer les hooks futurs. Audit initial code sur le vrai HEAD ; les trois nouveaux absents sont marqués absents. Tâches/ordre d’ouverture dans MASTER_BACKLOG, état/proof dans CURRENT_STATE ; les lots de design ne deviennent pas tous actifs simultanément.
+
+
+## DEC-027 — Passe de continuité par séquences de combat
+
+Demande directe utilisateur du 25/10, [texte intégral](../archive/requests/2026-10-25-fight-continuity.md), puis « reprends » et « finis » : Codex est autorisé à auditer puis implémenter cette passe dans les moteurs existants. Exception explicite au rôle historique de revue seule, limitée à cette mission. Préserver serveur autoritaire, confirmations, dégâts, réseau, identité et travail concurrent. L'unité de validation est un combat continu de 10–20 secondes, dont A sans jutsu ; tests techniques et acceptation visuelle restent distincts. Aucun nouveau kit, système dojutsu ou effet/caméra destiné à masquer le corps.
+
+Le [brief de convergence ajouté sur la branche](../archive/requests/2026-10-25-combat-convergence-breakthrough.md) est préservé intégralement comme source détaillée. Son emplacement précédent ajoutait un huitième propriétaire actif ; ses exigences restent suivies par MOV-004/005, COM-002/003/004/005, TOOL-002/005 et QA-001. État et limites : CURRENT_STATE ; preuve : [rapport](../archive/reports/fight-continuity-2026-10-25/REPORT.md).

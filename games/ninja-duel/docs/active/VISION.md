@@ -91,3 +91,5 @@ Le jalon produit est le roster jouable en breadth-first, puis une alpha publique
 ## Jalon Character V1
 
 Selon DEC-026, l’identité corporelle complète vient avant les systèmes globaux finaux : les vingt prodiges cibles doivent être reconnaissables HUD masqué par leur déplacement, leurs Light chains/Heavy, leurs armes/pouvoirs physiques, leur défense et leurs réactions. Les moteurs restent communs ; leur expression ne doit pas devenir une même chaîne répétée. Les signatures renforcent une boucle déjà incarnée. Ce jalon n’attend ni arbre/maîtrise, ni chakra/armes globaux finaux, ni son/VFX/balance finaux. Les éléments fondamentaux (clones dans routes, os dans coups, sable actif, Shunshin dans transitions) font déjà partie de V1. Composition et décisions dans DECISIONS, détails dans les Combat Bibles, priorités dans MASTER_BACKLOG.
+
+La séquence de combat continue constitue l'unité de qualité : vingt secondes sans jutsu doivent déjà exprimer un combat ninja. Chaque action hérite d'un appui, d'un élan et d'une relation à l'adversaire, puis laisse une sortie crédible. La lisibilité vient d'abord des deux corps et du contact ; effets et caméra les accompagnent.
