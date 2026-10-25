@@ -214,6 +214,27 @@ test("a punch at a body that stepped inside arm's length gives way instead of go
  assert(close>far+.4,string.format("the hips do not give way at close range (%.2f vs %.2f)",close,far))
 end)
 
+test("a throw with the stick pushed back does not pass the held body through the thrower",function()
+ local c,a,b=H.duel("GentleFist","Lavender")
+ c:relocate(a,V.new(0,3,2.4));c:relocate(b,V.new(0,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+ assert(c:request(a,"Grab"),"setup: no grab")
+ local n=0
+ repeat H.step(c,.01);n+=1 until a.grabVictim or n>60
+ assert(a.grabVictim,"setup: the grab did not hold")
+ -- Stick pushed straight back (away from the held body).
+ a.move=V.new(0,0,1)
+ assert(c:request(a,"Attack"),"setup: no throw")
+ local closest=99
+ for _=1,60 do
+  H.step(c,.01)
+  local d=a.root.Position-b.root.Position
+  if math.abs(d.Y)<3 then closest=math.min(closest,V.new(d.X,0,d.Z).Magnitude) end
+ end
+ assert(closest>=1.8,string.format("the thrown body went through the thrower (%.2f studs)",closest))
+end)
+
 test("a strike already out is committed: it does not steer onto a body that slipped aside",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(0,3,7));c:relocate(b,V.new(0,3,0))

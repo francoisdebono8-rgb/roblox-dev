@@ -3224,7 +3224,7 @@ return {
       <Item class="StringValue" referent="ND22">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">771de43e34601d05a964ce68f2075842b93a823463c85665067c70f186393f03</string>
+          <string name="Value">5034bc2c87dcb96c2a6c16e056bf6a418a6225891d96e171cf6815b86077a76b</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND23">
@@ -5760,7 +5760,19 @@ function Brawler.hit(c,a,p)
   b=a.grabVictim
   if not b or b.health&lt;=0 then return false end
   Brawler.releaseGrab(a)
+  local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
   local direction=if a.move.Magnitude&gt;.2 then a.move.Unit else a.root.CFrame.LookVector
+  -- The held body is in front: a throw behind sent it through the thrower
+  -- (free fights: Neji's back throw left Hinata 0.46 studs inside him). A
+  -- stick pushed back throws to that side instead.
+  if look.Magnitude&gt;.1 then
+   look=look.Unit
+   local flat=Vector3.new(direction.X,0,direction.Z)
+   if flat.Magnitude&gt;.1 and flat.Unit:Dot(look)&lt;0 then
+    local side=flat-look*flat:Dot(look)
+    direction=if side.Magnitude&gt;.1 then side.Unit else look
+   end
+  end
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
  end
  local success,guarded,protected
@@ -26659,13 +26671,15 @@ local function reactionTargets(actor,feet)
 		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
 		-- away from the blow and turns with it instead of folding forward.
 		spec={root={y=-.35*snap,z=.45*snap,roll=-dir*22*snap*s,yaw=-dir*28*snap},torso={roll=-dir*20*snap*s,yaw=-dir*30*snap,pitch=12*snap},head={roll=-dir*16*snap,yaw=-dir*28*snap},
-			ra={raise=48*snap,out=50*snap,elbow=50},la={raise=44*snap,out=50*snap,elbow=48}}
+			ra={raise=20*snap,out=62*snap,elbow=50},la={raise=18*snap,out=62*snap,elbow=48}}
 	elseif zone=="head" then
 		-- The face takes it: the head whips away and back, the whole upper body
 		-- follows it back over the hips, the arms fly open.
 		spec={root={y=-.25*snap,z=.6*snap*math.max(from,.4),pitch=-12*snap*s,yaw=twist*16*snap,roll=-twist*9*snap},torso={pitch=-20*snap*s,yaw=twist*24*snap,roll=-twist*10*snap},
 			head={pitch=-34*snap*s,yaw=twist*52*snap,roll=twist*20*snap},
-			ra={raise=40*snap,out=58*snap,elbow=36},la={raise=34*snap,out=54*snap,elbow=34}}
+			-- (Recorded free fights: arms thrown forward put the struck body's
+			-- hand inside the striker's head; they fly open to the sides instead.)
+			ra={raise=-6*snap,out=72*snap,elbow=36},la={raise=-4*snap,out=68*snap,elbow=34}}
 	elseif zone=="legs" then
 		-- The base is taken: the hit knee buckles, the body drops toward it and
 		-- the arms go out for balance.
@@ -27176,11 +27190,17 @@ function Motion.present(char,actor,clock,dt)
 		if subject.lookAt and rootPart and not subject.airborne and weight&gt;0 then
 			local to=subject.lookAt-rootPart.Position
 			local along=-rootPart.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z)).Z
-			local short=math.clamp(3.4-along,0,1.2)
+			-- Two limits (recorded free fights, part by part): the striking hand
+			-- stays out of the body at the server's contact distance (the clips
+			-- reach ~0.3 past it), and the chest, carried forward by the clip's
+			-- lunge and lean, never meets the opponent's (a dash attack drove the
+			-- two torsos within 1.4 studs for a dozen frames).
+			local chest=(final.Root or IDENTITY):PointToWorldSpace(Vector3.new(0,1.2,0))
+			local short=math.clamp(math.max(3.9-along,2.6-(along+chest.Z)),0,2)
 			if along&gt;0 and short&gt;0 and math.abs(to.Y)&lt;3 then
 				local w=short*weight
-				final.Root=CF(0,0,.65*w)*(final.Root or IDENTITY)
-				final.Waist=(final.Waist or IDENTITY)*ANG(rad(9*w),0,0)
+				final.Root=CF(0,0,w)*(final.Root or IDENTITY)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(6*w),0,0)
 			end
 		end
 		if subject.whiffed and not subject.airborne then

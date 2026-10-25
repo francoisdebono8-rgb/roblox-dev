@@ -1043,7 +1043,19 @@ function Brawler.hit(c,a,p)
   b=a.grabVictim
   if not b or b.health<=0 then return false end
   Brawler.releaseGrab(a)
+  local look=a.root.CFrame.LookVector*Vector3.new(1,0,1)
   local direction=if a.move.Magnitude>.2 then a.move.Unit else a.root.CFrame.LookVector
+  -- The held body is in front: a throw behind sent it through the thrower
+  -- (free fights: Neji's back throw left Hinata 0.46 studs inside him). A
+  -- stick pushed back throws to that side instead.
+  if look.Magnitude>.1 then
+   look=look.Unit
+   local flat=Vector3.new(direction.X,0,direction.Z)
+   if flat.Magnitude>.1 and flat.Unit:Dot(look)<0 then
+    local side=flat-look*flat:Dot(look)
+    direction=if side.Magnitude>.1 then side.Unit else look
+   end
+  end
   a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+direction)
  end
  local success,guarded,protected

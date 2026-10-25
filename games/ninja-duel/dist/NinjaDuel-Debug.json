@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "7b8df352b413ba3b29df0afb57248104f8148f1c29cd931fca0f9ae28be492b8",
+  "sha256": "8e2a4ee0803c54d47f76be46a894f4faf77eacbb58f0a730f764494498cc7fe1",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -22,7 +22,7 @@
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "615e5183c8cc30ebb5908382ad0e44c0a2caa0fdf4e65226366bf110202c2dfa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
-    "src/Client/VelmoraMotionEngine.luau": "7d7d4120c29bd09fc861d74c9386d58f63190f1a5c79e7bedc626af2d377108b",
+    "src/Client/VelmoraMotionEngine.luau": "0628b9f37d76f5c00f8d13011067762cdd8a57e2babcc169dee46ebef83ea78d",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
     "src/Client/Wave1Motion.luau": "cc1a082bdf6a8d65ec1637962136d7fba2b6f333b0a14f82dbd46637f9513954",
     "src/Client/Wave2FX.luau": "201da5528a60236e6e480d6a02e64013025d98c2b82b196be9cc1bbed3770747",
@@ -35,7 +35,7 @@
     "src/Server/BanglaCombat.luau": "2cfde6dddc151ca93d3d4cc1e1e931945795a4e03c9725e5559a93eec2880c55",
     "src/Server/BanglaEvade.luau": "238403f2d75432fa6a2f4ea4867d4a34b0bc4548bed163a271f633d926e17504",
     "src/Server/Bodies.luau": "b5f7a27c31ebf20e0bc00f0193f543a7a2be2d62be653b4e6955fe00a133f9a2",
-    "src/Server/Brawler.luau": "3b610a2002f0c10d70d8a8a2f45909dc5d77152bdbabaa0b1572b863a2cf1853",
+    "src/Server/Brawler.luau": "c96496dcdbe976d6d055e63b5e50c1a6bbb7f0abb99fbf4193718a7fd74f19a2",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "41f7c6ffa540a81801474ab5e20671063cebf75f238b0313b8fc95a8fcab4395",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -106,7 +106,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "60164f8bddcaf34d015e1572b473c66a366ca97f4619ee83837f9c41581509f7",
+  "buildFingerprint": "56b49d8b50f9ce4b54b517016e0730cf6d0e929f7ecfc817f5393e90c02d5c4c",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

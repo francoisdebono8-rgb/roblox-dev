@@ -2084,13 +2084,15 @@ local function reactionTargets(actor,feet)
 		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
 		-- away from the blow and turns with it instead of folding forward.
 		spec={root={y=-.35*snap,z=.45*snap,roll=-dir*22*snap*s,yaw=-dir*28*snap},torso={roll=-dir*20*snap*s,yaw=-dir*30*snap,pitch=12*snap},head={roll=-dir*16*snap,yaw=-dir*28*snap},
-			ra={raise=48*snap,out=50*snap,elbow=50},la={raise=44*snap,out=50*snap,elbow=48}}
+			ra={raise=20*snap,out=62*snap,elbow=50},la={raise=18*snap,out=62*snap,elbow=48}}
 	elseif zone=="head" then
 		-- The face takes it: the head whips away and back, the whole upper body
 		-- follows it back over the hips, the arms fly open.
 		spec={root={y=-.25*snap,z=.6*snap*math.max(from,.4),pitch=-12*snap*s,yaw=twist*16*snap,roll=-twist*9*snap},torso={pitch=-20*snap*s,yaw=twist*24*snap,roll=-twist*10*snap},
 			head={pitch=-34*snap*s,yaw=twist*52*snap,roll=twist*20*snap},
-			ra={raise=40*snap,out=58*snap,elbow=36},la={raise=34*snap,out=54*snap,elbow=34}}
+			-- (Recorded free fights: arms thrown forward put the struck body's
+			-- hand inside the striker's head; they fly open to the sides instead.)
+			ra={raise=-6*snap,out=72*snap,elbow=36},la={raise=-4*snap,out=68*snap,elbow=34}}
 	elseif zone=="legs" then
 		-- The base is taken: the hit knee buckles, the body drops toward it and
 		-- the arms go out for balance.
@@ -2601,11 +2603,17 @@ function Motion.present(char,actor,clock,dt)
 		if subject.lookAt and rootPart and not subject.airborne and weight>0 then
 			local to=subject.lookAt-rootPart.Position
 			local along=-rootPart.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z)).Z
-			local short=math.clamp(3.4-along,0,1.2)
+			-- Two limits (recorded free fights, part by part): the striking hand
+			-- stays out of the body at the server's contact distance (the clips
+			-- reach ~0.3 past it), and the chest, carried forward by the clip's
+			-- lunge and lean, never meets the opponent's (a dash attack drove the
+			-- two torsos within 1.4 studs for a dozen frames).
+			local chest=(final.Root or IDENTITY):PointToWorldSpace(Vector3.new(0,1.2,0))
+			local short=math.clamp(math.max(3.9-along,2.6-(along+chest.Z)),0,2)
 			if along>0 and short>0 and math.abs(to.Y)<3 then
 				local w=short*weight
-				final.Root=CF(0,0,.65*w)*(final.Root or IDENTITY)
-				final.Waist=(final.Waist or IDENTITY)*ANG(rad(9*w),0,0)
+				final.Root=CF(0,0,w)*(final.Root or IDENTITY)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(6*w),0,0)
 			end
 		end
 		if subject.whiffed and not subject.airborne then
