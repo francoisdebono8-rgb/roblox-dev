@@ -37,6 +37,18 @@ test("a jab to the body folds the whole body, not just the head (it reads at gam
  assert(most>30,string.format("a jab still barely moves the body (%.0f degrees)",most))
 end)
 
+test("between two blows of a string the struck body does not flash back to its stance",function()
+ local c,a=H.duel("Mirage","Leaf")
+ Motion.reset(a.model)
+ for _=1,10 do frame(a.model,body(a)) end
+ for i=1,6 do frame(a.model,body(a,{reaction="HitStun",reactionElapsed=i/60,hitStrength=.3,hitAngle=0,hitZone="body",hitKind="strike"})) end
+ local folded=deg(a.model.joints.Root.Transform)
+ -- The server lets the stun lapse for two frames before the next hit.
+ for _=1,2 do frame(a.model,body(a)) end
+ local between=deg(a.model.joints.Root.Transform)
+ assert(between>folded*.7,string.format("the body snapped back between hits (%.0f -> %.0f degrees)",folded,between))
+end)
+
 test("a knockback takes the body off its feet: thrown back nearly flat while it flies",function()
  local c,a=H.duel("Mirage","Leaf")
  Motion.reset(a.model)
@@ -122,6 +134,15 @@ test("a landed blow's spark sits on the struck side and height, not in the chest
  assert(hit,"setup: the jab never landed")
  local off=hit.position-b.root.Position
  assert(off.Z>.3,"the spark is not on the side facing the striker")
+end)
+
+test("identity in the exchange: Itachi's evasions are shorter, Zabuza's cleaver turns slower than Lee",function()
+ local Fighters=H.load("Shared/Fighters")
+ local all=Fighters
+ assert((all.Mirage.DashScale or 1)<(all.Leaf.DashScale or 1)*.9,"Itachi's dodge is not more economical than Lee's")
+ local c,z=H.duel("Mist","Leaf")
+ local c2,l=H.duel("Leaf","Mirage")
+ assert((z.def.StrikeTurnScale or 1)<(l.def.StrikeTurnScale or 1)*.8,"Zabuza's strikes swing round as fast as Lee's")
 end)
 
 print(string.format("NinjaDuel combat feel (convergence): %d PASS (headless; the look is a Studio check)",passed))

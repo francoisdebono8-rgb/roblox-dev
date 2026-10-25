@@ -617,7 +617,7 @@ return Metrics
 		Routes = "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
 		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 18, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
-		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
+		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.8, StrikeTurnScale = 1.1, GuardStrength = 0.08, PreferredRange = 10,
 		-- The Sharingan (three tomoe at 13): it sees strikes coming. Wider parry
 		-- and perfect-dodge windows, each successful one opens a counter, and a
 		-- raised guard tracks a teleport instead of being crossed up.
@@ -1514,7 +1514,7 @@ fighters.Mist = {
 	Routes = "↑ cleaver rise from the hip  ·  ↓ low cut backing off  ·  ←→ arc covering the flank  ·  held guard: handle riposte  ·  air: flat strike / cleaver dive",
 	Description = "Kubikiribōchō: slow, long and heavy. The Hidden Mist, the Silent Killing out of it, the Water Prison.",
 	Health = 150, Chakra = 110, ChakraRegen = 7, Speed = 18.5, SprintScale = 1.1, JumpScale = 0.96, AirControlScale = 0.85, AccelerationScale = 0.86,
-	CombatTravel = 0.92, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.08, PreferredRange = 6.5,
+	CombatTravel = 0.92, CombatDamage = 1.12, DashScale = 1.0, StrikeTurnScale = 0.62, GuardStrength = 0.08, PreferredRange = 6.5,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 	ToolMastery = { Kind = "kunai", Count = 1, Speed = 88, Damage = 3, Recover = .8 },
 	-- Awakening: the Demon. Light blows do not stop him, the cleaver bites deeper.
@@ -3343,7 +3343,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">426b6220876a7557e028c586c1c3adb6fb217c357df071af43875d55032c0ccc</string>
+          <string name="Value">294080ab99a1a52d52c58825d2c335696195a7f3e13223a46a6814bbf2df53eb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -9422,7 +9422,9 @@ function Combat:updateActor(a,dt)
    -- starts): a bounded turn in the startup; a strike already out only
    -- adjusts slowly (a body that slipped away is not chased round by the
    -- swing); lateral routes still track it.
-   self:turnToward(a,flat,dt,if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)
+   -- (A fighter's own weight in the turn, StrikeTurnScale: Zabuza's cleaver
+   -- swings round slower, Itachi's economy turns a little sharper.)
+   self:turnToward(a,flat,dt,(if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)*(a.def.StrikeTurnScale or 1))
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
@@ -10857,6 +10859,9 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="chakra" then
+			-- (Visual QA: a pure-taijutsu fight keeps both bodies dry of chakra.)
+			actor.chakra=math.max(0,arg2 or actor.chakra);return actor.chakra
 		elseif op=="health" then
 			actor.health=math.max(1,arg2 or actor.health);actor.hum.Health=actor.health;return actor.health
 		elseif op=="sprint" then
@@ -29122,6 +29127,25 @@ function Motion.present(char,actor,clock,dt)
 		local targets,rate=reactionTargets(subject)
 		apply(char,targets,rate,dt)
 		return "air reaction"
+	end
+	-- Combat convergence (Studio timelines): inside a string the server lets a
+	-- hit-stun lapse for a frame or two before the next blow lands, and the
+	-- body flashed back toward its stance between two reactions. A standing
+	-- reaction now keeps its tail for a few frames when nothing else takes over.
+	if subject.reaction=="HitStun" or subject.reaction=="GuardStun" then
+		memo.reactionTail={reaction=subject.reaction,hitAngle=subject.hitAngle,hitZone=subject.hitZone,hitKind=subject.hitKind,
+			hitTwist=subject.hitTwist,hitStrength=subject.hitStrength,elapsed=subject.reactionElapsed or 0,at=elapsedTime}
+	elseif not subject.reaction and memo.reactionTail and subject.state=="Neutral" and not subject.attackName and not subject.airborne
+		and elapsedTime-memo.reactionTail.at&lt;.09 and (subject.speed or 0)&lt;8 then
+		local tail=memo.reactionTail
+		local held=table.clone(subject)
+		held.reaction=tail.reaction;held.hitAngle=tail.hitAngle;held.hitZone=tail.hitZone;held.hitKind=tail.hitKind
+		held.hitTwist=tail.hitTwist;held.hitStrength=tail.hitStrength
+		held.reactionElapsed=tail.elapsed+(elapsedTime-tail.at)
+		Motion.defense(char,held,dt)
+		return "defense"
+	else
+		memo.reactionTail=nil
 	end
 	if subject.state=="Dodging" or subject.reaction then
 		Motion.defense(char,subject,dt)

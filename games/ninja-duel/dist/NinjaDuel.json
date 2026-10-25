@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "0eb8e7f3633be1026458fe6b0ecdeee3d632de0e25381f3b5724e763e14b46be",
+  "sha256": "7bf27fef45235bf03948412b61f7b79fcafdabc0aa94fecf95d81f8d5913efcf",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -19,7 +19,7 @@
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "615e5183c8cc30ebb5908382ad0e44c0a2caa0fdf4e65226366bf110202c2dfa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
-    "src/Client/VelmoraMotionEngine.luau": "16f5075c73aaf7a1b4f01669961d7c54280adcf0d45d86eceb22cacb9d06d85c",
+    "src/Client/VelmoraMotionEngine.luau": "a847ce704da426a064d849c57f1d72e8fbf7966e2fd35d3cb2678405bf32a7d6",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
     "src/Client/Wave1Motion.luau": "cc1a082bdf6a8d65ec1637962136d7fba2b6f333b0a14f82dbd46637f9513954",
     "src/Client/Wave2FX.luau": "201da5528a60236e6e480d6a02e64013025d98c2b82b196be9cc1bbed3770747",
@@ -39,7 +39,7 @@
     "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "69f4c28467e3773b2be42160e414f46a787f24092cb015be754d884b570dc790",
+    "src/Server/Combat.luau": "b16ee7a78093603e73fb87e24c01f77989127ca7525209286639935e18f9a74d",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "09a6caa466191d08519946bcffa3068931e7ebdb98592d2d5f5b7be63daa9ae4",
@@ -72,7 +72,7 @@
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
     "src/Shared/Config.luau": "3d1c6ea4c3f7e83eddb147f486791b1f369b9bad8acd1a6ddc82fe007360e799",
     "src/Shared/Controls.luau": "35c9f4ee549ea6f328fbd2490b42a796df7b3ff87fbc38578d10dbbd810070aa",
-    "src/Shared/Fighters.luau": "2e9ab53e08d4ef4a3eeca240ac985063ed06e67f18b996c1e7505694977baf02",
+    "src/Shared/Fighters.luau": "a2d7b6bfacf1fa6c9ab41b3cc0d211a89308731498ff444a7b4e45b70cbbf82b",
     "src/Shared/Looks.luau": "ca2b167a1ff9ffa8bc4152fc28f11c62f90dbdd8fe5c027517ad6c756a67749e",
     "src/Shared/MoveGraphs.luau": "e5c568f3b1aa2481a2330971807acf2288fefa8ec3be02f5f2d90245712860d0",
     "src/Shared/OnlineProtocol.luau": "d297a74dc56b750386ef8c051204ad5ee7040b49d32cf0a7f4ec58fe6e22628a",
@@ -81,14 +81,14 @@
     "src/Shared/RosterStaging.luau": "ca70b3f34cb58ff208bb5fc5cbdaf88b7a01f00fdf20bb463d6d862c0d02498f",
     "src/Shared/Rules.luau": "07708aa2ac82ee9803691412dbd2ceb02044f4c265a4c70425eb1f9c790d4f74",
     "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0",
-    "src/Shared/Wave1.luau": "c8ec5a9253b251f199166b441f621905134b195816b5ee07b40a0fc9ac69b6cf",
+    "src/Shared/Wave1.luau": "d39c16f5ef961c520126c7698a68bafc07d209435f38a3064351d8a3e5213ae2",
     "src/Shared/Wave2.luau": "a38051ac7cab73c757e0a57d5f0969730b1d48ace5846094dadbc4c422979987",
     "src/Shared/Wave3.luau": "0110e4f77e3dcf86bcfe97e1fa3a5c66469dc49d83a7d53d42d0017b58156600",
     "src/Shared/Wave4.luau": "8e7e6a4da1eed328bdd8ec66a1e591c4fe53ab7017c7a60b6fa2a07842898a8e"
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "b9c4e55744ded420d178ecf3aae4dece5caaf0e38d6d7d0ee9058aa447f5de89",
+  "buildFingerprint": "7b5df1ef627e85f375b4393ee2a9e3894f139f3fbec05621f9eb3b0809537d67",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

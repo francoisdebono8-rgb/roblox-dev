@@ -210,6 +210,9 @@ function DevHooks.install(matches)
 			actor.move=arg2 or Vector3.zero;actor.lastMove=os.clock()+(arg3 or 0)
 			if arg1~="bot" then actor.sprinting=false end
 			return true
+		elseif op=="chakra" then
+			-- (Visual QA: a pure-taijutsu fight keeps both bodies dry of chakra.)
+			actor.chakra=math.max(0,arg2 or actor.chakra);return actor.chakra
 		elseif op=="health" then
 			actor.health=math.max(1,arg2 or actor.health);actor.hum.Health=actor.health;return actor.health
 		elseif op=="sprint" then

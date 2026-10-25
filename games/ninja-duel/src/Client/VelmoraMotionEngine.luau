@@ -2488,6 +2488,25 @@ function Motion.present(char,actor,clock,dt)
 		apply(char,targets,rate,dt)
 		return "air reaction"
 	end
+	-- Combat convergence (Studio timelines): inside a string the server lets a
+	-- hit-stun lapse for a frame or two before the next blow lands, and the
+	-- body flashed back toward its stance between two reactions. A standing
+	-- reaction now keeps its tail for a few frames when nothing else takes over.
+	if subject.reaction=="HitStun" or subject.reaction=="GuardStun" then
+		memo.reactionTail={reaction=subject.reaction,hitAngle=subject.hitAngle,hitZone=subject.hitZone,hitKind=subject.hitKind,
+			hitTwist=subject.hitTwist,hitStrength=subject.hitStrength,elapsed=subject.reactionElapsed or 0,at=elapsedTime}
+	elseif not subject.reaction and memo.reactionTail and subject.state=="Neutral" and not subject.attackName and not subject.airborne
+		and elapsedTime-memo.reactionTail.at<.09 and (subject.speed or 0)<8 then
+		local tail=memo.reactionTail
+		local held=table.clone(subject)
+		held.reaction=tail.reaction;held.hitAngle=tail.hitAngle;held.hitZone=tail.hitZone;held.hitKind=tail.hitKind
+		held.hitTwist=tail.hitTwist;held.hitStrength=tail.hitStrength
+		held.reactionElapsed=tail.elapsed+(elapsedTime-tail.at)
+		Motion.defense(char,held,dt)
+		return "defense"
+	else
+		memo.reactionTail=nil
+	end
 	if subject.state=="Dodging" or subject.reaction then
 		Motion.defense(char,subject,dt)
 		return "defense"

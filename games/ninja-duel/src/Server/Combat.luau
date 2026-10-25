@@ -1464,7 +1464,9 @@ function Combat:updateActor(a,dt)
    -- starts): a bounded turn in the startup; a strike already out only
    -- adjusts slowly (a body that slipped away is not chased round by the
    -- swing); lateral routes still track it.
-   self:turnToward(a,flat,dt,if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)
+   -- (A fighter's own weight in the turn, StrikeTurnScale: Zabuza's cleaver
+   -- swings round slower, Itachi's economy turns a little sharper.)
+   self:turnToward(a,flat,dt,(if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)*(a.def.StrikeTurnScale or 1))
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then

@@ -38,7 +38,7 @@ local Fighters = {
 		Routes = "↑ rising palm (shuriken cover the climb)  ·  ↓ reaping sweep  ·  ←→ feint step (an afterimage stays)  ·  air: side kick / hammer drop / hook switch",
 		Description = "Sharingan already awakened. Reads, precise shuriken, deception and Katon fire.",
 		Health = 145, Chakra = 125, ChakraRegen = 7.2, Speed = 18, SprintScale = 1.0, JumpScale = 0.98, AirControlScale = 0.95, AccelerationScale = 0.98,
-		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.98, GuardStrength = 0.08, PreferredRange = 10,
+		CombatTravel = 0.98, CombatDamage = 1.1, DashScale = 0.8, StrikeTurnScale = 1.1, GuardStrength = 0.08, PreferredRange = 10,
 		-- The Sharingan (three tomoe at 13): it sees strikes coming. Wider parry
 		-- and perfect-dodge windows, each successful one opens a counter, and a
 		-- raised guard tracks a teleport instead of being crossed up.
