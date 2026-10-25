@@ -368,7 +368,18 @@ function FX:stepProjectiles(dt)
 			pcall(self.restStep,self,entry)
 			continue
 		end
-		local hidden=age<0
+		-- Combat convergence (Studio, 60 fps probe): the held kunai vanished one
+		-- frame before the thrown one appeared, and that one appeared ~2 studs
+		-- ahead of the hand and 1.5 lower (the server origin). A thrown object
+		-- now shows from the frame the hand lets go and leaves from the hand,
+		-- easing onto the server flight in its first tenth of a second.
+		local thrown=p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire"
+		local hidden=age<(if thrown then -1/30 else 0)
+		if thrown and not hidden and not entry.release then
+			local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
+			local hand=owner and (owner:FindFirstChild(if p.kind=="shuriken" then "LeftHand" else "RightHand") or owner:FindFirstChild("RightHand"))
+			entry.release=if hand then hand.Position else false
+		end
 		if hidden~=entry.hidden then
 			entry.hidden=hidden
 			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
@@ -380,6 +391,10 @@ function FX:stepProjectiles(dt)
 		end
 		local travel=if (p.speed or 0)<=0 then 0 else math.clamp(age,0,p.range/p.speed)*p.speed
 		local position=p.origin+p.direction*travel
+		if entry.release and age<.1 then
+			local u=math.clamp((age+1/30)/(.1+1/30),0,1)
+			position=entry.release:Lerp(position,u*u*(3-2*u))
+		end
 		local look=CFrame.lookAt(position,position+p.direction)
 		local cf
 		if entry.decor and entry.decor.ring then

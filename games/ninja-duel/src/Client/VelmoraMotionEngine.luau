@@ -2024,12 +2024,20 @@ local function reactionTargets(actor,feet)
 			rl={lift=40*fall,knee=56*fall},ll={lift=18*fall,knee=40*fall}}),RATE.recoil
 	end
 	if kind=="Knockback" then
-		local lift=smooth(math.clamp(elapsed/.12,0,1))
-		-- A kick turns the body with it; the head whips the other way.
-		local turn=if hitKind=="kick" then twist*30*t else 0
-		return build({root={pitch=-22*strong*t-8,roll=side*14*t,yaw=turn},torso={pitch=-20*t*strong,yaw=side*24*t+turn*.4},head={pitch=-24*t,yaw=-turn*.6},
-			ra={raise=60*t*strong,out=46*t,elbow=24},la={raise=54*t*strong,out=42*t,elbow=22},
-			rl={lift=30*lift,knee=50*lift},ll={lift=-10*lift,knee=30*lift}}),RATE.recoil
+		-- Combat convergence (Studio strips): the body used to stay upright and
+		-- slide back on planted feet (a pushed dummy). Now the blow takes it off
+		-- its feet: the hips go first, the chest is thrown back almost flat while
+		-- it flies, arms and legs trail toward the striker; near the ground the
+		-- legs reach down for the skid and the chest comes back over them.
+		local lift=smooth(math.clamp(elapsed/.1,0,1))
+		local turn=if hitKind=="kick" then twist*34*lift else 0
+		local vy=actor.velocity and actor.velocity.Y or 0
+		local landing=if actor.airborne then math.clamp(-vy/30,0,1) else 1
+		local throw=lift*(1-.65*landing)
+		return build({root={y=-.3*landing,pitch=-(46*throw+10)*math.max(strong,.85),roll=side*16*lift,yaw=turn},
+			torso={pitch=-22*throw-6*landing,yaw=side*20*lift+turn*.4},head={pitch=18*throw-10,yaw=-turn*.6},
+			ra={raise=78*throw+30,out=50,elbow=30+30*landing},la={raise=70*throw+28,out=46,elbow=28+30*landing},
+			rl={lift=48*throw+30*landing,knee=40+30*landing},ll={lift=20*throw+50*landing,knee=26+50*landing}}),RATE.recoil*1.2
 	end
 	if kind=="GuardStun" then
 		return build({root={y=-.55,z=.2*t,pitch=-6*t},torso={pitch=-12*t,roll=side*8*t},ra={raise=78,out=-26,twist=36,elbow=118},la={raise=78,out=-26,twist=36,elbow=118},
@@ -2053,7 +2061,9 @@ local function reactionTargets(actor,feet)
 	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
 	-- Even a jab must read at game speed (a 5-damage hit was worth 9 degrees of
 	-- fold): light blows get a floor, heavier ones still go further.
-	local s=math.max(strong,.62)
+	-- (Combat convergence, Studio strips: at .62 a jab still read as a target
+	-- dummy at normal speed; the whole body now answers, not only the head.)
+	local s=math.max(strong,.95)
 	local spec
 	-- Which way the blow came from (+1: from the fighter's right).
 	local dir=if math.abs(side)>.3 then (if side>0 then 1 else -1) else twist
@@ -2073,22 +2083,27 @@ local function reactionTargets(actor,feet)
 	elseif hitKind=="kick" or hitKind=="slash" then
 		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
 		-- away from the blow and turns with it instead of folding forward.
-		spec={root={y=-.25*snap,z=.35*snap,roll=-dir*14*snap,yaw=-dir*16*snap},torso={roll=-dir*16*snap,yaw=-dir*22*snap,pitch=8*snap},head={roll=-dir*12*snap,yaw=-dir*20*snap},
-			ra={raise=36*snap,out=30*snap,elbow=56},la={raise=32*snap,out=30*snap,elbow=52}}
+		spec={root={y=-.35*snap,z=.45*snap,roll=-dir*22*snap*s,yaw=-dir*28*snap},torso={roll=-dir*20*snap*s,yaw=-dir*30*snap,pitch=12*snap},head={roll=-dir*16*snap,yaw=-dir*28*snap},
+			ra={raise=48*snap,out=50*snap,elbow=50},la={raise=44*snap,out=50*snap,elbow=48}}
 	elseif zone=="head" then
-		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
-			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
-			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
+		-- The face takes it: the head whips away and back, the whole upper body
+		-- follows it back over the hips, the arms fly open.
+		spec={root={y=-.25*snap,z=.6*snap*math.max(from,.4),pitch=-12*snap*s,yaw=twist*16*snap,roll=-twist*9*snap},torso={pitch=-20*snap*s,yaw=twist*24*snap,roll=-twist*10*snap},
+			head={pitch=-34*snap*s,yaw=twist*52*snap,roll=twist*20*snap},
+			ra={raise=40*snap,out=58*snap,elbow=36},la={raise=34*snap,out=54*snap,elbow=34}}
 	elseif zone=="legs" then
-		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
-			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
+		-- The base is taken: the hit knee buckles, the body drops toward it and
+		-- the arms go out for balance.
+		spec={root={y=-.85*snap,roll=twist*18*snap,pitch=10*snap},torso={pitch=14*snap,roll=-twist*14*snap},head={pitch=10*snap,yaw=twist*12*snap},
+			ra={raise=52*snap,out=56*snap,elbow=40},la={raise=48*snap,out=56*snap,elbow=38}}
 	else
 		-- Support -> fold: the hips are driven back off the blow, the chest folds
-		-- over it and twists away, the head follows the chest down.
-		local fold=(1-behind)*32*snap*s
-		spec={root={y=-.35*snap*s,z=from*.6*snap,pitch=6*snap*s,yaw=twist*14*snap},torso={pitch=fold-behind*26*snap,yaw=twist*24*snap,roll=-side*10*snap},
-			head={pitch=18*snap*(1-behind)-behind*28*snap,yaw=-side*14*snap},
-			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
+		-- hard over it and twists away, the head follows the chest down, the
+		-- arms come in around the struck body.
+		local fold=(1-behind)*44*snap*s
+		spec={root={y=-.5*snap*s,z=from*.85*snap,pitch=14*snap*s*(1-behind),yaw=twist*18*snap},torso={pitch=fold-behind*30*snap,yaw=twist*28*snap,roll=-side*12*snap},
+			head={pitch=24*snap*(1-behind)-behind*30*snap,yaw=-side*16*snap},
+			ra={raise=52*snap,out=-12*snap,elbow=100*snap+30},la={raise=46*snap,out=-10*snap,elbow=96*snap+30}}
 	end
 	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}
 	return build(spec),RATE.recoil*1.5

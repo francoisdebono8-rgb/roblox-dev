@@ -417,7 +417,11 @@ function Brawler.start(c,a,name)
   local gap=tgt and (tgt.Position-a.root.Position)
   local inReach=gap~=nil and Vector3.new(gap.X,0,gap.Z).Magnitude<=(spec.range or 5)+4 and math.abs(gap.Y)<10
   if name=="Slam" or (a.airCombo or 0)>=1 or (not a.airSwingUsed and inReach) then
-   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+   -- Combat convergence (Studio: the body hung still ~0.4 s after the last
+   -- air hit, a hover): the hold covers the swing itself; through the
+   -- recovery gravity takes the body back (the juggled body falls with it, so
+   -- the string still reaches). The slam keeps its full hold.
+   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+(if name=="Slam" then spec.recovery+.18 else .06)
   end
   a.airSwingUsed=true
  end
@@ -945,7 +949,7 @@ function Brawler.contactImpact(c,b)
  for i=#feed,1,-1 do
   local entry=feed[i]
   if entry.at~=c.now then return nil end
-  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude<1 then return entry end
+  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude<2.4 then return entry end -- (contact point, not the chest centre)
  end
  return nil
 end
@@ -1096,7 +1100,8 @@ function Brawler.hit(c,a,p)
 	else
 		b.guardImpact=c.now+.18
 		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
-		Motor.travel(b,c,a.root.CFrame.LookVector,push)
+		-- Skidded over a few frames (Combat step), not moved in one.
+		b.guardSlide={dir=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit,remaining=push,speed=push*12}
 	end
   return true
  end

@@ -2,7 +2,7 @@
 local Combo=require(script.Parent.BanglaCombo)
 local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
  return {startup=startup,active=active,recovery=recovery,damage=damage,travel=travel,
-  travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,7),stun=stun or 0.27,
+  travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,10),stun=stun or 0.27,
   range=7.8,width=5.5,height=6,blockable=true,
   -- Contact distance (root to root) where the step-in stops: an arm's length
   -- for hand strikes. Closer, the two bodies visibly merge mid-string.

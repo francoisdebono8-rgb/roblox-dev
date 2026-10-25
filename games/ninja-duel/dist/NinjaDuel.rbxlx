@@ -31,7 +31,7 @@ return {Punch=0,HardSmack=0,MegaPunch=0,Parry=0}
 local Combo=require(script.Parent.BanglaCombo)
 local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
  return {startup=startup,active=active,recovery=recovery,damage=damage,travel=travel,
-  travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,7),stun=stun or 0.27,
+  travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,10),stun=stun or 0.27,
   range=7.8,width=5.5,height=6,blockable=true,
   -- Contact distance (root to root) where the step-in stops: an arm's length
   -- for hand strikes. Closer, the two bodies visibly merge mid-string.
@@ -3224,7 +3224,7 @@ return {
       <Item class="StringValue" referent="ND22">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">2f3ee1c3b54e91366296873080e7d21ee530d46a96bd28204aaadfea7c30db6b</string>
+          <string name="Value">b9c4e55744ded420d178ecf3aae4dece5caaf0e38d6d7d0ee9058aa447f5de89</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND23">
@@ -5134,7 +5134,11 @@ function Brawler.start(c,a,name)
   local gap=tgt and (tgt.Position-a.root.Position)
   local inReach=gap~=nil and Vector3.new(gap.X,0,gap.Z).Magnitude&lt;=(spec.range or 5)+4 and math.abs(gap.Y)&lt;10
   if name=="Slam" or (a.airCombo or 0)&gt;=1 or (not a.airSwingUsed and inReach) then
-   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+spec.recovery+.18
+   -- Combat convergence (Studio: the body hung still ~0.4 s after the last
+   -- air hit, a hover): the hold covers the swing itself; through the
+   -- recovery gravity takes the body back (the juggled body falls with it, so
+   -- the string still reaches). The slam keeps its full hold.
+   a.airHold=c.now+spec.startup+math.max(spec.active,slamWindow)+(if name=="Slam" then spec.recovery+.18 else .06)
   end
   a.airSwingUsed=true
  end
@@ -5662,7 +5666,7 @@ function Brawler.contactImpact(c,b)
  for i=#feed,1,-1 do
   local entry=feed[i]
   if entry.at~=c.now then return nil end
-  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude&lt;1 then return entry end
+  if CONTACT[entry.style] and (entry.position-b.root.Position).Magnitude&lt;2.4 then return entry end -- (contact point, not the chest centre)
  end
  return nil
 end
@@ -5813,7 +5817,8 @@ function Brawler.hit(c,a,p)
 	else
 		b.guardImpact=c.now+.18
 		local push=if p.name=="Heavy" or p.name=="Slam" or p.name=="Light3" then 1.15 else .42
-		Motor.travel(b,c,a.root.CFrame.LookVector,push)
+		-- Skidded over a few frames (Combat step), not moved in one.
+		b.guardSlide={dir=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit,remaining=push,speed=push*12}
 	end
   return true
  end
@@ -7838,9 +7843,14 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	victim.hitStrength=math.clamp(amount/26,0,1)
 	-- Seed the stop; Brawler adds the exact per-move weight once it knows the move.
 	self:applyHitstop(attacker,victim,style,heavy)
-	self:pushImpact(victim.root.Position,style,victim.impactHeavy)
+	-- Combat convergence: the spark sits where the blow met the body (the
+	-- side facing the striker, at the struck height), not in the chest centre.
+	local contactZone=attacker.pending and attacker.pending.kind=="Brawl" and attacker.pending.spec and attacker.pending.spec.zone
+	local contactAt=victim.root.Position+(victim.hitFrom or Vector3.zero)*.7
+		+Vector3.new(0,if contactZone=="head" or contactZone=="chin" then 1.55 elseif contactZone=="legs" then -1.4 else .45,0)
+	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy)
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
-	self:effect("Impact",victim.root.Position,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
+	self:effect("Impact",if self.hitOrigin then victim.root.Position else contactAt,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health&gt;0 then
 		attacker.pursuitUntil=self.now+Config.PursuitWindow
 		self:cue(attacker,"LAUNCH • E TO PURSUE",Config.PursuitWindow)
@@ -8802,6 +8812,15 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
+	-- Combat convergence (Studio): a blocked blow used to move the guard in one
+	-- frame (a 0.4-1.15 stud pop); the guard now skids back over a few frames.
+	if a.guardSlide then
+		local g=a.guardSlide
+		local step=math.min(g.remaining,g.speed*dt)
+		if step&gt;0 and not a.reaction then g.remaining-=Motor.travel(a,self,g.dir,step) end
+		g.speed=math.max(g.speed*math.exp(-dt*6),4)
+		if g.remaining&lt;=.01 or a.reaction then a.guardSlide=nil end
+	end
 	-- (Studio, §20 route: the sweep's travel ran out early in its active window,
 	-- 112 -&gt; 12 studs/s in one frame; the slide starts as soon as it is spent.)
 	if a.strikeCarry and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)&lt;=.05)) and not a.reaction and a.strikeCarry.dir then
@@ -8862,7 +8881,8 @@ function Combat:updateActor(a,dt)
 		local toward=point-a.root.Position
 		local distance=(b.root.Position-a.root.Position).Magnitude
 		local face=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
-		if face.Magnitude&gt;.3 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		-- (Combat convergence: bounded, a chase no longer snaps the body round.)
+		if face.Magnitude&gt;.3 then self:turnToward(a,face,dt,1440) end
 		if Brawler.chaseArrived(self,a) then
 			a.untilTime=math.min(a.untilTime,now)
 		elseif toward.Magnitude&gt;.2 then
@@ -8884,7 +8904,9 @@ function Combat:updateActor(a,dt)
 			local toGoal=Vector3.new(r.goal.X-a.root.Position.X,0,r.goal.Z-a.root.Position.Z)
 			local committed=r.line~=nil or (r.commitAt~=nil and now&gt;=r.commitAt)
 			local face=if committed then toGoal elseif toTarget.Magnitude&gt;.1 then toTarget else toGoal
-			if face.Magnitude&gt;.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+			-- (Combat convergence, Studio: 3000 deg/s snaps when the dash committed
+			-- to its line; the body now swings onto it.)
+			if face.Magnitude&gt;.1 then self:turnToward(a,face,dt,1440) end
 			if toGoal.Magnitude&lt;.6 or (not r.line and toTarget.Magnitude&lt;=r.arrive) then a.untilTime=math.min(a.untilTime,now)
 			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
 		end
@@ -8933,7 +8955,10 @@ function Combat:updateActor(a,dt)
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
-			if flatTarget.Magnitude&gt;.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			-- Combat convergence: the step-in steers during the startup only. Once
+			-- the strike is out it is committed: a body that slipped aside is
+			-- overshot (a whiff that reads), not followed by a magnet.
+			if flatTarget.Magnitude&gt;.1 and a.state=="Startup" then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
 			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
@@ -8957,7 +8982,11 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   self:turnToward(a,flat,dt,1080)
+   -- Combat convergence (Studio: 1400-1900 deg/s root snaps at strike
+   -- starts): a bounded turn in the startup; a strike already out only
+   -- adjusts slowly (a body that slipped away is not chased round by the
+   -- swing); lateral routes still track it.
+   self:turnToward(a,flat,dt,if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
@@ -18715,7 +18744,18 @@ function FX:stepProjectiles(dt)
 			pcall(self.restStep,self,entry)
 			continue
 		end
-		local hidden=age&lt;0
+		-- Combat convergence (Studio, 60 fps probe): the held kunai vanished one
+		-- frame before the thrown one appeared, and that one appeared ~2 studs
+		-- ahead of the hand and 1.5 lower (the server origin). A thrown object
+		-- now shows from the frame the hand lets go and leaves from the hand,
+		-- easing onto the server flight in its first tenth of a second.
+		local thrown=p.kind=="kunai" or p.kind=="marked" or p.kind=="shuriken" or p.kind=="wire"
+		local hidden=age&lt;(if thrown then -1/30 else 0)
+		if thrown and not hidden and not entry.release then
+			local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
+			local hand=owner and (owner:FindFirstChild(if p.kind=="shuriken" then "LeftHand" else "RightHand") or owner:FindFirstChild("RightHand"))
+			entry.release=if hand then hand.Position else false
+		end
 		if hidden~=entry.hidden then
 			entry.hidden=hidden
 			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
@@ -18727,6 +18767,10 @@ function FX:stepProjectiles(dt)
 		end
 		local travel=if (p.speed or 0)&lt;=0 then 0 else math.clamp(age,0,p.range/p.speed)*p.speed
 		local position=p.origin+p.direction*travel
+		if entry.release and age&lt;.1 then
+			local u=math.clamp((age+1/30)/(.1+1/30),0,1)
+			position=entry.release:Lerp(position,u*u*(3-2*u))
+		end
 		local look=CFrame.lookAt(position,position+p.direction)
 		local cf
 		if entry.decor and entry.decor.ring then
@@ -26490,12 +26534,20 @@ local function reactionTargets(actor,feet)
 			rl={lift=40*fall,knee=56*fall},ll={lift=18*fall,knee=40*fall}}),RATE.recoil
 	end
 	if kind=="Knockback" then
-		local lift=smooth(math.clamp(elapsed/.12,0,1))
-		-- A kick turns the body with it; the head whips the other way.
-		local turn=if hitKind=="kick" then twist*30*t else 0
-		return build({root={pitch=-22*strong*t-8,roll=side*14*t,yaw=turn},torso={pitch=-20*t*strong,yaw=side*24*t+turn*.4},head={pitch=-24*t,yaw=-turn*.6},
-			ra={raise=60*t*strong,out=46*t,elbow=24},la={raise=54*t*strong,out=42*t,elbow=22},
-			rl={lift=30*lift,knee=50*lift},ll={lift=-10*lift,knee=30*lift}}),RATE.recoil
+		-- Combat convergence (Studio strips): the body used to stay upright and
+		-- slide back on planted feet (a pushed dummy). Now the blow takes it off
+		-- its feet: the hips go first, the chest is thrown back almost flat while
+		-- it flies, arms and legs trail toward the striker; near the ground the
+		-- legs reach down for the skid and the chest comes back over them.
+		local lift=smooth(math.clamp(elapsed/.1,0,1))
+		local turn=if hitKind=="kick" then twist*34*lift else 0
+		local vy=actor.velocity and actor.velocity.Y or 0
+		local landing=if actor.airborne then math.clamp(-vy/30,0,1) else 1
+		local throw=lift*(1-.65*landing)
+		return build({root={y=-.3*landing,pitch=-(46*throw+10)*math.max(strong,.85),roll=side*16*lift,yaw=turn},
+			torso={pitch=-22*throw-6*landing,yaw=side*20*lift+turn*.4},head={pitch=18*throw-10,yaw=-turn*.6},
+			ra={raise=78*throw+30,out=50,elbow=30+30*landing},la={raise=70*throw+28,out=46,elbow=28+30*landing},
+			rl={lift=48*throw+30*landing,knee=40+30*landing},ll={lift=20*throw+50*landing,knee=26+50*landing}}),RATE.recoil*1.2
 	end
 	if kind=="GuardStun" then
 		return build({root={y=-.55,z=.2*t,pitch=-6*t},torso={pitch=-12*t,roll=side*8*t},ra={raise=78,out=-26,twist=36,elbow=118},la={raise=78,out=-26,twist=36,elbow=118},
@@ -26519,7 +26571,9 @@ local function reactionTargets(actor,feet)
 	local snap=snapEnvelope(elapsed,reactionDuration[kind] or .24)
 	-- Even a jab must read at game speed (a 5-damage hit was worth 9 degrees of
 	-- fold): light blows get a floor, heavier ones still go further.
-	local s=math.max(strong,.62)
+	-- (Combat convergence, Studio strips: at .62 a jab still read as a target
+	-- dummy at normal speed; the whole body now answers, not only the head.)
+	local s=math.max(strong,.95)
 	local spec
 	-- Which way the blow came from (+1: from the fighter's right).
 	local dir=if math.abs(side)&gt;.3 then (if side&gt;0 then 1 else -1) else twist
@@ -26539,22 +26593,27 @@ local function reactionTargets(actor,feet)
 	elseif hitKind=="kick" or hitKind=="slash" then
 		-- From the side (roundhouse to the ribs, a kunai cut): the body bends
 		-- away from the blow and turns with it instead of folding forward.
-		spec={root={y=-.25*snap,z=.35*snap,roll=-dir*14*snap,yaw=-dir*16*snap},torso={roll=-dir*16*snap,yaw=-dir*22*snap,pitch=8*snap},head={roll=-dir*12*snap,yaw=-dir*20*snap},
-			ra={raise=36*snap,out=30*snap,elbow=56},la={raise=32*snap,out=30*snap,elbow=52}}
+		spec={root={y=-.35*snap,z=.45*snap,roll=-dir*22*snap*s,yaw=-dir*28*snap},torso={roll=-dir*20*snap*s,yaw=-dir*30*snap,pitch=12*snap},head={roll=-dir*16*snap,yaw=-dir*28*snap},
+			ra={raise=48*snap,out=50*snap,elbow=50},la={raise=44*snap,out=50*snap,elbow=48}}
 	elseif zone=="head" then
-		spec={root={y=-.2*snap,z=.35*snap,yaw=twist*10*snap,roll=-twist*6*snap},torso={pitch=-10*snap,yaw=twist*18*snap,roll=-twist*7*snap},
-			head={pitch=-20*snap*s,yaw=twist*46*snap,roll=twist*16*snap},
-			ra={raise=34*snap,out=36*snap,elbow=44},la={raise=30*snap,out=32*snap,elbow=40}}
+		-- The face takes it: the head whips away and back, the whole upper body
+		-- follows it back over the hips, the arms fly open.
+		spec={root={y=-.25*snap,z=.6*snap*math.max(from,.4),pitch=-12*snap*s,yaw=twist*16*snap,roll=-twist*9*snap},torso={pitch=-20*snap*s,yaw=twist*24*snap,roll=-twist*10*snap},
+			head={pitch=-34*snap*s,yaw=twist*52*snap,roll=twist*20*snap},
+			ra={raise=40*snap,out=58*snap,elbow=36},la={raise=34*snap,out=54*snap,elbow=34}}
 	elseif zone=="legs" then
-		spec={root={y=-.55*snap,roll=twist*12*snap,pitch=6*snap},torso={pitch=10*snap,roll=-twist*10*snap},head={pitch=8*snap,yaw=twist*10*snap},
-			ra={raise=40*snap,out=40*snap,elbow=50},la={raise=36*snap,out=40*snap,elbow=46}}
+		-- The base is taken: the hit knee buckles, the body drops toward it and
+		-- the arms go out for balance.
+		spec={root={y=-.85*snap,roll=twist*18*snap,pitch=10*snap},torso={pitch=14*snap,roll=-twist*14*snap},head={pitch=10*snap,yaw=twist*12*snap},
+			ra={raise=52*snap,out=56*snap,elbow=40},la={raise=48*snap,out=56*snap,elbow=38}}
 	else
 		-- Support -&gt; fold: the hips are driven back off the blow, the chest folds
-		-- over it and twists away, the head follows the chest down.
-		local fold=(1-behind)*32*snap*s
-		spec={root={y=-.35*snap*s,z=from*.6*snap,pitch=6*snap*s,yaw=twist*14*snap},torso={pitch=fold-behind*26*snap,yaw=twist*24*snap,roll=-side*10*snap},
-			head={pitch=18*snap*(1-behind)-behind*28*snap,yaw=-side*14*snap},
-			ra={raise=44*snap,out=-8*snap,elbow=96*snap+30},la={raise=40*snap,out=-6*snap,elbow=92*snap+30}}
+		-- hard over it and twists away, the head follows the chest down, the
+		-- arms come in around the struck body.
+		local fold=(1-behind)*44*snap*s
+		spec={root={y=-.5*snap*s,z=from*.85*snap,pitch=14*snap*s*(1-behind),yaw=twist*18*snap},torso={pitch=fold-behind*30*snap,yaw=twist*28*snap,roll=-side*12*snap},
+			head={pitch=24*snap*(1-behind)-behind*30*snap,yaw=-side*16*snap},
+			ra={raise=52*snap,out=-12*snap,elbow=100*snap+30},la={raise=46*snap,out=-10*snap,elbow=96*snap+30}}
 	end
 	spec.rf=feet and feet.rf or {z=.25};spec.lf=feet and feet.lf or {z=-.35}
 	return build(spec),RATE.recoil*1.5

@@ -321,9 +321,14 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	victim.hitStrength=math.clamp(amount/26,0,1)
 	-- Seed the stop; Brawler adds the exact per-move weight once it knows the move.
 	self:applyHitstop(attacker,victim,style,heavy)
-	self:pushImpact(victim.root.Position,style,victim.impactHeavy)
+	-- Combat convergence: the spark sits where the blow met the body (the
+	-- side facing the striker, at the struck height), not in the chest centre.
+	local contactZone=attacker.pending and attacker.pending.kind=="Brawl" and attacker.pending.spec and attacker.pending.spec.zone
+	local contactAt=victim.root.Position+(victim.hitFrom or Vector3.zero)*.7
+		+Vector3.new(0,if contactZone=="head" or contactZone=="chin" then 1.55 elseif contactZone=="legs" then -1.4 else .45,0)
+	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy)
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
-	self:effect("Impact",victim.root.Position,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
+	self:effect("Impact",if self.hitOrigin then victim.root.Position else contactAt,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health>0 then
 		attacker.pursuitUntil=self.now+Config.PursuitWindow
 		self:cue(attacker,"LAUNCH • E TO PURSUE",Config.PursuitWindow)
@@ -1285,6 +1290,15 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
+	-- Combat convergence (Studio): a blocked blow used to move the guard in one
+	-- frame (a 0.4-1.15 stud pop); the guard now skids back over a few frames.
+	if a.guardSlide then
+		local g=a.guardSlide
+		local step=math.min(g.remaining,g.speed*dt)
+		if step>0 and not a.reaction then g.remaining-=Motor.travel(a,self,g.dir,step) end
+		g.speed=math.max(g.speed*math.exp(-dt*6),4)
+		if g.remaining<=.01 or a.reaction then a.guardSlide=nil end
+	end
 	-- (Studio, §20 route: the sweep's travel ran out early in its active window,
 	-- 112 -> 12 studs/s in one frame; the slide starts as soon as it is spent.)
 	if a.strikeCarry and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)<=.05)) and not a.reaction and a.strikeCarry.dir then
@@ -1345,7 +1359,8 @@ function Combat:updateActor(a,dt)
 		local toward=point-a.root.Position
 		local distance=(b.root.Position-a.root.Position).Magnitude
 		local face=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
-		if face.Magnitude>.3 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+		-- (Combat convergence: bounded, a chase no longer snaps the body round.)
+		if face.Magnitude>.3 then self:turnToward(a,face,dt,1440) end
 		if Brawler.chaseArrived(self,a) then
 			a.untilTime=math.min(a.untilTime,now)
 		elseif toward.Magnitude>.2 then
@@ -1367,7 +1382,9 @@ function Combat:updateActor(a,dt)
 			local toGoal=Vector3.new(r.goal.X-a.root.Position.X,0,r.goal.Z-a.root.Position.Z)
 			local committed=r.line~=nil or (r.commitAt~=nil and now>=r.commitAt)
 			local face=if committed then toGoal elseif toTarget.Magnitude>.1 then toTarget else toGoal
-			if face.Magnitude>.1 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face) end
+			-- (Combat convergence, Studio: 3000 deg/s snaps when the dash committed
+			-- to its line; the body now swings onto it.)
+			if face.Magnitude>.1 then self:turnToward(a,face,dt,1440) end
 			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=r.arrive) then a.untilTime=math.min(a.untilTime,now)
 			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
 		end
@@ -1416,7 +1433,10 @@ function Combat:updateActor(a,dt)
 			local elapsed=now-(a.attackStarted or now)
 			local progress=math.clamp(elapsed/a.pending.spec.travelTime,0,1)
 			local drive=.32+1.18*math.sin(progress*math.pi)
-			if flatTarget.Magnitude>.1 then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
+			-- Combat convergence: the step-in steers during the startup only. Once
+			-- the strike is out it is committed: a body that slipped aside is
+			-- overshot (a whiff that reads), not followed by a magnet.
+			if flatTarget.Magnitude>.1 and a.state=="Startup" then a.travelDirection=(a.travelDirection:Lerp(flatTarget.Unit,math.min(1,dt*10))).Unit end
 			local distance=math.min(a.travelRemaining,a.pending.spec.travel*drive*dt/a.pending.spec.travelTime,flatTarget.Magnitude-gap)
 			a.travelRemaining-=Motor.travel(a,self,a.travelDirection,distance)
 		end
@@ -1440,7 +1460,11 @@ function Combat:updateActor(a,dt)
    elseif a.fighterId=="Mirage" and a.state=="Active" and a.hitConfirmed and (attack.name=="Light3" or attack.name=="Air2") then
     Motor.travel(a,self,-flat,dt*9)
    end
-   self:turnToward(a,flat,dt,1080)
+   -- Combat convergence (Studio: 1400-1900 deg/s root snaps at strike
+   -- starts): a bounded turn in the startup; a strike already out only
+   -- adjusts slowly (a body that slipped away is not chased round by the
+   -- swing); lateral routes still track it.
+   self:turnToward(a,flat,dt,if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then
