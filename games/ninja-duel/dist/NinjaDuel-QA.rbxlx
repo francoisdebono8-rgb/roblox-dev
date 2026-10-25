@@ -1513,7 +1513,7 @@ fighters.Mist = {
 	Name = "Zabuza", FullName = "Zabuza Momochi", Age = 14, Title = "THE DEMON OF THE MIST", Color = { 120, 150, 170 },
 	Routes = "↑ cleaver rise from the hip  ·  ↓ low cut backing off  ·  ←→ arc covering the flank  ·  held guard: handle riposte  ·  air: flat strike / cleaver dive",
 	Description = "Kubikiribōchō: slow, long and heavy. The Hidden Mist, the Silent Killing out of it, the Water Prison.",
-	Health = 150, Chakra = 110, ChakraRegen = 7, Speed = 18.5, SprintScale = 1.1, JumpScale = 1.0, AirControlScale = 0.95, AccelerationScale = 0.98,
+	Health = 150, Chakra = 110, ChakraRegen = 7, Speed = 18.5, SprintScale = 1.1, JumpScale = 0.96, AirControlScale = 0.85, AccelerationScale = 0.86,
 	CombatTravel = 0.92, CombatDamage = 1.12, DashScale = 1.0, GuardStrength = 0.08, PreferredRange = 6.5,
 	ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 	ToolMastery = { Kind = "kunai", Count = 1, Speed = 88, Damage = 3, Recover = .8 },
@@ -3343,7 +3343,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b7272896a5d46f6786ecd0eec081b310d8e823ce113fb842b270fcbdf7658a1c</string>
+          <string name="Value">0b860ef1cdbc5f2ed1ee89b1baf7e49a78dcbf4c90dab0745fde196b579a54c6</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -4373,7 +4373,13 @@ function Evade.step(a,c,travel)
   travel(a,c,delta,delta.Magnitude)
   -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
-  if e.direction.Magnitude&gt;.1 and not e.keep then c:turnToward(a,e.direction,dt,900)
+  -- Only a forward-ish dodge turns the body into it (Studio, §20 route: a side
+  -- dodge out of a sprint swung the root 90 degrees and back in 0.3 s, a
+  -- pivot that also hid the cartwheel); sideways or back, the body keeps its
+  -- facing and the dodge reads as a sidestep / hop back (or the acrobatics).
+  local look=rootPart.CFrame.LookVector;look=Vector3.new(look.X,0,look.Z)
+  local ahead=look.Magnitude&lt;.05 or e.direction:Dot(look.Unit)&gt;.3
+  if e.direction.Magnitude&gt;.1 and not e.keep then if ahead then c:turnToward(a,e.direction,dt,900) end
   elseif e.keep and a.target and a.target.root then
    -- Chest held on them through the sidestep / hop away (small corrections).
    local to=a.target.root.Position-rootPart.Position
@@ -5306,7 +5312,19 @@ function Brawler.request(c,a,action)
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
   -- angle the guard has to read.
+  local wall=a.wall
   Motor.detach(a,c.now,false)
+  if wall.mode~="run" and (action=="Attack" or action=="Heavy") then
+   -- Movement overhaul (Studio): a strike off a climb swung at the wall itself
+   -- (the body still faced it). It springs off: the body turns out, toward
+   -- the opponent when they are on this side of the wall.
+   local out=Vector3.new(wall.normal.X,0,wall.normal.Z)
+   if a.target and a.target.root then
+    local to=a.target.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+    if to.Magnitude&gt;.1 and to.Unit:Dot(out)&gt;0 then out=to end
+   end
+   if out.Magnitude&gt;.05 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+out.Unit) end
+  end
   if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health&gt;0
    and (a.target.root.Position-a.root.Position).Magnitude&lt;=Config.Wall.DiveRange then
    return Brawler.start(c,a,"WallDive")
@@ -5393,7 +5411,7 @@ function Brawler.request(c,a,action)
   if ok~=false and p and p.kind=="Brawl" then
    local need=runSpeed*(p.spec.travelTime or .22)*.85
    if need&gt;p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
-   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .45 else .7),at=c.now}
+   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .6 else .7),at=c.now}
    Brawler.event(c,a,"RunningStrike")
   end
   return ok
@@ -9220,9 +9238,11 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
-	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+	-- (Studio, §20 route: the sweep's travel ran out early in its active window,
+	-- 112 -&gt; 12 studs/s in one frame; the slide starts as soon as it is spent.)
+	if a.strikeCarry and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)&lt;=.05)) and not a.reaction and a.strikeCarry.dir then
 		local carry=a.strikeCarry
-		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
+		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*3) -- (real keys: at 6 the slide was ~3 studs/s by the end of the recovery, a visible stop before the hand-back)
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude&lt;4.5 and ahead:Dot(carry.dir)&gt;0
@@ -14804,7 +14824,14 @@ local function updateMovement(deltaTime)
 	-- waits for the feet, up to a moment, instead of being dropped.)
 	if a.strikeCarry and not blocked and (grounded or c.now&gt;(a.strikeCarry.at or 0)+1.2) then
 		local carry=a.strikeCarry;a.strikeCarry=nil
-		if grounded and horizontalOf(a.move).Magnitude&gt;.05 and carry.dir then groundLocomotion=horizontalOf(carry.dir)*carry.speed end
+		if grounded and horizontalOf(a.move).Magnitude&gt;.05 and carry.dir then
+			groundLocomotion=horizontalOf(carry.dir)*carry.speed
+			-- (Studio, real keys: the slide moves the root, not its velocity, so the
+			-- humanoid restarted from ~2 studs/s and took 0.3 s to get back to the
+			-- run. Hand the body the speed itself, as the dodge exit does.)
+			local v=root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity=Vector3.new(groundLocomotion.X,v.Y,groundLocomotion.Z)
+		end
 	end
 	if grounded then
 		local input=horizontalOf(a.move)
@@ -14826,8 +14853,11 @@ local function updateMovement(deltaTime)
 		end
 		wasSprinting=sprinting
 		if target.Magnitude&lt;.05 then acceleration=profile.GroundDeceleration
-		elseif c.now&lt;(burstUntil or 0) then acceleration=profile.BurstAcceleration or acceleration
-		elseif groundLocomotion.Magnitude&gt;.05 and groundLocomotion.Unit:Dot(target.Unit)&lt;.45 then acceleration=profile.TurnAcceleration end
+		-- Movement overhaul (Studio): the burst and the turn ignored the fighter's
+		-- AccelerationScale, so a heavy body (Zabuza .86) reached a sprint as
+		-- fast as Lee; the weight now shows in the start and in the turn too.
+		elseif c.now&lt;(burstUntil or 0) then acceleration=(profile.BurstAcceleration or acceleration)*(a.def.AccelerationScale or 1)
+		elseif groundLocomotion.Magnitude&gt;.05 and groundLocomotion.Unit:Dot(target.Unit)&lt;.45 then acceleration=profile.TurnAcceleration*(a.def.AccelerationScale or 1) end
 		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
 		if groundLocomotion.Magnitude&lt;.03 then groundLocomotion=Vector3.zero end
 		lastGroundHorizontalVelocity=groundLocomotion
@@ -21098,6 +21128,19 @@ function FX.buildShuriken()
 	model.PrimaryPart=root
 	return model
 end
+-- Per-fighter dash streak (movement overhaul, brief §12): Lee a short, wide
+-- physical burst; Itachi barely a trace; Shisui a long faint false continuation;
+-- Gaara a slow sand glide; Haku a thin ice line; Zabuza a heavy grey wake;
+-- Nagato a short, controlled one. Unlisted fighters keep the default.
+local DASH_STREAK={
+	Leaf={color=Color3.fromRGB(70,170,80),life=.1,alpha=.5,width=1.25},
+	Mirage={color=Color3.fromRGB(150,20,30),life=.06,alpha=.78,width=.7},
+	Flicker={color=Color3.fromRGB(110,200,150),life=.24,alpha=.72,width=.9},
+	Sand={color=Color3.fromRGB(205,175,115),life=.22,alpha=.55,width=1.35},
+	Mirror={color=Color3.fromRGB(190,230,255),life=.18,alpha=.6,width=.75},
+	Mist={color=Color3.fromRGB(150,160,175),life=.13,alpha=.5,width=1.45},
+	Rinnegan={color=Color3.fromRGB(150,120,200),life=.09,alpha=.7,width=.8},
+}
 local function addTrail(root,a,b,color,lifetime,transparency,width)
 	local a0=new("Attachment",{Position=a},root)
 	local a1=new("Attachment",{Position=b},root)
@@ -22323,7 +22366,11 @@ function FX:fighter(model,actor,dt)
 		local veins={}
 		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
 		aura.veins=veins
-		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
+		-- The dash streak is each fighter's (movement overhaul, brief §12), not
+		-- one shared red: its tone, how long it lingers, how solid and how wide.
+		local dash=DASH_STREAK[actor.fighterId]
+		aura.trail=if dash then addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),dash.color or color,dash.life,dash.alpha,dash.width)
+			else addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
 		local irises={}
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
@@ -28480,6 +28527,15 @@ GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 -- Naruto: energetic and loose, arms swinging wide, a heavy bouncing stride.
 GAIT.Legion={stride=1.1,cadence=1.05,arm=48,lean=7,bob=1.2,guard=.05}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
+-- The full sprint per fighter (movement overhaul, brief §3 / §17): how far the
+-- body pitches into the run (x the shared ninja run) and what the arms do —
+-- swept back (default), low and loose (economical), pumping (heavy) or
+-- trailing wide (glide). Same server speeds; only the body differs.
+local RUN={default={lean=1,arms="back"},
+	Leaf={lean=1.2,arms="back"},Lion={lean=1.1,arms="back"},Flicker={lean=1.15,arms="back"},Legion={lean=1.05,arms="back"},
+	Mirage={lean=.6,arms="low"},Rinnegan={lean=.45,arms="low"},Puppet={lean=.5,arms="low"},Professor={lean=.7,arms="low"},
+	Mist={lean=.75,arms="pump"},Clay={lean=.8,arms="pump"},Bone={lean=.9,arms="pump"},Ink={lean=.95,arms="pump"},
+	Mirror={lean=1.05,arms="glide"},Serpent={lean=.85,arms="glide"}}
 -- A fighter whose motion data lives in its own module (DEC-015: the engine
 -- offers the tables and builders, the module adds its stance, gait, clips,
 -- throw overlays, cast poses and intro). Temari first.
@@ -28716,10 +28772,22 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	local lean=if forward&gt;-.3 then forward*(5+alpha*(if minato then 18 else 12)) else forward*10
 	local spec
 	if sprint and forward&gt;.3 then
-		-- The ninja run: chest low, arms swept back, legs driving.
-		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16),yaw=swing*6},
-			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
+		-- The ninja run: chest low, arms swept back, legs driving. How far the
+		-- body pitches and what the arms do is each fighter's (RUN, brief §3).
+		local run=RUN[fighterId] or RUN.default
+		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16)*run.lean,yaw=swing*6},
+			torso={pitch=(if minato then 24 else 18)*run.lean,yaw=-swing*9},head={pitch=-28*run.lean},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
+		if run.arms=="low" then
+			-- Economical: loose arms low by the sides, a small swing.
+			spec.ra={raise=-16-swing*14,out=8,elbow=34};spec.la={raise=-16+swing*14,out=8,elbow=34}
+		elseif run.arms=="pump" then
+			-- Heavy: bent arms pumping with the legs.
+			spec.ra={raise=18-swing*42,out=12,elbow=92};spec.la={raise=18+swing*42,out=12,elbow=92}
+		elseif run.arms=="glide" then
+			-- Gliding: arms trailing wide and low, almost still.
+			spec.ra={raise=-44+swing*4,out=42,elbow=8};spec.la={raise=-44-swing*4,out=42,elbow=8}
+		end
 	else
 		local arm=gait.arm*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 4 else 3)},
@@ -29412,6 +29480,11 @@ function Motion.present(char,actor,clock,dt)
 		return "ko"
 	end
 	local memo=stateOf(char)
+	-- Studio: the dodge clock only restarted when the last *defense* state
+	-- differed, and nothing cleared it between dodges, so every dodge after the
+	-- first ran on the first one's clock (its push and its cartwheel already
+	-- over: the body stood upright through the dash). Out of defense, forget it.
+	if subject.state~="Dodging" and not subject.reaction then memo.lastDefenseState=nil end
 	trickStep(char,subject)
 	if subject.state~=memo.lastState then
 		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end

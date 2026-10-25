@@ -79,3 +79,7 @@ Studio method: the server dev bindable drives the human with a world stick (`scr
 | Kept-facing dodge out of a run away | — | a dodge keeps the chest on them only when the body faces them (not after a committed run away, `facingCommitted`): close back dodge face 1.00 throughout; a dodge out of a run away stays a dash along it |
 
 Tests: `Movement.spec` 14 (real wall planes with a seam swap, climb height vs entry speed, wall-jump carry, dodge facing); harness wall parts now have a parent and `GetFullName`.
+
+## Pass 4 — §20 route, real keys, per-fighter expression (25/10, Studio)
+
+Full report (systems, before/after, route per fighter, remaining flaws, commits): [movement-overhaul-2026-10-25](../reports/movement-overhaul-2026-10-25/REPORT.md).

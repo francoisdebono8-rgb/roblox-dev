@@ -1285,9 +1285,11 @@ function Combat:updateActor(a,dt)
 	-- Movement overhaul (Studio): out of a running strike the body slides on
 	-- through its recovery, the speed fading, instead of standing dead still;
 	-- the recovery's commitment (no new action) is unchanged.
-	if a.strikeCarry and a.state=="Recovery" and not a.reaction and a.strikeCarry.dir then
+	-- (Studio, §20 route: the sweep's travel ran out early in its active window,
+	-- 112 -> 12 studs/s in one frame; the slide starts as soon as it is spent.)
+	if a.strikeCarry and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)<=.05)) and not a.reaction and a.strikeCarry.dir then
 		local carry=a.strikeCarry
-		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
+		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*3) -- (real keys: at 6 the slide was ~3 studs/s by the end of the recovery, a visible stop before the hand-back)
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude<4.5 and ahead:Dot(carry.dir)>0

@@ -476,7 +476,19 @@ function Brawler.request(c,a,action)
  if a.wall then
   -- From a wall run a strike becomes a dive at the opponent: height and an
   -- angle the guard has to read.
+  local wall=a.wall
   Motor.detach(a,c.now,false)
+  if wall.mode~="run" and (action=="Attack" or action=="Heavy") then
+   -- Movement overhaul (Studio): a strike off a climb swung at the wall itself
+   -- (the body still faced it). It springs off: the body turns out, toward
+   -- the opponent when they are on this side of the wall.
+   local out=Vector3.new(wall.normal.X,0,wall.normal.Z)
+   if a.target and a.target.root then
+    local to=a.target.root.Position-a.root.Position;to=Vector3.new(to.X,0,to.Z)
+    if to.Magnitude>.1 and to.Unit:Dot(out)>0 then out=to end
+   end
+   if out.Magnitude>.05 then a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+out.Unit) end
+  end
   if (action=="Attack" or action=="Heavy") and a.state=="Neutral" and a.target and a.target.health>0
    and (a.target.root.Position-a.root.Position).Magnitude<=Config.Wall.DiveRange then
    return Brawler.start(c,a,"WallDive")
@@ -563,7 +575,7 @@ function Brawler.request(c,a,action)
   if ok~=false and p and p.kind=="Brawl" then
    local need=runSpeed*(p.spec.travelTime or .22)*.85
    if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
-   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .45 else .7),at=c.now}
+   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .6 else .7),at=c.now}
    Brawler.event(c,a,"RunningStrike")
   end
   return ok
