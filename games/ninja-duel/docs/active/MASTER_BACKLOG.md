@@ -193,6 +193,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - outcome: PENDING
 - update: 18/10 Codex, autorisation utilisateur ponctuelle : réceptions isolées/relâchées et mouvement mural lié à la vitesse dessinée livrés ; deux modules client, 511cas PASS par variante et trois nouveaux tests ciblés. Rejeu natif sur Debug final, clavier/souris et mur. [Preuves et limites](../archive/reports/r15-2026-10-18/REPORT.md). Pas clôture de toute la locomotion ni des vingt identités ; préserver les hooks Wave4 du brouillon Claude.
 - acceptance: Saut neutre/avec élan/sprint, air control et momentum conservés, approche mur/rebond/mantle/detach, réception faible/grande hauteur et reprise sans pause ; comparer avant/après natif.
+- evidence_addendum: 25/10 Movement Overhaul passes 1–4 : NATIVE_STUDIO mesuré (route §20 continue, 4 fighters ; murs course/montée, wall-jump tangentiel 62→54, Light aérien sans gel 62→57, réceptions sans arrêt). [Rapport](../reports/movement-overhaul-2026-10-25/REPORT.md). HUMAN_VISUAL/FEEL PENDING ; pas de clôture.
 
 ## MOV-006 — Évaluer prediction si preuves de latence la justifient
 

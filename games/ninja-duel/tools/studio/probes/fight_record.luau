@@ -3,7 +3,6 @@
 local RS=game:GetService('RunService')
 local Players=game:GetService('Players')
 local remote=game.ReplicatedStorage.NinjaDuel.Action
-local Motion=require(Players.LocalPlayer.PlayerScripts.NinjaDuelClient.VelmoraMotionEngine)
 shared.NdFilms={}
 local latest,current
 local function keyOf(model,part)
@@ -31,10 +30,16 @@ RS:BindToRenderStep('NdFightRecord',Enum.RenderPriority.Camera.Value+4,function(
  local bot=folder and folder:FindFirstChild(s.bot.id)
  if not me or not bot then return end
  if not current or current.epoch~=s.epoch then
-  current={epoch=s.epoch,started=os.clock(),frames={},models={},fighters={s.human.fighterId,s.bot.fighterId},keys=setmetatable({},{__mode='k'}),toolSamples=0,toolErrors=0}
+  current={epoch=s.epoch,started=os.clock(),frames={},models={},fighters={s.human.fighterId,s.bot.fighterId},keys=setmetatable({},{__mode='k'}),impacts={},lastImpact=0}
   shared.NdFilms[s.epoch]=current
  end
  if #current.frames>=2200 then return end
+ for _,hit in s.impacts or {} do
+  if (hit.serial or 0)>current.lastImpact then
+   local kind=hit.style or 'unknown';current.impacts[kind]=(current.impacts[kind] or 0)+1
+  end
+ end
+ current.lastImpact=math.max(current.lastImpact,s.impactSerial or 0)
  local t=os.clock()-current.started
  if t>2 and not current.models.me then current.models={me=template(me),bot=template(bot)} end
  local frame={t=t,label=string.format('%s:%s/%s/%s %s:%s/%s/%s',s.human.fighterId,s.human.state,s.human.attackName or '-',s.human.reaction or '-',s.bot.fighterId,s.bot.state,s.bot.attackName or '-',s.bot.reaction or '-'),poses={}}

@@ -182,6 +182,19 @@ function FX.buildShuriken()
 	model.PrimaryPart=root
 	return model
 end
+-- Per-fighter dash streak (movement overhaul, brief §12): Lee a short, wide
+-- physical burst; Itachi barely a trace; Shisui a long faint false continuation;
+-- Gaara a slow sand glide; Haku a thin ice line; Zabuza a heavy grey wake;
+-- Nagato a short, controlled one. Unlisted fighters keep the default.
+local DASH_STREAK={
+	Leaf={color=Color3.fromRGB(70,170,80),life=.1,alpha=.5,width=1.25},
+	Mirage={color=Color3.fromRGB(150,20,30),life=.06,alpha=.78,width=.7},
+	Flicker={color=Color3.fromRGB(110,200,150),life=.24,alpha=.72,width=.9},
+	Sand={color=Color3.fromRGB(205,175,115),life=.22,alpha=.55,width=1.35},
+	Mirror={color=Color3.fromRGB(190,230,255),life=.18,alpha=.6,width=.75},
+	Mist={color=Color3.fromRGB(150,160,175),life=.13,alpha=.5,width=1.45},
+	Rinnegan={color=Color3.fromRGB(150,120,200),life=.09,alpha=.7,width=.8},
+}
 local function addTrail(root,a,b,color,lifetime,transparency,width)
 	local a0=new("Attachment",{Position=a},root)
 	local a1=new("Attachment",{Position=b},root)
@@ -1465,7 +1478,11 @@ function FX:fighter(model,actor,dt)
 		local veins={}
 		for _,p in model:GetChildren() do if p.Name=="ByakuganVein" then table.insert(veins,p) end end
 		aura.veins=veins
-		aura.trail=addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
+		-- The dash streak is each fighter's (movement overhaul, brief §12), not
+		-- one shared red: its tone, how long it lingers, how solid and how wide.
+		local dash=DASH_STREAK[actor.fighterId]
+		aura.trail=if dash then addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),dash.color or color,dash.life,dash.alpha,dash.width)
+			else addTrail(root,Vector3.new(0,1.6,.3),Vector3.new(0,-1.9,.3),color,if minato then .16 else .12,.62,1)
 		aura.trail.Enabled=false
 		local irises={}
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end

@@ -137,6 +137,22 @@ test("acrobatic side and back dodges turn the body; the others slide",function()
  assert(lowest("Mirage","back")>.6,"Itachi handsprings")
 end)
 
+test("every dodge turns the body, not only the first (the dodge clock restarts)",function()
+ local c,a=H.duel("Leaf","Mirage")
+ Motion.reset(a.model)
+ local v=a.root.CFrame.RightVector*35
+ local function dodge()
+  local low=1
+  for _=1,19 do frame(a.model,body(a,{state="Dodging",velocity=v,speed=35}));low=math.min(low,upY(a.model.joints.Root.Transform)) end
+  return low
+ end
+ local first=dodge()
+ for _=1,30 do frame(a.model,body(a,{velocity=v,speed=20})) end
+ local second=dodge()
+ assert(first<.2,"the first dodge did not turn the body")
+ assert(second<.2,string.format("the second dodge stood upright (up.y %.2f)",second))
+end)
+
 test("a dodge hands its momentum back: the run continues out of it",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  c:relocate(a,V.new(0,3,20));c:relocate(b,V.new(30,3,-20))
@@ -177,6 +193,20 @@ test("a back dodge near them keeps the chest on them; running off, it is a dash 
  assert(face>.7,string.format("the back dodge turned away from them (%.2f)",face))
  local keep2=dodgeAway(30,.6)
  assert(not keep2,"running off (committed facing), the dodge still turned back to them")
+end)
+
+test("a side dodge out of a sprint keeps the run's facing (no 90-degree root pivot)",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(-60,3,30));c:relocate(b,V.new(60,3,-30))
+ a.move=V.new(1,0,0);a.sprinting=true
+ local n=0
+ repeat H.step(c,.01);n+=1 until (a.locomotion or V.zero).Magnitude>=30 or n>300
+ local look0=a.root.CFrame.LookVector
+ a.move=V.new(0,0,1)
+ assert(c:request(a,"Dodge"),"dodge refused")
+ local worst=1
+ for _=1,30 do H.step(c,.01);worst=math.min(worst,a.root.CFrame.LookVector:Dot(look0)) end
+ assert(worst>.94,string.format("the side dodge pivoted the root (cos %.2f)",worst))
 end)
 
 test("an opening light in a full sprint is the running strike, carried by the run; walking or mid-string it is not",function()
@@ -390,6 +420,20 @@ test("body sweep blocks high-speed crossings but preserves escape, tangents and 
  assert(Motor.clearance(a,V.new(0,0,-12)).Z==-12,"a jump over an opponent was blocked")
  c:relocate(a,V.new(0,3,0));a.pending={spec={orbit=true}}
  assert(Motor.clearance(a,V.new(0,0,-12)).Z==-12,"authored side switch was blocked")
+end)
+
+test("the full sprint is each fighter's: Lee drives low, Itachi stays economical",function()
+ local function sprintPitch(id)
+  local c,a=H.duel(id,if id=="Flashstep" then "Mirage" else "Flashstep")
+  Motion.reset(a.model)
+  local v=a.root.CFrame.LookVector*44
+  for _=1,40 do frame(a.model,body(a,{velocity=v,speed=44,sprinting=true})) end
+  -- Forward pitch of the root joint (its up axis tipped toward the run).
+  local up=a.model.joints.Root.Transform:VectorToObjectSpace(AXIS_Y)
+  return up.Z
+ end
+ local lee,itachi=sprintPitch("Leaf"),sprintPitch("Mirage")
+ assert(math.abs(lee)>math.abs(itachi)+.05,string.format("Lee's sprint is no lower than Itachi's (%.2f vs %.2f)",lee,itachi))
 end)
 
 print(string.format("NinjaDuel movement overhaul: %d PASS (headless; the look and feel are Studio checks)",passed))

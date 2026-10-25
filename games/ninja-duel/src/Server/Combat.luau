@@ -1292,9 +1292,10 @@ function Combat:updateActor(a,dt)
 	-- the recovery's commitment (no new action) is unchanged.
 	if a.strikeCarry and a.state~="Neutral" and a.state~="Startup" and a.state~="Active" and a.state~="Recovery" then a.strikeCarry=nil end
 	if a.strikeCarry and not a.reaction and a.strikeCarry.dir
-		and (a.state=="Recovery" or (a.strikeCarry.entry and (a.state=="Startup" or a.state=="Active"))) then
+		and (a.state=="Recovery" or (a.state=="Active" and (a.travelRemaining or 0)<=.05)
+		 or (a.strikeCarry.entry and (a.state=="Startup" or a.state=="Active"))) then
 		local carry=a.strikeCarry
-		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*6)
+		carry.slide=(carry.slide or carry.speed)*math.exp(-dt*(if carry.entry then 6 else 3)) -- (real keys: at 6 the slide was ~3 studs/s by the end of the recovery, a visible stop before the hand-back)
 		-- Never into the opponent: the slide stops short of a body ahead.
 		local ahead=a.target and a.target.root and (a.target.root.Position-a.root.Position)
 		local blocked=ahead and Vector3.new(ahead.X,0,ahead.Z).Magnitude<4.5 and ahead:Dot(carry.dir)>0

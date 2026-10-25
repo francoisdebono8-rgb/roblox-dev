@@ -1462,6 +1462,15 @@ GAIT.Leaf={stride=1.16,cadence=1.1,arm=40,lean=8,bob=1.0,guard=.1,holdRear=true}
 -- Naruto: energetic and loose, arms swinging wide, a heavy bouncing stride.
 GAIT.Legion={stride=1.1,cadence=1.05,arm=48,lean=7,bob=1.2,guard=.05}
 local function gaitOf(id) return GAIT[id] or GAIT[familyOf(id).body] or GAIT.Flashstep end
+-- The full sprint per fighter (movement overhaul, brief §3 / §17): how far the
+-- body pitches into the run (x the shared ninja run) and what the arms do —
+-- swept back (default), low and loose (economical), pumping (heavy) or
+-- trailing wide (glide). Same server speeds; only the body differs.
+local RUN={default={lean=1,arms="back"},
+	Leaf={lean=1.2,arms="back"},Lion={lean=1.1,arms="back"},Flicker={lean=1.15,arms="back"},Legion={lean=1.05,arms="back"},
+	Mirage={lean=.6,arms="low"},Rinnegan={lean=.45,arms="low"},Puppet={lean=.5,arms="low"},Professor={lean=.7,arms="low"},
+	Mist={lean=.75,arms="pump"},Clay={lean=.8,arms="pump"},Bone={lean=.9,arms="pump"},Ink={lean=.95,arms="pump"},
+	Mirror={lean=1.05,arms="glide"},Serpent={lean=.85,arms="glide"}}
 -- A fighter whose motion data lives in its own module (DEC-015: the engine
 -- offers the tables and builders, the module adds its stance, gait, clips,
 -- throw overlays, cast poses and intro). Temari first.
@@ -1698,10 +1707,22 @@ local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	local lean=if forward>-.3 then forward*(5+alpha*(if minato then 18 else 12)) else forward*10
 	local spec
 	if sprint and forward>.3 then
-		-- The ninja run: chest low, arms swept back, legs driving.
-		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16),yaw=swing*6},
-			torso={pitch=(if minato then 24 else 18),yaw=-swing*9},head={pitch=-28},
+		-- The ninja run: chest low, arms swept back, legs driving. How far the
+		-- body pitches and what the arms do is each fighter's (RUN, brief §3).
+		local run=RUN[fighterId] or RUN.default
+		spec={root={y=-.55+bob,pitch=(if minato then 22 else 16)*run.lean,yaw=swing*6},
+			torso={pitch=(if minato then 24 else 18)*run.lean,yaw=-swing*9},head={pitch=-28*run.lean},
 			ra={raise=-58+swing*6,out=14,twist=-10,elbow=12},la={raise=-58-swing*6,out=14,twist=-10,elbow=12}}
+		if run.arms=="low" then
+			-- Economical: loose arms low by the sides, a small swing.
+			spec.ra={raise=-16-swing*14,out=8,elbow=34};spec.la={raise=-16+swing*14,out=8,elbow=34}
+		elseif run.arms=="pump" then
+			-- Heavy: bent arms pumping with the legs.
+			spec.ra={raise=18-swing*42,out=12,elbow=92};spec.la={raise=18+swing*42,out=12,elbow=92}
+		elseif run.arms=="glide" then
+			-- Gliding: arms trailing wide and low, almost still.
+			spec.ra={raise=-44+swing*4,out=42,elbow=8};spec.la={raise=-44-swing*4,out=42,elbow=8}
+		end
 	else
 		local arm=gait.arm*math.clamp(speed/16,.3,1)
 		spec={root={y=-.32+bob,pitch=lean,yaw=swing*6*alpha,roll=side*(if minato then 4 else 3)},
@@ -2438,11 +2459,13 @@ function Motion.present(char,actor,clock,dt)
 		return "ko"
 	end
 	local memo=stateOf(char)
+	-- Studio: the dodge clock only restarted when the last *defense* state
+	-- differed, and nothing cleared it between dodges, so every dodge after the
+	-- first ran on the first one's clock (its push and its cartwheel already
+	-- over: the body stood upright through the dash). Out of defense, forget it.
+	if subject.state~="Dodging" and not subject.reaction then memo.lastDefenseState=nil end
 	trickStep(char,subject)
 	if subject.state~=memo.lastState then
-		-- Defense may not run during the intervening locomotion/attack.
-		-- Every new dodge owns its own push-off and rotation clock.
-		if subject.state=="Dodging" then memo.dashAt=elapsedTime end
 		if memo.lastState=="Rush" and subject.state=="Recovery" and not subject.attackName then memo.brakeAt=elapsedTime end
 		memo.lastState=subject.state
 	end

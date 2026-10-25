@@ -204,7 +204,14 @@ local function updateMovement(deltaTime)
 	-- waits for the feet, up to a moment, instead of being dropped.)
 	if a.strikeCarry and not blocked and (grounded or c.now>(a.strikeCarry.at or 0)+1.2) then
 		local carry=a.strikeCarry;a.strikeCarry=nil
-		if grounded and horizontalOf(a.move).Magnitude>.05 and carry.dir then groundLocomotion=horizontalOf(carry.dir)*carry.speed end
+		if grounded and horizontalOf(a.move).Magnitude>.05 and carry.dir then
+			groundLocomotion=horizontalOf(carry.dir)*carry.speed
+			-- (Studio, real keys: the slide moves the root, not its velocity, so the
+			-- humanoid restarted from ~2 studs/s and took 0.3 s to get back to the
+			-- run. Hand the body the speed itself, as the dodge exit does.)
+			local v=root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity=Vector3.new(groundLocomotion.X,v.Y,groundLocomotion.Z)
+		end
 	end
 	if grounded then
 		local input=horizontalOf(a.move)
@@ -226,8 +233,11 @@ local function updateMovement(deltaTime)
 		end
 		wasSprinting=sprinting
 		if target.Magnitude<.05 then acceleration=profile.GroundDeceleration
-		elseif c.now<(burstUntil or 0) then acceleration=profile.BurstAcceleration or acceleration
-		elseif groundLocomotion.Magnitude>.05 and groundLocomotion.Unit:Dot(target.Unit)<.45 then acceleration=profile.TurnAcceleration end
+		-- Movement overhaul (Studio): the burst and the turn ignored the fighter's
+		-- AccelerationScale, so a heavy body (Zabuza .86) reached a sprint as
+		-- fast as Lee; the weight now shows in the start and in the turn too.
+		elseif c.now<(burstUntil or 0) then acceleration=(profile.BurstAcceleration or acceleration)*(a.def.AccelerationScale or 1)
+		elseif groundLocomotion.Magnitude>.05 and groundLocomotion.Unit:Dot(target.Unit)<.45 then acceleration=profile.TurnAcceleration*(a.def.AccelerationScale or 1) end
 		groundLocomotion=moveVectorToward(groundLocomotion,target,acceleration*deltaTime)
 		if groundLocomotion.Magnitude<.03 then groundLocomotion=Vector3.zero end
 		lastGroundHorizontalVelocity=groundLocomotion

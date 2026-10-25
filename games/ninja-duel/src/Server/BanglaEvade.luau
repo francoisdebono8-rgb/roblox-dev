@@ -55,7 +55,13 @@ function Evade.step(a,c,travel)
   travel(a,c,delta,delta.Magnitude)
   -- Turn into the dash at a bounded rate instead of snapping 90 degrees in a frame.
   local dt=math.max(1/240,c.now-(e.lastAt or startTime));e.lastAt=c.now
-  if e.direction.Magnitude>.1 and not e.keep then c:turnToward(a,e.direction,dt,900)
+  -- Only a forward-ish dodge turns the body into it (Studio, §20 route: a side
+  -- dodge out of a sprint swung the root 90 degrees and back in 0.3 s, a
+  -- pivot that also hid the cartwheel); sideways or back, the body keeps its
+  -- facing and the dodge reads as a sidestep / hop back (or the acrobatics).
+  local look=rootPart.CFrame.LookVector;look=Vector3.new(look.X,0,look.Z)
+  local ahead=look.Magnitude<.05 or e.direction:Dot(look.Unit)>.3
+  if e.direction.Magnitude>.1 and not e.keep then if ahead then c:turnToward(a,e.direction,dt,900) end
   elseif e.keep and a.target and a.target.root then
    -- Chest held on them through the sidestep / hop away (small corrections).
    local to=a.target.root.Position-rootPart.Position
