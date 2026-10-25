@@ -76,6 +76,53 @@ test("a body knocked along the floor lands and skids to a stop (no glide at stan
  assert(lastStep<30/60*.5,"the body still slides at full speed at the end of the throw")
 end)
 
+-- Studio's solver also moves every root by the velocity left on it; the
+-- harness does not. Kinetic carry-over (a dash's speed after it ended) only
+-- shows with it, so these cases step it by hand.
+local function physicsStep(c,dt)
+ H.step(c,dt)
+ for _,actor in c.actors do
+  local v=actor.root.AssemblyLinearVelocity
+  if V.new(v.X,0,v.Z).Magnitude>.01 then
+   actor.root.CFrame=H.C.new(actor.root.Position+V.new(v.X,0,v.Z)*dt)*actor.root.CFrame.Rotation
+  end
+ end
+end
+
+test("two dashes meeting stop at arm's length instead of merging the bodies",function()
+ local c,a,b=H.duel("Leaf","Mist")
+ c:relocate(a,V.new(0,3,9));c:relocate(b,V.new(0,3,-9))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position);b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+ a.locked=true;b.locked=true;a.chakra=100;b.chakra=100
+ assert(c:rush(a),"setup: no dash");assert(c:rush(b),"setup: no second dash")
+ local closest=99
+ for _=1,40 do
+  physicsStep(c,1/60)
+  local d=a.root.Position-b.root.Position
+  closest=math.min(closest,V.new(d.X,0,d.Z).Magnitude)
+ end
+ assert(closest>=2.4,string.format("the two bodies merged (%.2f studs root to root)",closest))
+end)
+
+test("a strike pressed out of a dash does not slide on into the opponent",function()
+ local c,a,b=H.duel("Mist","Leaf")
+ c:relocate(a,V.new(0,3,14));c:relocate(b,V.new(0,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ a.locked=true;a.chakra=100
+ assert(c:rush(a),"setup: no dash")
+ local n=0
+ repeat physicsStep(c,1/60);n+=1 until n>60 or (V.new(a.root.Position.X,0,a.root.Position.Z)-V.new(0,0,0)).Magnitude<7
+ local Brawler=H.load("Server/Brawler")
+ assert(Brawler.start(c,a,"DashAttack")~=false,"setup: no strike")
+ local closest=99
+ for _=1,20 do
+  physicsStep(c,1/60)
+  local d=a.root.Position-b.root.Position
+  closest=math.min(closest,V.new(d.X,0,d.Z).Magnitude)
+ end
+ assert(closest>=2.4,string.format("the dash speed carried the strike into the body (%.2f studs)",closest))
+end)
+
 test("a strike already out is committed: it does not steer onto a body that slipped aside",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(0,3,7));c:relocate(b,V.new(0,3,0))

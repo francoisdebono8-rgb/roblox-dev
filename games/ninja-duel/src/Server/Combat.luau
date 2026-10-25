@@ -1259,6 +1259,9 @@ function Combat:updateActor(a,dt)
 			-- strike (air string up there, dash attack on the ground) or heavy.
 			a.pending=nil;a.attackName=nil;self:setState(a,"Neutral",0)
 			a.rushArriveUntil=now+Config.Rush.Arrive
+			-- The chase stops where it arrives (Studio: its speed carried the
+			-- body on into the one it reached).
+			a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8)
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
@@ -1385,7 +1388,15 @@ function Combat:updateActor(a,dt)
 			-- (Combat convergence, Studio: 3000 deg/s snaps when the dash committed
 			-- to its line; the body now swings onto it.)
 			if face.Magnitude>.1 then self:turnToward(a,face,dt,1440) end
-			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude<=r.arrive) then a.untilTime=math.min(a.untilTime,now)
+			-- Combat convergence (Studio: two dashes meeting closed 5.8 -> 1.4 studs
+			-- in one frame and the bodies merged): the arrival reads the closing
+			-- speed of both bodies, so it stops a frame early rather than inside.
+			local closing=if toTarget.Magnitude>.1 then math.max(0,(a.root.AssemblyLinearVelocity-b.root.AssemblyLinearVelocity):Dot(toTarget.Unit)) else 0
+			if toGoal.Magnitude<.6 or (not r.line and toTarget.Magnitude-closing*dt<=r.arrive) then
+				-- Stopped this frame, not on the next state change: the solver would
+				-- carry the dash speed one more step.
+				a.untilTime=math.min(a.untilTime,now)
+				if not r.line then a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8) end
 			else a.aimIntent={target=a.root.Position+toGoal,speed=r.speed,acceleration=1100} end
 		end
 	elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.attackName=="WallDive" then
@@ -1903,6 +1914,19 @@ function Combat:separate()
 	local push=math.min(3-gap,.35)*.5
 	local dir=if gap>.05 then flat.Unit else a.root.CFrame.RightVector
 	Motor.travel(a,self,-dir,push);Motor.travel(b,self,dir,push)
+	-- Combat convergence (Studio: kinetic bursts carried one body into the
+	-- other): inside a body width neither root keeps velocity into the other,
+	-- the contact a physical collision would have made. A dodge passes.
+	if gap<2.6 then
+		for _,pair in {{a,dir},{b,-dir}} do
+			local body,n=pair[1],pair[2]
+			if body.state~="Dodging" and not (body.rush and body.rush.line) then
+				local v=body.root.AssemblyLinearVelocity
+				local inward=v:Dot(n)
+				if inward>0 then body.root.AssemblyLinearVelocity=v-n*inward end
+			end
+		end
+	end
 end
 function Combat:update(dt,now)
 	self.now=now
