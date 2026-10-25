@@ -1234,6 +1234,7 @@ function Combat:updateActor(a,dt)
 			a.hitConfirmed=brawl and pending.contact==true
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
+			a.attackWhiffed=brawl and not a.hitConfirmed or nil
 			if brawl and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.

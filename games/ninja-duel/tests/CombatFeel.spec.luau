@@ -123,6 +123,28 @@ test("a strike pressed out of a dash does not slide on into the opponent",functi
  assert(closest>=2.4,string.format("the dash speed carried the strike into the body (%.2f studs)",closest))
 end)
 
+test("a whiff over-reaches: the swing that met nothing carries the body past the contact",function()
+ local c,a,b=H.duel("Leaf","Mirage")
+ c:relocate(a,V.new(0,3,30));c:relocate(b,V.new(0,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ assert(c:request(a,"Attack"))
+ local n=0
+ repeat H.step(c,.01);n+=1 until a.state=="Recovery" or n>80
+ assert(a.state=="Recovery" and a.attackWhiffed==true,"the empty swing was not flagged as a whiff")
+ -- The look: the same recovery frame, landed vs whiffed.
+ local function lean(whiffed)
+  local c2,x=H.duel("Leaf","Mirage")
+  Motion.reset(x.model)
+  for _=1,10 do frame(x.model,body(x)) end
+  for i=1,24 do frame(x.model,body(x,{state="Recovery",attackName="Light1",attackElapsed=.2+math.min(i,8)/100,whiffed=whiffed})) end
+  local root=x.model.joints.Root.Transform
+  return -root.Position.Z
+ end
+ local landedZ=lean(nil)
+ local whiffZ=lean(true)
+ assert(whiffZ>landedZ+.25,string.format("the whiffed body does not carry forward (%.2f vs %.2f)",whiffZ,landedZ))
+end)
+
 test("a strike already out is committed: it does not steer onto a body that slipped aside",function()
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(0,3,7));c:relocate(b,V.new(0,3,0))

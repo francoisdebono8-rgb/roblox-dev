@@ -3343,7 +3343,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">4de30dd7314b2a1c03c68239a0cc90dbb86c8e3265d79fed15028fd4ac3b2771</string>
+          <string name="Value">6229e8ec99dfe0dcb5718fbc5e0db88fd13d7534c64ce0b61ca22c9b34caef16</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -5166,6 +5166,7 @@ function Brawler.start(c,a,name)
  -- from it: the burst's speed does not carry the body on through its startup
  -- (Studio: rush -&gt; dash attack slid 1.9 studs into the opponent).
  if a.state=="Rush" or a.state=="Pursuit" then a.rush=nil;a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8) end
+ a.attackWhiffed=nil
  -- Any new strike drops a pending running-strike hand-back (it is for the
  -- run after the swing, not for the next blow of a string).
  a.strikeCarry=nil
@@ -9216,6 +9217,7 @@ function Combat:updateActor(a,dt)
 			a.hitConfirmed=brawl and pending.contact==true
 			-- A committed swing that never touched anything: report the whiff so
 			-- the client can answer with air movement instead of silence.
+			a.attackWhiffed=brawl and not a.hitConfirmed or nil
 			if brawl and not a.hitConfirmed then
 				self:pushImpact(a.root.Position+a.root.CFrame.LookVector*2.2,"whiff",false,{owner=a.id,fighter=a.fighterId,move=pending.name,variant=a.attackVariant})
 				-- Genjutsu image / Sharingan Focus: a swing at the wrong place is read.
@@ -13367,7 +13369,7 @@ function Matches:view(s,cursor,mine,theirs)
 			cue=if a.cueUntil&gt;s.combat.now then a.cue else "",dodge=math.max(0,a.dodgeUntil-s.combat.now),read=math.max(0,a.readUntil-s.combat.now),
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
-			subCharges=a.subCharges,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
+			subCharges=a.subCharges,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
@@ -29273,6 +29275,20 @@ function Motion.present(char,actor,clock,dt)
 				-- A low glide through the image / past the read blow.
 				local w=if phase&lt;1 then 1 elseif phase&lt;2 then 2-phase else 0
 				final.Root=CF(0,-.7*w,-1.2*w)*(final.Root or IDENTITY)
+			end
+		end
+		-- Combat convergence (whiff quality): a swing that met nothing does not
+		-- recover like one that landed. The body carries on past where the
+		-- contact should have been, hips dropped and forward, chest over the
+		-- front foot, then hauls itself back. Planted feet stay planted (they
+		-- are solved against the hips as drawn).
+		if subject.whiffed and not subject.airborne then
+			local phase=attackPhase(name,subject.attackElapsed or 0,subject.fighterId)
+			local w=smooth(math.clamp((phase-2)/.12,0,1))*(1-smooth(math.clamp((phase-2.45)/.4,0,1)))
+			if w&gt;0 then
+				final.Root=CF(0,-.32*w,-.55*w)*(final.Root or IDENTITY)*ANG(rad(-9*w),0,0)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(-10*w),0,0)
+				final.Neck=(final.Neck or IDENTITY)*ANG(rad(8*w),0,0)
 			end
 		end
 		-- Planted feet come from the stepping system; kicking legs from the clip.

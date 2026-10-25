@@ -330,6 +330,7 @@ function Brawler.start(c,a,name)
  -- from it: the burst's speed does not carry the body on through its startup
  -- (Studio: rush -> dash attack slid 1.9 studs into the opponent).
  if a.state=="Rush" or a.state=="Pursuit" then a.rush=nil;a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8) end
+ a.attackWhiffed=nil
  -- Any new strike drops a pending running-strike hand-back (it is for the
  -- run after the swing, not for the next blow of a string).
  a.strikeCarry=nil

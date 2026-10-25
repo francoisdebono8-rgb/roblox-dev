@@ -2587,6 +2587,20 @@ function Motion.present(char,actor,clock,dt)
 				final.Root=CF(0,-.7*w,-1.2*w)*(final.Root or IDENTITY)
 			end
 		end
+		-- Combat convergence (whiff quality): a swing that met nothing does not
+		-- recover like one that landed. The body carries on past where the
+		-- contact should have been, hips dropped and forward, chest over the
+		-- front foot, then hauls itself back. Planted feet stay planted (they
+		-- are solved against the hips as drawn).
+		if subject.whiffed and not subject.airborne then
+			local phase=attackPhase(name,subject.attackElapsed or 0,subject.fighterId)
+			local w=smooth(math.clamp((phase-2)/.12,0,1))*(1-smooth(math.clamp((phase-2.45)/.4,0,1)))
+			if w>0 then
+				final.Root=CF(0,-.32*w,-.55*w)*(final.Root or IDENTITY)*ANG(rad(-9*w),0,0)
+				final.Waist=(final.Waist or IDENTITY)*ANG(rad(-10*w),0,0)
+				final.Neck=(final.Neck or IDENTITY)*ANG(rad(8*w),0,0)
+			end
+		end
 		-- Planted feet come from the stepping system; kicking legs from the clip.
 		if footwork and base.__feet then
 			final.__feet={}

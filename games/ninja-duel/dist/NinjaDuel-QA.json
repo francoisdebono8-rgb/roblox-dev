@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "1d6e70ab8216992de92898a050a6f7250c881bc901d240077f8843fb944c7ab0",
+  "sha256": "9d88d69c28cff4f615dac8004bb4d90c87f2c157d039498008eed143ea4c0a6d",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c46093090a292885309267399f6227936f7431b758426ded3614f7c4e003f71b",
@@ -22,7 +22,7 @@
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "615e5183c8cc30ebb5908382ad0e44c0a2caa0fdf4e65226366bf110202c2dfa",
     "src/Client/VelmoraHitFeedback.luau": "3184e761ac37eb73a937d862c7fe7486d15e2ed07cea8cceab918cbcab30cb85",
-    "src/Client/VelmoraMotionEngine.luau": "a847ce704da426a064d849c57f1d72e8fbf7966e2fd35d3cb2678405bf32a7d6",
+    "src/Client/VelmoraMotionEngine.luau": "f65d096f084cbdc461dd7869d4827938529e078755727351a37e7b2c2c683f3c",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
     "src/Client/Wave1Motion.luau": "cc1a082bdf6a8d65ec1637962136d7fba2b6f333b0a14f82dbd46637f9513954",
     "src/Client/Wave2FX.luau": "201da5528a60236e6e480d6a02e64013025d98c2b82b196be9cc1bbed3770747",
@@ -35,7 +35,7 @@
     "src/Server/BanglaCombat.luau": "2cfde6dddc151ca93d3d4cc1e1e931945795a4e03c9725e5559a93eec2880c55",
     "src/Server/BanglaEvade.luau": "238403f2d75432fa6a2f4ea4867d4a34b0bc4548bed163a271f633d926e17504",
     "src/Server/Bodies.luau": "b5f7a27c31ebf20e0bc00f0193f543a7a2be2d62be653b4e6955fe00a133f9a2",
-    "src/Server/Brawler.luau": "443c1e8bdbee968f5a661d353d6073ca9b9e213d5bbc6944fb342ad855b23955",
+    "src/Server/Brawler.luau": "fecc509026821e9d65d6511bceb7c594578289ef4b8d4b2c2cfc99c9139eeb23",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "41f7c6ffa540a81801474ab5e20671063cebf75f238b0313b8fc95a8fcab4395",
     "src/Server/ChakraDev.luau": "e89f9b4f656d2a87860dc2e961cc995f63214dbddad1d24764bccd26f8c89153",
@@ -46,7 +46,7 @@
     "src/Server/ChakraStudioView.luau": "966d7c5d04a9195b2bcdfcf89405c016ea209b797f07b33830e765d4f3e93bed",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "75c6cc082876a395fe4bf3426a193388331d32f3c32589a1d6dcb12a9a0304d6",
+    "src/Server/Combat.luau": "3b72d50c88545cd6d27a185bb9bb369a150be78aa5722132f88d077a4293d117",
     "src/Server/CombatInspector.luau": "4c4a626b7586dd19beedac4a5daad67b91f7d1b9b3b46b26e18e858cff9d434b",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
@@ -64,7 +64,7 @@
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
-    "src/Server/Matches.luau": "a9428696d7dee539d4e5451c20f12e61d356e3bd72f40f7ac2fee4e5844aa5b0",
+    "src/Server/Matches.luau": "0e71165e263708356be2f35c787a1e0fe9419a8fa58c7b35b706a207eae69549",
     "src/Server/Motor.luau": "05b903d347bc81d907d56836390d4ebdd996f8a04d3a8ba34c4dfbcb0b5590dd",
     "src/Server/NativeQA.luau": "5830c6bc049fd12f835baf4f961756d308cefd2785c30d72dba92a43811407c1",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
@@ -107,7 +107,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "6b0d0c2d65e90cf6876e292ea7176081ca44d678f45f9a1f58d00b8f0ca4bf60",
+  "buildFingerprint": "43beb9c5605e30f353c69a34d3601180662a3a27f47166a763869403c0e184d8",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
