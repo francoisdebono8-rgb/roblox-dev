@@ -203,7 +203,10 @@ test("Itachi · Sharingan Focus: a swing that misses close to him is read",funct
   local c,a,b=H.duel("Flashstep","Mirage")
   place(c,a,b,V.new(0,3,10),V.new(0,3,0))
   if focus then awaken(c,b) end
-  assert(c:request(a,"Attack"))
+  -- A plain swing out of reach (pressed at 10 studs the situation would call
+  -- for a lunge, Shared/ActionContext; this case is about the whiff).
+  local Brawler=H.load("Server/Brawler")
+  assert(Brawler.start(c,a,"Light1")~=false)
   H.step(c,.45)
   assert(a.hitConfirmed==false and b.health==b.def.Health,"setup: the swing should miss")
   if focus then assert(ev(b,'WhiffRead')==1 and (b.counterUntil or 0)>c.now,"the focused eye did not read the whiff")

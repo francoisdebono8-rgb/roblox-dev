@@ -1179,7 +1179,7 @@ end
 local function attackFeet(name,elapsed,fighterId)
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
-	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or route.Light1
+	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
 	local t=attackPhase(name,elapsed,fighterId)
 	local a,b=keys[1],keys[1]
 	local u=0
@@ -1210,7 +1210,7 @@ end
 local function attackTargets(name,elapsed,fighterId)
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
-	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or route.Light1
+	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
 	local phase=attackPhase(name,elapsed,fighterId)
 	local weight=if phase<2.55 then 1 else 1-smooth((phase-2.55)/.45)
 	return sampleKeys(keys,phase),weight,phase

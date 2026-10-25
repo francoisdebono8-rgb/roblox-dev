@@ -154,6 +154,26 @@ function AI:defend(now)
 	if hurt and self.subPlan and hits>=self.subPlan and a.subCharges>0 and a.chakra>=Config.Substitution.Cost then
 		if c:request(a,"Substitute") then self.subPlan=false;return true end
 	end
+	-- Ninja Embodiment (EMB-003): the blow's own window to answer it, decided
+	-- once per reaction: guard back up or step out (away or to a side) on the
+	-- ground, right itself in the air, roll out of a knockdown.
+	if a.reaction and self.recoverFor~=a.reactionStartedAt then
+		local kind=Brawler.recoverable(c,a)
+		if kind then
+			self.recoverFor=a.reactionStartedAt
+			if self.rng:NextNumber()<(Config.AI.Recover or .5) then
+				local away=a.root.Position-a.target.root.Position;away=Vector3.new(away.X,0,away.Z)
+				away=if away.Magnitude>.1 then away.Unit else -a.root.CFrame.LookVector
+				local side=Vector3.new(-away.Z,0,away.X)*(if self.rng:NextNumber()<.5 then 1 else -1)
+				if kind=="stand" and self.rng:NextNumber()<.55 then
+					if c:request(a,"Guard") then self.guardUntil=now+.3;return true end
+				else
+					a.move=if self.rng:NextNumber()<.5 then away else (side+away*.4).Unit
+					if c:request(a,"Dodge") then return true end
+				end
+			end
+		end
+	end
 	return false
 end
 -- A zoner (def.Zoner: Temari). The distance is hers: too close, the fan pushes
@@ -639,6 +659,36 @@ function AI:update(now)
 	-- A body on the floor with wake-up cover cannot be hit: no swings at it.
 	local covered=target.groundPose~=nil and (target.invulnerableUntil or 0)>now
 	if covered then return end
+	-- Ninja Embodiment (EMB-002): an entry is a plan, not a walk into the
+	-- string. Out of a run (the running strike), over the top (the drop
+	-- strike on the way down), round a committed body to its side, or
+	-- straight in. The strike then reads the situation the plan made.
+	if not self.plan and free and distance>6.5 and distance<13 and self.rng:NextNumber()<(tune.Plan or 0) then
+		local roll=self.rng:NextNumber()
+		local committed=target.state=="Recovery" or target.state=="TechniqueChannel" or target.state=="TechniqueRecovery" or target.state=="Startup"
+		self.plan=if committed and roll<.45 then "flank" elseif roll<.45 then "run" elseif roll<.75 then "jump" else "straight"
+		self.planUntil=now+1.4;self.planSide=self.strafeSign or 1
+		Brawler.event(c,a,"Plan:"..self.plan)
+		if self.plan=="jump" then a.move=toward;c:request(a,"Jump") end
+	end
+	if self.plan and (now>(self.planUntil or 0) or a.reaction) then self.plan=nil end
+	if self.plan=="run" then
+		a.move=toward;a.sprinting=false
+		if distance<9 and distance>3.5 and c:request(a,"Attack") then self.plan=nil end
+		return
+	elseif self.plan=="jump" then
+		a.move=toward
+		local vy=a.root.AssemblyLinearVelocity.Y
+		local above=a.root.Position.Y-target.root.Position.Y
+		if a.airborne and vy<-6 and distance<6.5 and above>1.5 and above<=6 then
+			if c:request(a,"Attack") then self.plan=nil end
+		elseif not a.airborne and now>(self.planUntil or 0)-1.1 then self.plan=nil end
+		return
+	elseif self.plan=="flank" then
+		a.move=(tangent*(self.planSide or 1)+toward*.45).Unit
+		if distance<5.5 and c:request(a,"Attack") then self.plan=nil end
+		return
+	elseif self.plan=="straight" then self.plan=nil end
 	if distance<math.max(8,reach) and self.rng:NextNumber()<tune.Aggression then
 		c:request(a,if a.grabVictim then "Attack" elseif distance<5 and self.rng:NextNumber()<.12 then "Grab" elseif self.rng:NextNumber()<.16 then "Heavy" else "Attack")
 	end

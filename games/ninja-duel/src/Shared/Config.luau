@@ -38,6 +38,16 @@ return {
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
 	Flow = {Early = 0.07, Late = 0.13, Damage = 1.15, Stop = 0.035},
 	ThrowBreak = 0.35,
+	-- Ninja Embodiment (EMB-003): an ordinary blow takes control for a moment,
+	-- not for the attacker's whole string. Past a share of its stun (never before
+	-- Min seconds) a standing body may recover into its guard (guard stamina)
+	-- or step out of it (chakra); a body thrown into the air may right itself
+	-- past its apex (chakra, once per air time; an earned launcher holds longer);
+	-- a knocked-down body landing may roll out (Tech). The substitution stays the
+	-- escape from anywhere, earlier, for its own price. An air string drops the
+	-- body after AirHits blows in one air time.
+	Agency = {Stand = 0.45, Min = 0.12, Air = 0.35, AirHits = 4, Launched = 0.72, GuardCost = 10, StepCost = 6, AirCost = 8,
+		Tech = 0.3, TechDistance = 4.5, AirLift = 16, AirPush = 10},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
@@ -67,5 +77,10 @@ return {
 	-- that just got hit backs off to neutral instead of mashing back.
 	AI = { Tick = 0.18, Reaction = 0.38, Aggression = 0.72, Defense = 0.58, Technique = 0.34,
 		TechniqueGap = 2.6, TechniqueJitter = 2.6, ReadGuard = 0.3, ReadDodge = 0.16, ReadPoke = 0.22, GuardRead = 0.07,
-		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35 },
+		Feint = 0.1, ProbeTool = 2.4, Disengage = 0.45, WallRun = 0.35,
+		-- Ninja Embodiment: the bot answers an ordinary blow (Recover: once per
+		-- reaction) and comes in with a plan that makes the situation the
+		-- strike reads (EMB-002): out of a run, over the top, from the side of a
+		-- committed body; or straight in.
+		Recover = 0.5, Plan = 0.65 },
 }

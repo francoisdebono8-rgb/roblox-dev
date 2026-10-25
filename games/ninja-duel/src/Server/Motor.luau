@@ -246,7 +246,7 @@ function Motor.step(a,c,dt,now)
 	if vertical<0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now>(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y<=5 then
-		a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false
+		a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
 		local falling=a.fallSpeed or 0;a.fallSpeed=0
 		-- Only a real drop costs speed. A standard or sprint jump lands below
 		-- HardLandVelocity and keeps its momentum straight into the next step.

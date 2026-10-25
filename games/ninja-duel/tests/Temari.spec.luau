@@ -687,7 +687,9 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
     local t=0
     local lanes=0
     -- (two ranged fighters, her and Gaara behind his shield, fight longer)
-    while match.phase=="Duel" and t<180 do
+    -- (Ninja Embodiment, EMB-003: a struck body now answers ordinary blows and
+    -- air strings stop after a few hits, so duels last longer than they did.)
+    while match.phase=="Duel" and t<300 do
      one:update(c.now);two:update(c.now);H.step(c,.01);t+=.01
      for _,x in {a,b} do
       local key=x.state..":"..tostring(x.attackSerial or 0)..":"..tostring(x.castId)
@@ -708,7 +710,7 @@ test("AI duels: Temari against every fighter, both ways and the mirror, to the K
       if gapOf(a,b)>=20 then totals.band=(totals.band or 0)+1 end
      end
     end
-    assert(match.phase~="Duel",string.format("%s vs %s did not finish in 180 s (%.0f / %.0f health)",pair[1],pair[2],a.health,b.health))
+    assert(match.phase~="Duel",string.format("%s vs %s did not finish in 300 s (%.0f / %.0f health)",pair[1],pair[2],a.health,b.health))
     for _,x in {a,b} do
      if x.fighterId=="Gale" then
       totals.scythes+=ev(x,"Kamaitachi");totals.turned+=ev(x,"WindDeflect")+ev(x,"WindReturn")+ev(x,"GustReturn")

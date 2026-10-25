@@ -874,6 +874,17 @@ function Combat:request(a,action,aim,clientTime,opts)
 	-- Pinned against a wall, the dodge button is a timed wall tech, never a
 	-- substitution: a mistimed tech must not silently spend a charge.
 	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
+	-- Ninja Embodiment (EMB-003): past its share of an ordinary blow the body
+	-- answers it (Brawler.recoverable): guard or step out standing, right
+	-- itself in the air, roll out of a knockdown. Earlier, the dodge is still
+	-- the substitution.
+	if (action=="Guard" or action=="Dodge") and a.reaction then
+		local kind=Brawler.recoverable(self,a)
+		if kind then
+			local ok,why=Brawler.recover(self,a,kind,action)
+			if not ok or kind~="stand" then return ok,why end
+		end
+	end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
 	if action=="Awaken" then return self:awaken(a) end

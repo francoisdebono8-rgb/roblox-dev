@@ -3,6 +3,7 @@ local Attacks=require(Shared.Attacks)
 local Motor=require(script.Parent.Motor)
 local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
+local ActionContext=require(Shared.ActionContext)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -26,6 +27,36 @@ end
 -- one (Combat:add), otherwise the canonical MoveGraphs entry.
 function Brawler.graph(a)
  return a.graph or MoveGraphs[a.fighterId]
+end
+-- Ninja Embodiment (EMB-002): the body's situation for the strike input
+-- (Shared/ActionContext reads it; this only gathers the server facts).
+function Brawler.situation(c,a)
+ local b=a.target
+ if not b or not b.root or b.health<=0 then return nil end
+ local vel=a.root.AssemblyLinearVelocity
+ local loco=a.locomotion or Vector3.zero
+ if Vector3.new(loco.X,0,loco.Z).Magnitude>Vector3.new(vel.X,0,vel.Z).Magnitude then vel=Vector3.new(loco.X,vel.Y,loco.Z) end
+ -- Under an illusion the body reads the image it believes in (Itachi's
+ -- Mirage): where it stands, facing this body.
+ local fooled=a.decoyPosition and (a.illusionUntil or 0)>c.now
+ local seen=if fooled then a.decoyPosition else b.root.Position
+ local look=if fooled then (a.root.Position-seen) else b.root.CFrame.LookVector
+ local x=ActionContext.read({pos=a.root.Position,look=a.root.CFrame.LookVector,vel=vel,airborne=a.airborne,
+  target={pos=seen,look=look,airborne=b.airborne and not fooled,
+   down=b.reaction=="Knockdown" or b.reaction=="Wakeup" or b.groundPose~=nil,guarding=b.state=="Guarding"}})
+ -- How far this fighter's plain strike already reaches (its step-in plus its
+ -- contact): the reach situation starts beyond it.
+ local light=Attacks.Light1
+ local profile=a.def.AttackProfile and a.def.AttackProfile.Light1
+ -- (+1: the strike's volume lands about a stud past the contact distance.)
+ x.plainReach=light.travel*(a.def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+ return x
+end
+-- The strike this situation calls for (nil: the plain strike).
+function Brawler.contextual(c,a)
+ local x=Brawler.situation(c,a)
+ if not x then return nil end
+ return ActionContext.resolve(x,Brawler.graph(a),Attacks)
 end
 -- The strike a riposte (or a counter stance's answer) comes out as: the
 -- fighter's own gesture (MoveGraphs riposte: Madara's pommel, Hashirama's
@@ -307,7 +338,7 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  -- reaction that follows keeps it instead of shortening it to the move's own.
  duration=math.max(duration,(a.stunFloorUntil or 0)-c.now);a.stunFloorUntil=nil
  a.chainOpen=false;a.recoveryCancelAt=nil
- a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity
+ a.reaction=kind;a.reactionUntil=c.now+duration;a.reactionVelocity=velocity;a.reactionStartedAt=c.now
 	 a.reactionSource=source;a.reactionCause=cause
  a.pending=nil;a.buffered=nil;a.attackName=nil;a.guardHeld=false;a.state="Neutral";a.untilTime=c.now
  -- Hit out of it: his own strings and re-entry are over.
@@ -323,6 +354,77 @@ function Brawler.react(c,a,kind,velocity,duration,source,cause)
  end
  if kind=="WallSplat" then a.groundPose="Splat" end
  if not airReactions[kind] then a.groundPose=nil end
+end
+-- Ninja Embodiment (EMB-003): what a struck body may do about the blow now.
+-- "stand": an ordinary standing reaction past its share (Config.Agency.Stand);
+-- "air": thrown up or juggled, falling, past its share (a launcher holds
+-- longer); "tech": knocked down and just landed. nil: no say yet (or none:
+-- grabbed, bound, spiked, pinned to a wall, guard broken).
+function Brawler.recoverable(c,a)
+ local kind=a.reaction
+ if not kind then return nil end
+ local tune=Config.Agency
+ local started=a.reactionStartedAt or c.now
+ local length=math.max((a.reactionUntil or c.now)-started,.01)
+ local share=(c.now-started)/length
+ if (kind=="HitStun" or kind=="GuardStun") and not a.airborne then
+  if share>=tune.Stand and c.now-started>=tune.Min then return "stand" end
+  return nil
+ end
+ if (kind=="Juggled" or kind=="Launched" or kind=="Knockback") and a.airborne and not a.airRecoverUsed then
+  -- An air string keeps the body rising, so a juggled body answers past its
+  -- share whatever its way; only the earned launcher also waits for its apex.
+  local falling=(a.reactionVelocity and a.reactionVelocity.Y or 0)<0
+  if kind=="Launched" then if falling and share>=tune.Launched then return "air" end return nil end
+  if share>=tune.Air then return "air" end
+  return nil
+ end
+ if kind=="Knockback" and not a.airborne then return "stand" end
+ if kind=="Knockdown" and not a.airborne and a.landedAt and c.now-a.landedAt<=tune.Tech then return "tech" end
+ return nil
+end
+-- Take the body back. A "stand" recovery only ends the reaction (the guard or
+-- the dodge then proceeds as usual); "air" rights the body in the air; "tech"
+-- rolls it out of the knockdown. The price is paid here.
+function Brawler.recover(c,a,kind,action)
+ local tune=Config.Agency
+ if kind=="stand" then
+  if action=="Guard" then
+   if (a.stamina or 100)<tune.GuardCost then return false,"Exhausted" end
+   a.stamina=(a.stamina or 100)-tune.GuardCost
+  else
+   if a.chakra<tune.StepCost then return false,"Need chakra" end
+   a.chakra-=tune.StepCost
+  end
+ elseif kind=="air" then
+  if a.chakra<tune.AirCost then return false,"Need chakra" end
+  a.chakra-=tune.AirCost
+ end
+ local attacker=a.reactionSource or a.target
+ local away=if attacker and attacker.root then a.root.Position-attacker.root.Position else -a.root.CFrame.LookVector
+ away=Vector3.new(away.X,0,away.Z);away=if away.Magnitude>.05 then away.Unit else -a.root.CFrame.LookVector
+ a.reaction=nil;a.reactionUntil=0;a.reactionVelocity=nil;a.groundPose=nil;a.state="Neutral";a.untilTime=c.now
+ a.comboHits=0
+ if kind=="air" then
+  -- Righted in the air: a small lift and drift away from the striker, then
+  -- the body falls under its own control (no second air recovery).
+  a.airRecoverUsed=true;a.airDodgeUsed=true
+  a.root.AssemblyLinearVelocity=away*tune.AirPush+Vector3.new(0,tune.AirLift,0)
+  Brawler.event(c,a,"AirRecover");c:cue(a,"RECOVER",.5)
+  c:pushImpact(a.root.Position,"recover",false,{owner=a.id,fighter=a.fighterId,kind="air"})
+  return true,"Recovered"
+ end
+ if kind=="tech" then
+  -- Rolled out of the fall: up and away, briefly untouchable.
+  a.hop={direction=away,remaining=tune.TechDistance,speed=30}
+  a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+.3)
+  Brawler.event(c,a,"Tech");c:cue(a,"TECH",.5)
+  c:pushImpact(a.root.Position,"recover",false,{owner=a.id,fighter=a.fighterId,kind="tech"})
+  return true,"Recovered"
+ end
+ Brawler.event(c,a,"Recover")
+ c:pushImpact(a.root.Position,"recover",false,{owner=a.id,fighter=a.fighterId,kind=action=="Guard" and "guard" or "step"})
+ return true,"Recovered"
 end
 function Brawler.start(c,a,name)
  Bangla.close(a.pending)
@@ -644,7 +746,17 @@ function Brawler.request(c,a,action)
     Brawler.event(c,a,"Route");return Brawler.start(c,a,route)
    end
   end
-  if not airAlive then Brawler.breakString(a,true) end
+  if not airAlive then
+   Brawler.breakString(a,true)
+   -- An air opener reads the situation: falling onto a body below is a drop
+   -- strike, not the first hit of an air string.
+   local move,tag=Brawler.contextual(c,a)
+   if move and tag=="drop" then
+    a.lastAirAttack=c.now
+    Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
+    return Brawler.start(c,a,move)
+   end
+  end
   a.lastAirAttack=c.now
   return Brawler.start(c,a,if (a.airCombo or 0)%2==0 then "Air1" else "Air2")
  end
@@ -674,6 +786,28 @@ function Brawler.request(c,a,action)
  -- confirmed hit, Light3 (the string's end) after two. Out of a string (a
  -- whiff, a block, a pause, a hit taken) it is Light1 again.
  if not alive then Brawler.breakString(a,false) end
+ -- Ninja Embodiment (EMB-002): out of a string (an opener, or after a whiff,
+ -- a block or a hit taken), the strike is the one the body's situation calls
+ -- for: from behind, from the flank, out of a run, inside arm's length, at
+ -- the edge of reach. The light string is what is left when nothing does.
+ if action=="Attack" and not inChain and not canDash then
+  local move,tag=Brawler.contextual(c,a)
+  if move then
+   a.lastAttack=c.now
+   Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
+   if tag=="flank" then local _,sideSign=Brawler.intent(a);a.angleSide=if sideSign~=0 then sideSign else (a.angleSide or 1) end
+   local runSpeed=a.locomotion and a.locomotion.Magnitude or 0
+   local ok=Brawler.start(c,a,move)
+   local p=a.pending
+   if tag=="run" and ok~=false and p and p.kind=="Brawl" then
+    -- Out of a run the swing carries the run (as out of a sprint, below).
+    local need=runSpeed*(p.spec.travelTime or .22)*.85
+    if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+    a.strikeCarry={dir=a.travelDirection,speed=runSpeed*.6,at=c.now}
+   end
+   return ok
+  end
+ end
  local name="Light"..math.min((a.combo or 0)+1,3)
  a.lastAttack=c.now
  -- Context finisher (Neji): with three chakra points closed, the third palm
@@ -1161,6 +1295,17 @@ function Brawler.hit(c,a,p)
  -- does a fighter's own strike that declares them (Attacks `riders`).
  if p.family or p.spec.riders then Families.strikeHit(c,a,b,p,false) end
  -- A combo that runs too long drops the body out of it (with wake-up cover).
+ -- Ninja Embodiment (EMB-003): an air string is a few blows, not a stay up
+ -- there (free fights: four seconds and ten hits at 24 studs). Past
+ -- Config.Agency.AirHits in one air time the body drops out of it.
+ if b.airborne and (b.reaction=="Juggled" or b.reaction=="Launched") then
+  b.airStringHits=(b.airStringHits or 0)+1
+  if b.airStringHits>Config.Agency.AirHits then
+   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
+   Brawler.event(c,a,"AirLimit")
+   return true
+  end
+ end
  if (b.comboHits or 0)>=Config.ComboScaling.MaxHits and b.reaction~="Knockdown" then
   Brawler.react(c,b,"Knockdown",Vector3.new(impulse.X*.3,math.min(impulse.Y,0)-18,impulse.Z*.3),.5,a)
   c:cue(a,"COMBO LIMIT",.7);Brawler.event(c,a,"ComboLimit")
@@ -1259,7 +1404,7 @@ function Brawler.step(c,a,dt)
       if a.reaction=="Knockdown" then a.reactionUntil=math.min(a.reactionUntil,c.now+.55);Brawler.event(c,a,"LandedSlam") end
       -- The body is on the floor now: stop reporting it as airborne so the
       -- presentation plays the grounded pose instead of an air reaction.
-      a.airborne=false
+      a.airborne=false;a.airRecoverUsed=false;a.airStringHits=0
       a.landedAt=c.now
       -- A body thrown along the floor keeps some of its run as a skid.
       velocity=Vector3.new(velocity.X,0,velocity.Z)*.6

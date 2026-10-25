@@ -218,6 +218,27 @@ for name,shape in {
 } do
  for key,value in shape do attacks[name][key]=value end
 end
+-- Ninja Embodiment (EMB-002, Shared/ActionContext): two shared strikes the
+-- situation itself calls for. `clip` names the clip a fighter plays for it
+-- when he has none of his own (his own kick from behind, his own air kick).
+--   BackStrike  the opponent's back is turned: a full strike into it, no
+--               turning needed; it throws the body away (a punish, not a string).
+--   DropStrike  falling onto a grounded body: the weight comes down with the
+--               strike; it does not hold the body in the air.
+for name,m in {
+ BackStrike=move(.08,.13,.3,10,2.4,"Knockback",Vector3.new(0,10,34),.46),
+ DropStrike=move(.07,.15,.24,8,1.2,"HitStun",Vector3.new(0,-6,10),.4),
+} do
+ m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
+ m.depth=m.range*.8;m.offset=m.range*.4
+ attacks[name]=m
+end
+for name,shape in {
+ BackStrike={contact=3.6,range=6.5,width=5.5,height=6,zone="body",kind="kick",clip="Light3",side=1,twist=60,lean=14,arm=100,step=1.2},
+ DropStrike={contact=3,range=6.5,width=6,height=10,zone="head",kind="kick",clip="Air2",side=-1,twist=40,lean=24,arm=100,step=1.1},
+} do
+ for key,value in shape do attacks[name][key]=value end
+end
 -- Roster 20 batches add their strikes from their own data modules.
 for _,wave in {require(script.Parent.Wave1),require(script.Parent.Wave2),require(script.Parent.Wave3),require(script.Parent.Wave4)} do
  if wave.attacks then wave.attacks(move,attacks) end
