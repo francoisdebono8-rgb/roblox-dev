@@ -347,3 +347,55 @@ But the rule is:
 > **Build the universe once; describe what each ninja can do inside it.**
 
 That is the real Ninja Embodiment overhaul.
+
+---
+
+## 14. VISUAL REFERENCE WORKFLOW — `izzyfrm/roblox-ai`
+
+Use the public reference repository `izzyfrm/roblox-ai` as an **optional visual research library** during this mission whenever animation, VFX, UI, presentation, cinematic framing, impact readability or Roblox-specific visual implementation would benefit from concrete references.
+
+The repository is a reference library, not code to copy and not a substitute for design judgment.
+
+### Required workflow when a visual problem is important
+
+1. Inspect the relevant category first, for example:
+   - `animations/` for movement, run lean, dash/slide, punch/sword motion and cast timing;
+   - `vfx/` for hit sparks, slash trails, speed lines, anime impact frames, fire/explosion, smoke, teleport and power-up effects;
+   - `ui-styles/`, `visual-refs/`, `previews/` for HUD / menus / tournament presentation;
+   - `cutscenes/` for intros, finishers and tournament presentation;
+   - `game-refs/` for broader Roblox readability and visual hierarchy;
+   - `roblox-docs/` for Studio-specific implementation references.
+2. Select only references that actually solve the current problem.
+3. State internally what principle is being extracted: timing, spacing, silhouette, anticipation, impact hierarchy, trail shape, camera framing, typography, information hierarchy, etc.
+4. Build an **original Ninja Duel implementation** from those principles.
+5. Validate the result in the real Studio playtest at normal speed. Do not declare success because a reference exists or because the code resembles it.
+
+### Important restrictions
+
+- Do not copy logos, distinctive artwork, copyrighted assets or another game's exact VFX/UI composition.
+- Do not import reference media into the shipped game unless licensing explicitly allows it.
+- Do not let generic Roblox references override the established Ninja Embodiment philosophy.
+- Do not add visual noise merely because a reference is flashy.
+- Body motion, contact, readability and player agency remain more important than effect density.
+
+### Combat-specific use
+
+For the current overhaul, actively consult the library where useful for:
+
+- speed readability without hiding body motion;
+- hit/impact presentation;
+- dash and slide presentation;
+- charged/sustained power states;
+- elemental impacts;
+- teleport presentation;
+- destruction feedback;
+- wall/ground contact feedback;
+- attack anticipation/recovery silhouettes.
+
+The target is not "make it look like a reference".
+
+The target is:
+
+> **Use better references so the AI stops inventing mediocre Roblox presentation from vague prompts, while preserving our own combat grammar and art direction.**
+
+This repository is a research input. The real acceptance test remains the live game in Studio.
