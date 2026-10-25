@@ -132,4 +132,4 @@ Résultats : 29 suites PASS, isolation des builds PASS, docs PASS.
 - `1cd3f13` pass 1 : acrobaties contextuelles, élan de l'esquive.
 - `396c881` pass 2 : corrections issues de Studio, frappes en course.
 - `aba5212` pass 3 : frappes aériennes, murs, wall-jump.
-- Pass 4 (ce rapport) : esquive sans pivot, horloge d'esquive, frappe depuis la montée, glissades sans arrêt, sprint et traînée par fighter, inertie de Zabuza.
+- `a3eb920` pass 4 : esquive sans pivot, horloge d'esquive, frappe depuis la montée, glissades sans arrêt, sprint et traînée par fighter, inertie de Zabuza.
