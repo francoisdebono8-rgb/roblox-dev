@@ -1,10 +1,13 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "fd842cff91ac0e27f205e1aae65ff800b034f4ec6398825bc17052076957c4da",
+  "sha256": "af8e8496f51fa5670f1f853e4fe402e79e36e7c060a4ef5e326698fa2e7ca2c0",
   "sources": {
-    "src/Client/AuthoredClips.luau": "68c4286908e285dc479f9fddbc4f8088cba5636b59747e2ddaa6d9e4b2fb6392",
-    "src/Client/AuthoredMotion.luau": "cf63bff1ff4aa755f8b2e1f831b22c78869a848e9e10f944bd43c2e6459d1f3f",
+    "src/Client/AuthoredClips.luau": "2c449a99160a212d0cc8fae7f0163042164287240022a164cddb67925b060797",
+    "src/Client/AuthoredClips1.luau": "ac11a0b17011c482f040ebdc6e482ae0addaa9faf8f2a31a5ce015d604060858",
+    "src/Client/AuthoredClips2.luau": "c6fbbb71d1521b414e0e4ff9239ff9b44f501d1ffdde55bf8e7466d199759ae8",
+    "src/Client/AuthoredClips3.luau": "c8192d0e7e13d18aacb9eca03f59cb3a745b027ed19141c5568f4913cdfa3a6e",
+    "src/Client/AuthoredMotion.luau": "880b4c21af24dd7c366853d91ce9aaf1f2733f4ac075e8eac8222a57fd6e8167",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "383dad9f184c56d774e2aad722f0ca6ffa32f2e86b49edf833671100bf09e06b",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
@@ -21,7 +24,7 @@
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "b25453f9ee8a5a0536116f9d4bbdc7e969ef04681193911014cef21e409a0be9",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
-    "src/Client/VelmoraMotionEngine.luau": "910b804ac54b94345de4e5364f2a593eeda445d96beced35777239211ef78ff5",
+    "src/Client/VelmoraMotionEngine.luau": "311401d2cdafac48f3f56d65c527b2352cf87559a4e0d7c26949a444359d4250",
     "src/Client/VfxAtlas.luau": "667e2fae948f3b1425896c6fa5d5177066a743e19609c7165909a9455b7124dd",
     "src/Client/VfxKit.luau": "a4e75609ad7da1fde7158695b1f0a889d756f7521ad923165ad36dbd7b4cbb73",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
@@ -96,7 +99,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "444933031c0e2f7d217dcecd512d1f13fd2df81a36d4eddd56a9c15932938bbb",
+  "buildFingerprint": "433cce56f8e9469afedaffb7af3694395057348a181ecbd6d6505d511a8e5301",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

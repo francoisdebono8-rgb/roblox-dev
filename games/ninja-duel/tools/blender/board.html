@@ -1,0 +1,204 @@
+<title>Planche d'animation Ninja Duel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a dopesheet. Fighter tabs, then shelves of clips (movement, strikes, still to make), each clip a looping film card. */
+:root {
+  --bg: #eef0f2;
+  --panel: #ffffff;
+  --ink: #16191d;
+  --muted: #5c6470;
+  --line: #d5d9df;
+  --accent: #2a55d6;      /* Sasuke blue, used for focus and the active tab */
+  --ok: #1f8a4c;
+  --live: #2a55d6;
+  --todo: #9aa1ab;
+  --film: #c9ced6;
+  --display: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111418; --panel: #1a1e24; --ink: #e8ebef; --muted: #98a1ad; --line: #2c323b;
+    --accent: #7c9cff; --ok: #4cc27f; --live: #7c9cff; --todo: #5f6772; --film: #2a3038; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111418; --panel: #1a1e24; --ink: #e8ebef; --muted: #98a1ad; --line: #2c323b;
+  --accent: #7c9cff; --ok: #4cc27f; --live: #7c9cff; --todo: #5f6772; --film: #2a3038; color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 28px; }
+header { display: grid; gap: 10px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.lede { margin: 0; max-width: 64ch; color: var(--muted); }
+.progress { display: grid; gap: 8px; }
+.bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--line); }
+.bar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab { appearance: none; background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 14px 8px; font-family: var(--display); font-size: 19px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab:focus-visible, .chipbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 14px; }
+.shelf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h2 { font-family: var(--display); font-size: 22px; font-weight: 600; margin: 0; }
+.shelf-head p { margin: 0; color: var(--muted); font-size: 13px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; min-width: 0; }
+.film { aspect-ratio: 1 / 1; background: var(--film); position: relative; max-width: 100%; }
+.film video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.film .none { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted); text-align: center; padding: 12px; }
+.info { padding: 10px 12px 12px; display: grid; gap: 4px; align-content: start; }
+.name { font-weight: 600; line-height: 1.25; }
+.id { font-family: var(--mono); font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.meta { font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin-top: 4px; }
+.todo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 14px; margin: 0; padding: 0; list-style: none; }
+.todo-list li { background: var(--panel); border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 2px; }
+.todo-list li span { color: var(--muted); font-size: 13px; }
+footer { color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .film video { display: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ninja Duel · animations faites dans Blender</div>
+    <h1>Planche d'animation</h1>
+    <p class="lede">Chaque animation est construite dans Blender sur le squelette du jeu, puis jouée telle quelle en partie. Les films ci-dessous tournent à la vitesse réelle du jeu. Le statut dit si l'animation est seulement faite, déjà dans le jeu, ou vérifiée en partie dans Studio.</p>
+    <div class="progress" id="progress"></div>
+  </header>
+
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="board" style="display:grid;gap:34px"></main>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const STATUS = {
+  verified: { label: "Vérifiée en jeu", color: "var(--ok)" },
+  ingame:   { label: "Dans le jeu", color: "var(--live)" },
+  todo:     { label: "À faire", color: "var(--todo)" },
+};
+const UPDATED = "26 oct. 2026, 20 h";
+
+// name, clip id suffix, status, note
+const MOVE = [
+  ["Garde, au repos", "Idle"],
+  ["Marche avant", "Walk.F"], ["Marche arrière", "Walk.B"], ["Pas chassé à gauche", "Walk.L"], ["Pas chassé à droite", "Walk.R"],
+  ["Course avant", "Run.F"], ["Course arrière", "Run.B"], ["Course de côté, gauche", "Run.L"], ["Course de côté, droite", "Run.R"],
+  ["Course ninja (sprint)", "Sprint"],
+  ["Saut sur place", "Jump.Air"], ["Saut en course", "Jump.Leap"], ["Salto", "Flip"], ["Réception", "Land"],
+];
+const FIGHTERS = {
+  Lion: {
+    name: "Sasuke",
+    verified: ["Run.F", "Sprint", "Jump.Air", "Land", "Light1", "Light2", "Light3", "Heavy", "FireBloom.Channel", "FireBloom.Release", "FireBloom.Recover"],
+    strikes: [
+      ["Coup 1, direct du bras avant", "Light1"], ["Coup 2, coup de pied circulaire", "Light2"], ["Coup 3, talon retourné", "Light3"],
+      ["Coup lourd, coup de pied de poussée", "Heavy"],
+      ["Boule de feu, signes", "FireBloom.Channel"], ["Boule de feu, chargée", "FireBloom.Hold"], ["Boule de feu, souffle", "FireBloom.Release"], ["Boule de feu, retour", "FireBloom.Recover"],
+      ["Chidori, formation", "Chidori.Form"], ["Chidori, porté", "Chidori.Hold"], ["Chidori, frappe", "ChidoriThrust"],
+      ["Touché de face", "HitFront"],
+    ],
+  },
+  Flashstep: {
+    name: "Minato",
+    verified: ["Light1", "Light2", "Light3", "Heavy"],
+    strikes: [
+      ["Coup 1, kunai en revers", "Light1"], ["Coup 2, paume", "Light2"], ["Coup 3, coup de pied circulaire", "Light3"],
+      ["Coup lourd, direct en fente", "Heavy"],
+      ["Rasengan, formation", "BurstStrike.Channel"], ["Rasengan, frappe", "Rasengan"],
+    ],
+  },
+};
+const NEXT = [
+  ["Esquives (4 directions)", "le dash au sol, avec appui et freinage"],
+  ["Garde haute et impact sur la garde", "bras croisés, recul des appuis"],
+  ["Touchés de dos et de côté", "Sasuke et Minato"],
+  ["Chute au sol et relevé", "projection, roulade, remise en garde"],
+  ["Poursuite", "le bond derrière un adversaire projeté"],
+  ["Coups aériens", "Air1, Air2, coup plongeant"],
+  ["Course sur les murs", "montée et course latérale"],
+  ["Minato : lancer de kunai, arrivée du Dieu de la foudre", "lancer, apparition, frappe"],
+];
+
+let FILMS = {};
+let current = "Lion";
+
+function statusOf(f, id, isMove) {
+  if (FIGHTERS[f].verified.includes(id)) return "verified";
+  return "ingame";
+}
+function card(f, label, id, st) {
+  const full = f + "." + id;
+  const film = FILMS[full];
+  const s = STATUS[st];
+  const meta = [];
+  if (film && film.stride) meta.push(film.stride + " studs / cycle");
+  if (film && film.seconds) meta.push(film.seconds + " s");
+  return `<article class="card">
+    <div class="film">${film ? `<video src="v/${full}.mp4" muted loop playsinline preload="metadata" aria-label="${label}"></video>` : `<div class="none">film à venir</div>`}</div>
+    <div class="info">
+      <div class="name">${label}</div>
+      <div class="id">${full}</div>
+      ${meta.length ? `<div class="meta">${meta.join(" · ")}</div>` : ""}
+      <div class="status"><span class="dot" style="background:${s.color}"></span>${s.label}</div>
+    </div>
+  </article>`;
+}
+function render() {
+  const f = FIGHTERS[current];
+  const moves = MOVE.map(([l, id]) => card(current, l, id, statusOf(current, id, true))).join("");
+  const strikes = f.strikes.map(([l, id]) => card(current, l, id, statusOf(current, id, false))).join("");
+  document.getElementById("board").innerHTML = `
+    <section><div class="shelf-head"><h2>Déplacements</h2><p>Mélangés en jeu selon la direction et la vitesse réelles du personnage.</p></div><div class="grid">${moves}</div></section>
+    <section><div class="shelf-head"><h2>Coups et jutsu</h2><p>Recalés en partie sur le timing du serveur : l'image d'impact tombe sur le coup.</p></div><div class="grid">${strikes}</div></section>
+    <section><div class="shelf-head"><h2>Prochaines animations</h2><p>Pour Sasuke et Minato, dans cet ordre.</p></div><ul class="todo-list">${NEXT.map(([a, b]) => `<li><strong>${a}</strong><span>${b}</span></li>`).join("")}</ul></section>`;
+  observe();
+}
+function progress() {
+  let n = { verified: 0, ingame: 0, todo: 0 };
+  for (const k of Object.keys(FIGHTERS)) {
+    const f = FIGHTERS[k];
+    for (const [, id] of MOVE) n[statusOf(k, id, true)]++;
+    for (const [, id] of f.strikes) n[statusOf(k, id, false)]++;
+  }
+  n.todo = NEXT.length * 2;
+  const total = n.verified + n.ingame + n.todo;
+  const seg = k => `<span style="width:${(100 * n[k] / total).toFixed(2)}%;background:${STATUS[k].color}"></span>`;
+  document.getElementById("progress").innerHTML = `<div class="bar" role="img" aria-label="Avancement">${seg("verified")}${seg("ingame")}${seg("todo")}</div>
+    <div class="legend">${["verified", "ingame", "todo"].map(k => `<span><span class="dot" style="background:${STATUS[k].color}"></span>${STATUS[k].label} <b>${n[k]}</b></span>`).join("")}<span>Mis à jour le ${UPDATED}</span></div>`;
+}
+function tabs() {
+  const el = document.getElementById("tabs");
+  el.innerHTML = Object.entries(FIGHTERS).map(([k, f]) => `<button class="tab" role="tab" id="tab-${k}" aria-selected="${k === current}">${f.name}</button>`).join("");
+  el.querySelectorAll(".tab").forEach(b => b.addEventListener("click", () => {
+    current = b.id.slice(4);
+    try { localStorage.setItem("nd-board-tab", current); } catch (e) {}
+    tabs(); render();
+  }));
+}
+let io = null;
+function observe() {
+  if (io) io.disconnect();
+  io = new IntersectionObserver(es => es.forEach(e => {
+    const v = e.target;
+    if (e.isIntersecting) { const p = v.play(); if (p) p.catch(() => {}); } else v.pause();
+  }), { rootMargin: "120px" });
+  document.querySelectorAll(".film video").forEach(v => io.observe(v));
+}
+async function boot() {
+  try { const t = localStorage.getItem("nd-board-tab"); if (t && FIGHTERS[t]) current = t; } catch (e) {}
+  try { const r = await fetch("films.json"); if (r.ok) FILMS = await r.json(); } catch (e) {}
+  tabs(); progress(); render();
+  document.getElementById("foot").textContent = "Films rendus dans Blender (Workbench) depuis le squelette du jeu, caméra qui suit le personnage, sol en damier de 2 studs pour voir les appuis.";
+}
+boot();
+</script>

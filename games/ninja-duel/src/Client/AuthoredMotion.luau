@@ -26,7 +26,7 @@ local function decode(name)
 	if cached~=nil then return cached or nil end
 	local c=DATA[name]
 	if not c then decoded[name]=false;return nil end
-	local out={fps=c.fps,frames=c.frames,length=c.length,loop=c.loop,markers=c.markers or {},joints={}}
+	local out={fps=c.fps,frames=c.frames,length=c.length,loop=c.loop,markers=c.markers or {},meta=c.meta or {},joints={}}
 	for _,joint in ORDER do
 		local rows=c.joints[joint]
 		if rows then

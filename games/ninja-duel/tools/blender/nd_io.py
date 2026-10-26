@@ -38,8 +38,9 @@ def export(arm, actions, path):
                 break
             f = min(end, f + step)
         markers = {k: round((v - start) / nd_anim.FPS, 4) for k, v in dict(act.get("nd_markers", {})).items()}
+        meta = {k: (round(v, 4) if isinstance(v, float) else v) for k, v in dict(act.get("nd_meta", {})).items()}
         data[act.name] = {"fps": SAMPLE, "frames": len(rows["Root"]), "length": round((end - start) / nd_anim.FPS, 4),
-                          "loop": bool(act.get("nd_loop", False)), "markers": markers, "joints": rows}
+                          "loop": bool(act.get("nd_loop", False)), "markers": markers, "meta": meta, "joints": rows}
     with open(path, "w") as fh:
         json.dump(data, fh, separators=(",", ":"))
     return data

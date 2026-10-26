@@ -73,7 +73,10 @@ function Motion.now() return elapsedTime end
 
 -- Damping rate per layer, and a hard angular speed limit (deg/s) so a sudden
 -- target change still travels instead of teleporting.
-local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22,chainIn=26,kick=43}
+local RATE={attack=42,throw=32,cast=24,recoil=36,guard=26,defense=26,locomotion=22,air=14,ground=12,wall=16,chase=22,chainIn=26,kick=43,
+	-- Blender-authored body motion is already the final curve: played almost
+	-- as is (a frame of smoothing only to join one clip to the next).
+	authored=48}
 local KICK_SPEED=1600 -- deg/s cap for a free (kicking) leg during a strike
 local CHAIN_IN=.08 -- seconds of a chained strike during which the upper body eases in
 local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike may whip at 2280)
@@ -94,11 +97,11 @@ local function write(char,key,target,rate,dt)
 	local nextCF=current:Lerp(target,alpha)
 	local step=angleBetween(current,nextCF)
 	-- Strikes may whip faster than ordinary motion so their shape reads.
-	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif rate==RATE.kick then KICK_SPEED elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
+	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif rate==RATE.kick then KICK_SPEED elseif rate==RATE.authored then 2600 elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
 	if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
-	local maxMove=14*dt
+	local maxMove=(if rate==RATE.authored then 24 else 14)*dt
 	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
 	s.pose[key]=nextCF
 	joint.Transform=nextCF
@@ -1684,7 +1687,103 @@ local function stepFeet(char,s,base,velocity,speed,dt,mode)
 	local armSwing=math.clamp(separation/(if running then stanceLen*.8 else 2.2),-1,1)
 	return out.R,out.L,bob,armSwing
 end
+-- ------------------------------------------------- authored locomotion
+-- (Blender-first) A fighter with an authored locomotion set (tools/blender,
+-- clips_loco) moves with it instead of the procedural gait: the idle, the
+-- walk / run cycles in four directions and the sprint, blended by the body's
+-- real direction and speed. Every cycle starts on the right foot's strike,
+-- and its phase advances by the distance travelled over the clip's stride,
+-- so the planted feet stay on the floor at any speed.
+local LOCO_DIRS={"F","B","R","L"}
+local function mixPoses(list)
+	local out,acc=nil,0
+	for _,e in list do
+		local pose,w=e[1],e[2]
+		if pose and w>1e-3 then
+			acc+=w
+			if not out then out=table.clone(pose)
+			else
+				local t=w/acc
+				for joint,cf in pose do out[joint]=(out[joint] or IDENTITY):Lerp(cf,t) end
+			end
+		end
+	end
+	return out
+end
+Motion._mixPoses=mixPoses
+local function strideOf(name)
+	local c=Authored and Authored.clip(name)
+	return c and c.meta and c.meta.stride or 7
+end
+local function hasAuthoredLoco(fighterId)
+	return Authored~=nil and Authored.has(tostring(fighterId)..".Run.F")
+end
+Motion.hasAuthoredLoco=hasAuthoredLoco
+-- Eyes on the opponent (yaw on the chest and head, degrees).
+local function trackOf(root,actor)
+	if not (root and actor.lookAt) then return 0,0 end
+	local to=actor.lookAt-root.Position
+	local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
+	if l.Magnitude<=1 then return 0,0 end
+	local angle=math.deg(math.atan2(l.X,-l.Z))
+	local torso=math.clamp(angle*.4,-38,38)
+	return torso,math.clamp(angle*.8-torso,-48,48)
+end
+local function authoredLocomotion(char,actor,fighterId,dt)
+	local F=tostring(fighterId)
+	local s=stateOf(char)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local velocity=planar(actor.velocity)
+	local speed=velocity.Magnitude
+	local idle=Authored.sample(F..".Idle",elapsedTime) or {}
+	local pose=idle
+	if speed>.4 then
+		local lv=if root then root.CFrame:VectorToObjectSpace(velocity) else Vector3.new(0,0,-speed)
+		local fwd,side=-lv.Z/speed,lv.X/speed
+		local dirW={F=math.max(0,fwd),B=math.max(0,-fwd),R=math.max(0,side),L=math.max(0,-side)}
+		-- Walk below ~8 studs/s, run at the fighter's speed (~20), the ninja
+		-- run when sprinting (forward only).
+		local toRun=smooth((speed-6)/(15-6))
+		local toSprint=smooth((speed-24)/(38-24))
+		local list,stride,total={},0,0
+		local function add(name,w)
+			if w>1e-3 and Authored.has(name) then
+				table.insert(list,{name,w});stride+=strideOf(name)*w;total+=w
+			end
+		end
+		for _,d in LOCO_DIRS do
+			local w=dirW[d]
+			if w>0 then
+				add(F..".Walk."..d,w*(1-toRun))
+				add(F..".Run."..d,w*toRun*(if d=="F" and Authored.has(F..".Sprint") then 1-toSprint else 1))
+			end
+		end
+		add(F..".Sprint",dirW.F*toRun*toSprint)
+		stride=if total>0 then stride/total else 7
+		s.locoPhase=((s.locoPhase or 0)+speed*(dt or 1/60)/math.max(stride,.5))%1
+		local samples={}
+		for _,e in list do
+			table.insert(samples,{Authored.sample(e[1],s.locoPhase*Authored.length(e[1])),e[2]})
+		end
+		local moving=mixPoses(samples)
+		if moving then
+			-- Starting off and stopping: the stance hands over to the cycle over
+			-- the first few studs per second.
+			pose=mixPoses({{idle,1},{moving,smooth(speed/4)/math.max(1-smooth(speed/4),1e-3)}}) or moving
+		end
+	else
+		s.locoPhase=0
+	end
+	local trackTorso,trackHead=trackOf(root,actor)
+	pose=table.clone(pose)
+	if math.abs(trackTorso)>.5 then pose.Waist=(pose.Waist or IDENTITY)*ANG(0,rad(-trackTorso*.6),0) end
+	if math.abs(trackHead)>.5 then pose.Neck=(pose.Neck or IDENTITY)*ANG(0,rad(-trackHead*.6),0) end
+	return pose
+end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
+	if not mode and not rest and hasAuthoredLoco(fighterId) then
+		return authoredLocomotion(char,actor,fighterId,dt),RATE.authored
+	end
 	local s=stateOf(char)
 	local minato=springy(fighterId)
 	local root=char:FindFirstChild("HumanoidRootPart")
@@ -1877,7 +1976,42 @@ local function rotate(targets,axis,sign,p,lift)
 	out.Root=CF(0,(lift or 0)*math.sin(math.pi*p),0)*pivot*turn*pivot:Inverse()*(targets.Root or IDENTITY)
 	return out
 end
+-- (Blender-first) The authored jump: its time axis is the arc itself, read
+-- from the body's vertical speed (take-off, rise, apex, fall, reach for the
+-- floor); a running jump leans into the authored leap; a flip plays the
+-- authored tuck while the body turns over.
+local JUMP_V=58
+local function authoredAir(char,actor,fighterId)
+	local F=tostring(fighterId)
+	local v=actor.velocity or Vector3.zero
+	local u=math.clamp((JUMP_V-v.Y)/(2*JUMP_V),0,1)
+	local air=Authored.sample(F..".Jump.Air",u*Authored.length(F..".Jump.Air"))
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local flatV=planar(v)
+	local localV=if root and flatV.Magnitude>1 then root.CFrame:VectorToObjectSpace(flatV).Unit else Vector3.zero
+	local forward=-localV.Z
+	local momentum=math.clamp((flatV.Magnitude-8)/22,0,1)
+	local travel=momentum*math.max(0,forward)
+	if travel>.01 and Authored.has(F..".Jump.Leap") then
+		air=mixPoses({{air,1},{Authored.sample(F..".Jump.Leap",u*Authored.length(F..".Jump.Leap")),travel/math.max(1-travel,1e-3)}})
+	end
+	local targets=table.clone(air)
+	-- Sideways and backward jumps lean that way.
+	local sideways=momentum*localV.X*(1-math.max(0,forward))
+	local backward=momentum*math.max(0,-forward)
+	if math.abs(sideways)>.05 or backward>.05 then
+		targets.Root=(targets.Root or IDENTITY)*ANG(rad(12*backward),0,rad(-14*sideways))
+	end
+	local tr=stateOf(char).trick
+	if tr and Authored.has(F..".Flip") then
+		local p=math.clamp((elapsedTime-tr.at)/tr.dur,0,1)
+		local tuck=table.clone(Authored.sample(F..".Flip",p*Authored.length(F..".Flip")))
+		return rotate(tuck,tr.axis,tr.sign,p,.25),RATE.attack
+	end
+	return targets,RATE.authored
+end
 local function airTargets(char,actor,fighterId)
+	if Authored and Authored.has(tostring(fighterId)..".Jump.Air") then return authoredAir(char,actor,fighterId) end
 	local rise=(actor.velocity and actor.velocity.Y or 0)/70
 	local minato=springy(fighterId)
 	local spec
@@ -2735,6 +2869,32 @@ function Motion.present(char,actor,clock,dt)
 		-- cap a foot crossed ~2.5 studs in one frame, twice a real kick.
 		apply(char,final,RATE.attack,dt,if chainIn then RATE.chainIn else nil,RATE.kick)
 		return "attack"
+	end
+	-- (Blender-first) Touch-down: the authored landing plays through (the
+	-- server's landing window is only a tenth of a second), unless the body
+	-- runs on or does anything else.
+	local landName=Authored and tostring(subject.fighterId)..".Land"
+	if landName and Authored.has(landName) then
+		if subject.landing and not memo.wasLanding then
+			memo.landAt=elapsedTime;memo.landHard=subject.landStrong==true or elapsedTime-(memo.trickEndAt or -9)<.6
+		end
+		memo.wasLanding=subject.landing==true
+		local since=memo.landAt and elapsedTime-memo.landAt
+		local still=not subject.airborne and (subject.speed or 0)<6 and not swinging and not casting and subject.state=="Neutral"
+		if since and still then
+			local len=Authored.length(landName)
+			-- A plain hop lands lighter and quicker than a drop or a flip.
+			local t=since*(if memo.landHard then 1 else 1.7)
+			if t<len then
+				local pose=Authored.sample(landName,t)
+				local final=if memo.landHard then pose else mixPoses({{base,1},{pose,1.4}})
+				apply(char,final,RATE.authored,dt)
+				return "landing"
+			end
+			memo.landAt=nil
+		elseif since and not subject.landing then
+			memo.landAt=nil
+		end
 	end
 	if subject.landing then
   -- Load quickly, then release progressively into gait/guard. Holding the
