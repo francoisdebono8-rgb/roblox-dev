@@ -32,6 +32,10 @@
 --   wall    his back is to a surface on this body's line (a drive puts him
 --           into it); also read inside a string, where it ends the string
 --   back    the opponent's back is turned to this body, within reach
+--   aside   (the player's stick) pressed while moving round him: the
+--           fighter's own lateral strike, which carries the body round
+--   away    (the player's stick) pressed while backing off: a strike that
+--           takes the step back with it (space, not a string)
 --   run     carrying real speed toward the opponent (not a full sprint)
 --   flank   at the opponent's side, within reach
 --   close   inside arm's length: knees, elbows, hilts, palms
@@ -54,6 +58,8 @@ Context.Tune={
 	RunSpeed=13,        -- speed toward the opponent for a running strike
 	RunMin=3.5,RunMax=10,
 	ReachMin=6.8,ReachSpan=3,ReachStill=4,
+	Stick=7,            -- the stick's lateral opener (aside) within this distance
+	StickAway=9,        -- backing off: the step-back strike (a body already moving away)
 	WallBehind=12,      -- a surface at most this far behind the target (a
 	                    -- finisher throws a body about that far)
 }
@@ -84,6 +90,8 @@ Context.Situations={
 	{tag="drop",test=function(x) return x.airborne and not x.targetAirborne and not x.targetDown and x.vy&lt;T.DropFall and x.dy&gt;1.5 and x.dy&lt;=T.DropHeight and x.dist&lt;=T.DropReach end},
 	{tag="wall",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and x.wallBehind~=nil and x.wallBehind&lt;=T.WallBehind end},
 	{tag="back",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and x.facingDot&lt;T.BackDot end},
+	{tag="aside",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.stick=="side" and x.dist&lt;=T.Stick end},
+	{tag="away",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.stick=="back" and x.dist&lt;=T.StickAway end},
 	{tag="run",test=function(x) return not x.airborne and x.toward&gt;=T.RunSpeed and x.dist&gt;=T.RunMin and x.dist&lt;=T.RunMax end},
 	{tag="flank",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and math.abs(x.facingDot)&lt;T.FlankDot end},
 	{tag="close",test=function(x) return not x.airborne and not x.targetAirborne and x.dist&lt;T.Close end},
@@ -100,6 +108,8 @@ Context.Defaults={
 	-- The fighter's own string finisher (its Light3 throws the body away).
 	wall=function(graph) return graph.wallStrike or "Light3" end,
 	back=function(graph) return "BackStrike" end,
+	aside=function(graph) return graph.routes and graph.routes.side or nil end,
+	away=function(graph) return graph.stepBack or "StepBackStrike" end,
 	run=function(graph) return graph.runStrike or "DashAttack" end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
 	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,
@@ -368,6 +378,9 @@ end
 --               strike; it does not hold the body in the air.
 for name,m in {
  BackStrike=move(.08,.13,.3,10,2.4,"Knockback",Vector3.new(0,10,34),.46),
+ -- (The stick backing off as he presses: a quick strike that takes the
+ -- step back with it: it lands, and the body is already out of reach.)
+ StepBackStrike=move(.07,.1,.26,5,0,"HitStun",Vector3.new(0,3,10),.34),
  DropStrike=move(.07,.15,.24,8,1.2,"HitStun",Vector3.new(0,-6,10),.4),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
@@ -377,6 +390,7 @@ end
 for name,shape in {
  BackStrike={contact=3.6,range=6.5,width=5.5,height=6,zone="body",kind="kick",clip="Light3",side=1,twist=60,lean=14,arm=100,step=1.2},
  DropStrike={contact=3,range=6.5,width=6,height=10,zone="head",kind="kick",clip="Air2",side=-1,twist=40,lean=24,arm=100,step=1.1},
+ StepBackStrike={contact=3.4,range=6,width=5,height=6,zone="body",kind="strike",clip="Light2",side=-1,twist=30,lean=-6,arm=90,step=.9,retreat=2.6},
 } do
  for key,value in shape do attacks[name][key]=value end
 end
@@ -3523,7 +3537,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">bbd4e8cb6cf254cb1738690e5ff3c2c3f227f0caa576a1925ff6b506d0933dc9</string>
+          <string name="Value">abae8efaa50df9ebc3a6bda489a7fd302a8dd1d0f38ca0f1422881a0b1487c6a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -5351,6 +5365,9 @@ function Brawler.situation(c,a)
  local profile=a.def.AttackProfile and a.def.AttackProfile.Light1
  -- (+1: the strike's volume lands about a stud past the contact distance.)
  x.plainReach=light.travel*(a.def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+ -- The stick: what the player (or the bot) is doing with the body as it
+ -- presses (moving round him, backing off), so an opener follows the body.
+ x.stick=(Brawler.intent(a,c.now))
  -- The space: a surface at the target's back on this body's line (a drive
  -- puts him into it). Not under an illusion (the image has no wall behind).
  if not fooled then
@@ -6118,10 +6135,16 @@ function Brawler.request(c,a,action)
   if move then
    a.lastAttack=c.now
    Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
-   if tag=="flank" then local _,sideSign=Brawler.intent(a);a.angleSide=if sideSign~=0 then sideSign else (a.angleSide or 1) end
+   if tag=="flank" or tag=="aside" then local _,sideSign=Brawler.intent(a);a.angleSide=if sideSign~=0 then sideSign else (a.angleSide or 1) end
    local runSpeed=a.locomotion and a.locomotion.Magnitude or 0
    local ok=Brawler.start(c,a,move)
    local p=a.pending
+   if tag=="away" and ok~=false and p and p.kind=="Brawl" and a.target then
+    -- The step back is the move: it goes with the strike, landed or not.
+    local back=a.root.Position-a.target.root.Position;back=Vector3.new(back.X,0,back.Z)
+    a.hop={direction=if back.Magnitude&gt;.1 then back.Unit else -a.root.CFrame.LookVector,remaining=1.6,speed=18}
+    p.spec.travel=0;a.travelRemaining=0
+   end
    if tag=="run" and ok~=false and p and p.kind=="Brawl" then
     -- Out of a run the swing carries the run (as out of a sprint, below).
     local need=runSpeed*(p.spec.travelTime or .22)*.85

@@ -227,6 +227,9 @@ end
 --               strike; it does not hold the body in the air.
 for name,m in {
  BackStrike=move(.08,.13,.3,10,2.4,"Knockback",Vector3.new(0,10,34),.46),
+ -- (The stick backing off as he presses: a quick strike that takes the
+ -- step back with it: it lands, and the body is already out of reach.)
+ StepBackStrike=move(.07,.1,.26,5,0,"HitStun",Vector3.new(0,3,10),.34),
  DropStrike=move(.07,.15,.24,8,1.2,"HitStun",Vector3.new(0,-6,10),.4),
 } do
  m.animation=name;m.feedback=m.reaction;m.chain=false;m.air=false
@@ -236,6 +239,7 @@ end
 for name,shape in {
  BackStrike={contact=3.6,range=6.5,width=5.5,height=6,zone="body",kind="kick",clip="Light3",side=1,twist=60,lean=14,arm=100,step=1.2},
  DropStrike={contact=3,range=6.5,width=6,height=10,zone="head",kind="kick",clip="Air2",side=-1,twist=40,lean=24,arm=100,step=1.1},
+ StepBackStrike={contact=3.4,range=6,width=5,height=6,zone="body",kind="strike",clip="Light2",side=-1,twist=30,lean=-6,arm=90,step=.9,retreat=2.6},
 } do
  for key,value in shape do attacks[name][key]=value end
 end

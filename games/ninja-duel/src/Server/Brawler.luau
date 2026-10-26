@@ -53,6 +53,9 @@ function Brawler.situation(c,a)
  local profile=a.def.AttackProfile and a.def.AttackProfile.Light1
  -- (+1: the strike's volume lands about a stud past the contact distance.)
  x.plainReach=light.travel*(a.def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+ -- The stick: what the player (or the bot) is doing with the body as it
+ -- presses (moving round him, backing off), so an opener follows the body.
+ x.stick=(Brawler.intent(a,c.now))
  -- The space: a surface at the target's back on this body's line (a drive
  -- puts him into it). Not under an illusion (the image has no wall behind).
  if not fooled then
@@ -820,10 +823,16 @@ function Brawler.request(c,a,action)
   if move then
    a.lastAttack=c.now
    Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
-   if tag=="flank" then local _,sideSign=Brawler.intent(a);a.angleSide=if sideSign~=0 then sideSign else (a.angleSide or 1) end
+   if tag=="flank" or tag=="aside" then local _,sideSign=Brawler.intent(a);a.angleSide=if sideSign~=0 then sideSign else (a.angleSide or 1) end
    local runSpeed=a.locomotion and a.locomotion.Magnitude or 0
    local ok=Brawler.start(c,a,move)
    local p=a.pending
+   if tag=="away" and ok~=false and p and p.kind=="Brawl" and a.target then
+    -- The step back is the move: it goes with the strike, landed or not.
+    local back=a.root.Position-a.target.root.Position;back=Vector3.new(back.X,0,back.Z)
+    a.hop={direction=if back.Magnitude>.1 then back.Unit else -a.root.CFrame.LookVector,remaining=1.6,speed=18}
+    p.spec.travel=0;a.travelRemaining=0
+   end
    if tag=="run" and ok~=false and p and p.kind=="Brawl" then
     -- Out of a run the swing carries the run (as out of a sprint, below).
     local need=runSpeed*(p.spec.travelTime or .22)*.85

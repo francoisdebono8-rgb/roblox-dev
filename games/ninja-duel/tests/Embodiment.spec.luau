@@ -99,6 +99,27 @@ test("the strike input in the game resolves from the situation, not the counter"
  assert(not a.airHold or a.airHold<=c.now,"the drop strike holds the body in the air")
 end)
 
+test("the stick shapes the opener: round him is the fighter's lateral strike, backing off is a strike that takes the step back",function()
+ local function opener(move)
+  local c,a,b=H.duel("Lion","Mirage")
+  c:relocate(a,V.new(0,3,4));c:relocate(b,V.new(0,3,0))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+  a.move=move
+  assert(c:request(a,"Attack"),"press refused")
+  return c,a,b
+ end
+ local _,side=opener(V.new(1,0,0))
+ assert(side.attackName==Graphs.Lion.routes.side,"round him: "..tostring(side.attackName))
+ local c,back,b=opener(V.new(0,0,1))
+ assert(back.attackName=="StepBackStrike","backing off: "..tostring(back.attackName))
+ local before=(back.root.Position-b.root.Position).Magnitude
+ H.step(c,.35)
+ assert((back.root.Position-b.root.Position).Magnitude>before+1,"the step back did not go with the strike")
+ local _,still=opener(V.zero)
+ assert(still.attackName=="Light1","standing: "..tostring(still.attackName))
+end)
+
 -- EMB-003 -------------------------------------------------------------------
 local Config=H.load("Shared/Config")
 local function jabbed()

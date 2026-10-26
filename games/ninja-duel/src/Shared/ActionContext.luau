@@ -12,6 +12,10 @@
 --   wall    his back is to a surface on this body's line (a drive puts him
 --           into it); also read inside a string, where it ends the string
 --   back    the opponent's back is turned to this body, within reach
+--   aside   (the player's stick) pressed while moving round him: the
+--           fighter's own lateral strike, which carries the body round
+--   away    (the player's stick) pressed while backing off: a strike that
+--           takes the step back with it (space, not a string)
 --   run     carrying real speed toward the opponent (not a full sprint)
 --   flank   at the opponent's side, within reach
 --   close   inside arm's length: knees, elbows, hilts, palms
@@ -34,6 +38,8 @@ Context.Tune={
 	RunSpeed=13,        -- speed toward the opponent for a running strike
 	RunMin=3.5,RunMax=10,
 	ReachMin=6.8,ReachSpan=3,ReachStill=4,
+	Stick=7,            -- the stick's lateral opener (aside) within this distance
+	StickAway=9,        -- backing off: the step-back strike (a body already moving away)
 	WallBehind=12,      -- a surface at most this far behind the target (a
 	                    -- finisher throws a body about that far)
 }
@@ -64,6 +70,8 @@ Context.Situations={
 	{tag="drop",test=function(x) return x.airborne and not x.targetAirborne and not x.targetDown and x.vy<T.DropFall and x.dy>1.5 and x.dy<=T.DropHeight and x.dist<=T.DropReach end},
 	{tag="wall",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and x.wallBehind~=nil and x.wallBehind<=T.WallBehind end},
 	{tag="back",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and x.facingDot<T.BackDot end},
+	{tag="aside",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.stick=="side" and x.dist<=T.Stick end},
+	{tag="away",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.stick=="back" and x.dist<=T.StickAway end},
 	{tag="run",test=function(x) return not x.airborne and x.toward>=T.RunSpeed and x.dist>=T.RunMin and x.dist<=T.RunMax end},
 	{tag="flank",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and math.abs(x.facingDot)<T.FlankDot end},
 	{tag="close",test=function(x) return not x.airborne and not x.targetAirborne and x.dist<T.Close end},
@@ -80,6 +88,8 @@ Context.Defaults={
 	-- The fighter's own string finisher (its Light3 throws the body away).
 	wall=function(graph) return graph.wallStrike or "Light3" end,
 	back=function(graph) return "BackStrike" end,
+	aside=function(graph) return graph.routes and graph.routes.side or nil end,
+	away=function(graph) return graph.stepBack or "StepBackStrike" end,
 	run=function(graph) return graph.runStrike or "DashAttack" end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
 	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,

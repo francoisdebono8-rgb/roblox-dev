@@ -41,15 +41,24 @@ local listed={}
 for _,id in Roster do listed[id]=true end
 local function each(fn) for _,id in NEW do if listed[id] then fn(id) end end end
 
-test("direction + light before the first confirmed hit is the plain opener, never a route",function()
+-- (Ninja Embodiment, rupture) The opener follows the body: round him is the
+-- fighter's own lateral strike, backing off is a strike that takes the step
+-- back; toward him stays the plain opener (the launch and the low route still
+-- need a confirmed hit).
+test("direction + light out of a string: round him his own lateral strike, backing off the step-back strike, toward the plain opener",function()
  each(function(id)
   for _,dir in {"forward","back","side"} do
    local c,a,b=H.duel(id,"Leaf");place(c,a,b,3.4);b.health=999
    local stick=if dir=="forward" then flat(b.root.Position-a.root.Position).Unit elseif dir=="back" then flat(a.root.Position-b.root.Position).Unit else a.root.CFrame.RightVector
    assert(press(c,a,"Attack",stick),id..": opener refused")
-   assert(a.attackName=="Light1" or a.attackName=="DashAttack",id..": "..dir.." + light from neutral gave "..tostring(a.attackName))
-   local routes=MoveGraphs[id].routes
-   for _,r in routes do assert(a.attackName~=r or r=="Light1",id..": a route opened before any hit") end
+   local graph=MoveGraphs[id]
+   local want=if dir=="back" then (graph.stepBack or "StepBackStrike") elseif dir=="side" then (graph.routes.side or "Light1") else nil
+   if want then
+    assert(a.attackName==want,id..": "..dir.." + light from neutral gave "..tostring(a.attackName).." (wanted "..want..")")
+   else
+    assert(a.attackName=="Light1" or a.attackName=="DashAttack",id..": "..dir.." + light from neutral gave "..tostring(a.attackName))
+    assert(a.attackName~=graph.routes.up and a.attackName~=graph.routes.down,id..": a launch or low route opened before any hit")
+   end
   end
  end)
 end)
