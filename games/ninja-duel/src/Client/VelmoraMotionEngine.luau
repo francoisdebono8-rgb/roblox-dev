@@ -1966,6 +1966,15 @@ local function chaseTargets(char,actor,dt)
 end
 
 -- ------------------------------------------------------------ reactions
+-- Per body: where its last knockback flight left the legs (landing blend),
+-- and the root height it stands at (how near the floor a flight is).
+local LANDINGS={}
+local function noteStand(actor)
+	if actor and actor.id and not actor.airborne and actor.position then
+		local l=LANDINGS[actor.id] or {};LANDINGS[actor.id]=l
+		if not actor.reaction then l.standY=actor.position.Y end
+	end
+end
 local reactionDuration={HitStun=.24,GuardStun=.42,Knockback=.36,Launched=.5,Juggled=.42,WallSplat=.42,Grabbed=.3}
 -- The blow lands within two or three frames, then the body recovers: the
 -- reaction peaks at once instead of easing in after the hit.
@@ -2032,12 +2041,35 @@ local function reactionTargets(actor,feet)
 		local lift=smooth(math.clamp(elapsed/.1,0,1))
 		local turn=if hitKind=="kick" then twist*34*lift else 0
 		local vy=actor.velocity and actor.velocity.Y or 0
-		local landing=if actor.airborne then math.clamp(-vy/30,0,1) else 1
+		-- (Continuity blocker: landing) The touchdown is a blend, not a switch:
+		-- the airborne flag used to throw the body from the flying pose to the
+		-- skid pose in one frame. From the pose the flight had reached, the
+		-- legs take the floor over ~0.16 s and the hips compress on contact.
+		local land=LANDINGS[actor.id or ""] or {}
+		LANDINGS[actor.id or ""]=land
+		local landing,compress
+		local y=actor.position and actor.position.Y
+		local quick=false
+		if actor.airborne then
+			-- The legs reach for the floor as it comes near (a low, flat flight
+			-- falls slowly but still lands), not only when falling fast.
+			local near=if y and land.standY then math.clamp(1-(y-land.standY)/2.5,0,1) else 0
+			landing=math.max(math.clamp(-vy/30,0,1),near);land.v=landing;land.groundAt=nil;compress=0
+		else
+			if not land.groundAt then land.groundAt=elapsedTime;land.from=land.v or 0 end
+			local k=smooth(math.clamp((elapsedTime-land.groundAt)/.16,0,1))
+			landing=land.from+(1-land.from)*k
+			quick=k<1
+			compress=math.clamp((elapsedTime-land.groundAt)/.05,0,1)*(1-smooth(math.clamp((elapsedTime-land.groundAt-.05)/.22,0,1)))
+		end
 		local throw=lift*(1-.65*landing)
-		return build({root={y=-.3*landing,pitch=-(46*throw+10)*math.max(strong,.85),roll=side*16*lift,yaw=turn},
+		-- On the floor a body still thrown back is low (its hips near the
+		-- ground), not lying in the air at standing height.
+		local low=if actor.airborne then 0 else 1.3*throw
+		return build({root={y=-.3*landing-.45*compress-low,pitch=-(46*throw+10)*math.max(strong,.85),roll=side*16*lift,yaw=turn},
 			torso={pitch=-22*throw-6*landing,yaw=side*20*lift+turn*.4},head={pitch=18*throw-10,yaw=-turn*.6},
 			ra={raise=78*throw+30,out=50,elbow=30+30*landing},la={raise=70*throw+28,out=46,elbow=28+30*landing},
-			rl={lift=48*throw+30*landing,knee=40+30*landing},ll={lift=20*throw+50*landing,knee=26+50*landing}}),RATE.recoil*1.2
+			rl={lift=48*throw+30*landing,knee=40+30*landing},ll={lift=20*throw+50*landing,knee=26+50*landing}}),RATE.recoil*(if quick then 2.6 else 1.2)
 	end
 	if kind=="GuardStun" then
 		return build({root={y=-.55,z=.2*t,pitch=-6*t},torso={pitch=-12*t,roll=side*8*t},ra={raise=78,out=-26,twist=36,elbow=118},la={raise=78,out=-26,twist=36,elbow=118},
@@ -2328,6 +2360,7 @@ function Motion.pose(char,name,elapsed,fighterId,dt)
 	apply(char,blend({},targets,weight),RATE.attack,dt)
 end
 function Motion.locomotion(char,speed,airborne,velocity,fighterId,dt,actor,now)
+	noteStand(actor)
 	local subject=actor or {velocity=velocity,speed=speed}
 	if not subject.velocity then subject=table.clone(subject);subject.velocity=velocity end
 	local targets,rate
