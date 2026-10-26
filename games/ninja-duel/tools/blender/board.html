@@ -86,7 +86,7 @@ const STATUS = {
   ingame:   { label: "Dans le jeu", color: "var(--live)" },
   todo:     { label: "À faire", color: "var(--todo)" },
 };
-const UPDATED = "26 oct. 2026, 20 h";
+const UPDATED = "26 oct. 2026, 21 h";
 
 // name, clip id suffix, status, note
 const MOVE = [
@@ -95,6 +95,14 @@ const MOVE = [
   ["Course avant", "Run.F"], ["Course arrière", "Run.B"], ["Course de côté, gauche", "Run.L"], ["Course de côté, droite", "Run.R"],
   ["Course ninja (sprint)", "Sprint"],
   ["Saut sur place", "Jump.Air"], ["Saut en course", "Jump.Leap"], ["Salto", "Flip"], ["Réception", "Land"],
+];
+const REACT = [
+  ["Garde", "Guard"], ["Coup encaissé sur la garde", "Guard.Impact"],
+  ["Touché au visage", "Hit.Head"], ["Touché au corps", "Hit.Body"], ["Touché sur le côté", "Hit.Side"], ["Touché dans le dos", "Hit.Back"], ["Touché aux jambes", "Hit.Legs"],
+  ["Projeté en arrière", "Knockback"], ["Réception après projection", "Knockback.Land"], ["Envoyé en l'air", "Launched"],
+  ["Chute au sol", "Knockdown"], ["Au sol", "Down"], ["Relevé", "Getup"],
+  ["Esquive avant", "Dash.F"], ["Esquive de côté (roue)", "Cartwheel"], ["Esquive arrière (flip)", "Handspring"],
+  ["Poursuite", "Chase"],
 ];
 const FIGHTERS = {
   Lion: {
@@ -110,7 +118,7 @@ const FIGHTERS = {
   },
   Flashstep: {
     name: "Minato",
-    verified: ["Light1", "Light2", "Light3", "Heavy"],
+    verified: ["Light1", "Light2", "Light3", "Heavy", "Hit.Body", "Hit.Side", "Knockback.Land", "Knockdown", "Down", "Getup"],
     strikes: [
       ["Coup 1, kunai en revers", "Light1"], ["Coup 2, paume", "Light2"], ["Coup 3, coup de pied circulaire", "Light3"],
       ["Coup lourd, direct en fente", "Heavy"],
@@ -119,14 +127,12 @@ const FIGHTERS = {
   },
 };
 const NEXT = [
-  ["Esquives (4 directions)", "le dash au sol, avec appui et freinage"],
-  ["Garde haute et impact sur la garde", "bras croisés, recul des appuis"],
-  ["Touchés de dos et de côté", "Sasuke et Minato"],
-  ["Chute au sol et relevé", "projection, roulade, remise en garde"],
-  ["Poursuite", "le bond derrière un adversaire projeté"],
   ["Coups aériens", "Air1, Air2, coup plongeant"],
   ["Course sur les murs", "montée et course latérale"],
-  ["Minato : lancer de kunai, arrivée du Dieu de la foudre", "lancer, apparition, frappe"],
+  ["Minato : lancer de kunai", "lancer en course et à l'arrêt"],
+  ["Minato : Dieu de la foudre", "disparition, arrivée, frappe"],
+  ["Sasuke : variantes aériennes", "Chidori et Boule de feu en l'air"],
+  ["K.O. et projection contre un mur", "fin de round, impact sur la pierre"],
 ];
 
 let FILMS = {};
@@ -157,8 +163,10 @@ function render() {
   const f = FIGHTERS[current];
   const moves = MOVE.map(([l, id]) => card(current, l, id, statusOf(current, id, true))).join("");
   const strikes = f.strikes.map(([l, id]) => card(current, l, id, statusOf(current, id, false))).join("");
+  const reacts = REACT.map(([l, id]) => card(current, l, id, statusOf(current, id, false))).join("");
   document.getElementById("board").innerHTML = `
     <section><div class="shelf-head"><h2>Déplacements</h2><p>Mélangés en jeu selon la direction et la vitesse réelles du personnage.</p></div><div class="grid">${moves}</div></section>
+    <section><div class="shelf-head"><h2>Défense et réactions</h2><p>Choisies en jeu selon l'endroit et le côté du coup ; un coup venu de l'autre côté joue l'animation en miroir.</p></div><div class="grid">${reacts}</div></section>
     <section><div class="shelf-head"><h2>Coups et jutsu</h2><p>Recalés en partie sur le timing du serveur : l'image d'impact tombe sur le coup.</p></div><div class="grid">${strikes}</div></section>
     <section><div class="shelf-head"><h2>Prochaines animations</h2><p>Pour Sasuke et Minato, dans cet ordre.</p></div><ul class="todo-list">${NEXT.map(([a, b]) => `<li><strong>${a}</strong><span>${b}</span></li>`).join("")}</ul></section>`;
   observe();
@@ -169,6 +177,7 @@ function progress() {
     const f = FIGHTERS[k];
     for (const [, id] of MOVE) n[statusOf(k, id, true)]++;
     for (const [, id] of f.strikes) n[statusOf(k, id, false)]++;
+    for (const [, id] of REACT) n[statusOf(k, id, false)]++;
   }
   n.todo = NEXT.length * 2;
   const total = n.verified + n.ingame + n.todo;

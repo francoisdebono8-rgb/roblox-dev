@@ -183,6 +183,9 @@ def cycle(arm, name, G, theta, frames=48, meta=None):
     return bake(arm, name, lambda u: gait_spec(G, theta, u % 1), frames, 2, True, None, m)
 
 
+LEG_PARTS = ("rl", "ll", "rf", "lf")
+
+
 def keyed(keys, u, loop=False):
     """Catmull-Rom through (u, spec) keys (u ascending in [0, 1])."""
     us = [k[0] for k in keys]
@@ -202,7 +205,17 @@ def keyed(keys, u, loop=False):
     p1, p2 = keys[i][1], keys[i + 1][1]
     p0 = keys[i - 1][1] if i > 0 else (keys[-2][1] if loop else p1)
     p3 = keys[i + 2][1] if i + 2 < n else (keys[1][1] if loop else p2)
-    return catmull(p0, p1, p2, p3, t)
+    out = catmull(p0, p1, p2, p3, t)
+    # A leg is either free (rl/ll, posed directly) or planted (rf/lf, solved
+    # by IK). Keep each key's own mode; where the two keys differ, the two
+    # bodies are built and blended joint by joint.
+    modes1 = {k for k in LEG_PARTS if k in p1}
+    modes2 = {k for k in LEG_PARTS if k in p2}
+    a = {k: v for k, v in out.items() if k not in LEG_PARTS or k in modes1}
+    if modes1 == modes2:
+        return a
+    b = {k: v for k, v in out.items() if k not in LEG_PARTS or k in modes2}
+    return ("blend", a, b, smooth(t))
 
 
 def arc(arm, name, keys, frames, loop=False, markers=None, meta=None, step=2):

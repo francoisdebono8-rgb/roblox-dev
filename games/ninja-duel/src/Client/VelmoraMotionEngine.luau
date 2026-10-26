@@ -2110,7 +2110,9 @@ local function chaseTargets(char,actor,dt)
 	local s=stateOf(char)
 	s.phase=(s.phase+(dt or 1/60)*3)%1
 	local swing=math.sin(s.phase*math.pi*2)
-	local dash=build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
+	local F=tostring(actor.fighterId)
+	local dash=if Authored and Authored.has(F..".Chase") then Authored.sample(F..".Chase",s.phase*Authored.length(F..".Chase"))
+		else build({root={pitch=52},torso={pitch=14},head={pitch=-48},ra={raise=-70,out=18,elbow=10},la={raise=-70,out=18,elbow=10},
 		rl={lift=40+swing*30,knee=60-swing*20},ll={lift=-20-swing*20,knee=70+swing*10}})
 	-- Chasing a launched body is a leap, not a dive along the floor: the body
 	-- goes up vertical behind its own rising knee, arms pulling up, eyes on
@@ -2140,7 +2142,65 @@ local reactionDuration={HitStun=.24,GuardStun=.42,Knockback=.36,Launched=.5,Jugg
 local function snapEnvelope(elapsed,hold)
 	return math.clamp(elapsed/.035,0,1)*(1-smooth(math.clamp((elapsed-.035)/hold,0,1)))
 end
+-- (Blender-first) Authored reactions: where the fighter has them, the blow
+-- picks its clip (face, body, side, back, legs; thrown back, launched,
+-- knocked down, guard), mirrored for a blow from the other side.
+local HIT_RATE=70
+local function authoredReaction(actor)
+	local F=tostring(actor.fighterId)
+	if not (Authored and Authored.has(F..".Hit.Body")) then return nil end
+	local kind=actor.reaction or "HitStun"
+	local elapsed=actor.reactionElapsed or 0
+	local function play(name,t,mirror)
+		local full=F.."."..name
+		if not Authored.has(full) then return nil end
+		local pose=Authored.sample(full,t)
+		if mirror then pose=Authored.mirror(pose) end
+		return pose
+	end
+	local angle=rad(actor.hitAngle or 0)
+	local from,side=math.cos(angle),math.sin(angle)
+	local twist=actor.hitTwist or 1
+	if kind=="Launched" or kind=="Juggled" then
+		local p=play("Launched",elapsed,side<0);if p then return p,RATE.authored end
+	elseif kind=="Knockdown" then
+		local p=play("Knockdown",elapsed*Authored.length(F..".Knockdown")/.34,side<0);if p then return p,RATE.authored end
+	elseif kind=="Knockback" then
+		local land=LANDINGS[actor.id or ""] or {}
+		LANDINGS[actor.id or ""]=land
+		if actor.airborne then
+			land.groundAt=nil
+			local p=play("Knockback",elapsed,side<0);if p then return p,RATE.authored end
+		else
+			land.groundAt=land.groundAt or elapsedTime
+			local p=play("Knockback.Land",elapsedTime-land.groundAt,side<0);if p then return p,HIT_RATE end
+		end
+	elseif kind=="GuardStun" then
+		local p=play("Guard.Impact",elapsed,false);if p then return p,HIT_RATE end
+	elseif kind=="HitStun" then
+		local zone=actor.hitZone or "body"
+		local hitKind=actor.hitKind or "strike"
+		local dir=if math.abs(side)>.3 then (if side>0 then 1 else -1) else twist
+		local name,mirror
+		if hitKind=="kick" or hitKind=="slash" or math.abs(side)>.6 then name,mirror="Hit.Side",dir<0
+		elseif from<-.4 then name,mirror="Hit.Back",twist<0
+		elseif zone=="head" or zone=="chin" then name,mirror="Hit.Head",twist<0
+		elseif zone=="legs" then name,mirror="Hit.Legs",twist<0
+		else name,mirror="Hit.Body",twist<0 end
+		local p=play(name,elapsed,mirror)
+		if p then
+			-- A light blow moves the body a little over half as far as a heavy one.
+			local amp=math.clamp((actor.hitStrength or .4)*1.4,.35,1.4)
+			local w=.55+.45*math.clamp((amp-.35)/1.05,0,1)
+			if w<.999 then p=mixPoses({{play(name,0,mirror),1},{p,w/(1-w)}}) or p end
+			return p,HIT_RATE
+		end
+	end
+	return nil
+end
 local function reactionTargets(actor,feet)
+	local authoredPose,authoredRate=authoredReaction(actor)
+	if authoredPose then return authoredPose,authoredRate end
 	local kind=actor.reaction or "HitStun"
 	local elapsed=actor.reactionElapsed or 0
 	local t=1-smooth(math.clamp(elapsed/(reactionDuration[kind] or .24),0,1))
@@ -2305,6 +2365,19 @@ end
 local function groundTargets(actor)
 	local pose=actor.groundPose or (if actor.reaction=="WallSplat" then "Splat" else "Knockdown")
 	local side=actor.groundSide or 1
+	local F=tostring(actor.fighterId)
+	if Authored and Authored.has(F..".Down") and pose~="Splat" then
+		-- (Blender-first) lying on the floor, then the authored get-up, played
+		-- over the server's wake-up window.
+		local out
+		if (pose=="Wakeup" or actor.reaction=="Wakeup") and Authored.has(F..".Getup") then
+			out=Authored.sample(F..".Getup",(actor.reactionElapsed or 0)*Authored.length(F..".Getup")/.24)
+		else
+			out=Authored.sample(F..".Down",elapsedTime)
+		end
+		if side<0 then out=Authored.mirror(out) end
+		return out,RATE.authored
+	end
 	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
 		ra={raise=20,out=62,elbow=24},la={raise=14,out=56,elbow=30},rl={lift=18,out=8,knee=30},ll={lift=6,out=10,knee=12}}
 	if pose=="Splat" and actor.reaction=="WallSplat" then
@@ -2332,6 +2405,15 @@ end
 
 -- ---------------------------------------------------------- defence poses
 local function guardTargets(fighterId,impact)
+	local F=tostring(fighterId)
+	if Authored and Authored.has(F..".Guard") then
+		-- (Blender-first) the authored guard; a blow on it plays the impact
+		-- over the server's .18 s window.
+		if (impact or 0)>0 and Authored.has(F..".Guard.Impact") then
+			return Authored.sample(F..".Guard.Impact",(.18-impact)*2),HIT_RATE
+		end
+		return Authored.sample(F..".Guard",elapsedTime),RATE.authored
+	end
 	local absorbed=math.clamp((impact or 0)/.18,0,1)
 	local base=stance(fighterId)
 	-- A fighter may guard with what it carries (Motion.guard: Zabuza's blade
@@ -2356,6 +2438,20 @@ local function dodgeTargets(char,actor,t)
 	-- The most acrobatic bodies turn a side dodge into a cartwheel and a back
 	-- dodge into a back handspring (hands toward the floor, legs over); the
 	-- others keep the low slide. Forward stays a low slip off the line.
+	local F=tostring(actor.fighterId)
+	if Authored and Authored.has(F..".Dash.F") then
+		-- (Blender-first) authored dodges: the forward dash, and the shape of
+		-- the body through the cartwheel or the back handspring the engine turns.
+		local p=math.clamp((t or 0)/DODGE_TIME,0,1)
+		local sideways=math.abs(side)>math.abs(forward)*.8
+		if acroOf(actor.fighterId)>=TRICK_AT.dodge and sideways and Authored.has(F..".Cartwheel") then
+			return rotate(Authored.sample(F..".Cartwheel",p*Authored.length(F..".Cartwheel")),"roll",if side<0 then -1 else 1,p,.4),RATE.attack
+		elseif acroOf(actor.fighterId)>=TRICK_AT.dodge and forward<-.3 and Authored.has(F..".Handspring") then
+			return rotate(Authored.sample(F..".Handspring",p*Authored.length(F..".Handspring")),"pitch",-1,p,.4),RATE.attack
+		elseif not sideways and forward>=0 then
+			return Authored.sample(F..".Dash.F",p*Authored.length(F..".Dash.F")),RATE.authored
+		end
+	end
 	if acroOf(actor.fighterId)>=TRICK_AT.dodge and (math.abs(side)>math.abs(forward)*.8 or forward<-.3) then
 		local p=math.clamp((t or 0)/DODGE_TIME,0,1)
 		local w=math.sin(math.pi*p)

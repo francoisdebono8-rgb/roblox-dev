@@ -71,6 +71,20 @@ function Authored.sample(name,t)
 	return out
 end
 
+-- The same pose seen in a mirror (left and right swapped): an animation
+-- authored for a blow from the right plays for a blow from the left.
+local SWAP={Right="Left",Left="Right",RightElbow="LeftElbow",LeftElbow="RightElbow",RightWrist="LeftWrist",LeftWrist="RightWrist",
+	RightHip="LeftHip",LeftHip="RightHip",RightKnee="LeftKnee",LeftKnee="RightKnee",RightAnkle="LeftAnkle",LeftAnkle="RightAnkle"}
+local function mirrorCF(cf)
+	local x,y,z,r00,r01,r02,r10,r11,r12,r20,r21,r22=cf:GetComponents()
+	return CFrame.new(-x,y,z,r00,-r01,-r02,-r10,r11,r12,-r20,r21,r22)
+end
+function Authored.mirror(pose)
+	local out={}
+	for joint,cf in pose do out[SWAP[joint] or joint]=mirrorCF(cf) end
+	return out
+end
+
 -- Strike phase (the engine's 0..3: startup, active, recovery) -> clip time.
 function Authored.attackTime(name,phase)
 	local c=decode(name)

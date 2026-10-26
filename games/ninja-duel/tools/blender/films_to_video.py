@@ -30,4 +30,7 @@ if __name__ == "__main__":
     os.makedirs(dst, exist_ok=True)
     for f in sorted(os.listdir(src)):
         if f.endswith(".png") and os.path.exists(os.path.join(src, f[:-4] + ".json")):
+            out = os.path.join(dst, f[:-4] + ".mp4")
+            if os.path.exists(out) and os.path.getmtime(out) >= os.path.getmtime(os.path.join(src, f)):
+                continue  # up to date
             print(convert(os.path.join(src, f), dst, loops))

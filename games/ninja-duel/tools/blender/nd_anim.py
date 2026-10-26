@@ -154,8 +154,24 @@ def fcurves(act):
 _last_quat = {}
 
 
+def blend_poses(a, b, t):
+    """Joint-level blend of two built poses (quaternion slerp, location lerp)."""
+    out = {}
+    for name in a:
+        qa, la = a[name]
+        qb, lb = b[name]
+        if qa.dot(qb) < 0:
+            qb = -qb
+        loc = None if la is None else la.lerp(lb, t)
+        out[name] = (qa.slerp(qb, t), loc)
+    return out
+
+
 def key(arm, frame, spec, interp="BEZIER", easing="AUTO"):
-    pose = build(spec)
+    if isinstance(spec, tuple) and spec and spec[0] == "blend":
+        pose = blend_poses(build(spec[1]), build(spec[2]), spec[3])
+    else:
+        pose = build(spec)
     for name in ORDER:
         pb = arm.pose.bones[name]
         q, loc = pose[name]
