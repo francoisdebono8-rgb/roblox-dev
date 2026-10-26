@@ -1,10 +1,10 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "2fd276f421a112fde7ba7461ae0ee2fa0e2f20bfd09eaedc6aba00d7d822a4bb",
+  "sha256": "5081cdfc2421dabbf7e9e99a14055c09367124c9730fc062c3c5b4cd7370d19a",
   "sources": {
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
-    "src/Client/Camera.luau": "8967f3bd2d9918116c8bc2763fcab37fcc7a597de806f2a309b42447ecfaa8bc",
+    "src/Client/Camera.luau": "383dad9f184c56d774e2aad722f0ca6ffa32f2e86b49edf833671100bf09e06b",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
     "src/Client/DevClient.luau": "b2fc3715b57a141984bec45ee5777a5f8e5eedff3a4ac1e936b542afa807731f",
@@ -110,7 +110,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "60f5bf8ac4919075c91df5699d6e50e1edd3adb686bfeab1019aa31f199b1d27",
+  "buildFingerprint": "93b89c85bf0a53f94f5614f891040c02fb3a49c9f59b7beccd708f79cf4003da",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

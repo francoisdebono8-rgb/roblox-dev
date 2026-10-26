@@ -3523,7 +3523,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">60f5bf8ac4919075c91df5699d6e50e1edd3adb686bfeab1019aa31f199b1d27</string>
+          <string name="Value">93b89c85bf0a53f94f5614f891040c02fb3a49c9f59b7beccd708f79cf4003da</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -20778,6 +20778,14 @@ end
 local function wrap(angle)
  return (angle+math.pi)%(2*math.pi)-math.pi
 end
+-- What stops the lens (it never goes into these): the floor, the stadium
+-- wall in every piece (the wall, its cap: a lens lifted over a fight along the
+-- wall used to slip through the cap into the stands), anything marked as a
+-- wall, and any very large part. Smaller fighting-space props fade instead.
+local function solid(part)
+	return part.Name=="Training floor" or string.sub(part.Name,1,8)=="Boundary" or part:GetAttribute("NinjaWall")==true or part.Size.Magnitude&gt;40
+end
+Camera.solid=solid
 function Camera.new()
 	local self=setmetatable({locked=true,look=Vector2.zero,yaw=0,pitch=.22,lastEpoch=-1,lastHealth=nil,lastEnemyHealth=nil,
 		shakeUntil=0,shakeSize=0,fovKick=0,focus=nil,boomAngle=nil,distance=nil,rng=Random.new(),zoom=0,mode=nil},Camera)
@@ -20960,7 +20968,7 @@ function Camera:update(data,dt)
 	local faded={}
 	local hit=workspace:Raycast(focus,desired-focus,ray)
 	for _=1,4 do
-		if not hit or hit.Instance.Name=="Training floor" or hit.Instance.Name=="Boundary" then break end
+		if not hit or solid(hit.Instance) then break end
 		faded[hit.Instance]=true
 		table.insert(exclude,hit.Instance)
 		ray.FilterDescendantsInstances=exclude
@@ -21028,7 +21036,44 @@ function Camera:update(data,dt)
 		if move.Magnitude&gt;limit then nextCF=CFrame.new(base.Position+move.Unit*limit)*nextCF.Rotation end
 		self.rigCF=nextCF
 	end
-	camera.CFrame=self.rigCF*shake
+	-- (Continuity blocker) The smoothed lens and its shake are checked last:
+	-- the follow lags behind a pushed-in target and the shake adds an offset,
+	-- either could carry the lens through the wall. Whatever stops the lens
+	-- now holds it on this side, without a lerp back through.
+	local final=self.rigCF*shake
+	local reach=final.Position-focus
+	if reach.Magnitude&gt;.05 then
+		local block=workspace:Raycast(focus,reach,ray)
+		for _=1,4 do
+			if not block or solid(block.Instance) then break end
+			table.insert(exclude,block.Instance);ray.FilterDescendantsInstances=exclude
+			block=workspace:Raycast(focus,reach,ray)
+		end
+		if block then
+			-- Off the surface along its normal (a ray grazing the wall puts a
+			-- point "1.2 back along the ray" still on the wall's face).
+			local safe=block.Position+block.Normal*1.2-reach.Unit*.4
+			self.rigCF=CFrame.new(safe)*self.rigCF.Rotation
+			final=self.rigCF*shake
+		end
+	end
+	-- And never closer than the near plane allows to a solid surface the ray
+	-- did not cross (a lens sliding along the wall, just short of it).
+	local around=OverlapParams.new();around.FilterType=Enum.RaycastFilterType.Exclude;around.FilterDescendantsInstances=exclude
+	for _,part in workspace:GetPartBoundsInRadius(final.Position,1.1,around) do
+		if solid(part) then
+			local p=part.CFrame:PointToObjectSpace(final.Position)
+			local half=part.Size/2
+			local closest=part.CFrame:PointToWorldSpace(Vector3.new(math.clamp(p.X,-half.X,half.X),math.clamp(p.Y,-half.Y,half.Y),math.clamp(p.Z,-half.Z,half.Z)))
+			local away=final.Position-closest
+			local gap=away.Magnitude
+			if gap&lt;1.1 then
+				local push=(if gap&gt;.01 then away.Unit else (focus-final.Position).Unit)*(1.1-gap)
+				self.rigCF=self.rigCF+push;final=final+push
+			end
+		end
+	end
+	camera.CFrame=final
 end
 return Camera
 </ProtectedString>

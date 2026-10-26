@@ -213,6 +213,31 @@ test("minato lateral angles do not desynchronise or push through the target",fun
  H.step(c,.6)
  assert((a.root.Position-b.root.Position).Magnitude<9,"fighters did not resettle after the exchange")
 end)
+test("camera never enters the wall: fights against it, with the shake of a slam, keep the lens on this side",function()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ local Camera=H.load("Client/Camera")
+ local camera=makeCamera()
+ local keepPlayer=H.localPlayer.Character
+ H.localPlayer.Character=a.model
+ H.clearWalls()
+ H.addWall(9)
+ local cam=Camera.new()
+ local worst=-99
+ for k,spot in {{6,-2},{7.5,1},{4,7.5},{8,3}} do
+  c:relocate(a,V.new(spot[1],3,k%2==0 and 2 or -2));c:relocate(b,V.new(spot[2],3,0))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+  for f=1,90 do
+   if f==30 then cam:impulse("slam","victim") end
+   cam:update({phase="Duel",epoch=1,human=humanData(a),bot=humanData(b)},1/60)
+   worst=math.max(worst,camera.CFrame.Position.X)
+  end
+ end
+ H.clearWalls()
+ H.localPlayer.Character=keepPlayer
+ assert(worst<=9-1,string.format("the lens went to x=%.2f against a wall at x=9",worst))
+end)
+
 test("camera framing stays bounded, focused and free of snaps",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  local Camera=H.load("Client/Camera")

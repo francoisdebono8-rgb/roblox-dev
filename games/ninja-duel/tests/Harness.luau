@@ -114,6 +114,12 @@ function workspace:GetPartBoundsInBox(cf,size,params)
  return out
 end
 function workspace:FindFirstChild() return nil end
+-- Parts near a point (the camera keeps clear of walls): the spec's walls.
+function workspace:GetPartBoundsInRadius(position,radius,params)
+ local out={}
+ for _,w in Harness.walls do if math.abs(position.X-w.x)<=radius then table.insert(out,w.part) end end
+ return out
+end
 workspace.CurrentCamera=nil
 
 local function emitter() return {IsA=function(_,class) return class=="ParticleEmitter" end,GetAttribute=function() return 4 end,Emit=function(_,count) Harness.effectEmits+=count end} end
