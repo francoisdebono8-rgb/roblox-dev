@@ -453,6 +453,21 @@ local function grindCue(fx,data)
 	K.flash(fx.folder,at,RASENGAN_CORE,1,5,.2,0)
 	K.sparks(fx.folder,at,RASENGAN,24,26)
 	Debris:AddItem(model,.4)
+	if Kit.has("slash") then
+		-- (Reference quality) the sphere grinds: crescents of wind whirl round
+		-- the contact, a star, and the floor under it cracks and blows out.
+		Kit.star(fx.folder,at,8,RASENGAN_CORE,.12)
+		for k=1,4 do
+			local cf=CFrame.new(at)*CFrame.Angles(math.rad(70+k*8),k*math.pi/2,0)
+			Kit.plane(fx.folder,cf,"slash",Vector2.new(3,1.5),Vector2.new(9,4.5),.22+k*.03,if k%2==0 then RASENGAN_CORE else RASENGAN,0)
+		end
+		Kit.streaks(fx.folder,at,data.direction or Vector3.zAxis,12,RASENGAN_CORE,70,60)
+		local floor=Kit.floorUnder(at,{fx.folder},8)
+		if floor then
+			Kit.ground(fx.folder,floor.Position,floor.Normal,"crack",8,2,1,Color3.new(1,1,1),.1)
+			Kit.dust(fx.folder,floor.Position,7,2.6,Color3.fromRGB(222,214,196),16)
+		end
+	end
 end
 local function minatoImpact(fx,data,folder)
 	if data.arrival then chainCue(fx,data,folder) end

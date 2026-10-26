@@ -117,7 +117,6 @@ local function strikeLayers(style,position,impact,spec)
 		local floor=Kit.floorUnder(position,{folder,if me and me.Parent then me.Parent else folder},9)
 		if floor then
 			Kit.dust(folder,floor.Position,math.floor(6+10*w),2.2+1.6*w,Color3.fromRGB(214,200,172),12+10*w)
-			if style=="slam" then Kit.ground(folder,floor.Position,floor.Normal,"crack",9,2.4,1.2,Color3.new(1,1,1),.05) end
 		end
 	end
 	return true

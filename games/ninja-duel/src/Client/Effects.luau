@@ -485,11 +485,25 @@ local function burst(parent,position,props,count)
 	return holder
 end
 local function smokePuff(parent,position,color,count,size)
+	if Kit.has("smoke") then
+		-- (Reference quality) cel puffs: fewer, rounder, they swell and break up.
+		size=size or 2.2
+		Kit.burst(parent,position,"smoke",math.max(3,math.floor((count or 18)*.5)),{
+			Lifetime=NumberRange.new(.45,.8),Speed=NumberRange.new(5,11),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(color or Color3.fromRGB(236,236,240)),
+			Size=num({{0,size*.9},{.4,size*1.8},{1,size*2.2}}),Transparency=num({{0,0},{.7,.1},{1,1}}),
+			Drag=6,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-40,40)})
+		return
+	end
 	burst(parent,position,{Texture=TEX.smoke,Lifetime=NumberRange.new(.5,.9),Speed=NumberRange.new(4,9),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(color or Color3.fromRGB(236,236,240)),LightEmission=0,Size=num({{0,size or 2.2},{1,(size or 2.2)*2.6}}),
 		Transparency=num({{0,.15},{1,1}}),Drag=6,RotSpeed=NumberRange.new(-60,60),Rotation=NumberRange.new(0,360)},count or 18)
 end
 local function sparks(parent,position,color,count,speed)
+	if Kit.has("streak") then
+		Kit.streaks(parent,position,Vector3.yAxis,math.max(3,math.floor((count or 14)*.6)),color,(speed or 18)*1.6,180)
+		return
+	end
 	burst(parent,position,{Texture=TEX.spark,Lifetime=NumberRange.new(.15,.35),Speed=NumberRange.new(speed or 18,(speed or 18)*1.8),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(color),LightEmission=1,Size=num({{0,.45},{1,0}}),Drag=5},count or 14)
 end
@@ -833,6 +847,8 @@ function FX:impact(impact,folder)
 		sound(anchorPart(self.folder,position),SOUND.land,.35,1.05)
 	elseif style=="slam" then
 		smokePuff(self.folder,position-Vector3.new(0,2.4,0),Color3.fromRGB(176,160,130),22,2.6)
+		local floor=floorUnder(self,position,2,8)
+		if floor then Kit.ground(self.folder,floor.Position,floor.Normal,"crack",10,2.6,1.2,Color3.new(1,1,1),.05) end
 		shockRing(self.folder,position-Vector3.new(0,2.6,0),Color3.fromRGB(255,214,160),3,22,.32)
 	elseif style=="launcher" or style=="finisher" then
 		shockRing(self.folder,position,Color3.fromRGB(255,236,200),2,9,.2,impact.direction)
@@ -866,6 +882,8 @@ function FX:impact(impact,folder)
 			Debris:AddItem(chip,.5)
 		end
 		if big then sparks(self.folder,position+normal,Color3.fromRGB(255,226,170),14,22) end
+		-- (Reference quality) the surface cracks where the body met it.
+		Kit.ground(self.folder,position,normal,"crack",if big then 9 else 6,2.2,1.2,Color3.new(1,1,1),.1)
 	elseif style=="worldbreak" then
 		-- (EMB-004) A tree going down or a boulder bursting: the server already
 		-- changed the arena; this is the dust and the pieces flying off it.
@@ -938,6 +956,8 @@ function FX:impact(impact,folder)
 		smokePuff(self.folder,position,Color3.fromRGB(176,160,130),16,2.2)
 		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
 		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
+		local floor=floorUnder(self,position,2,6)
+		if floor then Kit.ground(self.folder,floor.Position,floor.Normal,"crack",8,2.4,1.2,Color3.new(1,1,1),.1) end
 	end
 	-- Chakra interactions (infusion contacts, meetings in flight, planted
 	-- points, wire). Presentation only, and never allowed to break the feed.
@@ -1022,11 +1042,11 @@ function FX:explosion(position,normal,scale)
 			Size=num({{0,6*scale},{.4,10*scale},{1,8*scale}}),Transparency=num({{0,0},{.8,0},{1,1}}),
 			Drag=3,Rotation=NumberRange.new(0,360),zoffset=1.5})
 		task.delay(.22,function()
-			Kit.burst(folder,position+Vector3.new(0,1.5,0),"smoke",math.floor(10*scale),{
-				Lifetime=NumberRange.new(1.2,1.9),Speed=NumberRange.new(4,12),SpreadAngle=Vector2.new(180,180),
-				Color=ColorSequence.new(Color3.fromRGB(78,62,60)),LightEmission=0,
-				Size=num({{0,7*scale},{1,15*scale}}),Transparency=num({{0,.05},{.8,.2},{1,1}}),
-				Drag=3,Acceleration=Vector3.new(0,5,0),RotSpeed=NumberRange.new(-20,20),Rotation=NumberRange.new(0,360),zoffset=-.5})
+			Kit.burst(folder,position+Vector3.new(0,2.5,0),"smoke",math.floor(9*scale),{
+				Lifetime=NumberRange.new(.9,1.4),Speed=NumberRange.new(8,16),SpreadAngle=Vector2.new(70,70),
+				Color=ColorSequence.new(Color3.fromRGB(58,54,58)),LightEmission=0,
+				Size=num({{0,5*scale},{1,11*scale}}),Transparency=num({{0,.1},{.5,.25},{1,1}}),
+				Drag=2.5,Acceleration=Vector3.new(0,9,0),RotSpeed=NumberRange.new(-20,20),Rotation=NumberRange.new(0,360),zoffset=-.5})
 		end)
 		burst(folder,position,{Texture=TEX.fireSpark,Lifetime=NumberRange.new(.6,1.3),Speed=NumberRange.new(24,50),SpreadAngle=Vector2.new(180,180),
 			Color=ColorSequence.new(Color3.fromRGB(255,196,110)),LightEmission=1,Size=num({{0,.6},{1,0}}),Drag=2,Acceleration=Vector3.new(0,-34,0)},40)
@@ -1072,6 +1092,19 @@ function FX:teleport(from,to,model,awake)
 	end
 	flash(self.folder,to,MINATO_CORE,2,9,.22,0)
 	flash(self.folder,to,MINATO,4,12,.32,.4)
+	if Kit.has("star") then
+		-- (Reference quality) the Yellow Flash: a star where he lands, light
+		-- thrown out along his line, the floor dust kicked up under him.
+		Kit.star(self.folder,to,9,MINATO_CORE,.12)
+		Kit.star(self.folder,from,5,MINATO,.08)
+		if delta.Magnitude>1 then Kit.streaks(self.folder,to,delta.Unit,10,MINATO,80,30) end
+		local floor=floorUnder(self,to,1,6)
+		if floor then
+			Kit.dust(self.folder,floor.Position,5,2,Color3.fromRGB(226,214,186),14)
+			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2)
+			Kit.plane(self.folder,flat,"ring",Vector2.new(2,2),Vector2.new(14,14),.3,MINATO,0)
+		end
+	end
 	shockRing(self.folder,to-Vector3.new(0,2.6,0),MINATO,2,16,.3)
 	sparks(self.folder,to,MINATO,18,24)
 	if awake then
@@ -1747,12 +1780,12 @@ function FX:fighter(model,actor,dt)
 			aura.mouthLight.Brightness=if breathing then 4 else 1.2+3*charge
 			aura.mouthLight.Range=10+12*charge
 			if charge>0 and not breathing and aura.orb then
-				local size=.8+3.2*charge+math.sin(os.clock()*30)*.12
-				aura.orb.Size=Vector3.one*size
-				aura.orb.CFrame=aura.mouthAt.WorldCFrame*CFrame.new(0,0,-(.4+size*.55))
-				aura.orb.Transparency=.15
+				local size=.7+1.5*charge+math.sin(os.clock()*30)*.08
+				aura.orb.Size=Vector3.one*size*.55
+				aura.orb.CFrame=aura.mouthAt.WorldCFrame*CFrame.new(0,0,-(.5+size*.6))
+				aura.orb.Transparency=.25
 				Kit.setRate(aura.orbFlames,20+30*charge)
-				Kit.setSize(aura.orbFlames,num({{0,size*.9},{1,size*1.5}}))
+				Kit.setSize(aura.orbFlames,num({{0,size*.8},{1,size*1.2}}))
 			elseif aura.orb then
 				aura.orb.Transparency=1;Kit.setRate(aura.orbFlames,0)
 			end
