@@ -4,6 +4,7 @@
 -- Every effect is driven by a server-reported contact, never by a button press.
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
+local Kit=require(script.Parent.VfxKit)
 local Feedback={}
 -- Audio stays on assets already imported and verified by this project; extra
 -- cues are declared here so adding one later is a one-line change.
@@ -75,7 +76,53 @@ end
 local AIR_CUE={whiff=true,dodge=true,substitute=true,walltech=true,rotation=true,deflect=true}
 -- Real contacts without a look of their own keep the generic hit layer.
 local CONTACT_FALLBACK={fire=true,fireball=true,chidori=true,groundbounce=true,sandhit=true,sandburst=true,sandburial=true,sandshield=true}
-function Feedback.impact(style,position)
+-- Body contacts drawn with the project's own textures (Client/VfxKit): the
+-- flash where the blow met the body, a crescent across the strike, streaks
+-- thrown along it, a ring, and for the heavy ones the floor answering.
+-- weight 0..1: how much of each layer.
+local WEIGHT={light=.32,air=.42,flow=.3,kunai=.22,shuriken=.2,pin=.2,palm=.3,block=.45,parry=.8,clash=.9,
+	finisher=.75,launcher=.8,slam=1,wallbounce=.9,jutsu=.6,awaken=.6,repel=.7,palmburst=.6}
+local SLASH={light=true,air=true,finisher=true,launcher=true,slam=true,flow=true,clash=true}
+local function strikeLayers(style,position,impact,spec)
+	local w=WEIGHT[style]
+	if not w or not Kit.has("star") then return false end
+	local folder=workspace:FindFirstChild("NinjaDuelFX") or workspace
+	local dir=impact and impact.direction
+	if not dir or dir.Magnitude<.05 then dir=Vector3.new(math.random()-.5,0,math.random()-.5) end
+	if dir.Magnitude<.05 then dir=Vector3.zAxis end
+	dir=dir.Unit
+	local guard=style=="block" or style=="parry"
+	local color=if guard then Color3.fromRGB(255,226,140) else Color3.fromRGB(255,250,236)
+	local hot=if style=="slam" or style=="finisher" or style=="launcher" then Color3.fromRGB(255,190,120) else color
+	Kit.star(folder,position,2.2+4.6*w,color,.07+.07*w)
+	Kit.streaks(folder,position,dir,math.floor(5+12*w),hot,45+50*w,if guard then 70 else 38)
+	local camera=workspace.CurrentCamera
+	local toCamera=if camera then (camera.CFrame.Position-position) else -dir
+	if toCamera.Magnitude<.05 then toCamera=Vector3.zAxis end
+	toCamera=toCamera.Unit
+	-- The ring stands across the strike, tilted toward the viewer so it reads.
+	local ringNormal=(dir+toCamera*.6).Unit
+	local up=if math.abs(ringNormal.Y)>.95 then Vector3.xAxis else Vector3.yAxis
+	local ringCF=CFrame.lookAt(position,position+ringNormal,up)
+	Kit.plane(folder,ringCF,"ring",Vector2.new(1.2,1.2)*(1+w),Vector2.new(5,5)*(1+w*1.6),.12+.1*w,hot,0)
+	if SLASH[style] then
+		-- A crescent drawn across the blow, facing the camera.
+		local across=dir:Cross(toCamera)
+		local roll=math.atan2(across.Y,math.sqrt(across.X^2+across.Z^2))+(math.random()-.5)*.9
+		local slashCF=CFrame.lookAt(position,position+toCamera)*CFrame.Angles(0,0,roll)
+		Kit.plane(folder,slashCF,"slash",Vector2.new(4,2)*(.8+w),Vector2.new(6.5,3.2)*(.8+w),.1+.06*w,color,0)
+	end
+	if style=="slam" or style=="wallbounce" or style=="launcher" then
+		local me=game:GetService("Players").LocalPlayer.Character
+		local floor=Kit.floorUnder(position,{folder,if me and me.Parent then me.Parent else folder},9)
+		if floor then
+			Kit.dust(folder,floor.Position,math.floor(6+10*w),2.2+1.6*w,Color3.fromRGB(214,200,172),12+10*w)
+			if style=="slam" then Kit.ground(folder,floor.Position,floor.Normal,"crack",9,2.4,1.2,Color3.new(1,1,1),.05) end
+		end
+	end
+	return true
+end
+function Feedback.impact(style,position,impact)
 	-- Only styles with a contact look get shards and a hit sound. Casts, chases,
 	-- fades, sticks and afterimages have their own effects (FX:impact).
 	local spec=look[style] or (CONTACT_FALLBACK[style] and look.light)
@@ -87,6 +134,9 @@ function Feedback.impact(style,position)
 	light.Color=spec.color;light.Brightness=(if style=="parry" or style=="slam" then 8 else 4)
 	light.Range=spec.range;light.Parent=anchor
 	TweenService:Create(light,TweenInfo.new(if style=="slam" then .28 else .17),{Brightness=0}):Play()
+	Debris:AddItem(anchor,.45)
+	local ok,drawn=pcall(strikeLayers,style,position,impact,spec)
+	if ok and drawn then return spec end
 	local spread=if style=="slam" then 1.1 elseif style=="whiff" then 2.4 else .7
 	local distance=if style=="whiff" then 2 else math.max(1.4,spec.range*.32)
 	for _=1,spec.shards do
@@ -124,7 +174,6 @@ function Feedback.impact(style,position)
 		TweenService:Create(ring,TweenInfo.new(.28,Enum.EasingStyle.Quad),{Size=Vector3.new(.12,13,13),Transparency=1}):Play()
 		Debris:AddItem(ring,.34)
 	end
-	Debris:AddItem(anchor,.45)
 	return spec
 end
 -- Hitstop-scaled impulse; the camera reads this instead of re-deriving it.

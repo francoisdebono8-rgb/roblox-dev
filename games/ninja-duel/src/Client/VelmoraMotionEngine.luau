@@ -1318,6 +1318,14 @@ local function castSpec(actor)
 		return merge(base,{root={y=-.55,pitch=10,yaw=sweep*.5},torso={pitch=8,yaw=sweep},head={pitch=8,yaw=sweep*.6},
 			ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=8,out=28,elbow=30},lf={z=-1.0},rf={z=.95,yaw=24}})
 	elseif id=="FireBloom" then
+		if state=="TechniqueChannel" and (actor.techCharge or 0)>0 then
+			-- (Reference quality) Held: the ring of fingers at the mouth, the chest
+			-- drawing in deeper and the weight sinking back the longer he holds.
+			local c=actor.techCharge
+			local quiver=math.sin(t*38)*2*c
+			return merge(base,{root={y=-.5-.35*c,z=.25*c,pitch=-6-10*c,yaw=8},torso={pitch=-12-12*c+quiver,yaw=-4},head={pitch=-10-8*c},
+				ra={raise=112,out=-36,twist=22,elbow=146,wrist=-10},la={raise=30+20*c,out=10,elbow=60,wrist=-10},lf={z=-1.0-.2*c},rf={z=.95+.25*c,yaw=30}})
+		end
 		if state=="TechniqueChannel" then
 			-- Signs, then a held tiger seal and a deep inhale before the breath.
 			local remaining=(actor.channel or 0)

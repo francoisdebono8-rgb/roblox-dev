@@ -124,7 +124,7 @@ function Presentation:impacts(data,camera)
  local folder=character and character.Parent
  for _,impact in data.impacts do
   if impact.serial==nil or impact.serial>self.impactSerial then
-   Feedback.impact(impact.style or "light",impact.position)
+   Feedback.impact(impact.style or "light",impact.position,impact)
    self.fx:impact(impact,folder)
    if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
   end

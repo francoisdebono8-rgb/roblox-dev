@@ -137,7 +137,11 @@ function Input.new(send,getState,toggleLock,camera)
  bind("SubstitutePad",key(GAMEPAD.Substitute),function(state,obj) if pressed(state,obj) then send("Substitute") end end)
  bind("Skip",both("Skip"),function(state,obj) if pressed(state,obj) and getState().tutorial then send("TutorialSkip") end end)
  for index,code in {Enum.KeyCode.One,Enum.KeyCode.Two,Enum.KeyCode.Three,Enum.KeyCode.Four} do
-  bind("Technique"..index,key(code),function(state,obj) if pressed(state,obj) then send("Technique"..index) end end)
+  bind("Technique"..index,key(code),function(state,obj)
+   if pressed(state,obj) then send("Technique"..index)
+   -- The release lets a held technique go (a charged Katon).
+   elseif released(state) then send("SealRelease") end
+  end)
  end
  local function blur()
   local jumping=next(self.jumps)~=nil

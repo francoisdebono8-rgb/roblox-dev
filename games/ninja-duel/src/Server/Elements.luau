@@ -22,11 +22,29 @@ function Elements.fire(c,a,pending,now)
 	local delta=aim-origin
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
-	local drop=math.clamp(delta.Y,-flat.Magnitude*.35,flat.Magnitude*.08)
+	-- Out of the air the breath goes down onto him (or the ground under him).
+	local steep=if a.airborne then 1.6 else .35
+	local drop=math.clamp(delta.Y,-flat.Magnitude*steep,flat.Magnitude*.08)
 	local target=origin+flat.Unit*spec.Range+Vector3.new(0,drop*spec.Range/math.max(flat.Magnitude,1),0)
-	local ball=c:projectile(a,target,spec.Speed or 54,spec.Range,spec.Damage,"fireball",nil,{origin=origin,radius=2.4,growth=2.2,heavy=true})
+	-- (Reference quality) Held, the breath is bigger, slower and harder: it
+	-- throws a body down instead of knocking it back (spec.Hold).
+	local charge=math.clamp(pending.charge or 0,0,1)
+	local hold=spec.Hold
+	local radius=2.4*(1+(if hold then (hold.Radius or 1)-1 else 0)*charge)
+	local damage=spec.Damage*(1+(if hold then (hold.Damage or 1)-1 else 0)*charge)
+	local speed=(spec.Speed or 54)*(1-(if hold then 1-(hold.Speed or 1) else 0)*charge)
+	local ball=c:projectile(a,target,speed,spec.Range,damage,"fireball",nil,{origin=origin,radius=radius,growth=2.2*(1+charge*.5),heavy=true})
+	ball.charge=charge
 	if spec.Lane then Elements.burnLane(c,a,ball) end
-	c:cue(a,"KATON • GREAT FIREBALL")
+	-- The body takes the breath: a step back on the ground, and in the air a
+	-- recoil that holds him up for a moment and pushes him back.
+	local back=-flat.Unit
+	if a.airborne then
+		a.root.AssemblyLinearVelocity=back*(10+8*charge)+Vector3.new(0,14+6*charge,0)
+	elseif charge>.3 then
+		a.root.AssemblyLinearVelocity=back*(10*charge)+Vector3.new(0,a.root.AssemblyLinearVelocity.Y,0)
+	end
+	c:cue(a,if charge>=.99 then "KATON • GREAT FIREBALL • FULL" elseif charge>0 then "KATON • GREAT FIREBALL • HELD" else "KATON • GREAT FIREBALL")
 end
 -- Itachi's Katon is control, not only damage (spec.Lane): where the fireball
 -- passes the opponent, the ground under its path catches, patch after patch at

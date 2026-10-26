@@ -328,7 +328,10 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	local contactZone=attacker.pending and attacker.pending.kind=="Brawl" and attacker.pending.spec and attacker.pending.spec.zone
 	local contactAt=victim.root.Position+(victim.hitFrom or Vector3.zero)*.7
 		+Vector3.new(0,if contactZone=="head" or contactZone=="chin" then 1.55 elseif contactZone=="legs" then -1.4 else .45,0)
-	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy)
+	-- (Reference quality) the client draws the blow along its strike and tints
+	-- the body it struck: who, which way, how hard.
+	self:pushImpact(if self.hitOrigin then victim.root.Position else contactAt,style,victim.impactHeavy,
+		{victim=victim.id,direction=-(victim.hitFrom or Vector3.zero),amount=amount,guarded=guarded})
 	Brawler.event(self,attacker,"Damage"); if guarded then Brawler.event(self,victim,"GuardHit") end
 	self:effect("Impact",if self.hitOrigin then victim.root.Position else contactAt,if guarded then Color3.fromRGB(221,203,152) else attacker.color,Vector3.new(2,2,2),0.12)
 	if heavy and not guarded and victim.health>0 then
@@ -1194,6 +1197,30 @@ function Combat:request(a,action,aim,clientTime,opts)
 	self:pushImpact(a.root.Position,"cast",false,{owner=a.id,fighter=a.fighterId,technique=spec.Id,channel=spec.Channel})
 	return true
 end
+-- (Reference quality) A held technique (spec.Hold = {Time, Cost}): while its
+-- key stays down past the channel it keeps gathering, up to Hold.Time more
+-- seconds; pending.charge (0..1) is what it gathered. Released, out of time
+-- or out of chakra, it goes. The body stays in the channel the whole time
+-- (a blow taken interrupts it like any channel).
+function Combat.charging(c,a,pending,now)
+	local hold=pending.spec.Hold
+	local key=a.techHold
+	if not hold or not key or not key.down then return false end
+	local slotSpec=a.def.Techniques and a.def.Techniques[key.slot]
+	if not slotSpec or slotSpec.Id~=pending.spec.Id then return false end
+	pending.chargeStart=pending.chargeStart or now
+	local held=now-pending.chargeStart
+	local cost=(hold.Cost or 0)/(hold.Time or 1)*(1/30)
+	if held>=(hold.Time or 1) or a.chakra<cost then pending.charge=math.min(1,held/(hold.Time or 1));return false end
+	if not pending.charge then
+		c:cue(a,string.upper(pending.spec.Name).." • HOLD TO GATHER",hold.Time)
+		require(script.Parent.Brawler).event(c,a,"Hold:"..pending.spec.Id)
+	end
+	a.chakra-=cost
+	pending.charge=held/(hold.Time or 1)
+	a.techCharge=pending.charge
+	return true
+end
 -- Where a melee swing goes: the locked target, or the enemy body it was
 -- pushed at (Bodies.aim) while that body lives.
 function Combat.swingAt(a)
@@ -1299,7 +1326,11 @@ function Combat:updateActor(a,dt)
 			-- The chase stops where it arrives (Studio: its speed carried the
 			-- body on into the one it reached).
 			a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8)
+		elseif a.state=="TechniqueChannel" and pending and Combat.charging(self,a,pending,now) then
+			-- (Reference quality) Held: the technique keeps gathering (spec.Hold).
+			a.untilTime=now+1/30
 		elseif a.state=="TechniqueChannel" and pending then
+			a.techCharge=nil
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
 			-- (Embodiment) A technique that is a state of the body forms it
@@ -1701,7 +1732,7 @@ function Combat:igniteBlade(p)
 end
 function Combat:projectileHit(p,target,position,normal)
 	local style=p.style or IMPACT_STYLE[p.kind] or (if Looks[p.kind] then "look" else "shuriken")
-	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction})
+	self:pushImpact(position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=normal,owner=p.a.id,victim=target.id,direction=p.direction,charge=p.charge})
 	-- The entry still finishes the blade on the client; it only reads as a body
 	-- hit once the defence has resolved. A blade that was evaded, parried or
 	-- absorbed ends silently ("spent"): the defence pushed its own effect.
@@ -1743,7 +1774,10 @@ function Combat:projectileHit(p,target,position,normal)
 		elseif p.kind=="fireball" then
 			local push=Vector3.new(p.direction.X,0,p.direction.Z)
 			if push.Magnitude<.05 then push=p.a.root.CFrame.LookVector end
-			Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a)
+			-- (Reference quality) a held breath throws the body down and away.
+			local charge=p.charge or 0
+			if charge>=.5 then Brawler.react(self,target,"Knockdown",push.Unit*(46+20*charge)+Vector3.new(0,26+8*charge,0),.8,p.a)
+			else Brawler.react(self,target,"Knockback",push.Unit*44+Vector3.new(0,20,0),.55,p.a) end
 		elseif p.reaction then
 			-- A flight that names its reaction (impulse: lift, push along its line):
 			-- a real Knockback, so the wind can splat a body on a wall at range.
@@ -1795,7 +1829,7 @@ function Combat:projectileSurface(p,hit)
 	-- so the client draws the object that stays instead of a plain stuck blade.
 	local stayed=(p.chakra or p.kind=="wire") and not bounceFrom and Chakra.surface(self,p,hit.Position,hit.Normal,hit.Instance)
 	local marker=if stayed and stayed.wire then "stretch" elseif stayed and stayed.point then "plant" else nil
-	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion})
+	self:pushImpact(hit.Position,style,p.kind=="fireball",{projectile=p.id,kind=p.kind,normal=hit.Normal,owner=p.a.id,direction=p.direction,chakra=marker,infusion=p.infusion,charge=p.charge})
 	-- The surface keeps it (EMB-004): a hole in the trunk, a scorch on the stone.
 	if hit.Instance.CanCollide and not bounceFrom then WorldReaction.projectile(self,p,hit) end
 	if p.kind=="fireball" then self:fireExplosion(p,hit.Position+hit.Normal*1.5,false) end
@@ -1854,7 +1888,7 @@ function Combat:projectileExpire(p)
 		return
 	end
 	if p.kind=="fireball" then
-		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction})
+		self:pushImpact(p.position,"fire",true,{projectile=p.id,kind=p.kind,normal=Vector3.yAxis,owner=p.a.id,direction=p.direction,charge=p.charge})
 		self:fireExplosion(p,p.position,false)
 		return
 	end

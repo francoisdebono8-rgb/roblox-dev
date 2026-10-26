@@ -134,7 +134,14 @@ local Fighters = {
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
 		Techniques = {
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15, Hint = "On a wired opponent: Dragon Flame runs along the wire" },
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15,
+				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
+				-- in for up to Time more seconds (Cost chakra over it) and the ball
+				-- grows (Radius), hits harder (Damage), flies slower (Speed) and
+				-- throws the body down. From the air it goes down onto him and the
+				-- recoil holds him up.
+				Hold = { Time = 0.9, Cost = 10, Radius = 1.8, Damage = 1.5, Speed = 0.8 },
+				Hint = "Hold to grow it • from the air it goes down • on a wired opponent: Dragon Flame" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
 			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
 			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,

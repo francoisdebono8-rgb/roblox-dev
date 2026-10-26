@@ -200,6 +200,8 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
+			-- A held technique gathering (0..1), for the body and the fire at the mouth.
+			techCharge=if a.state=="TechniqueChannel" then a.techCharge else nil,
 			-- A state of the body held until a strike releases it (Server/BodyState).
 			bodyState=require(script.Parent.BodyState).snapshot(a,now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
@@ -343,6 +345,14 @@ function Matches:act(s,actor,payload,clock)
  -- The held guard key is an intent that outlives a refused press (Combat
  -- re-raises it once free). Only players send it; the AI guards per tick.
  if action=="Guard" then actor.guardWanted=true elseif action=="GuardOff" then actor.guardWanted=false end
+ -- (Reference quality) A technique key is held: its release lets a held
+ -- technique go (Combat.charging). Players hold keys; the AI plans its own.
+ local slot=string.match(action,"^Technique(%d)$")
+ if slot then actor.techHold={slot=tonumber(slot),down=true} end
+ if action=="SealRelease" then
+  if actor.techHold then actor.techHold.down=false end
+  return
+ end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end

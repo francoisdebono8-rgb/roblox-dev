@@ -27,6 +27,7 @@ local Debris=game:GetService("Debris")
 
 local IdentityFX={}
 local K -- Effects' helpers, handed over by install()
+local Kit=require(script.Parent.VfxKit)
 IdentityFX.clock=os.clock -- (headless tests drive time)
 
 local HYUGA=Color3.fromRGB(190,208,255)
@@ -663,6 +664,20 @@ local function chidoriCue(fx,data,folder)
 	end
 	K.flash(fx.folder,at,CHIDORI_CORE,1,7,.2,0)
 	K.shockRing(fx.folder,at,CHIDORI,2,12,.26,data.direction)
+	if Kit.has("lightning") then
+		-- (Reference quality) the bolt sheet bursts out of the contact, the star
+		-- flashes white-blue and the floor under him is scored.
+		Kit.star(fx.folder,at,9,CHIDORI_CORE,.12)
+		Kit.burst(fx.folder,at,"lightning",6,{Lifetime=NumberRange.new(.08,.16),Speed=NumberRange.new(0,4),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(CHIDORI),LightEmission=1,Size=Kit.num({{0,4},{1,7}}),Transparency=Kit.num({{0,0},{1,.4}}),
+			Rotation=NumberRange.new(0,360),zoffset=2})
+		Kit.streaks(fx.folder,at,data.direction or Vector3.zAxis,16,CHIDORI_CORE,70,40)
+		local floor=Kit.floorUnder(at,{fx.folder},8)
+		if floor then
+			Kit.ground(fx.folder,floor.Position,floor.Normal,"crack",7,2,1,Color3.new(1,1,1),.1)
+			Kit.ground(fx.folder,floor.Position,floor.Normal,"scorch",6,2,1,Color3.fromRGB(120,150,220),.3)
+		end
+	end
 end
 local function chidoriFizzle(fx,data)
 	local holder=K.new("Model",{Name="ChidoriFizzle"},fx.folder)

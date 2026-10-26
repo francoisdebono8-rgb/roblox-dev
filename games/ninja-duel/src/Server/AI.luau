@@ -719,6 +719,14 @@ function AI:update(now)
 				or (Bodies.count(c,a,"clone")>0 and self.rng:NextNumber()<.35)) end
 			if spec.Family and not use then use=familyWants(self,c,a,target,spec,distance,danger) end
 			if use and c:request(a,"Technique"..slot,aim) then
+				-- A held technique (spec.Hold): the bot holds it for a while of its
+				-- choosing, longer when the opponent is far (more time to see it).
+				if spec.Hold then
+					a.techHold={slot=slot,down=true}
+					local want=if distance>18 then self.rng:NextNumber() else self.rng:NextNumber()*.35
+					local hold=a.techHold
+					c:schedule(now+spec.Channel+want*(spec.Hold.Time or 1),function() hold.down=false end)
+				end
 				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
 			end
 		end
