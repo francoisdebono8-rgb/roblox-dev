@@ -296,6 +296,10 @@ function UI.new(parent,send)
 		-- Studio capture aid (see Camera): shrink the HUD into the visible region.
 		if game:GetService("RunService"):IsStudio() and workspace:GetAttribute("NinjaDuelCaptureShift") then s*=.66 end
 		hudScale.Scale=s
+		-- A UIScale also shrinks the frame it scales: size the HUD up by the
+		-- same factor so its bottom row sits at the bottom of the screen (the
+		-- slots and help used to float mid-screen on a small viewport).
+		self.hud.Size=UDim2.fromScale(1/s,1/s)
 	end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitHud);fitHud()
 	self:refreshSelection(); self:render({phase="Selection"})
@@ -578,6 +582,11 @@ function UI:render(data)
 		else ""
 	self.help.Text=if pad then Controls.HelpPad else Controls.Help
 	self.grammar.Text=Controls.comboHelp(MoveGraphs[h.fighterId] or {},pad)
+	-- (Reference quality) The control sheet is for the first seconds of a duel
+	-- (and the tutorial), not a permanent band across the fight.
+	if self.helpEpoch~=data.epoch then self.helpEpoch=data.epoch;self.helpUntil=os.clock()+10 end
+	local helping=data.tutorial~=nil or os.clock()<(self.helpUntil or 0)
+	self.help.Visible=helping;self.grammar.Visible=helping
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")

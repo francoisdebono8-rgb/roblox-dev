@@ -7,6 +7,8 @@ local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
 local FX={};FX.__index=FX
+-- Cel flame streams of the fireballs in flight (VfxKit), by model.
+FX.fireStreams=setmetatable({},{__mode="k"})
 -- Identity layers: a fighter whose look lives in its own module (SandFX)
 -- registers projectile builders and poses, contact styles and a per-frame step.
 FX.layers={}
@@ -214,11 +216,12 @@ function FX.buildFireball()
 		Color=seq({{0,Color3.fromRGB(255,240,170)},{.35,Color3.fromRGB(255,140,40)},{.75,Color3.fromRGB(200,50,20)},{1,Color3.fromRGB(60,20,10)}}),
 		LightEmission=1,Size=num({{0,3},{.4,5},{1,1.5}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Drag=3,RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360),ZOffset=1})
 	if Kit.has("fire") then
-		-- (Reference quality) cel flames: our own flipbook, colours baked in.
-		flames.TextureContent=Kit.content("fire");flames.FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4
-		flames.FlipbookMode=Enum.ParticleFlipbookMode.OneShot;flames.Color=ColorSequence.new(Color3.new(1,1,1))
-		flames.LightEmission=.25;flames.Transparency=num({{0,0},{.85,0},{1,1}});flames.Rate=70
-		flames.Lifetime=NumberRange.new(.35,.55)
+		-- (Reference quality) cel flames: our own flipbook, colours baked in,
+		-- left behind along the flight as it burns.
+		flames.Rate=40
+		FX.fireStreams[model]=Kit.stream(at,"fire",{Rate=55,Lifetime=NumberRange.new(.3,.5),Speed=NumberRange.new(1,4),SpreadAngle=Vector2.new(180,180),
+			Color=ColorSequence.new(Color3.new(1,1,1)),LightEmission=.25,Size=num({{0,3},{.5,5},{1,4}}),Transparency=num({{0,0},{.85,0},{1,1}}),
+			Drag=3,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-60,60)})
 	end
 	emitter(at,{Name="Smoke",Enabled=true,Texture=TEX.smoke,Rate=26,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(Color3.fromRGB(60,48,44)),LightEmission=0,Size=num({{0,3},{1,8}}),Transparency=num({{0,.55},{1,1}}),Drag=2})
@@ -355,6 +358,7 @@ function FX:finishProjectile(id)
 	if not entry then return nil end
 	self.projectiles[id]=nil
 	local root=entry.root
+	Kit.stop(FX.fireStreams[entry.model])
 	-- Let a trail finish fading instead of cutting it.
 	for _,d in entry.model:GetDescendants() do
 		if d:IsA("BasePart") then d.Transparency=1 elseif d:IsA("ParticleEmitter") or d:IsA("Beam") then d.Enabled=false elseif d:IsA("PointLight") then d.Enabled=false end
@@ -394,6 +398,8 @@ function FX:stepProjectiles(dt)
 			entry.hidden=hidden
 			for _,d in entry.model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=if hidden then 1 else 0 end end
 			if entry.decor then for _,e in entry.decor.emitters do e.Enabled=not hidden end end
+			local stream=FX.fireStreams[entry.model]
+			if stream then stream.Enabled=not hidden end
 		end
 		if entry.decor and entry.decor.light then
 			local look=entry.decor.look
@@ -427,6 +433,7 @@ function FX:stepProjectiles(dt)
 			local flames=entry.root:FindFirstChildOfClass("Attachment")
 			if flames then
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end
+				Kit.setSize(FX.fireStreams[entry.model],num({{0,radius*1.3},{.5,radius*2.3},{1,radius*2}}))
 			end
 			cf=look*CFrame.Angles(0,0,os.clock()*3)
 		elseif p.kind=="palm" then
@@ -1001,8 +1008,8 @@ function FX:explosion(position,normal,scale)
 		-- ground scorched in streaks, cracked under it, and debris thrown out.
 		local folder=self.folder
 		flash(folder,position,Color3.fromRGB(255,252,226),2*scale,13*scale,.16,0)
-		local dome=flash(folder,position,Color3.fromRGB(255,236,200),4*scale,24*scale,.38,.55)
-		dome.Material=Enum.Material.ForceField
+		local dome=flash(folder,position,Color3.fromRGB(255,244,226),4*scale,22*scale,.3,.5)
+		dome.Material=Enum.Material.SmoothPlastic
 		Kit.star(folder,position,16*scale,Color3.fromRGB(255,240,190),.14)
 		Kit.burst(folder,position,"fire",math.floor(16*scale),{
 			Lifetime=NumberRange.new(.8,1.25),Speed=NumberRange.new(10*scale,24*scale),SpreadAngle=Vector2.new(180,180),
@@ -1603,15 +1610,15 @@ function FX:fighter(model,actor,dt)
 		if Kit.has("lightning") then
 			-- (Reference quality) the birds: arcs of lightning thrown out of the
 			-- hand, flickering through our own bolt sheet.
-			aura.chidori.bolts=new("ParticleEmitter",{TextureContent=Kit.content("lightning"),Rate=34,Lifetime=NumberRange.new(.05,.09),Speed=NumberRange.new(0,0),
-				FlipbookLayout=Enum.ParticleFlipbookLayout.Grid2x2,FlipbookMode=Enum.ParticleFlipbookMode.Random,
-				Color=ColorSequence.new(Color3.fromRGB(196,226,255)),LightEmission=1,LightInfluence=0,Size=num({{0,2.6},{1,3.4}}),
-				Transparency=num({{0,0},{1,.3}}),Rotation=NumberRange.new(0,360),ZOffset=2},at)
+			aura.chidori.bolts=Kit.stream(at,"lightning",{Rate=30,Lifetime=NumberRange.new(.05,.09),Speed=NumberRange.new(0,0),
+				FlipbookMode=Enum.ParticleFlipbookMode.Random,
+				Color=ColorSequence.new(Color3.fromRGB(196,226,255)),LightEmission=1,Size=num({{0,2.6},{1,3.4}}),
+				Transparency=num({{0,0},{1,.3}}),Rotation=NumberRange.new(0,360)})
 		end
 		sound(hand,SOUND.whoosh,.5,2.6)
 	elseif not chidori and aura.chidori then
 		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
-		if aura.chidori.bolts then aura.chidori.bolts.Enabled=false end
+		Kit.stop(aura.chidori.bolts)
 		Debris:AddItem(aura.chidori.attachment,.4)
 		aura.chidori=nil
 	end
@@ -1719,8 +1726,8 @@ function FX:fighter(model,actor,dt)
 					SpreadAngle=Vector2.new(18,18),EmissionDirection=Enum.NormalId.Front,Color=seq({{0,Color3.fromRGB(255,230,150)},{1,Color3.fromRGB(255,90,30)}}),
 					LightEmission=1,LightInfluence=0,Size=num({{0,.6},{1,1.6}}),Transparency=num({{0,.2},{1,1}})},at)
 				if Kit.has("fire") then
-					aura.mouth.TextureContent=Kit.content("fire");aura.mouth.FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4
-					aura.mouth.FlipbookMode=Enum.ParticleFlipbookMode.OneShot;aura.mouth.Color=ColorSequence.new(Color3.new(1,1,1));aura.mouth.LightEmission=.3
+					aura.mouthCel=Kit.stream(at,"fire",{Rate=0,Lifetime=NumberRange.new(.18,.32),Speed=NumberRange.new(8,16),SpreadAngle=Vector2.new(14,14),front=true,
+						Color=ColorSequence.new(Color3.new(1,1,1)),Size=num({{0,.8},{1,2.6}}),Transparency=num({{0,0},{.85,0},{1,1}}),Rotation=NumberRange.new(0,360)})
 				end
 				aura.mouthLight=new("PointLight",{Color=Color3.fromRGB(255,140,60),Brightness=0,Range=10,Shadows=false},at)
 			end
@@ -1729,14 +1736,14 @@ function FX:fighter(model,actor,dt)
 				orb.Shape=Enum.PartType.Ball;orb.Transparency=1;orb.Name="KatonCharge"
 				aura.orb=orb
 				local core=new("Attachment",{},orb)
-				aura.orbFlames=new("ParticleEmitter",{TextureContent=Kit.content("fire"),Rate=0,Lifetime=NumberRange.new(.25,.4),Speed=NumberRange.new(1,3),
-					SpreadAngle=Vector2.new(180,180),Color=ColorSequence.new(Color3.new(1,1,1)),LightEmission=.3,LightInfluence=0,
-					Size=num({{0,1},{1,1.6}}),Transparency=num({{0,0},{.85,0},{1,1}}),Rotation=NumberRange.new(0,360),ZOffset=1},core)
-				if Kit.has("fire") then aura.orbFlames.FlipbookLayout=Enum.ParticleFlipbookLayout.Grid4x4;aura.orbFlames.FlipbookMode=Enum.ParticleFlipbookMode.OneShot end
+				aura.orbFlames=Kit.stream(core,"fire",{Rate=0,Lifetime=NumberRange.new(.25,.4),Speed=NumberRange.new(1,3),
+					SpreadAngle=Vector2.new(180,180),Color=ColorSequence.new(Color3.new(1,1,1)),
+					Size=num({{0,1},{1,1.6}}),Transparency=num({{0,0},{.85,0},{1,1}}),Rotation=NumberRange.new(0,360)})
 			end
 			local breathing=actor.state=="TechniqueActive"
 			local charge=actor.techCharge or 0
 			aura.mouth.Rate=if breathing then 90 else 14+40*charge
+			Kit.setRate(aura.mouthCel,if breathing then 40 else 4+10*charge)
 			aura.mouthLight.Brightness=if breathing then 4 else 1.2+3*charge
 			aura.mouthLight.Range=10+12*charge
 			if charge>0 and not breathing and aura.orb then
@@ -1744,14 +1751,14 @@ function FX:fighter(model,actor,dt)
 				aura.orb.Size=Vector3.one*size
 				aura.orb.CFrame=aura.mouthAt.WorldCFrame*CFrame.new(0,0,-(.4+size*.55))
 				aura.orb.Transparency=.15
-				aura.orbFlames.Rate=30+50*charge
-				aura.orbFlames.Size=num({{0,size*.9},{1,size*1.5}})
+				Kit.setRate(aura.orbFlames,20+30*charge)
+				Kit.setSize(aura.orbFlames,num({{0,size*.9},{1,size*1.5}}))
 			elseif aura.orb then
-				aura.orb.Transparency=1;aura.orbFlames.Rate=0
+				aura.orb.Transparency=1;Kit.setRate(aura.orbFlames,0)
 			end
 		elseif aura.mouth then
-			aura.mouth.Rate=0;aura.mouthLight.Brightness=0
-			if aura.orb then aura.orb.Transparency=1;aura.orbFlames.Rate=0 end
+			aura.mouth.Rate=0;aura.mouthLight.Brightness=0;Kit.setRate(aura.mouthCel,0)
+			if aura.orb then aura.orb.Transparency=1;Kit.setRate(aura.orbFlames,0) end
 		end
 	end
 	self:identity(model,actor,aura)
