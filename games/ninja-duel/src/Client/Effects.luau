@@ -452,7 +452,17 @@ function FX:stepProjectiles(dt)
 end
 
 -- ------------------------------------------------------------------ helpers
-local function flash(parent,position,color,from,to,time,transparency)
+local function flash(parent,position,color,from,to,time,transparency,keepBall)
+	if not keepBall and Kit.has("star") then
+		-- (Reference quality) a flat cel flash (our star) and a short hot core,
+		-- instead of a growing translucent bubble.
+		Kit.star(parent,position,to*.95,color,math.max(.07,time*.8))
+		local core=block(parent,Vector3.one*from*.6,CFrame.new(position),color,Enum.Material.Neon)
+		core.Shape=Enum.PartType.Ball;core.Transparency=transparency or .15
+		tween(core,time*.45,{Size=Vector3.one*from*1.1,Transparency=1})
+		Debris:AddItem(core,time*.45+.05)
+		return core
+	end
 	local ball=block(parent,Vector3.one*from,CFrame.new(position),color,Enum.Material.Neon)
 	ball.Shape=Enum.PartType.Ball;ball.Transparency=transparency or .15
 	tween(ball,time,{Size=Vector3.one*to,Transparency=1})
@@ -470,6 +480,13 @@ local function floorUnder(fx,position,up,depth)
 end
 local function shockRing(parent,position,color,from,to,time,normal)
 	local up=normal or Vector3.yAxis
+	if Kit.has("ring") and up.Magnitude>.01 then
+		-- (Reference quality) a soft-edged pressure ring (our texture).
+		up=up.Unit
+		local side=if math.abs(up.Y)>.95 then Vector3.xAxis else Vector3.yAxis
+		Kit.plane(parent,CFrame.lookAt(position,position+up,side),"ring",Vector2.new(from,from),Vector2.new(to,to),time,color,0)
+		return
+	end
 	local cf=CFrame.lookAt(position,position+up)*CFrame.Angles(0,math.pi/2,0)
 	local ring=block(parent,Vector3.new(.12,from,from),cf,color,Enum.Material.Neon)
 	ring.Shape=Enum.PartType.Cylinder;ring.Transparency=.3
@@ -1028,7 +1045,7 @@ function FX:explosion(position,normal,scale)
 		-- ground scorched in streaks, cracked under it, and debris thrown out.
 		local folder=self.folder
 		flash(folder,position,Color3.fromRGB(255,252,226),2*scale,13*scale,.16,0)
-		local dome=flash(folder,position,Color3.fromRGB(255,244,226),4*scale,22*scale,.3,.5)
+		local dome=flash(folder,position,Color3.fromRGB(255,244,226),4*scale,22*scale,.3,.5,true)
 		dome.Material=Enum.Material.SmoothPlastic
 		Kit.star(folder,position,16*scale,Color3.fromRGB(255,240,190),.14)
 		Kit.burst(folder,position,"fire",math.floor(16*scale),{
@@ -1067,7 +1084,7 @@ function FX:explosion(position,normal,scale)
 		if Kit.has("scorch") then
 			Kit.ground(self.folder,floor.Position,floor.Normal,"scorch",16*scale,4.5,2,Color3.new(1,1,1),.08)
 			Kit.ground(self.folder,floor.Position,floor.Normal,"crack",8*scale,3.5,1.5,Color3.new(1,1,1),.15)
-			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2)
+			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2,Vector3.xAxis)
 			Kit.plane(self.folder,flat,"ring",Vector2.new(4,4)*scale,Vector2.new(30,30)*scale,.42,Color3.fromRGB(255,200,140),0)
 			Kit.dust(self.folder,floor.Position,math.floor(10*scale),3.2*scale,Color3.fromRGB(200,180,150),18)
 		else
@@ -1101,7 +1118,7 @@ function FX:teleport(from,to,model,awake)
 		local floor=floorUnder(self,to,1,6)
 		if floor then
 			Kit.dust(self.folder,floor.Position,5,2,Color3.fromRGB(226,214,186),14)
-			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2)
+			local flat=CFrame.lookAt(floor.Position+floor.Normal*.2,floor.Position+floor.Normal*1.2,Vector3.xAxis)
 			Kit.plane(self.folder,flat,"ring",Vector2.new(2,2),Vector2.new(14,14),.3,MINATO,0)
 		end
 	end
