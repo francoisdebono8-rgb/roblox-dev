@@ -281,9 +281,10 @@ function World.arena(parent, origin)
 	for _,spot in {{.55,112,38,10},{1.6,104,33,9},{2.4,110,36,9.5},{3.3,98,31,8.5},{3.9,116,40,10.5},{5.3,106,35,9.5},{6.0,92,29,8}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
-	-- Weathered boulders for low cover (they stop blades and fire), spread so
-	-- every approach has something to run around.
-	for _,spot in {{1.5,40,1.1},{4.6,36,1.1},{.2,70,1.4},{2.9,64,1.3},{5.7,62,1.3}} do
+	-- Weathered boulders for low cover (they stop blades and fire), in a ring
+	-- around the open middle (a clear centre to fight in; cover, trunks and the
+	-- wall at its edge to drive a body into or break).
+	for _,spot in {{1.5,78,1.1},{4.6,74,1.1},{.2,84,1.4},{2.9,80,1.3},{5.7,82,1.3}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2*spot[3],math.cos(spot[1])*spot[2])
 		local k=spot[3]
 		local cover=part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
@@ -291,22 +292,6 @@ function World.arena(parent, origin)
 		cover:SetAttribute("WorldBreakable",true)
 		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
-	end
-	-- (Embodiment) Training posts and two low stones nearer the middle: the
-	-- field had all its scenery at the edge, so the exchanges in the middle
-	-- never met the world. Posts are thin wood (they splinter and snap), the
-	-- stones squat (they crack and burst). Clear of the two start marks.
-	for _,spot in {{.8,22,9},{2.3,27,8},{3.95,21,9.5},{5.45,26,8.5},{1.55,46,10},{4.7,48,9}} do
-		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],spot[3]/2,math.cos(spot[1])*spot[2])
-		local post=part(folder,"Training post",Vector3.new(1.7,spot[3],1.7),CFrame.new(at)*CFrame.Angles(0,spot[1],0),C.woodDark,Enum.Material.Wood)
-		post:SetAttribute("WorldBreakable",true)
-		deco(post,"Post band",Vector3.new(1.8,.35,1.8),CFrame.new(at+Vector3.new(0,spot[3]*.28,0))*CFrame.Angles(0,spot[1],0),rgb(60,44,30),Enum.Material.Wood)
-	end
-	for _,spot in {{2.95,34,1},{6.1,38,.9}} do
-		local k=spot[3]
-		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.5*k,math.cos(spot[1])*spot[2])
-		local stone=part(folder,"Cover",Vector3.new(5,3,3.4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1]*1.7,0),rgb(124,120,110),Enum.Material.Slate)
-		stone:SetAttribute("WorldBreakable",true)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do

@@ -142,7 +142,7 @@ local Fighters = {
 				-- jumps or climbs with it and his next strike releases it (a
 				-- thrust, a drop out of the air, a dive off a wall). Held, it
 				-- drains; a blow taken or a guard puts it out.
-				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
 				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 		},
 	},

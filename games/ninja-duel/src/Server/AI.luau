@@ -260,6 +260,23 @@ function AI:zone(now,distance,toward,tangent,target)
 	end
 	return true
 end
+-- (Rupture) Break off an exchange: a hop away, an arc, a jump out; a blade
+-- may fly on the way. The next approach is a fresh decision.
+function AI:breakOff(now,tangent,toward)
+	local c,a=self.combat,self.actor
+	local tune=Config.AI
+	local roll=self.rng:NextNumber()
+	self.reposKind=if roll<.4 then "arc" elseif roll<.75 then "out" else "jump"
+	self.reposSide=if self.rng:NextNumber()<.5 then 1 else -1
+	self.reposUntil=now+(tune.RepositionTime or .9)+self.rng:NextNumber()*(tune.RepositionJitter or .6)
+	self.reposThrown=false
+	Brawler.event(c,a,"BreakOff:"..self.reposKind)
+	if self.reposKind=="jump" then
+		a.move=(-toward+tangent*self.reposSide*.6).Unit;c:request(a,"Jump")
+	elseif self.reposKind=="out" then
+		a.move=(-toward+tangent*self.reposSide*.4).Unit;c:request(a,"Dodge")
+	end
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
@@ -400,6 +417,31 @@ function AI:update(now)
 	local entering=distance<8.5 and (self.lastDistance or 99)>=8.5 and closing>4
 	self.lastDistance=distance
 	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	-- (Rupture) An ordinary exchange is short: after it the bot breaks off and
+	-- moves (a hop away and a blade, an arc round him, a jump, a technique)
+	-- instead of standing toe to toe trading the next string.
+	-- Each confirmed hit of its string is a decision: carry on, or end it
+	-- here and move.
+	local combo=a.combo or 0
+	if combo~=(self.comboSeen or 0) then
+		if combo>(self.comboSeen or 0) and not a.airborne
+			and self.rng:NextNumber()<(if combo>=2 then (tune.BreakOff2 or .55) else (tune.BreakOff1 or .3)) then
+			self:breakOff(now,tangent,toward)
+		end
+		self.comboSeen=combo
+	end
+	if (self.reposUntil or 0)>now and not a.reaction then
+		local kind=self.reposKind
+		local away=-toward
+		if kind=="arc" then a.move=(tangent*(self.reposSide or 1)+away*.35).Unit;a.sprinting=true
+		elseif kind=="out" then a.move=(away+tangent*(self.reposSide or 1)*.5).Unit;a.sprinting=true
+		else a.move=(away*.6+tangent*(self.reposSide or 1)).Unit;a.sprinting=distance<10 end
+		if not self.reposThrown and distance>7 and free and self.rng:NextNumber()<.5 then
+			self.reposThrown=true
+			if press(c,a,"Tool","neutral",0,target.root.Position) then return end
+		end
+		return
+	end
 	-- (Embodiment) A state held in the body (the Chidori in the hand): run it
 	-- in and release it, sometimes from a jump (the release reads the air).
 	if a.bodyState then
@@ -578,7 +620,8 @@ function AI:update(now)
 		end
 		local nearWall=fromCenter.Magnitude>Config.ArenaRadius-22
 		if a.combo>=2 then
-			if roll<.3 then a.move=toward;press(c,a,"Attack","forward");return end -- launcher
+			-- (Rupture) the launcher is a choice now and then, not the default end.
+			if roll<.12 then a.move=toward;press(c,a,"Attack","forward");return end -- launcher
 			if roll<.46 then a.move=-toward;press(c,a,"Attack","back");return end -- low route
 			if roll<.56 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 		elseif a.combo==1 and roll<.2 then a.move=Vector3.zero;press(c,a,"Heavy");return end
@@ -625,6 +668,15 @@ function AI:update(now)
 		-- A kit made only of family techniques is scanned from a rotating slot
 		-- (the whole kit gets used, not slot 1 first); a kit with bespoke
 		-- techniques keeps its authored priority order.
+		-- (Rupture) A technique that is a held state (the Chidori) is formed
+		-- first when it can be: in the open, at range, the threat is what the
+		-- body does with it next.
+		for slot,spec in a.def.Techniques do
+			if spec.State and not a.bodyState and distance>7 and distance<(spec.Range or 20) and self.rng:NextNumber()<(tune.StateForm or .35)
+				and c:request(a,"Technique"..slot,target.root.Position) then
+				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
+			end
+		end
 		local count=#a.def.Techniques
 		local rotate=true
 		for _,spec in a.def.Techniques do if not spec.Family then rotate=false end end

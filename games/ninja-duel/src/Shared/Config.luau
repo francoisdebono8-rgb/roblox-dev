@@ -104,5 +104,9 @@ return {
 		-- corner when its own back is within Corner studs of one.
 		Recover = 0.5, Plan = 0.65, Herd = 40, HerdTime = 1.6, HerdGap = 2.5, Corner = 4.5,
 		-- Spacing at range it drifts to scenery within Terrain studs.
-		Terrain = 50, TerrainPull = 0.9 },
+		Terrain = 50, TerrainPull = 0.9,
+		-- (Rupture) An ordinary string is short: after one confirmed hit
+		-- (BreakOff1) or two (BreakOff2) it breaks off and moves for
+		-- RepositionTime (+ jitter) instead of trading the next string.
+		BreakOff1 = 0.3, BreakOff2 = 0.55, RepositionTime = 0.9, RepositionJitter = 0.6 },
 }

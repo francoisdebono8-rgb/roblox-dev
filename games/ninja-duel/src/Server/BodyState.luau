@@ -63,7 +63,7 @@ end
 function BodyState.release(c,a,action)
 	local s=BodyState.active(a,c.now)
 	if not s or (action~="Attack" and action~="Heavy") then return nil end
-	if a.state~="Neutral" and a.state~="Recovery" and a.state~="Dodging" and a.state~="TechniqueRecovery" then return nil end
+	if a.state~="Neutral" and a.state~="Recovery" and a.state~="Dodging" and a.state~="TechniqueRecovery" and a.state~="TechniqueActive" then return nil end
 	local Brawler=brawler()
 	local st=s.state
 	local Motor=require(script.Parent.Motor)

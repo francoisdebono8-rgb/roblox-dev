@@ -84,12 +84,17 @@ test("Wire Trap binds; Great Fireball on the wired body is the Dragon Flame",fun
  assert(health-b.health>=10,"the Dragon Flame was light")
 end)
 
-test("Chidori: the thrust lands hard from range; a miss leaves him open",function()
+test("Chidori: formed, held in the hand, released by the strike; it lands hard from range; a miss leaves him open",function()
  local c,a,b=H.duel("Lion","Mirage")
  place(c,a,b,V.new(0,3,7),V.new(0,3,-7))
  local health=b.health
  assert(c:request(a,slot(a,"Chidori"),b.root.Position),"Chidori refused")
  assert(a.state=="TechniqueChannel","no charge")
+ -- (Embodiment) The charge forms it; it stays in the hand, nothing is thrown yet.
+ until_(c,1.2,function() return a.bodyState~=nil end,"the Chidori was never held")
+ H.step(c,.3)
+ assert(a.attackName~="ChidoriThrust","the held Chidori threw itself")
+ assert(c:request(a,"Attack"),"the strike does not release it")
  until_(c,1.2,function() return a.attackName=="ChidoriThrust" end,"the thrust never started")
  until_(c,.8,function() return b.health<health end,"the Chidori never landed")
  assert(health-b.health>=18,"the Chidori was light ("..string.format("%.1f",health-b.health)..")")
@@ -99,6 +104,8 @@ test("Chidori: the thrust lands hard from range; a miss leaves him open",functio
  place(c2,x,y,V.new(0,3,7),V.new(0,3,-7))
  c2:relocate(y,V.new(40,3,-7))
  assert(c2:request(x,slot(x,"Chidori"),V.new(0,3,-7)))
+ until_(c2,1.2,function() return x.bodyState~=nil end,"the Chidori was never held")
+ assert(c2:request(x,"Attack"))
  until_(c2,1.2,function() return x.attackName=="ChidoriThrust" end,"the thrust never started")
  until_(c2,.8,function() return x.state=="Recovery" end,"no recovery after the miss")
  local open=0

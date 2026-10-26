@@ -530,7 +530,11 @@ return {
 		-- corner when its own back is within Corner studs of one.
 		Recover = 0.5, Plan = 0.65, Herd = 40, HerdTime = 1.6, HerdGap = 2.5, Corner = 4.5,
 		-- Spacing at range it drifts to scenery within Terrain studs.
-		Terrain = 50, TerrainPull = 0.9 },
+		Terrain = 50, TerrainPull = 0.9,
+		-- (Rupture) An ordinary string is short: after one confirmed hit
+		-- (BreakOff1) or two (BreakOff2) it breaks off and moves for
+		-- RepositionTime (+ jitter) instead of trading the next string.
+		BreakOff1 = 0.3, BreakOff2 = 0.55, RepositionTime = 0.9, RepositionJitter = 0.6 },
 }
 </ProtectedString>
         </Properties>
@@ -767,7 +771,13 @@ return Controls
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15, Hint = "On a wired opponent: Dragon Flame runs along the wire" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
 			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
-			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
+				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
+				-- jumps or climbs with it and his next strike releases it (a
+				-- thrust, a drop out of the air, a dive off a wall). Held, it
+				-- drains; a blow taken or a guard puts it out.
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 		},
 	},
 	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient
@@ -3394,7 +3404,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">bb97ad53409d8be12c11c3d289a0bbe30ee2502b6e9b3da60473390af0889c44</string>
+          <string name="Value">478d1aa938ecb31fbcf0df3978cb748330062b89b99ee6265daed6a07efd0841</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -3758,6 +3768,23 @@ function AI:zone(now,distance,toward,tangent,target)
 	end
 	return true
 end
+-- (Rupture) Break off an exchange: a hop away, an arc, a jump out; a blade
+-- may fly on the way. The next approach is a fresh decision.
+function AI:breakOff(now,tangent,toward)
+	local c,a=self.combat,self.actor
+	local tune=Config.AI
+	local roll=self.rng:NextNumber()
+	self.reposKind=if roll&lt;.4 then "arc" elseif roll&lt;.75 then "out" else "jump"
+	self.reposSide=if self.rng:NextNumber()&lt;.5 then 1 else -1
+	self.reposUntil=now+(tune.RepositionTime or .9)+self.rng:NextNumber()*(tune.RepositionJitter or .6)
+	self.reposThrown=false
+	Brawler.event(c,a,"BreakOff:"..self.reposKind)
+	if self.reposKind=="jump" then
+		a.move=(-toward+tangent*self.reposSide*.6).Unit;c:request(a,"Jump")
+	elseif self.reposKind=="out" then
+		a.move=(-toward+tangent*self.reposSide*.4).Unit;c:request(a,"Dodge")
+	end
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health&lt;=0 or target.health&lt;=0 then a.move=Vector3.zero; return end
@@ -3898,6 +3925,39 @@ function AI:update(now)
 	local entering=distance&lt;8.5 and (self.lastDistance or 99)&gt;=8.5 and closing&gt;4
 	self.lastDistance=distance
 	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	-- (Rupture) An ordinary exchange is short: after it the bot breaks off and
+	-- moves (a hop away and a blade, an arc round him, a jump, a technique)
+	-- instead of standing toe to toe trading the next string.
+	-- Each confirmed hit of its string is a decision: carry on, or end it
+	-- here and move.
+	local combo=a.combo or 0
+	if combo~=(self.comboSeen or 0) then
+		if combo&gt;(self.comboSeen or 0) and not a.airborne
+			and self.rng:NextNumber()&lt;(if combo&gt;=2 then (tune.BreakOff2 or .55) else (tune.BreakOff1 or .3)) then
+			self:breakOff(now,tangent,toward)
+		end
+		self.comboSeen=combo
+	end
+	if (self.reposUntil or 0)&gt;now and not a.reaction then
+		local kind=self.reposKind
+		local away=-toward
+		if kind=="arc" then a.move=(tangent*(self.reposSide or 1)+away*.35).Unit;a.sprinting=true
+		elseif kind=="out" then a.move=(away+tangent*(self.reposSide or 1)*.5).Unit;a.sprinting=true
+		else a.move=(away*.6+tangent*(self.reposSide or 1)).Unit;a.sprinting=distance&lt;10 end
+		if not self.reposThrown and distance&gt;7 and free and self.rng:NextNumber()&lt;.5 then
+			self.reposThrown=true
+			if press(c,a,"Tool","neutral",0,target.root.Position) then return end
+		end
+		return
+	end
+	-- (Embodiment) A state held in the body (the Chidori in the hand): run it
+	-- in and release it, sometimes from a jump (the release reads the air).
+	if a.bodyState then
+		a.move=toward;a.sprinting=distance&gt;7
+		if distance&lt;(a.bodyState.state.Reach or 9) then c:request(a,"Attack")
+		elseif distance&gt;11 and not a.airborne and self.rng:NextNumber()&lt;.12 then c:request(a,"Jump") end
+		return
+	end
 	-- A zoner plays her own range game (AI:zone) before any melee logic.
 	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then
@@ -4068,7 +4128,8 @@ function AI:update(now)
 		end
 		local nearWall=fromCenter.Magnitude&gt;Config.ArenaRadius-22
 		if a.combo&gt;=2 then
-			if roll&lt;.3 then a.move=toward;press(c,a,"Attack","forward");return end -- launcher
+			-- (Rupture) the launcher is a choice now and then, not the default end.
+			if roll&lt;.12 then a.move=toward;press(c,a,"Attack","forward");return end -- launcher
 			if roll&lt;.46 then a.move=-toward;press(c,a,"Attack","back");return end -- low route
 			if roll&lt;.56 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 		elseif a.combo==1 and roll&lt;.2 then a.move=Vector3.zero;press(c,a,"Heavy");return end
@@ -4115,6 +4176,15 @@ function AI:update(now)
 		-- A kit made only of family techniques is scanned from a rotating slot
 		-- (the whole kit gets used, not slot 1 first); a kit with bespoke
 		-- techniques keeps its authored priority order.
+		-- (Rupture) A technique that is a held state (the Chidori) is formed
+		-- first when it can be: in the open, at range, the threat is what the
+		-- body does with it next.
+		for slot,spec in a.def.Techniques do
+			if spec.State and not a.bodyState and distance&gt;7 and distance&lt;(spec.Range or 20) and self.rng:NextNumber()&lt;(tune.StateForm or .35)
+				and c:request(a,"Technique"..slot,target.root.Position) then
+				self.techReadyAt=now+(tune.TechniqueGap or 0)+self.rng:NextNumber()*(tune.TechniqueJitter or 0);return
+			end
+		end
 		local count=#a.def.Techniques
 		local rotate=true
 		for _,spec in a.def.Techniques do if not spec.Family then rotate=false end end
@@ -4985,6 +5055,127 @@ return Bodies
       </Item>
       <Item class="ModuleScript" referent="ND35">
         <Properties>
+          <string name="Name">BodyState</string>
+          <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, SYS-001 sustained chakra): a technique that is a
+-- state of the body, not a packet that plays itself.
+--
+--   prepare (the technique's channel) -&gt; the state holds on the body (chakra
+--   drains while it is kept) -&gt; the body moves freely with it -&gt; the next
+--   strike releases it, shaped by the situation it is pressed in -&gt; the world
+--   or the opponent takes the consequence.
+--
+-- A technique opts in with data: `State = {...}` on its spec.
+--   Time     seconds the state can be held
+--   Drain    chakra per second while held (it ends when the chakra runs out)
+--   Strike   the strike it releases into on the ground
+--   Air      the strike out of the air (default: the shared drop strike)
+--   Wall     the strike off a wall run (default: the shared wall dive)
+--   Damage   the released strike's damage
+--   World    {contact, element}: how the world takes it (Server/WorldReaction)
+--   Style    the contact style pushed to the client on release
+--   Name     the cue
+-- The state ends on release, on a blow taken, on a guard, when its time or
+-- the chakra runs out (a fizzle). Nothing here names a fighter.
+local BodyState={}
+
+local function brawler() return require(script.Parent.Brawler) end
+
+function BodyState.active(a,now)
+	local s=a.bodyState
+	return s~=nil and now&lt;s.untilTime and s or nil
+end
+
+function BodyState.enter(c,a,spec)
+	local st=spec.State
+	a.bodyState={id=spec.Id,spec=spec,state=st,at=c.now,untilTime=c.now+(st.Time or 2)}
+	c:cue(a,string.upper(st.Name or spec.Name or spec.Id).." • ATTACK TO RELEASE",.9)
+	brawler().event(c,a,"State:"..spec.Id)
+	c:pushImpact(a.root.Position,st.Style or "chidori",false,{owner=a.id,state=spec.Id,phase="form"})
+end
+
+function BodyState.finish(c,a,why)
+	local s=a.bodyState
+	if not s then return end
+	a.bodyState=nil
+	if why~="release" then
+		brawler().event(c,a,"StateEnd:"..why)
+		if why=="fizzle" then c:cue(a,string.upper(s.state.Name or s.id).." • FADED",.6) end
+	end
+end
+
+-- Per frame: the drain, the time limit, and what breaks the state.
+function BodyState.step(c,a,dt)
+	local s=a.bodyState
+	if not s then return end
+	if a.health&lt;=0 or c.match.phase~="Duel" then a.bodyState=nil;return end
+	if a.reaction or a.state=="Stunned" then BodyState.finish(c,a,"broken");return end
+	if a.state=="Guarding" then BodyState.finish(c,a,"guard");return end
+	a.chakra=math.max(0,a.chakra-(s.state.Drain or 0)*dt)
+	if c.now&gt;=s.untilTime or a.chakra&lt;=0 then BodyState.finish(c,a,"fizzle") end
+end
+
+-- The strike press while the state holds: the state's strike, shaped by the
+-- situation (off a wall: a dive; out of the air: a drop; running: it carries
+-- the run). Returns the request's result, or nil when the state does not
+-- answer this press.
+function BodyState.release(c,a,action)
+	local s=BodyState.active(a,c.now)
+	if not s or (action~="Attack" and action~="Heavy") then return nil end
+	if a.state~="Neutral" and a.state~="Recovery" and a.state~="Dodging" and a.state~="TechniqueRecovery" and a.state~="TechniqueActive" then return nil end
+	local Brawler=brawler()
+	local st=s.state
+	local Motor=require(script.Parent.Motor)
+	local move,shape=st.Strike or "Light3","ground"
+	if a.wall then
+		Motor.detach(a,c.now,false)
+		move,shape=st.Wall or "WallDive","wall"
+	elseif a.airborne then
+		move,shape=st.Air or "DropStrike","air"
+	end
+	local runSpeed=a.locomotion and a.locomotion.Magnitude or 0
+	a.state="Neutral";a.untilTime=c.now;a.evade=nil
+	Brawler.breakString(a,a.airborne==true)
+	BodyState.finish(c,a,"release")
+	local ok=Brawler.start(c,a,move)
+	local p=a.pending
+	if ok==false or not p then return ok end
+	p.spec.damage=st.Damage or p.spec.damage
+	p.spec.world=st.World
+	p.state=s.id
+	a.attackVariant=s.id
+	a.lastAttack=c.now
+	if shape=="ground" and runSpeed&gt;8 then
+		-- Released out of a run: the run is in the thrust.
+		local need=runSpeed*(p.spec.travelTime or .3)*.9
+		if need&gt;p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
+	end
+	Brawler.event(c,a,"Release:"..s.id);Brawler.event(c,a,"Release:"..shape)
+	c:pushImpact(a.root.Position,st.Style or "chidori",true,{owner=a.id,state=s.id,phase="release",shape=shape})
+	c:cue(a,string.upper(st.Name or s.id),.6)
+	-- The risk, said to both: a release that touched nothing (not even a
+	-- guard) leaves the body open for its whole recovery.
+	local serial=a.attackSerial
+	c:schedule(c.now+p.spec.startup+p.spec.active+.02,function()
+		if a.health&lt;=0 or a.attackSerial~=serial or a.hitConfirmed or a.state~="Recovery" then return end
+		c:cue(a,string.upper(st.Name or s.id).." • MISSED • OPEN",.8)
+		if a.target and a.target.health&gt;0 then c:cue(a.target,string.upper(st.Name or s.id).." MISSED • PUNISH",.8) end
+		Brawler.event(c,a,"StateMissed:"..s.id)
+	end)
+	return ok
+end
+
+function BodyState.snapshot(a,now)
+	local s=a.bodyState
+	if not s or now&gt;=s.untilTime then return nil end
+	return {id=s.id,remaining=s.untilTime-now}
+end
+
+return BodyState
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND36">
+        <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
@@ -4994,6 +5185,7 @@ local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
 local WorldReaction=require(script.Parent.WorldReaction)
 local Perception=require(script.Parent.Perception)
+local BodyState=require(script.Parent.BodyState)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -5574,6 +5766,9 @@ function Brawler.request(c,a,action)
   return true
  end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
+ -- A state of the body (the Chidori held in the hand): the strike releases it.
+ local released=BodyState.release(c,a,action)
+ if released~=nil then return released end
  -- Riposte: right after a clean block or a perfect dodge, a strike comes out
  -- at once and opens a string (its contact is the string's first hit).
  if action=="Attack" and (a.riposteUntil or 0)&gt;c.now and (a.state=="Guarding" or a.state=="Neutral" or a.state=="Dodging" or a.state=="Recovery") and not a.airborne then
@@ -6485,7 +6680,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -6613,7 +6808,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -7655,7 +7850,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -7683,7 +7878,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -7780,7 +7975,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -7979,7 +8174,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -8005,7 +8200,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -8021,6 +8216,7 @@ local Families = require(script.Parent.Families)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 local WorldReaction = require(script.Parent.WorldReaction)
+local BodyState = require(script.Parent.BodyState)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
 local Bodies = require(script.Parent.Bodies)
@@ -9234,6 +9430,7 @@ function Combat:updateActor(a,dt)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
+	BodyState.step(self,a,dt)
 	-- Per-fighter steps registered by a fighter's module (Temari's glide).
 	for _,step in Techniques.actorSteps or {} do step(self,a,dt,now) end
 	-- Rooted while spinning or striking the sixty-four palms.
@@ -9294,7 +9491,10 @@ function Combat:updateActor(a,dt)
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
-			pending.implementation.execute(self,a,pending,now)
+			-- (Embodiment) A technique that is a state of the body forms it
+			-- here; the next strike releases it (Server/BodyState).
+			if pending.spec.State then BodyState.enter(self,a,pending.spec)
+			else pending.implementation.execute(self,a,pending,now) end
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
@@ -10010,6 +10210,7 @@ function Combat:clear(preserveAnimations)
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
 		Brawler.resetStrings(a);a.intentMemory=nil;a.intentOverride=nil;a.rush=nil;a.arrivalRecovery=nil;a.pursuitDuration=nil;a.rushReadyAt=0
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
+		a.bodyState=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 		-- Every other temporary state (buffs, stances, slows, poison, windows).
@@ -10025,7 +10226,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -10135,7 +10336,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -10177,7 +10378,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -10290,7 +10491,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -11142,7 +11343,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -11467,7 +11668,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -11742,7 +11943,7 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND49">
+      <Item class="Script" referent="ND50">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -11770,7 +11971,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -11975,6 +12176,8 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
+			-- A state of the body held until a strike releases it (Server/BodyState).
+			bodyState=require(script.Parent.BodyState).snapshot(a,now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
 			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)&gt;now,lookVector=a.root.CFrame.LookVector,
 			-- Phase 4: combo scaling, recharging substitution, seals, wall state.
@@ -12151,7 +12354,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -12486,7 +12689,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND53">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -12824,7 +13027,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND54">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -12936,7 +13139,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -13232,7 +13435,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -13708,7 +13911,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -13919,7 +14122,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -14122,7 +14325,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -14611,7 +14814,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -14924,7 +15127,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -15970,7 +16173,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -16070,7 +16273,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -16098,7 +16301,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -16226,7 +16429,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -16277,7 +16480,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -16412,7 +16615,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -16526,7 +16729,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -16712,7 +16915,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -16819,7 +17022,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -17105,9 +17308,10 @@ function World.arena(parent, origin)
 	for _,spot in {{.55,112,38,10},{1.6,104,33,9},{2.4,110,36,9.5},{3.3,98,31,8.5},{3.9,116,40,10.5},{5.3,106,35,9.5},{6.0,92,29,8}} do
 		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
 	end
-	-- Weathered boulders for low cover (they stop blades and fire), spread so
-	-- every approach has something to run around.
-	for _,spot in {{1.5,40,1.1},{4.6,36,1.1},{.2,70,1.4},{2.9,64,1.3},{5.7,62,1.3}} do
+	-- Weathered boulders for low cover (they stop blades and fire), in a ring
+	-- around the open middle (a clear centre to fight in; cover, trunks and the
+	-- wall at its edge to drive a body into or break).
+	for _,spot in {{1.5,78,1.1},{4.6,74,1.1},{.2,84,1.4},{2.9,80,1.3},{5.7,82,1.3}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2*spot[3],math.cos(spot[1])*spot[2])
 		local k=spot[3]
 		local cover=part(folder,"Cover",Vector3.new(7,4,4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1],0),rgb(128,124,114),Enum.Material.Slate)
@@ -17115,22 +17319,6 @@ function World.arena(parent, origin)
 		cover:SetAttribute("WorldBreakable",true)
 		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
-	end
-	-- (Embodiment) Training posts and two low stones nearer the middle: the
-	-- field had all its scenery at the edge, so the exchanges in the middle
-	-- never met the world. Posts are thin wood (they splinter and snap), the
-	-- stones squat (they crack and burst). Clear of the two start marks.
-	for _,spot in {{.8,22,9},{2.3,27,8},{3.95,21,9.5},{5.45,26,8.5},{1.55,46,10},{4.7,48,9}} do
-		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],spot[3]/2,math.cos(spot[1])*spot[2])
-		local post=part(folder,"Training post",Vector3.new(1.7,spot[3],1.7),CFrame.new(at)*CFrame.Angles(0,spot[1],0),C.woodDark,Enum.Material.Wood)
-		post:SetAttribute("WorldBreakable",true)
-		deco(post,"Post band",Vector3.new(1.8,.35,1.8),CFrame.new(at+Vector3.new(0,spot[3]*.28,0))*CFrame.Angles(0,spot[1],0),rgb(60,44,30),Enum.Material.Wood)
-	end
-	for _,spot in {{2.95,34,1},{6.1,38,.9}} do
-		local k=spot[3]
-		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.5*k,math.cos(spot[1])*spot[2])
-		local stone=part(folder,"Cover",Vector3.new(5,3,3.4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1]*1.7,0),rgb(124,120,110),Enum.Material.Slate)
-		stone:SetAttribute("WorldBreakable",true)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
@@ -17804,7 +17992,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -18246,7 +18434,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -18474,21 +18662,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND72">
+  <Item class="StarterPlayer" referent="ND73">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND73">
+    <Item class="StarterPlayerScripts" referent="ND74">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND74">
+      <Item class="Folder" referent="ND75">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND75">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -18652,7 +18840,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -18943,7 +19131,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -19498,7 +19686,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND79">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -21026,6 +21214,9 @@ function FX:fighter(model,actor,dt)
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
 	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
 		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
+		-- (Embodiment) held in the hand as a state, and through the strike that releases it.
+		or (actor.bodyState~=nil and actor.bodyState.id=="Chidori")
+		or (actor.attackVariant=="Chidori" and (actor.state=="Startup" or actor.state=="Active"))
 	if chidori and not aura.chidori and (actor.health or 1)&gt;0 then
 		local hand=model:FindFirstChild("RightHand") or root
 		local at=new("Attachment",{Name="Chidori"},hand)
@@ -21247,7 +21438,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -21828,7 +22019,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -22306,7 +22497,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND81">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -22487,7 +22678,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND82">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -23227,7 +23418,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -23404,7 +23595,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -23585,7 +23776,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND85">
+        <Item class="LocalScript" referent="ND86">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -23734,7 +23925,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -23992,7 +24183,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -24311,7 +24502,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -24904,7 +25095,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -25506,7 +25697,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -25647,7 +25838,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -28362,7 +28553,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -28576,7 +28767,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -28877,7 +29068,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -28890,7 +29081,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -28993,7 +29184,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -29120,7 +29311,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -29263,7 +29454,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -29479,7 +29670,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND99">
+  <Item class="Lighting" referent="ND100">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -29497,7 +29688,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND100">
+  <Item class="SoundService" referent="ND101">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

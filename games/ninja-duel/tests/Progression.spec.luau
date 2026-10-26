@@ -838,6 +838,9 @@ test("Sasuke · Wall Chidori: charged from a wall run it hangs on the wall and c
  end
  local charge,a,c=wall({"ChidoriFocus","WallChidori"})
  assert(math.abs(charge-.3)<.01 and a.wall==nil and a.airHold>c.now,"not a wall charge ("..string.format("%.2f",charge)..")")
+ -- (Embodiment) Charged off the wall it is held; the strike dives it out.
+ until_(c,.5,function() return a.bodyState~=nil end,"the Chidori was never held off the wall")
+ assert(c:request(a,"Attack"),"the strike does not release it off the wall")
  until_(c,.5,function() return a.attackName=="ChidoriThrust" end,"the thrust never left the wall")
  local baseCharge=wall({"ChidoriFocus"})
  assert(baseCharge>.45,"the base Chidori charged fast on a wall")
