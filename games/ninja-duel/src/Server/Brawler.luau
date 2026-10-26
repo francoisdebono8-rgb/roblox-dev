@@ -731,10 +731,13 @@ function Brawler.request(c,a,action)
     local b=a.target
     local look=b.root.Position-a.root.Position;look=Vector3.new(look.X,0,look.Z)
     look=if look.Magnitude>.1 then look.Unit else a.root.CFrame.LookVector
-    c:relocate(a,b.root.Position+Vector3.new(0,2.4,0)-look*1.2)
+    -- (Continuity blocker) Not a teleport: the body vaults there through
+    -- the barrage's startup (Combat's vault step), so the heel comes down
+    -- from where the body really went.
     a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
     a.airborne=true
     local ok=Brawler.start(c,a,"Slam")
+    if a.pending then a.vault={goal=b.root.Position+Vector3.new(0,2.4,0)-look*1.2,untilTime=c.now+a.pending.spec.startup,serial=a.attackSerial} end
     if a.pending then a.pending.spec.damage=17;a.pending.spec.impulse=Vector3.new(0,-90,8);a.attackVariant="LionBarrage" end
     c:cue(a,"LION COMBO",.9);Brawler.event(c,a,"LionCombo")
     return ok
@@ -937,11 +940,14 @@ function Brawler.airFinisher(c,a,f)
  -- along the line (the dive is head first): put over its head, or turned
  -- toward it, the two bodies interpenetrated all the way down (seen in Studio).
  local side=look:Cross(Vector3.yAxis)
- c:relocate(a,b.root.Position+Vector3.new(0,1.8,0)+side*3)
+ -- (Continuity blocker) It vaults there through the startup (Combat's vault
+ -- step), not a relocation.
+ local goal=b.root.Position+Vector3.new(0,1.8,0)+side*3
  a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)
  a.airborne=true
  local ok=Brawler.start(c,a,"Slam")
  local p=a.pending
+ if p then a.vault={goal=goal,untilTime=c.now+p.spec.startup,serial=a.attackSerial} end
  if p then
   if use.damage then p.spec.damage=use.damage end
   if use.impulse then p.spec.impulse=use.impulse end

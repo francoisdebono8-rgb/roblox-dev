@@ -710,6 +710,19 @@ end
 -- dimensions (motion in updateActor). The strike that connected and opened the
 -- window (a launcher, the third light, a palm thrust...) may be cancelled into
 -- it at once: E pressed on the knock-away is never eaten by its active frames.
+-- (Continuity blocker: magnetic pursuit) The chase heads for where the body
+-- was going when it set off; that point only follows the body's real path at
+-- Config.Chase.Steer studs/s. A chase that re-solved the body's position every
+-- frame read as the chaser glued to it (constant spacing all through the air).
+function Combat.steerChase(a,want,dt)
+	local p=a.chasePoint
+	if not p or a.chaseSerial~=a.pursuitStarted then a.chasePoint=want;a.chaseSerial=a.pursuitStarted;return want end
+	local delta=want-p
+	local step=Config.Chase.Steer*dt
+	if delta.Magnitude>step then p+=delta.Unit*step else p=want end
+	a.chasePoint=p
+	return p
+end
 function Combat:chase(a)
 	if a.chakra<Config.PursuitCost then return false,"Need chakra" end
 	if (a.target.root.Position-a.root.Position).Magnitude>Config.PursuitRange then return false,"Too far" end
@@ -1361,7 +1374,11 @@ function Combat:updateActor(a,dt)
 		local b=a.target
 		local back=a.root.Position-b.root.Position;back=Vector3.new(back.X,0,back.Z)
 		back=if back.Magnitude>.1 then back.Unit else -b.root.CFrame.LookVector
-		local point=b.root.Position+back*2.1-Vector3.new(0,1.1,0)
+		-- Where the rising body will be when the follow ends (not where it is).
+		local ahead=math.max(0,(a.shadowUntil or now)-now)
+		local rise=if b.reaction and b.reactionVelocity then b.reactionVelocity else Vector3.zero
+		local fall=if b.reaction and b.airborne then 37.5*ahead*ahead else 0
+		local point=Combat.steerChase(a,b.root.Position+rise*ahead-Vector3.new(0,fall,0)+back*2.1-Vector3.new(0,1.1,0),dt)
 		local offset=point-a.root.Position
 		a.airborne=true
 		a.aimIntent={target=point,speed=math.clamp(offset.Magnitude*16,0,140),acceleration=3200}
@@ -1378,16 +1395,17 @@ function Combat:updateActor(a,dt)
 		local elapsed=now-(a.pursuitStarted or now)
 		local remaining=math.max(.04,(a.pursuitDuration or .24)-elapsed)
 		local velocity=if b.reaction and b.reactionVelocity then b.reactionVelocity else b.root.AssemblyLinearVelocity
-		local lead=math.min(remaining,.15)
+		-- Lead to the end of the chase: it sets off for the intercept.
+		local lead=remaining
 		local fall=if b.reaction and b.airborne then 37.5*lead*lead else 0
 		local predicted=b.root.Position+velocity*lead-Vector3.new(0,fall,0)
 		local line=a.pursuitLine or Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z).Unit
-		local point=predicted-line*2.6-Vector3.new(0,.6,0)
+		local point=Combat.steerChase(a,predicted-line*2.6-Vector3.new(0,.6,0),dt)
 		local toward=point-a.root.Position
 		local distance=(b.root.Position-a.root.Position).Magnitude
 		local face=Vector3.new(b.root.Position.X-a.root.Position.X,0,b.root.Position.Z-a.root.Position.Z)
 		-- (Combat convergence: bounded, a chase no longer snaps the body round.)
-		if face.Magnitude>.3 then self:turnToward(a,face,dt,1440) end
+		if face.Magnitude>.3 then self:turnToward(a,face,dt,Config.Chase.Turn) end
 		if Brawler.chaseArrived(self,a) then
 			a.untilTime=math.min(a.untilTime,now)
 		elseif toward.Magnitude>.2 then
@@ -1434,6 +1452,12 @@ function Combat:updateActor(a,dt)
 		if a.state=="Active" and delta.Magnitude>2.8 then
 			a.aimIntent={target=a.target.root.Position-delta.Unit*2.4,speed=92,acceleration=2600}
 		end
+	elseif a.state=="Startup" and a.vault and a.vault.serial==a.attackSerial and now<a.vault.untilTime+.05 then
+		-- (Continuity blocker) A vault over the body (the Lion Combo's flip):
+		-- a short kinetic arc to its point, never a relocation.
+		local to=a.vault.goal-a.root.Position
+		local left=math.max(.03,a.vault.untilTime-now)
+		a.aimIntent={target=a.vault.goal,speed=math.clamp(to.Magnitude/left,20,160),acceleration=4000}
 	elseif a.state=="Active" and a.pending and a.pending.kind=="Brawl" and a.attackName=="Slam" then
   -- The slam owns a continuous plunge: a constant downward velocity with bounded
   -- acceleration, plus a gentle drift onto the victim. No per-frame correction.
@@ -1507,7 +1531,15 @@ function Combat:updateActor(a,dt)
    -- swing); lateral routes still track it.
    -- (A fighter's own weight in the turn, StrikeTurnScale: Zabuza's cleaver
    -- swings round slower, Itachi's economy turns a little sharper.)
-   self:turnToward(a,flat,dt,(if spec.orbit or spec.angle then 1080 elseif a.state=="Startup" then 900 else 420)*(a.def.StrikeTurnScale or 1))
+   -- (Continuity blocker: magnetic facing) A strike turns little once it
+   -- has started and barely while it is out: a body that slipped aside is
+   -- missed, not tracked; one that went past behind is not turned to at all
+   -- (the overshoot reads; the next action turns round).
+   local look=Vector3.new(a.root.CFrame.LookVector.X,0,a.root.CFrame.LookVector.Z)
+   local behind=not attack.aim and look.Magnitude>.01 and look.Unit:Dot(flat.Unit)<math.cos(math.rad(115))
+   -- (A strike pushed at another body, a clone at his side, turns to it.)
+   local turn=if spec.orbit or spec.angle then 1080 elseif attack.aim then 900 elseif a.state=="Startup" then Config.Facing.Startup else Config.Facing.Active
+   if not behind then self:turnToward(a,flat,dt,turn*(a.def.StrikeTurnScale or 1)) end
   end
  end
 	if a.landedAtSerial~=a.model:GetAttribute("MovementLandedAt") then

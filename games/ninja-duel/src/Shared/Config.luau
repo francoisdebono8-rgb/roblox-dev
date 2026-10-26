@@ -63,6 +63,12 @@ return {
 	-- counts; Scan: how far around the target the nearest surface is looked
 	-- for; Cache: seconds a read is reused; Refresh: seconds the arena's
 	-- surface list is reused.
+	-- (Continuity blocker) How fast a strike still turns to the opponent,
+	-- degrees/s: in its startup, and once it is out (was 900 / 420).
+	Facing = {Startup = 480, Active = 160},
+	-- (Continuity blocker) A chase heads for the point the body was going to
+	-- and lets it drift at Steer studs/s; it turns at Turn degrees/s.
+	Chase = {Steer = 60, Turn = 720},
 	Perception = {Behind = 14, Scan = 48, Cache = 0.12, Refresh = 10},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that

@@ -643,7 +643,8 @@ function AI:update(now)
 	local body=not a.airborne and Bodies.threat(c,a,6.5)
 	if body and self.rng:NextNumber()<(if body.state=="Startup" then .8 else .3) then
 		local to=Vector3.new(body.position.X-a.root.Position.X,0,body.position.Z-a.root.Position.Z)
-		if to.Magnitude>.5 then a.move=to.Unit;if c:request(a,"Attack") then return end end
+		-- (The push at the clone is aim, not the stick's opener: neutral intent.)
+		if to.Magnitude>.5 then a.move=to.Unit;if press(c,a,"Attack","neutral",0) then return end end
 	end
 	if a.chakra<18 then a.move=-toward+tangent*0.2; return end
 	-- (Rock Lee has no blade to probe with: his tool is the deflecting kick.)

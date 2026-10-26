@@ -398,4 +398,60 @@ test("the space is read: broken scenery is no surface; the bot brings him to a w
  assert(math.abs(x.root.Position.Z)>1.5 or x.root.Position.X<6.5,"still pinned in the corner: "..tostring(x.root.Position))
 end)
 
+-- Continuity blocker ----------------------------------------------------------
+test("a strike that is out barely turns: a body that slipped aside is missed, one that went behind is not turned to",function()
+ local Cfg=H.load("Shared/Config")
+ local c,a,b=H.duel("Lion","Mirage")
+ c:relocate(a,V.new(0,3,3.6));c:relocate(b,V.new(0,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+ assert(c:request(a,"Attack"))
+ local n=0
+ repeat H.step(c,.005);n+=1 until a.state=="Active" or n>100
+ -- He slips to the side (60 degrees off the line).
+ local before=a.root.CFrame.LookVector
+ c:relocate(b,a.root.Position+V.new(math.sin(math.rad(60)),0,-math.cos(math.rad(60)))*3.6)
+ H.step(c,.05)
+ local turned=math.deg(math.acos(math.clamp(before:Dot(a.root.CFrame.LookVector),-1,1)))
+ assert(turned<=12,string.format("the strike tracked him %.1f degrees in 0.05 s",turned))
+ -- He went past behind: no turn at all.
+ local c2,x,y=H.duel("Lion","Mirage")
+ c2:relocate(x,V.new(0,3,3.6));c2:relocate(y,V.new(0,3,0))
+ x.root.CFrame=H.C.lookAt(x.root.Position,y.root.Position)
+ assert(c2:request(x,"Attack"))
+ local look=x.root.CFrame.LookVector
+ c2:relocate(y,x.root.Position-look*3.5)
+ H.step(c2,.05)
+ assert(look:Dot(x.root.CFrame.LookVector)>.999,"the strike swung round to a body behind it")
+end)
+
+test("a chase heads for where the body was going; that point only drifts with it",function()
+ local Combat=H.load("Server/Combat")
+ local Cfg=H.load("Shared/Config")
+ local a={pursuitStarted=1}
+ local p0=Combat.steerChase(a,V.new(0,10,0),.02)
+ assert(p0==V.new(0,10,0))
+ local p1=Combat.steerChase(a,V.new(0,30,0),.02)
+ assert(math.abs((p1-p0).Magnitude-Cfg.Chase.Steer*.02)<1e-4,"the chase point jumped with the body")
+ a.pursuitStarted=2
+ assert(Combat.steerChase(a,V.new(5,5,5),.02)==V.new(5,5,5),"a new chase did not start from its own intercept")
+end)
+
+test("the Lion Combo's flip and a lotus are a vault over the body, never a teleport",function()
+ for _,id in {"Lion","Leaf"} do
+  local c,a,b=H.duel(id,"Mirage")
+  c:relocate(a,V.new(0,12,3.4));c:relocate(b,V.new(0,12,0))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  a.airborne=true;b.airborne=true;a.airHold=c.now+1
+  H.load("Server/Brawler").react(c,b,"Juggled",V.zero,1,a)
+  a.lionUntil=c.now+1
+  local before=a.root.Position
+  assert(c:request(a,"Heavy"),id..": heavy refused")
+  assert((a.root.Position-before).Magnitude<.5,id..": the body jumped "..string.format("%.1f",(a.root.Position-before).Magnitude).." studs on the press")
+  local last,worst=a.root.Position,0
+  for _=1,30 do H.step(c,.01);worst=math.max(worst,(a.root.Position-last).Magnitude);last=a.root.Position end
+  assert(worst<1.8,id..": a frame moved the body "..string.format("%.2f",worst).." studs")
+ end
+end)
+
 print(string.format("NinjaDuel embodiment: %d PASS (headless; the freedom is a Studio check)",passed))
