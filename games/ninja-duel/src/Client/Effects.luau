@@ -1643,20 +1643,31 @@ function FX:fighter(model,actor,dt)
 		if Kit.has("lightning") then
 			-- (Reference quality) the birds: arcs of lightning thrown out of the
 			-- hand, flickering through our own bolt sheet.
-			aura.chidori.bolts=Kit.stream(at,"lightning",{Rate=30,Lifetime=NumberRange.new(.05,.09),Speed=NumberRange.new(0,0),
+			aura.chidori.bolts=Kit.stream(at,"lightning",{Rate=45,Lifetime=NumberRange.new(.05,.1),Speed=NumberRange.new(0,0),
 				FlipbookMode=Enum.ParticleFlipbookMode.Random,
-				Color=ColorSequence.new(Color3.fromRGB(196,226,255)),LightEmission=1,Size=num({{0,2.6},{1,3.4}}),
-				Transparency=num({{0,0},{1,.3}}),Rotation=NumberRange.new(0,360)})
+				Color=ColorSequence.new(Color3.fromRGB(170,210,255)),LightEmission=1,Size=num({{0,4.2},{1,5.6}}),
+				Transparency=num({{0,0},{1,.2}}),Rotation=NumberRange.new(0,360)})
+			-- A hard white-blue core in the palm, pulsing.
+			local ball=block(self.folder,Vector3.one*1.2,hand.CFrame,Color3.fromRGB(214,234,255),Enum.Material.Neon)
+			ball.Shape=Enum.PartType.Ball;ball.Transparency=.1;ball.Name="ChidoriCore"
+			aura.chidori.ball=ball;aura.chidori.hand=hand
+			aura.chidori.light.Range=16
 		end
 		sound(hand,SOUND.whoosh,.5,2.6)
 	elseif not chidori and aura.chidori then
 		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
 		Kit.stop(aura.chidori.bolts)
+		if aura.chidori.ball then aura.chidori.ball:Destroy() end
 		Debris:AddItem(aura.chidori.attachment,.4)
 		aura.chidori=nil
 	end
 	if aura.chidori then
-		aura.chidori.light.Brightness=1.2+math.random()*1.4
+		aura.chidori.light.Brightness=2+math.random()*3
+		if aura.chidori.ball and aura.chidori.hand then
+			local size=1+math.random()*.5
+			aura.chidori.ball.Size=Vector3.one*size
+			aura.chidori.ball.CFrame=aura.chidori.hand.CFrame*CFrame.new(0,-.7,0)
+		end
 		-- Carried at a run, it tears at the ground beside him: a crackle to the
 		-- floor and a scored line now and then.
 		local speed=Vector3.new(root.AssemblyLinearVelocity.X,0,root.AssemblyLinearVelocity.Z).Magnitude
