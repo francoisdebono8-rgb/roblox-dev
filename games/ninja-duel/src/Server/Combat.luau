@@ -573,7 +573,10 @@ function Combat:faceLocked(a,dt)
 	if current.Magnitude<.01 then current=desired end
 	current=current.Unit
 	local angle=math.atan2(current:Cross(desired).Y,current:Dot(desired))
-	local rate=math.rad(if committed then 540 else 760)*dt
+	-- (Continuity blocker: magnetic facing) A turn the hips and feet can
+	-- carry: a body whipping 180 degrees in under a quarter second read as the
+	-- lock, not the fighter (Config.Facing.Neutral / Committed).
+	local rate=math.rad(if committed then Config.Facing.Committed else Config.Facing.Neutral)*dt
 	local turn=math.clamp(angle,-rate,rate)
 	local look=CFrame.fromAxisAngle(Vector3.yAxis,turn):VectorToWorldSpace(current)
 	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+look)

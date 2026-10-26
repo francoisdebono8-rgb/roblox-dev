@@ -64,8 +64,10 @@ return {
 	-- for; Cache: seconds a read is reused; Refresh: seconds the arena's
 	-- surface list is reused.
 	-- (Continuity blocker) How fast a strike still turns to the opponent,
-	-- degrees/s: in its startup, and once it is out (was 900 / 420).
-	Facing = {Startup = 480, Active = 160},
+	-- degrees/s: in its startup, and once it is out (was 900 / 420); the
+	-- lock's own turn in neutral, and while moving away or sprinting (was
+	-- 760 / 540).
+	Facing = {Startup = 480, Active = 160, Neutral = 520, Committed = 420},
 	-- (Continuity blocker) A chase heads for the point the body was going to
 	-- and lets it drift at Steer studs/s; it turns at Turn degrees/s.
 	Chase = {Steer = 60, Turn = 720},
