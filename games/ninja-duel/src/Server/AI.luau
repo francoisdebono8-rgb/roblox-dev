@@ -5,6 +5,7 @@ local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
+local Perception=require(script.Parent.Perception)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -336,6 +337,16 @@ function AI:update(now)
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
 	local edge=math.clamp((centre.Magnitude-(Config.ArenaRadius-45))/30,0,1)
 	if edge>0 and radial<.5 and centre.Magnitude>.1 then a.move-=centre.Unit*edge*.9 end
+	-- (Embodiment) A ninja moves through the terrain: spacing at range, it
+	-- drifts to the scenery (a boulder to stand behind, a trunk, the wall),
+	-- so the exchanges that follow happen where the space can be used.
+	if self.probing and not holding and not fooled then
+		local spot=Perception.nearest(c,a.root.Position,tune.Terrain or 50)
+		if spot and spot.distance>5 then
+			a.move+=spot.direction*(tune.TerrainPull or .9)
+			if (self.terrainAt or -9)<now-3 then self.terrainAt=now;Brawler.event(c,a,"Perceive:terrain:"..spot.kind) end
+		end
+	end
 	a.sprinting=distance>desired+6 and not calm
 	if calm then a.move*=.7 end
 	-- Step-in feint at probing range: two quick steps in, then out of reach,
@@ -659,6 +670,46 @@ function AI:update(now)
 	-- A body on the floor with wake-up cover cannot be hit: no swings at it.
 	local covered=target.groundPose~=nil and (target.invulnerableUntil or 0)>now
 	if covered then return end
+	-- Ninja Embodiment: the space. A body on a wall is finished there (light
+	-- blows pin, a heavy bounces him back out); a body with its own back to a
+	-- surface gets out of the corner; and with a surface near the opponent
+	-- the bot circles to put him between itself and it, so the strike that
+	-- follows (the resolver's wall situation) drives him into it.
+	local seen=if fooled then nil else Perception.read(c,a)
+	if seen and free and not self.plan then
+		if target.reaction=="WallSplat" and distance<6.5 then
+			c:request(a,if self.rng:NextNumber()<.35 then "Heavy" else "Attack");return
+		end
+		local corner=seen.behindSelf
+		if corner and corner.distance<(tune.Corner or 4.5) and distance<9 then
+			a.move=(tangent*(self.strafeSign or 1)+toward*.15).Unit
+			if (self.cornerAt or -9)<now-1 then self.cornerAt=now;Brawler.event(c,a,"Perceive:corner") end
+			if self.rng:NextNumber()<.2 then c:request(a,"Dodge") end
+			return
+		end
+		local near=seen.nearest
+		local driven=seen.behindTarget and seen.behindTarget.distance<=12
+		if near and not driven and near.distance<(tune.Herd or 16) and distance>2.5 and distance<14 then
+			if not self.herdUntil and now>(self.herdNext or 0) then
+				self.herdUntil=now+(tune.HerdTime or 1.6);self.herdNext=now+(tune.HerdTime or 1.6)+(tune.HerdGap or 2.5)
+				Brawler.event(c,a,"Perceive:herd:"..near.kind)
+			end
+			if self.herdUntil and now<self.herdUntil then
+				-- Where to stand: on the far side of him from the surface.
+				local want=-near.direction
+				local have=-seen.line
+				if have:Dot(want)<.85 then
+					local cross=have.X*want.Z-have.Z*want.X
+					local s=if cross<0 then 1 else -1
+					a.move=(tangent*s+toward*(if distance>5 then .35 else -.15)).Unit
+					a.sprinting=distance>8
+					return
+				end
+				self.herdUntil=nil
+			end
+		end
+		if self.herdUntil and now>=self.herdUntil then self.herdUntil=nil end
+	end
 	-- Ninja Embodiment (EMB-002): an entry is a plan, not a walk into the
 	-- string. Out of a run (the running strike), over the top (the drop
 	-- strike on the way down), round a committed body to its side, or

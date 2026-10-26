@@ -469,7 +469,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: Résolveur d’action contextuel universel
 - sources: [DEC-027](DECISIONS.md#dec-027--ninja-embodiment--le-joueur-devient-le-ninja); [brief](../archive/requests/2026-10-25-ninja-embodiment-game-completion.md); [règle universelle](../archive/requests/2026-10-25-ninja-embodiment-universal-system-rule.md); [audit](../reports/ninja-embodiment-2026-10-25/AUDIT.md)
 - validation: La même entrée produit des frappes différentes selon vitesse, angle, support, altitude, montée/descente, forme/arme, posture adverse, monde ; déclaré en données par fighter ; la chaîne Light1→2→3 cesse d’être le squelette dominant (part mesurée en combat libre).
-- evidence: 25/10 : Attack = compteur Light1→2→3 ; contexte limité à sprint>28, arrivée, mur, air, riposte.
+- evidence: 25/10 : Attack = compteur Light1→2→3 ; contexte limité à sprint>28, arrivée, mur, air, riposte. Lots 1 et 3 ([progression](../reports/ninja-embodiment-2026-10-25/PROGRESS.md)) : `Shared/ActionContext` (drop, wall, back, run, flank, close, reach) + `Server/Perception` (surface derrière lui/moi, la plus proche) ; le mur termine aussi une chaîne. Studio IA 45 s : frappes universelles 63–81 %, contextes 2–4/combat — les défauts run/reach restent DashAttack partagé ; déclarations par fighter à faire.
 - outcome: PENDING
 
 ## EMB-003 — Agence du défenseur et verrous mérités

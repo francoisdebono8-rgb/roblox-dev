@@ -43,3 +43,22 @@ Studio (ND-Debug place):
 - AI vs AI, 40 s each: Sasuke–Gaara 31 impacts (15 craters, 13 scorches, 4 punctures, 2 cracks); Minato–Itachi 16; Rival–Bone 4 punctures; Gale–Leaf 0. The AI fights in the middle of the field: it never brings a fight to a tree or a boulder. **The world reacts; the AI does not yet use it** (perception / AI environment use is still open).
 
 Still missing for EMB-004: world-aware AI, chakra actions reading the world facts (embeds, walls, stumps), materials beyond this arena, a 3-minute Studio fight that visibly tells its story.
+
+## Lot 3 — perception: the space around a fight
+
+`Server/Perception` is one shared read of the space, cached per actor (0.12 s, invalidated when either body moves a stud): the surface beyond the target on the attacker's line (`behindTarget`), the surface at the attacker's own back (`behindSelf`), the nearest surface around the target (geometry over the arena's surface list, no rays), and whether the world stands between them. It owns the surface rule (NinjaWall or WorldBreakable, not Broken); `Brawler.splatSurface` delegates to it.
+
+- Resolver: a new situation, `wall` — his back to a surface within 12 studs on this body's line. Default: the fighter's own string finisher (its Light3 throws the body), or `graph.wallStrike`. It is also read **inside a string**: with a surface behind him, the next press ends the string into it instead of playing the next light (the stick routes still come first).
+- AI: a body on a wall is finished there (pins, a heavy to bounce); with its own back to a surface the bot slips out sideways; with a surface within 40 studs of the opponent it circles to put him between itself and it (1.6 s tries, 2.5 s apart); spacing at range it drifts to the scenery.
+- Arena: four training posts (thin wood) and two low stones nearer the middle, plus the existing trees and boulders: the middle of the field had nothing in it.
+- Headless (Embodiment.spec +2 cases, both mutation-checked): the opener with his back to the wall is the drive and he splats; inside a string the wall ends it, in the open the next light follows; a stump is no surface; the bot circles to the far side of a wall; a cornered bot slips out.
+
+Studio, AI vs AI, 45 s per pairing (after this lot):
+
+| Pairing | universal | locked | context events | space events | world |
+|---|---|---|---|---|---|
+| Sasuke–Minato | 77 % / 81 % | 28 % / 11 % | wall 1, reach 1 | herd 3, terrain 21, splat 1 | 24 impacts |
+| Kimimaro–Gaara | 71 % / 78 % | 26 % / 10 % | wall 1, reach 4, run 2 | herd 13, terrain 12 | 7 impacts |
+| Lee–Itachi | 63 % / 72 % | 30 % / 14 % | close, flank, wall, drop 1 each | herd 10, terrain 19, corner 1, splat 1 | 14 impacts, 1 cracked |
+
+Verdict: the bodies now read the space and move through it (terrain and herd events every few seconds; the first wall drives and splats in free fights), but the strike vocabulary is still mostly shared: the resolver's run/reach default is the shared DashAttack, and the string still runs on lights. **Not a breakthrough yet.** Next: the fighters declare what their own body does in each situation (vertical slices Sasuke, Minato, Kimimaro), so the same situation reads differently per ninja.

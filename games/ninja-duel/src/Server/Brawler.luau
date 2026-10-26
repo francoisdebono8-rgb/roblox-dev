@@ -5,6 +5,7 @@ local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
 local WorldReaction=require(script.Parent.WorldReaction)
+local Perception=require(script.Parent.Perception)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -51,14 +52,22 @@ function Brawler.situation(c,a)
  local profile=a.def.AttackProfile and a.def.AttackProfile.Light1
  -- (+1: the strike's volume lands about a stud past the contact distance.)
  x.plainReach=light.travel*(a.def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+ -- The space: a surface at the target's back on this body's line (a drive
+ -- puts him into it). Not under an illusion (the image has no wall behind).
+ if not fooled then
+  local seen=Perception.read(c,a)
+  x.wallBehind=seen and seen.behindTarget and seen.behindTarget.distance or nil
+ end
  return x
 end
--- The strike this situation calls for (nil: the plain strike).
-function Brawler.contextual(c,a)
+-- The strike this situation calls for (nil: the plain strike). `only`
+-- limits the situations read (inside a string only the wall counts).
+function Brawler.contextual(c,a,only)
  local x=Brawler.situation(c,a)
  if not x then return nil end
- return ActionContext.resolve(x,Brawler.graph(a),Attacks)
+ return ActionContext.resolve(x,Brawler.graph(a),Attacks,only)
 end
+local WALL_ONLY={wall=true}
 -- The strike a riposte (or a counter stance's answer) comes out as: the
 -- fighter's own gesture (MoveGraphs riposte: Madara's pommel, Hashirama's
 -- shoulder, Hiruzen's point), and while awake the one Awakening.Riposte
@@ -783,6 +792,17 @@ function Brawler.request(c,a,action)
    return Brawler.start(c,a,route)
   end
  end
+ -- (EMB-002) Inside a string the wall decides when it ends: with a surface at
+ -- his back, the next press is the drive that puts him into it (the string's
+ -- own finisher unless the fighter declares another), not the next light.
+ if action=="Attack" and inChain and (a.combo or 0)>=1 then
+  local move,tag=Brawler.contextual(c,a,WALL_ONLY)
+  if move then
+   a.lastAttack=c.now
+   Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
+   return Brawler.start(c,a,move)
+  end
+ end
  -- The light step follows the confirmed hits: Light1 opens, Light2 after one
  -- confirmed hit, Light3 (the string's end) after two. Out of a string (a
  -- whiff, a block, a pause, a hit taken) it is Light1 again.
@@ -935,10 +955,9 @@ function Brawler.stopStyle(p)
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
+-- (Server/Perception owns the rule: a broken one is a stump or a mound now.)
 function Brawler.splatSurface(part)
- -- (A broken one is a stump or a mound now: nothing to be slammed into.)
- if part:GetAttribute("WorldState")=="Broken" then return false end
- return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
+ return Perception.surface(part)
 end
 -- Wall splat: a body carried into a wall hard enough sticks to it for a
 -- moment. The attacker chooses: pursue (E), pin it with lighter hits or

@@ -58,6 +58,12 @@ return {
 		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
 		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
 		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
+	-- Ninja Embodiment (Server/Perception): the space a body reads around a
+	-- fight. Behind: how far past the target (or behind itself) a surface
+	-- counts; Scan: how far around the target the nearest surface is looked
+	-- for; Cache: seconds a read is reused; Refresh: seconds the arena's
+	-- surface list is reused.
+	Perception = {Behind = 14, Scan = 48, Cache = 0.12, Refresh = 10},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
@@ -92,5 +98,11 @@ return {
 		-- reaction) and comes in with a plan that makes the situation the
 		-- strike reads (EMB-002): out of a run, over the top, from the side of a
 		-- committed body; or straight in.
-		Recover = 0.5, Plan = 0.65 },
+		-- It also reads the space (Server/Perception): with a surface within
+		-- Herd studs of the opponent it circles to put him between itself and
+		-- it (HerdTime per try, HerdGap between tries), and it steps out of a
+		-- corner when its own back is within Corner studs of one.
+		Recover = 0.5, Plan = 0.65, Herd = 40, HerdTime = 1.6, HerdGap = 2.5, Corner = 4.5,
+		-- Spacing at range it drifts to scenery within Terrain studs.
+		Terrain = 50, TerrainPull = 0.9 },
 }

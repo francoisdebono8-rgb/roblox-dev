@@ -9,6 +9,8 @@
 --
 -- Situations (first match wins):
 --   drop    falling onto a grounded body below and close
+--   wall    his back is to a surface on this body's line (a drive puts him
+--           into it); also read inside a string, where it ends the string
 --   back    the opponent's back is turned to this body, within reach
 --   run     carrying real speed toward the opponent (not a full sprint)
 --   flank   at the opponent's side, within reach
@@ -32,9 +34,12 @@ Context.Tune={
 	RunSpeed=13,        -- speed toward the opponent for a running strike
 	RunMin=3.5,RunMax=10,
 	ReachMin=6.8,ReachSpan=3,ReachStill=4,
+	WallBehind=12,      -- a surface at most this far behind the target (a
+	                    -- finisher throws a body about that far)
 }
 
 -- s: {pos, look, vel, airborne, grounded, target={pos, look, airborne, down, guarding}}
+-- (Brawler adds the world facts it perceives: x.wallBehind, x.plainReach.)
 -- Returns a table describing the situation (pure, no Roblox services).
 function Context.read(s)
 	local t=s.target
@@ -57,6 +62,7 @@ local T=Context.Tune
 -- Ordered situations. Each test reads only the context table.
 Context.Situations={
 	{tag="drop",test=function(x) return x.airborne and not x.targetAirborne and not x.targetDown and x.vy<T.DropFall and x.dy>1.5 and x.dy<=T.DropHeight and x.dist<=T.DropReach end},
+	{tag="wall",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and x.wallBehind~=nil and x.wallBehind<=T.WallBehind end},
 	{tag="back",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and x.facingDot<T.BackDot end},
 	{tag="run",test=function(x) return not x.airborne and x.toward>=T.RunSpeed and x.dist>=T.RunMin and x.dist<=T.RunMax end},
 	{tag="flank",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist<=T.Reach and math.abs(x.facingDot)<T.FlankDot end},
@@ -71,6 +77,8 @@ Context.Situations={
 -- shared strike.
 Context.Defaults={
 	drop=function(graph) return "DropStrike" end,
+	-- The fighter's own string finisher (its Light3 throws the body away).
+	wall=function(graph) return graph.wallStrike or "Light3" end,
 	back=function(graph) return "BackStrike" end,
 	run=function(graph) return graph.runStrike or "DashAttack" end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
@@ -81,11 +89,11 @@ Context.Defaults={
 -- graph: the fighter's MoveGraphs entry (may be nil); attacks: the Attacks
 -- table (a slot naming a strike that does not exist is skipped).
 -- Returns move name and situation tag, or nil for the plain strike.
-function Context.resolve(x,graph,attacks)
+function Context.resolve(x,graph,attacks,only)
 	graph=graph or {}
 	local declared=graph.context or {}
 	for _,situation in Context.Situations do
-		if situation.test(x) then
+		if (not only or only[situation.tag]) and situation.test(x) then
 			local move=declared[situation.tag]
 			if move==false then continue end
 			if move==nil then move=Context.Defaults[situation.tag](graph) end

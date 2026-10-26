@@ -290,4 +290,91 @@ test("blades, fire and a swing that met the world leave their own marks",functio
  assert(World.state(c).stats.impacts>before,"the whiffed swing never met the wall")
 end)
 
+-- Perception -----------------------------------------------------------------
+local Perception=H.load("Server/Perception")
+
+test("the space is read: a surface at his back changes the strike, and ends a string",function()
+ local Brawler=H.load("Server/Brawler")
+ -- Pure: the wall situation and its default, and `only`.
+ local x=situation();x.wallBehind=5
+ local move,tag=Context.resolve(x,Graphs.Flashstep,Attacks)
+ assert(tag=="wall" and move=="Light3","wall situation: "..tostring(tag).."/"..tostring(move))
+ assert(Context.resolve(situation({target={look=V.new(0,0,-1)}}),Graphs.Flashstep,Attacks,{wall=true})==nil,"only= let another situation through")
+ -- In the game: his back to the wall, the opener is the drive, and it puts him in it.
+ H.clearWalls()
+ local c,a,b=H.duel("Flashstep","Mirage")
+ H.addWall(8)
+ c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(3.6,3,0))
+ a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+ b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+ local seen=Perception.read(c,a)
+ assert(seen.behindTarget and math.abs(seen.behindTarget.distance-4.4)<.2 and seen.behindTarget.kind=="wall","perception: "..tostring(seen.behindTarget and seen.behindTarget.distance))
+ assert(c:request(a,"Attack") and a.attackName=="Light3","opener with his back to the wall: "..tostring(a.attackName))
+ local splat=false
+ for _=1,120 do H.step(c,.01);if b.reaction=="WallSplat" then splat=true;break end end
+ assert(splat,"the drive did not put him on the wall ("..tostring(b.reaction)..")")
+ H.clearWalls()
+ -- Inside a string: no wall, a light; the wall appears behind him, the next press ends the string into it.
+ local function jabX()
+  local c,a,b=H.duel("Flashstep","Mirage")
+  c:relocate(a,V.new(0,3,0));c:relocate(b,V.new(3.6,3,0))
+  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
+  b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+  assert(c:request(a,"Attack") and a.attackName=="Light1","setup: the opener in the open is "..tostring(a.attackName))
+  local n=0
+  repeat H.step(c,.005);n+=1 until b.reaction=="HitStun" or n>120
+  return c,a,b
+ end
+ local c2,x2,y2=jabX()
+ assert(x2.combo==1,"setup: no confirmed jab")
+ H.step(c2,x2.untilTime-c2.now+.01)
+ H.addWall(y2.root.Position.X+5)
+ x2.perception=nil
+ assert(c2:request(x2,"Attack") and x2.attackName=="Light3","inside the string with a wall behind him: "..tostring(x2.attackName))
+ H.clearWalls()
+ local c3,x3,y3=jabX()
+ H.step(c3,x3.untilTime-c3.now+.01)
+ assert(c3:request(x3,"Attack") and x3.attackName=="Light2","inside the string in the open: "..tostring(x3.attackName))
+end)
+
+test("the space is read: broken scenery is no surface; the bot brings him to a wall and leaves a corner",function()
+ local AI=H.load("Server/AI")
+ local trunk=H.fakePart(V.new(0,10,0));trunk.Name="Field tree"
+ assert(Perception.surface(trunk))
+ trunk:SetAttribute("WorldState","Broken")
+ assert(not Perception.surface(trunk),"a stump is still a surface")
+ -- Herding: a wall six studs past him, the bot at his side.
+ H.clearWalls()
+ local c,a,b=H.duel("Mirage","Flashstep")
+ H.addWall(10)
+ c:relocate(b,V.new(4,3,0));c:relocate(a,V.new(4,3,7))
+ b.root.CFrame=H.C.lookAt(b.root.Position,a.root.Position)
+ a.def=table.clone(a.def);a.def.Techniques={}
+ local bot=AI.new(c,a,7)
+ -- A pressing bot (not probing at range, not breathing).
+ bot.probing=false;bot.modeUntil=math.huge
+ local function side() local d=a.root.Position-b.root.Position;d=V.new(d.X,0,d.Z).Unit;return d:Dot(V.new(-1,0,0)) end
+ local before=side()
+ local herded=false
+ for _=1,100 do
+  bot:update(c.now)
+  H.step(c,.02)
+  if c.match.events["Perceive:herd:wall"] then herded=true end
+  if side()>.8 then break end
+ end
+ H.clearWalls()
+ assert(herded,"the bot never read the wall near him")
+ assert(side()>before+.5,string.format("the bot did not circle to the far side (%.2f -> %.2f)",before,side()))
+ -- Its own back to the wall: it slips out sideways instead of trading there.
+ local c2,x,y=H.duel("Mirage","Flashstep")
+ H.addWall(10)
+ c2:relocate(x,V.new(8,3,0));c2:relocate(y,V.new(2,3,0))
+ x.def=table.clone(x.def);x.def.Techniques={}
+ local bot2=AI.new(c2,x,3);bot2.probing=false;bot2.modeUntil=math.huge
+ for _=1,40 do bot2:update(c2.now);H.step(c2,.02) end
+ H.clearWalls()
+ assert(c2.match.events["Perceive:corner"],"the cornered bot never read its own back")
+ assert(math.abs(x.root.Position.Z)>1.5 or x.root.Position.X<6.5,"still pinned in the corner: "..tostring(x.root.Position))
+end)
+
 print(string.format("NinjaDuel embodiment: %d PASS (headless; the freedom is a Studio check)",passed))

@@ -340,6 +340,8 @@ function Harness.duel(first,second,kits)
  local folder=fakePart();folder.Name="Duel_1"
  folder.bones={}
  function folder:FindFirstChild(key) if key=="Effects" then return effects end return nil end
+ -- The arena's surfaces as the server perceives them: the spec's walls.
+ function folder:GetDescendants() local out={} for _,w in Harness.walls do table.insert(out,w.part) end return out end
  -- The arena floor sits at the origin plane and actors stand 3 studs above it,
   -- exactly like World.arena + World.rig, so grounded and landing logic is real.
   local match={origin=V.zero,phase="Duel",effects=effects,folder=folder,events={},cues={}}

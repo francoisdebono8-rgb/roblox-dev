@@ -29,6 +29,8 @@
 --
 -- Situations (first match wins):
 --   drop    falling onto a grounded body below and close
+--   wall    his back is to a surface on this body's line (a drive puts him
+--           into it); also read inside a string, where it ends the string
 --   back    the opponent's back is turned to this body, within reach
 --   run     carrying real speed toward the opponent (not a full sprint)
 --   flank   at the opponent's side, within reach
@@ -52,9 +54,12 @@ Context.Tune={
 	RunSpeed=13,        -- speed toward the opponent for a running strike
 	RunMin=3.5,RunMax=10,
 	ReachMin=6.8,ReachSpan=3,ReachStill=4,
+	WallBehind=12,      -- a surface at most this far behind the target (a
+	                    -- finisher throws a body about that far)
 }
 
 -- s: {pos, look, vel, airborne, grounded, target={pos, look, airborne, down, guarding}}
+-- (Brawler adds the world facts it perceives: x.wallBehind, x.plainReach.)
 -- Returns a table describing the situation (pure, no Roblox services).
 function Context.read(s)
 	local t=s.target
@@ -77,6 +82,7 @@ local T=Context.Tune
 -- Ordered situations. Each test reads only the context table.
 Context.Situations={
 	{tag="drop",test=function(x) return x.airborne and not x.targetAirborne and not x.targetDown and x.vy&lt;T.DropFall and x.dy&gt;1.5 and x.dy&lt;=T.DropHeight and x.dist&lt;=T.DropReach end},
+	{tag="wall",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and x.wallBehind~=nil and x.wallBehind&lt;=T.WallBehind end},
 	{tag="back",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and x.facingDot&lt;T.BackDot end},
 	{tag="run",test=function(x) return not x.airborne and x.toward&gt;=T.RunSpeed and x.dist&gt;=T.RunMin and x.dist&lt;=T.RunMax end},
 	{tag="flank",test=function(x) return not x.airborne and not x.targetAirborne and not x.targetDown and x.dist&lt;=T.Reach and math.abs(x.facingDot)&lt;T.FlankDot end},
@@ -91,6 +97,8 @@ Context.Situations={
 -- shared strike.
 Context.Defaults={
 	drop=function(graph) return "DropStrike" end,
+	-- The fighter's own string finisher (its Light3 throws the body away).
+	wall=function(graph) return graph.wallStrike or "Light3" end,
 	back=function(graph) return "BackStrike" end,
 	run=function(graph) return graph.runStrike or "DashAttack" end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
@@ -101,11 +109,11 @@ Context.Defaults={
 -- graph: the fighter's MoveGraphs entry (may be nil); attacks: the Attacks
 -- table (a slot naming a strike that does not exist is skipped).
 -- Returns move name and situation tag, or nil for the plain strike.
-function Context.resolve(x,graph,attacks)
+function Context.resolve(x,graph,attacks,only)
 	graph=graph or {}
 	local declared=graph.context or {}
 	for _,situation in Context.Situations do
-		if situation.test(x) then
+		if (not only or only[situation.tag]) and situation.test(x) then
 			local move=declared[situation.tag]
 			if move==false then continue end
 			if move==nil then move=Context.Defaults[situation.tag](graph) end
@@ -476,6 +484,12 @@ return {
 		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
 		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
 		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
+	-- Ninja Embodiment (Server/Perception): the space a body reads around a
+	-- fight. Behind: how far past the target (or behind itself) a surface
+	-- counts; Scan: how far around the target the nearest surface is looked
+	-- for; Cache: seconds a read is reused; Refresh: seconds the arena's
+	-- surface list is reused.
+	Perception = {Behind = 14, Scan = 48, Cache = 0.12, Refresh = 10},
 	RoundsToWin = 2,
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
@@ -510,7 +524,13 @@ return {
 		-- reaction) and comes in with a plan that makes the situation the
 		-- strike reads (EMB-002): out of a run, over the top, from the side of a
 		-- committed body; or straight in.
-		Recover = 0.5, Plan = 0.65 },
+		-- It also reads the space (Server/Perception): with a surface within
+		-- Herd studs of the opponent it circles to put him between itself and
+		-- it (HerdTime per try, HerdGap between tries), and it steps out of a
+		-- corner when its own back is within Corner studs of one.
+		Recover = 0.5, Plan = 0.65, Herd = 40, HerdTime = 1.6, HerdGap = 2.5, Corner = 4.5,
+		-- Spacing at range it drifts to scenery within Terrain studs.
+		Terrain = 50, TerrainPull = 0.9 },
 }
 </ProtectedString>
         </Properties>
@@ -3374,7 +3394,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e2a3a658f85235a0c3239cc353baad3fd5a085d71d48f19de407dc47f996fa30</string>
+          <string name="Value">bb97ad53409d8be12c11c3d289a0bbe30ee2502b6e9b3da60473390af0889c44</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -3483,6 +3503,7 @@ local Chakra=require(script.Parent.ChakraCombat)
 local Bodies=require(script.Parent.Bodies)
 local Zones=require(script.Parent.Zones)
 local Families=require(script.Parent.Families)
+local Perception=require(script.Parent.Perception)
 -- Family techniques (roster breadth pass): when one is worth using is read
 -- from its family and its own spec.AI band, never from the fighter's name.
 local function familyWants(self,c,a,target,spec,distance,danger)
@@ -3814,6 +3835,16 @@ function AI:update(now)
 	local centre=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
 	local edge=math.clamp((centre.Magnitude-(Config.ArenaRadius-45))/30,0,1)
 	if edge&gt;0 and radial&lt;.5 and centre.Magnitude&gt;.1 then a.move-=centre.Unit*edge*.9 end
+	-- (Embodiment) A ninja moves through the terrain: spacing at range, it
+	-- drifts to the scenery (a boulder to stand behind, a trunk, the wall),
+	-- so the exchanges that follow happen where the space can be used.
+	if self.probing and not holding and not fooled then
+		local spot=Perception.nearest(c,a.root.Position,tune.Terrain or 50)
+		if spot and spot.distance&gt;5 then
+			a.move+=spot.direction*(tune.TerrainPull or .9)
+			if (self.terrainAt or -9)&lt;now-3 then self.terrainAt=now;Brawler.event(c,a,"Perceive:terrain:"..spot.kind) end
+		end
+	end
 	a.sprinting=distance&gt;desired+6 and not calm
 	if calm then a.move*=.7 end
 	-- Step-in feint at probing range: two quick steps in, then out of reach,
@@ -4137,6 +4168,46 @@ function AI:update(now)
 	-- A body on the floor with wake-up cover cannot be hit: no swings at it.
 	local covered=target.groundPose~=nil and (target.invulnerableUntil or 0)&gt;now
 	if covered then return end
+	-- Ninja Embodiment: the space. A body on a wall is finished there (light
+	-- blows pin, a heavy bounces him back out); a body with its own back to a
+	-- surface gets out of the corner; and with a surface near the opponent
+	-- the bot circles to put him between itself and it, so the strike that
+	-- follows (the resolver's wall situation) drives him into it.
+	local seen=if fooled then nil else Perception.read(c,a)
+	if seen and free and not self.plan then
+		if target.reaction=="WallSplat" and distance&lt;6.5 then
+			c:request(a,if self.rng:NextNumber()&lt;.35 then "Heavy" else "Attack");return
+		end
+		local corner=seen.behindSelf
+		if corner and corner.distance&lt;(tune.Corner or 4.5) and distance&lt;9 then
+			a.move=(tangent*(self.strafeSign or 1)+toward*.15).Unit
+			if (self.cornerAt or -9)&lt;now-1 then self.cornerAt=now;Brawler.event(c,a,"Perceive:corner") end
+			if self.rng:NextNumber()&lt;.2 then c:request(a,"Dodge") end
+			return
+		end
+		local near=seen.nearest
+		local driven=seen.behindTarget and seen.behindTarget.distance&lt;=12
+		if near and not driven and near.distance&lt;(tune.Herd or 16) and distance&gt;2.5 and distance&lt;14 then
+			if not self.herdUntil and now&gt;(self.herdNext or 0) then
+				self.herdUntil=now+(tune.HerdTime or 1.6);self.herdNext=now+(tune.HerdTime or 1.6)+(tune.HerdGap or 2.5)
+				Brawler.event(c,a,"Perceive:herd:"..near.kind)
+			end
+			if self.herdUntil and now&lt;self.herdUntil then
+				-- Where to stand: on the far side of him from the surface.
+				local want=-near.direction
+				local have=-seen.line
+				if have:Dot(want)&lt;.85 then
+					local cross=have.X*want.Z-have.Z*want.X
+					local s=if cross&lt;0 then 1 else -1
+					a.move=(tangent*s+toward*(if distance&gt;5 then .35 else -.15)).Unit
+					a.sprinting=distance&gt;8
+					return
+				end
+				self.herdUntil=nil
+			end
+		end
+		if self.herdUntil and now&gt;=self.herdUntil then self.herdUntil=nil end
+	end
 	-- Ninja Embodiment (EMB-002): an entry is a plan, not a walk into the
 	-- string. Out of a run (the running strike), over the top (the drop
 	-- strike on the way down), round a committed body to its side, or
@@ -4922,6 +4993,7 @@ local Bangla=require(script.Parent.BanglaCombat)
 local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
 local WorldReaction=require(script.Parent.WorldReaction)
+local Perception=require(script.Parent.Perception)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -4968,14 +5040,22 @@ function Brawler.situation(c,a)
  local profile=a.def.AttackProfile and a.def.AttackProfile.Light1
  -- (+1: the strike's volume lands about a stud past the contact distance.)
  x.plainReach=light.travel*(a.def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+ -- The space: a surface at the target's back on this body's line (a drive
+ -- puts him into it). Not under an illusion (the image has no wall behind).
+ if not fooled then
+  local seen=Perception.read(c,a)
+  x.wallBehind=seen and seen.behindTarget and seen.behindTarget.distance or nil
+ end
  return x
 end
--- The strike this situation calls for (nil: the plain strike).
-function Brawler.contextual(c,a)
+-- The strike this situation calls for (nil: the plain strike). `only`
+-- limits the situations read (inside a string only the wall counts).
+function Brawler.contextual(c,a,only)
  local x=Brawler.situation(c,a)
  if not x then return nil end
- return ActionContext.resolve(x,Brawler.graph(a),Attacks)
+ return ActionContext.resolve(x,Brawler.graph(a),Attacks,only)
 end
+local WALL_ONLY={wall=true}
 -- The strike a riposte (or a counter stance's answer) comes out as: the
 -- fighter's own gesture (MoveGraphs riposte: Madara's pommel, Hashirama's
 -- shoulder, Hiruzen's point), and while awake the one Awakening.Riposte
@@ -5700,6 +5780,17 @@ function Brawler.request(c,a,action)
    return Brawler.start(c,a,route)
   end
  end
+ -- (EMB-002) Inside a string the wall decides when it ends: with a surface at
+ -- his back, the next press is the drive that puts him into it (the string's
+ -- own finisher unless the fighter declares another), not the next light.
+ if action=="Attack" and inChain and (a.combo or 0)&gt;=1 then
+  local move,tag=Brawler.contextual(c,a,WALL_ONLY)
+  if move then
+   a.lastAttack=c.now
+   Brawler.event(c,a,"Context");Brawler.event(c,a,"Context:"..tag)
+   return Brawler.start(c,a,move)
+  end
+ end
  -- The light step follows the confirmed hits: Light1 opens, Light2 after one
  -- confirmed hit, Light3 (the string's end) after two. Out of a string (a
  -- whiff, a block, a pause, a hit taken) it is Light1 again.
@@ -5852,10 +5943,9 @@ function Brawler.stopStyle(p)
 end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
+-- (Server/Perception owns the rule: a broken one is a stump or a mound now.)
 function Brawler.splatSurface(part)
- -- (A broken one is a stump or a mound now: nothing to be slammed into.)
- if part:GetAttribute("WorldState")=="Broken" then return false end
- return part:GetAttribute("NinjaWall")==true or part.Name=="Field tree" or part.Name=="Cover"
+ return Perception.surface(part)
 end
 -- Wall splat: a body carried into a wall hard enough sticks to it for a
 -- moment. The attacker chooses: pursue (E), pin it with lighter hits or
@@ -12736,6 +12826,118 @@ return Online
       </Item>
       <Item class="ModuleScript" referent="ND53">
         <Properties>
+          <string name="Name">Perception</string>
+          <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
+-- fight. One shared read, used by the strike resolver (a body with its back
+-- to a wall is a different situation), by the AI (bring the fight to a wall,
+-- a tree, a boulder) and later by chakra actions that read the world.
+--
+-- Server-side and cheap: a handful of rays per read, cached per actor for
+-- Config.Perception.Cache seconds. Nothing here names a fighter.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Config=require(Shared.Config)
+
+local Perception={}
+local TUNE=Config.Perception
+
+-- A surface a body can be driven into: the stadium wall, the field trees,
+-- the boulders, anything declared NinjaWall or WorldBreakable. A broken one
+-- (a stump, a mound) no longer is.
+function Perception.surface(part)
+	if not part then return false end
+	if part:GetAttribute("WorldState")=="Broken" then return false end
+	return part:GetAttribute("NinjaWall")==true or part:GetAttribute("WorldBreakable")==true or part.Name=="Field tree" or part.Name=="Cover"
+end
+local function kindOf(part)
+	if part:GetAttribute("NinjaWall") then return "wall" end
+	local m=part.Material and part.Material.Name or ""
+	if m=="Wood" or m=="WoodPlanks" then return "tree" end
+	return "rock"
+end
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+local function surfaceHit(c,from,dir,length)
+	local hit=workspace:Raycast(from,dir*length,c:rayParams(true))
+	if hit and math.abs(hit.Normal.Y)&lt;.5 and Perception.surface(hit.Instance) then
+		return {distance=hit.Distance,part=hit.Instance,normal=hit.Normal,position=hit.Position,kind=kindOf(hit.Instance),
+			state=hit.Instance:GetAttribute("WorldState") or "Intact"}
+	end
+	return nil
+end
+Perception.surfaceHit=surfaceHit
+
+-- The arena's surfaces (built from the match folder, refreshed now and then;
+-- a broken one is filtered out on every read).
+local function candidates(c)
+	local list=c.perceptionSurfaces
+	if list and c.now&gt;=list.at and c.now-list.at&lt;TUNE.Refresh then return list end
+	list={at=c.now}
+	local folder=c.match and c.match.folder
+	if folder and folder.GetDescendants then
+		for _,part in folder:GetDescendants() do
+			if part:IsA("BasePart") and part.CanCollide and Perception.surface(part) then table.insert(list,part) end
+		end
+	end
+	c.perceptionSurfaces=list
+	return list
+end
+-- The closest point of a part's box to a position, on the ground plane.
+local function closest(part,position)
+	local cf,size=part.CFrame,part.Size
+	local p=cf:PointToObjectSpace(position)
+	local q=Vector3.new(math.clamp(p.X,-size.X/2,size.X/2),math.clamp(p.Y,-size.Y/2,size.Y/2),math.clamp(p.Z,-size.Z/2,size.Z/2))
+	return cf:PointToWorldSpace(q)
+end
+-- The nearest surface around a position within `range` (geometry, no rays).
+function Perception.nearest(c,position,range)
+	local best=nil
+	for _,part in ipairs(candidates(c)) do
+		if Perception.surface(part) then
+			local point=closest(part,position)
+			local d=flat(point-position)
+			local distance=d.Magnitude
+			if distance&gt;.05 and distance&lt;=range and (not best or distance&lt;best.distance) then
+				best={distance=distance,part=part,direction=d.Unit,position=point,kind=kindOf(part),state=part:GetAttribute("WorldState") or "Intact"}
+			end
+		end
+	end
+	return best
+end
+
+-- The read for actor `a` facing its target. Returns nil without a target.
+--   behindTarget: the surface beyond the target on this body's line (a drive
+--                 sends him into it)
+--   behindSelf:   the surface at this body's own back (it is the one pinned)
+--   nearest:      the closest surface around the target (within Scan), and
+--                 the direction from him to it
+--   blocked:      the world stands between the two bodies (cover)
+function Perception.read(c,a)
+	local b=a.target
+	if not b or not b.root or b.health&lt;=0 then return nil end
+	local here,there=a.root.Position,b.root.Position
+	-- Reused for a moment while neither body has really moved.
+	local cache=a.perception
+	if cache and cache.target==b and c.now&gt;=cache.at and c.now-cache.at&lt;TUNE.Cache
+		and (cache.here-here).Magnitude&lt;1 and (cache.there-there).Magnitude&lt;1 then return cache end
+	local line=flat(there-here)
+	local distance=line.Magnitude
+	line=if distance&gt;.05 then line.Unit else flat(a.root.CFrame.LookVector).Unit
+	local r={at=c.now,target=b,here=here,there=there,distance=distance,line=line}
+	r.behindTarget=surfaceHit(c,there,line,TUNE.Behind)
+	r.behindSelf=surfaceHit(c,here,-line,TUNE.Behind)
+	r.nearest=Perception.nearest(c,there,TUNE.Scan)
+	local chest=Vector3.new(0,.8,0)
+	local block=workspace:Raycast(here+chest,(there-here),c:rayParams(true))
+	r.blocked=block~=nil and not block.Instance:IsDescendantOf(b.model)
+	a.perception=r
+	return r
+end
+
+return Perception
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND54">
+        <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
 -- Per-actor/server execution replaces LocalPlayer, UI, input listeners and FPS camera.
@@ -13030,7 +13232,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND55">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -13506,7 +13708,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -13717,7 +13919,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -13920,7 +14122,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -14409,7 +14611,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -14722,7 +14924,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -15768,7 +15970,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -15868,7 +16070,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -15896,7 +16098,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -16024,7 +16226,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -16075,7 +16277,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -16210,7 +16412,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -16324,7 +16526,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -16510,7 +16712,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -16617,7 +16819,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -16913,6 +17115,22 @@ function World.arena(parent, origin)
 		cover:SetAttribute("WorldBreakable",true)
 		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
+	end
+	-- (Embodiment) Training posts and two low stones nearer the middle: the
+	-- field had all its scenery at the edge, so the exchanges in the middle
+	-- never met the world. Posts are thin wood (they splinter and snap), the
+	-- stones squat (they crack and burst). Clear of the two start marks.
+	for _,spot in {{.8,22,9},{2.3,27,8},{3.95,21,9.5},{5.45,26,8.5},{1.55,46,10},{4.7,48,9}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],spot[3]/2,math.cos(spot[1])*spot[2])
+		local post=part(folder,"Training post",Vector3.new(1.7,spot[3],1.7),CFrame.new(at)*CFrame.Angles(0,spot[1],0),C.woodDark,Enum.Material.Wood)
+		post:SetAttribute("WorldBreakable",true)
+		deco(post,"Post band",Vector3.new(1.8,.35,1.8),CFrame.new(at+Vector3.new(0,spot[3]*.28,0))*CFrame.Angles(0,spot[1],0),rgb(60,44,30),Enum.Material.Wood)
+	end
+	for _,spot in {{2.95,34,1},{6.1,38,.9}} do
+		local k=spot[3]
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.5*k,math.cos(spot[1])*spot[2])
+		local stone=part(folder,"Cover",Vector3.new(5,3,3.4)*k,CFrame.new(at)*CFrame.Angles(0,spot[1]*1.7,0),rgb(124,120,110),Enum.Material.Slate)
+		stone:SetAttribute("WorldBreakable",true)
 	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
@@ -17586,7 +17804,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -18028,7 +18246,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -18256,21 +18474,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND71">
+  <Item class="StarterPlayer" referent="ND72">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND72">
+    <Item class="StarterPlayerScripts" referent="ND73">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND73">
+      <Item class="Folder" referent="ND74">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND74">
+        <Item class="ModuleScript" referent="ND75">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -18434,7 +18652,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND75">
+        <Item class="ModuleScript" referent="ND76">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -18725,7 +18943,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND76">
+        <Item class="ModuleScript" referent="ND77">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -19280,7 +19498,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND78">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -21029,7 +21247,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND79">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -21610,7 +21828,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND80">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -22088,7 +22306,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -22269,7 +22487,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND81">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -23009,7 +23227,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND82">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -23186,7 +23404,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -23367,7 +23585,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND84">
+        <Item class="LocalScript" referent="ND85">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -23516,7 +23734,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -23774,7 +23992,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -24093,7 +24311,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -24686,7 +24904,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -25288,7 +25506,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -25429,7 +25647,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -28144,7 +28362,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -28358,7 +28576,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -28659,7 +28877,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -28672,7 +28890,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -28775,7 +28993,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -28902,7 +29120,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -29045,7 +29263,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -29261,7 +29479,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND98">
+  <Item class="Lighting" referent="ND99">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -29279,7 +29497,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND99">
+  <Item class="SoundService" referent="ND100">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>
