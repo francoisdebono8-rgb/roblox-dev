@@ -251,6 +251,11 @@ function FX.new()
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelFX";folder.Parent=workspace
 	-- Decode the VFX textures now, before the first contact needs them.
 	if task and task.defer then task.defer(function() pcall(Kit.warm) end) end
+	-- (Reference quality) the world's marks (Server/WorldReaction scars) are
+	-- drawn with our scorch and crack art instead of flat dark discs.
+	if workspace.DescendantAdded then
+		workspace.DescendantAdded:Connect(function(part) pcall(FX.dressScar,part) end)
+	end
 	return setmetatable({folder=folder,projectiles={},stuck={},seals={},hazards={},auras={},rasengan={},epoch=nil,
 		clock=0,cache={}},FX)
 end
@@ -1470,6 +1475,36 @@ end
 -- Built-in Roblox sounds (shipped with every client, Mac and PC).
 function FX:jumpSound(position) sound(anchorPart(self.folder,position),SOUND.jump,.28,1.1) end
 function FX:getUpSound(position) sound(anchorPart(self.folder,position),SOUND.getUp,.25,1.15) end
+local SCAR_ART={crater={"crack",1.5,Color3.new(1,1,1)},scorch={"scorch",1.6,Color3.new(1,1,1)},char={"scorch",1.5,Color3.fromRGB(150,170,230)},
+	gouge={"crack",1.3,Color3.new(1,1,1)},splinter={"crack",1.2,Color3.new(1,1,1)}}
+function FX.dressScar(part)
+	if not part:IsA("BasePart") or string.sub(part.Name,1,5)~="Scar " then return end
+	local art=SCAR_ART[string.sub(part.Name,6)]
+	if not art or not Kit.has(art[1]) then return end
+	task.defer(function()
+		if not part.Parent then return end
+		local holder=Instance.new("Part")
+		holder.Name="ScarArt";holder.Anchored=true;holder.CanCollide=false;holder.CanQuery=false;holder.CanTouch=false
+		holder.CastShadow=false;holder.Transparency=1;holder.Parent=part
+		local decal=Instance.new("Decal");decal.TextureContent=Kit.content(art[1]);decal.Face=Enum.NormalId.Top
+		decal.Color3=art[3];decal.Parent=holder
+		local spin=math.random()*math.pi*2
+		local function fit()
+			-- The scar's X axis is the surface normal (a flat cylinder).
+			local cf=part.CFrame
+			local normal=cf.RightVector
+			local side=if math.abs(normal.Y)>.9 then Vector3.xAxis else Vector3.yAxis
+			local right=side:Cross(normal).Unit
+			local size=math.max(part.Size.Y,part.Size.Z)*art[2]
+			holder.Size=Vector3.new(size,.05,size)
+			holder.CFrame=CFrame.fromMatrix(cf.Position+normal*.03,right,normal)*CFrame.Angles(0,spin,0)
+			part.Transparency=1
+		end
+		fit()
+		part:GetPropertyChangedSignal("Size"):Connect(fit)
+		part:GetPropertyChangedSignal("Transparency"):Connect(function() if part.Transparency<1 then part.Transparency=1 end end)
+	end)
+end
 function FX:hazardsStep(data)
 	local live={}
 	for _,h in data.hazards or {} do

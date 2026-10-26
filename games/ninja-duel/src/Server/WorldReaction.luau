@@ -203,7 +203,8 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		end
 	end
 	local folder=folderOf(c)
-	local lift=SHAPES[kind].depth*.5+.01
+	-- Clear of the surface: a flush mark z-fought into a dark ring outline.
+	local lift=SHAPES[kind].depth*.5+.06
 	local frame=surfaceFrame(position+normal*lift,normal,along)
 	if not SHAPES[kind].round and not along then
 		-- An unaimed crack runs in a direction drawn from where it is.
