@@ -400,6 +400,14 @@ function AI:update(now)
 	local entering=distance<8.5 and (self.lastDistance or 99)>=8.5 and closing>4
 	self.lastDistance=distance
 	local free=a.state=="Neutral" and not a.reaction and not a.airborne
+	-- (Embodiment) A state held in the body (the Chidori in the hand): run it
+	-- in and release it, sometimes from a jump (the release reads the air).
+	if a.bodyState then
+		a.move=toward;a.sprinting=distance>7
+		if distance<(a.bodyState.state.Reach or 9) then c:request(a,"Attack")
+		elseif distance>11 and not a.airborne and self.rng:NextNumber()<.12 then c:request(a,"Jump") end
+		return
+	end
 	-- A zoner plays her own range game (AI:zone) before any melee logic.
 	if a.def.Zoner and self:zone(now,distance,toward,tangent,target) then return end
 	if entering and free then

@@ -1523,6 +1523,9 @@ function FX:fighter(model,actor,dt)
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
 	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
 		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
+		-- (Embodiment) held in the hand as a state, and through the strike that releases it.
+		or (actor.bodyState~=nil and actor.bodyState.id=="Chidori")
+		or (actor.attackVariant=="Chidori" and (actor.state=="Startup" or actor.state=="Active"))
 	if chidori and not aura.chidori and (actor.health or 1)>0 then
 		local hand=model:FindFirstChild("RightHand") or root
 		local at=new("Attachment",{Name="Chidori"},hand)

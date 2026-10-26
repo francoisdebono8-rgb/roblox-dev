@@ -11,6 +11,7 @@ local Families = require(script.Parent.Families)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 local WorldReaction = require(script.Parent.WorldReaction)
+local BodyState = require(script.Parent.BodyState)
 -- Bodies that are not actors (Naruto's shadow clones): stepped, struck,
 -- cleared and sent with the duel (Server/Bodies).
 local Bodies = require(script.Parent.Bodies)
@@ -1224,6 +1225,7 @@ function Combat:updateActor(a,dt)
 	-- The curse mark burns the body that carries it (never to a KO), faster
 	-- while it goes hungry (Techniques.curseDrain).
 	Techniques.curseDrain(self,a,dt,now)
+	BodyState.step(self,a,dt)
 	-- Per-fighter steps registered by a fighter's module (Temari's glide).
 	for _,step in Techniques.actorSteps or {} do step(self,a,dt,now) end
 	-- Rooted while spinning or striking the sixty-four palms.
@@ -1284,7 +1286,10 @@ function Combat:updateActor(a,dt)
 		elseif a.state=="TechniqueChannel" and pending then
 			-- State changes before payoff so simultaneous channels resolve deterministically.
 			self:setState(a,"TechniqueActive",pending.spec.Active)
-			pending.implementation.execute(self,a,pending,now)
+			-- (Embodiment) A technique that is a state of the body forms it
+			-- here; the next strike releases it (Server/BodyState).
+			if pending.spec.State then BodyState.enter(self,a,pending.spec)
+			else pending.implementation.execute(self,a,pending,now) end
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then
 			a.pending=nil; self:setState(a,"TechniqueRecovery",pending.spec.Recovery)
@@ -2000,6 +2005,7 @@ function Combat:clear(preserveAnimations)
 		a.rushArriveUntil=0;a.awakenUntil=0;a.flowStreak=0;a.nextFlow=nil;a.grabbedAt=nil;a.boundBy=nil
 		Brawler.resetStrings(a);a.intentMemory=nil;a.intentOverride=nil;a.rush=nil;a.arrivalRecovery=nil;a.pursuitDuration=nil;a.rushReadyAt=0
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
+		a.bodyState=nil
 		a.attackName=nil; a.attackStarted=0; a.pending=nil; a.anchor=nil; a.illusionUntil=0; a.decoyPosition=nil; a.move=Vector3.zero; a.wall=nil
 		a.hum:Move(Vector3.zero); a.root.AssemblyLinearVelocity=Vector3.zero; a.locomotion=Vector3.zero; a.airborne=false
 		-- Every other temporary state (buffs, stances, slows, poison, windows).

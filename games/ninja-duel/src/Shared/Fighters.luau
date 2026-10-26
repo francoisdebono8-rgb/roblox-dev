@@ -137,7 +137,13 @@ local Fighters = {
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15, Hint = "On a wired opponent: Dragon Flame runs along the wire" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
 			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
-			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
+				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
+				-- jumps or climbs with it and his next strike releases it (a
+				-- thrust, a drop out of the air, a dive off a wall). Held, it
+				-- drains; a blow taken or a guard puts it out.
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 		},
 	},
 	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient

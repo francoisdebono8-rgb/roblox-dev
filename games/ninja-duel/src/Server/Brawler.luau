@@ -6,6 +6,7 @@ local MoveGraphs=require(Shared.MoveGraphs)
 local ActionContext=require(Shared.ActionContext)
 local WorldReaction=require(script.Parent.WorldReaction)
 local Perception=require(script.Parent.Perception)
+local BodyState=require(script.Parent.BodyState)
 local Config=require(Shared.Config)
 local Rules=require(Shared.Rules)
 -- Bodies that are not actors (Naruto's shadow clones): strikes they carry
@@ -586,6 +587,9 @@ function Brawler.request(c,a,action)
   return true
  end
  if not Brawler.free(a,c.now) then return false,"Reacting" end
+ -- A state of the body (the Chidori held in the hand): the strike releases it.
+ local released=BodyState.release(c,a,action)
+ if released~=nil then return released end
  -- Riposte: right after a clean block or a perfect dodge, a strike comes out
  -- at once and opens a string (its contact is the string's first hit).
  if action=="Attack" and (a.riposteUntil or 0)>c.now and (a.state=="Guarding" or a.state=="Neutral" or a.state=="Dodging" or a.state=="Recovery") and not a.airborne then

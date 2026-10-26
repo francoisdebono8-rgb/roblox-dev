@@ -200,6 +200,8 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
+			-- A state of the body held until a strike releases it (Server/BodyState).
+			bodyState=require(script.Parent.BodyState).snapshot(a,now),
 			anchorSurface=a.anchor and a.anchor.surface,anchorNormal=a.anchor and a.anchor.normal,anchorRemaining=a.anchor and math.max(0,a.anchor.expires-now) or 0,
 			teleportSerial=a.teleportSerial or 0,flash=(a.flashUntil or 0)>now,lookVector=a.root.CFrame.LookVector,
 			-- Phase 4: combo scaling, recharging substitution, seals, wall state.

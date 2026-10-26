@@ -1189,9 +1189,13 @@ test("Sasuke · a Chidori that finds nothing tells both he is open; one that lan
  local serial=c.impactSerial
  local seen,feed={},{}
  assert(c:request(a,slot(a,"Chidori"),b.root.Position),"Chidori refused")
+ -- (Embodiment) Formed, it is held in the hand; the strike releases it.
+ for _=1,80 do H.step(c,.01);feedSince(c,serial,seen,feed) end
+ assert(a.bodyState and a.bodyState.id=="Chidori","the Chidori is not held after its charge")
+ assert(c:request(a,"Attack"),"the strike does not release the Chidori")
  for _=1,150 do H.step(c,.01);feedSince(c,serial,seen,feed) end
  assert(b.health==b.def.Health,"setup: the thrust should miss")
- assert(ev(a,"ChidoriMissed")==1,"the miss is not marked")
+ assert(ev(a,"StateMissed:Chidori")==1,"the miss is not marked")
  local toB,toA=false,false
  for _,cue in match.cues do
   if cue.actor==b.id and cue.message=="CHIDORI MISSED • PUNISH" then toB=true end
@@ -1206,13 +1210,15 @@ test("Sasuke · a Chidori that finds nothing tells both he is open; one that lan
  local s2=c2.impactSerial
  local seen2,feed2={},{}
  assert(c2:request(x,slot(x,"Chidori"),y.root.Position))
+ for _=1,80 do H.step(c2,.01);feedSince(c2,s2,seen2,feed2) end
+ assert(c2:request(x,"Attack"),"the strike does not release the Chidori")
  for _=1,120 do H.step(c2,.01);feedSince(c2,s2,seen2,feed2);if y.health<y.def.Health then break end end
  assert(y.health<y.def.Health,"setup: the thrust should land")
  H.step(c2,.3)
  local landed
  for _,impact in feed2 do if impact.move=="ChidoriThrust" and impact.victim==y.id and impact.style~="whiff" then landed=impact end end
  assert(landed and landed.owner==x.id,"the Chidori contact does not name itself")
- assert(ev(x,"ChidoriMissed")==0,"a landed Chidori was called a miss")
+ assert(ev(x,"StateMissed:Chidori")==0,"a landed Chidori was called a miss")
 end)
 
 test("Sasuke · the Phoenix Flower's hidden blades are marked as hidden in the snapshot",function()
