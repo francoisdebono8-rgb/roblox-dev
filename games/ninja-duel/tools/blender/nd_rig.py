@@ -19,14 +19,19 @@ PARTS = {
     "Hair": ((0, 3.42, 0), (1.65, .55, 1.65), "Neck", "hair"),
     "Eyes": ((0, 2.75, -.76), (.85, .1, .05), "Neck", "ink"),
     "Sash": ((0, -.4, 0), (2.1, .25, 1.1), "Root", "accent"),
+    # Preview only: spikes at the back of the head, so the facing reads.
+    "HairBack": ((0, 2.95, .62), (1.5, 1.1, .45), "Neck", "hair"),
 }
 for side, s in (("Right", 1), ("Left", -1)):
-    PARTS[side + "UpperArm"] = ((s * 1.45, 1.1, 0), (.8, 1.1, .8), side, "outfit")
-    PARTS[side + "LowerArm"] = ((s * 1.45, .1, 0), (.76, .95, .76), side + "Elbow", "outfit")
+    # (Preview: the right limbs a shade lighter, so left and right read.)
+    tone = "outfitR" if s > 0 else "outfit"
+    PARTS[side + "UpperArm"] = ((s * 1.45, 1.1, 0), (.8, 1.1, .8), side, tone)
+    PARTS[side + "LowerArm"] = ((s * 1.45, .1, 0), (.76, .95, .76), side + "Elbow", tone)
     PARTS[side + "Hand"] = ((s * 1.45, -.63, 0), (.72, .5, .72), side + "Wrist", "skin")
-    PARTS[side + "UpperLeg"] = ((s * .5, -1.05, 0), (.85, 1.1, .85), side + "Hip", "pants")
-    PARTS[side + "LowerLeg"] = ((s * .5, -2.1, 0), (.8, 1.05, .8), side + "Knee", "pants")
-    PARTS[side + "Foot"] = ((s * .5, -2.8, -.15), (.8, .42, 1.15), side + "Ankle", "pants")
+    leg = "pantsR" if s > 0 else "pants"
+    PARTS[side + "UpperLeg"] = ((s * .5, -1.05, 0), (.85, 1.1, .85), side + "Hip", leg)
+    PARTS[side + "LowerLeg"] = ((s * .5, -2.1, 0), (.8, 1.05, .8), side + "Knee", leg)
+    PARTS[side + "Foot"] = ((s * .5, -2.8, -.15), (.8, .42, 1.15), side + "Ankle", leg)
 
 # Joint pivots (root space) and parents. Names are the engine's JOINTS keys
 # (Client/VelmoraMotionEngine): Right/Left are the shoulders.
@@ -107,7 +112,9 @@ def build_rig(name="Sasuke", fighter="Lion", offset=(0, 0, 0)):
     bpy.ops.object.mode_set(mode="OBJECT")
     for pb in arm.pose.bones:
         pb.rotation_mode = "QUATERNION"
-    colours = FIGHTERS.get(fighter, FIGHTERS["Lion"])
+    colours = dict(FIGHTERS.get(fighter, FIGHTERS["Lion"]))
+    colours["outfitR"] = tuple(min(255, int(c * 1.6 + 20)) for c in colours["outfit"])
+    colours["pantsR"] = tuple(min(255, int(c * 1.6 + 20)) for c in colours["pants"])
     for part, (centre, size, bone, tone) in PARTS.items():
         bpy.ops.mesh.primitive_cube_add(size=1)
         box = bpy.context.active_object

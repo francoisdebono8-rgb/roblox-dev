@@ -53,47 +53,49 @@ def ori(o):
     return R(-o.get("pitch", 0), -o.get("yaw", 0), -o.get("roll", 0))
 
 
+# The three functions below are exact ports of the runtime engine's armCF,
+# legFK and legIK (Client/VelmoraMotionEngine), so a pose spec means the same
+# body in Blender and in the game.
 def arm_rot(side, a):
     s = 1 if side == "R" else -1
     a = a or {}
-    shoulder = R(0, 0, s * a.get("out", 0)) @ R(a.get("raise", 0), 0, 0) @ R(0, -s * a.get("twist", 0), 0)
-    elbow = R(a.get("elbow", 0), 0, 0)
-    wrist = R(a.get("wrist", 0), 0, s * a.get("wroll", 0))
-    return shoulder, elbow, wrist
+    shoulder = R(a.get("raise", 0), 0, 0) @ R(0, 0, a.get("out", 0) * s) @ R(0, a.get("twist", 0) * s, 0)
+    return shoulder, R(a.get("elbow", 0), 0, 0), R(a.get("wrist", 0), 0, a.get("wroll", 0) * s)
 
 
 def leg_free(side, l):
     s = 1 if side == "R" else -1
     l = l or {}
-    hip = R(0, -s * l.get("twist", 0), 0) @ R(0, 0, s * l.get("out", 0)) @ R(l.get("lift", 0), 0, 0)
-    knee = R(-l.get("knee", 0), 0, 0)
-    ankle = R(l.get("ankle", 0), 0, 0)
-    return hip, knee, ankle
+    hip = R(l.get("lift", 0), 0, 0) @ R(0, 0, l.get("out", 0) * s) @ R(0, l.get("twist", 0) * s, 0)
+    return hip, R(-l.get("knee", 0), 0, 0), R(l.get("ankle", 0), 0, 0)
 
 
 def leg_ik(side, root_pos, root_rot, f):
     """Planted foot: ankle target (HumanoidRootPart space) -> hip, knee, ankle."""
     s = 1 if side == "R" else -1
-    pivot = Vector(JOINTS[("Right" if s > 0 else "Left") + "Hip"][0])
-    rest_ankle = Vector(JOINTS[("Right" if s > 0 else "Left") + "Ankle"][0])
-    target = rest_ankle + Vector((f.get("x", 0), f.get("y", 0), f.get("z", 0)))
-    hip_w = Vector(root_pos) + root_rot @ pivot
-    d = root_rot.inverted() @ (target - hip_w)
-    yaw = f.get("yaw", 0)
-    yawm = R(0, -yaw, 0)
-    dl = yawm.inverted() @ d
-    dist = max(.05, min(dl.length, L1 + L2 - 1e-3))
-    u = dl.normalized()
-    pitch = math.asin(max(-1, min(1, -u.z)))
-    roll = math.atan2(u.x, -u.y)
-    alpha = math.acos(max(-1, min(1, (L1 * L1 + dist * dist - L2 * L2) / (2 * L1 * dist))))
-    inner = math.acos(max(-1, min(1, (L1 * L1 + L2 * L2 - dist * dist) / (2 * L1 * L2))))
-    flex = math.pi - inner
-    hip = yawm @ Matrix.Rotation(roll, 3, "Z") @ Matrix.Rotation(pitch + alpha, 3, "X")
-    knee = Matrix.Rotation(-flex, 3, "X")
-    foot = R(0, -yaw, 0) @ R(f.get("toe", 0), 0, 0)
-    ankle = (root_rot @ hip @ knee).inverted() @ foot
-    return hip, knee, ankle
+    ankle = Vector((.5 * s + f.get("x", 0), -2.6 + f.get("y", 0), f.get("z", 0)))
+    hip_w = Vector(root_pos) + root_rot @ Vector((.5 * s, -.55, 0))
+    inv = root_rot.inverted()
+    d = inv @ (ankle - hip_w)
+    u = d.normalized() if d.length > 1e-4 else Vector((0, -1, 0))
+    D = max(.45, min(d.length, L1 + L2 - 1e-3))
+    bend = math.pi - math.acos(max(-1, min(1, (L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2))))
+    a = math.acos(max(-1, min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D))))
+    hint = Vector((s * .18, 0, -1)).normalized()
+    w = hint - u * hint.dot(u)
+    if w.length < 1e-3:
+        w = Vector((0, 0, -1))
+    w = w.normalized()
+    up = -(u * math.cos(a) + w * math.sin(a))
+    x = w.cross(up)
+    if x.length < 1e-3:
+        x = Vector((1, 0, 0))
+    x = x.normalized()
+    z = x.cross(up).normalized()
+    hip = Matrix((x, up, z)).transposed()  # columns x, up, z (CFrame.fromMatrix)
+    knee = R(-math.degrees(bend), 0, 0)
+    foot = (hip @ knee).inverted() @ inv @ R(0, -f.get("yaw", 0), 0) @ R(f.get("toe", 0), 0, 0)
+    return hip, knee, foot
 
 
 def build(spec):

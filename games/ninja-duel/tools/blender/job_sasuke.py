@@ -20,7 +20,7 @@ os.makedirs(os.path.join(OUT, "sheets"), exist_ok=True)
 for act in acts:
     if act.name == "Lion.Idle":
         continue
-    for view in ("side", "game"):
+    for view in ("front34", "game"):
         frames = nd_io.render(arm, act, os.path.join(OUT, "frames"), view, 3)
         nd_io.sheet(frames, os.path.join(OUT, "sheets", "%s_%s.png" % (act.name, view)), 6, 240)
 print("done")

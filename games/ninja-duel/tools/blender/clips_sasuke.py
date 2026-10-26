@@ -31,36 +31,32 @@ def author(arm):
     # ------------------------------------------------------- Light1: the jab
     acts.append(clip(arm, "Lion.Light1", [
         (0, STANCE),
-        # Load: the lead shoulder draws back a hair, weight onto the front foot.
-        (4, s({"root": {"y": -.56, "yaw": 38, "z": .05}, "torso": {"yaw": -4}, "la": {"raise": 60, "elbow": 96, "twist": 22}})),
-        # Snap: hips turn in, the fist goes straight to the face.
-        (8, s({"root": {"y": -.5, "z": -.35, "yaw": 18, "pitch": 9}, "torso": {"yaw": -26, "pitch": 8}, "head": {"yaw": -6},
-                "la": {"raise": 94, "out": -6, "twist": -16, "elbow": 2, "wrist": -4}, "ra": {"raise": 56, "out": -18, "elbow": 122},
-                "lf": {"z": -.9}}), "LINEAR"),
-        # Overshoot and recoil of the arm.
-        (11, s({"root": {"z": -.38, "yaw": 16, "pitch": 10}, "torso": {"yaw": -28, "pitch": 9},
-                 "la": {"raise": 92, "out": -6, "twist": -14, "elbow": 10}, "ra": {"raise": 56, "out": -18, "elbow": 122}, "lf": {"z": -.9}})),
-        (18, s({"root": {"z": -.1, "yaw": 26}, "torso": {"yaw": -18}, "la": {"raise": 74, "elbow": 54}})),
-        (30, STANCE),
-    ], markers={"contact": 8, "recover": 14}))
+        # Load: the lead fist draws in, the hips coil away, weight drops.
+        (3, s({"root": {"y": -.58, "yaw": 38}, "torso": {"yaw": 14}, "la": {"raise": 54, "out": 6, "twist": 22, "elbow": 116}})),
+        # Snap: hips square up, the lead foot slides in, the fist goes straight out.
+        (7, s({"root": {"y": -.5, "z": -.45, "yaw": -8, "pitch": 9}, "torso": {"yaw": -22, "pitch": 6}, "head": {"yaw": 2},
+               "la": {"raise": 94, "out": -6, "twist": -16, "elbow": 0, "wrist": 0}, "ra": {"raise": 52, "out": -16, "elbow": 122},
+               "lf": {"z": -1.05}}), "LINEAR"),
+        # Overshoot: the shoulder rolls through.
+        (10, s({"root": {"y": -.52, "z": -.5, "yaw": -12, "pitch": 10}, "torso": {"yaw": -26, "pitch": 7},
+                "la": {"raise": 92, "out": -8, "twist": -14, "elbow": 6}, "ra": {"raise": 52, "out": -16, "elbow": 122}, "lf": {"z": -1.05}})),
+        (16, s({"root": {"z": -.25, "yaw": 14}, "torso": {"yaw": -10}, "la": {"raise": 72, "elbow": 60}, "lf": {"z": -.9}})),
+        (28, STANCE),
+    ], markers={"contact": 7, "recover": 12}))
     lag(arm, ["Neck"], 1)
 
     # -------------------------------------------- Light2: rear-leg roundhouse
     acts.append(clip(arm, "Lion.Light2", [
         (0, STANCE),
-        # Chamber: weight onto the lead foot, the rear knee comes up and across.
-        (6, s({"root": {"y": -.46, "yaw": 4, "pitch": 4, "z": -.15}, "torso": {"yaw": -10, "roll": 4}, "head": {"yaw": -4},
-                "ra": {"raise": 46, "out": -8, "elbow": 112}, "la": {"raise": 70, "out": 14, "elbow": 84},
-                "rl": {"lift": 70, "out": 24, "twist": -10, "knee": 124, "ankle": -10}, "lf": {"yaw": -10, "z": -.6}})),
-        # Contact: the hip turns over, the shin snaps out flat at rib height.
-        (11, s({"root": {"y": -.38, "yaw": 74, "pitch": -6, "roll": -18, "z": -.2}, "torso": {"yaw": 12, "roll": -16}, "head": {"yaw": -44, "roll": 12},
-                 "ra": {"raise": -12, "out": 36, "elbow": 36}, "la": {"raise": 66, "out": -10, "twist": 22, "elbow": 112},
-                 "rl": {"lift": 80, "out": 66, "twist": -28, "knee": 6, "ankle": -24}, "lf": {"yaw": 54, "z": -.6, "toe": -10}}), "LINEAR"),
-        (15, s({"root": {"y": -.4, "yaw": 84, "pitch": -5, "roll": -16, "z": -.2}, "torso": {"yaw": 14, "roll": -14}, "head": {"yaw": -46, "roll": 10},
-                 "ra": {"raise": -8, "out": 38, "elbow": 40}, "la": {"raise": 66, "out": -10, "twist": 22, "elbow": 112},
-                 "rl": {"lift": 76, "out": 66, "twist": -28, "knee": 14, "ankle": -24}, "lf": {"yaw": 62, "z": -.6, "toe": -10}})),
-        # Re-chamber, then the foot comes down back where it started.
-        (22, s({"root": {"y": -.5, "yaw": 54, "z": -.15}, "torso": {"yaw": 0}, "rl": {"lift": 54, "out": 30, "knee": 104}, "lf": {"yaw": 34, "z": -.6}})),
+        (6, s({"root": {"y": -.56, "yaw": -24, "pitch": 6}, "torso": {"yaw": -16}, "ra": {"raise": 50, "out": -10, "elbow": 110},
+               "la": {"raise": 60, "out": 10, "elbow": 90}, "rl": {"lift": 64, "out": 22, "knee": 116, "ankle": -10}, "lf": {"yaw": -24}})),
+        (11, s({"root": {"y": -.4, "yaw": 74, "pitch": -6, "roll": -20}, "torso": {"yaw": 10, "roll": -18}, "head": {"yaw": -42, "roll": 12},
+                "ra": {"raise": -12, "out": 38, "elbow": 36}, "la": {"raise": 64, "out": -8, "twist": 20, "elbow": 112},
+                "rl": {"lift": 80, "out": 64, "twist": -26, "knee": 6, "ankle": -22}, "lf": {"yaw": 54, "toe": -8}}), "LINEAR"),
+        (15, s({"root": {"y": -.42, "yaw": 84, "pitch": -5, "roll": -18}, "torso": {"yaw": 13, "roll": -16},
+                "ra": {"raise": -8, "out": 36, "elbow": 42}, "la": {"raise": 64, "out": -8, "twist": 20, "elbow": 112},
+                "rl": {"lift": 74, "out": 66, "twist": -26, "knee": 14, "ankle": -20}, "lf": {"yaw": 62}})),
+        (22, s({"root": {"y": -.5, "yaw": 50}, "rl": {"lift": 42, "out": 22, "knee": 74}, "lf": {"yaw": 30}})),
         (34, STANCE),
     ], markers={"contact": 11, "recover": 16}))
     lag(arm, ["Right", "RightElbow", "Neck"], 1)
@@ -68,38 +64,37 @@ def author(arm):
     # ---------------------------------- Light3: spinning heel kick (finisher)
     acts.append(clip(arm, "Lion.Light3", [
         (0, STANCE),
-        (6, s({"root": {"y": -.66, "yaw": -24, "pitch": 6}, "torso": {"yaw": -22}, "head": {"yaw": -8},
-                "ra": {"raise": 40, "out": 30, "elbow": 92}, "la": {"raise": 40, "out": 30, "elbow": 92}})),
-        (11, s({"root": {"y": -.46, "yaw": 100, "roll": 8}, "torso": {"yaw": -14}, "head": {"yaw": -64},
-                 "ra": {"raise": 38, "out": 30, "elbow": 96}, "la": {"raise": 38, "out": 30, "elbow": 96},
-                 "rl": {"lift": 40, "out": 30, "knee": 92}, "lf": {"yaw": 100, "x": .4, "z": 0}})),
-        (16, s({"root": {"y": -.24, "yaw": 198, "pitch": -8, "roll": 18}, "torso": {"yaw": 16, "roll": 12}, "head": {"yaw": 52},
-                 "ra": {"raise": 20, "out": 52, "elbow": 46}, "la": {"raise": 30, "out": 46, "elbow": 56},
-                 "rl": {"lift": 96, "out": 54, "twist": 20, "knee": 4, "ankle": -22}, "lf": {"yaw": 198, "x": .4, "z": 0, "toe": -12}}), "LINEAR"),
-        (21, s({"root": {"y": -.27, "yaw": 222, "pitch": -6, "roll": 14}, "torso": {"yaw": 20, "roll": 10},
-                 "ra": {"raise": 22, "out": 50, "elbow": 50}, "la": {"raise": 32, "out": 44, "elbow": 58},
-                 "rl": {"lift": 86, "out": 56, "twist": 20, "knee": 12, "ankle": -20}, "lf": {"yaw": 222, "x": .4, "z": 0}})),
-        (30, s({"root": {"y": -.5, "yaw": 300}, "rl": {"lift": 40, "out": 20, "knee": 76}, "lf": {"yaw": 300, "x": .3, "z": 0}})),
-        (42, s({"root": {"yaw": 390}, "rf": {"yaw": 398}, "lf": {"yaw": 354}})),
-    ], markers={"contact": 16, "recover": 21}))
+        (5, s({"root": {"y": -.64, "yaw": -22, "pitch": 6}, "torso": {"yaw": -22}, "ra": {"raise": 40, "out": 30, "elbow": 90}, "la": {"raise": 40, "out": 30, "elbow": 90}})),
+        (10, s({"root": {"y": -.45, "yaw": 92, "roll": 8}, "torso": {"yaw": -10}, "head": {"yaw": -62},
+                "ra": {"raise": 40, "out": 24, "elbow": 100}, "la": {"raise": 40, "out": 24, "elbow": 100},
+                "rl": {"lift": 42, "out": 30, "knee": 90}, "lf": {"yaw": 90, "x": .4, "z": 0}})),
+        (15, s({"root": {"y": -.22, "yaw": 198, "pitch": -10, "roll": 18}, "torso": {"yaw": 16, "roll": 12}, "head": {"yaw": 52},
+                "ra": {"raise": 22, "out": 48, "elbow": 48}, "la": {"raise": 32, "out": 42, "elbow": 58},
+                "rl": {"lift": 100, "out": 54, "twist": 20, "knee": 4, "ankle": -22}, "lf": {"yaw": 198, "x": .4, "z": 0, "toe": -10}}), "LINEAR"),
+        (20, s({"root": {"y": -.26, "yaw": 216, "pitch": -7, "roll": 15}, "torso": {"yaw": 18, "roll": 10},
+                "ra": {"raise": 24, "out": 48, "elbow": 52}, "la": {"raise": 34, "out": 42, "elbow": 60},
+                "rl": {"lift": 90, "out": 54, "twist": 20, "knee": 10, "ankle": -20}, "lf": {"yaw": 214, "x": .4, "z": 0}})),
+        (28, s({"root": {"y": -.46, "yaw": 290}, "rl": {"lift": 40, "out": 20, "knee": 70}, "lf": {"yaw": 290, "x": .3, "z": 0}})),
+        (40, s({"root": {"yaw": 390}, "rf": {"yaw": 398}, "lf": {"yaw": 354}})),
+    ], markers={"contact": 15, "recover": 20}))
     lag(arm, ["Right", "Left", "RightElbow", "LeftElbow"], 2)
 
     # ------------------------------------- Heavy: driving front (push) kick
     acts.append(clip(arm, "Lion.Heavy", [
         (0, STANCE),
-        (10, s({"root": {"y": -.82, "z": .3, "pitch": 14}, "torso": {"pitch": 10}, "head": {"pitch": -10},
-                 "ra": {"raise": 36, "out": 22, "elbow": 104}, "la": {"raise": 60, "out": 12, "elbow": 92}, "lf": {"z": -1.0}})),
-        (14, s({"root": {"y": -.5, "z": -.1, "pitch": 0}, "rl": {"lift": 86, "knee": 120, "ankle": -10},
-                 "ra": {"raise": 10, "out": 30, "elbow": 70}, "la": {"raise": 66, "out": -4, "elbow": 100}, "lf": {"z": -1.1}})),
-        (18, s({"root": {"y": -.3, "z": -.65, "pitch": -16}, "torso": {"pitch": -8, "yaw": -8}, "head": {"pitch": 12},
-                 "ra": {"raise": -22, "out": 42, "elbow": 38}, "la": {"raise": 72, "out": -12, "elbow": 102},
-                 "rl": {"lift": 98, "out": 4, "knee": 2, "ankle": -32}, "lf": {"z": -1.25, "toe": -12}}), "LINEAR"),
-        (25, s({"root": {"y": -.33, "z": -.68, "pitch": -13}, "torso": {"pitch": -6, "yaw": -8},
-                 "ra": {"raise": -18, "out": 40, "elbow": 40}, "la": {"raise": 70, "out": -10, "elbow": 100},
-                 "rl": {"lift": 90, "knee": 10, "ankle": -28}, "lf": {"z": -1.25}})),
-        (34, s({"root": {"y": -.55, "z": -.3}, "rl": {"lift": 46, "knee": 80}, "lf": {"z": -1.1}})),
-        (46, STANCE),
-    ], markers={"contact": 18, "recover": 25}))
+        (9, s({"root": {"y": -.8, "z": .28, "pitch": 13}, "torso": {"pitch": 9}, "ra": {"raise": 40, "out": 20, "elbow": 100},
+               "la": {"raise": 60, "out": 10, "elbow": 90}, "lf": {"z": -1.0}})),
+        (13, s({"root": {"y": -.5, "z": -.15, "pitch": 2}, "rl": {"lift": 92, "knee": 124, "ankle": -12},
+                "ra": {"raise": 10, "out": 30, "elbow": 70}, "la": {"raise": 66, "out": -4, "elbow": 100}, "lf": {"z": -1.15}})),
+        (17, s({"root": {"y": -.3, "z": -.62, "pitch": -15}, "torso": {"pitch": -6, "yaw": -8}, "head": {"pitch": 10},
+                "ra": {"raise": -20, "out": 40, "elbow": 40}, "la": {"raise": 70, "out": -10, "elbow": 100},
+                "rl": {"lift": 98, "out": 4, "knee": 2, "ankle": -30}, "lf": {"z": -1.2, "toe": -10}}), "LINEAR"),
+        (24, s({"root": {"y": -.33, "z": -.65, "pitch": -12}, "torso": {"pitch": -6, "yaw": -8},
+                "ra": {"raise": -18, "out": 40, "elbow": 42}, "la": {"raise": 70, "out": -10, "elbow": 100},
+                "rl": {"lift": 92, "knee": 8, "ankle": -28}, "lf": {"z": -1.2}})),
+        (32, s({"root": {"y": -.55, "z": -.3}, "rl": {"lift": 48, "knee": 84}, "lf": {"z": -1.1}})),
+        (44, STANCE),
+    ], markers={"contact": 17, "recover": 24}))
     lag(arm, ["Right", "Left", "Neck"], 1)
 
     # -------------------------------------- Katon: Great Fireball (4 parts)

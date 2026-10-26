@@ -69,6 +69,10 @@ local function block(parent,size,cf,color,material,class)
 		TopSurface=Enum.SurfaceType.Smooth,BottomSurface=Enum.SurfaceType.Smooth},parent)
 	return p
 end
+local function tween(object,time,goal,style,direction)
+	local t=TweenService:Create(object,TweenInfo.new(time,style or Enum.EasingStyle.Quad,direction or Enum.EasingDirection.Out),goal)
+	t:Play();return t
+end
 local function sound(parent,id,volume,speed,cut)
 	if type(id)=="table" then id=id[math.random(1,#id)] end
 	local s=new("Sound",{SoundId=id,Volume=volume or .4,PlaybackSpeed=speed or 1,RollOffMaxDistance=160,RollOffMinDistance=12},parent)
@@ -78,10 +82,6 @@ local function sound(parent,id,volume,speed,cut)
 	-- A bare anchor made for this sound goes with it.
 	if parent.Name=="SoundAnchor" then Debris:AddItem(parent,3) end
 	return s
-end
-local function tween(object,time,goal,style,direction)
-	local t=TweenService:Create(object,TweenInfo.new(time,style or Enum.EasingStyle.Quad,direction or Enum.EasingDirection.Out),goal)
-	t:Play();return t
 end
 local function seq(points)
 	local keys={}

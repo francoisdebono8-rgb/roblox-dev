@@ -91,7 +91,7 @@ def verify(with_isolation=True):
     compiler = tool('luau-compile')
     sources = sorted((ROOT / 'src').rglob('*.luau'))
     for source in sources:
-        proc = subprocess.run([compiler, str(source)], capture_output=True, text=True)
+        proc = subprocess.run([compiler, str(source)], capture_output=True, text=True, encoding='utf-8', errors='replace')
         if proc.returncode:
             raise SystemExit(f'Luau syntax failure: {source}\n{proc.stderr}')
     print(f'PASS  Luau syntax ({len(sources)} sources)')

@@ -426,6 +426,7 @@ end)
 
 -- Client -----------------------------------------------------------------------------
 local Motion=H.load("Client/VelmoraMotionEngine")
+local Authored=H.load("Client/AuthoredMotion")
 local C=H.C
 local function snapshot(model)
  local out={}
@@ -503,8 +504,15 @@ test("his own clips where his identity needs them, Sasuke's elsewhere; the lotus
   for _=1,40 do Motion.pose(x.model,name,-.03,fighter,1/60) end
   return snapshot(x.model)
  end
- assert(differ(key0(a,"Leaf","Light2"),key0(s,"Lion","Light2"),.001)==0,"Lee's roundhouse is not Sasuke's (the family is not reused)")
- assert(differ(key0(a,"Leaf","Light3"),key0(s,"Lion","Light3"),.001)==0,"Lee's spinning heel kick is not Sasuke's")
+ -- Shared family clips stay shared, unless Sasuke now has his own authored
+ -- (Blender) clip for the move: that one is his identity and Lee keeps the family's.
+ for _,name in {"Light2","Light3"} do
+  if Authored.has("Lion."..name) then
+   assert(differ(key0(a,"Leaf",name),key0(s,"Lion",name))>=3,"Lee borrowed Sasuke's authored "..name)
+  else
+   assert(differ(key0(a,"Leaf",name),key0(s,"Lion",name),.001)==0,"Lee's "..name.." is not the family's (the family is not reused)")
+  end
+ end
  assert(differ(key0(a,"Leaf","LeafRising"),key0(s,"Lion","LionKick"))>=3,"the Leaf Rising Wind is Sasuke's rising kick")
  assert(differ(key0(a,"Leaf","LeafHurricane"),key0(s,"Lion","Sweep"))>=3,"the Leaf Hurricane is Sasuke's sweep")
  assert(differ(key0(a,"Leaf","DeflectKick"),key0(a,"Leaf","Light1"))>=3,"the deflecting kick falls back to the jab")

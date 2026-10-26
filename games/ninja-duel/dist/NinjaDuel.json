@@ -1,14 +1,14 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "559d008497acbfca51260fe26b718061a5741dd62f2a28305d0b9fbd6595feca",
+  "sha256": "fd842cff91ac0e27f205e1aae65ff800b034f4ec6398825bc17052076957c4da",
   "sources": {
-    "src/Client/AuthoredClips.luau": "2e6074bf20f27e8b0d74faf6e8b936c0ce14c844f6cee40bc6da7bec169a3d10",
+    "src/Client/AuthoredClips.luau": "68c4286908e285dc479f9fddbc4f8088cba5636b59747e2ddaa6d9e4b2fb6392",
     "src/Client/AuthoredMotion.luau": "cf63bff1ff4aa755f8b2e1f831b22c78869a848e9e10f944bd43c2e6459d1f3f",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "383dad9f184c56d774e2aad722f0ca6ffa32f2e86b49edf833671100bf09e06b",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
-    "src/Client/Effects.luau": "e4c8a13a11adee767a806f91557f7b4371d707912188f3a4fd1aa2c04f63dbbe",
+    "src/Client/Effects.luau": "dee2644e4f8310146444ae4e60deea33e05aeb384a6ca5a8ff19ce1ca4c7fef8",
     "src/Client/FamilyFX.luau": "44b314f991eb2e153062441ba52053c90b054f254481d1c67bed248799516c3f",
     "src/Client/GaleFX.luau": "9fc4738f9982d99debdc5e74aa351f399f74cf574170b562db65a04dfdd06074",
     "src/Client/GaleMotion.luau": "1b9bc2f85d3a171dbaf1ce5ed3ce1ebc4b47104353752347ec2110d1abdf2df2",
@@ -96,7 +96,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "33054293a4464cc240da3dec145d5accc7606779ec335a19999c7ca709e03263",
+  "buildFingerprint": "444933031c0e2f7d217dcecd512d1f13fd2df81a36d4eddd56a9c15932938bbb",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -122,9 +122,122 @@
     18342131933
   ],
   "automatedQA": {
-    "status": "SKIPPED",
-    "reason": "luau/lune not available in this environment",
-    "suites": {}
+    "status": "PASS",
+    "failed": [],
+    "suites": {
+      "tests/Input.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel input/PS5: 16 PASS (callbacks + remote validation; hardware feel not simulated)"
+      },
+      "tests/Rules.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel pure policy: 7 PASS"
+      },
+      "tests/Combat.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel headless combat/migration: 17 PASS (geometry adapter; native QA still required)"
+      },
+      "tests/Sequences.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel sequence replay: 16 PASS (headless geometry adapter; native QA still required)"
+      },
+      "tests/Regression.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel regressions: 28 PASS"
+      },
+      "tests/Feedback.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel feedback policy: 5 PASS"
+      },
+      "tests/Animation.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel animation presentation: 20 PASS"
+      },
+      "tests/Branches.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel move graphs: 13 PASS"
+      },
+      "tests/Phase4.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel phase 4 depth: 19 PASS"
+      },
+      "tests/Neji.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Neji prototype: 8 PASS"
+      },
+      "tests/Systems.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel final systems: 5 PASS"
+      },
+      "tests/Tools.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel shared tools: 4 PASS"
+      },
+      "tests/Sasuke.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Sasuke prototype: 7 PASS"
+      },
+      "tests/Gaara.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Gaara prototype: 13 PASS"
+      },
+      "tests/Lee.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Rock Lee stress test: 26 PASS"
+      },
+      "tests/Online.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel online 1v1: 17 PASS (server lifecycle/authority; replication, latency and two-client Studio still required)"
+      },
+      "tests/Progression.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel progression: 49 PASS (headless: tree data, validation and combat hooks; Studio feel not judged)"
+      },
+      "tests/Profiles.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel progression profiles: 11 PASS (in-memory store; real DataStore adapter not exercised)"
+      },
+      "tests/Preparation.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel technical preparation: 7 PASS"
+      },
+      "tests/DevInfra.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel dev tools: 14 PASS (chakra lab gated: runtime modules absent)"
+      },
+      "tests/ComboModel.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel combo model: 25 PASS"
+      },
+      "tests/Chakra.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel chakra systemic: 25 PASS (headless rules, state and timing; the look is a Studio check)"
+      },
+      "tests/Identity.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel identity pass: 57 PASS"
+      },
+      "tests/Naruto.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Naruto (several bodies): 33 PASS"
+      },
+      "tests/Temari.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel Temari: 36 PASS"
+      },
+      "tests/Roster.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel roster Tier A: 8 PASS (20 fighters; headless rules, AI and drawing calls; feel and looks are Studio checks)"
+      },
+      "tests/Roster20.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel roster 20 (locked ten): 23 PASS (headless mechanics; feel and looks are Studio checks)"
+      },
+      "tests/Convergence.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel convergence (lifecycle, composition, reach): 14 PASS (headless)"
+      }
+    }
   },
   "nativeQA": "PENDING",
   "visualAcceptance": "PENDING",
