@@ -20,7 +20,15 @@ local Fighters=require(Shared.Fighters)
 -- Weapon models come from the VFX module; required lazily so headless tools
 -- that only pose skeletons do not need its services.
 local Effects=nil
+-- Blender-authored clips (Client/AuthoredMotion): where one exists for a
+-- strike or a technique, it replaces the procedural pose below.
+local Authored=nil
+do
+	local okA,mod=pcall(function() return require(script.Parent.AuthoredMotion) end)
+	if okA then Authored=mod end
+end
 local Motion={}
+Motion.Authored=Authored
 local rad=math.rad
 local CF=CFrame.new
 local ANG=CFrame.Angles
@@ -1177,6 +1185,7 @@ end
 -- The clip's footwork at `elapsed`: where each planted foot should be (root
 -- space), or nil for a leg that is kicking (free) at this moment.
 local function attackFeet(name,elapsed,fighterId)
+	if Authored and Authored.has(tostring(fighterId).."."..tostring(name)) then return nil end
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
 	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
@@ -1208,6 +1217,14 @@ end
 -- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId)
+	local authored=tostring(fighterId).."."..tostring(name)
+	if Authored and Authored.has(authored) then
+		-- (Blender-first) the authored strike, time-warped onto the server's
+		-- startup / active / recovery through its contact markers.
+		local phase=attackPhase(name,elapsed,fighterId)
+		local weight=if phase<2.55 then 1 else 1-smooth((phase-2.55)/.45)
+		return Authored.sample(authored,Authored.attackTime(authored,phase)),weight,phase
+	end
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
 	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
@@ -2591,6 +2608,37 @@ function Motion.present(char,actor,clock,dt)
 		local stanceFeet=stance(subject.fighterId)
 		base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt,{rf=footwork.R or stanceFeet.rf,lf=footwork.L or stanceFeet.lf},"attack")
 	else base,baseRate=locomotionTargets(char,subject,subject.fighterId,dt) end
+	if casting and not swinging and Authored then
+		-- (Blender-first) an authored technique: Channel (or Form), Hold while a
+		-- held technique gathers, Release, Recover.
+		local fighterId,id=tostring(subject.fighterId),tostring(subject.castId)
+		local prefix=fighterId.."."..id
+		local key=subject.state..":"..id
+		if memo.castKey~=key then memo.castKey=key;memo.castAt=elapsedTime end
+		if subject.state~="TechniqueChannel" or (subject.techCharge or 0)<=0 then memo.holdAt=nil end
+		local name,t
+		if subject.state=="TechniqueChannel" then
+			if (subject.techCharge or 0)>0 and Authored.has(prefix..".Hold") then
+				memo.holdAt=memo.holdAt or elapsedTime
+				name=prefix..".Hold";t=elapsedTime-memo.holdAt
+			else
+				name=if Authored.has(prefix..".Channel") then prefix..".Channel" else prefix..".Form"
+				if Authored.has(name) then t=Authored.stretch(name,subject.castElapsed or 0,techSpec(subject.fighterId,subject.castId).Channel or .4) end
+			end
+		elseif subject.state=="TechniqueActive" then
+			name=prefix..".Release";t=elapsedTime-memo.castAt
+		else
+			name=prefix..".Recover";t=elapsedTime-memo.castAt
+		end
+		if name and t and Authored.has(name) then
+			local targets=table.clone(Authored.sample(name,t))
+			if subject.airborne then
+				for joint in JOINTS do if not UPPER[joint] and joint~="Root" then targets[joint]=base[joint] end end
+			end
+			apply(char,targets,RATE.cast,dt)
+			return "technique"
+		end
+	end
 	if casting and not swinging then
 		local spec=castSpec(subject)
 		if spec then
@@ -2726,6 +2774,17 @@ function Motion.present(char,actor,clock,dt)
 			apply(char,targets,RATE.throw,dt)
 			return "throw"
 		end
+	end
+	-- (Blender-first) a technique carried on the body (BodyState, the Chidori):
+	-- the upper body holds its authored carry over the gait.
+	local carried=subject.bodyState and Authored and tostring(subject.fighterId).."."..tostring(subject.bodyState.id)..".Hold"
+	if carried and Authored.has(carried) then
+		memo.carryAt=memo.carryAt or elapsedTime
+		local pose=Authored.sample(carried,elapsedTime-memo.carryAt)
+		base=table.clone(base)
+		for joint in UPPER do if pose[joint] then base[joint]=pose[joint] end end
+	else
+		memo.carryAt=nil
 	end
 	if (subject.tenketsu or 0)>0 then base=tenketsuPosture(base,subject.tenketsu,subject.tenketsuSevere) end
 	if (subject.awaken or 0)>0 and familyOf(subject.fighterId).awakenPosture=="curse" then base=cursePosture(base,subject.curseHunger) end

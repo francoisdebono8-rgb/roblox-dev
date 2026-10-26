@@ -8,7 +8,10 @@ local Kit=require(script.Parent.VfxKit)
 local Feedback={}
 -- Audio stays on assets already imported and verified by this project; extra
 -- cues are declared here so adding one later is a one-line change.
-local AUDIO={light="rbxassetid://8595980577",heavy="rbxassetid://9117969717",whiff="rbxassetid://5835032207"}
+local AUDIO={light="rbxassetid://8595980577",heavy="rbxassetid://9117969717",whiff="rbxassetid://9126284094",
+	-- (Reference quality) a crack and a body thud under the heavy blows.
+	punch="rbxassetid://9117971636",body="rbxassetid://9113524242"}
+local LAYERED={finisher=true,launcher=true,slam=true,wallbounce=true,clash=true}
 local LOOPED={}
 -- style -> shard count, light range, colour, pitch, volume, tint of the target
 local look={
@@ -129,11 +132,15 @@ function Feedback.impact(style,position,impact)
 	local anchor=anchorAt(position)
 	local cue=(if style=="light" then "light" elseif AIR_CUE[style] then "whiff" else "heavy")
 	if style~="flow" then playSound(anchor,AUDIO[cue],spec.pitch,spec.volume) end
+	if LAYERED[style] then
+		playSound(anchor,AUDIO.punch,.95+math.random()*.1,.45)
+		playSound(anchor,AUDIO.body,1.1,.35)
+	end
 	local light=Instance.new("PointLight")
 	light.Color=spec.color;light.Brightness=(if style=="parry" or style=="slam" then 8 else 4)
 	light.Range=spec.range;light.Parent=anchor
 	TweenService:Create(light,TweenInfo.new(if style=="slam" then .28 else .17),{Brightness=0}):Play()
-	Debris:AddItem(anchor,.45)
+	Debris:AddItem(anchor,2)
 	local ok,drawn=pcall(strikeLayers,style,position,impact,spec)
 	if ok and drawn then return spec end
 	local spread=if style=="slam" then 1.1 elseif style=="whiff" then 2.4 else .7

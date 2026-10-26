@@ -32,7 +32,16 @@ local SOUND={
 	land="rbxasset://sounds/action_jump_land.mp3",
 	jump="rbxasset://sounds/action_jump.mp3",
 	getUp="rbxasset://sounds/action_get_up.mp3",
+	-- (Reference quality) Roblox's licensed Pro Sound Effects library.
+	electric={"rbxassetid://9116279560","rbxassetid://9116276961","rbxassetid://9116275998"},
+	swish="rbxassetid://9126284094",
+	whooshBy="rbxassetid://9120711172",
+	punch="rbxassetid://9117971636",
+	body="rbxassetid://9113524242",
+	bodyfall="rbxassetid://9113482032",
+	debris="rbxassetid://9114221862",
 }
+FX.SOUND=SOUND
 -- Contacts that bring the crowd to its feet, by strength.
 local CHEER={chidori=1,groundbounce=.8,slam=1,launcher=.7,finisher=.8,fire=1,teleport=.9,parry=.8,substitute=.4,burst=.8,clash=.9,wall=.6,wallbounce=1,worldbreak=1,walltech=.5,repel=.9,trigram=.7}
 local HYUGA=Color3.fromRGB(190,208,255)
@@ -60,9 +69,12 @@ local function block(parent,size,cf,color,material,class)
 		TopSurface=Enum.SurfaceType.Smooth,BottomSurface=Enum.SurfaceType.Smooth},parent)
 	return p
 end
-local function sound(parent,id,volume,speed)
+local function sound(parent,id,volume,speed,cut)
+	if type(id)=="table" then id=id[math.random(1,#id)] end
 	local s=new("Sound",{SoundId=id,Volume=volume or .4,PlaybackSpeed=speed or 1,RollOffMaxDistance=160,RollOffMinDistance=12},parent)
 	s:Play();Debris:AddItem(s,3)
+	-- A long take (debris, a body fall) is cut short with a fade.
+	if cut then task.delay(cut,function() if s.Parent then tween(s,.35,{Volume=0}) end end) end
 	-- A bare anchor made for this sound goes with it.
 	if parent.Name=="SoundAnchor" then Debris:AddItem(parent,3) end
 	return s
@@ -978,6 +990,7 @@ function FX:impact(impact,folder)
 		smokePuff(self.folder,position,Color3.fromRGB(176,160,130),16,2.2)
 		shockRing(self.folder,position+Vector3.new(0,.1,0),Color3.fromRGB(255,226,180),2,13,.26)
 		sound(anchorPart(self.folder,position),SOUND.land,.6,.7)
+		sound(anchorPart(self.folder,position),SOUND.bodyfall,.5,1.05,.7)
 		local floor=floorUnder(self,position,2,6)
 		if floor then Kit.ground(self.folder,floor.Position,floor.Normal,"crack",8,2.4,1.2,Color3.new(1,1,1),.1) end
 	end
@@ -1034,6 +1047,7 @@ function FX:explosion(position,normal,scale)
 	scale=scale or 1
 	local holder=anchorPart(self.folder,position);holder.Transparency=1
 	sound(holder,SOUND.boom,.8,.9)
+	sound(holder,SOUND.debris,.32*scale,1.15,1.1)
 	local light=new("PointLight",{Color=Color3.fromRGB(255,150,70),Brightness=10,Range=46*scale,Shadows=false},holder)
 	tween(light,.9,{Brightness=0})
 	if not Kit.has("fire") then
@@ -1137,6 +1151,7 @@ function FX:teleport(from,to,model,awake)
 	end
 	local holder=anchorPart(self.folder,to);holder.Transparency=1
 	sound(holder,SOUND.whoosh,.55,1.6)
+	sound(holder,SOUND.whooshBy,.45,1.7)
 	local light=new("PointLight",{Color=MINATO,Brightness=8,Range=24,Shadows=false},holder)
 	tween(light,.35,{Brightness=0})
 	Debris:AddItem(holder,1)
@@ -1706,6 +1721,8 @@ function FX:fighter(model,actor,dt)
 			aura.chidori.light.Range=16
 		end
 		sound(hand,SOUND.whoosh,.5,2.6)
+		sound(hand,SOUND.electric,.55,1)
+		aura.chidori.crackleAt=os.clock()
 	elseif not chidori and aura.chidori then
 		aura.chidori.emitter.Enabled=false;aura.chidori.core.Enabled=false
 		Kit.stop(aura.chidori.bolts)
@@ -1715,6 +1732,11 @@ function FX:fighter(model,actor,dt)
 	end
 	if aura.chidori then
 		aura.chidori.light.Brightness=2+math.random()*3
+		-- The birds: it keeps crackling while it is held.
+		if os.clock()-(aura.chidori.crackleAt or 0)>.55 and aura.chidori.hand then
+			aura.chidori.crackleAt=os.clock()
+			sound(aura.chidori.hand,SOUND.electric,.32,.9+math.random()*.3)
+		end
 		if aura.chidori.ball and aura.chidori.hand then
 			local size=1+math.random()*.5
 			aura.chidori.ball.Size=Vector3.one*size
