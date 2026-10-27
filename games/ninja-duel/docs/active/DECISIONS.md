@@ -103,3 +103,9 @@ Thèse : le combat n'est plus un moveset (Light1→2→3, routes, Heavy/Launcher
 
 Ordre : audit (fait le 25/10, [rapport](../reports/ninja-embodiment-2026-10-25/AUDIT.md)) → blockers → résolveur → défenseur → chakra → monde → tranches verticales → généralisation → portage → tests 3 min/Boxer → online/perf → polish → docs. Travail et critères dans MASTER_BACKLOG (EMB-001…).
 
+## DEC-028 — Animation de production dans Blender, puis maîtrise réelle du métier
+
+Demandes utilisateur des **26 et 27 octobre 2026**, textes intégraux : [Blender-first](../archive/requests/2026-10-26-blender-first-production-pipeline.md) (`72054c1`) et [maîtrise de l'animation](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) (`6b6fe95`), **activée le 27/10 à 22 h 22** (« fais intégralement le dernier commit poussé par ChatGPT »). Retour de jeu du 27/10 à 0 h 08 : les coups paraissent pensés seuls, pas comme le geste d'un joueur qui se déplace et attaque.
+
+Blender produit le corps (locomotion, sauts, frappes, réactions, préparations, sorties) ; Roblox/Luau garde le déplacement réel, l'intention, la direction, l'élan, les collisions, les touches, le chakra, les annulations et l'agence du défenseur (§10 : jamais de cinématique verrouillée). Python sert au pipeline (export, cuisson, films), pas d'animateur principal : les poses clés, intermédiaires, contacts et courbes sont posés dans Blender sur un rig de contrôle et le .blend est la source. Aucun effet visuel n'est ajouté pour sauver un mouvement faible (test sans maquillage, §14). Gate de compétence en six exercices avant production de masse ; Sasuke puis Minato comme preuves ; la méthode (§21) devient une règle permanente pour les vingt fighters. Travail et critères : ANIM-001…ANIM-006 dans MASTER_BACKLOG.
+

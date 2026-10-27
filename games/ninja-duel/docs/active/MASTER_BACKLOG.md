@@ -446,6 +446,84 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - evidence: ChakraCombat/ChakraTuning intégrés ; 738b449 ajoute fil-objet, conduction métal et feedback des objets. Rapport convergence3/CHAKRA_PLAYER_LAYER : headless uniquement ; tailles, lisibilité, cadence et interactions réelles restent à vérifier dans Studio.
 - outcome: PENDING
 
+## ANIM-001 — Maîtrise de l'animation : étude, méthode et gate de compétence (parent)
+
+- status: IN_PROGRESS
+- priority: P0
+- dependencies: EMB-001
+- subsystem: animation
+- character: Sasuke, Minato puis roster
+- summary: apprendre le métier (mécanique du corps, timing/spacing, Graph Editor, IK/contacts) et le prouver sur le rig avant de produire à grande échelle
+- sources: [DEC-028](DECISIONS.md#dec-028--animation-de-production-dans-blender-puis-maîtrise-réelle-du-métier) ; [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §1–4, §7–8, §16
+- validation: six exercices (transfert d'appui ; accélération-sprint-freinage-virage ; impulsion-air-réception ; frappe engagée ; réaction directionnelle ; course-saut-attaque-raté-réception-course) lisibles sans VFX, avec pour chacun poids, initiation, retard, spacing le plus rapide, absorption, lisibilité
+- evidence: —
+- outcome: PENDING
+
+## ANIM-002 — Les coups naissent du déplacement (continuité moteur)
+
+- status: OPEN
+- priority: P0
+- dependencies: ANIM-001
+- subsystem: animation, engine
+- character: tous
+- summary: transitions sans couture (la pose et la vitesse en cours sont héritées), frappes en mouvement qui gardent l'appui et l'élan, raté qui emporte le corps
+- sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §10, §15 ; retour utilisateur du 27/10 0 h 08
+- validation: course→saut, course→attaque, saut→attaque, mur→attaque, attaque→mouvement, éjection→réception, launcher→poursuite, raté→récupération, FTG→action suivante : aucune pose remplacée d'un coup, vu en Studio aux vraies touches
+- evidence: —
+- outcome: PENDING
+
+## ANIM-003 — Sasuke, premier terrain de preuve artistique
+
+- status: OPEN
+- priority: P0
+- dependencies: ANIM-001, ANIM-002
+- subsystem: animation
+- character: Sasuke
+- summary: locomotion (départ, course ninja, freinage, virages, sauts, mur, chute, réception), taijutsu, lancers en mouvement, Katon (préparation→sceaux→inspiration→projection→suite), Chidori (formation, course, pilotage borné, saut, mur, plongée, touché, raté, sortie)
+- sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §11 ; références recherchées (§5)
+- validation: séquence aux vraies touches avec VFX coupés puis activés ; amélioration visible par un humain
+- evidence: —
+- outcome: PENDING
+
+## ANIM-004 — Minato, un autre corps par la même méthode
+
+- status: OPEN
+- priority: P0
+- dependencies: ANIM-003
+- subsystem: animation
+- character: Minato
+- summary: économie, appuis exacts, angles rapides, kunai en déplacement, FTG intention→disparition→arrivée cohérente→décision, Rasengan avec vraie mécanique
+- sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §12
+- validation: séquence aux vraies touches ; ne se lit pas comme un Sasuke plus rapide
+- evidence: —
+- outcome: PENDING
+
+## ANIM-005 — Réactions et défense réévaluées, round réel Sasuke–Minato
+
+- status: OPEN
+- priority: P1
+- dependencies: ANIM-003, ANIM-004
+- subsystem: animation
+- character: Sasuke, Minato
+- summary: garder ce qui se lit, refaire le reste (contact, direction, force, vitesse antérieure, appui, sol/air, monde) ; round libre de 60–90 s aux entrées normales
+- sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §13, §19–20
+- validation: « je ne vois plus des états qui changent, je vois Sasuke combattre Minato » (verdict humain)
+- evidence: —
+- outcome: PENDING
+
+## ANIM-006 — Règle permanente : méthode d'animation pour les vingt fighters
+
+- status: OPEN
+- priority: P1
+- dependencies: ANIM-005
+- subsystem: animation
+- character: roster (ROSTER_20)
+- summary: recherche personnage → apprentissage ciblé → poses fortes → mécanique → raffinement Blender → export → Studio → critique → correction, pour chaque fighter et technique
+- sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §6, §21
+- validation: chaque fighter reconnaissable à son corps HUD masqué ; pas une famille d'animation recolorée
+- evidence: —
+- outcome: PENDING
+
 ## EMB-001 — Ninja Embodiment — le joueur devient le ninja (parent)
 
 - status: IN_PROGRESS

@@ -2,6 +2,10 @@
 
 Propriétaire unique : notifications temporaires à accuser puis absorber selon [EXECUTION_RULES](EXECUTION_RULES.md). Décisions dans [DECISIONS](DECISIONS.md), faits dans [CURRENT_STATE](CURRENT_STATE.md), travail dans [MASTER_BACKLOG](MASTER_BACKLOG.md).
 
+## INBOX-ANIM-MASTERY-20261027 — ACK Claude 27/10 (bloc en cours)
+
+Mission [maîtrise de l'animation](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) (`6b6fe95`), activée par l'utilisateur le 27/10 à 22 h 22. Décision [DEC-028](DECISIONS.md#dec-028--animation-de-production-dans-blender-puis-maîtrise-réelle-du-métier), travail ANIM-001…006 dans MASTER_BACKLOG. Déjà livré avant activation (Blender-first, non encore jugé artistiquement) : `719d115`, `cdfad66`, `c7ab3c0` (locomotion), `04ac9bf` (défense, réactions, poursuite).
+
 ## INBOX-AUDIT-ROSTER20-20261017 — PENDING ACK Claude
 
 Demande utilisateur : audit complet avant nouvelle passe gameplay, sans corrections runtime Codex. Lecture prioritaire : [ENGINEERING_REVIEW](ENGINEERING_REVIEW.md), puis [preuves et classement datés](../archive/audits/2026-10-17-roster20/AUDIT.md). Appliquer les critères des tickets existants et la séquence DEC-021 ; ne pas interpréter le checkpoint « Tier A » comme clôture de la gate native.
