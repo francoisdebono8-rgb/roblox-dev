@@ -456,12 +456,12 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: apprendre le métier (mécanique du corps, timing/spacing, Graph Editor, IK/contacts) et le prouver sur le rig avant de produire à grande échelle
 - sources: [DEC-028](DECISIONS.md#dec-028--animation-de-production-dans-blender-puis-maîtrise-réelle-du-métier) ; [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §1–4, §7–8, §16
 - validation: six exercices (transfert d'appui ; accélération-sprint-freinage-virage ; impulsion-air-réception ; frappe engagée ; réaction directionnelle ; course-saut-attaque-raté-réception-course) lisibles sans VFX, avec pour chacun poids, initiation, retard, spacing le plus rapide, absorption, lisibilité
-- evidence: —
+- evidence: méthode [ANIMATION_CRAFT](../research/ANIMATION_CRAFT.md) ; rig `tools/blender/nd_ctrl.py` + `nd_shot.py` ; six exercices répondus dans le [gate](../reports/animation-mastery-2026-10-27/GATE.md). Lisibilité sans VFX et verdict humain PENDING.
 - outcome: PENDING
 
 ## ANIM-002 — Les coups naissent du déplacement (continuité moteur)
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P0
 - dependencies: ANIM-001
 - subsystem: animation, engine
@@ -469,12 +469,12 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: transitions sans couture (la pose et la vitesse en cours sont héritées), frappes en mouvement qui gardent l'appui et l'élan, raté qui emporte le corps
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §10, §15 ; retour utilisateur du 27/10 0 h 08
 - validation: course→saut, course→attaque, saut→attaque, mur→attaque, attaque→mouvement, éjection→réception, launcher→poursuite, raté→récupération, FTG→action suivante : aucune pose remplacée d'un coup, vu en Studio aux vraies touches
-- evidence: —
+- evidence: `36be268` inertialisation des transitions, frappe en course sur les jambes de la course, pieds plantés verrouillés au sol ; deux tests qui échouent par mutation. Studio aux vraies touches ([gate](../reports/animation-mastery-2026-10-27/GATE.md)) : course→frappe sans couture, saut arrière→réception, Chidori formé→course→estoc, FTG→Rasengan. Mur→attaque, éjection→réception, launcher→poursuite non rejoués.
 - outcome: PENDING
 
 ## ANIM-003 — Sasuke, premier terrain de preuve artistique
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P0
 - dependencies: ANIM-001, ANIM-002
 - subsystem: animation
@@ -482,12 +482,12 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: locomotion (départ, course ninja, freinage, virages, sauts, mur, chute, réception), taijutsu, lancers en mouvement, Katon (préparation→sceaux→inspiration→projection→suite), Chidori (formation, course, pilotage borné, saut, mur, plongée, touché, raté, sortie)
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §11 ; références recherchées (§5)
 - validation: séquence aux vraies touches avec VFX coupés puis activés ; amélioration visible par un humain
-- evidence: —
+- evidence: `8e664a8` Sasuke réécrit pose par pose (`clips_lion2.py`, 60 i/s, rapport de flips). Studio : frappe en course, Chidori formé→course→estoc aux vraies touches, Phoenix Flower en duel IA, 0 erreur. VFX coupés/activés et verdict humain PENDING.
 - outcome: PENDING
 
 ## ANIM-004 — Minato, un autre corps par la même méthode
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P0
 - dependencies: ANIM-003
 - subsystem: animation
@@ -495,7 +495,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: économie, appuis exacts, angles rapides, kunai en déplacement, FTG intention→disparition→arrivée cohérente→décision, Rasengan avec vraie mécanique
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §12
 - validation: séquence aux vraies touches ; ne se lit pas comme un Sasuke plus rapide
-- evidence: —
+- evidence: `8e664a8` Minato réécrit (`clips_flash2.py`, appuis sur la plante, foulée plus longue, FTG intention/départ/arrivée). Studio : FTG→Rasengan en course aux vraies touches, duel IA 25 s, 0 erreur. Reste : flip résiduel RightHip 122° à l'impact du Light3 ; verdict humain.
 - outcome: PENDING
 
 ## ANIM-005 — Réactions et défense réévaluées, round réel Sasuke–Minato

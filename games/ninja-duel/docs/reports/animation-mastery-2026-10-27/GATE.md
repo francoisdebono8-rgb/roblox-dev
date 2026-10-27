@@ -50,5 +50,18 @@ For each: where the weight is, what initiates, what follows late, the fastest sp
 ## Status
 
 - TECHNICAL PASS: 31 suites; release build. See the commit for its hash.
-- NATIVE_STUDIO: see the section below (to fill in after the in-game check).
+- NATIVE_STUDIO: PASS on the checks listed below (build `8e664a8`, Debug, BUILD 079033dc…).
 - HUMAN_VISUAL/FEEL: PENDING. The verdict belongs to the user.
+
+## NATIVE_STUDIO (27/10, `Documents/Roblox/ND-Anim1.rbxlx`)
+
+Real keys and mouse through Studio input, the bot frozen unless stated, and the client state read every frame:
+
+- **Run → strike (Sasuke):** W held, then a click. The jab comes out on the run's legs with the stride kept; no pose replaced at once (chronophotograph).
+- **Back jump → landing → backpedal:** seen, feet on the floor at the landing.
+- **Chidori (Sasuke):** key 4 → `TechniqueChannel/Chidori` 0.68 s → neutral with the Chidori in hand → run (W) → click → `Startup/Active ChidoriThrust` → recovery. The thrust comes out of the run.
+- **Flying Thunder God → Rasengan (Minato):** at a run, key 2 (FTG channel 0.1 s, recovery) then key 3 → `TechniqueChannel/BurstStrike` → `Active/DashAttack` → recovery → neutral in under a second.
+- **AI duel, Minato (autopilot) vs Sasuke, 25 s:** dodges, stuns, Phoenix Flower channel/active/recovery; no error.
+- **Console:** only the build line and the usual Studio messages in every run.
+
+Not yet done in Studio: wall → strike, launcher → pursuit, a thrown body landing, Katon held at length, the 60–90 s round played by a human, VFX off then on (ANIM-005).
