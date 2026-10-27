@@ -49,7 +49,7 @@ local UPPER={Waist=true,Neck=true,Right=true,Left=true,RightElbow=true,LeftElbow
 local states=setmetatable({},{__mode="k"})
 local function stateOf(char)
 	local s=states[char]
-	if not s then s={motors={},pose={},phase=0,clock=0};states[char]=s end
+	if not s then s={motors={},pose={},phase=0,clock=0,inert={},vel={}};states[char]=s end
 	return s
 end
 local function motor(char,key)
@@ -85,6 +85,32 @@ local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
 	return math.abs(angle)
 end
+-- (ANIM-002) Inertialization: when the body changes clip (a strike out of
+-- the run, the next blow of a string, a landing, a hit), the new clip plays
+-- at its own authored spacing at once and the difference with the body as it
+-- was drawn - its pose and its velocity - is carried as an offset that decays
+-- on a critically damped spring. Nothing snaps and nothing lags: the old
+-- motion flows into the new one (Bollo, "High Performance Animation in Gears
+-- of War 4", SIGGRAPH 2017; Holden's spring formulation).
+local LN2=0.69314718
+local function damper(x,v,half,dt)
+	local y=(4*LN2/math.max(half,1e-3))*.5
+	local j1=v+x*y
+	local e=math.exp(-y*dt)
+	return (x+j1*dt)*e,(v-j1*y*dt)*e
+end
+local function rotVec(cf)
+	local axis,angle=cf:ToAxisAngle()
+	if angle>math.pi then angle-=2*math.pi end
+	if angle~=angle or axis~=axis then return Vector3.zero end
+	return axis*angle
+end
+local function fromRot(v)
+	local m=v.Magnitude
+	if m<1e-6 then return IDENTITY end
+	return CFrame.fromAxisAngle(v/m,m)
+end
+Motion._damper=damper
 -- Write one joint: damp the owned pose towards the target, limit the angular
 -- step, then publish it as the Motor6D transform.
 local function write(char,key,target,rate,dt)
@@ -93,22 +119,74 @@ local function write(char,key,target,rate,dt)
 	local s=stateOf(char)
 	if not dt then s.pose[key]=target;joint.Transform=target;return end
 	local current=s.pose[key] or joint.Transform
-	local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
-	local nextCF=current:Lerp(target,alpha)
-	local step=angleBetween(current,nextCF)
-	-- Strikes may whip faster than ordinary motion so their shape reads.
-	local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif rate==RATE.kick then KICK_SPEED elseif rate==RATE.authored then 2600 elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
-	if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
+	local inert=s.inert[key]
+	if s.capture and rate==RATE.authored then
+		-- A new clip: carry the body's drawn pose and velocity as an offset.
+		local off=target:Inverse()*current
+		local vel=s.vel[key]
+		inert={r=rotVec(off),p=off.Position,vr=vel and vel.w or Vector3.zero,vp=vel and vel.v or Vector3.zero,half=s.capture,t0=target}
+		if inert.vr.Magnitude>25 then inert.vr=inert.vr.Unit*25 end
+		s.inert[key]=inert
+	elseif inert and inert.t0 then
+		-- Second frame: the offset's velocity is the old motion minus the new one.
+		local tv=rotVec(inert.t0:Inverse()*target)/dt
+		inert.vr-=tv;inert.vp-=(target.Position-inert.t0.Position)/dt
+		inert.t0=nil
+	end
+	local desired=target
+	if inert then
+		inert.r,inert.vr=damper(inert.r,inert.vr,inert.half,dt)
+		inert.p,inert.vp=damper(inert.p,inert.vp,inert.half,dt)
+		if inert.r.Magnitude<1e-3 and inert.vr.Magnitude<1e-2 and inert.p.Magnitude<1e-3 and inert.vp.Magnitude<1e-2 then
+			s.inert[key]=nil
+		else
+			desired=target*(CF(inert.p)*fromRot(inert.r))
+		end
+	end
+	local nextCF
+	if rate==RATE.authored then
+		-- Authored motion is the final curve: drawn as is (with its transition
+		-- offset); only an absurd jump is capped.
+		nextCF=desired
+		local step=angleBetween(current,nextCF)
+		local limit=rad(5000)*dt
+		if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
+	else
+		local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
+		nextCF=current:Lerp(desired,alpha)
+		local step=angleBetween(current,nextCF)
+		-- Strikes may whip faster than ordinary motion so their shape reads.
+		local limit=rad(if rate==RATE.chainIn then CHAIN_IN_SPEED elseif rate==RATE.kick then KICK_SPEED elseif (rate or 0)>=RATE.attack then 2280 else MAX_SPEED)*dt
+		if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
+	end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
-	local maxMove=(if rate==RATE.authored then 24 else 14)*dt
+	local maxMove=(if rate==RATE.authored then 40 else 14)*dt
 	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
+	-- The drawn velocity (joint space), for the next transition.
+	local vel=s.vel[key] or {}
+	vel.w=rotVec(current:Inverse()*nextCF)/dt;vel.v=(nextCF.Position-current.Position)/dt
+	s.vel[key]=vel
 	s.pose[key]=nextCF
 	joint.Transform=nextCF
 end
 local LEG_SIDE={RightHip="R",RightKnee="R",RightAnkle="R",LeftHip="L",LeftKnee="L",LeftAnkle="L"}
 local legIK
+-- Name the clip the next apply() draws: a change of name is a transition
+-- (inertialized over `half` seconds when the new clip is authored).
+local function mark(char,key,half)
+	local s=stateOf(char)
+	s.markKey=key;s.markHalf=half or .1
+end
+Motion._mark=mark
 local function apply(char,targets,rate,dt,upperRate,legRate)
+	local s=stateOf(char)
+	local key=s.markKey or ("proc:"..tostring(rate))
+	if key~=s.lastMarkKey then
+		if s.lastMarkKey~=nil and dt then s.capture=if s.markKey then s.markHalf or .1 else .06 end
+		s.lastMarkKey=key
+	end
+	s.markKey=nil
 	local feet=targets.__feet
 	for key in JOINTS do
 		local side=LEG_SIDE[key]
@@ -117,15 +195,18 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 			write(char,key,targets[key] or IDENTITY,r,dt)
 		end
 	end
+	s.capture=nil
 	if feet then
 		-- The hips are damped; a planted foot must not be. Solve each planted leg
 		-- against the hips as drawn this frame and set it almost at once.
-		local s=stateOf(char)
 		local hips=s.pose.Root or targets.Root
 		for side,f in feet do
 			local prefix=if side=="R" then "Right" else "Left"
 			local hip,knee,ankle=legIK(hips,if side=="R" then 1 else -1,f.ankle,f.yaw,f.toe)
-			write(char,prefix.."Hip",hip,60,dt);write(char,prefix.."Knee",knee,60,dt);write(char,prefix.."Ankle",ankle,60,dt)
+			for _,j in {prefix.."Hip",prefix.."Knee",prefix.."Ankle"} do s.inert[j]=nil end
+			-- (Authored: exact, a damped leg lets the foot creep with the body.)
+			local legRate2=if rate==RATE.authored then RATE.authored else 60
+			write(char,prefix.."Hip",hip,legRate2,dt);write(char,prefix.."Knee",knee,legRate2,dt);write(char,prefix.."Ankle",ankle,legRate2,dt)
 		end
 	end
 end
@@ -1776,10 +1857,107 @@ local function authoredLocomotion(char,actor,fighterId,dt)
 	end
 	local trackTorso,trackHead=trackOf(root,actor)
 	pose=table.clone(pose)
+	-- (ANIM-002) Momentum: the chest leans into acceleration and sits back to
+	-- brake, the body banks into a turn (the cycles are drawn at constant speed).
+	local accel=Vector3.zero
+	if s.authLastVel and dt and dt>0 then accel=(velocity-s.authLastVel)/dt end
+	s.authLastVel=velocity
+	s.authAccel=(s.authAccel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*9))
+	if root then
+		local a=root.CFrame:VectorToObjectSpace(s.authAccel)
+		local forward=math.clamp(-a.Z*.05,-14,12)
+		local bank=math.clamp(a.X*.03,-9,9)
+		if math.abs(forward)>.2 or math.abs(bank)>.2 then
+			pose.Waist=ANG(rad(-forward*.8),0,rad(-bank*.6))*(pose.Waist or IDENTITY)
+			pose.Root=(pose.Root or IDENTITY)*ANG(rad(-forward*.25),0,rad(-bank*.5))
+			pose.Neck=ANG(rad(forward*.35),0,0)*(pose.Neck or IDENTITY)
+		end
+	end
 	if math.abs(trackTorso)>.5 then pose.Waist=(pose.Waist or IDENTITY)*ANG(0,rad(-trackTorso*.6),0) end
 	if math.abs(trackHead)>.5 then pose.Neck=(pose.Neck or IDENTITY)*ANG(0,rad(-trackHead*.6),0) end
 	return pose
 end
+-- (ANIM-002) The ankle of a drawn pose, in HumanoidRootPart space (the rig's
+-- Motor6D chain: Root, hip, knee, ankle pivots).
+local function ankleFrame(pose,key)
+	local prefix=if key=="R" then "Right" else "Left"
+	local side=if key=="R" then 1 else -1
+	return (pose.Root or IDENTITY)*CF(.5*side,-.55,0)*(pose[prefix.."Hip"] or IDENTITY)*CF(0,-1.05,0)
+		*(pose[prefix.."Knee"] or IDENTITY)*CF(0,-1,0)*(pose[prefix.."Ankle"] or IDENTITY)
+end
+Motion._ankleFrame=ankleFrame
+-- (ANIM-002) Feet of an authored clip on the real floor. A foot the clip keeps
+-- on the ground (low and still in the clip) is locked where it landed in the
+-- world, whatever the server does with the body meanwhile (a lunge, the slide
+-- out of a running strike); a foot the clip lifts leaves from where it really
+-- was and joins the clip's path over a few frames (a step, not a glide). A
+-- locked foot the body has carried out of reach is released the same way.
+local function authoredFeet(char,pose,dt)
+	local s=stateOf(char)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	dt=dt or 1/60
+	if not s.af or elapsedTime-(s.afAt or -1)>.2 then s.af={} end
+	s.afAt=elapsedTime
+	local rootCF=root.CFrame
+	local feet={}
+	for _,key in {"R","L"} do
+		local f=s.af[key] or {off=Vector3.zero}
+		s.af[key]=f
+		local frame=ankleFrame(pose,key)
+		local clipPos=frame.Position
+		local speed=if f.prev then (clipPos-f.prev).Magnitude/dt else 0
+		f.prev=clipPos
+		local low=clipPos.Y-ANKLE_Y<(if f.planted then .3 else .16)
+		local still=speed<(if f.planted then 6 else 3.5)
+		-- A foot released to step does not plant again before it has arrived.
+		local stepping=f.release and f.off.Magnitude>.12
+		if not stepping then f.release=nil end
+		if low and still and not stepping then
+			if not f.planted then
+				f.planted=true
+				local at=rootCF:PointToWorldSpace(clipPos+f.off)
+				f.world=Vector3.new(at.X,rootCF.Position.Y+ANKLE_Y,at.Z)
+			end
+			local here=rootCF:PointToObjectSpace(f.world)
+			here=Vector3.new(here.X,ANKLE_Y,here.Z)
+			local hip=(pose.Root or IDENTITY)*Vector3.new(if key=="R" then .5 else -.5,-.55,0)
+			if (here-hip).Magnitude>L1+L2-.04 or (here-clipPos).Magnitude>1.3 then
+				-- Out of reach: let it go, it steps back under the body.
+				f.planted=false;f.off=here-clipPos;f.release=true
+			else
+				f.off=here-clipPos
+			end
+		else
+			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos end
+		end
+		local lift=0
+		if not f.planted then
+			-- A swing from where the foot really was onto the clip's path, lifted
+			-- off the floor in an arc (a step, never a skate).
+			if f.off.Magnitude>.05 then
+				f.swing0=math.max(f.swing0 or 0,f.off.Magnitude)
+				f.off*=math.exp(-dt/.05)
+				local u=1-f.off.Magnitude/f.swing0
+				lift=4*u*(1-u)*math.min(.55,f.swing0*.35)
+			else
+				f.off=Vector3.zero;f.swing0=nil
+			end
+		else
+			f.swing0=nil
+		end
+		-- A foot the clip kicks high stays the clip's own (free leg).
+		if clipPos.Y-ANKLE_Y<.9 then
+			local rx,ry=frame:ToEulerAnglesYXZ()
+			local target=clipPos+f.off
+			if f.planted then target=Vector3.new(target.X,ANKLE_Y,target.Z) else target+=Vector3.new(0,lift,0) end
+			feet[key]={ankle=target,yaw=-math.deg(ry),toe=math.deg(rx)}
+		end
+	end
+	return feet
+end
+Motion._authoredFeet=authoredFeet
+Motion._feetState=function(char) return stateOf(char).af end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	if not mode and not rest and hasAuthoredLoco(fighterId) then
 		return authoredLocomotion(char,actor,fighterId,dt),RATE.authored
@@ -2864,8 +3042,11 @@ function Motion.present(char,actor,clock,dt)
 			local targets=table.clone(Authored.sample(name,t))
 			if subject.airborne then
 				for joint in JOINTS do if not UPPER[joint] and joint~="Root" then targets[joint]=base[joint] end end
+			else
+				targets.__feet=authoredFeet(char,targets,dt)
 			end
-			apply(char,targets,RATE.cast,dt)
+			mark(char,"cast:"..name,.08)
+			apply(char,targets,RATE.authored,dt)
 			return "technique"
 		end
 	end
@@ -2949,6 +3130,28 @@ function Motion.present(char,actor,clock,dt)
 			final.__feet={}
 			for side in footwork do final.__feet[side]=base.__feet[side] end
 		else final.__feet=nil end
+		local authoredStrike=Authored and Authored.has(tostring(subject.fighterId).."."..tostring(name))
+		if authoredStrike then
+			-- (ANIM-002) A strike thrown on the move comes out of the run: the legs
+			-- keep the stride (phase by distance, feet on the floor) as long as the
+			-- body really travels, the hips give half their turn to the run, the
+			-- arms and chest throw the blow. Slowing through the recovery, the
+			-- strike's own footwork takes the legs back, its planted feet locked
+			-- on the floor where they land.
+			local speed=planar(subject.velocity).Magnitude
+			local wMove=if subject.airborne then 0 else smooth((speed-7)/10)*weight
+			if wMove>0 and baseRate==RATE.authored then
+				-- (`base` is this frame's authored locomotion: its phase already advanced.)
+				local run=base
+				for joint in JOINTS do
+					if not UPPER[joint] and joint~="Root" and run[joint] then final[joint]=(final[joint] or IDENTITY):Lerp(run[joint],wMove) end
+				end
+				local r0,r1=final.Root or IDENTITY,run.Root or IDENTITY
+				final.Root=CF(r0.Position:Lerp(r1.Position,wMove))*r0.Rotation:Lerp(r1.Rotation,wMove*.5)
+			end
+			-- (While the run carries the legs, its own cycle keeps them on the floor.)
+			if not subject.airborne and wMove<.35 then final.__feet=authoredFeet(char,final,dt) end
+		end
 		-- Chaining into the next strike: the arms travel from the last contact
 		-- pose back into the new chamber over a few frames instead of in one or
 		-- two (a hand used to jump ~3 studs in a frame between Light1 and Light2,
@@ -2963,6 +3166,11 @@ function Motion.present(char,actor,clock,dt)
 		s.lastBranch="attack";s.lastBranchAt=elapsedTime
 		-- A kicking (free) leg whips a little slower than an arm: at the strike
 		-- cap a foot crossed ~2.5 studs in one frame, twice a real kick.
+		if authoredStrike then
+			mark(char,"atk:"..key,if s.chainedIn then .05 else .07)
+			apply(char,final,RATE.authored,dt)
+			return "attack"
+		end
 		apply(char,final,RATE.attack,dt,if chainIn then RATE.chainIn else nil,RATE.kick)
 		return "attack"
 	end
@@ -2983,7 +3191,9 @@ function Motion.present(char,actor,clock,dt)
 			local t=since*(if memo.landHard then 1 else 1.7)
 			if t<len then
 				local pose=Authored.sample(landName,t)
-				local final=if memo.landHard then pose else mixPoses({{base,1},{pose,1.4}})
+				local final=table.clone(if memo.landHard then pose else mixPoses({{base,1},{pose,1.4}}))
+				final.__feet=authoredFeet(char,final,dt)
+				mark(char,"land",.05)
 				apply(char,final,RATE.authored,dt)
 				return "landing"
 			end
@@ -3046,6 +3256,7 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.awaken or 0)>0 and familyOf(subject.fighterId).awakenPosture=="curse" then base=cursePosture(base,subject.curseHunger) end
 	local brake=memo.brakeAt and elapsedTime-memo.brakeAt
 	if brake and brake<.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
+	if baseRate==RATE.authored then mark(char,if subject.airborne then "air" else "loco",if subject.airborne then .1 else .12) end
 	apply(char,base,baseRate,dt)
 	return "locomotion"
 end
@@ -3055,7 +3266,7 @@ function Motion.reset(char)
 	-- Anchors, gait phase, acceleration and attack-transition memory belong
 	-- to the previous life/rig just as much as its joint pose does.
 	table.clear(s)
-	s.motors={};s.pose={};s.phase=0;s.clock=0
+	s.motors={};s.pose={};s.phase=0;s.clock=0;s.inert={};s.vel={}
 	for key in JOINTS do local joint=motor(char,key);if joint then joint.Transform=IDENTITY end end
 end
 Motion.clear=Motion.reset

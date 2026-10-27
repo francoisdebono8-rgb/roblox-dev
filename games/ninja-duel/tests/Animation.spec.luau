@@ -659,4 +659,72 @@ test("wall support freezes without travel and cycles when the body climbs",funct
  assert(maxDelta(before,snapshot(a.model))>5,"climbing has no knee drive")
 end)
 
+-- (ANIM-002) The strikes come out of the movement.
+local function ankleWorld(model,side)
+ local pose={}
+ for _,k in {"Root","RightHip","RightKnee","RightAnkle","LeftHip","LeftKnee","LeftAnkle"} do pose[k]=model.joints[k].Transform end
+ return model.root.CFrame:PointToWorldSpace(Motion._ankleFrame(pose,side).Position)
+end
+test("an authored strike keeps its planted feet on the floor while the server carries the body",function()
+ local c,a=H.duel("Lion","Flashstep")
+ assert(Motion.Authored and Motion.Authored.has("Lion.Heavy"),"fixture: Sasuke's authored Heavy is gone")
+ local root=a.model.root
+ root.CFrame=H.C.new(0,3,0)
+ for _=1,30 do frame(a.model,body(a,{state="Neutral",velocity=V.zero}),{},1/60) end
+ local planted={}
+ local worst=0
+ local wasHeld={}
+ local heldFrames=0
+ for i=1,40 do
+  -- The lunge: the server moves the root 3 studs forward over the swing.
+  root.CFrame=root.CFrame*H.C.new(0,0,-.075)
+  frame(a.model,body(a,{state="Active",attackName="Heavy",velocity=V.zero}),{attackElapsed=i/60},1/60)
+  for _,side in {"R","L"} do
+   local w=ankleWorld(a.model,side)
+   local p=planted[side]
+   -- A foot the engine holds planted on two frames must not move.
+   local held=(Motion._feetState(a.model) or {})[side]
+   held=held and held.planted
+   if p and held and wasHeld[side] then worst=math.max(worst,(w-p).Magnitude) end
+   planted[side]=w;wasHeld[side]=held
+   if held then heldFrames+=1 end
+  end
+ end
+ assert(heldFrames>30,"the strike never held a foot on the floor ("..heldFrames..")")
+ -- A locked foot does not creep with the body (a glide would move it .075 a frame).
+ assert(worst<.03,string.format("a planted foot glided %.3f studs in a frame",worst))
+end)
+test("a strike thrown at a run keeps the stride; a clip change never snaps",function()
+ local c,a=H.duel("Lion","Flashstep")
+ local root=a.model.root
+ root.CFrame=H.C.new(0,3,0)
+ local run=body(a,{state="Neutral",velocity=V.new(0,0,-20),speed=20})
+ local runWorst=0
+ local prev=nil
+ for i=1,60 do
+  root.CFrame=root.CFrame*H.C.new(0,0,-20/60);frame(a.model,run,{},1/60)
+  local now=snapshot(a.model)
+  if prev and i>30 then runWorst=math.max(runWorst,maxDelta(prev,now)) end
+  prev=now
+ end
+ local before=snapshot(a.model)
+ local worst=0
+ local hipMotion=0
+ local lastHip=a.model.joints.RightHip.Transform
+ for i=1,24 do
+  root.CFrame=root.CFrame*H.C.new(0,0,-20/60)
+  frame(a.model,body(a,{state="Startup",attackName="Light1",velocity=V.new(0,0,-20),speed=20}),{attackElapsed=i/60},1/60)
+  local now=snapshot(a.model)
+  worst=math.max(worst,maxDelta(before,now))
+  before=now
+  local hip=a.model.joints.RightHip.Transform
+  hipMotion+=maxDelta({x=lastHip},{x=hip})
+  lastHip=hip
+ end
+ -- The legs keep running under the blow (the thigh keeps swinging) ...
+ assert(hipMotion>25,string.format("the legs froze under a running strike (%.1f deg of thigh travel)",hipMotion))
+ -- ... and leaving the run for the strike never jumps a joint in one frame.
+ assert(worst<runWorst+6,string.format("the strike snapped in out of the run (%.1f deg in a frame, the run itself %.1f)",worst,runWorst))
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))
