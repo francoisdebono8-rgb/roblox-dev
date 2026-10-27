@@ -51,12 +51,17 @@ def _bones():
         d["shoulder." + side] = (bl(JOINTS[n][0]), bl(JOINTS[n + "Elbow"][0]), "spine")
         d["forearm." + side] = (bl(JOINTS[n + "Elbow"][0]), bl(JOINTS[n + "Wrist"][0]), "shoulder." + side)
         d["hand." + side] = (bl(JOINTS[n + "Wrist"][0]), bl((s * 1.45, -.9, 0)), "forearm." + side)
-        d["thigh." + side] = (bl(JOINTS[n + "Hip"][0]), bl(JOINTS[n + "Knee"][0]), "cog")
-        d["shin." + side] = (bl(JOINTS[n + "Knee"][0]), bl(JOINTS[n + "Ankle"][0]), "thigh." + side)
+        # (The knee sits 0.05 forward of the straight line: Blender's IK cannot
+        # choose a bend for a perfectly straight chain and leaves it straight.)
+        knee = bl(JOINTS[n + "Knee"][0]) + Vector((0, .05, 0))
+        d["thigh." + side] = (bl(JOINTS[n + "Hip"][0]), knee, "cog")
+        d["shin." + side] = (knee, bl(JOINTS[n + "Ankle"][0]), "thigh." + side)
         ankle = bl(JOINTS[n + "Ankle"][0])
         d["foot." + side] = (ankle, ankle + Vector((0, .6, 0)), "shin." + side)
         d["foot_ik." + side] = (ankle, ankle + Vector((0, .6, 0)), None)
-        d["knee_pole." + side] = (ankle + Vector((0, 3.0, 1.0)), ankle + Vector((0, 3.0, 1.4)), "foot_ik." + side)
+        # (Not parented to the foot: a pole that tilts with the toes flips the
+        # knee when the foot points down behind or up in front.)
+        d["knee_pole." + side] = (ankle + Vector((0, 3.0, 1.0)), ankle + Vector((0, 3.0, 1.4)), None)
     return d
 
 
@@ -123,6 +128,7 @@ def build(name="Sasuke", fighter="Lion", offset=(0, 0, 0)):
         ik.pole_target, ik.pole_subtarget = arm, "knee_pole." + side
         ik.chain_count = 2
         ik.use_stretch = False
+        ik.iterations = 800
         ik.pole_angle = math.radians(-90)
         cr = arm.pose.bones["foot." + side].constraints.new("COPY_ROTATION")
         cr.target, cr.subtarget = arm, "foot_ik." + side
@@ -198,9 +204,26 @@ def pose_bones(arm, spec):
         R = nd_anim.R(0, -f.get("yaw", 0), 0) @ nd_anim.R(f.get("toe", 0), 0, 0)
         ik_rest = arm.data.bones["foot_ik." + side].matrix_local.to_3x3()
         out["foot_ik." + side] = (local_rot(arm, "foot_ik." + side, R), ik_rest.transposed() @ (target - rest_head))
-        k = math.radians(f.get("knee", 0) * s)
-        pole_rest = arm.data.bones["knee_pole." + side].matrix_local.to_3x3()
-        out["knee_pole." + side] = (None, pole_rest.transposed() @ Vector((math.sin(k) * 3.0, (math.cos(k) - 1) * 3.0, 0)))
+        # The knee points ahead of the PELVIS (its yaw, half-way to the foot's,
+        # turned by `knee`), from the middle of the hip-ankle line: legs that
+        # swing under the body or kick above the hips never cross the pole,
+        # so the knee never flips.
+        hip_y = H + r.get("y", 0) - .55
+        hip = rb((tr.get("x", 0) + r.get("x", 0) + .5 * s, hip_y, tr.get("z", 0) + r.get("z", 0)))
+        a = math.radians(tr.get("yaw", 0) + r.get("yaw", 0) * .5 + f.get("yaw", 0) * .5 + f.get("knee", 0) * s)
+        ahead = Vector((math.sin(a), math.cos(a), 0.0))
+        # The knee aims ahead, tilted the way a real knee goes: down-forward
+        # when the heel is folded up behind (sprint recovery), up-forward when
+        # the foot is high in front (a kick). Without the tilt the pole lies on
+        # the leg's own line in those poses and the knee flips.
+        leg = target - hip
+        dz = leg.dot(ahead)
+        dy = leg.z
+        tilt = max(-1.2, min(2.0, dy + 1.0)) * max(-1.0, min(1.0, dz / .6))
+        ahead = (ahead + Vector((0, 0, tilt))).normalized()
+        pole_world = (hip + target) * .5 + ahead * 3.0
+        pole = arm.data.bones["knee_pole." + side]
+        out["knee_pole." + side] = (None, pole.matrix_local.to_3x3().transposed() @ (pole_world - pole.head_local))
     return out
 
 

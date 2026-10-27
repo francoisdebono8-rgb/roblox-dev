@@ -26,7 +26,9 @@ import nd_anim, nd_ctrl
 from nd_rig import PARTS
 
 FPS = 60
-SAMPLE = 30
+# Exported at the authoring rate: a sprint cycle is 20 frames and a kick's
+# contact 2 frames; at 30 fps the fastest arcs were cut into chords.
+SAMPLE = 60
 POSE_BONES = ["root", "cog", "spine", "neck", "shoulder.R", "forearm.R", "hand.R", "shoulder.L", "forearm.L", "hand.L",
               "foot_ik.R", "foot_ik.L", "knee_pole.R", "knee_pole.L"]
 
@@ -294,6 +296,16 @@ def export(arm, actions, path, in_place=True):
                           "joints": rows}
     with open(path, "w") as fh:
         json.dump(data, fh, separators=(",", ":"))
+    # A joint turning more than 115 deg in one sample is a flip (IK or
+    # quaternion), not motion: report it.
+    for name, c in data.items():
+        for j, rows in c["joints"].items():
+            for i in range(1, len(rows)):
+                a, b = rows[i - 1][-4:], rows[i][-4:]
+                dot = min(1.0, abs(sum(x * y for x, y in zip(a, b))))
+                ang = math.degrees(2 * math.acos(dot))
+                if ang > 115:
+                    print("FLIP", name, j, i, round(ang))
     return data
 
 
@@ -325,8 +337,8 @@ def stage(res=360, silhouette=False):
     return cam
 
 
-VIEWS = {"front34": Vector((-9.5, 8.5, 3.0)), "side": Vector((13.5, 1.5, 2.6)), "back34": Vector((8, -9, 4.0)),
-         "front": Vector((0, 13.5, 2.6))}
+VIEWS = {"front34": Vector((-7.8, 7.2, 1.4)), "side": Vector((11.5, .6, .9)), "back34": Vector((7, -7.5, 2.0)),
+         "front": Vector((0, 11.5, .9)), "side_far": Vector((16, 1, 2.0))}
 
 
 def film(arm, act, folder, view="side", every=2, follow=True):
@@ -343,8 +355,8 @@ def film(arm, act, folder, view="side", every=2, follow=True):
     while f <= max(start, last):
         scene.frame_set(f)
         root = arm.matrix_world @ arm.pose.bones["root"].matrix.translation
-        target = Vector((root.x, root.y, 2.4)) if follow else Vector((0, 0, 2.4))
-        anchor = target if anchor is None else anchor.lerp(target, .35)
+        target = Vector((root.x, root.y, 2.7)) if follow else Vector((0, 0, 2.7))
+        anchor = target
         cam.location = anchor + VIEWS[view]
         cam.rotation_euler = (anchor - cam.location).to_track_quat("-Z", "Y").to_euler()
         path = os.path.join(folder, "%s_%s_%03d.png" % (act.name, view, i))
@@ -379,50 +391,66 @@ def mirror(spec):
     return out
 
 
-def cycle(arm, name, stride, frames, half, duty, meta=None, base=None):
+def cycle(arm, name, stride, frames, keys, plant, direction=(0.0, -1.0), mirror_half=True, base=None):
     """A locomotion cycle authored pose-to-pose, as an animator blocks it.
 
-    half: [(u, spec, spacing)] for the first half (u in [0, .5)): the right
-      foot strikes at u=0 and stays planted until `duty` (its world spot is
-      kept exactly: it is not keyed, it is computed), the left foot swings
-      from behind to land at u=.5. Feet in these specs are relative to the
-      HumanoidRootPart at that instant (body space); the root travels
-      `stride` studs forward over the cycle. The second half is the mirror.
+    keys: [(u, spec, spacing)]. With mirror_half, only the first half
+      (u in [0, .5)) is given and the second half is its mirror (a forward or
+      backward run); otherwise the whole cycle is given (a sideways run is not
+      symmetric). Feet in the specs are in BODY space (relative to the
+      HumanoidRootPart at that instant); the root travels `stride` studs along
+      `direction` (x right, z back) over the cycle.
+    plant: {"R": (u0, u1)} (and "L" for a whole cycle): a planted foot is not
+      keyed by hand: its world spot is where it was at u0 and it is held
+      there exactly until u1 (it cannot slide).
     """
     shot = Shot(arm, name)
     base = base or {}
+    dx, dz = direction
 
-    def at(u):
-        return {"travel": {"x": 0, "z": -stride * u, "yaw": 0}}
+    def travel(u):
+        return stride * dx * u, stride * dz * u
 
-    # Where the right foot lands (body space at u=0) -> its world spot.
-    first = merge(base, half[0][1])
-    landR = dict(first.get("rf", {}))
-    spotR = (landR.get("x", 0), landR.get("z", 0))
-    keys = []
-    for u, spec, spacing in half:
-        keys.append((u, merge(base, spec), spacing, "R"))
-    for u, spec, spacing in half:
-        keys.append((u + .5, mirror(merge(base, spec)), spacing, "L"))
-    keys.append((1.0, merge(base, half[0][1]), half[0][2], "R"))
-    for u, spec, spacing, lead in keys:
-        spec = merge(spec, at(u))
-        planted = "rf" if lead == "R" else "lf"
-        phase = u if lead == "R" else u - .5
-        # Feet: body space -> world (travel added); the planted foot is held at
-        # its strike spot while phase <= duty.
-        for foot in ("rf", "lf"):
-            f = dict(spec.get(foot, {}))
-            if foot == planted and phase <= duty + 1e-6:
-                land = merge(base, half[0][1])["rf"]
-                if lead == "L":
-                    land = mirror({"rf": land})["lf"]
-                u0 = u - phase
-                f = dict(land)
-                f["z"] = land.get("z", 0) - stride * u0
-                f["y"] = 0
+    full = []
+    for u, spec, spacing in keys:
+        full.append((u, merge(base, spec), spacing))
+    plants = dict(plant)
+    if mirror_half:
+        for u, spec, spacing in keys:
+            full.append((u + .5, mirror(merge(base, spec)), spacing))
+        if "R" in plants and "L" not in plants:
+            plants["L"] = (plants["R"][0] + .5, plants["R"][1] + .5)
+    full.sort(key=lambda k: k[0])
+    full.append((1.0, full[0][1], full[0][2]))
+    # Body-space pose of each foot at the start of its plant.
+    spots = {}
+    for side, (u0, u1) in plants.items():
+        foot = "rf" if side == "R" else "lf"
+        at = min(full, key=lambda k: abs(k[0] - u0))
+        f = dict(at[1].get(foot, {}))
+        tx, tz = travel(u0)
+        spots[side] = dict(f, x=f.get("x", 0) + tx, z=f.get("z", 0) + tz, y=0)
+
+    def planted(side, u):
+        u0, u1 = plants[side]
+        for k in (0, -1, 1):
+            if u0 + k - 1e-6 <= u <= u1 + k + 1e-6:
+                return k
+        return None
+
+    for u, spec, spacing in full:
+        spec = merge(spec, {"travel": {"x": travel(u)[0], "z": travel(u)[1], "yaw": 0}})
+        for side, foot in (("R", "rf"), ("L", "lf")):
+            k = planted(side, u) if side in plants else None
+            if k is not None:
+                f = dict(spots[side])
+                f["x"] += stride * dx * k
+                f["z"] += stride * dz * k
             else:
-                f["z"] = f.get("z", 0) - stride * u
+                f = dict(spec.get(foot, {}))
+                tx, tz = travel(u)
+                f["x"] = f.get("x", 0) + tx
+                f["z"] = f.get("z", 0) + tz
             spec[foot] = f
         shot.key(int(round(u * frames)), spec, spacing)
     return shot

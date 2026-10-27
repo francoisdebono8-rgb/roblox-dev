@@ -1305,9 +1305,19 @@ local function attackTargets(name,elapsed,fighterId)
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.
-		local phase=attackPhase(name,elapsed,fighterId)
+		local phase,_,_,recovery=attackPhase(name,elapsed,fighterId)
 		local weight=if phase<2.55 then 1 else 1-smooth((phase-2.55)/.45)
-		return Authored.sample(authored,Authored.attackTime(authored,phase)),weight,phase
+		local t=Authored.attackTime(authored,phase)
+		if phase>=2 then
+			-- (ANIM-002) The recovery plays at the clip's own speed: squeezed
+			-- into a short server recovery, a re-chamber turned into a snap.
+			-- If the server frees the body first, the next clip takes over
+			-- through the transition.
+			local c=Authored.clip(authored)
+			local recover=c.markers.recover or c.length
+			t=math.min(c.length,recover+(phase-2)*recovery)
+		end
+		return Authored.sample(authored,t),weight,phase
 	end
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
@@ -1775,108 +1785,6 @@ end
 -- real direction and speed. Every cycle starts on the right foot's strike,
 -- and its phase advances by the distance travelled over the clip's stride,
 -- so the planted feet stay on the floor at any speed.
-local LOCO_DIRS={"F","B","R","L"}
-local function mixPoses(list)
-	local out,acc=nil,0
-	for _,e in list do
-		local pose,w=e[1],e[2]
-		if pose and w>1e-3 then
-			acc+=w
-			if not out then out=table.clone(pose)
-			else
-				local t=w/acc
-				for joint,cf in pose do out[joint]=(out[joint] or IDENTITY):Lerp(cf,t) end
-			end
-		end
-	end
-	return out
-end
-Motion._mixPoses=mixPoses
-local function strideOf(name)
-	local c=Authored and Authored.clip(name)
-	return c and c.meta and c.meta.stride or 7
-end
-local function hasAuthoredLoco(fighterId)
-	return Authored~=nil and Authored.has(tostring(fighterId)..".Run.F")
-end
-Motion.hasAuthoredLoco=hasAuthoredLoco
--- Eyes on the opponent (yaw on the chest and head, degrees).
-local function trackOf(root,actor)
-	if not (root and actor.lookAt) then return 0,0 end
-	local to=actor.lookAt-root.Position
-	local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
-	if l.Magnitude<=1 then return 0,0 end
-	local angle=math.deg(math.atan2(l.X,-l.Z))
-	local torso=math.clamp(angle*.4,-38,38)
-	return torso,math.clamp(angle*.8-torso,-48,48)
-end
-local function authoredLocomotion(char,actor,fighterId,dt)
-	local F=tostring(fighterId)
-	local s=stateOf(char)
-	local root=char:FindFirstChild("HumanoidRootPart")
-	local velocity=planar(actor.velocity)
-	local speed=velocity.Magnitude
-	local idle=Authored.sample(F..".Idle",elapsedTime) or {}
-	local pose=idle
-	if speed>.4 then
-		local lv=if root then root.CFrame:VectorToObjectSpace(velocity) else Vector3.new(0,0,-speed)
-		local fwd,side=-lv.Z/speed,lv.X/speed
-		local dirW={F=math.max(0,fwd),B=math.max(0,-fwd),R=math.max(0,side),L=math.max(0,-side)}
-		-- Walk below ~8 studs/s, run at the fighter's speed (~20), the ninja
-		-- run when sprinting (forward only).
-		local toRun=smooth((speed-6)/(15-6))
-		local toSprint=smooth((speed-24)/(38-24))
-		local list,stride,total={},0,0
-		local function add(name,w)
-			if w>1e-3 and Authored.has(name) then
-				table.insert(list,{name,w});stride+=strideOf(name)*w;total+=w
-			end
-		end
-		for _,d in LOCO_DIRS do
-			local w=dirW[d]
-			if w>0 then
-				add(F..".Walk."..d,w*(1-toRun))
-				add(F..".Run."..d,w*toRun*(if d=="F" and Authored.has(F..".Sprint") then 1-toSprint else 1))
-			end
-		end
-		add(F..".Sprint",dirW.F*toRun*toSprint)
-		stride=if total>0 then stride/total else 7
-		s.locoPhase=((s.locoPhase or 0)+speed*(dt or 1/60)/math.max(stride,.5))%1
-		local samples={}
-		for _,e in list do
-			table.insert(samples,{Authored.sample(e[1],s.locoPhase*Authored.length(e[1])),e[2]})
-		end
-		local moving=mixPoses(samples)
-		if moving then
-			-- Starting off and stopping: the stance hands over to the cycle over
-			-- the first few studs per second.
-			pose=mixPoses({{idle,1},{moving,smooth(speed/4)/math.max(1-smooth(speed/4),1e-3)}}) or moving
-		end
-	else
-		s.locoPhase=0
-	end
-	local trackTorso,trackHead=trackOf(root,actor)
-	pose=table.clone(pose)
-	-- (ANIM-002) Momentum: the chest leans into acceleration and sits back to
-	-- brake, the body banks into a turn (the cycles are drawn at constant speed).
-	local accel=Vector3.zero
-	if s.authLastVel and dt and dt>0 then accel=(velocity-s.authLastVel)/dt end
-	s.authLastVel=velocity
-	s.authAccel=(s.authAccel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*9))
-	if root then
-		local a=root.CFrame:VectorToObjectSpace(s.authAccel)
-		local forward=math.clamp(-a.Z*.05,-14,12)
-		local bank=math.clamp(a.X*.03,-9,9)
-		if math.abs(forward)>.2 or math.abs(bank)>.2 then
-			pose.Waist=ANG(rad(-forward*.8),0,rad(-bank*.6))*(pose.Waist or IDENTITY)
-			pose.Root=(pose.Root or IDENTITY)*ANG(rad(-forward*.25),0,rad(-bank*.5))
-			pose.Neck=ANG(rad(forward*.35),0,0)*(pose.Neck or IDENTITY)
-		end
-	end
-	if math.abs(trackTorso)>.5 then pose.Waist=(pose.Waist or IDENTITY)*ANG(0,rad(-trackTorso*.6),0) end
-	if math.abs(trackHead)>.5 then pose.Neck=(pose.Neck or IDENTITY)*ANG(0,rad(-trackHead*.6),0) end
-	return pose
-end
 -- (ANIM-002) The ankle of a drawn pose, in HumanoidRootPart space (the rig's
 -- Motor6D chain: Root, hip, knee, ankle pivots).
 local function ankleFrame(pose,key)
@@ -1958,6 +1866,142 @@ local function authoredFeet(char,pose,dt)
 end
 Motion._authoredFeet=authoredFeet
 Motion._feetState=function(char) return stateOf(char).af end
+local LOCO_DIRS={"F","B","R","L"}
+local function mixPoses(list)
+	local out,acc=nil,0
+	for _,e in list do
+		local pose,w=e[1],e[2]
+		if pose and w>1e-3 then
+			acc+=w
+			if not out then out=table.clone(pose)
+			else
+				local t=w/acc
+				for joint,cf in pose do out[joint]=(out[joint] or IDENTITY):Lerp(cf,t) end
+			end
+		end
+	end
+	return out
+end
+Motion._mixPoses=mixPoses
+local function strideOf(name)
+	local c=Authored and Authored.clip(name)
+	return c and c.meta and c.meta.stride or 7
+end
+local function hasAuthoredLoco(fighterId)
+	return Authored~=nil and Authored.has(tostring(fighterId)..".Run.F")
+end
+Motion.hasAuthoredLoco=hasAuthoredLoco
+-- Eyes on the opponent (yaw on the chest and head, degrees).
+local function trackOf(root,actor)
+	if not (root and actor.lookAt) then return 0,0 end
+	local to=actor.lookAt-root.Position
+	local l=root.CFrame:VectorToObjectSpace(Vector3.new(to.X,0,to.Z))
+	if l.Magnitude<=1 then return 0,0 end
+	local angle=math.deg(math.atan2(l.X,-l.Z))
+	local torso=math.clamp(angle*.4,-38,38)
+	return torso,math.clamp(angle*.8-torso,-48,48)
+end
+local function authoredLocomotion(char,actor,fighterId,dt)
+	local F=tostring(fighterId)
+	local s=stateOf(char)
+	local root=char:FindFirstChild("HumanoidRootPart")
+	local velocity=planar(actor.velocity)
+	local speed=velocity.Magnitude
+	local idle=Authored.sample(F..".Idle",elapsedTime) or {}
+	local pose=idle
+	if speed>.4 then
+		local lv=if root then root.CFrame:VectorToObjectSpace(velocity) else Vector3.new(0,0,-speed)
+		local fwd,side=-lv.Z/speed,lv.X/speed
+		local dirW={F=math.max(0,fwd),B=math.max(0,-fwd),R=math.max(0,side),L=math.max(0,-side)}
+		-- Walk below ~8 studs/s, run at the fighter's speed (~20), the ninja
+		-- run when sprinting (forward only).
+		local toRun=smooth((speed-6)/(15-6))
+		local toSprint=smooth((speed-24)/(38-24))
+		local list,stride,total={},0,0
+		local function add(name,w)
+			if w>1e-3 and Authored.has(name) then
+				table.insert(list,{name,w});stride+=strideOf(name)*w;total+=w
+			end
+		end
+		for _,d in LOCO_DIRS do
+			local w=dirW[d]
+			if w>0 then
+				add(F..".Walk."..d,w*(1-toRun))
+				add(F..".Run."..d,w*toRun*(if d=="F" and Authored.has(F..".Sprint") then 1-toSprint else 1))
+			end
+		end
+		add(F..".Sprint",dirW.F*toRun*toSprint)
+		stride=if total>0 then stride/total else 7
+		s.locoPhase=((s.locoPhase or 0)+speed*(dt or 1/60)/math.max(stride,.5))%1
+		local samples={}
+		for _,e in list do
+			table.insert(samples,{Authored.sample(e[1],s.locoPhase*Authored.length(e[1])),e[2]})
+		end
+		local moving=mixPoses(samples)
+		if moving then
+			-- Starting off and stopping: the stance hands over to the cycle over
+			-- the first few studs per second.
+			pose=mixPoses({{idle,1},{moving,smooth(speed/4)/math.max(1-smooth(speed/4),1e-3)}}) or moving
+		end
+	else
+		s.locoPhase=0
+	end
+	-- (ANIM-001) Starting off and stopping are authored one-shots: the body
+	-- falls into the first steps (Start) and catches itself on a planted heel
+	-- (Brake) instead of the cycle simply speeding up or freezing.
+	local now=elapsedTime
+	s.locoTag=nil
+	if speed<2 then s.stillAt=now end
+	s.peakSpeed=math.max(speed,(s.peakSpeed or 0)-(dt or 1/60)*30)
+	if speed>8 and s.stillAt and now-s.stillAt<.12 and not s.startAt and Authored.has(F..".Start") then s.startAt=now;s.brakeAt=nil end
+	if speed<4 and (s.prevSpeed or 0)>=4 and (s.peakSpeed or 0)>13 and Authored.has(F..".Brake") then s.brakeAt=now;s.startAt=nil end
+	s.prevSpeed=speed
+	local oneShot=nil
+	if s.startAt then
+		local t=now-s.startAt
+		local len=Authored.length(F..".Start")
+		if t<len and speed>5 then
+			local w=smooth((t/len-.55)/.45)
+			oneShot=mixPoses({{Authored.sample(F..".Start",t),1-w},{pose,w}})
+			s.locoTag="start"
+		else s.startAt=nil end
+	end
+	if not oneShot and s.brakeAt then
+		local t=now-s.brakeAt
+		local len=Authored.length(F..".Brake")
+		if t<len and speed<6 then
+			oneShot=table.clone(Authored.sample(F..".Brake",t))
+			s.locoTag="brake"
+		else s.brakeAt=nil end
+	end
+	if oneShot then
+		pose=oneShot
+		pose.__feet=authoredFeet(char,pose,dt)
+	end
+	local trackTorso,trackHead=trackOf(root,actor)
+	local feet=pose.__feet
+	pose=table.clone(pose)
+	pose.__feet=feet
+	-- (ANIM-002) Momentum: the chest leans into acceleration and sits back to
+	-- brake, the body banks into a turn (the cycles are drawn at constant speed).
+	local accel=Vector3.zero
+	if s.authLastVel and dt and dt>0 then accel=(velocity-s.authLastVel)/dt end
+	s.authLastVel=velocity
+	s.authAccel=(s.authAccel or Vector3.zero):Lerp(accel,math.min(1,(dt or 1/60)*9))
+	if root then
+		local a=root.CFrame:VectorToObjectSpace(s.authAccel)
+		local forward=math.clamp(-a.Z*.05,-14,12)
+		local bank=math.clamp(a.X*.03,-9,9)
+		if math.abs(forward)>.2 or math.abs(bank)>.2 then
+			pose.Waist=ANG(rad(-forward*.8),0,rad(-bank*.6))*(pose.Waist or IDENTITY)
+			pose.Root=(pose.Root or IDENTITY)*ANG(rad(-forward*.25),0,rad(-bank*.5))
+			pose.Neck=ANG(rad(forward*.35),0,0)*(pose.Neck or IDENTITY)
+		end
+	end
+	if math.abs(trackTorso)>.5 then pose.Waist=(pose.Waist or IDENTITY)*ANG(0,rad(-trackTorso*.6),0) end
+	if math.abs(trackHead)>.5 then pose.Neck=(pose.Neck or IDENTITY)*ANG(0,rad(-trackHead*.6),0) end
+	return pose
+end
 local function locomotionTargets(char,actor,fighterId,dt,rest,mode)
 	if not mode and not rest and hasAuthoredLoco(fighterId) then
 		return authoredLocomotion(char,actor,fighterId,dt),RATE.authored
@@ -3231,6 +3275,26 @@ function Motion.present(char,actor,clock,dt)
 	local throw=subject.throwKind and THROWS[subject.throwKind]
 	if subject.castId=="WindCut" and math.abs((subject.castElapsed or 99)-(subject.throwElapsed or -99))<.08 then throw=THROWS.WindCut end
 	local throwElapsed=subject.throwElapsed or 99
+	-- (Wind Cut keeps its own slash: the clip is looked up under its name.)
+	local throwName=if throw==THROWS.WindCut then "WindCut" else subject.throwKind
+	local throwClip=Authored and throwName and tostring(subject.fighterId)..".Throw."..tostring(throwName)
+	if throwClip and Authored.has(throwClip) and throwElapsed>=0 then
+		-- (ANIM-001) An authored throw: its release frame lands on the server's
+		-- release; the upper body throws, the legs keep their own motion.
+		local c=Authored.clip(throwClip)
+		local rel=c.markers.release or c.length*.4
+		local release=math.max(subject.throwRelease or .1,1/60)
+		local t=if throwElapsed<release then throwElapsed/release*rel else rel+(throwElapsed-release)
+		if t<c.length then
+			local w=1-smooth((t-(c.length-.12))/.12)
+			local pose=Authored.sample(throwClip,t)
+			local targets=table.clone(base)
+			for key in UPPER do if pose[key] then targets[key]=(base[key] or IDENTITY):Lerp(pose[key],w) end end
+			mark(char,"throw:"..throwClip,.05)
+			apply(char,targets,RATE.authored,dt)
+			return "throw"
+		end
+	end
 	if throw and throwElapsed>=0 and throwElapsed<(subject.throwRelease or .1)+.45 then
 		local spec,weight=throw(throwElapsed,subject.throwRelease or .1)
 		if weight>0 then
@@ -3256,7 +3320,10 @@ function Motion.present(char,actor,clock,dt)
 	if (subject.awaken or 0)>0 and familyOf(subject.fighterId).awakenPosture=="curse" then base=cursePosture(base,subject.curseHunger) end
 	local brake=memo.brakeAt and elapsedTime-memo.brakeAt
 	if brake and brake<.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
-	if baseRate==RATE.authored then mark(char,if subject.airborne then "air" else "loco",if subject.airborne then .1 else .12) end
+	if baseRate==RATE.authored then
+		local tag=memo.locoTag
+		mark(char,if subject.airborne then "air" else "loco"..(if tag then ":"..tag else ""),if subject.airborne then .1 elseif tag=="brake" then .06 else .12)
+	end
 	apply(char,base,baseRate,dt)
 	return "locomotion"
 end
