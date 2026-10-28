@@ -2539,6 +2539,18 @@ local function authoredReaction(actor)
 					p.Neck=(p.Neck or IDENTITY)*ANG(rad(-14*u),0,0)
 				end
 			end
+			if name=="Hit.Body" then
+				-- (Studio 28/10, side film) The gut blow folds the chest over the
+				-- fist: with the striker leaning in, the two heads met (1.3 studs
+				-- apart at an arm's length). A body that folds around a blow
+				-- takes its hips back first, so the fold opens a gap instead.
+				p=table.clone(p)
+				local u=math.clamp(elapsed/.05,0,1)*(1-smooth(math.clamp((elapsed-.08)/.3,0,1)))
+				-- (Measured: the clip folds the chest 77 degrees forward of the
+				-- hips' line; here a positive pitch stands the body back up.)
+				p.Root=(p.Root or IDENTITY)*CF(0,0,.8*u)*ANG(rad(12*u),0,0)
+				p.Waist=(p.Waist or IDENTITY)*ANG(rad(26*u),0,0)
+			end
 			return p,RATE.authored,name..(if mirror then ".L" else "")
 		end
 	end

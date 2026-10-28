@@ -3588,7 +3588,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6f2dc7fe6f3b9d846a1c07b7733c4f2cdb7a212e3a7e6306a3939f8b307b90ac</string>
+          <string name="Value">859f380b3976707c4e659b714d64a5c919fd6a68acdc5d08c1923dcdf04cd716</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -39652,6 +39652,18 @@ local function authoredReaction(actor)
 					p.Left=(p.Left or IDENTITY)*ANG(0,0,rad(-20*u))
 					p.Neck=(p.Neck or IDENTITY)*ANG(rad(-14*u),0,0)
 				end
+			end
+			if name=="Hit.Body" then
+				-- (Studio 28/10, side film) The gut blow folds the chest over the
+				-- fist: with the striker leaning in, the two heads met (1.3 studs
+				-- apart at an arm's length). A body that folds around a blow
+				-- takes its hips back first, so the fold opens a gap instead.
+				p=table.clone(p)
+				local u=math.clamp(elapsed/.05,0,1)*(1-smooth(math.clamp((elapsed-.08)/.3,0,1)))
+				-- (Measured: the clip folds the chest 77 degrees forward of the
+				-- hips' line; here a positive pitch stands the body back up.)
+				p.Root=(p.Root or IDENTITY)*CF(0,0,.8*u)*ANG(rad(12*u),0,0)
+				p.Waist=(p.Waist or IDENTITY)*ANG(rad(26*u),0,0)
 			end
 			return p,RATE.authored,name..(if mirror then ".L" else "")
 		end

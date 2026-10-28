@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "180c0fea9da79d451e7d42097004097817c138a107bb70a680316bb238db3d5a",
+  "sha256": "610b71be94c21493b2cf85a95874cf0cf76ce00c01433463dc01532131fe1ef1",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "104b1e48dc172b4520c218b4c600d99c7a44ce12bfc1fb8b807ccfa71dc2ca18",
@@ -57,7 +57,7 @@
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
     "src/Client/UI.luau": "b809d4fbd115e51b4463dc3e81e97e133a083943a3c7cb953ca65439ba086523",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
-    "src/Client/VelmoraMotionEngine.luau": "90e3bd26663b235b6c921d2a0feb55ea71d0f45d97fed2be95f35ba7b6e24562",
+    "src/Client/VelmoraMotionEngine.luau": "aec6521a1d3ba9f104bce9e830ebbdb4dfe6e73ac2925b3ffb95e0ea7a202482",
     "src/Client/VfxAtlas.luau": "667e2fae948f3b1425896c6fa5d5177066a743e19609c7165909a9455b7124dd",
     "src/Client/VfxKit.luau": "a4e75609ad7da1fde7158695b1f0a889d756f7521ad923165ad36dbd7b4cbb73",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
@@ -149,7 +149,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "77c41f3ad96e48925198f44fd5bb7b30cc0e4a85ac69f101d00ed91da0a54edb",
+  "buildFingerprint": "2739e03ddaa49f244f5fe4ff19e54d39f0cbc60fc26cae15ba8946e95b5e8084",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
