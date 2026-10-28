@@ -361,11 +361,18 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		local down=spec and spec.impulse and spec.impulse.Y<0
 		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" then 1 else F.Light
 		if power>0 then
-			victim.reaction="Knockback";victim.reactionStartedAt=self.now
+			-- thrown as a knockdown: the fall turns the body to the floor, so it
+			-- lands already lying and the KO pose takes over without a pop
+			victim.reaction="Knockdown";victim.groundPose="Knockdown";victim.reactionStartedAt=self.now
 			victim.reactionUntil=self.now+F.Settle
 			victim.reactionVelocity=away*F.Speed*power+Vector3.new(0,F.Lift*(.6+.4*power),0)
 			victim.airborne=true;victim.reactionSource=attacker
 			victim.koFlight={at=self.now+.22}
+			-- (Studio: the slow first part rose 0.15 stud for 2 of lift) a
+			-- live Humanoid pulls a body a stud or two off the floor back to
+			-- its hip height every physics step; the flight is driven by hand,
+			-- so the root is anchored for it (the next round unanchors it).
+			victim.root.Anchored=true
 		end
 		attacker.pending=nil;attacker.move=Vector3.zero
 		self.match.finish(attacker,victim)

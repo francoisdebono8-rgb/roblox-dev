@@ -58,7 +58,7 @@ test("final blow: the last hit throws the body, slow first, then it comes to res
  local start=b.root.Position
  c:damage(a,b,20,true)
  assert(finished and b.state=="Defeated","no KO")
- assert(b.koFlight and b.reaction=="Knockback","the body was not thrown ("..tostring(b.reaction)..")")
+ assert(b.koFlight and b.reaction=="Knockdown","the body was not thrown ("..tostring(b.reaction)..")")
  -- the freeze, then the slow part of the flight, then full speed
  for _=1,22 do H.step(c,.01) end
  local p0=b.root.Position

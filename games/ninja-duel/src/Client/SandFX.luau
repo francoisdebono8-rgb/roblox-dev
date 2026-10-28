@@ -10,6 +10,7 @@
 -- by invisible handles, with grains and dust thrown off them. The first pass
 -- used solid balls and cylinders, which read as blobs and planks (V1 directive).
 local Debris=game:GetService("Debris")
+local Tween=game:GetService("TweenService")
 local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Attacks=require(Shared.Attacks)
 local Fighters=require(Shared.Fighters)
@@ -513,12 +514,27 @@ local function stepCoffin(fx,model,actor,st)
 		local swirl=K.new("ParticleEmitter",{Texture=K.TEX.smoke,Rate=50,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
 			Color=ColorSequence.new(SAND),LightEmission=0,LightInfluence=1,Size=K.num({{0,1.2},{1,2.4}}),Transparency=K.num({{0,.35},{1,1}}),
 			Drag=2,Acceleration=Vector3.new(0,-3,0),Rotation=NumberRange.new(0,360)},K.new("Attachment",{},winds[1].h0))
-		st.coffin={holder=holder,winds=winds,born=SandFX.clock(),swirl=swirl}
+		-- (Studio film 28/10: the bind read as dust at the feet.) The coffin
+		-- itself: bands of packed sand that climb the body from the feet and
+		-- close round it up to the neck, each a little narrower, turning
+		-- against the next, so the body is visibly encased (the series' shot).
+		local bands={}
+		for k=1,7 do
+			local band=K.block(holder,Vector3.new(.7,2.9,2.9),root.CFrame,if k%2==0 then SAND_DARK else SAND,GRAIN)
+			band.Shape=Enum.PartType.Cylinder;band.Transparency=1;band.CastShadow=true
+			table.insert(bands,{part=band,k=k,turn=(if k%2==0 then 1 else -1)*(.8+k*.12)})
+		end
+		st.coffin={holder=holder,winds=winds,born=SandFX.clock(),swirl=swirl,bands=bands}
 		thud(fx,root.Position,.5,.5)
 	elseif not held and st.coffin then
 		local c=st.coffin;st.coffin=nil
 		c.swirl.Enabled=false
 		for _,w in c.winds do fadeWidths(w.beams,.3) end
+		-- released: the shell crumbles (bands drop and thin out)
+		for _,b in c.bands or {} do
+			Tween:Create(b.part,TweenInfo.new(.3,Enum.EasingStyle.Quad,Enum.EasingDirection.In),
+				{Transparency=1,CFrame=b.part.CFrame*CFrame.new(-.8,0,0),Size=b.part.Size*Vector3.new(.4,1.15,1.15)}):Play()
+		end
 		Debris:AddItem(c.holder,.35)
 	end
 	local c=st.coffin
@@ -532,6 +548,17 @@ local function stepCoffin(fx,model,actor,st)
 			local top=root.Position+Vector3.new(math.cos(b)*1.5,-2.8+4.4*grow,math.sin(b)*1.5)
 			w.h0.CFrame=frame(foot,top-foot)
 			w.h1.CFrame=frame(top,top-foot)
+		end
+		local age=SandFX.clock()-c.born
+		for _,b in c.bands or {} do
+			-- band k reaches its height at (k-1)*.06 s and settles there
+			local up=smooth((age-(b.k-1)*.055)/.2)
+			local y=-2.75+(b.k-.5)*.62
+			local r=(2.9-b.k*.13)*(.55+.45*up)
+			local wob=math.sin(age*7+b.k)*.06
+			b.part.Size=Vector3.new(.66,r,r)
+			b.part.CFrame=CFrame.new(root.Position+Vector3.new(wob,y-(1-up)*1.2,-wob))*CFrame.Angles(0,age*b.turn,0)*CFrame.Angles(0,0,math.pi/2)
+			b.part.Transparency=1-up
 		end
 	end
 end
