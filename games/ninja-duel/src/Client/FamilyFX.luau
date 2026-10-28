@@ -133,26 +133,42 @@ function FamilyFX.install(FX,kit)
 		if water then spray(body,color,40,w*.4,3) else spray(body,Color3.fromRGB(150,130,110),14,w*.3,2) end
 		return m
 	end
+	-- (Studio film 28/10: Kakashi's Water Dragon read as one blue ball.) A
+	-- serpent is a long body: the head, then one segment per ~1.1 stud of its
+	-- length, each following the path the head really took (a snake, not a
+	-- stiff rod waving); the water dragon also has horns and a jaw.
+	local function segmentsFor(look) return math.clamp(math.floor(look.size[3]/1.1),6,18) end
 	SHAPES.serpent=function(look)
 		local m=new("Model",{Name="FamilySerpent"})
 		local s=look.size
+		local water=look.zone=="water"
 		local head=ball(m,Vector3.new(s[1]*1.3,s[2]*1.1,s[1]*1.8),CFrame.new(),c3(look.color),Enum.Material.SmoothPlastic)
 		local parts={}
-		-- Segments are posed every frame along the path behind the head.
-		for i=1,6 do
-			local w=s[1]*(1-i*.11)
-			local seg=ball(m,Vector3.new(w,w,w*1.6),CFrame.new(0,0,i*s[3]/7),c3(if i%2==0 then look.color2 else look.color),Enum.Material.SmoothPlastic)
+		local n=segmentsFor(look)
+		for i=1,n do
+			local w=s[1]*(1-(i/n)*.72)
+			local seg=ball(m,Vector3.new(w,w,w*1.7),CFrame.new(0,0,i*s[3]/(n+1)),c3(if i%3==0 then look.color2 else look.color),Enum.Material.SmoothPlastic,if water then .12 else 0)
 			seg.Name="Segment"..i;seg.Anchored=true
 			table.insert(parts,seg)
 		end
+		local attach={}
 		for _,side in {-1,1} do
-			local eye=ball(m,Vector3.new(s[1]*.22,s[1]*.22,s[1]*.12),CFrame.new(side*s[1]*.4,s[2]*.25,-s[1]*.6),Color3.fromRGB(250,220,80),Enum.Material.Neon)
-			eye.Anchored=false;eye.Massless=true
-			new("WeldConstraint",{Part0=head,Part1=eye},head)
+			table.insert(attach,ball(m,Vector3.new(s[1]*.22,s[1]*.22,s[1]*.12),CFrame.new(side*s[1]*.4,s[2]*.25,-s[1]*.6),Color3.fromRGB(250,220,80),Enum.Material.Neon))
+			if water then
+				-- horns swept back, and the open lower jaw
+				table.insert(attach,block(m,Vector3.new(s[1]*.12,s[1]*.16,s[1]*1.1),CFrame.new(side*s[1]*.35,s[2]*.55,s[1]*.55)*CFrame.Angles(math.rad(25),math.rad(side*12),0),c3(look.color2),Enum.Material.SmoothPlastic))
+			end
+		end
+		if water then
+			table.insert(attach,ball(m,Vector3.new(s[1]*.9,s[2]*.3,s[1]*1.2),CFrame.new(0,-s[2]*.45,-s[1]*.35)*CFrame.Angles(math.rad(-18),0,0),c3(look.color2),Enum.Material.SmoothPlastic))
+		end
+		for _,a in attach do
+			a.Anchored=false;a.Massless=true
+			new("WeldConstraint",{Part0=head,Part1=a},head)
 		end
 		m.PrimaryPart=head
 		glow(head,c3(look.color),look.light)
-		if look.zone=="water" then spray(head,c3(look.color),50,s[1]*.5,4) end
+		if water then spray(head,c3(look.color),70,s[1]*.6,4) end
 		return m
 	end
 	SHAPES.swarm=function(look)
@@ -216,21 +232,48 @@ function FamilyFX.install(FX,kit)
 				return if flatLook.Magnitude>.05 then CFrame.lookAt(at,at+flatLook) else cf
 			end
 		elseif shape=="serpent" then
+			local n=segmentsFor(look)
+			local spacing=look.size[3]/(n+1)
+			local rises=look.zone=="water"
 			FX.poses[kind]=function(_,entry,p,age,cf)
-				local back=-p.direction
 				local side=p.direction:Cross(Vector3.yAxis)
 				side=if side.Magnitude>.05 then side.Unit else Vector3.xAxis
-				local length=look.size[3]
-				for i=1,6 do
+				-- the head swims (side to side) and, for the dragon, rears up
+				-- out of the cast and dives onto the target
+				local travelled=math.min(age*(p.speed or 40),p.range or 40)
+				local share=math.clamp(travelled/math.max(p.range or 40,1),0,1)
+				local lift=if rises then math.sin(share*math.pi)*4.5*(1-share*.35) else 0
+				local at=cf.Position+side*math.sin(age*9)*look.size[1]*.45+Vector3.new(0,lift,0)
+				-- path history, newest first
+				local hist=entry.serpentPath or {}
+				entry.serpentPath=hist
+				if #hist==0 or (hist[1]-at).Magnitude>.12 then table.insert(hist,1,at) end
+				if #hist>200 then table.remove(hist) end
+				local function along(d)
+					local walked=0
+					for k=1,#hist-1 do
+						local a,b=hist[k],hist[k+1]
+						local l=(b-a).Magnitude
+						if walked+l>=d then return a:Lerp(b,(d-walked)/math.max(l,1e-3)) end
+						walked+=l
+					end
+					-- not enough path yet: the body still coming out behind
+					-- not enough path yet: the rest of the body is still coming
+					-- up out of the ground under where it was cast
+					local rest=d-walked
+					return (hist[#hist] or at)-p.direction*rest*.3-Vector3.new(0,rest*.55,0)
+				end
+				local prev=at
+				for i=1,n do
 					local seg=entry.model:FindFirstChild("Segment"..i)
 					if seg then
-						local d=i*length/7
-						local wave=math.sin(age*12-i*.9)*look.size[1]*.6
-						local at=cf.Position+back*d+side*wave
-						seg.CFrame=CFrame.lookAt(at,at-back)
+						local here=along(i*spacing)
+						seg.CFrame=CFrame.lookAt(here,if (prev-here).Magnitude>1e-3 then prev else here+p.direction)
+						prev=here
 					end
 				end
-				return cf*CFrame.new(math.sin(age*12)*look.size[1]*.3,0,0)
+				local ahead=at+p.direction*2+Vector3.new(0,if rises then math.cos(share*math.pi)*1.6 else 0,0)
+				return CFrame.lookAt(at,ahead)
 			end
 		elseif shape=="swarm" then
 			FX.poses[kind]=function(_,entry,p,age,cf)

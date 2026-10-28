@@ -12,7 +12,7 @@ return {
 	-- Plain moulded chakra: the neutral fallback, never a kunai.
 	chakra={shape="orb",color=rgb(150,210,255),color2=rgb(70,140,255),size={1.2,1.2,1.2},light=2,trail=.8,hit="burst",launch="Palm"},
 	water={shape="orb",color=rgb(150,214,255),color2=rgb(40,120,210),size={1.4,1.4,1.8},light=.6,trail=1,hit="splash",zone="water",launch="Palm"},
-	waterdragon={shape="serpent",color=rgb(120,196,255),color2=rgb(30,96,190),size={2.6,2.6,9},light=1,trail=2.4,hit="splash",zone="water",launch="Fireball",radius=2.4},
+	waterdragon={shape="serpent",color=rgb(120,196,255),color2=rgb(30,96,190),size={3,3,18},light=1,trail=2.4,hit="splash",zone="water",launch="Fireball",radius=2.4},
 	shark={shape="beast",color=rgb(92,140,196),color2=rgb(222,236,248),size={2.4,2.2,5.4},light=.4,trail=1.8,hit="splash",zone="water",launch="Fireball",radius=2.2},
 	ice={shape="blade",color=rgb(214,240,255),color2=rgb(150,206,240),size={.5,.5,3.2},light=.8,trail=.4,hit="shatter",zone="ice",launch="Palm"},
 	senbon={shape="needle",color=rgb(220,226,236),color2=rgb(170,180,196),size={.08,.08,1.6},light=0,trail=.15,hit="sparks",launch="Shuriken",radius=.45},
