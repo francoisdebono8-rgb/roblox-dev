@@ -229,6 +229,29 @@ def air_switch(arm):
     return sh.build(markers={"contact": 6 / 60, "recover": 12 / 60})
 
 
+def lion_barrage(arm):
+    """Lion Combo finisher (Slam timing .15/.20/.38): above the launched body
+    he rolls back with the right leg thrown straight up over his head, hangs
+    a beat, then crunches forward and drives the heel down through the body
+    toward the floor - the whole body follows the leg."""
+    AIR = merge(AIR_T, {})
+    sh = Shot(arm, "Lion.LionBarrage")
+    sh.key(0, AIR, "ease")
+    up = merge(AIR, {"root": {"y": -.1, "pitch": -34}, "torso": {"pitch": -16}, "head": {"pitch": 18},
+                     "rf": {"x": -.1, "z": -1.3, "y": 3.4, "toe": 10, "knee": 0}, "lf": {"z": .5, "y": .3, "toe": -40},
+                     "la": {"raise": 150, "out": 40, "elbow": 20}, "ra": {"raise": 140, "out": 44, "elbow": 20}})
+    sh.key(5, up, "launch")
+    sh.key(7, merge(up, {"root": {"pitch": -30}, "rf": {"z": -1.5, "y": 3.4}}), "ease")
+    hit = merge(AIR, {"root": {"y": -.7, "pitch": 62}, "torso": {"pitch": 34}, "head": {"pitch": -16},
+                      "rf": {"x": -.1, "z": -2.1, "y": .4, "toe": 20, "knee": 0}, "lf": {"z": .7, "y": 1.0, "toe": -40},
+                      "la": {"raise": 20, "out": 50, "elbow": 40}, "ra": {"raise": 10, "out": 50, "elbow": 40}})
+    sh.key(9, hit, "impact")
+    sh.key(13, merge(hit, {"root": {"pitch": 68, "y": -.8}, "rf": {"y": .2}}), "ease")
+    sh.key(28, AIR, "ease")
+    sh.drag(["neck"], 1)
+    return sh.build(markers={"contact": 9 / 60, "recover": 18 / 60})
+
+
 # ------------------------------------------------------------- the jutsu
 WIDE = {"root": {"y": -.74, "z": 0, "pitch": 6, "yaw": 34}, "torso": {"pitch": 2, "yaw": -18}, "head": {"pitch": -4, "yaw": -14},
         "rf": {"x": .45, "z": .95, "yaw": 45}, "lf": {"x": -.25, "z": -.85, "yaw": -8}}
@@ -403,7 +426,7 @@ def awaken(arm):
 
 def author(arm):
     acts = [idle(arm), knee_strike(arm), lion_kick(arm), sweep(arm), vault_kick(arm), flying_kick(arm),
-            air_drive(arm), air_spike(arm), air_switch(arm), intro(arm), awaken(arm)]
+            air_drive(arm), air_spike(arm), air_switch(arm), lion_barrage(arm), intro(arm), awaken(arm)]
     acts += katon(arm)
     acts += phoenix(arm)
     acts += wire_trap(arm)

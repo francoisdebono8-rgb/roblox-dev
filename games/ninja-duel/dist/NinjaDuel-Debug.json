@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "541dc69ff7763c3808379e7f3151e8c4e6e043c0dda28561677abb5543d69513",
+  "sha256": "48aa6737ac5ccdb31f55188b2bf3af001fae43f21a97dbc92f33617b3b813813",
   "sources": {
     "src/Client/AuthoredClips.luau": "9bdd29db406fe28f90bbdf43de0b34c85dc4dec571b7dd62bfbc89f9326b8446",
     "src/Client/AuthoredClips1.luau": "f02b3f9d46208c412fdbfdb1ff0bec17756db1d3c7e0768684b672e5ae37a8b6",
@@ -11,8 +11,8 @@
     "src/Client/AuthoredClips5.luau": "2294045d1ff63a0cf53d35610c8ba9835f1b1e30af358cd588bab95ae26eee0c",
     "src/Client/AuthoredClips6.luau": "5b7f7f72f147df1a40d4cdb0da76e3e4d8a170000171b063ebc488e3f3cb4aa0",
     "src/Client/AuthoredClips7.luau": "c30480d7e24c7c4e3ad0652c83d8b198670875e9cb6941426ad3458626f3f2de",
-    "src/Client/AuthoredClips8.luau": "48b83bc09a4d0d7b1e05b139dde2f8e1fc27f833d783738f62dbbb6a70b9b5eb",
-    "src/Client/AuthoredClips9.luau": "fedb74aad556fae2ede496cdeb6340f13794745aceb3e120ff44abde7d1fc57c",
+    "src/Client/AuthoredClips8.luau": "2eb20549283a10af20e3b827a1b586b8ac2ff8064961b01cb0ae56910408b702",
+    "src/Client/AuthoredClips9.luau": "5e02d85765f869145189f9dae3db381c6f932d0faca4127e9129dbd2fb1de1ce",
     "src/Client/AuthoredMotion.luau": "17c36fa8cdfee30c067856282a460162fef84136d3022885ecd386cfb0930185",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "c12c45fbd8008b3a4f335e545b2ed4e60e6f3db93677a3e5e9bb425953ca6388",
@@ -124,7 +124,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "9e76af7baba9001664c938e0e548c004b1e4723d55b7685357bd00254f2c9612",
+  "buildFingerprint": "6f285ab6b1e705c6f388b6bdb963148c7d210551a6244b9ed9bdd84cfad366fc",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
