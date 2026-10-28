@@ -1305,9 +1305,20 @@ local function attackTargets(name,elapsed,fighterId)
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.
-		local phase,_,_,recovery=attackPhase(name,elapsed,fighterId)
+		local phase,startup,_,recovery=attackPhase(name,elapsed,fighterId)
 		local weight=if phase<2.55 then 1 else 1-smooth((phase-2.55)/.45)
 		local t=Authored.attackTime(authored,phase)
+		if phase<1 then
+			-- (ANIM-005) The contact lands on the server's frame. A wind-up
+			-- authored longer than the startup the server allows plays at most
+			-- 1.25x its own speed; the slow start of it (leaving the stance) is
+			-- skipped and the transition (inertialized) carries the body in.
+			local c=Authored.clip(authored)
+			local contact=c.markers.contact or c.length*.3
+			local visible=math.max(startup-LEAD,1/60)
+			local t0=math.max(0,contact-visible*1.25)
+			t=t0+phase*(contact-t0)
+		end
 		if phase>=2 then
 			-- (ANIM-002) The recovery plays at the clip's own speed: squeezed
 			-- into a short server recovery, a re-chamber turned into a snap.
@@ -1819,7 +1830,9 @@ local function authoredFeet(char,pose,dt)
 		local low=clipPos.Y-ANKLE_Y<(if f.planted then .3 else .16)
 		local still=speed<(if f.planted then 6 else 3.5)
 		-- A foot released to step does not plant again before it has arrived.
-		local stepping=f.release and f.off.Magnitude>.12
+		-- (Also any swing still under way: planting it mid-arc dropped the foot
+		-- by its lift in one frame.)
+		local stepping=not f.planted and f.swing0~=nil and f.off.Magnitude>.12
 		if not stepping then f.release=nil end
 		if low and still and not stepping then
 			if not f.planted then
@@ -1832,12 +1845,12 @@ local function authoredFeet(char,pose,dt)
 			local hip=(pose.Root or IDENTITY)*Vector3.new(if key=="R" then .5 else -.5,-.55,0)
 			if (here-hip).Magnitude>L1+L2-.04 or (here-clipPos).Magnitude>1.3 then
 				-- Out of reach: let it go, it steps back under the body.
-				f.planted=false;f.off=here-clipPos;f.release=true
+				f.planted=false;f.off=here-clipPos;f.release=true;f.offV=Vector3.zero
 			else
 				f.off=here-clipPos
 			end
 		else
-			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos end
+			if f.planted then f.planted=false;f.off=rootCF:PointToObjectSpace(f.world)-clipPos;f.offV=Vector3.zero end
 		end
 		local lift=0
 		if not f.planted then
@@ -1845,14 +1858,17 @@ local function authoredFeet(char,pose,dt)
 			-- off the floor in an arc (a step, never a skate).
 			if f.off.Magnitude>.05 then
 				f.swing0=math.max(f.swing0 or 0,f.off.Magnitude)
-				f.off*=math.exp(-dt/.05)
+				-- A critically damped spring, not a decay: the foot leaves the
+				-- floor from rest and accelerates into the step (an exponential
+				-- moved it a third of the way on the release frame: a knee snap).
+				f.off,f.offV=damper(f.off,f.offV or Vector3.zero,.055,dt)
 				local u=1-f.off.Magnitude/f.swing0
 				lift=4*u*(1-u)*math.min(.55,f.swing0*.35)
 			else
-				f.off=Vector3.zero;f.swing0=nil
+				f.off=Vector3.zero;f.swing0=nil;f.offV=Vector3.zero
 			end
 		else
-			f.swing0=nil
+			f.swing0=nil;f.offV=Vector3.zero
 		end
 		-- A foot the clip kicks high stays the clip's own (free leg).
 		if clipPos.Y-ANKLE_Y<.9 then
@@ -2376,6 +2392,9 @@ local function authoredReaction(actor)
 	local function play(name,t,mirror)
 		local full=F.."."..name
 		if not Authored.has(full) then return nil end
+		-- (ANIM-005) The other side is authored (".L"): the body takes the blow
+		-- from the left without swapping its lead foot, which a mirror did.
+		if mirror and Authored.has(full..".L") then return Authored.sample(full..".L",t) end
 		local pose=Authored.sample(full,t)
 		if mirror then pose=Authored.mirror(pose) end
 		return pose
@@ -2395,10 +2414,11 @@ local function authoredReaction(actor)
 			local p=play("Knockback",elapsed,side<0);if p then return p,RATE.authored end
 		else
 			land.groundAt=land.groundAt or elapsedTime
-			local p=play("Knockback.Land",elapsedTime-land.groundAt,side<0);if p then return p,HIT_RATE end
+			-- The skid ends in his own stance: never mirrored (the lead foot stays).
+			local p=play("Knockback.Land",elapsedTime-land.groundAt,false);if p then return p,RATE.authored,"Knockback.Land" end
 		end
 	elseif kind=="GuardStun" then
-		local p=play("Guard.Impact",elapsed,false);if p then return p,HIT_RATE end
+		local p=play("Guard.Impact",elapsed,false);if p then return p,RATE.authored,"Guard.Impact" end
 	elseif kind=="HitStun" then
 		local zone=actor.hitZone or "body"
 		local hitKind=actor.hitKind or "strike"
@@ -2415,14 +2435,14 @@ local function authoredReaction(actor)
 			local amp=math.clamp((actor.hitStrength or .4)*1.4,.35,1.4)
 			local w=.55+.45*math.clamp((amp-.35)/1.05,0,1)
 			if w<.999 then p=mixPoses({{play(name,0,mirror),1},{p,w/(1-w)}}) or p end
-			return p,HIT_RATE
+			return p,RATE.authored,name..(if mirror then ".L" else "")
 		end
 	end
 	return nil
 end
 local function reactionTargets(actor,feet)
-	local authoredPose,authoredRate=authoredReaction(actor)
-	if authoredPose then return authoredPose,authoredRate end
+	local authoredPose,authoredRate,clip=authoredReaction(actor)
+	if authoredPose then return authoredPose,authoredRate,clip end
 	local kind=actor.reaction or "HitStun"
 	local elapsed=actor.reactionElapsed or 0
 	local t=1-smooth(math.clamp(elapsed/(reactionDuration[kind] or .24),0,1))
@@ -2593,11 +2613,15 @@ local function groundTargets(actor)
 		-- over the server's wake-up window.
 		local out
 		if (pose=="Wakeup" or actor.reaction=="Wakeup") and Authored.has(F..".Getup") then
-			out=Authored.sample(F..".Getup",(actor.reactionElapsed or 0)*Authored.length(F..".Getup")/.24)
+			-- (ANIM-005) Rolled onto the other side: its own get-up, which still
+			-- ends in his stance (a mirrored get-up stood him up on the wrong lead).
+			local name=if side<0 and Authored.has(F..".Getup.L") then F..".Getup.L" else F..".Getup"
+			out=Authored.sample(name,(actor.reactionElapsed or 0)*Authored.length(name)/.24)
+			if side<0 and name==F..".Getup" then out=Authored.mirror(out) end
 		else
 			out=Authored.sample(F..".Down",elapsedTime)
+			if side<0 then out=Authored.mirror(out) end
 		end
-		if side<0 then out=Authored.mirror(out) end
 		return out,RATE.authored
 	end
 	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
@@ -2869,7 +2893,20 @@ function Motion.defense(char,actor,dt)
 			local rf,lf=stepFeet(char,stateOf(char),stance(actor.fighterId),velocity,velocity.Magnitude,dt,"react")
 			feet={rf=rf,lf=lf}
 		end
-		targets,rate=reactionTargets(actor,feet)
+		local clip
+		targets,rate,clip=reactionTargets(actor,feet)
+		if clip then
+			-- (ANIM-005) An authored reaction: each blow is its own transition
+			-- (a new hit restarts the clip: inertialized over 30 ms, the blow
+			-- lands at once), and on the ground its planted feet hold the floor
+			-- while the server slides the body; the other foot steps to catch it.
+			local s=stateOf(char)
+			local elapsed=actor.reactionElapsed or 0
+			if s.reactClip~=clip or elapsed+1e-3<(s.reactElapsed or 0) then s.reactSerial=(s.reactSerial or 0)+1 end
+			s.reactClip=clip;s.reactElapsed=elapsed
+			if not actor.airborne then targets.__feet=authoredFeet(char,targets,dt) end
+			mark(char,"react:"..clip..":"..s.reactSerial,.03)
+		end
 	else
 		return
 	end

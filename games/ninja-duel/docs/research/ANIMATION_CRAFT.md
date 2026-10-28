@@ -58,13 +58,19 @@ Working notes of the animation-mastery mission (27/10/2026). Each principle is s
 
 - The impulse enters at the contact point and propagates. The struck part moves first (head for a jab, chest for a body blow), the hips are carried after, and the extremities (hands, free foot) lag and overshoot.
 - Balance is lost in the direction of the force. Recovery uses a step in that direction (catching the CoM), then returns to guard.
-- Direction comes from the hit angle (the engine already mirrors clips for the side). Strength scales the amplitude, not the timing of the onset.
+- Direction comes from the hit angle. Strength scales the amplitude, not the timing of the onset.
+- The other side is authored (`Hit.*.L`), not mirrored: a mirror swaps the lead foot, so the body ended a reaction in the wrong stance.
+- The server slides a struck body ~0.9 stud. A reaction is authored with its feet still in place on the rig; at runtime the planted foot is locked on the real floor while the body slides, and the other foot steps to catch the weight (`clips_react2.py`, ANIM-005).
 
 ## 9. Continuity (runtime)
 
 - A clip change must keep the body's pose and velocity. Inertialization: the new clip plays at its own spacing at once, and the difference with what was drawn decays on a critically damped spring (Bollo, SIGGRAPH 2017; half-lives of 0.05 s for a chained strike, 0.07 s for a strike out of movement, 0.12 s back to locomotion). It is implemented in `write()`/`apply()` of the motion engine (ANIM-002).
 - A strike thrown on the move keeps the run's legs while the body travels (phase by distance). The upper body throws the blow. As the body slows, the strike's own footwork takes over.
 - The feet of authored clips are locked on the real floor while the clip keeps them still. A lift starts from where the foot really was and arcs onto the clip's path. A foot carried out of reach steps.
+
+- **Frame data first.** The server's startup is the game: a jab lands 3–5 frames after the press (Sasuke Light1: 0.081 s startup, minus the 0.03 s presentation lead). A clip's contact marker is mapped onto the server's contact. A wind-up authored longer than the startup plays at most 1.25× its speed; its slow start is skipped and the transition carries the body in. Author the anticipation inside the frames the game gives, and put the wind-up a heavy really needs into the heavy's own startup.
+- Markers are written in seconds from the first key. Until 28/10 the export divided them by 60 a second time: every contact sat at ~0.002 s, the stance was held through the startup and the whole blow played after the server's hit (the "strikes thought alone" feeling). The export now refuses a marker outside its clip, and a test checks every strike.
+- A kick goes out and back on the same line (chamber → extend → re-chamber → down). A leg swung straight from head height to behind the hip turns the IK knee over in one frame. The export reports any leg joint turning more than 45° in one sample (`FAST`) and more than 115° (`FLIP`).
 
 ## 10. The Graph Editor is part of the craft
 

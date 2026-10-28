@@ -727,4 +727,51 @@ test("a strike thrown at a run keeps the stride; a clip change never snaps",func
  assert(worst<runWorst+6,string.format("the strike snapped in out of the run (%.1f deg in a frame, the run itself %.1f)",worst,runWorst))
 end)
 
+test("authored strikes carry their contact inside the clip, after a real wind-up",function()
+ -- The runtime maps the server's startup/active/recovery onto the clip's
+ -- contact and recover markers: a marker at ~0 squeezed the whole wind-up into
+ -- a frame and played the blow after the server's contact (markers exported in
+ -- frames/60 twice). Every strike's contact sits inside the clip, past 2 frames.
+ local A=Motion.Authored
+ local checked=0
+ for _,F in {"Lion","Flashstep"} do
+  for _,move in {"Light1","Light2","Light3","Heavy","Air1","Air2","Launcher"} do
+   local name=F.."."..move
+   if A.has(name) then
+    local c=A.clip(name)
+    local contact,recover=c.markers.contact,c.markers.recover
+    assert(contact and recover,name.." has no contact/recover markers")
+    assert(contact>=2/60 and contact<c.length,string.format("%s contact %.4f outside its wind-up (length %.3f)",name,contact,c.length))
+    assert(recover>contact and recover<=c.length+1e-3,string.format("%s recover %.4f before its contact %.4f",name,recover,contact))
+    checked+=1
+   end
+  end
+ end
+ assert(checked>=10,"fixture: authored strikes missing ("..checked..")")
+end)
+test("a standing hit keeps a planted foot on the floor while the server slides the body back",function()
+ local c,a=H.duel("Lion","Flashstep")
+ assert(Motion.Authored.has("Lion.Hit.Head.L"),"fixture: the authored left-side reaction is gone")
+ local root=a.model.root
+ root.CFrame=H.C.new(0,3,0)
+ for _=1,20 do frame(a.model,body(a,{state="Neutral",velocity=V.zero}),{},1/60) end
+ local planted,wasHeld={},{}
+ local worst,heldFrames=0,0
+ for i=1,24 do
+  -- HitStun: the server slides the body back ~0.9 stud (decaying).
+  root.CFrame=root.CFrame*H.C.new(0,0,.9*(math.exp(-8*(i-1)/60)-math.exp(-8*i/60)))
+  frame(a.model,body(a,{state="Neutral",reaction="HitStun",hitAngle=0,hitZone="head",hitStrength=.8,reactionElapsed=i/60}),{},1/60)
+  for _,side in {"R","L"} do
+   local w=ankleWorld(a.model,side)
+   local held=(Motion._feetState(a.model) or {})[side]
+   held=held and held.planted
+   if planted[side] and held and wasHeld[side] then worst=math.max(worst,(w-planted[side]).Magnitude) end
+   planted[side]=w;wasHeld[side]=held
+   if held then heldFrames+=1 end
+  end
+ end
+ assert(heldFrames>16,"the reaction never held a foot on the floor ("..heldFrames..")")
+ assert(worst<.03,string.format("a planted foot slid %.3f studs in a frame under a hit",worst))
+end)
+
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

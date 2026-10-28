@@ -290,7 +290,12 @@ def export(arm, actions, path, in_place=True):
             if f >= end:
                 break
             f = min(end, f + step)
-        markers = {k: round((v - start) / FPS, 4) for k, v in dict(act.get("nd_markers", {})).items()}
+        # Markers are authored in SECONDS from the first key (contact: 11 / 60).
+        markers = {k: round(v - start / FPS, 4) for k, v in dict(act.get("nd_markers", {})).items()}
+        length = (end - start) / FPS
+        for k, v in markers.items():
+            if not (0 <= v <= length + 1e-3):
+                raise ValueError("marker %s=%.4f outside %s (0..%.3f)" % (k, v, act.name, length))
         data[act.name] = {"fps": SAMPLE, "frames": len(rows["Root"]), "length": round((end - start) / FPS, 4),
                           "loop": bool(act.get("nd_loop", False)), "markers": markers, "meta": dict(act.get("nd_meta", {})),
                           "joints": rows}
@@ -306,6 +311,8 @@ def export(arm, actions, path, in_place=True):
                 ang = math.degrees(2 * math.acos(dot))
                 if ang > 115:
                     print("FLIP", name, j, i, round(ang))
+                elif ang > 45 and ("Hip" in j or "Knee" in j or "Ankle" in j):
+                    print("FAST", name, j, i, round(ang))
     return data
 
 

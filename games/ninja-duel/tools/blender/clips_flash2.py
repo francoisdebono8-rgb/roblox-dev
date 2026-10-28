@@ -304,13 +304,13 @@ def light3(arm):
     sh = Shot(arm, "Flashstep.Light3")
     sh.key(0, s(), "ease")
     sh.key(5, s({"root": {"y": -.56, "yaw": -30}, "torso": {"yaw": -10}, "head": {"yaw": 20}, "lf": {"yaw": -50}, "rf": {"y": .1, "toe": -24}}), "ease")
-    sh.key(8, s({"root": {"y": -.4, "yaw": -110}, "torso": {"yaw": 0}, "head": {"yaw": 80}, "lf": {"yaw": -130},
+    sh.key(7, s({"root": {"y": -.4, "yaw": -110}, "torso": {"yaw": 0}, "head": {"yaw": 80}, "lf": {"yaw": -130},
                  "rf": {"x": -.5, "z": .3, "y": .9, "toe": -20, "knee": 30, "yaw": -110},
                  "ra": {"raise": 20, "out": 50, "elbow": 60, "wrist": -20}, "la": {"raise": 70, "out": -20, "elbow": 100}}), "pass")
     hit = s({"root": {"y": -.28, "z": -.2, "yaw": -210, "pitch": -4, "roll": 18}, "torso": {"yaw": 10, "roll": 8}, "head": {"yaw": 60},
              "lf": {"yaw": -210}, "rf": {"x": -1.4, "z": -2.4, "y": 1.9, "toe": -30, "knee": 60, "yaw": -200},
              "ra": {"raise": -20, "out": 60, "elbow": 20, "wrist": -20}, "la": {"raise": 74, "out": -20, "elbow": 104}})
-    sh.key(10, s({"root": {"y": -.32, "z": -.1, "yaw": -170, "roll": 10}, "torso": {"yaw": 6}, "head": {"yaw": 70}, "lf": {"yaw": -170},
+    sh.key(9, s({"root": {"y": -.32, "z": -.1, "yaw": -170, "roll": 10}, "torso": {"yaw": 6}, "head": {"yaw": 70}, "lf": {"yaw": -170},
                   "rf": {"x": -1.1, "z": -1.3, "y": 1.6, "toe": -26, "knee": 50, "yaw": -165},
                   "ra": {"raise": 0, "out": 56, "elbow": 40, "wrist": -20}, "la": {"raise": 72, "out": -20, "elbow": 102}}), "pass")
     sh.key(11, hit, "impact")
@@ -389,9 +389,19 @@ def launcher(arm):
     hit = s({"travel": {"z": -.3}, "root": {"y": -.05, "z": -.3, "pitch": -12, "yaw": 6}, "torso": {"pitch": -8}, "head": {"pitch": 6},
              "rf": {"x": -.2, "z": -1.6, "y": 2.6, "toe": 10, "yaw": 0}, "lf": {"y": .16, "toe": -46},
              "la": {"raise": 110, "out": 20, "elbow": 40}, "ra": {"raise": 60, "out": 30, "elbow": 80, "wrist": -20}})
+    # The knee chambers first (it rises bent), then the shin snaps up through
+    # the chin; after it the leg re-chambers before it comes down - a kick
+    # goes out and back along the same line, it is never dropped straight.
+    sh.key(8, s({"root": {"y": -.4, "pitch": 2}, "torso": {"pitch": 2}, "rf": {"x": -.15, "z": -.9, "y": 1.7, "toe": -34, "yaw": 0},
+                 "lf": {"y": .1, "toe": -36}, "la": {"raise": 90, "out": 20, "elbow": 50}, "ra": {"raise": 50, "out": 30, "elbow": 84}}), "pass")
     sh.key(10, hit, "impact")
     sh.key(13, merge(hit, {"rf": {"y": 2.8}}), "ease")
-    sh.key(22, merge(s({"travel": {"z": -.3}}), {"root": {"y": -.56}, "rf": {"z": .48}}), "impact")
+    sh.key(17, merge(hit, {"root": {"y": -.3, "pitch": -2}, "rf": {"x": -.1, "z": -.8, "y": 1.6, "toe": -30}}), "pass")
+    # The foot comes down IN FRONT (he went forward with the kick), then steps
+    # back low into the stance: a leg swung from head height straight to
+    # behind the hip turned the IK knee over in one frame.
+    sh.key(22, merge(s({"travel": {"z": -.3}}), {"root": {"y": -.56}, "rf": {"x": .05, "z": -.55, "y": 0, "toe": 0, "yaw": 10}}), "impact")
+    sh.key(26, merge(s({"travel": {"z": -.3}}), {"root": {"y": -.5}, "rf": {"x": .15, "z": .1, "y": .32, "toe": -20, "yaw": 20}}), "pass")
     sh.key(30, s({"travel": {"z": -.3}}), "ease")
     sh.drag(["neck"], 2)
     return sh.build(markers={"contact": 10 / 60, "recover": 16 / 60})
