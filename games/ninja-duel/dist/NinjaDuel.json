@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "e7ecf30c4b4feeea25c84cd27762237e7c5563a25e0019d01b5c74665cf7744c",
+  "sha256": "e6b18963df96224eef2fcf8e6bd307c8e92fe391d3c8943acb8711fbe9d7f760",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "104b1e48dc172b4520c218b4c600d99c7a44ce12bfc1fb8b807ccfa71dc2ca18",
@@ -40,7 +40,7 @@
     "src/Client/Camera.luau": "13efd46e51eda14496e28f5ce070826948a204eb6c56920283cf043d85b5964d",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
     "src/Client/ChakraFlowFX.luau": "91ccaa45c4a6543e0bd9614e9cedbc70659a310710a2acf3cbeafb1da064681f",
-    "src/Client/Effects.luau": "61562ca3b99e541498d2b5ab7ba70909f65821ad812f4e1afc18134d51ed8902",
+    "src/Client/Effects.luau": "9be99b58dbb6719f5e465d777caaddbe10cc7c13e3297d71dc1de48aaf0ae36b",
     "src/Client/FamilyFX.luau": "44b314f991eb2e153062441ba52053c90b054f254481d1c67bed248799516c3f",
     "src/Client/GaleFX.luau": "9fc4738f9982d99debdc5e74aa351f399f74cf574170b562db65a04dfdd06074",
     "src/Client/GaleMotion.luau": "1b9bc2f85d3a171dbaf1ce5ed3ce1ebc4b47104353752347ec2110d1abdf2df2",
@@ -70,7 +70,7 @@
     "src/Server/BanglaEvade.luau": "238403f2d75432fa6a2f4ea4867d4a34b0bc4548bed163a271f633d926e17504",
     "src/Server/Bodies.luau": "b5f7a27c31ebf20e0bc00f0193f543a7a2be2d62be653b4e6955fe00a133f9a2",
     "src/Server/BodyState.luau": "39a0185c0aff255f8ef21924133c0c2cfdd355500cca395be3b724489e1d393c",
-    "src/Server/Brawler.luau": "9eaf49d69701fdf69f25d2b47eb42a6fef53e2af7e5c6c377390546d3af2d930",
+    "src/Server/Brawler.luau": "fac00a86ea19c0e5a336b1370013cefa9c82cbdfb664ebcd97172c320466021a",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "41f7c6ffa540a81801474ab5e20671063cebf75f238b0313b8fc95a8fcab4395",
     "src/Server/ChakraFlow.luau": "2e4a9169e1ac1257ac6169b38e819b99679523f528e34302a1198b2fe3693c84",
@@ -105,8 +105,8 @@
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
     "src/Server/Wave3Kit.luau": "9fa83afb7d16647a1edeb80ab462019eecea113c6304797e8f6629b92f58881a",
     "src/Server/Wave4Kit.luau": "14b41f6af66e84734b44ab9f5370abfea7947a717bf2eb283c805bb96f13c7ba",
-    "src/Server/World.luau": "e65a4762080ee892a3f354bf2256b0384348ebdcb959bebb63cfa63833874958",
-    "src/Server/WorldReaction.luau": "2f6e39d6261e2ef69d4fe8769942a703b53be3f1d71b87b53f6cd3f96b0c74d1",
+    "src/Server/World.luau": "44f7ed89e63ec8e9499b48bb8216113fea8598838983465977ff66d1274727b5",
+    "src/Server/WorldReaction.luau": "c740b959f5eb6fd1ce6d1987effb2e949250a1995a01d3db8e0a57e12b6c5bfa",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/ActionContext.luau": "805878f86e3a058c3e7b7255d956851fe5b7b362370143e857e34144aa1a3b2a",
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
@@ -130,7 +130,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "68a2c92caf47f188f9242e17c944c1b0b3a73dc3bfba3bfddbcb95ba0aa76a8e",
+  "buildFingerprint": "6d4dbb715c35c96c88cf1fad14625bc128183bcb6ea00c68f592bdfd15479c20",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

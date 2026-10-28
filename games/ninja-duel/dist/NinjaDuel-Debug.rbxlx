@@ -3571,7 +3571,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">40b48635df627d6bb4e643c300928f49c06ff53204becc3b2e4d287a2cc002c9</string>
+          <string name="Value">d8e06a1c5c88234f0a51c358a295a452081101a686755becd4df59870cf4981d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -6441,6 +6441,25 @@ end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
 -- (Server/Perception owns the rule: a broken one is a stump or a mound now.)
+-- A flying body meets a prop (a crate, a post, a lantern): the whole body,
+-- not only its root's line (Studio: a thrown body crossed a crate shoulders
+-- first, through it). A box round the trunk and legs, ahead by this frame's
+-- travel; returns a raycast-like hit on the prop.
+function Brawler.propContact(c,a,velocity)
+ local flat=Vector3.new(velocity.X,0,velocity.Z)
+ if flat.Magnitude&lt;8 then return nil end
+ local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+ params.FilterDescendantsInstances={a.model,c.match.effects}
+ local centre=a.root.Position-Vector3.new(0,1,0)+flat.Unit*1.2
+ for _,part in workspace:GetPartBoundsInBox(CFrame.lookAt(centre,centre+flat),Vector3.new(2.4,4,2.6),params) do
+  if part.GetAttribute and part:GetAttribute("WorldBreakable") and part:GetAttribute("WorldState")~="Broken" then
+   local toward=Vector3.new(part.Position.X-a.root.Position.X,0,part.Position.Z-a.root.Position.Z)
+   local normal=if toward.Magnitude&gt;.05 then -toward.Unit else -flat.Unit
+   return {Instance=part,Position=part.Position+normal*math.min(part.Size.X,part.Size.Z)*.5,Normal=normal,Material=part.Material}
+  end
+ end
+ return nil
+end
 function Brawler.splatSurface(part)
  return Perception.surface(part)
 end
@@ -6879,11 +6898,23 @@ function Brawler.step(c,a,dt)
     -- Down on the floor (landed, or thrown along it): no more flight, a short
     -- skid on the back that dies out instead of gliding at standing height.
     local skid=Vector3.new(velocity.X,0,velocity.Z)
+    -- A body sliding along the floor into a low prop hits it too (Studio: a
+    -- knocked-down body skidded straight through a crate).
+    local prop=Brawler.propContact(c,a,skid)
+    if prop then
+     local result=WorldReaction.body(c,a,prop,-skid:Dot(prop.Normal),skid)
+     if prop.Instance:GetAttribute("WorldState")=="Broken" then skid*=Config.World.SmashCarry
+     elseif result~=nil or -skid:Dot(prop.Normal)&gt;0 then skid=Vector3.zero end
+    end
     if skid.Magnitude&gt;.05 then Motor.travel(a,c,skid,skid.Magnitude*dt) end
     velocity=skid*math.exp(-dt*7)
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
+    -- (Studio check 28/10: a body knocked into a supply crate flew over it.)
+    -- The sweep runs at the root, three studs up: a low prop (a crate, a
+    -- lantern's foot) is met by the legs, so the legs sweep it too.
+    if not hit then hit=Brawler.propContact(c,a,velocity) end
     -- The real floor sits three studs under the root and the swept ray only
     -- reaches 1.4 past the frame's travel: a low flight (a knockback along the
     -- ground, a spike from close above) never touched it, so the body glided
@@ -19518,7 +19549,11 @@ local function deco(parent,name,size,cf,color,material,shape)
 end
 -- A flat disc lying on the floor (cylinder axis pointing up).
 local function disc(parent,name,radius,y,center,color,material)
-	return deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+	local p=deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+	-- The ground the eye sees (a flat skin over the floor, out of queries):
+	-- broken ground takes its material and colour (WorldReaction.skinAt).
+	pcall(function() game:GetService("CollectionService"):AddTag(p,"NinjaGroundSkin") end)
+	return p
 end
 local function label(target,face,text,color,font)
 	local gui=Instance.new("SurfaceGui");gui.Face=face;gui.CanvasSize=Vector2.new(400,400);gui.LightInfluence=1;gui.Parent=target
@@ -19783,23 +19818,23 @@ function World.arena(parent, origin)
 	local function breakable(name,size,cf,color,material,integrity)
 		local p=part(folder,name,size,cf,color,material)
 		p:SetAttribute("WorldBreakable",true)
-		p:SetAttribute("WorldIntegrity",integrity)
+		p:SetAttribute("WorldToughness",integrity)
 		return p
 	end
 	for k,spot in {{.9,34},{1.15,37},{1.4,34}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2.6,math.cos(spot[1])*spot[2])
-		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,70)
+		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,55)
 		deco(post,"Post rope",Vector3.new(.25,1.85,1.85),CFrame.new(at+Vector3.new(0,.9,0))*CFrame.Angles(0,0,math.pi/2),rgb(196,180,140),Enum.Material.Fabric,Enum.PartType.Cylinder)
 	end
 	for _,spot in {{3.6,46,0},{3.75,49,1},{3.5,50,2},{5.0,44,0},{5.15,47,1},{2.2,52,0}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.4,math.cos(spot[1])*spot[2])
-		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,40)
+		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,30)
 		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,.7,0),PALETTE.woodDark,Enum.Material.Wood)
 		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,-.7,0),PALETTE.woodDark,Enum.Material.Wood)
 	end
 	for _,spot in {{.3,54},{2.7,40},{4.3,56},{5.8,42}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
-		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,80)
+		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,65)
 		deco(lantern,"Lantern roof",Vector3.new(2.8,.7,2.8),CFrame.new(at+Vector3.new(0,4.0,0))*CFrame.Angles(0,math.pi/4,0),rgb(126,122,112),Enum.Material.Slate)
 		deco(lantern,"Lantern light",Vector3.new(1.0,.9,1.0),CFrame.new(at+Vector3.new(0,3.1,0)),rgb(240,200,120),Enum.Material.Neon)
 	end
@@ -20590,7 +20625,7 @@ function WorldReaction.record(c,part)
 	local base=WorldReaction.Classes[class].integrity
 	local max=if base==math.huge then math.huge else base*thickness(part)
 	-- A prop may declare its own (a crate goes to one heavy blow).
-	local declared=part:GetAttribute("WorldIntegrity")
+	local declared=part:GetAttribute("WorldToughness")
 	if type(declared)=="number" then max=declared end
 	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
 	w.parts[part]=rec
@@ -20625,7 +20660,7 @@ local function surfaceFrame(position,normal,along)
 end
 -- Scar shapes: size grows with energy, capped per kind.
 local SHAPES={
-	crater={round=true,depth=.1,grow=1/22,min=.9,max=4.5},
+	crater={round=true,depth=.1,grow=1/8,min=2.2,max=8},
 	trench={round=false,depth=.1,grow=1/16,min=1.2,max=6,width=.9},
 	furrow={round=false,depth=.08,grow=1/14,min=1.4,max=5,width=.35},
 	puncture={round=true,depth=.08,grow=0,min=.35,max=.5},
@@ -20653,6 +20688,24 @@ local function evict(list,max)
 	end
 end
 local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local CRACK=Color3.fromRGB(28,22,17)
+local okCS,CS=pcall(function() return game:GetService("CollectionService") end)
+if not okCS then CS=nil end
+-- What the ground looks like at a point: the topmost flat skin over the floor
+-- there (World's earth and grass discs), else the surface itself.
+function WorldReaction.skinAt(position,surface)
+	local best,bestY=nil,-math.huge
+	for _,p in (if CS then CS:GetTagged("NinjaGroundSkin") else {}) do
+		if p.Parent then
+			local r=math.max(p.Size.Y,p.Size.Z)*.5
+			local d=Vector3.new(p.Position.X-position.X,0,p.Position.Z-position.Z).Magnitude
+			if d&lt;=r and math.abs(p.Position.Y-position.Y)&lt;1.5 and p.Position.Y&gt;bestY then best,bestY=p,p.Position.Y end
+		end
+	end
+	if best then return best.Material,best.Color end
+	if typeof(surface)=="Instance" and surface:IsA("BasePart") then return surface.Material,surface.Color end
+	return Enum.Material.Ground,Color3.fromRGB(120,96,70)
+end
 local function chunk(parent,cf,size,material,color)
 	local c=Instance.new("Part")
 	c.Name="Scar chunk";c.Anchored=true;c.CanCollide=false;c.CanQuery=false;c.CanTouch=false;c.CastShadow=true
@@ -20661,43 +20714,75 @@ local function chunk(parent,cf,size,material,color)
 	c.Parent=parent
 	return c
 end
--- The frame of a scar: X along the surface normal, Z along a strip's length.
+-- (Studio check 28/10: the first relief was a ring of small green grass cubes
+-- round a black ink star, too small for a Great Fireball.) Broken ground in
+-- the series (a Rasengan, a Chidori into the floor, Lee's kicks): a bowl
+-- pushed down, SLABS of the same ground torn up round it and leaning out,
+-- loose stones, and a few cracks running out of the rim as real grooves.
 local function relief(scar,palette)
 	local p=scar.part
 	for _,ch in p:GetChildren() do if ch.Name=="Scar chunk" then ch:Destroy() end end
-	local surf=scar.surface
-	local isPart=typeof(surf)=="Instance" and surf:IsA("BasePart")
-	local material=if isPart then surf.Material else Enum.Material.Slate
-	local color=if isPart then surf.Color:Lerp(palette.dark,.25) else palette.dark:Lerp(Color3.new(.55,.5,.45),.4)
-	p.Material=material
+	local material,skin=WorldReaction.skinAt(scar.position,scar.surface)
+	-- Grass breaks into the earth under it.
+	if material==Enum.Material.Grass then material=Enum.Material.Ground;skin=skin:Lerp(Color3.fromRGB(110,88,62),.7) end
+	local slab=skin:Lerp(Color3.new(0,0,0),.12)
+	local under=skin:Lerp(palette.dark,.6)
+	-- The bowl itself: the torn ground, darker, never black.
+	p.Material=material;p.Color=under
 	local size=scar.size
 	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
 	local seed=scar.position
 	if SHAPES[scar.kind].round then
-		-- The lip: chunks round the rim, tilted outward, half sunk in the floor.
-		local n=math.clamp(math.floor(5+size*2.2),6,14)
 		local r=size*.5
+		-- Slabs round the rim: wide, thin, their outer edge up.
+		local n=math.clamp(math.floor(4+size*1.3),6,12)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k,k*1.7,k*2.3))
-			local a=(k/n)*math.pi*2+h*.4
-			local s=size*(.16+h*.12)
-			local at=base*CFrame.new(s*.25,math.cos(a)*r*(.9+h*.2),math.sin(a)*r*(.9+h*.2))
-			-- tilt about the rim's tangent so the face lifts away from the centre
-			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(20+h*30))
-			chunk(p,cf,Vector3.new(s*.7,s*1.1,s*.9),material,color)
+			local a=(k/n)*math.pi*2+h*.5
+			local w=r*(.55+h*.35)
+			local at=base*CFrame.new(.12+h*.15,math.cos(a)*r*(.92+h*.12),math.sin(a)*r*(.92+h*.12))
+			-- face the centre, then lift the outer edge (pitch about the tangent)
+			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(32+h*30))
+			-- plates, not blocks (Studio: thick ones read as boxes)
+			chunk(p,cf,Vector3.new(.18+h*.12,w*.75,w),material,if k%3==0 then under else slab)
+		end
+		-- Loose stones thrown just outside.
+		for k=1,math.clamp(math.floor(size*1.5),3,9) do
+			local h=hash(seed+Vector3.new(k*5,k*.3,k*1.1))
+			local a=h*math.pi*2
+			local d=r*(1.1+h*.6)
+			local s=.25+h*.35
+			chunk(p,base*CFrame.new(s*.4,math.cos(a)*d,math.sin(a)*d)*CFrame.Angles(h*3,h*5,h*2),Vector3.new(s,s*1.2,s*.9),material,slab)
+		end
+		-- Cracks out of the rim: thin dark grooves flush with the ground,
+		-- three segments each that turn a little and narrow (Studio: a
+		-- straight groove with a raised lip read as a stick on the floor).
+		for k=1,math.clamp(math.floor(2+size*.6),3,6) do
+			local h=hash(seed+Vector3.new(k*7,k*3,k))
+			local a=(k/5)*math.pi*2+h
+			local len=r*(.6+h*.8)/3
+			local at=base*CFrame.Angles(a,0,0)*CFrame.new(.015,0,r*.92)
+			for seg=1,3 do
+				local turn=math.rad((hash(seed+Vector3.new(k,seg*2.1,seg))-.5)*50)
+				at=at*CFrame.Angles(turn,0,0)
+				chunk(p,at*CFrame.new(0,0,len*.5),Vector3.new(.03,.2-seg*.045,len*1.05),Enum.Material.SmoothPlastic,CRACK)
+				at=at*CFrame.new(0,0,len)
+			end
 		end
 	else
-		-- A crack / trench: slabs on both sides of the line, pushed up and out.
-		local n=math.clamp(math.floor(3+size*1.6),4,10)
+		-- A crack / trench: the line itself dark, the ground on both sides
+		-- broken into slabs pushed up and apart.
 		local width=(SHAPES[scar.kind].width or .3)
+		local n=math.clamp(math.floor(3+size*1.2),4,9)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k*3,k,k*.5))
 			local z=(k/(n+1)-.5)*size
 			local sideSign=if k%2==0 then 1 else -1
-			local s=math.max(.35,width*2.2+size*.06)*(.8+h*.5)
-			local at=base*CFrame.new(s*.18,sideSign*(width*.9+s*.35),z)
-			local cf=at*CFrame.Angles(0,0,0)*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)
-			chunk(p,cf,Vector3.new(s*.45,s*1.2,s*(.9+h*.6)),material,color)
+			local len=size/n*(1.1+h*.5)
+			local w=math.max(.45,width*1.6+size*.08)*(.8+h*.4)
+			local at=base*CFrame.new(.08,sideSign*(width*.55+w*.45),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(10+h*18),0,0)
+			chunk(p,cf,Vector3.new(.22+h*.15,w,len),material,slab)
 		end
 	end
 end
@@ -20947,6 +21032,11 @@ function WorldReaction.strike(c,a,pending)
 	local look=a.root.CFrame.LookVector
 	local from=a.root.Position+Vector3.new(0,.6,0)
 	local hit=workspace:Raycast(from,look*reach,c:rayParams(true))
+	-- Low props (a crate) sit under a chest-high swing: a kick finds them.
+	if not hit or math.abs(hit.Normal.Y)&gt;.6 then
+		hit=workspace:Raycast(from-Vector3.new(0,2.2,0),look*reach,c:rayParams(true))
+		if hit and not hit.Instance:GetAttribute("WorldBreakable") then hit=nil end
+	end
 	if not hit or math.abs(hit.Normal.Y)&gt;.6 then return nil end
 	local contact=(declared and declared.contact) or WorldReaction.StrikeKinds[spec.kind or ""] or "blunt"
 	local heavy=Config.World.HeavyKinds[spec.kind or ""] or spec.reaction=="Knockdown" or spec.reaction=="Launched"
@@ -31618,18 +31708,23 @@ end
 -- Built-in Roblox sounds (shipped with every client, Mac and PC).
 function FX:jumpSound(position) sound(anchorPart(self.folder,position),SOUND.jump,.28,1.1) end
 function FX:getUpSound(position) sound(anchorPart(self.folder,position),SOUND.getUp,.25,1.15) end
-local SCAR_ART={crater={"crack",1.5,Color3.new(1,1,1)},scorch={"scorch",1.6,Color3.new(1,1,1)},char={"scorch",1.5,Color3.fromRGB(150,170,230)},
-	gouge={"crack",1.3,Color3.new(1,1,1)},splinter={"crack",1.2,Color3.new(1,1,1)}}
+-- (Studio check 28/10) the crater is drawn in relief by the server now; the
+-- black star decal over it read as an ink print.
+-- Burns are a soft blackening that fades out at its edge (Studio: the spiky
+-- scorch star read as ink too), not a stamped shape.
+local SCAR_ART={scorch={"soft",1.9,Color3.fromRGB(18,14,10)},char={"soft",1.7,Color3.fromRGB(20,22,34)},
+	splinter={"crack",1.2,Color3.new(1,1,1)}}
 function FX.dressScar(part)
 	if not part:IsA("BasePart") or string.sub(part.Name,1,5)~="Scar " then return end
 	local art=SCAR_ART[string.sub(part.Name,6)]
-	if not art or not Kit.has(art[1]) then return end
+	if not art or (art[1]~="soft" and not Kit.has(art[1])) then return end
 	task.defer(function()
 		if not part.Parent then return end
 		local holder=Instance.new("Part")
 		holder.Name="ScarArt";holder.Anchored=true;holder.CanCollide=false;holder.CanQuery=false;holder.CanTouch=false
 		holder.CastShadow=false;holder.Transparency=1;holder.Parent=part
-		local decal=Instance.new("Decal");decal.TextureContent=Kit.content(art[1]);decal.Face=Enum.NormalId.Top
+		local decal=Instance.new("Decal");decal.Face=Enum.NormalId.Top
+		if art[1]=="soft" then decal.Texture=TEX.glow;decal.Transparency=.08 else decal.TextureContent=Kit.content(art[1]) end
 		decal.Color3=art[3];decal.Parent=holder
 		local spin=math.random()*math.pi*2
 		local function fit()

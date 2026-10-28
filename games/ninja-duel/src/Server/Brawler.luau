@@ -1027,7 +1027,7 @@ function Brawler.propContact(c,a,velocity)
  params.FilterDescendantsInstances={a.model,c.match.effects}
  local centre=a.root.Position-Vector3.new(0,1,0)+flat.Unit*1.2
  for _,part in workspace:GetPartBoundsInBox(CFrame.lookAt(centre,centre+flat),Vector3.new(2.4,4,2.6),params) do
-  if part:GetAttribute("WorldBreakable") and part:GetAttribute("WorldState")~="Broken" then
+  if part.GetAttribute and part:GetAttribute("WorldBreakable") and part:GetAttribute("WorldState")~="Broken" then
    local toward=Vector3.new(part.Position.X-a.root.Position.X,0,part.Position.Z-a.root.Position.Z)
    local normal=if toward.Magnitude>.05 then -toward.Unit else -flat.Unit
    return {Instance=part,Position=part.Position+normal*math.min(part.Size.X,part.Size.Z)*.5,Normal=normal,Material=part.Material}
