@@ -375,6 +375,9 @@ function Presentation:update(data,dt)
    visual.attackElapsed=clock.attackElapsed
    visual.landing=landing;visual.landingPhase=landingPhase;visual.landStrong=landingStrong
    visual.intro=data.intro
+   -- (Partie 2) The winner's pose after the K.O. and on the result screen.
+   visual.victory=data.winner~=nil and (data.ko==true or data.phase=="Result") and (actor.health or 0)>0
+    and ((key=="human")==(data.winner=="PlayerFighter"))
    local other=if key=="human" then "bot" else "human"
    visual.lookAt=self:visualRoot(other) or (data[other] and data[other].position)
    -- Throws and casts run on the shared server clock (slightly behind, like the

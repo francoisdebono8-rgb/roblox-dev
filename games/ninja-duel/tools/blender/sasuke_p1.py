@@ -427,9 +427,36 @@ def awaken(arm):
     return sh.build()
 
 
+def win(arm):
+    """Victory (Partie 2): the anime's "Hmph". He comes out of the guard
+    (straightens, 0.25 s), turns his back on the beaten opponent with one
+    step (the rear foot crosses, the body pivots right), the hands go into
+    the pockets, and the head turns back over the shoulder for a last look;
+    held. Reference: Sasuke's exits in Naruto ep. 18-19 (vs Haku's mirrors
+    aftermath) and his Storm 4 win pose (back turned, glance)."""
+    sh = Shot(arm, "Lion.Win")
+    sh.key(0, s(), "ease")
+    up = {"root": {"y": -.16, "pitch": 0, "yaw": 26}, "torso": {"pitch": -2, "yaw": -8}, "head": {"pitch": -8, "yaw": -20},
+          "ra": {"raise": 10, "out": 14, "twist": -10, "elbow": 30, "wrist": 0}, "la": {"raise": 10, "out": 14, "twist": -10, "elbow": 30, "wrist": 0},
+          "rf": {"x": .26, "z": .6, "yaw": 30}, "lf": {"x": -.1, "z": -.6, "yaw": 0}}
+    sh.key(14, up, "ease")
+    step = merge(up, {"root": {"y": -.22, "yaw": 70}, "torso": {"yaw": -14}, "head": {"yaw": -50},
+                      "rf": {"x": .1, "z": .1, "y": .25, "yaw": 70}})
+    sh.key(24, step, "pass")
+    cool = {"root": {"y": -.08, "pitch": -3, "yaw": 112}, "torso": {"pitch": -5, "yaw": -12}, "head": {"pitch": -10, "yaw": -62},
+            "ra": {"raise": -6, "out": 14, "twist": -30, "elbow": 60, "wrist": 0}, "la": {"raise": -6, "out": 14, "twist": -30, "elbow": 60, "wrist": 0},
+            "rf": {"x": .22, "z": -.18, "yaw": 112}, "lf": {"x": -.14, "z": -.42, "yaw": 96}}
+    sh.key(36, merge(cool, {"head": {"yaw": -30}}), "ease")
+    sh.key(60, cool, "ease")
+    sh.key(110, merge(cool, {"root": {"y": -.1}, "head": {"yaw": -66, "pitch": -12}}), "ease")
+    sh.key(150, cool, "ease")
+    sh.drag(["neck"], 4).drag(["shoulder.L", "shoulder.R"], 2)
+    return sh.build(markers={"hold": 60 / 60})
+
+
 def author(arm):
     acts = [idle(arm), knee_strike(arm), lion_kick(arm), sweep(arm), vault_kick(arm), flying_kick(arm),
-            air_drive(arm), air_spike(arm), air_switch(arm), lion_barrage(arm), intro(arm), awaken(arm)]
+            air_drive(arm), air_spike(arm), air_switch(arm), lion_barrage(arm), intro(arm), awaken(arm), win(arm)]
     acts += katon(arm)
     acts += phoenix(arm)
     acts += wire_trap(arm)

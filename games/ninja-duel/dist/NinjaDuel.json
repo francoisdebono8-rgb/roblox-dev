@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "07a0490cc31195b61b7427d4eb4fc99b821f892a58935ebc9e05021102d0977c",
+  "sha256": "9ad7efe0f28d56b973b7f3d4f552dc56c380b806d4412e72675ca477df6e4b9b",
   "sources": {
     "src/Client/AuthoredClips.luau": "9bdd29db406fe28f90bbdf43de0b34c85dc4dec571b7dd62bfbc89f9326b8446",
     "src/Client/AuthoredClips1.luau": "f02b3f9d46208c412fdbfdb1ff0bec17756db1d3c7e0768684b672e5ae37a8b6",
@@ -27,11 +27,11 @@
     "src/Client/Main.client.luau": "b09cb6d1f627f600726cee15abe49a7448990f59c961fd3218f23eff826bdc2e",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "46d003643be7269e8c2cd023c5b6eb1be696d777a6320b90f68d9125ff67b437",
-    "src/Client/Presentation.luau": "80c92059f0d6819811353fa2980de3df63ec38e1e578a6bf64a6b7cb2c3587ea",
+    "src/Client/Presentation.luau": "cd560a26fb7b6078fa9727c2eb060761b63137492c69cdff5cec045bd3bbac64",
     "src/Client/SandFX.luau": "c3549e823502a19c6979ce80d59a82c0bd9bbf3f61a691277d180220f04e16a2",
-    "src/Client/UI.luau": "7f34718b8d358abd774bf5c972deaa48c4b4837471c28a170cf48e41f106c1f1",
+    "src/Client/UI.luau": "b809d4fbd115e51b4463dc3e81e97e133a083943a3c7cb953ca65439ba086523",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
-    "src/Client/VelmoraMotionEngine.luau": "f111da2b26c22e999db0a4eb729f9a443aa9bc6614be1a006da5de8f1df11e97",
+    "src/Client/VelmoraMotionEngine.luau": "4a9285a503e69d6eaf8c87928f878eb8dbd104df9ee6246b2fff0d30662b2102",
     "src/Client/VfxAtlas.luau": "667e2fae948f3b1425896c6fa5d5177066a743e19609c7165909a9455b7124dd",
     "src/Client/VfxKit.luau": "a4e75609ad7da1fde7158695b1f0a889d756f7521ad923165ad36dbd7b4cbb73",
     "src/Client/Wave1FX.luau": "9139f26f0d2ae492c3a10c23919bc998b216789554a512359672b1e6a04db451",
@@ -106,7 +106,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "eff435e1eedbe2495d6d232a43e27921349d286bb364761814ee8f419f1c43e2",
+  "buildFingerprint": "a51ee07fc6f2a1f4b70c5de1d181edd93d5425c825337f43606187622343fbec",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

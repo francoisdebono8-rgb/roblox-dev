@@ -249,16 +249,19 @@ function UI.new(parent,send)
 	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.ko.Visible=false
 	-- ---------------------------------------------------------------- intro
+	-- (Partie 1 feedback) The names sit at the bottom edge and the round title
+	-- at the top, like a fighting game's entrance: the middle of the screen is
+	-- left to the close-up of each fighter's pose (Camera intro shots).
 	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
-	self.introLeft=frame(self.intro,UDim2.new(0,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
-	self.introRight=frame(self.intro,UDim2.new(.5,0,.62,0),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introLeft=frame(self.intro,UDim2.new(0,0,1,-118),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introRight=frame(self.intro,UDim2.new(.5,0,1,-118),UDim2.new(.5,0,0,110),palette.ink,.15)
 	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
 	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
 	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
 	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
-	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,.62,8),UDim2.fromOffset(160,96),88,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,1,-110),UDim2.fromOffset(160,96),88,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.introVs,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-	self.introRound=text(self.intro,"",UDim2.new(.5,-400,.5,-48),UDim2.fromOffset(800,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.introRound=text(self.intro,"",UDim2.new(.5,-400,0,70),UDim2.fromOffset(800,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.introBegin=text(self.intro,"",UDim2.new(.5,-400,.38,-60),UDim2.fromOffset(800,120),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.intro.Visible=false
@@ -464,9 +467,9 @@ function UI:render(data)
 		self.introBegin.Text=if data.intro<.75 then "始め!  BEGIN" else ""
 		if self.introShown~=data.epoch then
 			self.introShown=data.epoch
-			self.introLeft.Position=UDim2.new(-.5,0,.62,0);self.introRight.Position=UDim2.new(1,0,.62,0)
-			Tween:Create(self.introLeft,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(0,0,.62,0)}):Play()
-			Tween:Create(self.introRight,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(.5,0,.62,0)}):Play()
+			self.introLeft.Position=UDim2.new(-.5,0,1,-118);self.introRight.Position=UDim2.new(1,0,1,-118)
+			Tween:Create(self.introLeft,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(0,0,1,-118)}):Play()
+			Tween:Create(self.introRight,TweenInfo.new(.45,Enum.EasingStyle.Back,Enum.EasingDirection.Out),{Position=UDim2.new(.5,0,1,-118)}):Play()
 		end
 		return
 	end

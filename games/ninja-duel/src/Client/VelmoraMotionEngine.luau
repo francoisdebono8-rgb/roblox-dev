@@ -3118,7 +3118,7 @@ function Motion.present(char,actor,clock,dt)
 	local draws=subject.events and subject.events.Draw or 0
 	if draws>(memo.draws or draws) then memo.drawAt=elapsedTime end
 	memo.draws=draws
-	local busy=subject.reaction~=nil or (subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active" or subject.state=="Recovery"))
+	local busy=subject.victory==true or subject.reaction~=nil or (subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active" or subject.state=="Recovery"))
 		or (subject.castId~=nil and string.sub(subject.state or "",1,9)=="Technique") or (subject.throwElapsed or 99)<.3
 	local wantArm=if subject.armed and not busy then 1 else 0
 	memo.armW=(memo.armW or 0)+(wantArm-(memo.armW or 0))*math.min(1,(dt or 1/60)*16)
@@ -3134,6 +3134,18 @@ function Motion.present(char,actor,clock,dt)
 	if wakes>(memo.wakes or wakes) then memo.awakenAt=elapsedTime end
 	memo.wakes=wakes
 	if (subject.intro or 0)<=0 then memo.introAt=nil end
+	-- (Partie 2) Victory: the winner's authored pose once the finishing blow
+	-- is through, held on its last frame (Storm 4 / Tekken win poses).
+	local finishing=subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active")
+	if subject.victory and Authored and Authored.has(F..".Win") and not subject.reaction and not finishing then
+		memo.winAt=memo.winAt or elapsedTime
+		local targets=table.clone(Authored.sample(F..".Win",math.min(elapsedTime-memo.winAt,Authored.length(F..".Win"))))
+		targets.__feet=authoredFeet(char,targets,dt)
+		mark(char,"win",.18)
+		apply(char,targets,RATE.authored,dt)
+		return "win"
+	end
+	if not subject.victory then memo.winAt=nil end
 	if Authored and memo.awakenAt and Authored.has(F..".Awaken") and not subject.reaction and not subject.attackName then
 		local t=elapsedTime-memo.awakenAt
 		if t<Authored.length(F..".Awaken") then
