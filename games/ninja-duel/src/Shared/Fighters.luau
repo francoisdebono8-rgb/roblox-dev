@@ -25,7 +25,14 @@ local Fighters = {
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
 			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
+			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20,
+				-- (User 28/10: "I should be able to run with my attack and strike")
+				-- Cast in the open, the Rasengan stays in his palm: he runs, jumps
+				-- with it and his next strike drives it (a thrust, a plunge from the
+				-- air). After a teleport, from the air or as a string's end it is the
+				-- instant strike it was (Techniques.BurstStrike).
+				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 20,
+					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 70), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 8, Event = "Rasengan" }, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
 			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Flow = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
 			-- Thrown off the kunai's edge on the run: cuts enemy blades out of its
 			-- lane; a body it cuts is thrown a step sideways with a short wind seal
@@ -276,7 +283,10 @@ local Fighters = {
 		Skin = { 240, 204, 170 }, Hair = { 250, 206, 70 }, Outfit = { 244, 130, 36 },
 		Techniques = {
 			{ Id = "ShadowClone", Name = "Shadow Clone", Cost = 12, Channel = 0.18, Active = 0.05, Recovery = 0.12, Cooldown = 1.2, Interruptible = true, Flow = true, Range = 30, Hint = "A clone at his side (two at most) • one blow dispels it • routes, the Rasengan and the swap use them" },
-			{ Id = "CloneRasengan", Name = "Rasengan", Cost = 22, CloneCost = 12, Channel = 0.45, SoloChannel = 0.6, CloakChannel = 0.2, Active = 0.08, Recovery = 0.45, Cooldown = 6, Interruptible = true, Range = 10, Damage = 22, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
+			{ Id = "CloneRasengan", Name = "Rasengan", Cost = 22, CloneCost = 12, Channel = 0.45, SoloChannel = 0.6, CloakChannel = 0.2, Active = 0.08, Recovery = 0.45, Cooldown = 6, Interruptible = true, Range = 10, Damage = 22,
+				-- (User 28/10) Shaped in the open, it stays in his hand to run with.
+				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
+					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
 		},
 	},
@@ -407,6 +417,8 @@ local Fighters = {
 		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
 		Techniques = {
 			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
+				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
 			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
 				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },

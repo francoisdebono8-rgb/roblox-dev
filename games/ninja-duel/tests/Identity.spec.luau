@@ -946,6 +946,9 @@ test("Minato · the Rasengan contact names itself (the client grinds it into the
  place(c,a,b,V.new(0,3,4),V.new(0,3,-4))
  local serial=c.impactSerial
  assert(c:request(a,slot(a,"BurstStrike"),b.root.Position),"Rasengan refused")
+ -- (User 28/10) cast in the open it is held in the palm; the strike drives it.
+ until_(c,.6,function() return a.bodyState~=nil end,"the Rasengan was not held")
+ assert(c:request(a,"Attack",b.root.Position),"the strike did not release it")
  until_(c,1,function() return b.health<b.def.Health end,"the Rasengan never landed")
  local grind
  for _,impact in impactsSince(c,serial) do if impact.variant=="Rasengan" and impact.victim==b.id then grind=impact end end

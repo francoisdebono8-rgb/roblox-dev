@@ -188,6 +188,8 @@ test("play: every technique resolves and does something measurable",function()
    local seen={reaction=false,proj=false,haz=false,buff=false,stance=false}
    for _=1,220 do
     H.step(c,.01)
+    -- A technique held on the body (DEC-027 / user 28/10) is released by a strike.
+    if a.bodyState and a.state=="Neutral" then c:request(a,"Attack",b.root.Position) end
     if b.reaction then seen.reaction=true end
     if #c.projectiles>0 then seen.proj=true end
     if #c.hazards>0 or #(c.zones or {})>0 then seen.haz=true end

@@ -26,7 +26,10 @@ local lastJumpAt = -10
 local function act(a, aim)
 	local s = dev:Invoke("state")
 	local r = dev:Invoke("act", "human", a, aim or (s.bot and s.bot.position))
-	if type(r) == "table" and r.ok == false and r.reason then R.refused[r.reason] = (R.refused[r.reason] or 0) + 1 end
+	if type(r) == "table" and r.ok == false and r.reason then
+		local key = r.reason .. (if r.reason == "Committed" then "@" .. tostring(s.human and s.human.state) .. "/" .. a else "")
+		R.refused[key] = (R.refused[key] or 0) + 1
+	end
 	if a == "Jump" then lastJumpAt = now() end
 	return r
 end
@@ -34,7 +37,7 @@ local function flat(v) return Vector3.new(v.X, 0, v.Z) end
 
 -- Observer: 30 Hz on both seats.
 task.spawn(function()
-	local lastA, lastB, airAt, apex, groundY, lastHits, stateSince, lastState
+	local lastA, lastB, airAt, apex, groundY, lastHits, stateSince, lastState, dead
 	while R.done == nil do
 		local s = dev:Invoke("state")
 		local h, b = s.human, s.bot
@@ -64,10 +67,12 @@ task.spawn(function()
 			lastHits = h.comboHits or 0
 			-- frozen: the same non-neutral state for > 2 s
 			if h.state ~= lastState then lastState = h.state; stateSince = t end
-			if h.state ~= "Neutral" and h.state ~= "Guarding" and t - (stateSince or t) > 2 then
+			if h.state ~= "Neutral" and h.state ~= "Guarding" and h.state ~= "Defeated" and t - (stateSince or t) > 2 then
 				table.insert(R.frozen, string.format("%.1f %s", t, h.state)); stateSince = t
 			end
-			if (h.health or 1) <= 0 or (b.health or 1) <= 0 then R.kos += 1; task.wait(3) end
+			local ko = (h.health or 1) <= 0 or (b.health or 1) <= 0
+			if ko and not dead then R.kos += 1 end
+			dead = ko
 		end
 		task.wait(1 / 30)
 	end
@@ -95,7 +100,7 @@ task.spawn(function()
 			if gap < 14 and rng:NextNumber() < .35 then
 				-- attacks out of the run (light or heavy), or jumps in
 				local roll = rng:NextNumber()
-				if roll < .5 then act("Attack") elseif roll < .7 then act("Heavy")
+				if roll < .5 then act("Attack"); task.wait(.24); act("Attack"); task.wait(.24); act("Attack") elseif roll < .7 then act("Heavy")
 				else act("Jump"); task.wait(.18); act(if rng:NextNumber() < .5 then "Attack" else "Heavy"); task.wait(.25); act(if rng:NextNumber() < .6 then "Attack" else "Heavy") end
 			end
 			task.wait(.12)

@@ -316,6 +316,10 @@ test("Rasengan with a clone out: the clone comes to his side and shapes it throu
  local right=flat(a.root.CFrame.RightVector).Unit
  assert((clone.position-(a.root.Position+right*1.9)).Magnitude<1.6,"the shaping clone is not at his hand")
  local health=b.health
+ -- (User 28/10) Shaped in the open, it stays in his hand: his strike drives it.
+ until_(c,.5,function() return a.bodyState~=nil end,"the shaped Rasengan was not held")
+ assert(a.bodyState.id=="CloneRasengan","held "..tostring(a.bodyState.id))
+ assert(c:request(a,"Attack",b.root.Position),"the strike did not release the Rasengan")
  until_(c,.8,function() return b.health<health end,"the Rasengan never landed")
  assert(health-b.health>=18,string.format("the Rasengan was light (%.1f)",health-b.health))
  until_(c,.4,function() return b.reaction=="Knockback" end,"the Rasengan did not drive the body away")
@@ -856,7 +860,9 @@ test("his whole kit presents without a snap: string, clone routes, barrage, Rend
  reset(14)
  press(c,a,"Technique1",nil,b.root.Position);advance(.6)
  reset(8)
- press(c,a,"Technique2",nil,b.root.Position);advance(1.2)
+ press(c,a,"Technique2",nil,b.root.Position);advance(.7)
+ -- (User 28/10) the shaped Rasengan is held: he runs a step with it and strikes.
+ a.move=toward(a);advance(.2);a.move=V.zero;press(c,a,"Attack");advance(.8)
  reset()
  still(c,a,a.root.Position+side(a,1)*6)
  press(c,b,"Attack");advance(.12);c:request(a,"Substitute");advance(.6)

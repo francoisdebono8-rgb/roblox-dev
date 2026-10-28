@@ -1166,7 +1166,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	local technique=Techniques[spec.Id]
 	-- A string cancel shortens the wind-up to .14 s; a technique that is already
 	-- quicker (a teleport, the Read, Rotation) keeps its own.
-	if a.stringCancel==spec.Id then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
+	local cancelled=a.stringCancel==spec.Id
+	if cancelled then spec=table.clone(spec);spec.Channel=math.min(spec.Channel,.14) end
 	a.stringCancel=nil
 	if a.wireCancel and spec.Id=="FireBloom" then spec=table.clone(spec);spec.Channel=.16 end
 	a.wireCancel=nil
@@ -1205,7 +1206,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 	end
 	Brawler.event(self,a,"Technique"); Brawler.event(self,a,"Cast:"..spec.Id); Rules.reserve(a,spec,self.now); a.guardHeld=false
 	self:awakenTechnique(a,spec)
-	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant}
+	a.pending={kind="Technique",spec=spec,implementation=technique,aim=aim or a.target.root.Position,variant=variant,cancelled=cancelled}
 	-- A technique may set itself up as its channel begins (Naruto's Rasengan
 	-- calls the clone that shapes it, and its channel follows).
 	if technique.start then technique.start(self,a,a.pending);spec=a.pending.spec end
@@ -1368,7 +1369,12 @@ function Combat:updateActor(a,dt)
 			self:setState(a,"TechniqueActive",pending.spec.Active)
 			-- (Embodiment) A technique that is a state of the body forms it
 			-- here; the next strike releases it (Server/BodyState).
-			if pending.spec.State then BodyState.enter(self,a,pending.spec)
+			-- A HoldState technique is held when cast in the open (not as a
+			-- string's end, a teleport arrival or a plunge, not with its shaping
+			-- clone struck down): BodyState then carries it.
+			local hold=pending.spec.State or (pending.spec.HoldState and not pending.variant and not pending.cancelled and not pending.cloak
+				and not (pending.shaper and not pending.shaper.alive) and pending.spec.HoldState)
+			if hold then BodyState.enter(self,a,pending.spec,hold)
 			else pending.implementation.execute(self,a,pending,now) end
 			Brawler.event(self,a,"TechniqueResolved")
 		elseif a.state=="TechniqueActive" and pending then

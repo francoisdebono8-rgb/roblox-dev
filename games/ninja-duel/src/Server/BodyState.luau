@@ -27,8 +27,8 @@ function BodyState.active(a,now)
 	return s~=nil and now<s.untilTime and s or nil
 end
 
-function BodyState.enter(c,a,spec)
-	local st=spec.State
+function BodyState.enter(c,a,spec,held)
+	local st=held or spec.State
 	a.bodyState={id=spec.Id,spec=spec,state=st,at=c.now,untilTime=c.now+(st.Time or 2)}
 	c:cue(a,string.upper(st.Name or spec.Name or spec.Id).." • ATTACK TO RELEASE",.9)
 	brawler().event(c,a,"State:"..spec.Id)
@@ -84,7 +84,16 @@ function BodyState.release(c,a,action)
 	p.spec.damage=st.Damage or p.spec.damage
 	p.spec.world=st.World
 	p.state=s.id
-	a.attackVariant=s.id
+	-- A held Rasengan releases as the Rasengan (its own reaction, impulse and
+	-- look); a held Chidori as the thrust it names.
+	if st.Reaction then p.spec.reaction=st.Reaction end
+	if st.Impulse then p.spec.impulse=if shape=="air" then Vector3.new(0,-70,16) else st.Impulse end
+	if st.Stun then p.spec.stun=st.Stun end
+	if st.Rasengan then
+		p.rasengan=true
+		if shape=="ground" then p.spec.travel=math.max(p.spec.travel,10);a.travelRemaining=math.max(a.travelRemaining or 0,p.spec.travel) end
+	end
+	a.attackVariant=(shape=="air" and st.AirVariant) or st.Variant or s.id
 	a.lastAttack=c.now
 	if shape=="ground" and runSpeed>8 then
 		-- Released out of a run: the run is in the thrust.
@@ -92,6 +101,7 @@ function BodyState.release(c,a,action)
 		if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
 	end
 	Brawler.event(c,a,"Release:"..s.id);Brawler.event(c,a,"Release:"..shape)
+	if st.Event then Brawler.event(c,a,st.Event) end
 	c:pushImpact(a.root.Position,st.Style or "chidori",true,{owner=a.id,state=s.id,phase="release",shape=shape})
 	c:cue(a,string.upper(st.Name or s.id),.6)
 	-- The risk, said to both: a release that touched nothing (not even a

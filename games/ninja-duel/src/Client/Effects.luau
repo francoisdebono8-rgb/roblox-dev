@@ -1726,7 +1726,7 @@ function FX:fighter(model,actor,dt)
 	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
 		or (actor.attackName=="ChidoriThrust" and (actor.state=="Startup" or actor.state=="Active"))
 		-- (Embodiment) held in the hand as a state, and through the strike that releases it.
-		or (actor.bodyState~=nil and actor.bodyState.id=="Chidori")
+		or (actor.bodyState~=nil and (actor.bodyState.id=="Chidori" or actor.bodyState.id=="LightningBlade"))
 		or (actor.attackVariant=="Chidori" and (actor.state=="Startup" or actor.state=="Active"))
 	if chidori and not aura.chidori and (actor.health or 1)>0 then
 		local hand=model:FindFirstChild("RightHand") or root
@@ -1826,6 +1826,8 @@ function FX:fighter(model,actor,dt)
 	-- Rasengan forms in the right hand during the channel and stays through the strike.
 	local rasengan=(actor.castId=="BurstStrike" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))
 		or ((actor.attackVariant=="Rasengan" or actor.attackVariant=="RasenganDrop") and (actor.state=="Startup" or actor.state=="Active"))
+		-- (User 28/10) a held Rasengan stays in the palm while he runs with it.
+		or (actor.bodyState~=nil and (actor.bodyState.id=="BurstStrike" or actor.bodyState.id=="CloneRasengan"))
 	local orb=self.rasengan[model]
 	local hand=model:FindFirstChild("RightHand")
 	if rasengan and hand then

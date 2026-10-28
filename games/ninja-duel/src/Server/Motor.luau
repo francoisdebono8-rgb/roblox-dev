@@ -264,7 +264,9 @@ function Motor.step(a,c,dt,now)
 	if grounded then a.ungroundedAt=nil
 	elseif not a.airborne then
 		a.ungroundedAt=a.ungroundedAt or now
-		if now-a.ungroundedAt>.12 or vertical< -10 then a.airborne=true;a.ungroundedAt=nil end
+		-- (Player agent: a light blow's small vertical push, 4-5 studs/s, lifted
+		-- the body 0.3-0.4 stud for 0.2 s: it is a stagger, not a flight.)
+		if now-a.ungroundedAt>.25 or math.abs(vertical)>14 then a.airborne=true;a.ungroundedAt=nil end
 	end
  local movement,parkour=donor(a,c)
  a.grounded=grounded

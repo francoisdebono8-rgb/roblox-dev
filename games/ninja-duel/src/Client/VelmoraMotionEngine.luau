@@ -3541,6 +3541,15 @@ function Motion.present(char,actor,clock,dt)
 		local pose=Authored.sample(carried,elapsedTime-memo.carryAt)
 		base=table.clone(base)
 		for joint in UPPER do if pose[joint] then base[joint]=pose[joint] end end
+	elseif subject.bodyState then
+		-- (User 28/10) A held technique without its own carry clip (a held
+		-- Rasengan, Kakashi's blade): the right arm carries it low and out to
+		-- the side, palm up (the orb never against the body), the left hand
+		-- free; the legs keep running.
+		memo.carryAt=nil
+		local hold=build({ra={raise=36,out=26,twist=-70,elbow=46,wrist=-20},la={raise=40,out=10,twist=10,elbow=70}})
+		base=table.clone(base)
+		for _,joint in {"Right","RightElbow","RightWrist"} do if hold[joint] then base[joint]=hold[joint] end end
 	else
 		memo.carryAt=nil
 	end
