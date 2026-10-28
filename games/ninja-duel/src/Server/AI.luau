@@ -568,9 +568,14 @@ function AI:update(now)
 			self.feinted=true
 			if self.rng:NextNumber()<.3 and c:request(a,"Guard") then self.guardUntil=now+.3;return end
 		end
+		-- (Player agent: DashAttack four times in a row, every dash ended the
+		-- same way.) Having just used it, the bot lets the dash arrive and opens
+		-- a string from close instead.
+		if self:habit("DashAttack") and distance>5 then return end
 		press(c,a,"Attack");return
 	end
 	if (a.rushArriveUntil or 0)>now and not a.airborne then
+		if self:habit("DashAttack") and distance>5.5 then a.move=toward;return end
 		local roll=self.rng:NextNumber()
 		if target.state=="Guarding" and distance<4.5 and roll<.45 then press(c,a,"Grab")
 		elseif roll<.2 then press(c,a,"Heavy")

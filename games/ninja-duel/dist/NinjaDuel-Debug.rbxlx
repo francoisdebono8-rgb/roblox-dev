@@ -3571,7 +3571,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">97a764dafcd9b3eca5a4c6e76d45238c5c756caba0a6d6a8b2bfeaf627930920</string>
+          <string name="Value">229ba24fefa13d8d3dfa3dc6ac7c4cab51b973117f1c0ebacbb02425d1233051</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -4243,9 +4243,14 @@ function AI:update(now)
 			self.feinted=true
 			if self.rng:NextNumber()&lt;.3 and c:request(a,"Guard") then self.guardUntil=now+.3;return end
 		end
+		-- (Player agent: DashAttack four times in a row, every dash ended the
+		-- same way.) Having just used it, the bot lets the dash arrive and opens
+		-- a string from close instead.
+		if self:habit("DashAttack") and distance&gt;5 then return end
 		press(c,a,"Attack");return
 	end
 	if (a.rushArriveUntil or 0)&gt;now and not a.airborne then
+		if self:habit("DashAttack") and distance&gt;5.5 then a.move=toward;return end
 		local roll=self.rng:NextNumber()
 		if target.state=="Guarding" and distance&lt;4.5 and roll&lt;.45 then press(c,a,"Grab")
 		elseif roll&lt;.2 then press(c,a,"Heavy")
@@ -8246,7 +8251,7 @@ ChakraFlow.Tune={
 	HeavyDamage=1.45,
 	Reach=.8,          -- extra range / depth (studs)
 	Impulse=1.2,       -- knockback scale
-	LeapUp=1.32,       -- jump vertical scale
+	LeapUp=1.2,        -- jump vertical scale (apex about x1.5: Studio 18 -&gt; 27 studs)
 	LeapCarry=1.35,    -- jump horizontal scale
 }
 local T=ChakraFlow.Tune
@@ -11947,7 +11952,7 @@ function DevHooks.install(matches)
 		return {state=a.state,health=a.health,chakra=math.floor(a.chakra),position=a.root.Position,reaction=a.reaction,attackName=a.attackName,
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
-			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,
+			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,chakraLoad=a.chakraLoad and a.chakraLoad.nature,infused=a.pending and a.pending.chakraFlow,events=a.events,
 			chainOpen=a.chainOpen and now&gt;=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
 			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end

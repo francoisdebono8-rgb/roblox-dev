@@ -29,7 +29,7 @@ ChakraFlow.Tune={
 	HeavyDamage=1.45,
 	Reach=.8,          -- extra range / depth (studs)
 	Impulse=1.2,       -- knockback scale
-	LeapUp=1.32,       -- jump vertical scale
+	LeapUp=1.2,        -- jump vertical scale (apex about x1.5: Studio 18 -> 27 studs)
 	LeapCarry=1.35,    -- jump horizontal scale
 }
 local T=ChakraFlow.Tune
