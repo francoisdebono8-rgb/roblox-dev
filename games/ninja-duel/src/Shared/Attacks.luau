@@ -5,8 +5,9 @@ local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
   travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,10),stun=stun or 0.27,
   range=7.8,width=5.5,height=6,blockable=true,
   -- Contact distance (root to root) where the step-in stops: an arm's length
-  -- for hand strikes. Closer, the two bodies visibly merge mid-string.
-  contact=3.6}
+  -- for hand strikes. Closer, the two bodies visibly merge mid-string
+  -- (Studio 28/10: at 3.6 the client showed 3.3-4.0, torsos overlapping).
+  contact=4.1}
 end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
@@ -85,7 +86,7 @@ local attacks={
  FanDive=move(.1,.14,.26,7,1.5,"Spiked",Vector3.new(0,-70,4),.9),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
-for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
+for name,gap in {Light3=4.3,Heavy=4.2,FlyingKick=4.2,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
  if attacks[name] then attacks[name].contact=gap end
 end
 

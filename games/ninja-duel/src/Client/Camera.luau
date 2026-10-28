@@ -11,7 +11,7 @@ local Camera={}; Camera.__index=Camera
 local framing={
  -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
  -- body fills the frame, every motion of it reads; the opponent ahead.
- Ground={distance=10.5,height=3.4,fov=66,lift=1.9,side=.3},
+ Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.62},
  Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
  Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
  AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
@@ -165,7 +165,7 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local bias=if separation<=26 then .3 else math.max(.22,.3-(separation-26)*.003)
+	local bias=if separation<=26 then .42 else math.max(.3,.42-(separation-26)*.003)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Sprint feel: only the player's own sprint (never the opponent's) eases
 	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so

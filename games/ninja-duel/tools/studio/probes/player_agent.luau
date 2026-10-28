@@ -110,7 +110,7 @@ task.spawn(function()
 				task.wait(.3); act("Attack"); task.wait(.24); act("Attack"); task.wait(.25); act("Heavy") end
 		elseif gap > 9 then
 			-- runs in (a pad player toggles sprint and holds the stick)
-			dev:Invoke("sprint", "human", true); dev:Invoke("move", "human", dir)
+			dev:Invoke("move", "human", dir, 1); dev:Invoke("sprint", "human", true)
 			if gap < 14 and rng:NextNumber() < .35 then
 				-- attacks out of the run (light or heavy), or jumps in
 				local roll = rng:NextNumber()

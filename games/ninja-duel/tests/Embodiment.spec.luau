@@ -215,7 +215,7 @@ test("the material decides the mark, the same blow twice deepens one mark",funct
  assert(World.impact(c,hitOn(stone,30,"pierce")).scar=="chip")
  local fire=World.impact(c,hitOn(stone,40,"blast","fire",V.new(8.7,1,1)))
  assert(fire.scar=="crater" and fire.element=="fire")
- assert(World.impact(c,{part=earth,position=V.new(0,0,0),normal=V.yAxis,energy=50,contact="blunt"}).scar=="crater")
+ assert(World.impact(c,{part=earth,position=V.new(0,0,0),normal=V.yAxis,energy=80,contact="blunt"}).scar=="crater")
  local w=World.state(c)
  local kinds={}
  for _,scar in w.scars do kinds[scar.kind]=(kinds[scar.kind] or 0)+1 end
@@ -233,14 +233,42 @@ end)
 test("the arena's memory is bounded: oldest marks leave first",function()
  local c=H.duel("Flashstep","Mirage")
  local Config=H.load("Shared/Config")
- local parts={}
+ local wall=surface("Concrete",V.new(2,40,600))
  for k=1,Config.World.MaxScars+12 do
-  World.impact(c,{part=H.ground,position=V.new(k*6,0,0),normal=V.yAxis,energy=40,contact="blunt"})
+  World.impact(c,{part=wall,position=V.new(8.7,3,k*6),normal=V.new(-1,0,0),energy=40,contact="blunt"})
  end
  local w=World.state(c)
  assert(#w.scars==Config.World.MaxScars,"scar count "..#w.scars)
- assert(w.scars[1].position.X>12*6,"the oldest marks were kept")
+ assert(w.scars[1].position.Z>12*6,"the oldest marks were kept")
  assert(w.stats.scars==Config.World.MaxScars+12)
+end)
+
+test("the floor keeps only what weighed something, a few at a time, and lets them fade (user 28/10: no minefield)",function()
+ local c=H.duel("Flashstep","Mirage")
+ local Config=H.load("Shared/Config")
+ local T=Config.World
+ local w=World.state(c)
+ -- A landing, a launcher's fall: no mark on the floor.
+ World.impact(c,{part=H.ground,position=V.new(0,0,0),normal=V.yAxis,energy=T.GroundEnergy-10,contact="blunt"})
+ assert(#w.scars==0,"a light landing marked the floor")
+ -- A burning patch scorches, it never digs a crater.
+ World.impact(c,{part=H.ground,position=V.new(0,0,30),normal=V.yAxis,energy=60,contact="blast",element="fire",zone=true})
+ assert(#w.scars==1 and w.scars[1].kind=="scorch","a burning zone: "..tostring(w.scars[1] and w.scars[1].kind))
+ -- A slam does; past the floor's budget the oldest goes.
+ for k=1,T.MaxFloorScars+4 do
+  World.impact(c,{part=H.ground,position=V.new(k*9,0,0),normal=V.yAxis,energy=T.GroundEnergy+5,contact="blunt"})
+ end
+ local floor=0
+ for _,s in w.scars do if s.floor then floor+=1 end end
+ assert(floor==T.MaxFloorScars,"floor marks "..floor)
+ -- A great blow stays longer than a lesser one, and both fade.
+ World.impact(c,{part=H.ground,position=V.new(0,0,-40),normal=V.yAxis,energy=T.MajorEnergy+10,contact="blunt"})
+ local major=w.scars[#w.scars]
+ assert(major.expires-c.now==T.Fade.Major,"major life")
+ c.now+=T.Fade.Minor+.1;World.step(c)
+ assert(#w.scars==1 and w.scars[1]==major,"after the minor life: "..#w.scars.." marks left")
+ c.now+=T.Fade.Major;World.step(c)
+ assert(#w.scars==0 and (w.stats.faded or 0)>=T.MaxFloorScars,"the great blow never faded")
 end)
 
 test("a breakable trunk cracks, then falls; the stadium wall only carries its marks",function()

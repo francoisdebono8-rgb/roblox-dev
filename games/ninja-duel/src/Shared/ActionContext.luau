@@ -90,7 +90,14 @@ Context.Defaults={
 	back=function(graph) return "BackStrike" end,
 	aside=function(graph) return graph.routes and graph.routes.side or nil end,
 	away=function(graph) return graph.stepBack or "StepBackStrike" end,
-	run=function(graph) return graph.runStrike or "DashAttack" end,
+	-- (Studio 28/10) A light out of a run opens the string: a runStrike that
+	-- throws the body away (Sasuke's and Lee's flying kick) stays on the
+	-- sprint heavy, the run's light is the shared DashAttack.
+	run=function(graph,attacks)
+		local m=graph.runStrike
+		if m and attacks and attacks[m] and attacks[m].reaction~="HitStun" then return "DashAttack" end
+		return m or "DashAttack"
+	end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
 	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,
 	reach=function(graph) return graph.reachStrike or "DashAttack" end,
@@ -106,7 +113,7 @@ function Context.resolve(x,graph,attacks,only)
 		if (not only or only[situation.tag]) and situation.test(x) then
 			local move=declared[situation.tag]
 			if move==false then continue end
-			if move==nil then move=Context.Defaults[situation.tag](graph) end
+			if move==nil then move=Context.Defaults[situation.tag](graph,attacks) end
 			if move and attacks[move] then return move,situation.tag end
 		end
 	end

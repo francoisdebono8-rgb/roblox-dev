@@ -110,7 +110,14 @@ Context.Defaults={
 	back=function(graph) return "BackStrike" end,
 	aside=function(graph) return graph.routes and graph.routes.side or nil end,
 	away=function(graph) return graph.stepBack or "StepBackStrike" end,
-	run=function(graph) return graph.runStrike or "DashAttack" end,
+	-- (Studio 28/10) A light out of a run opens the string: a runStrike that
+	-- throws the body away (Sasuke's and Lee's flying kick) stays on the
+	-- sprint heavy, the run's light is the shared DashAttack.
+	run=function(graph,attacks)
+		local m=graph.runStrike
+		if m and attacks and attacks[m] and attacks[m].reaction~="HitStun" then return "DashAttack" end
+		return m or "DashAttack"
+	end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
 	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,
 	reach=function(graph) return graph.reachStrike or "DashAttack" end,
@@ -126,7 +133,7 @@ function Context.resolve(x,graph,attacks,only)
 		if (not only or only[situation.tag]) and situation.test(x) then
 			local move=declared[situation.tag]
 			if move==false then continue end
-			if move==nil then move=Context.Defaults[situation.tag](graph) end
+			if move==nil then move=Context.Defaults[situation.tag](graph,attacks) end
 			if move and attacks[move] then return move,situation.tag end
 		end
 	end
@@ -156,8 +163,9 @@ local function move(startup,active,recovery,damage,travel,reaction,impulse,stun)
   travelTime=startup+active,reaction=reaction or "HitStun",impulse=impulse or Vector3.new(0,0,10),stun=stun or 0.27,
   range=7.8,width=5.5,height=6,blockable=true,
   -- Contact distance (root to root) where the step-in stops: an arm's length
-  -- for hand strikes. Closer, the two bodies visibly merge mid-string.
-  contact=3.6}
+  -- for hand strikes. Closer, the two bodies visibly merge mid-string
+  -- (Studio 28/10: at 3.6 the client showed 3.3-4.0, torsos overlapping).
+  contact=4.1}
 end
 local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
@@ -236,7 +244,7 @@ local attacks={
  FanDive=move(.1,.14,.26,7,1.5,"Spiked",Vector3.new(0,-70,4),.9),
 }
 -- Reach of the body that lands each strike (see `contact` in move()).
-for name,gap in {Light3=4.0,Heavy=3.9,FlyingKick=4.0,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
+for name,gap in {Light3=4.3,Heavy=4.2,FlyingKick=4.2,PalmThrust=3.7,CounterPalm=3.7,KneeStrike=3.2,Sweep=3.5,Grab=2.6,Throw=2.6,ThrowUp=2.6,Slam=3.0,WallDive=2.6} do
  if attacks[name] then attacks[name].contact=gap end
 end
 
@@ -501,7 +509,16 @@ return {
 	World = {MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
 		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
 		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
-		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
+		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true},
+		-- (User 28/10: "the arena must not become a minefield where nobody
+		-- understands anything".) Weight: the floor only keeps what weighed
+		-- something - a slam, a spike, a Great Fireball - not every landing;
+		-- GroundEnergy for a contact mark, GroundElement for a scorch. The
+		-- marks fade (Fade seconds, Major once the energy passed MajorEnergy
+		-- or a mark was deepened three times; Out: the fade itself) and the
+		-- floor holds at most MaxFloorScars at once (oldest first out).
+		GroundEnergy = 75, GroundElement = 34, MajorEnergy = 120, MaxFloorScars = 10,
+		Fade = {Minor = 22, Major = 60, Out = 1.6}},
 	-- Ninja Embodiment (Server/Perception): the space a body reads around a
 	-- fight. Behind: how far past the target (or behind itself) a surface
 	-- counts; Scan: how far around the target the nearest surface is looked
@@ -3571,7 +3588,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f6ef43c6910bc2d3b45b6ea324b593ee761750c52f2707eadd16b99f98cc99e2</string>
+          <string name="Value">77c41f3ad96e48925198f44fd5bb7b30cc0e4a85ac69f101d00ed91da0a54edb</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -11155,6 +11172,7 @@ function Combat:update(dt,now)
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
+	WorldReaction.step(self)
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
 		if e.expires&lt;=now or not e.part.Parent then e.part:Destroy(); table.remove(self.effects,i) end
@@ -21291,6 +21309,8 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		if old.kind==kind and old.surface==surface and (old.position-position).Magnitude&lt;math.max(.8,old.size*.45) then
 			old.size=math.min(SHAPES[kind].max,old.size+math.max(.15,scarSize(kind,energy)*.25))
 			old.marks+=1
+			old.energy=math.max(old.energy or 0,energy)
+			old.expires=c.now+WorldReaction.life(old)
 			if old.part then draw(old,old.class) end
 			w.stats.merged+=1
 			-- Most recent stays last: it is the freshest memory.
@@ -21306,7 +21326,9 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		-- An unaimed crack runs in a direction drawn from where it is.
 		frame=frame*CFrame.Angles(math.pi*2*hash(position),0,0)
 	end
-	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now}
+	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now,
+		energy=energy,floor=normal.Y&gt;.6}
+	entry.expires=c.now+WorldReaction.life(entry)
 	if folder then
 		local p=Instance.new("Part")
 		p.Name="Scar "..kind;p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
@@ -21328,8 +21350,56 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 	end
 	table.insert(w.scars,entry)
 	w.stats.scars+=1
+	if entry.floor then
+		-- The floor's own budget: the oldest floor mark leaves first.
+		local n=0
+		for _,s2 in w.scars do if s2.floor then n+=1 end end
+		while n&gt;TUNE.MaxFloorScars do
+			for k,s2 in w.scars do
+				if s2.floor then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+			end
+		end
+	end
 	evict(w.scars,TUNE.MaxScars)
 	return entry
+end
+-- How long a mark stays: a heavy one (or one deepened again and again) for
+-- the fight's big moments, a lesser one only for the exchange that made it.
+function WorldReaction.life(scar)
+	local major=(scar.energy or 0)&gt;=TUNE.MajorEnergy or (scar.marks or 1)&gt;=3
+	return if major then TUNE.Fade.Major else TUNE.Fade.Minor
+end
+-- A mark leaving: it sinks back into the floor (fades) instead of popping.
+local okTween,Tween=pcall(function() return game:GetService("TweenService") end)
+if not okTween then Tween=nil end
+function WorldReaction.fade(c,scar)
+	local p=scar.part
+	scar.part=nil
+	if not p then return end
+	if Tween and typeof and typeof(p)=="Instance" then
+		local info=TweenInfo.new(TUNE.Fade.Out,Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+		for _,d in p:GetDescendants() do
+			if d:IsA("BasePart") then Tween:Create(d,info,{Transparency=1}):Play()
+			elseif d:IsA("Decal") then Tween:Create(d,info,{Transparency=1}):Play() end
+		end
+		Tween:Create(p,info,{Transparency=1}):Play()
+		task.delay(TUNE.Fade.Out+.05,function() p:Destroy() end)
+	else
+		p:Destroy()
+	end
+end
+-- Once per server step: the marks whose time has come fade out.
+function WorldReaction.step(c)
+	local w=c.world
+	if not w then return end
+	for k=#w.scars,1,-1 do
+		local scar=w.scars[k]
+		if scar.expires and c.now&gt;=scar.expires then
+			table.remove(w.scars,k)
+			WorldReaction.fade(c,scar)
+			w.stats.faded=(w.stats.faded or 0)+1
+		end
+	end
 end
 
 -- ------------------------------------------------------------------ breaks
@@ -21427,11 +21497,17 @@ function WorldReaction.impact(c,hit)
 	local normal=hit.normal or Vector3.yAxis
 	local position=hit.position
 	local direction=hit.direction or -normal
-	-- The mark of the contact, then the mark of the element.
+	-- The mark of the contact, then the mark of the element. The floor keeps
+	-- only what weighed something (TUNE.GroundEnergy / GroundElement): the
+	-- arena tells the fight without turning into a minefield. A zone (a
+	-- burning patch) leaves its element's mark, never a crater.
 	local scar=answer.scar
+	local floor=normal.Y&gt;.6
 	local entry=nil
-	if scar then entry=WorldReaction.scar(c,scar,part,position,normal,energy,if contact=="slash" or contact=="energy" then direction else nil,rec.class) end
-	if element and element.scar then WorldReaction.scar(c,element.scar,part,position+normal*.02,normal,energy,nil,rec.class) end
+	if scar and not hit.zone and (not floor or energy&gt;=TUNE.GroundEnergy) then
+		entry=WorldReaction.scar(c,scar,part,position,normal,energy,if contact=="slash" or contact=="energy" then direction else nil,rec.class)
+	end
+	if element and element.scar and (not floor or energy&gt;=TUNE.GroundElement) then WorldReaction.scar(c,element.scar,part,position+normal*.02,normal,energy,nil,rec.class) end
 	if contact=="pierce" and (rec.class=="wood" or rec.class=="earth") then
 		-- A blade that stays: a world fact (an anchor a technique can read).
 		table.insert(w.embeds,{position=position,normal=normal,part=part,owner=hit.source,at=c.now})
@@ -21523,7 +21599,7 @@ function WorldReaction.zone(c,position,radius,element)
 	if not WorldReaction.Elements[element or ""] then return nil end
 	local hit=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-8,0),c:rayParams(true))
 	if not hit then return nil end
-	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element})
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element,zone=true})
 end
 -- What the world still remembers (inspect, audit, perception later).
 function WorldReaction.summary(c)
@@ -29361,7 +29437,7 @@ local Camera={}; Camera.__index=Camera
 local framing={
  -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
  -- body fills the frame, every motion of it reads; the opponent ahead.
- Ground={distance=10.5,height=3.4,fov=66,lift=1.9,side=.3},
+ Ground={distance=12.5,height=3.6,fov=64,lift=1.8,side=.62},
  Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
  Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
  AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
@@ -29515,7 +29591,7 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local bias=if separation&lt;=26 then .3 else math.max(.22,.3-(separation-26)*.003)
+	local bias=if separation&lt;=26 then .42 else math.max(.3,.42-(separation-26)*.003)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Sprint feel: only the player's own sprint (never the opponent's) eases
 	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
@@ -31515,8 +31591,8 @@ function FX:impact(impact,folder)
 	-- guard, longer and stronger the harder it was.
 	if impact.victim and impact.amount then
 		local weight=math.clamp(impact.amount/20,.25,1)
-		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,54,54),
-			.12+.14*weight,if impact.guarded then .35 else .45+.3*weight)
+		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,236,226),
+			.06+.07*weight,if impact.guarded then .35 else .3+.25*weight)
 	end
 	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
 	if style=="fire" then

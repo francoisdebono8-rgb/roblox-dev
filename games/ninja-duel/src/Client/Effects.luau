@@ -859,8 +859,8 @@ function FX:impact(impact,folder)
 	-- guard, longer and stronger the harder it was.
 	if impact.victim and impact.amount then
 		local weight=math.clamp(impact.amount/20,.25,1)
-		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,54,54),
-			.12+.14*weight,if impact.guarded then .35 else .45+.3*weight)
+		pcall(Kit.tint,modelFor(folder,impact.victim),if impact.guarded then Color3.fromRGB(255,214,120) else Color3.fromRGB(255,236,226),
+			.06+.07*weight,if impact.guarded then .35 else .3+.25*weight)
 	end
 	for _,layer in FX.layers do if layer.impact and layer.impact(self,impact,folder) then return end end
 	if style=="fire" then

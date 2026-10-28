@@ -207,7 +207,9 @@ test("a press buffered during a whiff waits for the full recovery and comes out 
 end)
 test("a blade landing during a whiffing swing does not open the string",function()
  local c,a,b=H.duel("Flashstep","Mirage")
- place(c,a,b,12)
+ -- Out of every opener's reach (the reach strike lands up to ~12.5 once the
+ -- light's contact is an arm's length, 4.1).
+ place(c,a,b,16)
  assert(press(c,a,"Attack"))
  until_(c,.3,function() return a.state=="Active" end,"no active window")
  local p=c:projectile(a,b.root.Position,96,30,3,"kunai")

@@ -57,7 +57,16 @@ return {
 	World = {MaxScars = 48, MaxRubble = 24, RubblePerBreak = 4, MaxEmbeds = 16, MinEnergy = 8,
 		CrackedShare = 0.5, StumpHeight = 2.2, MoundShare = 0.38,
 		BodySpeed = 14, LandingSpeed = 26, BodyEnergy = 1.4, ProjectileEnergy = 5, StrikeEnergy = 4, ZoneEnergy = 5,
-		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true}},
+		BodyRepeat = 0.35, SmashCarry = 0.6, HeavyKinds = {heavy = true, spike = true, launch = true},
+		-- (User 28/10: "the arena must not become a minefield where nobody
+		-- understands anything".) Weight: the floor only keeps what weighed
+		-- something - a slam, a spike, a Great Fireball - not every landing;
+		-- GroundEnergy for a contact mark, GroundElement for a scorch. The
+		-- marks fade (Fade seconds, Major once the energy passed MajorEnergy
+		-- or a mark was deepened three times; Out: the fade itself) and the
+		-- floor holds at most MaxFloorScars at once (oldest first out).
+		GroundEnergy = 75, GroundElement = 34, MajorEnergy = 120, MaxFloorScars = 10,
+		Fade = {Minor = 22, Major = 60, Out = 1.6}},
 	-- Ninja Embodiment (Server/Perception): the space a body reads around a
 	-- fight. Behind: how far past the target (or behind itself) a surface
 	-- counts; Scan: how far around the target the nearest surface is looked

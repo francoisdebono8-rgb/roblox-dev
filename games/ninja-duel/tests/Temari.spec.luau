@@ -115,7 +115,8 @@ test("the fan string: a longer reach, she stops further out, and the third strik
  end
  local fan,fist=contactGap("Gale"),contactGap("Lion")
  assert(fan>=5.5,string.format("the fan landed only after she walked in to %.1f studs",fan))
- assert(fist<=fan-1.5,string.format("fixture: the fist landed from %.1f studs (fan %.1f)",fist,fan))
+ -- (Studio 28/10: a fist now stops at an arm's length, 4.1, not inside the body.)
+ assert(fist<=fan-1.2,string.format("fixture: the fist landed from %.1f studs (fan %.1f)",fist,fan))
  -- From 9 studs she steps in, but stops at the fan's reach, not at a fist's.
  local c3,m,n=H.duel("Gale","Mirage");place(c3,m,n,9);m.locked=true
  assert(press(c3,m,"Attack"));H.step(c3,.5)

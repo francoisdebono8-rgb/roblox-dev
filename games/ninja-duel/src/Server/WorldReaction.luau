@@ -302,6 +302,8 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		if old.kind==kind and old.surface==surface and (old.position-position).Magnitude<math.max(.8,old.size*.45) then
 			old.size=math.min(SHAPES[kind].max,old.size+math.max(.15,scarSize(kind,energy)*.25))
 			old.marks+=1
+			old.energy=math.max(old.energy or 0,energy)
+			old.expires=c.now+WorldReaction.life(old)
 			if old.part then draw(old,old.class) end
 			w.stats.merged+=1
 			-- Most recent stays last: it is the freshest memory.
@@ -317,7 +319,9 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 		-- An unaimed crack runs in a direction drawn from where it is.
 		frame=frame*CFrame.Angles(math.pi*2*hash(position),0,0)
 	end
-	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now}
+	local entry={kind=kind,surface=surface,position=position,normal=normal,size=scarSize(kind,energy),frame=frame,class=class,marks=1,at=c.now,
+		energy=energy,floor=normal.Y>.6}
+	entry.expires=c.now+WorldReaction.life(entry)
 	if folder then
 		local p=Instance.new("Part")
 		p.Name="Scar "..kind;p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
@@ -339,8 +343,56 @@ function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
 	end
 	table.insert(w.scars,entry)
 	w.stats.scars+=1
+	if entry.floor then
+		-- The floor's own budget: the oldest floor mark leaves first.
+		local n=0
+		for _,s2 in w.scars do if s2.floor then n+=1 end end
+		while n>TUNE.MaxFloorScars do
+			for k,s2 in w.scars do
+				if s2.floor then table.remove(w.scars,k);WorldReaction.fade(c,s2);n-=1;break end
+			end
+		end
+	end
 	evict(w.scars,TUNE.MaxScars)
 	return entry
+end
+-- How long a mark stays: a heavy one (or one deepened again and again) for
+-- the fight's big moments, a lesser one only for the exchange that made it.
+function WorldReaction.life(scar)
+	local major=(scar.energy or 0)>=TUNE.MajorEnergy or (scar.marks or 1)>=3
+	return if major then TUNE.Fade.Major else TUNE.Fade.Minor
+end
+-- A mark leaving: it sinks back into the floor (fades) instead of popping.
+local okTween,Tween=pcall(function() return game:GetService("TweenService") end)
+if not okTween then Tween=nil end
+function WorldReaction.fade(c,scar)
+	local p=scar.part
+	scar.part=nil
+	if not p then return end
+	if Tween and typeof and typeof(p)=="Instance" then
+		local info=TweenInfo.new(TUNE.Fade.Out,Enum.EasingStyle.Quad,Enum.EasingDirection.In)
+		for _,d in p:GetDescendants() do
+			if d:IsA("BasePart") then Tween:Create(d,info,{Transparency=1}):Play()
+			elseif d:IsA("Decal") then Tween:Create(d,info,{Transparency=1}):Play() end
+		end
+		Tween:Create(p,info,{Transparency=1}):Play()
+		task.delay(TUNE.Fade.Out+.05,function() p:Destroy() end)
+	else
+		p:Destroy()
+	end
+end
+-- Once per server step: the marks whose time has come fade out.
+function WorldReaction.step(c)
+	local w=c.world
+	if not w then return end
+	for k=#w.scars,1,-1 do
+		local scar=w.scars[k]
+		if scar.expires and c.now>=scar.expires then
+			table.remove(w.scars,k)
+			WorldReaction.fade(c,scar)
+			w.stats.faded=(w.stats.faded or 0)+1
+		end
+	end
 end
 
 -- ------------------------------------------------------------------ breaks
@@ -438,11 +490,17 @@ function WorldReaction.impact(c,hit)
 	local normal=hit.normal or Vector3.yAxis
 	local position=hit.position
 	local direction=hit.direction or -normal
-	-- The mark of the contact, then the mark of the element.
+	-- The mark of the contact, then the mark of the element. The floor keeps
+	-- only what weighed something (TUNE.GroundEnergy / GroundElement): the
+	-- arena tells the fight without turning into a minefield. A zone (a
+	-- burning patch) leaves its element's mark, never a crater.
 	local scar=answer.scar
+	local floor=normal.Y>.6
 	local entry=nil
-	if scar then entry=WorldReaction.scar(c,scar,part,position,normal,energy,if contact=="slash" or contact=="energy" then direction else nil,rec.class) end
-	if element and element.scar then WorldReaction.scar(c,element.scar,part,position+normal*.02,normal,energy,nil,rec.class) end
+	if scar and not hit.zone and (not floor or energy>=TUNE.GroundEnergy) then
+		entry=WorldReaction.scar(c,scar,part,position,normal,energy,if contact=="slash" or contact=="energy" then direction else nil,rec.class)
+	end
+	if element and element.scar and (not floor or energy>=TUNE.GroundElement) then WorldReaction.scar(c,element.scar,part,position+normal*.02,normal,energy,nil,rec.class) end
 	if contact=="pierce" and (rec.class=="wood" or rec.class=="earth") then
 		-- A blade that stays: a world fact (an anchor a technique can read).
 		table.insert(w.embeds,{position=position,normal=normal,part=part,owner=hit.source,at=c.now})
@@ -534,7 +592,7 @@ function WorldReaction.zone(c,position,radius,element)
 	if not WorldReaction.Elements[element or ""] then return nil end
 	local hit=workspace:Raycast(position+Vector3.new(0,2,0),Vector3.new(0,-8,0),c:rayParams(true))
 	if not hit then return nil end
-	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element})
+	return WorldReaction.impact(c,{part=hit.Instance,position=hit.Position,normal=hit.Normal,energy=radius*TUNE.ZoneEnergy,contact="blast",element=element,zone=true})
 end
 -- What the world still remembers (inspect, audit, perception later).
 function WorldReaction.summary(c)

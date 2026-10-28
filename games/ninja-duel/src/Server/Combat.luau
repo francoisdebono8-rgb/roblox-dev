@@ -2111,6 +2111,7 @@ function Combat:update(dt,now)
 	-- Zones act before the flights move (a blade entering a lane turns this frame).
 	if self.match.phase=="Duel" then Zones.step(self,dt) end
 	if self.match.phase=="Duel" then self:updateProjectiles(dt); self:updateHazards() end
+	WorldReaction.step(self)
 	for i=#self.effects,1,-1 do
 		local e=self.effects[i]
 		if e.expires<=now or not e.part.Parent then e.part:Destroy(); table.remove(self.effects,i) end
