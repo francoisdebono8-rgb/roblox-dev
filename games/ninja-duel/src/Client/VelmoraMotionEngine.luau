@@ -200,15 +200,40 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 		-- The hips are damped; a planted foot must not be. Solve each planted leg
 		-- against the hips as drawn this frame and set it almost at once.
 		local hips=s.pose.Root or targets.Root
+		s.ikOn=s.ikOn or {};s.ikEnter=s.ikEnter or {}
 		for side,f in feet do
 			local prefix=if side=="R" then "Right" else "Left"
-			local hip,knee,ankle=legIK(hips,if side=="R" then 1 else -1,f.ankle,f.yaw,f.toe)
+			local target=f.ankle
+			-- (ANIM-005) A leg handed from a drawn pose (a get-up, an air pose,
+			-- a reaction) to the feet solver starts from where its ankle was and
+			-- reaches the solver's spot over 0.1 s; it jumped there in one frame.
+			if not s.ikOn[side] and dt and s.pose[prefix.."Hip"] then
+				local sg=if side=="R" then 1 else -1
+				local from=(s.pose.Root or IDENTITY)*CF(.5*sg,-.55,0)*(s.pose[prefix.."Hip"] or IDENTITY)*CF(0,-1.05,0)
+					*(s.pose[prefix.."Knee"] or IDENTITY)*CF(0,-1,0)
+				local rootPart=char:FindFirstChild("HumanoidRootPart")
+				-- (held in the world: a lerp in root space crept with the body)
+				if rootPart and (from.Position-target).Magnitude>.3 then
+					s.ikEnter[side]={from=rootPart.CFrame:PointToWorldSpace(from.Position),at=elapsedTime}
+				end
+			end
+			local enter=s.ikEnter[side]
+			if enter then
+				local u=(elapsedTime-enter.at)/.1
+				local rootPart=char:FindFirstChild("HumanoidRootPart")
+				if u>=1 or not rootPart then s.ikEnter[side]=nil else
+					u=math.max(u,0);target=rootPart.CFrame:PointToObjectSpace(enter.from):Lerp(target,u*u*(3-2*u))
+				end
+			end
+			local hip,knee,ankle=legIK(hips,if side=="R" then 1 else -1,target,f.yaw,f.toe)
 			for _,j in {prefix.."Hip",prefix.."Knee",prefix.."Ankle"} do s.inert[j]=nil end
 			-- (Authored: exact, a damped leg lets the foot creep with the body.)
 			local legRate2=if rate==RATE.authored then RATE.authored else 60
 			write(char,prefix.."Hip",hip,legRate2,dt);write(char,prefix.."Knee",knee,legRate2,dt);write(char,prefix.."Ankle",ankle,legRate2,dt)
 		end
 	end
+	s.ikOn=s.ikOn or {}
+	s.ikOn.R=feet~=nil and feet.R~=nil;s.ikOn.L=feet~=nil and feet.L~=nil
 end
 
 -- ------------------------------------------------------------- pose builder
@@ -1816,15 +1841,26 @@ local function authoredFeet(char,pose,dt)
 	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return nil end
 	dt=dt or 1/60
-	if not s.af or elapsedTime-(s.afAt or -1)>.2 then s.af={} end
+	local fresh=not s.af or elapsedTime-(s.afAt or -1)>.2
+	if fresh then s.af={} end
 	s.afAt=elapsedTime
 	local rootCF=root.CFrame
 	local feet={}
 	for _,key in {"R","L"} do
-		local f=s.af[key] or {off=Vector3.zero}
-		s.af[key]=f
+		local f=s.af[key]
 		local frame=ankleFrame(pose,key)
 		local clipPos=frame.Position
+		if not f then
+			-- (ANIM-005) Entering an authored clip: the foot starts where the
+			-- body really has it (the gait, the stance) and swings onto the
+			-- clip's path; planted at the clip's spot it snapped the ankle.
+			f={off=Vector3.zero}
+			if fresh and s.pose[(if key=="R" then "Right" else "Left").."Hip"] then
+				local here=ankleFrame(s.pose,key).Position-clipPos
+				if here.Magnitude>.12 and here.Magnitude<2.5 then f.off=here;f.offV=Vector3.zero;f.release=true end
+			end
+		end
+		s.af[key]=f
 		local speed=if f.prev then (clipPos-f.prev).Magnitude/dt else 0
 		f.prev=clipPos
 		local low=clipPos.Y-ANKLE_Y<(if f.planted then .3 else .16)
@@ -2223,6 +2259,17 @@ local function authoredAir(char,actor,fighterId)
 	local F=tostring(fighterId)
 	local v=actor.velocity or Vector3.zero
 	local u=math.clamp((JUMP_V-v.Y)/(2*JUMP_V),0,1)
+	-- (ANIM-005) The arc axis follows the body's vertical speed, which the
+	-- server can change at once (a pursuit ends, a hit lands, a wall kick):
+	-- the pose then jumped across the arc in one frame. It moves at most a
+	-- whole arc in 0.35 s; a fresh jump starts where its speed says.
+	local st=stateOf(char)
+	local now=elapsedTime
+	if st.airU and now-(st.airAt or -1)<.2 then
+		local step=math.max(now-st.airAt,0)/.35
+		u=st.airU+math.clamp(u-st.airU,-step,step)
+	end
+	st.airU=u;st.airAt=now
 	local air=Authored.sample(F..".Jump.Air",u*Authored.length(F..".Jump.Air"))
 	local root=char:FindFirstChild("HumanoidRootPart")
 	local flatV=planar(v)
@@ -2230,6 +2277,11 @@ local function authoredAir(char,actor,fighterId)
 	local forward=-localV.Z
 	local momentum=math.clamp((flatV.Magnitude-8)/22,0,1)
 	local travel=momentum*math.max(0,forward)
+	if st.airTravel and now-(st.airTravelAt or -1)<.2 then
+		local step=math.max(now-st.airTravelAt,0)/.25
+		travel=st.airTravel+math.clamp(travel-st.airTravel,-step,step)
+	end
+	st.airTravel=travel;st.airTravelAt=now
 	if travel>.01 and Authored.has(F..".Jump.Leap") then
 		air=mixPoses({{air,1},{Authored.sample(F..".Jump.Leap",u*Authored.length(F..".Jump.Leap")),travel/math.max(1-travel,1e-3)}})
 	end
@@ -2403,15 +2455,17 @@ local function authoredReaction(actor)
 	local from,side=math.cos(angle),math.sin(angle)
 	local twist=actor.hitTwist or 1
 	if kind=="Launched" or kind=="Juggled" then
-		local p=play("Launched",elapsed,side<0);if p then return p,RATE.authored end
+		-- (ANIM-005) The clip opens on the stance; a body already in the air
+		-- (and every juggle hit) starts on the whip, the transition carries it.
+		local p=play("Launched",elapsed+3/60,side<0);if p then return p,RATE.authored,"Launched" end
 	elseif kind=="Knockdown" then
-		local p=play("Knockdown",elapsed*Authored.length(F..".Knockdown")/.34,side<0);if p then return p,RATE.authored end
+		local p=play("Knockdown",elapsed*Authored.length(F..".Knockdown")/.34,side<0);if p then return p,RATE.authored,"Knockdown" end
 	elseif kind=="Knockback" then
 		local land=LANDINGS[actor.id or ""] or {}
 		LANDINGS[actor.id or ""]=land
 		if actor.airborne then
 			land.groundAt=nil
-			local p=play("Knockback",elapsed,side<0);if p then return p,RATE.authored end
+			local p=play("Knockback",elapsed+2/60,side<0);if p then return p,RATE.authored,"Knockback" end
 		else
 			land.groundAt=land.groundAt or elapsedTime
 			-- The skid ends in his own stance: never mirrored (the lead foot stays).
@@ -2612,7 +2666,17 @@ local function groundTargets(actor)
 		-- (Blender-first) lying on the floor, then the authored get-up, played
 		-- over the server's wake-up window.
 		local out
-		if (pose=="Wakeup" or actor.reaction=="Wakeup") and Authored.has(F..".Getup") then
+		local clip="Down"
+		local fallLen=if Authored.has(F..".Knockdown") then Authored.length(F..".Knockdown") else 0
+		local elapsed=actor.reactionElapsed or 0
+		if pose=="Knockdown" and actor.reaction=="Knockdown" and fallLen>0 and (actor.airborne or elapsed<.34) then
+			-- (ANIM-005) Thrown down: the authored fall plays (it ends lying,
+			-- where Down starts); the body went to the lying pose at once.
+			clip="Knockdown"
+			out=Authored.sample(F..".Knockdown",math.min(fallLen,elapsed*fallLen/.34))
+			if side<0 then out=Authored.mirror(out) end
+		elseif (pose=="Wakeup" or actor.reaction=="Wakeup") and Authored.has(F..".Getup") then
+			clip="Getup"
 			-- (ANIM-005) Rolled onto the other side: its own get-up, which still
 			-- ends in his stance (a mirrored get-up stood him up on the wrong lead).
 			local name=if side<0 and Authored.has(F..".Getup.L") then F..".Getup.L" else F..".Getup"
@@ -2622,7 +2686,7 @@ local function groundTargets(actor)
 			out=Authored.sample(F..".Down",elapsedTime)
 			if side<0 then out=Authored.mirror(out) end
 		end
-		return out,RATE.authored
+		return out,RATE.authored,clip
 	end
 	local lying={root={y=-2.45,z=.6,pitch=-84,roll=side*14},torso={pitch=-8,roll=side*6},head={pitch=-14,yaw=side*20},
 		ra={raise=20,out=62,elbow=24},la={raise=14,out=56,elbow=30},rl={lift=18,out=8,knee=30},ll={lift=6,out=10,knee=12}}
@@ -2883,7 +2947,10 @@ function Motion.defense(char,actor,dt)
 		if s.lastDefenseState~="Dodging" then s.dashAt=elapsedTime end
 		targets,rate=dodgeTargets(char,actor,elapsedTime-(s.dashAt or elapsedTime))
 	elseif actor.groundPose or actor.reaction=="Knockdown" or actor.reaction=="Wakeup" then
-		targets,rate=groundTargets(actor)
+		local clip
+		targets,rate,clip=groundTargets(actor)
+		-- Fall, down, get-up: each its own (inertialized) transition.
+		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .05 else .07)
 	elseif actor.reaction then
 		-- Standing hit: the feet stay planted and stagger-step as the body is
 		-- pushed, instead of sliding with it.
@@ -2905,7 +2972,8 @@ function Motion.defense(char,actor,dt)
 			if s.reactClip~=clip or elapsed+1e-3<(s.reactElapsed or 0) then s.reactSerial=(s.reactSerial or 0)+1 end
 			s.reactClip=clip;s.reactElapsed=elapsed
 			if not actor.airborne then targets.__feet=authoredFeet(char,targets,dt) end
-			mark(char,"react:"..clip..":"..s.reactSerial,.03)
+			-- (a body set down after a flight takes a little longer to land)
+			mark(char,"react:"..clip..":"..s.reactSerial,if clip=="Knockback.Land" then .08 else .03)
 		end
 	else
 		return

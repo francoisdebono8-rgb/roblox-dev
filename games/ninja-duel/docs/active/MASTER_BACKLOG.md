@@ -500,7 +500,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 
 ## ANIM-005 — Réactions et défense réévaluées, round réel Sasuke–Minato
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: ANIM-003, ANIM-004
 - subsystem: animation
@@ -508,7 +508,7 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 - summary: garder ce qui se lit, refaire le reste (contact, direction, force, vitesse antérieure, appui, sol/air, monde) ; round libre de 60–90 s aux entrées normales
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §13, §19–20
 - validation: « je ne vois plus des états qui changent, je vois Sasuke combattre Minato » (verdict humain)
-- evidence: —
+- evidence: `8b97f47` + pass 2 du 28/10 ([gate](../reports/animation-mastery-2026-10-27/GATE.md)) : réactions, garde, éjection, lancé, chute, relevé réécrits pose par pose (`clips_react2.py`, chaque côté authored, pieds plantés tenus sous la glissade) ; bug des marqueurs (contact à ~0,002 s) corrigé, le coup arrive sur la frame du serveur. Rounds réels 90 s (avant), 87 s VFX coupés, 75 s : sauts > 60°/frame 51 → 23. Mur→frappe, launcher→poursuite, réception après éjection vus. Verdict humain PENDING.
 - outcome: PENDING
 
 ## ANIM-006 — Règle permanente : méthode d'animation pour les vingt fighters

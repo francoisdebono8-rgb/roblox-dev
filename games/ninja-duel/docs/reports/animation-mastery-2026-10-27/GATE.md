@@ -37,9 +37,13 @@ For each: where the weight is, what initiates, what follows late, the fastest sp
    - Spacing: the fist or heel arrives at full speed on the frame the step lands (`impact`). The key before eases out, so the motion accelerates all the way.
    - Absorbed: overshoot of 2 frames (the shoulder rolls through), a retraction faster than the extension, and the rear foot drags up to rebuild the stance.
    - Read: one straight line from the rear heel to the fist (Rasengan, Chidori thrust).
-5. **Directional hit reaction**
-   - Runtime: the clip is chosen by zone, side and strength, and mirrored for a blow from the other side. Its amplitude scales with the strength.
-   - Batch 2 clips (`clips_react.py`) are kept. They were re-evaluated as functional but still generated from parameters, so a pose-first re-authoring is pending (ANIM-005).
+5. **Directional hit reaction** (`clips_react2.py`, 28/10)
+   - Contact: the struck part moves first, in 3 frames (`impact`): the head for a face blow, the hips and chest for a body blow, the ribs for a side blow, the spine for a blow from behind, the knee for a low one.
+   - Follows late: the chest 4 frames after the head, the arms fly out last (`drag`).
+   - Direction: the body goes with the blow. Each side is authored (`.L`), not mirrored, so the lead foot never swaps.
+   - Support: the planted foot holds the real floor while the server slides the body ~0.9 stud; the other foot steps to catch the weight, then a step rebuilds the stance.
+   - Recovery: the head comes back to the opponent first. Minato gives less and is back sooner (tempo 0.82) than Sasuke (1.0).
+   - Same method for guard and guard impact, knockback and its landing skid, launch, knockdown, down, get-up (each side), forward dash, cartwheel, handspring and chase.
 6. **Continuous transition** (run → jump → attack → miss → landing → run)
    - Runtime: inertialized transitions (pose and velocity carried, critically damped offset).
    - A strike thrown at a run keeps the run's legs.
@@ -49,7 +53,7 @@ For each: where the weight is, what initiates, what follows late, the fastest sp
 
 ## Status
 
-- TECHNICAL PASS: 31 suites; release build. See the commit for its hash.
+- TECHNICAL PASS: 31 suites; release build. See the commit for its hash. Animation suite 24 cases, two added on 28/10 (strike markers inside their clip; a planted foot held under a hit), both checked by mutation.
 - NATIVE_STUDIO: PASS on the checks listed below (build `8e664a8`, Debug, BUILD 079033dc…).
 - HUMAN_VISUAL/FEEL: PENDING. The verdict belongs to the user.
 
@@ -65,3 +69,42 @@ Real keys and mouse through Studio input, the bot frozen unless stated, and the 
 - **Console:** only the build line and the usual Studio messages in every run.
 
 Not yet done in Studio: wall → strike, launcher → pursuit, a thrown body landing, Katon held at length, the 60–90 s round played by a human, VFX off then on (ANIM-005).
+
+## Pass 2 (28/10): ANIM-005 and the five open points
+
+**Bug found and fixed.** The export divided the clip markers by 60 a second time: every contact sat at ~0.002 s. The runtime maps the server's startup onto the clip's contact, so the stance was held through the whole startup and the blow played *after* the server's hit. This is very likely a large part of "strikes thought alone, not like a player who moves". Markers are now in seconds, the export refuses one outside its clip, and a test checks every strike. The contact now lands on the server's frame. A wind-up longer than the startup plays at most 1.25× its speed, its slow start skipped (the transition carries the body in).
+
+Other runtime fixes:
+- each blow is its own inertialized transition (a juggle hit no longer restarts the launch clip from the stance);
+- an authored fall plays before the lying pose (the body went to the floor in one frame);
+- a foot leaving the floor accelerates from rest (critically damped spring);
+- a leg handed from a drawn pose to the feet solver starts from where it was;
+- the air pose follows the vertical speed at a bounded rate.
+
+Clips: Minato Light3 flip fixed (frames re-spaced). His Launcher kick chambers, extends, re-chambers, and comes down in front. The sprint and run passing positions moved away from the hip, which removed the knee flip on every sprint stride (104° → 46° per sample, Minato 81° → 45°).
+
+### NATIVE_STUDIO (28/10, `Documents/Roblox/ND-Anim5.rbxlx`)
+
+Joint motion per 1/60 s on both bodies, every frame, with the state of each fighter.
+
+| Round (real keys, AI live) | Length | Frames > 40°/frame | > 60°/frame |
+|---|---|---|---|
+| ND-Anim3, Sasuke vs Minato, before the fixes | 90 s | 179 | 51 |
+| ND-Anim4, Minato vs Sasuke, VFX **off** | 87 s | 160 | 30 |
+| ND-Anim5, Sasuke vs Minato | 75 s | 94 | 23 |
+
+- States covered across the rounds: light chains, heavies, launcher → pursuit → air strings, dash attacks, sweeps, guards, dodges, grabs, wire trap/bound, Katon, Phoenix Flower, Chidori (formed → run → thrust), FTG, Rasengan, marked kunai, hit-stun, knockback, juggle, knockdown, wake-up, defeat.
+- **Wall → strike:** run and jump into the arena wall, click: `wall` → `WallDive` → the opponent is knocked down and gets up, with no snap above 75°.
+- **Launcher → pursuit:** `Launcher` → `Pursuit` → `Air1` → `AirDrive` → the body is thrown (Knockback), lands and skids.
+- **Thrown body landing:** `Knockback` (air) → `Knockback.Land`, inertialized over 0.08 s.
+- **VFX off** (every effect part, particle, beam, trail, light and billboard hidden each frame): Katon is read as the hand brought to the mouth, Chidori as the arm carried while running. The bodies remain the only information, and the counts above did not rise.
+- **Remaining snaps (> 60°):**
+  - FTG arrivals (a teleport);
+  - Minato Light3's spin on its first frames;
+  - the start of a run (knee 65° at the hand-over from the start one-shot to the cycle);
+  - a few shoulder pops at the return to locomotion.
+
+## Status after pass 2
+
+- ANIM-005: the reactions and defence have been re-authored, and the 60–90 s rounds have been played with real keys, with VFX both on and off. The human verdict remains open.
+- HUMAN_VISUAL/FEEL: PENDING.
