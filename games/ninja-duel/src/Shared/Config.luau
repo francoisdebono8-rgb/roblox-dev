@@ -82,6 +82,10 @@ return {
 	Chase = {Steer = 60, Turn = 720},
 	Perception = {Behind = 14, Scan = 48, Cache = 0.12, Refresh = 10},
 	RoundsToWin = 2,
+	-- (Final blow) The round's last hit throws the body: Speed / Lift (studs/s)
+	-- for a heavy finish (a light one at Light of it), the first SlowFor
+	-- seconds at SlowScale speed, back to full over Ease; Settle caps the flight.
+	FinalBlow = {Speed = 38, Lift = 20, Light = 0.7, SlowFor = 0.45, SlowScale = 0.3, Ease = 0.35, Settle = 3},
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
 	StartDistance = 24,

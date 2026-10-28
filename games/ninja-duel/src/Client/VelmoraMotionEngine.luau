@@ -3124,7 +3124,9 @@ function Motion.present(char,actor,clock,dt)
 		subject.reactionElapsed=elapsed.reactionElapsed or actor.reactionElapsed
 		subject.attackElapsed=elapsed.attackElapsed or actor.attackElapsed
 	end
-	if (subject.health or 1)<=0 then
+	-- (Final blow) A body still thrown by the last hit flies like any thrown
+	-- body; the KO pose waits for it to come to rest.
+	if (subject.health or 1)<=0 and not (subject.koFlying and subject.reaction) then
 		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
 		return "ko"
 	end

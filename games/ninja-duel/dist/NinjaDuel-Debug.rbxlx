@@ -534,6 +534,10 @@ return {
 	Chase = {Steer = 60, Turn = 720},
 	Perception = {Behind = 14, Scan = 48, Cache = 0.12, Refresh = 10},
 	RoundsToWin = 2,
+	-- (Final blow) The round's last hit throws the body: Speed / Lift (studs/s)
+	-- for a heavy finish (a light one at Light of it), the first SlowFor
+	-- seconds at SlowScale speed, back to full over Ease; Settle caps the flight.
+	FinalBlow = {Speed = 38, Lift = 20, Light = 0.7, SlowFor = 0.45, SlowScale = 0.3, Ease = 0.35, Settle = 3},
 	-- Where each fighter starts (studs from the centre): far enough apart that
 	-- the round opens on an approach, not on a punch.
 	StartDistance = 24,
@@ -3588,7 +3592,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">859f380b3976707c4e659b714d64a5c919fd6a68acdc5d08c1923dcdf04cd716</string>
+          <string name="Value">5a01b5105ea1ace3584f26df5084e2f86d0bd0215c0171c1dd41795960e05367</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -9409,6 +9413,25 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.koAirborne=victim.airborne==true
 		-- The last blow freezes for a beat on both bodies.
 		attacker.hitstopUntil=self.now+.22;victim.hitstopUntil=self.now+.22
+		-- (Final blow, user 28/10 "innovate") The body used to drop into the
+		-- lying pose on the spot. Fighting-anime finish instead: after the
+		-- freeze the last blow throws it - in slow motion first (updateActor,
+		-- Config.FinalBlow), then at full speed - through whatever is in the way
+		-- (a crate, a trunk), and it settles where it lands.
+		local away=Vector3.new(victim.root.Position.X-attacker.root.Position.X,0,victim.root.Position.Z-attacker.root.Position.Z)
+		away=if away.Magnitude&gt;.1 then away.Unit else -victim.root.CFrame.LookVector
+		local F=Config.FinalBlow
+		-- A blow driving down (a slam, a spike) pins the body where it is.
+		local spec=attacker.pending and attacker.pending.spec
+		local down=spec and spec.impulse and spec.impulse.Y&lt;0
+		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" then 1 else F.Light
+		if power&gt;0 then
+			victim.reaction="Knockback";victim.reactionStartedAt=self.now
+			victim.reactionUntil=self.now+F.Settle
+			victim.reactionVelocity=away*F.Speed*power+Vector3.new(0,F.Lift*(.6+.4*power),0)
+			victim.airborne=true;victim.reactionSource=attacker
+			victim.koFlight={at=self.now+.22}
+		end
 		attacker.pending=nil;attacker.move=Vector3.zero
 		self.match.finish(attacker,victim)
 	end
@@ -10340,7 +10363,26 @@ function Combat.swingAt(a)
 end
 function Combat:updateActor(a,dt)
 	local now=self.now
-	if a.health&lt;=0 then a.hum:Move(Vector3.zero); return end
+	if a.health&lt;=0 then
+		a.hum:Move(Vector3.zero)
+		local flight=a.koFlight
+		if flight and a.reaction and now&gt;=(a.hitstopUntil or 0) then
+			-- The final blow in slow motion: the flight runs at SlowScale for
+			-- SlowFor seconds, then eases back to full speed (Ease).
+			local F=Config.FinalBlow
+			local t=now-flight.at
+			local scale=if t&lt;F.SlowFor then F.SlowScale else math.min(1,F.SlowScale+(t-F.SlowFor)/F.Ease*(1-F.SlowScale))
+			Brawler.step(self,a,dt*scale)
+			local v=a.reactionVelocity or Vector3.zero
+			if a.reaction=="Wakeup" or not a.reaction or (not a.airborne and Vector3.new(v.X,0,v.Z).Magnitude&lt;1.5 and t&gt;F.SlowFor) then
+				-- Down for good: the KO pose takes the body where it came to rest.
+				a.reaction=nil;a.reactionVelocity=nil;a.koFlight=nil;a.groundPose=nil
+				a.root.AssemblyLinearVelocity=Vector3.zero
+			end
+			World.pose(a,now,dt)
+		end
+		return
+	end
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
 	-- Directional memory for routes: the latest strong push, every frame.
@@ -14596,7 +14638,7 @@ function Matches:resetRound(s)
 	for _,a in c.actors do
 		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
 		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
-		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
+		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.koFlight=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
 		a.armed=nil;a.armAt=0;a.chakraLoad=nil
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
@@ -14640,7 +14682,7 @@ function Matches:view(s,cursor,mine,theirs)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime&gt;s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
@@ -40238,7 +40280,9 @@ function Motion.present(char,actor,clock,dt)
 		subject.reactionElapsed=elapsed.reactionElapsed or actor.reactionElapsed
 		subject.attackElapsed=elapsed.attackElapsed or actor.attackElapsed
 	end
-	if (subject.health or 1)&lt;=0 then
+	-- (Final blow) A body still thrown by the last hit flies like any thrown
+	-- body; the KO pose waits for it to come to rest.
+	if (subject.health or 1)&lt;=0 and not (subject.koFlying and subject.reaction) then
 		apply(char,koTargets(subject.koStyle),RATE.ground,dt)
 		return "ko"
 	end

@@ -348,6 +348,25 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.koAirborne=victim.airborne==true
 		-- The last blow freezes for a beat on both bodies.
 		attacker.hitstopUntil=self.now+.22;victim.hitstopUntil=self.now+.22
+		-- (Final blow, user 28/10 "innovate") The body used to drop into the
+		-- lying pose on the spot. Fighting-anime finish instead: after the
+		-- freeze the last blow throws it - in slow motion first (updateActor,
+		-- Config.FinalBlow), then at full speed - through whatever is in the way
+		-- (a crate, a trunk), and it settles where it lands.
+		local away=Vector3.new(victim.root.Position.X-attacker.root.Position.X,0,victim.root.Position.Z-attacker.root.Position.Z)
+		away=if away.Magnitude>.1 then away.Unit else -victim.root.CFrame.LookVector
+		local F=Config.FinalBlow
+		-- A blow driving down (a slam, a spike) pins the body where it is.
+		local spec=attacker.pending and attacker.pending.spec
+		local down=spec and spec.impulse and spec.impulse.Y<0
+		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" then 1 else F.Light
+		if power>0 then
+			victim.reaction="Knockback";victim.reactionStartedAt=self.now
+			victim.reactionUntil=self.now+F.Settle
+			victim.reactionVelocity=away*F.Speed*power+Vector3.new(0,F.Lift*(.6+.4*power),0)
+			victim.airborne=true;victim.reactionSource=attacker
+			victim.koFlight={at=self.now+.22}
+		end
 		attacker.pending=nil;attacker.move=Vector3.zero
 		self.match.finish(attacker,victim)
 	end
@@ -1279,7 +1298,26 @@ function Combat.swingAt(a)
 end
 function Combat:updateActor(a,dt)
 	local now=self.now
-	if a.health<=0 then a.hum:Move(Vector3.zero); return end
+	if a.health<=0 then
+		a.hum:Move(Vector3.zero)
+		local flight=a.koFlight
+		if flight and a.reaction and now>=(a.hitstopUntil or 0) then
+			-- The final blow in slow motion: the flight runs at SlowScale for
+			-- SlowFor seconds, then eases back to full speed (Ease).
+			local F=Config.FinalBlow
+			local t=now-flight.at
+			local scale=if t<F.SlowFor then F.SlowScale else math.min(1,F.SlowScale+(t-F.SlowFor)/F.Ease*(1-F.SlowScale))
+			Brawler.step(self,a,dt*scale)
+			local v=a.reactionVelocity or Vector3.zero
+			if a.reaction=="Wakeup" or not a.reaction or (not a.airborne and Vector3.new(v.X,0,v.Z).Magnitude<1.5 and t>F.SlowFor) then
+				-- Down for good: the KO pose takes the body where it came to rest.
+				a.reaction=nil;a.reactionVelocity=nil;a.koFlight=nil;a.groundPose=nil
+				a.root.AssemblyLinearVelocity=Vector3.zero
+			end
+			World.pose(a,now,dt)
+		end
+		return
+	end
 	-- Movement intents last exactly one frame; each control block re-declares its own.
 	a.aimIntent=nil
 	-- Directional memory for routes: the latest strong push, every frame.
