@@ -10,7 +10,7 @@
 > - Base the work on references (the user's reference videos in `reference/`, the Naruto source material, fighting-game and Roblox combat-game practice) and say in the report which reference each choice comes from.
 > - **Quality bar:** the user wants a beta that feels finished. Test-level placeholders are not acceptable.
 
-## C-001 — Itachi: shot file for Blender (Partie 3 preparation) — TODO
+## C-001 — Itachi: shot file for Blender (Partie 3 preparation) — DONE (Claude, 28/10: `tools/blender/itachi_p3.py`)
 
 - **Goal:** write `tools/blender/itachi_p3.py`. It holds Itachi's complete authored move set, posed for the Blender control rig, ready for Claude to render and refine. It must not be wired into the game.
 - **Read first:**

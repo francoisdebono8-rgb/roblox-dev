@@ -68,7 +68,7 @@ local Fighters = {
 			-- (Techniques.MirageCast / whiffRead).
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 26, Channel = 0.42, Active = 0.06, Recovery = 0.2, Cooldown = 7, Interruptible = true, Flow = true, Range = 23, Requires = "Target", Hint = "His image stays, he withdraws behind it • a swing at the image is caught • trust the body" },
 			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.55, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.3, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 58, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
 			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
 		},
 	},

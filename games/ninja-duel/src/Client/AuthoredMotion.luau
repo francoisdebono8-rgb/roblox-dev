@@ -19,12 +19,31 @@ Authored.ORDER=ORDER
 local UPPER={Waist=true,Neck=true,Right=true,Left=true,RightElbow=true,LeftElbow=true,RightWrist=true,LeftWrist=true}
 Authored.UPPER=UPPER
 
+-- (DEC-030, shared body) Clips a fighter takes from a donor body until he has
+-- his own: blows received, guard, falls and get-ups, dashes, flips. They are
+-- the common language of the body (the bibles keep reactions mechanically
+-- shared, with local poses later); his stance, gait, strikes and jutsu are
+-- always his own. A fighter's own clip always wins over the donor's.
+local ALIAS={Mirage="Lion"}
+local SHARED={Hit=true,Guard=true,Down=true,Getup=true,Knockback=true,Knockdown=true,Launched=true,
+	Dash=true,Chase=true,Cartwheel=true,Handspring=true,Flip=true}
+Authored.ALIAS=ALIAS
+local function resolve(name)
+	if DATA[name] then return name end
+	local fighter,rest=string.match(name,"^([^%.]+)%.(.+)$")
+	local donor=fighter and ALIAS[fighter]
+	if not donor or not SHARED[string.match(rest,"^[^%.]+")] then return nil end
+	local other=donor.."."..rest
+	return if DATA[other] then other else nil
+end
+Authored.resolve=resolve
 -- Decoded once: per clip, per joint, an array of CFrames (one per sample).
 local decoded={}
 local function decode(name)
 	local cached=decoded[name]
 	if cached~=nil then return cached or nil end
-	local c=DATA[name]
+	local real=resolve(name)
+	local c=real and DATA[real]
 	if not c then decoded[name]=false;return nil end
 	local out={fps=c.fps,frames=c.frames,length=c.length,loop=c.loop,markers=c.markers or {},meta=c.meta or {},joints={}}
 	for _,joint in ORDER do
@@ -49,7 +68,7 @@ local function decode(name)
 	return out
 end
 Authored.clip=decode
-function Authored.has(name) return DATA[name]~=nil end
+function Authored.has(name) return resolve(name)~=nil end
 
 -- The pose at clip time t (seconds): {joint=CFrame}.
 function Authored.sample(name,t)
