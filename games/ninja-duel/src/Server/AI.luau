@@ -148,12 +148,17 @@ function AI:defend(now)
 	end
 	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
 	-- fight (and puts it away again), so the player meets the system too.
-	if not a.reaction and not a.airborne and a.target and a.target.root and now>=(self.armThought or 0) then
-		self.armThought=now+2.5+self.rng:NextNumber()*3
+	-- Only fighters whose own tool is a thrown blade: a bot keeps his identity
+	-- (Lee's bare hands, Temari's fan, Gaara's sand); the player may draw with anyone.
+	if (a.def.Tool=="Kunai" or a.def.Tool=="Shuriken") and not a.reaction and not a.airborne and a.target and a.target.root and now>=(self.armThought or 0) then
+		-- its own dice: the fight's decisions keep their sequence
+		self.armRng=self.armRng or Random.new(7)
+		local roll=self.armRng:NextNumber()
+		self.armThought=now+2.5+roll*3
 		local gap=(a.target.root.Position-a.root.Position).Magnitude
-		if not a.armed and gap<14 and self.rng:NextNumber()<.3 then
+		if not a.armed and gap<14 and roll<.3 then
 			if c:request(a,"Arm") then return true end
-		elseif a.armed and self.rng:NextNumber()<.12 then
+		elseif a.armed and roll>.88 then
 			if c:request(a,"Arm") then return true end
 		end
 	end
