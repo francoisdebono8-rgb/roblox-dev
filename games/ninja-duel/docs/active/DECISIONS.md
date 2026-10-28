@@ -179,3 +179,30 @@ Ce qui change :
 - **Les retours de l'utilisateur sont attendus à la fin des 10 parties**, pas entre chacune.
 - **Codex sert d'assistant** à travers [CODEX_QUEUE](../tools/CODEX_QUEUE.md), sur des tâches qui ne touchent pas les fichiers en cours de Claude.
 
+**Révision du même jour (16 h 55 – 17 h 13), après un vrai match observé.** [Rapport](../reports/observation-2026-10-28/REPORT.md).
+
+L'utilisateur a joué deux rounds pendant que Claude enregistrait le match. Ses retours :
+- approcher en courant envoyait toujours le coup de pied sauté, et l'adversaire loin ;
+- en l'air, le coup lourd était une « pierre » qu'on peut répéter sans risque ;
+- la liberté manque : infusions de chakra, techniques utilisables dans toutes les positions, Rasengan ou Chidori qu'on garde en main en courant ;
+- pas de destruction ;
+- les sols fissurés ressemblent à des décalcomanies, et tous les Katon se ressemblent ;
+- la fluidité, c'est le suivi du mouvement ;
+- « tu ne testes pas comme un joueur » ;
+- garder les 10 parties, ajuster sans repartir de zéro, Claude choisit l'ordre.
+
+Méthode désormais :
+- chaque livraison passe par l'agent joueur (`tools/studio/probes/player_agent.luau`), qui joue comme un humain à la manette et mesure les répétitions, les coups qui ne s'enchaînent pas, les pressions refusées, les décollages et les blocages ;
+- au fil des parties, un vrai match enregistré avec l'utilisateur.
+
+Ordre ajusté :
+- **Socle 2 (fait le 28/10)** : la course ouvre l'enchaînement ; le sprint de la manette s'arrête au repos ; saut + lourd = salto et coup de talon ; pressions gardées en mémoire au début de la récupération ; bot qui varie ; Rasengan et Lame de foudre tenus en main.
+- **Partie 10, la boucle joueur**, reçoit en plus :
+  - la destruction du décor et des fissures en relief ;
+  - un Katon propre à chaque perso ;
+  - les infusions de chakra généralisées ;
+  - les techniques depuis toutes les positions ;
+  - le combat aérien vivant.
+- **Partie 11, en ligne** : inchangée.
+- **Parties 2 à 9 (les persos)** : elles restent livrées ; chacune sera reprise sur match enregistré.
+
