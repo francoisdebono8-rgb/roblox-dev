@@ -399,7 +399,8 @@ test("rounds, KO beat and the result are mapped to each viewer",function()
 	d.combat:damage(two,one,1000,false,false)
 	assert(d.finishing and d.winner==two.id and last(a).ko and last(b).ko)
 	assert(last(b).winner=="PlayerFighter" and last(a).winner=="AIFighter")
-	step(m,2)
+	-- (Final blow) the KO beat holds the thrown body's flight: 2.6 s, then 2.2 s on match point
+	step(m,2.7)
 	assert(d.round==2 and d.epoch==epoch+1 and not d.finishing and d.phase=="Duel")
 	for _,p in {a,b} do assert(m.sessions[p].epoch==d.epoch and last(p).epoch==d.epoch and last(p).round==2) end
 	assert(last(a).wins.human==0 and last(a).wins.bot==1 and last(b).wins.human==1 and last(b).wins.bot==0)
@@ -408,7 +409,7 @@ test("rounds, KO beat and the result are mapped to each viewer",function()
 	d.introUntil=nil
 	d.combat:damage(two,one,1000,false,false)
 	assert(d.matchPoint)
-	step(m,1.6)
+	step(m,2.3)
 	assert(d.phase=="Result" and m.sessions[a].phase=="Result" and m.sessions[b].phase=="Result")
 	assert(last(b).phase=="Result" and last(b).winner=="PlayerFighter" and last(b).wins.human==2)
 	assert(last(a).winner=="AIFighter" and last(a).wins.bot==2 and not last(a).online.forfeit)
@@ -438,9 +439,9 @@ test("rematch needs both players and rebuilds a fresh fight",function()
 	local a,b=join(m,"Alpha","Bravo")
 	local d=fight(m,a,b)
 	d.introUntil=nil
-	d.combat:damage(d.seats[2].actor,d.seats[1].actor,1000,false,false);step(m,2)
+	d.combat:damage(d.seats[2].actor,d.seats[1].actor,1000,false,false);step(m,2.7)
 	d.introUntil=nil
-	d.combat:damage(d.seats[2].actor,d.seats[1].actor,1000,false,false);step(m,1.6)
+	d.combat:damage(d.seats[2].actor,d.seats[1].actor,1000,false,false);step(m,2.3)
 	assert(d.phase=="Result")
 	local oldFolder,oldActor,arenasBefore,epoch=d.folder,d.seats[1].actor,arenas,d.epoch
 	lifecycle(m,a,"Rematch")
@@ -530,7 +531,7 @@ test("the local AI duel keeps its contract on the shared helpers",function()
 	s.combat:damage(s.human,s.bot,1000,false,false)
 	assert(s.finishing and last(p).winner=="PlayerFighter" and last(p).wins.human==1)
 	local epoch=s.epoch
-	step(m,2)
+	step(m,2.7)
 	assert(s.round==2 and s.epoch==epoch+1 and aiCreated==ai+2 and last(p).epoch==s.epoch and last(p).wins.human==1)
 	assert(s.human.root.Position.Z>s.bot.root.Position.Z)
 	-- Queue requests are refused outside the roster.
@@ -609,7 +610,7 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(ui.hud.Visible and not ui.intro.Visible and ui.enemy.title.Text:find("BRAVO",1,true) and ui.hp.title.Text:find("YOU",1,true))
 	assert(ui.hp.name.Text:find("NEJI",1,true) and ui.enemy.name.Text:find("ITACHI",1,true))
 	-- Two knockouts for Alpha: VICTORY from Alpha's side.
-	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2) end
+	for _=1,2 do d.introUntil=nil;d.combat:damage(d.seats[1].actor,d.seats[2].actor,1000,false,false);step(m,2.7) end
 	ui:render(last(a))
 	assert(ui.result.Visible and ui.resultTitle.Text:find("VICTORY",1,true) and ui.rematchButton.Text=="REMATCH")
 	lifecycle(m,b,"Rematch");ui:render(last(a))

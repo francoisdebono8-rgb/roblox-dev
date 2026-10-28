@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "8f123795fff7e6dad726d211889afaad16113793ad553ca1dd27b1e11429cf51",
+  "sha256": "68335c6ff850acf6a210ee0c85e37bb8f0078860ee823fffa3585568fc07f240",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "5fc9c846a732817eaaaa591149134f8bf9d9d765c6cdd6bc801ee5f66c2f3350",
@@ -78,7 +78,7 @@
     "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "09575b09af477d88b0cf9d48ba4ff32e69e7b5d38197df34ff4f2cf5200de85a",
+    "src/Server/Combat.luau": "287a18afc3707eb54f10ce9cddaa6d1950f70f0dc3bab587216b7acb94bac1f8",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "9649bbdadd668229b9c6c967ef0050af7717f3491079cbe2f76bc9052e10c5cb",
@@ -86,7 +86,7 @@
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
-    "src/Server/Matches.luau": "97cbc4144ad267d7b78d6e7af3ba4f6d2630ff296e66341697bcf902825b5058",
+    "src/Server/Matches.luau": "7f7f9ff95e125827aee6913bd2626beb0e58e50fbc6862817c294a39a385b4f0",
     "src/Server/Motor.luau": "fee203c5e5a042d4f5f281fabc27f5cb6c009cae60d39d5519a226859a65be0b",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
     "src/Server/Perception.luau": "1435eb549a49ccc955a989f8e5b0d6ec0ffe888990364379d352c5ed29a7fd77",
@@ -130,7 +130,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "583fbca10a392ec73353ac966a003885837472df9d7934786619a6b70e51ccfd",
+  "buildFingerprint": "f49f57fb1356844b24bcbc20404e5a0ea4e877b82aa64e720ef10c158de885cb",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

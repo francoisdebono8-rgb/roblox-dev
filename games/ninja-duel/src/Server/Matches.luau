@@ -125,7 +125,8 @@ function Matches:roundOver(s,winner,notify,advance)
 	s.matchPoint=decided
 	local finishEpoch=s.epoch
 	notify()
-	task.delay(if decided then 1.5 else 1.9,function()
+	-- (Final blow) the thrown body needs its flight and a beat on the floor.
+	task.delay(if decided then 2.2 else 2.6,function()
 		if s.epoch~=finishEpoch or not s.finishing or s.phase~="Duel" then return end
 		s.finishing=false
 		if not decided then advance();return end

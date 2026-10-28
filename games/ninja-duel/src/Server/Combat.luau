@@ -361,9 +361,10 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		local down=spec and spec.impulse and spec.impulse.Y<0
 		local power=if down then 0 elseif heavy or style=="finisher" or style=="jutsu" then 1 else F.Light
 		if power>0 then
-			-- thrown as a knockdown: the fall turns the body to the floor, so it
-			-- lands already lying and the KO pose takes over without a pop
-			victim.reaction="Knockdown";victim.groundPose="Knockdown";victim.reactionStartedAt=self.now
+			-- (Studio films: thrown as a knockdown it slid along the floor from
+			-- the first frame.) Flies thrown back (Knockback); on the floor it
+			-- becomes a knockdown, lying, and the KO pose takes it from there.
+			victim.reaction="Knockback";victim.reactionStartedAt=self.now
 			victim.reactionUntil=self.now+F.Settle
 			victim.reactionVelocity=away*F.Speed*power+Vector3.new(0,F.Lift*(.6+.4*power),0)
 			victim.airborne=true;victim.reactionSource=attacker
@@ -1315,6 +1316,9 @@ function Combat:updateActor(a,dt)
 			local t=now-flight.at
 			local scale=if t<F.SlowFor then F.SlowScale else math.min(1,F.SlowScale+(t-F.SlowFor)/F.Ease*(1-F.SlowScale))
 			Brawler.step(self,a,dt*scale)
+			if a.reaction=="Knockback" and not a.airborne then
+				a.reaction="Knockdown";a.groundPose="Knockdown";a.reactionStartedAt=now;a.reactionUntil=now+F.Settle
+			end
 			local v=a.reactionVelocity or Vector3.zero
 			if a.reaction=="Wakeup" or not a.reaction or (not a.airborne and Vector3.new(v.X,0,v.Z).Magnitude<1.5 and t>F.SlowFor) then
 				-- Down for good: the KO pose takes the body where it came to rest.

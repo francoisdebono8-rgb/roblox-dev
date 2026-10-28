@@ -157,7 +157,7 @@ test("nine setups rebuild a live duel and reach their state through the engine",
 	H.clearWalls()
 	-- The KO beat still resolves through the real round flow; the dummy stays frozen.
 	local koEpoch=m.sessions[p].epoch
-	step(m,2.2)
+	step(m,2.8)
 	local s=m.sessions[p]
 	assert(s.epoch>koEpoch and s.bot.health==s.bot.def.Health and s.botFrozen,"the KO setup broke the round flow")
 	assert(tools:run(p,"repeat").ok and tools.last[p]=="ko")
