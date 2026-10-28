@@ -2836,7 +2836,8 @@ local weapons=setmetatable({},{__mode="k"})
 -- side 50 deg off the arm (tools/blender/kunai_lion.py KUNAI_POS/KUNAI_DIR:
 -- the same weld the Blender file is animated with).
 local LION_KUNAI_C0=CF(0,-.12,-.12)*ANG(math.rad(-50.3),0,0)
-local MELEE={Lion={Light1=true,Light2=true,Light3=true,Heavy=true},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+local MELEE={Lion={Light1=true,Light2=true,Light3=true,Heavy=true,KneeStrike=true,LionKick=true,Sweep=true,VaultKick=true,FlyingKick=true,
+	Air1=true,Air2=true,AirDrive=true,AirSpike=true,AirSwitch=true,Launcher=true,DashAttack=true},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -3089,6 +3090,31 @@ function Motion.present(char,actor,clock,dt)
 	local slips=subject.events and subject.events.ReadSlip or 0
 	if slips>(memo.slips or slips) then memo.slipAt=elapsedTime end
 	memo.slips=slips
+	-- (Partie 1) Authored one-shots: the match intro and the awakening entry.
+	local F=tostring(subject.fighterId)
+	local wakes=subject.events and subject.events.Awaken or 0
+	if wakes>(memo.wakes or wakes) then memo.awakenAt=elapsedTime end
+	memo.wakes=wakes
+	if (subject.intro or 0)<=0 then memo.introAt=nil end
+	if Authored and memo.awakenAt and Authored.has(F..".Awaken") and not subject.reaction and not subject.attackName then
+		local t=elapsedTime-memo.awakenAt
+		if t<Authored.length(F..".Awaken") then
+			local targets=table.clone(Authored.sample(F..".Awaken",t))
+			targets.__feet=authoredFeet(char,targets,dt)
+			mark(char,"awaken",.08)
+			apply(char,targets,RATE.authored,dt)
+			return "awaken"
+		end
+		memo.awakenAt=nil
+	end
+	if Authored and (subject.intro or 0)>0 and subject.state=="Neutral" and Authored.has(F..".Intro") then
+		memo.introAt=memo.introAt or elapsedTime
+		local targets=table.clone(Authored.sample(F..".Intro",elapsedTime-memo.introAt))
+		targets.__feet=authoredFeet(char,targets,dt)
+		mark(char,"intro",.1)
+		apply(char,targets,RATE.authored,dt)
+		return "intro"
+	end
 	-- Match intro attitude: Minato twirls a kunai, Itachi waits, perfectly still.
 	if (subject.intro or 0)>0 and subject.state=="Neutral" then
 		local base=stance(subject.fighterId)

@@ -14,8 +14,8 @@ local LIMBS={"Head","UpperTorso","LowerTorso","LeftUpperArm","LeftLowerArm","Lef
 local GHOST=Color3.fromRGB(26,26,36)
 local SPEED=55 -- studs/s: above a sprint (45); dodge 61, pursuit 74, rush 90
 local JUMP=6 -- studs in one frame: a teleport
-local CADENCE=1/30
-local LIFE=.16
+local CADENCE=1/20
+local LIFE=.12
 local STREAK_LIFE=.12
 
 type State={pos:Vector3?,at:number?,pose:{[string]:CFrame}?}
@@ -88,14 +88,16 @@ function Smear.step(st:State,model:Model?,dt:number)
 		local flat=Vector3.new(delta.X,0,delta.Z)
 		if delta.Magnitude>JUMP and delta.Magnitude<80 then
 			-- A teleport: copies across the gap, fading the farther back they are.
-			for k=1,4 do
-				local u=k/5
-				ghost(model,pose,-delta*(1-u),.45+.12*(1-u),LIFE*1.4)
+			-- (Partie 0: four dense copies read as a cloud of dark cubes; three
+			-- light ones read as a body that crossed the gap.)
+			for k=1,3 do
+				local u=k/4
+				ghost(model,pose,-delta*(1-u),.6+.15*(1-u),LIFE*1.3)
 			end
 			streaks(pos-delta*.5,6,if flat.Magnitude>.1 then flat.Unit else Vector3.zAxis)
 			st.at=now
 		elseif delta.Magnitude/math.max(dt,1e-3)>SPEED and now-(st.at or 0)>=CADENCE then
-			ghost(model,st.pose::{[string]:CFrame},Vector3.zero,.55,LIFE)
+			ghost(model,st.pose::{[string]:CFrame},Vector3.zero,.68,LIFE)
 			streaks(pos,2,if flat.Magnitude>.1 then flat.Unit else Vector3.zAxis)
 			st.at=now
 		end
