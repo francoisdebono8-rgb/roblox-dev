@@ -165,12 +165,12 @@ function AI:defend(now)
 	-- (Freedom) The bot loads its chakra now and then (ChakraFlow): its next
 	-- strike, leap or dash comes out infused, so the player meets it too. Own
 	-- dice, like the kunai: the fight's decisions keep their sequence.
-	if not a.reaction and a.target and a.target.root and now>=(self.loadThought or 0) and a.chakra>=60 then
+	if not a.reaction and a.target and a.target.root and now>=(self.loadThought or 0) and a.chakra>=30 then
 		self.loadRng=self.loadRng or Random.new(11)
 		local roll=self.loadRng:NextNumber()
 		self.loadThought=now+3+roll*4
 		local gap=(a.target.root.Position-a.root.Position).Magnitude
-		if roll<.4 and gap>4 and gap<30 and not a.chakraLoad and c:request(a,"ChakraLoad") then
+		if roll<.5 and gap>4 and gap<30 and not a.chakraLoad and c:request(a,"ChakraLoad") then
 			-- At range it spends the load on a chakra dash in (the Storm games'
 			-- chakra dash), a beat later so the glow reads first.
 			self.loadDashAt=if gap>=10 then now+.35 else nil

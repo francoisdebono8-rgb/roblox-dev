@@ -570,6 +570,17 @@ function Brawler.start(c,a,name)
 end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
+-- A body high above its grounded opponent and out of an air string's reach.
+Brawler.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+function Brawler.airDive(c,a)
+ local b=a.target
+ if not b or b.health<=0 or b.airborne or not a.airborne then return false end
+ local d=b.root.Position-a.root.Position
+ local h=Vector3.new(d.X,0,d.Z).Magnitude
+ local above=-d.Y
+ local T=Brawler.AirDive
+ return above>=T.Above and above<=T.AboveMax and h>=T.Near and h<=T.Far
+end
 function Brawler.disengage(c,a,kind)
  Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.buffered=nil
  Brawler.breakString(a,false)
@@ -788,6 +799,16 @@ function Brawler.request(c,a,action)
   end
   if not airAlive then
    Brawler.breakString(a,true)
+   -- (User 28/10: "when I fight in the air it does not work": from a jump's
+   -- height the first air swing passed over a body still standing below.)
+   -- High above a grounded body and out of reach, the air opener is a dive:
+   -- a beat held in the air, then the lunge down onto him (the wall dive's
+   -- strike, Storm's jumping attack that goes to the opponent).
+   if action=="Attack" and Brawler.airDive(c,a) then
+    a.lastAirAttack=c.now
+    Brawler.event(c,a,"AirDive")
+    return Brawler.start(c,a,"WallDive")
+   end
    -- An air opener reads the situation: falling onto a body below is a drop
    -- strike, not the first hit of an air string.
    local move,tag=Brawler.contextual(c,a)

@@ -3571,7 +3571,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">229ba24fefa13d8d3dfa3dc6ac7c4cab51b973117f1c0ebacbb02425d1233051</string>
+          <string name="Value">40b48635df627d6bb4e643c300928f49c06ff53204becc3b2e4d287a2cc002c9</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -3840,12 +3840,12 @@ function AI:defend(now)
 	-- (Freedom) The bot loads its chakra now and then (ChakraFlow): its next
 	-- strike, leap or dash comes out infused, so the player meets it too. Own
 	-- dice, like the kunai: the fight's decisions keep their sequence.
-	if not a.reaction and a.target and a.target.root and now&gt;=(self.loadThought or 0) and a.chakra&gt;=60 then
+	if not a.reaction and a.target and a.target.root and now&gt;=(self.loadThought or 0) and a.chakra&gt;=30 then
 		self.loadRng=self.loadRng or Random.new(11)
 		local roll=self.loadRng:NextNumber()
 		self.loadThought=now+3+roll*4
 		local gap=(a.target.root.Position-a.root.Position).Magnitude
-		if roll&lt;.4 and gap&gt;4 and gap&lt;30 and not a.chakraLoad and c:request(a,"ChakraLoad") then
+		if roll&lt;.5 and gap&gt;4 and gap&lt;30 and not a.chakraLoad and c:request(a,"ChakraLoad") then
 			-- At range it spends the load on a chakra dash in (the Storm games'
 			-- chakra dash), a beat later so the glow reads first.
 			self.loadDashAt=if gap&gt;=10 then now+.35 else nil
@@ -5995,6 +5995,17 @@ function Brawler.start(c,a,name)
 end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
+-- A body high above its grounded opponent and out of an air string's reach.
+Brawler.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+function Brawler.airDive(c,a)
+ local b=a.target
+ if not b or b.health&lt;=0 or b.airborne or not a.airborne then return false end
+ local d=b.root.Position-a.root.Position
+ local h=Vector3.new(d.X,0,d.Z).Magnitude
+ local above=-d.Y
+ local T=Brawler.AirDive
+ return above&gt;=T.Above and above&lt;=T.AboveMax and h&gt;=T.Near and h&lt;=T.Far
+end
 function Brawler.disengage(c,a,kind)
  Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.buffered=nil
  Brawler.breakString(a,false)
@@ -6213,6 +6224,16 @@ function Brawler.request(c,a,action)
   end
   if not airAlive then
    Brawler.breakString(a,true)
+   -- (User 28/10: "when I fight in the air it does not work": from a jump's
+   -- height the first air swing passed over a body still standing below.)
+   -- High above a grounded body and out of reach, the air opener is a dive:
+   -- a beat held in the air, then the lunge down onto him (the wall dive's
+   -- strike, Storm's jumping attack that goes to the opponent).
+   if action=="Attack" and Brawler.airDive(c,a) then
+    a.lastAirAttack=c.now
+    Brawler.event(c,a,"AirDive")
+    return Brawler.start(c,a,"WallDive")
+   end
    -- An air opener reads the situation: falling onto a body below is a drop
    -- strike, not the first hit of an air string.
    local move,tag=Brawler.contextual(c,a)
