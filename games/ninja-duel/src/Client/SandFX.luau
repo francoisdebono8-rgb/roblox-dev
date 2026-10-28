@@ -519,7 +519,7 @@ local function stepCoffin(fx,model,actor,st)
 		-- close round it up to the neck, each a little narrower, turning
 		-- against the next, so the body is visibly encased (the series' shot).
 		local bands={}
-		for k=1,7 do
+		for k=1,8 do
 			local band=K.block(holder,Vector3.new(.7,2.9,2.9),root.CFrame,if k%2==0 then SAND_DARK else SAND,GRAIN)
 			band.Shape=Enum.PartType.Cylinder;band.Transparency=1;band.CastShadow=true
 			table.insert(bands,{part=band,k=k,turn=(if k%2==0 then 1 else -1)*(.8+k*.12)})
@@ -553,8 +553,8 @@ local function stepCoffin(fx,model,actor,st)
 		for _,b in c.bands or {} do
 			-- band k reaches its height at (k-1)*.06 s and settles there
 			local up=smooth((age-(b.k-1)*.055)/.2)
-			local y=-2.75+(b.k-.5)*.62
-			local r=(2.9-b.k*.13)*(.55+.45*up)
+			local y=-2.75+(b.k-.5)*.66
+			local r=(2.9-b.k*.12)*(.55+.45*up)
 			local wob=math.sin(age*7+b.k)*.06
 			b.part.Size=Vector3.new(.66,r,r)
 			b.part.CFrame=CFrame.new(root.Position+Vector3.new(wob,y-(1-up)*1.2,-wob))*CFrame.Angles(0,age*b.turn,0)*CFrame.Angles(0,0,math.pi/2)
