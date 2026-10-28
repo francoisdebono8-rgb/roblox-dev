@@ -1,10 +1,11 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "3db38c48adab854d97f52497e61c5b94dfd539768a1e9eaf8e9bb4a550e04ed4",
+  "sha256": "bf28c4a2c0fd2fce3ecf75a5ec38e2b754c7f7ca89c0b0029509a478d68a6b71",
   "sources": {
-    "src/Client/AuthoredClips.luau": "9bdd29db406fe28f90bbdf43de0b34c85dc4dec571b7dd62bfbc89f9326b8446",
+    "src/Client/AuthoredClips.luau": "f467d965f47013036f94e4bf227ff6b7631b7560b938da167f4f833651005a6f",
     "src/Client/AuthoredClips1.luau": "f02b3f9d46208c412fdbfdb1ff0bec17756db1d3c7e0768684b672e5ae37a8b6",
+    "src/Client/AuthoredClips10.luau": "e11c06bc158023f17ced36cb434ef2864a0c0d2da8c73cf5f93a8645086c543e",
     "src/Client/AuthoredClips2.luau": "4c353530fd160c416524ccb7f0c95b019a7660bee4be70e5d4e1c023059b75c5",
     "src/Client/AuthoredClips3.luau": "3fbc2a0b315ae0a8a3a6007ac2f77e517cd0aa94a2864a90b6986a118d2bb807",
     "src/Client/AuthoredClips4.luau": "30a572d46e2daf52a9aefeb852baa155832b3a2d3447cefaedae6026188994e5",
@@ -12,7 +13,7 @@
     "src/Client/AuthoredClips6.luau": "2f1aaf9b17a275c7f7a879c59eb1ff61721dae324582ba5937549593297677f8",
     "src/Client/AuthoredClips7.luau": "9793c5d882e894248cd2b0b48f1813b7305f867a573fc2da9b09517d68b69fae",
     "src/Client/AuthoredClips8.luau": "8878ecb843eedd3ca88e2159d0483d05f46d1108897017bf99eb20e1651717c3",
-    "src/Client/AuthoredClips9.luau": "f54f9bcb26de5c0abf32c7556ff6bf255bf73c73527defc02352b70a709d13f2",
+    "src/Client/AuthoredClips9.luau": "58197d2138370ffd483dcecd4ff4025c30ea50aeeb2a2e084ec4e69e76eb76d8",
     "src/Client/AuthoredMotion.luau": "17c36fa8cdfee30c067856282a460162fef84136d3022885ecd386cfb0930185",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
     "src/Client/Camera.luau": "13efd46e51eda14496e28f5ce070826948a204eb6c56920283cf043d85b5964d",
@@ -125,7 +126,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "febab85b589523c5dd4c83bb62de06161c5bc3d618fb61b19e6380d104dff319",
+  "buildFingerprint": "2f69e938a3ad8843081108904b9e0ac3605481580f0da43cfe7aa0a564affebe",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
