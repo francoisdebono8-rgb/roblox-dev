@@ -293,6 +293,36 @@ function World.arena(parent, origin)
 		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
 	end
+	-- (User 28/10: "still no destruction of objects".) The trees and boulders
+	-- stand 75-115 studs out, where a duel rarely goes. In the fighting zone
+	-- (25-55 studs) there are now things to break: the three wooden training
+	-- posts of Team 7's test, crates of the exam's supplies and stone lanterns.
+	-- They are cover, they stop a thrown body, and a heavy blow, a fireball or a
+	-- body driven into them breaks them (WorldReaction: integrity scales with
+	-- their thickness, so they go far sooner than a trunk).
+	local function breakable(name,size,cf,color,material,integrity)
+		local p=part(folder,name,size,cf,color,material)
+		p:SetAttribute("WorldBreakable",true)
+		p:SetAttribute("WorldIntegrity",integrity)
+		return p
+	end
+	for k,spot in {{.9,34},{1.15,37},{1.4,34}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2.6,math.cos(spot[1])*spot[2])
+		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,70)
+		deco(post,"Post rope",Vector3.new(.25,1.85,1.85),CFrame.new(at+Vector3.new(0,.9,0))*CFrame.Angles(0,0,math.pi/2),rgb(196,180,140),Enum.Material.Fabric,Enum.PartType.Cylinder)
+	end
+	for _,spot in {{3.6,46,0},{3.75,49,1},{3.5,50,2},{5.0,44,0},{5.15,47,1},{2.2,52,0}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.4,math.cos(spot[1])*spot[2])
+		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,40)
+		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,.7,0),PALETTE.woodDark,Enum.Material.Wood)
+		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,-.7,0),PALETTE.woodDark,Enum.Material.Wood)
+	end
+	for _,spot in {{.3,54},{2.7,40},{4.3,56},{5.8,42}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
+		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,80)
+		deco(lantern,"Lantern roof",Vector3.new(2.8,.7,2.8),CFrame.new(at+Vector3.new(0,4.0,0))*CFrame.Angles(0,math.pi/4,0),rgb(126,122,112),Enum.Material.Slate)
+		deco(lantern,"Lantern light",Vector3.new(1.0,.9,1.0),CFrame.new(at+Vector3.new(0,3.1,0)),rgb(240,200,120),Enum.Material.Neon)
+	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
 		local a=k/48*math.pi*2+.07

@@ -109,6 +109,9 @@ function WorldReaction.record(c,part)
 	if not class then return nil end
 	local base=WorldReaction.Classes[class].integrity
 	local max=if base==math.huge then math.huge else base*thickness(part)
+	-- A prop may declare its own (a crate goes to one heavy blow).
+	local declared=part:GetAttribute("WorldIntegrity")
+	if type(declared)=="number" then max=declared end
 	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
 	w.parts[part]=rec
 	return rec
@@ -169,6 +172,55 @@ local function evict(list,max)
 		if old.part then old.part:Destroy() end
 	end
 end
+local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local function chunk(parent,cf,size,material,color)
+	local c=Instance.new("Part")
+	c.Name="Scar chunk";c.Anchored=true;c.CanCollide=false;c.CanQuery=false;c.CanTouch=false;c.CastShadow=true
+	c.Size=size;c.CFrame=cf;c.Material=material;c.Color=color
+	c.TopSurface=Enum.SurfaceType.Smooth;c.BottomSurface=Enum.SurfaceType.Smooth
+	c.Parent=parent
+	return c
+end
+-- The frame of a scar: X along the surface normal, Z along a strip's length.
+local function relief(scar,palette)
+	local p=scar.part
+	for _,ch in p:GetChildren() do if ch.Name=="Scar chunk" then ch:Destroy() end end
+	local surf=scar.surface
+	local isPart=typeof(surf)=="Instance" and surf:IsA("BasePart")
+	local material=if isPart then surf.Material else Enum.Material.Slate
+	local color=if isPart then surf.Color:Lerp(palette.dark,.25) else palette.dark:Lerp(Color3.new(.55,.5,.45),.4)
+	p.Material=material
+	local size=scar.size
+	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
+	local seed=scar.position
+	if SHAPES[scar.kind].round then
+		-- The lip: chunks round the rim, tilted outward, half sunk in the floor.
+		local n=math.clamp(math.floor(5+size*2.2),6,14)
+		local r=size*.5
+		for k=1,n do
+			local h=hash(seed+Vector3.new(k,k*1.7,k*2.3))
+			local a=(k/n)*math.pi*2+h*.4
+			local s=size*(.16+h*.12)
+			local at=base*CFrame.new(s*.25,math.cos(a)*r*(.9+h*.2),math.sin(a)*r*(.9+h*.2))
+			-- tilt about the rim's tangent so the face lifts away from the centre
+			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(20+h*30))
+			chunk(p,cf,Vector3.new(s*.7,s*1.1,s*.9),material,color)
+		end
+	else
+		-- A crack / trench: slabs on both sides of the line, pushed up and out.
+		local n=math.clamp(math.floor(3+size*1.6),4,10)
+		local width=(SHAPES[scar.kind].width or .3)
+		for k=1,n do
+			local h=hash(seed+Vector3.new(k*3,k,k*.5))
+			local z=(k/(n+1)-.5)*size
+			local sideSign=if k%2==0 then 1 else -1
+			local s=math.max(.35,width*2.2+size*.06)*(.8+h*.5)
+			local at=base*CFrame.new(s*.18,sideSign*(width*.9+s*.35),z)
+			local cf=at*CFrame.Angles(0,0,0)*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)
+			chunk(p,cf,Vector3.new(s*.45,s*1.2,s*(.9+h*.6)),material,color)
+		end
+	end
+end
 local function draw(scar,class)
 	local s=SHAPES[scar.kind]
 	local p=scar.part
@@ -184,6 +236,11 @@ local function draw(scar,class)
 	end
 	p.Color=if scar.kind=="wet" then Color3.fromRGB(40,52,64) elseif s.burn then palette.burn else palette.dark
 	p.Transparency=s.transparency or 0
+	-- (User 28/10: "it does not crack the ground, it prints something on it".)
+	-- A crater, a gouge, a trench or a crack is drawn in RELIEF: the floor's own
+	-- material is broken and lifted - a lip of tilted chunks round a crater, the
+	-- slabs on both sides of a crack pushed up and apart - over the dark recess.
+	if RELIEF[scar.kind] then relief(scar,palette) end
 end
 -- Leave (or deepen) a scar. Returns the scar entry.
 function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)

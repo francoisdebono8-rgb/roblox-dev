@@ -3571,7 +3571,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">2c74b1c5f69d2663038dacb5ee6a335ad1f454fe54dbd883da00e727019bd980</string>
+          <string name="Value">255a6bc0caba0184fbe49671b8b6dc85869c7d1455b47f9520dfbc65af00c12d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -19986,6 +19986,36 @@ function World.arena(parent, origin)
 		deco(cover,"Rock cap",Vector3.new(5,2.6,3.4)*k,CFrame.new(at+Vector3.new(-.5,2.2,0)*k)*CFrame.Angles(0,spot[1]+.3,math.rad(8)),rgb(140,136,124),Enum.Material.Slate)
 		deco(cover,"Rock chip",Vector3.new(2.2,1.4,1.8)*k,CFrame.new(at+Vector3.new(3.6,-1.3,1.6)*k)*CFrame.Angles(0,spot[1]*2,math.rad(14)),rgb(118,114,106),Enum.Material.Slate)
 	end
+	-- (User 28/10: "still no destruction of objects".) The trees and boulders
+	-- stand 75-115 studs out, where a duel rarely goes. In the fighting zone
+	-- (25-55 studs) there are now things to break: the three wooden training
+	-- posts of Team 7's test, crates of the exam's supplies and stone lanterns.
+	-- They are cover, they stop a thrown body, and a heavy blow, a fireball or a
+	-- body driven into them breaks them (WorldReaction: integrity scales with
+	-- their thickness, so they go far sooner than a trunk).
+	local function breakable(name,size,cf,color,material,integrity)
+		local p=part(folder,name,size,cf,color,material)
+		p:SetAttribute("WorldBreakable",true)
+		p:SetAttribute("WorldIntegrity",integrity)
+		return p
+	end
+	for k,spot in {{.9,34},{1.15,37},{1.4,34}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2.6,math.cos(spot[1])*spot[2])
+		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,70)
+		deco(post,"Post rope",Vector3.new(.25,1.85,1.85),CFrame.new(at+Vector3.new(0,.9,0))*CFrame.Angles(0,0,math.pi/2),rgb(196,180,140),Enum.Material.Fabric,Enum.PartType.Cylinder)
+	end
+	for _,spot in {{3.6,46,0},{3.75,49,1},{3.5,50,2},{5.0,44,0},{5.15,47,1},{2.2,52,0}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.4,math.cos(spot[1])*spot[2])
+		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,40)
+		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,.7,0),PALETTE.woodDark,Enum.Material.Wood)
+		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,-.7,0),PALETTE.woodDark,Enum.Material.Wood)
+	end
+	for _,spot in {{.3,54},{2.7,40},{4.3,56},{5.8,42}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
+		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,80)
+		deco(lantern,"Lantern roof",Vector3.new(2.8,.7,2.8),CFrame.new(at+Vector3.new(0,4.0,0))*CFrame.Angles(0,math.pi/4,0),rgb(126,122,112),Enum.Material.Slate)
+		deco(lantern,"Lantern light",Vector3.new(1.0,.9,1.0),CFrame.new(at+Vector3.new(0,3.1,0)),rgb(240,200,120),Enum.Material.Neon)
+	end
 	-- The forest of Konoha around the stadium, seen over the stands.
 	for k=0,47 do
 		local a=k/48*math.pi*2+.07
@@ -20772,6 +20802,9 @@ function WorldReaction.record(c,part)
 	if not class then return nil end
 	local base=WorldReaction.Classes[class].integrity
 	local max=if base==math.huge then math.huge else base*thickness(part)
+	-- A prop may declare its own (a crate goes to one heavy blow).
+	local declared=part:GetAttribute("WorldIntegrity")
+	if type(declared)=="number" then max=declared end
 	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
 	w.parts[part]=rec
 	return rec
@@ -20832,6 +20865,55 @@ local function evict(list,max)
 		if old.part then old.part:Destroy() end
 	end
 end
+local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local function chunk(parent,cf,size,material,color)
+	local c=Instance.new("Part")
+	c.Name="Scar chunk";c.Anchored=true;c.CanCollide=false;c.CanQuery=false;c.CanTouch=false;c.CastShadow=true
+	c.Size=size;c.CFrame=cf;c.Material=material;c.Color=color
+	c.TopSurface=Enum.SurfaceType.Smooth;c.BottomSurface=Enum.SurfaceType.Smooth
+	c.Parent=parent
+	return c
+end
+-- The frame of a scar: X along the surface normal, Z along a strip's length.
+local function relief(scar,palette)
+	local p=scar.part
+	for _,ch in p:GetChildren() do if ch.Name=="Scar chunk" then ch:Destroy() end end
+	local surf=scar.surface
+	local isPart=typeof(surf)=="Instance" and surf:IsA("BasePart")
+	local material=if isPart then surf.Material else Enum.Material.Slate
+	local color=if isPart then surf.Color:Lerp(palette.dark,.25) else palette.dark:Lerp(Color3.new(.55,.5,.45),.4)
+	p.Material=material
+	local size=scar.size
+	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
+	local seed=scar.position
+	if SHAPES[scar.kind].round then
+		-- The lip: chunks round the rim, tilted outward, half sunk in the floor.
+		local n=math.clamp(math.floor(5+size*2.2),6,14)
+		local r=size*.5
+		for k=1,n do
+			local h=hash(seed+Vector3.new(k,k*1.7,k*2.3))
+			local a=(k/n)*math.pi*2+h*.4
+			local s=size*(.16+h*.12)
+			local at=base*CFrame.new(s*.25,math.cos(a)*r*(.9+h*.2),math.sin(a)*r*(.9+h*.2))
+			-- tilt about the rim's tangent so the face lifts away from the centre
+			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(20+h*30))
+			chunk(p,cf,Vector3.new(s*.7,s*1.1,s*.9),material,color)
+		end
+	else
+		-- A crack / trench: slabs on both sides of the line, pushed up and out.
+		local n=math.clamp(math.floor(3+size*1.6),4,10)
+		local width=(SHAPES[scar.kind].width or .3)
+		for k=1,n do
+			local h=hash(seed+Vector3.new(k*3,k,k*.5))
+			local z=(k/(n+1)-.5)*size
+			local sideSign=if k%2==0 then 1 else -1
+			local s=math.max(.35,width*2.2+size*.06)*(.8+h*.5)
+			local at=base*CFrame.new(s*.18,sideSign*(width*.9+s*.35),z)
+			local cf=at*CFrame.Angles(0,0,0)*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)
+			chunk(p,cf,Vector3.new(s*.45,s*1.2,s*(.9+h*.6)),material,color)
+		end
+	end
+end
 local function draw(scar,class)
 	local s=SHAPES[scar.kind]
 	local p=scar.part
@@ -20847,6 +20929,11 @@ local function draw(scar,class)
 	end
 	p.Color=if scar.kind=="wet" then Color3.fromRGB(40,52,64) elseif s.burn then palette.burn else palette.dark
 	p.Transparency=s.transparency or 0
+	-- (User 28/10: "it does not crack the ground, it prints something on it".)
+	-- A crater, a gouge, a trench or a crack is drawn in RELIEF: the floor's own
+	-- material is broken and lifted - a lip of tilted chunks round a crater, the
+	-- slabs on both sides of a crack pushed up and apart - over the dark recess.
+	if RELIEF[scar.kind] then relief(scar,palette) end
 end
 -- Leave (or deepen) a scar. Returns the scar entry.
 function WorldReaction.scar(c,kind,surface,position,normal,energy,along,class)
