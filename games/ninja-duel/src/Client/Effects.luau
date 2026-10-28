@@ -216,16 +216,35 @@ local function addTrail(root,a,b,color,lifetime,transparency,width)
 	return new("Trail",{Attachment0=a0,Attachment1=a1,Color=ColorSequence.new(color),LightEmission=.7,
 		Transparency=num({{0,transparency or .35},{1,1}}),Lifetime=lifetime or .12,FaceCamera=true,WidthScale=num({{0,width or 1},{1,.2}})},root)
 end
-function FX.buildFireball()
+-- Each caster's Katon has its own fire (user 28/10 "les animations de Katon,
+-- c'est toutes les mêmes"). Sasuke: a tight, white-hot sphere that rolls
+-- fast. Itachi: a deep crimson mass, heavier smoke, slow roll, a long tail.
+local FIRE_LOOK={
+	default={core=Color3.fromRGB(255,240,180),mid=Color3.fromRGB(255,150,40),outer=Color3.fromRGB(230,70,20),
+		ramp={Color3.fromRGB(255,240,170),Color3.fromRGB(255,140,40),Color3.fromRGB(200,50,20),Color3.fromRGB(60,20,10)},smoke=26,smokeColor=Color3.fromRGB(60,48,44),roll=3,flames=140,embers=40,light=Color3.fromRGB(255,140,60)},
+	Lion={core=Color3.fromRGB(255,252,225),mid=Color3.fromRGB(255,196,70),outer=Color3.fromRGB(255,112,24),
+		ramp={Color3.fromRGB(255,250,210),Color3.fromRGB(255,180,50),Color3.fromRGB(235,80,20),Color3.fromRGB(70,26,10)},smoke=14,smokeColor=Color3.fromRGB(70,56,48),roll=7,flames=170,embers=60,light=Color3.fromRGB(255,176,80)},
+	Mirage={core=Color3.fromRGB(255,214,150),mid=Color3.fromRGB(236,92,28),outer=Color3.fromRGB(160,22,14),
+		ramp={Color3.fromRGB(255,214,140),Color3.fromRGB(230,80,24),Color3.fromRGB(150,24,14),Color3.fromRGB(34,12,10)},smoke=44,smokeColor=Color3.fromRGB(38,30,30),roll=1.6,flames=120,embers=24,light=Color3.fromRGB(235,80,40),tail=true},
+}
+FX.FIRE_LOOK=FIRE_LOOK
+FX.fireRoll=setmetatable({},{__mode="k"})
+function FX.buildFireball(caster)
+	local look=FIRE_LOOK[caster or ""] or FIRE_LOOK.default
 	local model=new("Model",{Name="GreatFireball"})
-	local root=block(model,Vector3.new(1,1,1),CFrame.new(),Color3.fromRGB(255,240,180),Enum.Material.Neon);root.Name="Root"
+	FX.fireRoll[model]=look.roll
+	local root=block(model,Vector3.new(1,1,1),CFrame.new(),look.core,Enum.Material.Neon);root.Name="Root"
 	root.Shape=Enum.PartType.Ball;root.Transparency=.05
-	local mid=block(model,Vector3.new(1,1,1),CFrame.new(),Color3.fromRGB(255,150,40),Enum.Material.Neon);mid.Shape=Enum.PartType.Ball;mid.Transparency=.35;mid.Name="Mid"
-	local outer=block(model,Vector3.new(1,1,1),CFrame.new(),Color3.fromRGB(230,70,20),Enum.Material.Neon);outer.Shape=Enum.PartType.Ball;outer.Transparency=.62;outer.Name="Outer"
+	local mid=block(model,Vector3.new(1,1,1),CFrame.new(),look.mid,Enum.Material.Neon);mid.Shape=Enum.PartType.Ball;mid.Transparency=.35;mid.Name="Mid"
+	local outer=block(model,Vector3.new(1,1,1),CFrame.new(),look.outer,Enum.Material.Neon);outer.Shape=Enum.PartType.Ball;outer.Transparency=.62;outer.Name="Outer"
 	weldAll(root,{mid,outer})
 	local at=new("Attachment",{},root)
-	local flames=emitter(at,{Name="Flames",Enabled=true,Texture=TEX.fire,Rate=140,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(2,7),SpreadAngle=Vector2.new(180,180),
-		Color=seq({{0,Color3.fromRGB(255,240,170)},{.35,Color3.fromRGB(255,140,40)},{.75,Color3.fromRGB(200,50,20)},{1,Color3.fromRGB(60,20,10)}}),
+	if look.tail then
+		-- Itachi's mass drags a long fire tail behind it.
+		addTrail(root,Vector3.new(0,1.6,0),Vector3.new(0,-1.6,0),look.outer,.5,.3,3)
+	end
+	local flames=emitter(at,{Name="Flames",Enabled=true,Texture=TEX.fire,Rate=look.flames,Lifetime=NumberRange.new(.25,.5),Speed=NumberRange.new(2,7),SpreadAngle=Vector2.new(180,180),
+		Color=seq({{0,look.ramp[1]},{.35,look.ramp[2]},{.75,look.ramp[3]},{1,look.ramp[4]}}),
 		LightEmission=1,Size=num({{0,3},{.4,5},{1,1.5}}),Transparency=num({{0,.15},{.7,.4},{1,1}}),Drag=3,RotSpeed=NumberRange.new(-120,120),Rotation=NumberRange.new(0,360),ZOffset=1})
 	if Kit.has("fire") then
 		-- (Reference quality) cel flames: our own flipbook, colours baked in,
@@ -235,11 +254,11 @@ function FX.buildFireball()
 			Color=ColorSequence.new(Color3.new(1,1,1)),LightEmission=.25,Size=num({{0,3},{.5,5},{1,4}}),Transparency=num({{0,0},{.85,0},{1,1}}),
 			Drag=3,Rotation=NumberRange.new(0,360),RotSpeed=NumberRange.new(-60,60)})
 	end
-	emitter(at,{Name="Smoke",Enabled=true,Texture=TEX.smoke,Rate=26,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
-		Color=ColorSequence.new(Color3.fromRGB(60,48,44)),LightEmission=0,Size=num({{0,3},{1,8}}),Transparency=num({{0,.55},{1,1}}),Drag=2})
-	emitter(at,{Name="Embers",Enabled=true,Texture=TEX.fireSpark,Rate=40,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(180,180),
+	emitter(at,{Name="Smoke",Enabled=true,Texture=TEX.smoke,Rate=look.smoke,Lifetime=NumberRange.new(.7,1.2),Speed=NumberRange.new(1,3),SpreadAngle=Vector2.new(180,180),
+		Color=ColorSequence.new(look.smokeColor),LightEmission=0,Size=num({{0,3},{1,8}}),Transparency=num({{0,.55},{1,1}}),Drag=2})
+	emitter(at,{Name="Embers",Enabled=true,Texture=TEX.fireSpark,Rate=look.embers,Lifetime=NumberRange.new(.4,.8),Speed=NumberRange.new(6,14),SpreadAngle=Vector2.new(180,180),
 		Color=ColorSequence.new(Color3.fromRGB(255,190,90)),LightEmission=1,Size=num({{0,.35},{1,0}}),Acceleration=Vector3.new(0,6,0)})
-	new("PointLight",{Color=Color3.fromRGB(255,140,60),Brightness=4,Range=28,Shadows=false},root)
+	new("PointLight",{Color=look.light,Brightness=4,Range=28,Shadows=false},root)
 	model.PrimaryPart=root
 	return model
 end
@@ -279,7 +298,7 @@ end
 local function serverNow() return workspace:GetServerTimeNow() end
 function FX:visualTime() return serverNow()-FX.DELAY end
 local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() return FX.buildKunai(true) end,wire=function() return FX.buildShuriken() end,
-	shuriken=FX.buildShuriken,fireball=FX.buildFireball,wind=FX.buildWind,
+	shuriken=FX.buildShuriken,fireball=function(p) return FX.buildFireball(p and p.caster) end,wind=FX.buildWind,
 	-- Vacuum Palm: a pale ring of compressed air (sized by the flight radius).
 	palm=function()
 		local model=new("Model",{Name="VacuumPalm"})
@@ -294,8 +313,8 @@ local BUILD={kunai=function() return FX.buildKunai(false) end,marked=function() 
 		return model
 	end,
 	-- Phoenix Flower: the same fire build, shrunk and dimmer.
-	phoenix=function()
-		local model=FX.buildFireball()
+	phoenix=function(p)
+		local model=FX.buildFireball(p and p.caster)
 		local light=model.PrimaryPart:FindFirstChildOfClass("PointLight");if light then light.Range=12;light.Brightness=2.5 end
 		local at=model.PrimaryPart:FindFirstChildOfClass("Attachment")
 		local smoke=at and at:FindFirstChild("Smoke");if smoke then smoke.Rate=8 end
@@ -321,7 +340,7 @@ function FX:sync(data)
 			if not entry then continue end
 		elseif not entry then
 			local build=BUILD[p.kind] or BUILD.kunai
-			local model=build()
+			local model=build(p)
 			model.Parent=self.folder
 			local root=model.PrimaryPart
 			-- Chakra infusion: the object itself looks reinforced / windy / burning /
@@ -349,6 +368,17 @@ function FX:sync(data)
 			self.projectiles[p.id]=entry
 			for _,d in model:GetDescendants() do if d:IsA("BasePart") then d.LocalTransparencyModifier=1 end end
 			if p.kind=="fireball" then
+				local owner=self.fighters and self.fighters:FindFirstChild(p.owner or "")
+				local head=owner and owner:FindFirstChild("Head")
+				if head then
+					local look=FIRE_LOOK[p.caster or ""] or FIRE_LOOK.default
+					local a0=new("Attachment",{Name="Breath",Position=Vector3.new(0,-.25,-.55)},head)
+					local a1=new("Attachment",{Name="BreathEnd"},root)
+					entry.breath={beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.5,Width1=(p.radius or 2.4)*1.6,Texture=TEX.fire,TextureSpeed=4,TextureLength=3,
+						Color=seq({{0,look.ramp[1]},{.5,look.ramp[2]},{1,look.ramp[3]}}),LightEmission=1,FaceCamera=true,Segments=8,
+						Transparency=num({{0,.2},{1,.35}})},root),a0=a0}
+					Debris:AddItem(a0,1)
+				end
 				sound(root,SOUND.boom,.35,.55)
 			elseif p.kind=="phoenix" then
 				sound(root,SOUND.whoosh,.25,.7)
@@ -418,6 +448,12 @@ function FX:stepProjectiles(dt)
 			local stream=FX.fireStreams[entry.model]
 			if stream then stream.Enabled=not hidden end
 		end
+		if entry.breath then
+			-- The breath thins and goes out over its first third of a second.
+			local u=math.clamp(age/.35,0,1)
+			if u>=1 then entry.breath.beam:Destroy();entry.breath.a0:Destroy();entry.breath=nil
+			else entry.breath.beam.Transparency=num({{0,.2+.8*u},{1,.35+.65*u}}) end
+		end
 		if entry.decor and entry.decor.light then
 			local look=entry.decor.look
 			entry.decor.light.Brightness=if look.spark then look.light*(.4+math.random()*1.2) else look.light*(.85+math.sin(os.clock()*18)*.15)
@@ -452,7 +488,7 @@ function FX:stepProjectiles(dt)
 				local f=flames:FindFirstChild("Flames");if f then f.Size=num({{0,radius*1.1},{.4,radius*1.9},{1,radius*.6}}) end
 				Kit.setSize(FX.fireStreams[entry.model],num({{0,radius*1.3},{.5,radius*2.3},{1,radius*2}}))
 			end
-			cf=look*CFrame.Angles(0,0,os.clock()*3)
+			cf=look*CFrame.Angles(0,0,os.clock()*(FX.fireRoll[entry.model] or 3))
 		elseif p.kind=="palm" then
 			local radius=(p.radius or 1.5)+(p.growth or 0)*math.max(0,age)
 			local ring=entry.model:FindFirstChild("Ring");local core=entry.model:FindFirstChild("Core")

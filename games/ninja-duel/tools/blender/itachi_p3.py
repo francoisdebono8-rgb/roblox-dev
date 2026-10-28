@@ -482,64 +482,72 @@ def mirage_cast(arm):
 
 
 def fire_seal_inhale(sh, n):
-    """Shared by the two fire jutsu: one brief tiger seal (the rear foot
-    anchors), then the inhale, the ringed right hand to the mouth."""
+    """Shared by the two fire jutsu, Itachi's way (user 28/10: "les Katon,
+    c'est toutes les mêmes"): unlike Sasuke he never brings a ringed hand to
+    the mouth. The tiger seal snaps at the chest and STAYS there; the body
+    stays upright over an anchored rear foot, only the chest fills and the
+    chin lifts."""
     sh.key(0, s(), "ease")
     sh.key(6, s(merge(ANCHOR, tiger())), "pass")
-    inhale = s(merge(ANCHOR, {"root": {"y": -.42, "z": .16, "pitch": -8}, "torso": {"pitch": -16}, "head": {"pitch": 20},
-                              "ra": {"raise": 98, "out": -40, "twist": 60, "elbow": 132, "wrist": 0},
-                              "la": {"raise": 30, "out": 16, "twist": 10, "elbow": 60}}))
+    seal = tiger()
+    inhale = s(merge(ANCHOR, merge({"root": {"y": -.36, "z": .1, "pitch": -4}, "torso": {"pitch": -12}, "head": {"pitch": 16}},
+                                   merge(seal, {"la": {"raise": 80, "elbow": 98}, "ra": {"raise": 80, "elbow": 98}}))))
     sh.key(n, inhale, "ease")
     return inhale
 
 
+def fire_seal_blow(lean=0, yaw=0):
+    """The release: the seal held still at the chest (it is the trigger), the
+    chin drops and the chest goes forward a little - no flourish."""
+    seal = tiger()
+    return s(merge(ANCHOR, merge({"root": {"y": -.46, "z": -.2, "pitch": 9 + lean, "yaw": yaw * .4}, "torso": {"pitch": 7 + lean, "yaw": yaw * .3},
+                                  "head": {"pitch": -14, "yaw": yaw}},
+                                 merge(seal, {"la": {"raise": 66, "elbow": 110}, "ra": {"raise": 66, "elbow": 110}}))))
+
+
 def fire_bloom(arm):
-    """Katon: Great Fireball, Itachi's way: ONE brief seal, the rear foot
-    anchored, a short inhale; the release goes forward over the front foot
-    and holds still while the fire pours (no flourish)."""
+    """Katon: Great Fireball, Itachi's way: ONE brief seal kept at the chest,
+    upright, a short inhale; the fire pours while he barely moves."""
     out = []
     ch = Shot(arm, N + "FireBloom.Channel")
     inhale = fire_seal_inhale(ch, 18)
     out.append(ch.build(markers={"release": 18 / 60}))
     ho = Shot(arm, N + "FireBloom.Hold")
     ho.key(0, inhale, "ease")
-    ho.key(20, merge(inhale, {"root": {"y": -.46}, "torso": {"pitch": -18}}), "ease")
+    ho.key(20, merge(inhale, {"root": {"y": -.4}, "torso": {"pitch": -14}}), "ease")
     ho.key(40, inhale, "ease")
     out.append(ho.build(markers={"loop": 0.0}, loop=True))
     re = Shot(arm, N + "FireBloom.Release")
-    blow = s(merge(ANCHOR, {"root": {"y": -.52, "z": -.3, "pitch": 18}, "torso": {"pitch": 14}, "head": {"pitch": -12},
-                            "ra": {"raise": 100, "out": -36, "twist": 60, "elbow": 132},
-                            "la": {"raise": 10, "out": 30, "elbow": 30}}))
+    blow = fire_seal_blow()
     re.key(0, inhale, "launch")
     re.key(4, blow, "impact")
-    re.key(24, merge(blow, {"root": {"z": -.32}}), "ease")
+    re.key(24, merge(blow, {"root": {"z": -.22}, "head": {"pitch": -16}}), "ease")
     out.append(re.build(markers={"release": 4 / 60}))
     rc = Shot(arm, N + "FireBloom.Recover")
-    rc.key(0, blow, "ease")
-    rc.key(20, s(), "ease")
+    rc.key(0, merge(blow, {"root": {"z": -.22}, "head": {"pitch": -16}}), "ease")
+    rc.key(10, s(merge(ANCHOR, tiger())), "pass")
+    rc.key(22, s(), "ease")
     out.append(rc.build())
     return out
 
 
 def phoenix_flower(arm):
-    """Phoenix Flower: the same seal and inhale, then three short breaths,
-    the head turning left - centre - right (each puff a fireball, the shuriken
-    hidden inside)."""
+    """Phoenix Flower: the same seal and inhale, then three short breaths, the
+    seal still held at the chest while only the head turns left - centre -
+    right (each puff a fireball, the shuriken hidden inside)."""
     out = []
     ch = Shot(arm, N + "PhoenixFlower.Channel")
     inhale = fire_seal_inhale(ch, 18)
     out.append(ch.build(markers={"release": 18 / 60}))
     re = Shot(arm, N + "PhoenixFlower.Release")
-    puff = s(merge(ANCHOR, {"root": {"y": -.46, "z": -.2, "pitch": 12}, "torso": {"pitch": 10}, "head": {"pitch": -10},
-                            "ra": {"raise": 100, "out": -36, "twist": 60, "elbow": 132}, "la": {"raise": 14, "out": 26, "elbow": 40}}))
     re.key(0, inhale, "launch")
-    re.key(3, merge(puff, {"root": {"yaw": 14}, "head": {"yaw": -34}}), "impact")
-    re.key(8, merge(puff, {"root": {"yaw": 24}, "head": {"yaw": -14}}), "impact")
-    re.key(13, merge(puff, {"root": {"yaw": 36}, "head": {"yaw": 8}}), "impact")
-    re.key(19, merge(puff, {"root": {"yaw": 30}}), "ease")
+    re.key(3, fire_seal_blow(2, -30), "impact")
+    re.key(8, fire_seal_blow(-2, -6), "impact")
+    re.key(13, fire_seal_blow(2, 22), "impact")
+    re.key(19, fire_seal_blow(0, 16), "ease")
     out.append(re.build(markers={"release": 3 / 60}))
     rc = Shot(arm, N + "PhoenixFlower.Recover")
-    rc.key(0, merge(puff, {"root": {"yaw": 30}}), "ease")
+    rc.key(0, fire_seal_blow(0, 16), "ease")
     rc.key(18, s(), "ease")
     out.append(rc.build())
     return out

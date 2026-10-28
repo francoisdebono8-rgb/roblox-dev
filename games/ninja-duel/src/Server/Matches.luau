@@ -248,7 +248,7 @@ function Matches:view(s,cursor,mine,theirs)
 		-- wire holding a body (ChakraCombat). Resting objects also carry what
 		-- they mean (mark), their surface normal, their expiry and live charge
 		-- (server clock), and a held wire the body it holds and its stake.
-		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,
+		table.insert(projectiles,{id=p.id,kind=p.kind,origin=p.origin,direction=p.direction,speed=p.speed,born=p.born,range=p.range,owner=p.a.id,caster=p.a.fighterId,radius=p.radius,growth=p.growth,infusion=p.infusion,planted=p.planted,
 			mark=p.mark,normal=p.normal,expires=p.expires,charged=p.charged,holds=p.holds and p.holds.id,anchored=p.anchored,hidden=p.hidden})
 	end
 	local hazards={}

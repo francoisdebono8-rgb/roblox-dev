@@ -30,10 +30,13 @@ function Elements.fire(c,a,pending,now)
 	-- throws a body down instead of knocking it back (spec.Hold).
 	local charge=math.clamp(pending.charge or 0,0,1)
 	local hold=spec.Hold
-	local radius=2.4*(1+(if hold then (hold.Radius or 1)-1 else 0)*charge)
+	-- Each caster's Great Fireball has its own body (user 28/10 "les Katon,
+	-- c'est toutes les mêmes"): Sasuke's is a tight fast sphere, Itachi's a
+	-- big slow wall of fire (spec.Radius / spec.Growth).
+	local radius=(spec.Radius or 2.4)*(1+(if hold then (hold.Radius or 1)-1 else 0)*charge)
 	local damage=spec.Damage*(1+(if hold then (hold.Damage or 1)-1 else 0)*charge)
 	local speed=(spec.Speed or 54)*(1-(if hold then 1-(hold.Speed or 1) else 0)*charge)
-	local ball=c:projectile(a,target,speed,spec.Range,damage,"fireball",nil,{origin=origin,radius=radius,growth=2.2*(1+charge*.5),heavy=true})
+	local ball=c:projectile(a,target,speed,spec.Range,damage,"fireball",nil,{origin=origin,radius=radius,growth=(spec.Growth or 2.2)*(1+charge*.5),heavy=true})
 	ball.charge=charge
 	if spec.Lane then Elements.burnLane(c,a,ball) end
 	-- The body takes the breath: a step back on the ground, and in the air a
