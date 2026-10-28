@@ -868,6 +868,37 @@ function Combat:wallTech(a)
 	if a.target then self:cue(a.target,"WALL TECH • RESET",.7) end
 	return true
 end
+-- Global kunai (DEC-030): any fighter may draw a kunai and fight with it.
+-- Drawn, his lights and heavy cut with the blade (Brawler.start: a little more
+-- reach and damage, slash contacts, the shared Kunai.* clips on the client);
+-- the tool button throws that blade, which is then gone until drawn again.
+-- Reference: Naruto Shippuden fights where every ninja draws a kunai to parry
+-- and slash (Sasuke vs Itachi, Kakashi vs Obito), and Shinobi Striker / Storm
+-- where the kunai is a common stance, not a character's move.
+function Combat:arm(a)
+	if a.airborne or not Rules.canAct(a,self.now) then return false,"Busy" end
+	if self.now<(a.armAt or 0) then return false,"Too soon" end
+	a.armed=not a.armed;a.armAt=self.now+.25
+	Brawler.event(self,a,if a.armed then "Draw" else "Sheathe")
+	self:cue(a,if a.armed then "KUNAI DRAWN" else "KUNAI SHEATHED",.45)
+	return true
+end
+function Combat:throwDrawn(a,aim)
+	-- The drawn blade may end a string that is alive (a thrown finisher).
+	local cancel=a.state=="Recovery" and a.chainOpen and self.now>=(a.chainAt or 0)
+	if (not cancel and not Rules.canAct(a,self.now)) or self.now<a.neutralToolAt then return false,"Tool recovering" end
+	if a.throwing then return false,"Throwing" end
+	if cancel then a.pending=nil;a.attackName=nil;a.chainOpen=false;self:setState(a,"Neutral",0);Brawler.event(self,a,"ChainTool") end
+	if a.state=="Guarding" then Defense.guard(a,false,self.now);self:setState(a,"Neutral",0) end
+	if a.wall then Motor.detach(a,self.now,false) end
+	a.armed=false;a.armAt=self.now+.3
+	a.neutralToolAt=self.now+(if cancel then .42 else .6)
+	self:beginThrow(a,{kind="Kunai",release=.08,count=1,interval=.08,aim=aim,fire=function(_,target)
+		self:projectile(a,target,100,if cancel then 24 else 62,5,"kunai")
+	end})
+	self:cue(a,if cancel then "KUNAI • FINISHER" else "KUNAI THROWN",.5)
+	return true
+end
 function Combat:request(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
@@ -909,6 +940,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
 	if action=="Awaken" then return self:awaken(a) end
+	if action=="Arm" then return self:arm(a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted<=pending.spec.startup*.62 then
@@ -955,6 +987,7 @@ function Combat:request(a,action,aim,clientTime,opts)
 		if a.state=="Recovery" and self.now<(a.recoveryCancelAt or 0) then return false,"Committed" end
 		return Motor.jump(a,self,self.now),"Airborne"
 	end
+	if action=="Tool" and a.armed and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra

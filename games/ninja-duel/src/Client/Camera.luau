@@ -199,12 +199,33 @@ function Camera:update(data,dt)
 	local desired=focus+boom*self.distance+Vector3.new(0,height,0)
 	-- Match intro: a slow orbit that presents both fighters, then the normal
 	-- rig takes over from wherever the orbit ended.
+	-- (Partie 1 feedback: "I don't really see the opening pose".) The old
+	-- orbit framed both bodies from 20+ studs, so an entrance pose was a few
+	-- pixels. Fighting-game entrance instead (Storm 4, Tekken 8): each
+	-- fighter in turn, three-quarter front, close enough that the pose reads,
+	-- a slow dolly across; then the camera eases into the duel frame.
 	if (data.intro or 0)>0 then
-		local mid=a:Lerp(target,.5)
-		local turn=self.boomAngle+math.rad(70)-(data.intro/2.6)*math.rad(110)
-		focus=mid+Vector3.new(0,2.6,0)
-		desired=focus+Vector3.new(math.sin(turn),0,math.cos(turn))*(separation*.5+13)+Vector3.new(0,3.2,0)
+		self.introTotal=math.max(self.introTotal or 0,data.intro)
+		local total,left=self.introTotal,data.intro
+		local shown=total-left
+		local split=total*.5
+		local first=shown<split
+		local subject=if first then a else target
+		local other=if first then target else a
+		local toward=Vector3.new(other.X-subject.X,0,other.Z-subject.Z)
+		toward=if toward.Magnitude>.1 then toward.Unit else Vector3.zAxis
+		local across=toward:Cross(Vector3.yAxis)
+		local u=if first then shown/split else (shown-split)/math.max(total-split,1e-3)
+		local sign=if first then 1 else -1
+		local closeFocus=subject+Vector3.new(0,1.3-u*.3,0)
+		local close=closeFocus+toward*(6.2+u*1.2)+across*sign*(2.6-u*1.6)+Vector3.new(0,.4+u*.3,0)
+		local out=math.clamp((.5-left)/.5,0,1)
+		out=out*out*(3-2*out)
+		focus=closeFocus:Lerp(focus,out)
+		desired=close:Lerp(desired,out)
 		self.focus=focus
+	else
+		self.introTotal=nil
 	end
 	self.fovKick*=math.exp(-dt*9)
 	local speed=data.human.speed or 0

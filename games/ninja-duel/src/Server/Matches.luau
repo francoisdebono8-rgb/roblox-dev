@@ -152,6 +152,7 @@ function Matches:resetRound(s)
 		a.health=a.def.Health;a.hum.Health=a.health;a.chakra=a.def.Chakra or Config.Chakra;a.cooldowns={}
 		a.subCharges=Config.Substitution.Charges;a.subCooldown=0;a.subRegenAt=math.huge
 		a.state="Neutral";a.untilTime=0;a.koStyle=nil;a.koAirborne=nil;a.groundPose=nil;a.reaction=nil;a.reactionVelocity=nil
+		a.armed=nil;a.armAt=0
 		a.stamina=100;a.hitstopUntil=0;a.root.Anchored=false;a.hum.WalkSpeed=a.def.Speed
 		a.shieldCharges=a.def.SandShield and a.def.SandShield.Charges or 0
 	end
@@ -197,7 +198,7 @@ function Matches:view(s,cursor,mine,theirs)
 			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
-			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,
+			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.

@@ -192,6 +192,7 @@ local function mark(char,key,half)
 	s.markKey=key;s.markHalf=half or .1
 end
 Motion._mark=mark
+local KUNAI_ARM={Right=true,RightElbow=true,RightWrist=true}
 local function apply(char,targets,rate,dt,upperRate,legRate)
 	local s=stateOf(char)
 	local key=s.markKey or ("proc:"..tostring(rate))
@@ -201,11 +202,15 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 	end
 	s.markKey=nil
 	local feet=targets.__feet
+	-- Global kunai (DEC-030): the drawn blade's arm, laid over any body pose.
+	local held=s.armOverlay
 	for key in JOINTS do
 		local side=LEG_SIDE[key]
 		if not (feet and side and feet[side]) then
 			local r=if upperRate and UPPER[key] then upperRate elseif legRate and side then legRate else rate
-			write(char,key,targets[key] or IDENTITY,r,dt)
+			local target=targets[key] or IDENTITY
+			if held and KUNAI_ARM[key] and held.pose[key] then target=target:Lerp(held.pose[key],held.w) end
+			write(char,key,target,r,dt)
 		end
 	end
 	s.capture=nil
@@ -1291,6 +1296,14 @@ Motion.VARIANT_OF=VARIANT_OF
 -- Naruto: the barrage's finisher rides on the Slam; a clone plays its side of
 -- a route he carries out on that route's own timing (Attacks proxyClip).
 VARIANT_OF.NarutoRendan="Slam";VARIANT_OF.CloneKickStrike="CloneKick";VARIANT_OF.UzumakiRise="UzumakiKick";VARIANT_OF.MirrorStrike="MirrorClone"
+-- Global kunai (DEC-030): with a drawn blade the string and the heavy play
+-- the shared Kunai.* clips (tools/blender/kunai_lion.py), on any fighter.
+local KUNAI_STRIKE={Light1=true,Light2=true,Light3=true,Heavy=true}
+local function kunaiClip(subject,name)
+	if subject.armed and KUNAI_STRIKE[name] and Authored and Authored.has("Kunai."..name) then return "Kunai."..name end
+	return nil
+end
+Motion.kunaiClip=kunaiClip
 local function clipName(subject)
 	return if VARIANT_OF[subject.attackVariant or ""] then subject.attackVariant else subject.attackName
 end
@@ -1313,8 +1326,8 @@ local function attackPhase(name,elapsed,fighterId)
 end
 -- The clip's footwork at `elapsed`: where each planted foot should be (root
 -- space), or nil for a leg that is kicking (free) at this moment.
-local function attackFeet(name,elapsed,fighterId)
-	if Authored and Authored.has(tostring(fighterId).."."..tostring(name)) then return nil end
+local function attackFeet(name,elapsed,fighterId,clip)
+	if clip or (Authored and Authored.has(tostring(fighterId).."."..tostring(name))) then return nil end
 	local route=CLIPS[fighterId] or CLIPS[familyOf(fighterId).clips or familyOf(fighterId).body] or CLIPS.Flashstep
 	local borrow=familyOf(fighterId).borrow
 	local keys=route[name] or (borrow and borrow[name] and route[borrow[name]]) or (Attacks[name] and Attacks[name].clip and route[Attacks[name].clip]) or route.Light1
@@ -1345,8 +1358,8 @@ local function attackFeet(name,elapsed,fighterId)
 end
 -- Pose + weight of an attack at `elapsed`. The weight stays at 1 through the
 -- active window and most of recovery, then fades so the stance takes over.
-local function attackTargets(name,elapsed,fighterId)
-	local authored=tostring(fighterId).."."..tostring(name)
+local function attackTargets(name,elapsed,fighterId,clip)
+	local authored=clip or tostring(fighterId).."."..tostring(name)
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.
@@ -2865,7 +2878,11 @@ local function weaponsFor(char,fighterId)
 	local kind=familyOf(fighterId).weapons
 	local minato=kind=="kunai"
 	local palms=kind=="palms"
-	if kind=="none" then return items end
+	-- Global kunai (DEC-030): every fighter carries a blade he may draw, held
+	-- in the forward grip the shared Kunai.* clips are animated with.
+	local right=char:FindFirstChild("RightHand")
+	if right then pcall(function() Effects=Effects or require(script.Parent.Effects);items.drawn=makeItem(right,Effects.buildKunai(false),LION_KUNAI_C0) end) end
+	if kind=="none" then for _,item in items do setVisible(item,false) end return items end
 	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
 	local ok=pcall(function()
@@ -2913,6 +2930,11 @@ function Motion.weapon(char,actor)
 	local holding=throwKind~=nil and throwElapsed>=0 and throwElapsed<releaseAt
 	if throwKind=="Shuriken" and throwElapsed>=releaseAt and throwElapsed<releaseAt+.08 then holding=throwElapsed>=releaseAt+.03 end
 	local castFan=actor.castId=="NeedleFan" and actor.state=="TechniqueChannel"
+	-- The drawn blade stays in the hand until thrown (the throw shows it to its
+	-- release frame where the fighter has no throwing kunai of his own).
+	local drawn=actor.armed==true or (holding and throwKind=="Kunai" and not items.throw and kind~="kunai")
+	setVisible(items.drawn,drawn)
+	if actor.armed then meleeOut=false end
 	if kind=="none" then
 		-- (no hand weapon: the sand does the work)
 	elseif kind=="palms" then
@@ -3090,6 +3112,22 @@ function Motion.present(char,actor,clock,dt)
 	local slips=subject.events and subject.events.ReadSlip or 0
 	if slips>(memo.slips or slips) then memo.slipAt=elapsedTime end
 	memo.slips=slips
+	-- Global kunai (DEC-030): a drawn blade is held in guard by the right arm
+	-- over whatever the body does (run, jump, guard), except while it strikes,
+	-- casts, throws or takes a blow; the draw itself is a short authored gesture.
+	local draws=subject.events and subject.events.Draw or 0
+	if draws>(memo.draws or draws) then memo.drawAt=elapsedTime end
+	memo.draws=draws
+	local busy=subject.reaction~=nil or (subject.attackName~=nil and (subject.state=="Startup" or subject.state=="Active" or subject.state=="Recovery"))
+		or (subject.castId~=nil and string.sub(subject.state or "",1,9)=="Technique") or (subject.throwElapsed or 99)<.3
+	local wantArm=if subject.armed and not busy then 1 else 0
+	memo.armW=(memo.armW or 0)+(wantArm-(memo.armW or 0))*math.min(1,(dt or 1/60)*16)
+	memo.armOverlay=nil
+	if Authored and memo.drawAt and subject.armed and not busy and Authored.has("Kunai.Draw") and elapsedTime-memo.drawAt<Authored.length("Kunai.Draw") then
+		memo.armOverlay={pose=Authored.sample("Kunai.Draw",elapsedTime-memo.drawAt),w=1}
+	elseif Authored and memo.armW>.01 and Authored.has("Kunai.Idle") then
+		memo.armOverlay={pose=Authored.sample("Kunai.Idle",elapsedTime),w=memo.armW}
+	end
 	-- (Partie 1) Authored one-shots: the match intro and the awakening entry.
 	local F=tostring(subject.fighterId)
 	local wakes=subject.events and subject.events.Awaken or 0
@@ -3211,7 +3249,7 @@ function Motion.present(char,actor,clock,dt)
 	-- The base the body returns to: gait on the ground, air pose in the air.
 	local base,baseRate
 	local attackName=clipName(subject)
-	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId) or nil
+	local footwork=swinging and not subject.airborne and attackFeet(attackName,subject.attackElapsed or 0,subject.fighterId,kunaiClip(subject,attackName)) or nil
 	if subject.airborne then base,baseRate=airTargets(char,subject,subject.fighterId)
 	elseif footwork then
 		-- Attack footwork: the clip says where each foot goes; the stepping
@@ -3277,7 +3315,7 @@ function Motion.present(char,actor,clock,dt)
 	end
 	if swinging then
 		local name=clipName(subject)
-		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId)
+		local targets,weight=attackTargets(name,subject.attackElapsed or 0,subject.fighterId,kunaiClip(subject,name))
 		-- (Clone: blend may hand back a cached clip pose, which must not change.)
 		local final=table.clone(blend(base,targets,weight))
 		local variant=subject.attackVariant

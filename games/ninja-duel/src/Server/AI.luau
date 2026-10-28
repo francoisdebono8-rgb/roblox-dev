@@ -146,6 +146,17 @@ function AI:defend(now)
 	if not a.awakened and a.def.Awakening and a.health<=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()<.4 then
 		if c:request(a,"Awaken") then return true end
 	end
+	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
+	-- fight (and puts it away again), so the player meets the system too.
+	if not a.reaction and not a.airborne and a.target and a.target.root and now>=(self.armThought or 0) then
+		self.armThought=now+2.5+self.rng:NextNumber()*3
+		local gap=(a.target.root.Position-a.root.Position).Magnitude
+		if not a.armed and gap<14 and self.rng:NextNumber()<.3 then
+			if c:request(a,"Arm") then return true end
+		elseif a.armed and self.rng:NextNumber()<.12 then
+			if c:request(a,"Arm") then return true end
+		end
+	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
 	if hits>0 and self.subPlan==nil then

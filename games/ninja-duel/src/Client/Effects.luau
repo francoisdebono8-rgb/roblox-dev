@@ -1673,23 +1673,54 @@ function FX:fighter(model,actor,dt)
 	-- Bound: wire coiled around the chest and arms while the bind holds.
 	-- (Held by Gaara's sand: SandFX draws the coffin instead of the wire.)
 	local bound=actor.bound==true and (actor.health or 1)>0 and actor.opponentFighter~="Sand"
+	-- (Partie 1 feedback: "the wire changes a little, but it stays light".)
+	-- Reference: Sasuke vs Itachi, the Windmill Shuriken bind (Shippuden 136)
+	-- and Storm 4's wire grabs: many thin turns that snap TIGHT around the
+	-- chest and arms (a visible constriction, not rings appearing), and the
+	-- wire stays taut from the binder's hand to the body for the whole hold.
 	if bound and not aura.binding then
 		local torso=model:FindFirstChild("UpperTorso") or root
 		local holder=new("Model",{Name="Binding"},self.folder)
 		local coils={}
-		for k=0,2 do
-			local coil=block(holder,Vector3.new(.08,2.9,2.9),torso.CFrame*CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2),Color3.fromRGB(196,200,208),Enum.Material.Metal)
-			coil.Shape=Enum.PartType.Cylinder;coil.Transparency=.15
-			table.insert(coils,{part=coil,offset=CFrame.new(0,-.5+k*.45,0)*CFrame.Angles(0,0,math.pi/2)})
+		for k=0,5 do
+			local tilt=math.rad((k%2==0 and 1 or -1)*7)
+			local offset=CFrame.new(0,-.75+k*.3,0)*CFrame.Angles(tilt,0,math.pi/2)
+			local coil=block(holder,Vector3.new(.06,3.6,3.6),torso.CFrame*offset,Color3.fromRGB(214,218,226),Enum.Material.Metal)
+			coil.Shape=Enum.PartType.Cylinder;coil.Transparency=.05
+			table.insert(coils,{part=coil,offset=offset})
 		end
-		aura.binding={holder=holder,coils=coils,torso=torso}
-		sound(torso,SOUND.whoosh,.4,2)
+		-- The taut line back to the binder's hand (the other fighter).
+		local beam
+		local binder
+		for _,m in (self.fighters and self.fighters:GetChildren() or {}) do if m~=model and m:IsA("Model") then binder=m end end
+		local hand=binder and binder:FindFirstChild("RightHand")
+		if hand then
+			local a0=new("Attachment",{Name="BindHand"},hand)
+			local a1=new("Attachment",{Name="BindBody"},torso)
+			beam=new("Beam",{Attachment0=a0,Attachment1=a1,Width0=.05,Width1=.05,Color=ColorSequence.new(Color3.fromRGB(230,234,242)),LightEmission=.7,FaceCamera=true,Segments=8,CurveSize0=-.4,CurveSize1=.4},holder)
+			aura.bindAttachments={a0,a1}
+		end
+		aura.binding={holder=holder,coils=coils,torso=torso,born=os.clock(),beam=beam}
+		sound(torso,SOUND.whoosh,.55,2.2)
 	elseif not bound and aura.binding then
 		aura.binding.holder:Destroy()
+		for _,att in aura.bindAttachments or {} do att:Destroy() end
+		aura.bindAttachments=nil
 		aura.binding=nil
 	end
 	if aura.binding then
-		for _,c in aura.binding.coils do c.part.CFrame=aura.binding.torso.CFrame*c.offset end
+		-- Snap tight in 0.12 s (diameter 3.6 -> 2.35), then a faint strain.
+		local t=os.clock()-aura.binding.born
+		local u=math.clamp(t/.12,0,1)
+		local d=3.6-(1.25*(1-(1-u)^3))+.04*math.sin(t*38)*(1-u)
+		for _,c in aura.binding.coils do
+			c.part.Size=Vector3.new(.06,d,d)
+			c.part.CFrame=aura.binding.torso.CFrame*c.offset
+		end
+		if aura.binding.beam then
+			-- taut once tight: the sag goes out of the line with the constriction
+			aura.binding.beam.CurveSize0=-.4*(1-u);aura.binding.beam.CurveSize1=.4*(1-u)
+		end
 	end
 	-- Sasuke: the Chidori crackles in the right hand from the charge to the thrust.
 	local chidori=(actor.castId=="Chidori" and (actor.state=="TechniqueChannel" or actor.state=="TechniqueActive"))

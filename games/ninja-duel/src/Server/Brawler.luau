@@ -464,6 +464,11 @@ function Brawler.start(c,a,name)
 		-- A weapon's reach: the step-in stops further out (Temari's iron fan).
 		spec.contact=profile.contact or spec.contact
 	end
+ -- A drawn kunai (Combat:arm, global): the string and heavy cut with it.
+ if a.armed and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
+  spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
+  spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
+ end
  -- An awakening that quickens the body (Awakening.Recovery: Naruto's cloak).
  local awake=a.def.Awakening
  if awake and awake.Recovery and (a.awakenUntil or 0)>c.now then spec.recovery*=awake.Recovery end

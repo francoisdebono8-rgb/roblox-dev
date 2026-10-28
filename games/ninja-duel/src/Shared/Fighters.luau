@@ -134,7 +134,7 @@ local Fighters = {
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
 		Techniques = {
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.5, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15,
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 58, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball
 				-- grows (Radius), hits harder (Damage), flies slower (Speed) and

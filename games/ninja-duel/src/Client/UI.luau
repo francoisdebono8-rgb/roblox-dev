@@ -529,8 +529,10 @@ function UI:render(data)
 			widget.box.Visible=false;widget.shown=0
 		end
 	end
-	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
-		if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
+	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
+		if h.wall then "WALL RUN" elseif h.dodge>0 then string.format("DASH %.1fs",h.dodge) else "DASH READY",
+		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
+		if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai")
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")

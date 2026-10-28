@@ -1,5 +1,8 @@
-"""Sasuke's kunai string (ANIM-005, user reference 28/10): the ground combo
-re-animated as a ninja's, with a kunai in the right hand, amplified poses.
+"""The common kunai string (DEC-030, global kunai): any fighter who draws his
+kunai (key B / D-pad left) fights with these clips, Kunai.Light1-3 / Heavy,
+plus the held guard (Kunai.Idle, right arm laid over any body pose) and the
+draw (Kunai.Draw). First authored as Sasuke's string (ANIM-005, user
+reference 28/10), with a kunai in the right hand, amplified poses.
 
 Animator's notes (what the reference does and the old string did not):
   * every blow is a WHOLE-BODY arc: the hips turn 60-90 deg, the chest snaps
@@ -47,7 +50,7 @@ def light1(arm):
     (low right -> high left). It overshoots above the head and holds there
     (the pose that reads), then folds back to guard while the rear foot drags
     up."""
-    sh = Shot(arm, "Lion.Light1")
+    sh = Shot(arm, "Kunai.Light1")
     T = -1.0
     sh.key(0, s(), "ease")
     sh.key(3, s({"root": {"y": -.76, "z": .06, "pitch": 18, "yaw": 54, "roll": 6}, "torso": {"pitch": 14, "yaw": 18, "roll": 10},
@@ -84,7 +87,7 @@ def light2(arm):
     the hips and chest whip right and the straight arm sweeps flat from left
     to right. Overshoot: the arm swings out behind the right shoulder, the
     left hand guards. Ends right-lead, ready for the spin."""
-    sh = Shot(arm, "Lion.Light2")
+    sh = Shot(arm, "Kunai.Light2")
     sh.key(0, s(), "ease")
     sh.key(4, s({"root": {"y": -.68, "z": -.3, "pitch": 14, "yaw": 4, "roll": -4}, "torso": {"pitch": 10, "yaw": -42, "roll": -8},
                  "head": {"pitch": -8, "yaw": 22},
@@ -122,7 +125,7 @@ def light3(arm):
     so the blade draws a flat circle at chest height; it crosses the target
     at frame 14 with the body leaning into the turn. The left leg sweeps
     round low and lands ahead: left lead again, square."""
-    sh = Shot(arm, "Lion.Light3")
+    sh = Shot(arm, "Kunai.Light3")
     st = merge(STANCE_R, {"rf": {"x": .1, "z": -.76, "yaw": 6}, "lf": {"x": -.26, "z": .84, "yaw": -38}})
     sh.key(0, st, "ease")
     sh.key(4, merge(st, {"root": {"y": -.72, "yaw": -34, "z": -.22, "pitch": 14}, "torso": {"yaw": -30, "pitch": 10}, "head": {"yaw": 50},
@@ -178,7 +181,7 @@ def heavy(arm):
     on the way down with the kunai raised over the head, and lands in a deep
     crouch as the arm chops straight down through the target. Then it rises
     back into the stance."""
-    sh = Shot(arm, "Lion.Heavy")
+    sh = Shot(arm, "Kunai.Heavy")
     sh.key(0, s(), "ease")
     load = s({"root": {"y": -1.05, "z": .1, "pitch": 34, "yaw": 10}, "torso": {"pitch": 18, "yaw": -4}, "head": {"pitch": -32, "yaw": -6},
               "ra": {"raise": -54, "out": 22, "twist": 0, "elbow": 26}, "la": {"raise": -54, "out": 22, "twist": 0, "elbow": 26},
@@ -230,8 +233,42 @@ def heavy(arm):
     return sh.build(markers={"contact": 18 / 60, "recover": 28 / 60})
 
 
+# ------------------------------------------------------------- guard, draw
+# Only the right arm of these two is used in game (laid over the fighter's
+# own body: run, jump, guard), so they are posed for the arm alone.
+# Reference: the kunai guard of the Naruto Shippuden duels (Sasuke vs Itachi,
+# ep. 135; Kakashi vs Obito, ep. 375): forward grip, forearm across the
+# centre line, the blade's point at the opponent's throat, elbow low and in.
+GUARD_RA = {"raise": 80, "out": -20, "twist": 6, "elbow": 42, "wrist": -40}
+
+
+def idle(arm):
+    """Held guard, breathing: the blade drifts a few degrees (2 s loop); a
+    blade held dead still reads as a prop, not a hand."""
+    sh = Shot(arm, "Kunai.Idle")
+    sh.key(0, s({"ra": GUARD_RA}), "ease")
+    sh.key(40, s({"ra": merge(GUARD_RA, {"raise": 76, "elbow": 68, "wrist": -18})}), "ease")
+    sh.key(80, s({"ra": merge(GUARD_RA, {"raise": 69, "out": -10, "elbow": 78, "wrist": -10})}), "ease")
+    sh.key(120, s({"ra": GUARD_RA}), "ease")
+    return sh.build(loop=True)
+
+
+def draw(arm):
+    """Draw (0.3 s): the hand drops to the holster on the right thigh (2
+    frames, fast), rips the blade out backwards, swings it up past the guard
+    (overshoot, the point flicks up) and settles on the guard.
+    Reference: the quick-draw of Shonen Unleashed / Storm 4 kunai stances."""
+    sh = Shot(arm, "Kunai.Draw")
+    sh.key(0, s(), "ease")
+    sh.key(3, s({"ra": {"raise": -24, "out": 18, "twist": 30, "elbow": 26, "wrist": 0}}), "impact")
+    sh.key(6, s({"ra": {"raise": -34, "out": 12, "twist": 40, "elbow": 40, "wrist": 30}}), "launch")
+    sh.key(11, s({"ra": merge(GUARD_RA, {"raise": 96, "elbow": 52, "wrist": -34})}), "ease")
+    sh.key(18, s({"ra": GUARD_RA}), "ease")
+    return sh.build()
+
+
 def author(arm):
-    return [light1(arm), light2(arm), light3(arm), heavy(arm)]
+    return [light1(arm), light2(arm), light3(arm), heavy(arm), idle(arm), draw(arm)]
 
 
 # ------------------------------------------------------------- the kunai

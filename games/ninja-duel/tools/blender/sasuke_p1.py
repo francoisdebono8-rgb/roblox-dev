@@ -270,22 +270,25 @@ def seal(name):
 
 
 def katon(arm):
-    """Great Fireball, acted: snake - ram - monkey(boar) - horse - tiger in
-    quick succession, the stance widening; the big inhale (chest up and back,
+    """Great Fireball, acted: ram - horse - tiger snapped in
+    0.2 s, the stance widening; the big inhale (chest up and back,
     head back, the body sits over the rear foot); the ringed hand comes to
     the mouth; then everything goes forward over the front foot at once and
     stays there while the fire pours out."""
     out = []
     ch = Shot(arm, "Lion.FireBloom.Channel")
     ch.key(0, s(), "ease")
-    for f, n in ((5, "snake"), (9, "ram"), (13, "boar"), (17, "horse"), (21, "tiger")):
+    # (Partie 1 feedback: five seals were too long to ever land it.) Three
+    # snapped seals, ram - horse - tiger, like the Storm games' quick cast;
+    # the full sequence is for the held (charged) version.
+    for f, n in ((4, "ram"), (8, "horse"), (12, "tiger")):
         ch.key(f, s(merge(WIDE, seal(n))), "pass")
     inhale = s(merge(WIDE, {"root": {"y": -.62, "z": .25, "pitch": -12}, "torso": {"pitch": -22}, "head": {"pitch": 26},
                             "ra": {"raise": 100, "out": -42, "twist": 60, "elbow": 132, "wrist": 0},
                             "la": {"raise": 40, "out": 20, "twist": 20, "elbow": 80}}))
-    ch.key(30, inhale, "ease")
+    ch.key(19, inhale, "ease")
     ch.drag(["neck"], 1)
-    out.append(ch.build(markers={"release": 30 / 60}))
+    out.append(ch.build(markers={"release": 19 / 60}))
     ho = Shot(arm, "Lion.FireBloom.Hold")
     ho.key(0, inhale, "ease")
     ho.key(20, merge(inhale, {"root": {"y": -.66, "z": .3}, "torso": {"pitch": -25}, "head": {"pitch": 28}}), "ease")

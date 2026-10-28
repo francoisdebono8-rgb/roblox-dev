@@ -86,4 +86,38 @@ test("air fan: Itachi throws three blades from the air",function()
  assert(most==3,"the air fan threw "..most)
 end)
 
+-- Global kunai (DEC-030): any fighter draws a kunai (Arm), fights with it,
+-- and the tool button throws that blade, which is then gone.
+test("global kunai: any fighter draws, cuts further with it, and throws it away",function()
+ for _,id in {"Leaf","Sand","Flashstep","Mirage"} do
+  local c,a,b=H.duel(id,"Flashstep")
+  place(c,a,b,V.new(0,3,14),V.new(0,3,-14))
+  assert(c:request(a,"Arm"),id.." could not draw")
+  assert(a.armed==true,id.." not armed")
+  H.step(c,.3)
+  -- the drawn string cuts (slash contacts)
+  assert(c:request(a,"Attack"),id.." armed light refused")
+  local spec=a.pending.spec
+  assert(spec.kind=="slash",id.." armed light is "..tostring(spec.kind))
+  H.step(c,1.2)
+  -- the throw: one kunai leaves the hand and the hand is empty again
+  a.neutralToolAt=0;a.chakra=0
+  assert(c:request(a,"Tool",b.root.Position),id.." could not throw the drawn kunai")
+  assert(not a.armed,id.." still armed after the throw")
+  local kind=nil
+  for _=1,30 do H.step(c,.01);for _,p in c.projectiles do if p.a==a then kind=p.kind end end end
+  assert(kind=="kunai",id.." threw "..tostring(kind))
+ end
+end)
+
+test("global kunai: draw and sheathe toggle, refused in the air and mid-swing",function()
+ local c,a,b=H.duel("Lion","Flashstep")
+ place(c,a,b,V.new(0,3,6),V.new(0,3,-6))
+ assert(c:request(a,"Arm"));H.step(c,.3)
+ assert(c:request(a,"Arm"));assert(not a.armed,"sheathe did not put it away")
+ H.step(c,.3)
+ assert(c:request(a,"Attack"))
+ assert(not c:request(a,"Arm"),"drew mid-swing")
+end)
+
 print("NinjaDuel shared tools: "..passed.." PASS")

@@ -128,7 +128,7 @@ function Input.new(send,getState,toggleLock,camera)
  for _,action in {"Substitute","WallDetach","Feint","Pursuit"} do
   bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
- for _,action in {"Technique5","Awaken"} do
+ for _,action in {"Technique5","Awaken","Arm"} do
   bind(action,both(action),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
  -- Pad re-engage has no button of its own: × in a chase window (Jump above),
