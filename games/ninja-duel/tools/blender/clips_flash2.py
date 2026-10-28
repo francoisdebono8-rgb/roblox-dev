@@ -69,7 +69,7 @@ def run_back(arm):
         (0.34, {"root": {"y": -.4}, "lf": {"z": 1.0, "y": .12, "toe": -14}}, "launch"),
         (0.45, {"root": {"y": -.42}, "rf": {"z": -.72, "y": .25, "toe": -22}, "lf": {"z": 1.0, "y": .03, "toe": -12}}, "ease"),
     ]
-    sh = cycle(arm, "Flashstep.Run.B", 6.6, 28, keys, {"R": (0, .32)}, direction=(0.0, 1.0))
+    sh = cycle(arm, "Flashstep.Run.B", 6.6, 28, keys, {"R": (0, .32)}, direction=(0.0, 1.0), keep_upper=True)
     sh.drag(["neck"], 2)
     return sh.build(loop=True, meta={"stride": 6.6})
 

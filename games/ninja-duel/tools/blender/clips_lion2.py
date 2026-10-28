@@ -95,7 +95,7 @@ def run_back(arm):
         (0.34, {"root": {"y": -.44, "yaw": -2}, "lf": {"z": .95, "y": .14, "toe": -14}}, "launch"),
         (0.45, {"root": {"y": -.46, "yaw": -6}, "rf": {"z": -.7, "y": .3, "toe": -24}, "lf": {"x": -.04, "z": .95, "y": .04, "toe": -12}}, "ease"),
     ]
-    sh = cycle(arm, "Lion.Run.B", 6.0, 30, keys, {"R": (0, .34)}, direction=(0.0, 1.0))
+    sh = cycle(arm, "Lion.Run.B", 6.0, 30, keys, {"R": (0, .34)}, direction=(0.0, 1.0), keep_upper=True)
     sh.drag(["neck"], 2)
     return sh.build(loop=True, meta={"stride": 6.0})
 

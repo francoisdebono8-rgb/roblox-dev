@@ -398,7 +398,7 @@ def mirror(spec):
     return out
 
 
-def cycle(arm, name, stride, frames, keys, plant, direction=(0.0, -1.0), mirror_half=True, base=None):
+def cycle(arm, name, stride, frames, keys, plant, direction=(0.0, -1.0), mirror_half=True, base=None, keep_upper=False):
     """A locomotion cycle authored pose-to-pose, as an animator blocks it.
 
     keys: [(u, spec, spacing)]. With mirror_half, only the first half
@@ -424,7 +424,15 @@ def cycle(arm, name, stride, frames, keys, plant, direction=(0.0, -1.0), mirror_
     plants = dict(plant)
     if mirror_half:
         for u, spec, spacing in keys:
-            full.append((u + .5, mirror(merge(base, spec)), spacing))
+            m = mirror(merge(base, spec))
+            if keep_upper:
+                # (28/10, film pass) an asymmetric guard (the backpedal) keeps
+                # its hands: mirroring it swapped the lead hand every step,
+                # an 11-degree jump in one frame at the half.
+                for part in ("la", "ra", "torso", "head"):
+                    if part in spec or part in base:
+                        m[part] = merge(base, spec).get(part, {})
+            full.append((u + .5, m, spacing))
         if "R" in plants and "L" not in plants:
             plants["L"] = (plants["R"][0] + .5, plants["R"][1] + .5)
     full.sort(key=lambda k: k[0])
