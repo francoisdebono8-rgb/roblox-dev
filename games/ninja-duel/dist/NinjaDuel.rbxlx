@@ -3436,7 +3436,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3a4560041968c8fad09203b6228dd90123d3856c039d8296c3c7d58c67b3d1aa</string>
+          <string name="Value">eff435e1eedbe2495d6d232a43e27921349d286bb364761814ee8f419f1c43e2</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -3685,6 +3685,22 @@ function AI:defend(now)
 	-- Low on health: awaken (once per match).
 	if not a.awakened and a.def.Awakening and a.health&lt;=a.def.Health*Config.Awaken.Threshold and not a.reaction and self.rng:NextNumber()&lt;.4 then
 		if c:request(a,"Awaken") then return true end
+	end
+	-- Global kunai (DEC-030): the bot draws a blade now and then for the close
+	-- fight (and puts it away again), so the player meets the system too.
+	-- Only fighters whose own tool is a thrown blade: a bot keeps his identity
+	-- (Lee's bare hands, Temari's fan, Gaara's sand); the player may draw with anyone.
+	if (a.def.Tool=="Kunai" or a.def.Tool=="Shuriken") and not a.reaction and not a.airborne and a.target and a.target.root and now&gt;=(self.armThought or 0) then
+		-- its own dice: the fight's decisions keep their sequence
+		self.armRng=self.armRng or Random.new(7)
+		local roll=self.armRng:NextNumber()
+		self.armThought=now+2.5+roll*3
+		local gap=(a.target.root.Position-a.root.Position).Magnitude
+		if not a.armed and gap&lt;14 and roll&lt;.3 then
+			if c:request(a,"Arm") then return true end
+		elseif a.armed and roll&gt;.88 then
+			if c:request(a,"Arm") then return true end
+		end
 	end
 	local hits=a.comboHits or 0
 	if hits==0 then self.subPlan=nil end
@@ -9146,7 +9162,7 @@ function Combat:arm(a)
 	if self.now&lt;(a.armAt or 0) then return false,"Too soon" end
 	a.armed=not a.armed;a.armAt=self.now+.25
 	Brawler.event(self,a,if a.armed then "Draw" else "Sheathe")
-	self:cue(a,if a.armed then "KUNAI EN MAIN" else "KUNAI RANGÉ",.45)
+	self:cue(a,if a.armed then "KUNAI DRAWN" else "KUNAI SHEATHED",.45)
 	return true
 end
 function Combat:throwDrawn(a,aim)
@@ -9162,7 +9178,7 @@ function Combat:throwDrawn(a,aim)
 	self:beginThrow(a,{kind="Kunai",release=.08,count=1,interval=.08,aim=aim,fire=function(_,target)
 		self:projectile(a,target,100,if cancel then 24 else 62,5,"kunai")
 	end})
-	self:cue(a,if cancel then "KUNAI • FINISSEUR" else "KUNAI LANCÉ",.5)
+	self:cue(a,if cancel then "KUNAI • FINISHER" else "KUNAI THROWN",.5)
 	return true
 end
 function Combat:request(a,action,aim,clientTime,opts)
@@ -28926,8 +28942,10 @@ function UI:render(data)
 			widget.box.Visible=false;widget.shown=0
 		end
 	end
-	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
-		if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("DASH %.1fs",h.dodge) else "DASH READY")
+	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
+		if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("DASH %.1fs",h.dodge) else "DASH READY",
+		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
+		if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai")
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
