@@ -208,6 +208,18 @@ def pose_bones(arm, spec):
         # turned by `knee`), from the middle of the hip-ankle line: legs that
         # swing under the body or kick above the hips never cross the pole,
         # so the knee never flips.
+        if r.get("tuck"):
+            # Somersault (root "tuck": 1): the pelvis pitches through 360, so
+            # the knee aims along the PELVIS's own forward (tipped up a little),
+            # from the real (rotated) hip: a tucked leg folds toward the chest
+            # whatever way up the body is.
+            Rp = nd_anim.R(0, -tr.get("yaw", 0), 0) @ nd_anim.ori(r)
+            hip = rb(Vector((tr.get("x", 0) + r.get("x", 0), H + r.get("y", 0), tr.get("z", 0) + r.get("z", 0))) + Rp @ Vector((.5 * s, -.55, 0)))
+            ahead = rb(Rp @ Vector((0, .3, -1))).normalized()
+            pole_world = (hip + target) * .5 + ahead * 3.0
+            pole = arm.data.bones["knee_pole." + side]
+            out["knee_pole." + side] = (None, pole.matrix_local.to_3x3().transposed() @ (pole_world - pole.head_local))
+            continue
         hip_y = H + r.get("y", 0) - .55
         hip = rb((tr.get("x", 0) + r.get("x", 0) + .5 * s, hip_y, tr.get("z", 0) + r.get("z", 0)))
         a = math.radians(tr.get("yaw", 0) + r.get("yaw", 0) * .5 + f.get("yaw", 0) * .5 + f.get("knee", 0) * s)

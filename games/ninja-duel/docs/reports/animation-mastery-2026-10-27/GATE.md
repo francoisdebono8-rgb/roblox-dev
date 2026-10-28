@@ -108,3 +108,19 @@ Joint motion per 1/60 s on both bodies, every frame, with the state of each figh
 
 - ANIM-005: the reactions and defence have been re-authored, and the 60–90 s rounds have been played with real keys, with VFX both on and off. The human verdict remains open.
 - HUMAN_VISUAL/FEEL: PENDING.
+
+## Pass 3 — Sasuke's kunai string, animated in Blender (28/10, after the user's 12:08 feedback)
+
+- New clips, authored pose by pose on the control rig and checked on renders from the game camera and a side camera (`tools/blender/kunai_lion.py`, `~/Documents/NinjaDuelBlender/NinjaDuel_Sasuke_v3.blend`, sheets `out/sheet_k*_*.png`):
+  - `Lion.Light1`: a draw-slash. The hand goes to the thigh holster, then the blade rises across the body as the lead foot steps a full stud. It overshoots above the head and holds there.
+  - `Lion.Light2`: a backhand return. The kunai is wound to the left shoulder, the rear foot steps through, then a flat left-to-right sweep. Ends right-lead.
+  - `Lion.Light3`: a full spinning slash on the front foot. The arm is straight, so the blade draws a flat circle.
+  - `Lion.Heavy`: a front salto (load, take-off, tuck, a full turn, open, land) into a downward axe slash.
+- In game, a kunai is welded to Sasuke's right hand from the start of each of these four strikes to the end of its recovery. The weld is the same as in Blender.
+- Engine:
+  - the authored cap is 2200°/s for limbs and 3600°/s for the Root;
+  - the Root may translate at 90 studs/s;
+  - a foot planted by an authored clip is solved exactly.
+- Headless: release PASS (Animation 24 PASS).
+- Studio file for the user: `Documents/Roblox/ND-Kunai1.rbxlx` (Debug build).
+- HUMAN_VISUAL/FEEL: PENDING. The user plays the string himself.

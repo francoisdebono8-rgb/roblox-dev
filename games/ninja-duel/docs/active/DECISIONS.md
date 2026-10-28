@@ -122,3 +122,8 @@ Décision : la fluidité de cette vidéo est la cible du corps pour tout le rost
 - la caméra se tient près, derrière l'épaule (distance ≈ 10,5, hauteur 3,4).
 
 La règle de la mission ChatGPT « ne pas cacher un corps faible derrière des effets » reste valable : les traînées n'apparaissent que là où l'œil ne peut pas suivre le corps. Le corps lui-même doit être fluide (premier point).
+
+**Révision du 28/10, 12 h 08** (retour utilisateur : « je ne vois pas de différence… anime sur Blender… les mouvements doivent être amplifiés… on ne peut pas sortir de kunai, salto et slash pas fluides ») :
+- les coups se dessinent d'abord comme des POSES amplifiées dans Blender (hanches qui tournent de 60 à 90°, buste qui dépasse, bras en dernier, arcs larges, overshoot tenu), vérifiées sur les rendus de la caméra de jeu et d'une caméra latérale ; le fichier `NinjaDuel_Sasuke_v3.blend` est la source ;
+- Sasuke frappe au kunai (prise directe, même soudure dans Blender et dans le jeu) ; son Heavy est un salto avant suivi d'un coup de taille vers le bas ;
+- le plafond de vitesse authored passe à 2 200°/s pour les membres et 3 600°/s pour le Root (un salto n'est pas un « pop ») ; un pied posé par un clip authored est exact (la jambe suit les hanches sans plafond), sinon il glissait vers le sol à l'atterrissage.

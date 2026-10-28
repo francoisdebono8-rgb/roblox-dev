@@ -83,8 +83,11 @@ local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike m
 local MAX_SPEED=1750
 -- deg/s: the fastest any authored joint turns (a sprint thigh peaks ~1200,
 -- a kick ~1500). The reference footage never moves a limb more than ~25 deg
--- between two 60 Hz frames outside a speed smear.
-local AUTHORED_SPEED=1500
+-- between two 60 Hz frames outside a speed smear. The kunai string (ANIM-005)
+-- whips a slash over 2-3 frames and turns a somersault in 9: up to ~35 deg
+-- per frame on the arm and the pelvis, so the cap sits above that (a real
+-- flip is still drawn over its own frames, a 180 deg pop is still split).
+local AUTHORED_SPEED=2200
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
 	return math.abs(angle)
@@ -155,7 +158,9 @@ local function write(char,key,target,rate,dt)
 		-- frames instead of one, the eye reads motion, not a pop.
 		nextCF=desired
 		local step=angleBetween(current,nextCF)
-		local limit=rad(AUTHORED_SPEED)*dt
+		-- (The Root is the whole body turning in the air - a salto, a spin -
+		-- not a limb: it may turn up to 60 deg a frame.)
+		local limit=rad(if key=="Root" then 3600 else AUTHORED_SPEED)*dt
 		if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	else
 		local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
@@ -167,7 +172,9 @@ local function write(char,key,target,rate,dt)
 	end
 	-- Translation (only the Root carries any) is speed-limited too.
 	local move=nextCF.Position-current.Position
-	local maxMove=(if rate==RATE.authored then 40 else 14)*dt
+	-- (The salto drops the hips ~1 stud a frame onto its landing: authored
+	-- motion may carry the Root that fast, or the feet land late.)
+	local maxMove=(if rate==RATE.authored then 90 else 14)*dt
 	if move.Magnitude>maxMove then nextCF=CF(current.Position+move.Unit*maxMove)*nextCF.Rotation end
 	-- The drawn velocity (joint space), for the next transition.
 	local vel=s.vel[key] or {}
@@ -223,6 +230,9 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 					s.ikEnter[side]={from=rootPart.CFrame:PointToWorldSpace(from.Position),at=elapsedTime}
 				end
 			end
+			-- (An authored clip's planted foot is exact; the hand-over blend only
+			-- carries a foot that is still on its way.)
+			if f.planted and rate==RATE.authored then s.ikEnter[side]=nil end
 			local enter=s.ikEnter[side]
 			if enter then
 				local u=(elapsedTime-enter.at)/.1
@@ -235,7 +245,11 @@ local function apply(char,targets,rate,dt,upperRate,legRate)
 			for _,j in {prefix.."Hip",prefix.."Knee",prefix.."Ankle"} do s.inert[j]=nil end
 			-- (Authored: exact, a damped leg lets the foot creep with the body.)
 			local legRate2=if rate==RATE.authored then RATE.authored else 60
-			write(char,prefix.."Hip",hip,legRate2,dt);write(char,prefix.."Knee",knee,legRate2,dt);write(char,prefix.."Ankle",ankle,legRate2,dt)
+			-- (A foot planted by an authored clip is exact: its knee and hip go
+			-- where the hips take them this frame. Speed-capped, the leg lagged
+			-- behind a landing and the "planted" foot slid down onto the floor.)
+			local legDt=if rate==RATE.authored and f.planted and not enter then nil else dt
+			write(char,prefix.."Hip",hip,legRate2,legDt);write(char,prefix.."Knee",knee,legRate2,legDt);write(char,prefix.."Ankle",ankle,legRate2,legDt)
 		end
 	end
 	s.ikOn=s.ikOn or {}
@@ -1917,7 +1931,7 @@ local function authoredFeet(char,pose,dt)
 			local rx,ry=frame:ToEulerAnglesYXZ()
 			local target=clipPos+f.off
 			if f.planted then target=Vector3.new(target.X,ANKLE_Y,target.Z) else target+=Vector3.new(0,lift,0) end
-			feet[key]={ankle=target,yaw=-math.deg(ry),toe=math.deg(rx)}
+			feet[key]={ankle=target,yaw=-math.deg(ry),toe=math.deg(rx),planted=f.planted}
 		end
 	end
 	return feet
@@ -2818,7 +2832,11 @@ end
 -- kunai for throws and his marked three-pronged kunai for the seal throw.
 -- Itachi holds shuriken flat between the fingers of his left hand.
 local weapons=setmetatable({},{__mode="k"})
-local MELEE={Lion={},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
+-- Sasuke's kunai string (ANIM-005): forward grip, blade out of the thumb
+-- side 50 deg off the arm (tools/blender/kunai_lion.py KUNAI_POS/KUNAI_DIR:
+-- the same weld the Blender file is animated with).
+local LION_KUNAI_C0=CF(0,-.12,-.12)*ANG(math.rad(-50.3),0,0)
+local MELEE={Lion={Light1=true,Light2=true,Light3=true,Heavy=true},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -2860,6 +2878,7 @@ local function weaponsFor(char,fighterId)
 			items.marked=makeItem(hand,Effects.buildKunai(true),CF(0,-.16,-.08)*ANG(math.rad(10),0,0))
 		else
 			items.shuriken=makeItem(hand,Effects.buildShuriken(),CF(0,-.34,-.08)*ANG(0,0,math.pi/2))
+			if kind=="wire" then items.melee=makeItem(hand,Effects.buildKunai(false),LION_KUNAI_C0) end
 		end
 	end)
 	if not ok then
@@ -2881,7 +2900,9 @@ function Motion.weapon(char,actor)
 	local name=actor.attackName
 	local spec=name and Attacks[name]
 	local swinging=name~=nil and actor.state~="Neutral" and actor.state~="Guarding"
-	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*.45 end)() else .35
+	-- (Sasuke keeps the kunai out through the whole recovery: the string flows on.)
+	local keep=if kind=="wire" then .95 else .45
+	local release=if spec then (function() local s,a,r=timing(name,actor.fighterId);return s+a+r*keep end)() else .35
 	local meleeOut=(swinging and (MELEE[actor.fighterId] or MELEE[familyOf(actor.fighterId).body] or {})[name]==true and (actor.attackElapsed or 0)<=release
 		and actor.attackVariant~="Rasengan") or (minato and (actor.intro or 0)>0)
 	-- Thrown weapons sit in the hand from the wind-up until their release frame.
@@ -2901,6 +2922,7 @@ function Motion.weapon(char,actor)
 		setVisible(items.marked,holding and throwKind=="MarkedKunai")
 	elseif kind=="wire" then
 		setVisible(items.shuriken,(holding and throwKind=="Shuriken") or (actor.castId=="WireTrap" and actor.state=="TechniqueChannel"))
+		if items.melee then setVisible(items.melee,meleeOut and not holding) end
 	else
 		setVisible(items.shuriken,(meleeOut and (name=="Light2")) or (holding and throwKind=="Shuriken") or castFan)
 		if items.melee then setVisible(items.melee,meleeOut and name=="Light2") end
