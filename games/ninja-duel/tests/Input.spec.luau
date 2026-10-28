@@ -150,6 +150,32 @@ test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay pl
  state.bot=nil;players.LocalPlayer.Character=nil;mouseHit=V.new(0,3,-20)
  Input.now=now
 end)
+test("chakra load: R1 or Z held alone loads the next action once; a chord or a jutsu does not",function()
+ local clock,now=0,Input.now
+ Input.now=function() return clock end
+ local function loads() local n=0;for _,e in sent do if e.action=="ChakraLoad" then n+=1 end end;return n end
+ table.clear(sent)
+ -- pad: R1 held alone
+ press("Modifier",E.KeyCode.ButtonR1)
+ clock=Input.ChakraHold*.5;input:chakraHold();assert(loads()==0,"loaded before the hold")
+ clock=Input.ChakraHold+.01;input:chakraHold();assert(loads()==1,"R1 held alone did not load")
+ clock+=1;input:chakraHold();assert(loads()==1,"one hold loaded twice")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- pad: R1 + square (a jutsu) is not a load
+ clock=10;press("Modifier",E.KeyCode.ButtonR1);tap("Light",E.KeyCode.ButtonX)
+ clock=11;input:chakraHold();assert(loads()==1,"R1 + square also loaded")
+ press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ -- keyboard: Z held alone
+ clock=20;press("ChakraKey",Controls.Keyboard.Chakra)
+ clock=20+Input.ChakraHold+.01;input:direction(camera);assert(loads()==2,"Z held alone did not load (polled by direction)")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ -- keyboard: Z + R is the chakra tool, not a load
+ clock=30;press("ChakraKey",Controls.Keyboard.Chakra);tap("Tool",Controls.Keyboard.Tool)
+ clock=31;input:chakraHold();assert(loads()==2,"Z + R also loaded")
+ press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ table.clear(sent)
+ Input.now=now
+end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
  table.clear(sent);state.human.pursuit=1

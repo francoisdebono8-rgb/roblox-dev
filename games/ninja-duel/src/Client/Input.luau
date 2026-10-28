@@ -5,6 +5,9 @@ local Input={};Input.__index=Input
 -- Chakra chord: a modifier released this long before the tool still counts
 -- (Z then R rolled quickly); the clock is a field so specs can drive it.
 Input.ChakraChord=.3
+-- The modifier held alone this long loads chakra into the next action
+-- (server ChakraFlow): pad R1, keyboard Z.
+Input.ChakraHold=.28
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -67,11 +70,12 @@ function Input.new(send,getState,toggleLock,camera)
   camera.look=self.look
  end)
  bind("Modifier",key(GAMEPAD.Modifier),function(state)
-  if begin(state) then self.modifier=true elseif released(state) then self.modifier=false end
+  if begin(state) then self.modifier=true;self.modifierAt=Input.now();self.modifierSpent=false elseif released(state) then self.modifier=false end
  end)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
+   if modified then self.modifierSpent=true end
    send(if modified then "Technique"..slot else normal)
    return not modified
   end
@@ -99,7 +103,7 @@ function Input.new(send,getState,toggleLock,camera)
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   if padObject(obj) and self.modifier then send("WallDetach")
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("WallDetach")
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -109,16 +113,20 @@ function Input.new(send,getState,toggleLock,camera)
  -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
  -- Only a boolean leaves the client; the server picks what the chakra does.
  bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
-  if begin(state) then self.chakra=true;self.chakraAt=Input.now() elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
+  if begin(state) then self.chakra=true;self.chakraAt=Input.now();self.chakraDownAt=self.chakraAt;self.chakraSpent=false elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
  end)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
    local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)<=Input.ChakraChord)
+   if chakra then self.modifierSpent=true;self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
   end
  end)
  bind("Grab",both("Grab"),function(state,obj)
-  if pressed(state,obj) then send(if padObject(obj) and self.modifier then "Feint" else "Grab") end
+  if pressed(state,obj) then
+   if padObject(obj) and self.modifier then self.modifierSpent=true end
+   send(if padObject(obj) and self.modifier then "Feint" else "Grab")
+  end
  end)
  bind("Lock",both("Lock"),function(state,obj) if pressed(state,obj) then toggleLock() end end)
  bind("Sprint",both("Sprint"),function(state,obj)
@@ -159,9 +167,21 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
- self.chakra=false;self.chakraAt=nil
+ self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true
+end
+-- (Freedom) The modifier held alone: once per hold, the next action is
+-- loaded with chakra. Polled every frame (Input:direction).
+function Input:chakraHold()
+ local now=Input.now()
+ if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)>=Input.ChakraHold then
+  self.modifierSpent=true;self.send("ChakraLoad")
+ end
+ if self.chakra and not self.chakraSpent and now-(self.chakraDownAt or now)>=Input.ChakraHold then
+  self.chakraSpent=true;self.send("ChakraLoad")
+ end
 end
 function Input:direction(camera)
+ self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
  -- (User 28/10) The pad's sprint is a toggle (L3); it ends when the stick

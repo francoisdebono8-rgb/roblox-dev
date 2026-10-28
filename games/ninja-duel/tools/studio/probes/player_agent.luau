@@ -12,7 +12,8 @@ local FIGHTER, OPPONENT, DURATION = "Lion", "Mirage", 75
 local dev = game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev", 10)
 local Fighters = require(game.ReplicatedStorage.NinjaDuel.Fighters)
 local rng = Random.new(28)
-local R = {moves = {}, botMoves = {}, seq = {}, botSeq = {}, strings = {}, airs = {}, flickers = {}, refused = {}, frozen = {}, kos = 0, log = {}}
+local R = {moves = {}, botMoves = {}, seq = {}, botSeq = {}, strings = {}, airs = {}, flickers = {}, refused = {}, frozen = {}, kos = 0, log = {},
+	infused = {}, botInfused = 0, loads = 0, airDashes = 0}
 shared.NdAgent = R
 local function note(t, s) table.insert(R.log, string.format("%.2f %s", t, s)) end
 
@@ -33,6 +34,7 @@ local function act(a, aim)
 	if a == "Jump" then lastJumpAt = now() end
 	return r
 end
+local function okAct(a) local r = act(a) return not (type(r) == "table" and r.ok == false) end
 local function flat(v) return Vector3.new(v.X, 0, v.Z) end
 
 -- Observer: 30 Hz on both seats.
@@ -46,7 +48,9 @@ task.spawn(function()
 			if h.attackName and h.attackName ~= lastA then
 				R.moves[h.attackName] = (R.moves[h.attackName] or 0) + 1
 				table.insert(R.seq, h.attackName)
+				if h.infused then R.infused[h.attackName] = (R.infused[h.attackName] or 0) + 1 end
 			end
+			if b.attackName and b.attackName ~= lastB and b.infused then R.botInfused += 1 end
 			lastA = h.attackName
 			if b.attackName and b.attackName ~= lastB then
 				R.botMoves[b.attackName] = (R.botMoves[b.attackName] or 0) + 1
@@ -94,6 +98,16 @@ task.spawn(function()
 			-- hit: a person mashes out or dodges once it is over
 			if rng:NextNumber() < .3 then act("Dodge") end
 			task.wait(.15)
+		elseif gap > 12 and not h.airborne and rng:NextNumber() < .08 and (h.chakra or 0) > 40 then
+			-- (Freedom) holds R1: loads chakra, then dashes in on it or leaps in
+			if okAct("ChakraLoad") then R.loads += 1 end
+			task.wait(.3)
+			dev:Invoke("move", "human", dir)
+			if rng:NextNumber() < .6 then act("Dodge"); task.wait(.35); act("Attack"); task.wait(.24); act("Attack")
+			else act("Jump"); task.wait(.25)
+				if (h.chakra or 0) > 30 and okAct("ChakraLoad") then R.loads += 1 end
+				task.wait(.05); if okAct("Dodge") then R.airDashes += 1 end
+				task.wait(.3); act("Attack"); task.wait(.24); act("Attack"); task.wait(.25); act("Heavy") end
 		elseif gap > 9 then
 			-- runs in (a pad player toggles sprint and holds the stick)
 			dev:Invoke("sprint", "human", true); dev:Invoke("move", "human", dir)
@@ -121,7 +135,11 @@ task.spawn(function()
 					act("Attack"); task.wait(.24)
 				end
 				dev:Invoke("move", "human", Vector3.zero)
-				if rng:NextNumber() < .35 then act("Heavy"); task.wait(.3) end
+				if rng:NextNumber() < .35 then
+					-- a loaded heavy now and then (hold R1, then triangle)
+					if rng:NextNumber() < .3 and (h.chakra or 0) > 30 and okAct("ChakraLoad") then R.loads += 1; task.wait(.3) end
+					act("Heavy"); task.wait(.3)
+				end
 				if rng:NextNumber() < .25 then act("Jump"); task.wait(.15); act("Attack"); task.wait(.25); act("Attack"); task.wait(.25); act("Heavy") end
 				task.wait(.2)
 			else
@@ -167,6 +185,7 @@ task.spawn(function()
 		"jumps (s/apex): " .. table.concat(airs, " "),
 		"airborne flickers (no jump): " .. #R.flickers .. " " .. table.concat(R.flickers, " "),
 		"refused presses: " .. list(R.refused),
+		string.format("chakra loads %d, air dashes %d, infused player strikes: %s, bot infused strikes %d", R.loads, R.airDashes, list(R.infused), R.botInfused),
 		"frozen > 2 s: " .. table.concat(R.frozen, " "),
 	}, "\n")
 end)

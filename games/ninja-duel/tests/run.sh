@@ -44,6 +44,7 @@ run Identity   "$LUNE" run tests/Identity.spec.luau
 run Systems    "$LUNE" run tests/Systems.spec.luau
 run Tools      "$LUNE" run tests/Tools.spec.luau
 run Chakra     "$LUNE" run tests/Chakra.spec.luau
+run ChakraFlow "$LUNE" run tests/ChakraFlow.spec.luau
 run Sasuke     "$LUNE" run tests/Sasuke.spec.luau
 run Gaara      "$LUNE" run tests/Gaara.spec.luau
 run Lee        "$LUNE" run tests/Lee.spec.luau

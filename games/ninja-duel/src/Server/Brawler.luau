@@ -474,6 +474,8 @@ function Brawler.start(c,a,name)
   spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
   spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
  end
+ -- A chakra load (ChakraFlow, hold the modifier): this strike takes it.
+ local chakraFlow=require(script.Parent.ChakraFlow).strike(c,a,name,spec)
  -- An awakening that quickens the body (Awakening.Recovery: Naruto's cloak).
  local awake=a.def.Awakening
  if awake and awake.Recovery and (a.awakenUntil or 0)>c.now then spec.recovery*=awake.Recovery end
@@ -513,7 +515,7 @@ function Brawler.start(c,a,name)
   local gap=(a.target.root.Position-a.root.Position).Magnitude
   slamWindow=math.clamp(gap/88,.16,.5)
  end
- a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true,step=step}
+ a.pending={kind="Brawl",name=name,spec=spec,hit=false,slamWindow=slamWindow,flow=a.nextFlow==true,step=step,chakraFlow=chakraFlow}
  if not a.nextFlow then a.flowStreak=0 end
  a.nextFlow=nil
  Bangla.begin(c,a,a.pending)
@@ -1288,6 +1290,7 @@ function Brawler.hit(c,a,p)
  local contact=if success then Brawler.tagContact(c,a,b,p) else nil
  if not success or b.health<=0 then return success end
  if protected then return true end
+ if p.chakraFlow then require(script.Parent.ChakraFlow).hit(c,a,b,p,guarded) end
  if a.def.GentleFist then Brawler.gentleFist(c,a,b,guarded,p.spec.zone,true) end
  -- Flying Thunder God: the arrival strike lands on a body still inside the
  -- combo that led to the teleport. The chain went on through the relocation.

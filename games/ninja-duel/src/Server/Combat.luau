@@ -436,6 +436,8 @@ end
 -- Chakra infusion and projectile interactions (ChakraCombat over the rules
 -- Codex prepared): infused throws, meetings in flight, planted points, wire.
 local Chakra=require(script.Parent.ChakraCombat)
+-- Chakra into the next action (hold the modifier alone): ChakraFlow.
+local ChakraFlow=require(script.Parent.ChakraFlow)
 -- Projectile kinds: "kunai", "marked" (Minato's seal kunai), "shuriken",
 -- "fireball" and "wind". Legacy names ("blade", "needle", "tool") still work.
 local KIND_ALIAS={blade="marked",needle="shuriken",tool="kunai"}
@@ -941,6 +943,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if action=="Substitute" then return self:substitute(a) end
 	if action=="Awaken" then return self:awaken(a) end
 	if action=="Arm" then return self:arm(a) end
+	-- The chakra modifier held alone: the next action is infused (ChakraFlow).
+	if action=="ChakraLoad" then return ChakraFlow.load(self,a) end
 	if action=="Feint" then
 		local pending=a.pending
 		if a.state=="Startup" and pending and pending.kind=="Brawl" and pending.name=="Heavy" and self.now-a.attackStarted<=pending.spec.startup*.62 then
@@ -974,6 +978,11 @@ function Combat:request(a,action,aim,clientTime,opts)
 	-- Pad re-engage: sprint + dodge toward a locked opponent at mid range is the
 	-- re-engage (chase in a window, chakra dash outside); anything else, or a
 	-- re-engage that is not available (cooldown, chakra), stays a dodge.
+	-- Loaded, the dodge is a chakra dash at him, on the ground or in the air.
+	if action=="Dodge" and ChakraFlow.active(self,a) then
+		local ok,why=ChakraFlow.dash(self,a)
+		if ok then return ok,why end
+	end
 	if action=="Dodge" and Brawler.dashIntent(self,a) then
 		local ok,why=self:reengage(a)
 		if ok then return ok,why end
@@ -985,7 +994,14 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- Like a guard or a dodge, a jump leaves a recovery only at its cancel
 		-- point: a whiff (or an unanswered dash) cannot hop out of its punish.
 		if a.state=="Recovery" and self.now<(a.recoveryCancelAt or 0) then return false,"Committed" end
-		return Motor.jump(a,self,self.now),"Airborne"
+		local jumped=Motor.jump(a,self,self.now)
+		if jumped then ChakraFlow.leap(self,a) end
+		return jumped,"Airborne"
+	end
+	-- Loaded, the tool is the chakra throw without the chord (Lee has none).
+	if action=="Tool" and a.def.Tool~="Deflect" and ChakraFlow.active(self,a) then
+		a.chakraLoad=nil
+		opts=table.clone(opts or {});opts.chakra=true
 	end
 	if action=="Tool" and a.armed and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
