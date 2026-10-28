@@ -2522,6 +2522,23 @@ local function authoredReaction(actor)
 			local amp=math.clamp((actor.hitStrength or .4)*1.4,.35,1.4)
 			local w=.55+.45*math.clamp((amp-.35)/1.05,0,1)
 			if w<.999 then p=mixPoses({{play(name,0,mirror),1},{p,w/(1-w)}}) or p end
+			-- (DEC-030) The shared clips are chosen by zone; the kind of blow
+			-- still changes how it lands. A palm shoves the trunk back as one
+			-- block (Neji's, Itachi's); a chakra point jolts: the shoulders
+			-- hike and the head snaps (Gentle Fist).
+			if hitKind=="palm" or hitKind=="tenketsu" then
+				p=table.clone(p)
+				local u=snapEnvelope(elapsed,.22)
+				if hitKind=="palm" then
+					p.Root=(p.Root or IDENTITY)*CF(0,0,.3*u)*ANG(rad(-9*u),0,0)
+					p.Waist=(p.Waist or IDENTITY)*ANG(rad(-12*u),0,0)
+					p.Neck=(p.Neck or IDENTITY)*ANG(rad(8*u),0,0)
+				else
+					p.Right=(p.Right or IDENTITY)*ANG(0,0,rad(20*u))
+					p.Left=(p.Left or IDENTITY)*ANG(0,0,rad(-20*u))
+					p.Neck=(p.Neck or IDENTITY)*ANG(rad(-14*u),0,0)
+				end
+			end
 			return p,RATE.authored,name..(if mirror then ".L" else "")
 		end
 	end

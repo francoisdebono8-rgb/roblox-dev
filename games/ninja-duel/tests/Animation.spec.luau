@@ -510,9 +510,9 @@ end)
 test("a palm, a chakra-point hit and a side kick each land differently on the body",function()
  -- Convergence 2 (phase 7): every standing hit used to answer with the same
  -- fold whatever struck it (a Gentle Fist palm read as a jab to the face).
- -- (DEC-030) The procedural reaction language, on a fighter without authored
- -- reactions (Itachi now plays the shared authored set, chosen by zone).
- local c,a=H.duel("Leaf","GentleFist")
+ -- (DEC-030) Every fighter now plays the shared authored reactions (chosen by
+ -- zone); the kind of blow still modulates them (authoredReaction).
+ local c,a=H.duel("Mirage","GentleFist")
  local function reaction(kind,angle)
   Motion.reset(a.model)
   local actor=body(a,{reaction="HitStun",hitAngle=angle or 0,hitStrength=.3,hitKind=kind,hitZone="body",hitTwist=1,reactionElapsed=.06})
