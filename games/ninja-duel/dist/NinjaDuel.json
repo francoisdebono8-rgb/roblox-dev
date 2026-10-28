@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "9ad7efe0f28d56b973b7f3d4f552dc56c380b806d4412e72675ca477df6e4b9b",
+  "sha256": "cc1fe75a4f837d2f7be3361983592da910e349ff6f10d0c80f0fecd7de79be61",
   "sources": {
     "src/Client/AuthoredClips.luau": "9bdd29db406fe28f90bbdf43de0b34c85dc4dec571b7dd62bfbc89f9326b8446",
     "src/Client/AuthoredClips1.luau": "f02b3f9d46208c412fdbfdb1ff0bec17756db1d3c7e0768684b672e5ae37a8b6",
@@ -106,7 +106,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "a51ee07fc6f2a1f4b70c5de1d181edd93d5425c825337f43606187622343fbec",
+  "buildFingerprint": "e103965ca9ec37b00652237a0e2c248f90f10a2364b790ec607979410a6c2fcc",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
