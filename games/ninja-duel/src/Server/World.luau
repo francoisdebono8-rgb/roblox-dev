@@ -38,7 +38,11 @@ local function deco(parent,name,size,cf,color,material,shape)
 end
 -- A flat disc lying on the floor (cylinder axis pointing up).
 local function disc(parent,name,radius,y,center,color,material)
-	return deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+	local p=deco(parent,name,Vector3.new(.06,radius*2,radius*2),CFrame.new(center+Vector3.new(0,y,0))*CFrame.Angles(0,0,math.pi/2),color,material,Enum.PartType.Cylinder)
+	-- The ground the eye sees (a flat skin over the floor, out of queries):
+	-- broken ground takes its material and colour (WorldReaction.skinAt).
+	pcall(function() game:GetService("CollectionService"):AddTag(p,"NinjaGroundSkin") end)
+	return p
 end
 local function label(target,face,text,color,font)
 	local gui=Instance.new("SurfaceGui");gui.Face=face;gui.CanvasSize=Vector2.new(400,400);gui.LightInfluence=1;gui.Parent=target
@@ -303,23 +307,23 @@ function World.arena(parent, origin)
 	local function breakable(name,size,cf,color,material,integrity)
 		local p=part(folder,name,size,cf,color,material)
 		p:SetAttribute("WorldBreakable",true)
-		p:SetAttribute("WorldIntegrity",integrity)
+		p:SetAttribute("WorldToughness",integrity)
 		return p
 	end
 	for k,spot in {{.9,34},{1.15,37},{1.4,34}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],2.6,math.cos(spot[1])*spot[2])
-		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,70)
+		local post=breakable("Training post",Vector3.new(1.7,5.2,1.7),CFrame.new(at)*CFrame.Angles(0,k*.7,0),PALETTE.wood,Enum.Material.Wood,55)
 		deco(post,"Post rope",Vector3.new(.25,1.85,1.85),CFrame.new(at+Vector3.new(0,.9,0))*CFrame.Angles(0,0,math.pi/2),rgb(196,180,140),Enum.Material.Fabric,Enum.PartType.Cylinder)
 	end
 	for _,spot in {{3.6,46,0},{3.75,49,1},{3.5,50,2},{5.0,44,0},{5.15,47,1},{2.2,52,0}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],1.4,math.cos(spot[1])*spot[2])
-		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,40)
+		local crate=breakable("Supply crate",Vector3.new(2.8,2.8,2.8),CFrame.new(at)*CFrame.Angles(0,spot[1]*3+spot[3],0),rgb(150,112,70),Enum.Material.WoodPlanks,30)
 		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,.7,0),PALETTE.woodDark,Enum.Material.Wood)
 		deco(crate,"Crate band",Vector3.new(2.9,.3,2.9),crate.CFrame*CFrame.new(0,-.7,0),PALETTE.woodDark,Enum.Material.Wood)
 	end
 	for _,spot in {{.3,54},{2.7,40},{4.3,56},{5.8,42}} do
 		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
-		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,80)
+		local lantern=breakable("Stone lantern",Vector3.new(1.6,3.6,1.6),CFrame.new(at+Vector3.new(0,1.8,0)),rgb(150,146,134),Enum.Material.Slate,65)
 		deco(lantern,"Lantern roof",Vector3.new(2.8,.7,2.8),CFrame.new(at+Vector3.new(0,4.0,0))*CFrame.Angles(0,math.pi/4,0),rgb(126,122,112),Enum.Material.Slate)
 		deco(lantern,"Lantern light",Vector3.new(1.0,.9,1.0),CFrame.new(at+Vector3.new(0,3.1,0)),rgb(240,200,120),Enum.Material.Neon)
 	end

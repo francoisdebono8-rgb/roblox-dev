@@ -1016,6 +1016,25 @@ end
 -- Surfaces a flying body can be slammed into: the stadium wall, the field
 -- trees and the boulders.
 -- (Server/Perception owns the rule: a broken one is a stump or a mound now.)
+-- A flying body meets a prop (a crate, a post, a lantern): the whole body,
+-- not only its root's line (Studio: a thrown body crossed a crate shoulders
+-- first, through it). A box round the trunk and legs, ahead by this frame's
+-- travel; returns a raycast-like hit on the prop.
+function Brawler.propContact(c,a,velocity)
+ local flat=Vector3.new(velocity.X,0,velocity.Z)
+ if flat.Magnitude<8 then return nil end
+ local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+ params.FilterDescendantsInstances={a.model,c.match.effects}
+ local centre=a.root.Position-Vector3.new(0,1,0)+flat.Unit*1.2
+ for _,part in workspace:GetPartBoundsInBox(CFrame.lookAt(centre,centre+flat),Vector3.new(2.4,4,2.6),params) do
+  if part:GetAttribute("WorldBreakable") and part:GetAttribute("WorldState")~="Broken" then
+   local toward=Vector3.new(part.Position.X-a.root.Position.X,0,part.Position.Z-a.root.Position.Z)
+   local normal=if toward.Magnitude>.05 then -toward.Unit else -flat.Unit
+   return {Instance=part,Position=part.Position+normal*math.min(part.Size.X,part.Size.Z)*.5,Normal=normal,Material=part.Material}
+  end
+ end
+ return nil
+end
 function Brawler.splatSurface(part)
  return Perception.surface(part)
 end
@@ -1454,11 +1473,23 @@ function Brawler.step(c,a,dt)
     -- Down on the floor (landed, or thrown along it): no more flight, a short
     -- skid on the back that dies out instead of gliding at standing height.
     local skid=Vector3.new(velocity.X,0,velocity.Z)
+    -- A body sliding along the floor into a low prop hits it too (Studio: a
+    -- knocked-down body skidded straight through a crate).
+    local prop=Brawler.propContact(c,a,skid)
+    if prop then
+     local result=WorldReaction.body(c,a,prop,-skid:Dot(prop.Normal),skid)
+     if prop.Instance:GetAttribute("WorldState")=="Broken" then skid*=Config.World.SmashCarry
+     elseif result~=nil or -skid:Dot(prop.Normal)>0 then skid=Vector3.zero end
+    end
     if skid.Magnitude>.05 then Motor.travel(a,c,skid,skid.Magnitude*dt) end
     velocity=skid*math.exp(-dt*7)
    elseif airReactions[a.reaction] then
     velocity+=Vector3.new(0,-75*dt,0)
     local hit=Motor.flight(a,c,velocity*dt)
+    -- (Studio check 28/10: a body knocked into a supply crate flew over it.)
+    -- The sweep runs at the root, three studs up: a low prop (a crate, a
+    -- lantern's foot) is met by the legs, so the legs sweep it too.
+    if not hit then hit=Brawler.propContact(c,a,velocity) end
     -- The real floor sits three studs under the root and the swept ray only
     -- reaches 1.4 past the frame's travel: a low flight (a knockback along the
     -- ground, a spike from close above) never touched it, so the body glided

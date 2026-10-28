@@ -110,7 +110,7 @@ function WorldReaction.record(c,part)
 	local base=WorldReaction.Classes[class].integrity
 	local max=if base==math.huge then math.huge else base*thickness(part)
 	-- A prop may declare its own (a crate goes to one heavy blow).
-	local declared=part:GetAttribute("WorldIntegrity")
+	local declared=part:GetAttribute("WorldToughness")
 	if type(declared)=="number" then max=declared end
 	rec={class=class,max=max,integrity=max,state="Intact",breakable=part:GetAttribute("WorldBreakable")==true,color=part.Color}
 	w.parts[part]=rec
@@ -145,7 +145,7 @@ local function surfaceFrame(position,normal,along)
 end
 -- Scar shapes: size grows with energy, capped per kind.
 local SHAPES={
-	crater={round=true,depth=.1,grow=1/22,min=.9,max=4.5},
+	crater={round=true,depth=.1,grow=1/8,min=2.2,max=8},
 	trench={round=false,depth=.1,grow=1/16,min=1.2,max=6,width=.9},
 	furrow={round=false,depth=.08,grow=1/14,min=1.4,max=5,width=.35},
 	puncture={round=true,depth=.08,grow=0,min=.35,max=.5},
@@ -173,6 +173,24 @@ local function evict(list,max)
 	end
 end
 local RELIEF={crater=true,gouge=true,trench=true,crack=true}
+local CRACK=Color3.fromRGB(28,22,17)
+local okCS,CS=pcall(function() return game:GetService("CollectionService") end)
+if not okCS then CS=nil end
+-- What the ground looks like at a point: the topmost flat skin over the floor
+-- there (World's earth and grass discs), else the surface itself.
+function WorldReaction.skinAt(position,surface)
+	local best,bestY=nil,-math.huge
+	for _,p in (if CS then CS:GetTagged("NinjaGroundSkin") else {}) do
+		if p.Parent then
+			local r=math.max(p.Size.Y,p.Size.Z)*.5
+			local d=Vector3.new(p.Position.X-position.X,0,p.Position.Z-position.Z).Magnitude
+			if d<=r and math.abs(p.Position.Y-position.Y)<1.5 and p.Position.Y>bestY then best,bestY=p,p.Position.Y end
+		end
+	end
+	if best then return best.Material,best.Color end
+	if typeof(surface)=="Instance" and surface:IsA("BasePart") then return surface.Material,surface.Color end
+	return Enum.Material.Ground,Color3.fromRGB(120,96,70)
+end
 local function chunk(parent,cf,size,material,color)
 	local c=Instance.new("Part")
 	c.Name="Scar chunk";c.Anchored=true;c.CanCollide=false;c.CanQuery=false;c.CanTouch=false;c.CastShadow=true
@@ -181,43 +199,75 @@ local function chunk(parent,cf,size,material,color)
 	c.Parent=parent
 	return c
 end
--- The frame of a scar: X along the surface normal, Z along a strip's length.
+-- (Studio check 28/10: the first relief was a ring of small green grass cubes
+-- round a black ink star, too small for a Great Fireball.) Broken ground in
+-- the series (a Rasengan, a Chidori into the floor, Lee's kicks): a bowl
+-- pushed down, SLABS of the same ground torn up round it and leaning out,
+-- loose stones, and a few cracks running out of the rim as real grooves.
 local function relief(scar,palette)
 	local p=scar.part
 	for _,ch in p:GetChildren() do if ch.Name=="Scar chunk" then ch:Destroy() end end
-	local surf=scar.surface
-	local isPart=typeof(surf)=="Instance" and surf:IsA("BasePart")
-	local material=if isPart then surf.Material else Enum.Material.Slate
-	local color=if isPart then surf.Color:Lerp(palette.dark,.25) else palette.dark:Lerp(Color3.new(.55,.5,.45),.4)
-	p.Material=material
+	local material,skin=WorldReaction.skinAt(scar.position,scar.surface)
+	-- Grass breaks into the earth under it.
+	if material==Enum.Material.Grass then material=Enum.Material.Ground;skin=skin:Lerp(Color3.fromRGB(110,88,62),.7) end
+	local slab=skin:Lerp(Color3.new(0,0,0),.12)
+	local under=skin:Lerp(palette.dark,.6)
+	-- The bowl itself: the torn ground, darker, never black.
+	p.Material=material;p.Color=under
 	local size=scar.size
 	local base=scar.frame*CFrame.new(-SHAPES[scar.kind].depth*.5,0,0)
 	local seed=scar.position
 	if SHAPES[scar.kind].round then
-		-- The lip: chunks round the rim, tilted outward, half sunk in the floor.
-		local n=math.clamp(math.floor(5+size*2.2),6,14)
 		local r=size*.5
+		-- Slabs round the rim: wide, thin, their outer edge up.
+		local n=math.clamp(math.floor(4+size*1.3),6,12)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k,k*1.7,k*2.3))
-			local a=(k/n)*math.pi*2+h*.4
-			local s=size*(.16+h*.12)
-			local at=base*CFrame.new(s*.25,math.cos(a)*r*(.9+h*.2),math.sin(a)*r*(.9+h*.2))
-			-- tilt about the rim's tangent so the face lifts away from the centre
-			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(20+h*30))
-			chunk(p,cf,Vector3.new(s*.7,s*1.1,s*.9),material,color)
+			local a=(k/n)*math.pi*2+h*.5
+			local w=r*(.55+h*.35)
+			local at=base*CFrame.new(.12+h*.15,math.cos(a)*r*(.92+h*.12),math.sin(a)*r*(.92+h*.12))
+			-- face the centre, then lift the outer edge (pitch about the tangent)
+			local cf=at*CFrame.Angles(a,0,0)*CFrame.Angles(0,0,math.rad(32+h*30))
+			-- plates, not blocks (Studio: thick ones read as boxes)
+			chunk(p,cf,Vector3.new(.18+h*.12,w*.75,w),material,if k%3==0 then under else slab)
+		end
+		-- Loose stones thrown just outside.
+		for k=1,math.clamp(math.floor(size*1.5),3,9) do
+			local h=hash(seed+Vector3.new(k*5,k*.3,k*1.1))
+			local a=h*math.pi*2
+			local d=r*(1.1+h*.6)
+			local s=.25+h*.35
+			chunk(p,base*CFrame.new(s*.4,math.cos(a)*d,math.sin(a)*d)*CFrame.Angles(h*3,h*5,h*2),Vector3.new(s,s*1.2,s*.9),material,slab)
+		end
+		-- Cracks out of the rim: thin dark grooves flush with the ground,
+		-- three segments each that turn a little and narrow (Studio: a
+		-- straight groove with a raised lip read as a stick on the floor).
+		for k=1,math.clamp(math.floor(2+size*.6),3,6) do
+			local h=hash(seed+Vector3.new(k*7,k*3,k))
+			local a=(k/5)*math.pi*2+h
+			local len=r*(.6+h*.8)/3
+			local at=base*CFrame.Angles(a,0,0)*CFrame.new(.015,0,r*.92)
+			for seg=1,3 do
+				local turn=math.rad((hash(seed+Vector3.new(k,seg*2.1,seg))-.5)*50)
+				at=at*CFrame.Angles(turn,0,0)
+				chunk(p,at*CFrame.new(0,0,len*.5),Vector3.new(.03,.2-seg*.045,len*1.05),Enum.Material.SmoothPlastic,CRACK)
+				at=at*CFrame.new(0,0,len)
+			end
 		end
 	else
-		-- A crack / trench: slabs on both sides of the line, pushed up and out.
-		local n=math.clamp(math.floor(3+size*1.6),4,10)
+		-- A crack / trench: the line itself dark, the ground on both sides
+		-- broken into slabs pushed up and apart.
 		local width=(SHAPES[scar.kind].width or .3)
+		local n=math.clamp(math.floor(3+size*1.2),4,9)
 		for k=1,n do
 			local h=hash(seed+Vector3.new(k*3,k,k*.5))
 			local z=(k/(n+1)-.5)*size
 			local sideSign=if k%2==0 then 1 else -1
-			local s=math.max(.35,width*2.2+size*.06)*(.8+h*.5)
-			local at=base*CFrame.new(s*.18,sideSign*(width*.9+s*.35),z)
-			local cf=at*CFrame.Angles(0,0,0)*CFrame.Angles(sideSign*math.rad(14+h*22),0,0)
-			chunk(p,cf,Vector3.new(s*.45,s*1.2,s*(.9+h*.6)),material,color)
+			local len=size/n*(1.1+h*.5)
+			local w=math.max(.45,width*1.6+size*.08)*(.8+h*.4)
+			local at=base*CFrame.new(.08,sideSign*(width*.55+w*.45),z)
+			local cf=at*CFrame.Angles(sideSign*math.rad(10+h*18),0,0)
+			chunk(p,cf,Vector3.new(.22+h*.15,w,len),material,slab)
 		end
 	end
 end
@@ -467,6 +517,11 @@ function WorldReaction.strike(c,a,pending)
 	local look=a.root.CFrame.LookVector
 	local from=a.root.Position+Vector3.new(0,.6,0)
 	local hit=workspace:Raycast(from,look*reach,c:rayParams(true))
+	-- Low props (a crate) sit under a chest-high swing: a kick finds them.
+	if not hit or math.abs(hit.Normal.Y)>.6 then
+		hit=workspace:Raycast(from-Vector3.new(0,2.2,0),look*reach,c:rayParams(true))
+		if hit and not hit.Instance:GetAttribute("WorldBreakable") then hit=nil end
+	end
 	if not hit or math.abs(hit.Normal.Y)>.6 then return nil end
 	local contact=(declared and declared.contact) or WorldReaction.StrikeKinds[spec.kind or ""] or "blunt"
 	local heavy=Config.World.HeavyKinds[spec.kind or ""] or spec.reaction=="Knockdown" or spec.reaction=="Launched"

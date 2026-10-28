@@ -1526,18 +1526,23 @@ end
 -- Built-in Roblox sounds (shipped with every client, Mac and PC).
 function FX:jumpSound(position) sound(anchorPart(self.folder,position),SOUND.jump,.28,1.1) end
 function FX:getUpSound(position) sound(anchorPart(self.folder,position),SOUND.getUp,.25,1.15) end
-local SCAR_ART={crater={"crack",1.5,Color3.new(1,1,1)},scorch={"scorch",1.6,Color3.new(1,1,1)},char={"scorch",1.5,Color3.fromRGB(150,170,230)},
-	gouge={"crack",1.3,Color3.new(1,1,1)},splinter={"crack",1.2,Color3.new(1,1,1)}}
+-- (Studio check 28/10) the crater is drawn in relief by the server now; the
+-- black star decal over it read as an ink print.
+-- Burns are a soft blackening that fades out at its edge (Studio: the spiky
+-- scorch star read as ink too), not a stamped shape.
+local SCAR_ART={scorch={"soft",1.9,Color3.fromRGB(18,14,10)},char={"soft",1.7,Color3.fromRGB(20,22,34)},
+	splinter={"crack",1.2,Color3.new(1,1,1)}}
 function FX.dressScar(part)
 	if not part:IsA("BasePart") or string.sub(part.Name,1,5)~="Scar " then return end
 	local art=SCAR_ART[string.sub(part.Name,6)]
-	if not art or not Kit.has(art[1]) then return end
+	if not art or (art[1]~="soft" and not Kit.has(art[1])) then return end
 	task.defer(function()
 		if not part.Parent then return end
 		local holder=Instance.new("Part")
 		holder.Name="ScarArt";holder.Anchored=true;holder.CanCollide=false;holder.CanQuery=false;holder.CanTouch=false
 		holder.CastShadow=false;holder.Transparency=1;holder.Parent=part
-		local decal=Instance.new("Decal");decal.TextureContent=Kit.content(art[1]);decal.Face=Enum.NormalId.Top
+		local decal=Instance.new("Decal");decal.Face=Enum.NormalId.Top
+		if art[1]=="soft" then decal.Texture=TEX.glow;decal.Transparency=.08 else decal.TextureContent=Kit.content(art[1]) end
 		decal.Color3=art[3];decal.Parent=holder
 		local spin=math.random()*math.pi*2
 		local function fit()
