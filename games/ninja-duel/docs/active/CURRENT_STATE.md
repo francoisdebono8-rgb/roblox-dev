@@ -1,3 +1,13 @@
+**Partie 10, passe visuelle (28/10, 19 h 45 → 21 h 30, utilisateur absent)** — chaque point filmé en Studio (captures en rafale), puis corrigé et refilmé :
+- **caméra** : plus large, décalée sur le côté, centrée vers le joueur (plus de corps qui se masquent) ; flash de coup court et clair au lieu d'un corps rouge ;
+- **contact** : un coup léger s'arrête à une longueur de bras (4,1) ; un coup au ventre recule les hanches et redresse le buste (le pli de 77° collait les têtes, 1,9 stud) ;
+- **course** : un léger en courant ouvre l'enchaînement (le coup de pied sauté reste sur le lourd) ;
+- **arène, avec un poids** (retour 19 h 43 « pas un champ de mines ») : le sol ne garde que les coups lourds (slam, pique, grande boule de feu), au plus 10 marques, qui s'effacent après 22 s (60 s pour les grandes) ; une zone qui brûle laisse une brûlure, jamais un cratère ;
+- **coup final** (nouveau) : le dernier coup du round projette le corps en arc, au ralenti 0,45 s puis à pleine vitesse, il casse ce qu'il touche, retombe couché et reste au sol ; le K.O. dure 2,6 s ;
+- **animations « comme un film »** (passe dans l'export des clips, `clips_to_luau.py`) : 83 coups figés net après l'impact continuent maintenant leur mouvement puis se posent sur la clé (dépassement et retour) ; 31 articulations qui sautaient en une image dans les cycles (garde qui changeait de main en reculant) sont lissées ;
+- **Sable de Gaara** : le Cercueil de sable enferme le corps dans des bandes de sable tassé qui montent jusqu'au cou, puis s'effritent (pas encore refilmé : écran du Mac en veille).
+Reste à filmer : Cercueil de sable, clips repassés sur les 8 personnages (fichier `Documents/Roblox/ND-Visual2.rbxlx`, à ouvrir quand l'écran est déverrouillé).
+
 **Partie 10, la boucle joueur (28/10, soir), après le match observé** — [DEC-030, révision 16 h 55](DECISIONS.md#dec-030--autonomie-de-claude-et-feuille-de-route-par-parties-jusquà-la-bêta-en-ligne-2810). Fait, chaque lot avec release PASS :
 - **décor qui casse** (`531447b`) : poteaux d'entraînement, caisses et lanternes de pierre dans la zone de combat (34–56 studs), solidité propre à chaque objet (une caisse cède à un coup lourd) ; cratères, entailles, tranchées et fissures dessinés en relief : blocs du sol soulevés et inclinés, dans sa matière et sa couleur, au lieu d'une marque imprimée ;
 - **Katon propre à chaque lanceur** (`14fdbd6`) : Sasuke, boule serrée blanc-jaune qui roule vite, main en anneau à la bouche, recul puis projection du buste ; Itachi, masse rouge sombre plus lente avec traîne et fumée, signe du tigre gardé sur la poitrine, droit, sans main à la bouche (clips Blender refaits) ; souffle visible de la bouche à la boule ;
