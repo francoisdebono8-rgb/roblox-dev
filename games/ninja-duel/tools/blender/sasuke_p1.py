@@ -454,9 +454,47 @@ def win(arm):
     return sh.build(markers={"hold": 60 / 60})
 
 
+def air_flip(arm):
+    """Jump + heavy (user 28/10): a small front salto in the air and, out
+    of it, a heel kick that comes over and down on the shoulder and sends the
+    body away. The tuck turns fast (knees to the chest), the kicking leg
+    opens late (the heel arrives last, at full speed), the arms counter-
+    swing; then the body opens for the landing, exposed (a long recovery).
+    Reference: Sasuke's flip kicks in the Valley fight (ep. 132-134) and
+    Storm 4's aerial heavy."""
+    from kunai_lion import tuck
+    sh = Shot(arm, "Lion.AirFlip")
+    sh.key(0, AIR, "ease")
+    TUCK = (0, -.55, -.35)
+
+    def fly(root, leg_r=TUCK, leg_l=TUCK, arms=None, torso=None, head=None):
+        spec = {"root": dict(root, tuck=1, roll=0)}
+        spec.update(tuck(0, spec["root"], leg_r, leg_l))
+        spec["torso"] = torso or {"pitch": 20, "yaw": 0, "roll": 0}
+        spec["head"] = head or {"pitch": 20, "yaw": 0}
+        spec.update(arms or {})
+        return merge(AIR, spec)
+    hug = {"ra": {"raise": 70, "out": -6, "twist": 0, "elbow": 96, "wrist": 0}, "la": {"raise": 70, "out": -6, "twist": 0, "elbow": 96, "wrist": 0}}
+    sh.key(3, fly({"y": -.4, "z": 0, "pitch": 70, "yaw": 0}, arms=hug), "pass")
+    sh.key(6, fly({"y": -.3, "z": 0, "pitch": 170, "yaw": 0}, arms=hug), "pass")
+    sh.key(8, fly({"y": -.35, "z": 0, "pitch": 255, "yaw": 0}, leg_r=(0, -.9, -.7),
+                  arms={"ra": {"raise": -30, "out": 50, "elbow": 20}, "la": {"raise": -30, "out": 50, "elbow": 20}}), "pass")
+    kick = fly({"y": -.4, "z": 0, "pitch": 320, "yaw": 0}, leg_r=(0, -.35, -1.45), leg_l=(0, -.9, .1),
+               arms={"ra": {"raise": -40, "out": 60, "elbow": 10}, "la": {"raise": -40, "out": 60, "elbow": 10}},
+               torso={"pitch": -10, "yaw": 0, "roll": 0}, head={"pitch": -14, "yaw": 0})
+    sh.key(10, kick, "impact")
+    sh.key(13, fly({"y": -.45, "z": 0, "pitch": 340, "yaw": 0}, leg_r=(0, -1.0, -1.0), leg_l=(0, -.9, .1),
+                   arms={"ra": {"raise": 20, "out": 60, "elbow": 20}, "la": {"raise": 20, "out": 60, "elbow": 20}},
+                   torso={"pitch": 0, "yaw": 0, "roll": 0}, head={"pitch": -16, "yaw": 0}), "ease")
+    sh.key(24, fly({"y": -.45, "z": 0, "pitch": 374, "yaw": 0}, leg_r=(0, -1.1, -.3), leg_l=(0, -1.0, -.1),
+                   arms={"ra": {"raise": 56, "out": 42, "elbow": 94}, "la": {"raise": 60, "out": 40, "elbow": 90}},
+                   torso={"pitch": 12, "yaw": 0, "roll": 0}, head={"pitch": -20, "yaw": 0}), "ease")
+    return sh.build(markers={"contact": 10 / 60, "recover": 16 / 60})
+
+
 def author(arm):
     acts = [idle(arm), knee_strike(arm), lion_kick(arm), sweep(arm), vault_kick(arm), flying_kick(arm),
-            air_drive(arm), air_spike(arm), air_switch(arm), lion_barrage(arm), intro(arm), awaken(arm), win(arm)]
+            air_drive(arm), air_spike(arm), air_switch(arm), lion_barrage(arm), intro(arm), awaken(arm), win(arm), air_flip(arm)]
     acts += katon(arm)
     acts += phoenix(arm)
     acts += wire_trap(arm)

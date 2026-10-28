@@ -256,7 +256,16 @@ function Motor.step(a,c,dt,now)
 		a.model:SetAttribute("MovementHardLanding",hard)
 		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
 	end
-	if not grounded then a.airborne=true end
+	-- (User 28/10, recorded match: 15 airborne flickers of 0.1-0.2 s under a
+	-- stud while running.) Coyote time: an uneven floor (a grass patch, a
+	-- stone, a step) that misses the ground ray for a frame or two does not
+	-- make the body airborne; a real drop (falling past 10 studs/s) or a
+	-- jump (which sets airborne itself) does.
+	if grounded then a.ungroundedAt=nil
+	elseif not a.airborne then
+		a.ungroundedAt=a.ungroundedAt or now
+		if now-a.ungroundedAt>.12 or vertical< -10 then a.airborne=true;a.ungroundedAt=nil end
+	end
  local movement,parkour=donor(a,c)
  a.grounded=grounded
  if parkour.step() then return false end

@@ -168,7 +168,7 @@ local Fighters = {
 		-- covers ~130 degrees either side of his facing, never his back).
 		SandShield = { Charges = 3, Regen = 3.5, Break = 17, Cover = -0.4 },
 		-- His heavy is not a punch: sand erupts under the opponent at range.
-		HeavyMove = "SandPillar", LauncherMove = "SandPillar",
+		HeavyMove = "SandPillar", LauncherMove = "SandPillar", AirHeavy = "Slam",
 		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
 		SandFlicker = { Distance = 12 },
 		Awakening = { Name = "SHUKAKU'S SAND", Speed = 1.12, Damage = 1.12, Regen = 1.6, Cooldown = 0.5, ShieldRegen = 2, Color = { 222, 176, 112 } },

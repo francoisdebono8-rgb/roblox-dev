@@ -314,11 +314,11 @@ test("route table, ground: base string, routes with their payoffs, running attac
   elseif id=="GentleFist" then
    assert((n.tenketsu or 0)>=points+2,"Neji's sweep did not close two points ("..tostring(n.tenketsu)..")")
   end
-  -- Running attacks out of a sprint.
-  -- Movement overhaul: the sprint strike is the fighter's own running entry
-  -- (MoveGraphs runStrike, else its DashAttack); the heavy a sliding sweep.
+  -- Running attacks out of a sprint (user 28/10): the light is the string's
+  -- first blow carried by the run; the heavy is the fighter's running strike
+  -- (MoveGraphs runStrike, else its DashAttack).
   local runStrike=(H.load("Shared/MoveGraphs")[id] or {}).runStrike or "DashAttack"
-  for _,pair in {{"Attack",runStrike},{"Heavy","SlideSweep","Knockdown"}} do
+  for _,pair in {{"Attack","Light1"},{"Heavy",runStrike}} do
    local c4,p,q=H.duel(id,"Mirage");place(c4,p,q,11)
    p.sprinting=true;p.locomotion=p.root.CFrame.LookVector*40
    assert(press(c4,p,pair[1]));assert(p.attackName==pair[2],id..": sprint "..pair[1].." is "..tostring(p.attackName))

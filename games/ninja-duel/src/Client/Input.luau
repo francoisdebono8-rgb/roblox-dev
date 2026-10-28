@@ -164,6 +164,15 @@ end
 function Input:direction(camera)
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
+ -- (User 28/10) The pad's sprint is a toggle (L3); it ends when the stick
+ -- rests a moment, so a stop always gives the walk / string back (it stayed on
+ -- and every light became the running strike).
+ if self.pad and self.sprinting then
+  if stick.Magnitude<.2 then
+   self.restAt=self.restAt or Input.now()
+   if Input.now()-self.restAt>.18 then self.sprinting=false;self.restAt=nil end
+  else self.restAt=nil end
+ end
  local x=stick.X+(if self.keys.D and not self.pad then 1 else 0)-(if self.keys.A and not self.pad then 1 else 0)
  local z=stick.Y+(if self.keys.W and not self.pad then 1 else 0)-(if self.keys.S and not self.pad then 1 else 0)
  local look=camera.CFrame.LookVector*Vector3.new(1,0,1)

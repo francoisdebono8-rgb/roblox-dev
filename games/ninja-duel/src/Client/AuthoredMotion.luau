@@ -29,7 +29,7 @@ Authored.UPPER=UPPER
 local ALIAS={}
 local DONOR="Lion"
 local SHARED={Hit=true,Guard=true,Down=true,Getup=true,Knockback=true,Knockdown=true,Launched=true,
-	Dash=true,Chase=true,Cartwheel=true,Handspring=true,Flip=true}
+	Dash=true,Chase=true,Cartwheel=true,Handspring=true,Flip=true,AirFlip=true}
 Authored.ALIAS=ALIAS
 local function resolve(name)
 	if DATA[name] then return name end

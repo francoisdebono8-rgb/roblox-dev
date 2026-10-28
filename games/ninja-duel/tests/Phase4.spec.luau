@@ -322,8 +322,8 @@ test("taijutsu routes: heavy after one clean strike differs per prodigy",functio
  end
 end)
 
-test("running taijutsu: out of a sprint, strike = the fighter's running entry (Lee: flying kick), heavy = sliding sweep",function()
- for _,pair in {{"Attack","DashAttack","HitStun","Mirage"},{"Attack","FlyingKick","Knockback","Leaf"},{"Heavy","SlideSweep","Knockdown","Mirage"}} do
+test("running taijutsu (user 28/10): out of a sprint, the light opens the string, the heavy is the running entry (Lee: flying kick)",function()
+ for _,pair in {{"Attack","Light1","HitStun","Mirage"},{"Heavy","DashAttack","HitStun","Mirage"},{"Heavy","FlyingKick","Knockback","Leaf"}} do
   local c,a,b=H.duel(pair[4],"Flashstep")
   place(c,a,b,V.new(0,3,9),V.new(0,3,-2))
   a.sprinting=true;a.locomotion=a.root.CFrame.LookVector*40

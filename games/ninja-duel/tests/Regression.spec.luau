@@ -128,6 +128,8 @@ test("the slam descends to the floor instead of hovering",function()
  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
  a.airborne=true;a.hitConfirmed=true;a.chainOpen=true
  a.attackName="Air2";a.state="Recovery";a.chainOpen=true;a.chainAt=0
+ -- (User 28/10) the slam ends an air string (a plain jump's heavy is the salto kick).
+ a.airCombo=2
  assert(c:request(a,"Heavy"),"slam refused")
  assert(a.attackName=="Slam","air heavy did not select the slam")
  H.step(c,2)
@@ -299,7 +301,7 @@ test("kinetic chase and slam never teleport the root",function()
  assert(maxStep<6,"chase teleported "..string.format("%.1f",maxStep).." studs in one frame")
  -- The slam plunge is likewise continuous.
  a.airborne=true;a.hitConfirmed=true;a.chainOpen=true
- a.attackName="Air2";a.state="Recovery";a.chainAt=0
+ a.attackName="Air2";a.state="Recovery";a.chainAt=0;a.airCombo=2
  c:relocate(a,c.match.origin+Vector3.new(0,24,1))
  assert(c:request(a,"Heavy") and a.attackName=="Slam","slam refused")
  previous=a.root.Position
@@ -366,7 +368,7 @@ local function slamFrom(height,targetGap)
  c:relocate(a,c.match.origin+V.new(0,3+height,1))
  c:relocate(b,c.match.origin+V.new(0,3,-targetGap))
  a.root.CFrame=H.C.lookAt(a.root.Position,b.root.Position)
- a.airborne=true;a.hitConfirmed=true;a.attackName="Air2";a.state="Recovery";a.chainOpen=true;a.chainAt=0
+ a.airborne=true;a.hitConfirmed=true;a.attackName="Air2";a.state="Recovery";a.chainOpen=true;a.chainAt=0;a.airCombo=2
  assert(c:request(a,"Heavy") and a.attackName=="Slam","slam refused")
  local t=0
  while a.airborne and t<3 do H.step(c,.01);t+=.01 end

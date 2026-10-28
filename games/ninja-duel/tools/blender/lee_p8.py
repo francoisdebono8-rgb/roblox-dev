@@ -46,8 +46,18 @@ def air(over=None):
 def locomotion(arm):
     """Sasuke's gait, Lee's spring: a bigger bob, the chest drives forward,
     the arms pump hard (Gai's student runs flat out)."""
-    return gait(arm, N, STANCE, GUARD, scaler(torso_yaw=1.1, torso_pitch=1.15, root_pitch=1.1, add={"torso": {"pitch": 4}}),
-                arms={"walk": 1.0, "run": 1.2, "jump": 1.1})
+    base = scaler(torso_yaw=1.1, torso_pitch=1.15, root_pitch=1.1, add={"torso": {"pitch": 4}})
+
+    def act(spec):
+        # The rear hand never leaves the small of the back (his bible); only
+        # the lead arm pumps.
+        spec = base(spec)
+        # (the ninja sprint sweeps both arms back: that one keeps them)
+        la = spec.get("la") or {}
+        if la.get("raise", 0) > -40:
+            spec["ra"] = dict(BACK)
+        return spec
+    return gait(arm, N, STANCE, GUARD, act, arms={"walk": 1.0, "run": 1.2, "jump": 1.1})
 
 
 def idle(arm):
@@ -209,7 +219,14 @@ def lotus(name, hug):
     def build(arm):
         sh = Shot(arm, N + name)
         sh.key(0, air(), "ease")
-        if hug:
+        if name == "HiddenLotus":
+            # Fifth Gate: no hug - a fist and a heel together, the body
+            # corkscrewing down after the barrage (a punch driven with a kick).
+            sh.key(3, air({"root": {"pitch": -20, "yaw": 40}, "ra": {"raise": 160, "out": 10, "elbow": 60}, "la": {"raise": 30, "out": 60}}), "ease")
+            hit = air({"root": {"pitch": 40, "yaw": -50}, "torso": {"pitch": 24, "yaw": -20},
+                       "ra": {"raise": 80, "out": -10, "elbow": 4, "wrist": 0}, "la": {"raise": -20, "out": 60, "elbow": 20},
+                       "rf": {"z": -1.2, "y": .6, "toe": 20, "knee": 0}})
+        elif hug:
             wrap = {"raise": 70, "out": -20, "twist": 0, "elbow": 110, "wrist": 0}
             sh.key(4, air({"root": {"pitch": 60}, "torso": {"pitch": 30}, "la": wrap, "ra": wrap}), "ease")
             hit = air({"root": {"pitch": 170}, "torso": {"pitch": 20}, "la": wrap, "ra": wrap,

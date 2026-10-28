@@ -209,7 +209,21 @@ test("a side dodge out of a sprint keeps the run's facing (no 90-degree root piv
  assert(worst>.94,string.format("the side dodge pivoted the root (cos %.2f)",worst))
 end)
 
-test("an opening light in a full sprint is the running strike, carried by the run; walking or mid-string it is not",function()
+test("in a full sprint the light opens the string carried by the run, the heavy is the running strike (user 28/10)",function()
+ -- The light: the string's first blow, carried by the run (no knockback away).
+ do
+  local c,a,b=H.duel("Leaf","Mirage")
+  c:relocate(a,V.new(-60,3,0));c:relocate(b,V.new(40,3,0))
+  a.move=V.new(1,0,0);a.sprinting=true
+  local n=0
+  repeat H.step(c,.01);n+=1 until (a.locomotion or V.zero).Magnitude>=30 or n>300
+  local from=a.root.Position
+  assert(c:request(a,"Attack"))
+  assert(a.attackName=="Light1","a sprinting light was "..tostring(a.attackName))
+  for _=1,25 do H.step(c,.01) end
+  local moved=V.new(a.root.Position.X-from.X,0,a.root.Position.Z-from.Z).Magnitude
+  assert(moved>=4,string.format("the run's light stopped dead (%.1f studs in the swing)",moved))
+ end
  local c,a,b=H.duel("Leaf","Mirage")
  c:relocate(a,V.new(-60,3,0));c:relocate(b,V.new(40,3,0))
  a.move=V.new(1,0,0);a.sprinting=true
@@ -217,9 +231,9 @@ test("an opening light in a full sprint is the running strike, carried by the ru
  repeat H.step(c,.01);n+=1 until (a.locomotion or V.zero).Magnitude>=30 or n>300
  assert((a.locomotion or V.zero).Magnitude>=30,"never reached sprint speed")
  local from=a.root.Position
- assert(c:request(a,"Attack"))
- -- The fighter's own running entry (Lee: the flying kick), not the plain opener.
- assert(a.attackName and a.attackName~="Light1","a sprinting light was "..tostring(a.attackName))
+ assert(c:request(a,"Heavy"))
+ -- The fighter's own running entry (Lee: the flying kick), on the heavy.
+ assert(a.attackName=="FlyingKick","a sprinting heavy was "..tostring(a.attackName))
  for _=1,25 do H.step(c,.01) end
  local moved=V.new(a.root.Position.X-from.X,0,a.root.Position.Z-from.Z).Magnitude
  assert(moved>=6,string.format("the running strike stopped the run (%.1f studs in the swing)",moved))

@@ -54,6 +54,9 @@ local attacks={
  AirDrive=move(.08,.13,.22,7,3,"Knockback",Vector3.new(0,8,48),.5),
  AirSpike=move(.09,.12,.24,7,2,"Spiked",Vector3.new(0,-72,6),.9),
  AirSwitch=move(.1,.14,.2,6,0,"Juggled",Vector3.new(0,13,9),.6),
+ -- (User 28/10) Jump + heavy: a small front salto into a heel kick that
+ -- sends the body away. Not a safe plunge: a long recovery that lands open.
+ AirFlip=move(.17,.13,.38,11,2.4,"Knockback",Vector3.new(0,16,56),.55),
  -- Sasuke: an acrobatic rising kick he follows into the air, a vault over the
  -- opponent into a back kick, and the Chidori thrust (started by the jutsu).
  LionKick=move(.15,.14,.28,8,3,"Launched",Vector3.new(0,50,5),1.25),
@@ -95,7 +98,7 @@ for name,spec in attacks do
  end
  spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
- spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch"
+ spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch" or name=="AirFlip"
 end
 -- Hitstop is not authored per move any more: weight comes from Combat.Hitstop so
 -- a light jab cannot be given a heavy stop by accident.
@@ -127,6 +130,7 @@ local motion={
  AirDrive={side=1,twist=20,lean=-10,arm=60,step=1},
  AirSpike={side=1,twist=10,lean=40,arm=120,step=1},
  AirSwitch={side=-1,twist=60,lean=10,arm=80,step=1},
+ AirFlip={side=1,twist=20,lean=-20,arm=60,step=1},
  LionKick={side=1,twist=10,lean=-30,arm=100,step=1.15},
  VaultKick={side=-1,twist=70,lean=10,arm=60,step=1.1},
  ChidoriThrust={side=1,twist=20,lean=30,arm=110,step=1.4},
@@ -150,11 +154,11 @@ attacks.ChidoriThrust.range=7;attacks.ChidoriThrust.width=4.5
 local ZONE={Light1="head",Light2="body",Light3="body",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
  Slam="body",AngleStep="body",Sweep="legs",CounterPalm="body",WallDive="body",PalmThrust="body",KneeStrike="body",FlyingKick="head",
  Riposte="head",SlideSweep="legs",SandPillar="legs",FeintStep="body",CircleStep="body",AirDrive="body",AirSpike="head",AirSwitch="head",
- LionKick="chin",VaultKick="head",ChidoriThrust="body",
+ LionKick="chin",VaultKick="head",ChidoriThrust="body",AirFlip="head",
  Throw="body",ThrowUp="body",Grab="body"}
 local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam",Sweep="sweep",SlideSweep="sweep",KneeStrike="knee",
  FlyingKick="kick",WallDive="kick",SandPillar="launch",AirDrive="kick",AirSpike="spike",AirSwitch="kick",PalmThrust="palm",CounterPalm="palm",
- LionKick="launch",VaultKick="kick",ChidoriThrust="heavy"}
+ LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 -- Rock Lee's moves, kept together so the stress-test fighter stays additive:

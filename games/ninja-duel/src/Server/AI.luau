@@ -293,6 +293,12 @@ function AI:breakOff(now,tangent,toward)
 		a.move=(-toward+tangent*self.reposSide*.4).Unit;c:request(a,"Dodge")
 	end
 end
+-- True when `move` is already two of the bot's last five: vary instead.
+function AI:habit(move)
+	local n=0
+	for _,m in self.recent or {} do if m==move then n+=1 end end
+	return n>=2
+end
 function AI:update(now)
 	local c,a=self.combat,self.actor; local target=a.target; local tune=Config.AI
 	if c.match.phase~="Duel" or a.health<=0 or target.health<=0 then a.move=Vector3.zero; return end
@@ -302,6 +308,14 @@ function AI:update(now)
 	if Families.shrouded(c,a) then a.fogAim=self.lastSeen or target.root.Position
 	else a.fogAim=nil;self.lastSeen=target.root.Position end
 	if a.state~="Rush" then self.feinted=nil end
+	-- (User 28/10: "the bot repeats itself", recorded match and player agent:
+	-- DashAttack 40 % of its moves.) It remembers its last moves; an entry it
+	-- has just used twice is set aside for another (Bot:habit).
+	self.recent=self.recent or {}
+	if a.attackName and a.attackName~=self.lastMove then
+		table.insert(self.recent,a.attackName);if #self.recent>5 then table.remove(self.recent,1) end
+	end
+	self.lastMove=a.attackName
 	if self:defend(now) then return end
 	-- Genjutsu: sometimes the bot sees through the decoy, sometimes it does not.
 	if a.illusionUntil>now then
@@ -602,7 +616,7 @@ function AI:update(now)
 	-- A body launched straight up above him is out of reach too: the flat
 	-- distance stays short while it rises (Naruto's barrage, a pillar).
 	local above=target.airborne and target.root.Position.Y-a.root.Position.Y>4
-	if a.pursuitUntil>now and (distance>8 or above) and distance<Config.PursuitRange and self.rng:NextNumber()<(CHASE[a.fighterId] or .58) then
+	if a.pursuitUntil>now and (distance>8 or above) and distance<Config.PursuitRange and self.rng:NextNumber()<(CHASE[a.fighterId] or .58) and not self:habit("DashAttack") then
 		c:request(a,"Pursuit"); return
 	end
 	if a.state=="Recovery" and a.chainOpen then

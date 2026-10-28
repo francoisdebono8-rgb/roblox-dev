@@ -182,6 +182,11 @@ end
 local function bufferable(a)
  local p=a.pending
  if p and p.kind=="Brawl" and (a.state=="Startup" or a.state=="Active") then return true end
+ -- (User 28/10, player agent: 23 presses refused "Committed" in 45 s) A
+ -- press in the first frames of a strike's recovery, before its chain window
+ -- opens, is what a player mashing does: it waits for the window (or for the
+ -- end of the recovery) instead of being eaten.
+ if a.state=="Recovery" and a.attackName~=nil then return true end
  if a.state=="Pursuit" or a.state=="Rush" then return true end
  return p~=nil and p.kind=="Technique" and p.spec.Id=="Flashstep" and (a.state=="TechniqueChannel" or a.state=="TechniqueActive")
 end
@@ -704,14 +709,19 @@ function Brawler.request(c,a,action)
  if not canChain and not canDash and a.state=="Neutral" and not a.airborne and a.sprinting and a.locomotion.Magnitude>28 and (action=="Attack" or action=="Heavy") then
   local runSpeed=a.locomotion.Magnitude
   local runGraph=Brawler.graph(a) or {}
-  local name=if action=="Heavy" then "SlideSweep" else (runGraph.runStrike or "DashAttack")
+  -- (User 28/10) Running in is how anyone approaches: the light out of a
+  -- run is the string's first blow, carried by the run (it never ends the
+  -- exchange); the fighter's running strike (a flying kick that throws the
+  -- body away) is a choice, on the heavy.
+  local name=if action=="Heavy" then (runGraph.runStrike or "DashAttack") else "Light1"
   if not Attacks[name] then name="FlyingKick" end
   local ok=Brawler.start(c,a,name)
   local p=a.pending
   if ok~=false and p and p.kind=="Brawl" then
    local need=runSpeed*(p.spec.travelTime or .22)*.85
    if need>p.spec.travel then p.spec.travel=need;a.travelRemaining=need end
-   a.strikeCarry={dir=a.travelDirection,speed=runSpeed*(if action=="Heavy" then .6 else .7),at=c.now}
+   -- The run continues after the running strike; the light stays in the string.
+   if action=="Heavy" then a.strikeCarry={dir=a.travelDirection,speed=runSpeed*.6,at=c.now} end
    Brawler.event(c,a,"RunningStrike")
   end
   return ok
@@ -747,7 +757,10 @@ function Brawler.request(c,a,action)
     c:cue(a,"LION COMBO",.9);Brawler.event(c,a,"LionCombo")
     return ok
    end
-   return Brawler.start(c,a,"Slam")
+   -- (User 28/10) The plunge ends an air string; out of a plain jump the
+   -- heavy is the salto heel kick (punishable), never a safe drop.
+   if (a.airCombo or 0)>=1 or c.now-(a.airStringAt or -10)<1.0 then return Brawler.start(c,a,"Slam") end
+   return Brawler.start(c,a,a.def.AirHeavy or "AirFlip")
   end
   if inChain and a.combo==1 and graph.heavyAfterOne then return Brawler.start(c,a,graph.heavyAfterOne) end
   if inChain and a.combo>=2 then return Brawler.start(c,a,a.def.LauncherMove or "Launcher") end
