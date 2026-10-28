@@ -160,3 +160,22 @@ Feuille de route (ordre choisi par Claude, révisable selon les retours) :
 
 Le choix des huit de la bêta est fait sur deux critères : les plus iconiques, et ceux dont le runtime est le plus avancé. Les autres ne sont pas abandonnés : ils restent hors de la sélection de la bêta tant qu'ils n'ont pas atteint le niveau.
 
+**Révision du même jour (15 h 01 – 15 h 12).**
+
+Retours de l'utilisateur après la Partie 1a :
+- « pas d'amélioration dingue » ;
+- la fluidité des personnages et des mouvements reste le problème ;
+- le kunai doit être un système pour tous, pas un coup de Sasuke : « tu ne penses pas assez en global » ;
+- les animations actuelles sont « au rang de test » ;
+- « finis les 10 parties, puis je corrigerai » ;
+- toujours se référer aux références : autres jeux, vrais combats de Naruto, animation.
+
+Ce qui change :
+- **Le socle commun passe en tête (Partie 1).** Il comprend :
+  - la réactivité, parce que le perso du joueur attendait le serveur 0,1 à 0,17 s : déplacement envoyé toutes les 80 ms, état à 15 Hz, lissage de 45 ms ;
+  - le kunai pour tous ;
+  - la locomotion et les impacts.
+- **Les huit personnages viennent ensuite**, puis la boucle de jeu et le mode en ligne.
+- **Les retours de l'utilisateur sont attendus à la fin des 10 parties**, pas entre chacune.
+- **Codex sert d'assistant** à travers [CODEX_QUEUE](../tools/CODEX_QUEUE.md), sur des tâches qui ne touchent pas les fichiers en cours de Claude.
+

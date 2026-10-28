@@ -29,6 +29,7 @@ local function send(action,extra)
 		if root and (hit-root.Position).Magnitude<=140 then payload.aim=hit end
 	end
 	remote:FireServer(payload)
+	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
@@ -46,14 +47,26 @@ remote.OnClientEvent:Connect(function(data)
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
 end)
 local nextMove=0
+local lastDir,lastSprint=nil,nil
+local lastSentAt=0
 RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,function(dt)
 	-- Last moment before the frame is drawn: the replicated roots have their
 	-- final positions for this frame, so the smoothed bodies and the camera agree.
 	presentation:smoothStep(current,dt)
 	presentation:update(current,dt)
 	camera:update(current,dt)
-	if current.phase=="Duel" and os.clock()>=nextMove then
-		nextMove=os.clock()+0.08; send("Move",input:direction(workspace.CurrentCamera))
+	-- (DEC-030 Partie 1, responsiveness) The stick goes out the frame it
+	-- changes, not on the next 80 ms tick (that alone cost up to 80 ms on every
+	-- start, stop and turn); the tick stays as a heartbeat.
+	if current.phase=="Duel" then
+		local dir=input:direction(workspace.CurrentCamera)
+		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
+		local changed=lastDir==nil or (dir-lastDir).Magnitude>.15 or input.sprinting~=lastSprint
+		if (changed and os.clock()-lastSentAt>=1/30) or os.clock()>=nextMove then
+			lastSentAt=os.clock()
+			nextMove=os.clock()+0.08;lastDir=dir;lastSprint=input.sprinting
+			send("Move",dir)
+		end
 	end
 end)
 -- Studio-only diagnostics channel (created by the server's DevHooks).

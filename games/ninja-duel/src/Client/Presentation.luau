@@ -7,6 +7,9 @@ local Effects=require(script.Parent.Effects)
 -- Bodies that are not fighters (Naruto's shadow clones).
 local BodyViews=require(script.Parent.BodyViews)
 local Smear=require(script.Parent.MotionSmear)
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Fighters=require(Shared.Fighters)
+local Config=require(Shared.Config)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
@@ -79,8 +82,85 @@ function Presentation:visualRoot(key)
 	return st and st.pos
 end
 function Presentation:visualVelocity(key)
+	-- (The player's own body: the velocity it is drawn with, lead included.)
+	if key=="human" and self.lead and self.lead.vel then return self.lead.vel end
 	local st=self.smooth[key]
 	return st and st.vel
+end
+-- (DEC-030 Partie 1, responsiveness) The player's own body answers the stick
+-- at once. The server still moves it (authority), but its track arrives
+-- 100-170 ms after the press; the body is drawn ahead of that track by what a
+-- body obeying the stick would have run since - an offset that fades as the
+-- track catches up (it is zero at any steady speed), never more than 3 studs,
+-- never into the opponent. Outside free movement it follows the track.
+local LEAD_TAU,LEAD_MAX=.13,3
+function Presentation:leadLocal(actor,drawn,dt)
+	local st=self.lead
+	if not st then st={off=Vector3.zero,v=Vector3.zero};self.lead=st end
+	local track=self.smooth.human and self.smooth.human.vel or Vector3.zero
+	local trackFlat=Vector3.new(track.X,0,track.Z)
+	local free=actor.state=="Neutral" and not actor.reaction and not actor.airborne and not actor.wall and actor.groundPose==nil
+	local want=trackFlat
+	if free then
+		local dir=self.inputDir or Vector3.zero
+		dir=Vector3.new(dir.X,0,dir.Z)
+		if dir.Magnitude>1 then dir=dir.Unit end
+		local def=Fighters[actor.fighterId]
+		local move=Config.Movement or {}
+		local speed=if self.inputSprint then (move.SprintSpeed or 45)*(def and def.SprintScale or 1) else (def and def.Speed or 18)
+		want=dir*speed
+	end
+	st.v=st.v:Lerp(want,math.min(1,dt*28))
+	st.off+=(st.v-trackFlat)*dt
+	st.off*=math.exp(-dt/(if free then LEAD_TAU else .07))
+	if st.off.Magnitude>LEAD_MAX then st.off=st.off.Unit*LEAD_MAX end
+	local other=self:visualRoot("bot")
+	if other then
+		local at=drawn.Position+st.off
+		local d=Vector3.new(at.X-other.X,0,at.Z-other.Z)
+		if d.Magnitude<2.6 and st.off.Magnitude>1e-3 then st.off*=math.clamp((d.Magnitude-1.6),0,1) end
+	end
+	local out=drawn+st.off
+	if st.prev then
+		local v=(out.Position-st.prev)/math.max(dt,1/240)
+		st.vel=(st.vel or v):Lerp(v,math.min(1,dt*18))
+	end
+	st.prev=out.Position
+	return out
+end
+-- (Responsiveness) A light or heavy pressed starts moving the body on the
+-- press: the strike the server will start is guessed (the next light of the
+-- string, or a heavy from neutral) and drawn from the press; when the server's
+-- strike arrives it continues from the same instant if the guess was right,
+-- otherwise the server's strike takes over (through the transition). A guess
+-- the server never confirms fades after 0.25 s.
+local NEXT_LIGHT={Light1="Light2",Light2="Light3"}
+function Presentation:predictStrike(action,data)
+	local h=data and data.human
+	if not h or h.airborne or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 then return end
+	local guess
+	if action=="Heavy" then
+		if h.state=="Neutral" then guess="Heavy" end
+	elseif h.state=="Neutral" then guess="Light1"
+	elseif h.state=="Recovery" and h.attackName and NEXT_LIGHT[h.attackName] then guess=NEXT_LIGHT[h.attackName] end
+	if guess then self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0} end
+end
+function Presentation:applyPrediction(actor,now)
+	local p=self.prediction
+	if not p then return actor end
+	if (actor.attackSerial or 0)~=p.serial then
+		self.prediction=nil
+		if actor.attackName==p.name then
+			local clock=self.clocks.human
+			if not clock then clock={};self.clocks.human=clock end
+			clock.attackName=actor.attackName;clock.attackSerial=actor.attackSerial or 0;clock.attackAt=p.at
+		end
+		return actor
+	end
+	if now-p.at>.25 or actor.reaction then self.prediction=nil;return actor end
+	local v=table.clone(actor)
+	v.attackName=p.name;v.state="Startup";v.attackSerial=-1-p.serial;v.attackElapsed=now-p.at
+	return v
 end
 -- Just before rendering: the replicated roots have their positions for this
 -- frame; advance each track and draw the body on it (position and facing).
@@ -99,6 +179,7 @@ function Presentation:smoothStep(data,dt)
 			if st and st.drawnCF and st.replicatedCF and (actualCF.Position-st.drawnCF.Position).Magnitude<1e-3
 				and actualCF.LookVector:Dot(st.drawnCF.LookVector)>.99999 then actualCF=st.replicatedCF end
 			local drawn=self:smoothRoot(key,actualCF,math.max(dt,1/240),actor.warpSerial)
+			if key=="human" then drawn=self:leadLocal(actor,drawn,math.max(dt,1/240)) end
 			st=self.smooth[key]
 			st.replicatedCF=actualCF
 			-- Draw the whole body on the track for this frame only; the next
@@ -235,6 +316,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
+  self.lead=nil;self.prediction=nil
   self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
@@ -255,6 +337,7 @@ function Presentation:update(data,dt)
    local humanoid=model:FindFirstChildOfClass("Humanoid")
    local animator=humanoid and humanoid:FindFirstChildOfClass("Animator")
    if animator then animator:Destroy() end
+   if key=="human" then actor=self:applyPrediction(actor,now) end
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see
@@ -281,7 +364,7 @@ function Presentation:update(data,dt)
     velocity=Vector3.new(tracked.X,if actor.wall then tracked.Y else velocity.Y,tracked.Z)
    end
    local planar=if velocity then Vector3.new(velocity.X,0,velocity.Z).Magnitude else 0
-   local speed=math.max(actor.speed or 0,planar)
+   local speed=if key=="human" and self.lead then planar else math.max(actor.speed or 0,planar)
    -- Everything the presentation contract needs, with locally measured clocks so
    -- a late packet cannot make the body replay its wind-up.
    local visual=table.clone(actor)

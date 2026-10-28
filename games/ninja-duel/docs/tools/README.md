@@ -7,3 +7,5 @@
 [DEVTOOLS](DEVTOOLS.md) : panneau F6, mises en situation, profiler, auto-test, CLI `tools/dev.py` et labo chakra optionnel, dans les places Debug/QA uniquement (jamais dans `dist/NinjaDuel.rbxlx`).
 
 [PUBLIC_BUILD](../archive/tools/PUBLIC_BUILD.md) conserve un état de release historique : pas preuve de PlaceID/version ou authentification actuelle. État vérifié : CURRENT_STATE et REL-001. [MAINTENANCE_BACKLOG_SOURCE](../archive/tools/MAINTENANCE_BACKLOG_SOURCE.md) conserve les propositions sources ; OPS-001 est déjà réalisé, OPS-002/003 partiels, ARC-002 différé.
+
+[CODEX_QUEUE](CODEX_QUEUE.md) : tâches que Claude confie à Codex (DEC-030). Codex prend la première tâche TODO, travaille sur sa propre branche, puis Claude relit et intègre.
