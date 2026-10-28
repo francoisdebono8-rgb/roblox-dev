@@ -91,7 +91,7 @@ return {
 		-- ~0.83 s of flight at scale 1 (JumpScale stretches it per fighter).
 		-- HardLandVelocity sits above every fighter's own jump landing (~67 max),
 		-- so only a real drop (~25 studs) lands heavy.
-		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
+		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 14, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	-- Neutral rhythm (convergence §8): jutsu are paced (Gap + Jitter seconds

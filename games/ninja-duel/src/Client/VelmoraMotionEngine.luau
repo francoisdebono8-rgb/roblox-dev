@@ -81,6 +81,10 @@ local KICK_SPEED=1600 -- deg/s cap for a free (kicking) leg during a strike
 local CHAIN_IN=.08 -- seconds of a chained strike during which the upper body eases in
 local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike may whip at 2280)
 local MAX_SPEED=1750
+-- deg/s: the fastest any authored joint turns (a sprint thigh peaks ~1200,
+-- a kick ~1500). The reference footage never moves a limb more than ~25 deg
+-- between two 60 Hz frames outside a speed smear.
+local AUTHORED_SPEED=1500
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
 	return math.abs(angle)
@@ -146,10 +150,12 @@ local function write(char,key,target,rate,dt)
 	local nextCF
 	if rate==RATE.authored then
 		-- Authored motion is the final curve: drawn as is (with its transition
-		-- offset); only an absurd jump is capped.
+		-- offset). (Fluidity pass, reference: no limb ever jumps.) A joint
+		-- turns at most AUTHORED_SPEED: a whip is drawn over two or three
+		-- frames instead of one, the eye reads motion, not a pop.
 		nextCF=desired
 		local step=angleBetween(current,nextCF)
-		local limit=rad(5000)*dt
+		local limit=rad(AUTHORED_SPEED)*dt
 		if step>limit and step>1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	else
 		local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
@@ -2950,7 +2956,7 @@ function Motion.defense(char,actor,dt)
 		local clip
 		targets,rate,clip=groundTargets(actor)
 		-- Fall, down, get-up: each its own (inertialized) transition.
-		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .05 else .07)
+		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .07 else .1)
 	elseif actor.reaction then
 		-- Standing hit: the feet stay planted and stagger-step as the body is
 		-- pushed, instead of sliding with it.
@@ -2973,7 +2979,7 @@ function Motion.defense(char,actor,dt)
 			s.reactClip=clip;s.reactElapsed=elapsed
 			if not actor.airborne then targets.__feet=authoredFeet(char,targets,dt) end
 			-- (a body set down after a flight takes a little longer to land)
-			mark(char,"react:"..clip..":"..s.reactSerial,if clip=="Knockback.Land" then .08 else .03)
+			mark(char,"react:"..clip..":"..s.reactSerial,if clip=="Knockback.Land" then .1 else .05)
 		end
 	else
 		return
@@ -3194,7 +3200,7 @@ function Motion.present(char,actor,clock,dt)
 			else
 				targets.__feet=authoredFeet(char,targets,dt)
 			end
-			mark(char,"cast:"..name,.08)
+			mark(char,"cast:"..name,.1)
 			apply(char,targets,RATE.authored,dt)
 			return "technique"
 		end
@@ -3316,7 +3322,7 @@ function Motion.present(char,actor,clock,dt)
 		-- A kicking (free) leg whips a little slower than an arm: at the strike
 		-- cap a foot crossed ~2.5 studs in one frame, twice a real kick.
 		if authoredStrike then
-			mark(char,"atk:"..key,if s.chainedIn then .05 else .07)
+			mark(char,"atk:"..key,if s.chainedIn then .07 else .09)
 			apply(char,final,RATE.authored,dt)
 			return "attack"
 		end
@@ -3342,7 +3348,7 @@ function Motion.present(char,actor,clock,dt)
 				local pose=Authored.sample(landName,t)
 				local final=table.clone(if memo.landHard then pose else mixPoses({{base,1},{pose,1.4}}))
 				final.__feet=authoredFeet(char,final,dt)
-				mark(char,"land",.05)
+				mark(char,"land",.07)
 				apply(char,final,RATE.authored,dt)
 				return "landing"
 			end
@@ -3395,7 +3401,7 @@ function Motion.present(char,actor,clock,dt)
 			local pose=Authored.sample(throwClip,t)
 			local targets=table.clone(base)
 			for key in UPPER do if pose[key] then targets[key]=(base[key] or IDENTITY):Lerp(pose[key],w) end end
-			mark(char,"throw:"..throwClip,.05)
+			mark(char,"throw:"..throwClip,.07)
 			apply(char,targets,RATE.authored,dt)
 			return "throw"
 		end
@@ -3427,7 +3433,7 @@ function Motion.present(char,actor,clock,dt)
 	if brake and brake<.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
 	if baseRate==RATE.authored then
 		local tag=memo.locoTag
-		mark(char,if subject.airborne then "air" else "loco"..(if tag then ":"..tag else ""),if subject.airborne then .1 elseif tag=="brake" then .06 else .12)
+		mark(char,if subject.airborne then "air" else "loco"..(if tag then ":"..tag else ""),if subject.airborne then .12 elseif tag=="brake" then .08 else .15)
 	end
 	apply(char,base,baseRate,dt)
 	return "locomotion"

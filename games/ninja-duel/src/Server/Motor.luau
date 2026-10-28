@@ -319,7 +319,18 @@ function Motor.step(a,c,dt,now)
    if inward>0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
   end
  end
-	 if locomotion.Magnitude>limit then locomotion=locomotion.Unit*limit end
+	 if locomotion.Magnitude>limit then
+	  if a.state~="Neutral" and limit==profile.AttackWalkSpeed and not a.airborne then
+	   -- (Fluidity pass, user reference 28/10) A strike thrown on the move
+	   -- does not brake the body to a walk in one frame: the run carries into
+	   -- it and settles to the attack walk over ~0.1 s, the body keeps moving
+	   -- under the blow instead of planting.
+	   local excess=(locomotion.Magnitude-limit)*math.exp(-dt/.06)
+	   locomotion=locomotion.Unit*(limit+excess)
+	  else
+	   locomotion=locomotion.Unit*limit
+	  end
+	 end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
 	 a.hum:Move(if locomotion.Magnitude>.01 then locomotion.Unit else Vector3.zero,false)

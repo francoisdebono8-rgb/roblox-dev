@@ -6,6 +6,7 @@ local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
 -- Bodies that are not fighters (Naruto's shadow clones).
 local BodyViews=require(script.Parent.BodyViews)
+local Smear=require(script.Parent.MotionSmear)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
@@ -234,6 +235,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
+  self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -303,6 +305,14 @@ function Presentation:update(data,dt)
    Motion.weapon(model,visual)
    self.presented=self.presented or {}
    self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
+   -- Speed smear (fluidity pass): faster than a sprint, or a teleport, is
+   -- drawn as motion. Not during an intro or between rounds (repositioning).
+   self.smears=self.smears or {}
+   self.smears[key]=self.smears[key] or {}
+   if data.phase=="Duel" and (data.intro or 0)<=0 then Smear.step(self.smears[key],model,dt) else self.smears[key]={} end
+   self.arcs=self.arcs or {}
+   self.arcs[key]=self.arcs[key] or {}
+   Smear.limbs(self.arcs[key],model,actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active"))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end

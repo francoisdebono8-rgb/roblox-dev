@@ -531,7 +531,7 @@ return {
 		-- ~0.83 s of flight at scale 1 (JumpScale stretches it per fighter).
 		-- HardLandVelocity sits above every fighter's own jump landing (~67 max),
 		-- so only a real drop (~25 studs) lands heavy.
-		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 12, HardLandVelocity = 84, FallbackGravity = 140,
+		JumpVelocity = 58, JumpCooldown = 0.4, AttackWalkSpeed = 14, HardLandVelocity = 84, FallbackGravity = 140,
 		HardLandRecovery = 0.14, SoftLandRecovery = 0.04, HardLandSpeed = 14,
 		MeleeTravelTime = 0.28, PursuitRecovery = 0.22 },
 	-- Neutral rhythm (convergence §8): jutsu are paced (Gap + Jitter seconds
@@ -3552,7 +3552,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d94e3699e3ba6035eb64bb0b197019402e9fe985f0d6b20445ded2cde018838a</string>
+          <string name="Value">0ae75f8a909c2077c59a6cee346121ed796d6f0428a4fe30e723122f4fbd261a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -14732,7 +14732,18 @@ function Motor.step(a,c,dt,now)
    if inward&gt;0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
   end
  end
-	 if locomotion.Magnitude&gt;limit then locomotion=locomotion.Unit*limit end
+	 if locomotion.Magnitude&gt;limit then
+	  if a.state~="Neutral" and limit==profile.AttackWalkSpeed and not a.airborne then
+	   -- (Fluidity pass, user reference 28/10) A strike thrown on the move
+	   -- does not brake the body to a walk in one frame: the run carries into
+	   -- it and settles to the attack walk over ~0.1 s, the body keeps moving
+	   -- under the blow instead of planting.
+	   local excess=(locomotion.Magnitude-limit)*math.exp(-dt/.06)
+	   locomotion=locomotion.Unit*(limit+excess)
+	  else
+	   locomotion=locomotion.Unit*limit
+	  end
+	 end
 	 a.locomotion=locomotion
 	 a.hum.WalkSpeed=locomotion.Magnitude
 	 a.hum:Move(if locomotion.Magnitude&gt;.01 then locomotion.Unit else Vector3.zero,false)
@@ -23446,7 +23457,9 @@ return BodyViews
 --    reserved for heavy moments.
 local Camera={}; Camera.__index=Camera
 local framing={
- Ground={distance=15,height=5.2,fov=68,lift=1.6,side=.32},
+ -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
+ -- body fills the frame, every motion of it reads; the opponent ahead.
+ Ground={distance=10.5,height=3.4,fov=66,lift=1.9,side=.3},
  Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
  Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
  AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
@@ -23600,7 +23613,7 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local bias=if separation&lt;=26 then .42 else math.max(.3,.42-(separation-26)*.004)
+	local bias=if separation&lt;=26 then .3 else math.max(.22,.3-(separation-26)*.003)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Sprint feel: only the player's own sprint (never the opponent's) eases
 	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
@@ -23626,8 +23639,8 @@ function Camera:update(data,dt)
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
-	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
-	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
+	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
 	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
@@ -29069,6 +29082,147 @@ print("[NinjaDuel] Client ready")
         </Item>
         <Item class="ModuleScript" referent="ND116">
           <Properties>
+            <string name="Name">MotionSmear</string>
+            <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
+-- follow is drawn as motion: a body moving faster than a sprint leaves dark
+-- translucent copies of its pose along its path and thin speed streaks around
+-- it; a body that jumps several studs in one frame (a teleport, a substitution,
+-- a flash step) leaves copies interpolated along the line it crossed, so the
+-- jump reads as a very fast move, not a cut. Presentation only.
+local TweenService=game:GetService("TweenService")
+local Debris=game:GetService("Debris")
+
+local Smear={}
+
+local LIMBS={"Head","UpperTorso","LowerTorso","LeftUpperArm","LeftLowerArm","LeftHand","RightUpperArm","RightLowerArm","RightHand",
+	"LeftUpperLeg","LeftLowerLeg","LeftFoot","RightUpperLeg","RightLowerLeg","RightFoot","HairCap"}
+local GHOST=Color3.fromRGB(26,26,36)
+local SPEED=55 -- studs/s: above a sprint (45); dodge 61, pursuit 74, rush 90
+local JUMP=6 -- studs in one frame: a teleport
+local CADENCE=1/30
+local LIFE=.16
+local STREAK_LIFE=.12
+
+type State={pos:Vector3?,at:number?,pose:{[string]:CFrame}?}
+
+local function folder():Instance
+	local f=workspace:FindFirstChild("NinjaDuelFX")
+	if not f then
+		f=Instance.new("Folder");f.Name="NinjaDuelFX";f.Parent=workspace
+	end
+	return f
+end
+
+local function snapshot(model:Model):{[string]:CFrame}
+	local out={}
+	for _,name in LIMBS do
+		local p=model:FindFirstChild(name)
+		if p and p:IsA("BasePart") and p.Transparency&lt;.9 then out[name]=p.CFrame end
+	end
+	return out
+end
+
+local function ghost(model:Model,pose:{[string]:CFrame},shift:Vector3,transparency:number,life:number)
+	local holder=Instance.new("Model");holder.Name="Smear"
+	for name,cf in pose do
+		local src=model:FindFirstChild(name)
+		if src and src:IsA("BasePart") then
+			local g=Instance.new("Part")
+			g.Anchored=true;g.CanCollide=false;g.CanQuery=false;g.CanTouch=false;g.CastShadow=false
+			g.Material=Enum.Material.SmoothPlastic;g.Color=GHOST
+			g.Size=src.Size;g.CFrame=cf+shift
+			g.Transparency=transparency
+			g.Parent=holder
+			TweenService:Create(g,TweenInfo.new(life,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1}):Play()
+		end
+	end
+	holder.Parent=folder()
+	Debris:AddItem(holder,life+.05)
+end
+
+local function streaks(at:Vector3,count:number,direction:Vector3)
+	local f=folder()
+	for _=1,count do
+		local s=Instance.new("Part")
+		s.Anchored=true;s.CanCollide=false;s.CanQuery=false;s.CanTouch=false;s.CastShadow=false
+		s.Material=Enum.Material.SmoothPlastic;s.Color=GHOST
+		local length=2+math.random()*2.2
+		s.Size=Vector3.new(.05,length,.05)
+		local side=direction:Cross(Vector3.yAxis)
+		if side.Magnitude&lt;1e-3 then side=Vector3.xAxis end
+		side=side.Unit
+		local offset=side*((math.random()-.5)*3.4)+Vector3.new(0,(math.random()-.3)*2.4,0)-direction*(math.random()*1.5)
+		s.CFrame=CFrame.new(at+offset)
+		s.Transparency=.35
+		s.Parent=f
+		TweenService:Create(s,TweenInfo.new(STREAK_LIFE,Enum.EasingStyle.Quad,Enum.EasingDirection.In),{Transparency=1,Size=Vector3.new(.03,length*1.4,.03)}):Play()
+		Debris:AddItem(s,STREAK_LIFE+.05)
+	end
+end
+
+-- One rendered frame of one body. `st` is the caller's per-body table.
+function Smear.step(st:State,model:Model?,dt:number)
+	if not model then return end
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if not (root and root:IsA("BasePart")) then return end
+	local now=os.clock()
+	local pos=root.Position
+	local pose=snapshot(model)
+	if st.pos and st.pose then
+		local delta=pos-(st.pos::Vector3)
+		local flat=Vector3.new(delta.X,0,delta.Z)
+		if delta.Magnitude&gt;JUMP and delta.Magnitude&lt;80 then
+			-- A teleport: copies across the gap, fading the farther back they are.
+			for k=1,4 do
+				local u=k/5
+				ghost(model,pose,-delta*(1-u),.45+.12*(1-u),LIFE*1.4)
+			end
+			streaks(pos-delta*.5,6,if flat.Magnitude&gt;.1 then flat.Unit else Vector3.zAxis)
+			st.at=now
+		elseif delta.Magnitude/math.max(dt,1e-3)&gt;SPEED and now-(st.at or 0)&gt;=CADENCE then
+			ghost(model,st.pose::{[string]:CFrame},Vector3.zero,.55,LIFE)
+			streaks(pos,2,if flat.Magnitude&gt;.1 then flat.Unit else Vector3.zAxis)
+			st.at=now
+		end
+	end
+	st.pos=pos;st.pose=pose
+end
+
+-- Thin arcs behind the hands and feet while a strike is out (the reference's
+-- fine swing lines): built once per body, lit only during the swing; they
+-- only show where a limb moves fast, so a still hand leaves nothing.
+local ENDS={RightHand=Vector3.new(0,-.35,0),LeftHand=Vector3.new(0,-.35,0),RightFoot=Vector3.new(0,-.1,-.35),LeftFoot=Vector3.new(0,-.1,-.35)}
+function Smear.limbs(st:any,model:Model?,active:boolean)
+	if not model then return end
+	if st.trailModel~=model then
+		st.trailModel=model;st.trails={}
+		for name,tip in ENDS do
+			local part=model:FindFirstChild(name)
+			if part and part:IsA("BasePart") then
+				local a0=Instance.new("Attachment");a0.Name="SmearA";a0.Position=tip*.3;a0.Parent=part
+				local a1=Instance.new("Attachment");a1.Name="SmearB";a1.Position=tip;a1.Parent=part
+				local t=Instance.new("Trail")
+				t.Name="SwingArc";t.Attachment0=a0;t.Attachment1=a1
+				t.Color=ColorSequence.new(Color3.fromRGB(235,238,245))
+				t.Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,.45),NumberSequenceKeypoint.new(1,1)})
+				t.WidthScale=NumberSequence.new({NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(1,.1)})
+				t.Lifetime=.11;t.MinLength=.15;t.FaceCamera=true;t.LightEmission=.2
+				t.Enabled=false;t.Parent=part
+				table.insert(st.trails,t)
+			end
+		end
+	end
+	for _,t in st.trails do
+		if t.Parent and t.Enabled~=active then t.Enabled=active end
+	end
+end
+
+return Smear
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND117">
+          <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
 -- his shadow clones (appearing, dispelled by one blow, spent after a route,
@@ -29325,7 +29479,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -29336,6 +29490,7 @@ local Feedback=require(script.Parent.VelmoraHitFeedback)
 local Effects=require(script.Parent.Effects)
 -- Bodies that are not fighters (Naruto's shadow clones).
 local BodyViews=require(script.Parent.BodyViews)
+local Smear=require(script.Parent.MotionSmear)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
@@ -29564,6 +29719,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
+  self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
  end
@@ -29633,6 +29789,14 @@ function Presentation:update(data,dt)
    Motion.weapon(model,visual)
    self.presented=self.presented or {}
    self.presented[key]=string.format("%s hp=%s state=%s",tostring(Motion.present(model,visual,clock,dt)),tostring(visual.health),tostring(visual.state))
+   -- Speed smear (fluidity pass): faster than a sprint, or a teleport, is
+   -- drawn as motion. Not during an intro or between rounds (repositioning).
+   self.smears=self.smears or {}
+   self.smears[key]=self.smears[key] or {}
+   if data.phase=="Duel" and (data.intro or 0)&lt;=0 then Smear.step(self.smears[key],model,dt) else self.smears[key]={} end
+   self.arcs=self.arcs or {}
+   self.arcs[key]=self.arcs[key] or {}
+   Smear.limbs(self.arcs[key],model,actor.attackName~=nil and (actor.state=="Startup" or actor.state=="Active"))
    self.last[key]={health=actor.health,attackName=actor.attackName,parry=actor.events and actor.events.Parry or 0,
     impactSerial=actor.impactSerial or 0,airborne=actor.airborne,reaction=actor.reaction}
   end
@@ -29644,7 +29808,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -30237,7 +30401,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -30848,7 +31012,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -31044,7 +31208,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -31130,6 +31294,10 @@ local KICK_SPEED=1600 -- deg/s cap for a free (kicking) leg during a strike
 local CHAIN_IN=.08 -- seconds of a chained strike during which the upper body eases in
 local CHAIN_IN_SPEED=800 -- deg/s cap per upper-body joint meanwhile (a strike may whip at 2280)
 local MAX_SPEED=1750
+-- deg/s: the fastest any authored joint turns (a sprint thigh peaks ~1200,
+-- a kick ~1500). The reference footage never moves a limb more than ~25 deg
+-- between two 60 Hz frames outside a speed smear.
+local AUTHORED_SPEED=1500
 local function angleBetween(a,b)
 	local _,angle=(a:Inverse()*b):ToAxisAngle()
 	return math.abs(angle)
@@ -31195,10 +31363,12 @@ local function write(char,key,target,rate,dt)
 	local nextCF
 	if rate==RATE.authored then
 		-- Authored motion is the final curve: drawn as is (with its transition
-		-- offset); only an absurd jump is capped.
+		-- offset). (Fluidity pass, reference: no limb ever jumps.) A joint
+		-- turns at most AUTHORED_SPEED: a whip is drawn over two or three
+		-- frames instead of one, the eye reads motion, not a pop.
 		nextCF=desired
 		local step=angleBetween(current,nextCF)
-		local limit=rad(5000)*dt
+		local limit=rad(AUTHORED_SPEED)*dt
 		if step&gt;limit and step&gt;1e-6 then nextCF=current:Lerp(nextCF,limit/step) end
 	else
 		local alpha=1-math.exp(-(rate or RATE.locomotion)*dt)
@@ -33999,7 +34169,7 @@ function Motion.defense(char,actor,dt)
 		local clip
 		targets,rate,clip=groundTargets(actor)
 		-- Fall, down, get-up: each its own (inertialized) transition.
-		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .05 else .07)
+		mark(char,"ground:"..tostring(clip or actor.groundPose or actor.reaction),if clip=="Knockdown" then .07 else .1)
 	elseif actor.reaction then
 		-- Standing hit: the feet stay planted and stagger-step as the body is
 		-- pushed, instead of sliding with it.
@@ -34022,7 +34192,7 @@ function Motion.defense(char,actor,dt)
 			s.reactClip=clip;s.reactElapsed=elapsed
 			if not actor.airborne then targets.__feet=authoredFeet(char,targets,dt) end
 			-- (a body set down after a flight takes a little longer to land)
-			mark(char,"react:"..clip..":"..s.reactSerial,if clip=="Knockback.Land" then .08 else .03)
+			mark(char,"react:"..clip..":"..s.reactSerial,if clip=="Knockback.Land" then .1 else .05)
 		end
 	else
 		return
@@ -34243,7 +34413,7 @@ function Motion.present(char,actor,clock,dt)
 			else
 				targets.__feet=authoredFeet(char,targets,dt)
 			end
-			mark(char,"cast:"..name,.08)
+			mark(char,"cast:"..name,.1)
 			apply(char,targets,RATE.authored,dt)
 			return "technique"
 		end
@@ -34365,7 +34535,7 @@ function Motion.present(char,actor,clock,dt)
 		-- A kicking (free) leg whips a little slower than an arm: at the strike
 		-- cap a foot crossed ~2.5 studs in one frame, twice a real kick.
 		if authoredStrike then
-			mark(char,"atk:"..key,if s.chainedIn then .05 else .07)
+			mark(char,"atk:"..key,if s.chainedIn then .07 else .09)
 			apply(char,final,RATE.authored,dt)
 			return "attack"
 		end
@@ -34391,7 +34561,7 @@ function Motion.present(char,actor,clock,dt)
 				local pose=Authored.sample(landName,t)
 				local final=table.clone(if memo.landHard then pose else mixPoses({{base,1},{pose,1.4}}))
 				final.__feet=authoredFeet(char,final,dt)
-				mark(char,"land",.05)
+				mark(char,"land",.07)
 				apply(char,final,RATE.authored,dt)
 				return "landing"
 			end
@@ -34444,7 +34614,7 @@ function Motion.present(char,actor,clock,dt)
 			local pose=Authored.sample(throwClip,t)
 			local targets=table.clone(base)
 			for key in UPPER do if pose[key] then targets[key]=(base[key] or IDENTITY):Lerp(pose[key],w) end end
-			mark(char,"throw:"..throwClip,.05)
+			mark(char,"throw:"..throwClip,.07)
 			apply(char,targets,RATE.authored,dt)
 			return "throw"
 		end
@@ -34476,7 +34646,7 @@ function Motion.present(char,actor,clock,dt)
 	if brake and brake&lt;.3 and subject.state=="Recovery" then base=brakePosture(base,1-smooth(brake/.3)) end
 	if baseRate==RATE.authored then
 		local tag=memo.locoTag
-		mark(char,if subject.airborne then "air" else "loco"..(if tag then ":"..tag else ""),if subject.airborne then .1 elseif tag=="brake" then .06 else .12)
+		mark(char,if subject.airborne then "air" else "loco"..(if tag then ":"..tag else ""),if subject.airborne then .12 elseif tag=="brake" then .08 else .15)
 	end
 	apply(char,base,baseRate,dt)
 	return "locomotion"
@@ -34498,7 +34668,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -35951,7 +36121,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -36411,7 +36581,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -36625,7 +36795,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -36926,7 +37096,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -36939,7 +37109,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -37042,7 +37212,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -37169,7 +37339,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -37312,7 +37482,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -37528,7 +37698,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND131">
+  <Item class="Lighting" referent="ND132">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -37546,7 +37716,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND132">
+  <Item class="SoundService" referent="ND133">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

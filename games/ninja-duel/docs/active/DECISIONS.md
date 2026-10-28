@@ -109,3 +109,16 @@ Demandes utilisateur des **26 et 27 octobre 2026**, textes intégraux : [Blender
 
 Blender produit le corps (locomotion, sauts, frappes, réactions, préparations, sorties) ; Roblox/Luau garde le déplacement réel, l'intention, la direction, l'élan, les collisions, les touches, le chakra, les annulations et l'agence du défenseur (§10 : jamais de cinématique verrouillée). Python sert au pipeline (export, cuisson, films), pas d'animateur principal : les poses clés, intermédiaires, contacts et courbes sont posés dans Blender sur un rig de contrôle et le .blend est la source. Aucun effet visuel n'est ajouté pour sauver un mouvement faible (test sans maquillage, §14). Gate de compétence en six exercices avant production de masse ; Sasuke puis Minato comme preuves ; la méthode (§21) devient une règle permanente pour les vingt fighters. Travail et critères : ANIM-001…ANIM-006 dans MASTER_BACKLOG.
 
+
+## DEC-029 — Cible de fluidité : la vidéo de référence de l'utilisateur (28/10)
+
+Demande utilisateur du **28 octobre 2026, 2 h 09** : « je veux que l'animation en général soit comme la vidéo Itachi de référence » puis, vidéo jointe (démo « 1 Tomoe Sharingan », TikTok @piercevile, tags deepwoken/rintama) : « regarde la fluidité, tout est smooth ; l'autre vidéo c'était surtout pour les techniques ». La copie `reference/itachi-quality-benchmark.mp4` du dépôt est tronquée (15 Ko, illisible) ; la vidéo des techniques est la vitrine Itachi de Shonen Unleashed (jointe le 26/10).
+
+Décision : la fluidité de cette vidéo est la cible du corps pour tout le roster. Elle se traduit en règles mesurables :
+- aucun membre ne saute : une articulation authored tourne au plus à 1 500°/s (≈ 25° par image à 60 Hz), et les transitions sont inertialisées sur 0,05 à 0,15 s ;
+- au-delà d'un sprint (55 studs/s) et sur toute téléportation, le corps laisse des copies sombres translucides et des traits de vitesse, comme dans la référence ;
+- des arcs fins suivent les mains et les pieds pendant une frappe ;
+- une frappe lancée en mouvement garde l'élan (vitesse ramenée en 0,1 s vers 14 studs/s au lieu d'un freinage à 12 en une image) ;
+- la caméra se tient près, derrière l'épaule (distance ≈ 10,5, hauteur 3,4).
+
+La règle de la mission ChatGPT « ne pas cacher un corps faible derrière des effets » reste valable : les traînées n'apparaissent que là où l'œil ne peut pas suivre le corps. Le corps lui-même doit être fluide (premier point).

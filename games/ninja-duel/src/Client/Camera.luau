@@ -9,7 +9,9 @@
 --    reserved for heavy moments.
 local Camera={}; Camera.__index=Camera
 local framing={
- Ground={distance=15,height=5.2,fov=68,lift=1.6,side=.32},
+ -- (Fluidity pass, user reference 28/10) close behind the shoulder: the
+ -- body fills the frame, every motion of it reads; the opponent ahead.
+ Ground={distance=10.5,height=3.4,fov=66,lift=1.9,side=.3},
  Launcher={distance=18,height=4,fov=72,lift=4.5,side=.36},
  Pursuit={distance=21,height=6,fov=78,lift=3,side=.4},
  AirCombo={distance=19,height=3.5,fov=74,lift=2.5,side=.4},
@@ -163,7 +165,7 @@ function Camera:update(data,dt)
 	self.boomAngle=wrap(self.boomAngle+step)
 	local boom=Vector3.new(math.sin(self.boomAngle),0,math.cos(self.boomAngle))
 	-- Focus: between the fighters, biased towards the player, raised for air.
-	local bias=if separation<=26 then .42 else math.max(.3,.42-(separation-26)*.004)
+	local bias=if separation<=26 then .3 else math.max(.22,.3-(separation-26)*.003)
 	local targetFocus=a:Lerp(target,bias)+Vector3.new(0,frame.lift,0)
 	-- Sprint feel: only the player's own sprint (never the opponent's) eases
 	-- in a wider lens, a slightly tighter and lower boom and a longer lead, so
@@ -189,8 +191,8 @@ function Camera:update(data,dt)
 	local settle=math.max(0,(self.settleUntil or 0)-os.clock())/.75
 	-- K.O.: a slow drift around the finish while the lens eases out.
 	if data.ko then self.yaw+=dt*.3 end
-	local spread=math.min(math.max(0,separation-7),19)*.68+math.max(0,separation-26)*.32
-	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),12,48)
+	local spread=math.min(math.max(0,separation-7),19)*.42+math.max(0,separation-26)*.22
+	local wantDistance=math.clamp(frame.distance-sprint*1.5+spread+vertical*.3+self.zoom+(self.settleSize or 0)*math.sin(settle*math.pi*.5)+(if data.ko then 6 else 0),8.5,48)
 	self.distance=if self.distance then self.distance+(wantDistance-self.distance)*(1-math.exp(-dt*4)) else wantDistance
 	local height=frame.height-sprint*.6+self.pitch*9+vertical*.28+math.min(math.max(0,separation-10)*.1,4)
 	if slam then height+=math.clamp(-(data.human.velocity and data.human.velocity.Y or 0)*.04,0,4) end
