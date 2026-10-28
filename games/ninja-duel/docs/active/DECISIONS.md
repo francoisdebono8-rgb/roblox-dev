@@ -127,3 +127,36 @@ La règle de la mission ChatGPT « ne pas cacher un corps faible derrière des e
 - les coups se dessinent d'abord comme des POSES amplifiées dans Blender (hanches qui tournent de 60 à 90°, buste qui dépasse, bras en dernier, arcs larges, overshoot tenu), vérifiées sur les rendus de la caméra de jeu et d'une caméra latérale ; le fichier `NinjaDuel_Sasuke_v3.blend` est la source ;
 - Sasuke frappe au kunai (prise directe, même soudure dans Blender et dans le jeu) ; son Heavy est un salto avant suivi d'un coup de taille vers le bas ;
 - le plafond de vitesse authored passe à 2 200°/s pour les membres et 3 600°/s pour le Root (un salto n'est pas un « pop ») ; un pied posé par un clip authored est exact (la jambe suit les hanches sans plafond), sinon il glissait vers le sol à l'atterrissage.
+
+## DEC-030 — Autonomie de Claude et feuille de route par parties jusqu'à la bêta en ligne (28/10)
+
+Demande utilisateur du **28 octobre 2026, 13 h 18** : « pour la suite du projet, tu travailles en autonomie avec pour but l'objectif final visé du jeu. Mais tu choisis, toi, tout ce qu'il faudrait faire pour atteindre ça. Parce que j'ai l'impression qu'on ne travaille pas de la bonne méthode. Donc peut-être qu'il te faut plus de liberté. Tu constituerais partie par partie, puis tu me ferais voir à chaque partie. […] On parle de la globalité du jeu : revoir chaque perso un par un, chaque animation, chaque attaque, chaque jutsu, chaque taijutsu, etc. Plus après, avec l'idée d'un mode en ligne, d'une bêta jouable, d'abord ça. »
+
+Décision. Claude choisit le contenu, l'ordre et la méthode, sans redemander d'autorisation par bloc. Il présente une partie terminée à la fois, que l'utilisateur joue lui-même. La cible finale est une **bêta jouable en ligne** : DEC-018, REL-001 et NET-001 restent les critères de publication.
+
+Diagnostic de méthode (pourquoi « on ne voit pas de différence ») :
+- les dernières passes ont amélioré des mesures (degrés par image, glissements de pied) que le joueur ne voit pas ;
+- elles ont touché tout le roster en surface au lieu d'amener un personnage au niveau de la référence ;
+- dix-huit des vingt combattants bougent encore par code procédural (`Wave*Motion`, `VelmoraMotionEngine`) plutôt que par des clips dessinés.
+
+Méthode retenue :
+- **un personnage à la fois**, terminé de bout en bout avant de passer au suivant ;
+- tout son corps est dessiné dans Blender : locomotion, chaîne, Heavy, routes, air, lancers, chaque jutsu, garde, esquive, réactions, intro et victoire ;
+- ses effets sont revus sur ce corps, et son IA sait utiliser ce qu'il a ;
+- Claude juge d'abord le résultat **comme un joueur**, sur des images du jeu en mouvement (Studio). Les tests et les mesures restent des garde-fous, pas la preuve.
+
+À chaque partie, Claude remet :
+- un fichier Studio jouable `Documents/Roblox/ND-PartieN.rbxlx` ;
+- des planches Blender ou des captures de jeu ;
+- une courte liste « quoi essayer, avec quelles touches ».
+
+Feuille de route (ordre choisi par Claude, révisable selon les retours) :
+- **Partie 0** — état des lieux joueur : chacun des vingt joué en Studio et capturé, défauts visibles listés par personnage ; outils de capture et de rendu prêts.
+- **Parties 1 à 8** — les huit combattants de la bêta, dans cet ordre : Sasuke, Itachi, Minato, Naruto, Kakashi, Gaara, Rock Lee, Neji.
+- **Partie 9** — socle commun revu en jeu : caméra, déplacement, garde et esquive, réactions, HUD, son, arène.
+- **Partie 10** — boucle du joueur : écran d'accueil ou hub compact, sélection, tutoriel court, duel IA, rounds et revanche.
+- **Partie 11** — en ligne : deux vrais clients, file d'attente et codes, latence, déconnexion. Publication privée, puis bêta.
+- **Parties 12 et suivantes** — les douze autres combattants un par un, ajoutés à la bêta au fur et à mesure, au même niveau.
+
+Le choix des huit de la bêta est fait sur deux critères : les plus iconiques, et ceux dont le runtime est le plus avancé. Les autres ne sont pas abandonnés : ils restent hors de la sélection de la bêta tant qu'ils n'ont pas atteint le niveau.
+

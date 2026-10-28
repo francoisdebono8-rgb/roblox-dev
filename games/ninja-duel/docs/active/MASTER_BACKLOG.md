@@ -513,12 +513,12 @@ Studio (3 par lot) : **S22** trois légers+lourd à vitesse normale : anticipati
 
 ## ANIM-006 — Règle permanente : méthode d'animation pour les vingt fighters
 
-- status: OPEN
+- status: IN_PROGRESS
 - priority: P1
 - dependencies: ANIM-005
 - subsystem: animation
 - character: roster (ROSTER_20)
-- summary: recherche personnage → apprentissage ciblé → poses fortes → mécanique → raffinement Blender → export → Studio → critique → correction, pour chaque fighter et technique
+- summary: recherche personnage → apprentissage ciblé → poses fortes → mécanique → raffinement Blender → export → Studio → critique → correction, pour chaque fighter et technique. Exécuté partie par partie selon [DEC-030](DECISIONS.md#dec-030--autonomie-de-claude-et-feuille-de-route-par-parties-jusquà-la-bêta-en-ligne-2810) : Partie 0 état des lieux, puis un personnage terminé par partie (Sasuke, Itachi, Minato, Naruto, Kakashi, Gaara, Lee, Neji pour la bêta), chaque partie livrée en fichier Studio jouable
 - sources: [mission](../archive/requests/2026-10-27-animation-mastery-combat-breakthrough.md) §6, §21
 - validation: chaque fighter reconnaissable à son corps HUD masqué ; pas une famille d'animation recolorée
 - evidence: —
@@ -987,7 +987,7 @@ Sortie commune : trois Lights/Heavy physiques distincts, branche seulement aprè
 - dependencies: CHR-EXT-002, NET-001
 - subsystem: release
 - character: ALL
-- summary: Alpha publique Roblox dès le roster baseline et le combat online suffisamment jouables
+- summary: Alpha publique Roblox dès le roster baseline et le combat online suffisamment jouables. DEC-030 (28/10) : bêta ouverte avec les huit premiers combattants terminés (Parties 1–8), socle et boucle joueur (Parties 9–10), en ligne (Partie 11) ; les douze autres rejoignent la bêta un par un
 - sources: [Décision alpha](DECISIONS.md#dec-018--alpha-publique-et-online-réel) ; [demande archivée](../archive/missions/PUBLIC_ALPHA_AFTER_ROSTER_20.md)
 - validation: 20 baseline réellement jouables ; flow NET-001 ; pas de crash/verrouillage courant de session ; autorité serveur et déconnexion/forfait ; persistance non destructive ou désactivée ; canal simple de bugs/feedback ; télémétrie pratique (choix, durée/résultat, abandon, rematch, erreurs) ; permissions/auth réelles et PlaceID/version/commit/hash consignés. Ni VFX premium, ni balance finale, ni progression complète, ni monétisation requis. Passage privé/test publié puis public : pas de dépendance circulaire NET-001/REL-001.
 - evidence: Au HEAD 04d6eb0 : direction alpha autorisée, publication et identifiants non prouvés. Cet audit ne publie rien.
