@@ -657,7 +657,7 @@ D.Kakashi=function(model,def)
 	end
 	for _,x in {-.4,-.1,.22} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.3-.15,-1,-.8),.6,.32,.2,hair) end
 	for _,s in {-1,1} do lock(model,"SideLock",Vector3.new(s*.86,.3,-.3),Vector3.new(s*.15,-1,-.1),.7,.3,.2,hair) end
-	Face.build(model,{iris=rgb(60,60,70),irisDark=rgb(24,24,30),skin=skin,brow=rgb(150,156,170),lash=rgb(30,30,38),mood="lazy",mouth=false,lids=.42})
+	Face.build(model,{iris=rgb(60,60,70),irisDark=rgb(24,24,30),skin=skin,brow=rgb(150,156,170),lash=rgb(30,30,38),mood="lazy",mouth=false,lids=.42,eyeY=.02})
 	settle(model)
 end
 

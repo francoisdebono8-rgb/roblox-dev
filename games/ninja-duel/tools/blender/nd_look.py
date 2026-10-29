@@ -223,9 +223,32 @@ def join(objs, name):
     o.name = name
     return o
 
-def export(stem, out):
+def merge_by_colour():
+    """Fewer meshes: every piece of one body part in one colour/material
+    becomes a single object (named <Body>__<FirstPiece>)."""
+    groups = {}
+    for o in list(bpy.data.objects):
+        if o.type != "MESH" or o.name not in MANIFEST:
+            continue
+        m = MANIFEST[o.name]
+        key = (m["body"], tuple(m["color"]), m["material"], m["reflectance"])
+        groups.setdefault(key, []).append(o)
+    for key, objs in groups.items():
+        if len(objs) < 2:
+            continue
+        keep = objs[0].name
+        info = MANIFEST[keep]
+        for o in objs[1:]:
+            MANIFEST.pop(o.name, None)
+        joined = join(objs, keep)
+        joined.name = keep
+        MANIFEST[keep] = info
+
+def export(stem, out, merge=True):
     """FBX of every piece (rest-pose positions; the importer keeps them
     relative to the scene origin) + the colour/body manifest."""
+    if merge:
+        merge_by_colour()
     bpy.ops.object.select_all(action="SELECT")
     path = os.path.join(out, stem + ".fbx")
     bpy.ops.export_scene.fbx(filepath=path, use_selection=True, apply_unit_scale=True, apply_scale_options="FBX_SCALE_UNITS",
@@ -334,14 +357,15 @@ def head_section(y):
             return (a0 + (a1 - a0) * t, b0 + (b1 - b0) * t, n0 + (n1 - n0) * t)
     return P[-1][1:]
 
-def head_loft(center, y0, y1, grow=0.0, steps=12, sides=48, cap_top=True, cap_bottom=True, dz=0.0, name="headloft"):
+def head_loft(center, y0, y1, grow=0.0, steps=12, sides=48, cap_top=True, cap_bottom=True, dz=0.0, name="headloft", grow_fn=None):
     """The head profile between heights y0..y1 (head space), grown outward by
-    `grow` studs all round."""
+    `grow` studs all round (or by grow_fn(y))."""
     secs = []
     for k in range(steps + 1):
         y = y0 + (y1 - y0) * k / steps
         a, b, n = head_section(y)
-        secs.append((y, a + grow, b + grow, n, dz))
+        g = grow_fn(y) if grow_fn else grow
+        secs.append((y, a + g, b + g, n, dz))
     return loft(secs, sides=sides, center=center, cap_top=cap_top, cap_bottom=cap_bottom, name=name)
 
 def head_point(center, x, y, out=0.0):

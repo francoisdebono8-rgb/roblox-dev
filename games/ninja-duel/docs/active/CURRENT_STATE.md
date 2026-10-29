@@ -1,3 +1,17 @@
+**Apparence des 8 persos, passe finale bêta (29/10, après-midi)** (utilisateur : « cheveux et bandeau, faut que tu t'y attardes », « les mains sont des moignons », « produis les designs sur Blender »)
+- **Visages dessinés** (`Shared/Face`) : yeux, sourcils et bouche sur des plaques tangentes à la tête ; expressions selon l'état (combat, cri sur les lourds et les jutsu, douleur, K.-O., victoire), clignement ; Sharingan et yeux de renard en teinte.
+- **Meshes Blender** :
+  - `tools/blender/nd_look.py` et `nd_kit.py` : une seule forme de tête dont dérivent la peau, la masse de cheveux et le bandeau ;
+  - le bandeau se porte par-dessus les cheveux : la mèche sort dessous, les pointes débordent au-dessus ;
+  - des poings avec des doigts.
+- **Chaîne de production :**
+  - `look_<perso>.py` produit un FBX et un manifeste ;
+  - Studio importe le FBX et téléverse les meshes ;
+  - `looks_to_luau.py` écrit `Server/LookMeshData` ;
+  - au démarrage, `Server/LookMeshes` charge les meshes, puis habille le perso.
+  - La version en pièces simples (`Server/Looks`) reste en secours.
+- **État :** Naruto est en jeu sur meshes, les 7 autres sont modélisés (rendus dans `Documents/NinjaDuelBlender/out`). Import Studio à faire.
+
 **Audit de fluidité (29/10, nuit), après les 2 combats joués par l'utilisateur** (« je pouvais plus bouger », « plein de bugs et d'incohérences ») — [rapport](../reports/fluidity-audit-2026-10-29/REPORT.md).
 - **Les causes corrigées :**
   - le stick était coupé hors de l'état neutre (garde, canalisation, récupération) ;
