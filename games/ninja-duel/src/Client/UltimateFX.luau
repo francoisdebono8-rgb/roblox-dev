@@ -225,6 +225,43 @@ local function impact(fx,impact,folder)
 	elseif style=="reveal" then
 		K.flash(fx.folder,p,rgb(236,232,255),.6,3.2,.15,.3)
 		return true
+	-- (Stage 6) the interactions of Server/Interactions.
+	elseif style=="steam" then
+		-- A white cloud that holds for its time, puff after puff.
+		local radius=impact.radius or 10
+		local rng=Random.new(impact.serial or 3)
+		for k=0,math.floor((impact.time or 3)/.3) do
+			task.delay(k*.3,function()
+				for _=1,3 do K.smokePuff(fx.folder,around(p,radius*.55,rng),rgb(238,240,244),5,radius*.35) end
+			end)
+		end
+		K.flash(fx.folder,p,rgb(255,255,255),1,radius*.6,.2,.3)
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.whoosh,.5,.6)
+		return true
+	elseif style=="puddle" then
+		local radius=impact.radius or 9
+		local disc=K.block(fx.folder,Vector3.new(.08,radius*2,radius*2),CFrame.new(p+Vector3.new(0,.06,0))*CFrame.Angles(0,0,math.rad(90)),rgb(90,160,220),Enum.Material.Glass,"Part")
+		disc.Name="Puddle";disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.55;disc.Reflectance=.25
+		task.delay(math.max(0,(impact.time or 6)-.6),function() if disc.Parent then K.tween(disc,.6,{Transparency=1}) end end)
+		Debris:AddItem(disc,(impact.time or 6)+.1)
+		return true
+	elseif style=="conduct" then
+		local at=impact.position or p
+		K.shockRing(fx.folder,at+Vector3.new(0,.2,0),rgb(170,210,255),1,(impact.radius or 9)*2,.35)
+		if K.sparks then K.sparks(fx.folder,p,rgb(220,236,255),14,26) end
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.electric,.6,1)
+		return true
+	elseif style=="sandmelt" then
+		K.flash(fx.folder,p,rgb(255,150,60),.5,3,.18,.3)
+		K.smokePuff(fx.folder,p-Vector3.new(0,1.6,0),rgb(214,176,112),5,1.2)
+		return true
+	elseif style=="jutsuclash" then
+		K.flash(fx.folder,p,rgb(236,246,255),1.5,12,.3,.1)
+		K.shockRing(fx.folder,p,rgb(150,200,255),2,22,.5)
+		K.shockRing(fx.folder,p-Vector3.new(0,2.4,0),rgb(255,255,255),2,16,.45)
+		if K.sparks then K.sparks(fx.folder,p,rgb(200,226,255),24,34) end
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.boom,.8,1.1)
+		return true
 	end
 	return false
 end

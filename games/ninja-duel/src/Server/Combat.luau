@@ -9,6 +9,7 @@ local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
 local Ultimates = require(script.Parent.Ultimates)
+local Interactions = require(script.Parent.Interactions)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 local WorldReaction = require(script.Parent.WorldReaction)
@@ -282,6 +283,11 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	end
 	amount=resolved
 	local guarded=outcome=="Blocked"
+	-- (Stage 6) lightning into a body standing in the water: harder, and the
+	-- current holds it a moment (Interactions).
+	local conducted=false
+	if not guarded then amount,conducted=Interactions.damage(self,attacker,victim,amount) end
+	if conducted then victim.stunFloorUntil=math.max(victim.stunFloorUntil or 0,self.now+Interactions.CONDUCT.Stun) end
 	if guarded then
 		self:cue(victim,"GUARDED")
 	else
@@ -1328,8 +1334,12 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
  end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
-	-- (Stage 6) A blade technique needs the blade out (Kakashi's Lightning Cut: B first).
-	if spec.Armed and not a.armed then return false,"Draw the blade (B)" end
+	-- (Stage 6) A blade technique draws the blade itself (Kakashi's Lightning
+	-- Cut): the tanto comes out with the signs, it stays out after.
+	if spec.Armed and not a.armed then
+		a.armed=true;a.armAt=self.now+.25
+		Brawler.event(self,a,"Draw")
+	end
 	-- A string cancel shortens the wind-up to .14 s; a technique that is already
 	-- quicker (a teleport, the Read, Rotation) keeps its own.
 	local cancelled=a.stringCancel==spec.Id
@@ -2004,6 +2014,10 @@ function Combat:projectileHit(p,target,position,normal)
 	-- hit once the defence has resolved. A blade that was evaded, parried or
 	-- absorbed ends silently ("spent"): the defence pushed its own effect.
 	local entry=self.impacts[#self.impacts]
+	-- (Stage 6) where a Water Dragon ends the ground stays wet; fire reaching
+	-- Gaara melts a charge of his sand.
+	Interactions.ended(self,p,position)
+	Interactions.fireOnSand(self,p,target)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
 	self.shieldBreak=p.breaksShield
@@ -2030,7 +2044,7 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 	if damaged and not guarded then
 		if p.kind=="sandwave" then
-			Techniques.bindInSand(self,p.a,target)
+			Techniques.bindInSand(self,p.a,target,p.wet)
 		elseif p.kind=="wire" then
 			Techniques.wireBind(self,p.a,target,p.riders,p.direction)
 		elseif p.kind=="palm" then
@@ -2075,6 +2089,7 @@ function Combat:projectileHit(p,target,position,normal)
 	end
 end
 function Combat:projectileSurface(p,hit)
+	Interactions.ended(self,p,hit.Position)
 	local style=if p.kind=="fireball" then "fire" elseif p.kind=="phoenix" then "ember" elseif p.kind=="wind" then "jutsu" elseif p.kind=="palm" then "palmburst" elseif Looks[p.kind] and not IMPACT_STYLE[p.kind] then "look" else "stick"
 	-- A family object that leaves a zone where it lands (an explosive tag).
 	if p.family and p.family.Charge and hit.Instance.CanCollide then Families.projectileEnd(self,p,hit.Position+hit.Normal*.4) end
@@ -2143,6 +2158,11 @@ function Combat:shurikenGeometry(a,sideSign,infused)
 	return true
 end
 function Combat:projectileExpire(p)
+	-- (A Water Dragon that ends in the air still wets the ground under it.)
+	if Interactions.isWater(p) then
+		local floor=workspace:Raycast(p.position,Vector3.new(0,-30,0),self:rayParams(true))
+		Interactions.ended(self,p,if floor then floor.Position else p.position)
+	end
 	-- A family object that ends without a body may stay as a charge.
 	Families.projectileEnd(self,p,p.position)
 	if p.geometry and p.a.target and p.a.target.health>0 then
@@ -2335,6 +2355,7 @@ function Combat:update(dt,now)
 	end
 end
 function Combat:clear(preserveAnimations)
+	Interactions.clear(self)
 	for _,a in self.actors do
 		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end

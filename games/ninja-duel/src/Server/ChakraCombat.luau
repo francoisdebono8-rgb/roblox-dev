@@ -16,6 +16,7 @@ local InputPlan=require(script.Parent.ChakraInputPlan)
 local T=require(script.Parent.ChakraTuning)
 local Brawler=require(script.Parent.Brawler)
 local Motor=require(script.Parent.Motor)
+local Interactions=require(script.Parent.Interactions)
 assert(Rules.validate(T),"Invalid chakra tuning")
 local E=T.Effects
 local Chakra={Tuning=T}
@@ -329,6 +330,8 @@ end
 -- Resolve one meeting. The rules pick one outcome (exclusive group "clash");
 -- the dominant side is the rule source.
 local function settle(c,s,t,vs,vt,at,forced)
+	-- (Stage 6) the meetings of the move list (fire against water: steam).
+	if not forced and Interactions.meet(c,s,t,at) then return "steam" end
 	local ctx={}
 	if not (vs.tags.chakra or vs.tags.volume or vt.tags.chakra or vt.tags.volume) then ctx.plain=true end
 	if beats(vs.nature,vt.nature) then ctx.natureAdvantage=true end

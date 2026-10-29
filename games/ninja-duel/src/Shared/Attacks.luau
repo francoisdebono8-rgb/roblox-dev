@@ -54,6 +54,10 @@ local attacks={
  -- at range and slams it down; after one lash, the sand fist drives it away.
  SandHand=move(.24,.16,.48,10,0,"Knockdown",Vector3.new(0,-24,-14),.8),
  SandFist=move(.18,.14,.4,11,0,"Knockback",Vector3.new(0,10,64),.52),
+ -- (Stage 6) Gaara's own routes: away, a low wave of sand along the floor;
+ -- sideways, a glide on the sand that strikes while it slips aside.
+ SandLowWave=move(.16,.16,.4,7,0,"Knockdown",Vector3.new(0,6,16),.62),
+ SandGlide=move(.12,.12,.26,6,0,"HitStun",Vector3.new(0,3,8),.34),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
  -- Lateral routes: Itachi's feint step (an afterimage stays, he reappears at
  -- the flank) and Neji's circular step onto a chakra point. Both keep the string.
@@ -175,6 +179,8 @@ for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] 
 attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
 attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
 attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
+attacks.SandLowWave.range=9.5;attacks.SandLowWave.width=7;attacks.SandLowWave.height=3.5;attacks.SandLowWave.depth=9;attacks.SandLowWave.offset=4.5;attacks.SandLowWave.clip="Sweep";attacks.SandLowWave.zone="legs";attacks.SandLowWave.kind="sweep"
+attacks.SandGlide.range=8.5;attacks.SandGlide.width=5;attacks.SandGlide.depth=7;attacks.SandGlide.offset=4;attacks.SandGlide.orbit=34;attacks.SandGlide.clip="FeintStep";attacks.SandGlide.zone="body"
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 -- Rock Lee's moves, kept together so the stress-test fighter stays additive:
 -- reach, body, hit zone and kind, the two routes that keep the string, and the

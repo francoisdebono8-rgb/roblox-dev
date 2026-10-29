@@ -98,7 +98,8 @@ local Graphs = {
 		reengage={name="lion",speed=1.15,arrive=2.8,angle=0,commit=.06,past=2.6,dashDamage=1.15,chase=.28,recovery=.3},
 	},
 	Sand={
-		routes={up="SandPillar",down="Sweep"},
+		-- (Stage 6) away: the low wave; sideways: the sand glide.
+		routes={up="SandPillar",down="SandLowWave",side="SandGlide"},
 		-- A controller, not a rushdown: the re-engage is a glide on the sand that
 		-- stops at lash range (the arrival strike is a lash), slower than a dash.
 		reengage={name="sand",speed=.85,arrive=7.5,angle=0,minRange=11,chase=.3,recovery=.22},

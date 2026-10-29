@@ -86,7 +86,7 @@ local Fighters = {
 		-- Awakening: Byakugan full field. No blind spot; he sees the whole network:
 		-- a clean palm closes two chakra points (Points) and a palm that breaks a
 		-- jutsu being moulded seals the techniques (ChannelCut, s); palms drain more.
-		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 1.8, Points = 2, ChannelCut = 1.5, Color = { 200, 214, 255 } },
+		Awakening = { Name = "BYAKUGAN FULL FIELD", Speed = 1.08, Damage = 1.06, Regen = 1.5, Cooldown = 0.6, NoBlindSpot = true, Drain = 2, Points = 2, ChannelCut = 1.5, Color = { 200, 214, 255 } },
 		-- Byakugan: near-360-degree sight. His guard covers every side except a
 		-- narrow blind spot straight behind, and genjutsu decoys do not fool him.
 		Byakugan = { BlindSpot = 0.9 },

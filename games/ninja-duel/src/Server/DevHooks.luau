@@ -221,6 +221,9 @@ function DevHooks.install(matches)
 		elseif op=="chakra" then
 			-- (Visual QA: a pure-taijutsu fight keeps both bodies dry of chakra.)
 			actor.chakra=math.max(0,arg2 or actor.chakra);return actor.chakra
+		elseif op=="ultimate" then
+			-- (Stage 6) fill (or set) the ultimate bar to try the sequences.
+			actor.ultimate=math.clamp(tonumber(arg2) or 100,0,100);return actor.ultimate
 		elseif op=="health" then
 			actor.health=math.max(1,arg2 or actor.health);actor.hum.Health=actor.health;return actor.health
 		elseif op=="sprint" then

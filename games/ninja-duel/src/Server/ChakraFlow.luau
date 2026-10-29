@@ -44,7 +44,8 @@ local SHAPE={
 	Wind={reach=1.6,impulse=1.45},      -- a blade of wind past the fist
 	Strength={impulse=1.6},             -- the body thrown much further
 	Lightning={reach=.4},
-	Fire={},Sand={impulse=1.15},GentleFist={},Chakra={},
+	-- (Stage 6) Gaara's hardened sand: longer lashes (and they slow, ChakraFlow.hit).
+	Fire={},Sand={reach=2,impulse=1.15},GentleFist={},Chakra={},
 }
 local NOT_STRIKES={Grab=true,Throw=true,ThrowUp=true}
 local HEAVY={Heavy=true,DashAttack=true,Slam=true,Launcher=true,Light3=true,AirFlip=true,FlyingKick=true,WallDive=true}
@@ -90,9 +91,14 @@ function ChakraFlow.strike(c,a,name,spec)
 	if NOT_STRIKES[name] then return nil end
 	local nature=spend(c,a,T.Strike)
 	if not nature then return nil end
+	-- (Stage 6) Sasuke's two natures: fire on his kicks, lightning elsewhere.
+	if a.fighterId=="Lion" and spec.kind=="kick" then nature="Fire" end
 	local shape=SHAPE[nature] or {}
 	spec.damageScale=(spec.damageScale or 1)*(if HEAVY[name] then T.HeavyDamage else T.Damage)
 	local reach=T.Reach+(shape.reach or 0)
+	-- (Stage 6) B + L2: a drawn blade carries the chakra further (Kakashi's
+	-- white-chakra tanto grows).
+	if a.armed and a.def.Weapon then reach+=1.5 end
 	spec.range=(spec.range or 5)+reach
 	spec.depth=(spec.depth or 2)+reach
 	spec.impulse=spec.impulse*(T.Impulse*(shape.impulse or 1))
@@ -135,6 +141,11 @@ function ChakraFlow.hit(c,a,b,p,guarded)
 	elseif nature=="Sand" then
 		-- Sand clings: the body is slowed a moment.
 		b.slowUntil=math.max(b.slowUntil or 0,c.now+1);b.slowScale=.75
+	elseif nature=="Chakra" and a.fighterId=="Flashstep" then
+		-- (Stage 6) Minato's infused blow seals the body (Flying Thunder God destination).
+		local Techniques=require(script.Parent.Techniques)
+		if Techniques.plant then Techniques.plant(c,a,b.root.Position,Vector3.yAxis,b) end
+		c:cue(a,"SEALED",.5)
 	end
 end
 

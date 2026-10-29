@@ -579,7 +579,7 @@ Techniques.Chidori={
 -- Gaara ----------------------------------------------------------------
 -- Sand Coffin: a wave of sand runs along the ground; a body it reaches is bound
 -- (held where it stands) and buried a beat later unless it substitutes out.
-function Techniques.bindInSand(c,owner,victim)
+function Techniques.bindInSand(c,owner,victim,wet)
 	if victim.health<=0 or victim.invulnerableUntil>c.now then return end
 	local Brawler=require(script.Parent.Brawler)
 	Brawler.react(c,victim,"Bound",Vector3.zero,1.25,owner)
@@ -591,7 +591,8 @@ function Techniques.bindInSand(c,owner,victim)
 		if victim.reaction~="Bound" or victim.boundBy~=owner or owner.health<=0 or victim.health<=0 then return end
 		victim.boundBy=nil
 		c.damageTag="Sand Burial"
-		c:damage(owner,victim,(spec and spec.Damage) or 18,false,false)
+		-- (Stage 6) wet sand (the Coffin cast at a body in the water) crushes harder.
+		c:damage(owner,victim,((spec and spec.Damage) or 18)*(if wet then wet.Damage else 1),false,false)
 		c.damageTag=nil
 		if c.match.phase~="Duel" or victim.health<=0 then return end
 		Brawler.react(c,victim,"Knockdown",Vector3.new(0,16,0),.7,owner)
@@ -606,8 +607,11 @@ Techniques.SandCoffin={
 		local origin=c.launchPoint(a,"Ground")
 		local flat=Vector3.new(aim.X-origin.X,0,aim.Z-origin.Z)
 		if flat.Magnitude<1 then flat=a.root.CFrame.LookVector*Vector3.new(1,0,1) end
-		c:projectile(a,origin+flat.Unit*pending.spec.Range+Vector3.new(0,2,0),pending.spec.Speed or 46,pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
-		c:cue(a,"SAND COFFIN",.6)
+		-- (Stage 6) at a body in the water the sand is wet: slower, harder.
+		local wet=a.target and require(script.Parent.Interactions).wetSand(c,a,a.target)
+		local p=c:projectile(a,origin+flat.Unit*pending.spec.Range+Vector3.new(0,2,0),(pending.spec.Speed or 46)*(if wet then wet.Speed else 1),pending.spec.Range,4,"sandwave",nil,{origin=origin+Vector3.new(0,1,0),radius=1.8,growth=.6})
+		if p and wet then p.wet=wet end
+		if not wet then c:cue(a,"SAND COFFIN",.6) end
 	end,
 }
 Techniques.SandShuriken={

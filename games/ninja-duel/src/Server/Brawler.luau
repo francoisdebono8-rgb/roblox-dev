@@ -1158,6 +1158,11 @@ function Brawler.clash(c,a,p)
   x.state="Recovery";x.untilTime=c.now+.24;x.recoveryCancelAt=c.now+.12
   x.hitstopUntil=math.max(x.hitstopUntil or 0,c.now+.08)
  end
+ -- (Stage 6) Rasengan into Chidori: the two jutsu explode (Interactions).
+ if require(script.Parent.Interactions).jutsuClash(c,a,b,p,q) then
+  Brawler.event(c,a,"JutsuClash");Brawler.event(c,b,"JutsuClash")
+  return true
+ end
  a.hop={direction=-flat.Unit,remaining=Config.Clash.Push,speed=30}
  b.hop={direction=flat.Unit,remaining=Config.Clash.Push,speed=30}
  c:pushImpact(a.root.Position:Lerp(b.root.Position,.5),"clash",true,{direction=flat.Unit})

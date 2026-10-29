@@ -327,7 +327,7 @@ local LASH={
 	DashAttack={{"RightHand",.45},{"LeftHand",-.45}},Sweep={{"RightHand",1.3,low=true}},
 	Slam={{"RightHand",.25,down=true},{"LeftHand",-.25,down=true}},
 	Light4={{"RightHand",1}},Light5={{"LeftHand",-1}},
-	SandHand={{"RightHand",.15},{"LeftHand",-.15}},SandFist={{"RightHand",.5},{"LeftHand",-.5}},
+	SandHand={{"RightHand",.15},{"LeftHand",-.15}},SandLowWave={{"RightHand",.6,down=true},{"LeftHand",-.6,down=true}},SandGlide={{"RightHand",.8}},SandFist={{"RightHand",.5},{"LeftHand",-.5}},
 }
 -- The move's own timeline as the motion engine plays it (same per-fighter
 -- timings and lead), so the sand leaves the hand on the clip's contact key.

@@ -249,8 +249,9 @@ test("combo prompts omit routes that the current character does not have",functi
   local help=Controls.comboHelp(graphs[id],true)
   assert(help:find("side + □",1,true) and help:find("away + R2",1,true))
  end
+ -- (Stage 6) Gaara now has a side route (the sand glide), still no retreat.
  local sand=Controls.comboHelp(graphs.Sand,true)
- assert(not sand:find("side",1,true) and not sand:find("retreat",1,true))
+ assert(sand:find("side",1,true) and not sand:find("retreat",1,true))
 end)
 test("PS5 prompts survive incidental mouse movement and list full jutsu chords",function()
  uis.LastInputTypeChanged:fire(E.UserInputType.Gamepad1);assert(input.pad)

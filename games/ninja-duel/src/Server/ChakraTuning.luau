@@ -6,7 +6,7 @@
 -- (speed, range, damage) or absolute contest values (weight, impact, contest).
 local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxSpeed=400,MaxChakra=1000,
 	Triggers={Infuse=true,ProjectileClash=true,SurfaceHit=true,Contact=true,PointContact=true,WireContact=true,WireCross=true,MetalCross=true},
-	Tags={tool=true,projectile=true,metal=true,blade=true,wire=true,sand=true,body=true,volume=true,actor=true,
+	Tags={tool=true,projectile=true,metal=true,blade=true,wire=true,sand=true,water=true,body=true,volume=true,actor=true,
 		solid=true,wall=true,floor=true,anchorCompatible=true,
 		chakra=true,reinforced=true,cutting=true,conductive=true,ignited=true,shockPoint=true,charged=true,
 		wind=true,fire=true,lightning=true,earth=true,marked=true,
@@ -44,7 +44,9 @@ local T={Enabled=true,MaxObjects=64,MaxSurfaces=32,MaxEvents=256,MaxLife=30,MaxS
 	-- Projectile kinds as interaction objects. Volumes are jutsu bodies: they
 	-- take part in clashes with their real radius.
 	ObjectOf={kunai="Kunai",marked="Marked",shuriken="Shuriken",wire="Wire",sand="Sand",
-		fireball="Fireball",phoenix="Phoenix",palm="VacuumPalm",wind="WindCut",sandwave="SandWave"},
+		fireball="Fireball",phoenix="Phoenix",palm="VacuumPalm",wind="WindCut",sandwave="SandWave",
+		-- (Stage 6) Kakashi's Water Dragon meets the fire (Interactions: steam).
+		waterdragon="WaterDragon"},
 	Objects={},Surfaces={},Infusions={},Rules={},
 }
 -- Rock Lee (stress-test wave): he cannot mould chakra at all, so there is
@@ -91,6 +93,7 @@ O.Fireball=volume({"projectile","volume","fire"},6)
 O.Phoenix=volume({"projectile","volume","fire"},2.5)
 O.VacuumPalm=volume({"projectile","volume","body"},5)
 O.WindCut=volume({"projectile","volume","wind","cutting"},4)
+O.WaterDragon=volume({"projectile","volume","water"},6)
 O.SandWave=volume({"projectile","volume","sand","earth"},6)
 T.Surfaces.Wall={tags={"solid","wall","anchorCompatible"},normal={x=-1,y=0,z=0},radius=8}
 T.Surfaces.Floor={tags={"solid","floor","anchorCompatible"},normal={x=0,y=1,z=0},radius=8}
