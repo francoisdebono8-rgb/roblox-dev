@@ -87,7 +87,12 @@ function Input.new(send,getState,toggleLock,camera)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
    if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
-   send(if modified then "Technique"..slot else normal)
+   -- (User 29/10) Pad L1 + □ is the grab (the guard held, the light pressed).
+   if not modified and normal=="Attack" and padObject(object) and next(self.guards)~=nil then send("Grab");return false end
+   -- The chakra button held (pad L2, keyboard Z): the press goes out infused.
+   if modified then send("Technique"..slot)
+   elseif self:chakraOn(padObject(object)) then send(normal,{chakra=true})
+   else send(normal) end
    return not modified
   end
   -- (Audit 29/10) The face button let go after R1+face lets a held technique
@@ -132,13 +137,19 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
  -- Only a boolean leaves the client; the server picks what the chakra does.
+ bind("ChakraPad",key(GAMEPAD.Chakra),function(state,obj)
+  if released(state) or (obj.Position and obj.Position.Z<=.25 and state~=Enum.UserInputState.Begin) then self.chakraPad=false;self.chakraPadAt=Input.now()
+  elseif state==Enum.UserInputState.Begin or (obj.Position and obj.Position.Z>=.45) then self.chakraPad=true end
+ end)
  bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
   if begin(state) then self.chakra=true;self.chakraAt=Input.now();self.chakraDownAt=self.chakraAt;self.chakraSpent=false elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
  end)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
-   local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)<=Input.ChakraChord)
-   if chakra then self.modifierSpent=true;self.chakraSpent=true end
+   -- R1 + R2 on the pad is the feint now (R1 is the jutsu shift, L2 the chakra).
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Feint");return end
+   local chakra=self:chakraOn(padObject(obj))
+   if chakra then self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
   end
  end)
@@ -187,7 +198,7 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
- self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true
+ self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end
 -- (Audit 29/10) A new round (or phase) clears the presses but not the hand:
 -- a direction held through the round change was forgotten until the key was
@@ -208,12 +219,15 @@ end
 -- loaded with chakra. Polled every frame (Input:direction).
 function Input:chakraHold()
  local now=Input.now()
- if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)>=Input.ChakraHoldPad then
-  self.modifierSpent=true;self.send("ChakraLoad")
- end
- if self.chakra and not self.chakraSpent and now-(self.chakraDownAt or now)>=Input.ChakraHold then
-  self.chakraSpent=true;self.send("ChakraLoad")
- end
+ -- (User 29/10) Nothing loads on a hold alone any more: the chakra button
+ -- infuses the press it is held with (Input:chakraOn).
+ local _=now
+end
+-- The chakra button: held (or released a moment before, a rolled chord).
+function Input:chakraOn(pad)
+ local now=Input.now()
+ if pad then return self.chakraPad==true or now-(self.chakraPadAt or -math.huge)<=Input.ChakraChord end
+ return self.chakra==true or now-(self.chakraAt or -math.huge)<=Input.ChakraChord
 end
 function Input:direction(camera)
  self:chakraHold()

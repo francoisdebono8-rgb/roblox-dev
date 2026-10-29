@@ -237,7 +237,6 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
  press("Technique5","DPadUp");assert(sent[#sent]=="Technique5")
  press("Modifier","ButtonR1",roblox.Enum.UserInputState.End)
  state.human.pursuit=1;press("Jump","ButtonA",roblox.Enum.UserInputState.End);press("Jump","ButtonA");assert(sent[#sent]=="PadJump","× is the server-decided chase-or-jump (audit 29/10)")
- press("Grab","ButtonL2");assert(sent[#sent]=="Grab")
  press("Guard","ButtonL1");assert(sent[#sent]=="Guard")
  press("Guard","ButtonL1",roblox.Enum.UserInputState.End);assert(sent[#sent]=="GuardOff")
  press("Tool","ButtonR2");assert(sent[#sent]=="Tool")

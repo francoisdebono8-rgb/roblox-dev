@@ -954,8 +954,19 @@ end
 -- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
 local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
+-- Actions the chakra button infuses (user 29/10: the infusion on its own
+-- button, L2 / Z held with the press): the press loads the body's nature for
+-- itself (ChakraFlow), the strike, jump or dodge spends it.
+local INFUSED={Attack=true,Heavy=true,Jump=true,Dodge=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	local loaded=false
+	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
+		loaded=ChakraFlow.load(self,a)==true
+	end
 	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	-- A refused press does not leave its load for a later one (a late press
+	-- loads again when it comes out).
+	if loaded and ok==false then a.chakraLoad=nil end
 	-- Players only (Matches:act marks them): the AI plans its own timing.
 	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
 		local L=Config.Late

@@ -91,8 +91,8 @@ test("PS5 modifier maps four jutsu and never modifies keyboard or mouse",functio
  tap("Dodge",Controls.Keyboard.Dodge);assert(last()=="Dodge")
  tap("Grab",Controls.Keyboard.Grab);assert(last()=="Grab")
 end)
-test("analog L2/R2 have press/release hysteresis and retain their selected action",function()
- for _,pair in {{"Grab",E.KeyCode.ButtonL2,"Grab"},{"Tool",E.KeyCode.ButtonR2,"Tool"}} do
+test("analog R2 has press/release hysteresis; R1 + R2 is the feint",function()
+ for _,pair in {{"Tool",E.KeyCode.ButtonR2,"Tool"}} do
   local n=#sent
   press(pair[1],pair[2],E.UserInputState.Begin,V.new(0,0,.1));assert(#sent==n)
   press(pair[1],pair[2],E.UserInputState.Change,V.new(0,0,.7));assert(last()==pair[3] and #sent==n+1)
@@ -103,9 +103,9 @@ test("analog L2/R2 have press/release hysteresis and retain their selected actio
   press(pair[1],pair[2],E.UserInputState.End)
  end
  press("Modifier",E.KeyCode.ButtonR1)
- press("Grab",E.KeyCode.ButtonL2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Feint")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Feint","R1 + R2 is not the feint")
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- press("Grab",E.KeyCode.ButtonL2,E.UserInputState.Change,V.new(0,0,.9));assert(last()=="Feint","modifier release changed a held trigger into grab")
 end)
 test("garde remains held across Change and releases only after both devices",function()
  press("Guard",E.KeyCode.ButtonL1);assert(last()=="Guard")
@@ -114,7 +114,7 @@ test("garde remains held across Change and releases only after both devices",fun
  press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End);assert(#sent==1)
  press("Guard",E.KeyCode.F,E.UserInputState.Cancel);assert(last()=="GuardOff" and #sent==2)
 end)
-test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay plain",function()
+test("chakra button: Z + R and L2 + R2 infuse the tool; R and R2 alone stay plain",function()
  local clock,now=0,Input.now
  Input.now=function() return clock end
  local function chakra() local e=sent[#sent].extra;return type(e)=="table" and e.chakra==true end
@@ -124,19 +124,21 @@ test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay pl
  press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
  clock=Input.ChakraChord*.6;tap("Tool",Controls.Keyboard.Tool);assert(chakra(),"Z released just before R was lost")
  clock=1;tap("Tool",Controls.Keyboard.Tool);assert(sent[#sent].extra==nil,"a stale Z still infused")
- -- PS5: R2 alone is the plain tool, R1 + R2 the chakra tool; R1 + face stays a jutsu.
+ -- PS5 (user 29/10): R2 alone is the plain tool, L2 + R2 the chakra tool; R1 + face stays a jutsu.
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and sent[#sent].extra==nil,"R2 alone carried chakra")
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
- press("Modifier",E.KeyCode.ButtonR1)
- press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and chakra(),"R1 + R2 was not infused")
+ press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.Begin,V.new(0,0,.8))
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and chakra(),"L2 + R2 was not infused")
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
+ press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.End);clock=3
+ press("Modifier",E.KeyCode.ButtonR1)
  local n=#sent;tap("Light",E.KeyCode.ButtonX);assert(sent[n+1].action=="Technique2","R1 + square stopped being a jutsu")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  -- The keyboard modifier never turns a pad tool into a chakra tool.
  press("ChakraKey",Controls.Keyboard.Chakra)
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(sent[#sent].extra==nil,"keyboard Z modified the pad trigger")
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
- assert(Controls.Help:find("Z + R",1,true) and Controls.HelpPad:find("R1 + R2",1,true),"the chakra chord is missing from the help")
+ assert(Controls.Help:find("hold Z",1,true) and Controls.HelpPad:find("hold L2",1,true),"the chakra button is missing from the help")
  -- Aim parity with a plain throw: the mouse point in reach, the opponent on the pad.
  press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End);clock=5
  players.LocalPlayer.Character={FindFirstChild=function(_,name) return if name=="HumanoidRootPart" then {Position=V.zero} else nil end}
@@ -145,36 +147,37 @@ test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay pl
  mouseHit=V.new(0,3,-500)
  tap("Tool",Controls.Keyboard.Tool);assert(chakra() and sent[#sent].extra.aim==nil,"an out-of-reach aim was sent")
  press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
- state.bot={position=V.new(6,3,-12)};press("Modifier",E.KeyCode.ButtonR1)
+ state.bot={position=V.new(6,3,-12)};press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.Begin,V.new(0,0,.8))
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(chakra() and sent[#sent].extra.aim==state.bot.position,"the pad chakra tool did not aim at the opponent")
- press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End);press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.End)
  state.bot=nil;players.LocalPlayer.Character=nil;mouseHit=V.new(0,3,-20)
  Input.now=now
 end)
-test("chakra load: R1 or Z held alone loads the next action once; a chord or a jutsu does not",function()
+test("chakra button (user 29/10): L2 or Z held infuses the press it is held with; held alone it sends nothing; L1 + square grabs",function()
  local clock,now=0,Input.now
  Input.now=function() return clock end
- local function loads() local n=0;for _,e in sent do if e.action=="ChakraLoad" then n+=1 end end;return n end
+ local function infused(i) local e=sent[i] return e and e.extra and e.extra.chakra==true end
  table.clear(sent)
- -- pad: R1 held alone
- press("Modifier",E.KeyCode.ButtonR1)
- clock=Input.ChakraHoldPad*.5;input:chakraHold();assert(loads()==0,"loaded before the hold")
- clock=Input.ChakraHold+.01;input:chakraHold();assert(loads()==0,"R1 (the jutsu shift) loaded at the keyboard's short hold")
- clock=Input.ChakraHoldPad+.01;input:chakraHold();assert(loads()==1,"R1 held alone did not load")
- clock+=1;input:chakraHold();assert(loads()==1,"one hold loaded twice")
- press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- -- pad: R1 + square (a jutsu) is not a load
- clock=10;press("Modifier",E.KeyCode.ButtonR1);tap("Light",E.KeyCode.ButtonX)
- clock=11;input:chakraHold();assert(loads()==1,"R1 + square also loaded")
- press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- -- keyboard: Z held alone
+ -- pad: L2 held, then square / triangle / cross / circle
+ press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.Begin,V.new(0,0,.8))
+ clock=1;input:chakraHold();input:direction(camera);assert(#sent==0,"L2 held alone sent "..tostring(sent[1] and sent[1].action))
+ tap("Light",E.KeyCode.ButtonX);assert(last()=="Attack" and infused(#sent),"L2 + square is not an infused light")
+ tap("Heavy",E.KeyCode.ButtonY);assert(last()=="Heavy" and infused(#sent),"L2 + triangle is not an infused heavy")
+ press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.End)
+ clock=5;tap("Light",E.KeyCode.ButtonX);assert(last()=="Attack" and not infused(#sent),"a light after L2 was let go is still infused")
+ -- pad: R1 + square stays a jutsu, never infused
+ local n=#sent
+ press("Modifier",E.KeyCode.ButtonR1);tap("Light",E.KeyCode.ButtonX);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
+ assert(sent[n+1].action=="Technique2" and not infused(n+1))
+ -- pad: guard held + square is the grab
+ press("Guard",E.KeyCode.ButtonL1);tap("Light",E.KeyCode.ButtonX);assert(last()=="Grab","L1 + square is not the grab")
+ press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End)
+ -- keyboard: Z held + light / jump
  clock=20;press("ChakraKey",Controls.Keyboard.Chakra)
- clock=20+Input.ChakraHold+.01;input:direction(camera);assert(loads()==2,"Z held alone did not load (polled by direction)")
+ clock=21;input:direction(camera)
+ tap("Light",Controls.Keyboard.Light);assert(last()=="Attack" and infused(#sent),"Z + LMB is not an infused light")
  press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
- -- keyboard: Z + R is the chakra tool, not a load
- clock=30;press("ChakraKey",Controls.Keyboard.Chakra);tap("Tool",Controls.Keyboard.Tool)
- clock=31;input:chakraHold();assert(loads()==2,"Z + R also loaded")
- press("ChakraKey",Controls.Keyboard.Chakra,E.UserInputState.End)
+ for _,e in sent do assert(e.action~="ChakraLoad","a hold alone still loads") end
  table.clear(sent)
  Input.now=now
 end)

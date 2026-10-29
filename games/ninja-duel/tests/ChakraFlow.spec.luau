@@ -169,4 +169,25 @@ test("client: the load glows, the infused limbs pour, every nature's contact, th
  assert(ok,err)
 end)
 
+test("the chakra button (user 29/10): a press sent with chakra comes out infused and spends it; a plain press does not",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ c:relocate(a,V.new(0,3,3));c:relocate(b,V.new(0,3,0))
+ a.ai=nil;b.ai=nil
+ local before=a.chakra
+ assert(c:request(a,"Heavy",nil,nil,{chakra=true}),"the infused heavy was refused")
+ assert(a.pending and a.pending.chakraFlow,"the heavy sent with the chakra button is not infused")
+ assert(a.chakra<before,"the infusion cost nothing")
+ local c2,x,y=H.duel("Lion","Mirage")
+ c2:relocate(x,V.new(0,3,3));c2:relocate(y,V.new(0,3,0))
+ x.ai=nil;y.ai=nil
+ assert(c2:request(x,"Heavy"))
+ assert(not (x.pending and x.pending.chakraFlow),"a plain heavy came out infused")
+ -- refused, the press leaves no load behind for a later one
+ local c3,p,q=H.duel("Lion","Mirage")
+ p.ai=nil;q.ai=nil
+ c3:setState(p,"Stunned",1)
+ local ok=c3:request(p,"Attack",nil,nil,{chakra=true})
+ assert(ok==false and p.chakraLoad==nil,"a refused infused press left its load")
+end)
+
 print("NinjaDuel chakra flow: "..passed.." PASS")

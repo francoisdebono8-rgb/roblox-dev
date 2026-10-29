@@ -12,8 +12,8 @@ local Controls = {
 		Guard = Enum.KeyCode.F,
 		Grab = Enum.KeyCode.V,
 		Tool = Enum.KeyCode.R,
-		-- Chakra modifier: held with the tool (Z + R), or pressed just before it.
-		-- The pad has no extra button: R1 (the jutsu modifier) + R2 is the same chord.
+		-- Chakra button (user 29/10): held, the press it is held with is infused
+		-- (a strike, a jump, a dodge, the tool). Pad: L2.
 		Chakra = Enum.KeyCode.Z,
 		Pursuit = Enum.KeyCode.E,
 		Substitute = Enum.KeyCode.X,
@@ -34,7 +34,9 @@ local Controls = {
 		Dodge = Enum.KeyCode.ButtonB,
 		Guard = Enum.KeyCode.ButtonL1,
 		Tool = Enum.KeyCode.ButtonR2,
-		Grab = Enum.KeyCode.ButtonL2,
+		-- (User 29/10) The chakra button: held, the next press is infused
+		-- (ChakraFlow). Grab moved to L1 + □ as in Storm (Input).
+		Chakra = Enum.KeyCode.ButtonL2,
 		Lock = Enum.KeyCode.ButtonR3,
 		Sprint = Enum.KeyCode.ButtonL3,
 		Modifier = Enum.KeyCode.ButtonR1,
@@ -52,16 +54,16 @@ local Controls = {
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Arm = "B", Skip = "ESC", ChakraLoad = "hold Z",
+		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   Z + R chakra   hold Z: load chakra (next strike / jump / dodge infused)   X substitute   G feint   T awaken   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-5 jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-5 jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
 	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L2 grab   R2 tool   R1 + R2 chakra   hold R1: load chakra (next □ △ × ○ infused)   R1 + face: jutsu   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Chakra="R1 + R2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + L2",WallDetach="R1 + L1",ChakraLoad="hold R1"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + face: jutsu   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",ChakraLoad="L2 + action"},
 	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
 }
 
