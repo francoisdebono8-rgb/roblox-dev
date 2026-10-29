@@ -73,6 +73,10 @@ function DevHooks.install(matches)
 		local player=Players:GetPlayers()[1]
 		return player,player and matches.sessions[player]
 	end
+	-- Flight recorder of a human playtest (DevFlight): samples, every press
+	-- and what came of it, and each freeze with what held the body.
+	local Flight=require(script.Parent.DevFlight)
+	Flight.install(matches,session)
 	local function summary(a,now)
 		if not a then return nil end
 		return {state=a.state,health=a.health,chakra=math.floor(a.chakra),position=a.root.Position,reaction=a.reaction,attackName=a.attackName,
@@ -150,6 +154,7 @@ function DevHooks.install(matches)
 	hook.OnInvoke=function(op,arg1,arg2,arg3,arg4)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
+		if op=="flight" then return Flight.data end
 		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)

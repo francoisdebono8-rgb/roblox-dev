@@ -3493,7 +3493,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">03d306753b3f6c50d48579b1c4bd7528e7a4a333cd454c3d812eb1dda0d90431</string>
+          <string name="Value">c9455359d6505e38f5c32b9a9d00187eb8392dc7f19b844c2ae299fe40838708</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -32526,7 +32526,14 @@ function Input.new(send,getState,toggleLock,camera)
  local function bind(name,keys,callback)
   local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
-   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then return Enum.ContextActionResult.Pass end
+   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then
+    -- (Flight recorder, Debug) a press the client itself let go of.
+    if Input.dropped and state==Enum.UserInputState.Begin and name~="MoveStick" and name~="LookStick" then
+     table.insert(Input.dropped,{t=os.clock(),name=name,why=if UIS:GetFocusedTextBox() then "textbox" else "phase "..tostring(getState().phase)})
+     while #Input.dropped&gt;60 do table.remove(Input.dropped,1) end
+    end
+    return Enum.ContextActionResult.Pass
+   end
    local stick=object.KeyCode==Enum.KeyCode.Thumbstick1 or object.KeyCode==Enum.KeyCode.Thumbstick2
    if not released(state) and (not stick or object.Position.Magnitude&gt;.15) then self.pad=padObject(object) end
    callback(state,object)
@@ -32918,7 +32925,33 @@ local presentation=Presentation.new()
 local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
 camera.presentation=presentation
 local mouse=player:GetMouse()
+-- (Debug places) Flight recorder, client half: every packet sent, the
+-- presses the client itself let go of (Input.dropped) and slow frames, kept
+-- on the player as the attribute NdFlightClient (JSON, refreshed each second).
+local flight=nil
+if workspace:GetAttribute("NinjaDuelDebug")==true then
+	flight={sent={},frames={},started=os.clock()}
+	Input.dropped={}
+	local HttpService=game:GetService("HttpService")
+	local worst,count,sum,since=0,0,0,os.clock()
+	RunService.Heartbeat:Connect(function(dt)
+		worst=math.max(worst,dt);count+=1;sum+=dt
+		local now=os.clock()
+		if now-since&gt;=1 then
+			table.insert(flight.frames,{t=math.floor((now-flight.started)*10)/10,fps=math.floor(count/(now-since)),worst=math.floor(worst*1000)})
+			while #flight.frames&gt;90 do table.remove(flight.frames,1) end
+			worst,count,sum,since=0,0,0,now
+			local dropped={}
+			for _,d in Input.dropped do table.insert(dropped,{t=math.floor((d.t-flight.started)*100)/100,name=d.name,why=d.why}) end
+			pcall(function() player:SetAttribute("NdFlightClient",HttpService:JSONEncode({sent=flight.sent,frames=flight.frames,dropped=dropped,now=math.floor((now-flight.started)*100)/100})) end)
+		end
+	end)
+end
 local function send(action,extra)
+	if flight and action~="Move" then
+		table.insert(flight.sent,{t=math.floor((os.clock()-flight.started)*100)/100,a=action,phase=current.phase})
+		while #flight.sent&gt;120 do table.remove(flight.sent,1) end
+	end
 	local payload={action=action,epoch=current.epoch}
 	if current.phase=="Duel" and action~="Move" then
   payload.clientTime=workspace:GetServerTimeNow()

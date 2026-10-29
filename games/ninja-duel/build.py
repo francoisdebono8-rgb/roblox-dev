@@ -18,7 +18,7 @@ args = parser.parse_args()
 # profiler, report, self-test, and the optional chakra lab (Chakra*).
 DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau',
     'DevTools.luau','DevCommands.luau','DevScenarios.luau','DevProfiler.luau','DevReport.luau','DevQA.luau','DevMetrics.luau',
-    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau'}
+    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau'}
 def included(p):
     return (args.qa or p.stem!='NativeQA') and (args.qa or args.debug or p.name not in DEBUG_SOURCES)
 xml = ET.Element('roblox', version='4')

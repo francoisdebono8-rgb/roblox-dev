@@ -39,7 +39,14 @@ function Input.new(send,getState,toggleLock,camera)
  local function bind(name,keys,callback)
   local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
-   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then return Enum.ContextActionResult.Pass end
+   if UIS:GetFocusedTextBox() or getState().phase~="Duel" or (name=="Skip" and not getState().tutorial) then
+    -- (Flight recorder, Debug) a press the client itself let go of.
+    if Input.dropped and state==Enum.UserInputState.Begin and name~="MoveStick" and name~="LookStick" then
+     table.insert(Input.dropped,{t=os.clock(),name=name,why=if UIS:GetFocusedTextBox() then "textbox" else "phase "..tostring(getState().phase)})
+     while #Input.dropped>60 do table.remove(Input.dropped,1) end
+    end
+    return Enum.ContextActionResult.Pass
+   end
    local stick=object.KeyCode==Enum.KeyCode.Thumbstick1 or object.KeyCode==Enum.KeyCode.Thumbstick2
    if not released(state) and (not stick or object.Position.Magnitude>.15) then self.pad=padObject(object) end
    callback(state,object)

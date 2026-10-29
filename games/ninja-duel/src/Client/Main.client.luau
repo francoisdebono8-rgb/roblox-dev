@@ -12,7 +12,33 @@ local presentation=Presentation.new()
 local camera=Camera.new(); local current={phase="Selection",epoch=0}; local ui; local input
 camera.presentation=presentation
 local mouse=player:GetMouse()
+-- (Debug places) Flight recorder, client half: every packet sent, the
+-- presses the client itself let go of (Input.dropped) and slow frames, kept
+-- on the player as the attribute NdFlightClient (JSON, refreshed each second).
+local flight=nil
+if workspace:GetAttribute("NinjaDuelDebug")==true then
+	flight={sent={},frames={},started=os.clock()}
+	Input.dropped={}
+	local HttpService=game:GetService("HttpService")
+	local worst,count,sum,since=0,0,0,os.clock()
+	RunService.Heartbeat:Connect(function(dt)
+		worst=math.max(worst,dt);count+=1;sum+=dt
+		local now=os.clock()
+		if now-since>=1 then
+			table.insert(flight.frames,{t=math.floor((now-flight.started)*10)/10,fps=math.floor(count/(now-since)),worst=math.floor(worst*1000)})
+			while #flight.frames>90 do table.remove(flight.frames,1) end
+			worst,count,sum,since=0,0,0,now
+			local dropped={}
+			for _,d in Input.dropped do table.insert(dropped,{t=math.floor((d.t-flight.started)*100)/100,name=d.name,why=d.why}) end
+			pcall(function() player:SetAttribute("NdFlightClient",HttpService:JSONEncode({sent=flight.sent,frames=flight.frames,dropped=dropped,now=math.floor((now-flight.started)*100)/100})) end)
+		end
+	end)
+end
 local function send(action,extra)
+	if flight and action~="Move" then
+		table.insert(flight.sent,{t=math.floor((os.clock()-flight.started)*100)/100,a=action,phase=current.phase})
+		while #flight.sent>120 do table.remove(flight.sent,1) end
+	end
 	local payload={action=action,epoch=current.epoch}
 	if current.phase=="Duel" and action~="Move" then
   payload.clientTime=workspace:GetServerTimeNow()
