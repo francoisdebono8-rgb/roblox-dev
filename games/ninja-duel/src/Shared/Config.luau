@@ -4,6 +4,10 @@ return {
 	ArenaRadius = 143, ArenaHeight = 76, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
+	-- A thrown object's flinch (Combat:damage): Stun on the first blade, then
+	-- nothing for Window seconds (a volley is one flinch); a thrown object
+	-- hitting for Heavy damage or more is a real blow and stuns as one.
+	ProjectileStun = {Stun = 0.18, Window = 0.9, Heavy = 8},
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,

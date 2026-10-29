@@ -465,6 +465,10 @@ return {
 	ArenaRadius = 143, ArenaHeight = 76, WalkSpeed = 19, JumpPower = 68, Chakra = 100,
 	ChakraRegen = 9, GuardDrain = 19, GuardChip = 0.12,
 	GuardBreak = 0.65, HitStun = 0.22, InterruptStun = 0.42,
+	-- A thrown object's flinch (Combat:damage): Stun on the first blade, then
+	-- nothing for Window seconds (a volley is one flinch); a thrown object
+	-- hitting for Heavy damage or more is a real blow and stuns as one.
+	ProjectileStun = {Stun = 0.18, Window = 0.9, Heavy = 8},
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
@@ -3612,7 +3616,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3a62950d1384f399159d905e3db9a6e2bafa2ad3879f70e86e9609c113b5fffe</string>
+          <string name="Value">d8a3987c9251b9ea1f85dcd0a0b16577bf03bc26593cbd101c6f04bf95542611</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -9376,12 +9380,26 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
+		-- (User 29/10 playtest, flight recorder: Itachi's shuriken volleys, 5-6
+		-- blades of 2 HP, re-stunned the body on every blade: 0.8-2.9 s without
+		-- control, "je peux plus bouger".) Thrown objects share a stun budget:
+		-- the first blade flinches, the blades after it inside
+		-- Config.ProjectileStun.Window only add damage (no stun, nothing
+		-- cancelled), so a volley is one flinch, not a lock. A channel
+		-- interrupt still interrupts; a heavy thrown object is a real blow.
+		local stun=if interrupted then Config.InterruptStun else Config.HitStun
+		local thrown=self.thrownHit
+		if thrown and not heavy and not interrupted and (thrown.damage or 0)&lt;Config.ProjectileStun.Heavy then
+			local tune=Config.ProjectileStun
+			if self.now-(victim.projectileStunAt or -10)&lt;tune.Window then protected=true
+			else victim.projectileStunAt=self.now;stun=math.min(stun,tune.Stun) end
+		end
 		-- Super armour (a Heavy buff): a light blow lands but does not stop him.
 		protected=protected or Families.withstands(victim,self.now,heavy,amount)
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
-			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
+			if outcome~="GuardBreak" then self:setState(victim,"Stunned",stun) end
 			if interrupted then victim.stunFloorUntil=victim.untilTime end
 			if interrupted then victim.interruptedAt=self.now; Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
@@ -11023,7 +11041,9 @@ function Combat:projectileHit(p,target,position,normal)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
 	self.shieldBreak=p.breaksShield
+	self.thrownHit=p
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.thrownHit=nil
 	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
 	self.shieldBreak=nil
@@ -11623,7 +11643,27 @@ function Flight.holds(a,now)
 		velocity=math.floor(flat(a.root.AssemblyLinearVelocity).Magnitude*10)/10,vy=math.floor(a.root.AssemblyLinearVelocity.Y*10)/10,
 		y=math.floor(a.root.Position.Y*100)/100,latePress=a.latePress and a.latePress.action,
 		bound=a.reaction=="Bound",channel=a.state=="TechniqueChannel",
+		x=math.floor(a.root.Position.X*10)/10,z=math.floor(a.root.Position.Z*10)/10,
+		grounded=a.root:IsGrounded(),gap=a.target and math.floor((flat(a.target.root.Position-a.root.Position)).Magnitude*10)/10,
+		hipHeight=hum and hum.HipHeight,floor=hum and hum.FloorMaterial.Name,
+		blockers=Flight.blockers(a),
 	}
+end
+-- Solid parts touching the body (props, walls, debris): what a stuck body is
+-- standing against.
+function Flight.blockers(a)
+	local ok,list=pcall(function()
+		local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances={a.model,a.target and a.target.model}
+		local out={}
+		for _,part in workspace:GetPartBoundsInRadius(a.root.Position,3.2,params) do
+			if part.CanCollide and part.Name~="Training floor" and #out&lt;6 then
+				table.insert(out,part.Name..(if part.Anchored then "" else "(loose)"))
+			end
+		end
+		return table.concat(out,",")
+	end)
+	return if ok then list else "?"
 end
 
 function Flight.install(matches,session)
@@ -11658,7 +11698,11 @@ function Flight.install(matches,session)
 		local now=os.clock()-R.started
 		if now-lastSample&gt;=.05 then
 			lastSample=now
+			R.worstDt=math.max(R.worstDt or 0,dt)
 			push(R.samples,{t=math.floor(now*100)/100,state=a.state,reaction=a.reaction,air=a.airborne,
+				x=math.floor(a.root.Position.X*10)/10,z=math.floor(a.root.Position.Z*10)/10,
+				bot=a.target and a.target.attackName or (a.target and a.target.state),
+				dt=math.floor(dt*1000),
 				move=a.move and math.floor(flat(a.move).Magnitude*10)/10,speed=math.floor(flat(a.root.AssemblyLinearVelocity).Magnitude*10)/10,
 				y=math.floor(a.root.Position.Y*10)/10,hp=math.floor(a.health)},800)
 		end

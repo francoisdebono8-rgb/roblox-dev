@@ -271,12 +271,26 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	else
 		local interrupted=Rules.interruptible(victim)
 		local protected= victim.state=="TechniqueChannel" and victim.pending and not victim.pending.spec.Interruptible
+		-- (User 29/10 playtest, flight recorder: Itachi's shuriken volleys, 5-6
+		-- blades of 2 HP, re-stunned the body on every blade: 0.8-2.9 s without
+		-- control, "je peux plus bouger".) Thrown objects share a stun budget:
+		-- the first blade flinches, the blades after it inside
+		-- Config.ProjectileStun.Window only add damage (no stun, nothing
+		-- cancelled), so a volley is one flinch, not a lock. A channel
+		-- interrupt still interrupts; a heavy thrown object is a real blow.
+		local stun=if interrupted then Config.InterruptStun else Config.HitStun
+		local thrown=self.thrownHit
+		if thrown and not heavy and not interrupted and (thrown.damage or 0)<Config.ProjectileStun.Heavy then
+			local tune=Config.ProjectileStun
+			if self.now-(victim.projectileStunAt or -10)<tune.Window then protected=true
+			else victim.projectileStunAt=self.now;stun=math.min(stun,tune.Stun) end
+		end
 		-- Super armour (a Heavy buff): a light blow lands but does not stop him.
 		protected=protected or Families.withstands(victim,self.now,heavy,amount)
 		if not protected then
 			Brawler.releaseGrab(victim)
 			victim.pending=nil; victim.readUntil=0; victim.guardHeld=false
-			if outcome~="GuardBreak" then self:setState(victim,"Stunned",if interrupted then Config.InterruptStun else Config.HitStun) end
+			if outcome~="GuardBreak" then self:setState(victim,"Stunned",stun) end
 			if interrupted then victim.stunFloorUntil=victim.untilTime end
 			if interrupted then victim.interruptedAt=self.now; Brawler.event(self,attacker,"Interrupt"); self:cue(victim,"INTERRUPTED"); self:cue(attacker,"CHANNEL INTERRUPTED") end
 		end
@@ -1918,7 +1932,9 @@ function Combat:projectileHit(p,target,position,normal)
 	self.damageTag=p.kind
 	self.hitOrigin=position-p.direction*4
 	self.shieldBreak=p.breaksShield
+	self.thrownHit=p
 	local damaged=self:damage(p.a,target,p.damage,false,false)
+	self.thrownHit=nil
 	if not damaged and entry and entry.projectile==p.id then entry.style="spent";entry.heavy=false end
 	self.hitOrigin=nil
 	self.shieldBreak=nil

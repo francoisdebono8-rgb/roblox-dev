@@ -33,7 +33,27 @@ function Flight.holds(a,now)
 		velocity=math.floor(flat(a.root.AssemblyLinearVelocity).Magnitude*10)/10,vy=math.floor(a.root.AssemblyLinearVelocity.Y*10)/10,
 		y=math.floor(a.root.Position.Y*100)/100,latePress=a.latePress and a.latePress.action,
 		bound=a.reaction=="Bound",channel=a.state=="TechniqueChannel",
+		x=math.floor(a.root.Position.X*10)/10,z=math.floor(a.root.Position.Z*10)/10,
+		grounded=a.root:IsGrounded(),gap=a.target and math.floor((flat(a.target.root.Position-a.root.Position)).Magnitude*10)/10,
+		hipHeight=hum and hum.HipHeight,floor=hum and hum.FloorMaterial.Name,
+		blockers=Flight.blockers(a),
 	}
+end
+-- Solid parts touching the body (props, walls, debris): what a stuck body is
+-- standing against.
+function Flight.blockers(a)
+	local ok,list=pcall(function()
+		local params=OverlapParams.new();params.FilterType=Enum.RaycastFilterType.Exclude
+		params.FilterDescendantsInstances={a.model,a.target and a.target.model}
+		local out={}
+		for _,part in workspace:GetPartBoundsInRadius(a.root.Position,3.2,params) do
+			if part.CanCollide and part.Name~="Training floor" and #out<6 then
+				table.insert(out,part.Name..(if part.Anchored then "" else "(loose)"))
+			end
+		end
+		return table.concat(out,",")
+	end)
+	return if ok then list else "?"
 end
 
 function Flight.install(matches,session)
@@ -68,7 +88,11 @@ function Flight.install(matches,session)
 		local now=os.clock()-R.started
 		if now-lastSample>=.05 then
 			lastSample=now
+			R.worstDt=math.max(R.worstDt or 0,dt)
 			push(R.samples,{t=math.floor(now*100)/100,state=a.state,reaction=a.reaction,air=a.airborne,
+				x=math.floor(a.root.Position.X*10)/10,z=math.floor(a.root.Position.Z*10)/10,
+				bot=a.target and a.target.attackName or (a.target and a.target.state),
+				dt=math.floor(dt*1000),
 				move=a.move and math.floor(flat(a.move).Magnitude*10)/10,speed=math.floor(flat(a.root.AssemblyLinearVelocity).Magnitude*10)/10,
 				y=math.floor(a.root.Position.Y*10)/10,hp=math.floor(a.health)},800)
 		end

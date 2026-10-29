@@ -149,5 +149,24 @@ test("a hit ends the run's hand-back (the body lurched after the stun)",function
  assert(b.strikeCarry==nil,"the run's carry outlived the hit")
 end)
 
+test("a volley of light blades is one flinch, not a lock (user 29/10 playtest: Itachi's shurikens)",function()
+ local c,a,b=duel("Lion","Mirage",10)
+ local health=a.health
+ local stunned=0
+ for i=1,6 do
+  -- headless the blade is resolved where it lands (Combat:projectileHit)
+  local p=c:projectile(b,a.root.Position,80,40,2,"shuriken")
+  c:projectileHit(p,a,a.root.Position,-p.direction)
+  for _=1,10 do H.step(c,.01);if a.state=="Stunned" then stunned+=.01 end end
+ end
+ for _=1,40 do H.step(c,.01);if a.state=="Stunned" then stunned+=.01 end end
+ assert(a.health<health-6,"fixture: the blades did not land ("..(health-a.health)..")")
+ assert(stunned<=.3,string.format("six blades held the body stunned %.2f s",stunned))
+ -- a real blow still stuns after a volley
+ local before=a.state
+ c:damage(b,a,9,false,true)
+ assert(a.state=="Stunned","a strike after the volley did not stun ("..tostring(before)..")")
+end)
+
 if failed>0 then error(failed.." fluidity test(s) failed",0) end
 print(string.format("NinjaDuel fluidity: %d PASS (headless; the feel itself is a Studio check)",passed))
