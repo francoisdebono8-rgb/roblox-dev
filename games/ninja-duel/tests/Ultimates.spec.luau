@@ -50,13 +50,39 @@ test("caught: both bodies are held for the sequence, the ticks and the last blow
   assert(a.ultimate==0,id..": the bar was not spent")
   local u=Ultimates.def(a)
   until_(c,u.Startup+.2,function() return b.ultimateHeld==true end,id..": the opener did not take the body")
-  assert(a.ultimateRunning and b.reaction=="Bound",id..": the bodies are not held")
+  assert(a.ultimateRunning and b.ultimateHeld,id..": the bodies are not held")
   assert(not c:request(b,"Attack"),id..": the held body could act")
   local before=b.health
   until_(c,u.Time+.4,function() return not b.ultimateHeld end,id..": the sequence never ended")
   H.step(c,.1)
   assert(before-b.health>=u.Damage*.8,string.format("%s: the sequence dealt %.1f of %d",id,before-b.health,u.Damage))
  end
+end)
+
+test("each fighter plays his own sequence: no two alike, nobody wired, Sasuke and Lee take it into the air, Minato flashes round",function()
+ local signatures={}
+ for _,id in MAIN do
+  local c,a,b=H.duel(id,"Mirage");place(c,a,b,4)
+  b.health=999;a.ultimate=100
+  assert(c:request(a,"Ultimate"))
+  local u=Ultimates.def(a)
+  local moves,reactions,top,warps={},{},0,a.warpSerial or 0
+  local seen={}
+  for _=1,math.ceil((u.Startup+u.Time+.2)/.02) do
+   H.step(c,.02)
+   if a.attackName and not seen[a.attackName] then seen[a.attackName]=true;table.insert(moves,a.attackName) end
+   if b.reaction and not seen["r"..b.reaction] then seen["r"..b.reaction]=true;table.insert(reactions,b.reaction) end
+   top=math.max(top,b.root.Position.Y-3)
+  end
+  local sig=table.concat(moves,",").."|"..table.concat(reactions,",")
+  signatures[id]=sig
+  if id~="Sand" then assert(not seen.rBound,id..": the body was wired/bound ("..sig..")") end
+  if id=="Lion" or id=="Leaf" then assert(top>6,id..": the sequence stayed on the ground ("..string.format("%.1f",top)..")") end
+  if id=="Flashstep" then assert((a.warpSerial or 0)-warps>=8,"Minato did not flash round the body") end
+  if id=="Mirage" then assert(#moves==0,"Itachi's Tsukuyomi threw blows ("..sig..")") end
+  print("   "..id..": "..sig)
+ end
+ for x,sx in signatures do for y,sy in signatures do assert(x==y or sx~=sy,x.." and "..y.." play the same sequence ("..sx..")") end end
 end)
 
 test("missed: out of reach or dodged, the bar is gone and the caster is open",function()

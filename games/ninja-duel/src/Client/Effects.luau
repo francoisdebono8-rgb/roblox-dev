@@ -1792,7 +1792,9 @@ function FX:fighter(model,actor,dt)
 	for _,mark in aura.marks or {} do mark.Transparency=if awake then 0 else 1 end
 	-- Bound: wire coiled around the chest and arms while the bind holds.
 	-- (Held by Gaara's sand: SandFX draws the coffin instead of the wire.)
-	local bound=actor.bound==true and (actor.health or 1)>0 and actor.opponentFighter~="Sand"
+	-- (Stage 6) a body held by an ultimate or a family bind (the Tsukuyomi)
+	-- is not wired: those draw their own hold.
+	local bound=actor.bound==true and (actor.health or 1)>0 and actor.opponentFighter~="Sand" and actor.boundKind==nil
 	-- (Partie 1 feedback: "the wire changes a little, but it stays light".)
 	-- Reference: Sasuke vs Itachi, the Windmill Shuriken bind (Shippuden 136)
 	-- and Storm 4's wire grabs: many thin turns that snap TIGHT around the

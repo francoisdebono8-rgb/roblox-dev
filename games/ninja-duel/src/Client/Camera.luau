@@ -78,9 +78,9 @@ local IMPULSE={
 -- the "ultimate" contact carries kind and time): a slow orbit round both
 -- bodies, then it hands back where it is (no snap).
 local CINEMA={
-	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=11,height=2.4,rate=.9,fov=52},pyramid={dist=22,height=12,rate=.25,fov=60},
+	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=12,height=3,rate=.9,fov=54,follow=true},pyramid={dist=22,height=12,rate=.25,fov=60},
 	lotus={dist=12,height=6,rate=1.4,fov=56,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
-	flash={dist=15,height=5,rate=1.1,fov=60},raikiri={dist=10,height=2.6,rate=.7,fov=50},
+	flash={dist=15,height=5,rate=1.1,fov=60},raikiri={dist=15,height=3,rate=.35,fov=54},
 }
 Camera.CINEMA=CINEMA
 function Camera:cinema(impact,now)

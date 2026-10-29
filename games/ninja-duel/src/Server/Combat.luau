@@ -2307,6 +2307,7 @@ end
 function Combat:separate()
 	local a,b=self.actors[1],self.actors[2]
 	if not a or not b or a.health<=0 or b.health<=0 or a.grabVictim or b.grabVictim then return end
+	if a.ultimateRunning or b.ultimateRunning then return end
 	local delta=b.root.Position-a.root.Position
 	local flat=Vector3.new(delta.X,0,delta.Z)
 	local gap=flat.Magnitude
@@ -2342,6 +2343,8 @@ function Combat:update(dt,now)
 		if self.match.phase~="Duel" then break end
 		self:updateActor(a,dt)
 	end
+	-- (Stage 6) an ultimate carries its bodies along its own lines.
+	if self.match.phase=="Duel" then Ultimates.step(self) end
 	if self.match.phase=="Duel" then self:separate() end
 	if self.match.phase=="Duel" then self:runScheduled() end
 	if self.match.phase=="Duel" then Bodies.step(self,dt) end

@@ -24,7 +24,7 @@ UltimateFX.LOOK={
 	pyramid={core=rgb(214,176,112),edge=rgb(150,112,70),grade={tint=rgb(255,232,196),saturation=-.1,contrast=.15}},
 	lotus={core=rgb(120,230,140),edge=rgb(226,255,226),grade={tint=rgb(226,255,226),saturation=.1,contrast=.15}},
 	palms={core=rgb(190,200,255),edge=rgb(250,250,255),grade={tint=rgb(226,230,255),saturation=-.35,contrast=.2}},
-	tsukuyomi={core=rgb(200,20,30),edge=rgb(20,10,12),grade={tint=rgb(255,90,90),saturation=-1,contrast=.45}},
+	tsukuyomi={core=rgb(200,20,30),edge=rgb(20,10,12),grade={tint=rgb(255,70,70),saturation=-1,contrast=.7,brightness=-.12}},
 	flash={core=rgb(255,220,80),edge=rgb(255,250,220),grade={tint=rgb(255,246,214),saturation=0,contrast=.2}},
 	raikiri={core=rgb(220,236,255),edge=rgb(120,170,255),grade={tint=rgb(220,230,255),saturation=-.3,contrast=.3}},
 }
@@ -75,7 +75,7 @@ function UltimateFX.grade(fx,look,time)
 	if fx.ultimateGrade and fx.ultimateGrade.Parent then fx.ultimateGrade:Destroy() end
 	local ok,cc=pcall(function()
 		local Lighting=game:GetService("Lighting") -- (asked late: a headless scene has none)
-		return K.new("ColorCorrectionEffect",{Name="NinjaUltimateGrade",TintColor=look.grade.tint,Saturation=look.grade.saturation,Contrast=look.grade.contrast,Brightness=0},Lighting)
+		return K.new("ColorCorrectionEffect",{Name="NinjaUltimateGrade",TintColor=look.grade.tint,Saturation=look.grade.saturation,Contrast=look.grade.contrast,Brightness=look.grade.brightness or 0},Lighting)
 	end)
 	if not ok or not cc then return end
 	fx.ultimateGrade=cc
@@ -95,10 +95,50 @@ end
 -- ~0.16 s): Naruto's clones pouring in, Sasuke's lightning, the sand closing
 -- into the pyramid, Lee's spin, Neji's palms, the red world, Minato's flashes,
 -- Kakashi's white chakra blade.
+-- A shadow clone: a copy of the caster's drawn body (its own colours) set
+-- down round the held body, facing it, gone in a puff.
+local function copyBody(fx,model,cf,life)
+	if not model then return nil end
+	local root=model:FindFirstChild("HumanoidRootPart")
+	if not root then return nil end
+	local holder=K.new("Model",{Name="UltimateClone"},fx.folder)
+	local base=root.CFrame
+	for _,d in model:GetDescendants() do
+		if d:IsA("BasePart") and d.Name~="HumanoidRootPart" and d.Transparency<.9 and d.Size.Magnitude<8 then
+			-- The part itself (a mesh keeps its mesh: hair, headband), without
+			-- its joints or scripts.
+			local ok,g=pcall(function() local was=d.Archivable;d.Archivable=true;local x=d:Clone();d.Archivable=was;return x end)
+			if ok and g then
+				for _,ch in g:GetChildren() do
+					if not (ch:IsA("SpecialMesh") or ch:IsA("Decal") or ch:IsA("SurfaceAppearance") or ch:IsA("SurfaceGui") or ch:IsA("Texture")) then ch:Destroy() end
+				end
+				g.Anchored=true;g.CanCollide=false;g.CanQuery=false;g.CanTouch=false;g.CastShadow=false
+				g.CFrame=cf*base:ToObjectSpace(d.CFrame)
+				g.Parent=holder
+			end
+		end
+	end
+	Debris:AddItem(holder,life)
+	return holder
+end
+UltimateFX.copyBody=copyBody
 local BEAT={
-	clones=function(fx,p,look,rng,k)
-		K.smokePuff(fx.folder,around(p,3.2,rng),rgb(236,230,220),6,1.3)
-		K.flash(fx.folder,around(p,1.4,rng),look.core,.4,2.4,.1,.35)
+	clones=function(fx,p,look,rng,k,caster)
+		-- Two more clones each beat, round the body, then a puff where they were.
+		for _=1,2 do
+			local spot=around(p,2.6+rng:NextNumber()*1.6,rng)
+			spot=Vector3.new(spot.X,p.Y,spot.Z)
+			-- Out of a puff 5 studs off, the clone lunges in to strike.
+			local from=p+(spot-p).Unit*5;from=Vector3.new(from.X,p.Y,from.Z)
+			local near=p+(spot-p).Unit*1.9;near=Vector3.new(near.X,p.Y,near.Z)
+			K.smokePuff(fx.folder,from,rgb(236,230,220),4,1.1)
+			local clone=copyBody(fx,caster,CFrame.lookAt(from,Vector3.new(p.X,p.Y,p.Z))*CFrame.Angles(math.rad(-12),0,0),.5)
+			if clone then
+				task.delay(.1,function() if clone.Parent then clone:PivotTo(CFrame.lookAt(near,Vector3.new(p.X,p.Y,p.Z))*CFrame.Angles(math.rad(-20),0,0)) end end)
+			end
+			task.delay(.45,function() K.smokePuff(fx.folder,near,rgb(236,230,220),5,1.2) end)
+		end
+		K.flash(fx.folder,around(p,1.2,rng),look.core,.4,2.4,.1,.35)
 	end,
 	lion=function(fx,p,look,rng,k)
 		if K.sparks then K.sparks(fx.folder,p+Vector3.new(0,rng:NextNumber()*2,0),look.core,8,22) end
@@ -144,6 +184,7 @@ local function sequence(fx,impact,folder)
 	local look=lookOf(impact.kind)
 	local time=impact.time or 3.4
 	local victim=rootOf(modelFor(folder,impact.victim))
+	local caster=modelFor(folder,impact.owner)
 	UltimateFX.banner(fx,impact.name,look.core,time,if impact.kind=="palms" then "2 PALMS" else nil)
 	UltimateFX.grade(fx,look,time)
 	local beat=BEAT[impact.kind] or BEAT.clones
@@ -156,30 +197,89 @@ local function sequence(fx,impact,folder)
 		while UltimateFX.clock()-started<time and fx.ultimateRun==token do
 			k+=1
 			local p=(victim and victim.Parent and victim.Position) or impact.position
-			pcall(beat,fx,p,look,rng,k)
+			pcall(beat,fx,p,look,rng,k,caster)
 			task.wait(.16)
 		end
 	end)
-	-- The pyramid closes at the end: a dome of sand over the body.
+	-- The pyramid closes at the end: a stepped pyramid of sand rises round
+	-- the body and crushes in.
 	if impact.kind=="pyramid" then
-		task.delay(math.max(0,time-.9),function()
+		task.delay(math.max(0,time-1.1),function()
 			if fx.ultimateRun~=token then return end
 			local p=(victim and victim.Parent and victim.Position) or impact.position
-			local dome=K.block(fx.folder,Vector3.new(1,1,1),CFrame.new(p),look.core,Enum.Material.Sand,"Part")
-			dome.Shape=Enum.PartType.Ball;dome.CanCollide=false;dome.Anchored=true
-			K.tween(dome,.35,{Size=Vector3.new(11,11,11)})
-			task.delay(.6,function() if dome.Parent then K.tween(dome,.25,{Transparency=1}) end end)
-			Debris:AddItem(dome,.9)
+			local floor=p.Y-6
+			for k=0,4 do
+				local w=14-k*2.6
+				local step=K.block(fx.folder,Vector3.new(w,.1,w),CFrame.new(p.X,floor+k*2.2,p.Z)*CFrame.Angles(0,math.rad(45),0),look.core,Enum.Material.Sand)
+				step.Name="Pyramid"
+				task.delay(k*.08,function() if step.Parent then K.tween(step,.25,{Size=Vector3.new(w,2.2,w),CFrame=CFrame.new(p.X,floor+k*2.2+1.1,p.Z)*CFrame.Angles(0,math.rad(45),0)}) end end)
+				task.delay(.85,function() if step.Parent then K.tween(step,.3,{Size=Vector3.new(w*.4,2.2,w*.4),Transparency=1}) end end)
+				Debris:AddItem(step,1.3)
+			end
 		end)
+	end
+	-- Sasuke's Chidori, Kakashi's Raikiri: the lightning in the hand.
+	if (impact.kind=="lion" or impact.kind=="raikiri") and caster then
+		UltimateFX.handCharge(fx,caster,look,if impact.kind=="lion" then .35 else 2.4,impact.kind=="raikiri")
+	end
+	-- Neji: the eight trigrams on the floor under both.
+	if impact.kind=="palms" and caster then
+		local root=caster:FindFirstChild("HumanoidRootPart")
+		local at=if root then root.Position:Lerp(impact.position,.5) else impact.position
+		UltimateFX.trigrams(fx,Vector3.new(at.X,at.Y-2.9,at.Z),look,time)
+	end
+	-- Itachi: a red moon over the world and the crows round the body.
+	if impact.kind=="tsukuyomi" then
+		local p=(victim and victim.Position) or impact.position
+		local moon=K.block(fx.folder,Vector3.new(30,30,30),CFrame.new(p+Vector3.new(0,60,-80)),rgb(180,10,20),Enum.Material.Neon)
+		moon.Shape=Enum.PartType.Ball;moon.Name="RedMoon";moon.Transparency=1
+		K.tween(moon,.4,{Transparency=.05})
+		task.delay(time-.4,function() if moon.Parent then K.tween(moon,.4,{Transparency=1}) end end)
+		Debris:AddItem(moon,time+.1)
 	end
 	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.6,.7)
 end
 
+-- A ball of lightning held in the caster's right hand for `time` seconds
+-- (white and long for the Raikiri).
+function UltimateFX.handCharge(fx,model,look,time,big)
+	local hand=model:FindFirstChild("RightHand") or model:FindFirstChild("Right Arm") or model:FindFirstChild("HumanoidRootPart")
+	if not hand then return end
+	local ball=K.block(fx.folder,Vector3.new(1,1,1)*(if big then 1.6 else 1.2),hand.CFrame,look.edge,Enum.Material.Neon)
+	ball.Shape=Enum.PartType.Ball;ball.Name="HandCharge";ball.Transparency=.15
+	local started=UltimateFX.clock()
+	task.spawn(function()
+		while ball.Parent and UltimateFX.clock()-started<time do
+			if hand.Parent then ball.CFrame=hand.CFrame*CFrame.new(0,-.6,0) end
+			if math.random()<.5 and K.sparks then K.sparks(fx.folder,ball.Position,look.core,3,18) end
+			task.wait(.03)
+		end
+		if ball.Parent then ball:Destroy() end
+	end)
+	Debris:AddItem(ball,time+.2)
+end
+-- The eight trigrams: a ring on the floor with its eight marks.
+function UltimateFX.trigrams(fx,center,look,time)
+	local disc=K.block(fx.folder,Vector3.new(.06,16,16),CFrame.new(center)*CFrame.Angles(0,0,math.rad(90)),look.core,Enum.Material.Neon,"Part")
+	disc.Name="Trigrams";disc.Shape=Enum.PartType.Cylinder;disc.Transparency=.75
+	for k=0,7 do
+		local angle=k*math.pi/4
+		local mark=K.block(fx.folder,Vector3.new(1.6,.08,.3),CFrame.new(center+Vector3.new(math.cos(angle)*6.2,.05,math.sin(angle)*6.2))*CFrame.Angles(0,-angle,0),look.edge,Enum.Material.Neon)
+		mark.Name="Trigram"
+		Debris:AddItem(mark,time)
+	end
+	Debris:AddItem(disc,time)
+end
 local function impact(fx,impact,folder)
 	local style=impact.style
 	local p=impact.position
 	if style=="ultimateStart" then
 		local look=lookOf(impact.kind)
+		-- The Chidori and the Raikiri are formed at the press.
+		if impact.kind=="lion" or impact.kind=="raikiri" then
+			local caster=modelFor(folder,impact.owner)
+			if caster then UltimateFX.handCharge(fx,caster,look,.5,impact.kind=="raikiri") end
+		end
 		K.flash(fx.folder,p,look.core,1,6,.18,.2)
 		K.shockRing(fx.folder,p-Vector3.new(0,2.6,0),look.edge,2,12,.35)
 		K.sound(K.anchorPart(fx.folder,p),K.SOUND.whoosh,.55,1.15)
