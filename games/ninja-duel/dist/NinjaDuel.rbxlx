@@ -625,8 +625,8 @@ local Controls = {
 		Guard = Enum.KeyCode.F,
 		Grab = Enum.KeyCode.V,
 		Tool = Enum.KeyCode.R,
-		-- Chakra modifier: held with the tool (Z + R), or pressed just before it.
-		-- The pad has no extra button: R1 (the jutsu modifier) + R2 is the same chord.
+		-- Chakra button (user 29/10): held, the press it is held with is infused
+		-- (a strike, a jump, a dodge, the tool). Pad: L2.
 		Chakra = Enum.KeyCode.Z,
 		Pursuit = Enum.KeyCode.E,
 		Substitute = Enum.KeyCode.X,
@@ -647,7 +647,9 @@ local Controls = {
 		Dodge = Enum.KeyCode.ButtonB,
 		Guard = Enum.KeyCode.ButtonL1,
 		Tool = Enum.KeyCode.ButtonR2,
-		Grab = Enum.KeyCode.ButtonL2,
+		-- (User 29/10) The chakra button: held, the next press is infused
+		-- (ChakraFlow). Grab moved to L1 + □ as in Storm (Input).
+		Chakra = Enum.KeyCode.ButtonL2,
 		Lock = Enum.KeyCode.ButtonR3,
 		Sprint = Enum.KeyCode.ButtonL3,
 		Modifier = Enum.KeyCode.ButtonR1,
@@ -665,16 +667,16 @@ local Controls = {
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Arm = "B", Skip = "ESC", ChakraLoad = "hold Z",
+		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   Z + R chakra   hold Z: load chakra (next strike / jump / dodge infused)   X substitute   G feint   T awaken   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-5 jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-5 jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
 	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L2 grab   R2 tool   R1 + R2 chakra   hold R1: load chakra (next □ △ × ○ infused)   R1 + face: jutsu   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L2",Tool="R2",Chakra="R1 + R2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + L2",WallDetach="R1 + L1",ChakraLoad="hold R1"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + face: jutsu   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",ChakraLoad="L2 + action"},
 	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
 }
 
@@ -702,6 +704,412 @@ return Controls
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND10">
+        <Properties>
+          <string name="Name">Face</string>
+          <ProtectedString name="Source">-- Cartoon faces drawn in 2D on the head (user 29/10 14:07: "il manque une
+-- expression faciale énorme"). Each eye and the mouth is a SurfaceGui on its
+-- own invisible plate laid tangent to the round head, so the drawing hugs the
+-- curve. The server builds the face (Face.build); the client drives it
+-- (Face.set with an expression name, Face.blink, Face.tint for the
+-- Sharingan / fox eyes). Nothing here touches gameplay.
+local Face={}
+
+-- The head the looks are built on (Server/Looks.form): the classic rounded
+-- Head mesh, upright and round in plan, 0.9 in radius, straight-sided from
+-- STRAIGHT below to STRAIGHT above the centre, rounding off beyond.
+Face.Head=Vector3.new(.9,.93,.9)
+Face.Radius=Face.Head.X
+local STRAIGHT=.5
+local PPS=320
+
+local function new(class,props,parent)
+	local i=Instance.new(class)
+	for k,v in props do (i::any)[k]=v end
+	if parent then i.Parent=parent end
+	return i
+end
+local function round(parent,radius)
+	return new("UICorner",{CornerRadius=UDim.new(radius or .5,0)},parent)
+end
+
+-- A plate tangent to the head at `angle` (degrees, + toward the fighter's
+-- right) and height `y` (head space), facing out.
+-- The squarer head of the Blender looks (tools/blender/nd_look.HEAD_PROFILE,
+-- same numbers): (y, half-width, half-depth, squareness).
+Face.BoxProfile={{-.95,.55,.56,2.6},{-.82,.74,.74,2.8},{-.55,.86,.83,3.2},{-.2,.9,.86,3.4},
+	{.25,.9,.86,3.4},{.6,.86,.83,3.2},{.84,.72,.72,2.8},{.95,.45,.46,2.4}}
+local SHAPE="can"
+function Face.useShape(shape) SHAPE=shape or "can" end
+function Face.boxSection(y)
+	local P=Face.BoxProfile
+	if y&lt;=P[1][1] then return P[1][2],P[1][3],P[1][4] end
+	for i=1,#P-1 do
+		local a,b=P[i],P[i+1]
+		if y&lt;=b[1] then
+			local t=(y-a[1])/(b[1]-a[1])
+			return a[2]+(b[2]-a[2])*t,a[3]+(b[3]-a[3])*t,a[4]+(b[4]-a[4])*t
+		end
+	end
+	local l=P[#P];return l[2],l[3],l[4]
+end
+local function onBox(angle,y,out)
+	local hx,hz,n=Face.boxSection(y)
+	local x=math.sin(math.rad(angle))*hx
+	local t=math.min(.999,math.abs(x)/hx)
+	local z=-hz*(1-t^n)^(1/n)
+	local gx=math.sign(x)*t^(n-1)/hx
+	local gz=-((math.abs(z)/hz)^(n-1))/hz
+	local _,hz2=Face.boxSection(y+.02)
+	local _,hz1=Face.boxSection(y-.02)
+	local dbdy=(hz2-hz1)/.04
+	local nrm=Vector3.new(gx,-dbdy*math.abs(gz),gz).Unit
+	local p=Vector3.new(x,y,z)+nrm*(out or .006)
+	return CFrame.lookAt(p,p+nrm)
+end
+function Face.onHead(angle,y,out)
+	if SHAPE=="box" then return onBox(angle,y,out) end
+	local h=Face.Head
+	local a=math.rad(angle)
+	local over=math.max(0,math.abs(y)-STRAIGHT)/(h.Y-STRAIGHT)
+	local k=math.sqrt(math.max(0,1-over*over))
+	local p=Vector3.new(h.X*k*math.sin(a),y,-h.Z*k*math.cos(a))
+	local tilt=math.sign(y)*over
+	local n=(Vector3.new(math.sin(a)*k,0,-math.cos(a)*k)+Vector3.new(0,tilt,0)).Unit
+	p+=n*(out or .006)
+	return CFrame.lookAt(p,p+n)
+end
+-- The angle (degrees) at which the head's surface is `x` studs off centre at
+-- height `y`.
+function Face.angleAt(x,y)
+	if SHAPE=="box" then
+		local hx=Face.boxSection(y)
+		return math.deg(math.asin(math.clamp(x/hx,-1,1)))
+	end
+	local h=Face.Head
+	local over=math.max(0,math.abs(y)-STRAIGHT)/(h.Y-STRAIGHT)
+	local k=math.sqrt(math.max(.05,1-over*over))
+	return math.deg(math.asin(math.clamp(x/(h.X*k),-1,1)))
+end
+
+local function plate(model,name,size,cf)
+	local head=model:FindFirstChild("Head")
+	if not head then return nil,nil end
+	local p=new("Part",{Name=name,Size=Vector3.new(size.X,size.Y,.02),Transparency=1,CanCollide=false,CanQuery=false,CanTouch=false,
+		Massless=true,Anchored=false,CastShadow=false,CFrame=head.CFrame*cf})
+	new("WeldConstraint",{Part0=head,Part1=p},p)
+	p.Parent=model
+	local gui=new("SurfaceGui",{Name="Drawing",Face=Enum.NormalId.Front,SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud,PixelsPerStud=PPS,
+		LightInfluence=.55,Brightness=1.15,ZOffset=1,ClipsDescendants=false,ResetOnSpawn=false},p)
+	return p,gui
+end
+
+-- Positions and sizes in studs on a plate of size `w` x `h`, origin at its
+-- centre, y down.
+local function at(w,h,x,y) return UDim2.fromScale(.5+x/w,.5+y/h) end
+local function sz(w,h,x,y) return UDim2.fromScale(x/w,y/h) end
+
+local EW,EH=.62,.82 -- eye plate
+local MW,MH=.7,.42 -- mouth plate
+
+-- spec fields (all optional): iris, irisDark, pupil (false = none), style
+-- ("normal" | "round" | "pale" | "ringed"), sclera (Vector2 studs), eyeX,
+-- eyeY, brow (Color3, false = none), browThick, lash, skin, mood (the idle
+-- expression), mouth (false = hidden), cheeks ("whiskers"), lids (0-1 resting
+-- droop).
+function Face.build(model,spec)
+	spec=spec or {}
+	-- Headless tests have no UI classes: the face is cosmetic, skip it.
+	if UDim==nil or UDim2==nil or ColorSequence==nil or Vector2==nil then model:SetAttribute("FaceMood",spec.mood or "calm");return nil end
+	local eyes=model:FindFirstChild("Eyes");if eyes then eyes.Transparency=1 end
+	local lash=spec.lash or Color3.fromRGB(28,24,30)
+	local sclera=spec.sclera or Vector2.new(.34,.3)
+	local face={spec=spec,eyes={},model=model}
+	local ex=spec.eyeX or .32
+	local ey=spec.eyeY or -.06
+	local eyeAngle=Face.angleAt(ex,ey)
+	for _,s in {-1,1} do
+		local part,gui=plate(model,"FaceEye",Vector2.new(EW,EH),Face.onHead(s*eyeAngle,ey))
+		if not gui then continue end
+		local e={side=s,part=part,gui=gui}
+		-- The white: clipped so the lids and the look can cut the iris.
+		e.white=new("CanvasGroup",{Name="White",AnchorPoint=Vector2.new(.5,.5),Position=at(EW,EH,0,0),Size=sz(EW,EH,sclera.X,sclera.Y),
+			BackgroundColor3=Color3.fromRGB(250,250,246),BorderSizePixel=0},gui)
+		round(e.white,.5)
+		local iw=sclera.X*(if spec.style=="round" then .5 else .56)
+		local ih=sclera.Y*(if spec.style=="round" then .62 else .8)
+		e.iris=new("Frame",{Name="Iris",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.56),Size=UDim2.fromScale(iw/sclera.X,ih/sclera.Y),
+			BackgroundColor3=spec.iris or Color3.fromRGB(70,110,200),BorderSizePixel=0},e.white)
+		round(e.iris,.5)
+		e.gradient=new("UIGradient",{Rotation=90,Color=ColorSequence.new(spec.irisDark or (spec.iris or Color3.fromRGB(70,110,200)):Lerp(Color3.new(),.45),spec.iris or Color3.fromRGB(70,110,200))},e.iris)
+		if spec.style=="ringed" then new("UIStroke",{Thickness=3,Color=(spec.iris or Color3.new()):Lerp(Color3.new(),.5)},e.iris) end
+		if spec.pupil~=false then
+			e.pupil=new("Frame",{Name="Pupil",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.52),Size=UDim2.fromScale(.42,.42),
+				BackgroundColor3=Color3.fromRGB(16,14,20),BorderSizePixel=0},e.iris)
+			round(e.pupil,.5)
+		end
+		-- Sharingan commas, shown by Face.tint(..., "sharingan").
+		e.tomoe={}
+		for k=0,2 do
+			local a=math.rad(k*120-90)
+			local t=new("Frame",{Name="Tomoe",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5+.3*math.cos(a),.52+.3*math.sin(a)),Size=UDim2.fromScale(.2,.2),
+				BackgroundColor3=Color3.fromRGB(16,10,12),BorderSizePixel=0,Visible=spec.sharingan==true},e.iris)
+			round(t,.5)
+			table.insert(e.tomoe,t)
+		end
+		e.shine=new("Frame",{Name="Shine",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.34,.3),Size=UDim2.fromScale(.32,.26),
+			BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0},e.iris)
+		round(e.shine,.5)
+		e.shine2=new("Frame",{Name="Shine",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.66,.74),Size=UDim2.fromScale(.14,.12),
+			BackgroundColor3=Color3.new(1,1,1),BorderSizePixel=0,BackgroundTransparency=.2},e.iris)
+		round(e.shine2,.5)
+		if spec.style=="pale" then
+			e.iris.BackgroundColor3=spec.iris or Color3.fromRGB(226,222,240)
+			e.gradient.Color=ColorSequence.new(Color3.fromRGB(200,196,224),spec.iris or Color3.fromRGB(236,232,248))
+			e.shine.Visible=false;e.shine2.Visible=false
+		end
+		-- The dark ring Gaara never sleeps off.
+		if spec.ring then
+			e.ring=new("Frame",{Name="Ring",AnchorPoint=Vector2.new(.5,.5),Position=at(EW,EH,0,0),Size=sz(EW,EH,sclera.X+.08,sclera.Y+.09),BackgroundTransparency=1,ZIndex=0},gui)
+			round(e.ring,.5)
+			new("UIStroke",{Thickness=12,Color=spec.ring,Transparency=.05},e.ring)
+		end
+		-- The upper lash line and its flick at the outer corner.
+		e.lash=new("Frame",{Name="Lash",AnchorPoint=Vector2.new(.5,.5),Size=sz(EW,EH,sclera.X*1.06,spec.lashThick or .05),BackgroundColor3=lash,BorderSizePixel=0,ZIndex=3},gui)
+		round(e.lash,.5)
+		e.flick=new("Frame",{Name="Flick",AnchorPoint=Vector2.new(.5,.5),Size=sz(EW,EH,.09,.04),BackgroundColor3=lash,BorderSizePixel=0,ZIndex=3},gui)
+		round(e.flick,.5)
+		-- The upper lid: skin over the top of the white, lowered to narrow the
+		-- eye. It lives inside the white so it is clipped to its round shape.
+		e.lid=new("Frame",{Name="Lid",AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,0),Size=UDim2.fromScale(1.3,1),
+			BackgroundColor3=spec.skin or Color3.fromRGB(246,214,186),BorderSizePixel=0,ZIndex=2},e.white)
+		-- Closed-eye strokes: a curve (blink, KO), a ^ (happy), a &gt; (hurt).
+		e.closed={}
+		for k=1,2 do
+			local c=new("Frame",{Name="Closed",AnchorPoint=Vector2.new(.5,.5),Size=sz(EW,EH,sclera.X*.62,.05),BackgroundColor3=lash,BorderSizePixel=0,Visible=false,ZIndex=3},gui)
+			round(c,.5)
+			e.closed[k]=c
+		end
+		if spec.brow~=false then
+			e.brow=new("Frame",{Name="Brow",AnchorPoint=Vector2.new(.5,.5),Size=sz(EW,EH,sclera.X*(spec.browWide or 1.05),spec.browThick or .055),
+				BackgroundColor3=spec.brow or lash,BorderSizePixel=0,ZIndex=4},gui)
+			round(e.brow,.5)
+		end
+		-- Whisker marks on the cheek, below and outside the eye.
+		if spec.cheeks=="whiskers" then
+			for k=0,2 do
+				local w=new("Frame",{Name="Whisker",AnchorPoint=Vector2.new(.5,.5),Position=at(EW,EH,s*-.06,.24+k*.07),Size=sz(EW,EH,.26,.022),
+					Rotation=s*-(8-k*8),BackgroundColor3=Color3.fromRGB(96,62,48),BorderSizePixel=0},gui)
+				round(w,.5)
+			end
+		end
+		table.insert(face.eyes,e)
+	end
+	if spec.mouth~=false then
+		local part,gui=plate(model,"FaceMouth",Vector2.new(MW,MH),Face.onHead(0,spec.mouthY or -.42))
+		if gui then
+			local m={part=part,gui=gui}
+			local lip=spec.lip or Color3.fromRGB(110,56,52)
+			-- A short line (calm), its curved version (smile), an open mouth
+			-- with a tongue (shout, hurt), teeth (grin, grit).
+			m.line=new("Frame",{Name="Line",AnchorPoint=Vector2.new(.5,.5),Position=at(MW,MH,0,0),Size=sz(MW,MH,.16,.028),BackgroundColor3=lip,BorderSizePixel=0},gui)
+			round(m.line,.5)
+			m.curveBox=new("Frame",{Name="Curve",AnchorPoint=Vector2.new(.5,0),Position=at(MW,MH,0,-.01),Size=sz(MW,MH,.3,.12),BackgroundTransparency=1,ClipsDescendants=true},gui)
+			m.curve=new("Frame",{Name="Arc",AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,1),Size=UDim2.fromScale(.8,1.9),BackgroundTransparency=1},m.curveBox)
+			round(m.curve,.5)
+			m.curveStroke=new("UIStroke",{Thickness=8,Color=lip},m.curve)
+			m.open=new("CanvasGroup",{Name="Open",AnchorPoint=Vector2.new(.5,.5),Position=at(MW,MH,0,.03),Size=sz(MW,MH,.22,.16),BackgroundColor3=Color3.fromRGB(86,26,32),BorderSizePixel=0},gui)
+			round(m.open,.5)
+			m.tongue=new("Frame",{Name="Tongue",AnchorPoint=Vector2.new(.5,0),Position=UDim2.fromScale(.5,.6),Size=UDim2.fromScale(.7,.6),BackgroundColor3=Color3.fromRGB(226,104,110),BorderSizePixel=0},m.open)
+			round(m.tongue,.5)
+			m.upper=new("Frame",{Name="Teeth",AnchorPoint=Vector2.new(.5,0),Position=UDim2.fromScale(.5,0),Size=UDim2.fromScale(1,.26),BackgroundColor3=Color3.fromRGB(250,248,242),BorderSizePixel=0},m.open)
+			m.teeth=new("Frame",{Name="Grit",AnchorPoint=Vector2.new(.5,.5),Position=at(MW,MH,0,.02),Size=sz(MW,MH,.24,.085),BackgroundColor3=Color3.fromRGB(250,248,242),BorderSizePixel=0},gui)
+			round(m.teeth,.35)
+			new("UIStroke",{Thickness=5,Color=lip},m.teeth)
+			new("Frame",{Name="Gap",AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromScale(.5,.5),Size=UDim2.new(1,-4,0,3),BackgroundColor3=lip:Lerp(Color3.new(1,1,1),.35),BorderSizePixel=0},m.teeth)
+			face.mouth=m
+		end
+	end
+	model:SetAttribute("FaceMood",spec.mood or "calm")
+	model:SetAttribute("FaceLids",spec.lids or 0)
+	Face.set(face,spec.mood or "calm")
+	return face
+end
+
+-- Expressions: eye shape, brow, mouth.
+--   eye  open | narrow | wide | closed | happy | squeeze | ko
+--   brow calm | angry | worry | up | flat
+--   mouth line | smile | smirk | grin | open | shout | grit | o | frown
+Face.Moods={
+	calm={eye="open",brow="calm",mouth="line"},
+	cool={eye="narrow",brow="flat",mouth="line"},
+	lazy={eye="lazy",brow="flat",mouth="line"},
+	cheer={eye="open",brow="up",mouth="grin"},
+	gentle={eye="open",brow="calm",mouth="smile"},
+	smirk={eye="narrow",brow="flat",mouth="smirk"},
+	stare={eye="narrow",brow="flat",mouth="line"},
+	fierce={eye="open",brow="angry",mouth="grit"},
+	fight={eye="narrow",brow="angry",mouth="grit"},
+	focus={eye="narrow",brow="angry",mouth="line"},
+	shout={eye="narrow",brow="angry",mouth="shout"},
+	hurt={eye="squeeze",brow="worry",mouth="open"},
+	stun={eye="wide",brow="worry",mouth="o"},
+	ko={eye="ko",brow="worry",mouth="o"},
+	win={eye="happy",brow="up",mouth="grin"},
+}
+local function look(face) return face end
+
+function Face.find(model)
+	local face={model=model,eyes={},spec={}}
+	for _,p in model:GetChildren() do
+		if p.Name=="FaceEye" then
+			local gui=p:FindFirstChild("Drawing")
+			if gui then
+				local white=gui:FindFirstChild("White")
+				local iris=white and white:FindFirstChild("Iris")
+				local e={part=p,gui=gui,white=white,iris=iris,pupil=iris and iris:FindFirstChild("Pupil"),lid=white and white:FindFirstChild("Lid"),
+					lash=gui:FindFirstChild("Lash"),flick=gui:FindFirstChild("Flick"),brow=gui:FindFirstChild("Brow"),ring=gui:FindFirstChild("Ring"),
+					gradient=iris and iris:FindFirstChildOfClass("UIGradient"),closed={},tomoe={}}
+				for _,c in gui:GetChildren() do if c.Name=="Closed" then table.insert(e.closed,c) end end
+				if iris then for _,t in iris:GetChildren() do if t.Name=="Tomoe" then table.insert(e.tomoe,t) end end end
+				e.side=if (model:FindFirstChild("Head") and (model.Head.CFrame:PointToObjectSpace(p.Position).X&gt;0)) then 1 else -1
+				table.insert(face.eyes,e)
+			end
+		elseif p.Name=="FaceMouth" then
+			local gui=p:FindFirstChild("Drawing")
+			if gui then
+				local curveBox=gui:FindFirstChild("Curve")
+				local open=gui:FindFirstChild("Open")
+				face.mouth={part=p,gui=gui,line=gui:FindFirstChild("Line"),curveBox=curveBox,curve=curveBox and curveBox:FindFirstChild("Arc"),
+					open=open,tongue=open and open:FindFirstChild("Tongue"),upper=open and open:FindFirstChild("Teeth"),teeth=gui:FindFirstChild("Grit")}
+			end
+		end
+	end
+	if #face.eyes==0 then return nil end
+	return face
+end
+
+local function eyeShape(e,eye,brow,droop)
+	local s=e.side
+	local white=e.white
+	if not white then return end
+	-- The white's resting box, read back from its build size.
+	e.base=e.base or {pos=white.Position,size=white.Size}
+	local bx,by=e.base.size.X.Scale,e.base.size.Y.Scale
+	local px,py=e.base.pos.X.Scale,e.base.pos.Y.Scale
+	local open=eye=="open" or eye=="narrow" or eye=="wide" or eye=="lazy"
+	white.Visible=open
+	if e.ring then e.ring.Visible=true end
+	-- Lid: how much of the white it covers (0 open .. 1 shut), and its slant.
+	local cover=if eye=="narrow" then .38 elseif eye=="lazy" then .5 elseif eye=="wide" then 0 else droop
+	local tilt=if brow=="angry" then 14 elseif brow=="worry" then -10 else 0
+	local height=if eye=="wide" then by*1.12 else by
+	white.Size=UDim2.fromScale(bx*(if eye=="wide" then 1.06 else 1),height)
+	white.Position=UDim2.fromScale(px,py)
+	if e.lid then
+		e.lid.Size=UDim2.fromScale(1.4,1)
+		e.lid.Position=UDim2.fromScale(.5,cover)
+		e.lid.Rotation=s*tilt
+	end
+	if e.iris then
+		e.iris.Size=UDim2.fromScale(e.iris.Size.X.Scale,e.iris.Size.Y.Scale)
+		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,.42) end
+	end
+	-- Lash line rides the lid edge.
+	local top=py-height/2+height*cover
+	if e.lash then
+		e.lash.Visible=open
+		e.lash.Position=UDim2.fromScale(px,top+.008)
+		e.lash.Rotation=s*tilt
+		e.flick.Visible=open
+		e.flick.Position=UDim2.fromScale(px-s*bx*.52,top+.02)
+		e.flick.Rotation=s*-24
+	end
+	-- Closed strokes.
+	local c1,c2=e.closed[1],e.closed[2]
+	if c1 and c2 then
+		c1.Visible=not open;c2.Visible=false
+		local w=bx*.62
+		if eye=="closed" or eye=="ko" then
+			c1.Position=UDim2.fromScale(px,py+.03);c1.Rotation=0;c1.Size=UDim2.fromScale(w*1.2,c1.Size.Y.Scale)
+		elseif eye=="happy" then
+			-- ^ : two strokes meeting above the eye's centre.
+			c2.Visible=true
+			c1.Size=UDim2.fromScale(w*.62,c1.Size.Y.Scale);c2.Size=c1.Size
+			c1.Position=UDim2.fromScale(px-bx*.17,py+.02);c1.Rotation=-34
+			c2.Position=UDim2.fromScale(px+bx*.17,py+.02);c2.Rotation=34
+		elseif eye=="squeeze" then
+			-- &gt; &lt; : the point toward the nose.
+			c2.Visible=true
+			c1.Size=UDim2.fromScale(w*.66,c1.Size.Y.Scale);c2.Size=c1.Size
+			c1.Position=UDim2.fromScale(px-s*bx*.02,py-.018);c1.Rotation=s*-26
+			c2.Position=UDim2.fromScale(px-s*bx*.02,py+.05);c2.Rotation=s*26
+		end
+	end
+	if e.brow then
+		local up=if brow=="up" then -.045 elseif brow=="worry" then -.03 elseif brow=="angry" then .035 elseif brow=="flat" then .02 else 0
+		local angle=if brow=="angry" then 20 elseif brow=="worry" then -16 elseif brow=="up" then -4 else -3
+		e.brow.Position=UDim2.fromScale(px+s*.012,py-by*.5-.1/EH+up)
+		e.brow.Rotation=s*angle
+	end
+end
+
+local function mouthShape(m,mouth)
+	if not m or not m.line then return end
+	m.line.Visible=mouth=="line" or mouth=="frown"
+	m.line.Rotation=0
+	m.curveBox.Visible=mouth=="smile" or mouth=="smirk"
+	m.curve.Rotation=0
+	if mouth=="smirk" then m.curveBox.Rotation=-10;m.curveBox.Size=sz(MW,MH,.22,.1) else m.curveBox.Rotation=0;m.curveBox.Size=sz(MW,MH,.3,.12) end
+	local open=mouth=="open" or mouth=="shout" or mouth=="o" or mouth=="grin"
+	m.open.Visible=open
+	if mouth=="shout" then m.open.Size=sz(MW,MH,.26,.22)
+	elseif mouth=="grin" then m.open.Size=sz(MW,MH,.34,.15)
+	elseif mouth=="o" then m.open.Size=sz(MW,MH,.1,.11)
+	else m.open.Size=sz(MW,MH,.24,.13) end
+	if m.upper then m.upper.Visible=mouth=="grin" or mouth=="shout";m.upper.Size=UDim2.fromScale(1,if mouth=="grin" then .42 else .26) end
+	if m.tongue then m.tongue.Visible=mouth~="o" end
+	m.teeth.Visible=mouth=="grit"
+end
+
+-- Apply an expression by name (Face.Moods) to a face from Face.build or
+-- Face.find. Returns the face.
+function Face.set(face,name,blink)
+	if not face then return end
+	local mood=Face.Moods[name] or Face.Moods.calm
+	local eye=mood.eye
+	if blink and (eye=="open" or eye=="narrow" or eye=="lazy" or eye=="wide") then eye="closed" end
+	local droop=(face.spec and face.spec.lids) or 0
+	if face.model then droop=face.model:GetAttribute("FaceLids") or droop end
+	for _,e in face.eyes do eyeShape(e,eye,mood.brow,droop) end
+	mouthShape(face.mouth,mood.mouth)
+	face.current=name;face.blinking=blink
+	return face
+end
+
+-- Iris colour override (nil restores): "sharingan" shows the commas.
+function Face.tint(face,color,kind)
+	if not face then return end
+	for _,e in face.eyes do
+		if not e.iris then continue end
+		e.restore=e.restore or {color=e.iris.BackgroundColor3,gradient=e.gradient and e.gradient.Color}
+		if color then
+			e.iris.BackgroundColor3=color
+			if e.gradient then e.gradient.Color=ColorSequence.new(color:Lerp(Color3.new(),.35),color) end
+		else
+			e.iris.BackgroundColor3=e.restore.color
+			if e.gradient and e.restore.gradient then e.gradient.Color=e.restore.gradient end
+		end
+		for _,t in e.tomoe do t.Visible=color~=nil and kind=="sharingan" end
+		if e.pupil then e.pupil.Size=if kind=="fox" then UDim2.fromScale(.16,.62) else UDim2.fromScale(.42,.42) end
+		e.gui.LightInfluence=if color then .1 else .55
+	end
+end
+Face.look=look
+return Face
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND11">
         <Properties>
           <string name="Name">Fighters</string>
           <ProtectedString name="Source">local Fighters = {
@@ -1149,7 +1557,7 @@ return Fighters
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND11">
+      <Item class="ModuleScript" referent="ND12">
         <Properties>
           <string name="Name">Looks</string>
           <ProtectedString name="Source">-- How a family object looks (Families.luau, client FamilyFX): one entry per
@@ -1223,7 +1631,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND12">
+      <Item class="ModuleScript" referent="ND13">
         <Properties>
           <string name="Name">MoveGraphs</string>
           <ProtectedString name="Source">-- Character move graphs: the data half of each fighter's combat identity.
@@ -1439,7 +1847,7 @@ return Graphs
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND13">
+      <Item class="ModuleScript" referent="ND14">
         <Properties>
           <string name="Name">OnlineProtocol</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): shared tunables and the request vocabulary of the
@@ -1465,7 +1873,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND14">
+      <Item class="ModuleScript" referent="ND15">
         <Properties>
           <string name="Name">Roster</string>
           <ProtectedString name="Source">-- The playable roster, in menu order: the select screen, the AI soaks and the
@@ -1490,7 +1898,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND15">
+      <Item class="ModuleScript" referent="ND16">
         <Properties>
           <string name="Name">RosterMoves</string>
           <ProtectedString name="Source">-- Roster 20 batches (Shared/WaveN): a fighter's own strike, added to Attacks
@@ -1520,7 +1928,7 @@ return RosterMoves
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND16">
+      <Item class="ModuleScript" referent="ND17">
         <Properties>
           <string name="Name">RosterStaging</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children, Shared/Wave4).
@@ -1530,7 +1938,7 @@ return {"Rival","Sapling","Professor"}
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND17">
+      <Item class="ModuleScript" referent="ND18">
         <Properties>
           <string name="Name">Rules</string>
           <ProtectedString name="Source">-- Pure policy shared by server combat and headless tests. Authority lives on server.
@@ -1573,7 +1981,7 @@ return Rules
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND18">
+      <Item class="ModuleScript" referent="ND19">
         <Properties>
           <string name="Name">VelmoraCombatConfig</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/shared/config/CombatConfig.luau.
@@ -1603,7 +2011,7 @@ return table.freeze({
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND19">
+      <Item class="ModuleScript" referent="ND20">
         <Properties>
           <string name="Name">Wave1</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (DEC-022): Haku, Zabuza, Kimimaro. This batch's shared
@@ -1850,7 +2258,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND20">
+      <Item class="ModuleScript" referent="ND21">
         <Properties>
           <string name="Name">Wave2</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (DEC-022): Shisui, Orochimaru, Kabuto. This batch's
@@ -2036,7 +2444,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND21">
+      <Item class="ModuleScript" referent="ND22">
         <Properties>
           <string name="Name">Wave3</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (DEC-022): Deidara, Sasori, Nagato, Killer Bee. This
@@ -2311,7 +2719,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND22">
+      <Item class="ModuleScript" referent="ND23">
         <Properties>
           <string name="Name">Wave4</string>
           <ProtectedString name="Source">-- DEC-026 newcomers: Madara, Hashirama and Hiruzen as children (the three
@@ -3505,17 +3913,17 @@ return {
           </Item>
         </Item>
       </Item>
-      <Item class="StringValue" referent="ND23">
+      <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">efc435b71ae41250afbd67d7a61fb700478c21d1369b446d356760111f109ec2</string>
+          <string name="Value">0ad2c177a8f0577fd1c7fc6cad8eca854b242e3e157e164831eea437d60f9761</string>
         </Properties>
       </Item>
-      <Item class="Folder" referent="ND24">
+      <Item class="Folder" referent="ND25">
         <Properties>
           <string name="Name">ThirdPartyLicenses</string>
         </Properties>
-        <Item class="StringValue" referent="ND25">
+        <Item class="StringValue" referent="ND26">
           <Properties>
             <string name="Name">bangla</string>
             <string name="Value">MIT License
@@ -3542,7 +3950,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND26">
+        <Item class="StringValue" referent="ND27">
           <Properties>
             <string name="Name">place1</string>
             <string name="Value">MIT License
@@ -3569,7 +3977,7 @@ SOFTWARE.
 </string>
           </Properties>
         </Item>
-        <Item class="StringValue" referent="ND27">
+        <Item class="StringValue" referent="ND28">
           <Properties>
             <string name="Name">velmora</string>
             <string name="Value">MIT License
@@ -3599,15 +4007,15 @@ SOFTWARE.
       </Item>
     </Item>
   </Item>
-  <Item class="ServerScriptService" referent="ND28">
+  <Item class="ServerScriptService" referent="ND29">
     <Properties>
       <string name="Name">ServerScriptService</string>
     </Properties>
-    <Item class="Folder" referent="ND29">
+    <Item class="Folder" referent="ND30">
       <Properties>
         <string name="Name">NinjaDuelServer</string>
       </Properties>
-      <Item class="ModuleScript" referent="ND30">
+      <Item class="ModuleScript" referent="ND31">
         <Properties>
           <string name="Name">AI</string>
           <ProtectedString name="Source">local Config=require(game:GetService("ReplicatedStorage").NinjaDuel.Config)
@@ -4515,7 +4923,7 @@ return AI
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND31">
+      <Item class="ModuleScript" referent="ND32">
         <Properties>
           <string name="Name">Animation</string>
           <ProtectedString name="Source">-- Bangla PunchMoves animation playback, adapted for server-owned human and AI R15.
@@ -4621,7 +5029,7 @@ return Animation
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND32">
+      <Item class="ModuleScript" referent="ND33">
         <Properties>
           <string name="Name">BanglaCombat</string>
           <ProtectedString name="Source">-- Adapted from BanglaBattlegrounds ServerScriptService/StarterCombat.
@@ -4711,7 +5119,7 @@ return Bangla
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND33">
+      <Item class="ModuleScript" referent="ND34">
         <Properties>
           <string name="Name">BanglaEvade</string>
           <ProtectedString name="Source">-- performEvade from Bangla WalkRunHandler (Dewan Mukto, MIT), adapted.
@@ -4791,7 +5199,7 @@ return Evade
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND34">
+      <Item class="ModuleScript" referent="ND35">
         <Properties>
           <string name="Name">Bodies</string>
           <ProtectedString name="Source">-- Light bodies that are not actors (roster hook H12): Naruto's shadow clones
@@ -5229,7 +5637,7 @@ return Bodies
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND35">
+      <Item class="ModuleScript" referent="ND36">
         <Properties>
           <string name="Name">BodyState</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, SYS-001 sustained chakra): a technique that is a
@@ -5360,7 +5768,7 @@ return BodyState
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND36">
+      <Item class="ModuleScript" referent="ND37">
         <Properties>
           <string name="Name">Brawler</string>
           <ProtectedString name="Source">local Shared=game:GetService("ReplicatedStorage").NinjaDuel
@@ -6977,7 +7385,7 @@ return Brawler
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND37">
+      <Item class="ModuleScript" referent="ND38">
         <Properties>
           <string name="Name">BuildPresets</string>
           <ProtectedString name="Source">-- Example ranked builds (PROG-002) and AI budget builds (PROG-003). Every
@@ -7105,7 +7513,7 @@ return Presets
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND38">
+      <Item class="ModuleScript" referent="ND39">
         <Properties>
           <string name="Name">ChakraCombat</string>
           <ProtectedString name="Source">-- ChakraCombat: the runtime adapter between the real duel (projectiles,
@@ -8147,7 +8555,7 @@ return Chakra
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND39">
+      <Item class="ModuleScript" referent="ND40">
         <Properties>
           <string name="Name">ChakraFlow</string>
           <ProtectedString name="Source">-- ChakraFlow: chakra into whatever the body does next (Freedom, user 28/10:
@@ -8335,7 +8743,7 @@ return ChakraFlow
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND40">
+      <Item class="ModuleScript" referent="ND41">
         <Properties>
           <string name="Name">ChakraInputPlan</string>
           <ProtectedString name="Source">-- Optional intent planner ONLY. Does not bind keys or send/change combat actions.
@@ -8363,7 +8771,7 @@ return P
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND41">
+      <Item class="ModuleScript" referent="ND42">
         <Properties>
           <string name="Name">ChakraRules</string>
           <ProtectedString name="Source">-- Declarative matching only. No callbacks/code strings supplied by configuration.
@@ -8460,7 +8868,7 @@ return R
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND42">
+      <Item class="ModuleScript" referent="ND43">
         <Properties>
           <string name="Name">ChakraTuning</string>
           <ProtectedString name="Source">-- Live chakra interaction data (SYS-001 / TOOL-006): OBJECT + CHAKRA + NATURE /
@@ -8659,7 +9067,7 @@ return T
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND43">
+      <Item class="ModuleScript" referent="ND44">
         <Properties>
           <string name="Name">ChakraVectors</string>
           <ProtectedString name="Source">-- Serializable vector math: simulation/reporting has no Roblox instance dependency.
@@ -8685,7 +9093,7 @@ return V
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND44">
+      <Item class="ModuleScript" referent="ND45">
         <Properties>
           <string name="Name">Combat</string>
           <ProtectedString name="Source">local Shared = game:GetService("ReplicatedStorage").NinjaDuel
@@ -9644,8 +10052,19 @@ end
 -- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
 local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
+-- Actions the chakra button infuses (user 29/10: the infusion on its own
+-- button, L2 / Z held with the press): the press loads the body's nature for
+-- itself (ChakraFlow), the strike, jump or dodge spends it.
+local INFUSED={Attack=true,Heavy=true,Jump=true,Dodge=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	local loaded=false
+	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
+		loaded=ChakraFlow.load(self,a)==true
+	end
 	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	-- A refused press does not leave its load for a later one (a late press
+	-- loads again when it comes out).
+	if loaded and ok==false then a.chakraLoad=nil end
 	-- Players only (Matches:act marks them): the AI plans its own timing.
 	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
 		local L=Config.Late
@@ -10980,7 +11399,7 @@ return Combat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND45">
+      <Item class="ModuleScript" referent="ND46">
         <Properties>
           <string name="Name">Costumes</string>
           <ProtectedString name="Source">-- Costumes of the roster breadth pass (ROSTER_20): each one registers under
@@ -11101,7 +11520,7 @@ return Costumes
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND46">
+      <Item class="ModuleScript" referent="ND47">
         <Properties>
           <string name="Name">DonorAnimations</string>
           <ProtectedString name="Source">-- R6 -&gt; R15 compatibility only; transforms/times remain the donor choreography.
@@ -11143,7 +11562,7 @@ return Donor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND47">
+      <Item class="ModuleScript" referent="ND48">
         <Properties>
           <string name="Name">Elements</string>
           <ProtectedString name="Source">-- Element families define different gameplay primitives. Fire and Wind are
@@ -11277,7 +11696,7 @@ return Elements
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND48">
+      <Item class="ModuleScript" referent="ND49">
         <Properties>
           <string name="Name">Families</string>
           <ProtectedString name="Source">-- Reusable technique families and fighter traits (ROSTER_20_BREADTH_PASS).
@@ -12129,7 +12548,7 @@ return Families
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND49">
+      <Item class="ModuleScript" referent="ND50">
         <Properties>
           <string name="Name">Gale</string>
           <ProtectedString name="Source">-- Temari (Gale, roster wave): the wind fan, on the shared systems. Her kit
@@ -12454,7 +12873,7 @@ return Gale
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND50">
+      <Item class="ModuleScript" referent="ND51">
         <Properties>
           <string name="Name">Legion</string>
           <ProtectedString name="Source">-- Naruto Uzumaki (roster wave: Part I, the Chunin Exam to the Valley of the
@@ -12729,7 +13148,836 @@ return Legion
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="Script" referent="ND51">
+      <Item class="ModuleScript" referent="ND52">
+        <Properties>
+          <string name="Name">LookMeshData</string>
+          <ProtectedString name="Source">-- Generated by tools/blender/looks_to_luau.py from the Studio imports of
+-- tools/blender/look_*.py. Do not edit by hand: re-run the script.
+return {
+	["Naruto"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
+		{name="Head__BandTailL",body="Head",mesh="rbxassetid://126311166264900",offset=Vector3.new(-0.16,0,0.9757),size=Vector3.new(0.2,0.64,0.05),color=Color3.fromRGB(40,70,160),material="SmoothPlastic",reflectance=0},
+		{name="Head__BandTailR",body="Head",mesh="rbxassetid://80240160005820",offset=Vector3.new(0.16,0,0.9757),size=Vector3.new(0.2,0.64,0.05),color=Color3.fromRGB(40,70,160),material="SmoothPlastic",reflectance=0},
+		{name="Head__Fringe",body="Head",mesh="rbxassetid://96313876061266",offset=Vector3.new(-0.003,0.3569,-0.5668),size=Vector3.new(2.0349,1.1137,0.8837),color=Color3.fromRGB(255,210,60),material="SmoothPlastic",reflectance=0},
+		{name="Head__Hair",body="Head",mesh="rbxassetid://118294438497496",offset=Vector3.new(0.0855,1.0877,0.3263),size=Vector3.new(2.4789,1.5306,2.4326),color=Color3.fromRGB(255,210,60),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairCap",body="Head",mesh="rbxassetid://117763361062689",offset=Vector3.new(0,0.2578,0.0129),size=Vector3.new(1.9,1.3844,1.7942),color=Color3.fromRGB(232,166,30),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairShade",body="Head",mesh="rbxassetid://105153770227888",offset=Vector3.new(-0.3086,1.1014,0.2478),size=Vector3.new(2.0329,1.4074,2.2758),color=Color3.fromRGB(232,166,30),material="SmoothPlastic",reflectance=0},
+		{name="Head__Headband",body="Head",mesh="rbxassetid://78191434552168",offset=Vector3.new(0,0.4246,0),size=Vector3.new(1.9886,0.2708,1.9114),color=Color3.fromRGB(40,70,160),material="SmoothPlastic",reflectance=0},
+		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://133351985191390",offset=Vector3.new(0,0.43,-0.9621),size=Vector3.new(0.68,0.22,0.0738),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
+		{name="Head__PlateMark",body="Head",mesh="rbxassetid://71748609809402",offset=Vector3.new(0.03,0.43,-0.9896),size=Vector3.new(0.23,0.1665,0.0417),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://117254165523704",offset=Vector3.new(0,0.035,0.28),size=Vector3.new(0.74,0.37,0.6),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Strap",body="LeftFoot",mesh="rbxassetid://109544416959887",offset=Vector3.new(0,-0.04,-0.06),size=Vector3.new(0.8,0.16,0.14),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Strap.001",body="LeftFoot",mesh="rbxassetid://132188207301133",offset=Vector3.new(0,-0.04,-0.3),size=Vector3.new(0.8,0.16,0.14),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Mitt",body="LeftHand",mesh="rbxassetid://111499421656838",offset=Vector3.new(-0,-0.03,0),size=Vector3.new(0.62,0.66,0.56),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Thumb",body="LeftHand",mesh="rbxassetid://106989614280154",offset=Vector3.new(0.27,0.02,-0.12),size=Vector3.new(0.14,0.3,0.16),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerArm__Cuff",body="LeftLowerArm",mesh="rbxassetid://72695811598473",offset=Vector3.new(-0,-0.4,0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerArm__Sleeve",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__PantCuff",body="LeftLowerLeg",mesh="rbxassetid://129000713226482",offset=Vector3.new(0,-0.42,0),size=Vector3.new(0.94,0.26,0.92),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__Pants",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperArm__Shoulder",body="LeftUpperArm",mesh="rbxassetid://73796391593062",offset=Vector3.new(-0,0.45,0),size=Vector3.new(0.8,0.5,0.76),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://98921195071801",offset=Vector3.new(-0.002,-0.23,0.0015),size=Vector3.new(0.79,0.86,0.73),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperLeg__Pants",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="LowerTorso__JacketHem",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="LowerTorso__Pouch",body="LowerTorso",mesh="rbxassetid://112355640287662",offset=Vector3.new(0,0.02,0.54),size=Vector3.new(0.6,0.34,0.2),color=Color3.fromRGB(84,74,66),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://140639176842122",offset=Vector3.new(0,0.035,0.28),size=Vector3.new(0.74,0.37,0.6),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Strap",body="RightFoot",mesh="rbxassetid://88280254366188",offset=Vector3.new(0,-0.04,-0.06),size=Vector3.new(0.8,0.16,0.14),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Strap.001",body="RightFoot",mesh="rbxassetid://95819211619394",offset=Vector3.new(0,-0.04,-0.3),size=Vector3.new(0.8,0.16,0.14),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Mitt",body="RightHand",mesh="rbxassetid://71955444538546",offset=Vector3.new(0,-0.03,0),size=Vector3.new(0.62,0.66,0.56),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Thumb",body="RightHand",mesh="rbxassetid://101551750860714",offset=Vector3.new(-0.27,0.02,-0.12),size=Vector3.new(0.14,0.3,0.16),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerArm__Cuff",body="RightLowerArm",mesh="rbxassetid://95297937156650",offset=Vector3.new(0,-0.4,0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerArm__Sleeve",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__PantCuff",body="RightLowerLeg",mesh="rbxassetid://96896292687543",offset=Vector3.new(0,-0.42,0),size=Vector3.new(0.94,0.26,0.92),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__Pants",body="RightLowerLeg",mesh="rbxassetid://79184593768874",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperArm__Shoulder",body="RightUpperArm",mesh="rbxassetid://123924230015346",offset=Vector3.new(0,0.45,0),size=Vector3.new(0.8,0.5,0.76),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://83013108019686",offset=Vector3.new(-0.002,-0.23,0.0015),size=Vector3.new(0.79,0.86,0.73),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperLeg__Holster",body="RightUpperLeg",mesh="rbxassetid://140361089969257",offset=Vector3.new(0.5,-0.05,0),size=Vector3.new(0.18,0.46,0.42),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperLeg__Pants",body="RightUpperLeg",mesh="rbxassetid://90152206521093",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperLeg__ThighWrap",body="RightUpperLeg",mesh="rbxassetid://121365983115647",offset=Vector3.new(0,-0.02,0),size=Vector3.new(0.96,0.36,0.94),color=Color3.fromRGB(246,244,236),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Collar",body="UpperTorso",mesh="rbxassetid://89465336066565",offset=Vector3.new(0,0.72,0),size=Vector3.new(1.56,0.24,1.32),color=Color3.fromRGB(246,244,236),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Jacket",body="UpperTorso",mesh="rbxassetid://116666271754099",offset=Vector3.new(0.007,-0.16,-0.0015),size=Vector3.new(1.76,1,0.9935),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Yoke",body="UpperTorso",mesh="rbxassetid://137191887512392",offset=Vector3.new(0,0.565,0),size=Vector3.new(1.76,0.45,0.98),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Zip",body="UpperTorso",mesh="rbxassetid://93035360707489",offset=Vector3.new(0,-0.1,-0.505),size=Vector3.new(0.07,1.1,0.03),color=Color3.fromRGB(246,244,236),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__ZipPull",body="UpperTorso",mesh="rbxassetid://131206050422567",offset=Vector3.new(0,0.45,-0.52),size=Vector3.new(0.12,0.16,0.04),color=Color3.fromRGB(200,200,208),material="SmoothPlastic",reflectance=0},
+	}},
+}
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND53">
+        <Properties>
+          <string name="Name">LookMeshes</string>
+          <ProtectedString name="Source">-- Blender-made looks (user 29/10 14:37: "produis les designs sur Blender").
+-- tools/blender/look_&lt;name&gt;.py models each costume piece in the rig's rest
+-- pose; Studio's 3D importer uploads them; tools/blender/looks_to_luau.py
+-- writes Server/LookMeshData (mesh id, body part, rest offset, size, colour)
+-- from what Studio imported. At server start each mesh is made once
+-- (AssetService:CreateMeshPartAsync); a fighter is dressed by cloning them
+-- onto his body parts, and the body parts they replace are hidden.
+-- Until the meshes are ready (or where none exist, or headless), the fighter
+-- keeps his part-built look (Server/Looks).
+local LookMeshes={templates={},state={}}
+local ok,Data=pcall(require,script.Parent.LookMeshData)
+if not ok then Data={} end
+LookMeshes.Data=Data
+
+-- Rest-pose centres of the body parts (matches tools/blender/nd_look.REST).
+LookMeshes.Rest={
+	LowerTorso=Vector3.new(0,0,0),UpperTorso=Vector3.new(0,1.15,0),Head=Vector3.new(0,2.75,0),
+	LeftUpperArm=Vector3.new(-1.24,1.1,0),RightUpperArm=Vector3.new(1.24,1.1,0),
+	LeftLowerArm=Vector3.new(-1.24,.1,0),RightLowerArm=Vector3.new(1.24,.1,0),
+	LeftHand=Vector3.new(-1.24,-.63,0),RightHand=Vector3.new(1.24,-.63,0),
+	LeftUpperLeg=Vector3.new(-.5,-1.05,0),RightUpperLeg=Vector3.new(.5,-1.05,0),
+	LeftLowerLeg=Vector3.new(-.5,-2.1,0),RightLowerLeg=Vector3.new(.5,-2.1,0),
+	LeftFoot=Vector3.new(-.5,-2.8,-.15),RightFoot=Vector3.new(.5,-2.8,-.15),
+}
+
+-- Make every mesh once, in the background.
+function LookMeshes.preload()
+	local okService,AssetService=pcall(function() return game:GetService("AssetService") end)
+	if not okService or not AssetService or not AssetService.CreateMeshPartAsync then return end
+	for fighter,look in Data do
+		if LookMeshes.state[fighter] then continue end
+		LookMeshes.state[fighter]="loading"
+		local made,left,failed={},#look.pieces,false
+		for _,piece in look.pieces do
+			task.spawn(function()
+				local good,part=pcall(function() return AssetService:CreateMeshPartAsync(piece.mesh) end)
+				if not good or not part then
+					warn("[LookMeshes] "..fighter.."/"..piece.name..": "..tostring(part))
+					failed=true
+				else
+					made[piece.name]=part
+				end
+				left-=1
+				if left==0 then
+					LookMeshes.templates[fighter]=made
+					LookMeshes.state[fighter]=if failed then "failed" else "ready"
+				end
+			end)
+		end
+	end
+end
+
+function LookMeshes.ready(fighter)
+	return LookMeshes.state[fighter]=="ready"
+end
+
+local KEEP={CurseMark=true,ByakuganVein=true,FaceEye=true,FaceMouth=true,TearLine=true,LoveMark=true}
+-- Dress `model` with the meshes of `fighter`. Returns true when it did.
+function LookMeshes.dress(model,fighter)
+	local look=Data[fighter]
+	local made=LookMeshes.templates[fighter]
+	if not look or not made then return false end
+	for _,piece in look.pieces do
+		local body=model:FindFirstChild(piece.body)
+		local template=made[piece.name]
+		if body and template then
+			local p=template:Clone()
+			p.Name=piece.name
+			p.Size=piece.size
+			p.Color=piece.color
+			p.Material=Enum.Material[piece.material or "SmoothPlastic"] or Enum.Material.SmoothPlastic
+			p.Reflectance=piece.reflectance or 0
+			p.Anchored=false;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true
+			p.CastShadow=piece.body~="Head"
+			p.CFrame=body.CFrame*CFrame.new(piece.offset)
+			local weld=Instance.new("WeldConstraint");weld.Part0=body;weld.Part1=p;weld.Parent=p
+			p.Parent=model
+		end
+	end
+	-- The body parts the meshes replace (their own meshes stay for hits).
+	for _,name in look.hide or {} do
+		local part=model:FindFirstChild(name)
+		if part and part:IsA("BasePart") then part.Transparency=1 end
+	end
+	-- The part-built costume underneath goes, except what effects drive
+	-- (curse marks, Byakugan veins) and the drawn face.
+	for _,p in model:GetChildren() do
+		if p:GetAttribute("LookPiece") and not KEEP[p.Name] then p:Destroy() end
+	end
+	model:SetAttribute("LookMeshes",fighter)
+	return true
+end
+
+return LookMeshes
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND54">
+        <Properties>
+          <string name="Name">Looks</string>
+          <ProtectedString name="Source">-- Looks of the 8 main fighters, final-beta pass (user 29/10 14:00-14:07:
+-- "inspire-toi des tenues des versions jeunes", "les cheveux sont jamais très
+-- bons", "bugs avec les bandeaux", "le masque de Kakashi ne va pas", "points
+-- transparents au poignet", "Gaara est vraiment moche", "cartoon mais joli",
+-- "il manque une expression faciale").
+--
+-- One body form for all of them (Looks.form): round limbs that overlap at the
+-- joints (no see-through wrists or elbows), mitten hands that sink into the
+-- forearm, a narrower kid's torso with the arms brought in, rounded shoes.
+-- Head gear is built against the measured head (a rounded cylinder 0.915
+-- studs in radius): bands and masks are rings just outside it, never boxes
+-- whose corners cut through. Hair is a rounded base plus cone locks. The face
+-- is drawn (Shared/Face) and carries expressions.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Face=require(Shared.Face)
+
+local Looks={}
+local A,R=CFrame.Angles,math.rad
+local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+-- A smooth cone, apex up, 1 x 1.3 x 1 studs at scale 1.
+Looks.Cone="rbxassetid://1778999"
+local CONE_W,CONE_H=1,1.3
+local HEAD_R=Face.Radius
+
+local ARMS={"LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm"}
+local LEGS={"LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg"}
+
+local function mesh(p,kind,scale,offset)
+	local m=Instance.new("SpecialMesh")
+	m.MeshType=kind
+	if scale then m.Scale=scale end
+	if offset then m.Offset=offset end
+	m.Parent=p
+	return m
+end
+-- A costume piece welded onto a body part. opts: mesh ("Head" round tube,
+-- "Sphere", "Brick"), scale, material, class ("Part" / "WedgePart"), shape.
+local function piece(model,bodyName,name,size,offset,color,opts)
+	local body=model:FindFirstChild(bodyName)
+	if not body then return nil end
+	opts=opts or {}
+	local p=Instance.new(opts.class or "Part")
+	p.Name=name;p.Size=size;p.CFrame=body.CFrame*offset;p.Color=color
+	p.Material=opts.material or Enum.Material.SmoothPlastic
+	p.Reflectance=opts.reflectance or 0
+	p.Anchored=false;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.Massless=true;p.CastShadow=opts.shadow~=false
+	p.TopSurface=Enum.SurfaceType.Smooth;p.BottomSurface=Enum.SurfaceType.Smooth
+	if opts.shape then p.Shape=opts.shape end
+	if opts.mesh=="Head" then mesh(p,Enum.MeshType.Head,opts.scale)
+	elseif opts.mesh=="Sphere" then mesh(p,Enum.MeshType.Sphere,opts.scale)
+	elseif opts.mesh=="Brick" then mesh(p,Enum.MeshType.Brick,opts.scale) end
+	if opts.transparency then p.Transparency=opts.transparency end
+	p:SetAttribute("LookPiece",true)
+	local weld=Instance.new("WeldConstraint");weld.Part0=body;weld.Part1=p;weld.Parent=p
+	p.Parent=model
+	return p
+end
+Looks.piece=piece
+local function paint(model,names,color)
+	for _,name in names do local part=model:FindFirstChild(name);if part then part.Color=color end end
+end
+-- A ring round a limb or the head: an exact cylinder of `dia` at height `y`.
+-- (A Head mesh keeps a minimum thickness, about a quarter of its width: a
+-- flat band drawn with one comes out twice too tall.)
+local UPRIGHT=A(0,0,math.pi/2)
+local function ring(model,body,name,y,height,dia,color,opts)
+	opts=opts or {};opts.shape=Enum.PartType.Cylinder
+	return piece(model,body,name,Vector3.new(height,dia,dia),CFrame.new(0,y,0)*UPRIGHT,color,opts)
+end
+-- A cone lock on the head: from `base` (head space) along `dir`, `len` long,
+-- `w` x `d` thick at the root.
+local function lock(model,name,base,dir,len,w,d,color,bodyName)
+	local unit=dir.Unit
+	local center=base+unit*len*.5
+	local up=if math.abs(unit.Y)&gt;.95 then Vector3.zAxis else Vector3.yAxis
+	local cf=CFrame.lookAt(center,center+unit,up)*A(-math.pi/2,0,0)
+	local p=piece(model,bodyName or "Head",name,Vector3.new(.2,.2,.2),cf,color)
+	if p then
+		local m=Instance.new("SpecialMesh");m.MeshType=Enum.MeshType.FileMesh;m.MeshId=Looks.Cone
+		m.Scale=Vector3.new(w/CONE_W,len/CONE_H,(d or w)/CONE_W);m.Parent=p
+	end
+	return p
+end
+Looks.lock=lock
+-- A soft rounded mass (ellipsoid) on any body part.
+local function blob(model,body,name,size,cf,color,opts)
+	opts=opts or {};opts.mesh="Sphere"
+	return piece(model,body,name,size,cf,color,opts)
+end
+
+-- Body form: shared by the eight. Moves the arms in, rounds every limb.
+function Looks.form(model,skin)
+	local upper=model:FindFirstChild("UpperTorso")
+	local lower=model:FindFirstChild("LowerTorso")
+	if upper then mesh(upper,Enum.MeshType.Brick,Vector3.new(.84,1,.9)) end
+	if lower then mesh(lower,Enum.MeshType.Brick,Vector3.new(.82,1,.88)) end
+	for _,side in {"Left","Right"} do
+		local s=if side=="Left" then -1 else 1
+		local shoulder=upper and upper:FindFirstChild(side.."Shoulder")
+		local arm=model:FindFirstChild(side.."UpperArm")
+		if shoulder and arm and upper then
+			-- The arm moves in with the narrower torso: shift the whole chain.
+			local c0=shoulder.C0
+			local target=CFrame.new(s*.84,c0.Position.Y,c0.Position.Z)
+			local delta=upper.CFrame*target*shoulder.C1:Inverse()*arm.CFrame:Inverse()
+			shoulder.C0=target
+			for _,name in {side.."UpperArm",side.."LowerArm",side.."Hand"} do
+				local p=model:FindFirstChild(name);if p then p.CFrame=delta*p.CFrame end
+			end
+		end
+		local ua=model:FindFirstChild(side.."UpperArm");if ua then mesh(ua,Enum.MeshType.Head,Vector3.new(.9,1.16,.9)) end
+		local la=model:FindFirstChild(side.."LowerArm");if la then mesh(la,Enum.MeshType.Head,Vector3.new(.88,1.22,.88)) end
+		local hand=model:FindFirstChild(side.."Hand")
+		if hand then
+			-- A mitten: an ellipsoid that sinks into the forearm, and a thumb.
+			mesh(hand,Enum.MeshType.Sphere,Vector3.new(.88,1.6,.82),Vector3.new(0,.06,0))
+			if skin then hand.Color=skin end
+			blob(model,side.."Hand","Thumb",Vector3.new(.22,.36,.22),CFrame.new(-s*.28,.02,-.14)*A(0,0,R(-s*22)),skin or hand.Color)
+		end
+		local ul=model:FindFirstChild(side.."UpperLeg");if ul then mesh(ul,Enum.MeshType.Head,Vector3.new(.94,1.2,.94)) end
+		local ll=model:FindFirstChild(side.."LowerLeg");if ll then mesh(ll,Enum.MeshType.Head,Vector3.new(.9,1.2,.9)) end
+		local foot=model:FindFirstChild(side.."Foot")
+		if foot then mesh(foot,Enum.MeshType.Sphere,Vector3.new(.92,1.05,1),Vector3.new(0,.02,-.04)) end
+		-- A ball at the shoulder closes the joint whatever the arm does.
+		if ua then blob(model,side.."UpperArm","ShoulderBall",Vector3.new(.76,.76,.76),CFrame.new(0,.36,0),ua.Color) end
+	end
+	-- The head (user 29/10 14:33: the ball was "beaucoup trop rond"): the
+	-- classic rounded Head mesh, 1.8 across and 1.86 tall (Shared/Face.Head);
+	-- a neck under it.
+	local head=model:FindFirstChild("Head")
+	local neck=upper and upper:FindFirstChild("Neck")
+	if head and neck and neck:IsA("Motor6D") then
+		-- The head sits a little higher, on a visible neck, so the round chin
+		-- clears the shoulders and the collars.
+		local target=CFrame.new(0,1.05,0)
+		head.CFrame=upper.CFrame*target*neck.C1:Inverse()
+		neck.C0=target
+	end
+	if head then
+		local m=head:FindFirstChildOfClass("SpecialMesh") or mesh(head,Enum.MeshType.Head)
+		m.MeshType=Enum.MeshType.Head
+		m.Scale=Vector3.new(1.2,1.24,1.2)
+		if skin then head.Color=skin end
+		piece(model,"UpperTorso","NeckSkin",Vector3.new(.62,.6,.62),CFrame.new(0,.88,.02),skin or head.Color,{mesh="Head"})
+	end
+end
+-- After the costume painted the limbs: the joint balls take their limb's colour.
+local function settle(model)
+	for _,p in model:GetChildren() do
+		if p.Name=="ShoulderBall" then
+			local weld=p:FindFirstChildOfClass("WeldConstraint")
+			if weld and weld.Part0 then p.Color=weld.Part0.Color end
+		end
+	end
+end
+
+-- Sandals: dark shoe over the foot, the toes bare.
+local function sandals(model,color,skin)
+	for _,side in {"Left","Right"} do
+		local foot=model:FindFirstChild(side.."Foot");if foot then foot.Color=color end
+		blob(model,side.."Foot","Toes",Vector3.new(.62,.26,.36),CFrame.new(0,.06,-.42),skin)
+		piece(model,side.."Foot","Sole",Vector3.new(.74,.08,1.1),CFrame.new(0,-.19,-.04),rgb(46,40,40),{mesh="Sphere"})
+		ring(model,side.."LowerLeg","Strap",-.5,.14,.76,color)
+	end
+end
+
+-- The forehead protector: a cloth ring just outside the head (and the hair
+-- base), a curved metal plate in three facets, an emblem, two tails.
+local function headband(model,cloth,opts)
+	opts=opts or {}
+	local y=opts.y or .42
+	-- An elliptical band (a Cylinder mesh scales on both axes): it hugs the
+	-- forehead and still wraps the hair at the back.
+	local r=opts.radius or 1.08
+	local z=opts.z or .15
+	local band=piece(model,"Head","Headband",Vector3.new(.26,2.0,r*2),CFrame.new(0,y,z)*UPRIGHT,cloth)
+	if band then mesh(band,Enum.MeshType.Cylinder) end
+	local metal=rgb(188,196,208)
+	local front=-(r-z)
+	for k=-1,1 do
+		local a=k*17
+		local px=math.sin(R(a))*(r+.012)
+		local pz=z-math.cos(R(a))*(r+.012)
+		local plate=piece(model,"Head","HeadbandPlate",Vector3.new(if k==0 then .34 else .26,.3,.04),
+			CFrame.new(px,y,pz)*A(0,R(-a),0),metal,{reflectance=.12})
+		if k==0 and plate and UDim2~=nil and UDim~=nil then
+			-- An original emblem: a ring with a tail, engraved.
+			local gui=Instance.new("SurfaceGui");gui.Face=Enum.NormalId.Front;gui.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud;gui.PixelsPerStud=300
+			gui.LightInfluence=.8;gui.Parent=plate
+			local ringFrame=Instance.new("Frame");ringFrame.AnchorPoint=Vector2.new(.5,.5);ringFrame.Position=UDim2.fromScale(.46,.5);ringFrame.Size=UDim2.fromOffset(46,46)
+			ringFrame.BackgroundTransparency=1;ringFrame.Parent=gui
+			Instance.new("UICorner",ringFrame).CornerRadius=UDim.new(.5,0)
+			local stroke=Instance.new("UIStroke");stroke.Thickness=7;stroke.Color=rgb(92,98,112);stroke.Parent=ringFrame
+			local tail=Instance.new("Frame");tail.AnchorPoint=Vector2.new(0,.5);tail.Position=UDim2.fromScale(.56,.36);tail.Size=UDim2.fromOffset(30,7)
+			tail.Rotation=-35;tail.BackgroundColor3=rgb(92,98,112);tail.BorderSizePixel=0;tail.Parent=gui
+			if opts.slashed then
+				local cut=Instance.new("Frame");cut.AnchorPoint=Vector2.new(.5,.5);cut.Position=UDim2.fromScale(.5,.5);cut.Size=UDim2.new(1.2,0,0,6)
+				cut.Rotation=-12;cut.BackgroundColor3=rgb(40,40,46);cut.BorderSizePixel=0;cut.Parent=gui
+			end
+		end
+	end
+	if opts.tails~=false then
+		for _,s in {-1,1} do
+			piece(model,"Head","HeadbandTail",Vector3.new(.2,.72,.06),CFrame.new(s*.16,y-.3,z+r-.02)*A(R(14),0,R(s*12)),cloth)
+		end
+	end
+	return front
+end
+Looks.headband=headband
+
+-- The rounded hair base over the crown and the back of the head.
+-- The rounded hair base: an ellipsoid set up and back on the head, so it
+-- covers the crown, the back and the temples and leaves the face clear (the
+-- hairline crosses the forehead about 0.65 up). The headband wraps it.
+local function hairBase(model,color,opts)
+	opts=opts or {}
+	return piece(model,"Head","HairBase",Vector3.new(1.96,1.9,2.0),CFrame.new(0,.14+(opts.lift or 0),.24),color,{mesh="Sphere",shadow=false})
+end
+
+local function hideOld(model)
+	local hair=model:FindFirstChild("Hair");if hair then hair.Transparency=1 end
+	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
+	local eyes=model:FindFirstChild("Eyes");if eyes then eyes.Transparency=1 end
+end
+
+-- A drawn emblem on the back (or anywhere): a thin plate with a SurfaceGui.
+local function badge(model,body,name,size,cf,draw)
+	local p=piece(model,body,name,Vector3.new(size.X,size.Y,.02),cf,Color3.new(1,1,1),{transparency=1,shadow=false})
+	if not p then return end
+	if UDim2==nil or UDim==nil then return p end -- headless tests: no UI classes
+	local gui=Instance.new("SurfaceGui");gui.Name="Drawing";gui.Face=Enum.NormalId.Front;gui.SizingMode=Enum.SurfaceGuiSizingMode.PixelsPerStud;gui.PixelsPerStud=200
+	gui.LightInfluence=.7;gui.Parent=p
+	draw(gui)
+	return p
+end
+local function disc(parent,pos,size,color,stroke,strokeColor)
+	local f=Instance.new("Frame");f.AnchorPoint=Vector2.new(.5,.5);f.Position=pos;f.Size=size;f.BackgroundColor3=color;f.BorderSizePixel=0
+	if color==nil then f.BackgroundTransparency=1 end
+	Instance.new("UICorner",f).CornerRadius=UDim.new(.5,0)
+	if stroke then local s=Instance.new("UIStroke");s.Thickness=stroke;s.Color=strokeColor or Color3.new();s.Parent=f end
+	f.Parent=parent
+	return f
+end
+-- Back is +Z: a badge there faces out of the back.
+local BACK=A(0,math.pi,0)
+
+Looks.dressers={}
+local D=Looks.dressers
+
+-- Naruto (12-13): the orange jumpsuit with the navy shoulders, the big white
+-- collar, a red swirl on the back, the blue-cloth headband, wild blond spikes,
+-- whisker marks, a grin never far away.
+D.Naruto=function(model,def)
+	local skin=rgb(252,220,186)
+	local hair,hairShade=rgb(255,212,64),rgb(236,170,34)
+	local orange,orangeDark=rgb(250,128,30),rgb(220,96,20)
+	local navy=rgb(34,48,104)
+	local white=rgb(246,244,236)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso"},orange);paint(model,ARMS,orange);paint(model,LEGS,orange)
+	-- Navy yoke over the shoulders, front and back.
+	piece(model,"UpperTorso","Yoke",Vector3.new(1.72,.44,.94),CFrame.new(0,.5,0),navy,{mesh="Brick"})
+	for _,side in {"Left","Right"} do ring(model,side.."UpperArm","Sleeve",.3,.5,.8,navy) end
+	-- The big white collar round the base of the head; the zip.
+	ring(model,"UpperTorso","Collar",.72,.22,1.62,white)
+	piece(model,"UpperTorso","Zip",Vector3.new(.07,.98,.03),CFrame.new(0,-.12,-.47),white)
+	piece(model,"UpperTorso","ZipPull",Vector3.new(.12,.16,.05),CFrame.new(0,.36,-.48),rgb(200,200,206),{mesh="Sphere"})
+	badge(model,"UpperTorso","Swirl",Vector2.new(.8,.8),CFrame.new(0,-.08,.465)*BACK,function(gui)
+		disc(gui,UDim2.fromScale(.5,.5),UDim2.fromScale(.84,.84),rgb(214,40,34))
+		disc(gui,UDim2.fromScale(.56,.46),UDim2.fromScale(.5,.5),orange)
+		disc(gui,UDim2.fromScale(.5,.5),UDim2.fromScale(.2,.2),rgb(214,40,34))
+	end)
+	-- Cuffs rolled at the wrists and ankles, white bandage and holster on the right thigh.
+	for _,side in {"Left","Right"} do
+		ring(model,side.."LowerArm","Cuff",-.4,.2,.72,orangeDark)
+		ring(model,side.."LowerLeg","PantCuff",-.36,.22,.8,orangeDark)
+	end
+	ring(model,"RightUpperLeg","ThighWrap",-.05,.34,.86,white)
+	piece(model,"RightUpperLeg","Holster",Vector3.new(.2,.46,.42),CFrame.new(.42,-.05,0),navy,{mesh="Brick"})
+	piece(model,"LowerTorso","Pouch",Vector3.new(.6,.34,.24),CFrame.new(0,.06,.5),rgb(84,74,66),{mesh="Brick"})
+	sandals(model,navy,skin)
+	-- Hair: a round base, spikes all round, the fringe over the band.
+	hairBase(model,hair)
+	headband(model,rgb(40,70,160))
+	local spikes={
+		{0,.9,.1, 0,1,.2, 1.0,.5},{-.45,.82,.2, -.55,.8,.3, .95,.46},{.45,.82,.2, .55,.8,.3, .95,.46},
+		{-.2,.78,.55, -.2,.55,1, .9,.5},{.25,.78,.55, .25,.55,1, .9,.5},{0,.4,.85, 0,.1,1, .85,.52},
+		{-.55,.36,.7, -.6,0,.9, .8,.46},{.55,.36,.7, .6,0,.9, .8,.46},{-.85,.6,.1, -1,.45,.15, .7,.42},
+		{.85,.6,.1, 1,.45,.15, .7,.42},{-.8,.3,.45, -.9,-.1,.5, .66,.4},{.8,.3,.45, .9,-.1,.5, .66,.4},
+		{0,-.1,.9, 0,-.6,.8, .6,.44},{-.4,.95,-.3, -.4,1,-.3, .6,.38},{.4,.95,-.3, .4,1,-.3, .6,.38},
+	}
+	for i,s in spikes do lock(model,"HairSpike",Vector3.new(s[1],s[2],s[3]),Vector3.new(s[4],s[5],s[6]),s[7],s[8],s[8]*.8,if i%3==0 then hairShade else hair) end
+	-- Fringe: short spikes falling over the band.
+	for _,x in {-.52,-.26,0,.26,.52} do
+		lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.35,-1,-.8),.62,.34,.22,if x==0 then hairShade else hair)
+	end
+	for _,s in {-1,1} do lock(model,"SideLock",Vector3.new(s*.9,.4,-.32),Vector3.new(s*.25,-1,-.2),.6,.28,.2,hair) end
+	Face.build(model,{iris=rgb(60,140,240),skin=skin,brow=rgb(214,150,40),lash=rgb(40,30,30),cheeks="whiskers",mood="fierce"})
+	settle(model)
+end
+
+-- Sasuke (12): navy high-collared short-sleeve shirt, a red-and-white roundel
+-- on the back, white shorts, pale arm warmers, leg wraps, blue-black hair
+-- with the spikes swept back and long bangs framing the face.
+D.Sasuke=function(model,def)
+	local skin=rgb(250,226,204)
+	local hair,hairShade=rgb(30,34,56),rgb(46,54,88)
+	local navy,navyDark=rgb(36,46,96),rgb(26,32,70)
+	local white=rgb(238,236,230)
+	local warm=rgb(222,222,230)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LeftUpperArm","RightUpperArm"},navy)
+	paint(model,{"LeftLowerArm","RightLowerArm"},warm)
+	paint(model,{"LowerTorso","LeftUpperLeg","RightUpperLeg"},white)
+	paint(model,{"LeftLowerLeg","RightLowerLeg"},skin)
+	-- The high collar, open at the front.
+	ring(model,"UpperTorso","HighCollar",.78,.42,1.7,navy)
+	for _,side in {"Left","Right"} do
+		ring(model,side.."UpperArm","SleeveHem",-.22,.12,.76,navyDark)
+		ring(model,side.."LowerArm","WarmerTop",.42,.14,.72,rgb(200,200,210))
+		ring(model,side.."LowerLeg","LegWrap",.26,.46,.8,white)
+		ring(model,side.."UpperLeg","ShortsHem",-.28,.12,.86,rgb(214,212,206))
+	end
+	piece(model,"LowerTorso","Belt",Vector3.new(1.7,.16,.92),CFrame.new(0,.3,0),rgb(110,90,150),{mesh="Brick"})
+	badge(model,"UpperTorso","Roundel",Vector2.new(.62,.62),CFrame.new(0,.08,.465)*BACK,function(gui)
+		local top=Instance.new("Frame");top.Size=UDim2.fromScale(1,.5);top.BackgroundTransparency=1;top.ClipsDescendants=true;top.Parent=gui
+		disc(top,UDim2.fromScale(.5,1),UDim2.fromScale(.92,1.84),rgb(214,40,40))
+		local bottom=Instance.new("Frame");bottom.Position=UDim2.fromScale(0,.5);bottom.Size=UDim2.fromScale(1,.5);bottom.BackgroundTransparency=1;bottom.ClipsDescendants=true;bottom.Parent=gui
+		disc(bottom,UDim2.fromScale(.5,0),UDim2.fromScale(.92,1.84),rgb(246,244,240))
+	end)
+	sandals(model,navyDark,skin)
+	hairBase(model,hair)
+	headband(model,navyDark)
+	-- Spikes swept back and up from the crown.
+	for i,s in {{0,.7,.6, 0,.6,1, 1.0,.56},{-.38,.62,.6, -.45,.5,1, .92,.5},{.38,.62,.6, .45,.5,1, .92,.5},
+		{-.2,.3,.85, -.25,.35,1, .9,.5},{.2,.3,.85, .25,.35,1, .9,.5},{0,.9,.25, 0,.9,.6, .8,.5},{-.7,.5,.4, -.8,.3,.8, .7,.44},{.7,.5,.4, .8,.3,.8, .7,.44}} do
+		lock(model,"HairSpike",Vector3.new(s[1],s[2],s[3]),Vector3.new(s[4],s[5],s[6]),s[7],s[8],s[8]*.7,if i%2==0 then hairShade else hair)
+	end
+	-- Long bangs down both sides of the face, a short fringe in the middle.
+	for _,s in {-1,1} do
+		lock(model,"Bang",Vector3.new(s*.8,.34,-.44),Vector3.new(s*.06,-1,-.12),1.15,.44,.26,hair)
+		lock(model,"SideHair",Vector3.new(s*.95,.5,0),Vector3.new(s*.2,-1,.1),.95,.36,.5,hair)
+	end
+	for _,x in {-.34,0,.34} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.3,-1,-.8),.78,.38,.24,hair) end
+	-- The cursed seal (hidden until the awakening): three marks on the neck.
+	for k=0,2 do
+		local mark=piece(model,"Head","CurseMark",Vector3.new(.12,.2,.03),Face.onHead(-58-k*7,-.42+k*.16,.01)*A(0,0,R(20-k*15)),rgb(14,10,16),{mesh="Sphere",shadow=false})
+		if mark then mark.Transparency=1 end
+	end
+	Face.build(model,{iris=rgb(46,46,70),irisDark=rgb(16,16,26),skin=skin,brow=rgb(30,34,56),lash=rgb(20,20,30),mood="cool"})
+	settle(model)
+end
+
+-- Gaara (12): the deep red-brown coat to the knees over grey trousers, the
+-- strap across the chest holding a big gourd on his back, short spiky
+-- brick-red hair, no brows, the dark rings round pale teal eyes, the red mark
+-- on his forehead.
+D.Gaara=function(model,def)
+	local skin=rgb(250,228,212)
+	local hair,hairShade=rgb(190,52,40),rgb(150,36,30)
+	local coat,coatDark=rgb(122,46,44),rgb(92,32,34)
+	local grey=rgb(110,104,104)
+	local strap=rgb(214,200,170)
+	local gourd,gourdDark=rgb(214,170,110),rgb(170,126,78)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso"},coat);paint(model,ARMS,coat)
+	paint(model,{"LeftUpperLeg","RightUpperLeg"},coat);paint(model,{"LeftLowerLeg","RightLowerLeg"},grey)
+	-- The coat's skirt over the thighs, split at the front.
+	for _,s in {-1,1} do
+		piece(model,"LowerTorso","CoatSkirt",Vector3.new(.84,1.3,.98),CFrame.new(s*.42,-.68,.02)*A(0,0,R(s*-4)),coat,{mesh="Brick"})
+	end
+	piece(model,"LowerTorso","CoatHem",Vector3.new(1.74,.12,1.0),CFrame.new(0,-1.3,.02),coatDark,{mesh="Brick"})
+	piece(model,"LowerTorso","Sash",Vector3.new(1.72,.22,.94),CFrame.new(0,.3,0),coatDark,{mesh="Brick"})
+	ring(model,"UpperTorso","Collar",.74,.26,1.66,coatDark)
+	for _,side in {"Left","Right"} do
+		ring(model,side.."LowerArm","Cuff",-.38,.2,.74,coatDark)
+		ring(model,side.."LowerLeg","Wrap",-.32,.24,.78,rgb(226,220,206))
+	end
+	-- The gourd strap: right shoulder to left hip, front and back.
+	piece(model,"UpperTorso","GourdStrap",Vector3.new(.2,2.0,.05),CFrame.new(0,-.02,-.475)*A(0,0,R(-36)),strap)
+	piece(model,"UpperTorso","GourdStrap",Vector3.new(.2,2.0,.05),CFrame.new(0,-.02,.475)*A(0,0,R(36)),strap)
+	piece(model,"UpperTorso","StrapClasp",Vector3.new(.3,.3,.06),CFrame.new(.24,.3,-.5)*A(0,0,R(-36)),rgb(180,186,196),{reflectance=.1})
+	-- The gourd: a big round belly, a smaller top, the neck and its cork.
+	blob(model,"UpperTorso","Gourd",Vector3.new(1.8,1.8,1.5),CFrame.new(.05,-.35,1.18),gourd)
+	blob(model,"UpperTorso","GourdTop",Vector3.new(1.18,1.18,1.0),CFrame.new(.22,.72,1.12),gourd)
+	piece(model,"UpperTorso","GourdWaist",Vector3.new(.26,.9,.9),CFrame.new(.14,.26,1.15)*UPRIGHT,gourdDark,{shape=Enum.PartType.Cylinder})
+	piece(model,"UpperTorso","GourdNeck",Vector3.new(.36,.4,.36),CFrame.new(.3,1.38,1.1)*A(0,0,R(-12)),gourdDark,{mesh="Head"})
+	blob(model,"UpperTorso","GourdCork",Vector3.new(.3,.22,.3),CFrame.new(.33,1.6,1.1),rgb(120,86,56))
+	-- Hair: short, messy, lifted at the front.
+	hairBase(model,hair)
+	for i,s in {{0,.92,.05, 0,1,.1, .62,.46},{-.42,.85,.1, -.6,.9,.1, .6,.42},{.42,.85,.1, .6,.9,.1, .6,.42},
+		{-.25,.78,.5, -.3,.6,1, .62,.44},{.25,.78,.5, .3,.6,1, .62,.44},{0,.45,.85, 0,.2,1, .6,.46},
+		{-.8,.55,.2, -1,.3,.3, .52,.4},{.8,.55,.2, 1,.3,.3, .52,.4},{-.6,.25,.65, -.7,-.1,.8, .52,.4},{.6,.25,.65, .7,-.1,.8, .52,.4},
+		{-.3,.92,-.4, -.35,.85,-.6, .5,.36},{.3,.92,-.4, .35,.85,-.6, .5,.36}} do
+		lock(model,"HairSpike",Vector3.new(s[1],s[2],s[3]),Vector3.new(s[4],s[5],s[6]),s[7],s[8],s[8]*.8,if i%3==0 then hairShade else hair)
+	end
+	for _,x in {-.55,-.28,.02,.3,.56} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.5,-.9,-.8),.5,.32,.2,hair) end
+	-- The mark above his left eye.
+	badge(model,"Head","LoveMark",Vector2.new(.34,.34),Face.onHead(-20,.46,.01),function(gui)
+		local t=Instance.new("TextLabel");t.Size=UDim2.fromScale(1,1);t.BackgroundTransparency=1;t.Text="愛";t.TextScaled=true
+		t.Font=Enum.Font.GothamBold;t.TextColor3=rgb(200,36,40);t.Parent=gui
+	end)
+	Face.build(model,{iris=rgb(120,200,190),irisDark=rgb(60,140,130),style="ringed",skin=skin,brow=false,lash=rgb(30,20,24),
+		ring=rgb(44,30,36),sclera=Vector2.new(.33,.26),mood="stare",lids=.12})
+	settle(model)
+end
+
+-- Rock Lee (13): the green jumpsuit, orange leg warmers, the headband worn as
+-- a belt, bandaged hands, a glossy black bowl cut, round eyes, huge brows.
+D["Rock Lee"]=function(model,def)
+	local skin=rgb(252,222,192)
+	local green,greenDark=rgb(56,170,74),rgb(40,132,58)
+	local warmer=rgb(250,134,40)
+	local hair=rgb(16,16,22)
+	local wrap=rgb(244,240,228)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso"},green);paint(model,ARMS,green);paint(model,LEGS,green)
+	-- Vest-cut seams of the jumpsuit, the zip.
+	piece(model,"UpperTorso","Seam",Vector3.new(.06,1.3,.03),CFrame.new(0,-.04,-.465),greenDark)
+	ring(model,"UpperTorso","Collar",.72,.2,1.6,greenDark)
+	-- The headband as a belt, the plate at the front.
+	local belt=rgb(190,40,40)
+	piece(model,"LowerTorso","Belt",Vector3.new(1.72,.26,.94),CFrame.new(0,.28,0),belt,{mesh="Brick"})
+	piece(model,"LowerTorso","BeltPlate",Vector3.new(.5,.3,.05),CFrame.new(0,.28,-.48),rgb(188,196,208),{reflectance=.12})
+	-- Orange leg warmers, rolled at the top; bandages on the hands and forearms.
+	for _,side in {"Left","Right"} do
+		ring(model,side.."LowerLeg","LegWarmer",-.05,.86,.86,warmer)
+		ring(model,side.."LowerLeg","WarmerRoll",.4,.2,.9,rgb(230,110,30))
+		ring(model,side.."LowerArm","Wrap",-.12,.6,.72,wrap)
+		local hand=model:FindFirstChild(side.."Hand");if hand then hand.Color=wrap end
+	end
+	for _,p in model:GetChildren() do if p.Name=="Thumb" then p.Color=wrap end end
+	sandals(model,rgb(40,46,66),skin)
+	-- The bowl cut: a glossy round helmet, a blunt fringe, short at the nape.
+	-- (a Head mesh: its flat bottom is the straight-cut fringe), the back
+	-- of the head, short sideburns.
+	piece(model,"Head","HairBase",Vector3.new(2.04,.98,2.06),CFrame.new(0,.63,.06),hair,{mesh="Head",reflectance=.03,shadow=false})
+	blob(model,"Head","BackHair",Vector3.new(1.92,1.6,1.3),CFrame.new(0,.12,.36),hair,{reflectance=.03,shadow=false})
+	for _,s in {-1,1} do blob(model,"Head","SideHair",Vector3.new(.26,.7,.5),CFrame.new(s*.86,0,-.12),hair) end
+	Face.build(model,{style="round",iris=rgb(20,20,24),irisDark=rgb(10,10,12),pupil=false,skin=skin,brow=hair,browThick=.12,browWide=1.25,
+		lash=rgb(16,16,20),lashThick=.06,sclera=Vector2.new(.36,.36),mood="fierce"})
+	settle(model)
+end
+
+-- Neji (13): the pale high-collared shirt with wide sleeves, dark shorts, the
+-- bandaged right thigh and arm, long dark-brown hair tied low, the headband,
+-- pale eyes without pupils.
+D.Neji=function(model,def)
+	local skin=rgb(252,228,206)
+	local hair,hairShade=rgb(70,46,36),rgb(96,64,48)
+	local shirt,shirtShade=rgb(236,230,216),rgb(204,196,180)
+	local shorts=rgb(64,58,62)
+	local wrap=rgb(246,244,238)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso"},shirt);paint(model,ARMS,shirt)
+	paint(model,{"LowerTorso","LeftUpperLeg","RightUpperLeg"},shorts);paint(model,{"LeftLowerLeg","RightLowerLeg"},skin)
+	-- The shirt hangs over the hips, wide sleeves, a high collar.
+	piece(model,"LowerTorso","ShirtHem",Vector3.new(1.74,.8,.96),CFrame.new(0,.12,0),shirt,{mesh="Brick"})
+	piece(model,"UpperTorso","Fold",Vector3.new(.06,1.1,.03),CFrame.new(-.14,-.05,-.465)*A(0,0,R(8)),shirtShade)
+	ring(model,"UpperTorso","HighCollar",.76,.38,1.66,shirt)
+	for _,side in {"Left","Right"} do
+		ring(model,side.."LowerArm","WideSleeve",-.05,.8,.86,shirt)
+		ring(model,side.."LowerLeg","LegWrap",.12,.6,.8,wrap)
+	end
+	ring(model,"RightUpperLeg","ThighWrap",0,.5,.88,wrap)
+	piece(model,"RightUpperLeg","Holster",Vector3.new(.2,.42,.4),CFrame.new(.43,-.05,0),rgb(50,46,52),{mesh="Brick"})
+	sandals(model,rgb(50,46,58),skin)
+	-- Long straight hair: a base, bangs parted and framing, the long tail.
+	hairBase(model,hair)
+	headband(model,rgb(42,42,54))
+	for _,s in {-1,1} do
+		lock(model,"Bang",Vector3.new(s*.8,.34,-.44),Vector3.new(s*.03,-1,-.1),1.25,.44,.26,hair)
+		blob(model,"Head","SideHair",Vector3.new(.34,1.5,.9),CFrame.new(s*.9,-.2,.22),hair)
+	end
+	blob(model,"Head","BackHair",Vector3.new(1.8,1.6,.6),CFrame.new(0,-.25,.84),hair)
+	ring(model,"Head","HairTie",-.95,.14,.46,rgb(240,236,226))
+	-- The tail falls down the back, from the head down to the waist.
+	blob(model,"UpperTorso","HairTail",Vector3.new(.5,1.7,.34),CFrame.new(0,-.1,.62),hair)
+	lock(model,"HairTip",Vector3.new(0,-.9,.62),Vector3.new(0,-1,.05),.6,.48,.32,hairShade,"UpperTorso")
+	-- Byakugan veins at the temples (shown while focused).
+	for _,s in {-1,1} do
+		for k=0,2 do
+			local vein=piece(model,"Head","ByakuganVein",Vector3.new(.03,.2,.02),Face.onHead(s*(44+k*4),.0+(k-1)*.08,.012)*A(0,0,R(s*(30-k*30))),rgb(150,138,196),{shadow=false})
+			if vein then vein.Transparency=1 end
+		end
+	end
+	Face.build(model,{style="pale",pupil=false,iris=rgb(236,232,250),skin=skin,brow=hair,lash=rgb(40,30,30),mood="cool",lids=.08})
+	settle(model)
+end
+
+-- Itachi (13, the ANBU years; user 29/10 14:33 with a reference): the dark
+-- short-sleeved shirt with its high collar, the pale ANBU chest armour on
+-- shoulder straps with its padded waist band, long arm guards, dark
+-- trousers, the headband, long bangs and a low ponytail, the lines under his
+-- eyes, the Sharingan, and a sword on his back, longer than Kakashi's tanto
+-- (hilt over the right shoulder; hilt parts are Sheathed*).
+D.Itachi=function(model,def)
+	local skin=rgb(248,224,204)
+	local hair,hairShade=rgb(24,24,32),rgb(44,44,58)
+	local shirt=rgb(32,32,44)
+	local armor,armorShade=rgb(186,184,204),rgb(150,148,170)
+	local pants=rgb(48,48,62)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm"},shirt)
+	paint(model,{"LeftLowerArm","RightLowerArm"},skin)
+	paint(model,LEGS,pants)
+	ring(model,"UpperTorso","HighCollar",.8,.44,1.7,shirt)
+	-- The armour: front and back plates, straps over the shoulders, a seam,
+	-- two buckles, the padded band round the waist.
+	piece(model,"UpperTorso","ChestArmor",Vector3.new(1.56,1.12,1.0),CFrame.new(0,-.1,0),armor,{mesh="Brick"})
+	for _,s in {-1,1} do
+		piece(model,"UpperTorso","ArmorStrap",Vector3.new(.3,.12,1.02),CFrame.new(s*.42,.56,0),armor,{mesh="Brick"})
+		piece(model,"UpperTorso","ArmorBuckle",Vector3.new(.22,.16,.05),CFrame.new(s*.5,-.44,-.52)*A(0,0,R(s*-30)),armorShade)
+	end
+	piece(model,"UpperTorso","ArmorSeam",Vector3.new(.04,1.0,.03),CFrame.new(.06,-.1,-.51),armorShade)
+	piece(model,"LowerTorso","ArmorBand",Vector3.new(1.86,.34,1.1),CFrame.new(0,.32,0),armor,{mesh="Brick"})
+	piece(model,"LowerTorso","ArmorBandEdge",Vector3.new(1.88,.06,1.12),CFrame.new(0,.15,0),armorShade,{mesh="Brick"})
+	-- Short sleeves; long arm guards with a pale plate on the outside.
+	for _,side in {"Left","Right"} do
+		local s=if side=="Left" then -1 else 1
+		ring(model,side.."UpperArm","SleeveHem",-.06,.12,.78,rgb(24,24,34))
+		ring(model,side.."LowerArm","ArmGuard",-.1,.72,.76,rgb(30,30,42))
+		piece(model,side.."LowerArm","GuardPlate",Vector3.new(.1,.84,.5),CFrame.new(s*.39,-.08,0),armor)
+		ring(model,side.."LowerArm","GuardStrap",.12,.07,.8,armorShade)
+		ring(model,side.."LowerArm","GuardStrap",-.36,.07,.8,armorShade)
+		ring(model,side.."LowerLeg","LegWrap",-.32,.3,.78,rgb(226,224,232))
+	end
+	sandals(model,rgb(34,34,46),skin)
+	-- The sword across the back: long sheath, round guard, a hilt wrapped in
+	-- a diamond pattern, over the right shoulder.
+	local axis=CFrame.new(.08,0,.62)*A(0,0,R(-28))
+	piece(model,"UpperTorso","Sheath",Vector3.new(.22,2.6,.2),axis*CFrame.new(0,-.3,0),rgb(22,22,28),{mesh="Head"})
+	piece(model,"UpperTorso","SheathTip",Vector3.new(.1,.24,.24),axis*CFrame.new(0,-1.62,0)*UPRIGHT,rgb(150,150,160),{shape=Enum.PartType.Cylinder})
+	piece(model,"UpperTorso","SheathedGuard",Vector3.new(.06,.4,.4),axis*CFrame.new(0,1.02,0)*UPRIGHT,rgb(40,40,48),{shape=Enum.PartType.Cylinder})
+	piece(model,"UpperTorso","SheathedHilt",Vector3.new(.16,.78,.16),axis*CFrame.new(0,1.44,0),rgb(232,228,214),{mesh="Head"})
+	for k=0,3 do
+		piece(model,"UpperTorso","SheathedWrap",Vector3.new(.17,.08,.17),axis*CFrame.new(0,1.16+k*.18,0)*A(0,R(45),R(30)),rgb(26,26,34),{mesh="Brick"})
+	end
+	piece(model,"UpperTorso","SheathedPommel",Vector3.new(.05,.18,.18),axis*CFrame.new(0,1.84,0)*UPRIGHT,rgb(40,40,48),{shape=Enum.PartType.Cylinder})
+	hairBase(model,hair)
+	headband(model,rgb(36,42,62))
+	for _,s in {-1,1} do
+		lock(model,"Bang",Vector3.new(s*.8,.34,-.44),Vector3.new(s*.03,-1,-.1),1.3,.44,.26,hair)
+		blob(model,"Head","SideHair",Vector3.new(.3,1.1,.8),CFrame.new(s*.9,-.05,.2),hair)
+	end
+	for _,x in {-.3,0,.28} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.3,-1,-.8),.7,.34,.22,if x==0 then hairShade else hair) end
+	-- The low ponytail.
+	ring(model,"Head","HairTie",-.78,.12,.4,rgb(70,30,40))
+	blob(model,"UpperTorso","Ponytail",Vector3.new(.38,1.0,.3),CFrame.new(-.12,.3,.6)*A(R(-8),0,R(8)),hair)
+	lock(model,"HairTip",Vector3.new(-.16,-.2,.64),Vector3.new(-.1,-1,.08),.5,.36,.24,hair,"UpperTorso")
+	for _,s in {-1,1} do
+		piece(model,"Head","TearLine",Vector3.new(.025,.2,.02),Face.onHead(s*30,-.28,.012)*A(0,0,R(s*-12)),rgb(150,110,104),{shadow=false})
+	end
+	Face.build(model,{iris=rgb(214,30,36),irisDark=rgb(140,10,20),skin=skin,brow=hair,lash=rgb(20,18,24),mood="cool",lids=.1,sharingan=true})
+	settle(model)
+end
+
+-- Minato (13; user 29/10 14:35 with a reference): the white tracksuit with
+-- navy piping down the arms and legs, a navy band at the hem and cuffs, the
+-- hood down round the collar, a fishnet undershirt at the neck, the zip,
+-- spiky blond hair with short bangs, calm blue eyes, a quiet smile.
+D.Minato=function(model,def)
+	local skin=rgb(252,224,196)
+	local hair,hairShade=rgb(255,218,80),rgb(236,182,44)
+	local white,whiteShade=rgb(236,238,242),rgb(206,210,220)
+	local navy=rgb(36,48,96)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso"},white);paint(model,ARMS,white);paint(model,LEGS,white)
+	-- The hood down round the collar, the fishnet at the throat, the zip.
+	ring(model,"UpperTorso","Hood",.74,.3,1.76,whiteShade)
+	blob(model,"UpperTorso","HoodBack",Vector3.new(1.3,.6,.4),CFrame.new(0,.62,.46),whiteShade)
+	piece(model,"UpperTorso","Fishnet",Vector3.new(.5,.24,.04),CFrame.new(0,.64,-.47),rgb(70,70,80))
+	piece(model,"UpperTorso","Zip",Vector3.new(.05,1.2,.03),CFrame.new(0,-.06,-.465),rgb(170,176,190))
+	-- Navy piping: down the outside of the arms and legs, the hem band.
+	for _,side in {"Left","Right"} do
+		local s=if side=="Left" then -1 else 1
+		for _,limb in {"UpperArm","LowerArm"} do
+			piece(model,side..limb,"Piping",Vector3.new(.06,1.12,.12),CFrame.new(s*.33,0,0),navy)
+		end
+		for _,limb in {"UpperLeg","LowerLeg"} do
+			piece(model,side..limb,"Piping",Vector3.new(.06,1.16,.12),CFrame.new(s*.38,0,0),navy)
+		end
+		ring(model,side.."LowerArm","Cuff",-.42,.14,.72,navy)
+		ring(model,side.."LowerLeg","PantCuff",-.4,.12,.78,navy)
+	end
+	piece(model,"UpperTorso","SidePiping",Vector3.new(1.7,1.38,.06),CFrame.new(0,0,0),navy,{mesh="Brick",scale=Vector3.new(1,1,1)})
+	piece(model,"LowerTorso","HemBand",Vector3.new(1.72,.24,.94),CFrame.new(0,.36,0),navy,{mesh="Brick"})
+	sandals(model,navy,skin)
+	-- Hair: spiky all round, short bangs, no headband.
+	hairBase(model,hair)
+	for i,s in {{0,.95,.15, 0,1,.3, .95,.5},{-.42,.86,.25, -.6,.75,.45, .9,.46},{.42,.86,.25, .6,.75,.45, .9,.46},
+		{-.2,.7,.65, -.25,.4,1, .9,.5},{.2,.7,.65, .25,.4,1, .9,.5},{0,.25,.92, 0,-.2,1, .75,.5},
+		{-.6,.35,.7, -.65,-.1,.9, .75,.44},{.6,.35,.7, .65,-.1,.9, .75,.44},{-.88,.6,.2, -1,.35,.3, .7,.42},{.88,.6,.2, 1,.35,.3, .7,.42},
+		{-.4,.95,-.25, -.5,1,-.3, .65,.4},{.4,.95,-.25, .5,1,-.3, .65,.4}} do
+		lock(model,"HairSpike",Vector3.new(s[1],s[2],s[3]),Vector3.new(s[4],s[5],s[6]),s[7],s[8],s[8]*.8,if i%3==0 then hairShade else hair)
+	end
+	for _,s in {-1,1} do lock(model,"Bang",Vector3.new(s*.8,.4,-.42),Vector3.new(s*.1,-1,-.12),.95,.4,.24,hair) end
+	for _,x in {-.44,-.15,.15,.44} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.4,-1,-.8),.72,.36,.22,hair) end
+	Face.build(model,{iris=rgb(70,150,230),skin=skin,brow=rgb(220,170,60),lash=rgb(40,30,30),mood="gentle"})
+	settle(model)
+end
+
+-- Kakashi (13; user 29/10 13:19 "version Storm, un petit sabre dans le
+-- dos", 14:33 with a reference): the black suit and mask up over the nose,
+-- the brown straps crossed on the chest with a metal clasp, grey shoulder
+-- guards, black arm guards with metal plates, a pale belt, silver hair
+-- swept up and to his left, the headband straight across the forehead, the
+-- tanto sheathed across his back (hilt over the right shoulder). Hilt parts
+-- are named Sheathed*: the client hides them while the blade is drawn.
+D.Kakashi=function(model,def)
+	local skin=rgb(250,226,204)
+	local hair,hairShade=rgb(214,220,230),rgb(170,178,194)
+	local suit,suitDark=rgb(30,32,42),rgb(20,22,30)
+	local leather,leatherDark=rgb(124,82,56),rgb(96,62,42)
+	local metal=rgb(176,182,196)
+	Looks.form(model,skin)
+	paint(model,{"UpperTorso","LowerTorso"},suit);paint(model,ARMS,suit);paint(model,LEGS,suit)
+	ring(model,"Head","Mask",-.56,.8,1.86,suit,{shadow=false})
+	ring(model,"UpperTorso","HighCollar",.76,.36,1.7,suit)
+	-- The crossed straps, front and back, and the clasp where they meet.
+	for _,z in {-.475,.475} do
+		for _,s in {-1,1} do
+			piece(model,"UpperTorso","Strap",Vector3.new(.22,2.0,.05),CFrame.new(0,-.04,z)*A(0,0,R(s*34)),leather)
+		end
+	end
+	piece(model,"UpperTorso","StrapClasp",Vector3.new(.3,.3,.07),CFrame.new(0,-.04,-.5)*A(0,0,R(45)),metal,{reflectance=.08})
+	-- Grey shoulder guards; black arm guards with a metal plate outside.
+	for _,side in {"Left","Right"} do
+		local s=if side=="Left" then -1 else 1
+		blob(model,side.."UpperArm","ShoulderGuard",Vector3.new(.88,.56,.88),CFrame.new(0,.42,0),metal)
+		ring(model,side.."LowerArm","ArmGuard",-.12,.76,.8,suitDark)
+		piece(model,side.."LowerArm","GuardPlate",Vector3.new(.1,.7,.44),CFrame.new(s*.41,-.1,0),metal,{reflectance=.06})
+		ring(model,side.."LowerArm","GuardBand",.24,.06,.82,metal)
+		ring(model,side.."LowerLeg","ShinWrap",-.32,.3,.8,rgb(206,196,170))
+	end
+	-- The pale belt and its metal buckle; pouch and holster.
+	piece(model,"LowerTorso","Belt",Vector3.new(1.72,.2,.94),CFrame.new(0,.32,0),rgb(206,190,150),{mesh="Brick"})
+	piece(model,"LowerTorso","Buckle",Vector3.new(.32,.24,.06),CFrame.new(0,.32,-.48),metal,{reflectance=.08})
+	piece(model,"LowerTorso","BackPouch",Vector3.new(.6,.32,.22),CFrame.new(0,.1,.5),leatherDark,{mesh="Brick"})
+	piece(model,"RightUpperLeg","Holster",Vector3.new(.2,.46,.42),CFrame.new(.43,-.05,0),suitDark,{mesh="Brick"})
+	-- The sheath across the back, its mouth over the right shoulder.
+	local axis=CFrame.new(.1,.12,.62)*A(0,0,R(-36))
+	piece(model,"UpperTorso","Sheath",Vector3.new(.22,1.7,.2),axis,rgb(22,22,28),{mesh="Head"})
+	piece(model,"UpperTorso","SheathTip",Vector3.new(.12,.24,.24),axis*CFrame.new(0,-.88,0)*UPRIGHT,rgb(160,164,172),{shape=Enum.PartType.Cylinder,reflectance=.1})
+	piece(model,"UpperTorso","SheathedGuard",Vector3.new(.06,.36,.36),axis*CFrame.new(0,.88,0)*UPRIGHT,rgb(50,50,58),{shape=Enum.PartType.Cylinder})
+	piece(model,"UpperTorso","SheathedHilt",Vector3.new(.15,.6,.15),axis*CFrame.new(0,1.2,0),rgb(236,234,226),{mesh="Head"})
+	for k=0,2 do piece(model,"UpperTorso","SheathedWrap",Vector3.new(.04,.17,.17),axis*CFrame.new(0,1.0+k*.17,0)*UPRIGHT,suitDark,{shape=Enum.PartType.Cylinder}) end
+	sandals(model,suitDark,skin)
+	-- Silver hair: swept up and leaning to his left.
+	hairBase(model,hair)
+	headband(model,rgb(30,36,56))
+	for i,s in {{0,.9,.1, -.35,1,.15, 1.25,.58},{-.38,.85,.15, -.7,.9,.2, 1.15,.52},{.36,.86,.1, .05,1,.1, 1.05,.52},
+		{-.7,.66,.1, -1,.6,.15, .95,.48},{.7,.7,.15, .5,.9,.2, .85,.46},{-.15,.75,.55, -.5,.8,.8, 1.0,.5},
+		{.3,.7,.55, .05,.75,.9, .9,.48},{-.55,.5,.55, -.9,.4,.7, .8,.44},{0,.5,.8, -.2,.4,1, .8,.46},{-.2,.88,-.35, -.5,1,-.35, .75,.42},
+		{.25,.88,-.35, -.05,1,-.4, .7,.4},{-.85,.3,.3, -1,.1,.4, .7,.4},{.85,.35,.3, 1,.25,.35, .6,.38}} do
+		lock(model,"HairSpike",Vector3.new(s[1],s[2],s[3]),Vector3.new(s[4],s[5],s[6]),s[7],s[8],s[8]*.75,if i%2==0 then hairShade else hair)
+	end
+	for _,x in {-.4,-.1,.22} do lock(model,"Fringe",Vector3.new(x,.74,-.52),Vector3.new(x*.3-.15,-1,-.8),.6,.32,.2,hair) end
+	for _,s in {-1,1} do lock(model,"SideLock",Vector3.new(s*.86,.3,-.3),Vector3.new(s*.15,-1,-.1),.7,.3,.2,hair) end
+	Face.build(model,{iris=rgb(60,60,70),irisDark=rgb(24,24,30),skin=skin,brow=rgb(150,156,170),lash=rgb(30,30,38),mood="lazy",mouth=false,lids=.42})
+	settle(model)
+end
+
+return Looks
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="Script" referent="ND55">
         <Properties>
           <string name="Name">Main</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -12738,6 +13986,8 @@ local Shared=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuel")
 Players.CharacterAutoLoads=false
 local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Shared
 local Matches=require(script.Parent.Matches)
+-- Blender-made costume meshes load in the background (Server/LookMeshes).
+require(script.Parent.LookMeshes).preload()
 local matches=Matches.new(remote)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
@@ -12757,7 +14007,7 @@ print("[NinjaDuel] Ready — select a fighter and start the duel")
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND52">
+      <Item class="ModuleScript" referent="ND56">
         <Properties>
           <string name="Name">Matches</string>
           <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -13170,7 +14420,7 @@ return Matches
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND53">
+      <Item class="ModuleScript" referent="ND57">
         <Properties>
           <string name="Name">Motor</string>
           <ProtectedString name="Source">-- Server movement authority. This module owns locomotion, landing and safe
@@ -13562,7 +14812,7 @@ return Motor
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND54">
+      <Item class="ModuleScript" referent="ND58">
         <Properties>
           <string name="Name">Online</string>
           <ProtectedString name="Source">-- Online 1v1 (NET-001): casual queue, private duel codes, a short fighter
@@ -13900,7 +15150,7 @@ return Online
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND55">
+      <Item class="ModuleScript" referent="ND59">
         <Properties>
           <string name="Name">Perception</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027): what a body perceives of the space around a
@@ -14012,7 +15262,7 @@ return Perception
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND56">
+      <Item class="ModuleScript" referent="ND60">
         <Properties>
           <string name="Name">Place1Movement</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 FirstPersonMovementController (alexkkork, MIT).
@@ -14316,7 +15566,7 @@ return Movement
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND57">
+      <Item class="ModuleScript" referent="ND61">
         <Properties>
           <string name="Name">Place1Parkour</string>
           <ProtectedString name="Source">-- Adapted directly from Place1 ParkourTraversalController (alexkkork, MIT).
@@ -14792,7 +16042,7 @@ return Parkour
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND58">
+      <Item class="ModuleScript" referent="ND62">
         <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
@@ -15003,7 +16253,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND59">
+      <Item class="ModuleScript" referent="ND63">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -15206,7 +16456,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND60">
+      <Item class="ModuleScript" referent="ND64">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -15695,7 +16945,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND61">
+      <Item class="ModuleScript" referent="ND65">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -16008,7 +17258,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND62">
+      <Item class="ModuleScript" referent="ND66">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -17054,7 +18304,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND63">
+      <Item class="ModuleScript" referent="ND67">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
@@ -17154,7 +18404,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND64">
+      <Item class="ModuleScript" referent="ND68">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -17182,7 +18432,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND65">
+      <Item class="ModuleScript" referent="ND69">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -17310,7 +18560,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND66">
+      <Item class="ModuleScript" referent="ND70">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -17361,7 +18611,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND67">
+      <Item class="ModuleScript" referent="ND71">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -17496,7 +18746,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND68">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -17610,7 +18860,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND69">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -17796,7 +19046,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND70">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -17903,11 +19153,14 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
 local Animation=require(script.Parent.Animation)
+local Looks=require(script.Parent.Looks)
+local LookMeshes=require(script.Parent.LookMeshes)
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local function part(parent, name, size, cf, color, material)
 	local p = Instance.new("Part")
 	p.Name, p.Size, p.CFrame = name, size, cf
@@ -18879,13 +20132,27 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
+	-- The 8 main fighters wear the final-beta looks (Server/Looks): body
+	-- form, head gear fitted to the head, cone hair, drawn faces.
+	local look=Looks.dressers[def.Name]
+	if look then
+		local hair=model:FindFirstChild("Hair");if hair then hair.Transparency=1 end
+		-- Blender meshes when they are loaded (Server/LookMeshes): the face is
+		-- then drawn on their squarer head.
+		local meshes=LookMeshes.ready(def.Name)
+		Face.useShape(if meshes then "box" else "can")
+		look(model,def)
+		Face.useShape("can")
+		if meshes then LookMeshes.dress(model,def.Name) end
+	elseif def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
-	if def.Name=="Rock Lee" then dressLee(model,def) end
-	if def.Name=="Naruto" then dressNaruto(model,def) end
-	if def.Name=="Temari" then dressTemari(model,def) end
-	local custom=World.dressers[def.Name]
-	if custom then custom(model,def) end
+	if not look then
+		if def.Name=="Rock Lee" then dressLee(model,def) end
+		if def.Name=="Naruto" then dressNaruto(model,def) end
+		if def.Name=="Temari" then dressTemari(model,def) end
+		local custom=World.dressers[def.Name]
+		if custom then custom(model,def) end
+	end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -18907,7 +20174,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -19520,7 +20787,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -19748,21 +21015,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND74">
+  <Item class="StarterPlayer" referent="ND78">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND75">
+    <Item class="StarterPlayerScripts" referent="ND79">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND76">
+      <Item class="Folder" referent="ND80">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND77">
+        <Item class="ModuleScript" referent="ND81">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -19803,7 +21070,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND78">
+        <Item class="ModuleScript" referent="ND82">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -20019,7 +21286,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND79">
+        <Item class="ModuleScript" referent="ND83">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -20252,7 +21519,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND80">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -20536,7 +21803,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND81">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -20684,7 +21951,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND82">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -20900,7 +22167,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21133,7 +22400,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21366,7 +22633,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21616,7 +22883,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21832,7 +23099,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22133,7 +23400,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22332,7 +23599,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22531,7 +23798,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22815,7 +24082,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23082,7 +24349,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23264,7 +24531,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23514,7 +24781,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23713,7 +24980,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24014,7 +25281,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24162,7 +25429,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24497,7 +25764,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24713,7 +25980,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24827,7 +26094,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25094,7 +26361,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25395,7 +26662,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25560,7 +26827,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25844,7 +27111,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26145,7 +27412,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26327,7 +27594,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26628,7 +27895,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26844,7 +28111,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27026,7 +28293,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -27162,7 +28429,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -27326,7 +28593,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -27698,7 +28965,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -28253,7 +29520,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -28417,7 +29684,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -28428,6 +29695,7 @@ return ChakraFlowFX
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
 FX.fireStreams=setmetatable({},{__mode="k"})
@@ -30092,6 +31360,47 @@ function FX:wear(model,actor,aura)
 		end
 	end
 end
+-- Faces (user 29/10: "il manque une expression faciale"): what the body is
+-- doing picks the expression; a transient one is held a moment so a light
+-- string does not flicker the face; the eyes blink every few seconds.
+local function moodOf(actor)
+	if (actor.health or 1)&lt;=0 then return "ko",1 end
+	local reaction=actor.reaction
+	if reaction=="Bound" then return "stun",.35 end
+	if reaction~=nil then return "hurt",.4 end
+	local state=actor.state
+	if state=="Stunned" then return "hurt",.4 end
+	if state=="TechniqueChannel" then return "focus",.25 end
+	if state=="TechniqueActive" then return "shout",.4 end
+	if state=="Startup" or state=="Active" then
+		local name=actor.attackName or ""
+		if string.find(name,"Heavy") or string.find(name,"Launcher") or string.find(name,"Spike") or string.find(name,"Sweep") or string.find(name,"Finisher") then return "shout",.35 end
+		return "fight",.3
+	end
+	if state=="Guarding" then return "fight",.25 end
+	if state=="Dodging" or state=="Rush" or state=="Pursuit" then return "focus",.25 end
+	if (actor.awaken or 0)&gt;0 then return "fight",.3 end
+	if actor.won then return "win",1 end
+	return nil,0
+end
+FX.moodOf=moodOf
+function FX:expression(model,actor,aura)
+	local face=aura.face
+	if not face then return end
+	local now=os.clock()
+	local mood,hold=moodOf(actor)
+	if mood then
+		aura.mood=mood;aura.moodUntil=now+hold
+	elseif not aura.moodUntil or now&gt;aura.moodUntil then
+		aura.mood=model:GetAttribute("FaceMood") or "calm"
+	end
+	local blink=false
+	if aura.blinkAt and now&gt;=aura.blinkAt then
+		blink=now&lt;aura.blinkAt+.12
+		if not blink then aura.blinkAt=now+2.4+math.random()*2.8 end
+	end
+	if aura.mood~=face.current or blink~=(face.blinking==true) then Face.set(face,aura.mood,blink) end
+end
 -- Per-fighter identity layer: Minato's speed trail and Rasengan, Itachi's
 -- Sharingan glow and fire breath. Restrained: it switches on only for the
 -- moments it describes.
@@ -30117,6 +31426,8 @@ function FX:fighter(model,actor,dt)
 		local irises={}
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
 		aura.irises=irises
+		aura.face=Face.find(model)
+		aura.blinkAt=os.clock()+1.5+math.random()*2.5
 		local head=model:FindFirstChild("Head")
 		local marks={}
 		for _,p in model:GetChildren() do if p.Name=="CurseMark" then table.insert(marks,p) end end
@@ -30138,8 +31449,19 @@ function FX:fighter(model,actor,dt)
 			iris.Material=Enum.Material.Neon
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
+		-- Drawn faces (Shared/Face): Itachi's Sharingan always shows and burns
+		-- brighter when lit; Sasuke's comes with the reads, the casts and the
+		-- awakening.
+		if aura.face then
+			local want=if lit then "lit" elseif actor.fighterId=="Mirage" then "on" else "off"
+			if aura.eyeTint~=want then
+				aura.eyeTint=want
+				if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,if want=="lit" then Color3.fromRGB(255,40,40) else Color3.fromRGB(214,30,36),"sharingan") end
+			end
+		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
+	self:expression(model,actor,aura)
 	-- Awakening: a chakra mantle that rises off the body for the whole state.
 	local awake=(actor.awaken or 0)&gt;0 and (actor.health or 1)&gt;0
 	if awake and not aura.mantle then
@@ -30514,7 +31836,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -31138,7 +32460,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -31616,7 +32938,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -31797,7 +33119,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -32567,7 +33889,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -32659,7 +33981,12 @@ function Input.new(send,getState,toggleLock,camera)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
    if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
-   send(if modified then "Technique"..slot else normal)
+   -- (User 29/10) Pad L1 + □ is the grab (the guard held, the light pressed).
+   if not modified and normal=="Attack" and padObject(object) and next(self.guards)~=nil then send("Grab");return false end
+   -- The chakra button held (pad L2, keyboard Z): the press goes out infused.
+   if modified then send("Technique"..slot)
+   elseif self:chakraOn(padObject(object)) then send(normal,{chakra=true})
+   else send(normal) end
    return not modified
   end
   -- (Audit 29/10) The face button let go after R1+face lets a held technique
@@ -32704,13 +34031,19 @@ function Input.new(send,getState,toggleLock,camera)
  end)
  -- Chakra modifier + tool: keyboard Z (held, or just pressed), pad R1 + R2.
  -- Only a boolean leaves the client; the server picks what the chakra does.
+ bind("ChakraPad",key(GAMEPAD.Chakra),function(state,obj)
+  if released(state) or (obj.Position and obj.Position.Z&lt;=.25 and state~=Enum.UserInputState.Begin) then self.chakraPad=false;self.chakraPadAt=Input.now()
+  elseif state==Enum.UserInputState.Begin or (obj.Position and obj.Position.Z&gt;=.45) then self.chakraPad=true end
+ end)
  bind("ChakraKey",key(KEYBOARD.Chakra),function(state)
   if begin(state) then self.chakra=true;self.chakraAt=Input.now();self.chakraDownAt=self.chakraAt;self.chakraSpent=false elseif released(state) then self.chakra=false;self.chakraAt=Input.now() end
  end)
  bind("Tool",both("Tool"),function(state,obj)
   if pressed(state,obj) then
-   local chakra=if padObject(obj) then self.modifier else (self.chakra or Input.now()-(self.chakraAt or -math.huge)&lt;=Input.ChakraChord)
-   if chakra then self.modifierSpent=true;self.chakraSpent=true end
+   -- R1 + R2 on the pad is the feint now (R1 is the jutsu shift, L2 the chakra).
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Feint");return end
+   local chakra=self:chakraOn(padObject(obj))
+   if chakra then self.chakraSpent=true end
    if chakra then send("Tool",{chakra=true,aim=toolAim(getState(),padObject(obj))}) else send("Tool") end
   end
  end)
@@ -32759,7 +34092,7 @@ end
 function Input:reset()
  table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
- self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true
+ self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true;self.chakraPad=false;self.chakraPadAt=nil
 end
 -- (Audit 29/10) A new round (or phase) clears the presses but not the hand:
 -- a direction held through the round change was forgotten until the key was
@@ -32780,12 +34113,15 @@ end
 -- loaded with chakra. Polled every frame (Input:direction).
 function Input:chakraHold()
  local now=Input.now()
- if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)&gt;=Input.ChakraHoldPad then
-  self.modifierSpent=true;self.send("ChakraLoad")
- end
- if self.chakra and not self.chakraSpent and now-(self.chakraDownAt or now)&gt;=Input.ChakraHold then
-  self.chakraSpent=true;self.send("ChakraLoad")
- end
+ -- (User 29/10) Nothing loads on a hold alone any more: the chakra button
+ -- infuses the press it is held with (Input:chakraOn).
+ local _=now
+end
+-- The chakra button: held (or released a moment before, a rolled chord).
+function Input:chakraOn(pad)
+ local now=Input.now()
+ if pad then return self.chakraPad==true or now-(self.chakraPadAt or -math.huge)&lt;=Input.ChakraChord end
+ return self.chakra==true or now-(self.chakraAt or -math.huge)&lt;=Input.ChakraChord
 end
 function Input:direction(camera)
  self:chakraHold()
@@ -32812,7 +34148,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -32993,7 +34329,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND121">
+        <Item class="LocalScript" referent="ND125">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -33181,7 +34517,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -33324,7 +34660,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -33338,6 +34674,7 @@ return Smear
 local Debris=game:GetService("Debris")
 local NarutoFX={}
 local K -- Effects' helpers, handed over by install()
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 NarutoFX.clock=os.clock -- (headless tests drive time)
 local NARUTO="Legion"
 local SMOKE=Color3.fromRGB(240,240,244)
@@ -33545,10 +34882,14 @@ local function cloak(fx,model,actor,st)
 		for _,p in model:GetChildren() do
 			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
 		end
+		-- The drawn face: red slit eyes.
+		st.face=st.face or Face.find(model)
+		Face.tint(st.face,FOX,"fox")
 	elseif not open and st.tail then
 		st.tail:Destroy();st.tail=nil
 		for _,iris in st.irises or {} do iris.part.Color=iris.color;iris.part.Material=iris.material end
 		st.irises=nil
+		if st.face then Face.tint(st.face,nil) end
 	end
 	if st.tail and hips then
 		local t=NarutoFX.clock()
@@ -33582,7 +34923,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -34010,7 +35351,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -34630,7 +35971,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -35250,7 +36591,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -35446,7 +36787,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -39064,7 +40405,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -40517,7 +41858,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -40977,7 +42318,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -41191,7 +42532,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -41492,7 +42833,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -41505,7 +42846,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -41608,7 +42949,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -41735,7 +43076,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -41878,7 +43219,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -42094,7 +43435,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND138">
+  <Item class="Lighting" referent="ND142">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -42112,7 +43453,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND139">
+  <Item class="SoundService" referent="ND143">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

@@ -672,7 +672,7 @@ test("client: the Fifth Gate burns green, the lotuses spin and crack the floor, 
  restore()
  assert(ok,err)
 end)
-test("his costume builds: green suit, orange leg warmers, the headband as a red belt, bowl cut and thick brows",function()
+test("his costume builds: green suit, orange leg warmers, the headband as a red belt, bowl cut",function()
  local made={}
  local base=H.envBase.Instance
  H.envBase.Instance={new=function(class) local x=base.new(class);table.insert(made,x);return x end}
@@ -683,11 +683,12 @@ test("his costume builds: green suit, orange leg warmers, the headband as a red 
  assert(ok,err)
  local names={}
  for _,x in made do local n=rawget(x,"Name") or x.Name;if n then names[n]=(names[n] or 0)+1 end end
- assert(names.LegWarmer==2 and names.WarmerCuff==2,"no leg warmers")
- assert(names.HeadbandBelt==1 and names.BeltPlate==1,"no headband belt")
- assert(names.BowlFringe==1 and names.ThickBrow==2,"no bowl cut or thick brows")
+ -- Final-beta look (Server/Looks): the brows are drawn on the face (Shared/Face).
+ assert(names.LegWarmer==2 and names.WarmerRoll==2,"no leg warmers")
+ assert(names.Belt==1 and names.BeltPlate==1,"no headband belt")
+ assert(names.HairBase==1 and names.BackHair==1,"no bowl cut")
  assert(names.Headband==nil,"he wears the headband on his head")
- assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(52,140,66),"the suit is not his green")
+ assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(56,170,74),"the suit is not his green")
 end)
 test("he is selectable: his roster slot and both buttons, and the duel starts with him",function()
  H.envBase.UDim2=H.roblox.UDim2;H.envBase.UDim=H.roblox.UDim

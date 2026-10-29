@@ -6,6 +6,7 @@
 local Debris=game:GetService("Debris")
 local TweenService=game:GetService("TweenService")
 local Kit=require(script.Parent.VfxKit)
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local FX={};FX.__index=FX
 -- Cel flame streams of the fireballs in flight (VfxKit), by model.
 FX.fireStreams=setmetatable({},{__mode="k"})
@@ -1670,6 +1671,47 @@ function FX:wear(model,actor,aura)
 		end
 	end
 end
+-- Faces (user 29/10: "il manque une expression faciale"): what the body is
+-- doing picks the expression; a transient one is held a moment so a light
+-- string does not flicker the face; the eyes blink every few seconds.
+local function moodOf(actor)
+	if (actor.health or 1)<=0 then return "ko",1 end
+	local reaction=actor.reaction
+	if reaction=="Bound" then return "stun",.35 end
+	if reaction~=nil then return "hurt",.4 end
+	local state=actor.state
+	if state=="Stunned" then return "hurt",.4 end
+	if state=="TechniqueChannel" then return "focus",.25 end
+	if state=="TechniqueActive" then return "shout",.4 end
+	if state=="Startup" or state=="Active" then
+		local name=actor.attackName or ""
+		if string.find(name,"Heavy") or string.find(name,"Launcher") or string.find(name,"Spike") or string.find(name,"Sweep") or string.find(name,"Finisher") then return "shout",.35 end
+		return "fight",.3
+	end
+	if state=="Guarding" then return "fight",.25 end
+	if state=="Dodging" or state=="Rush" or state=="Pursuit" then return "focus",.25 end
+	if (actor.awaken or 0)>0 then return "fight",.3 end
+	if actor.won then return "win",1 end
+	return nil,0
+end
+FX.moodOf=moodOf
+function FX:expression(model,actor,aura)
+	local face=aura.face
+	if not face then return end
+	local now=os.clock()
+	local mood,hold=moodOf(actor)
+	if mood then
+		aura.mood=mood;aura.moodUntil=now+hold
+	elseif not aura.moodUntil or now>aura.moodUntil then
+		aura.mood=model:GetAttribute("FaceMood") or "calm"
+	end
+	local blink=false
+	if aura.blinkAt and now>=aura.blinkAt then
+		blink=now<aura.blinkAt+.12
+		if not blink then aura.blinkAt=now+2.4+math.random()*2.8 end
+	end
+	if aura.mood~=face.current or blink~=(face.blinking==true) then Face.set(face,aura.mood,blink) end
+end
 -- Per-fighter identity layer: Minato's speed trail and Rasengan, Itachi's
 -- Sharingan glow and fire breath. Restrained: it switches on only for the
 -- moments it describes.
@@ -1695,6 +1737,8 @@ function FX:fighter(model,actor,dt)
 		local irises={}
 		for _,p in model:GetChildren() do if p.Name=="Iris" then table.insert(irises,p) end end
 		aura.irises=irises
+		aura.face=Face.find(model)
+		aura.blinkAt=os.clock()+1.5+math.random()*2.5
 		local head=model:FindFirstChild("Head")
 		local marks={}
 		for _,p in model:GetChildren() do if p.Name=="CurseMark" then table.insert(marks,p) end end
@@ -1716,8 +1760,19 @@ function FX:fighter(model,actor,dt)
 			iris.Material=Enum.Material.Neon
 			iris.Color=if lit then Color3.fromRGB(255,36,36) else Color3.fromRGB(205,18,28)
 		end
+		-- Drawn faces (Shared/Face): Itachi's Sharingan always shows and burns
+		-- brighter when lit; Sasuke's comes with the reads, the casts and the
+		-- awakening.
+		if aura.face then
+			local want=if lit then "lit" elseif actor.fighterId=="Mirage" then "on" else "off"
+			if aura.eyeTint~=want then
+				aura.eyeTint=want
+				if want=="off" then Face.tint(aura.face,nil) else Face.tint(aura.face,if want=="lit" then Color3.fromRGB(255,40,40) else Color3.fromRGB(214,30,36),"sharingan") end
+			end
+		end
 		if aura.eyeLight then aura.eyeLight.Brightness=if lit then 2.2 else .5 end
 	end
+	self:expression(model,actor,aura)
 	-- Awakening: a chakra mantle that rises off the body for the whole state.
 	local awake=(actor.awaken or 0)>0 and (actor.health or 1)>0
 	if awake and not aura.mantle then

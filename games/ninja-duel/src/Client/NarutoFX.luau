@@ -9,6 +9,7 @@
 local Debris=game:GetService("Debris")
 local NarutoFX={}
 local K -- Effects' helpers, handed over by install()
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 NarutoFX.clock=os.clock -- (headless tests drive time)
 local NARUTO="Legion"
 local SMOKE=Color3.fromRGB(240,240,244)
@@ -216,10 +217,14 @@ local function cloak(fx,model,actor,st)
 		for _,p in model:GetChildren() do
 			if p.Name=="Iris" then table.insert(st.irises,{part=p,color=p.Color,material=p.Material});p.Color=FOX;p.Material=Enum.Material.Neon end
 		end
+		-- The drawn face: red slit eyes.
+		st.face=st.face or Face.find(model)
+		Face.tint(st.face,FOX,"fox")
 	elseif not open and st.tail then
 		st.tail:Destroy();st.tail=nil
 		for _,iris in st.irises or {} do iris.part.Color=iris.color;iris.part.Material=iris.material end
 		st.irises=nil
+		if st.face then Face.tint(st.face,nil) end
 	end
 	if st.tail and hips then
 		local t=NarutoFX.clock()

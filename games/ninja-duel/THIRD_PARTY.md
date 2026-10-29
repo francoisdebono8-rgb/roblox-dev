@@ -10,6 +10,8 @@ Full MIT notices: `vendor/bangla/LICENSE`, `vendor/place1/LICENSE`, `vendor/velm
 
 Bangla animation references: Punch `18342131933`, HardSmack `18342045122`, MegaPunch `18341956985`, Parry `18341905406`. Bangla sound references: swing `5835032207`, light hit `8595980577`, heavy hit `9117969717`. Donor particle texture references are retained verbatim in `BanglaAssets.rbxmx`. These are external Roblox dependencies; cloud animation/audio/texture bytes are not redistributed and asset access is not guaranteed by the code licence. The repo author explicitly permits importing its scripts/models/UI in the [README](https://github.com/dwmk/RobloxGames/blob/46e6241c607f1b7dea8b41380f7041055e86c9bc/README.md).
 
+Cone mesh `1778999` (a public Roblox mesh asset, referenced by `Server/Looks.luau` for the hair locks through a SpecialMesh; not redistributed).
+
 Roblox Ninja R15 catalogue animation references, not redistributed: Idle `656117400`, Run `656118852`, Walk `656121766`, Jump `656117878`, Fall `656115606`, Climb `656114359`, from the [official animation reference](https://create.roblox.com/docs/animation/using). These Roblox assets are not relicensed under MIT.
 
 Development-only runtime: [Lune v0.10.5](https://github.com/lune-org/lune/releases/tag/v0.10.5), MPL-2.0. No Lune executable/source is redistributed in the place.

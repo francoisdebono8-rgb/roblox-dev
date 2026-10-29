@@ -887,11 +887,12 @@ test("his costume builds: orange jumpsuit, blue shoulders, the spiral on the bac
  assert(ok,err)
  local names={}
  for _,x in made do local n=rawget(x,"Name") or x.Name;if n then names[n]=(names[n] or 0)+1 end end
- assert(names.Whisker==6,"no whiskers ("..tostring(names.Whisker)..")")
- assert(names.Spiral==1 and names.ShoulderPanel==1 and names.Collar==1,"no Part I jacket")
+ -- Final-beta look (Server/Looks): the whiskers are drawn on the face
+ -- (Shared/Face, skipped headless).
+ assert(names.Swirl==1 and names.Yoke==1 and names.Collar==1,"no Part I jacket")
  assert((names.HairSpike or 0)>=12,"his hair is not spiky")
  assert(names.Headband==1,"no headband")
- assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(244,130,36),"the jumpsuit is not his orange")
+ assert(a.model.bones.UpperTorso.Color==H.roblox.Color3.fromRGB(250,128,30),"the jumpsuit is not his orange")
  for _,x in made do
   local material=rawget(x,"Material") or x.Material
   assert(material~=H.roblox.Enum.Material.Fabric,"a Fabric part (renders as wicker in Studio)")

@@ -1,0 +1,551 @@
+{
+ "rest": {
+  "LowerTorso": [
+   0,
+   0,
+   0
+  ],
+  "UpperTorso": [
+   0,
+   1.15,
+   0
+  ],
+  "Head": [
+   0,
+   2.75,
+   0
+  ],
+  "LeftUpperArm": [
+   -1.24,
+   1.1,
+   0
+  ],
+  "RightUpperArm": [
+   1.24,
+   1.1,
+   0
+  ],
+  "LeftLowerArm": [
+   -1.24,
+   0.1,
+   0
+  ],
+  "RightLowerArm": [
+   1.24,
+   0.1,
+   0
+  ],
+  "LeftHand": [
+   -1.24,
+   -0.63,
+   0
+  ],
+  "RightHand": [
+   1.24,
+   -0.63,
+   0
+  ],
+  "LeftUpperLeg": [
+   -0.5,
+   -1.05,
+   0
+  ],
+  "RightUpperLeg": [
+   0.5,
+   -1.05,
+   0
+  ],
+  "LeftLowerLeg": [
+   -0.5,
+   -2.1,
+   0
+  ],
+  "RightLowerLeg": [
+   0.5,
+   -2.1,
+   0
+  ],
+  "LeftFoot": [
+   -0.5,
+   -2.8,
+   -0.15
+  ],
+  "RightFoot": [
+   0.5,
+   -2.8,
+   -0.15
+  ]
+ },
+ "pieces": {
+  "Head__Skin": {
+   "body": "Head",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__Jacket": {
+   "body": "UpperTorso",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__Yoke": {
+   "body": "UpperTorso",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__Collar": {
+   "body": "UpperTorso",
+   "color": [
+    246,
+    244,
+    236
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__Zip": {
+   "body": "UpperTorso",
+   "color": [
+    246,
+    244,
+    236
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__ZipPull": {
+   "body": "UpperTorso",
+   "color": [
+    200,
+    200,
+    208
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LowerTorso__JacketHem": {
+   "body": "LowerTorso",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LowerTorso__Pouch": {
+   "body": "LowerTorso",
+   "color": [
+    84,
+    74,
+    66
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__Sleeve": {
+   "body": "LeftUpperArm",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__Shoulder": {
+   "body": "LeftUpperArm",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerArm__Sleeve": {
+   "body": "LeftLowerArm",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerArm__Cuff": {
+   "body": "LeftLowerArm",
+   "color": [
+    214,
+    92,
+    18
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftHand__Mitt": {
+   "body": "LeftHand",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftHand__Thumb": {
+   "body": "LeftHand",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperLeg__Pants": {
+   "body": "LeftUpperLeg",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__Pants": {
+   "body": "LeftLowerLeg",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__PantCuff": {
+   "body": "LeftLowerLeg",
+   "color": [
+    214,
+    92,
+    18
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Sole": {
+   "body": "LeftFoot",
+   "color": [
+    60,
+    48,
+    44
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Heel": {
+   "body": "LeftFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Strap": {
+   "body": "LeftFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Strap.001": {
+   "body": "LeftFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Toes": {
+   "body": "LeftFoot",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__Sleeve": {
+   "body": "RightUpperArm",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__Shoulder": {
+   "body": "RightUpperArm",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerArm__Sleeve": {
+   "body": "RightLowerArm",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerArm__Cuff": {
+   "body": "RightLowerArm",
+   "color": [
+    214,
+    92,
+    18
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightHand__Mitt": {
+   "body": "RightHand",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightHand__Thumb": {
+   "body": "RightHand",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperLeg__Pants": {
+   "body": "RightUpperLeg",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__Pants": {
+   "body": "RightLowerLeg",
+   "color": [
+    250,
+    128,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__PantCuff": {
+   "body": "RightLowerLeg",
+   "color": [
+    214,
+    92,
+    18
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Sole": {
+   "body": "RightFoot",
+   "color": [
+    60,
+    48,
+    44
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Heel": {
+   "body": "RightFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Strap": {
+   "body": "RightFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Strap.001": {
+   "body": "RightFoot",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Toes": {
+   "body": "RightFoot",
+   "color": [
+    252,
+    220,
+    186
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperLeg__ThighWrap": {
+   "body": "RightUpperLeg",
+   "color": [
+    246,
+    244,
+    236
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperLeg__Holster": {
+   "body": "RightUpperLeg",
+   "color": [
+    34,
+    48,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__HairCap": {
+   "body": "Head",
+   "color": [
+    232,
+    166,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__Headband": {
+   "body": "Head",
+   "color": [
+    40,
+    70,
+    160
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__HeadbandPlate": {
+   "body": "Head",
+   "color": [
+    190,
+    198,
+    210
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0.12
+  },
+  "Head__PlateMark": {
+   "body": "Head",
+   "color": [
+    110,
+    118,
+    132
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__BandTailL": {
+   "body": "Head",
+   "color": [
+    40,
+    70,
+    160
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__BandTailR": {
+   "body": "Head",
+   "color": [
+    40,
+    70,
+    160
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__Hair": {
+   "body": "Head",
+   "color": [
+    255,
+    210,
+    60
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__HairShade": {
+   "body": "Head",
+   "color": [
+    232,
+    166,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__Fringe": {
+   "body": "Head",
+   "color": [
+    255,
+    210,
+    60
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  }
+ }
+}

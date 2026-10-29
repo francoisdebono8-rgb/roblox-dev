@@ -1,5 +1,8 @@
 local World = {}
 local Animation=require(script.Parent.Animation)
+local Looks=require(script.Parent.Looks)
+local LookMeshes=require(script.Parent.LookMeshes)
+local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local function part(parent, name, size, cf, color, material)
 	local p = Instance.new("Part")
 	p.Name, p.Size, p.CFrame = name, size, cf
@@ -971,13 +974,27 @@ function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
 	local sash=model:FindFirstChild("Sash");if sash then sash.Transparency=1 end
-	if def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
+	-- The 8 main fighters wear the final-beta looks (Server/Looks): body
+	-- form, head gear fitted to the head, cone hair, drawn faces.
+	local look=Looks.dressers[def.Name]
+	if look then
+		local hair=model:FindFirstChild("Hair");if hair then hair.Transparency=1 end
+		-- Blender meshes when they are loaded (Server/LookMeshes): the face is
+		-- then drawn on their squarer head.
+		local meshes=LookMeshes.ready(def.Name)
+		Face.useShape(if meshes then "box" else "can")
+		look(model,def)
+		Face.useShape("can")
+		if meshes then LookMeshes.dress(model,def.Name) end
+	elseif def.Name=="Minato" then dressMinato(model,def) elseif def.Name=="Itachi" then dressItachi(model,def) elseif def.Name=="Neji" then dressNeji(model,def)
 	elseif def.Name=="Sasuke" then dressSasuke(model,def) elseif def.Name=="Gaara" then dressGaara(model,def) end
-	if def.Name=="Rock Lee" then dressLee(model,def) end
-	if def.Name=="Naruto" then dressNaruto(model,def) end
-	if def.Name=="Temari" then dressTemari(model,def) end
-	local custom=World.dressers[def.Name]
-	if custom then custom(model,def) end
+	if not look then
+		if def.Name=="Rock Lee" then dressLee(model,def) end
+		if def.Name=="Naruto" then dressNaruto(model,def) end
+		if def.Name=="Temari" then dressTemari(model,def) end
+		local custom=World.dressers[def.Name]
+		if custom then custom(model,def) end
+	end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
