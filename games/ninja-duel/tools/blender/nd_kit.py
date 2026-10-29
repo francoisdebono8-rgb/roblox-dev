@@ -82,14 +82,16 @@ def hands(skin, wrap=None):
         hd = REST[side + "Hand"]
         c = wrap or skin
         x, y, z = hd
-        # back of the hand (outside), palm side toward the body
-        parts = [box((x + s * .04, y + .08, z), (.42, .42, .46), bevel=.1, segments=3)]
+        # A fist, simpler than the first one (user 15:26-15:27: keep a real
+        # hand and the thumb, less detail): the back of the hand, four
+        # fingers curled in one row, the thumb across the front.
+        parts = [box((x + s * .03, y + .07, z), (.44, .44, .48), bevel=.11, segments=3)]
         for i in range(4):
             fz = z - .18 + i * .12
-            parts.append(box((x, y - .17, fz), (.46, .2, .105), bevel=.05, segments=2))        # knuckle row
-            parts.append(box((x - s * .17, y - .22, fz), (.18, .22, .1), bevel=.05, segments=2))   # curled tip
-        parts.append(box((x - s * .18, y - .05, z - .26), (.16, .26, .14), bevel=.06, segments=2))  # thumb
-        parts.append(box((x - s * .05, y - .17, z - .29), (.26, .12, .12), bevel=.05, segments=2))
+            parts.append(box((x - s * .04, y - .18, fz), (.4, .22, .11), bevel=.05, segments=2))
+        t = box((x - s * .12, y - .08, z - .27), (.24, .14, .13), bevel=.06, segments=2)
+        rotated(t, (x - s * .12, y - .08, z - .27), s * 35)
+        parts.append(t)
         finish(join(parts, "fist"), side + "Hand", "Fist", c, smooth=40)
 
 def legs(upper, lower=None, cuff=None, baggy=0.0):

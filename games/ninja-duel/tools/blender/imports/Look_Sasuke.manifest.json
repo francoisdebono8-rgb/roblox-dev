@@ -1,0 +1,401 @@
+{
+ "rest": {
+  "LowerTorso": [
+   0,
+   0,
+   0
+  ],
+  "UpperTorso": [
+   0,
+   1.15,
+   0
+  ],
+  "Head": [
+   0,
+   2.75,
+   0
+  ],
+  "LeftUpperArm": [
+   -1.24,
+   1.1,
+   0
+  ],
+  "RightUpperArm": [
+   1.24,
+   1.1,
+   0
+  ],
+  "LeftLowerArm": [
+   -1.24,
+   0.1,
+   0
+  ],
+  "RightLowerArm": [
+   1.24,
+   0.1,
+   0
+  ],
+  "LeftHand": [
+   -1.24,
+   -0.63,
+   0
+  ],
+  "RightHand": [
+   1.24,
+   -0.63,
+   0
+  ],
+  "LeftUpperLeg": [
+   -0.5,
+   -1.05,
+   0
+  ],
+  "RightUpperLeg": [
+   0.5,
+   -1.05,
+   0
+  ],
+  "LeftLowerLeg": [
+   -0.5,
+   -2.1,
+   0
+  ],
+  "RightLowerLeg": [
+   0.5,
+   -2.1,
+   0
+  ],
+  "LeftFoot": [
+   -0.5,
+   -2.8,
+   -0.15
+  ],
+  "RightFoot": [
+   0.5,
+   -2.8,
+   -0.15
+  ]
+ },
+ "pieces": {
+  "Head__Skin": {
+   "body": "Head",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__Chest": {
+   "body": "UpperTorso",
+   "color": [
+    36,
+    46,
+    96
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__RoundelRed": {
+   "body": "UpperTorso",
+   "color": [
+    214,
+    40,
+    40
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "UpperTorso__RoundelWhite": {
+   "body": "UpperTorso",
+   "color": [
+    246,
+    244,
+    240
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LowerTorso__Hips": {
+   "body": "LowerTorso",
+   "color": [
+    238,
+    236,
+    230
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperLeg__Thigh": {
+   "body": "LeftUpperLeg",
+   "color": [
+    238,
+    236,
+    230
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__Shin": {
+   "body": "LeftLowerLeg",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperLeg__Thigh": {
+   "body": "RightUpperLeg",
+   "color": [
+    238,
+    236,
+    230
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__Shin": {
+   "body": "RightLowerLeg",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__Wrap": {
+   "body": "LeftLowerLeg",
+   "color": [
+    238,
+    236,
+    230
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__Wrap": {
+   "body": "RightLowerLeg",
+   "color": [
+    238,
+    236,
+    230
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__Arm": {
+   "body": "LeftUpperArm",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftUpperArm__Sleeve": {
+   "body": "LeftUpperArm",
+   "color": [
+    36,
+    46,
+    96
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerArm__Forearm": {
+   "body": "LeftLowerArm",
+   "color": [
+    214,
+    214,
+    224
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__Arm": {
+   "body": "RightUpperArm",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightUpperArm__Sleeve": {
+   "body": "RightUpperArm",
+   "color": [
+    36,
+    46,
+    96
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerArm__Forearm": {
+   "body": "RightLowerArm",
+   "color": [
+    214,
+    214,
+    224
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftHand__Fist": {
+   "body": "LeftHand",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightHand__Fist": {
+   "body": "RightHand",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Sole": {
+   "body": "LeftFoot",
+   "color": [
+    60,
+    48,
+    44
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Heel": {
+   "body": "LeftFoot",
+   "color": [
+    26,
+    32,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftFoot__Toes": {
+   "body": "LeftFoot",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "LeftLowerLeg__AnkleStrap": {
+   "body": "LeftLowerLeg",
+   "color": [
+    26,
+    32,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Sole": {
+   "body": "RightFoot",
+   "color": [
+    60,
+    48,
+    44
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Heel": {
+   "body": "RightFoot",
+   "color": [
+    26,
+    32,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightFoot__Toes": {
+   "body": "RightFoot",
+   "color": [
+    250,
+    226,
+    204
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "RightLowerLeg__AnkleStrap": {
+   "body": "RightLowerLeg",
+   "color": [
+    26,
+    32,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__HeadbandPlate": {
+   "body": "Head",
+   "color": [
+    190,
+    198,
+    210
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0.12
+  },
+  "Head__PlateMark": {
+   "body": "Head",
+   "color": [
+    110,
+    118,
+    132
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__BandTail": {
+   "body": "Head",
+   "color": [
+    26,
+    32,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__HairShade": {
+   "body": "Head",
+   "color": [
+    50,
+    58,
+    92
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Head__Bangs": {
+   "body": "Head",
+   "color": [
+    30,
+    34,
+    56
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  }
+ }
+}

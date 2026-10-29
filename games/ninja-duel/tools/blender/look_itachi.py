@@ -33,12 +33,13 @@ for side in ("Left", "Right"):
 sandals((34, 34, 46), SKIN)
 sword_on_back(2.6, (.08, UT[1], .62), -28, hilt_len=.78)
 headband((36, 42, 62))
-hair_mass(HAIR)
-side_locks(HAIR, x=.86, top=.6, length=1.25, z=-.42, width=.44)
+hair_mass(HAIR, back=-.8, nape_puff=.16)
+back_mass(HAIR, bottom=-1.0, width=.92, depth=.4, z=.5, top=.4)
+side_locks(HAIR, x=.87, top=.6, length=1.55, z=-.44, width=.48, thick=.16)
 bangs([(-.3, -.38, .22), (-.06, -.08, .26), (.18, .22, .24)], HAIR, width=.42)
-pts = [tuple(Vector((0, HY - .55 - 1.1 * k / 8, .86 + .12 * k / 8))) for k in range(9)]
-finish(lock_path(pts, lambda p: (0, 0, 1), .34, .22, sides=8), "Head", "Ponytail", HAIR, smooth=40)
-finish(band(-.55, .1, .2, .17, thick=.04, center=(0, HY, .85), n=2), "Head", "HairTie", (70, 30, 40))
+pts = [tuple(Vector((0, HY - .7 - 1.9 * k / 10, .86 + .16 * k / 10))) for k in range(11)]
+finish(lock_path(pts, lambda p: (0, 0, 1), .4, .26, sides=8, taper=.55), "Head", "Ponytail", HAIR, smooth=40)
+finish(band(-.7, .1, .23, .2, thick=.04, center=(0, HY, .85), n=2), "Head", "HairTie", (70, 30, 40))
 export("Look_Itachi", OUT)
 preview("Look_Itachi", OUT, stand_in=False)
 print("done")

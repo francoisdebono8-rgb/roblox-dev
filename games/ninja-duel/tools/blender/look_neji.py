@@ -27,9 +27,17 @@ arms(SHIRT, SHIRT, cuff=SHIRT_S, bulk=.03)
 hands(SKIN)
 sandals((50, 46, 58), SKIN)
 headband((42, 42, 54))
-hair_mass(HAIR)
-back_mass(HAIR, bottom=-1.7, width=.92, depth=.42, z=.52, top=.55)
-side_locks(HAIR, x=.86, top=.6, length=1.2, z=-.42, width=.44)
+hair_mass(HAIR, back=-.8, nape_puff=.14)
+back_mass(HAIR, bottom=-.95, width=.92, depth=.42, z=.52, top=.55)
+# The long hair: three locks from the back of the head down to the waist,
+# gathered by a tie near the ends.
+long = []
+for dx, spread in ((-.22, -.08), (0, 0), (.22, .08)):
+    pts = [tuple(Vector((dx + spread * k / 10, HY - .3 - 2.7 * k / 10, .8 + .06 * math.sin(k / 10 * math.pi) - .02 * k))) for k in range(11)]
+    long.append(lock_path(pts, lambda p: (0, 0, 1), .38, .2, sides=8, taper=.35))
+finish(join(long, "long"), "Head", "LongHair", HAIR, smooth=40)
+finish(band(-2.55, .12, .28, .16, thick=.05, center=(0, HY, .63), n=2), "Head", "HairTie", (240, 236, 226))
+side_locks(HAIR, x=.87, top=.6, length=1.5, z=-.44, width=.46, thick=.15)
 bangs([(-.22, -.4, .26), (.22, .4, .26)], HAIR, width=.42)
 export("Look_Neji", OUT)
 preview("Look_Neji", OUT, stand_in=False)
