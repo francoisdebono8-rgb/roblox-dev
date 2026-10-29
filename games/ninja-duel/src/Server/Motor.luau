@@ -354,7 +354,15 @@ function Motor.step(a,c,dt,now)
   if flat.Magnitude>.05 and flat.Magnitude<Motor.SURFACE and math.abs(d.Y)<4 then
    local n=flat.Unit
    local inward=locomotion:Dot(n)
-   if inward>0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
+   -- (User 29/10 playtest, flight recorder: 7 s of "free, stick held, not
+   -- moving", 2.3 s at once, walking into a guarding opponent.) Walking into
+   -- a body standing on its feet pushes it, as a fighting game's push boxes
+   -- do: the walker keeps Config.Push.Share of its inward speed and the other
+   -- body is carried along (Combat:separate keeps them apart). A body in a
+   -- reaction, a throw or the air is still a wall.
+   local pushable=other.reaction==nil and not other.airborne and not other.grabbedBy and not a.grabVictim
+   local keep=if pushable then Config.Push.Share else 0
+   if inward>0 then locomotion-=n*inward*(1-keep)*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
   end
  end
 	 if locomotion.Magnitude>limit then

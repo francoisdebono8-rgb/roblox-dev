@@ -469,6 +469,9 @@ return {
 	-- nothing for Window seconds (a volley is one flinch); a thrown object
 	-- hitting for Heavy damage or more is a real blow and stuns as one.
 	ProjectileStun = {Stun = 0.18, Window = 0.9, Heavy = 8},
+	-- Walking into a standing body pushes it (Motor.step): the walker keeps
+	-- Share of the inward speed.
+	Push = {Share = 0.45},
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,
@@ -3616,7 +3619,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d8a3987c9251b9ea1f85dcd0a0b16577bf03bc26593cbd101c6f04bf95542611</string>
+          <string name="Value">5ba0ea1ae81ead12f7887012c9b451f351e02bd9e7b1d94375fe6e62af9840fa</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -11334,7 +11337,10 @@ function Combat:separate()
 	if gap&lt;2.6 then
 		for _,pair in {{a,dir},{b,-dir}} do
 			local body,n=pair[1],pair[2]
-			if body.state~="Dodging" and not (body.rush and body.rush.line) then
+			-- A walk into a standing body is a push (Motor.step, Config.Push):
+			-- only bursts (a chase, a strike's lunge, a knockback) are stopped.
+			local walking=(body.state=="Neutral" or body.state=="Guarding") and not body.reaction and not body.airborne
+			if body.state~="Dodging" and not (body.rush and body.rush.line) and not walking then
 				local v=body.root.AssemblyLinearVelocity
 				local inward=v:Dot(n)
 				if inward&gt;0 then body.root.AssemblyLinearVelocity=v-n*inward end
@@ -15530,7 +15536,15 @@ function Motor.step(a,c,dt,now)
   if flat.Magnitude&gt;.05 and flat.Magnitude&lt;Motor.SURFACE and math.abs(d.Y)&lt;4 then
    local n=flat.Unit
    local inward=locomotion:Dot(n)
-   if inward&gt;0 then locomotion-=n*inward*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
+   -- (User 29/10 playtest, flight recorder: 7 s of "free, stick held, not
+   -- moving", 2.3 s at once, walking into a guarding opponent.) Walking into
+   -- a body standing on its feet pushes it, as a fighting game's push boxes
+   -- do: the walker keeps Config.Push.Share of its inward speed and the other
+   -- body is carried along (Combat:separate keeps them apart). A body in a
+   -- reaction, a throw or the air is still a wall.
+   local pushable=other.reaction==nil and not other.airborne and not other.grabbedBy and not a.grabVictim
+   local keep=if pushable then Config.Push.Share else 0
+   if inward&gt;0 then locomotion-=n*inward*(1-keep)*math.clamp((Motor.SURFACE-flat.Magnitude)/.6,0,1) end
   end
  end
 	 if locomotion.Magnitude&gt;limit then

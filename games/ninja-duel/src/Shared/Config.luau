@@ -8,6 +8,9 @@ return {
 	-- nothing for Window seconds (a volley is one flinch); a thrown object
 	-- hitting for Heavy damage or more is a real blow and stuns as one.
 	ProjectileStun = {Stun = 0.18, Window = 0.9, Heavy = 8},
+	-- Walking into a standing body pushes it (Motor.step): the walker keeps
+	-- Share of the inward speed.
+	Push = {Share = 0.45},
 	ComboReset = 1.05, MeleeRange = 7.6, MeleeFacing = 0.18,
 	DodgeCost = 10, DodgeCooldown = 0.8, DodgeTime = 0.32, DodgeIFrames = 0.22,
 	DodgeSpeed = 61, GuardSpeed = 8, ChannelSpeed = 7,

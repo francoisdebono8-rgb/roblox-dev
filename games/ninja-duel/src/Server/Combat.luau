@@ -2225,7 +2225,10 @@ function Combat:separate()
 	if gap<2.6 then
 		for _,pair in {{a,dir},{b,-dir}} do
 			local body,n=pair[1],pair[2]
-			if body.state~="Dodging" and not (body.rush and body.rush.line) then
+			-- A walk into a standing body is a push (Motor.step, Config.Push):
+			-- only bursts (a chase, a strike's lunge, a knockback) are stopped.
+			local walking=(body.state=="Neutral" or body.state=="Guarding") and not body.reaction and not body.airborne
+			if body.state~="Dodging" and not (body.rush and body.rush.line) and not walking then
 				local v=body.root.AssemblyLinearVelocity
 				local inward=v:Dot(n)
 				if inward>0 then body.root.AssemblyLinearVelocity=v-n*inward end

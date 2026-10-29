@@ -168,5 +168,22 @@ test("a volley of light blades is one flinch, not a lock (user 29/10 playtest: I
  assert(a.state=="Stunned","a strike after the volley did not stun ("..tostring(before)..")")
 end)
 
+test("walking into a standing opponent pushes him, it does not freeze the walker (user 29/10 playtest)",function()
+ local c,a,b=duel("Lion","Mirage",2.7)
+ local a0,b0=a.root.Position,b.root.Position
+ for _=1,100 do a.move=V.new(0,0,-1);H.step(c,.01) end
+ local walked=a0.Z-a.root.Position.Z
+ local pushed=b0.Z-b.root.Position.Z
+ assert(walked>1.5,string.format("the walker stayed planted (%.2f studs in 1 s)",walked))
+ assert(pushed>1,string.format("the opponent was not pushed (%.2f studs)",pushed))
+ assert((a.root.Position-b.root.Position).Magnitude>1.8,"the bodies walked into each other")
+ -- a body in a reaction is not pushed along
+ local c2,x,y=duel("Lion","Mirage",2.7)
+ Brawler.react(c2,y,"HitStun",V.zero,1,x)
+ local y0=y.root.Position
+ for _=1,50 do x.move=V.new(0,0,-1);H.step(c2,.01) end
+ assert((y.root.Position-y0).Magnitude<1.2,"a body in a reaction was carried by a walk")
+end)
+
 if failed>0 then error(failed.." fluidity test(s) failed",0) end
 print(string.format("NinjaDuel fluidity: %d PASS (headless; the feel itself is a Studio check)",passed))
