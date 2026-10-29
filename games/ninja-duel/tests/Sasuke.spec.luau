@@ -55,6 +55,8 @@ end)
 test("vault kick: sideways inside a string crosses to the other side",function()
  local c,a,b=H.duel("Lion","Flashstep")
  place(c,a,b,V.new(0,3,2.6),V.new(0,3,-2.6))
+ -- (Stage 6) the flank comes after □□.
+ assert(c:request(a,"Attack"));chain(c,a)
  assert(c:request(a,"Attack"));chain(c,a)
  local before=a.root.Position-b.root.Position
  a.move=a.root.CFrame.RightVector

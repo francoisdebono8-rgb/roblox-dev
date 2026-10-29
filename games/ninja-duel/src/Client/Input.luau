@@ -100,14 +100,14 @@ function Input.new(send,getState,toggleLock,camera)
   if released(state) and self.seals[object.KeyCode.Name] then self.seals[object.KeyCode.Name]=nil;send("SealRelease") end
   return false
  end
- bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
- bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",3) end)
- bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",4) end)
+ bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",1) end)
+ bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",2) end)
+ bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",3) end)
  bind("Jump",both("Jump"),function(state,obj)
   local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
   if released(state) then
    if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
-   face(state,obj,"Jump",1)
+   face(state,obj,"Jump",4)
   else
    -- (User 29/10: a jump pressed after a launch flew the body up after the
    -- other one.) On a pad × doubles as the chase inside its window (no
@@ -116,7 +116,7 @@ function Input.new(send,getState,toggleLock,camera)
    -- (Audit 29/10) The pad sends PadJump: the server picks the chase if its
    -- own window is open, else the jump (Matches:act).
    local action=if padObject(obj) then "PadJump" else "Jump"
-   if face(state,obj,action,1) then self.jumps[id]=true end
+   if face(state,obj,action,4) then self.jumps[id]=true end
   end
  end)
  bind("Guard",both("Guard"),function(state,obj)
@@ -128,7 +128,8 @@ function Input.new(send,getState,toggleLock,camera)
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("WallDetach")
+   -- R1 + L1: the ultimate (on a wall, the server lets go of it instead).
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Ultimate")
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -164,7 +165,7 @@ function Input.new(send,getState,toggleLock,camera)
   if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
   elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
  end)
- for _,action in {"Substitute","WallDetach","Feint","Pursuit"} do
+ for _,action in {"Substitute","WallDetach","Feint","Pursuit","Ultimate"} do
   bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
  for _,action in {"Technique5","Awaken","Arm"} do

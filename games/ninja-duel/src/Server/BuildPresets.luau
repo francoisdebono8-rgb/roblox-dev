@@ -17,9 +17,9 @@ Presets.AI={
 	Flashstep={
 		Beginner={Why="Seals that survive his substitution: the base loop, a little more forgiving.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance"}},
-		Medium={Why="Adds the air spike that plants a destination and a cheaper Rasengan.",
+		Medium={Why="Adds the air spike that plants a destination and a quicker Lightning Strike.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands"}},
-		Hard={Why="Rasengan drive pick-ups, longer seals and a parry that seals the attacker.",
+		Hard={Why="A steadier seal, longer seals and a parry that seals the attacker.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal"}},
 		Boss={Why="The full relocation fighter: string teleports and air exits.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal","StringFlash","AirExit","LongSeal"}},

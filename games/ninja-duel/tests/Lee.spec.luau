@@ -97,8 +97,9 @@ test("pure taijutsu: no blade, no element, no projectile technique, no kawarimi,
  assert(ChakraTuning.CharacterMastery.Leaf=="Taijutsu","no chakra profile of his own")
  assert(#ChakraTuning.Masteries.Taijutsu.tags==1 and ChakraTuning.Masteries.Taijutsu.tags[1]=="body","the Taijutsu profile is not body-only")
  assert(next(ChakraTuning.Preferred.Taijutsu)==nil and ChakraTuning.BodyTool.Taijutsu==nil,"the Taijutsu profile pours chakra into something")
- -- Young stage only (DEC-013): five gates at most.
- assert(def.Awakening.Name=="FIFTH GATE","the awakening is not the Fifth Gate")
+ -- Young stage only (DEC-013): five gates at most. (Stage 6) the gates open
+ -- one by one inside the awakening, the first to the fifth.
+ assert(def.Awakening.Gates and def.Awakening.Gates.Max==5,"the awakening does not stop at the Fifth Gate")
 end)
 
 -- Routes ---------------------------------------------------------------------
@@ -147,23 +148,27 @@ test("heavy after two kicks is the rising kick too (into the chase); heavy after
  local c2,x=opened(1)
  assert(press(c2,x,"Heavy"));assert(x.attackName=="KneeStrike","heavy after one kick is "..tostring(x.attackName))
 end)
-test("the Leaf Hurricane keeps the string: two kicks, away, a low spin, then the third kick ends it",function()
+test("the Leaf Hurricane keeps the string: two kicks, away, a low spin, then the string runs to its last kick",function()
  local c,a,b=opened(2)
  assert(press(c,a,"Attack",-toward(a)));assert(a.attackName=="LeafHurricane","away after two kicks gave "..tostring(a.attackName))
  until_(c,.6,function() return b.reaction=="Juggled" end,"the low spin did not take the legs")
  assert(b.reaction~="Knockdown","the low spin ended the string with a knockdown")
  chain(c,a,"LeafHurricane")
  assert(a.combo==3,"the low spin did not count as the third confirmed hit ("..tostring(a.combo)..")")
- assert(press(c,a,"Attack"));assert(a.attackName=="Light3","after the low spin the next press is "..tostring(a.attackName))
- until_(c,.6,function() return b.reaction=="Knockback" end,"the fourth strike did not knock away")
+ -- (Stage 6) Lee's string is 5 hits: a fourth kick keeps it, the fifth ends it.
+ assert(press(c,a,"Attack"));assert(a.attackName=="Light5","after the low spin the next press is "..tostring(a.attackName))
+ chain(c,a,"Light5")
+ assert(press(c,a,"Attack"));assert(a.attackName=="Light3","the fifth press is "..tostring(a.attackName))
+ until_(c,.6,function() return b.reaction=="Knockback" end,"the fifth strike did not knock away")
  -- From the low spin the rising kick is still there.
  local c2,x,y=opened(2)
  assert(press(c2,x,"Attack",-toward(x)));chain(c2,x,"LeafHurricane")
  assert(press(c2,x,"Attack",toward(x)));assert(x.attackName=="LeafRising","toward after the low spin is "..tostring(x.attackName))
 end)
-test("the Leaf Whirlwind: one kick and side, a wide spin that reaches a body that stepped aside, the string stays open",function()
- local c,a,b=opened(1)
- assert(press(c,a,"Attack",side(a,1)));assert(a.attackName=="LeafWhirlwind","side after one kick gave "..tostring(a.attackName))
+test("the Leaf Whirlwind: two kicks and side, a wide spin that reaches a body that stepped aside, the string stays open",function()
+ -- (Stage 6) the flank comes after □□, like the launcher and the sweep.
+ local c,a,b=opened(2)
+ assert(press(c,a,"Attack",side(a,1)));assert(a.attackName=="LeafWhirlwind","side after two kicks gave "..tostring(a.attackName))
  -- The opponent steps a body width aside during the startup: the arc still reaches.
  c:relocate(b,b.root.Position+side(a,1)*2.6)
  local before=flat(a.root.Position-b.root.Position)
@@ -173,7 +178,7 @@ test("the Leaf Whirlwind: one kick and side, a wide spin that reaches a body tha
  local after=flat(a.root.Position-b.root.Position)
  local turned=math.deg(math.acos(math.clamp(before.Unit:Dot(after.Unit),-1,1)))
  assert(turned<25,string.format("the Leaf Whirlwind took an angle (%.0f deg): it is not an orbit route",turned))
- assert(a.combo==2,"the whirlwind did not keep the string ("..tostring(a.combo)..")")
+ assert(a.combo==3,"the whirlwind did not keep the string ("..tostring(a.combo)..")")
 end)
 
 -- Technique --------------------------------------------------------------------
@@ -296,7 +301,12 @@ test("the Fifth Gate: only under 35%; faster legs (the real limit), harder, the 
  a.health=a.def.Health*.3;a.hum.Health=a.health
  assert(c:request(a,"Awaken"),"the gate refused under 35%")
  H.step(c,.5)
- assert(a.speedScale>1.1 and math.abs(a.speedScale-a.def.Awakening.Speed)<.001,"the gate did not speed him up ("..tostring(a.speedScale)..")")
+ -- (Stage 6) the gates open one by one, one more every 4 s: the first is a
+ -- fifth of the speed, the fifth (16 s in) the whole of it.
+ assert(a.speedScale>1 and a.speedScale<a.def.Awakening.Speed-.05,"the first gate is already the fifth ("..tostring(a.speedScale)..")")
+ H.step(c,16)
+ assert(a.speedScale>1.1 and math.abs(a.speedScale-a.def.Awakening.Speed)<.001,"the fifth gate did not speed him up ("..tostring(a.speedScale)..")")
+ a.health=a.def.Health*.3;a.hum.Health=a.health
  -- Measured in Studio: the fastest legs of the cast on foot (his sprint was
  -- Minato's), with the gate's peak kept where it was readable (~64 studs/s).
  for id,def in H.fighters do
@@ -419,7 +429,9 @@ test("AI duels: Rock Lee against every CORE4 prodigy, Gaara and himself, both wa
     end
    end
   end
-  assert(routes>=6,"Lee's bot barely used his routes ("..routes..")")
+  print("   lotus",lotus,"routes",routes)
+  -- (Stage 6) every route now needs □□ first (it was 6 with the flank after one).
+  assert(routes>=4,"Lee's bot barely used his routes ("..routes..")")
   assert(lotus>=1,"Lee's bot never reached a lotus in eleven duels")
  end)
 end)
@@ -589,7 +601,7 @@ test("his whole kit presents without a snap: string, low spin, rising kick, shad
  end
  local function reset(gap)
   place(c,a,b,gap or 4.5)
-  for _,x in {a,b} do x.health=x.def.Health;x.hum.Health=x.health;x.reaction=nil;x.state="Neutral";x.untilTime=c.now;x.pending=nil;x.attackName=nil;x.airborne=false end
+  for _,x in {a,b} do x.health=x.def.Health;x.hum.Health=x.health;x.reaction=nil;x.state="Neutral";x.untilTime=c.now;x.pending=nil;x.attackName=nil;x.airborne=false;x.combo=0;x.chainOpen=false end
   b.cooldowns={};a.cooldowns={};a.chakra=a.def.Chakra
  end
  a.move=V.new(1,0,0);advance(.4);a.move=V.zero;advance(.3)

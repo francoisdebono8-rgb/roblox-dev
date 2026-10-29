@@ -13,6 +13,11 @@ local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
  Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
  Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,14,50),.48),
+ -- (Stage 6) The longer strings: 4 hits for everyone (5 for Lee and Naruto),
+ -- the last one (Light3) throws. The middle hits play the fighter's first and
+ -- second clips again until they get their own (clip).
+ Light4=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
+ Light5=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.Punch,3.4),
  Heavy=move(.30,.17,.52,14,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,8,3.2,"Launched",Vector3.new(0,58,13),1.18),
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
@@ -45,6 +50,10 @@ local attacks={
  Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
  -- Gaara: sand erupts under the opponent at range and throws them up.
  SandPillar=move(.27,.14,.5,9,0,"Launched",Vector3.new(0,54,4),1.1),
+ -- (Stage 6) Gaara's heavy no longer launches: a hand of sand seizes the body
+ -- at range and slams it down; after one lash, the sand fist drives it away.
+ SandHand=move(.24,.16,.48,10,0,"Knockdown",Vector3.new(0,-24,-14),.8),
+ SandFist=move(.18,.14,.4,11,0,"Knockback",Vector3.new(0,10,64),.52),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
  -- Lateral routes: Itachi's feint step (an afterimage stays, he reappears at
  -- the flank) and Neji's circular step onto a chakra point. Both keep the string.
@@ -97,7 +106,7 @@ for name,spec in attacks do
   -- contact distance: it now reaches a quarter stud past it.
   spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
  end
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Light4" or name=="Light5" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch" or name=="AirFlip"
 end
@@ -107,6 +116,8 @@ local motion={
  Light1={side=1,twist=30,lean=8,arm=82,step=1.05},
  Light2={side=-1,twist=34,lean=10,arm=88,step=1.08},
  Light3={side=1,twist=72,lean=12,arm=102,step=1.2},
+ Light4={side=1,twist=30,lean=8,arm=82,step=1.05},
+ Light5={side=-1,twist=34,lean=10,arm=88,step=1.08},
  Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3},
  Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15},
  DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35},
@@ -152,7 +163,7 @@ attacks.VaultKick.width=5.5;attacks.VaultKick.range=6.5;attacks.VaultKick.orbit=
 attacks.ChidoriThrust.range=7;attacks.ChidoriThrust.width=4.5
 -- Where a strike lands and what it is: the victim's body answers the blow it
 -- actually took (head snaps, body folds, legs are taken away, ...).
-local ZONE={Light1="head",Light2="body",Light3="body",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
+local ZONE={Light1="head",Light2="body",Light3="body",Light4="body",Light5="head",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
  Slam="body",AngleStep="body",Sweep="legs",CounterPalm="body",WallDive="body",PalmThrust="body",KneeStrike="body",FlyingKick="head",
  Riposte="head",SlideSweep="legs",SandPillar="legs",FeintStep="body",CircleStep="body",AirDrive="body",AirSpike="head",AirSwitch="head",
  LionKick="chin",VaultKick="head",ChidoriThrust="body",AirFlip="head",
@@ -161,6 +172,9 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  FlyingKick="kick",WallDive="kick",SandPillar="launch",AirDrive="kick",AirSpike="spike",AirSwitch="kick",PalmThrust="palm",CounterPalm="palm",
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
+attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
+attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
+attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 -- Rock Lee's moves, kept together so the stress-test fighter stays additive:
 -- reach, body, hit zone and kind, the two routes that keep the string, and the

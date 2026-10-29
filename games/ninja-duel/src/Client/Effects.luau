@@ -2118,6 +2118,9 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
+require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Systemic chakra, the player-facing layer (planted marks, the wire, clashes, bodies).
 require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})

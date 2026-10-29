@@ -121,9 +121,11 @@ test("the fan string: a longer reach, she stops further out, and the third strik
  local c3,m,n=H.duel("Gale","Mirage");place(c3,m,n,9);m.locked=true
  assert(press(c3,m,"Attack"));H.step(c3,.5)
  assert(gapOf(m,n)>=4.6,string.format("she walked into fist range (%.1f studs)",gapOf(m,n)))
- -- Three strikes: the third opens the fan and throws the body away.
+ -- (Stage 6) four strikes: the last opens the fan and throws the body away.
  local c4,p,q=opened(2)
- assert(press(c4,p,"Attack"));assert(p.attackName=="Light3","the third press is "..tostring(p.attackName))
+ assert(press(c4,p,"Attack"));assert(p.attackName=="Light4","the third press is "..tostring(p.attackName))
+ until_(c4,.9,function() return p.state=="Recovery" and p.chainOpen and c4.now>=(p.chainAt or 0) end,"the third strike did not chain")
+ assert(press(c4,p,"Attack"));assert(p.attackName=="Light3","the fourth press is "..tostring(p.attackName))
  until_(c4,.6,function() return q.reaction=="Knockback" end,"the fan gust did not knock away")
  H.step(c4,.8)
  assert(gapOf(p,q)>=12,string.format("the string ended %.1f studs apart: it made no distance",gapOf(p,q)))
@@ -150,11 +152,11 @@ test("routes: toward after two is the Updraft into rising air, away the Fan Slam
  local c4,p,q=opened(2)
  assert(press(c4,p,"Attack",-toward(p)));assert(p.attackName=="FanSlam","away after two gave "..tostring(p.attackName))
  until_(c4,.6,function() return q.reaction=="Knockdown" end,"the Fan Slam did not knock down")
- -- Sideways after one: a full turn, the body is thrown to the side asked for.
- local c5,s,o=opened(1)
+ -- Sideways after two (stage 6: every route after □□): a full turn, the body is thrown to the side asked for.
+ local c5,s,o=opened(2)
  local right=side(s,1)
  local before=o.root.Position
- assert(press(c5,s,"Attack",right));assert(s.attackName=="FanPirouette","side after one gave "..tostring(s.attackName))
+ assert(press(c5,s,"Attack",right));assert(s.attackName=="FanPirouette","side after two gave "..tostring(s.attackName))
  until_(c5,.6,function() return o.reaction=="Knockback" end,"the pirouette did not throw the body")
  H.step(c5,.6)
  local moved=o.root.Position-before
@@ -1061,16 +1063,17 @@ test("her whole kit presents without a snap: string, routes, air, the gust, the 
  end
  local function reset(gap)
   place(c,a,b,gap or 5.5)
-  for _,x in {a,b} do x.health=x.def.Health;x.hum.Health=x.health;x.reaction=nil;x.state="Neutral";x.untilTime=c.now;x.pending=nil;x.attackName=nil;x.airborne=false end
+  for _,x in {a,b} do x.health=x.def.Health;x.hum.Health=x.health;x.reaction=nil;x.state="Neutral";x.untilTime=c.now;x.pending=nil;x.attackName=nil;x.airborne=false;x.combo=0;x.chainOpen=false;x.comboHits=0 end
   b.cooldowns={};a.cooldowns={};a.chakra=a.def.Chakra;a.neutralToolAt=0;a.rushReadyAt=0
  end
  a.move=V.new(1,0,0);advance(.4);a.move=V.zero;advance(.3)
  reset()
- press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.7)
+ -- (Stage 6) a 4-hit string; every route after □□.
+ press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.7)
  reset()
  press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack",toward(a));advance(.9)
  reset()
- press(c,a,"Attack");advance(.36);press(c,a,"Attack",side(a,1));advance(.7)
+ press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack",side(a,1));advance(.7)
  reset()
  press(c,a,"Attack");advance(.36);press(c,a,"Attack");advance(.36);press(c,a,"Attack",-toward(a));advance(.7)
  reset(12)

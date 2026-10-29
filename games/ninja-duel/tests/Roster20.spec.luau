@@ -262,7 +262,7 @@ test("Nagato: repulsion clears blades and bodies, attraction pulls, the absorbin
  local c3,a3,b3=H.duel("Rinnegan","Copycat");place(c3,a3,b3,14);a3.chakra=40;b3.chakra=999;a3.health=100
  assert(press(c3,a3,slot("Rinnegan","Absorb")));run(c3,.1)
  local chakra=a3.chakra
- assert(c3:request(b3,"Technique3",a3.root.Position)) -- Kakashi's Water Dragon
+ assert(c3:request(b3,H.slot(b3,"WaterDragon"),a3.root.Position)) -- Kakashi's Water Dragon
  run(c3,1.5)
  assert(a3.health>=100,"the dragon was not absorbed (it hurt him)")
  assert(a3.chakra>chakra,"absorbing gave no chakra back")
@@ -391,11 +391,11 @@ for _,id in {"Rival","Sapling","Professor"} do
   if not listed[id] then return end
   local g=MoveGraphs[id]
   local reach=Fighters[id].AttackProfile.Light1.contact
-  -- Side after one, away after two: its own moves.
+  -- Side and away after two (stage 6: every route after □□): its own moves.
   local c,a,b=H.duel(id,"Leaf");place(c,a,b,reach);b.health=999
-  confirm(c,a)
+  confirm(c,a);confirm(c,a)
   assert(press(c,a,"Attack",a.root.CFrame.RightVector))
-  assert(a.attackName==g.routes.side,id..": side after one gave "..tostring(a.attackName))
+  assert(a.attackName==g.routes.side,id..": side after two gave "..tostring(a.attackName))
   local c2,a2,b2=H.duel(id,"Leaf");place(c2,a2,b2,reach);b2.health=999
   confirm(c2,a2);confirm(c2,a2)
   assert(press(c2,a2,"Attack",flat(a2.root.Position-b2.root.Position).Unit))

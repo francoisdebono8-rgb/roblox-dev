@@ -39,7 +39,9 @@ local Graphs = {
 		onRoute={Launcher="bodySeal",Sweep="floorSeal"},
 		-- Heavy after one clean cut: a rising knee that pops the opponent up.
 		heavyAfterOne="KneeStrike",
-		stringCancels={BurstStrike=true},
+		-- (Stage 6) at 13 he has no Rasengan: a clean string is spent on the
+		-- Lightning Strike (the shunshin cut) instead.
+		stringCancels={LightningStrike=true},
 		blockCancels={},
 		-- Surgical: the fastest re-entry, onto an angle beside the body; a seal
 		-- planted near the target pulls him onto its side, wider and quicker.
@@ -101,7 +103,7 @@ local Graphs = {
 		-- stops at lash range (the arrival strike is a lash), slower than a dash.
 		reengage={name="sand",speed=.85,arrive=7.5,angle=0,minRange=11,chase=.3,recovery=.22},
 		-- One lash, then the pillar: sand erupts under the opponent.
-		heavyAfterOne="SandPillar",
+		heavyAfterOne="SandFist",
 		stringCancels={SandCoffin=true},
 		blockCancels={Tool=true},
 	},

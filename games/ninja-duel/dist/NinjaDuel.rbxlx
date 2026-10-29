@@ -180,6 +180,11 @@ local attacks={
  Light1=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
  Light2=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.HardSmack,3.5),
  Light3=move(.12,.14,Combo.comboDelay-.26,Combo.Damage.MegaPunch,4.2,"Knockback",Vector3.new(0,14,50),.48),
+ -- (Stage 6) The longer strings: 4 hits for everyone (5 for Lee and Naruto),
+ -- the last one (Light3) throws. The middle hits play the fighter's first and
+ -- second clips again until they get their own (clip).
+ Light4=move(.09,.12,Combo.comboDelay-.22,Combo.Damage.Punch,3.2),
+ Light5=move(.10,.12,Combo.comboDelay-.23,Combo.Damage.Punch,3.4),
  Heavy=move(.30,.17,.52,14,5.4,"Knockdown",Vector3.new(0,12,34),.68),
  Launcher=move(.17,.14,.28,8,3.2,"Launched",Vector3.new(0,58,13),1.18),
  DashAttack=move(.07,.15,.27,7,8.2,"HitStun",Vector3.new(0,3,13),.31),
@@ -212,6 +217,10 @@ local attacks={
  Riposte=move(.05,.12,.26,8,2.6,"HitStun",Vector3.new(0,5,12),.36),
  -- Gaara: sand erupts under the opponent at range and throws them up.
  SandPillar=move(.27,.14,.5,9,0,"Launched",Vector3.new(0,54,4),1.1),
+ -- (Stage 6) Gaara's heavy no longer launches: a hand of sand seizes the body
+ -- at range and slams it down; after one lash, the sand fist drives it away.
+ SandHand=move(.24,.16,.48,10,0,"Knockdown",Vector3.new(0,-24,-14),.8),
+ SandFist=move(.18,.14,.4,11,0,"Knockback",Vector3.new(0,10,64),.52),
  SlideSweep=move(.12,.18,.38,8,11,"Knockdown",Vector3.new(0,8,18),.62),
  -- Lateral routes: Itachi's feint step (an afterimage stays, he reappears at
  -- the flank) and Neji's circular step onto a chakra point. Both keep the string.
@@ -264,7 +273,7 @@ for name,spec in attacks do
   -- contact distance: it now reaches a quarter stud past it.
   spec.depth=spec.contact+.25-1;spec.offset=(1+spec.contact+.25)/2
  end
- spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
+ spec.animation=name;spec.feedback=spec.reaction;spec.chain=name=="Light1" or name=="Light2" or name=="Light4" or name=="Light5" or name=="Air1" or name=="Air2" or name=="DashAttack" or name=="AngleStep" or name=="Riposte"
   or name=="FeintStep" or name=="CircleStep" or name=="AirSwitch" or name=="VaultKick"
  spec.air=name=="Air1" or name=="Air2" or name=="AirDrive" or name=="AirSpike" or name=="AirSwitch" or name=="AirFlip"
 end
@@ -274,6 +283,8 @@ local motion={
  Light1={side=1,twist=30,lean=8,arm=82,step=1.05},
  Light2={side=-1,twist=34,lean=10,arm=88,step=1.08},
  Light3={side=1,twist=72,lean=12,arm=102,step=1.2},
+ Light4={side=1,twist=30,lean=8,arm=82,step=1.05},
+ Light5={side=-1,twist=34,lean=10,arm=88,step=1.08},
  Heavy={side=-1,twist=48,lean=25,arm=116,step=1.3},
  Launcher={side=1,twist=20,lean=-24,arm=112,step=1.15},
  DashAttack={side=1,twist=36,lean=28,arm=96,step=1.35},
@@ -319,7 +330,7 @@ attacks.VaultKick.width=5.5;attacks.VaultKick.range=6.5;attacks.VaultKick.orbit=
 attacks.ChidoriThrust.range=7;attacks.ChidoriThrust.width=4.5
 -- Where a strike lands and what it is: the victim's body answers the blow it
 -- actually took (head snaps, body folds, legs are taken away, ...).
-local ZONE={Light1="head",Light2="body",Light3="body",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
+local ZONE={Light1="head",Light2="body",Light3="body",Light4="body",Light5="head",Heavy="body",Launcher="chin",DashAttack="body",Air1="body",Air2="head",
  Slam="body",AngleStep="body",Sweep="legs",CounterPalm="body",WallDive="body",PalmThrust="body",KneeStrike="body",FlyingKick="head",
  Riposte="head",SlideSweep="legs",SandPillar="legs",FeintStep="body",CircleStep="body",AirDrive="body",AirSpike="head",AirSwitch="head",
  LionKick="chin",VaultKick="head",ChidoriThrust="body",AirFlip="head",
@@ -328,6 +339,9 @@ local KIND={Light3="kick",Heavy="heavy",Launcher="launch",Air2="kick",Slam="slam
  FlyingKick="kick",WallDive="kick",SandPillar="launch",AirDrive="kick",AirSpike="spike",AirSwitch="kick",PalmThrust="palm",CounterPalm="palm",
  LionKick="launch",VaultKick="kick",ChidoriThrust="heavy",AirFlip="kick"}
 for name,spec in attacks do spec.zone=ZONE[name] or "body";spec.kind=KIND[name] or "strike" end
+attacks.Light4.clip="Light1";attacks.Light5.clip="Light2"
+attacks.SandHand.range=12;attacks.SandHand.width=5;attacks.SandHand.height=6;attacks.SandHand.depth=11;attacks.SandHand.offset=6;attacks.SandHand.facing=.25;attacks.SandHand.clip="SandPillar";attacks.SandHand.kind="heavy";attacks.SandHand.zone="body"
+attacks.SandFist.range=9;attacks.SandFist.width=5;attacks.SandFist.depth=8;attacks.SandFist.offset=4.5;attacks.SandFist.facing=.3;attacks.SandFist.clip="Light3";attacks.SandFist.kind="heavy"
 attacks.Grab.range=4.6;attacks.Grab.blockable=false;attacks.Throw.blockable=false;attacks.ThrowUp.blockable=false
 -- Rock Lee's moves, kept together so the stress-test fighter stays additive:
 -- reach, body, hit zone and kind, the two routes that keep the string, and the
@@ -446,7 +460,9 @@ function Combo.next(actor,now)
  actor.combo=comboCount;actor.lastAttack=now
  return 'Light'..comboCount
 end
-Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch'}
+-- (Stage 6) Longer strings: the fourth (and Lee's and Naruto's fifth) hit is
+-- a quick blow between the second and the ender (Light3 always ends).
+Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch',Light4='Punch',Light5='Punch'}
 -- Donor server damageValues and Animation objects, never supplied by clients.
 -- MegaPunch tuned 25 -&gt; 18 for Ninja Duel pacing (a three-hit string is no
 -- longer a third of a health bar); Punch and HardSmack keep the donor values.
@@ -636,6 +652,8 @@ local Controls = {
 		Sprint = Enum.KeyCode.LeftControl,
 		Technique5 = Enum.KeyCode.Five,
 		Awaken = Enum.KeyCode.T,
+		-- The ultimate (stage 6): its bar full, one blow opens the sequence. Pad R1 + L1.
+		Ultimate = Enum.KeyCode.Y,
 		-- Draw / sheathe a kunai (any fighter, DEC-030); R then throws it.
 		Arm = Enum.KeyCode.B,
 		Skip = Enum.KeyCode.Escape,
@@ -667,17 +685,19 @@ local Controls = {
 	KeyLabel = {
 		Light = "LMB", Heavy = "RMB", Jump = "SPACE", Dodge = "Q", Guard = "F",
 		Grab = "V", Tool = "R", Chakra = "Z", Pursuit = "E", Substitute = "X", Feint = "G",
-		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
+		WallDetach = "C", Lock = "SHIFT", Sprint = "CTRL", Technique5 = "5", Awaken = "T", Ultimate = "Y", Arm = "B", Skip = "ESC", ChakraLoad = "Z + action",
 	},
 	-- HUD copy for the keyboard layout, kept next to the bindings it documents.
 	Hint = "LMB light \u{00B7} RMB heavy",
-	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-5 jutsu",
+	Help = "WASD move   SPACE jump   Q dodge   LMB light   RMB heavy   F guard   V grab / throw break   E re-engage (chase / chakra dash)   R tool   hold Z + any action: chakra-infused (strike, heavy, jump, dodge, tool)   X substitute   G feint   T awaken   Y ultimate (bar full)   B kunai (draw / sheathe, R throws it)   CTRL sprint   SHIFT lock   1-4 jutsu",
 	-- The directional combo grammar, shared by every fighter.
 	Grammar = "CLEAN HITS  2 hits → toward + LMB: launch · away + LMB: sweep  |  1 hit → side + LMB: angle  |  air hit → direction + LMB: drive / spike / switch  |  away + R in a string: retreat",
 	GrammarPad = "CLEAN HITS  2 hits → toward + □: launch · away + □: sweep  |  1 hit → side + □: angle  |  air hit → direction + □: drive / spike / switch  |  away + R2 in a string: retreat",
-	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + face: jutsu   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
-	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",ChakraLoad="L2 + action"},
-	TechniquePad = {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"},
+	HelpPad = "L move · L3 sprint   R camera · R3 lock   □ light   △ heavy   ○ dodge / escape   × jump / chase   sprint + ○ toward: chakra dash   L1 guard   L1 + □ grab   R2 tool   hold L2 + any action: chakra-infused   R1 + □/△/○/×: jutsu 1-4   R1 + L1 ultimate   R1 + R2 feint   D-pad → escape · ← kunai · ↓ awaken · ↑ jutsu 5",
+	PadLabel = {Light="□",Heavy="△",Dodge="○",Jump="×",Guard="L1",Modifier="R1",Grab="L1 + □",Tool="R2",Chakra="L2",Sprint="L3",Lock="R3",Pursuit="×",Dash="L3 + ○",Substitute="D-pad →",Arm="D-pad ←",Feint="R1 + R2",WallDetach="R1 + L1",Ultimate="R1 + L1",ChakraLoad="L2 + action"},
+	-- (Stage 6) One order for everyone: □ pressure, △ signature, ○ movement
+	-- or defence, × control or combo.
+	TechniquePad = {"R1 + □","R1 + △","R1 + ○","R1 + ×","D-pad ↑"},
 }
 
 function Controls.comboHelp(graph,pad)
@@ -1169,20 +1189,12 @@ return Face
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
-			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20,
-				-- (User 28/10: "I should be able to run with my attack and strike")
-				-- Cast in the open, the Rasengan stays in his palm: he runs, jumps
-				-- with it and his next strike drives it (a thrust, a plunge from the
-				-- air). After a teleport, from the air or as a string's end it is the
-				-- instant strike it was (Techniques.BurstStrike).
-				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 20,
-					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 70), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 8, Event = "Rasengan" }, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
-			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Flow = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
+			{ Id = "LightningStrike", Name = "Lightning Strike", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Cost = 16, Channel = 0.04, Active = 0.02, Recovery = 0.12, Cooldown = 3.4, Interruptible = true, Range = 26, Damage = 12, Invuln = 0.14, Kind = "flash", Hint = "A shunshin through the body with one kunai cut • the fastest blow of the game" },
+			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 6, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Prototype = true, Hint = "Prototype: to one seal (the last planted), 6 s to recharge • no strike of its own" },
 			-- Thrown off the kunai's edge on the run: cuts enemy blades out of its
 			-- lane; a body it cuts is thrown a step sideways with a short wind seal
 			-- (Flying Thunder God lands beside it). Techniques.WindCut.
-			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Mobile = true, Throw = "Kunai", Cost = 14, Channel = 0.16, Active = 0.02, Recovery = 0, Cooldown = 3.2, Interruptible = true, Range = 40, Speed = 104, Damage = 6, Hint = "Thrown on the run • cuts blades in its lane • a cut body is marked: 2 lands beside it" },
+			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Mobile = true, Throw = "Kunai", Cost = 14, Channel = 0.16, Active = 0.02, Recovery = 0, Cooldown = 3.2, Interruptible = true, Range = 40, Speed = 104, Damage = 6, Hint = "Thrown on the run • cuts blades in its lane • a cut body is marked: the Flying Thunder God lands beside it" },
 		},
 	},
 	Mirage = {
@@ -1204,7 +1216,9 @@ return Face
 		-- that meets it is parried and read: he slips aside, it bites the
 		-- afterimage), every swing that misses close to him is read
 		-- (WhiffRead, studs), cheaper and faster jutsu.
-		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, GuardRead = true, WhiffRead = 9, Color = { 230, 40, 50 } },
+		-- (Stage 6, 13:42 decision) His Mangekyō at 13: entering the awakening, the
+		-- Tsukuyomi holds the body in front of him 1.5 s (once a fight, as the awakening).
+		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, GuardRead = true, WhiffRead = 9, Tsukuyomi = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -1213,15 +1227,14 @@ return Face
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
-			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter" },
 			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Flow = true, Range = 56, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.3, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 50, Radius = 2.6, Growth = 1.8, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
 			-- His image stays where he stood and he withdraws behind it, on the
 			-- opponent's line of sight: a swing that reaches the image is caught
 			-- (Techniques.MirageCast / whiffRead).
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 26, Channel = 0.42, Active = 0.06, Recovery = 0.2, Cooldown = 7, Interruptible = true, Flow = true, Range = 23, Requires = "Target", Hint = "His image stays, he withdraws behind it • a swing at the image is caught • trust the body" },
-			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.3, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 50, Radius = 2.6, Growth = 1.8, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
-			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
+			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter" },
 		},
 	},
 	-- Third prototype: the Hyuga genius at the Chunin Exam finals. Pure taijutsu
@@ -1253,9 +1266,10 @@ return Face
 		},
 		Skin = { 228, 202, 178 }, Hair = { 52, 36, 30 }, Outfit = { 226, 220, 206 },
 		Techniques = {
-			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
 			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Flow = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
 			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • each closed point adds palms and seal time • four closed: the guard collapses" },
+			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
+			{ Id = "ByakuganSight", Name = "Byakugan: Perception", Family = "Buff", Time = 5, Kind = "byakugan", Reveal = true, ParryScale = 1.5, Cost = 14, Channel = 0.12, Active = 0.04, Recovery = 0.12, Cooldown = 10, Interruptible = true, Hint = "5 s: clones and illusions shown, a wider parry" },
 		},
 	},
 	-- Fourth playable prototype: Sasuke at the Chunin Exam (12). Faster and
@@ -1286,6 +1300,15 @@ return Face
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
 		Techniques = {
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
+				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
+				-- jumps or climbs with it and his next strike releases it (a
+				-- thrust, a drop out of the air, a dive off a wall). Held, it
+				-- drains; a blow taken or a guard puts it out.
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				Hint = "Form it, move with it, then strike • a miss leaves him open" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball
@@ -1294,15 +1317,6 @@ return Face
 				-- recoil holds him up.
 				Hold = { Time = 0.9, Cost = 10, Radius = 1.8, Damage = 1.5, Speed = 0.8 },
 				Hint = "Hold to grow it • from the air it goes down • on a wired opponent: Dragon Flame" },
-			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
-			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
-			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
-				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
-				-- jumps or climbs with it and his next strike releases it (a
-				-- thrust, a drop out of the air, a dive off a wall). Held, it
-				-- drains; a blow taken or a guard puts it out.
-				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
-				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 		},
 	},
 	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient
@@ -1320,7 +1334,9 @@ return Face
 		-- covers ~130 degrees either side of his facing, never his back).
 		SandShield = { Charges = 3, Regen = 3.5, Break = 17, Cover = -0.4 },
 		-- His heavy is not a punch: sand erupts under the opponent at range.
-		HeavyMove = "SandPillar", LauncherMove = "SandPillar", AirHeavy = "Slam",
+		-- (Stage 6) △ is the sand hand (no launch: hammering it no longer juggles);
+		-- the pillar is only toward + □ in a string.
+		HeavyMove = "SandHand", LauncherMove = "SandFist", AirHeavy = "Slam",
 		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
 		SandFlicker = { Distance = 12 },
 		Awakening = { Name = "SHUKAKU'S SAND", Speed = 1.12, Damage = 1.12, Regen = 1.6, Cooldown = 0.5, ShieldRegen = 2, Color = { 222, 176, 112 } },
@@ -1337,9 +1353,10 @@ return Face
 		},
 		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },
 		Techniques = {
-			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
 			{ Id = "SandShuriken", Name = "Sand Shuriken", Cost = 16, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 3.5, Interruptible = true, Range = 38, Damage = 3, Hint = "Six hardened sand blades" },
+			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
 			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
+			{ Id = "SandArmor", Name = "Sand Armor", Family = "Buff", Time = 6, Hits = 2, Kind = "sandarmor", Cost = 20, Channel = 0.2, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true, Hint = "Absorbs the next two blows for 6 s" },
 		},
 	},
 	-- Stress-test fighter of the next wave (DEC-015): Rock Lee at the Chunin
@@ -1353,6 +1370,8 @@ return Face
 		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
 		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
 		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.2, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
+		-- (Stage 6) His ground string is five hits (everyone else four).
+		StringLength = 5,
 		CombatTravel = 1.15, CombatDamage = 1, DashScale = 1.12, GuardStrength = 0.08, PreferredRange = 4.5,
 		ComboToolCancel = false, CombatStyle = "Taijutsu", Tool = "Deflect",
 		-- Heavy after two clean hits is the rising kick too (into the chase).
@@ -1372,7 +1391,10 @@ return Face
 		-- The Fifth Gate (the five gates he opened against Gaara): faster and
 		-- harder, the lotus becomes the free Hidden Lotus, but the body burns
 		-- (health drain, never to a KO).
-		Awakening = { Name = "FIFTH GATE", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
+		-- (Stage 6, 13:42 decision) The gates only in the awakening: the first
+		-- opens at once, one more every 4 s up to the fifth (Gates); speed,
+		-- damage and the health they cost grow with each.
+		Awakening = { Name = "EIGHT GATES", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
 		AttackProfile = {
 			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
 			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
@@ -1383,6 +1405,9 @@ return Face
 			-- Konoha Daisenpū: a spinning kick that crosses the gap. A taijutsu
 			-- strike started by the jutsu pipeline (like the Chidori thrust).
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
+			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
+			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
+			{ Id = "DynamicEntry", Name = "Dynamic Entry", Family = "Teleport", To = "Aim", Distance = 24, Short = 3, Move = "FlyingKick", Cost = 14, Channel = 0.08, Active = 0.02, Recovery = 0.2, Cooldown = 5, Interruptible = true, Range = 26, Damage = 13, Kind = "leaf", Hint = "The flying kick from across the field" },
 		},
 	},
 	-- Roster wave (several bodies, hook H12): Naruto in Part I, from the Chunin
@@ -1396,6 +1421,8 @@ return Face
 		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
 		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
 		Health = 140, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
+		-- (Stage 6) His ground string is five hits (everyone else four).
+		StringLength = 5,
 		CombatTravel = 1.05, CombatDamage = 1, DashScale = 1.05, GuardStrength = 0.08, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Legion", Tool = "Kunai",
 		-- A plain kunai; with the chakra chord (Z + R) it is a clone transformed
@@ -1433,6 +1460,7 @@ return Face
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "His clones send him up, then the heel down" },
 		},
 	},
 	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke
@@ -1553,7 +1581,8 @@ return Face
 		-- (R stays his kunai). Weapon is the shared shape for any carried blade.
 		Weapon = { Kind = "Tanto", Name = "TANTO", Reach = 1.5, Contact = 0.9, Damage = 1.15, Throwable = false,
 			Moves = { Light1 = true, Light2 = true, Light3 = true, Heavy = true, Launcher = true, Sweep = true, FeintStep = true, DashAttack = true, Air1 = true, Air2 = true, AirSpike = true } },
-		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
+		-- (Stage 6, 13:42 decision) The Sharingan only while awakened (SharinganAwake).
+		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 }, SharinganAwake = true,
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.
 		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
@@ -1569,14 +1598,15 @@ return Face
 		},
 		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
 		Techniques = {
+			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
 			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
 				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
 			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
 				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
-			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
-				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+			{ Id = "LightningCut", Name = "Lightning Cut", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Armed = true, Element = "Lightning", Cost = 18, Channel = 0.08, Active = 0.02, Recovery = 0.16, Cooldown = 6, Interruptible = true, Range = 22, Damage = 14, Invuln = 0.12, Kind = "lightning", Hint = "Tantô drawn: through the body in one cut, out behind it" },
 		},
 	},
 }
@@ -1657,6 +1687,15 @@ return {
 	firebreath={shape="orb",color=rgb(255,170,70),color2=rgb(255,90,30),size={2,2,2},light=3,trail=0,hit="burst",zone="scorch"},
 	swordread={shape="blade",color=rgb(220,60,60),color2=rgb(200,206,214),size={.2,.06,2.4},light=0,trail=0,hit="sparks"},
 	woodguard={shape="blade",color=rgb(150,110,70),color2=rgb(110,160,80),size={.6,.6,1.6},light=0,trail=0,hit="crush"},
+	-- (Stage 6) the eight main fighters' new jutsu: Minato's flash cut,
+	-- Kakashi's white-chakra cut, Lee's entry kick, Neji's sight, Gaara's
+	-- armour and Lee's weights (bodies and buffs: no thrown object).
+	flash={shape="blade",color=rgb(255,236,120),color2=rgb(255,200,40),size={.3,.06,1.6},light=2,trail=.6,hit="sparks"},
+	lightning={shape="blade",color=rgb(236,246,255),color2=rgb(130,190,255),size={.3,.06,2.2},light=2.5,trail=.5,hit="sparks"},
+	leaf={shape="orb",color=rgb(120,200,90),color2=rgb(60,140,50),size={1.2,1.2,1.2},light=0,trail=.6,hit="crush"},
+	byakugan={shape="orb",color=rgb(236,232,255),color2=rgb(170,160,230),size={1,1,1},light=1,trail=0,hit="burst"},
+	sandarmor={shape="orb",color=rgb(214,186,130),color2=rgb(170,140,90),size={1,1,1},light=0,trail=0,hit="crush"},
+	weights={shape="boulder",color=rgb(150,140,130),color2=rgb(90,84,78),size={1,1,1},light=0,trail=0,hit="crush"},
 	staffread={shape="blade",color=rgb(232,200,120),color2=rgb(90,64,40),size={.2,.2,4},light=0,trail=0,hit="sparks"},
 }
 </ProtectedString>
@@ -1706,7 +1745,9 @@ local Graphs = {
 		onRoute={Launcher="bodySeal",Sweep="floorSeal"},
 		-- Heavy after one clean cut: a rising knee that pops the opponent up.
 		heavyAfterOne="KneeStrike",
-		stringCancels={BurstStrike=true},
+		-- (Stage 6) at 13 he has no Rasengan: a clean string is spent on the
+		-- Lightning Strike (the shunshin cut) instead.
+		stringCancels={LightningStrike=true},
 		blockCancels={},
 		-- Surgical: the fastest re-entry, onto an angle beside the body; a seal
 		-- planted near the target pulls him onto its side, wider and quicker.
@@ -1768,7 +1809,7 @@ local Graphs = {
 		-- stops at lash range (the arrival strike is a lash), slower than a dash.
 		reengage={name="sand",speed=.85,arrive=7.5,angle=0,minRange=11,chase=.3,recovery=.22},
 		-- One lash, then the pillar: sand erupts under the opponent.
-		heavyAfterOne="SandPillar",
+		heavyAfterOne="SandFist",
 		stringCancels={SandCoffin=true},
 		blockCancels={Tool=true},
 	},
@@ -1898,7 +1939,7 @@ return table.freeze({
 	-- The only requests an online fighter may send during a fight. Anything else
 	-- is ignored before it reaches Combat.
 	Combat=table.freeze({Move=true,Arm=true,ChakraLoad=true,Attack=true,Heavy=true,Jump=true,JumpOff=true,Dodge=true,Guard=true,GuardOff=true,
-		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Awaken=true,
+		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Ultimate=true,Awaken=true,
 		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true,PadJump=true}),
 })
 </ProtectedString>
@@ -3947,7 +3988,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">bb299d0809a52b992c6a20aa5b6424664380b2f79d141fafe3ad479b953c06ea</string>
+          <string name="Value">df49b57c687dbb3b20da0a5e3d9283735fd3ef5abc2aa82dc3eb69ba093a0364</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -4074,6 +4115,9 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Teleport" then
 		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	-- (Stage 6) a scripted sequence (Lee's Primary Lotus, the Uzumaki
+	-- barrage): an opener at contact range, taken on an opening.
+	elseif family=="Sequence" then lo,hi,chance=0,(spec.Range or 4)+1,if opening then .85 else .2
 	elseif family=="Summon" then
 		-- Out first; once out, a lunge now and then.
 		if Bodies.count(c,a,spec.Body or "puppet")==0 then lo,hi,chance=0,40,.8 else lo,hi,chance=0,30,.25 end
@@ -4091,7 +4135,7 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	end
 	if rule.Punish and not opening then return false end
 	if distance&lt;lo or distance&gt;hi then return false end
-	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
+	if (family=="Projectile" or family=="Strike" or family=="Teleport" or family=="Sequence") and not c:lineOfSight(a,target) then return false end
 	return self.rng:NextNumber()&lt;chance
 end
 local AI={}; AI.__index=AI
@@ -4675,9 +4719,10 @@ function AI:update(now)
 	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.
 	local counterRange=8+(if a.counterReach and a.counterReach.expires&gt;now then a.counterReach.max else 0)
 	if (a.counterUntil or 0)&gt;now and distance&lt;counterRange then a.move=toward;c:request(a,"Attack");return end
-	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
+	-- Flying Thunder God arrival: strike from the new angle, or the Lightning
+	-- Strike at once (stage 6: at 13 he has no Rasengan).
 	if (a.flashUntil or 0)&gt;now then
-		local rasengan=slotOf(a,"BurstStrike")
+		local rasengan=slotOf(a,"LightningStrike") or slotOf(a,"BurstStrike")
 		if rasengan and self.rng:NextNumber()&lt;.35 and c:request(a,rasengan) then return end
 		c:request(a,if self.rng:NextNumber()&lt;.3 then "Heavy" else "Attack");return
 	end
@@ -4739,7 +4784,8 @@ function AI:update(now)
 			if roll&lt;.46 then a.move=-toward;press(c,a,"Attack","back");return end -- low route
 			if roll&lt;.56 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 		elseif a.combo==1 and roll&lt;.2 then a.move=Vector3.zero;press(c,a,"Heavy");return end
-		if roll&lt;.7 and roll&gt;=.56 then
+		-- (Stage 6) the flank, like every route, comes after □□.
+		if a.combo&gt;=2 and roll&lt;.7 and roll&gt;=.56 then
 			local sign=if self.rng:NextNumber()&lt;.5 then 1 else -1
 			a.move=tangent*sign;press(c,a,"Attack","side",sign);return
 		end
@@ -6421,7 +6467,9 @@ function Brawler.start(c,a,name)
  local proxy,kind
  name,proxy,kind=Bodies.route(c,a,name)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
-	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
+	-- (Stage 6) a string's middle hits (Light4, Light5) use the tuning of the
+	-- hit whose clip they borrow (Gaara's lashes keep their reach).
+	local profile=a.def.AttackProfile and (a.def.AttackProfile[name] or a.def.AttackProfile[Attacks[name].clip or ""])
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
@@ -6437,7 +6485,7 @@ function Brawler.start(c,a,name)
  if a.armed and weapon and weapon.Moves[name] then
   spec.range=(spec.range or 5)+weapon.Reach;spec.contact=(spec.contact or 3.2)+weapon.Contact
   spec.damageScale=(spec.damageScale or 1)*weapon.Damage;spec.kind="slash"
- elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
+ elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Light4" or name=="Light5" or name=="Heavy") then
   spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
   spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
  end
@@ -6803,7 +6851,7 @@ function Brawler.request(c,a,action)
   local route=nil
   if dir=="forward" and a.combo&gt;=2 then route=routes.up
   elseif dir=="back" and a.combo&gt;=2 then route=routes.down
-  elseif dir=="side" and a.combo&gt;=1 then route=routes.side end
+  elseif dir=="side" and a.combo&gt;=2 then route=routes.side end
   if route and Attacks[route] then
    a.angleSide=sideSign;a.lastAttack=c.now
    Brawler.event(c,a,"Route");Brawler.event(c,a,if dir=="forward" then "RouteUp" elseif dir=="back" then "RouteDown" else "RouteSide")
@@ -6853,7 +6901,11 @@ function Brawler.request(c,a,action)
    return ok
   end
  end
- local name="Light"..math.min((a.combo or 0)+1,3)
+ -- (Stage 6) The string's length: 4 hits (def.StringLength 5: Lee, Naruto);
+ -- the last is always Light3 (it throws), the middle ones Light4, Light5.
+ local index=(a.combo or 0)+1
+ local length=a.def.StringLength or 4
+ local name=if index&gt;=length then "Light3" elseif index&lt;=2 then "Light"..index else "Light"..(index+1)
  a.lastAttack=c.now
  -- Context finisher (Neji): with three chakra points closed, the third palm
  -- becomes the twin-palm thrust that throws the body away.
@@ -7588,9 +7640,9 @@ Presets.AI={
 	Flashstep={
 		Beginner={Why="Seals that survive his substitution: the base loop, a little more forgiving.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance"}},
-		Medium={Why="Adds the air spike that plants a destination and a cheaper Rasengan.",
+		Medium={Why="Adds the air spike that plants a destination and a quicker Lightning Strike.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands"}},
-		Hard={Why="Rasengan drive pick-ups, longer seals and a parry that seals the attacker.",
+		Hard={Why="A steadier seal, longer seals and a parry that seals the attacker.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal"}},
 		Boss={Why="The full relocation fighter: string teleports and air exits.",
 			Nodes={"FlashEconomy","SealCraft","ReturnSeal","DeepReserves","Endurance","SpikeAnchor","RasenganFocus","QuickHands","RasenganDrive","SealInk","ParrySeal","StringFlash","AirExit","LongSeal"}},
@@ -9287,6 +9339,7 @@ local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
+local Ultimates = require(script.Parent.Ultimates)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 local WorldReaction = require(script.Parent.WorldReaction)
@@ -9450,7 +9503,7 @@ function Combat:setState(a,state,duration)
 	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
-local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
+local SHIELD_BREAKERS={SandHand=true,SandFist=true,Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 -- Damage over time (burning ground, a burning wire): chip damage that never
 -- stuns, interrupts, scales or confirms anything. Through Combat:damage a body
 -- standing in fire was re-stunned every 0.48 s (its action cancelled), every
@@ -9459,7 +9512,7 @@ local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike
 function Combat:chip(attacker,victim,amount)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
 	if (victim.rotationUntil or 0)&gt;self.now or victim.invulnerableUntil&gt;self.now then return false end
-	if (attacker.awakenUntil or 0)&gt;self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	if (attacker.awakenUntil or 0)&gt;self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
 	if victim.health&lt;=0 then
@@ -9474,6 +9527,19 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health&lt;=0 or attacker.health&lt;=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)&gt;self.now then return false end
+	-- A buff that takes blows (Families Buff Hits: Gaara's Sand Armor).
+	local armour=victim.buff
+	if armour and self.now&lt;armour.untilT and armour.spec.Hits and (victim.buffHits or 0)&gt;0 then
+		victim.buffHits-=1
+		if victim.buffHits&lt;=0 then armour.untilT=self.now end
+		attacker.hitConfirmed=true
+		local face=(attacker.root.Position-victim.root.Position)*Vector3.new(1,0,1)
+		face=if face.Magnitude&gt;.1 then face.Unit else victim.root.CFrame.LookVector
+		self:pushImpact(victim.root.Position+face*1.6,"sandshield",victim.buffHits&lt;=0,{owner=victim.id,direction=face})
+		self:cue(victim,string.upper(armour.spec.Name)..(if victim.buffHits&gt;0 then " • 1 LEFT" else " • GONE"),.5)
+		Brawler.event(self,victim,"ArmorAbsorb")
+		return false
+	end
 	-- A counter stance (Families Counter) answers the blow before any defence.
 	if Families.beforeHit(self,attacker,victim,readEligible) then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
@@ -9487,7 +9553,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		frontal=full or victim.root.CFrame.LookVector:Dot(delta.Unit)&gt;-victim.def.Byakugan.BlindSpot
 	end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
-	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt&lt;.7 then
+	local eye=victim.def.Sharingan
+	if eye and victim.def.SharinganAwake and (victim.awakenUntil or 0)&lt;=self.now then eye=nil end
+	if not frontal and eye and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt&lt;.7 then
 		frontal=true
 		local flat=Vector3.new(delta.X,0,delta.Z)
 		if flat.Magnitude&gt;.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
@@ -9575,7 +9643,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil&gt;self.now then amount*=1.35; attacker.bonusUntil=0 end
-	if (attacker.awakenUntil or 0)&gt;self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	if (attacker.awakenUntil or 0)&gt;self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
 	-- Buffs and armour (Families): outgoing and incoming.
 	amount*=Families.damageScale(attacker,victim,self.now)
 	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
@@ -9589,6 +9657,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
 	victim.lastHurt=self.now
+	-- Both bodies fill their ultimate bar (Server/Ultimates).
+	Ultimates.gain(self,attacker,victim,amount)
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	-- The attacker's on-hit trait (def.OnHit: a drain, a slow).
 	Families.afterHit(self,attacker,victim,amount,guarded)
@@ -10132,12 +10202,29 @@ function Combat:rush(a)
 end
 -- Awakening: once per match, below a third of health. A shockwave buys space,
 -- chakra comes back, and each prodigy's own strength is pushed for a while.
+-- Lee's gates (Awakening.Gates): which one is open, 1 at the awakening, one
+-- more every Step seconds, up to Max.
+function Combat.gateOf(a,now)
+	local tune=a.def.Awakening
+	local g=tune and tune.Gates
+	if not g then return nil end
+	return math.min(g.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(g.Step or 4)))
+end
+-- An awakening's multiplier (Speed, Damage): whole at once, or grown gate by
+-- gate up to its full value at the last one.
+function Combat.awakeScale(a,key,now)
+	local tune=a.def.Awakening
+	local full=(tune and tune[key]) or 1
+	local gate=Combat.gateOf(a,now)
+	if not gate then return full end
+	return 1+(full-1)*gate/(tune.Gates.Max or 5)
+end
 function Combat:awaken(a)
 	local tune=a.def.Awakening
 	if not tune or a.awakened then return false,"No awakening" end
 	if a.health&gt;a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration;a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
+	a.awakened=true;a.awakenUntil=self.now+(tune.Duration or Config.Awaken.Duration);a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
 	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
 	a.cooldowns={}
 	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
@@ -10154,6 +10241,15 @@ function Combat:awaken(a)
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
 	if b then self:cue(b,"OPPONENT AWAKENED",1) end
 	Brawler.event(self,a,"Awaken")
+	-- Itachi's Tsukuyomi: the body in front of him, in reach and in sight, is held.
+	if tune.Tsukuyomi and b and b.health&gt;0 then
+		local gap=b.root.Position-a.root.Position
+		if gap.Magnitude&lt;=22 and self:lineOfSight(a,b) and (b.invulnerableUntil or 0)&lt;=self.now then
+			b.invulnerableUntil=0
+			Families.bind(self,a,b,{Bind=tune.Tsukuyomi,Kind="tsukuyomi",Name="Tsukuyomi"})
+			self:pushImpact(b.root.Position,"tsukuyomi",true,{owner=a.id,victim=b.id,time=tune.Tsukuyomi})
+		end
+	end
 	-- What an awakening sets off on entry (Techniques.awakenHooks: Kamatari).
 	for _,hook in Techniques.awakenHooks or {} do hook(self,a) end
 	return true
@@ -10238,6 +10334,7 @@ local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 -- itself (ChakraFlow), the strike, jump or dodge spends it.
 local INFUSED={Attack=true,Heavy=true,Jump=true,Dodge=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	if type(action)~="string" then return false,"Bad action" end
 	local loaded=false
 	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
 		loaded=ChakraFlow.load(self,a)==true
@@ -10290,6 +10387,13 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		return true
 	end
 	if action=="WallDetach" then Motor.detach(a,self.now,false); return true end
+	-- R1 + L1 (Y): the ultimate; on a wall the same chord still lets go of it.
+	if action=="Ultimate" then
+		if a.wall then Motor.detach(a,self.now,false); return true end
+		return Ultimates.start(self,a)
+	end
+	-- Held in an ultimate, nothing answers (no substitution out of it).
+	if a.ultimateHeld then return false,"Held" end
 	-- Pinned against a wall, the dodge button is a timed wall tech, never a
 	-- substitution: a mistimed tech must not silently spend a charge.
 	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
@@ -10497,7 +10601,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	a.flashCancel=nil
 	local arriving=(a.flashUntil or 0)&gt;self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
 		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
-	if cancelSpec and cancelSpec.Id=="BurstStrike" and arriving
+	-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
+	if cancelSpec and (cancelSpec.Id=="BurstStrike" or cancelSpec.Id=="LightningStrike") and arriving
 		and (a.cooldowns[cancelSpec.Id] or 0)&lt;=self.now and a.chakra&gt;=cancelSpec.Cost then
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
@@ -10554,6 +10659,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
  end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
+	-- (Stage 6) A blade technique needs the blade out (Kakashi's Lightning Cut: B first).
+	if spec.Armed and not a.armed then return false,"Draw the blade (B)" end
 	-- A string cancel shortens the wind-up to .14 s; a technique that is already
 	-- quicker (a teleport, the Read, Rotation) keeps its own.
 	local cancelled=a.stringCancel==spec.Id
@@ -10720,7 +10827,14 @@ function Combat:updateActor(a,dt)
 	end
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
-	a.speedScale=(if (a.awakenUntil or 0)&gt;now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	a.speedScale=(if (a.awakenUntil or 0)&gt;now then Combat.awakeScale(a,"Speed",now) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	-- Lee's gates open one by one while he is awakened (Combat.gateOf).
+	local gate=(a.awakenUntil or 0)&gt;now and Combat.gateOf(a,now)
+	if gate and gate~=a.gateShown then
+		a.gateShown=gate
+		self:pushImpact(a.root.Position,"gate",gate&gt;=5,{owner=a.id,fighter=a.fighterId,gate=gate})
+		self:cue(a,({"FIRST","SECOND","THIRD","FOURTH","FIFTH"})[gate].." GATE • OPEN",.9)
+	end
 	-- Family traits that act every frame (an Absorb buff drinking blades).
 	Families.step(self,a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster
@@ -12309,6 +12423,42 @@ F.Strike={
 		c:cue(a,string.upper(spec.Name),.7)
 	end,
 }
+-- (Stage 6) Sequence: a jutsu that is a whole route (Lee's Primary Lotus,
+-- Naruto's Rendan): its Opener launches the body; if it lands he chases it
+-- up and his own air finisher (MoveGraphs airFinisher) brings it down.
+F.Sequence={
+	check=function(c,a,spec)
+		local b=a.target
+		if not b or b.health&lt;=0 then return false,"No target" end
+		if (b.root.Position-a.root.Position).Magnitude&gt;(spec.Range or 8)+1.5 then return false,"Out of range" end
+		return true
+	end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		a.stringCancel=nil
+		brawler().start(c,a,spec.Opener or "Launcher")
+		if a.pending then a.pending.family=spec end
+		c:cue(a,string.upper(spec.Name),.7)
+	end,
+}
+function Families.sequenceHit(c,a,b,spec)
+	local Brawler=brawler()
+	local Config=require(Shared.Config)
+	local graph=Brawler.graph(a) or {}
+	if not graph.airFinisher then return end
+	c:schedule(c.now+.14,function()
+		if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+		a.chakra+=Config.PursuitCost
+		if c:request(a,"Pursuit") then
+			a.untilTime=c.now+.42;a.airHold=c.now+1.0
+			c:schedule(c.now+.46,function()
+				if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or a.reaction then return end
+				a.state="Neutral";a.untilTime=c.now
+				Brawler.airFinisher(c,a,graph.airFinisher)
+			end)
+		else a.chakra-=Config.PursuitCost end
+	end)
+end
 F.Burst={
 	check=function() return true end,
 	execute=function(c,a,pending)
@@ -12428,6 +12578,19 @@ F.Buff={
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		a.buff={untilT=c.now+(spec.Time or 5),spec=spec,id=spec.Id}
+		-- Hits: the next N blows are taken by the buff (Gaara's Sand Armor; Combat:damage).
+		a.buffHits=spec.Hits
+		-- Reveal (Neji's Byakugan: Perception): his own illusion is broken at
+		-- once and the opponent's bodies (shadow clones) are shown.
+		if spec.Reveal then
+			a.illusionUntil=0;a.decoyPosition=nil
+			local b=a.target
+			if b then
+				for _,body in require(script.Parent.Bodies).of(c,b) do
+					c:pushImpact(body.root and body.root.Position or b.root.Position,"reveal",false,{owner=a.id,body=body.id,time=spec.Time or 5})
+				end
+			end
+		end
 		if spec.Heal then
 			a.health=math.min(a.def.Health,a.health+spec.Heal);a.hum.Health=math.max(1,a.health)
 		end
@@ -12484,7 +12647,8 @@ F.Teleport={
 		else
 			local aim=aimOf(a,pending)
 			local off=flat(aim-from)
-			destination=from+unitOr(off,line)*math.min(off.Magnitude,d)
+			-- Short: it stops that far before the aim (Lee's Dynamic Entry lands its kick, not on the body).
+			destination=from+unitOr(off,line)*math.min(math.max(0,off.Magnitude-(spec.Short or 0)),d)
 		end
 		destination=Vector3.new(destination.X,from.Y,destination.Z)
 		c:relocate(a,destination)
@@ -12633,6 +12797,10 @@ end
 function Families.strikeHit(c,a,b,p,guarded)
 	local spec=p.family or (p.spec and p.spec.riders)
 	if not spec then return end
+	if spec.Family=="Sequence" then
+		if not guarded then Families.sequenceHit(c,a,b,spec) end
+		return
+	end
 	-- The awakening's chain: a relocation strike that lands gives the
 	-- relocation back at once, a few times in a row (Shisui).
 	local chain=p.family and p.family.Family=="Teleport" and not guarded and awakeRule(a,c,"ChainTeleport")
@@ -14461,6 +14629,7 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local Ultimates=require(script.Parent.Ultimates)
 local Bodies=require(script.Parent.Bodies)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
@@ -14654,7 +14823,7 @@ function Matches:view(s,cursor,mine,theirs)
 			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
-			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
+			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.
@@ -17461,22 +17630,25 @@ return {
 			Effects = { { "def.Awakening.FlashChain", "set", 1.8 } },
 			Shows = "Awakened, a clean hit within 0.7 s of a teleport arrival seals the body again (1.8 s): the relocation chain lasts as long as he keeps landing.",
 			Counter = "Guard or parry breaks the chain; 16 chakra per jump; once per match.", Lore = "GAMEPLAY_LIBERTY" },
-		{ Id = "QuickstepCut", Name = "Quickstep Cut", Branch = "Jutsu", Kind = "route", Major = true, Cost = 10,
-			Effects = { { "tech.Quickstep.Arrival", "set", 0.35 } },
-			Shows = "After Quickstep a strike cancels the recovery like a teleport arrival (light, launcher, or an instant Rasengan): the angle now converts.",
-			Counter = "The step is short and readable; a guard facing the new side stops it.", Lore = "PLAUSIBLE_YOUNG" },
+		-- (Stage 6) at 13 he has neither the Quickstep nor the Rasengan: the
+		-- node ids stay (saved builds keep them), their effects move to the
+		-- Lightning Strike and the prototype Flying Thunder God.
+		{ Id = "QuickstepCut", Name = "Swift Strike", Branch = "Jutsu", Kind = "property", Cost = 10,
+			Effects = { { "tech.LightningStrike.Cost", "add", -3 } },
+			Shows = "The Lightning Strike costs 13 chakra instead of 16: the shunshin cut comes back into the string more often.",
+			Counter = "Same reach and line: a guard facing him still stops it.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "GaleChase", Name = "Gale Chase", Branch = "Jutsu", Kind = "jutsu", Major = true, Cost = 8, Requires = { "QuickstepCut" },
 			Effects = { { "tech.WindCut.Chase", "set", 0.8 } },
 			Shows = "A Wind Cut that connects opens the chase (E) for 0.8 s: the gust becomes a re-entry.",
 			Counter = "Side-step the lane; a guarded gust opens nothing.", Lore = "GAMEPLAY_LIBERTY" },
-		{ Id = "RasenganFocus", Name = "Rasengan Focus", Branch = "Jutsu", Kind = "property", Cost = 4,
-			Effects = { { "tech.BurstStrike.Cost", "add", -3 } },
-			Shows = "Rasengan costs 21 chakra instead of 24.",
-			Counter = "Same wind-up and recovery: interrupt or punish it.", Lore = "GAMEPLAY_LIBERTY" },
-		{ Id = "RasenganDrive", Name = "Rasengan Drive", Branch = "Jutsu", Kind = "jutsu", Major = true, Cost = 10, Requires = { "RasenganFocus" },
-			Effects = { { "tech.BurstStrike.DropReaction", "set", "Spiked" } },
-			Shows = "The plunging Rasengan spikes the body into the floor: it bounces once for a pick-up instead of a flat knockdown.",
-			Counter = "Air dodge or substitution before the plunge; the bounce happens once per combo.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "RasenganFocus", Name = "Quick Recharge", Branch = "Jutsu", Kind = "property", Cost = 4,
+			Effects = { { "tech.LightningStrike.Cooldown", "add", -0.6 } },
+			Shows = "The Lightning Strike recharges in 2.8 s instead of 3.4 s.",
+			Counter = "Same startup and line: read it and guard.", Lore = "GAMEPLAY_LIBERTY" },
+		{ Id = "RasenganDrive", Name = "Steadier Seal", Branch = "Jutsu", Kind = "property", Cost = 10, Requires = { "RasenganFocus" },
+			Effects = { { "tech.Flashstep.Cooldown", "add", -1.5 } },
+			Shows = "The prototype Flying Thunder God recharges in 4.5 s instead of 6: one more jump per exchange.",
+			Counter = "Still one seal at a time, the last planted: stand on it or pull it out.", Lore = "GAMEPLAY_LIBERTY" },
 		{ Id = "DeepReserves", Name = "Deep Reserves", Branch = "Body", Kind = "stat", Cost = 4,
 			Effects = { { "def.Chakra", "add", 6 } },
 			Shows = "Chakra reserve 116 instead of 110.", Counter = "Gentle Fist drains it all the same.", Lore = "PLAUSIBLE_YOUNG" },
@@ -17539,9 +17711,11 @@ return {
 		{ Id = "ShortSigns", Name = "Short Signs", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 5,
 			Effects = { { "tech.MirageCast.Channel", "mul", 0.8 } },
 			Shows = "Genjutsu: Mirage is cast in 0.34 s instead of 0.42 s.", Counter = "Still interruptible; the Byakugan is still immune.", Lore = "PLAUSIBLE_YOUNG" },
-		{ Id = "PhoenixVolley", Name = "Phoenix Volley", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
-			Effects = { { "tech.PhoenixFlower.Cost", "add", -3 } },
-			Shows = "Phoenix Flower costs 17 chakra instead of 20.", Counter = "Same five flames: guard or advance diagonally.", Lore = "PLAUSIBLE_YOUNG" },
+		-- (Stage 6) the Phoenix Flower is Sasuke's mark: the node id stays, its
+		-- saving moves to the Great Fireball.
+		{ Id = "PhoenixVolley", Name = "Fire Breath", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
+			Effects = { { "tech.FireBloom.Cost", "add", -3 } },
+			Shows = "Great Fireball costs 23 chakra instead of 26.", Counter = "Same wind-up and lane: side-step and punish.", Lore = "PLAUSIBLE_YOUNG" },
 		{ Id = "FireTempo", Name = "Fire Tempo", Branch = "Genjutsu &amp; Katon", Kind = "property", Cost = 4,
 			Effects = { { "tech.FireBloom.Cooldown", "mul", 0.84 } },
 			Shows = "Great Fireball is ready again after 4.6 s instead of 5.5 s.", Counter = "Same wind-up: side-step and punish.", Lore = "PLAUSIBLE_YOUNG" },
@@ -17743,8 +17917,27 @@ local function seals(c,a,now)
 	return list
 end
 Techniques.seals=seals
+-- (Stage 6) Minato at 13: the Flying Thunder God is a prototype (spec
+-- Prototype): it only knows the last seal he planted (a kunai still in
+-- flight first), never a pick among them. In the Yellow Flash awakening it
+-- is whole for a while: the stick picks, a launched body is a destination.
+local function prototype(a,now)
+	if (a.awakenUntil or 0)&gt;now and a.def.Awakening and a.def.Awakening.FlashWake then return false end
+	for _,t in a.def.Techniques or {} do if t.Id=="Flashstep" then return t.Prototype==true end end
+	return false
+end
 local function pick(c,a,now,range)
 	local best,bestScore
+	if prototype(a,now) then
+		for _,seal in seals(c,a,now) do
+			if (seal.position-a.root.Position).Magnitude&lt;=range then
+				local score=if seal.flying then math.huge else ((seal.anchor and seal.anchor.plantedAt) or 0)
+				-- (seals are listed oldest first: a tie goes to the later one)
+				if not bestScore or score&gt;=bestScore then best,bestScore=seal,score end
+			end
+		end
+		return best
+	end
 	local stick=Vector3.new(a.move.X,0,a.move.Z)
 	for _,seal in seals(c,a,now) do
 		local gap=(seal.position-a.root.Position).Magnitude
@@ -18726,6 +18919,8 @@ function Techniques.curseDrain(c,a,dt,now)
 	local tune=a.def.Awakening
 	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)&lt;=now or a.health&lt;=1 then a.curseHunger=false;return end
 	local rate=tune.HealthDrain
+	-- Lee's gates: each one open costs a fifth more of the full drain.
+	if tune.Gates then rate*=math.min(tune.Gates.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(tune.Gates.Step or 4)))/(tune.Gates.Max or 5) end
 	if (a.curseFedUntil or 0)&gt;now then rate=0
 	elseif tune.Hunger and now-(a.curseLanded or a.awakenedAt or now)&gt;1.5 then rate*=tune.Hunger end
 	a.curseHunger=rate&gt;tune.HealthDrain
@@ -18846,6 +19041,150 @@ return Tutorial
       </Item>
       <Item class="ModuleScript" referent="ND70">
         <Properties>
+          <string name="Name">Ultimates</string>
+          <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
+-- fighter, R1 + L1 on the pad (Y on the keyboard) when the ultimate bar is
+-- full. The bar fills in the fight, by hitting and by being hit (not only
+-- while awakened). The ultimate opens with one quick blow: if it lands, both
+-- bodies are taken into a 3-4 s sequence (a dedicated camera on the client,
+-- the "ultimate" impact); if it misses, the opponent has an opening.
+-- Away from the 8 main fighters (no entry below) the button does nothing.
+-- On a wall, R1 + L1 is still the wall detach (Combat routes it).
+local Ultimates={}
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+
+Ultimates.MAX=100
+-- Bar gain per point of damage dealt / taken (a fight of ~3 rounds gives
+-- one or two ultimates a side).
+Ultimates.GAIN={Dealt=1.1,Taken=.8}
+-- Each ultimate: the opener's reach, its startup, the sequence length, the
+-- total damage (ticks on a held body, then the last blow), the camera beat
+-- the client plays (kind) and how the opener reaches (Lunge: he arrives in
+-- front of the body; Gaze/Sand: from where he stands).
+Ultimates.DEFS={
+	Naruto={Name="THOUSAND CLONES",Reach=10,Startup=.24,Time=3.4,Ticks=9,Damage=30,Kind="clones",Opener="Lunge"},
+	Sasuke={Name="CHIDORI: LION'S STRIKE",Reach=12,Startup=.3,Time=3.2,Ticks=6,Damage=32,Kind="lion",Opener="Lunge"},
+	Gaara={Name="IMPERIAL DESERT FUNERAL",Reach=26,Startup=.42,Time=3.6,Ticks=5,Damage=34,Kind="pyramid",Opener="Sand"},
+	["Rock Lee"]={Name="HIDDEN LOTUS",Reach=9,Startup=.2,Time=3.4,Ticks=10,Damage=34,Kind="lotus",Opener="Lunge"},
+	Neji={Name="128 PALMS",Reach=8,Startup=.24,Time=3.4,Ticks=12,Damage=30,Kind="palms",Opener="Lunge"},
+	Itachi={Name="TSUKUYOMI",Reach=20,Startup=.32,Time=3.6,Ticks=4,Damage=28,Kind="tsukuyomi",Opener="Gaze"},
+	Minato={Name="YELLOW FLASH",Reach=22,Startup=.16,Time=3.2,Ticks=12,Damage=30,Kind="flash",Opener="Lunge"},
+	Kakashi={Name="CHIDORI: RAIKIRI",Reach=22,Startup=.3,Time=3.2,Ticks=4,Damage=34,Kind="raikiri",Opener="Lunge"},
+}
+function Ultimates.def(a)
+	return Ultimates.DEFS[a.def.Name]
+end
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+
+-- Combat:damage, once the amount is final: both bodies fill their bar.
+function Ultimates.gain(c,attacker,victim,amount)
+	if attacker==victim or amount&lt;=0 or victim.ultimateHeld then return end
+	if Ultimates.def(attacker) and not attacker.ultimateRunning then
+		attacker.ultimate=math.min(Ultimates.MAX,(attacker.ultimate or 0)+amount*Ultimates.GAIN.Dealt)
+	end
+	if Ultimates.def(victim) and not victim.ultimateRunning and not victim.ultimateHeld then
+		victim.ultimate=math.min(Ultimates.MAX,(victim.ultimate or 0)+amount*Ultimates.GAIN.Taken)
+	end
+end
+function Ultimates.ready(a)
+	return Ultimates.def(a)~=nil and (a.ultimate or 0)&gt;=Ultimates.MAX
+end
+
+-- R1 + L1: start the ultimate (the bar is spent at the press).
+function Ultimates.start(c,a)
+	local Brawler=require(script.Parent.Brawler)
+	local u=Ultimates.def(a)
+	if not u then return false,"No ultimate" end
+	if (a.ultimate or 0)&lt;Ultimates.MAX then return false,"Ultimate not ready" end
+	if not Brawler.free(a,c.now) then return false,"Busy" end
+	local b=a.target
+	if not b or b.health&lt;=0 then return false,"No target" end
+	local gap=flat(b.root.Position-a.root.Position)
+	if gap.Magnitude&gt;u.Reach or not c:lineOfSight(a,b) then return false,"Out of range" end
+	a.ultimate=0
+	a.pending=nil;a.guardHeld=false
+	c:setState(a,"Startup",u.Startup)
+	a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+u.Startup)
+	local face=if gap.Magnitude&gt;.1 then gap.Unit else flat(a.root.CFrame.LookVector)
+	a.root.CFrame=CFrame.lookAt(a.root.Position,a.root.Position+face)
+	c:pushImpact(a.root.Position,"ultimateStart",true,{owner=a.id,fighter=a.fighterId,kind=u.Kind,name=u.Name})
+	c:cue(a,u.Name,1.2)
+	Brawler.event(c,a,"UltimateStart")
+	c:schedule(c.now+u.Startup,function() Ultimates.connect(c,a,b,u) end)
+	return true
+end
+
+-- The opener's moment: it reaches or it misses.
+function Ultimates.connect(c,a,b,u)
+	local Brawler=require(script.Parent.Brawler)
+	if a.health&lt;=0 or c.match.phase~="Duel" or c.match.finishing then return end
+	if a.reaction then return end -- hit out of the startup: the ultimate is lost
+	local gap=flat(b.root.Position-a.root.Position)
+	local missed=b.health&lt;=0 or gap.Magnitude&gt;u.Reach*1.25 or (b.invulnerableUntil or 0)&gt;c.now or b.state=="Dodging"
+		or (b.rotationUntil or 0)&gt;c.now or not c:lineOfSight(a,b)
+	if missed then
+		-- The opening: a long recovery, the bar is gone.
+		c:setState(a,"Recovery",1.0)
+		c:cue(a,"ULTIMATE MISSED",.9);c:cue(b,"OPENING",.8)
+		c:pushImpact(a.root.Position,"ultimateMiss",false,{owner=a.id,kind=u.Kind})
+		Brawler.event(c,a,"UltimateMiss")
+		return
+	end
+	-- Caught: the lunge brings him in front of the body; the sand and the
+	-- gaze work from where he stands.
+	local line=if gap.Magnitude&gt;.1 then gap.Unit else flat(a.root.CFrame.LookVector)
+	if u.Opener=="Lunge" then
+		local from=a.root.Position
+		c:relocate(a,Vector3.new(b.root.Position.X,a.root.Position.Y,b.root.Position.Z)-line*3.2)
+		c:pushImpact(a.root.Position,"teleport",false,{owner=a.id,from=from,to=a.root.Position,kind=u.Kind})
+	end
+	a.root.CFrame=CFrame.lookAt(a.root.Position,Vector3.new(b.root.Position.X,a.root.Position.Y,b.root.Position.Z))
+	b.root.CFrame=CFrame.lookAt(b.root.Position,Vector3.new(a.root.Position.X,b.root.Position.Y,a.root.Position.Z))
+	Brawler.releaseGrab(b);b.pending=nil;b.guardHeld=false
+	a.ultimateRunning=true;b.ultimateHeld=true
+	local hold=u.Time+.1
+	-- Both bodies belong to the sequence: no input, no damage from elsewhere.
+	c:setState(a,"Recovery",hold)
+	a.invulnerableUntil=math.max(a.invulnerableUntil or 0,c.now+hold)
+	Brawler.react(c,b,"Bound",Vector3.zero,hold,a)
+	b.boundBy=a;b.boundKind="ultimate"
+	c:pushImpact(b.root.Position,"ultimate",true,{owner=a.id,victim=b.id,fighter=a.fighterId,kind=u.Kind,name=u.Name,time=u.Time})
+	c:cue(a,u.Name,u.Time);c:cue(b,u.Name,u.Time)
+	Brawler.event(c,a,"Ultimate")
+	-- Ticks across the sequence, then the last blow at its end.
+	local tick=u.Damage*.65/u.Ticks
+	for k=1,u.Ticks do
+		c:schedule(c.now+(u.Time-.5)*k/(u.Ticks+1),function()
+			if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" or not a.ultimateRunning then return end
+			c.damageTag=u.Name
+			c:chip(a,b,tick)
+			c.damageTag=nil
+			c:pushImpact(b.root.Position+Vector3.new(0,.6,0),"ultimateTick",k%3==0,{owner=a.id,victim=b.id,kind=u.Kind,index=k})
+		end)
+	end
+	c:schedule(c.now+u.Time-.3,function()
+		a.ultimateRunning=nil;b.ultimateHeld=nil
+		if b.boundBy==a then b.boundBy=nil end
+		if a.health&lt;=0 or b.health&lt;=0 or c.match.phase~="Duel" then return end
+		b.invulnerableUntil=0
+		local away=flat(b.root.Position-a.root.Position)
+		away=if away.Magnitude&gt;.1 then away.Unit else line
+		c.damageTag=u.Name
+		local landed=c:damage(a,b,u.Damage*.35,true,false)
+		c.damageTag=nil
+		if c.match.phase~="Duel" or b.health&lt;=0 then return end
+		if landed then Brawler.react(c,b,"Knockdown",away*46+Vector3.new(0,22,0),.9,a) end
+		c:pushImpact(b.root.Position,"ultimateEnd",true,{owner=a.id,victim=b.id,kind=u.Kind})
+		c:setState(a,"Recovery",.35)
+	end)
+end
+
+return Ultimates
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND71">
+        <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
 -- Copyright (c) 2026 Yashveer Singh, MIT.
@@ -18872,7 +19211,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND71">
+      <Item class="ModuleScript" referent="ND72">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -18896,6 +19235,8 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
+	-- Kakashi's eye only while awakened (stage 6, def.SharinganAwake).
+	if eye and victim.def.SharinganAwake and (victim.awakenUntil or 0)&lt;=c.now then eye=nil end
 	if eye and (victim.awakenUntil or 0)&gt;c.now and victim.def.Awakening and victim.def.Awakening.Windows then
 		local k=victim.def.Awakening.Windows
 		eye={ParryWindow=eye.ParryWindow*k,PerfectDodge=eye.PerfectDodge*k,Counter=eye.Counter}
@@ -18912,6 +19253,9 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
 	local window=if eye then eye.ParryWindow else Tune.ParryWindow
+	-- A buff that widens the parry (Neji's Byakugan: Perception).
+	local sight=victim.buff
+	if sight and c.now&lt;sight.untilT and sight.spec.ParryScale then window*=sight.spec.ParryScale end
 	-- Sharingan Focus: the raised guard itself reads. Any frontal blow of the
 	-- body that meets it is parried (once per raise; parry cooldown and
 	-- stamina still apply) and read. Blades and jutsu keep the eye's window.
@@ -19000,7 +19344,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND72">
+      <Item class="ModuleScript" referent="ND73">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -19051,7 +19395,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND73">
+      <Item class="ModuleScript" referent="ND74">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -19186,7 +19530,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND74">
+      <Item class="ModuleScript" referent="ND75">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -19300,7 +19644,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND75">
+      <Item class="ModuleScript" referent="ND76">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -19486,7 +19830,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND76">
+      <Item class="ModuleScript" referent="ND77">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -19593,7 +19937,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND77">
+      <Item class="ModuleScript" referent="ND78">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -20781,7 +21125,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND78">
+      <Item class="ModuleScript" referent="ND79">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -21394,7 +21738,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND79">
+      <Item class="ModuleScript" referent="ND80">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -21622,21 +21966,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND80">
+  <Item class="StarterPlayer" referent="ND81">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND81">
+    <Item class="StarterPlayerScripts" referent="ND82">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND82">
+      <Item class="Folder" referent="ND83">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND83">
+        <Item class="ModuleScript" referent="ND84">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21677,7 +22021,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND84">
+        <Item class="ModuleScript" referent="ND85">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -21893,7 +22237,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND85">
+        <Item class="ModuleScript" referent="ND86">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22126,7 +22470,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND86">
+        <Item class="ModuleScript" referent="ND87">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22410,7 +22754,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND87">
+        <Item class="ModuleScript" referent="ND88">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22558,7 +22902,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND88">
+        <Item class="ModuleScript" referent="ND89">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -22774,7 +23118,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND89">
+        <Item class="ModuleScript" referent="ND90">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23007,7 +23351,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND90">
+        <Item class="ModuleScript" referent="ND91">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23240,7 +23584,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND91">
+        <Item class="ModuleScript" referent="ND92">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23490,7 +23834,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND92">
+        <Item class="ModuleScript" referent="ND93">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -23706,7 +24050,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND93">
+        <Item class="ModuleScript" referent="ND94">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24007,7 +24351,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND94">
+        <Item class="ModuleScript" referent="ND95">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24206,7 +24550,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND95">
+        <Item class="ModuleScript" referent="ND96">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24405,7 +24749,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND96">
+        <Item class="ModuleScript" referent="ND97">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24689,7 +25033,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND97">
+        <Item class="ModuleScript" referent="ND98">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24956,7 +25300,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND98">
+        <Item class="ModuleScript" referent="ND99">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25138,7 +25482,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND99">
+        <Item class="ModuleScript" referent="ND100">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25388,7 +25732,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND100">
+        <Item class="ModuleScript" referent="ND101">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25587,7 +25931,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND101">
+        <Item class="ModuleScript" referent="ND102">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25888,7 +26232,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26036,7 +26380,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26371,7 +26715,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26587,7 +26931,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26701,7 +27045,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26968,7 +27312,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27269,7 +27613,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27434,7 +27778,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27718,7 +28062,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28019,7 +28363,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28201,7 +28545,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28502,7 +28846,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28718,7 +29062,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28900,7 +29244,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -29036,7 +29380,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -29200,7 +29544,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -29273,10 +29617,27 @@ end
 local IMPULSE={
  whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
+ -- (Stage 6) the ultimates and the awakenings' moments.
+ ultimateStart={.08,2},ultimate={.12,1.2},ultimateTick={.05,.6},ultimateEnd={.3,3.2},ultimateMiss={0,0},tsukuyomi={.06,1.6},gate={.04,.8},reveal={0,0},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
  slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
-function Camera:impulse(style,role)
+-- (Stage 6) an ultimate takes the lens for its sequence (Server/Ultimates:
+-- the "ultimate" contact carries kind and time): a slow orbit round both
+-- bodies, then it hands back where it is (no snap).
+local CINEMA={
+	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=11,height=2.4,rate=.9,fov=52},pyramid={dist=22,height=12,rate=.25,fov=60},
+	lotus={dist=12,height=6,rate=1.4,fov=56,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
+	flash={dist=15,height=5,rate=1.1,fov=60},raikiri={dist=10,height=2.6,rate=.7,fov=50},
+}
+Camera.CINEMA=CINEMA
+function Camera:cinema(impact,now)
+	local look=CINEMA[impact and impact.kind or ""] or CINEMA.clones
+	self.cinematic={from=now,untilT=now+((impact and impact.time) or 3.4),look=look,sign=if math.random()&lt;.5 then 1 else -1}
+end
+function Camera:impulse(style,role,impact)
+	if style=="ultimate" then self:cinema(impact,os.clock())
+	elseif (style=="ultimateEnd" or style=="ultimateMiss") and self.cinematic then self.cinematic.untilT=math.min(self.cinematic.untilT,os.clock()+.3) end
 	local spec=IMPULSE[style] or IMPULSE.light
 	if not spec or (spec[1]&lt;=0 and spec[2]&lt;=0) then return end
 	local weight=if role=="victim" then 1.25 elseif role=="neutral" then .6 else .85
@@ -29497,6 +29858,28 @@ function Camera:update(data,dt)
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
 	local studio=game:GetService("RunService"):IsStudio()
+	-- (Stage 6) the ultimate's own lens: it orbits the two bodies for the
+	-- sequence; the rig picks up from where it stops.
+	local cine=self.cinematic
+	if cine and clock&lt;cine.untilT and data.phase=="Duel" then
+		local look=cine.look
+		local mid=a:Lerp(target,.5)
+		local t=clock-cine.from
+		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+		if line.Magnitude&lt;.1 then line=Vector3.xAxis end
+		local base=math.atan2(line.Unit.X,line.Unit.Z)+math.pi/2
+		local angle=base+cine.sign*t*look.rate
+		local height=look.height+(if look.follow then math.max(0,target.Y-a.Y)*.6 else 0)
+		local eye=mid+Vector3.new(math.sin(angle)*look.dist,height,math.cos(angle)*look.dist)
+		local cf=CFrame.lookAt(eye,mid+Vector3.new(0,1,0))*shake
+		local ease=math.clamp(t/.3,0,1)
+		camera.CFrame=(self.rigCF or camera.CFrame):Lerp(cf,ease)
+		camera.FieldOfView=camera.FieldOfView+(look.fov-camera.FieldOfView)*math.clamp(dt*6,0,1)
+		if ease&gt;=1 then self.rigCF=camera.CFrame end
+		return
+	elseif cine then
+		self.cinematic=nil;self.rigCF=camera.CFrame
+	end
 	-- Studio film camera (tooling only): a low side view of both fighters, the
 	-- way a fighting-game camera shows feet, ground contact and body mechanics.
 	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")
@@ -29572,7 +29955,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -30127,7 +30510,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -30291,7 +30674,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -32414,6 +32797,9 @@ require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=
 -- Rock Lee (the Fifth Gate, lotuses, deflecting kick, Rupture, his speed).
 require(script.Parent.LeeFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
+-- (Stage 6) the eight ultimates, the Tsukuyomi, Lee's gates, the Byakugan's reveal.
+require(script.Parent.UltimateFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
+	smokePuff=smokePuff,sparks=sparks,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
 -- Systemic chakra, the player-facing layer (planted marks, the wire, clashes, bodies).
 require(script.Parent.ChakraFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
 	smokePuff=smokePuff,floorUnder=floorUnder,anchorPart=anchorPart,weldAll=weldAll,num=num,seq=seq,TEX=TEX,SOUND=SOUND,BUILD=BUILD})
@@ -32443,7 +32829,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -33067,7 +33453,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -33545,7 +33931,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -33726,7 +34112,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -34496,7 +34882,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -34601,14 +34987,14 @@ function Input.new(send,getState,toggleLock,camera)
   if released(state) and self.seals[object.KeyCode.Name] then self.seals[object.KeyCode.Name]=nil;send("SealRelease") end
   return false
  end
- bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
- bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",3) end)
- bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",4) end)
+ bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",1) end)
+ bind("Heavy",both("Heavy"),function(state,obj) face(state,obj,"Heavy",2) end)
+ bind("Dodge",both("Dodge"),function(state,obj) face(state,obj,"Dodge",3) end)
  bind("Jump",both("Jump"),function(state,obj)
   local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
   if released(state) then
    if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
-   face(state,obj,"Jump",1)
+   face(state,obj,"Jump",4)
   else
    -- (User 29/10: a jump pressed after a launch flew the body up after the
    -- other one.) On a pad × doubles as the chase inside its window (no
@@ -34617,7 +35003,7 @@ function Input.new(send,getState,toggleLock,camera)
    -- (Audit 29/10) The pad sends PadJump: the server picks the chase if its
    -- own window is open, else the jump (Matches:act).
    local action=if padObject(obj) then "PadJump" else "Jump"
-   if face(state,obj,action,1) then self.jumps[id]=true end
+   if face(state,obj,action,4) then self.jumps[id]=true end
   end
  end)
  bind("Guard",both("Guard"),function(state,obj)
@@ -34629,7 +35015,8 @@ function Input.new(send,getState,toggleLock,camera)
    end
    pressed(state,obj)
   elseif pressed(state,obj) then
-   if padObject(obj) and self.modifier then self.modifierSpent=true;send("WallDetach")
+   -- R1 + L1: the ultimate (on a wall, the server lets go of it instead).
+   if padObject(obj) and self.modifier then self.modifierSpent=true;send("Ultimate")
    else
     local already=next(self.guards)~=nil;self.guards[id]=true
     if not already then send("Guard") end
@@ -34665,7 +35052,7 @@ function Input.new(send,getState,toggleLock,camera)
   if obj.KeyCode==GAMEPAD.Sprint then if pressed(state,obj) then self.sprinting=not self.sprinting end
   elseif begin(state) then self.sprinting=true elseif released(state) then self.sprinting=false end
  end)
- for _,action in {"Substitute","WallDetach","Feint","Pursuit"} do
+ for _,action in {"Substitute","WallDetach","Feint","Pursuit","Ultimate"} do
   bind(action.."Key",key(KEYBOARD[action]),function(state,obj) if pressed(state,obj) then send(action) end end)
  end
  for _,action in {"Technique5","Awaken","Arm"} do
@@ -34755,7 +35142,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -34936,7 +35323,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND127">
+        <Item class="LocalScript" referent="ND128">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -35124,7 +35511,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -35267,7 +35654,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -35530,7 +35917,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -35669,7 +36056,15 @@ end
 -- strike arrives it continues from the same instant if the guess was right,
 -- otherwise the server's strike takes over (through the transition). A guess
 -- the server never confirms fades after 0.25 s.
-local NEXT_LIGHT={Light1="Light2",Light2="Light3"}
+-- (Stage 6) The string's next light, by its length (Fighters StringLength).
+local function nextLight(name,fighterId)
+	local f=Fighters[fighterId]
+	local length=(f and f.StringLength) or 4
+	local index=({Light1=1,Light2=2,Light4=3,Light5=4})[name]
+	if not index then return nil end
+	index+=1
+	return if index&gt;=length then "Light3" elseif index&lt;=2 then "Light"..index else "Light"..(index+1)
+end
 function Presentation:predictStrike(action,data)
 	local h=data and data.human
 	if not h or h.airborne or h.reaction or h.wall or h.groundPose or (h.health or 1)&lt;=0 then return end
@@ -35677,7 +36072,7 @@ function Presentation:predictStrike(action,data)
 	if action=="Heavy" then
 		if h.state=="Neutral" then guess="Heavy" end
 	elseif h.state=="Neutral" then guess="Light1"
-	elseif h.state=="Recovery" and h.attackName and NEXT_LIGHT[h.attackName] then guess=NEXT_LIGHT[h.attackName] end
+	elseif h.state=="Recovery" and h.attackName and nextLight(h.attackName,h.fighterId) then guess=nextLight(h.attackName,h.fighterId) end
 	if guess then self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0} end
 end
 function Presentation:applyPrediction(actor,now)
@@ -35958,7 +36353,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -36289,17 +36684,20 @@ local LASH={
 	Air1={{"RightHand",1}},Air2={{"LeftHand",-1}},Riposte={{"RightHand",1}},
 	DashAttack={{"RightHand",.45},{"LeftHand",-.45}},Sweep={{"RightHand",1.3,low=true}},
 	Slam={{"RightHand",.25,down=true},{"LeftHand",-.25,down=true}},
+	Light4={{"RightHand",1}},Light5={{"LeftHand",-1}},
+	SandHand={{"RightHand",.15},{"LeftHand",-.15}},SandFist={{"RightHand",.5},{"LeftHand",-.5}},
 }
 -- The move's own timeline as the motion engine plays it (same per-fighter
 -- timings and lead), so the sand leaves the hand on the clip's contact key.
 local LEAD=.03
 local function timing(name)
 	local spec=Attacks[name] or Attacks.Light1
-	local profile=Fighters.Sand.AttackProfile and Fighters.Sand.AttackProfile[name]
+	local profile=Fighters.Sand.AttackProfile and (Fighters.Sand.AttackProfile[name] or Fighters.Sand.AttackProfile[spec.clip or ""])
 	return spec.startup*(profile and profile.startup or 1),spec.active*(profile and profile.active or 1),spec.recovery*(profile and profile.recovery or 1)
 end
 local function reachOf(name)
-	local profile=Fighters.Sand.AttackProfile and Fighters.Sand.AttackProfile[name]
+	local clip=Attacks[name] and Attacks[name].clip or ""
+	local profile=Fighters.Sand.AttackProfile and (Fighters.Sand.AttackProfile[name] or Fighters.Sand.AttackProfile[clip])
 	return (profile and profile.range) or (Attacks[name] and Attacks[name].range) or 8
 end
 local function stateOf(fx,model)
@@ -36578,7 +36976,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -36755,9 +37153,14 @@ function UI.new(parent,send)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
 		corner(fill,4)
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(14,74),UDim2.fromOffset(412,6),palette.track)
+		local chakraTrack=frame(box,UDim2.fromOffset(14,73),UDim2.fromOffset(412,5),palette.track)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
+		-- (Stage 6) the ultimate bar: it fills by hitting and being hit; full,
+		-- it burns and the plate says how to fire it.
+		local ultimateTrack=frame(box,UDim2.fromOffset(14,79),UDim2.fromOffset(412,3),palette.track)
+		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
+		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the status row (both players read them), each lit as it closes.
@@ -36790,7 +37193,7 @@ function UI.new(parent,send)
 		-- changes in the fight (UI.awakening), under the plate.
 		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -37009,8 +37412,10 @@ function UI.conversion(h,pad)
 	if h.flash then
 		local line=light.." — ARRIVAL STRIKE  •  "..heavy..(if h.airborne then " — SLAM" else " — LAUNCH")
 		for i,tech in h.techniques or {} do
-			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra&gt;=tech.cost and (h.sealed or 0)&lt;=0 then
-				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"
+			-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
+			local label=if tech.id=="BurstStrike" then "RASENGAN" elseif tech.id=="LightningStrike" then "LIGHTNING STRIKE" else nil
+			if label and tech.remaining==0 and h.chakra&gt;=tech.cost and (h.sealed or 0)&lt;=0 then
+				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — "..label
 			end
 		end
 		return line
@@ -37020,6 +37425,19 @@ function UI.conversion(h,pad)
 		return heavy.." — "..(if finisher then finisher.cue else "LION COMBO")
 	end
 	return nil
+end
+-- (Stage 6) the ultimate bar on a plate; full, it burns gold and (on the
+-- player's own plate) says which buttons fire it.
+function UI.ultimate(widget,actor,pad,mine)
+	if not widget.ultimate then return end
+	local level=math.clamp((actor.ultimate or 0)/100,0,1)
+	widget.ultimate.Size=UDim2.fromScale(level,1)
+	local ready=actor.ultimateReady==true
+	local pulse=.5+.5*math.sin(os.clock()*8)
+	widget.ultimate.BackgroundColor3=if ready then Color3.fromRGB(255,190+math.floor(50*pulse),60) else Color3.fromRGB(255,150,40)
+	if ready then
+		widget.status.Text..="   •   ULTIMATE READY"..(if mine then " ("..(if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate)..")" else "")
+	end
 end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
@@ -37072,6 +37490,7 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		UI.ultimate(widget,actor,pad,actor==h)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.
@@ -37198,7 +37617,250 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
+          <Properties>
+            <string name="Name">UltimateFX</string>
+            <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
+-- Server/Ultimates pushes the contacts, this layer draws them. One identity
+-- layer installed into Effects (like LeeFX): Effects offers the registry and
+-- its helpers; the lens is Camera:cinema (the same "ultimate" contact).
+--   ultimateStart  the press: a flash of the fighter's colour, his ultimate's name
+--   ultimate       caught: letterbox, the name, the sequence drawn for its time
+--   ultimateTick   each blow of the sequence
+--   ultimateEnd    the last blow
+--   ultimateMiss   the opener whiffed (the opening is the opponent's)
+-- and three awakening moments: Itachi's Tsukuyomi (the world turns red and
+-- black for the held body), a gate of Lee's opening, the Byakugan's reveal.
+-- Presentation only: nothing here can change gameplay.
+local Debris=game:GetService("Debris")
+
+local UltimateFX={}
+local K -- Effects' helpers, handed over by install()
+UltimateFX.clock=os.clock -- (headless tests drive time)
+
+local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+-- Per sequence: the core colour, its edge, the world's grade while it plays.
+UltimateFX.LOOK={
+	clones={core=rgb(255,150,40),edge=rgb(255,226,170),grade={tint=rgb(255,236,214),saturation=.15,contrast=.12}},
+	lion={core=rgb(150,200,255),edge=rgb(236,246,255),grade={tint=rgb(214,226,255),saturation=-.2,contrast=.25}},
+	pyramid={core=rgb(214,176,112),edge=rgb(150,112,70),grade={tint=rgb(255,232,196),saturation=-.1,contrast=.15}},
+	lotus={core=rgb(120,230,140),edge=rgb(226,255,226),grade={tint=rgb(226,255,226),saturation=.1,contrast=.15}},
+	palms={core=rgb(190,200,255),edge=rgb(250,250,255),grade={tint=rgb(226,230,255),saturation=-.35,contrast=.2}},
+	tsukuyomi={core=rgb(200,20,30),edge=rgb(20,10,12),grade={tint=rgb(255,90,90),saturation=-1,contrast=.45}},
+	flash={core=rgb(255,220,80),edge=rgb(255,250,220),grade={tint=rgb(255,246,214),saturation=0,contrast=.2}},
+	raikiri={core=rgb(220,236,255),edge=rgb(120,170,255),grade={tint=rgb(220,230,255),saturation=-.3,contrast=.3}},
+}
+local function lookOf(kind) return UltimateFX.LOOK[kind or ""] or UltimateFX.LOOK.clones end
+
+-- The screen side (letterbox and title) lives in the local player's GUI; a
+-- headless scene has none and simply skips it.
+local function playerGui()
+	local ok,gui=pcall(function()
+		local player=game:GetService("Players").LocalPlayer
+		return player and player:FindFirstChildOfClass("PlayerGui")
+	end)
+	return ok and gui or nil
+end
+function UltimateFX.banner(fx,name,color,time,subtitle)
+	local gui=playerGui()
+	if not gui then return nil end
+	local old=gui:FindFirstChild("NinjaUltimate")
+	if old then old:Destroy() end
+	local screen=K.new("ScreenGui",{Name="NinjaUltimate",IgnoreGuiInset=true,ResetOnSpawn=false,DisplayOrder=40},gui)
+	local top=K.new("Frame",{BackgroundColor3=Color3.new(),BorderSizePixel=0,Size=UDim2.new(1,0,0,0),Position=UDim2.fromScale(0,0)},screen)
+	local bottom=K.new("Frame",{BackgroundColor3=Color3.new(),BorderSizePixel=0,Size=UDim2.new(1,0,0,0),AnchorPoint=Vector2.new(0,1),Position=UDim2.fromScale(0,1)},screen)
+	K.tween(top,.22,{Size=UDim2.new(1,0,.11,0)});K.tween(bottom,.22,{Size=UDim2.new(1,0,.11,0)})
+	local title=K.new("TextLabel",{BackgroundTransparency=1,Size=UDim2.new(1,0,0,64),AnchorPoint=Vector2.new(.5,1),Position=UDim2.new(.5,0,1,-18),
+		Font=Enum.Font.GothamBlack,Text=name or "",TextColor3=color,TextSize=46,TextTransparency=1,TextStrokeTransparency=.2,TextStrokeColor3=Color3.new()},screen)
+	K.tween(title,.2,{TextTransparency=0})
+	local sub=nil
+	if subtitle then
+		sub=K.new("TextLabel",{Name="Count",BackgroundTransparency=1,Size=UDim2.new(1,0,0,30),AnchorPoint=Vector2.new(.5,0),Position=UDim2.new(.5,0,0,22),
+			Font=Enum.Font.GothamBold,Text=subtitle,TextColor3=Color3.new(1,1,1),TextSize=26,TextStrokeTransparency=.3},screen)
+	end
+	fx.ultimateScreen={screen=screen,top=top,bottom=bottom,title=title,sub=sub,ends=UltimateFX.clock()+(time or 3.4)}
+	task.delay(time or 3.4,function() UltimateFX.closeBanner(fx,screen) end)
+	return screen
+end
+function UltimateFX.closeBanner(fx,screen)
+	local open=fx.ultimateScreen
+	if not open or (screen and open.screen~=screen) then return end
+	fx.ultimateScreen=nil
+	if open.screen.Parent then
+		K.tween(open.top,.2,{Size=UDim2.new(1,0,0,0)});K.tween(open.bottom,.2,{Size=UDim2.new(1,0,0,0)})
+		K.tween(open.title,.2,{TextTransparency=1})
+		Debris:AddItem(open.screen,.3)
+	end
+end
+-- The world's grade for the sequence (one at a time).
+function UltimateFX.grade(fx,look,time)
+	if fx.ultimateGrade and fx.ultimateGrade.Parent then fx.ultimateGrade:Destroy() end
+	local ok,cc=pcall(function()
+		local Lighting=game:GetService("Lighting") -- (asked late: a headless scene has none)
+		return K.new("ColorCorrectionEffect",{Name="NinjaUltimateGrade",TintColor=look.grade.tint,Saturation=look.grade.saturation,Contrast=look.grade.contrast,Brightness=0},Lighting)
+	end)
+	if not ok or not cc then return end
+	fx.ultimateGrade=cc
+	task.delay(time,function()
+		if cc.Parent then K.tween(cc,.3,{TintColor=Color3.new(1,1,1),Saturation=0,Contrast=0});Debris:AddItem(cc,.35) end
+	end)
+end
+
+local function modelFor(folder,id) return folder and folder:FindFirstChild(id or "") end
+local function rootOf(model) return model and model:FindFirstChild("HumanoidRootPart") end
+local function around(position,radius,rng)
+	local a=rng:NextNumber()*math.pi*2
+	return position+Vector3.new(math.cos(a)*radius,rng:NextNumber()*2-.5,math.sin(a)*radius)
+end
+
+-- What each sequence draws round the held body while it plays (a beat every
+-- ~0.16 s): Naruto's clones pouring in, Sasuke's lightning, the sand closing
+-- into the pyramid, Lee's spin, Neji's palms, the red world, Minato's flashes,
+-- Kakashi's white chakra blade.
+local BEAT={
+	clones=function(fx,p,look,rng,k)
+		K.smokePuff(fx.folder,around(p,3.2,rng),rgb(236,230,220),6,1.3)
+		K.flash(fx.folder,around(p,1.4,rng),look.core,.4,2.4,.1,.35)
+	end,
+	lion=function(fx,p,look,rng,k)
+		if K.sparks then K.sparks(fx.folder,p+Vector3.new(0,rng:NextNumber()*2,0),look.core,8,22) end
+		K.flash(fx.folder,around(p,1.2,rng),look.edge,.3,2.2,.08,.3)
+	end,
+	pyramid=function(fx,p,look,rng,k)
+		local y=p.Y-2.6
+		local spot=around(Vector3.new(p.X,y,p.Z),2+rng:NextNumber()*3,rng)
+		local grain=K.block(fx.folder,Vector3.new(.9,.9,.9),CFrame.new(spot.X,y,spot.Z),look.core,Enum.Material.Sand)
+		grain.CanCollide=false;grain.Anchored=true
+		K.tween(grain,.35,{CFrame=CFrame.new(p+Vector3.new(0,.5,0)),Size=Vector3.new(.3,.3,.3)})
+		Debris:AddItem(grain,.4)
+		if k%3==0 then K.shockRing(fx.folder,Vector3.new(p.X,y+.1,p.Z),look.edge,3,9,.4) end
+	end,
+	lotus=function(fx,p,look,rng,k)
+		K.shockRing(fx.folder,p,look.core,1.5,6,.25)
+		K.smokePuff(fx.folder,p-Vector3.new(0,1.5,0),rgb(206,194,168),3,1)
+	end,
+	palms=function(fx,p,look,rng,k)
+		K.flash(fx.folder,around(p,.9,rng),look.edge,.25,1.6,.07,.25)
+		local open=fx.ultimateScreen
+		if open and open.sub then
+			local counts={2,4,8,16,32,64,128}
+			open.sub.Text=tostring(counts[math.min(#counts,1+math.floor(k/2))]).." PALMS"
+		end
+	end,
+	tsukuyomi=function(fx,p,look,rng,k)
+		if k%2==0 then K.shockRing(fx.folder,p,look.core,1,7,.5) end
+	end,
+	flash=function(fx,p,look,rng,k)
+		local from=around(p,6,rng)
+		K.flash(fx.folder,from,look.core,.5,3,.1,.25)
+		K.flash(fx.folder,around(p,1.2,rng),look.edge,.3,2,.08,.3)
+	end,
+	raikiri=function(fx,p,look,rng,k)
+		if K.sparks then K.sparks(fx.folder,p,look.edge,10,26) end
+		if k%2==0 then K.flash(fx.folder,p,look.core,.6,3.4,.1,.25) end
+	end,
+}
+UltimateFX.BEAT=BEAT
+
+local function sequence(fx,impact,folder)
+	local look=lookOf(impact.kind)
+	local time=impact.time or 3.4
+	local victim=rootOf(modelFor(folder,impact.victim))
+	UltimateFX.banner(fx,impact.name,look.core,time,if impact.kind=="palms" then "2 PALMS" else nil)
+	UltimateFX.grade(fx,look,time)
+	local beat=BEAT[impact.kind] or BEAT.clones
+	local rng=Random.new(impact.serial or 1)
+	local token={}
+	fx.ultimateRun=token
+	task.spawn(function()
+		local started=UltimateFX.clock()
+		local k=0
+		while UltimateFX.clock()-started&lt;time and fx.ultimateRun==token do
+			k+=1
+			local p=(victim and victim.Parent and victim.Position) or impact.position
+			pcall(beat,fx,p,look,rng,k)
+			task.wait(.16)
+		end
+	end)
+	-- The pyramid closes at the end: a dome of sand over the body.
+	if impact.kind=="pyramid" then
+		task.delay(math.max(0,time-.9),function()
+			if fx.ultimateRun~=token then return end
+			local p=(victim and victim.Parent and victim.Position) or impact.position
+			local dome=K.block(fx.folder,Vector3.new(1,1,1),CFrame.new(p),look.core,Enum.Material.Sand,"Part")
+			dome.Shape=Enum.PartType.Ball;dome.CanCollide=false;dome.Anchored=true
+			K.tween(dome,.35,{Size=Vector3.new(11,11,11)})
+			task.delay(.6,function() if dome.Parent then K.tween(dome,.25,{Transparency=1}) end end)
+			Debris:AddItem(dome,.9)
+		end)
+	end
+	K.sound(K.anchorPart(fx.folder,impact.position),K.SOUND.whoosh,.6,.7)
+end
+
+local function impact(fx,impact,folder)
+	local style=impact.style
+	local p=impact.position
+	if style=="ultimateStart" then
+		local look=lookOf(impact.kind)
+		K.flash(fx.folder,p,look.core,1,6,.18,.2)
+		K.shockRing(fx.folder,p-Vector3.new(0,2.6,0),look.edge,2,12,.35)
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.whoosh,.55,1.15)
+		return true
+	elseif style=="ultimate" then
+		sequence(fx,impact,folder)
+		return true
+	elseif style=="ultimateTick" then
+		local look=lookOf(impact.kind)
+		K.flash(fx.folder,p,look.edge,.4,if impact.heavy then 3.2 else 2,.08,.25)
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.hit,.35,1+((impact.index or 0)%4)*.06)
+		return true
+	elseif style=="ultimateEnd" then
+		local look=lookOf(impact.kind)
+		fx.ultimateRun=nil
+		K.flash(fx.folder,p,look.core,1.2,9,.25,.15)
+		K.shockRing(fx.folder,p-Vector3.new(0,2.4,0),look.core,3,18,.5)
+		K.smokePuff(fx.folder,p-Vector3.new(0,2.4,0),rgb(206,194,168),12,2)
+		K.sound(K.anchorPart(fx.folder,p),K.SOUND.boom,.7,.9)
+		UltimateFX.closeBanner(fx)
+		return true
+	elseif style=="ultimateMiss" then
+		fx.ultimateRun=nil
+		K.smokePuff(fx.folder,p-Vector3.new(0,2.4,0),rgb(200,190,170),6,1.4)
+		UltimateFX.closeBanner(fx)
+		return true
+	elseif style=="tsukuyomi" then
+		local look=UltimateFX.LOOK.tsukuyomi
+		K.shockRing(fx.folder,p,look.core,1,10,.6)
+		-- The held body's player sees the red world; the caster only the ring.
+		local mine=false
+		pcall(function()
+			local character=game:GetService("Players").LocalPlayer.Character
+			mine=character~=nil and character.Name==impact.victim
+		end)
+		if mine then UltimateFX.grade(fx,look,impact.time or 1.5) end
+		return true
+	elseif style=="gate" then
+		local tone=rgb(120,230,140)
+		K.flash(fx.folder,p,tone,.8,4+(impact.gate or 1),.18,.25)
+		K.shockRing(fx.folder,p-Vector3.new(0,2.6,0),tone,2,8+(impact.gate or 1)*2,.4)
+		return true
+	elseif style=="reveal" then
+		K.flash(fx.folder,p,rgb(236,232,255),.6,3.2,.15,.3)
+		return true
+	end
+	return false
+end
+UltimateFX.impact=impact
+
+function UltimateFX.install(FX,kit)
+	K=kit
+	table.insert(FX.layers,{name="Ultimate",impact=impact})
+end
+return UltimateFX
+</ProtectedString>
+          </Properties>
+        </Item>
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -37394,7 +38056,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -38709,7 +39371,7 @@ end
 local function timing(name,fighterId)
 	local spec=Attacks[name] or Attacks[VARIANT_OF[name] or "DashAttack"]
 	local fighter=Fighters[fighterId]
-	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
+	local profile=fighter and fighter.AttackProfile and (fighter.AttackProfile[name] or fighter.AttackProfile[spec.clip or ""])
 	local startup=spec.startup*(profile and profile.startup or 1)
 	local active=spec.active*(profile and profile.active or 1)
 	local recovery=spec.recovery*(profile and profile.recovery or 1)
@@ -38759,6 +39421,11 @@ end
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId,clip)
 	local authored=clip or tostring(fighterId).."."..tostring(name)
+	-- (Stage 6) A strike drawn with another one's clip until it has its own
+	-- (Attacks clip: the 4th and 5th lights of the longer strings).
+	if not clip and Authored and not Authored.has(authored) and Attacks[name] and Attacks[name].clip then
+		authored=tostring(fighterId).."."..Attacks[name].clip
+	end
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.
@@ -41012,7 +41679,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -42465,7 +43132,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -42925,7 +43592,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -43139,7 +43806,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -43440,7 +44107,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -43453,7 +44120,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -43556,7 +44223,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -43683,7 +44350,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -43826,7 +44493,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -44042,7 +44709,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND144">
+  <Item class="Lighting" referent="ND146">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -44060,7 +44727,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND145">
+  <Item class="SoundService" referent="ND147">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

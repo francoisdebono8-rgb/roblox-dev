@@ -64,5 +64,14 @@ return {
 	firebreath={shape="orb",color=rgb(255,170,70),color2=rgb(255,90,30),size={2,2,2},light=3,trail=0,hit="burst",zone="scorch"},
 	swordread={shape="blade",color=rgb(220,60,60),color2=rgb(200,206,214),size={.2,.06,2.4},light=0,trail=0,hit="sparks"},
 	woodguard={shape="blade",color=rgb(150,110,70),color2=rgb(110,160,80),size={.6,.6,1.6},light=0,trail=0,hit="crush"},
+	-- (Stage 6) the eight main fighters' new jutsu: Minato's flash cut,
+	-- Kakashi's white-chakra cut, Lee's entry kick, Neji's sight, Gaara's
+	-- armour and Lee's weights (bodies and buffs: no thrown object).
+	flash={shape="blade",color=rgb(255,236,120),color2=rgb(255,200,40),size={.3,.06,1.6},light=2,trail=.6,hit="sparks"},
+	lightning={shape="blade",color=rgb(236,246,255),color2=rgb(130,190,255),size={.3,.06,2.2},light=2.5,trail=.5,hit="sparks"},
+	leaf={shape="orb",color=rgb(120,200,90),color2=rgb(60,140,50),size={1.2,1.2,1.2},light=0,trail=.6,hit="crush"},
+	byakugan={shape="orb",color=rgb(236,232,255),color2=rgb(170,160,230),size={1,1,1},light=1,trail=0,hit="burst"},
+	sandarmor={shape="orb",color=rgb(214,186,130),color2=rgb(170,140,90),size={1,1,1},light=0,trail=0,hit="crush"},
+	weights={shape="boulder",color=rgb(150,140,130),color2=rgb(90,84,78),size={1,1,1},light=0,trail=0,hit="crush"},
 	staffread={shape="blade",color=rgb(232,200,120),color2=rgb(90,64,40),size={.2,.2,4},light=0,trail=0,hit="sparks"},
 }

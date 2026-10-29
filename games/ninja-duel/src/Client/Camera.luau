@@ -68,10 +68,27 @@ end
 local IMPULSE={
  whiff={0,0},spent={0,0},kunai={0,0},shuriken={0,0},stick={0,0},fade={0,0},cast={0,0},chase={.02,1.2},dodge={.01,.25},substitute={.02,.4},
  light={.02,.3},air={.025,.45},landing={.04,.6},block={.04,.6},quickstep={.015,.8},teleport={.03,2.2},mirage={0,0},burst={.02,1},
+ -- (Stage 6) the ultimates and the awakenings' moments.
+ ultimateStart={.08,2},ultimate={.12,1.2},ultimateTick={.05,.6},ultimateEnd={.3,3.2},ultimateMiss={0,0},tsukuyomi={.06,1.6},gate={.04,.8},reveal={0,0},
  launcher={.1,1.3},finisher={.13,1.6},parry={.14,1.7},jutsu={.15,1.8},fire={.32,3.2},
  slam={.26,2.6},wall={.14,1.1},wallbounce={.2,2.0},clash={.12,1.6},walltech={.02,.4},pin={.02,.25},ember={.02,.35},palm={.015,.2},palmburst={.06,.9},flow={.03,.6},awaken={.12,2.4},groundbounce={.18,1.8},worldbreak={.2,2.2},chidori={.1,2.2},afterimage={0,0},deflect={.01,.2},repel={.1,1.3},rotation={.04,.9},trigram={0,0},
 }
-function Camera:impulse(style,role)
+-- (Stage 6) an ultimate takes the lens for its sequence (Server/Ultimates:
+-- the "ultimate" contact carries kind and time): a slow orbit round both
+-- bodies, then it hands back where it is (no snap).
+local CINEMA={
+	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=11,height=2.4,rate=.9,fov=52},pyramid={dist=22,height=12,rate=.25,fov=60},
+	lotus={dist=12,height=6,rate=1.4,fov=56,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
+	flash={dist=15,height=5,rate=1.1,fov=60},raikiri={dist=10,height=2.6,rate=.7,fov=50},
+}
+Camera.CINEMA=CINEMA
+function Camera:cinema(impact,now)
+	local look=CINEMA[impact and impact.kind or ""] or CINEMA.clones
+	self.cinematic={from=now,untilT=now+((impact and impact.time) or 3.4),look=look,sign=if math.random()<.5 then 1 else -1}
+end
+function Camera:impulse(style,role,impact)
+	if style=="ultimate" then self:cinema(impact,os.clock())
+	elseif (style=="ultimateEnd" or style=="ultimateMiss") and self.cinematic then self.cinematic.untilT=math.min(self.cinematic.untilT,os.clock()+.3) end
 	local spec=IMPULSE[style] or IMPULSE.light
 	if not spec or (spec[1]<=0 and spec[2]<=0) then return end
 	local weight=if role=="victim" then 1.25 elseif role=="neutral" then .6 else .85
@@ -292,6 +309,28 @@ function Camera:update(data,dt)
 	-- top-left two thirds of the play viewport, so tooling can ask for the view
 	-- to be re-aimed at that visible region. Never active outside Studio.
 	local studio=game:GetService("RunService"):IsStudio()
+	-- (Stage 6) the ultimate's own lens: it orbits the two bodies for the
+	-- sequence; the rig picks up from where it stops.
+	local cine=self.cinematic
+	if cine and clock<cine.untilT and data.phase=="Duel" then
+		local look=cine.look
+		local mid=a:Lerp(target,.5)
+		local t=clock-cine.from
+		local line=Vector3.new(target.X-a.X,0,target.Z-a.Z)
+		if line.Magnitude<.1 then line=Vector3.xAxis end
+		local base=math.atan2(line.Unit.X,line.Unit.Z)+math.pi/2
+		local angle=base+cine.sign*t*look.rate
+		local height=look.height+(if look.follow then math.max(0,target.Y-a.Y)*.6 else 0)
+		local eye=mid+Vector3.new(math.sin(angle)*look.dist,height,math.cos(angle)*look.dist)
+		local cf=CFrame.lookAt(eye,mid+Vector3.new(0,1,0))*shake
+		local ease=math.clamp(t/.3,0,1)
+		camera.CFrame=(self.rigCF or camera.CFrame):Lerp(cf,ease)
+		camera.FieldOfView=camera.FieldOfView+(look.fov-camera.FieldOfView)*math.clamp(dt*6,0,1)
+		if ease>=1 then self.rigCF=camera.CFrame end
+		return
+	elseif cine then
+		self.cinematic=nil;self.rigCF=camera.CFrame
+	end
 	-- Studio film camera (tooling only): a low side view of both fighters, the
 	-- way a fighting-game camera shows feet, ground contact and body mechanics.
 	local film=studio and workspace:GetAttribute("NinjaDuelFilmCam")

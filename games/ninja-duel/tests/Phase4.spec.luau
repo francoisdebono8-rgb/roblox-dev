@@ -182,36 +182,31 @@ test("clash: two strikes active together cancel out into a reset",function()
  assert((a.root.Position-b.root.Position).Magnitude>6,"the clash did not push the fighters apart")
 end)
 
-test("Rasengan is instant after a teleport and a plunge in the air",function()
+test("the Lightning Strike cashes in a teleport arrival at once",function()
+ -- (Stage 6) at 13 Minato has no Rasengan: the arrival is spent on the
+ -- shunshin cut, out of the teleport recovery.
  local c,a,b=H.duel("Flashstep","Mirage")
  place(c,a,b,V.new(0,3,14),V.new(0,3,-3))
  Techniques.plant(c,a,V.new(0,0,-6),V.yAxis)
- assert(c:request(a,"Technique2"),"teleport refused")
+ assert(c:request(a,H.slot(a,"Flashstep")),"teleport refused")
  until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no arrival window")
- assert(c:request(a,"Technique3"),"Rasengan refused out of the teleport")
- assert(a.pending and a.pending.variant=="FlashRasengan","not the teleport variant")
- assert(a.untilTime-c.now<=.06,"the teleport Rasengan kept its wind-up")
- local c2,x,y=H.duel("Flashstep","Mirage")
- place(c2,x,y,V.new(0,15,3),V.new(0,13,-1))
- x.airborne=true;x.airHold=c2.now+1
- Brawler.react(c2,y,"Juggled",V.zero,1.2,x)
- assert(c2:request(x,"Technique3"),"airborne Rasengan refused")
- assert(x.pending.variant=="RasenganDrop")
- until_(c2,.4,function() return x.attackVariant=="RasenganDrop" end,"no plunge")
- assert(x.attackName=="Slam","the airborne Rasengan is not a plunge")
+ assert(c:request(a,H.slot(a,"LightningStrike"),b.root.Position),"the Lightning Strike was refused out of the teleport")
 end)
 
-test("Flying Thunder God: the stick picks the seal, a hit seals the body",function()
+test("Flying Thunder God (prototype): to the last planted seal only, a hit seals the body",function()
+ -- (Stage 6) at 13 the technique is a prototype: the stick does not choose,
+ -- he goes to the newest seal, and the jutsu recharges for 6 s.
  local c,a,b=H.duel("Flashstep","Mirage")
  place(c,a,b,V.new(0,3,0),V.new(0,3,-30))
  Techniques.plant(c,a,V.new(30,0,0),V.yAxis)
  Techniques.plant(c,a,V.new(-30,0,0),V.yAxis)
  assert(#a.anchors==2,"two seals were not both kept")
  a.move=V.xAxis
- assert(c:request(a,"Technique2"))
+ assert(c:request(a,H.slot(a,"Flashstep")))
  until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no teleport")
- assert(a.root.Position.X>25,"the stick did not choose the seal ("..tostring(a.root.Position)..")")
+ assert(a.root.Position.X<-25,"the prototype did not go to the last seal ("..tostring(a.root.Position)..")")
  assert(#a.anchors==1)
+ assert((a.cooldowns.Flashstep or 0)-c.now>5,"the prototype does not recharge for 6 s")
  -- A third plant replaces the oldest planted seal, never exceeding two.
  Techniques.plant(c,a,V.new(0,0,40),V.yAxis);Techniques.plant(c,a,V.new(5,0,40),V.yAxis)
  local planted=0;for _,e in a.anchors do if not e.actor then planted+=1 end end
@@ -222,7 +217,7 @@ test("Flying Thunder God: the stick picks the seal, a hit seals the body",functi
  Techniques.plant(c2,x,y.root.Position,V.yAxis,y)
  c2:relocate(y,V.new(-18,3,-26))
  x.move=V.zero
- assert(c2:request(x,"Technique2"))
+ assert(c2:request(x,H.slot(x,"Flashstep")))
  until_(c2,.3,function() return (x.flashUntil or 0)>c2.now end,"no teleport to the body seal")
  assert((x.root.Position-y.root.Position).Magnitude<5,"did not arrive beside the sealed body")
  assert(#x.anchors==0,"the body seal was not spent")
@@ -231,7 +226,7 @@ end)
 test("a marked kunai that connects puts the seal on the body",function()
  local c,a,b=H.duel("Flashstep","Mirage")
  place(c,a,b,V.new(0,3,10),V.new(0,3,-10))
- assert(c:request(a,"Technique1",b.root.Position))
+ assert(c:request(a,H.slot(a,"MarkedBlade"),b.root.Position))
  until_(c,.3,function() return c:markedInFlight(a)~=nil end,"no marked kunai thrown")
  -- The harness has no body raycasts: resolve the contact the server would see.
  local blade=c:markedInFlight(a)
@@ -240,7 +235,7 @@ test("a marked kunai that connects puts the seal on the body",function()
  -- A guarded kunai drops its seal at the guard's feet instead.
  local c2,x,y=H.duel("Flashstep","Mirage")
  place(c2,x,y,V.new(0,3,10),V.new(0,3,-10))
- assert(c2:request(x,"Technique1",y.root.Position))
+ assert(c2:request(x,H.slot(x,"MarkedBlade"),y.root.Position))
  until_(c2,.3,function() return c2:markedInFlight(x)~=nil end,"no marked kunai thrown")
  assert(c2:request(y,"Guard"))
  H.step(c2,.3)
@@ -285,7 +280,7 @@ test("Itachi's Sharingan tracks a teleport behind a raised guard",function()
  Techniques.plant(c,a,b.root.Position,V.yAxis,b)
  assert(c:request(b,"Guard"))
  H.step(c,.3)
- assert(c:request(a,"Technique2"))
+ assert(c:request(a,H.slot(a,"Flashstep")))
  until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no teleport")
  local health=b.health
  assert(c:request(a,"Attack"))
@@ -298,13 +293,14 @@ test("Shadow Shuriken and Phoenix Flower release their full volleys",function()
  place(c,a,b,V.new(0,3,14),V.new(0,3,-14))
  local thrown=0
  local seen={}
- assert(c:request(a,"Technique2",b.root.Position))
+ assert(c:request(a,H.slot(a,"NeedleFan"),b.root.Position))
  for _=1,90 do H.step(c,.01);for _,p in c.projectiles do if not seen[p] then seen[p]=true;thrown+=1 end end end
  assert(thrown==7,"Shadow Shuriken released "..thrown.." blades")
- local c2,x,y=H.duel("Mirage","Flashstep")
+ -- (Stage 6) the Phoenix Flower is Sasuke's mark now.
+ local c2,x,y=H.duel("Lion","Flashstep")
  place(c2,x,y,V.new(0,3,14),V.new(0,3,-14))
  local flames=0;local seen2={}
- assert(c2:request(x,"Technique5",y.root.Position))
+ assert(c2:request(x,H.slot(x,"PhoenixFlower"),y.root.Position))
  for _=1,90 do H.step(c2,.01);for _,p in c2.projectiles do if not seen2[p] and p.kind=="phoenix" then seen2[p]=true;flames+=1 end end end
  assert(flames==5,"Phoenix Flower released "..flames.." flames")
 end)

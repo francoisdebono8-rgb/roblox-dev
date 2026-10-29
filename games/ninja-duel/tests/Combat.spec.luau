@@ -134,7 +134,8 @@ test("ground branch, real launch, 3D chase, two air hits, slam and wakeup",funct
 end)
 test("horizontal finisher differs from launcher",function()
  local c,a,b=pair()
- for _=1,3 do assert(c:request(a,"Attack"));step(c,.3) end
+ -- (Stage 6) the string is 4 hits (5 for Lee and Naruto); the last one projects.
+ for _=1,(a.def.StringLength or 4) do assert(c:request(a,"Attack"));step(c,.3) end
  assert(a.attackName=="Light3" and b.reaction=="Knockback" and b.reactionVelocity.Y<20)
 end)
 test("active window late entry, whiff recovery and combo buffer",function()
@@ -204,10 +205,10 @@ end)
 test("guarded Fire costs stamina and interruptible channel cannot release",function()
  local c,a,b=pair();a,b=b,a
 	 assert(c:request(b,"Guard"));local health=b.health;local stamina=b.stamina
- assert(c:request(a,"Technique4",b.root.Position));step(c,.6)
+ assert(c:request(a,"Technique2",b.root.Position));step(c,.6)
 	 assert(b.health<health and health-b.health<4 and b.stamina<stamina)
- local x,y,z=pair();assert(x:request(z,"Technique4",y.root.Position));x:damage(y,z,7,false,true);step(x,1)
- assert(#x.hazards==0 and z.pending==nil and not x:request(z,"Technique4"))
+ local x,y,z=pair();assert(x:request(z,"Technique2",y.root.Position));x:damage(y,z,7,false,true);step(x,1)
+ assert(#x.hazards==0 and z.pending==nil and not x:request(z,"Technique2"))
 end)
 test("Velmora parry and perfect dodge create punish windows",function()
  local c,a,b=pair();local health=b.health
@@ -230,10 +231,10 @@ test("actual controller callbacks cover branches, sticks, modifiers and release"
  end
  press("Light","ButtonX");assert(sent[#sent]=="Attack")
  press("Heavy","ButtonY");assert(sent[#sent]=="Heavy")
- press("Modifier","ButtonR1");press("Jump","ButtonA");assert(sent[#sent]=="Technique1")
- press("Light","ButtonX",roblox.Enum.UserInputState.End);press("Light","ButtonX");assert(sent[#sent]=="Technique2")
- press("Heavy","ButtonY",roblox.Enum.UserInputState.End);press("Heavy","ButtonY");assert(sent[#sent]=="Technique3")
- press("Dodge","ButtonB");assert(sent[#sent]=="Technique4")
+ press("Modifier","ButtonR1");press("Jump","ButtonA");assert(sent[#sent]=="Technique4")
+ press("Light","ButtonX",roblox.Enum.UserInputState.End);press("Light","ButtonX");assert(sent[#sent]=="Technique1")
+ press("Heavy","ButtonY",roblox.Enum.UserInputState.End);press("Heavy","ButtonY");assert(sent[#sent]=="Technique2")
+ press("Dodge","ButtonB");assert(sent[#sent]=="Technique3")
  press("Technique5","DPadUp");assert(sent[#sent]=="Technique5")
  press("Modifier","ButtonR1",roblox.Enum.UserInputState.End)
  state.human.pursuit=1;press("Jump","ButtonA",roblox.Enum.UserInputState.End);press("Jump","ButtonA");assert(sent[#sent]=="PadJump","× is the server-decided chase-or-jump (audit 29/10)")
@@ -267,9 +268,11 @@ test("imported Bangla combo owns damage, contacts, effects and cleanup",function
  -- A press on the beat is a Flow strike (Config.Flow.Damage = x1.15).
  local function flowScale() return if a.pending and a.pending.flow then 1.15 else 1 end
  health=b.health;assert(c:request(a,"Attack"));local f2=flowScale();step(c,.3);assert(math.abs(health-b.health-10*f2)<.01,"second hit "..(health-b.health))
- -- The third hit (MegaPunch 18) is scaled by Config.ComboScaling: 18 * 0.88.
- health=b.health;assert(c:request(a,"Attack"));local f3=flowScale();step(c,.3);assert(math.abs(health-b.health-15.84*f3)<.01,"third hit not scaled: "..(health-b.health))
- -- The third hit ends the string: nothing left to continue, no chain.
+ -- (Stage 6) the string is 4 hits: the third is a punch (5) scaled by
+ -- Config.ComboScaling (x0.88); the fourth (MegaPunch 18) x0.76 ends it.
+ health=b.health;assert(c:request(a,"Attack"));local f3=flowScale();step(c,.3);assert(a.attackName=="Light4" and math.abs(health-b.health-4.4*f3)<.01,"third hit not scaled: "..(health-b.health))
+ health=b.health;assert(c:request(a,"Attack"));local f4=flowScale();step(c,.3);assert(math.abs(health-b.health-13.68*f4)<.01,"fourth hit not scaled: "..(health-b.health))
+ -- The last hit ends the string: nothing left to continue, no chain.
  assert(a.attackName=="Light3" and a.combo==0 and not a.chainOpen)
  -- The next press opens a new string; it counts once it connects.
  step(c,.5);assert(c:request(a,"Attack") and a.attackName=="Light1" and a.combo==0)

@@ -19,6 +19,8 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	-- Itachi's Sharingan sees the strike coming: wider windows, and every
 	-- clean read opens a counter.
 	local eye=victim.def and victim.def.Sharingan
+	-- Kakashi's eye only while awakened (stage 6, def.SharinganAwake).
+	if eye and victim.def.SharinganAwake and (victim.awakenUntil or 0)<=c.now then eye=nil end
 	if eye and (victim.awakenUntil or 0)>c.now and victim.def.Awakening and victim.def.Awakening.Windows then
 		local k=victim.def.Awakening.Windows
 		eye={ParryWindow=eye.ParryWindow*k,PerfectDodge=eye.PerfectDodge*k,Counter=eye.Counter}
@@ -35,6 +37,9 @@ function Defense.resolve(c,attacker,victim,amount,frontal,melee)
 	if not frontal or not victim.guardHeld then return 'Hit',amount end
 	local since=c.now-victim.guardPressedAt
 	local window=if eye then eye.ParryWindow else Tune.ParryWindow
+	-- A buff that widens the parry (Neji's Byakugan: Perception).
+	local sight=victim.buff
+	if sight and c.now<sight.untilT and sight.spec.ParryScale then window*=sight.spec.ParryScale end
 	-- Sharingan Focus: the raised guard itself reads. Any frontal blow of the
 	-- body that meets it is parried (once per raise; parry cooldown and
 	-- stamina still apply) and read. Blades and jutsu keep the eye's window.

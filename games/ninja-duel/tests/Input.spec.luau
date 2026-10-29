@@ -82,7 +82,7 @@ test("mouse heavy and light may overlap without losing either press",function()
 end)
 test("PS5 modifier maps four jutsu and never modifies keyboard or mouse",function()
  press("Modifier",E.KeyCode.ButtonR1)
- for i,pair in {{"Jump",E.KeyCode.ButtonA},{"Light",E.KeyCode.ButtonX},{"Heavy",E.KeyCode.ButtonY},{"Dodge",E.KeyCode.ButtonB}} do
+ for i,pair in {{"Light",E.KeyCode.ButtonX},{"Heavy",E.KeyCode.ButtonY},{"Dodge",E.KeyCode.ButtonB},{"Jump",E.KeyCode.ButtonA}} do
   -- the press is the jutsu, its release lets a held one go (audit 29/10)
   local n=#sent;tap(pair[1],pair[2]);local got={};for k=n+1,#sent do table.insert(got,sent[k].action) end;assert(sent[n+1].action=="Technique"..i and last()=="SealRelease",table.concat(got,","))
  end
@@ -132,7 +132,7 @@ test("chakra button: Z + R and L2 + R2 infuse the tool; R and R2 alone stay plai
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
  press("ChakraPad",E.KeyCode.ButtonL2,E.UserInputState.End);clock=3
  press("Modifier",E.KeyCode.ButtonR1)
- local n=#sent;tap("Light",E.KeyCode.ButtonX);assert(sent[n+1].action=="Technique2","R1 + square stopped being a jutsu")
+ local n=#sent;tap("Light",E.KeyCode.ButtonX);assert(sent[n+1].action=="Technique1","R1 + square stopped being a jutsu")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  -- The keyboard modifier never turns a pad tool into a chakra tool.
  press("ChakraKey",Controls.Keyboard.Chakra)
@@ -168,7 +168,7 @@ test("chakra button (user 29/10): L2 or Z held infuses the press it is held with
  -- pad: R1 + square stays a jutsu, never infused
  local n=#sent
  press("Modifier",E.KeyCode.ButtonR1);tap("Light",E.KeyCode.ButtonX);press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
- assert(sent[n+1].action=="Technique2" and not infused(n+1))
+ assert(sent[n+1].action=="Technique1" and not infused(n+1))
  -- pad: guard held + square is the grab
  press("Guard",E.KeyCode.ButtonL1);tap("Light",E.KeyCode.ButtonX);assert(last()=="Grab","L1 + square is not the grab")
  press("Guard",E.KeyCode.ButtonL1,E.UserInputState.End)
@@ -190,12 +190,13 @@ test("jump release cuts a jump but never a technique or pursuit",function()
  table.clear(sent);tap("Jump",E.KeyCode.Space);assert(sent[1] and sent[1].action=="Jump","Space chased instead of jumping")
  state.human.pursuit=0
  table.clear(sent);state.human.pursuit=1;press("Modifier",E.KeyCode.ButtonR1)
- tap("Jump",E.KeyCode.ButtonA);assert(sent[1].action=="Technique1" and last()=="SealRelease" and #sent==2,"R1 + × sent a JumpOff")
+ tap("Jump",E.KeyCode.ButtonA);assert(sent[1].action=="Technique4" and last()=="SealRelease" and #sent==2,"R1 + × sent a JumpOff")
 end)
 test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-pad press",function()
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
  press("Modifier",E.KeyCode.ButtonR1);tap("Guard",E.KeyCode.ButtonL1)
- assert(last()=="WallDetach","detach emitted a stray GuardOff")
+ -- (Stage 6) R1 + L1 is the ultimate; on a wall the server makes it the detach.
+ assert(last()=="Ultimate","R1 + L1 emitted a stray GuardOff")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  -- CORE_COMBAT_CONVERGENCE_2 §3: no D-pad input sends the re-engage.
  for _,binding in bindings do
@@ -255,7 +256,7 @@ test("PS5 prompts survive incidental mouse movement and list full jutsu chords",
  uis.LastInputTypeChanged:fire(E.UserInputType.Gamepad1);assert(input.pad)
  uis.LastInputTypeChanged:fire(E.UserInputType.MouseMovement);assert(input.pad)
  uis.LastInputTypeChanged:fire(E.UserInputType.Keyboard);assert(not input.pad)
- for i,chord in {"R1 + ×","R1 + □","R1 + △","R1 + ○","D-pad ↑"} do assert(Controls.TechniquePad[i]==chord) end
+ for i,chord in {"R1 + □","R1 + △","R1 + ○","R1 + ×","D-pad ↑"} do assert(Controls.TechniquePad[i]==chord) end
  for _,symbol in {"□","△","○","×","L1","R1","L2","R2"} do assert(Controls.HelpPad:find(symbol,1,true),symbol.." missing") end
 end)
 -- Integration: use real server validation and the unchanged character graphs.

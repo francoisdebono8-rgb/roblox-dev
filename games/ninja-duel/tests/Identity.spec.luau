@@ -271,7 +271,7 @@ test("Minato · Yellow Flash: each jump leaves its return seal, a launched body 
  Techniques.plant(c,a,V.new(20,0,0),V.yAxis)
  local start=a.root.Position
  a.move=V.xAxis
- assert(c:request(a,"Technique2"),"teleport refused")
+ assert(c:request(a,H.slot(a,"Flashstep")),"teleport refused")
  until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no arrival")
  assert(a.flashUntil-c.now>.6,"the awakened arrival window is not longer")
  local planted={}
@@ -283,14 +283,14 @@ test("Minato · Yellow Flash: each jump leaves its return seal, a launched body 
  c:relocate(b,V.new(-6,12,-10));b.airborne=true
  Brawler.react(c,b,"Launched",V.new(0,20,0),1.2,a)
  a.pursuitUntil=c.now+1
- assert(c:request(a,"Technique2"),"no Flying Thunder God onto the launched body")
+ assert(c:request(a,H.slot(a,"Flashstep")),"no Flying Thunder God onto the launched body")
  until_(c,.3,function() return (a.root.Position-b.root.Position).Magnitude<5 end,"he did not arrive beside the launched body")
  assert(a.pursuitUntil<=c.now,"the chase window was not spent")
  -- Without the awakening nothing reaches the body.
  local c2,x,y=H.duel("Flashstep","Mirage")
  place(c2,x,y,V.new(0,3,0),V.new(0,3,-20))
  Brawler.react(c2,y,"Launched",V.new(0,20,0),1.2,x);x.pursuitUntil=c2.now+1
- assert(not c2:request(x,"Technique2"),"a launched body was a destination without Yellow Flash")
+ assert(not c2:request(x,H.slot(x,"Flashstep")),"a launched body was a destination without Yellow Flash")
 end)
 
 -- Neji ------------------------------------------------------------------------
@@ -383,7 +383,7 @@ test("Neji · Rotation flows into the twin palm: the strike staggers within reac
  local c,a,b=H.duel("Flashstep","GentleFist")
  place(c,a,b,V.new(0,3,3),V.new(0,3,-3))
  assert(c:request(a,"Attack"))
- assert(c:request(b,"Technique1"),"Rotation refused")
+ assert(c:request(b,H.slot(b,"Rotation")),"Rotation refused")
  local ok,reason=c:request(b,"Attack")
  assert(ok and reason=="Buffered","a palm pressed during the spin was refused ("..tostring(reason)..")")
  until_(c,.6,function() return ev(b,'Repel')>0 end,"the strike was not repelled")
@@ -395,7 +395,7 @@ test("Neji · Rotation flows into the twin palm: the strike staggers within reac
  -- Without a pressed palm the dome still winds down at once and waits.
  local c2,x,y=H.duel("Flashstep","GentleFist")
  place(c2,x,y,V.new(0,3,3),V.new(0,3,-3))
- assert(c2:request(x,"Attack"));assert(c2:request(y,"Technique1"))
+ assert(c2:request(x,"Attack"));assert(c2:request(y,H.slot(y,"Rotation")))
  until_(c2,.6,function() return ev(y,'Repel')>0 end,"no repel")
  local repelled=c2.now
  until_(c2,.3,function() return y.state=="Neutral" end,"the dome did not wind down after the repel")
@@ -404,7 +404,7 @@ test("Neji · Rotation flows into the twin palm: the strike staggers within reac
  -- Pressed while the dome is still winding down: straight out of the spin.
  local c3,m,n=H.duel("Flashstep","GentleFist")
  place(c3,m,n,V.new(0,3,3),V.new(0,3,-3))
- assert(c3:request(m,"Attack"));assert(c3:request(n,"Technique1"))
+ assert(c3:request(m,"Attack"));assert(c3:request(n,H.slot(n,"Rotation")))
  until_(c3,.6,function() return (n.events.Repel or 0)>0 end,"no repel")
  assert(n.state=="TechniqueActive" or n.state=="TechniqueRecovery","setup: the dome should still be winding down")
  assert(c3:request(n,"Attack") and n.attackName=="PalmThrust","a press during the wind-down was eaten")
@@ -442,9 +442,10 @@ test("Sasuke · Curse Mark: the third kick does not let go (a stagger, the strin
   local c,a,b=H.duel("Lion","Mirage")
   place(c,a,b,V.new(0,3,2.25),V.new(0,3,-2.25))
   if cursed then awaken(c,a) end
-  for hit=1,2 do assert(c:request(a,"Attack"));assert(chainOpen(c,a),"string broke at hit "..hit) end
+  -- (Stage 6) the string is 4 hits: the curse holds on to its last kick.
+  for hit=1,(a.def.StringLength or 4)-1 do assert(c:request(a,"Attack"));assert(chainOpen(c,a),"string broke at hit "..hit) end
   assert(c:request(a,"Attack"))
-  assert(a.attackName=="Light3","not the third kick")
+  assert(a.attackName=="Light3","not the last kick")
   until_(c,.5,function() return a.state=="Recovery" end,"the third kick never recovered")
   if cursed then
    assert(b.reaction=="HitStun" and a.chainOpen,"the cursed kick let go ("..tostring(b.reaction)..")")
@@ -697,7 +698,7 @@ test("Neji · the twin palm out of Rotation lands as a palm that names the count
  local c,a,b=H.duel("Flashstep","GentleFist")
  place(c,a,b,V.new(0,3,3),V.new(0,3,-3))
  assert(c:request(a,"Attack"))
- assert(c:request(b,"Technique1"),"Rotation refused")
+ assert(c:request(b,H.slot(b,"Rotation")),"Rotation refused")
  assert(c:request(b,"Attack"))
  local serial=c.impactSerial
  local health=a.health
@@ -900,7 +901,7 @@ local function launchAndFlash(c,a,b)
  until_(c,.5,function() return b.reaction=="Launched" end,"the rising kick did not launch")
  assert(#bodySeals(a,b)==1,"the rising kick left no seal on the body")
  local flashed=false
- for _=1,80 do H.step(c,.01);if c:request(a,"Technique2") then flashed=true;break end end
+ for _=1,80 do H.step(c,.01);if c:request(a,H.slot(a,"Flashstep")) then flashed=true;break end end
  assert(flashed,"no Flying Thunder God onto the sealed body")
  until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no arrival")
 end
@@ -924,36 +925,15 @@ test("Minato · combo -> relocation -> combo: the rising kick's seal takes him t
  local c2,x,y=H.duel("Flashstep","Mirage")
  place(c2,x,y,V.new(0,3,0),V.new(0,3,-14))
  Techniques.plant(c2,x,y.root.Position,V.yAxis,y)
- assert(c2:request(x,"Technique2"))
+ assert(c2:request(x,H.slot(x,"Flashstep")))
  until_(c2,.3,function() return (x.flashUntil or 0)>c2.now end,"no arrival")
  assert(c2:request(x,"Attack"))
  until_(c2,.4,function() return y.health<y.def.Health end,"the arrival strike did not land")
  assert(ev(x,"FlashChain")==0,"a fresh exchange was called a chain")
- -- The Rasengan out of the jump carries the chain too, and grinds where it lands.
- local c3,m,n=H.duel("Flashstep","Mirage")
- launchAndFlash(c3,m,n)
- local s3=c3.impactSerial
- assert(c3:request(m,slot(m,"BurstStrike"),n.root.Position),"no Rasengan out of the arrival")
- local before=n.health
- until_(c3,.6,function() return n.health<before end,"the arrival Rasengan did not land")
- local rasengan
- for _,impact in impactsSince(c3,s3) do if impact.variant=="Rasengan" and impact.arrival then rasengan=impact end end
- assert(rasengan and ev(m,"FlashChain")==1,"the Rasengan out of the jump does not carry the chain")
+ -- (Stage 6) at 13 Minato has no Rasengan: the arrival chain is the strike above.
 end)
 
-test("Minato · the Rasengan contact names itself (the client grinds it into the body)",function()
- local c,a,b=H.duel("Flashstep","Mirage")
- place(c,a,b,V.new(0,3,4),V.new(0,3,-4))
- local serial=c.impactSerial
- assert(c:request(a,slot(a,"BurstStrike"),b.root.Position),"Rasengan refused")
- -- (User 28/10) cast in the open it is held in the palm; the strike drives it.
- until_(c,.6,function() return a.bodyState~=nil end,"the Rasengan was not held")
- assert(c:request(a,"Attack",b.root.Position),"the strike did not release it")
- until_(c,1,function() return b.health<b.def.Health end,"the Rasengan never landed")
- local grind
- for _,impact in impactsSince(c,serial) do if impact.variant=="Rasengan" and impact.victim==b.id then grind=impact end end
- assert(grind and grind.owner==a.id and grind.fighter=="Flashstep","the Rasengan contact does not say it was the Rasengan")
-end)
+-- (Stage 6) "the Rasengan contact names itself" left with Minato's Rasengan (he is 13).
 
 -- Minato (client) ----------------------------------------------------------------
 test("client · Minato's seals read apart: a beacon over a planted kunai, a formula on the floor (no kunai) where Yellow Flash left, a ring round a sealed body",function()
@@ -1045,11 +1025,11 @@ local function plate(fighterId,extra)
  return data
 end
 local function duelView(h,b) return {phase="Duel",epoch=1,intro=0,round=1,roundsToWin=2,wins={human=0,bot=0},human=h,bot=b} end
-test("HUD · Minato: after a jump the arrival strike and the Rasengan are prompted; Yellow Flash says what it changes and how long it lasts",function()
+test("HUD · Minato: after a jump the arrival strike and the Lightning Strike are prompted; Yellow Flash says what it changes and how long it lasts",function()
  hudScene(function(ui)
   local me=plate("Flashstep",{flash=true})
   ui:render(duelView(me,plate("Mirage")))
-  assert(ui.hint.Text:find("ARRIVAL STRIKE",1,true) and ui.hint.Text:find("RMB — LAUNCH",1,true) and ui.hint.Text:find("3 — RASENGAN",1,true),"the arrival is not prompted ("..ui.hint.Text..")")
+  assert(ui.hint.Text:find("ARRIVAL STRIKE",1,true) and ui.hint.Text:find("RMB — LAUNCH",1,true) and ui.hint.Text:find("2 — LIGHTNING STRIKE",1,true),"the arrival is not prompted ("..ui.hint.Text..")")
   me.airborne=true;ui:render(duelView(me,plate("Mirage")))
   assert(ui.hint.Text:find("RMB — SLAM",1,true),"the air arrival prompts a launcher ("..ui.hint.Text..")")
   me.airborne=false

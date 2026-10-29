@@ -84,12 +84,15 @@ test("sand lashes reach where a fist does not",function()
  assert(y.health==y.def.Health,"a punch reached 9 studs")
 end)
 
-test("his heavy is the Sand Pillar: sand erupts under the opponent at range",function()
+test("his heavy is the Sand Hand: it seizes the body at range and slams it down",function()
+ -- (Stage 6) △ no longer launches (hammering it juggled for free): the hand
+ -- of sand slams the body; the pillar is toward + □ inside a string.
  local c,a,b=H.duel("Sand","Flashstep")
  place(c,a,b,V.new(0,3,5),V.new(0,3,-5))
  assert(c:request(a,"Heavy"))
- assert(a.attackName=="SandPillar","the heavy is "..tostring(a.attackName))
- until_(c,.8,function() return b.reaction=="Launched" end,"the pillar did not launch at 10 studs")
+ assert(a.attackName=="SandHand","the heavy is "..tostring(a.attackName))
+ until_(c,.8,function() return b.reaction=="Knockdown" end,"the sand hand did not slam at 10 studs")
+ assert(H.load("Shared/MoveGraphs").Sand.routes.up=="SandPillar","the pillar left the string's toward route")
 end)
 
 test("sand body-flicker: the dodge is an instant reposition",function()
@@ -108,7 +111,7 @@ end)
 test("Sand Coffin binds, then buries; a substitution escapes the burial",function()
  local c,a,b=H.duel("Sand","Flashstep")
  place(c,a,b,V.new(0,3,8),V.new(0,3,-8))
- assert(c:request(a,"Technique1",b.root.Position),"Sand Coffin refused")
+ assert(c:request(a,H.slot(a,"SandCoffin"),b.root.Position),"Sand Coffin refused")
  until_(c,1.4,function() return b.reaction=="Bound" end,"the sand never bound him")
  local health=b.health
  until_(c,1.4,function() return b.health<health end,"the burial never came")
@@ -118,7 +121,7 @@ test("Sand Coffin binds, then buries; a substitution escapes the burial",functio
  -- Escape: substitute while bound.
  local c2,x,y=H.duel("Sand","Flashstep")
  place(c2,x,y,V.new(0,3,8),V.new(0,3,-8))
- assert(c2:request(x,"Technique1",y.root.Position))
+ assert(c2:request(x,H.slot(x,"SandCoffin"),y.root.Position))
  until_(c2,1.4,function() return y.reaction=="Bound" end,"the sand never bound him")
  local bound=y.health
  assert(c2:request(y,"Substitute"),"no substitution out of the coffin")
@@ -132,7 +135,7 @@ test("Desert Wave swallows blades and throws a close attacker away",function()
  -- A slow blade still in front of him when the sand rises (a fast one has
  -- already flown past by then; the harness floor used to eat it early).
  c:projectile(b,a.root.Position,15,30,3,"shuriken")
- assert(c:request(a,"Technique3"),"Desert Wave refused")
+ assert(c:request(a,H.slot(a,"DesertWave")),"Desert Wave refused")
  until_(c,.8,function() return b.reaction=="Knockback" end,"the close attacker was not thrown away")
  for _,p in c.projectiles do assert(p.a~=b,"a blade survived the wave") end
 end)

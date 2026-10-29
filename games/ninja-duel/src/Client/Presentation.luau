@@ -134,7 +134,15 @@ end
 -- strike arrives it continues from the same instant if the guess was right,
 -- otherwise the server's strike takes over (through the transition). A guess
 -- the server never confirms fades after 0.25 s.
-local NEXT_LIGHT={Light1="Light2",Light2="Light3"}
+-- (Stage 6) The string's next light, by its length (Fighters StringLength).
+local function nextLight(name,fighterId)
+	local f=Fighters[fighterId]
+	local length=(f and f.StringLength) or 4
+	local index=({Light1=1,Light2=2,Light4=3,Light5=4})[name]
+	if not index then return nil end
+	index+=1
+	return if index>=length then "Light3" elseif index<=2 then "Light"..index else "Light"..(index+1)
+end
 function Presentation:predictStrike(action,data)
 	local h=data and data.human
 	if not h or h.airborne or h.reaction or h.wall or h.groundPose or (h.health or 1)<=0 then return end
@@ -142,7 +150,7 @@ function Presentation:predictStrike(action,data)
 	if action=="Heavy" then
 		if h.state=="Neutral" then guess="Heavy" end
 	elseif h.state=="Neutral" then guess="Light1"
-	elseif h.state=="Recovery" and h.attackName and NEXT_LIGHT[h.attackName] then guess=NEXT_LIGHT[h.attackName] end
+	elseif h.state=="Recovery" and h.attackName and nextLight(h.attackName,h.fighterId) then guess=nextLight(h.attackName,h.fighterId) end
 	if guess then self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0} end
 end
 function Presentation:applyPrediction(actor,now)

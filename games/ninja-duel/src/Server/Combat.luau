@@ -8,6 +8,7 @@ local Animation = require(script.Parent.Animation)
 local Techniques = require(script.Parent.Techniques)
 -- Reusable technique families and fighter traits (roster breadth pass).
 local Families = require(script.Parent.Families)
+local Ultimates = require(script.Parent.Ultimates)
 local Looks = require(Shared.Looks)
 local Brawler = require(script.Parent.Brawler)
 local WorldReaction = require(script.Parent.WorldReaction)
@@ -171,7 +172,7 @@ function Combat:setState(a,state,duration)
 	a.chainOpen=false; a.recoveryCancelAt=nil; a.arrivalRecovery=nil
 end
 -- Strikes that crack Gaara's sand shield outright (the rest each cost a charge).
-local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
+local SHIELD_BREAKERS={SandHand=true,SandFist=true,Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike=true,FlyingKick=true,PalmThrust=true,CounterPalm=true,WallDive=true,SandPillar=true}
 -- Damage over time (burning ground, a burning wire): chip damage that never
 -- stuns, interrupts, scales or confirms anything. Through Combat:damage a body
 -- standing in fire was re-stunned every 0.48 s (its action cancelled), every
@@ -180,7 +181,7 @@ local SHIELD_BREAKERS={Heavy=true,Launcher=true,Light3=true,Slam=true,KneeStrike
 function Combat:chip(attacker,victim,amount)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	if (victim.rotationUntil or 0)>self.now or victim.invulnerableUntil>self.now then return false end
-	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	if (attacker.awakenUntil or 0)>self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	if self.damageLog then table.insert(self.damageLog,{t=self.now,by=attacker.fighterId,amount=amount,tag=self.damageTag or "chip",hits=victim.comboHits}) end
 	if victim.health<=0 then
@@ -195,6 +196,19 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 	if self.match.phase~="Duel" or self.match.finishing or victim.health<=0 or attacker.health<=0 then return false end
 	-- Inside Rotation nothing reaches Neji; the dome answers on its own step.
 	if (victim.rotationUntil or 0)>self.now then return false end
+	-- A buff that takes blows (Families Buff Hits: Gaara's Sand Armor).
+	local armour=victim.buff
+	if armour and self.now<armour.untilT and armour.spec.Hits and (victim.buffHits or 0)>0 then
+		victim.buffHits-=1
+		if victim.buffHits<=0 then armour.untilT=self.now end
+		attacker.hitConfirmed=true
+		local face=(attacker.root.Position-victim.root.Position)*Vector3.new(1,0,1)
+		face=if face.Magnitude>.1 then face.Unit else victim.root.CFrame.LookVector
+		self:pushImpact(victim.root.Position+face*1.6,"sandshield",victim.buffHits<=0,{owner=victim.id,direction=face})
+		self:cue(victim,string.upper(armour.spec.Name)..(if victim.buffHits>0 then " • 1 LEFT" else " • GONE"),.5)
+		Brawler.event(self,victim,"ArmorAbsorb")
+		return false
+	end
 	-- A counter stance (Families Counter) answers the blow before any defence.
 	if Families.beforeHit(self,attacker,victim,readEligible) then return false end
 	if victim.wall then Motor.detach(victim,self.now,false) end
@@ -208,7 +222,9 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		frontal=full or victim.root.CFrame.LookVector:Dot(delta.Unit)>-victim.def.Byakugan.BlindSpot
 	end
 	-- Sharingan tracking: a raised guard follows a teleport instead of being crossed up.
-	if not frontal and victim.def.Sharingan and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt<.7 then
+	local eye=victim.def.Sharingan
+	if eye and victim.def.SharinganAwake and (victim.awakenUntil or 0)<=self.now then eye=nil end
+	if not frontal and eye and victim.guardHeld and attacker.teleportAt and self.now-attacker.teleportAt<.7 then
 		frontal=true
 		local flat=Vector3.new(delta.X,0,delta.Z)
 		if flat.Magnitude>.1 then victim.root.CFrame=CFrame.lookAt(victim.root.Position,victim.root.Position+flat) end
@@ -296,7 +312,7 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		end
 	end
 	if attacker.bonusUntil>self.now then amount*=1.35; attacker.bonusUntil=0 end
-	if (attacker.awakenUntil or 0)>self.now then amount*=attacker.def.Awakening.Damage or 1 end
+	if (attacker.awakenUntil or 0)>self.now then amount*=Combat.awakeScale(attacker,"Damage",self.now) end
 	-- Buffs and armour (Families): outgoing and incoming.
 	amount*=Families.damageScale(attacker,victim,self.now)
 	-- An awakening with a price (the Curse Mark): the body that carries it takes more.
@@ -310,6 +326,8 @@ function Combat:damage(attacker,victim,amount,heavy,readEligible)
 		victim.comboHits=n+1;victim.comboDamage=(victim.comboDamage or 0)+amount;victim.comboBy=attacker
 	end
 	victim.lastHurt=self.now
+	-- Both bodies fill their ultimate bar (Server/Ultimates).
+	Ultimates.gain(self,attacker,victim,amount)
 	victim.health=math.max(0,victim.health-amount); victim.hum.Health=math.max(1,victim.health)
 	-- The attacker's on-hit trait (def.OnHit: a drain, a slow).
 	Families.afterHit(self,attacker,victim,amount,guarded)
@@ -853,12 +871,29 @@ function Combat:rush(a)
 end
 -- Awakening: once per match, below a third of health. A shockwave buys space,
 -- chakra comes back, and each prodigy's own strength is pushed for a while.
+-- Lee's gates (Awakening.Gates): which one is open, 1 at the awakening, one
+-- more every Step seconds, up to Max.
+function Combat.gateOf(a,now)
+	local tune=a.def.Awakening
+	local g=tune and tune.Gates
+	if not g then return nil end
+	return math.min(g.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(g.Step or 4)))
+end
+-- An awakening's multiplier (Speed, Damage): whole at once, or grown gate by
+-- gate up to its full value at the last one.
+function Combat.awakeScale(a,key,now)
+	local tune=a.def.Awakening
+	local full=(tune and tune[key]) or 1
+	local gate=Combat.gateOf(a,now)
+	if not gate then return full end
+	return 1+(full-1)*gate/(tune.Gates.Max or 5)
+end
 function Combat:awaken(a)
 	local tune=a.def.Awakening
 	if not tune or a.awakened then return false,"No awakening" end
 	if a.health>a.def.Health*Config.Awaken.Threshold then return false,"Not yet" end
 	if not Brawler.free(a,self.now) then return false,"Reacting" end
-	a.awakened=true;a.awakenUntil=self.now+Config.Awaken.Duration;a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
+	a.awakened=true;a.awakenUntil=self.now+(tune.Duration or Config.Awaken.Duration);a.awakenedAt=self.now;a.curseLanded=self.now;a.curseFedUntil=0
 	a.chakra=math.min(a.def.Chakra or Config.Chakra,a.chakra+40)
 	a.cooldowns={}
 	a.invulnerableUntil=math.max(a.invulnerableUntil,self.now+.45)
@@ -875,6 +910,15 @@ function Combat:awaken(a)
 	self:cue(a,"AWAKENING • "..tune.Name,1.4)
 	if b then self:cue(b,"OPPONENT AWAKENED",1) end
 	Brawler.event(self,a,"Awaken")
+	-- Itachi's Tsukuyomi: the body in front of him, in reach and in sight, is held.
+	if tune.Tsukuyomi and b and b.health>0 then
+		local gap=b.root.Position-a.root.Position
+		if gap.Magnitude<=22 and self:lineOfSight(a,b) and (b.invulnerableUntil or 0)<=self.now then
+			b.invulnerableUntil=0
+			Families.bind(self,a,b,{Bind=tune.Tsukuyomi,Kind="tsukuyomi",Name="Tsukuyomi"})
+			self:pushImpact(b.root.Position,"tsukuyomi",true,{owner=a.id,victim=b.id,time=tune.Tsukuyomi})
+		end
+	end
 	-- What an awakening sets off on entry (Techniques.awakenHooks: Kamatari).
 	for _,hook in Techniques.awakenHooks or {} do hook(self,a) end
 	return true
@@ -959,6 +1003,7 @@ local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
 -- itself (ChakraFlow), the strike, jump or dodge spends it.
 local INFUSED={Attack=true,Heavy=true,Jump=true,Dodge=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	if type(action)~="string" then return false,"Bad action" end
 	local loaded=false
 	if opts and opts.chakra==true and INFUSED[action] and not ChakraFlow.active(self,a) then
 		loaded=ChakraFlow.load(self,a)==true
@@ -1011,6 +1056,13 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		return true
 	end
 	if action=="WallDetach" then Motor.detach(a,self.now,false); return true end
+	-- R1 + L1 (Y): the ultimate; on a wall the same chord still lets go of it.
+	if action=="Ultimate" then
+		if a.wall then Motor.detach(a,self.now,false); return true end
+		return Ultimates.start(self,a)
+	end
+	-- Held in an ultimate, nothing answers (no substitution out of it).
+	if a.ultimateHeld then return false,"Held" end
 	-- Pinned against a wall, the dodge button is a timed wall tech, never a
 	-- substitution: a mistimed tech must not silently spend a charge.
 	if action=="Dodge" and a.reaction=="WallSplat" then return self:wallTech(a) end
@@ -1218,7 +1270,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 	a.flashCancel=nil
 	local arriving=(a.flashUntil or 0)>self.now and (a.state=="TechniqueRecovery" or a.state=="TechniqueActive")
 		and (a.pending==nil or a.pending.spec.Id=="Flashstep")
-	if cancelSpec and cancelSpec.Id=="BurstStrike" and arriving
+	-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
+	if cancelSpec and (cancelSpec.Id=="BurstStrike" or cancelSpec.Id=="LightningStrike") and arriving
 		and (a.cooldowns[cancelSpec.Id] or 0)<=self.now and a.chakra>=cancelSpec.Cost then
 		a.flashUntil=0;a.state="Neutral";a.untilTime=self.now;a.pending=nil
 		a.flashCancel=true
@@ -1275,6 +1328,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
  end
 	if not spec then return false,"Unknown action" end
 	local technique=Techniques[spec.Id]
+	-- (Stage 6) A blade technique needs the blade out (Kakashi's Lightning Cut: B first).
+	if spec.Armed and not a.armed then return false,"Draw the blade (B)" end
 	-- A string cancel shortens the wind-up to .14 s; a technique that is already
 	-- quicker (a teleport, the Read, Rotation) keeps its own.
 	local cancelled=a.stringCancel==spec.Id
@@ -1441,7 +1496,14 @@ function Combat:updateActor(a,dt)
 	end
 	-- (x the wind: walking into a lane is slower, with it faster, Zones.speedScale;
 	-- x buffs and slows, Families.speedScale)
-	a.speedScale=(if (a.awakenUntil or 0)>now then (a.def.Awakening.Speed or 1) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	a.speedScale=(if (a.awakenUntil or 0)>now then Combat.awakeScale(a,"Speed",now) else 1)*Zones.speedScale(self,a)*Families.speedScale(a,now)
+	-- Lee's gates open one by one while he is awakened (Combat.gateOf).
+	local gate=(a.awakenUntil or 0)>now and Combat.gateOf(a,now)
+	if gate and gate~=a.gateShown then
+		a.gateShown=gate
+		self:pushImpact(a.root.Position,"gate",gate>=5,{owner=a.id,fighter=a.fighterId,gate=gate})
+		self:cue(a,({"FIRST","SECOND","THIRD","FOURTH","FIFTH"})[gate].." GATE • OPEN",.9)
+	end
 	-- Family traits that act every frame (an Absorb buff drinking blades).
 	Families.step(self,a,now)
 	-- The curse mark burns the body that carries it (never to a KO), faster

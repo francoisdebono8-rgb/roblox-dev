@@ -371,6 +371,13 @@ function Harness.duel(first,second,kits)
  return c,a,b,match
 end
 
+-- (Stage 6) the jutsu are ordered by role (R1 + □ △ ○ ×): tests name the
+-- technique and get its request, never a hard slot number.
+function Harness.slot(a,id)
+ for i,spec in a.def.Techniques do if spec.Id==id then return "Technique"..i end end
+ error(tostring(a.fighterId)..": no technique "..tostring(id),2)
+end
+
 function Harness.step(c,time)
  for _=1,math.max(1,math.ceil(time/.01)) do c:update(.01,c.now+.01) end
 end

@@ -326,17 +326,20 @@ local LASH={
 	Air1={{"RightHand",1}},Air2={{"LeftHand",-1}},Riposte={{"RightHand",1}},
 	DashAttack={{"RightHand",.45},{"LeftHand",-.45}},Sweep={{"RightHand",1.3,low=true}},
 	Slam={{"RightHand",.25,down=true},{"LeftHand",-.25,down=true}},
+	Light4={{"RightHand",1}},Light5={{"LeftHand",-1}},
+	SandHand={{"RightHand",.15},{"LeftHand",-.15}},SandFist={{"RightHand",.5},{"LeftHand",-.5}},
 }
 -- The move's own timeline as the motion engine plays it (same per-fighter
 -- timings and lead), so the sand leaves the hand on the clip's contact key.
 local LEAD=.03
 local function timing(name)
 	local spec=Attacks[name] or Attacks.Light1
-	local profile=Fighters.Sand.AttackProfile and Fighters.Sand.AttackProfile[name]
+	local profile=Fighters.Sand.AttackProfile and (Fighters.Sand.AttackProfile[name] or Fighters.Sand.AttackProfile[spec.clip or ""])
 	return spec.startup*(profile and profile.startup or 1),spec.active*(profile and profile.active or 1),spec.recovery*(profile and profile.recovery or 1)
 end
 local function reachOf(name)
-	local profile=Fighters.Sand.AttackProfile and Fighters.Sand.AttackProfile[name]
+	local clip=Attacks[name] and Attacks[name].clip or ""
+	local profile=Fighters.Sand.AttackProfile and (Fighters.Sand.AttackProfile[name] or Fighters.Sand.AttackProfile[clip])
 	return (profile and profile.range) or (Attacks[name] and Attacks[name].range) or 8
 end
 local function stateOf(fx,model)

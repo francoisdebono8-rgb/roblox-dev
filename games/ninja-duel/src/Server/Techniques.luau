@@ -40,8 +40,27 @@ local function seals(c,a,now)
 	return list
 end
 Techniques.seals=seals
+-- (Stage 6) Minato at 13: the Flying Thunder God is a prototype (spec
+-- Prototype): it only knows the last seal he planted (a kunai still in
+-- flight first), never a pick among them. In the Yellow Flash awakening it
+-- is whole for a while: the stick picks, a launched body is a destination.
+local function prototype(a,now)
+	if (a.awakenUntil or 0)>now and a.def.Awakening and a.def.Awakening.FlashWake then return false end
+	for _,t in a.def.Techniques or {} do if t.Id=="Flashstep" then return t.Prototype==true end end
+	return false
+end
 local function pick(c,a,now,range)
 	local best,bestScore
+	if prototype(a,now) then
+		for _,seal in seals(c,a,now) do
+			if (seal.position-a.root.Position).Magnitude<=range then
+				local score=if seal.flying then math.huge else ((seal.anchor and seal.anchor.plantedAt) or 0)
+				-- (seals are listed oldest first: a tie goes to the later one)
+				if not bestScore or score>=bestScore then best,bestScore=seal,score end
+			end
+		end
+		return best
+	end
 	local stick=Vector3.new(a.move.X,0,a.move.Z)
 	for _,seal in seals(c,a,now) do
 		local gap=(seal.position-a.root.Position).Magnitude
@@ -1023,6 +1042,8 @@ function Techniques.curseDrain(c,a,dt,now)
 	local tune=a.def.Awakening
 	if not (tune and tune.HealthDrain) or (a.awakenUntil or 0)<=now or a.health<=1 then a.curseHunger=false;return end
 	local rate=tune.HealthDrain
+	-- Lee's gates: each one open costs a fifth more of the full drain.
+	if tune.Gates then rate*=math.min(tune.Gates.Max or 5,1+math.floor((now-(a.awakenedAt or now))/(tune.Gates.Step or 4)))/(tune.Gates.Max or 5) end
 	if (a.curseFedUntil or 0)>now then rate=0
 	elseif tune.Hunger and now-(a.curseLanded or a.awakenedAt or now)>1.5 then rate*=tune.Hunger end
 	a.curseHunger=rate>tune.HealthDrain

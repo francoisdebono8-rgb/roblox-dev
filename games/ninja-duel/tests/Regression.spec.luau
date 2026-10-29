@@ -244,7 +244,7 @@ test("hitstop weight is proportional and never stalls a light combo",function()
  local d,e,f=H.duel("Flashstep","Mirage")
  engage(d,e,f)
  local longest=0
- for _=1,3 do
+ for _=1,(e.def.StringLength or 4) do
   d:request(e,"Attack")
   for _=1,30 do
    H.step(d,.01)

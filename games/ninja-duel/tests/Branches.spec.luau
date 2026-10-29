@@ -25,6 +25,16 @@ local function confirm(c,a,b)
  end
  error("the chain never opened ("..tostring(a.state)..")")
 end
+-- Two clean hits, then stop inside the second chain window.
+local function confirm2(c,a,b)
+ confirm(c,a,b)
+ assert(c:request(a,"Attack"),"second light refused")
+ for _=1,80 do
+  H.step(c,.01)
+  if a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt and a.combo>=2 then return end
+ end
+ error("the second chain never opened")
+end
 local function angleAround(b,p)
  local d=p-b.root.Position
  return math.atan2(d.X,d.Z)
@@ -32,7 +42,8 @@ end
 
 test("Minato: side input inside a clean string swings around the guard",function()
  local c,a,b=H.duel("Flashstep","Mirage")
- confirm(c,a,b)
+ -- (Stage 6) the flank comes after □□, like the launcher and the sweep.
+ confirm2(c,a,b)
  local before=angleAround(b,a.root.Position)
  a.move=a.root.CFrame.RightVector
  assert(c:request(a,"Attack"),"branch press refused")
@@ -57,16 +68,6 @@ test("Minato: back + tool inside a clean string disengages behind a kunai and en
  assert(thrown>=1,"no kunai covered the retreat")
  assert((a.root.Position-b.root.Position).Magnitude>gap+2.5,"disengage did not create space")
 end)
--- Two clean hits, then stop inside the second chain window.
-local function confirm2(c,a,b)
- confirm(c,a,b)
- assert(c:request(a,"Attack"),"second light refused")
- for _=1,80 do
-  H.step(c,.01)
-  if a.state=="Recovery" and a.chainOpen and c.now>=a.chainAt and a.combo>=2 then return end
- end
- error("the second chain never opened")
-end
 test("grammar: two hits + toward the opponent launches, for every fighter",function()
  for _,id in {"Flashstep","Mirage","GentleFist"} do
   local c,a,b=H.duel(id,"Flashstep")
@@ -109,7 +110,7 @@ end)
 test("grammar: sideways keeps the string and turns the angle (Itachi feint, Neji circle)",function()
  for _,pair in {{"Mirage","FeintStep"},{"GentleFist","CircleStep"}} do
   local c,a,b=H.duel(pair[1],"Flashstep")
-  confirm(c,a,b)
+  confirm2(c,a,b)
   local before=angleAround(b,a.root.Position)
   a.move=a.root.CFrame.RightVector
   assert(c:request(a,"Attack"))
@@ -189,13 +190,14 @@ test("Itachi: a successful Read opens the counter palm",function()
  assert(c:request(a,"Attack"),"counter press refused")
  assert(a.attackName=="CounterPalm","Read did not lead into the counter palm: "..tostring(a.attackName))
 end)
-test("Minato: a clean string can be spent on Rasengan",function()
+test("Minato: a clean string can be spent on the Lightning Strike",function()
+ -- (Stage 6) at 13 he has no Rasengan: the shunshin cut is the string cancel.
  local c,a,b=H.duel("Flashstep","Mirage")
  confirm(c,a,b)
  local slot
- for i,spec in a.def.Techniques do if spec.Id=="BurstStrike" then slot=i end end
- assert(c:request(a,"Technique"..slot,b.root.Position),"Rasengan cancel refused")
- assert(a.state=="TechniqueChannel","Rasengan did not start channelling")
+ for i,spec in a.def.Techniques do if spec.Id=="LightningStrike" then slot=i end end
+ assert(c:request(a,"Technique"..slot,b.root.Position),"Lightning Strike cancel refused")
+ assert(a.state=="TechniqueChannel" or a.state=="TechniqueActive","the Lightning Strike did not start ("..tostring(a.state)..")")
  assert(a.untilTime-c.now<=.15,"the string cancel did not shorten the wind-up")
 end)
 test("Flying Thunder God reaches a marked kunai in flight and strikes on arrival",function()

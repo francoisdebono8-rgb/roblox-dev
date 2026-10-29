@@ -15,6 +15,6 @@ return table.freeze({
 	-- The only requests an online fighter may send during a fight. Anything else
 	-- is ignored before it reaches Combat.
 	Combat=table.freeze({Move=true,Arm=true,ChakraLoad=true,Attack=true,Heavy=true,Jump=true,JumpOff=true,Dodge=true,Guard=true,GuardOff=true,
-		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Awaken=true,
+		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Ultimate=true,Awaken=true,
 		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true,PadJump=true}),
 })

@@ -172,9 +172,14 @@ function UI.new(parent,send)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
 		corner(fill,4)
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(14,74),UDim2.fromOffset(412,6),palette.track)
+		local chakraTrack=frame(box,UDim2.fromOffset(14,73),UDim2.fromOffset(412,5),palette.track)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
+		-- (Stage 6) the ultimate bar: it fills by hitting and being hit; full,
+		-- it burns and the plate says how to fire it.
+		local ultimateTrack=frame(box,UDim2.fromOffset(14,79),UDim2.fromOffset(412,3),palette.track)
+		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
+		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
 		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the status row (both players read them), each lit as it closes.
@@ -207,7 +212,7 @@ function UI.new(parent,send)
 		-- changes in the fight (UI.awakening), under the plate.
 		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -426,8 +431,10 @@ function UI.conversion(h,pad)
 	if h.flash then
 		local line=light.." — ARRIVAL STRIKE  •  "..heavy..(if h.airborne then " — SLAM" else " — LAUNCH")
 		for i,tech in h.techniques or {} do
-			if tech.id=="BurstStrike" and tech.remaining==0 and h.chakra>=tech.cost and (h.sealed or 0)<=0 then
-				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — RASENGAN"
+			-- (Stage 6) at 13 the arrival is cashed in with the Lightning Strike.
+			local label=if tech.id=="BurstStrike" then "RASENGAN" elseif tech.id=="LightningStrike" then "LIGHTNING STRIKE" else nil
+			if label and tech.remaining==0 and h.chakra>=tech.cost and (h.sealed or 0)<=0 then
+				line..="  •  "..(if pad then Controls.TechniquePad[i] else tostring(i)).." — "..label
 			end
 		end
 		return line
@@ -437,6 +444,19 @@ function UI.conversion(h,pad)
 		return heavy.." — "..(if finisher then finisher.cue else "LION COMBO")
 	end
 	return nil
+end
+-- (Stage 6) the ultimate bar on a plate; full, it burns gold and (on the
+-- player's own plate) says which buttons fire it.
+function UI.ultimate(widget,actor,pad,mine)
+	if not widget.ultimate then return end
+	local level=math.clamp((actor.ultimate or 0)/100,0,1)
+	widget.ultimate.Size=UDim2.fromScale(level,1)
+	local ready=actor.ultimateReady==true
+	local pulse=.5+.5*math.sin(os.clock()*8)
+	widget.ultimate.BackgroundColor3=if ready then Color3.fromRGB(255,190+math.floor(50*pulse),60) else Color3.fromRGB(255,150,40)
+	if ready then
+		widget.status.Text..="   •   ULTIMATE READY"..(if mine then " ("..(if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate)..")" else "")
+	end
 end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
@@ -489,6 +509,7 @@ function UI:render(data)
 		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
+		UI.ultimate(widget,actor,pad,actor==h)
 		-- Gentle Fist effects on this fighter: the closed points (pips), what
 		-- they cost (the chakra bar dims, its recovery is spelled out) and the
 		-- jutsu the 64 Palms sealed.

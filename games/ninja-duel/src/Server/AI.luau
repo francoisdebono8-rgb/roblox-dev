@@ -23,6 +23,9 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	elseif family=="Teleport" then
 		if spec.To=="Back" then lo,hi,chance=0,6,if danger then .6 else 0 else lo,hi,chance=8,math.min(range,34),if opening then .7 else .25 end
 	elseif family=="Counter" then lo,hi,chance=0,8,if danger then .7 else 0
+	-- (Stage 6) a scripted sequence (Lee's Primary Lotus, the Uzumaki
+	-- barrage): an opener at contact range, taken on an opening.
+	elseif family=="Sequence" then lo,hi,chance=0,(spec.Range or 4)+1,if opening then .85 else .2
 	elseif family=="Summon" then
 		-- Out first; once out, a lunge now and then.
 		if Bodies.count(c,a,spec.Body or "puppet")==0 then lo,hi,chance=0,40,.8 else lo,hi,chance=0,30,.25 end
@@ -40,7 +43,7 @@ local function familyWants(self,c,a,target,spec,distance,danger)
 	end
 	if rule.Punish and not opening then return false end
 	if distance<lo or distance>hi then return false end
-	if (family=="Projectile" or family=="Strike" or family=="Teleport") and not c:lineOfSight(a,target) then return false end
+	if (family=="Projectile" or family=="Strike" or family=="Teleport" or family=="Sequence") and not c:lineOfSight(a,target) then return false end
 	return self.rng:NextNumber()<chance
 end
 local AI={}; AI.__index=AI
@@ -624,9 +627,10 @@ function AI:update(now)
 	-- A counter with a reach (a caught genjutsu image, a repelled strike) glides to the body.
 	local counterRange=8+(if a.counterReach and a.counterReach.expires>now then a.counterReach.max else 0)
 	if (a.counterUntil or 0)>now and distance<counterRange then a.move=toward;c:request(a,"Attack");return end
-	-- Flying Thunder God arrival: strike from the new angle, or Rasengan at once.
+	-- Flying Thunder God arrival: strike from the new angle, or the Lightning
+	-- Strike at once (stage 6: at 13 he has no Rasengan).
 	if (a.flashUntil or 0)>now then
-		local rasengan=slotOf(a,"BurstStrike")
+		local rasengan=slotOf(a,"LightningStrike") or slotOf(a,"BurstStrike")
 		if rasengan and self.rng:NextNumber()<.35 and c:request(a,rasengan) then return end
 		c:request(a,if self.rng:NextNumber()<.3 then "Heavy" else "Attack");return
 	end
@@ -688,7 +692,8 @@ function AI:update(now)
 			if roll<.46 then a.move=-toward;press(c,a,"Attack","back");return end -- low route
 			if roll<.56 then a.move=Vector3.zero;press(c,a,"Heavy");return end
 		elseif a.combo==1 and roll<.2 then a.move=Vector3.zero;press(c,a,"Heavy");return end
-		if roll<.7 and roll>=.56 then
+		-- (Stage 6) the flank, like every route, comes after □□.
+		if a.combo>=2 and roll<.7 and roll>=.56 then
 			local sign=if self.rng:NextNumber()<.5 then 1 else -1
 			a.move=tangent*sign;press(c,a,"Attack","side",sign);return
 		end

@@ -427,6 +427,42 @@ F.Strike={
 		c:cue(a,string.upper(spec.Name),.7)
 	end,
 }
+-- (Stage 6) Sequence: a jutsu that is a whole route (Lee's Primary Lotus,
+-- Naruto's Rendan): its Opener launches the body; if it lands he chases it
+-- up and his own air finisher (MoveGraphs airFinisher) brings it down.
+F.Sequence={
+	check=function(c,a,spec)
+		local b=a.target
+		if not b or b.health<=0 then return false,"No target" end
+		if (b.root.Position-a.root.Position).Magnitude>(spec.Range or 8)+1.5 then return false,"Out of range" end
+		return true
+	end,
+	execute=function(c,a,pending)
+		local spec=pending.spec
+		a.stringCancel=nil
+		brawler().start(c,a,spec.Opener or "Launcher")
+		if a.pending then a.pending.family=spec end
+		c:cue(a,string.upper(spec.Name),.7)
+	end,
+}
+function Families.sequenceHit(c,a,b,spec)
+	local Brawler=brawler()
+	local Config=require(Shared.Config)
+	local graph=Brawler.graph(a) or {}
+	if not graph.airFinisher then return end
+	c:schedule(c.now+.14,function()
+		if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or not (b.reaction=="Launched" or b.reaction=="Juggled") then return end
+		a.chakra+=Config.PursuitCost
+		if c:request(a,"Pursuit") then
+			a.untilTime=c.now+.42;a.airHold=c.now+1.0
+			c:schedule(c.now+.46,function()
+				if a.health<=0 or b.health<=0 or c.match.phase~="Duel" or a.reaction then return end
+				a.state="Neutral";a.untilTime=c.now
+				Brawler.airFinisher(c,a,graph.airFinisher)
+			end)
+		else a.chakra-=Config.PursuitCost end
+	end)
+end
 F.Burst={
 	check=function() return true end,
 	execute=function(c,a,pending)
@@ -546,6 +582,19 @@ F.Buff={
 	execute=function(c,a,pending)
 		local spec=pending.spec
 		a.buff={untilT=c.now+(spec.Time or 5),spec=spec,id=spec.Id}
+		-- Hits: the next N blows are taken by the buff (Gaara's Sand Armor; Combat:damage).
+		a.buffHits=spec.Hits
+		-- Reveal (Neji's Byakugan: Perception): his own illusion is broken at
+		-- once and the opponent's bodies (shadow clones) are shown.
+		if spec.Reveal then
+			a.illusionUntil=0;a.decoyPosition=nil
+			local b=a.target
+			if b then
+				for _,body in require(script.Parent.Bodies).of(c,b) do
+					c:pushImpact(body.root and body.root.Position or b.root.Position,"reveal",false,{owner=a.id,body=body.id,time=spec.Time or 5})
+				end
+			end
+		end
 		if spec.Heal then
 			a.health=math.min(a.def.Health,a.health+spec.Heal);a.hum.Health=math.max(1,a.health)
 		end
@@ -602,7 +651,8 @@ F.Teleport={
 		else
 			local aim=aimOf(a,pending)
 			local off=flat(aim-from)
-			destination=from+unitOr(off,line)*math.min(off.Magnitude,d)
+			-- Short: it stops that far before the aim (Lee's Dynamic Entry lands its kick, not on the body).
+			destination=from+unitOr(off,line)*math.min(math.max(0,off.Magnitude-(spec.Short or 0)),d)
 		end
 		destination=Vector3.new(destination.X,from.Y,destination.Z)
 		c:relocate(a,destination)
@@ -751,6 +801,10 @@ end
 function Families.strikeHit(c,a,b,p,guarded)
 	local spec=p.family or (p.spec and p.spec.riders)
 	if not spec then return end
+	if spec.Family=="Sequence" then
+		if not guarded then Families.sequenceHit(c,a,b,spec) end
+		return
+	end
 	-- The awakening's chain: a relocation strike that lands gives the
 	-- relocation back at once, a few times in a row (Shisui).
 	local chain=p.family and p.family.Family=="Teleport" and not guarded and awakeRule(a,c,"ChainTeleport")

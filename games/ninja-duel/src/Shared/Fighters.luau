@@ -24,20 +24,12 @@ local Fighters = {
 			-- Thrown while running: the seal travels as a real kunai and can be
 			-- reached mid-flight by Flying Thunder God.
 			{ Id = "MarkedBlade", Name = "Marked Kunai", Mobile = true, Throw = "MarkedKunai", Cost = 10, Channel = 0.12, Active = 0.02, Recovery = 0, Cooldown = 2.2, Interruptible = true, Range = 66, Damage = 6, Hint = "Plants a seal (two held at most) • a hit seals the body" },
-			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 1.5, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Hint = "Stick picks the seal and the side • strike or 3 on arrival" },
-			{ Id = "BurstStrike", Name = "Rasengan", Cost = 24, Channel = 0.3, Active = 0.08, Recovery = 0.5, Cooldown = 5.5, Interruptible = true, Range = 8, Damage = 20,
-				-- (User 28/10: "I should be able to run with my attack and strike")
-				-- Cast in the open, the Rasengan stays in his palm: he runs, jumps
-				-- with it and his next strike drives it (a thrust, a plunge from the
-				-- air). After a teleport, from the air or as a string's end it is the
-				-- instant strike it was (Techniques.BurstStrike).
-				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 20,
-					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 70), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 8, Event = "Rasengan" }, Hint = "Instant after a teleport • plunges when airborne • ends a clean string" },
-			{ Id = "Quickstep", Name = "Quickstep", Cost = 12, Channel = 0.11, Active = 0.08, Recovery = 0.21, Cooldown = 2.3, Interruptible = true, Flow = true, Range = 12, Hint = "Create an angle • no guaranteed hit" },
+			{ Id = "LightningStrike", Name = "Lightning Strike", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Cost = 16, Channel = 0.04, Active = 0.02, Recovery = 0.12, Cooldown = 3.4, Interruptible = true, Range = 26, Damage = 12, Invuln = 0.14, Kind = "flash", Hint = "A shunshin through the body with one kunai cut • the fastest blow of the game" },
+			{ Id = "Flashstep", Name = "Flying Thunder God", Cost = 16, Channel = 0.06, Active = 0.04, Recovery = 0.2, Cooldown = 6, Interruptible = true, Flow = true, Range = 90, Requires = "Anchor", Prototype = true, Hint = "Prototype: to one seal (the last planted), 6 s to recharge • no strike of its own" },
 			-- Thrown off the kunai's edge on the run: cuts enemy blades out of its
 			-- lane; a body it cuts is thrown a step sideways with a short wind seal
 			-- (Flying Thunder God lands beside it). Techniques.WindCut.
-			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Mobile = true, Throw = "Kunai", Cost = 14, Channel = 0.16, Active = 0.02, Recovery = 0, Cooldown = 3.2, Interruptible = true, Range = 40, Speed = 104, Damage = 6, Hint = "Thrown on the run • cuts blades in its lane • a cut body is marked: 2 lands beside it" },
+			{ Id = "WindCut", Name = "Wind Cut", Element = "Wind", Mobile = true, Throw = "Kunai", Cost = 14, Channel = 0.16, Active = 0.02, Recovery = 0, Cooldown = 3.2, Interruptible = true, Range = 40, Speed = 104, Damage = 6, Hint = "Thrown on the run • cuts blades in its lane • a cut body is marked: the Flying Thunder God lands beside it" },
 		},
 	},
 	Mirage = {
@@ -59,7 +51,9 @@ local Fighters = {
 		-- that meets it is parried and read: he slips aside, it bites the
 		-- afterimage), every swing that misses close to him is read
 		-- (WhiffRead, studs), cheaper and faster jutsu.
-		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, GuardRead = true, WhiffRead = 9, Color = { 230, 40, 50 } },
+		-- (Stage 6, 13:42 decision) His Mangekyō at 13: entering the awakening, the
+		-- Tsukuyomi holds the body in front of him 1.5 s (once a fight, as the awakening).
+		Awakening = { Name = "SHARINGAN FOCUS", Speed = 1.06, Regen = 1.4, Cooldown = 0.6, CostScale = 0.6, Windows = 1.5, GuardRead = true, WhiffRead = 9, Tsukuyomi = 1.5, Color = { 230, 40, 50 } },
 		AttackProfile = {
 			Light1={startup=.96,recovery=.9,travel=.92,range=6.6},Light2={startup=.98,recovery=.88,travel=.9,range=7,chainTool=true,kind="palm"},
 			Light3={startup=1.02,recovery=1.0,travel=.86,impulseZ=60,kind="kick"},Heavy={startup=.98,recovery=1.02,travel=.9},
@@ -68,15 +62,14 @@ local Fighters = {
 		},
 		Skin = { 197, 164, 143 }, Hair = { 30, 31, 43 }, Outfit = { 69, 49, 66 },
 		Techniques = {
-			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter" },
 			{ Id = "NeedleFan", Name = "Shadow Shuriken", Cost = 18, Channel = 0.26, Active = 0.08, Recovery = 0.26, Cooldown = 3.6, Interruptible = true, Flow = true, Range = 56, Damage = 2, Hint = "Five blades, then two hidden ones aimed at the dodge" },
+			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
+			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.3, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 50, Radius = 2.6, Growth = 1.8, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
 			-- His image stays where he stood and he withdraws behind it, on the
 			-- opponent's line of sight: a swing that reaches the image is caught
 			-- (Techniques.MirageCast / whiffRead).
 			{ Id = "MirageCast", Name = "Genjutsu: Mirage", Cost = 26, Channel = 0.42, Active = 0.06, Recovery = 0.2, Cooldown = 7, Interruptible = true, Flow = true, Range = 23, Requires = "Target", Hint = "His image stays, he withdraws behind it • a swing at the image is caught • trust the body" },
-			-- Lane: where it passes the opponent the ground burns (Elements.burnLane).
-			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 26, Channel = 0.3, Active = 0.42, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 76, Speed = 50, Radius = 2.6, Growth = 1.8, Damage = 16, Lane = true, Hint = "Where it passes him the ground burns: a lane that cuts his path" },
-			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.3, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 60, Speed = 72, Damage = 4, Hint = "Five small flames fanned at the opponent • pressure" },
+			{ Id = "Read", Name = "Sharingan Read", Cost = 14, Channel = 0.1, Active = 1.0, Recovery = 0.2, Cooldown = 3.6, Interruptible = false, Range = 10, Hint = "Read one frontal strike: he slips aside, it bites the afterimage • strike in the stance = instant counter" },
 		},
 	},
 	-- Third prototype: the Hyuga genius at the Chunin Exam finals. Pure taijutsu
@@ -108,9 +101,10 @@ local Fighters = {
 		},
 		Skin = { 228, 202, 178 }, Hair = { 52, 36, 30 }, Outfit = { 226, 220, 206 },
 		Techniques = {
-			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
 			{ Id = "VacuumPalm", Name = "Vacuum Palm", Cost = 14, Channel = 0.18, Active = 0.06, Recovery = 0.26, Cooldown = 2.8, Interruptible = true, Flow = true, Range = 32, Speed = 96, Damage = 7, Hint = "Air-pressure palm • pushes into walls • ends a clean string" },
 			{ Id = "SixtyFourPalms", Name = "64 Palms", Cost = 30, Channel = 0.22, Active = 0.12, Recovery = 0.4, Cooldown = 10, Interruptible = true, Range = 5, Damage = 3, Hint = "Point blank • each closed point adds palms and seal time • four closed: the guard collapses" },
+			{ Id = "Rotation", Name = "Rotation", Cost = 24, Channel = 0.04, Active = 0.55, Recovery = 0.24, Cooldown = 6, Interruptible = false, Range = 7, Damage = 6, Hint = "Spinning dome • repels strikes and blades • counter after" },
+			{ Id = "ByakuganSight", Name = "Byakugan: Perception", Family = "Buff", Time = 5, Kind = "byakugan", Reveal = true, ParryScale = 1.5, Cost = 14, Channel = 0.12, Active = 0.04, Recovery = 0.12, Cooldown = 10, Interruptible = true, Hint = "5 s: clones and illusions shown, a wider parry" },
 		},
 	},
 	-- Fourth playable prototype: Sasuke at the Chunin Exam (12). Faster and
@@ -141,6 +135,15 @@ local Fighters = {
 		},
 		Skin = { 236, 210, 190 }, Hair = { 24, 26, 40 }, Outfit = { 34, 40, 72 },
 		Techniques = {
+			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
+			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
+				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
+				-- jumps or climbs with it and his next strike releases it (a
+				-- thrust, a drop out of the air, a dive off a wall). Held, it
+				-- drains; a blow taken or a guard puts it out.
+				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
+				Hint = "Form it, move with it, then strike • a miss leaves him open" },
+			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then R1 + × (4) for Dragon Flame" },
 			{ Id = "FireBloom", Name = "Great Fireball", Element = "Fire", Cost = 24, Channel = 0.32, Active = 0.4, Recovery = 0.36, Cooldown = 5.5, Interruptible = true, Feintable = true, Range = 70, Speed = 64, Radius = 2, Growth = 1.6, Damage = 15,
 				-- (Reference quality) Tap: the quick breath. Held: he keeps drawing
 				-- in for up to Time more seconds (Cost chakra over it) and the ball
@@ -149,15 +152,6 @@ local Fighters = {
 				-- recoil holds him up.
 				Hold = { Time = 0.9, Cost = 10, Radius = 1.8, Damage = 1.5, Speed = 0.8 },
 				Hint = "Hold to grow it • from the air it goes down • on a wired opponent: Dragon Flame" },
-			{ Id = "PhoenixFlower", Name = "Phoenix Flower", Element = "Fire", Cost = 20, Channel = 0.28, Active = 0.32, Recovery = 0.3, Cooldown = 5, Interruptible = true, Range = 56, Speed = 72, Damage = 4, HiddenBlades = true, Hint = "Flames with two shuriken hidden inside" },
-			{ Id = "WireTrap", Name = "Wire Trap", Cost = 18, Channel = 0.18, Active = 0.08, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 34, Damage = 3, Hint = "A wired shuriken binds • then 1 for Dragon Flame" },
-			{ Id = "Chidori", Name = "Chidori", Element = "Lightning", Cost = 34, Channel = 0.62, Active = 0.05, Recovery = 0.1, Cooldown = 9, Interruptible = true, Range = 20, Damage = 22,
-				-- (Embodiment) Formed, the Chidori stays in the hand: he runs,
-				-- jumps or climbs with it and his next strike releases it (a
-				-- thrust, a drop out of the air, a dive off a wall). Held, it
-				-- drains; a blow taken or a guard puts it out.
-				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Chidori" },
-				Hint = "Form it, move with it, then strike • a miss leaves him open" },
 		},
 	},
 	-- Fourth prototype: Gaara at the Chunin Exam (12). A slow, patient
@@ -175,7 +169,9 @@ local Fighters = {
 		-- covers ~130 degrees either side of his facing, never his back).
 		SandShield = { Charges = 3, Regen = 3.5, Break = 17, Cover = -0.4 },
 		-- His heavy is not a punch: sand erupts under the opponent at range.
-		HeavyMove = "SandPillar", LauncherMove = "SandPillar", AirHeavy = "Slam",
+		-- (Stage 6) △ is the sand hand (no launch: hammering it no longer juggles);
+		-- the pillar is only toward + □ in a string.
+		HeavyMove = "SandHand", LauncherMove = "SandFist", AirHeavy = "Slam",
 		-- Dodge: a sand body-flicker (instant reposition) instead of a roll.
 		SandFlicker = { Distance = 12 },
 		Awakening = { Name = "SHUKAKU'S SAND", Speed = 1.12, Damage = 1.12, Regen = 1.6, Cooldown = 0.5, ShieldRegen = 2, Color = { 222, 176, 112 } },
@@ -192,9 +188,10 @@ local Fighters = {
 		},
 		Skin = { 236, 214, 196 }, Hair = { 164, 42, 34 }, Outfit = { 52, 46, 52 },
 		Techniques = {
-			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
 			{ Id = "SandShuriken", Name = "Sand Shuriken", Cost = 16, Channel = 0.25, Active = 0.08, Recovery = 0.25, Cooldown = 3.5, Interruptible = true, Range = 38, Damage = 3, Hint = "Six hardened sand blades" },
+			{ Id = "SandCoffin", Name = "Sand Coffin", Cost = 26, Channel = 0.35, Active = 0.1, Recovery = 0.35, Cooldown = 8, Interruptible = true, Range = 30, Speed = 46, Damage = 18, Hint = "A wave of sand binds, then crushes • substitution escapes" },
 			{ Id = "DesertWave", Name = "Desert Wave", Element = "Earth", Cost = 22, Channel = 0.26, Active = 0.2, Recovery = 0.3, Cooldown = 6, Interruptible = true, Range = 12, Damage = 7, Hint = "A wall of sand throws close attackers away" },
+			{ Id = "SandArmor", Name = "Sand Armor", Family = "Buff", Time = 6, Hits = 2, Kind = "sandarmor", Cost = 20, Channel = 0.2, Active = 0.05, Recovery = 0.2, Cooldown = 12, Interruptible = true, Hint = "Absorbs the next two blows for 6 s" },
 		},
 	},
 	-- Stress-test fighter of the next wave (DEC-015): Rock Lee at the Chunin
@@ -208,6 +205,8 @@ local Fighters = {
 		Routes = "↑ Leaf Rising Wind: a rising kick he follows into the air (heavy up there: PRIMARY LOTUS, paid in health)  ·  ↓ Leaf Hurricane: a low spinning kick, the string goes on  ·  ←→ Leaf Whirlwind: a wide spinning kick that catches the side step  ·  air: drive / axe kick / switch",
 		Description = "No jutsu, no blade: taijutsu only. The fastest legs, kicks that never stop, a lotus paid with his own body, and the Fifth Gate.",
 		Health = 125, Chakra = 100, ChakraRegen = 9.5, Speed = 20, SprintScale = 1.2, JumpScale = 1.15, AirControlScale = 1.12, AccelerationScale = 1.22,
+		-- (Stage 6) His ground string is five hits (everyone else four).
+		StringLength = 5,
 		CombatTravel = 1.15, CombatDamage = 1, DashScale = 1.12, GuardStrength = 0.08, PreferredRange = 4.5,
 		ComboToolCancel = false, CombatStyle = "Taijutsu", Tool = "Deflect",
 		-- Heavy after two clean hits is the rising kick too (into the chase).
@@ -227,7 +226,10 @@ local Fighters = {
 		-- The Fifth Gate (the five gates he opened against Gaara): faster and
 		-- harder, the lotus becomes the free Hidden Lotus, but the body burns
 		-- (health drain, never to a KO).
-		Awakening = { Name = "FIFTH GATE", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Color = { 120, 230, 140 } },
+		-- (Stage 6, 13:42 decision) The gates only in the awakening: the first
+		-- opens at once, one more every 4 s up to the fifth (Gates); speed,
+		-- damage and the health they cost grow with each.
+		Awakening = { Name = "EIGHT GATES", Speed = 1.18, Damage = 1.1, Regen = 1.6, Cooldown = 0.5, HealthDrain = 2, Gates = { Step = 4, Max = 5 }, Duration = 22, Color = { 120, 230, 140 } },
 		AttackProfile = {
 			Light1={startup=.85,recovery=.9,travel=1.1},Light2={startup=.86,recovery=.9,range=6.6,kind="kick",damage=.8},
 			Light3={startup=.9,recovery=.95,impulseZ=58,range=6.8,damage=.75},Heavy={startup=.9},
@@ -238,6 +240,9 @@ local Fighters = {
 			-- Konoha Daisenpū: a spinning kick that crosses the gap. A taijutsu
 			-- strike started by the jutsu pipeline (like the Chidori thrust).
 			{ Id = "LeafGreatWhirlwind", Name = "Leaf Great Whirlwind", Cost = 10, Channel = 0.08, Active = 0.05, Recovery = 0.1, Cooldown = 2.6, Interruptible = true, Range = 15, Damage = 9, Hint = "A spinning kick across the gap • knocks away • E to chase • ends a clean string" },
+			{ Id = "PrimaryLotus", Name = "Primary Lotus", Family = "Sequence", Opener = "Launcher", Cost = 18, Channel = 0.1, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "Seize, fly up, drive him head first into the floor • costs health" },
+			{ Id = "RemoveWeights", Name = "Remove the Weights", Family = "Buff", Time = 8, Speed = 1.25, Kind = "weights", Cost = 10, Channel = 0.3, Active = 0.05, Recovery = 0.2, Cooldown = 16, Interruptible = true, Hint = "Speed + 25 % for 8 s" },
+			{ Id = "DynamicEntry", Name = "Dynamic Entry", Family = "Teleport", To = "Aim", Distance = 24, Short = 3, Move = "FlyingKick", Cost = 14, Channel = 0.08, Active = 0.02, Recovery = 0.2, Cooldown = 5, Interruptible = true, Range = 26, Damage = 13, Kind = "leaf", Hint = "The flying kick from across the field" },
 		},
 	},
 	-- Roster wave (several bodies, hook H12): Naruto in Part I, from the Chunin
@@ -251,6 +256,8 @@ local Fighters = {
 		Routes = "third hit: a clone out kicks from behind  ·  ↑ Uzumaki Barrage: clones kick him up (E, then heavy: NARUTO RENDAN)  ·  ↓ tackle into the legs  ·  ←→ a clone strikes from his side  ·  air: drive / axe kick / switch  ·  Z + R: the kunai turns into a clone",
 		Description = "Shadow clones that carry his routes and fall to one blow, a Rasengan he can only shape with a clone, the biggest reserve — and the Nine-Tails' red chakra when it all goes wrong.",
 		Health = 140, Chakra = 160, ChakraRegen = 6.5, Speed = 18.5, SprintScale = 1.12, JumpScale = 1.1, AirControlScale = 1.0, AccelerationScale = 1.08,
+		-- (Stage 6) His ground string is five hits (everyone else four).
+		StringLength = 5,
 		CombatTravel = 1.05, CombatDamage = 1, DashScale = 1.05, GuardStrength = 0.08, PreferredRange = 6,
 		ComboToolCancel = true, CombatStyle = "Legion", Tool = "Kunai",
 		-- A plain kunai; with the chakra chord (Z + R) it is a clone transformed
@@ -288,6 +295,7 @@ local Fighters = {
 				HoldState = { Time = 3, Drain = 5, Strike = "DashAttack", Air = "Slam", Variant = "Rasengan", AirVariant = "RasenganDrop", Damage = 22,
 					Reaction = "Knockback", Impulse = Vector3.new(0, 22, 74), Stun = .62, Rasengan = true, World = { contact = "energy", element = "wind" }, Style = "burst", Name = "Rasengan", Reach = 9, Event = "Rasengan" }, Hint = "A clone shapes it at his side • strike the clone and it fails • ends a clean string" },
 			{ Id = "MassShadowClone", Name = "Multi Shadow Clone", Cost = 30, Channel = 0.3, Active = 0.08, Recovery = 0.2, Cooldown = 10, Interruptible = true, Range = 26, Hint = "Clones burst out on both sides and charge" },
+			{ Id = "NarutoRendan", Name = "Naruto Uzumaki Rendan", Family = "Sequence", Opener = "Launcher", Cost = 22, Channel = 0.12, Active = 0.04, Recovery = 0.3, Cooldown = 9, Interruptible = true, Range = 8, Hint = "His clones send him up, then the heel down" },
 		},
 	},
 	-- Roster wave (DEC-015): Temari between the Chunin Exam and the Sasuke
@@ -408,7 +416,8 @@ local Fighters = {
 		-- (R stays his kunai). Weapon is the shared shape for any carried blade.
 		Weapon = { Kind = "Tanto", Name = "TANTO", Reach = 1.5, Contact = 0.9, Damage = 1.15, Throwable = false,
 			Moves = { Light1 = true, Light2 = true, Light3 = true, Heavy = true, Launcher = true, Sweep = true, FeintStep = true, DashAttack = true, Air1 = true, Air2 = true, AirSpike = true } },
-		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
+		-- (Stage 6, 13:42 decision) The Sharingan only while awakened (SharinganAwake).
+		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 }, SharinganAwake = true,
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.
 		Awakening = { Name = "SHARINGAN UNCOVERED", Speed = 1.08, Regen = 1.4, Cooldown = 0.5, CostScale = 0.6, Windows = 1.4, BindScale = 1.5, Color = { 230, 50, 60 } },
@@ -424,14 +433,15 @@ local Fighters = {
 		},
 		Skin = { 226, 200, 178 }, Hair = { 214, 218, 222 }, Outfit = { 40, 50, 72 },
 		Techniques = {
+			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
+				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
 			{ Id = "LightningBlade", Name = "Lightning Blade", Family = "Strike", Move = "ChidoriThrust", Element = "Lightning", Cost = 32, Channel = 0.5, Active = 0.05, Recovery = 0.12, Cooldown = 9, Interruptible = true,
 				-- (User 28/10) Like Sasuke's Chidori: formed, it stays in the hand.
 				State = { Time = 2.6, Drain = 6, Strike = "ChidoriThrust", Air = "ChidoriThrust", Damage = 22, World = { contact = "energy", element = "lightning" }, Style = "chidori", Name = "Lightning Blade" },
 				Range = 20, Damage = 22, Hint = "Charge, then a lightning thrust • a miss leaves him open", AI = { Min = 4, Max = 16, Punish = true } },
 			{ Id = "TrackingFang", Name = "Summoning: Tracking Fang", Family = "Projectile", Kind = "hounds", Ground = true, Cost = 22, Channel = 0.3, Active = 0.08, Recovery = 0.3, Cooldown = 8, Interruptible = true,
 				Range = 30, Speed = 50, Damage = 4, Radius = 1.6, Bind = 1.1, Hint = "His hounds burst from the ground and hold the body • then the blade" },
-			{ Id = "WaterDragon", Name = "Water Dragon", Family = "Projectile", Kind = "waterdragon", Element = "Water", Cost = 28, Channel = 0.55, Active = 0.3, Recovery = 0.36, Cooldown = 7, Interruptible = true, Feintable = true,
-				Range = 52, Speed = 60, Damage = 14, Radius = 2.4, Knock = 46, Lift = 18, Hint = "A copied dragon of water that throws the body far" },
+			{ Id = "LightningCut", Name = "Lightning Cut", Family = "Teleport", To = "Behind", Distance = 3.2, Move = "DashAttack", Armed = true, Element = "Lightning", Cost = 18, Channel = 0.08, Active = 0.02, Recovery = 0.16, Cooldown = 6, Interruptible = true, Range = 22, Damage = 14, Invuln = 0.12, Kind = "lightning", Hint = "Tantô drawn: through the body in one cut, out behind it" },
 		},
 	},
 }

@@ -64,9 +64,10 @@ test("awakening: only below a third of health, once per match, and it changes th
  m.health=m.def.Health*.2
  assert(c2:request(m,"Awaken"))
  H.step(c2,.5)
- assert(c2:request(m,"Technique4"),"Quickstep refused")
- local cd=m.cooldowns.Quickstep-c2.now
- local spec;for _,t in m.def.Techniques do if t.Id=="Quickstep" then spec=t end end
+ -- (Stage 6) the Quickstep is gone at 13: the Wind Cut shows the reduction.
+ assert(c2:request(m,H.slot(m,"WindCut"),i.root.Position),"Wind Cut refused")
+ local cd=m.cooldowns.WindCut-c2.now
+ local spec;for _,t in m.def.Techniques do if t.Id=="WindCut" then spec=t end end
  assert(cd<spec.Cooldown*.6,"awakened cooldown not reduced ("..string.format("%.2f",cd)..")")
 end)
 

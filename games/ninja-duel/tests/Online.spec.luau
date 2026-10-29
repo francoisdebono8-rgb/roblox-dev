@@ -286,8 +286,8 @@ test("anti-cheat, rate limits, epochs and payload validation stay per player",fu
 		act(m,b,"Dodge",{direction=dir});assert(two.state=="Neutral")
 	end
 	-- Shadow Shuriken: refused at an impossible aim, accepted at a real one.
-	act(m,b,"Technique2",{aim=two.root.Position+V.new(0,0,500)});assert(two.state=="Neutral" and two.pending==nil)
-	act(m,b,"Technique2",{aim=one.root.Position});assert(two.state=="TechniqueChannel","the valid aim control failed")
+	act(m,b,H.slot(two,"NeedleFan"),{aim=two.root.Position+V.new(0,0,500)});assert(two.state=="Neutral" and two.pending==nil)
+	act(m,b,H.slot(two,"NeedleFan"),{aim=one.root.Position});assert(two.state=="TechniqueChannel","the valid aim control failed")
 	-- Each player's token bucket is their own.
 	-- (Audit 29/10: the stick has a budget of its own, s.moveBucket.)
 	s.bucket.tokens=0;s.moveBucket={tokens=0,time=os.clock()}
@@ -344,7 +344,7 @@ test("two players drive blades, substitution, Flying Thunder God, grab break, ju
 	step(m,1.2);place(30)
 	Techniques.plant(c,one,d.origin+V.new(30,0,0),V.yAxis)
 	local stay=two.root.Position
-	act(m,a,"Technique2")
+	act(m,a,H.slot(one,"Flashstep"))
 	for _=1,40 do step(m,.01);if (one.flashUntil or 0)>c.now then break end end
 	assert((one.flashUntil or 0)>c.now and one.root.Position.X-d.origin.X>25,"Alpha's teleport did not reach the seal")
 	assert((two.root.Position-stay).Magnitude<1,"Alpha's teleport moved Bravo")

@@ -18,7 +18,9 @@ function Combo.next(actor,now)
  actor.combo=comboCount;actor.lastAttack=now
  return 'Light'..comboCount
 end
-Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch'}
+-- (Stage 6) Longer strings: the fourth (and Lee's and Naruto's fifth) hit is
+-- a quick blow between the second and the ender (Light3 always ends).
+Combo.Actions={Light1='Punch',Light2='HardSmack',Light3='MegaPunch',Light4='Punch',Light5='Punch'}
 -- Donor server damageValues and Animation objects, never supplied by clients.
 -- MegaPunch tuned 25 -> 18 for Ninja Duel pacing (a three-hit string is no
 -- longer a third of a health bar); Punch and HardSmack keep the donor values.

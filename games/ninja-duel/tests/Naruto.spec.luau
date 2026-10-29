@@ -73,6 +73,12 @@ local function opened(hits,other,setup)
   assert(press(c,a,"Attack"),"second light refused")
   until_(c,.8,function() return chainOpen(c,a) and a.attackName=="Light2" end,"the second chain never opened")
  end
+ -- (Stage 6) his string is 5 hits: the middle ones are Light4 and Light5.
+ for k=3,(hits or 1) do
+  local name=if k==3 then "Light4" else "Light5"
+  assert(press(c,a,"Attack"),"light "..k.." refused")
+  until_(c,.8,function() return chainOpen(c,a) and a.attackName==name end,"chain "..k.." never opened")
+ end
  return c,a,b
 end
 
@@ -203,12 +209,12 @@ test("the lock stays on Naruto, the stick picks the clone: an opener pushed at a
  assert(clone3.alive)
 end)
 -- Routes carried by clones ---------------------------------------------------------
-test("the third hit comes from a clone out, from behind: judged from the clone it goes through a frontal guard; the clone is spent",function()
- local c,a,b=opened(2,"Mirage",function(c,a,b) still(c,a,a.root.Position+side(a,1)*3) end)
+test("the last hit comes from a clone out, from behind (stage 6: his string is 5 hits): judged from the clone it goes through a frontal guard; the clone is spent",function()
+ local c,a,b=opened(4,"Mirage",function(c,a,b) still(c,a,a.root.Position+side(a,1)*3) end)
  assert(#clones(c,a)==1,"fixture: no clone out")
  local clone=clones(c,a)[1]
- assert(press(c,a,"Attack"),"the third press was refused")
- assert(a.attackName=="CloneKick","the third hit with a clone out is "..tostring(a.attackName))
+ assert(press(c,a,"Attack"),"the last press was refused")
+ assert(a.attackName=="CloneKick","the last hit with a clone out is "..tostring(a.attackName))
  -- The opponent raises a frontal guard against Naruto right away.
  b.reaction=nil;b.reactionUntil=0;b.state="Guarding";b.guardHeld=true;b.guardPressedAt=-10;b.untilTime=c.now
  local health=b.health
@@ -220,15 +226,15 @@ test("the third hit comes from a clone out, from behind: judged from the clone i
  until_(c,.8,function() return not clone.alive end,"the clone outlived its kick")
  assert(#clones(c,a,true)==0,"a clone stayed after the route")
  -- No clone out: the third hit is his own push kick, and the same guard holds.
- local c2,x,y=opened(2,"Mirage")
+ local c2,x,y=opened(4,"Mirage")
  assert(press(c2,x,"Attack"))
- assert(x.attackName=="Light3","with no clone the third hit is "..tostring(x.attackName))
+ assert(x.attackName=="Light3","with no clone the last hit is "..tostring(x.attackName))
  y.reaction=nil;y.reactionUntil=0;y.state="Guarding";y.guardHeld=true;y.guardPressedAt=-10;y.untilTime=c2.now
  until_(c2,.6,function() return y.impactStyle=="block" end,"his own kick was not guarded")
- assert(#clones(c2,x,true)==0,"a plain third hit made a clone")
+ assert(#clones(c2,x,true)==0,"a plain last hit made a clone")
  -- A punch thrown at Naruto in the same instant does not "clash" with the
  -- clone's kick from behind: the two blows are far apart.
- local c3,m,n=opened(2,"Mirage",function(c,a) still(c,a,a.root.Position+side(a,1)*3) end)
+ local c3,m,n=opened(4,"Mirage",function(c,a) still(c,a,a.root.Position+side(a,1)*3) end)
  assert(press(c3,m,"Attack") and m.attackName=="CloneKick")
  H.step(c3,.06)
  n.reaction=nil;n.reactionUntil=0;n.state="Neutral";n.untilTime=c3.now;n.comboHits=0
@@ -237,11 +243,12 @@ test("the third hit comes from a clone out, from behind: judged from the clone i
  until_(c3,.6,function() return n.health<health end,"the clone's kick never landed")
  assert(ev(m,"Clash")==0 and ev(n,"Clash")==0,"the clone's kick clashed with a punch thrown at Naruto")
 end)
-test("side after one hit: a clone strikes from that flank and the string goes on; with none out he pays 12 for one",function()
- local c,a,b=opened(1)
+test("side after two hits: a clone strikes from that flank and the string goes on; with none out he pays 12 for one",function()
+ -- (Stage 6) the flank comes after □□.
+ local c,a,b=opened(2)
  local chakra=a.chakra
  assert(press(c,a,"Attack",side(a,1)),"the side route was refused")
- assert(a.attackName=="MirrorClone","side after one hit gave "..tostring(a.attackName))
+ assert(a.attackName=="MirrorClone","side after two hits gave "..tostring(a.attackName))
  assert(chakra-a.chakra>=11.9,string.format("the summoned clone cost %.1f",chakra-a.chakra))
  local clone=clones(c,a,true)[1]
  assert(clone and clone.ephemeral,"no clone came for the route")
@@ -249,10 +256,10 @@ test("side after one hit: a clone strikes from that flank and the string goes on
  until_(c,.5,function() return b.health<health end,"the flank strike never landed")
  assert(math.abs(math.abs(b.hitAngle or 0)-90)<45,string.format("the strike was not judged from the flank (hit angle %.0f)",b.hitAngle or 0))
  chain(c,a,"MirrorClone")
- assert(a.combo==2,"the flank strike did not keep the string ("..tostring(a.combo)..")")
+ assert(a.combo==3,"the flank strike did not keep the string ("..tostring(a.combo)..")")
  until_(c,.8,function() return not clone.alive end,"the route's clone stayed")
  -- With a clone out the route spends it and costs nothing.
- local c2,x,y=opened(1,"Mirage",function(c,a) still(c,a,a.root.Position+side(a,-1)*3) end)
+ local c2,x,y=opened(2,"Mirage",function(c,a) still(c,a,a.root.Position+side(a,-1)*3) end)
  local live=clones(c2,x)[1]
  local before=x.chakra
  assert(press(c2,x,"Attack",side(x,1)))
@@ -462,7 +469,9 @@ test("the Nine-Tails chakra: only under 35%; the clones burst, no clone comes ba
  assert(not ok and #clones(c,a,true)==0,"a clone was made in the cloak")
  -- Clone routes become his own claws: no clone, no chakra for one.
  place(c,a,b,4.5);b.health=b.def.Health
+ -- (Stage 6) the flank comes after □□.
  assert(press(c,a,"Attack"));chain(c,a,"cloak Light1")
+ assert(press(c,a,"Attack"));chain(c,a,"cloak Light2")
  local chakra=a.chakra
  assert(press(c,a,"Attack",side(a,1)))
  assert(a.attackName=="ClawSwipe","the cloak's side route is "..tostring(a.attackName))

@@ -467,7 +467,9 @@ function Brawler.start(c,a,name)
  local proxy,kind
  name,proxy,kind=Bodies.route(c,a,name)
  local spec=table.clone(Attacks[name]);spec.travel*=a.def.CombatTravel or 1
-	local profile=a.def.AttackProfile and a.def.AttackProfile[name]
+	-- (Stage 6) a string's middle hits (Light4, Light5) use the tuning of the
+	-- hit whose clip they borrow (Gaara's lashes keep their reach).
+	local profile=a.def.AttackProfile and (a.def.AttackProfile[name] or a.def.AttackProfile[Attacks[name].clip or ""])
 	if profile then
 		spec.startup*=profile.startup or 1;spec.active*=profile.active or 1;spec.recovery*=profile.recovery or 1;spec.travel*=profile.travel or 1
 		spec.travelTime=spec.startup+spec.active;spec.range=profile.range or spec.range;spec.angle=profile.angle
@@ -483,7 +485,7 @@ function Brawler.start(c,a,name)
  if a.armed and weapon and weapon.Moves[name] then
   spec.range=(spec.range or 5)+weapon.Reach;spec.contact=(spec.contact or 3.2)+weapon.Contact
   spec.damageScale=(spec.damageScale or 1)*weapon.Damage;spec.kind="slash"
- elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
+ elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Light4" or name=="Light5" or name=="Heavy") then
   spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
   spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
  end
@@ -849,7 +851,7 @@ function Brawler.request(c,a,action)
   local route=nil
   if dir=="forward" and a.combo>=2 then route=routes.up
   elseif dir=="back" and a.combo>=2 then route=routes.down
-  elseif dir=="side" and a.combo>=1 then route=routes.side end
+  elseif dir=="side" and a.combo>=2 then route=routes.side end
   if route and Attacks[route] then
    a.angleSide=sideSign;a.lastAttack=c.now
    Brawler.event(c,a,"Route");Brawler.event(c,a,if dir=="forward" then "RouteUp" elseif dir=="back" then "RouteDown" else "RouteSide")
@@ -899,7 +901,11 @@ function Brawler.request(c,a,action)
    return ok
   end
  end
- local name="Light"..math.min((a.combo or 0)+1,3)
+ -- (Stage 6) The string's length: 4 hits (def.StringLength 5: Lee, Naruto);
+ -- the last is always Light3 (it throws), the middle ones Light4, Light5.
+ local index=(a.combo or 0)+1
+ local length=a.def.StringLength or 4
+ local name=if index>=length then "Light3" elseif index<=2 then "Light"..index else "Light"..(index+1)
  a.lastAttack=c.now
  -- Context finisher (Neji): with three chakra points closed, the third palm
  -- becomes the twin-palm thrust that throws the body away.

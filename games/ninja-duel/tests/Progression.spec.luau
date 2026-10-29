@@ -283,7 +283,7 @@ test("Minato · Cut and Flash: a clean string cancels into Flying Thunder God, o
   local c,a,b=duelWith("Flashstep","Mirage",nodes)
   if seal then Techniques.plant(c,a,V.new(20,0,0),V.yAxis) end
   confirmHit(c,a)
-  local ok=c:request(a,"Technique2")
+  local ok=c:request(a,H.slot(a,"Flashstep"))
   return ok,c,a,b
  end
  local ok,c,a=attempt({"FlashEconomy","StringFlash"},true)
@@ -347,24 +347,21 @@ test("Minato · Return Seal: a substitution leaves a seal where he stood",functi
  assert(#x.anchors==0,"the base substitution planted a seal")
 end)
 
-test("Minato · Quickstep Cut: a strike right after Quickstep cancels its recovery (heavy = launcher)",function()
- local function step(nodes)
+test("Minato · Swift Strike: the Lightning Strike costs less (stage 6: no Quickstep at 13)",function()
+ local function cost(nodes)
   local c,a,b=duelWith("Flashstep","Mirage",nodes,nil,6)
-  a.move=a.root.CFrame.RightVector
-  assert(c:request(a,"Technique4"),"Quickstep refused")
-  until_(c,.4,function() return a.state=="TechniqueRecovery" end,"no Quickstep recovery")
-  a.move=V.zero
-  return c:request(a,"Heavy"),a
+  local before=a.chakra
+  assert(c:request(a,H.slot(a,"LightningStrike"),b.root.Position),"Lightning Strike refused")
+  return before-a.chakra
  end
- local ok,a=step({"QuickstepCut"})
- assert(ok and a.attackName=="Launcher","the step did not convert into a launcher ("..tostring(a.attackName)..")")
- assert(not step({}),"the base Quickstep converted")
+ local cheap,base=cost({"QuickstepCut"}),cost({})
+ assert(math.abs(base-16)<.01 and math.abs(cheap-13)<.01,string.format("the strike cost %.1f with the node, %.1f without",cheap,base))
 end)
 
 test("Minato · Gale Chase: a Wind Cut that lands opens the chase window",function()
  local function gust(nodes)
   local c,a,b=duelWith("Flashstep","Mirage",nodes,nil,12)
-  assert(c:request(a,"Technique5",b.root.Position),"Wind Cut refused")
+  assert(c:request(a,H.slot(a,"WindCut"),b.root.Position),"Wind Cut refused")
   until_(c,1,function() return b.health<b.def.Health end,"the gust never landed")
   return a.pursuitUntil-c.now
  end
@@ -372,23 +369,15 @@ test("Minato · Gale Chase: a Wind Cut that lands opens the chase window",functi
  assert(gust({})<=0,"the base gust opened a chase")
 end)
 
-test("Minato · Rasengan Drive: the plunging Rasengan spikes the body into a ground bounce",function()
- local function plunge(nodes)
-  local c,x,y=duelWith("Flashstep","Mirage",nodes)
-  c:relocate(x,V.new(0,15,3));c:relocate(y,V.new(0,13,-1))
-  x.root.CFrame=H.C.lookAt(x.root.Position,y.root.Position*V.new(1,0,1)+V.new(0,15,0))
-  x.airborne=true;x.airHold=c.now+1
-  Brawler.react(c,y,"Juggled",V.zero,1.2,x)
-  assert(c:request(x,"Technique3"),"airborne Rasengan refused")
-  until_(c,.4,function() return x.attackVariant=="RasenganDrop" end,"no plunge")
-  return x.pending.spec.reaction,c,y
+test("Minato · Steadier Seal: the prototype Flying Thunder God recharges faster (stage 6: no Rasengan at 13)",function()
+ local function recharge(nodes)
+  local c,a,b=duelWith("Flashstep","Mirage",nodes,nil,6)
+  Techniques.plant(c,a,V.new(14,0,0),V.yAxis)
+  assert(c:request(a,H.slot(a,"Flashstep")),"teleport refused")
+  return a.cooldowns.Flashstep-c.now
  end
- local reaction,c,y=plunge({"RasenganFocus","RasenganDrive"})
- assert(reaction=="Spiked","the drive plunge does not spike ("..tostring(reaction)..")")
- local bounced=false
- for _=1,200 do H.step(c,.01);if (y.events or {}).GroundBounce then bounced=true;break end end
- assert(bounced,"the spiked body never bounced ("..tostring(y.reaction)..")")
- assert(plunge({"RasenganFocus"})=="Knockdown","the base plunge changed")
+ local quick,base=recharge({"RasenganFocus","RasenganDrive"}),recharge({})
+ assert(base>5.9 and quick<base-1.4,string.format("the seal recharged in %.2f s with the node, %.2f s without",quick,base))
 end)
 
 test("Minato · Seal on the Parry: a parried strike seals the attacker for 1.8 s",function()
@@ -423,7 +412,7 @@ test("Minato · Air Exit: Tool during an air arrival plants a seal on the floor 
   c:relocate(b,V.new(0,13,-6));b.airborne=true
   Brawler.react(c,b,"Juggled",V.zero,2,a)
   Techniques.plant(c,a,b.root.Position,V.yAxis,b)
-  assert(c:request(a,"Technique2"),"teleport refused")
+  assert(c:request(a,H.slot(a,"Flashstep")),"teleport refused")
   until_(c,.3,function() return (a.flashUntil or 0)>c.now end,"no arrival")
   assert(a.airborne,"the arrival is not in the air")
   local ok=c:request(a,"Tool")
@@ -442,7 +431,7 @@ test("Itachi · Read Cancel: a clean string ends in the Read stance (exclusive w
  local function cancel(nodes)
   local c,a,b=duelWith("Mirage","Flashstep",nodes)
   confirmHit(c,a)
-  return c:request(a,"Technique1"),c,a,b
+  return c:request(a,H.slot(a,"Read")),c,a,b
  end
  local ok,c,a,b=cancel({"QuickRead","ReadCancel"})
  assert(ok and a.untilTime-c.now<=.11,"the string did not end in the Read stance")
@@ -472,11 +461,12 @@ end)
 test("Itachi · Feint Echo: the feint step leaves a decoy; a swing at it is caught",function()
  local function echo(nodes)
   local c,a,b=duelWith("Mirage","Flashstep",nodes)
-  confirmHit(c,a)
+  -- (Stage 6) the flank comes after □□.
+  confirmHit(c,a);confirmHit(c,a)
   a.move=a.root.CFrame.RightVector
   assert(c:request(a,"Attack"))
   assert(a.attackName=="FeintStep","side route is "..tostring(a.attackName))
-  until_(c,.4,function() return (a.events.Hit or 0)>=2 end,"the feint step never landed")
+  until_(c,.4,function() return (a.events.Hit or 0)>=3 end,"the feint step never landed")
   return c,a,b
  end
  local c,a,b=echo({"FeintEcho"})
@@ -508,7 +498,7 @@ end)
 test("Itachi · Flank Blades: Shadow Shuriken's hidden blades come from the flanks, past a frontal guard",function()
  local function fan(nodes)
   local c,a,b=duelWith("Mirage","Flashstep",nodes,nil,14)
-  assert(c:request(a,"Technique2",b.root.Position),"Shadow Shuriken refused")
+  assert(c:request(a,H.slot(a,"NeedleFan"),b.root.Position),"Shadow Shuriken refused")
   local hidden={}
   for _=1,90 do
    H.step(c,.01)
@@ -588,17 +578,17 @@ end)
 test("Neji · Kaiten Cancel / Palm Barrage: a clean string ends in Rotation or in the 64 Palms (exclusive)",function()
  local c,a,b=duelWith("GentleFist","Flashstep",{"PrecisePalms","KaitenCancel"})
  confirmHit(c,a)
- assert(c:request(a,"Technique1"),"the string did not cancel into Rotation")
+ assert(c:request(a,H.slot(a,"Rotation")),"the string did not cancel into Rotation")
  assert(a.untilTime-c.now<=.05,"Rotation lost its own wind-up")
  until_(c,.5,function() return b.reaction=="Knockback" end,"the dome did not throw the opponent out")
  local c2,x,y=duelWith("GentleFist","Flashstep",{"DeepPoints","PalmBarrage"})
  confirmHit(c2,x)
- assert(c2:request(x,"Technique3"),"the string did not cancel into the 64 Palms")
+ assert(c2:request(x,H.slot(x,"SixtyFourPalms")),"the string did not cancel into the 64 Palms")
  assert(x.untilTime-c2.now<=.15,"the palms kept their full wind-up")
  until_(c2,2.5,function() return (y.sealedUntil or 0)>c2.now end,"the flurry never sealed")
  local c3,m=duelWith("GentleFist","Flashstep",{"PrecisePalms","DeepPoints"})
  confirmHit(c3,m)
- assert(not c3:request(m,"Technique1") and not c3:request(m,"Technique3"),"the base string cancelled into a technique")
+ assert(not c3:request(m,H.slot(m,"Rotation")) and not c3:request(m,H.slot(m,"SixtyFourPalms")),"the base string cancelled into a technique")
  assert(not SkillBuilds.validate("GentleFist",{"PrecisePalms","DeepPoints","KaitenCancel","PalmBarrage"}),"both string enders at once")
 end)
 
@@ -655,7 +645,7 @@ end)
 test("Neji · Sealing Palm: Vacuum Palm closes a chakra point at range",function()
  local function palm(nodes)
   local c,a,b=duelWith("GentleFist","Flashstep",nodes,nil,10)
-  assert(c:request(a,"Technique2",b.root.Position))
+  assert(c:request(a,H.slot(a,"VacuumPalm"),b.root.Position))
   until_(c,.8,function() return b.health<b.def.Health end,"the palm never landed")
   return b.tenketsu or 0
  end
@@ -666,7 +656,7 @@ end)
 test("Neji · Returning Rotation and Wide Dome: blades fly back at the thrower; the dome reaches further",function()
  local function dome(nodes,gap)
   local c,a,b=duelWith("GentleFist","Flashstep",nodes,nil,gap)
-  assert(c:request(a,"Technique1"))
+  assert(c:request(a,H.slot(a,"Rotation")))
   until_(c,.2,function() return (a.rotationUntil or 0)>c.now end,"no dome")
   c:projectile(b,a.root.Position,40,30,3,"kunai")
   local back
@@ -690,7 +680,7 @@ end)
 test("Neji · Lingering Seal: after the 64 Palms the techniques stay sealed 4.5 s",function()
  local function seal(nodes)
   local c,a,b=duelWith("GentleFist","Mirage",nodes,nil,4)
-  assert(c:request(a,"Technique3"))
+  assert(c:request(a,H.slot(a,"SixtyFourPalms")))
   until_(c,2.2,function() return (b.sealedUntil or 0)>c.now end,"the flurry never finished")
   return b.sealedUntil-c.now
  end
@@ -750,7 +740,7 @@ test("Sasuke · Wire Cancel and Blocked Tool: a clean string into Wire Trap; a b
  local function wire(nodes)
   local c,a=duelWith("Lion","Flashstep",nodes)
   confirmHit(c,a)
-  return c:request(a,"Technique3"),c,a
+  return c:request(a,H.slot(a,"WireTrap")),c,a
  end
  local ok,c,a=wire({"BlockedTool","WireCancel"})
  assert(ok and a.untilTime-c.now<=.15,"the string did not cancel into the wire")
@@ -771,7 +761,7 @@ test("Sasuke · Wire Pin: a wire near a wall ties the body against it for longer
   H.clearWalls();H.addWall(8)
   local c,a,b=duelWith("Lion","Flashstep",nodes)
   place(c,a,b,V.new(-8,3,0),V.new(2,3,0))
-  assert(c:request(a,"Technique3",b.root.Position),"Wire Trap refused")
+  assert(c:request(a,H.slot(a,"WireTrap"),b.root.Position),"Wire Trap refused")
   until_(c,.8,function() return b.reaction=="Bound" end,"the wire never bound")
   return b.root.Position.X,b.reactionUntil-c.now
  end
@@ -784,7 +774,7 @@ end)
 test("Sasuke · Wired Flames: the hidden blades bind, the Dragon Flame follows",function()
  local function flames(nodes)
   local c,a,b=duelWith("Lion","Mirage",nodes,nil,12)
-  assert(c:request(a,"Technique2",b.root.Position),"Phoenix refused")
+  assert(c:request(a,H.slot(a,"PhoenixFlower"),b.root.Position),"Phoenix refused")
   local wires={}
   for _=1,70 do H.step(c,.01);for _,p in c.projectiles do if p.a==a and p.kind=="wire" and not table.find(wires,p) then table.insert(wires,p) end end end
   return wires,c,a,b
@@ -796,7 +786,7 @@ test("Sasuke · Wired Flames: the hidden blades bind, the Dragon Flame follows",
  assert(b.reaction=="Bound" and math.abs(b.reactionUntil-c.now-.7)<.02,"the wired blade did not bind for 0.7 s")
  until_(c,.6,function() return a.state=="Neutral" or a.state=="TechniqueRecovery" end,"Sasuke still casting")
  local health=b.health
- assert(c:request(a,"Technique1"),"no Dragon Flame on the wired body")
+ assert(c:request(a,H.slot(a,"FireBloom")),"no Dragon Flame on the wired body")
  until_(c,.5,function() return b.health<health end,"the Dragon Flame never landed")
  assert(#flames({"ShurikenFan"})==0,"the base hidden blades carry wire")
 end)
@@ -806,7 +796,7 @@ test("Sasuke · Blood for Chakra (awakening): the Curse Mark pays a missing Chid
   local c,a=duelWith("Lion","Mirage",nodes,nil,10)
   a.awakenUntil=c.now+12;a.awakened=true;a.chakra=5
   local health=a.health
-  return c:request(a,"Technique4"),health-a.health,a
+  return c:request(a,H.slot(a,"Chidori")),health-a.health,a
  end
  local ok,paid,a=chidori({"CurseControl","CurseBlood"})
  assert(ok and math.abs(paid-29)<.01 and a.chakra<1,"the Chidori was not paid with health ("..tostring(paid)..")")
@@ -833,7 +823,7 @@ test("Sasuke · Wall Chidori: charged from a wall run it hangs on the wall and c
   local part=H.addWall(6)
   c:relocate(a,V.new(4.3,8,4));a.airborne=true
   a.wall={part=part,normal=-V.xAxis,untilTime=c.now+2}
-  assert(c:request(a,"Technique4",b.root.Position),"Chidori refused on the wall")
+  assert(c:request(a,H.slot(a,"Chidori"),b.root.Position),"Chidori refused on the wall")
   return a.untilTime-c.now,a,c
  end
  local charge,a,c=wall({"ChidoriFocus","WallChidori"})
@@ -862,13 +852,13 @@ test("property and stat nodes are read by the live pipeline (cost, cooldown, cha
  -- Read costs 12 instead of 14.
  local c,a=duelWith("Mirage","Flashstep",{"EconomicRead"})
  local chakra=a.chakra
- assert(c:request(a,"Technique1"));assert(math.abs(chakra-a.chakra-12)<.01,"Read cost "..(chakra-a.chakra))
+ assert(c:request(a,H.slot(a,"Read")));assert(math.abs(chakra-a.chakra-12)<.01,"Read cost "..(chakra-a.chakra))
  -- Rotation back after 5.22 s instead of 6.
  local c2,x=duelWith("GentleFist","Flashstep",{"SwiftRotation"})
- assert(c2:request(x,"Technique1"));assert(math.abs(x.cooldowns.Rotation-c2.now-5.22)<.01,"Rotation cooldown")
+ assert(c2:request(x,H.slot(x,"Rotation")));assert(math.abs(x.cooldowns.Rotation-c2.now-5.22)<.01,"Rotation cooldown")
  -- Chidori charge 0.508 s instead of 0.62.
  local c3,s=duelWith("Lion","Mirage",{"ChidoriFocus"},nil,10)
- assert(c3:request(s,"Technique4"));assert(math.abs(s.untilTime-c3.now-.5084)<.01,"Chidori channel")
+ assert(c3:request(s,H.slot(s,"Chidori")));assert(math.abs(s.untilTime-c3.now-.5084)<.01,"Chidori channel")
  -- Health and reserve on the actor and its humanoid; recovery per second.
  local c4,n=duelWith("GentleFist","Flashstep",{"Conditioning","ChakraReserve","ChakraControl"})
  assert(n.health==141 and n.hum.MaxHealth==141 and n.chakra==121,"stats not applied to the actor")
@@ -997,7 +987,7 @@ test("match start: optional builds validated on the server; no option keeps toda
   -- AI budget build.
   assert(matches:start(player,"Lion","Mirage",false,{bot={preset="Hard"}}),"AI preset refused")
   s=matches.sessions[player]
-  assert(s.bot.build and s.bot.build.spent==69 and s.bot.def.Techniques[1].Active>1,"the bot did not get the Hard build")
+  assert(s.bot.build and s.bot.build.spent==69 and s.bot.def.Techniques[tonumber(string.match(H.slot(s.bot,"Read"),"%d"))].Active>1,"the bot did not get the Hard build")
   assert(s.human.build==nil,"the player got a build he did not ask for")
   -- Ranked: the player's build must fit the bracket and be unlocked.
   local identity=BuildPresets.ranked("Lion","Identity")

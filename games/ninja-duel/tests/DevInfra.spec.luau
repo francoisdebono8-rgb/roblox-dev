@@ -187,7 +187,8 @@ test("CORE4 character swaps, refill, awakening and KO run the real engine",funct
 	assert(not refused.ok and refused.error=="Reacting" and not s.bot.awakened,tostring(refused.error))
 	step(m,1.2)
 	local result=tools:run(p,"awaken",{actor="bot"});assert(result.ok and s.bot.awakened,tostring(result.error))
-	step(m,1.2)
+	-- (Stage 6) Itachi's awakening holds the body in the Tsukuyomi for 1.5 s.
+	step(m,1.8)
 	result=tools:run(p,"awaken");assert(result.ok,"QA awakening is repeatable: "..tostring(result.error))
 	assert(tools:run(p,"ko",{actor="bot"}).ok and s.bot.health<=0 and s.finishing)
 	local list=tools:run(p,"list")

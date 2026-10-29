@@ -174,6 +174,8 @@ test("play: every technique resolves and does something measurable",function()
    if spec.Family=="Burst" or spec.Family=="Counter" then gap=math.min(gap,(spec.Radius or 6)-1.5) end
    place(c,a,b,math.max(gap,3))
    a.chakra=a.def.Chakra or 100;b.health=999
+   -- (Stage 6) a blade jutsu (Kakashi's Lightning Cut) needs the blade drawn.
+   if spec.Armed then a.armed=true end
    local snap={hp=b.health,pos=a.root.Position,proj=0,haz=0,events=0}
    for _,v in a.events or {} do snap.events+=v end
    local ok,why=press(c,a,"Technique"..slot,nil,b.root.Position)

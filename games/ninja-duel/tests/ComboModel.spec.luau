@@ -21,7 +21,8 @@ local CORE4={"Flashstep","Mirage","GentleFist","Lion"}
 local UP={Flashstep="Launcher",Mirage="Launcher",GentleFist="Launcher",Lion="LionKick"}
 local SIDE={Flashstep="AngleStep",Mirage="FeintStep",GentleFist="CircleStep",Lion="VaultKick"}
 local QUICK={Flashstep="KneeStrike",Mirage="CounterPalm",GentleFist="PalmThrust",Lion="KneeStrike"}
-local CANCEL={Flashstep="BurstStrike",Mirage="NeedleFan",GentleFist="VacuumPalm",Lion="Chidori"}
+-- (Stage 6) at 13 Minato spends a string on the Lightning Strike (no Rasengan).
+local CANCEL={Flashstep="LightningStrike",Mirage="NeedleFan",GentleFist="VacuumPalm",Lion="Chidori"}
 local passed=0
 local failures={}
 local function test(name,fn)
@@ -73,6 +74,12 @@ local function opened(id,hits,other)
  if (hits or 1)>=2 then
   assert(press(c,a,"Attack"),id..": second light refused")
   until_(c,.8,function() return chainOpen(c,a) and a.attackName=="Light2" end,id..": the second chain never opened")
+ end
+ -- (Stage 6) longer strings: the middle hits are Light4 (and Light5).
+ for k=3,(hits or 1) do
+  local name=if k==3 then "Light4" else "Light5"
+  assert(press(c,a,"Attack"),id..": light "..k.." refused")
+  until_(c,.8,function() return chainOpen(c,a) and a.attackName==name end,id..": chain "..k.." never opened")
  end
  return c,a,b
 end
@@ -154,19 +161,20 @@ test("a toward push 40 degrees off the opponent line still launches; 60 degrees 
   local c,a=opened(id,2)
   assert(press(c,a,"Attack",rotated(toward(a),40)))
   assert(a.attackName==UP[id],id..": 40 degrees off the line gave "..tostring(a.attackName))
-  local c2,x=opened(id,1)
+  local c2,x=opened(id,2)
   assert(press(c2,x,"Attack",rotated(toward(x),-62)))
   assert(x.attackName==SIDE[id],id..": 62 degrees off the line gave "..tostring(x.attackName))
  end
 end)
-test("one hit + side turns the angle and keeps the string; two hits + away takes the legs (CORE4)",function()
+test("two hits + side turns the angle and keeps the string; two hits + away takes the legs (CORE4)",function()
+ -- (Stage 6) every route comes after □□.
  for _,id in CORE4 do
-  local c,a,b=opened(id,1)
+  local c,a,b=opened(id,2)
   assert(press(c,a,"Attack",side(a,1)))
-  assert(a.attackName==SIDE[id],id..": side after one hit gave "..tostring(a.attackName))
-  until_(c,.6,function() return (a.events.Hit or 0)>=2 end,id..": the lateral route never connected")
+  assert(a.attackName==SIDE[id],id..": side after two hits gave "..tostring(a.attackName))
+  until_(c,.6,function() return (a.events.Hit or 0)>=3 end,id..": the lateral route never connected")
   chain(c,a,id)
-  assert(a.combo==2,id..": the lateral route did not count as the second confirmed hit ("..tostring(a.combo)..")")
+  assert(a.combo==3,id..": the lateral route did not count as the third confirmed hit ("..tostring(a.combo)..")")
   local c2,x,y=opened(id,2)
   assert(press(c2,x,"Attack",-toward(x)))
   assert(x.attackName=="Sweep",id..": away after two hits gave "..tostring(x.attackName))
@@ -288,10 +296,11 @@ end)
 -- Phase 2: route table --------------------------------------------------------
 test("route table, ground: base string, routes with their payoffs, running attacks, tool branch, disengage, jutsu conversion (CORE4)",function()
  for _,id in CORE4 do
-  -- Base string: the third light knocks away and opens the chase.
-  local c,a,b=opened(id,2)
-  assert(press(c,a,"Attack"));assert(a.attackName==(if id=="GentleFist" and (b.tenketsu or 0)>=3 then "PalmThrust" else "Light3"),id..": the third light is "..tostring(a.attackName))
-  until_(c,.6,function() return b.reaction=="Knockback" end,id..": the third light did not knock away")
+  -- Base string: the last light knocks away and opens the chase (stage 6:
+  -- 4 hits, 5 for Lee and Naruto).
+  local c,a,b=opened(id,(H.fighters[id].StringLength or 4)-1)
+  assert(press(c,a,"Attack"));assert(a.attackName==(if id=="GentleFist" and (b.tenketsu or 0)>=3 then "PalmThrust" else "Light3"),id..": the last light is "..tostring(a.attackName))
+  until_(c,.6,function() return b.reaction=="Knockback" end,id..": the last light did not knock away")
   assert(a.pursuitUntil>c.now,id..": the knock-away opened no chase window")
   -- Forward route and its payoff.
   local c2,x,y=opened(id,2)
@@ -376,8 +385,10 @@ test("route table, air: string, drive, spike bounce, switch, slam and each prodi
   -- The prodigy's own aerial conversion.
   if id=="Flashstep" then
    local c5,f,g=H.duel(id,"Mirage");airborne(c5,f,g,3);f.chakra=f.def.Chakra
-   assert(press(c5,f,slot(f,"BurstStrike")),"airborne Rasengan refused")
-   until_(c5,.5,function() return f.attackVariant=="RasenganDrop" end,"Minato's air Rasengan is not the plunge")
+   -- (Stage 6) no Rasengan at 13: in the air the shunshin cut reaches the body.
+   local health=g.health
+   assert(press(c5,f,slot(f,"LightningStrike"),nil,g.root.Position),"airborne Lightning Strike refused")
+   until_(c5,.6,function() return g.health<health end,"Minato's air Lightning Strike never landed")
   elseif id=="Mirage" then
    local c5,f,g=H.duel(id,"Mirage");airborne(c5,f,g,12)
    assert(press(c5,f,"Tool",nil,g.root.Position),"air throw refused")
@@ -406,7 +417,7 @@ test("route table, re-engage: chase after a launch, a knock-away and a wall spla
    until_(c,.5,function() return (a.events.AirHit or 0)>=1 end,id..": the strike after the chase never connected")
   end
   -- Knock-away -> chase -> strike on arrival.
-  local c2,x,y=opened(id,2)
+  local c2,x,y=opened(id,(H.fighters[id].StringLength or 4)-1)
   assert(press(c2,x,"Attack"))
   until_(c2,.6,function() return y.reaction=="Knockback" end,id..": no knock-away")
   H.step(c2,.08)

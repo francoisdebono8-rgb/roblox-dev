@@ -125,10 +125,14 @@ for _,fighter in {"Flashstep","Mirage"} do
   H.step(c,.4);assertClean(a,"after tool")
   for slot=1,#a.def.Techniques do
    a.cooldowns={};a.chakra=a.def.Chakra
+   -- (Stage 6) each jutsu from a fresh engagement: an earlier one may have
+   -- thrown the opponent out of the next one's range.
+   engage(c,a,b);H.step(c,.03);a.cooldowns={};a.chakra=a.def.Chakra
    if a.def.Techniques[slot].Requires=="Anchor" then
     a.anchor={position=a.root.Position+V.new(6,0,0),expires=c.now+12,part=c:effect("Anchor",a.root.Position,a.color,V.one,12)}
    end
-   assert(c:request(a,"Technique"..slot,b.root.Position),"technique "..slot.." refused")
+   local okSlot,why=c:request(a,"Technique"..slot,b.root.Position)
+   assert(okSlot,"technique "..slot.." refused ("..tostring(why)..", "..tostring(a.state)..")")
    H.step(c,2.4)
    assertClean(a,"after technique "..slot)
    assert(a.state~="TechniqueChannel" and a.state~="TechniqueActive","technique "..slot.." never resolved")

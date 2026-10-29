@@ -9,6 +9,7 @@ local AI=require(script.Parent.AI)
 local Tutorial=require(script.Parent.Tutorial)
 local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
+local Ultimates=require(script.Parent.Ultimates)
 local Bodies=require(script.Parent.Bodies)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
@@ -202,7 +203,7 @@ function Matches:view(s,cursor,mine,theirs)
 			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
-			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
+			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.

@@ -1310,7 +1310,7 @@ end
 local function timing(name,fighterId)
 	local spec=Attacks[name] or Attacks[VARIANT_OF[name] or "DashAttack"]
 	local fighter=Fighters[fighterId]
-	local profile=fighter and fighter.AttackProfile and fighter.AttackProfile[name]
+	local profile=fighter and fighter.AttackProfile and (fighter.AttackProfile[name] or fighter.AttackProfile[spec.clip or ""])
 	local startup=spec.startup*(profile and profile.startup or 1)
 	local active=spec.active*(profile and profile.active or 1)
 	local recovery=spec.recovery*(profile and profile.recovery or 1)
@@ -1360,6 +1360,11 @@ end
 -- active window and most of recovery, then fades so the stance takes over.
 local function attackTargets(name,elapsed,fighterId,clip)
 	local authored=clip or tostring(fighterId).."."..tostring(name)
+	-- (Stage 6) A strike drawn with another one's clip until it has its own
+	-- (Attacks clip: the 4th and 5th lights of the longer strings).
+	if not clip and Authored and not Authored.has(authored) and Attacks[name] and Attacks[name].clip then
+		authored=tostring(fighterId).."."..Attacks[name].clip
+	end
 	if Authored and Authored.has(authored) then
 		-- (Blender-first) the authored strike, time-warped onto the server's
 		-- startup / active / recovery through its contact markers.
