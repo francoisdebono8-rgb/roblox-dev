@@ -43,8 +43,9 @@ function ArenaMeshes.ready()
 	return ArenaMeshes.state=="ready"
 end
 
--- Place one asset at cf (its origin), uniformly scaled. Returns the parts.
-function ArenaMeshes.place(parent,asset,cf,scale)
+-- Place one asset at cf (its origin), uniformly scaled; color/material
+-- override every piece when given (one shape, several grounds). Returns the parts.
+function ArenaMeshes.place(parent,asset,cf,scale,color,material)
 	local pieces=Data[asset]
 	if not pieces then return {} end
 	scale=scale or 1
@@ -56,8 +57,8 @@ function ArenaMeshes.place(parent,asset,cf,scale)
 			p.Name=asset.."_"..piece.name
 			p.Size=piece.size*scale
 			p.CFrame=cf*CFrame.new(piece.offset*scale)
-			p.Color=piece.color
-			p.Material=Enum.Material[piece.material or "SmoothPlastic"] or Enum.Material.SmoothPlastic
+			p.Color=color or piece.color
+			p.Material=material or Enum.Material[piece.material or "SmoothPlastic"] or Enum.Material.SmoothPlastic
 			p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false
 			p.Parent=parent
 			table.insert(made,p)

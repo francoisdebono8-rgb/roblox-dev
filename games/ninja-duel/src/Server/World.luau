@@ -156,8 +156,16 @@ local function dressedArena(folder,decor,origin)
 	local top=wallH+1.2
 	local function asset(name,cf,scale) return ArenaMeshes.place(decor,name,cf,scale) end
 	local rand=Random.new(29)
-	-- Sand floor (Server/WorldReaction reads its material for broken ground).
-	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),rgb(206,184,136),Enum.Material.Sand)
+	-- Light packed earth (user 29/10 17:36-17:45: less sand, a bit more earth,
+	-- light like the references, no layered patches), round so it stops under
+	-- the bowl (Server/WorldReaction reads its material for broken ground).
+	local floor=part(folder,"Training floor",Vector3.new(2,2*(R+28),2*(R+28)),CFrame.new(origin-Vector3.new(0,1,0))*CFrame.Angles(0,0,math.pi/2),rgb(184,158,114),Enum.Material.SmoothPlastic)
+	floor.Shape=Enum.PartType.Cylinder
+	-- Its grain: the earth texture at half strength over the light colour
+	-- (17:42-17:45: "un mix" of the flat light ground and the textured one).
+	local grain=part(decor,"Floor grain",floor.Size,floor.CFrame+Vector3.new(0,.012,0),rgb(196,172,128),Enum.Material.Ground)
+	grain.Shape=Enum.PartType.Cylinder;grain.Transparency=.5
+	grain.CanCollide=false;grain.CanQuery=false;grain.CanTouch=false;grain.CastShadow=false
 	part(decor,"Village ground",Vector3.new(1700,2,1700),CFrame.new(origin-Vector3.new(0,1.3,0)),rgb(84,120,62),Enum.Material.Grass).CanCollide=false
 	-- The wall-run panels and the cap above them (invisible: the meshes show).
 	local segments=116
@@ -235,7 +243,7 @@ local function dressedArena(folder,decor,origin)
 		local r=R+40+rand:NextNumber(0,60)
 		asset("Tree",CFrame.new(origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r))*CFrame.Angles(0,a*5,0),rand:NextNumber(1.4,2.1))
 	end
-	-- Grass on the sand: patches and tufts, thicker toward the wall.
+	-- Grass on the earth: patches and tufts, thicker toward the wall.
 	for k=0,39 do
 		local a=rand:NextNumber(0,math.pi*2);local r=55+(R-65)*math.sqrt(rand:NextNumber())
 		asset(({"GrassA","GrassB","GrassC"})[k%3+1],CFrame.new(origin+Vector3.new(math.sin(a)*r,.02,math.cos(a)*r))*CFrame.Angles(0,a,0),rand:NextNumber(.8,1.4))
