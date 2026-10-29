@@ -638,6 +638,21 @@ test("landing clocks belong to each fighter and release on expiry, takeoff and e
  assert(not P.landing(p,"bot",floor,floor,12.01),"round reset retained a landing")
 end)
 
+test("the landing crouch waits for the drawn body to reach the floor (audit 29/10)",function()
+ local P=H.load("Client/Presentation")
+ local drawnY=5
+ local p={landings={},visualRoot=function() return V.new(0,drawnY,0) end}
+ local air={airborne=true};local floor={airborne=false,position=V.new(0,3,0)}
+ assert(not P.landing(p,"bot",floor,air,10),"the crouch started with the drawn body two studs up")
+ drawnY=3.1
+ local on,phase=P.landing(p,"bot",floor,floor,10.04)
+ assert(on and phase==0,"the crouch did not start on the floor")
+ -- never more than 0.12 s late, whatever the track says
+ drawnY=5;local q={landings={},visualRoot=p.visualRoot}
+ P.landing(q,"bot",floor,air,20)
+ assert(P.landing(q,"bot",floor,floor,20.13),"a stuck track held the landing back")
+end)
+
 test("a landing unloads the hips progressively before the flag ends",function()
  local c,a=H.duel("Flashstep","Mirage")
  local function height(phase)

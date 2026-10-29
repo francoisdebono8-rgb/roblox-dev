@@ -293,10 +293,20 @@ end
 -- player's knees; keep a local phase so compression releases before neutral.
 function Presentation:landing(key,actor,previous,now)
  if previous and previous.airborne and not actor.airborne then
-  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true}
+  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true,pending=true}
  end
  local landing=self.landings[key]
  if not landing then return false,0,false end
+ -- (Audit 29/10) The server says "landed" before the drawn body gets there
+ -- (it is drawn ~45 ms behind its replicated root): at a fall's speed the
+ -- crouch began two studs up in the air. It starts when the drawn body
+ -- reaches the floor it landed on (or after 0.12 s at most).
+ if landing.pending then
+  local drawn=self.visualRoot and self:visualRoot(key)
+  local floor=actor.position and actor.position.Y
+  if drawn and floor and drawn.Y-floor>.35 and now-landing.at<.12 then return false,0,false end
+  landing.pending=nil;landing.at=now
+ end
  if actor.airborne or now>=landing.at+landing.duration then
   self.landings[key]=nil
   return false,0,false

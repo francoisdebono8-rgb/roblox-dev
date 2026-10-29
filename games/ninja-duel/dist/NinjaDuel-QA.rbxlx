@@ -3612,7 +3612,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7663b489f479e63cca140961599856b58e77f5d85bf7727cce6ce7f0ac56ab78</string>
+          <string name="Value">ae7150b1434426b4ad064add0d8061bc1cc5605f5ed681fac09f3aa708570547</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -36370,10 +36370,20 @@ end
 -- player's knees; keep a local phase so compression releases before neutral.
 function Presentation:landing(key,actor,previous,now)
  if previous and previous.airborne and not actor.airborne then
-  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true}
+  self.landings[key]={at=now,duration=if actor.landStrong then .22 else .1,strong=actor.landStrong==true,pending=true}
  end
  local landing=self.landings[key]
  if not landing then return false,0,false end
+ -- (Audit 29/10) The server says "landed" before the drawn body gets there
+ -- (it is drawn ~45 ms behind its replicated root): at a fall's speed the
+ -- crouch began two studs up in the air. It starts when the drawn body
+ -- reaches the floor it landed on (or after 0.12 s at most).
+ if landing.pending then
+  local drawn=self.visualRoot and self:visualRoot(key)
+  local floor=actor.position and actor.position.Y
+  if drawn and floor and drawn.Y-floor&gt;.35 and now-landing.at&lt;.12 then return false,0,false end
+  landing.pending=nil;landing.at=now
+ end
  if actor.airborne or now&gt;=landing.at+landing.duration then
   self.landings[key]=nil
   return false,0,false

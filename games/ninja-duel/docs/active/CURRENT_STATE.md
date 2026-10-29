@@ -20,7 +20,9 @@
   - agent joueur sur 3 × 70 s (Gaara–Itachi, Naruto–Itachi, Kakashi–Lee) : 0 freeze, 0 état figé, 1 faux « en l'air » de 0,7 s au réveil au pied d'un mur (corrigé : un corps qui se relève est posé au sol) ;
   - vraies touches clavier (marche, saut, garde + D qui marche à 8, dodge, saut en courant) : tout répond ;
   - en garde avec le stick, le corps se déplace de 5,5 studs en 0,6 s ;
-  - après un coup sauté, le perso est libre au sol en 0,65 s et marche aussitôt.
+  - après un coup sauté, le perso est libre au sol en 0,65 s et marche aussitôt ;
+  - K.-O. filmé (Sasuke contre Itachi) : la caméra suit le corps projeté jusqu'à ce qu'il retombe couché ;
+  - l'accroupissement d'atterrissage attend que le corps dessiné touche le sol : il est dessiné environ 45 ms derrière le serveur, et l'accroupissement commençait 2 studs en l'air.
 
 **Partie 10, passe visuelle (28/10, 19 h 45 → 21 h 30, utilisateur absent)** — chaque point filmé en Studio (captures en rafale), puis corrigé et refilmé :
 - **caméra** : plus large, décalée sur le côté, centrée vers le joueur (plus de corps qui se masquent) ; flash de coup court et clair au lieu d'un corps rouge ;
