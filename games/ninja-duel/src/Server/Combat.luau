@@ -927,7 +927,8 @@ function Combat:arm(a)
 	if self.now<(a.armAt or 0) then return false,"Too soon" end
 	a.armed=not a.armed;a.armAt=self.now+.25
 	Brawler.event(self,a,if a.armed then "Draw" else "Sheathe")
-	self:cue(a,if a.armed then "KUNAI DRAWN" else "KUNAI SHEATHED",.45)
+	local blade=if a.def.Weapon then a.def.Weapon.Name else "KUNAI"
+	self:cue(a,if a.armed then blade.." DRAWN" else blade.." SHEATHED",.45)
 	return true
 end
 function Combat:throwDrawn(a,aim)
@@ -1085,7 +1086,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		a.chakraLoad=nil
 		opts=table.clone(opts or {});opts.chakra=true
 	end
-	if action=="Tool" and a.armed and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
+	-- (A blade that is not thrown, Kakashi's tanto: R stays the tool.)
+	if action=="Tool" and a.armed and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra

@@ -59,45 +59,56 @@ function Costumes.install(dressers,kit)
 		sandals(model,def,rgb(40,46,66))
 	end
 
-	-- Kakashi (14, the Copy Ninja): silver hair swept up and to one side, the
-	-- mask over his nose and mouth, the headband slanted over his left eye
-	-- (the Sharingan under it), a green flak vest over navy.
+	-- Kakashi (13, Kakashi Gaiden; user 29/10: "Kakashi petit, version Storm,
+	-- un petit sabre dans le dos"): silver hair swept up and to his right, the
+	-- navy mask over nose and mouth, the headband straight across the forehead
+	-- (Obito's eye comes with the awakening), a navy high-collared shirt with
+	-- no vest, dark arm guards, and the White Light Chakra Sabre sheathed
+	-- across his back, the white-wrapped hilt over his right shoulder. The hilt
+	-- parts are named Sheathed*: the client hides them while the blade is drawn.
 	dressers.Kakashi=function(model,def)
 		local hair=rgb(214,218,222)
 		local hairShade=rgb(178,184,192)
-		local navy=rgb(40,50,72)
-		local vest=rgb(92,112,70)
-		local vestShade=rgb(70,88,54)
+		local navy=rgb(36,44,66)
+		local navyShade=rgb(26,32,50)
+		local guardDark=rgb(28,30,38)
 		local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
 		face(model,rgb(40,40,44),rgb(150,150,156))
 		hairCap(model,hair)
-		-- The hair rises in a slanted crest toward his right.
 		local spikes={{Vector3.new(0,.8,.1),Vector3.new(.5,1,.2),1.5},{Vector3.new(-.3,.75,.2),Vector3.new(.1,1,.3),1.4},{Vector3.new(.35,.65,.1),Vector3.new(.9,.7,.2),1.3},
-			{Vector3.new(-.55,.55,.2),Vector3.new(-.4,1,.4),1.1},{Vector3.new(0,.5,.6),Vector3.new(.3,.6,1),1.2},{Vector3.new(.55,.35,.3),Vector3.new(1,.25,.4),1.0}}
+			{Vector3.new(-.55,.55,.2),Vector3.new(-.4,1,.4),1.1},{Vector3.new(0,.5,.6),Vector3.new(.3,.6,1),1.2},{Vector3.new(.55,.35,.3),Vector3.new(1,.25,.4),1.0},
+			{Vector3.new(-.2,.6,-.45),Vector3.new(.2,.8,-.6),.9}}
 		for i,s in spikes do spike(model,s[1],s[2],s[3],.5,.42,if i%2==0 then hairShade else hair) end
-		-- The mask: up over the nose, the mouth hidden.
+		-- The mask, up over the nose; the mouth hidden.
 		wear(model,"Head","Mask",Vector3.new(1.62,.62,1.62),CFrame.new(0,-.36,-.02),navy)
 		for _,p in model:GetChildren() do if p.Name=="Mouth" then p.Transparency=1 end end
-		-- The headband slanted down over the left eye (+12 degrees of roll lowers
-		-- his left side, -X).
-		local tilt=A(0,0,R(12))
-		wear(model,"Head","Headband",Vector3.new(1.68,.26,1.68),CFrame.new(0,.26,0)*tilt,rgb(28,36,58))
-		wear(model,"Head","HeadbandPlate",Vector3.new(.9,.32,.06),CFrame.new(-.06,.24,-.86)*tilt,rgb(176,184,194),Enum.Material.Metal)
-		wear(model,"Head","LeafMark",Vector3.new(.3,.14,.02),CFrame.new(-.06,.26,-.9)*tilt,rgb(70,78,90),Enum.Material.Metal)
-		wear(model,"Head","EyeCover",Vector3.new(.42,.26,.06),CFrame.new(-.3,.1,-.83),rgb(28,36,58))
+		-- Headband straight across the forehead.
+		wear(model,"Head","Headband",Vector3.new(1.68,.26,1.68),CFrame.new(0,.3,0),rgb(28,36,58))
+		wear(model,"Head","HeadbandPlate",Vector3.new(.9,.3,.06),CFrame.new(0,.3,-.86),rgb(176,184,194),Enum.Material.Metal)
+		wear(model,"Head","LeafMark",Vector3.new(.3,.13,.02),CFrame.new(0,.31,-.9),rgb(70,78,90),Enum.Material.Metal)
 		paint(model,TORSO,navy);paint(model,ARMS,navy);paint(model,LEGS,navy)
-		-- Flak vest with its scroll pouches, the red swirl on the shoulders skipped.
-		wear(model,"UpperTorso","Vest",Vector3.new(2.1,1.62,1.14),CFrame.new(0,-.02,0),vest)
-		wear(model,"UpperTorso","VestCollar",Vector3.new(1.5,.3,1.16),CFrame.new(0,.82,.02),vestShade)
-		for _,x in {-.5,.5} do
-			for k=0,1 do wear(model,"UpperTorso","Pouch",Vector3.new(.42,.36,.12),CFrame.new(x,-.12-k*.42,-.6),vestShade) end
-		end
-		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),rgb(30,34,46))
+		-- High collar joined to the mask, a seam down the front.
+		wear(model,"UpperTorso","Collar",Vector3.new(1.2,.34,1.0),CFrame.new(0,.88,0),navy)
+		wear(model,"UpperTorso","Seam",Vector3.new(.05,1.4,.03),CFrame.new(.18,-.05,-.52),navyShade)
+		-- Dark arm guards, elbow to knuckles.
 		for _,side in {"Left","Right"} do
-			wear(model,side.."LowerArm","Glove",Vector3.new(.84,.4,.84),CFrame.new(0,-.36,0),rgb(30,32,40))
+			wear(model,side.."LowerArm","ArmGuard",Vector3.new(.84,.9,.84),CFrame.new(0,-.1,0),guardDark)
+			wear(model,side.."LowerArm","GuardPlate",Vector3.new(.5,.5,.08),CFrame.new(0,-.05,-.44),rgb(120,126,138),Enum.Material.Metal)
 			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.55,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
 		end
-		wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(30,34,46))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),navyShade)
+		wear(model,"LowerTorso","BackPouch",Vector3.new(.7,.36,.24),CFrame.new(0,.2,.6),rgb(54,60,74))
+		wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),navyShade)
+		-- The sword strap across the chest, right shoulder to left hip.
+		wear(model,"UpperTorso","Strap",Vector3.new(.14,2.05,.05),CFrame.new(0,.02,-.53)*A(0,0,R(36)),rgb(60,52,46))
+		wear(model,"UpperTorso","StrapBack",Vector3.new(.14,2.05,.05),CFrame.new(0,.02,.53)*A(0,0,R(-36)),rgb(60,52,46))
+		-- The sheath across the back, its mouth over the right shoulder.
+		local axis=CFrame.new(.08,.1,.66)*A(0,0,R(-36))
+		wear(model,"UpperTorso","Sheath",Vector3.new(.24,1.75,.2),axis,rgb(24,24,30))
+		wear(model,"UpperTorso","SheathTip",Vector3.new(.26,.12,.22),axis*CFrame.new(0,-.9,0),rgb(150,154,162),Enum.Material.Metal)
+		wear(model,"UpperTorso","SheathedGuard",Vector3.new(.36,.06,.36),axis*CFrame.new(0,.9,0),rgb(46,46,54),Enum.Material.Metal)
+		wear(model,"UpperTorso","SheathedHilt",Vector3.new(.16,.6,.16),axis*CFrame.new(0,1.22,0),rgb(232,230,222))
+		for k=0,2 do wear(model,"UpperTorso","SheathedWrap",Vector3.new(.18,.04,.18),axis*CFrame.new(0,1.02+k*.17,0),guardDark) end
 		sandals(model,def,rgb(40,46,66))
 	end
 end

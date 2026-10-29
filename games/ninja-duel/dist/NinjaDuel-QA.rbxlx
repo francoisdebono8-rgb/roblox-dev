@@ -1218,13 +1218,21 @@ return Metrics
 	-- Sharingan (smaller windows than Itachi's), the Lightning Blade, his
 	-- tracking hounds that bind, and a copied Water Dragon.
 	Copycat = {
-		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 14, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
+		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
 		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
 		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
 		Health = 135, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.02, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 92, Damage = 3, Recover = .62 },
+		-- (User 29/10: "Kakashi petit, version Storm, un petit sabre dans le
+		-- dos, sabre qu'il pourra utiliser".) The White Light Chakra Sabre, his
+		-- father's tanto, sheathed across his back. B draws it instead of the
+		-- shared kunai: the string, the routes on the ground and the heavy cut
+		-- with it (Brawler.start: Reach, Contact, Damage); it is never thrown
+		-- (R stays his kunai). Weapon is the shared shape for any carried blade.
+		Weapon = { Kind = "Tanto", Name = "TANTO", Reach = 1.5, Contact = 0.9, Damage = 1.15, Throwable = false,
+			Moves = { Light1 = true, Light2 = true, Light3 = true, Heavy = true, Launcher = true, Sweep = true, FeintStep = true, DashAttack = true, Air1 = true, Air2 = true, AirSpike = true } },
 		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.
@@ -3619,7 +3627,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">0baeff6f9c8772fffc0c9eea52310fbc17152468bae16c2af708a9f41abd487d</string>
+          <string name="Value">503aa51c8c3f2bc0a597d6cb59017544483974725decdf71aac683cab1c48ad8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -5953,7 +5961,13 @@ function Brawler.start(c,a,name)
 		spec.contact=profile.contact or spec.contact
 	end
  -- A drawn kunai (Combat:arm, global): the string and heavy cut with it.
- if a.armed and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
+ -- A fighter's own blade (def.Weapon: Kakashi's tanto) cuts further, on the
+ -- moves it lists.
+ local weapon=a.def.Weapon
+ if a.armed and weapon and weapon.Moves[name] then
+  spec.range=(spec.range or 5)+weapon.Reach;spec.contact=(spec.contact or 3.2)+weapon.Contact
+  spec.damageScale=(spec.damageScale or 1)*weapon.Damage;spec.kind="slash"
+ elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
   spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
   spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
  end
@@ -10039,7 +10053,8 @@ function Combat:arm(a)
 	if self.now&lt;(a.armAt or 0) then return false,"Too soon" end
 	a.armed=not a.armed;a.armAt=self.now+.25
 	Brawler.event(self,a,if a.armed then "Draw" else "Sheathe")
-	self:cue(a,if a.armed then "KUNAI DRAWN" else "KUNAI SHEATHED",.45)
+	local blade=if a.def.Weapon then a.def.Weapon.Name else "KUNAI"
+	self:cue(a,if a.armed then blade.." DRAWN" else blade.." SHEATHED",.45)
 	return true
 end
 function Combat:throwDrawn(a,aim)
@@ -10197,7 +10212,8 @@ function Combat:requestInner(a,action,aim,clientTime,opts)
 		a.chakraLoad=nil
 		opts=table.clone(opts or {});opts.chakra=true
 	end
-	if action=="Tool" and a.armed and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
+	-- (A blade that is not thrown, Kakashi's tanto: R stays the tool.)
+	if action=="Tool" and a.armed and not (a.def.Weapon and a.def.Weapon.Throwable==false) and not (opts~=nil and opts.chakra==true) then return self:throwDrawn(a,aim) end
 	if action=="Tool" then
 		-- No blade to throw (Rock Lee): the tool button is his deflecting kick, and
 		-- his chakra profile (ChakraTuning Taijutsu) infuses nothing: the chakra
@@ -11534,45 +11550,56 @@ function Costumes.install(dressers,kit)
 		sandals(model,def,rgb(40,46,66))
 	end
 
-	-- Kakashi (14, the Copy Ninja): silver hair swept up and to one side, the
-	-- mask over his nose and mouth, the headband slanted over his left eye
-	-- (the Sharingan under it), a green flak vest over navy.
+	-- Kakashi (13, Kakashi Gaiden; user 29/10: "Kakashi petit, version Storm,
+	-- un petit sabre dans le dos"): silver hair swept up and to his right, the
+	-- navy mask over nose and mouth, the headband straight across the forehead
+	-- (Obito's eye comes with the awakening), a navy high-collared shirt with
+	-- no vest, dark arm guards, and the White Light Chakra Sabre sheathed
+	-- across his back, the white-wrapped hilt over his right shoulder. The hilt
+	-- parts are named Sheathed*: the client hides them while the blade is drawn.
 	dressers.Kakashi=function(model,def)
 		local hair=rgb(214,218,222)
 		local hairShade=rgb(178,184,192)
-		local navy=rgb(40,50,72)
-		local vest=rgb(92,112,70)
-		local vestShade=rgb(70,88,54)
+		local navy=rgb(36,44,66)
+		local navyShade=rgb(26,32,50)
+		local guardDark=rgb(28,30,38)
 		local cap=model:FindFirstChild("Hair");if cap then cap.Color=hair;cap.Transparency=1 end
 		face(model,rgb(40,40,44),rgb(150,150,156))
 		hairCap(model,hair)
-		-- The hair rises in a slanted crest toward his right.
 		local spikes={{Vector3.new(0,.8,.1),Vector3.new(.5,1,.2),1.5},{Vector3.new(-.3,.75,.2),Vector3.new(.1,1,.3),1.4},{Vector3.new(.35,.65,.1),Vector3.new(.9,.7,.2),1.3},
-			{Vector3.new(-.55,.55,.2),Vector3.new(-.4,1,.4),1.1},{Vector3.new(0,.5,.6),Vector3.new(.3,.6,1),1.2},{Vector3.new(.55,.35,.3),Vector3.new(1,.25,.4),1.0}}
+			{Vector3.new(-.55,.55,.2),Vector3.new(-.4,1,.4),1.1},{Vector3.new(0,.5,.6),Vector3.new(.3,.6,1),1.2},{Vector3.new(.55,.35,.3),Vector3.new(1,.25,.4),1.0},
+			{Vector3.new(-.2,.6,-.45),Vector3.new(.2,.8,-.6),.9}}
 		for i,s in spikes do spike(model,s[1],s[2],s[3],.5,.42,if i%2==0 then hairShade else hair) end
-		-- The mask: up over the nose, the mouth hidden.
+		-- The mask, up over the nose; the mouth hidden.
 		wear(model,"Head","Mask",Vector3.new(1.62,.62,1.62),CFrame.new(0,-.36,-.02),navy)
 		for _,p in model:GetChildren() do if p.Name=="Mouth" then p.Transparency=1 end end
-		-- The headband slanted down over the left eye (+12 degrees of roll lowers
-		-- his left side, -X).
-		local tilt=A(0,0,R(12))
-		wear(model,"Head","Headband",Vector3.new(1.68,.26,1.68),CFrame.new(0,.26,0)*tilt,rgb(28,36,58))
-		wear(model,"Head","HeadbandPlate",Vector3.new(.9,.32,.06),CFrame.new(-.06,.24,-.86)*tilt,rgb(176,184,194),Enum.Material.Metal)
-		wear(model,"Head","LeafMark",Vector3.new(.3,.14,.02),CFrame.new(-.06,.26,-.9)*tilt,rgb(70,78,90),Enum.Material.Metal)
-		wear(model,"Head","EyeCover",Vector3.new(.42,.26,.06),CFrame.new(-.3,.1,-.83),rgb(28,36,58))
+		-- Headband straight across the forehead.
+		wear(model,"Head","Headband",Vector3.new(1.68,.26,1.68),CFrame.new(0,.3,0),rgb(28,36,58))
+		wear(model,"Head","HeadbandPlate",Vector3.new(.9,.3,.06),CFrame.new(0,.3,-.86),rgb(176,184,194),Enum.Material.Metal)
+		wear(model,"Head","LeafMark",Vector3.new(.3,.13,.02),CFrame.new(0,.31,-.9),rgb(70,78,90),Enum.Material.Metal)
 		paint(model,TORSO,navy);paint(model,ARMS,navy);paint(model,LEGS,navy)
-		-- Flak vest with its scroll pouches, the red swirl on the shoulders skipped.
-		wear(model,"UpperTorso","Vest",Vector3.new(2.1,1.62,1.14),CFrame.new(0,-.02,0),vest)
-		wear(model,"UpperTorso","VestCollar",Vector3.new(1.5,.3,1.16),CFrame.new(0,.82,.02),vestShade)
-		for _,x in {-.5,.5} do
-			for k=0,1 do wear(model,"UpperTorso","Pouch",Vector3.new(.42,.36,.12),CFrame.new(x,-.12-k*.42,-.6),vestShade) end
-		end
-		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),rgb(30,34,46))
+		-- High collar joined to the mask, a seam down the front.
+		wear(model,"UpperTorso","Collar",Vector3.new(1.2,.34,1.0),CFrame.new(0,.88,0),navy)
+		wear(model,"UpperTorso","Seam",Vector3.new(.05,1.4,.03),CFrame.new(.18,-.05,-.52),navyShade)
+		-- Dark arm guards, elbow to knuckles.
 		for _,side in {"Left","Right"} do
-			wear(model,side.."LowerArm","Glove",Vector3.new(.84,.4,.84),CFrame.new(0,-.36,0),rgb(30,32,40))
+			wear(model,side.."LowerArm","ArmGuard",Vector3.new(.84,.9,.84),CFrame.new(0,-.1,0),guardDark)
+			wear(model,side.."LowerArm","GuardPlate",Vector3.new(.5,.5,.08),CFrame.new(0,-.05,-.44),rgb(120,126,138),Enum.Material.Metal)
 			wear(model,side.."LowerLeg","ShinWrap",Vector3.new(.86,.55,.86),CFrame.new(0,-.2,0),rgb(220,220,214))
 		end
-		wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),rgb(30,34,46))
+		wear(model,"LowerTorso","Belt",Vector3.new(2.06,.2,1.06),CFrame.new(0,.34,0),navyShade)
+		wear(model,"LowerTorso","BackPouch",Vector3.new(.7,.36,.24),CFrame.new(0,.2,.6),rgb(54,60,74))
+		wear(model,"RightUpperLeg","Holster",Vector3.new(.24,.5,.5),CFrame.new(.5,-.05,0),navyShade)
+		-- The sword strap across the chest, right shoulder to left hip.
+		wear(model,"UpperTorso","Strap",Vector3.new(.14,2.05,.05),CFrame.new(0,.02,-.53)*A(0,0,R(36)),rgb(60,52,46))
+		wear(model,"UpperTorso","StrapBack",Vector3.new(.14,2.05,.05),CFrame.new(0,.02,.53)*A(0,0,R(-36)),rgb(60,52,46))
+		-- The sheath across the back, its mouth over the right shoulder.
+		local axis=CFrame.new(.08,.1,.66)*A(0,0,R(-36))
+		wear(model,"UpperTorso","Sheath",Vector3.new(.24,1.75,.2),axis,rgb(24,24,30))
+		wear(model,"UpperTorso","SheathTip",Vector3.new(.26,.12,.22),axis*CFrame.new(0,-.9,0),rgb(150,154,162),Enum.Material.Metal)
+		wear(model,"UpperTorso","SheathedGuard",Vector3.new(.36,.06,.36),axis*CFrame.new(0,.9,0),rgb(46,46,54),Enum.Material.Metal)
+		wear(model,"UpperTorso","SheathedHilt",Vector3.new(.16,.6,.16),axis*CFrame.new(0,1.22,0),rgb(232,230,222))
+		for k=0,2 do wear(model,"UpperTorso","SheathedWrap",Vector3.new(.18,.04,.18),axis*CFrame.new(0,1.02+k*.17,0),guardDark) end
 		sandals(model,def,rgb(40,46,66))
 	end
 end
@@ -31311,6 +31338,30 @@ function FX.buildKunai(marked)
 	return model
 end
 -- Four-point shuriken, flat in the XZ plane, spun about its own Y axis.
+-- Kakashi's White Light Chakra Sabre (user 29/10): a straight tanto built
+-- along -Z like the kunai (grip centre at the origin). White-wrapped grip,
+-- small round guard, a long straight blade with a pale chakra edge.
+function FX.buildTanto()
+	local model=new("Model",{Name="Tanto"})
+	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
+	local grip=block(model,Vector3.new(.62,.15,.15),CFrame.new(0,0,.18)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(232,230,222),Enum.Material.Fabric)
+	grip.Shape=Enum.PartType.Cylinder
+	for i=-1,1 do
+		local wrap=block(model,Vector3.new(.04,.165,.165),CFrame.new(0,0,.18+i*.17)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(40,42,52),Enum.Material.Fabric)
+		wrap.Shape=Enum.PartType.Cylinder
+	end
+	local pommel=block(model,Vector3.new(.06,.18,.18),CFrame.new(0,0,.5)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(70,72,80),Enum.Material.Metal)
+	pommel.Shape=Enum.PartType.Cylinder
+	local guard=block(model,Vector3.new(.05,.34,.34),CFrame.new(0,0,-.15)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(46,46,54),Enum.Material.Metal)
+	guard.Shape=Enum.PartType.Cylinder
+	-- The blade: a flat bar, the back thicker than the edge, a short point.
+	block(model,Vector3.new(.05,.17,1.55),CFrame.new(0,0,-.95),Color3.fromRGB(196,202,212),Enum.Material.Metal)
+	block(model,Vector3.new(.03,.05,1.55),CFrame.new(0,-.08,-.95),Color3.fromRGB(236,244,255),Enum.Material.Neon).Transparency=.35
+	local tip=block(model,Vector3.new(.05,.17,.24),CFrame.new(0,.03,-1.78)*CFrame.Angles(math.rad(-28),0,0),Color3.fromRGB(196,202,212),Enum.Material.Metal,"WedgePart")
+	tip.Name="Tip"
+	model.PrimaryPart=root
+	return model
+end
 function FX.buildShuriken()
 	local model=new("Model",{Name="Shuriken"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1
@@ -37855,7 +37906,11 @@ function UI:render(data)
 	self.statusLine.Text=string.format("STAMINA %d   •   SUBSTITUTION %d   •   %s   •   %s",math.floor(h.stamina or 100),h.subCharges or 0,
 		if h.wall then "WALL RUN" elseif h.dodge&gt;0 then string.format("DASH %.1fs",h.dodge) else "DASH READY",
 		-- Global kunai (DEC-030): whether a blade is drawn, and how to use it.
-		if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai")
+		(function()
+			local weapon=Fighters[h.fighterId or ""] and Fighters[h.fighterId].Weapon
+			if weapon then return if h.armed then weapon.Name.." DRAWN (B sheathes it)" else "B: draw "..string.lower(weapon.Name) end
+			return if h.armed then "KUNAI DRAWN (R throws it)" else "B: draw kunai"
+		end)())
 	-- Only decisive moments speak; routine cues stay silent.
 	local cue=h.cue or ""
 	local loud=cue:find("READ") or cue:find("PARRY") or cue:find("PERFECT") or cue:find("FLYING THUNDER") or cue:find("GUARD BREAK") or cue:find("WALL ")
@@ -41012,8 +41067,9 @@ local weapons=setmetatable({},{__mode="k"})
 local LION_KUNAI_C0=CF(0,-.12,-.12)*ANG(math.rad(-50.3),0,0)
 local MELEE={Lion={Light1=true,Light2=true,Light3=true,Heavy=true,KneeStrike=true,LionKick=true,Sweep=true,VaultKick=true,FlyingKick=true,
 	Air1=true,Air2=true,AirDrive=true,AirSpike=true,AirSwitch=true,Launcher=true,DashAttack=true},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true},
-	-- (Partie 6) Kakashi's tanto, in the Lights and the cuts (tools/blender/kakashi_p6.py).
-	Copycat={Light1=true,Light3=true,Heavy=true,DashAttack=true,FeintStep=true,Sweep=true,Air1=true,AirSpike=true,AirSwitch=true}}
+	-- (User 29/10) Kakashi's tanto is drawn with B (def.Weapon) and only then
+	-- in his hand; sheathed he fights bare-handed. The blade stays on his back.
+	Copycat={}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -41044,7 +41100,13 @@ local function weaponsFor(char,fighterId)
 	-- Global kunai (DEC-030): every fighter carries a blade he may draw, held
 	-- in the forward grip the shared Kunai.* clips are animated with.
 	local right=char:FindFirstChild("RightHand")
-	if right then pcall(function() Effects=Effects or require(script.Parent.Effects);items.drawn=makeItem(right,Effects.buildKunai(false),LION_KUNAI_C0) end) end
+	-- A fighter's own blade (Fighters def.Weapon: Kakashi's tanto) is the one he draws.
+	local own=Fighters and Fighters[fighterId] and Fighters[fighterId].Weapon
+	if right then pcall(function()
+		Effects=Effects or require(script.Parent.Effects)
+		local blade=if own and own.Kind=="Tanto" then Effects.buildTanto() else Effects.buildKunai(false)
+		items.drawn=makeItem(right,blade,LION_KUNAI_C0)
+	end) end
 	if kind=="none" then for _,item in items do setVisible(item,false) end return items end
 	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
@@ -41096,7 +41158,18 @@ function Motion.weapon(char,actor)
 	-- The drawn blade stays in the hand until thrown (the throw shows it to its
 	-- release frame where the fighter has no throwing kunai of his own).
 	local drawn=actor.armed==true or (holding and throwKind=="Kunai" and not items.throw and kind~="kunai")
+	local own=Fighters and Fighters[actor.fighterId] and Fighters[actor.fighterId].Weapon
+	if own and own.Throwable==false then drawn=actor.armed==true end
 	setVisible(items.drawn,drawn)
+	-- The sheathed blade on the back shows its hilt only while it is sheathed.
+	if own then
+		local torso=char:FindFirstChild("UpperTorso")
+		for _,name in {"SheathedHilt","SheathedGuard","SheathedWrap"} do
+			for _,p in torso and torso:GetChildren() or {} do
+				if p.Name==name and p:IsA("BasePart") then p.Transparency=if actor.armed then 1 else 0 end
+			end
+		end
+	end
 	if actor.armed then meleeOut=false end
 	if kind=="none" then
 		-- (no hand weapon: the sand does the work)

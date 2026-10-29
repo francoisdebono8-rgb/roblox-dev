@@ -2880,8 +2880,9 @@ local weapons=setmetatable({},{__mode="k"})
 local LION_KUNAI_C0=CF(0,-.12,-.12)*ANG(math.rad(-50.3),0,0)
 local MELEE={Lion={Light1=true,Light2=true,Light3=true,Heavy=true,KneeStrike=true,LionKick=true,Sweep=true,VaultKick=true,FlyingKick=true,
 	Air1=true,Air2=true,AirDrive=true,AirSpike=true,AirSwitch=true,Launcher=true,DashAttack=true},Flashstep={Light1=true,Light2=true,DashAttack=true,Air1=true,AngleStep=true,Riposte=true,AirSwitch=true},Mirage={Light2=true,Light1=true,DashAttack=true,Air1=true,Air2=true,Light3=true},
-	-- (Partie 6) Kakashi's tanto, in the Lights and the cuts (tools/blender/kakashi_p6.py).
-	Copycat={Light1=true,Light3=true,Heavy=true,DashAttack=true,FeintStep=true,Sweep=true,Air1=true,AirSpike=true,AirSwitch=true}}
+	-- (User 29/10) Kakashi's tanto is drawn with B (def.Weapon) and only then
+	-- in his hand; sheathed he fights bare-handed. The blade stays on his back.
+	Copycat={}}
 local function makeItem(hand,model,c0)
 	model.Parent=hand
 	local root=model.PrimaryPart
@@ -2912,7 +2913,13 @@ local function weaponsFor(char,fighterId)
 	-- Global kunai (DEC-030): every fighter carries a blade he may draw, held
 	-- in the forward grip the shared Kunai.* clips are animated with.
 	local right=char:FindFirstChild("RightHand")
-	if right then pcall(function() Effects=Effects or require(script.Parent.Effects);items.drawn=makeItem(right,Effects.buildKunai(false),LION_KUNAI_C0) end) end
+	-- A fighter's own blade (Fighters def.Weapon: Kakashi's tanto) is the one he draws.
+	local own=Fighters and Fighters[fighterId] and Fighters[fighterId].Weapon
+	if right then pcall(function()
+		Effects=Effects or require(script.Parent.Effects)
+		local blade=if own and own.Kind=="Tanto" then Effects.buildTanto() else Effects.buildKunai(false)
+		items.drawn=makeItem(right,blade,LION_KUNAI_C0)
+	end) end
 	if kind=="none" then for _,item in items do setVisible(item,false) end return items end
 	local hand=char:FindFirstChild(if kind=="shuriken" then "LeftHand" else "RightHand")
 	if not hand then weapons[char]=nil;return nil end
@@ -2964,7 +2971,18 @@ function Motion.weapon(char,actor)
 	-- The drawn blade stays in the hand until thrown (the throw shows it to its
 	-- release frame where the fighter has no throwing kunai of his own).
 	local drawn=actor.armed==true or (holding and throwKind=="Kunai" and not items.throw and kind~="kunai")
+	local own=Fighters and Fighters[actor.fighterId] and Fighters[actor.fighterId].Weapon
+	if own and own.Throwable==false then drawn=actor.armed==true end
 	setVisible(items.drawn,drawn)
+	-- The sheathed blade on the back shows its hilt only while it is sheathed.
+	if own then
+		local torso=char:FindFirstChild("UpperTorso")
+		for _,name in {"SheathedHilt","SheathedGuard","SheathedWrap"} do
+			for _,p in torso and torso:GetChildren() or {} do
+				if p.Name==name and p:IsA("BasePart") then p.Transparency=if actor.armed then 1 else 0 end
+			end
+		end
+	end
 	if actor.armed then meleeOut=false end
 	if kind=="none" then
 		-- (no hand weapon: the sand does the work)

@@ -393,13 +393,21 @@ local Fighters = {
 	-- Sharingan (smaller windows than Itachi's), the Lightning Blade, his
 	-- tracking hounds that bind, and a copied Water Dragon.
 	Copycat = {
-		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 14, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
+		Name = "Kakashi", FullName = "Kakashi Hatake", Age = 13, Title = "THE COPY NINJA", Color = { 170, 182, 196 },
 		Routes = "↑ launcher  ·  ↓ sweep  ·  ←→ feint step  ·  air: drive / spike / switch",
 		Description = "The all-rounder: a Sharingan that reads, hounds that hold, a copied Water Dragon and the Lightning Blade.",
 		Health = 135, Chakra = 120, ChakraRegen = 7.6, Speed = 19, SprintScale = 1.08, JumpScale = 1.05, AirControlScale = 1.05, AccelerationScale = 1.06,
 		CombatTravel = 1.06, CombatDamage = 1.02, DashScale = 1.05, GuardStrength = 0.1, PreferredRange = 7,
 		ComboToolCancel = true, CombatStyle = "Control", Tool = "Kunai",
 		ToolMastery = { Kind = "kunai", Count = 1, Speed = 92, Damage = 3, Recover = .62 },
+		-- (User 29/10: "Kakashi petit, version Storm, un petit sabre dans le
+		-- dos, sabre qu'il pourra utiliser".) The White Light Chakra Sabre, his
+		-- father's tanto, sheathed across his back. B draws it instead of the
+		-- shared kunai: the string, the routes on the ground and the heavy cut
+		-- with it (Brawler.start: Reach, Contact, Damage); it is never thrown
+		-- (R stays his kunai). Weapon is the shared shape for any carried blade.
+		Weapon = { Kind = "Tanto", Name = "TANTO", Reach = 1.5, Contact = 0.9, Damage = 1.15, Throwable = false,
+			Moves = { Light1 = true, Light2 = true, Light3 = true, Heavy = true, Launcher = true, Sweep = true, FeintStep = true, DashAttack = true, Air1 = true, Air2 = true, AirSpike = true } },
 		Sharingan = { ParryWindow = 0.26, PerfectDodge = 0.2, Counter = 0.8 },
 		-- Awakening: the Sharingan uncovered. Wider read windows, jutsu at a
 		-- fraction of their cost, and his hounds hold half as long again.

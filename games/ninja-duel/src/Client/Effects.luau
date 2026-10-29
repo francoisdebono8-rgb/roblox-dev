@@ -180,6 +180,30 @@ function FX.buildKunai(marked)
 	return model
 end
 -- Four-point shuriken, flat in the XZ plane, spun about its own Y axis.
+-- Kakashi's White Light Chakra Sabre (user 29/10): a straight tanto built
+-- along -Z like the kunai (grip centre at the origin). White-wrapped grip,
+-- small round guard, a long straight blade with a pale chakra edge.
+function FX.buildTanto()
+	local model=new("Model",{Name="Tanto"})
+	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new(),nil);root.Name="Root";root.Transparency=1
+	local grip=block(model,Vector3.new(.62,.15,.15),CFrame.new(0,0,.18)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(232,230,222),Enum.Material.Fabric)
+	grip.Shape=Enum.PartType.Cylinder
+	for i=-1,1 do
+		local wrap=block(model,Vector3.new(.04,.165,.165),CFrame.new(0,0,.18+i*.17)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(40,42,52),Enum.Material.Fabric)
+		wrap.Shape=Enum.PartType.Cylinder
+	end
+	local pommel=block(model,Vector3.new(.06,.18,.18),CFrame.new(0,0,.5)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(70,72,80),Enum.Material.Metal)
+	pommel.Shape=Enum.PartType.Cylinder
+	local guard=block(model,Vector3.new(.05,.34,.34),CFrame.new(0,0,-.15)*CFrame.Angles(0,math.pi/2,0),Color3.fromRGB(46,46,54),Enum.Material.Metal)
+	guard.Shape=Enum.PartType.Cylinder
+	-- The blade: a flat bar, the back thicker than the edge, a short point.
+	block(model,Vector3.new(.05,.17,1.55),CFrame.new(0,0,-.95),Color3.fromRGB(196,202,212),Enum.Material.Metal)
+	block(model,Vector3.new(.03,.05,1.55),CFrame.new(0,-.08,-.95),Color3.fromRGB(236,244,255),Enum.Material.Neon).Transparency=.35
+	local tip=block(model,Vector3.new(.05,.17,.24),CFrame.new(0,.03,-1.78)*CFrame.Angles(math.rad(-28),0,0),Color3.fromRGB(196,202,212),Enum.Material.Metal,"WedgePart")
+	tip.Name="Tip"
+	model.PrimaryPart=root
+	return model
+end
 function FX.buildShuriken()
 	local model=new("Model",{Name="Shuriken"})
 	local root=block(model,Vector3.new(.1,.1,.1),CFrame.new(),Color3.new());root.Name="Root";root.Transparency=1

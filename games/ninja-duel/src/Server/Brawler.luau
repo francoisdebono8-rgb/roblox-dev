@@ -477,7 +477,13 @@ function Brawler.start(c,a,name)
 		spec.contact=profile.contact or spec.contact
 	end
  -- A drawn kunai (Combat:arm, global): the string and heavy cut with it.
- if a.armed and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
+ -- A fighter's own blade (def.Weapon: Kakashi's tanto) cuts further, on the
+ -- moves it lists.
+ local weapon=a.def.Weapon
+ if a.armed and weapon and weapon.Moves[name] then
+  spec.range=(spec.range or 5)+weapon.Reach;spec.contact=(spec.contact or 3.2)+weapon.Contact
+  spec.damageScale=(spec.damageScale or 1)*weapon.Damage;spec.kind="slash"
+ elseif a.armed and not weapon and (name=="Light1" or name=="Light2" or name=="Light3" or name=="Heavy") then
   spec.range=(spec.range or 5)+.6;spec.contact=(spec.contact or 3.2)+.4
   spec.damageScale=(spec.damageScale or 1)*1.1;spec.kind="slash"
  end
