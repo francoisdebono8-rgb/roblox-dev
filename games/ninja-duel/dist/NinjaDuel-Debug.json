@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "5942a921443c234cdead43474bb5285400f1c127a5a081a779b780ec051e64e6",
+  "sha256": "f6fcb97c1b8016f0affcf25e8ca858663e89b91e4f451f4af0e7f3d31dd60a27",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "5fc9c846a732817eaaaa591149134f8bf9d9d765c6cdd6bc801ee5f66c2f3350",
@@ -103,8 +103,8 @@
     "src/Server/Families.luau": "4a16af8ba0eaa5c887dc54293f6f5914561f254affb29e04a0b24945935bdb20",
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
-    "src/Server/LookMeshData.luau": "6d6cb4ed5f0bb70375deb48f965be5bcd2cc25088911fca40cb05df4e7f4b1f9",
-    "src/Server/LookMeshes.luau": "8e0c5e602b531f35768ae6841c4c8e9bf14b83c7f1be604a08cceb3b9a532a6f",
+    "src/Server/LookMeshData.luau": "fe54c601b6c04737305f23b681ea6d89173543b14c1208fbe23ec3a1138bac66",
+    "src/Server/LookMeshes.luau": "9a976884492452b7b8560b8daf54fb996961e846c0b408348aca073d0ebc22ba",
     "src/Server/Looks.luau": "b7c970f706e8702e3eb37098164372069ce68b3ffb1fe43d3e18f275a84fef7f",
     "src/Server/Main.server.luau": "c0a6b8f143eed1b7770b0b98924e86ec6d34ab6ae397385b74bf4c084935bd2d",
     "src/Server/Matches.luau": "1c087256ca0a562758f84be5a0297f726725a4cbddbd8768c513b711dc1609cf",
@@ -136,7 +136,7 @@
     "src/Shared/Config.luau": "9ac6b5fa475291fcb3f76253edeeb90fb7bdb6a47c40e612d48ce4728a78ff8e",
     "src/Shared/Controls.luau": "19b4eb1ecd0545a432f93f975e3b1c22946b763c121cb5da65cbdc1df3229485",
     "src/Shared/DevMetrics.luau": "011735bb738b123e7d097faf408bd5473f57a2ea978d76303c964c473d281cea",
-    "src/Shared/Face.luau": "0e077a497b837294591f2ff71a9f1324dd1fa352b20c6992c41c8efe9a7517a0",
+    "src/Shared/Face.luau": "02badd728c546560d0075d0fd98a215972af71fdc4a593a2282425fdf76eeff5",
     "src/Shared/Fighters.luau": "035ec20b52be345f8accd016970afd1d5be628aefc03fc9a8fc335d212e421d0",
     "src/Shared/Looks.luau": "106074aabdde58618e32c356706e7fbee0726c5f045270b0c93764f8d97cc8bb",
     "src/Shared/MoveGraphs.luau": "e5c568f3b1aa2481a2330971807acf2288fefa8ec3be02f5f2d90245712860d0",
@@ -153,7 +153,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "1d46951d85aba2e07e357f762493c61481f4e5409d09dc177819720b820929c8",
+  "buildFingerprint": "1bfb928f811ace161d6fe493015df6270596c58e535bd937ca2778a3e9dddebb",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

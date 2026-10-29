@@ -16,7 +16,10 @@ def folds(amount=.006, waves=3, rate=6):
     return lambda a, y: amount * math.sin(waves * a + y * rate) + amount * .5 * math.sin(7 * a - y * 11)
 
 def head(skin):
-    finish(head_loft(H, -.95, .95, steps=24, sides=56), "Head", "Skin", skin, smooth=50)
+    # The skull stops under the hair's crown: a flat skin top level with the
+    # hair's top fought it and showed through from above (user 29/10 15:59:
+    # "Itachi devient chauve" in combat, where the camera looks down).
+    finish(head_loft(H, -.95, .86, steps=24, sides=56), "Head", "Skin", skin, smooth=50)
 
 def torso(top, bottom=None, split=.34, top_cut=None):
     """Upper torso shell; `bottom` below `split` when the chest is two colours."""
@@ -142,9 +145,16 @@ def headband(cloth, metal=(190, 198, 210), y0=BAND[0], y1=BAND[1], slashed=False
             mark.append(box(tuple(head_point(H, x, mid - .02 + x * .1, .15)), (.08, .02, .03), bevel=0))
     finish(join(mark, "mark"), "Head", "PlateMark", (110, 118, 132), smooth=20)
     if tails:
-        a, b, n = head_section(y0)
-        for s in (-1, 1):
-            finish(box((s * .16, HY + y0 - .3, b + .12), (.2, .64, .05), bevel=.02), "Head", "BandTail", cloth)
+        # The knot at the back and two tails hanging from it, fanned apart and
+        # lifted off the hair (they lay flat on it as an "II").
+        a, b, n = head_section(mid)
+        knot = (0, HY + mid, b + .13)
+        finish(box(knot, (.22, .2, .14), bevel=.04), "Head", "BandKnot", cloth, smooth=40)
+        for s, length, fan in ((-1, .62, 20), (1, .5, 30)):
+            t = box((s * .05, HY + mid - length / 2, b + .16), (.17, length, .045), bevel=.02)
+            turned(t, knot, s * fan, "Z")
+            turned(t, knot, -22, "X")
+            finish(t, "Head", "BandTail" + ("L" if s < 0 else "R"), cloth, smooth=40)
 
 def hair_cap(color, front=BAND[1], back=-.44, grow=.05):
     cap = head_loft(H, -.6, .95, grow=grow, steps=20, sides=56)
@@ -175,7 +185,7 @@ def spikes(spec, color, shade=None, flat=.42, sides=8, name="Hair"):
     if dark:
         finish(join(dark, "hs"), "Head", name + "Shade", shade, smooth=25)
 
-def fringe(locks, color, band_top=BAND[1], name="Fringe", width=.44, thick=.13):
+def fringe(locks, color, band_top=BAND[1], name="Fringe", width=.44, thick=.13, taper=.8, top=.86):
     """locks: (x at the root, x at the tip, tip height): flat locks that lie
     over the band (offset past it) down to the tip."""
     out = []
@@ -183,11 +193,11 @@ def fringe(locks, color, band_top=BAND[1], name="Fringe", width=.44, thick=.13):
         pts = []
         for k in range(9):
             t = k / 8
-            y = .86 - (.86 - y1) * t
+            y = top - (top - y1) * t
             x = x0 + (x1 - x0) * t
             off = .07 + (.1 * min(1, max(0, (band_top + .14 - y) / .14)) if band_top is not None else 0)
             pts.append(tuple(head_point(H, x, y, off)))
-        out.append(lock_path(pts, lambda p: (p[0] * .3, .25, -1), width, thick, sides=7))
+        out.append(lock_path(pts, lambda p: (p[0] * .3, .25, -1), width, thick, sides=7, taper=taper))
     finish(join(out, "f"), "Head", name, color, smooth=30)
 
 def side_locks(color, x=.92, top=.5, length=.7, z=-.25, width=.4, thick=.14, name="SideLocks", lean=0.0):
@@ -206,6 +216,17 @@ def back_mass(color, bottom=-.9, width=.95, depth=.5, z=.55, top=.4, body="Head"
         rows.append((y, width * (1 - .25 * t * t), depth * (1 - .5 * t), 2.6, z))
     rows.reverse()
     finish(loft(rows, sides=32, center=(0, HY, 0)), body, name, color, smooth=40)
+
+def turned(ob, pivot, deg, axis):
+    """Turn a piece about a Roblox axis ("X" or "Z") through `pivot`.
+    Roblox X is Blender -X, Roblox Z is Blender Y."""
+    from mathutils import Matrix
+    from nd_look import R
+    P = R(*pivot)
+    rot = Matrix.Rotation(math.radians(-deg), 4, "X") if axis == "X" else Matrix.Rotation(math.radians(deg), 4, "Y")
+    ob.data.transform(Matrix.Translation(P) @ rot @ Matrix.Translation(-P))
+    ob.data.update()
+    return ob
 
 def rotated(ob, pivot, deg):
     """Turn a piece about the Roblox Z axis (front-back) through `pivot`

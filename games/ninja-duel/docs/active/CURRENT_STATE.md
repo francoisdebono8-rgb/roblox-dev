@@ -10,7 +10,7 @@
   - `looks_to_luau.py` écrit `Server/LookMeshData` ;
   - au démarrage, `Server/LookMeshes` charge les meshes, puis habille le perso.
   - La version en pièces simples (`Server/Looks`) reste en secours.
-- **État :** Naruto est en jeu sur meshes, les 7 autres sont modélisés (rendus dans `Documents/NinjaDuelBlender/out`). Import Studio à faire.
+- **État (16 h 30) : É4 close.** Les 8 sont en jeu sur meshes Blender (8 imports Studio). Dernière retouche : nœud du bandeau à pans écartés ; épis sans la couronne autour du bandeau (sauf Sasuke inchangé) ; mèches pointues pour Minato et Gaara ; crâne arrêté sous les cheveux (le dessus de la tête ressortait vu d'en haut en combat : « Itachi devient chauve ») ; meshes en détail plein à toute distance. Yeux : la paupière couleur peau n'est pas découpée sur un visage 3D (rectangle clair au-dessus de l'œil) ; un œil plissé est maintenant un blanc plus court, sourcil posé sur le bord. Le joueur pourra plus tard jouer avec son propre skin : les persos ne sont plus la priorité.
 
 **Audit de fluidité (29/10, nuit), après les 2 combats joués par l'utilisateur** (« je pouvais plus bouger », « plein de bugs et d'incohérences ») — [rapport](../reports/fluidity-audit-2026-10-29/REPORT.md).
 - **Les causes corrigées :**

@@ -173,7 +173,7 @@ function Face.build(model,spec)
 		-- The upper lid: skin over the top of the white, lowered to narrow the
 		-- eye. It lives inside the white so it is clipped to its round shape.
 		e.lid=new("Frame",{Name="Lid",AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,0),Size=UDim2.fromScale(1.3,1),
-			BackgroundColor3=spec.skin or Color3.fromRGB(246,214,186),BorderSizePixel=0,ZIndex=2},e.white)
+			Visible=false,BackgroundColor3=spec.skin or Color3.fromRGB(246,214,186),BorderSizePixel=0,ZIndex=2},e.white)
 		-- Closed-eye strokes: a curve (blink, KO), a ^ (happy), a > (hurt).
 		e.closed={}
 		for k=1,2 do
@@ -280,31 +280,59 @@ function Face.find(model)
 	return face
 end
 
-local function eyeShape(e,eye,brow,droop)
+-- A frame's resting box, kept as attributes so a client that finds the face
+-- (Face.find) reads the built size, not the narrowed one the server set.
+local function restOf(obj)
+	local size,pos=obj:GetAttribute("RestSize"),obj:GetAttribute("RestPos")
+	if not size then
+		size,pos=obj.Size,obj.Position
+		obj:SetAttribute("RestSize",size);obj:SetAttribute("RestPos",pos)
+	end
+	return {size=size,pos=pos}
+end
+local function coverOf(eye,droop)
+	return if eye=="narrow" then .3 elseif eye=="lazy" then .5 elseif eye=="wide" then 0 else droop
+end
+local function eyeShape(e,eye,brow,droop,browEye)
 	local s=e.side
 	local white=e.white
 	if not white then return end
 	-- The white's resting box, read back from its build size.
-	e.base=e.base or {pos=white.Position,size=white.Size}
+	e.base=e.base or restOf(white)
 	local bx,by=e.base.size.X.Scale,e.base.size.Y.Scale
 	local px,py=e.base.pos.X.Scale,e.base.pos.Y.Scale
 	local open=eye=="open" or eye=="narrow" or eye=="wide" or eye=="lazy"
 	white.Visible=open
 	if e.ring then e.ring.Visible=true end
 	-- Lid: how much of the white it covers (0 open .. 1 shut), and its slant.
-	local cover=if eye=="narrow" then .38 elseif eye=="lazy" then .5 elseif eye=="wide" then 0 else droop
-	local tilt=if brow=="angry" then 14 elseif brow=="worry" then -10 else 0
+	local cover=coverOf(eye,droop)
+	local tilt=if brow=="angry" then 14 elseif brow=="worry" then -10 elseif brow=="flat" then 7 else 0
 	local height=if eye=="wide" then by*1.12 else by
-	white.Size=UDim2.fromScale(bx*(if eye=="wide" then 1.06 else 1),height)
-	white.Position=UDim2.fromScale(px,py)
-	if e.lid then
-		e.lid.Size=UDim2.fromScale(1.4,1)
-		e.lid.Position=UDim2.fromScale(.5,cover)
-		e.lid.Rotation=s*tilt
+	-- A narrowed eye is a shorter white whose top edge comes down to the lash
+	-- line (user 29/10 15:58: the skin-coloured lid drawn over the white is
+	-- not clipped on a 3D face and showed as a pale box above the eye).
+	local shown=height*(1-cover)
+	white.Size=UDim2.fromScale(bx*(if eye=="wide" then 1.06 else 1),shown)
+	white.Position=UDim2.fromScale(px,py+height*cover/2)
+	if e.lid then e.lid.Visible=false end
+	if e.ring then
+		e.ringBase=e.ringBase or restOf(e.ring).size
+		e.ring.Size=UDim2.fromScale(e.ringBase.X.Scale,e.ringBase.Y.Scale-height+shown)
+		e.ring.Position=white.Position
 	end
 	if e.iris then
-		e.iris.Size=UDim2.fromScale(e.iris.Size.X.Scale,e.iris.Size.Y.Scale)
-		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,.42) end
+		e.irisBase=e.irisBase or restOf(e.iris)
+		local ib=e.irisBase
+		-- The iris keeps its size and place on the face; the shortened white
+		-- trims its top (it slides down to sit inside).
+		local ih=ib.size.Y.Scale*height
+		local cy=py-height/2+ib.pos.Y.Scale*height
+		local top=py-height/2+height*cover
+		local h=math.min(ih,shown*.96)
+		cy=math.max(cy,top+h/2)
+		e.iris.Size=UDim2.fromScale(ib.size.X.Scale,h/math.max(shown,1e-3))
+		e.iris.Position=UDim2.fromScale(.5,(cy-top)/math.max(shown,1e-3))
+		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
 	end
 	-- Lash line rides the lid edge.
 	local top=py-height/2+height*cover
@@ -338,9 +366,12 @@ local function eyeShape(e,eye,brow,droop)
 		end
 	end
 	if e.brow then
-		local up=if brow=="up" then -.045 elseif brow=="worry" then -.03 elseif brow=="angry" then .035 elseif brow=="flat" then .02 else 0
-		local angle=if brow=="angry" then 20 elseif brow=="worry" then -16 elseif brow=="up" then -4 else -3
-		e.brow.Position=UDim2.fromScale(px+s*.012,py-by*.5-.1/EH+up)
+		local up=if brow=="up" then -.045 elseif brow=="worry" then -.03 elseif brow=="angry" then .035 elseif brow=="flat" then .015 else .012
+		local angle=if brow=="angry" then 20 elseif brow=="worry" then -16 elseif brow=="up" then -4 elseif brow=="flat" then 7 else -3
+		-- The brow sits just above the lid edge (user 29/10: no gap between
+		-- brows and narrowed eyes); a blink keeps it where the mood put it.
+		local lidTop=py-height/2+height*coverOf(browEye or eye,droop)
+		e.brow.Position=UDim2.fromScale(px+s*.012,lidTop-.1/EH+up)
 		e.brow.Rotation=s*angle
 	end
 end
@@ -372,7 +403,7 @@ function Face.set(face,name,blink)
 	if blink and (eye=="open" or eye=="narrow" or eye=="lazy" or eye=="wide") then eye="closed" end
 	local droop=(face.spec and face.spec.lids) or 0
 	if face.model then droop=face.model:GetAttribute("FaceLids") or droop end
-	for _,e in face.eyes do eyeShape(e,eye,mood.brow,droop) end
+	for _,e in face.eyes do eyeShape(e,eye,mood.brow,droop,mood.eye) end
 	mouthShape(face.mouth,mood.mouth)
 	face.current=name;face.blinking=blink
 	return face

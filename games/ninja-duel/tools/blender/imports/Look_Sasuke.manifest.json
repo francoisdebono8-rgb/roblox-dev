@@ -367,7 +367,7 @@
    "material": "SmoothPlastic",
    "reflectance": 0
   },
-  "Head__BandTail": {
+  "Head__BandKnot": {
    "body": "Head",
    "color": [
     26,

@@ -881,7 +881,7 @@ function Face.build(model,spec)
 		-- The upper lid: skin over the top of the white, lowered to narrow the
 		-- eye. It lives inside the white so it is clipped to its round shape.
 		e.lid=new("Frame",{Name="Lid",AnchorPoint=Vector2.new(.5,1),Position=UDim2.fromScale(.5,0),Size=UDim2.fromScale(1.3,1),
-			BackgroundColor3=spec.skin or Color3.fromRGB(246,214,186),BorderSizePixel=0,ZIndex=2},e.white)
+			Visible=false,BackgroundColor3=spec.skin or Color3.fromRGB(246,214,186),BorderSizePixel=0,ZIndex=2},e.white)
 		-- Closed-eye strokes: a curve (blink, KO), a ^ (happy), a &gt; (hurt).
 		e.closed={}
 		for k=1,2 do
@@ -988,31 +988,59 @@ function Face.find(model)
 	return face
 end
 
-local function eyeShape(e,eye,brow,droop)
+-- A frame's resting box, kept as attributes so a client that finds the face
+-- (Face.find) reads the built size, not the narrowed one the server set.
+local function restOf(obj)
+	local size,pos=obj:GetAttribute("RestSize"),obj:GetAttribute("RestPos")
+	if not size then
+		size,pos=obj.Size,obj.Position
+		obj:SetAttribute("RestSize",size);obj:SetAttribute("RestPos",pos)
+	end
+	return {size=size,pos=pos}
+end
+local function coverOf(eye,droop)
+	return if eye=="narrow" then .3 elseif eye=="lazy" then .5 elseif eye=="wide" then 0 else droop
+end
+local function eyeShape(e,eye,brow,droop,browEye)
 	local s=e.side
 	local white=e.white
 	if not white then return end
 	-- The white's resting box, read back from its build size.
-	e.base=e.base or {pos=white.Position,size=white.Size}
+	e.base=e.base or restOf(white)
 	local bx,by=e.base.size.X.Scale,e.base.size.Y.Scale
 	local px,py=e.base.pos.X.Scale,e.base.pos.Y.Scale
 	local open=eye=="open" or eye=="narrow" or eye=="wide" or eye=="lazy"
 	white.Visible=open
 	if e.ring then e.ring.Visible=true end
 	-- Lid: how much of the white it covers (0 open .. 1 shut), and its slant.
-	local cover=if eye=="narrow" then .38 elseif eye=="lazy" then .5 elseif eye=="wide" then 0 else droop
-	local tilt=if brow=="angry" then 14 elseif brow=="worry" then -10 else 0
+	local cover=coverOf(eye,droop)
+	local tilt=if brow=="angry" then 14 elseif brow=="worry" then -10 elseif brow=="flat" then 7 else 0
 	local height=if eye=="wide" then by*1.12 else by
-	white.Size=UDim2.fromScale(bx*(if eye=="wide" then 1.06 else 1),height)
-	white.Position=UDim2.fromScale(px,py)
-	if e.lid then
-		e.lid.Size=UDim2.fromScale(1.4,1)
-		e.lid.Position=UDim2.fromScale(.5,cover)
-		e.lid.Rotation=s*tilt
+	-- A narrowed eye is a shorter white whose top edge comes down to the lash
+	-- line (user 29/10 15:58: the skin-coloured lid drawn over the white is
+	-- not clipped on a 3D face and showed as a pale box above the eye).
+	local shown=height*(1-cover)
+	white.Size=UDim2.fromScale(bx*(if eye=="wide" then 1.06 else 1),shown)
+	white.Position=UDim2.fromScale(px,py+height*cover/2)
+	if e.lid then e.lid.Visible=false end
+	if e.ring then
+		e.ringBase=e.ringBase or restOf(e.ring).size
+		e.ring.Size=UDim2.fromScale(e.ringBase.X.Scale,e.ringBase.Y.Scale-height+shown)
+		e.ring.Position=white.Position
 	end
 	if e.iris then
-		e.iris.Size=UDim2.fromScale(e.iris.Size.X.Scale,e.iris.Size.Y.Scale)
-		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,.42) end
+		e.irisBase=e.irisBase or restOf(e.iris)
+		local ib=e.irisBase
+		-- The iris keeps its size and place on the face; the shortened white
+		-- trims its top (it slides down to sit inside).
+		local ih=ib.size.Y.Scale*height
+		local cy=py-height/2+ib.pos.Y.Scale*height
+		local top=py-height/2+height*cover
+		local h=math.min(ih,shown*.96)
+		cy=math.max(cy,top+h/2)
+		e.iris.Size=UDim2.fromScale(ib.size.X.Scale,h/math.max(shown,1e-3))
+		e.iris.Position=UDim2.fromScale(.5,(cy-top)/math.max(shown,1e-3))
+		if e.pupil then e.pupil.Size=if eye=="wide" then UDim2.fromScale(.26,.26) else UDim2.fromScale(.42,math.min(.9,.42*ih/h)) end
 	end
 	-- Lash line rides the lid edge.
 	local top=py-height/2+height*cover
@@ -1046,9 +1074,12 @@ local function eyeShape(e,eye,brow,droop)
 		end
 	end
 	if e.brow then
-		local up=if brow=="up" then -.045 elseif brow=="worry" then -.03 elseif brow=="angry" then .035 elseif brow=="flat" then .02 else 0
-		local angle=if brow=="angry" then 20 elseif brow=="worry" then -16 elseif brow=="up" then -4 else -3
-		e.brow.Position=UDim2.fromScale(px+s*.012,py-by*.5-.1/EH+up)
+		local up=if brow=="up" then -.045 elseif brow=="worry" then -.03 elseif brow=="angry" then .035 elseif brow=="flat" then .015 else .012
+		local angle=if brow=="angry" then 20 elseif brow=="worry" then -16 elseif brow=="up" then -4 elseif brow=="flat" then 7 else -3
+		-- The brow sits just above the lid edge (user 29/10: no gap between
+		-- brows and narrowed eyes); a blink keeps it where the mood put it.
+		local lidTop=py-height/2+height*coverOf(browEye or eye,droop)
+		e.brow.Position=UDim2.fromScale(px+s*.012,lidTop-.1/EH+up)
 		e.brow.Rotation=s*angle
 	end
 end
@@ -1080,7 +1111,7 @@ function Face.set(face,name,blink)
 	if blink and (eye=="open" or eye=="narrow" or eye=="lazy" or eye=="wide") then eye="closed" end
 	local droop=(face.spec and face.spec.lids) or 0
 	if face.model then droop=face.model:GetAttribute("FaceLids") or droop end
-	for _,e in face.eyes do eyeShape(e,eye,mood.brow,droop) end
+	for _,e in face.eyes do eyeShape(e,eye,mood.brow,droop,mood.eye) end
 	mouthShape(face.mouth,mood.mouth)
 	face.current=name;face.blinking=blink
 	return face
@@ -3916,7 +3947,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d9433c2096ea180e2196203446f4b566380a284bbd7c86d43703c0d1ffcaeeaa</string>
+          <string name="Value">b46f7b84a63a79e8e6fe4dde4e2a89a70fcc48fdcc53553a26b05fc570d683a8</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -13155,34 +13186,34 @@ return Legion
 -- tools/blender/look_*.py. Do not edit by hand: re-run the script.
 return {
 	["Gaara"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
-		{name="Head__Fringe",body="Head",mesh="rbxassetid://72294023225896",offset=Vector3.new(0.0817,0.6018,0.2081),size=Vector3.new(2.3367,2.016,2.3374),color=Color3.fromRGB(190,52,40),material="SmoothPlastic",reflectance=0},
-		{name="Head__HairShade",body="Head",mesh="rbxassetid://91110346885713",offset=Vector3.new(-0.3033,0.94,0.0314),size=Vector3.new(1.8651,1.1169,1.5613),color=Color3.fromRGB(150,36,30),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://78839164354880",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
+		{name="Head__Fringe",body="Head",mesh="rbxassetid://118884056085296",offset=Vector3.new(0.0511,0.5392,0.1246),size=Vector3.new(2.1023,1.8907,2.1513),color=Color3.fromRGB(190,52,40),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairShade",body="Head",mesh="rbxassetid://130341473962458",offset=Vector3.new(-0.2149,0.8968,0.027),size=Vector3.new(1.7353,0.9895,1.4397),color=Color3.fromRGB(150,36,30),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://123370620912339",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://136521133946244",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Cuff",body="LeftLowerArm",mesh="rbxassetid://72695811598473",offset=Vector3.new(-0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(92,32,34),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://126419200076596",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(110,104,104),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://77416524230897",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,220,206),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://139093998199954",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,220,206),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://75504691590833",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(110,104,104),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__CoatHem",body="LowerTorso",mesh="rbxassetid://114296777159302",offset=Vector3.new(-0,-0.445,-0),size=Vector3.new(2,1.73,1.28),color=Color3.fromRGB(92,32,34),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__CoatSkirt",body="LowerTorso",mesh="rbxassetid://72029678351798",offset=Vector3.new(-0.0051,-0.34,0.0007),size=Vector3.new(1.96,1.92,1.2506),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://110748485709267",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://109031964259040",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,228,212),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Cuff",body="RightLowerArm",mesh="rbxassetid://95297937156650",offset=Vector3.new(0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(92,32,34),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://123361747437849",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(52,44,44),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://79184593768874",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(110,104,104),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://129218302361001",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,220,206),material="SmoothPlastic",reflectance=0},
-		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://75177144628111",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://72697606020421",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,220,206),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://86121769476143",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperLeg__Thigh",body="RightUpperLeg",mesh="rbxassetid://90152206521093",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(110,104,104),material="SmoothPlastic",reflectance=0},
-		{name="UpperTorso__Chest",body="UpperTorso",mesh="rbxassetid://140310490426239",offset=Vector3.new(0.0044,0.065,-0.0015),size=Vector3.new(1.7653,1.45,0.9935),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Chest",body="UpperTorso",mesh="rbxassetid://75713401293289",offset=Vector3.new(0.0044,0.065,-0.0015),size=Vector3.new(1.7653,1.45,0.9935),color=Color3.fromRGB(122,46,44),material="SmoothPlastic",reflectance=0},
 		{name="UpperTorso__Clasp",body="UpperTorso",mesh="rbxassetid://88367001306487",offset=Vector3.new(0.25,0.3,-0.54),size=Vector3.new(0.28,0.28,0.06),color=Color3.fromRGB(180,186,196),material="SmoothPlastic",reflectance=0.1},
 		{name="UpperTorso__Collar",body="UpperTorso",mesh="rbxassetid://128128607392242",offset=Vector3.new(-0,0.76,0),size=Vector3.new(1.52,0.3,1.32),color=Color3.fromRGB(92,32,34),material="SmoothPlastic",reflectance=0},
 		{name="UpperTorso__Gourd",body="UpperTorso",mesh="rbxassetid://89353616751637",offset=Vector3.new(0.05,0.015,1.2),size=Vector3.new(1.84,2.73,1.5088),color=Color3.fromRGB(214,170,110),material="SmoothPlastic",reflectance=0},
@@ -13192,19 +13223,19 @@ return {
 	}},
 	["Itachi"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
 		{name="Head__BackHair",body="Head",mesh="rbxassetid://89795282196150",offset=Vector3.new(-0,-0.825,0.0547),size=Vector3.new(2.0665,3.55,2.0538),color=Color3.fromRGB(24,24,32),material="SmoothPlastic",reflectance=0},
-		{name="Head__BandTail",body="Head",mesh="rbxassetid://124573481738903",offset=Vector3.new(-0,0.23,0.0225),size=Vector3.new(1.9611,0.86,1.9359),color=Color3.fromRGB(36,42,62),material="SmoothPlastic",reflectance=0},
+		{name="Head__BandKnot",body="Head",mesh="rbxassetid://117698284609690",offset=Vector3.new(-0,0.3324,0.1408),size=Vector3.new(1.9611,0.6553,2.1724),color=Color3.fromRGB(36,42,62),material="SmoothPlastic",reflectance=0},
 		{name="Head__HairTie",body="Head",mesh="rbxassetid://115550597220440",offset=Vector3.new(-0,-0.7,0.85),size=Vector3.new(0.46,0.1,0.4),color=Color3.fromRGB(70,30,40),material="SmoothPlastic",reflectance=0},
-		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://125794037717867",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
-		{name="Head__PlateMark",body="Head",mesh="rbxassetid://77911075265066",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://140003218593338",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
+		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://73724204771070",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
+		{name="Head__PlateMark",body="Head",mesh="rbxassetid://89200472902562",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://139710967618203",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://105923353037428",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Guard",body="LeftLowerArm",mesh="rbxassetid://134891136314144",offset=Vector3.new(-0,-0.05,0),size=Vector3.new(0.79,0.9,0.77),color=Color3.fromRGB(30,30,42),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__GuardPlate",body="LeftLowerArm",mesh="rbxassetid://121542609609923",offset=Vector3.new(-0.45,-0.05,0),size=Vector3.new(0.08,0.81,0.46),color=Color3.fromRGB(186,184,204),material="SmoothPlastic",reflectance=0.08},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://124937698131611",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://96485689404329",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(48,48,62),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://139093998199954",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,224,232),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Arm",body="LeftUpperArm",mesh="rbxassetid://101316440785196",offset=Vector3.new(-0,-0.375,0),size=Vector3.new(0.72,0.57,0.68),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
@@ -13212,14 +13243,14 @@ return {
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://130070541230258",offset=Vector3.new(0,0.01,-0.009),size=Vector3.new(0.92,1.34,0.9),color=Color3.fromRGB(48,48,62),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__ArmorBand",body="LowerTorso",mesh="rbxassetid://117736939092129",offset=Vector3.new(-0,0.25,0),size=Vector3.new(1.86,0.4,1.14),color=Color3.fromRGB(186,184,204),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(32,32,44),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://88142561693017",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://133939234664420",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Guard",body="RightLowerArm",mesh="rbxassetid://81507717231336",offset=Vector3.new(0,-0.05,0),size=Vector3.new(0.79,0.9,0.77),color=Color3.fromRGB(30,30,42),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__GuardPlate",body="RightLowerArm",mesh="rbxassetid://97770221957007",offset=Vector3.new(0.45,-0.05,0),size=Vector3.new(0.08,0.81,0.46),color=Color3.fromRGB(186,184,204),material="SmoothPlastic",reflectance=0.08},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://109374630967396",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,34,46),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://105960649784280",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(48,48,62),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://72697606020421",offset=Vector3.new(0,-0.3,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(226,224,232),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperArm__Arm",body="RightUpperArm",mesh="rbxassetid://114078460717984",offset=Vector3.new(0,-0.375,0),size=Vector3.new(0.72,0.57,0.68),color=Color3.fromRGB(248,224,204),material="SmoothPlastic",reflectance=0},
@@ -13235,34 +13266,34 @@ return {
 		{name="UpperTorso__SheathedWrap",body="UpperTorso",mesh="rbxassetid://124811976162010",offset=Vector3.new(0.7819,1.32,0.62),size=Vector3.new(0.4114,0.5162,0.17),color=Color3.fromRGB(28,28,36),material="SmoothPlastic",reflectance=0},
 	}},
 	["Kakashi"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
-		{name="Head__BandTail",body="Head",mesh="rbxassetid://136131152647227",offset=Vector3.new(-0,0.23,0.0225),size=Vector3.new(1.9611,0.86,1.9359),color=Color3.fromRGB(30,36,56),material="SmoothPlastic",reflectance=0},
-		{name="Head__Bangs",body="Head",mesh="rbxassetid://111937687305233",offset=Vector3.new(-0.3361,0.8032,0.0902),size=Vector3.new(2.6894,2.6106,2.1256),color=Color3.fromRGB(214,220,230),material="SmoothPlastic",reflectance=0},
-		{name="Head__HairShade",body="Head",mesh="rbxassetid://123924245338361",offset=Vector3.new(-0.2518,1.123,0.0877),size=Vector3.new(2.4211,1.2731,1.6782),color=Color3.fromRGB(170,178,194),material="SmoothPlastic",reflectance=0},
-		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://72749115173632",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
+		{name="Head__BandKnot",body="Head",mesh="rbxassetid://82334456661822",offset=Vector3.new(-0,0.3324,0.1408),size=Vector3.new(1.9611,0.6553,2.1724),color=Color3.fromRGB(30,36,56),material="SmoothPlastic",reflectance=0},
+		{name="Head__Bangs",body="Head",mesh="rbxassetid://123003561987262",offset=Vector3.new(-0.3361,0.8032,0.0902),size=Vector3.new(2.6894,2.6106,2.1256),color=Color3.fromRGB(214,220,230),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairShade",body="Head",mesh="rbxassetid://128203402176550",offset=Vector3.new(-0.2518,1.1379,0.0877),size=Vector3.new(2.4211,1.2435,1.6782),color=Color3.fromRGB(170,178,194),material="SmoothPlastic",reflectance=0},
+		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://73724204771070",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
 		{name="Head__Mask",body="Head",mesh="rbxassetid://84435998897312",offset=Vector3.new(-0,-0.605,0),size=Vector3.new(1.8509,0.73,1.7731),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
-		{name="Head__PlateMark",body="Head",mesh="rbxassetid://78858554792469",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://100420012219396",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
+		{name="Head__PlateMark",body="Head",mesh="rbxassetid://89200472902562",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://115420510453782",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://108097249303895",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Guard",body="LeftLowerArm",mesh="rbxassetid://109780391915064",offset=Vector3.new(-0,-0.08,0),size=Vector3.new(0.79,0.76,0.77),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__GuardPlate",body="LeftLowerArm",mesh="rbxassetid://136064477674891",offset=Vector3.new(-0.45,-0.08,0),size=Vector3.new(0.08,0.684,0.46),color=Color3.fromRGB(176,182,196),material="SmoothPlastic",reflectance=0.08},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://131020584533617",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://107044604650243",offset=Vector3.new(0,-0.32,-0),size=Vector3.new(0.92,0.3,0.9),color=Color3.fromRGB(206,196,170),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Shoulder",body="LeftUpperArm",mesh="rbxassetid://73796391593062",offset=Vector3.new(-0,0.45,0),size=Vector3.new(0.8,0.5,0.76),color=Color3.fromRGB(176,182,196),material="SmoothPlastic",reflectance=0},
-		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://81050862349434",offset=Vector3.new(-0.0004,-0.23,0.0015),size=Vector3.new(0.7933,0.86,0.74),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://71897226582543",offset=Vector3.new(-0.0004,-0.23,0.0015),size=Vector3.new(0.7933,0.86,0.74),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Belt",body="LowerTorso",mesh="rbxassetid://131126767680509",offset=Vector3.new(-0,0.32,0),size=Vector3.new(1.76,0.22,1.04),color=Color3.fromRGB(206,190,150),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Buckle",body="LowerTorso",mesh="rbxassetid://84688694171002",offset=Vector3.new(-0,0.32,-0.55),size=Vector3.new(0.32,0.24,0.06),color=Color3.fromRGB(176,182,196),material="SmoothPlastic",reflectance=0.08},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Pouch",body="LowerTorso",mesh="rbxassetid://126909062059564",offset=Vector3.new(-0,0.1,0.55),size=Vector3.new(0.6,0.32,0.22),color=Color3.fromRGB(96,62,42),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://99523896234002",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://83861988822211",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(30,32,42),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Guard",body="RightLowerArm",mesh="rbxassetid://114727566408040",offset=Vector3.new(0,-0.08,0),size=Vector3.new(0.79,0.76,0.77),color=Color3.fromRGB(20,22,30),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__GuardPlate",body="RightLowerArm",mesh="rbxassetid://112432655069269",offset=Vector3.new(0.45,-0.08,0),size=Vector3.new(0.08,0.684,0.46),color=Color3.fromRGB(176,182,196),material="SmoothPlastic",reflectance=0.08},
@@ -13285,55 +13316,55 @@ return {
 	["Rock Lee"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
 		{name="Head__BackHair",body="Head",mesh="rbxassetid://126497282866716",offset=Vector3.new(-0,0.225,0),size=Vector3.new(1.96,1.45,1.88),color=Color3.fromRGB(16,16,22),material="SmoothPlastic",reflectance=0.04},
 		{name="Head__Sideburn",body="Head",mesh="rbxassetid://109060475320011",offset=Vector3.new(-0,0.08,-0.3),size=Vector3.new(1.92,0.36,0.3),color=Color3.fromRGB(16,16,22),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(252,222,192),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90514425098640",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://113519419454223",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(252,222,192),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,222,192),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://101614399066186",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://80529271215880",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://107140112842548",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(250,134,40),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://96485689404329",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(250,134,40),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://119911981654835",offset=Vector3.new(0,0.44,-0),size=Vector3.new(1,0.22,0.98),color=Color3.fromRGB(230,110,30),material="SmoothPlastic",reflectance=0},
-		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://136598177123607",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
-		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://101741548056335",offset=Vector3.new(0,0.01,-0.009),size=Vector3.new(0.92,1.34,0.9),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://75504691590833",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://130070541230258",offset=Vector3.new(0,0.01,-0.009),size=Vector3.new(0.92,1.34,0.9),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Belt",body="LowerTorso",mesh="rbxassetid://119887834547305",offset=Vector3.new(-0,0.3,0),size=Vector3.new(1.76,0.26,1.04),color=Color3.fromRGB(190,40,40),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__BeltPlate",body="LowerTorso",mesh="rbxassetid://99058827968547",offset=Vector3.new(-0,0.3,-0.55),size=Vector3.new(0.5,0.3,0.05),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://125037257214973",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,222,192),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://139679350118116",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(244,240,228),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://86024394178824",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://84430079773702",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(250,134,40),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(40,46,66),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://105960649784280",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.92,1.18,0.9),color=Color3.fromRGB(250,134,40),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://127364995750738",offset=Vector3.new(0,0.44,-0),size=Vector3.new(1,0.22,0.98),color=Color3.fromRGB(230,110,30),material="SmoothPlastic",reflectance=0},
-		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://82494672777746",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
-		{name="RightUpperLeg__Thigh",body="RightUpperLeg",mesh="rbxassetid://132228791990342",offset=Vector3.new(0,0.01,-0.009),size=Vector3.new(0.92,1.34,0.9),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
-		{name="UpperTorso__Chest",body="UpperTorso",mesh="rbxassetid://80509961813145",offset=Vector3.new(0.0044,0.065,-0.0015),size=Vector3.new(1.7653,1.45,0.9935),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://86121769476143",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperLeg__Thigh",body="RightUpperLeg",mesh="rbxassetid://133100343243142",offset=Vector3.new(0,0.01,-0.009),size=Vector3.new(0.92,1.34,0.9),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
+		{name="UpperTorso__Chest",body="UpperTorso",mesh="rbxassetid://75713401293289",offset=Vector3.new(0.0044,0.065,-0.0015),size=Vector3.new(1.7653,1.45,0.9935),color=Color3.fromRGB(56,170,74),material="SmoothPlastic",reflectance=0},
 		{name="UpperTorso__Collar",body="UpperTorso",mesh="rbxassetid://83426692900263",offset=Vector3.new(-0,0.0875,0),size=Vector3.new(1.44,1.525,1.24),color=Color3.fromRGB(40,132,58),material="SmoothPlastic",reflectance=0},
 	}},
 	["Minato"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
-		{name="Head__Fringe",body="Head",mesh="rbxassetid://99907695858479",offset=Vector3.new(-0.0641,0.5631,0.3291),size=Vector3.new(2.6539,2.5262,2.5533),color=Color3.fromRGB(255,218,80),material="SmoothPlastic",reflectance=0},
-		{name="Head__HairShade",body="Head",mesh="rbxassetid://90538421235711",offset=Vector3.new(0.0641,0.9788,0.2749),size=Vector3.new(2.6539,1.5645,2.0989),color=Color3.fromRGB(236,182,44),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://123890416749988",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
+		{name="Head__Fringe",body="Head",mesh="rbxassetid://137227495827058",offset=Vector3.new(-0.0641,0.5631,0.3233),size=Vector3.new(2.6539,2.5262,2.5649),color=Color3.fromRGB(255,218,80),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairShade",body="Head",mesh="rbxassetid://87368336890295",offset=Vector3.new(0.0641,0.9788,0.2749),size=Vector3.new(2.6539,1.5645,2.0989),color=Color3.fromRGB(236,182,44),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://123370620912339",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://106181946302766",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Cuff",body="LeftLowerArm",mesh="rbxassetid://128528900776178",offset=Vector3.new(-0,-0,-0),size=Vector3.new(0.8,1.05,0.78),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://109644804868860",offset=Vector3.new(0,0,-0),size=Vector3.new(0.94,1.1,0.92),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Piping",body="LeftUpperArm",mesh="rbxassetid://125087272299967",offset=Vector3.new(-0.39,0,0),size=Vector3.new(0.035,1.2,0.12),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
-		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://133177020159820",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
+		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://75504691590833",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.7956,1.36,0.7644),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperLeg__Piping",body="LeftUpperLeg",mesh="rbxassetid://102357508984746",offset=Vector3.new(-0.445,-0,-0),size=Vector3.new(0.035,1.3,0.12),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__HemBand",body="LowerTorso",mesh="rbxassetid://74937836218761",offset=Vector3.new(-0,0.42,0),size=Vector3.new(1.74,0.22,1.02),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://137047560711484",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://105264353601200",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,224,196),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Cuff",body="RightLowerArm",mesh="rbxassetid://119292102048361",offset=Vector3.new(0,-0,-0),size=Vector3.new(0.8,1.05,0.78),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(236,238,242),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://125922396407165",offset=Vector3.new(0,0,-0),size=Vector3.new(0.94,1.1,0.92),color=Color3.fromRGB(36,48,96),material="SmoothPlastic",reflectance=0},
@@ -13348,19 +13379,19 @@ return {
 		{name="UpperTorso__Zip",body="UpperTorso",mesh="rbxassetid://136534792629389",offset=Vector3.new(-0,-0.08,-0.5),size=Vector3.new(0.05,1.25,0.03),color=Color3.fromRGB(170,176,190),material="SmoothPlastic",reflectance=0},
 	}},
 	["Naruto"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
-		{name="Head__BandTail",body="Head",mesh="rbxassetid://136280989108523",offset=Vector3.new(-0,0.23,0.0225),size=Vector3.new(1.9611,0.86,1.9359),color=Color3.fromRGB(40,70,160),material="SmoothPlastic",reflectance=0},
-		{name="Head__Bangs",body="Head",mesh="rbxassetid://104709488939362",offset=Vector3.new(-0.0641,0.662,0.3107),size=Vector3.new(2.6539,2.3283,2.59),color=Color3.fromRGB(255,210,60),material="SmoothPlastic",reflectance=0},
-		{name="Head__HairShade",body="Head",mesh="rbxassetid://80382951281911",offset=Vector3.new(0.0641,0.9788,0.2288),size=Vector3.new(2.6539,1.5645,2.1911),color=Color3.fromRGB(232,166,30),material="SmoothPlastic",reflectance=0},
-		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://114579167095245",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
-		{name="Head__PlateMark",body="Head",mesh="rbxassetid://95112436132021",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://89025667286275",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="Head__BandKnot",body="Head",mesh="rbxassetid://84657895994978",offset=Vector3.new(-0,0.3324,0.1408),size=Vector3.new(1.9611,0.6553,2.1724),color=Color3.fromRGB(40,70,160),material="SmoothPlastic",reflectance=0},
+		{name="Head__Bangs",body="Head",mesh="rbxassetid://104593197684195",offset=Vector3.new(-0.0641,0.662,0.3107),size=Vector3.new(2.6539,2.3283,2.59),color=Color3.fromRGB(255,210,60),material="SmoothPlastic",reflectance=0},
+		{name="Head__HairShade",body="Head",mesh="rbxassetid://87368336890295",offset=Vector3.new(0.0641,0.9788,0.2749),size=Vector3.new(2.6539,1.5645,2.0989),color=Color3.fromRGB(232,166,30),material="SmoothPlastic",reflectance=0},
+		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://73724204771070",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
+		{name="Head__PlateMark",body="Head",mesh="rbxassetid://89200472902562",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://123613746292144",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://76540166369267",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Cuff",body="LeftLowerArm",mesh="rbxassetid://72695811598473",offset=Vector3.new(-0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://78797544708801",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Cuff",body="LeftLowerLeg",mesh="rbxassetid://129000713226482",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.94,0.26,0.92),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Shoulder",body="LeftUpperArm",mesh="rbxassetid://73796391593062",offset=Vector3.new(-0,0.45,0),size=Vector3.new(0.8,0.5,0.76),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
@@ -13368,17 +13399,17 @@ return {
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://136784710337797",offset=Vector3.new(0.0015,0,-0.0024),size=Vector3.new(1.7278,1.24,1.008),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Pouch",body="LowerTorso",mesh="rbxassetid://112355640287662",offset=Vector3.new(-0,0.02,0.54),size=Vector3.new(0.6,0.34,0.2),color=Color3.fromRGB(84,74,66),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://87179616759933",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://128877352383965",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,220,186),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Cuff",body="RightLowerArm",mesh="rbxassetid://95297937156650",offset=Vector3.new(0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://70868772695545",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Cuff",body="RightLowerLeg",mesh="rbxassetid://96896292687543",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.94,0.26,0.92),color=Color3.fromRGB(214,92,18),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://79184593768874",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperArm__Shoulder",body="RightUpperArm",mesh="rbxassetid://123924230015346",offset=Vector3.new(0,0.45,0),size=Vector3.new(0.8,0.5,0.76),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
-		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://130611626546419",offset=Vector3.new(-0.0004,-0.23,0.0015),size=Vector3.new(0.7933,0.86,0.74),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
+		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://72760059111869",offset=Vector3.new(-0.0004,-0.23,0.0015),size=Vector3.new(0.7933,0.86,0.74),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperLeg__Holster",body="RightUpperLeg",mesh="rbxassetid://140361089969257",offset=Vector3.new(0.5,-0.05,-0),size=Vector3.new(0.18,0.46,0.42),color=Color3.fromRGB(34,48,104),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperLeg__Thigh",body="RightUpperLeg",mesh="rbxassetid://90152206521093",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(250,128,30),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperLeg__Wrap",body="RightUpperLeg",mesh="rbxassetid://121365983115647",offset=Vector3.new(0,-0.02,-0),size=Vector3.new(0.96,0.36,0.94),color=Color3.fromRGB(246,244,236),material="SmoothPlastic",reflectance=0},
@@ -13390,30 +13421,30 @@ return {
 	}},
 	["Neji"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
 		{name="Head__BackHair",body="Head",mesh="rbxassetid://107660816815021",offset=Vector3.new(-0,-1.025,0.0077),size=Vector3.new(2.0477,3.95,1.9583),color=Color3.fromRGB(70,46,36),material="SmoothPlastic",reflectance=0},
-		{name="Head__BandTail",body="Head",mesh="rbxassetid://93806752646083",offset=Vector3.new(-0,0.23,0.0225),size=Vector3.new(1.9611,0.86,1.9359),color=Color3.fromRGB(42,42,54),material="SmoothPlastic",reflectance=0},
+		{name="Head__BandKnot",body="Head",mesh="rbxassetid://91394099068209",offset=Vector3.new(-0,0.3324,0.1408),size=Vector3.new(1.9611,0.6553,2.1724),color=Color3.fromRGB(42,42,54),material="SmoothPlastic",reflectance=0},
 		{name="Head__HairTie",body="Head",mesh="rbxassetid://125215224908423",offset=Vector3.new(-0,-2.55,0.63),size=Vector3.new(0.56,0.12,0.32),color=Color3.fromRGB(240,236,226),material="SmoothPlastic",reflectance=0},
-		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://88284773432433",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
-		{name="Head__PlateMark",body="Head",mesh="rbxassetid://92150065171837",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
-		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://130066881812091",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
+		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://73724204771070",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
+		{name="Head__PlateMark",body="Head",mesh="rbxassetid://89200472902562",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://101529953278038",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
+		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
-		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://90859077729414",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
+		{name="LeftHand__Fist",body="LeftHand",mesh="rbxassetid://75573010813458",offset=Vector3.new(-0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Cuff",body="LeftLowerArm",mesh="rbxassetid://72695811598473",offset=Vector3.new(-0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(204,196,180),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerArm__Forearm",body="LeftLowerArm",mesh="rbxassetid://114668390279396",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(236,230,216),material="SmoothPlastic",reflectance=0},
-		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://103136750630078",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
+		{name="LeftLowerLeg__AnkleStrap",body="LeftLowerLeg",mesh="rbxassetid://101648578885471",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Shin",body="LeftLowerLeg",mesh="rbxassetid://102009746839524",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
 		{name="LeftLowerLeg__Wrap",body="LeftLowerLeg",mesh="rbxassetid://78358761594768",offset=Vector3.new(0,0.1,-0),size=Vector3.new(0.92,0.7,0.9),color=Color3.fromRGB(246,244,238),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperArm__Sleeve",body="LeftUpperArm",mesh="rbxassetid://110983677924477",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.8556,1.36,0.8244),color=Color3.fromRGB(236,230,216),material="SmoothPlastic",reflectance=0},
 		{name="LeftUpperLeg__Thigh",body="LeftUpperLeg",mesh="rbxassetid://115187077232187",offset=Vector3.new(0,0.01,0.0022),size=Vector3.new(0.9,1.34,0.8625),color=Color3.fromRGB(64,58,62),material="SmoothPlastic",reflectance=0},
 		{name="LowerTorso__Hips",body="LowerTorso",mesh="rbxassetid://101783759000407",offset=Vector3.new(0.0028,-0.065,0.0017),size=Vector3.new(1.8146,1.37,1.0557),color=Color3.fromRGB(236,230,216),material="SmoothPlastic",reflectance=0},
-		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://111433898113815",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
+		{name="RightFoot__Heel",body="RightFoot",mesh="rbxassetid://80118597085961",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Sole",body="RightFoot",mesh="rbxassetid://105409213787688",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
-		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://80643749307068",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
+		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Cuff",body="RightLowerArm",mesh="rbxassetid://95297937156650",offset=Vector3.new(0,-0.4,-0),size=Vector3.new(0.8,0.2,0.78),color=Color3.fromRGB(204,196,180),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(236,230,216),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://118494156140734",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(50,46,58),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://79184593768874",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(252,228,206),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://121098044215536",offset=Vector3.new(0,0.1,-0),size=Vector3.new(0.92,0.7,0.9),color=Color3.fromRGB(246,244,238),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperArm__Sleeve",body="RightUpperArm",mesh="rbxassetid://82414707389204",offset=Vector3.new(0.0024,0.02,-0.0006),size=Vector3.new(0.8556,1.36,0.8244),color=Color3.fromRGB(236,230,216),material="SmoothPlastic",reflectance=0},
@@ -13424,12 +13455,12 @@ return {
 		{name="UpperTorso__Fold",body="UpperTorso",mesh="rbxassetid://127272452788183",offset=Vector3.new(-0.16,-0.05,-0.5),size=Vector3.new(0.05,1.1,0.03),color=Color3.fromRGB(204,196,180),material="SmoothPlastic",reflectance=0},
 	}},
 	["Sasuke"]={hide={"Head","UpperTorso","LowerTorso","LeftUpperArm","RightUpperArm","LeftLowerArm","RightLowerArm","LeftHand","RightHand","LeftUpperLeg","RightUpperLeg","LeftLowerLeg","RightLowerLeg","LeftFoot","RightFoot"},pieces={
-		{name="Head__BandTail",body="Head",mesh="rbxassetid://72207601508515",offset=Vector3.new(-0,0.23,0.0225),size=Vector3.new(1.9611,0.86,1.9359),color=Color3.fromRGB(26,32,70),material="SmoothPlastic",reflectance=0},
+		{name="Head__BandKnot",body="Head",mesh="rbxassetid://112141724458743",offset=Vector3.new(-0,0.3324,0.1408),size=Vector3.new(1.9611,0.6553,2.1724),color=Color3.fromRGB(26,32,70),material="SmoothPlastic",reflectance=0},
 		{name="Head__Bangs",body="Head",mesh="rbxassetid://97636351813990",offset=Vector3.new(-0,0.62,0.2852),size=Vector3.new(2.4195,2.2441,2.5153),color=Color3.fromRGB(30,34,56),material="SmoothPlastic",reflectance=0},
 		{name="Head__HairShade",body="Head",mesh="rbxassetid://112505382382044",offset=Vector3.new(-0.0289,1.0944,0.2627),size=Vector3.new(1.1921,1.1434,1.5286),color=Color3.fromRGB(50,58,92),material="SmoothPlastic",reflectance=0},
 		{name="Head__HeadbandPlate",body="Head",mesh="rbxassetid://73724204771070",offset=Vector3.new(-0,0.54,-0.944),size=Vector3.new(0.68,0.2,0.0894),color=Color3.fromRGB(190,198,210),material="SmoothPlastic",reflectance=0.12},
 		{name="Head__PlateMark",body="Head",mesh="rbxassetid://89200472902562",offset=Vector3.new(0.03,0.54,-0.9786),size=Vector3.new(0.23,0.1665,0.0448),color=Color3.fromRGB(110,118,132),material="SmoothPlastic",reflectance=0},
-		{name="Head__Skin",body="Head",mesh="rbxassetid://127659344067630",offset=Vector3.new(-0,0,0),size=Vector3.new(1.8,1.9,1.72),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
+		{name="Head__Skin",body="Head",mesh="rbxassetid://123370620912339",offset=Vector3.new(-0,-0.045,0),size=Vector3.new(1.8,1.81,1.72),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Heel",body="LeftFoot",mesh="rbxassetid://90494648962885",offset=Vector3.new(0,0.035,0.105),size=Vector3.new(0.8,0.37,0.95),color=Color3.fromRGB(26,32,70),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Sole",body="LeftFoot",mesh="rbxassetid://87146271240363",offset=Vector3.new(0,-0.2,-0.02),size=Vector3.new(0.78,0.1,1.18),color=Color3.fromRGB(60,48,44),material="SmoothPlastic",reflectance=0},
 		{name="LeftFoot__Toes",body="LeftFoot",mesh="rbxassetid://100768542029528",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
@@ -13447,7 +13478,7 @@ return {
 		{name="RightFoot__Toes",body="RightFoot",mesh="rbxassetid://120506006522238",offset=Vector3.new(0,-0.1,-0.44),size=Vector3.new(0.62,0.2,0.34),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="RightHand__Fist",body="RightHand",mesh="rbxassetid://74211298474882",offset=Vector3.new(0.005,0,-0.0475),size=Vector3.new(0.49,0.58,0.575),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerArm__Forearm",body="RightLowerArm",mesh="rbxassetid://74395359532936",offset=Vector3.new(-0.0016,0.05,-0.0011),size=Vector3.new(0.69,1.1,0.674),color=Color3.fromRGB(214,214,224),material="SmoothPlastic",reflectance=0},
-		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://135783272452930",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(26,32,70),material="SmoothPlastic",reflectance=0},
+		{name="RightLowerLeg__AnkleStrap",body="RightLowerLeg",mesh="rbxassetid://79018734192940",offset=Vector3.new(0,-0.42,-0),size=Vector3.new(0.88,0.16,0.86),color=Color3.fromRGB(26,32,70),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Shin",body="RightLowerLeg",mesh="rbxassetid://79184593768874",offset=Vector3.new(0.0053,0.03,-0.0049),size=Vector3.new(0.86,1.18,0.84),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
 		{name="RightLowerLeg__Wrap",body="RightLowerLeg",mesh="rbxassetid://140226564280294",offset=Vector3.new(0,0.18,-0),size=Vector3.new(0.92,0.56,0.9),color=Color3.fromRGB(238,236,230),material="SmoothPlastic",reflectance=0},
 		{name="RightUpperArm__Arm",body="RightUpperArm",mesh="rbxassetid://110444007451726",offset=Vector3.new(0,-0.325,0),size=Vector3.new(0.72,0.67,0.68),color=Color3.fromRGB(250,226,204),material="SmoothPlastic",reflectance=0},
@@ -13489,6 +13520,10 @@ LookMeshes.Rest={
 	LeftFoot=Vector3.new(-.5,-2.8,-.15),RightFoot=Vector3.new(.5,-2.8,-.15),
 }
 
+-- Full detail at any distance (the automatic level of detail thins the hair
+-- shells at fighting distance); no physics shape (they never collide).
+local OPTIONS=nil
+pcall(function() OPTIONS={RenderFidelity=Enum.RenderFidelity.Precise,CollisionFidelity=Enum.CollisionFidelity.Box} end)
 -- Make every mesh once, in the background.
 function LookMeshes.preload()
 	local okService,AssetService=pcall(function() return game:GetService("AssetService") end)
@@ -13499,7 +13534,7 @@ function LookMeshes.preload()
 		local made,left,failed={},#look.pieces,false
 		for _,piece in look.pieces do
 			task.spawn(function()
-				local good,part=pcall(function() return AssetService:CreateMeshPartAsync(piece.mesh) end)
+				local good,part=pcall(function() return AssetService:CreateMeshPartAsync(piece.mesh,OPTIONS) end)
 				if not good or not part then
 					warn("[LookMeshes] "..fighter.."/"..piece.name..": "..tostring(part))
 					failed=true

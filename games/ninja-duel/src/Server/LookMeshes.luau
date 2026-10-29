@@ -23,6 +23,10 @@ LookMeshes.Rest={
 	LeftFoot=Vector3.new(-.5,-2.8,-.15),RightFoot=Vector3.new(.5,-2.8,-.15),
 }
 
+-- Full detail at any distance (the automatic level of detail thins the hair
+-- shells at fighting distance); no physics shape (they never collide).
+local OPTIONS=nil
+pcall(function() OPTIONS={RenderFidelity=Enum.RenderFidelity.Precise,CollisionFidelity=Enum.CollisionFidelity.Box} end)
 -- Make every mesh once, in the background.
 function LookMeshes.preload()
 	local okService,AssetService=pcall(function() return game:GetService("AssetService") end)
@@ -33,7 +37,7 @@ function LookMeshes.preload()
 		local made,left,failed={},#look.pieces,false
 		for _,piece in look.pieces do
 			task.spawn(function()
-				local good,part=pcall(function() return AssetService:CreateMeshPartAsync(piece.mesh) end)
+				local good,part=pcall(function() return AssetService:CreateMeshPartAsync(piece.mesh,OPTIONS) end)
 				if not good or not part then
 					warn("[LookMeshes] "..fighter.."/"..piece.name..": "..tostring(part))
 					failed=true
