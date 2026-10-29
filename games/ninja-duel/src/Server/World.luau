@@ -131,6 +131,122 @@ local function atmosphere()
 	local rays=Instance.new("SunRaysEffect");rays.Name="NinjaDuelRays";rays.Intensity=.04;rays.Spread=.6;rays.Parent=Lighting
 end
 World.atmosphere=atmosphere
+-- --------------------------------------------- the stadium, Blender pass 2
+-- (User 29/10 17:01-17:03, with reference pictures.) Inside, one tall smooth
+-- wall of pale concrete panels; outside, the red domed bowl; the spectators
+-- only in the buildings on the north rim; a sandy field with grass patches
+-- and tufts, bushes and trees along the wall, the middle open (no posts,
+-- crates, rocks or lanterns). Gameplay parts are the same as the part-built
+-- stadium: the floor, the wall-run panels and their invisible cap, the
+-- participants' balcony, the field trees' trunks (cover, breakable).
+local WING_W,WING_TIERS=50,4
+local function wingSeats()
+	local out={}
+	for i=0,WING_TIERS-1 do
+		local y=2+(i+1)*1.25
+		local z=-8.4+i*2.9+1.0
+		local x=-WING_W/2+2
+		while x<=WING_W/2-2 do table.insert(out,Vector3.new(x,y,z));x+=2.3 end
+	end
+	return out
+end
+local function dressedArena(folder,decor,origin)
+	local R=World.WALL_RADIUS
+	local wallH,height=40,76
+	local top=wallH+1.2
+	local function asset(name,cf,scale) return ArenaMeshes.place(decor,name,cf,scale) end
+	local rand=Random.new(29)
+	-- Sand floor (Server/WorldReaction reads its material for broken ground).
+	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),rgb(206,184,136),Enum.Material.Sand)
+	part(decor,"Village ground",Vector3.new(1700,2,1700),CFrame.new(origin-Vector3.new(0,1.3,0)),rgb(84,120,62),Enum.Material.Grass).CanCollide=false
+	-- The wall-run panels and the cap above them (invisible: the meshes show).
+	local segments=116
+	local width=2*math.pi*(R+1)/segments+.3
+	for k=0,segments-1 do
+		local a=k/segments*math.pi*2
+		local dir=Vector3.new(math.sin(a),0,math.cos(a))
+		local at=origin+dir*(R+1)+Vector3.new(0,wallH/2,0)
+		local look=CFrame.lookAt(at,origin+Vector3.new(0,wallH/2,0))
+		local w=part(folder,"Boundary",Vector3.new(width,wallH,2),look,PALETTE.wall,Enum.Material.Concrete)
+		w:SetAttribute("NinjaWall",true);w.Transparency=1;w.CastShadow=false
+		local cap=part(folder,"Boundary cap",Vector3.new(width,height-wallH,2),look*CFrame.new(0,height/2,0),PALETTE.wall,Enum.Material.SmoothPlastic)
+		cap.Transparency=1;cap.CanQuery=false;cap.CanTouch=false;cap.CastShadow=false
+	end
+	for k=0,7 do
+		local slice=CFrame.new(origin)*CFrame.Angles(0,k*math.pi/4,0)
+		asset("WallSector",slice);asset("ShellSector",slice)
+	end
+	-- North rim: the hall (its gallery is World's Kage box) and four wings.
+	-- The hall is the tallest and widest building (scale HS): its base sits on
+	-- the rim with its face on the wall, its gallery out over the field.
+	local HS=1.35
+	local kage=origin+Vector3.new(0,wallH+16*HS,-(R-.5+11*HS))
+	local kageCF=CFrame.lookAt(kage,Vector3.new(origin.X,kage.Y,origin.Z))
+	asset("Hall",kageCF,HS)
+	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x*HS,.8*HS,-10*HS)).Position,(origin-kage)*Vector3.new(1,0,1),if x<0 then 5 else 2) end
+	local seed=0
+	for _,w in {{.34,1},{.7,.8}} do
+		for _,sg in {-1,1} do
+			local az=math.pi+sg*w[1]
+			local at=origin+Vector3.new(math.sin(az)*(R+9),top,math.cos(az)*(R+9))
+			local cf=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
+			asset("Wing",cf,w[2])
+			for _,seat in wingSeats() do
+				seed+=1
+				if seed%4~=0 then
+					local p=cf*CFrame.new(seat*w[2]+Vector3.new(((seed*37)%3-1)*.2,0,0))
+					spectator(decor,p.Position-Vector3.new(0,.15,0),(origin-p.Position)*Vector3.new(1,0,1),seed,seed%3==0)
+				end
+			end
+		end
+	end
+	-- Participants' balcony on the east wall (a real ledge), in the wall's tones.
+	local east=CFrame.lookAt(origin+Vector3.new(R-4,24,0),origin+Vector3.new(0,24,0))
+	part(folder,"Participants balcony",Vector3.new(26,1.2,8),east,rgb(110,78,54),Enum.Material.Wood)
+	deco(decor,"Balcony rail",Vector3.new(26,1.6,.3),east*CFrame.new(0,1.4,-3.9),rgb(110,78,54),Enum.Material.Wood)
+	for _,x in {-12,-4,4,12} do deco(decor,"Balcony bracket",Vector3.new(.8,3,.8),east*CFrame.new(x,-2,1.5)*CFrame.Angles(math.rad(35),0,0),rgb(80,56,40),Enum.Material.Wood) end
+	deco(decor,"Balcony opening",Vector3.new(16,9,.2),east*CFrame.new(0,5,3.95),rgb(34,32,30),Enum.Material.SmoothPlastic)
+	for _,x in {-13.4,13.4} do deco(decor,"Balcony side",Vector3.new(.8,11,8.4),east*CFrame.new(x,5.4,0),rgb(204,206,196),Enum.Material.Concrete) end
+	deco(decor,"Balcony awning",Vector3.new(28.4,.8,9.4),east*CFrame.new(0,11.2,-.4)*CFrame.Angles(math.rad(-10),0,0),rgb(212,156,62),Enum.Material.SmoothPlastic)
+	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
+	-- The competitors' doorways (south and west).
+	asset("Gate",CFrame.lookAt(origin+Vector3.new(0,8,R-.4),origin+Vector3.new(0,8,0)))
+	asset("Gate",CFrame.lookAt(origin+Vector3.new(-(R-.4),8,0),origin+Vector3.new(0,8,0)))
+	-- Bushes along the foot of the wall.
+	for k=0,47 do
+		local a=k/48*math.pi*2+rand:NextNumber(-.04,.04)
+		if math.abs(a-math.pi/2)>.12 then
+			asset("Bush",CFrame.new(origin+Vector3.new(math.sin(a)*(R-4.5),0,math.cos(a)*(R-4.5)))*CFrame.Angles(0,a*7,0),1+(k%3)*.2)
+		end
+	end
+	-- Field trees: an invisible trunk part (cover, line of sight, breakable;
+	-- the mesh is its child and falls with it), the whole tree in Blender.
+	for _,spot in {{.55,112,.9},{1.6,104,.8},{2.4,110,.85},{3.3,98,.75},{3.9,116,.95},{5.3,106,.85},{6.0,92,.75}} do
+		local at=origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2])
+		local h=15*spot[3]
+		local trunk=part(folder,"Field tree",Vector3.new(2.2*spot[3],h,2.2*spot[3]),CFrame.new(at+Vector3.new(0,h/2,0)),PALETTE.bark,Enum.Material.Wood)
+		trunk.Transparency=1;trunk.CastShadow=false
+		trunk:SetAttribute("WorldBreakable",true)
+		ArenaMeshes.place(trunk,"Tree",CFrame.new(at)*CFrame.Angles(0,spot[1]*3,0),spot[3])
+	end
+	-- The forest round the stadium, seen over the rim.
+	for k=0,69 do
+		local a=k/70*math.pi*2+rand:NextNumber(-.03,.03)
+		local r=R+40+rand:NextNumber(0,60)
+		asset("Tree",CFrame.new(origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r))*CFrame.Angles(0,a*5,0),rand:NextNumber(1.4,2.1))
+	end
+	-- Grass on the sand: patches and tufts, thicker toward the wall.
+	for k=0,39 do
+		local a=rand:NextNumber(0,math.pi*2);local r=55+(R-65)*math.sqrt(rand:NextNumber())
+		asset(({"GrassA","GrassB","GrassC"})[k%3+1],CFrame.new(origin+Vector3.new(math.sin(a)*r,.02,math.cos(a)*r))*CFrame.Angles(0,a,0),rand:NextNumber(.8,1.4))
+	end
+	for k=0,69 do
+		local a=rand:NextNumber(0,math.pi*2);local r=45+(R-53)*math.sqrt(rand:NextNumber())
+		asset("Tufts",CFrame.new(origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r))*CFrame.Angles(0,a,0),rand:NextNumber(.8,1.3))
+	end
+	atmosphere()
+	return folder
+end
 function World.arena(parent, origin)
 	local folder = Instance.new("Folder"); folder.Name = "Courtyard"; folder.Parent = parent
 	local decor=Instance.new("Folder");decor.Name="Decor";decor.Parent=folder
@@ -141,6 +257,7 @@ function World.arena(parent, origin)
 	-- decor when its meshes are loaded; the gameplay parts are the same.
 	local M=ArenaMeshes.ready()
 	local function asset(name,cf,scale) return ArenaMeshes.place(decor,name,cf,scale) end
+	if M and ArenaMeshes.Data.Hall then return dressedArena(folder,decor,origin) end
 	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
 	disc(decor,"Earth",92,.03,origin,C.earth,Enum.Material.Ground)
