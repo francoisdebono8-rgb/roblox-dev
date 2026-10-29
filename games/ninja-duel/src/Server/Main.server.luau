@@ -6,6 +6,7 @@ local remote=Instance.new("RemoteEvent"); remote.Name="Action"; remote.Parent=Sh
 local Matches=require(script.Parent.Matches)
 -- Blender-made costume meshes load in the background (Server/LookMeshes).
 require(script.Parent.LookMeshes).preload()
+require(script.Parent.ArenaMeshes).preload()
 local matches=Matches.new(remote)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player) end)

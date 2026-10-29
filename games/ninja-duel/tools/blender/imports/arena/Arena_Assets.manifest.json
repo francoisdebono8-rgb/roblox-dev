@@ -1,0 +1,741 @@
+{
+ "rest": {
+  "LowerTorso": [
+   0,
+   0,
+   0
+  ],
+  "UpperTorso": [
+   0,
+   1.15,
+   0
+  ],
+  "Head": [
+   0,
+   2.75,
+   0
+  ],
+  "LeftUpperArm": [
+   -1.24,
+   1.1,
+   0
+  ],
+  "RightUpperArm": [
+   1.24,
+   1.1,
+   0
+  ],
+  "LeftLowerArm": [
+   -1.24,
+   0.1,
+   0
+  ],
+  "RightLowerArm": [
+   1.24,
+   0.1,
+   0
+  ],
+  "LeftHand": [
+   -1.24,
+   -0.63,
+   0
+  ],
+  "RightHand": [
+   1.24,
+   -0.63,
+   0
+  ],
+  "LeftUpperLeg": [
+   -0.5,
+   -1.05,
+   0
+  ],
+  "RightUpperLeg": [
+   0.5,
+   -1.05,
+   0
+  ],
+  "LeftLowerLeg": [
+   -0.5,
+   -2.1,
+   0
+  ],
+  "RightLowerLeg": [
+   0.5,
+   -2.1,
+   0
+  ],
+  "LeftFoot": [
+   -0.5,
+   -2.8,
+   -0.15
+  ],
+  "RightFoot": [
+   0.5,
+   -2.8,
+   -0.15
+  ]
+ },
+ "pieces": {
+  "WallSector__Mortar": {
+   "body": "WallSector",
+   "color": [
+    128,
+    118,
+    102
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__Base": {
+   "body": "WallSector",
+   "color": [
+    112,
+    106,
+    96
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__BaseCap": {
+   "body": "WallSector",
+   "color": [
+    128,
+    122,
+    110
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__Cornice": {
+   "body": "WallSector",
+   "color": [
+    210,
+    198,
+    174
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__Parapet": {
+   "body": "WallSector",
+   "color": [
+    170,
+    158,
+    136
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__RailPost": {
+   "body": "WallSector",
+   "color": [
+    74,
+    50,
+    36
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__Rail": {
+   "body": "WallSector",
+   "color": [
+    104,
+    72,
+    50
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "WallSector__Stone": {
+   "body": "WallSector",
+   "color": [
+    196,
+    184,
+    160
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__Tiers": {
+   "body": "StandSector",
+   "color": [
+    176,
+    168,
+    150
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__Benches": {
+   "body": "StandSector",
+   "color": [
+    138,
+    98,
+    62
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__BenchFront": {
+   "body": "StandSector",
+   "color": [
+    112,
+    78,
+    50
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__Stairs": {
+   "body": "StandSector",
+   "color": [
+    210,
+    198,
+    174
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__BackWall": {
+   "body": "StandSector",
+   "color": [
+    238,
+    232,
+    216
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__BackOuter": {
+   "body": "StandSector",
+   "color": [
+    128,
+    34,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__BackTimber": {
+   "body": "StandSector",
+   "color": [
+    74,
+    50,
+    36
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__Roof": {
+   "body": "StandSector",
+   "color": [
+    60,
+    70,
+    82
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__RoofRib": {
+   "body": "StandSector",
+   "color": [
+    78,
+    90,
+    104
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__RoofEdge": {
+   "body": "StandSector",
+   "color": [
+    44,
+    50,
+    60
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "StandSector__Plinth": {
+   "body": "StandSector",
+   "color": [
+    112,
+    106,
+    96
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Base": {
+   "body": "Pavilion",
+   "color": [
+    128,
+    122,
+    110
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Walls": {
+   "body": "Pavilion",
+   "color": [
+    238,
+    232,
+    216
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Timber": {
+   "body": "Pavilion",
+   "color": [
+    74,
+    50,
+    36
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Lattice": {
+   "body": "Pavilion",
+   "color": [
+    54,
+    40,
+    32
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Roof": {
+   "body": "Pavilion",
+   "color": [
+    60,
+    70,
+    82
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Ridge": {
+   "body": "Pavilion",
+   "color": [
+    44,
+    50,
+    60
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Pavilion__Finial": {
+   "body": "Pavilion",
+   "color": [
+    214,
+    170,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Podium": {
+   "body": "KageBox",
+   "color": [
+    128,
+    122,
+    110
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__PodiumCap": {
+   "body": "KageBox",
+   "color": [
+    210,
+    198,
+    174
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Hall": {
+   "body": "KageBox",
+   "color": [
+    238,
+    232,
+    216
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Pillars": {
+   "body": "KageBox",
+   "color": [
+    168,
+    46,
+    38
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Lintel": {
+   "body": "KageBox",
+   "color": [
+    128,
+    34,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Roof": {
+   "body": "KageBox",
+   "color": [
+    60,
+    70,
+    82
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Ridge": {
+   "body": "KageBox",
+   "color": [
+    44,
+    50,
+    60
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Finial": {
+   "body": "KageBox",
+   "color": [
+    214,
+    170,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__BalconyFloor": {
+   "body": "KageBox",
+   "color": [
+    104,
+    72,
+    50
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "KageBox__Hanging": {
+   "body": "KageBox",
+   "color": [
+    176,
+    44,
+    40
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Dark": {
+   "body": "Gate",
+   "color": [
+    26,
+    24,
+    22
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Doors": {
+   "body": "Gate",
+   "color": [
+    112,
+    76,
+    48
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Bands": {
+   "body": "Gate",
+   "color": [
+    50,
+    48,
+    48
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Frame": {
+   "body": "Gate",
+   "color": [
+    170,
+    158,
+    136
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Plaque": {
+   "body": "Gate",
+   "color": [
+    214,
+    170,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Gate__Awning": {
+   "body": "Gate",
+   "color": [
+    60,
+    70,
+    82
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Footing": {
+   "body": "GateTower",
+   "color": [
+    128,
+    122,
+    110
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Legs": {
+   "body": "GateTower",
+   "color": [
+    74,
+    50,
+    36
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Braces": {
+   "body": "GateTower",
+   "color": [
+    104,
+    72,
+    50
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Rails": {
+   "body": "GateTower",
+   "color": [
+    168,
+    46,
+    38
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Room": {
+   "body": "GateTower",
+   "color": [
+    238,
+    232,
+    216
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__RoomOpen": {
+   "body": "GateTower",
+   "color": [
+    40,
+    30,
+    26
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Drum": {
+   "body": "GateTower",
+   "color": [
+    128,
+    34,
+    30
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__DrumSkin": {
+   "body": "GateTower",
+   "color": [
+    226,
+    208,
+    170
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Roof": {
+   "body": "GateTower",
+   "color": [
+    60,
+    70,
+    82
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Finial": {
+   "body": "GateTower",
+   "color": [
+    214,
+    170,
+    70
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__Banner": {
+   "body": "GateTower",
+   "color": [
+    176,
+    44,
+    40
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "GateTower__BannerW": {
+   "body": "GateTower",
+   "color": [
+    236,
+    228,
+    208
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "Crown__Leaves": {
+   "body": "Crown",
+   "color": [
+    78,
+    124,
+    62
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "Crown__LeavesDark": {
+   "body": "Crown",
+   "color": [
+    56,
+    98,
+    52
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "Crown__LeavesLight": {
+   "body": "Crown",
+   "color": [
+    104,
+    150,
+    72
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "Crown__Branches": {
+   "body": "Crown",
+   "color": [
+    98,
+    72,
+    52
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "PineTree__Trunk": {
+   "body": "PineTree",
+   "color": [
+    98,
+    72,
+    52
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "PineTree__Needles": {
+   "body": "PineTree",
+   "color": [
+    46,
+    92,
+    64
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "PineTree__NeedlesDark": {
+   "body": "PineTree",
+   "color": [
+    34,
+    72,
+    52
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "BroadTree__Trunk": {
+   "body": "BroadTree",
+   "color": [
+    98,
+    72,
+    52
+   ],
+   "material": "SmoothPlastic",
+   "reflectance": 0
+  },
+  "BroadTree__Leaves": {
+   "body": "BroadTree",
+   "color": [
+    78,
+    124,
+    62
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "BroadTree__LeavesDark": {
+   "body": "BroadTree",
+   "color": [
+    56,
+    98,
+    52
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "Bush__Leaves": {
+   "body": "Bush",
+   "color": [
+    78,
+    124,
+    62
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  },
+  "Bush__LeavesDark": {
+   "body": "Bush",
+   "color": [
+    56,
+    98,
+    52
+   ],
+   "material": "Grass",
+   "reflectance": 0
+  }
+ }
+}

@@ -2,6 +2,7 @@ local World = {}
 local Animation=require(script.Parent.Animation)
 local Looks=require(script.Parent.Looks)
 local LookMeshes=require(script.Parent.LookMeshes)
+local ArenaMeshes=require(script.Parent.ArenaMeshes)
 local Face=require(game:GetService("ReplicatedStorage").NinjaDuel.Face)
 local function part(parent, name, size, cf, color, material)
 	local p = Instance.new("Part")
@@ -64,7 +65,7 @@ local function spectator(folder,at,facing,seed,still)
 	if still then return end
 	deco(parent,"SpectatorHair",Vector3.new(1.0,.45,1.0),head.CFrame*CFrame.new(0,.28,.05),if seed%4==0 then rgb(220,190,120) else rgb(36,30,28),Enum.Material.SmoothPlastic).CastShadow=false
 end
-local function tree(parent,at,height,spread)
+local function tree(parent,at,height,spread,meshes)
 	-- Field trees: a real trunk (cover and line of sight) under a loose crown.
 	local trunk=part(parent,"Field tree",Vector3.new(2.6,height,2.6),CFrame.new(at+Vector3.new(0,height/2,0)),PALETTE.bark,Enum.Material.Wood)
 	trunk.Shape=Enum.PartType.Block
@@ -72,6 +73,11 @@ local function tree(parent,at,height,spread)
 	-- and may break.
 	trunk:SetAttribute("WorldBreakable",true)
 	parent=trunk
+	if meshes then
+		-- The Blender crown (stage 5), carried by the trunk like the balls.
+		ArenaMeshes.place(trunk,"Crown",CFrame.new(at+Vector3.new(0,height+spread*.3,0))*CFrame.Angles(0,(at.X*.13+at.Z*.07)%6.28,0),spread/10)
+		return trunk
+	end
 	local crown=deco(parent,"Crown",Vector3.new(spread*2,spread*1.4,spread*2),CFrame.new(at+Vector3.new(0,height+spread*.3,0)),PALETTE.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	crown.Size=Vector3.one*spread*1.9
 	for k=0,4 do
@@ -131,6 +137,10 @@ function World.arena(parent, origin)
 	local C=PALETTE
 	local R=World.WALL_RADIUS
 	local height=76
+	-- Stage 5: the Blender scenery (Server/ArenaMeshes) replaces the part-built
+	-- decor when its meshes are loaded; the gameplay parts are the same.
+	local M=ArenaMeshes.ready()
+	local function asset(name,cf,scale) return ArenaMeshes.place(decor,name,cf,scale) end
 	-- Field: grass with a broad packed-earth centre and worn patches.
 	part(folder,"Training floor",Vector3.new(460,2,460),CFrame.new(origin-Vector3.new(0,1,0)),C.grass,Enum.Material.Grass)
 	disc(decor,"Earth",92,.03,origin,C.earth,Enum.Material.Ground)
@@ -167,6 +177,7 @@ function World.arena(parent, origin)
 		w:SetAttribute("NinjaWall",true)
 		local cap=part(folder,"Boundary cap",Vector3.new(width,height-wallH,2),look*CFrame.new(0,(height)/2,0),C.wall,Enum.Material.SmoothPlastic)
 		cap.Transparency=1;cap.CanQuery=false;cap.CanTouch=false;cap.CastShadow=false
+		if M then continue end
 		deco(decor,"Seam",Vector3.new(.25,wallH-4,.1),look*CFrame.new(width/2,2,-1.02),C.wallSeam,Enum.Material.Concrete)
 		deco(decor,"Band",Vector3.new(width,.9,.12),look*CFrame.new(0,wallH/2-12,-1.03),C.wallBand,Enum.Material.Concrete)
 		deco(decor,"Base course",Vector3.new(width,4,.7),look*CFrame.new(0,-wallH/2+2,-1.3),rgb(120,116,104),Enum.Material.Slate)
@@ -175,11 +186,17 @@ function World.arena(parent, origin)
 		deco(decor,"Outer face",Vector3.new(width,wallH,.6),look*CFrame.new(0,0,1.3),C.brick,Enum.Material.Brick)
 		deco(decor,"Parapet",Vector3.new(width,1.6,1),look*CFrame.new(0,wallH/2+.8,-.2),C.brickDark,Enum.Material.Brick)
 	end
+	if M then
+		for k=0,7 do
+			local slice=CFrame.new(origin)*CFrame.Angles(0,k*math.pi/4,0)
+			asset("WallSector",slice);asset("StandSector",slice)
+		end
+	end
 	-- Tournament banners hang from the cornice between the pilasters.
 	for k=0,21 do
 		local a=k/22*math.pi*2+math.pi/22
 		local dir=Vector3.new(math.sin(a),0,math.cos(a))
-		local at=origin+dir*(R-.35)+Vector3.new(0,wallH-9.5,0)
+		local at=origin+dir*(R-(if M then 1.75 else .35))+Vector3.new(0,wallH-9.5,0)
 		local look=CFrame.lookAt(at,origin+Vector3.new(0,wallH-9.5,0))
 		local cloth=deco(decor,"Wall banner",Vector3.new(5.6,15,.12),look,if k%2==0 then rgb(170,40,36) else rgb(232,226,210),Enum.Material.SmoothPlastic)
 		deco(decor,"Banner rod",Vector3.new(6.4,.35,.35),look*CFrame.new(0,7.6,0),rgb(70,52,36),Enum.Material.Wood)
@@ -188,7 +205,13 @@ function World.arena(parent, origin)
 		gui.CanvasSize=Vector2.new(220,590)
 	end
 	-- Bushes along the foot of the wall.
-	for k=0,131 do
+	if M then
+		for k=0,65 do
+			local a=k/66*math.pi*2
+			asset("Bush",CFrame.new(origin+Vector3.new(math.sin(a)*(R-2.4),1.2,math.cos(a)*(R-2.4)))*CFrame.Angles(0,a*5,0),1+(k%3)*.2)
+		end
+	end
+	for k=0,(if M then -1 else 131) do
 		local a=k/132*math.pi*2+((k*17)%5)*.01
 		local r=R-1.6-((k*29)%3)*.6
 		local size=3.4+((k*41)%4)*.7
@@ -199,7 +222,11 @@ function World.arena(parent, origin)
 	local seed=0
 	local tiers=7
 	local rise,depth=2.9,3.6
-	local function isAisle(a) return (a*12/(math.pi*2))%1<.045 end
+	local function isAisle(a)
+		-- The Blender stands have two stairways per 45-degree slice.
+		if M then local u=(a/(math.pi*2)*16-.5)%1 return u<.035 or u>.965 end
+		return (a*12/(math.pi*2))%1<.045
+	end
 	for tier=1,tiers do
 		local radius=R+2.6+tier*depth
 		local floorY=wallH+tier*rise
@@ -209,7 +236,7 @@ function World.arena(parent, origin)
 			local at=origin+Vector3.new(math.sin(a)*radius,floorY,math.cos(a)*radius)
 			local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
 			local aisle=isAisle(a)
-			deco(decor,"Stand",Vector3.new(radius*2*math.pi/steps+.3,rise+.4,depth+.2),look*CFrame.new(0,-(rise+.4)/2,0),if aisle then C.wallBand elseif tier%2==0 then C.wood else C.woodDark,if aisle then Enum.Material.Concrete else Enum.Material.Wood)
+			if not M then deco(decor,"Stand",Vector3.new(radius*2*math.pi/steps+.3,rise+.4,depth+.2),look*CFrame.new(0,-(rise+.4)/2,0),if aisle then C.wallBand elseif tier%2==0 then C.wood else C.woodDark,if aisle then Enum.Material.Concrete else Enum.Material.Wood) end
 			if not aisle then
 				for _,x in (if tier<=3 then {-2,2} else {0}) do
 					seed+=1
@@ -225,7 +252,7 @@ function World.arena(parent, origin)
 	local backTop=wallH+tiers*rise+6
 	-- The back wall of the bowl, with roofed sections over the upper rings.
 	local backSegments=96
-	for k=0,backSegments-1 do
+	for k=0,(if M then -1 else backSegments-1) do
 		local a=k/backSegments*math.pi*2
 		local at=origin+Vector3.new(math.sin(a)*backR,(wallH+backTop)/2,math.cos(a)*backR)
 		local look=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
@@ -242,21 +269,25 @@ function World.arena(parent, origin)
 		local a=k/12*math.pi*2+math.pi/12
 		if math.abs(math.sin(a/2))>.18 then -- (the Kage box takes the north)
 			local at=origin+Vector3.new(math.sin(a)*(backR+5),backTop-.5,math.cos(a)*(backR+5))
-			pavilion(decor,CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),18,10,8,1)
+			local cf=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z))
+			if M then asset("Pavilion",cf) else pavilion(decor,cf,18,10,8,1) end
 		end
 	end
 	-- The Kage box (north): a two-storey pavilion built out over the upper rings,
 	-- its balcony above the field with the two Kage watching.
 	local kage=origin+Vector3.new(0,wallH+16,-(R+12))
 	local kageCF=CFrame.lookAt(kage,Vector3.new(origin.X,kage.Y,origin.Z))
-	deco(decor,"Kage base",Vector3.new(30,16,22),kageCF*CFrame.new(0,-8,4),C.brick,Enum.Material.Brick)
-	pavilion(decor,kageCF,34,16,11,2)
-	local box=deco(decor,"Kage box",Vector3.new(16,1,6),kageCF*CFrame.new(0,.5,-10.5),C.trim,Enum.Material.Wood)
-	deco(decor,"Kage rail",Vector3.new(16,1.6,.3),kageCF*CFrame.new(0,1.8,-13.4),C.wood,Enum.Material.Wood)
+	if M then
+		asset("KageBox",kageCF)
+	else
+		deco(decor,"Kage base",Vector3.new(30,16,22),kageCF*CFrame.new(0,-8,4),C.brick,Enum.Material.Brick)
+		pavilion(decor,kageCF,34,16,11,2)
+		deco(decor,"Kage box",Vector3.new(16,1,6),kageCF*CFrame.new(0,.5,-10.5),C.trim,Enum.Material.Wood)
+		deco(decor,"Kage rail",Vector3.new(16,1.6,.3),kageCF*CFrame.new(0,1.8,-13.4),C.wood,Enum.Material.Wood)
+	end
 	for _,x in {-4,4} do spectator(decor,(kageCF*CFrame.new(x,1,-11)).Position,(origin-kage)*Vector3.new(1,0,1),if x<0 then 5 else 2) end
 	local plaque=deco(decor,"Kage plaque",Vector3.new(4,4,.3),kageCF*CFrame.new(0,8.5,-8.2),C.plaster,Enum.Material.SmoothPlastic)
 	label(plaque,Enum.NormalId.Front,"火",rgb(190,40,36))
-	box.Transparency=0
 	-- Participants' balcony on the east wall: a real ledge (elevation and a
 	-- vertical route: run up the wall beside it and step on, or drop from it
 	-- into a dive), set in a roofed alcove with the corridor behind it.
@@ -265,8 +296,8 @@ function World.arena(parent, origin)
 	deco(decor,"Balcony rail",Vector3.new(26,1.6,.3),east*CFrame.new(0,1.4,-3.9),C.wood,Enum.Material.Wood)
 	for _,x in {-12,-4,4,12} do deco(decor,"Balcony bracket",Vector3.new(.8,3,.8),east*CFrame.new(x,-2,1.5)*CFrame.Angles(math.rad(35),0,0),C.trim,Enum.Material.Wood) end
 	deco(decor,"Balcony corridor",Vector3.new(10,8,.2),east*CFrame.new(0,4.6,3.95),rgb(34,30,28),Enum.Material.SmoothPlastic)
-	for _,x in {-13.4,13.4} do deco(decor,"Balcony side",Vector3.new(.8,11,8.4),east*CFrame.new(x,5.4,0),C.wallBand,Enum.Material.Concrete) end
-	deco(decor,"Balcony awning",Vector3.new(28.4,.8,9.4),east*CFrame.new(0,11.2,-.4)*CFrame.Angles(math.rad(-10),0,0),C.roofDark,Enum.Material.SmoothPlastic)
+	for _,x in {-13.4,13.4} do deco(decor,"Balcony side",Vector3.new(.8,11,8.4),east*CFrame.new(x,5.4,0),if M then rgb(168,46,38) else C.wallBand,Enum.Material.Concrete) end
+	deco(decor,"Balcony awning",Vector3.new(28.4,.8,9.4),east*CFrame.new(0,11.2,-.4)*CFrame.Angles(math.rad(-10),0,0),if M then rgb(60,70,82) else C.roofDark,Enum.Material.SmoothPlastic)
 	for k=-3,3 do spectator(decor,(east*CFrame.new(k*2,.5,.2)).Position,-east.LookVector*-1,k+20) end
 	-- The competitors' gates (south and west): heavy wooden doors in a stone frame.
 	local function gate(cf)
@@ -280,13 +311,20 @@ function World.arena(parent, origin)
 		deco(decor,"Gate lintel",Vector3.new(22,2.4,1.6),cf*CFrame.new(0,8.8,-.6),rgb(120,116,104),Enum.Material.Slate)
 		for _,x in {-10.4,10.4} do deco(decor,"Gate post",Vector3.new(2.2,17,1.6),cf*CFrame.new(x,.4,-.6),rgb(120,116,104),Enum.Material.Slate) end
 	end
-	gate(CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0)))
-	gate(CFrame.lookAt(origin+Vector3.new(-(R-.05),8,0),origin+Vector3.new(0,8,0)))
+	if M then
+		asset("Gate",CFrame.lookAt(origin+Vector3.new(0,8,R-.4),origin+Vector3.new(0,8,0)))
+		asset("Gate",CFrame.lookAt(origin+Vector3.new(-(R-.4),8,0),origin+Vector3.new(0,8,0)))
+		-- The drum tower over the south gate, seen above the stands.
+		asset("GateTower",CFrame.lookAt(origin+Vector3.new(0,0,backR+22),origin),1.6)
+	else
+		gate(CFrame.lookAt(origin+Vector3.new(0,8,R-.05),origin+Vector3.new(0,8,0)))
+		gate(CFrame.lookAt(origin+Vector3.new(-(R-.05),8,0),origin+Vector3.new(0,8,0)))
+	end
 	-- The ground outside the stadium, so it never floats in the sky.
 	part(decor,"Village ground",Vector3.new(1700,2,1700),CFrame.new(origin-Vector3.new(0,1.3,0)),C.grassDark,Enum.Material.Grass).CanCollide=false
 	-- Field trees: line of sight and something to fight around, as in the finals.
 	for _,spot in {{.55,112,38,10},{1.6,104,33,9},{2.4,110,36,9.5},{3.3,98,31,8.5},{3.9,116,40,10.5},{5.3,106,35,9.5},{6.0,92,29,8}} do
-		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4])
+		tree(folder,origin+Vector3.new(math.sin(spot[1])*spot[2],0,math.cos(spot[1])*spot[2]),spot[3],spot[4],M)
 	end
 	-- Weathered boulders for low cover (they stop blades and fire), in a ring
 	-- around the open middle (a clear centre to fight in; cover, trunks and the
@@ -336,6 +374,10 @@ function World.arena(parent, origin)
 		local r=R+62+((k*53)%5)*7
 		local at=origin+Vector3.new(math.sin(a)*r,0,math.cos(a)*r)
 		local h=50+((k*31)%4)*7
+		if M then
+			asset(if k%3==0 then "BroadTree" else "PineTree",CFrame.new(at)*CFrame.Angles(0,a*3,0),(1+((k*31)%4)*.12)*1.3)
+			continue
+		end
 		deco(decor,"Forest trunk",Vector3.new(3,h,3),CFrame.new(at+Vector3.new(0,h/2,0)),C.bark,Enum.Material.Wood)
 		deco(decor,"Forest crown",Vector3.one*(26+((k*13)%4)*5),CFrame.new(at+Vector3.new(0,h,0)),if k%2==0 then C.leafDark else C.leaf,Enum.Material.Grass,Enum.PartType.Ball)
 	end
