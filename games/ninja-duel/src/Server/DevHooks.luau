@@ -201,6 +201,9 @@ function DevHooks.install(matches)
 		if op=="act" then
 			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim, arg4 =
 			-- optional request options (e.g. {chakra=true}, the chakra chord)
+			-- The human seat is a player (late presses, Combat: Config.Late), as
+			-- through Matches:act; the bot seat stays the AI's.
+			if arg1~="bot" then actor.playerInput=true end
 			local ok,reason=c:request(actor,arg2,arg3,nil,if type(arg4)=="table" then arg4 else nil)
 			return {ok=ok,reason=reason}
 		elseif op=="scripted" then

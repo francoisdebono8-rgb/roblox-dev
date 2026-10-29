@@ -1464,7 +1464,11 @@ function Brawler.step(c,a,dt)
    elseif a.reaction=="Knockdown" and a.airborne then
     -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
     -- 0.24 s in the air, then slid at the fall's speed).
-   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then
+    -- (Studio agent 29/10: 0.7 s "airborne" through a wake-up at the foot of
+    -- a wall) A body that gets up from the floor is on it.
+    if a.airborne and Motor.grounded(a,c) then Motor.land(a,c,c.now) end
+    a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
     -- (Audit 29/10) A flight that ends in the air hands its speed on: the
     -- body went on with zero speed, stopped, then dropped at full gravity.

@@ -8,15 +8,17 @@
 --   while no jump was pressed), refused presses by reason, frozen states,
 --   the bot's move repetition, rounds and time to KO.
 -- Background: returns at once; shared.NdAgent.report when done (DURATION s).
-local FIGHTER, OPPONENT, DURATION = "Lion", "Mirage", 75
+return function(FIGHTER, OPPONENT, DURATION, SEED)
+DURATION = DURATION or 75
 local dev = game:GetService("ServerStorage"):WaitForChild("NinjaDuelDev", 10)
 local Fighters = require(game.ReplicatedStorage.NinjaDuel.Fighters)
-local rng = Random.new(28)
+local rng = Random.new(SEED or 28)
 local R = {moves = {}, botMoves = {}, seq = {}, botSeq = {}, strings = {}, airs = {}, flickers = {}, refused = {}, frozen = {}, kos = 0, log = {},
-	infused = {}, botInfused = 0, loads = 0, airDashes = 0}
+	infused = {}, botInfused = 0, loads = 0, airDashes = 0, freezes = {}, ghosts = {}, presses = 0, accepted = 0}
 shared.NdAgent = R
 local function note(t, s) table.insert(R.log, string.format("%.2f %s", t, s)) end
 
+dev:Invoke("freezeBot", false); dev:Invoke("scripted", false)
 dev:Invoke("start", FIGHTER, OPPONENT)
 local t0 = os.clock()
 repeat task.wait(.2) local r = dev:Invoke("act", "human", "GuardOff") until (type(r) == "table" and r.reason ~= "Intro") or os.clock() - t0 > 12
@@ -27,6 +29,8 @@ local lastJumpAt = -10
 local function act(a, aim)
 	local s = dev:Invoke("state")
 	local r = dev:Invoke("act", "human", a, aim or (s.bot and s.bot.position))
+	R.presses += 1
+	if type(r) == "table" and r.ok ~= false then R.accepted += 1 end
 	if type(r) == "table" and r.ok == false and r.reason then
 		local key = r.reason .. (if r.reason == "Committed" then "@" .. tostring(s.human and s.human.state) .. "/" .. a else "")
 		R.refused[key] = (R.refused[key] or 0) + 1
@@ -40,6 +44,9 @@ local function flat(v) return Vector3.new(v.X, 0, v.Z) end
 -- Observer: 30 Hz on both seats.
 task.spawn(function()
 	local lastA, lastB, airAt, apex, groundY, lastHits, stateSince, lastState, dead
+	-- (Audit 29/10) freeze: the stick held, Neutral, grounded, no reaction,
+	-- and the body does not move for 0.3 s; ghost: "airborne" on the floor.
+	local stillFor, ghostFor, lastPos, lastT = 0, 0, nil, nil
 	while R.done == nil do
 		local s = dev:Invoke("state")
 		local h, b = s.human, s.bot
@@ -57,6 +64,23 @@ task.spawn(function()
 				table.insert(R.botSeq, b.attackName)
 			end
 			lastB = b.attackName
+			local dt = if lastT then t - lastT else 0
+			lastT = t
+			local moved = if lastPos then flat(h.position - lastPos).Magnitude else 0
+			lastPos = h.position
+			local stick = h.move and flat(h.move).Magnitude or 0
+			if h.state == "Neutral" and not h.reaction and not h.airborne and stick > .5 and (h.health or 0) > 0 and moved < .03 then
+				stillFor += dt
+			else
+				if stillFor >= .3 then table.insert(R.freezes, string.format("%.1f:%.2fs", t, stillFor)) end
+				stillFor = 0
+			end
+			if h.airborne and groundY and math.abs(h.position.Y - groundY) < .3 and math.abs((h.velocity or Vector3.zero).Y) < 1 then
+				ghostFor += dt
+			else
+				if ghostFor >= .25 then table.insert(R.ghosts, string.format("%.1f:%.2fs %s", t, ghostFor, tostring(h.reaction or h.state))) end
+				ghostFor = 0
+			end
 			if not h.airborne then groundY = h.position.Y end
 			if h.airborne and not airAt then airAt = t; apex = h.position.Y end
 			if h.airborne then apex = math.max(apex, h.position.Y) end
@@ -187,6 +211,10 @@ task.spawn(function()
 		"refused presses: " .. list(R.refused),
 		string.format("chakra loads %d, air dashes %d, infused player strikes: %s, bot infused strikes %d", R.loads, R.airDashes, list(R.infused), R.botInfused),
 		"frozen > 2 s: " .. table.concat(R.frozen, " "),
+		string.format("presses %d, accepted %d (%.0f%%)", R.presses, R.accepted, R.presses > 0 and R.accepted / R.presses * 100 or 0),
+		"FREEZES (stick held, free, not moving >= 0.3 s): " .. #R.freezes .. " " .. table.concat(R.freezes, " "),
+		"GHOST AIR (airborne on the floor >= 0.25 s): " .. #R.ghosts .. " " .. table.concat(R.ghosts, " "),
 	}, "\n")
 end)
 return "agent playing " .. FIGHTER .. " vs " .. OPPONENT
+end

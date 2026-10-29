@@ -3493,7 +3493,7 @@ return {
       <Item class="StringValue" referent="ND23">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7c81f70c10cf0024de4401150379e3cb3528eedcc33742744625efe84fe433ff</string>
+          <string name="Value">2199ccc63bffb60f11ea7e9fa0a2783159149ef41284f1b5a6484276dca9c1b0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND24">
@@ -6814,7 +6814,11 @@ function Brawler.step(c,a,dt)
    elseif a.reaction=="Knockdown" and a.airborne then
     -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
     -- 0.24 s in the air, then slid at the fall's speed).
-   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then
+    -- (Studio agent 29/10: 0.7 s "airborne" through a wake-up at the foot of
+    -- a wall) A body that gets up from the floor is on it.
+    if a.airborne and Motor.grounded(a,c) then Motor.land(a,c,c.now) end
+    a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
     -- (Audit 29/10) A flight that ends in the air hands its speed on: the
     -- body went on with zero speed, stopped, then dropped at full gravity.

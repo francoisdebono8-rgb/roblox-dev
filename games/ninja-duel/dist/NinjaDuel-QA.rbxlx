@@ -3612,7 +3612,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">c033bf900928c6b0c6611bf4b4e109933fbbc5c73cdca6b1ae0885440f45dea9</string>
+          <string name="Value">7663b489f479e63cca140961599856b58e77f5d85bf7727cce6ce7f0ac56ab78</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -6933,7 +6933,11 @@ function Brawler.step(c,a,dt)
    elseif a.reaction=="Knockdown" and a.airborne then
     -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
     -- 0.24 s in the air, then slid at the fall's speed).
-   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+   elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then
+    -- (Studio agent 29/10: 0.7 s "airborne" through a wake-up at the foot of
+    -- a wall) A body that gets up from the floor is on it.
+    if a.airborne and Motor.grounded(a,c) then Motor.land(a,c,c.now) end
+    a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
     -- (Audit 29/10) A flight that ends in the air hands its speed on: the
     -- body went on with zero speed, stopped, then dropped at full gravity.
@@ -12308,6 +12312,9 @@ function DevHooks.install(matches)
 		if op=="act" then
 			-- arg1 = "human"/"bot", arg2 = action, arg3 = optional aim, arg4 =
 			-- optional request options (e.g. {chakra=true}, the chakra chord)
+			-- The human seat is a player (late presses, Combat: Config.Late), as
+			-- through Matches:act; the bot seat stays the AI's.
+			if arg1~="bot" then actor.playerInput=true end
 			local ok,reason=c:request(actor,arg2,arg3,nil,if type(arg4)=="table" then arg4 else nil)
 			return {ok=ok,reason=reason}
 		elseif op=="scripted" then
