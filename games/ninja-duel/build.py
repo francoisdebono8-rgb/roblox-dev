@@ -105,6 +105,13 @@ TEST_RUNNERS.append(('lune','tests/Temari.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Roster.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Roster20.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Convergence.spec.luau'))
+# (Audit 29/10) Suites that existed but were outside the gate (CombatFeel had
+# been failing unseen), the fluidity regressions, and the player-control gate.
+TEST_RUNNERS.append(('lune','tests/Movement.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/Embodiment.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/CombatFeel.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/Fluidity.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/Control.spec.luau'))
 def run_automated():
     tool={}
     import os

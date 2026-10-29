@@ -289,7 +289,8 @@ test("anti-cheat, rate limits, epochs and payload validation stay per player",fu
 	act(m,b,"Technique2",{aim=two.root.Position+V.new(0,0,500)});assert(two.state=="Neutral" and two.pending==nil)
 	act(m,b,"Technique2",{aim=one.root.Position});assert(two.state=="TechniqueChannel","the valid aim control failed")
 	-- Each player's token bucket is their own.
-	s.bucket.tokens=0
+	-- (Audit 29/10: the stick has a budget of its own, s.moveBucket.)
+	s.bucket.tokens=0;s.moveBucket={tokens=0,time=os.clock()}
 	local ownBucket=m.sessions[a].bucket
 	ownBucket.tokens=100
 	m:request(b,{action="Move",epoch=s.epoch,direction=V.xAxis})

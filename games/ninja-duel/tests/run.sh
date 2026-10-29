@@ -36,6 +36,8 @@ run Animation  "$LUNE" run tests/Animation.spec.luau
 run Movement   "$LUNE" run tests/Movement.spec.luau
 run CombatFeel "$LUNE" run tests/CombatFeel.spec.luau
 run Embodiment "$LUNE" run tests/Embodiment.spec.luau
+run Fluidity   "$LUNE" run tests/Fluidity.spec.luau
+run Control    "$LUNE" run tests/Control.spec.luau
 run Branches   "$LUNE" run tests/Branches.spec.luau
 run ComboModel "$LUNE" run tests/ComboModel.spec.luau
 run Phase4     "$LUNE" run tests/Phase4.spec.luau

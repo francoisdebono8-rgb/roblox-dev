@@ -99,7 +99,16 @@ Context.Defaults={
 		return m or "DashAttack"
 	end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
-	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,
+	-- (Audit 29/10, user: "Gaara particulier") A light pressed at close range
+	-- never launches by default: Gaara's heavyAfterOne is his Sand Pillar, so
+	-- every light at arm's length was a launcher. A fighter may still declare
+	-- a launching closeStrike on purpose.
+	close=function(graph,attacks)
+		if graph.closeStrike then return graph.closeStrike end
+		local m=graph.heavyAfterOne
+		if m and attacks and attacks[m] and attacks[m].reaction=="Launched" then return nil end
+		return m
+	end,
 	reach=function(graph) return graph.reachStrike or "DashAttack" end,
 }
 

@@ -83,7 +83,8 @@ end)
 test("PS5 modifier maps four jutsu and never modifies keyboard or mouse",function()
  press("Modifier",E.KeyCode.ButtonR1)
  for i,pair in {{"Jump",E.KeyCode.ButtonA},{"Light",E.KeyCode.ButtonX},{"Heavy",E.KeyCode.ButtonY},{"Dodge",E.KeyCode.ButtonB}} do
-  tap(pair[1],pair[2]);assert(last()=="Technique"..i)
+  -- the press is the jutsu, its release lets a held one go (audit 29/10)
+  local n=#sent;tap(pair[1],pair[2]);local got={};for k=n+1,#sent do table.insert(got,sent[k].action) end;assert(sent[n+1].action=="Technique"..i and last()=="SealRelease",table.concat(got,","))
  end
  tap("Light",Controls.Keyboard.Light);assert(last()=="Attack")
  tap("Heavy",Controls.Keyboard.Heavy);assert(last()=="Heavy")
@@ -129,7 +130,7 @@ test("chakra modifier: Z + R and R1 + R2 infuse the tool; R and R2 alone stay pl
  press("Modifier",E.KeyCode.ButtonR1)
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.Change,V.new(0,0,.7));assert(last()=="Tool" and chakra(),"R1 + R2 was not infused")
  press("Tool",E.KeyCode.ButtonR2,E.UserInputState.End)
- tap("Light",E.KeyCode.ButtonX);assert(last()=="Technique2","R1 + square stopped being a jutsu")
+ local n=#sent;tap("Light",E.KeyCode.ButtonX);assert(sent[n+1].action=="Technique2","R1 + square stopped being a jutsu")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  -- The keyboard modifier never turns a pad tool into a chakra tool.
  press("ChakraKey",Controls.Keyboard.Chakra)
@@ -157,8 +158,9 @@ test("chakra load: R1 or Z held alone loads the next action once; a chord or a j
  table.clear(sent)
  -- pad: R1 held alone
  press("Modifier",E.KeyCode.ButtonR1)
- clock=Input.ChakraHold*.5;input:chakraHold();assert(loads()==0,"loaded before the hold")
- clock=Input.ChakraHold+.01;input:chakraHold();assert(loads()==1,"R1 held alone did not load")
+ clock=Input.ChakraHoldPad*.5;input:chakraHold();assert(loads()==0,"loaded before the hold")
+ clock=Input.ChakraHold+.01;input:chakraHold();assert(loads()==0,"R1 (the jutsu shift) loaded at the keyboard's short hold")
+ clock=Input.ChakraHoldPad+.01;input:chakraHold();assert(loads()==1,"R1 held alone did not load")
  clock+=1;input:chakraHold();assert(loads()==1,"one hold loaded twice")
  press("Modifier",E.KeyCode.ButtonR1,E.UserInputState.End)
  -- pad: R1 + square (a jutsu) is not a load
@@ -179,9 +181,13 @@ end)
 test("jump release cuts a jump but never a technique or pursuit",function()
  tap("Jump",E.KeyCode.Space);assert(#sent==2 and last()=="JumpOff")
  table.clear(sent);state.human.pursuit=1
- tap("Jump",E.KeyCode.ButtonA);assert(#sent==1 and last()=="Pursuit")
- table.clear(sent);press("Modifier",E.KeyCode.ButtonR1)
- tap("Jump",E.KeyCode.ButtonA);assert(#sent==1 and last()=="Technique1")
+ -- (Audit 29/10) the pad's × is PadJump: the server picks chase or jump
+ tap("Jump",E.KeyCode.ButtonA);assert(sent[1].action=="PadJump","× sent "..tostring(sent[1].action))
+ -- (User 29/10) on a keyboard Space stays a jump inside a chase window
+ table.clear(sent);tap("Jump",E.KeyCode.Space);assert(sent[1] and sent[1].action=="Jump","Space chased instead of jumping")
+ state.human.pursuit=0
+ table.clear(sent);state.human.pursuit=1;press("Modifier",E.KeyCode.ButtonR1)
+ tap("Jump",E.KeyCode.ButtonA);assert(sent[1].action=="Technique1" and last()=="SealRelease" and #sent==2,"R1 + × sent a JumpOff")
 end)
 test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-pad press",function()
  tap("SubstitutePad",E.KeyCode.DPadRight);assert(last()=="Substitute")
@@ -201,7 +207,7 @@ test("PS5 provides deliberate escape, feint and detach; re-engage is never a D-p
  end
  assert(Controls.Gamepad.Rush==nil,"the chakra dash is still declared on the D-pad")
  -- On a pad the re-engage is × inside a chase window, sprint + ○ toward outside.
- state.human.pursuit=1;tap("Jump",E.KeyCode.ButtonA);assert(last()=="Pursuit","× does not chase in a window")
+ state.human.pursuit=1;local n=#sent;tap("Jump",E.KeyCode.ButtonA);assert(sent[n+1].action=="PadJump","× does not send the server's chase-or-jump")
  state.human.pursuit=0;tap("Dodge",E.KeyCode.ButtonB);assert(last()=="Dodge","○ does not send the dodge the server reads")
  assert(Controls.HelpPad:find("sprint + ○ toward: chakra dash",1,true),"the pad help does not teach the chakra dash")
  assert(Controls.Help:find("E re-engage",1,true),"the keyboard help does not teach the re-engage")

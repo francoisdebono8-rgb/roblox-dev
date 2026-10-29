@@ -196,7 +196,10 @@ function Matches:view(s,cursor,mine,theirs)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime>s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),
+			-- (Audit 29/10) Only the counters the client reads: every event count
+			-- (80+ names, never reset) went out 30 times a second.
+			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
@@ -274,7 +277,12 @@ function Matches:view(s,cursor,mine,theirs)
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
-	if not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
+	-- (Audit 29/10) The stick has its own budget: a pad in motion sends up to
+	-- 30 Move packets a second and they used to drain the presses' budget.
+	if type(payload)=="table" and payload.action=="Move" then
+		s.moveBucket=s.moveBucket or {tokens=Config.RequestBurst,time=clock}
+		if not Rules.consumeToken(s.moveBucket,clock,Config.RequestRate,Config.RequestBurst) then return end
+	elseif not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
 	if type(payload)~="table" or type(payload.action)~="string" or #payload.action>24 then return end
 	local action=payload.action
 	if action=="Ready" then
@@ -304,6 +312,15 @@ end
 -- the anti-cheat timing and rate state is kept per actor, so per player.
 function Matches:act(s,actor,payload,clock)
 	local action=payload.action
+	actor.playerInput=true
+	-- (Audit 29/10) The pad's × is the chase inside its window, else the jump.
+	-- The client decided from a state one round trip old: a window already
+	-- closed here became a paid ground dash. The server decides now, and a
+	-- chase it refuses still jumps.
+	local padJump=action=="PadJump"
+	if padJump then
+		action=if (actor.pursuitUntil or 0)>s.combat.now and actor.target and actor.target.health>0 then "Pursuit" else "Jump"
+	end
 	if action~="Move" and not AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow()) then
 		-- Diagnostics for latency tests: how many presses were refused, and how
 		-- old the last refused one was (late packets vs rate limit).
@@ -356,6 +373,7 @@ function Matches:act(s,actor,payload,clock)
   return
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
+	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)

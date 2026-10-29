@@ -1,3 +1,23 @@
+**Audit de fluidité (29/10, nuit), après les 2 combats joués par l'utilisateur** (« je pouvais plus bouger », « plein de bugs et d'incohérences ») — [rapport](../reports/fluidity-audit-2026-10-29/REPORT.md).
+- **Les causes corrigées :**
+  - le stick était coupé hors de l'état neutre (garde, canalisation, récupération) ;
+  - l'atterrissage n'était pas détecté pendant les coups et les stuns (faux « en l'air », corps figé) ;
+  - un anti-triche jetait la 2e pression ;
+  - il n'y avait pas de mémoire des touches ;
+  - suspension après un chase, et coup sauté qui se figeait ;
+  - boucle garde / stun ;
+  - réactions aériennes coupées en vol ;
+  - coup ou dodge au réveil perdus ;
+  - embardée après un stun ;
+  - R1 qui chargeait du chakra, × décidé sur un état périmé, jutsu tenus à la manette ;
+  - touches oubliées au nouveau round ;
+  - léger de près de Gaara qui était un lanceur ;
+  - caméra au K.-O. et au corps à corps ;
+  - effets calculés deux fois par image.
+- **Mesure (joueur manette scripté contre l'IA, 8 persos) :** pressions mangées 7 % → 2 %, faux « en l'air » → 0.
+- **La release bloque maintenant sur la fluidité :** `tests/Fluidity.spec.luau` (12 tests, tous échouaient avant), `tests/Control.spec.luau` (contrôle du joueur), ainsi que Mouvement, Embodiment et CombatFeel, qui étaient hors de la release.
+- **Contrôle Studio : en cours.**
+
 **Partie 10, passe visuelle (28/10, 19 h 45 → 21 h 30, utilisateur absent)** — chaque point filmé en Studio (captures en rafale), puis corrigé et refilmé :
 - **caméra** : plus large, décalée sur le côté, centrée vers le joueur (plus de corps qui se masquent) ; flash de coup court et clair au lieu d'un corps rouge ;
 - **contact** : un coup léger s'arrête à une longueur de bras (4,1) ; un coup au ventre recule les hanches et redresse le buste (le pli de 77° collait les têtes, 1,9 stud) ;

@@ -34,7 +34,10 @@ test("a jab to the body folds the whole body, not just the head (it reads at gam
   local torso=a.model.joints.Waist and a.model.joints.Waist.Transform or a.model.joints.Root.Transform
   most=math.max(most,deg(torso)+deg(a.model.joints.Root.Transform))
  end
- assert(most>30,string.format("a jab still barely moves the body (%.0f degrees)",most))
+ -- (28/10, 43737a4: the hips go back and the chest straightens part of the
+ -- fold so a string keeps a gap between the heads; filmed in Studio. This
+ -- suite was outside the release gate and kept the old 30-degree bar.)
+ assert(most>24,string.format("a jab still barely moves the body (%.0f degrees)",most))
 end)
 
 test("between two blows of a string the struck body does not flash back to its stance",function()

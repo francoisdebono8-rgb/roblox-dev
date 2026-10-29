@@ -119,7 +119,16 @@ Context.Defaults={
 		return m or "DashAttack"
 	end,
 	flank=function(graph) return graph.routes and graph.routes.side or nil end,
-	close=function(graph) return graph.closeStrike or graph.heavyAfterOne end,
+	-- (Audit 29/10, user: "Gaara particulier") A light pressed at close range
+	-- never launches by default: Gaara's heavyAfterOne is his Sand Pillar, so
+	-- every light at arm's length was a launcher. A fighter may still declare
+	-- a launching closeStrike on purpose.
+	close=function(graph,attacks)
+		if graph.closeStrike then return graph.closeStrike end
+		local m=graph.heavyAfterOne
+		if m and attacks and attacks[m] and attacks[m].reaction=="Launched" then return nil end
+		return m
+	end,
 	reach=function(graph) return graph.reachStrike or "DashAttack" end,
 }
 
@@ -485,6 +494,12 @@ return {
 	-- IntentWindow seconds; toward is within acos(Toward) of the line to the
 	-- opponent, away within acos(Away) of the line away from him, side between.
 	Combo = {Grace = 0.18, Buffer = 0.3, IntentStrong = 0.45, IntentWindow = 0.22, Toward = 0.64, Away = 0.57},
+	-- Late presses (audit 29/10: 7% of a player's presses were refused in the
+	-- last 0.25 s of a recovery, a dodge or a stun, and nothing came out). A
+	-- press refused because the body is busy is kept this long and fires on
+	-- the first free frame: Late after the fighter's own commitment, LateHit
+	-- at the end of a reaction (shorter: a reversal, not a free mash-out).
+	Late = {Own = 0.2, Hit = 0.12},
 	-- Awakening: once per match, at low health, a fighter-specific power-up.
 	Awaken = {Threshold = 0.35, Duration = 12},
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.
@@ -1549,7 +1564,7 @@ return table.freeze({
 	-- is ignored before it reaches Combat.
 	Combat=table.freeze({Move=true,Arm=true,ChakraLoad=true,Attack=true,Heavy=true,Jump=true,JumpOff=true,Dodge=true,Guard=true,GuardOff=true,
 		Grab=true,Tool=true,Pursuit=true,Substitute=true,Feint=true,WallDetach=true,Awaken=true,
-		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true}),
+		Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true,SealRelease=true,PadJump=true}),
 })
 </ProtectedString>
         </Properties>
@@ -1682,7 +1697,12 @@ return table.freeze({
 	-- gameplay rule: the server state machine and the press buffer decide what
 	-- a press does). Attack stays under a deliberate double tap (~0.1 s), or the
 	-- second press of a buffered string was dropped before reaching the buffer.
-	Rates = table.freeze({Attack=0.08,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
+	-- (Audit 29/10, tests/Control.sim: Heavy 0.24 / Dodge 0.42 / Grab 0.55
+	-- dropped a person's second press silently, even when the first one had
+	-- been refused by the fight, so a dodge pressed in a stun and again as it
+	-- ended did nothing.) Every gap is now under what a hand can do on one
+	-- button (~0.08 s); cooldowns stay the fight's business.
+	Rates = table.freeze({Attack=0.05,Heavy=0.07,Guard=0.04,Dodge=0.07,Grab=0.07,Tool=0.07,Technique=0.07}),
 })
 </ProtectedString>
         </Properties>
@@ -3592,7 +3612,7 @@ return {
       <Item class="StringValue" referent="ND24">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">4c230f8f6a60382e8c2503f43b7c3973cb512912965165dbba49ef9dd7f64fcb</string>
+          <string name="Value">073baf0bbf4769b3336b53494ed10d533d1a5cc528cc00a129aa50d03eebe3a0</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND25">
@@ -4135,6 +4155,9 @@ function AI:update(now)
 		self.feintIn=now+.22+self.rng:NextNumber()*.12
 	end
 	if a.move.Magnitude&gt;1 then a.move=a.move.Unit end
+	-- A guard can walk now (Place1Movement: steerable); the bot's guard is a
+	-- short planted answer, as it was tuned.
+	if a.state=="Guarding" and now&lt;self.guardUntil then a.move=Vector3.zero end
 	if now&gt;=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	-- Wall run: rise along the wall, then dive at the opponent.
 	local fromCenter=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)
@@ -5534,6 +5557,10 @@ function Brawler.riposteMove(c,a,base)
  return if Attacks[move] then move else "Riposte"
 end
 function Brawler.free(a,now)
+ -- (Audit 29/10) A knockdown or a wall splat always becomes a wake-up
+ -- (Brawler.step): a strike started at its last frame was never checked for
+ -- a hit and always whiffed. The late press (Combat) fires it after.
+ if a.reaction=="Knockdown" or a.reaction=="WallSplat" then return false end
  return a.reaction==nil or now&gt;=(a.reactionUntil or 0)
 end
 function Brawler.event(c,a,event)
@@ -5798,6 +5825,9 @@ end
 -- the flight ends on reports it, so the client can say which blow did it.
 function Brawler.react(c,a,kind,velocity,duration,source,cause)
  Brawler.releaseGrab(a)
+ -- (Audit 29/10) A hit ends the run: its hand-back threw the body on at the
+ -- run's speed on the first free frame after the stun.
+ a.strikeCarry=nil
  Bangla.close(a.pending)
  -- A guard break or channel interrupt already set a longer stun: the melee
  -- reaction that follows keeps it instead of shortening it to the move's own.
@@ -6900,8 +6930,14 @@ function Brawler.step(c,a,dt)
     local normal=a.splatNormal or Vector3.zero
     a.reaction="Knockdown";a.reactionUntil=c.now+.9;a.reactionVelocity=normal*7+Vector3.new(0,-6,0)
     a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
+   elseif a.reaction=="Knockdown" and a.airborne then
+    -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
+    -- 0.24 s in the air, then slid at the fall's speed).
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
+    -- (Audit 29/10) A flight that ends in the air hands its speed on: the
+    -- body went on with zero speed, stopped, then dropped at full gravity.
+    if a.airborne and a.reactionVelocity then a.root.AssemblyLinearVelocity=a.reactionVelocity end
     a.reaction=nil;a.reactionVelocity=nil
     -- Fully recovered: drop the grounded presentation state with it.
     a.groundPose=nil
@@ -9228,6 +9264,7 @@ function Combat:cue(a,message,duration)
 end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
+	if state=="Stunned" then a.strikeCarry=nil end
 	-- Chain and cancel windows belong to the attack recovery that computes them
 	-- right after this call; any other state change must not inherit stale ones
 	-- (a substitution or awaken recovery used to open a string-cancel). The
@@ -9833,6 +9870,9 @@ function Combat:chase(a)
 	local style=Brawler.reentry(a)
 	a.chakra-=Config.PursuitCost; a.pursuitUntil=0
 	a.reaction=nil; a.airborne=true
+	-- (Audit 29/10) Motor.settle lands any grounded body: a chase starting
+	-- from the floor was landed on its first frame (dust, landing pose).
+	a.takeoffUntil=math.max(a.takeoffUntil or 0,self.now+.15)
 	a.pursuitStarted=self.now
 	-- A body still rising fast (a chase pressed on the launch itself) is
 	-- followed up to where an air strike can catch it, not dropped at 0.24 s.
@@ -9993,7 +10033,35 @@ function Combat:throwDrawn(a,aim)
 	self:cue(a,if cancel then "KUNAI • FINISHER" else "KUNAI THROWN",.5)
 	return true
 end
+-- (User 29/10: "des fois je pouvais plus bouger".) Every press and its
+-- answer is kept (last 40) so a recorded match shows what was asked and why
+-- it was refused (DevHooks summary: presses).
+-- Presses that wait for the body to be free (Config.Late): the verbs a player
+-- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
+local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
+	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	-- Players only (Matches:act marks them): the AI plans its own timing.
+	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
+		local L=Config.Late
+		local down=a.reaction=="Knockdown" or a.reaction=="WallSplat" or a.reaction=="Wakeup"
+		a.latePress={action=action,aim=aim,opts=opts,at=self.now,window=if down then L.Hit+.24 elseif reason=="Reacting" then L.Hit else L.Own}
+	elseif ok~=false and action~="GuardOff" then a.latePress=nil end
+	-- (Audit 29/10) An air dodge leaves the hover: its speed was zeroed by the
+	-- remaining air hold on the next frame.
+	if ok~=false and action=="Dodge" and a.state=="Dodging" then a.airHold=0 end
+	-- (Audit 29/10) A jutsu is the next action too: it spends a load (R1 held
+	-- while choosing it loaded one, and the next ○ became a dash at him).
+	if ok~=false and string.match(action,"^Technique%d$") then a.chakraLoad=nil end
+	if action~="GuardOff" then
+		local log=a.pressLog or {};a.pressLog=log
+		table.insert(log,{t=self.now,action=action,ok=ok~=false,reason=reason,state=a.state,air=a.airborne==true,reaction=a.reaction})
+		if #log&gt;40 then table.remove(log,1) end
+	end
+	return ok,reason
+end
+function Combat:requestInner(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health&lt;=0 then return false,"No duel" end
 	if self.match.introUntil and self.now&lt;self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
@@ -10010,7 +10078,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if action=="Jump" then a.jumpHeld=true end
 	if action=="JumpOff" then
 		a.jumpHeld=false
-		if a.airborne and a.root.AssemblyLinearVelocity.Y&gt;22 and self.now&lt;(a.takeoffUntil or 0)+0.18 then
+		-- (A pad × that became a chase sends its release too: the chase is not a jump.)
+		if a.airborne and a.state~="Pursuit" and a.root.AssemblyLinearVelocity.Y&gt;22 and self.now&lt;(a.takeoffUntil or 0)+0.18 then
 			local v=a.root.AssemblyLinearVelocity
 			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
 		end
@@ -10031,6 +10100,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 			if not ok or kind~="stand" then return ok,why end
 		end
 	end
+	-- (Audit 29/10) Down on the floor or getting up, a dodge is not an escape
+	-- (Combat:substitute refuses it "No escape window"): it waits for the
+	-- body to be up (Config.Late) and comes out as the dodge it was.
+	if action=="Dodge" and not Brawler.free(a,self.now) and (a.reaction=="Wakeup" or (a.reaction=="Knockdown" and not a.airborne)) then return false,"Reacting" end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
 	if action=="Awaken" then return self:awaken(a) end
@@ -10086,6 +10159,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- Like a guard or a dodge, a jump leaves a recovery only at its cancel
 		-- point: a whiff (or an unanswered dash) cannot hop out of its punish.
 		if a.state=="Recovery" and self.now&lt;(a.recoveryCancelAt or 0) then return false,"Committed" end
+		-- (Audit 29/10) Past the cancel point the jump leaves the recovery, as a
+		-- guard or a dodge does: the ground jump only starts from Neutral, so it
+		-- was refused "Airborne" with the body standing still.
+		if a.state=="Recovery" and not a.airborne then a.pending=nil;self:setState(a,"Neutral",0) end
 		local jumped=Motor.jump(a,self,self.now)
 		if jumped then ChakraFlow.leap(self,a) end
 		return jumped,"Airborne"
@@ -10399,6 +10476,18 @@ function Combat:updateActor(a,dt)
 	-- Directional memory for routes: the latest strong push, every frame.
 	Brawler.observe(self,a)
 	Defense.step(self,a,dt,now)
+	-- A body resting on the floor has landed, whatever it is doing (Motor.settle).
+	Motor.settle(a,self,now)
+	-- A press made just before the body was free comes out now (Config.Late).
+	local late=a.latePress
+	if late then
+		if now-late.at&gt;late.window then a.latePress=nil
+		elseif a.state=="Neutral" and not a.reaction and now&gt;=(a.hitstopUntil or 0) then
+			a.latePress=nil
+			local opts=table.clone(late.opts or {});opts.late=true
+			self:request(a,late.action,late.aim,nil,opts)
+		end
+	end
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
 	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
@@ -10490,6 +10579,16 @@ function Combat:updateActor(a,dt)
 			-- The chase stops where it arrives (Studio: its speed carried the
 			-- body on into the one it reached).
 			a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8)
+			-- (User 29/10 match: Gaara, Naruto chased a launched body and went on
+			-- rising 10-13 studs past it.) The brake kept the climb: up there the
+			-- body stops where it arrived and hangs for the follow-up.
+			if a.airborne then
+				local v=a.root.AssemblyLinearVelocity
+				a.root.AssemblyLinearVelocity=Vector3.new(v.X,math.min(v.Y,0),v.Z)
+				-- (Audit 29/10) .45 from the arrival: an early arrival kept the
+				-- whole chase's hold and hung up to a second.
+				a.airHold=now+.45
+			end
 		elseif a.state=="TechniqueChannel" and pending and Combat.charging(self,a,pending,now) then
 			-- (Reference quality) Held: the technique keeps gathering (spec.Hold).
 			a.untilTime=now+1/30
@@ -10526,8 +10625,10 @@ function Combat:updateActor(a,dt)
 	-- A guard key still held through a hit, a recovery or a throw comes back up
 	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
 	-- alone, so it never grants a fresh parry window.
+	-- (Audit 29/10) Not on an empty tank: at 8 stamina it broke again 0.67 s
+	-- later, a guard / stun loop the held key could not get out of.
 	if a.guardWanted and a.state=="Neutral" and not a.guardHeld and not a.throwing and not a.reaction
-		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
+		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) and (a.stamina or 100)&gt;=30 then
 		a.guardHeld=true;self:setState(a,"Guarding",0)
 	end
 	-- Movement overhaul (Studio): out of a running strike the body slides on
@@ -10690,7 +10791,16 @@ function Combat:updateActor(a,dt)
 		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
 		 if math.abs(delta.Y)&lt;.45 then vertical=0 end
 		 local correction=planar+Vector3.new(0,vertical,0)
-   Motor.flight(a,self,correction)
+   -- (Audit 29/10, user: "quand on saute et qu'on redescend avec un coup")
+   -- Held in an air string (airHold) the body is placed; a jump-in strike
+   -- with no hold keeps falling on its arc and is only drawn to arm's length
+   -- (Motor.flight zeroed its speed every frame: it hovered while swinging).
+   if (a.airHold or 0)&gt;now then Motor.flight(a,self,correction)
+   else
+    local v=a.root.AssemblyLinearVelocity
+    Motor.flight(a,self,planar)
+    a.root.AssemblyLinearVelocity=v
+   end
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining&gt;0 then
 		local toTarget=Combat.swingAt(a)-a.root.Position
@@ -12076,7 +12186,7 @@ function DevHooks.install(matches)
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
 			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)&gt;now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,chakraLoad=a.chakraLoad and a.chakraLoad.nature,infused=a.pending and a.pending.chakraFlow,events=a.events,
-			chainOpen=a.chainOpen and now&gt;=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
+			chainOpen=a.chainOpen and now&gt;=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,move=a.move,presses=a.pressLog,now=now,hitZone=a.hitZone,hitKind=a.hitKind,
 			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end
 	-- Codex's Studio tools (33028b2 / 7091585, ported; docs/tools/DEVTOOLS.md):
@@ -14694,7 +14804,10 @@ function Matches:view(s,cursor,mine,theirs)
 			speed=a.locomotion.Magnitude,airborne=a.airborne,sprinting=a.model:GetAttribute("MovementSprinting")==true,
 			landStrong=a.model:GetAttribute("MovementHardLanding")==true,pursuit=math.max(0,a.pursuitUntil-s.combat.now),combo=a.combo,
 			subCharges=a.subCharges,chakraLoad=if a.chakraLoad and a.chakraLoad.untilTime&gt;s.combat.now then a.chakraLoad.nature else nil,infused=a.pending and a.pending.chakraFlow or nil,wall=a.wall~=nil,wallMode=a.wall and a.wall.mode or nil,wallSide=a.wall and a.wall.side or nil,reaction=a.reaction,guardImpact=math.max(0,(a.guardImpact or 0)-s.combat.now),attackName=a.attackName,attackElapsed=s.combat.now-(a.attackStarted or 0),whiffed=if a.state=="Recovery" and a.attackWhiffed then true else nil,airHold=a.airHold,impactSerial=a.impactSerial or 0,impactHeavy=a.impactHeavy,impactStyle=a.impactStyle,
-			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),events=a.events,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
+			hitFrom=a.hitFrom,hitAngle=a.hitAngle,hitStrength=a.hitStrength or 0,hitZone=a.hitZone,hitKind=a.hitKind,hitTwist=a.hitTwist,groundPose=a.groundPose,groundSide=a.groundSide,koStyle=a.koStyle,koAirborne=a.koAirborne,koFlying=a.koFlight~=nil,reactionElapsed=math.max(0,s.combat.now-(a.reactionStartedAt or s.combat.now)),
+			-- (Audit 29/10) Only the counters the client reads: every event count
+			-- (80+ names, never reset) went out 30 times a second.
+			events=if a.events then {Parry=a.events.Parry,ReadSlip=a.events.ReadSlip,Draw=a.events.Draw,Awaken=a.events.Awaken} else nil,velocity=if a.state=="Dodging" then (a.dodgeDirection or Vector3.zero)*35 else a.root.AssemblyLinearVelocity,
 			-- Presentation timing for throws, casts, teleports and variants:
 			-- elapsed values are measured on the server clock the client shares.
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,
@@ -14772,7 +14885,12 @@ function Matches:view(s,cursor,mine,theirs)
 end
 function Matches:request(player,payload)
 	local s=self:session(player); local clock=os.clock()
-	if not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
+	-- (Audit 29/10) The stick has its own budget: a pad in motion sends up to
+	-- 30 Move packets a second and they used to drain the presses' budget.
+	if type(payload)=="table" and payload.action=="Move" then
+		s.moveBucket=s.moveBucket or {tokens=Config.RequestBurst,time=clock}
+		if not Rules.consumeToken(s.moveBucket,clock,Config.RequestRate,Config.RequestBurst) then return end
+	elseif not Rules.consumeToken(s.bucket,clock,Config.RequestRate,Config.RequestBurst) then return end
 	if type(payload)~="table" or type(payload.action)~="string" or #payload.action&gt;24 then return end
 	local action=payload.action
 	if action=="Ready" then
@@ -14802,6 +14920,15 @@ end
 -- the anti-cheat timing and rate state is kept per actor, so per player.
 function Matches:act(s,actor,payload,clock)
 	local action=payload.action
+	actor.playerInput=true
+	-- (Audit 29/10) The pad's × is the chase inside its window, else the jump.
+	-- The client decided from a state one round trip old: a window already
+	-- closed here became a paid ground dash. The server decides now, and a
+	-- chase it refuses still jumps.
+	local padJump=action=="PadJump"
+	if padJump then
+		action=if (actor.pursuitUntil or 0)&gt;s.combat.now and actor.target and actor.target.health&gt;0 then "Pursuit" else "Jump"
+	end
 	if action~="Move" and not AntiCheat.check(actor,action,payload.clientTime,workspace:GetServerTimeNow()) then
 		-- Diagnostics for latency tests: how many presses were refused, and how
 		-- old the last refused one was (late packets vs rate limit).
@@ -14854,6 +14981,7 @@ function Matches:act(s,actor,payload,clock)
   return
  end
  local ok,reason=s.combat:request(actor,action,aim,payload.clientTime,if payload.chakra==true then {chakra=true} else nil)
+	if padJump and action=="Pursuit" and ok==false then action="Jump";ok,reason=s.combat:request(actor,"Jump",aim,payload.clientTime,nil) end
 	if not ok and reason~="Committed" and reason~="Intro" then s.combat:cue(actor,string.upper(reason)) end
 end
 function Matches:update(dt,now)
@@ -15130,6 +15258,41 @@ function Motor.descend(a,c,speed,dt)
 end
 -- How close a walk may bring one body to the other (root to root).
 Motor.SURFACE=3.4
+-- The body is back on the floor: every air flag ends with it.
+function Motor.land(a,c,now)
+	local profile=Config.Movement
+	a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
+	local falling=a.fallSpeed or 0;a.fallSpeed=0
+	-- Only a real drop costs speed. A standard or sprint jump lands below
+	-- HardLandVelocity and keeps its momentum straight into the next step.
+	local hard=falling&gt;profile.HardLandVelocity
+	a.landUntil=if hard then now+profile.HardLandRecovery else nil
+	a.model:SetAttribute("MovementLandedAt",now)
+	a.model:SetAttribute("MovementHardLanding",hard)
+	c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
+end
+-- (User 29/10, recorded match: "quand on saute et qu'on redescend avec un
+-- coup".) Motor.step was the only place a landing was seen, and it does not
+-- run while the body strikes, dodges, is stunned or takes a ground reaction:
+-- a body that came down in one of those stayed "airborne" on the floor for up
+-- to 1.7 s (air strikes thrown standing, air reactions on the ground). Every
+-- frame, whatever the state, a body resting on the floor has landed - except
+-- a thrown body (its flight lands itself), a wall, a plunging slam and the
+-- first instants of a jump.
+function Motor.settle(a,c,now)
+	-- (Audit 29/10) Every way into the air gets a moment before it can be
+	-- settled, whether or not it set takeoffUntil (a chase, an air channel and
+	-- a vault set airborne on the floor and were landed on their first frame).
+	if not a.airborne then a.airSince=nil;return false end
+	a.airSince=a.airSince or now
+	if a.wall or now&lt;=(a.takeoffUntil or 0) or now-a.airSince&lt;.15 then return false end
+	local kind=a.reaction
+	if kind=="Launched" or kind=="Juggled" or kind=="Knockback" or kind=="Knockdown" or kind=="WallSplat" or kind=="Spiked" or kind=="Grabbed" then return false end
+	if a.state=="Active" and a.attackName=="Slam" then return false end
+	if a.root.AssemblyLinearVelocity.Y&gt;5 or not Motor.grounded(a,c) then return false end
+	Motor.land(a,c,now)
+	return true
+end
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
  donor(a,c)
@@ -15139,15 +15302,7 @@ function Motor.step(a,c,dt,now)
 	if vertical&lt;0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now&gt;(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y&lt;=5 then
-		a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
-		local falling=a.fallSpeed or 0;a.fallSpeed=0
-		-- Only a real drop costs speed. A standard or sprint jump lands below
-		-- HardLandVelocity and keeps its momentum straight into the next step.
-		local hard=falling&gt;profile.HardLandVelocity
-		a.landUntil=if hard then now+profile.HardLandRecovery else nil
-		a.model:SetAttribute("MovementLandedAt",now)
-		a.model:SetAttribute("MovementHardLanding",hard)
-		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
+		Motor.land(a,c,now)
 	end
 	-- (User 28/10, recorded match: 15 airborne flickers of 0.1-0.2 s under a
 	-- stud while running.) Coyote time: an uneven floor (a grass patch, a
@@ -15865,6 +16020,14 @@ local function updateMovement(deltaTime)
 	end
 
 	local blocked = movementIsBlocked(character)
+	-- (Audit 29/10, "je pouvais plus bouger") A guard, a channel, and a
+	-- recovery past its cancel point (where a guard, a dodge or a jump are
+	-- already allowed) keep the stick: the body walks at Motor's cap for that
+	-- state (GuardSpeed, ChannelSpeed, AttackWalkSpeed). Every non-Neutral
+	-- state used to brake the body to a standstill, so those caps never applied.
+	local steerable = blocked and a.wall==nil and a.reaction==nil and a.model:GetAttribute('MovementTraversalActive')~=true
+		and (a.state=='Guarding' or a.state=='TechniqueChannel'
+			or ((a.state=='Recovery' or a.state=='TechniqueRecovery') and c.now&gt;=(a.recoveryCancelAt or math.huge)))
 	local grounded = a.grounded
 	local horizontalVelocity = horizontalOf(root.AssemblyLinearVelocity)
 	local groundSpeed = horizontalVelocity.Magnitude
@@ -15916,7 +16079,7 @@ local function updateMovement(deltaTime)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
-		if not blocked and input.Magnitude&gt;.05 then
+		if (not blocked or steerable) and input.Magnitude&gt;.05 then
 			-- A backpedal or side step is slower than running where the body faces.
 			local face=horizontalOf(root.CFrame.LookVector)
 			local along=if face.Magnitude&gt;.01 then face.Unit:Dot(input.Unit) else 1
@@ -29146,16 +29309,29 @@ function Camera:update(data,dt)
 	local pursuit=data.human.state=="Pursuit" or data.bot.state=="Pursuit"
 	local slam=data.human.attackName=="Slam" or data.bot.attackName=="Slam"
 	local selected=mode(data.human,data.bot)
+	-- (Audit 29/10) A mode is kept at least 0.4 s: the air-combo flags drop
+	-- between two blows, and the lens swung 12 degrees and dollied in and out
+	-- in the middle of a string.
+	local clock=os.clock()
+	if self.mode and selected~=self.mode and clock&lt;(self.modeSince or 0)+.4 and selected~="Slam" and selected~="Pursuit" then selected=self.mode end
+	if selected~=self.mode then self.modeSince=clock end
 	self.mode=selected
 	local frame=framing[selected]
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
+	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
+	-- back behind the shoulder once the stick rests (it stayed off for good).
+	if follow and not data.ko and math.abs(self.look.X or 0)&lt;.05 then self.yaw*=math.exp(-dt*1.6) end
 	-- Boom heading: behind the player on the player-&gt;opponent line, offset over
 	-- the shoulder. When the fighters swap sides the heading orbits around at a
 	-- bounded angular speed rather than staying on the old side.
 	local behind=-flat.Unit
 	local desiredAngle
 	if follow then
+		-- (Audit 29/10) Bodies on top of each other (a cross-up, a vault, a
+		-- grab): the line between them is noise, the heading holds instead of
+		-- whipping at up to 420 deg/s.
+		if separation&lt;3.2 and self.heldBehind then behind=self.heldBehind else self.heldBehind=behind end
 		desiredAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
 	elseif lost and self.locked then
 		desiredAngle=self.fogYaw or self.boomAngle or 0
@@ -32341,8 +32517,9 @@ function FX:update(data,dt,folder)
 	end
 	-- Layers that draw across the scene once per frame (ChakraFX).
 	for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
-	-- A layer may also read the whole duel once per frame (both fighters, hazards).
-	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
+	-- (Audit 29/10) The layers' whole-duel frame already ran above: a second
+	-- pass here stepped GaleFX, IdentityFX and the Wave1 shroud twice a frame
+	-- (double cost, wind lanes at double speed).
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,
@@ -34445,6 +34622,10 @@ Input.ChakraChord=.3
 -- The modifier held alone this long loads chakra into the next action
 -- (server ChakraFlow): pad R1, keyboard Z.
 Input.ChakraHold=.28
+-- (Audit 29/10) On the pad R1 is also the jutsu shift: a player holding it
+-- while choosing the face button loaded chakra by accident (and the next ○
+-- became a dash). The pad's load needs a deliberate hold.
+Input.ChakraHoldPad=.5
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -34468,7 +34649,7 @@ local function toolAim(state,pad)
 end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
-  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
+  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={},seals={}},Input)
  local function bind(name,keys,callback)
   local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
@@ -34512,10 +34693,13 @@ function Input.new(send,getState,toggleLock,camera)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
-   if modified then self.modifierSpent=true end
+   if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
    send(if modified then "Technique"..slot else normal)
    return not modified
   end
+  -- (Audit 29/10) The face button let go after R1+face lets a held technique
+  -- go, as keys 1-4 do (a pad Katon always charged to the end).
+  if released(state) and self.seals[object.KeyCode.Name] then self.seals[object.KeyCode.Name]=nil;send("SealRelease") end
   return false
  end
  bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
@@ -34525,10 +34709,16 @@ function Input.new(send,getState,toggleLock,camera)
   local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
   if released(state) then
    if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
-   pressed(state,obj)
+   face(state,obj,"Jump",1)
   else
-   local h=getState().human;local action=if h and h.pursuit&gt;0 then "Pursuit" else "Jump"
-   if face(state,obj,action,1) and action=="Jump" then self.jumps[id]=true end
+   -- (User 29/10: a jump pressed after a launch flew the body up after the
+   -- other one.) On a pad × doubles as the chase inside its window (no
+   -- spare button); on a keyboard the chase has its own key (E) and Space
+   -- always jumps.
+   -- (Audit 29/10) The pad sends PadJump: the server picks the chase if its
+   -- own window is open, else the jump (Matches:act).
+   local action=if padObject(obj) then "PadJump" else "Jump"
+   if face(state,obj,action,1) then self.jumps[id]=true end
   end
  end)
  bind("Guard",both("Guard"),function(state,obj)
@@ -34602,15 +34792,30 @@ function Input.new(send,getState,toggleLock,camera)
  return self
 end
 function Input:reset()
- table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
+ table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true
+end
+-- (Audit 29/10) A new round (or phase) clears the presses but not the hand:
+-- a direction held through the round change was forgotten until the key was
+-- pressed again, so the body stood still at the start of every round.
+function Input:resync()
+ self:reset()
+ pcall(function()
+  for _,code in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
+   if UIS:IsKeyDown(code) then self.keys[code.Name]=true end
+  end
+  if not self.pad and UIS:IsKeyDown(KEYBOARD.Sprint) then self.sprinting=true end
+  for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
+   if input.KeyCode==Enum.KeyCode.Thumbstick1 and input.Position.Magnitude&gt;.15 then self.stick=Vector2.new(input.Position.X,input.Position.Y) end
+  end
+ end)
 end
 -- (Freedom) The modifier held alone: once per hold, the next action is
 -- loaded with chakra. Polled every frame (Input:direction).
 function Input:chakraHold()
  local now=Input.now()
- if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)&gt;=Input.ChakraHold then
+ if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)&gt;=Input.ChakraHoldPad then
   self.modifierSpent=true;self.send("ChakraLoad")
  end
  if self.chakra and not self.chakraSpent and now-(self.chakraDownAt or now)&gt;=Input.ChakraHold then
@@ -34869,7 +35074,7 @@ local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModu
 require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch&lt;(current.epoch or 0) then return end
-	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
+	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
 	if data.epoch~=current.epoch then camera.locked=true end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
@@ -35562,7 +35767,10 @@ function Presentation:smoothStep(data,dt)
 	for key,model in {human=character,bot=Presentation.opponent(data,folder)} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
 		local actor=data[key]
-		if root and not root.Anchored and actor then
+		-- (Audit 29/10) Anchored roots too: the final blow's flight moves an
+		-- anchored root, and an untracked one froze the camera (and the look)
+		-- on the impact point while the body flew off.
+		if root and actor then
 			-- The true replicated pose: if the root still sits exactly where we
 			-- drew it last frame, no new packet arrived since.
 			local st=self.smooth[key]

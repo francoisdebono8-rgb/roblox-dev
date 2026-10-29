@@ -79,7 +79,7 @@ function DevHooks.install(matches)
 			airborne=a.airborne,wall=a.wall~=nil,airHold=a.airHold,pending=a.pending and (a.pending.name or (a.pending.spec and a.pending.spec.Id)),
 			throwing=a.throwing and a.throwing.kind,anchor=a.anchor and a.anchor.position,velocity=a.root.AssemblyLinearVelocity,
 			untilIn=a.untilTime-now,groundPose=a.groundPose,flash=(a.flashUntil or 0)>now,comboHits=a.comboHits,subCharges=a.subCharges,seals=#(a.anchors or {}),attackVariant=a.attackVariant,chakraLoad=a.chakraLoad and a.chakraLoad.nature,infused=a.pending and a.pending.chakraFlow,events=a.events,
-			chainOpen=a.chainOpen and now>=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,hitZone=a.hitZone,hitKind=a.hitKind,
+			chainOpen=a.chainOpen and now>=(a.chainAt or 0) and a.state=="Recovery",combo=a.combo,move=a.move,presses=a.pressLog,now=now,hitZone=a.hitZone,hitKind=a.hitKind,
 			build=a.build and {spent=a.build.spent,bracket=a.build.bracket,nodes=table.clone(a.build.nodes)}}
 	end
 	-- Codex's Studio tools (33028b2 / 7091585, ported; docs/tools/DEVTOOLS.md):

@@ -439,6 +439,9 @@ function AI:update(now)
 		self.feintIn=now+.22+self.rng:NextNumber()*.12
 	end
 	if a.move.Magnitude>1 then a.move=a.move.Unit end
+	-- A guard can walk now (Place1Movement: steerable); the bot's guard is a
+	-- short planted answer, as it was tuned.
+	if a.state=="Guarding" and now<self.guardUntil then a.move=Vector3.zero end
 	if now>=self.guardUntil and a.state=="Guarding" then c:request(a,"GuardOff") end
 	-- Wall run: rise along the wall, then dive at the opponent.
 	local fromCenter=(a.root.Position-c.match.origin)*Vector3.new(1,0,1)

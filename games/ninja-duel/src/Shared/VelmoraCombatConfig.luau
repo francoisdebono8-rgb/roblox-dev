@@ -15,5 +15,10 @@ return table.freeze({
 	-- gameplay rule: the server state machine and the press buffer decide what
 	-- a press does). Attack stays under a deliberate double tap (~0.1 s), or the
 	-- second press of a buffered string was dropped before reaching the buffer.
-	Rates = table.freeze({Attack=0.08,Heavy=0.24,Guard=0.05,Dodge=0.42,Grab=0.55,Tool=0.25,Technique=0.10}),
+	-- (Audit 29/10, tests/Control.sim: Heavy 0.24 / Dodge 0.42 / Grab 0.55
+	-- dropped a person's second press silently, even when the first one had
+	-- been refused by the fight, so a dodge pressed in a stun and again as it
+	-- ended did nothing.) Every gap is now under what a hand can do on one
+	-- button (~0.08 s); cooldowns stay the fight's business.
+	Rates = table.freeze({Attack=0.05,Heavy=0.07,Guard=0.04,Dodge=0.07,Grab=0.07,Tool=0.07,Technique=0.07}),
 })

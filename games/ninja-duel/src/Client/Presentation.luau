@@ -171,7 +171,10 @@ function Presentation:smoothStep(data,dt)
 	for key,model in {human=character,bot=Presentation.opponent(data,folder)} do
 		local root=model and model:FindFirstChild("HumanoidRootPart")
 		local actor=data[key]
-		if root and not root.Anchored and actor then
+		-- (Audit 29/10) Anchored roots too: the final blow's flight moves an
+		-- anchored root, and an untracked one froze the camera (and the look)
+		-- on the impact point while the body flew off.
+		if root and actor then
 			-- The true replicated pose: if the root still sits exactly where we
 			-- drew it last frame, no new packet arrived since.
 			local st=self.smooth[key]

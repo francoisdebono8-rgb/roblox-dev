@@ -165,6 +165,14 @@ local function updateMovement(deltaTime)
 	end
 
 	local blocked = movementIsBlocked(character)
+	-- (Audit 29/10, "je pouvais plus bouger") A guard, a channel, and a
+	-- recovery past its cancel point (where a guard, a dodge or a jump are
+	-- already allowed) keep the stick: the body walks at Motor's cap for that
+	-- state (GuardSpeed, ChannelSpeed, AttackWalkSpeed). Every non-Neutral
+	-- state used to brake the body to a standstill, so those caps never applied.
+	local steerable = blocked and a.wall==nil and a.reaction==nil and a.model:GetAttribute('MovementTraversalActive')~=true
+		and (a.state=='Guarding' or a.state=='TechniqueChannel'
+			or ((a.state=='Recovery' or a.state=='TechniqueRecovery') and c.now>=(a.recoveryCancelAt or math.huge)))
 	local grounded = a.grounded
 	local horizontalVelocity = horizontalOf(root.AssemblyLinearVelocity)
 	local groundSpeed = horizontalVelocity.Magnitude
@@ -216,7 +224,7 @@ local function updateMovement(deltaTime)
 	if grounded then
 		local input=horizontalOf(a.move)
 		local target=Vector3.zero
-		if not blocked and input.Magnitude>.05 then
+		if (not blocked or steerable) and input.Magnitude>.05 then
 			-- A backpedal or side step is slower than running where the body faces.
 			local face=horizontalOf(root.CFrame.LookVector)
 			local along=if face.Magnitude>.01 then face.Unit:Dot(input.Unit) else 1

@@ -75,4 +75,35 @@ test("final blow: the last hit throws the body, slow first, then it comes to res
  assert(flat.Magnitude>5 and flat:Dot(V.new(0,0,-1))>0,string.format("thrown %.1f studs, the wrong way?",flat.Magnitude))
 end)
 
+test("a body that lands while it strikes, dodges or is hit is no longer airborne (user 29/10 match)",function()
+ local c,a,b=H.duel("Lion","Mirage")
+ place(c,a,b,V.new(0,3,4),V.new(0,3,-4))
+ b.ai=nil
+ -- came down during an air strike's recovery, then took a light hit
+ a.airborne=true;a.takeoffUntil=0;a.state="Recovery";a.untilTime=c.now+.3;a.attackName="Air1"
+ for _=1,3 do H.step(c,.01) end
+ assert(not a.airborne,"still airborne on the floor during a recovery")
+ a.airborne=true
+ c:damage(b,a,2,false)
+ for _=1,3 do H.step(c,.01) end
+ assert(not a.airborne,"still airborne on the floor in a ground reaction")
+ -- a press now is a ground strike, not an air one
+ for _=1,60 do H.step(c,.01) end
+ a.reaction=nil;a.state="Neutral";a.untilTime=0
+ assert(c:request(a,"Attack"))
+ assert(a.attackName~="Air1" and a.attackName~="Air2","an air strike thrown standing ("..tostring(a.attackName)..")")
+end)
+
+test("an air hold never freezes a body standing on the floor (user 29/10: \"je pouvais plus bouger\")",function()
+ local c,a,b=H.duel("Sand","Mirage")
+ place(c,a,b,V.new(0,3,10),V.new(0,3,-10))
+ b.ai=nil
+ a.airborne=true;a.takeoffUntil=0;a.airHold=c.now+1.2;a.state="Neutral"
+ local from=a.root.Position
+ for _=1,30 do a.move=V.new(1,0,0);H.step(c,.01) end
+ assert(not a.airborne and (a.airHold or 0)<=c.now,"the body is still held in the air on the floor")
+ for _=1,30 do a.move=V.new(1,0,0);H.step(c,.01) end
+ assert((a.root.Position-from).Magnitude>1,string.format("frozen: moved %.2f studs in 0.6 s",(a.root.Position-from).Magnitude))
+end)
+
 print("NinjaDuel air combat: "..passed.." PASS")

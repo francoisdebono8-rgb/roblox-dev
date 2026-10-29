@@ -2029,8 +2029,9 @@ function FX:update(data,dt,folder)
 	end
 	-- Layers that draw across the scene once per frame (ChakraFX).
 	for _,layer in FX.layers do if layer.step then layer.step(self,data,dt,folder) end end
-	-- A layer may also read the whole duel once per frame (both fighters, hazards).
-	for _,layer in FX.layers do if layer.frame then layer.frame(self,data,dt,folder) end end
+	-- (Audit 29/10) The layers' whole-duel frame already ran above: a second
+	-- pass here stepped GaleFX, IdentityFX and the Wave1 shroud twice a frame
+	-- (double cost, wind lanes at double speed).
 end
 -- Gaara's sand (projectiles, shield, flicker, coffin, Desert Wave, lashes).
 require(script.Parent.SandFX).install(FX,{new=new,block=block,tween=tween,sound=sound,flash=flash,shockRing=shockRing,burst=burst,

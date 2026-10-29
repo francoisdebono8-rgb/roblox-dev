@@ -140,16 +140,29 @@ function Camera:update(data,dt)
 	local pursuit=data.human.state=="Pursuit" or data.bot.state=="Pursuit"
 	local slam=data.human.attackName=="Slam" or data.bot.attackName=="Slam"
 	local selected=mode(data.human,data.bot)
+	-- (Audit 29/10) A mode is kept at least 0.4 s: the air-combo flags drop
+	-- between two blows, and the lens swung 12 degrees and dollied in and out
+	-- in the middle of a string.
+	local clock=os.clock()
+	if self.mode and selected~=self.mode and clock<(self.modeSince or 0)+.4 and selected~="Slam" and selected~="Pursuit" then selected=self.mode end
+	if selected~=self.mode then self.modeSince=clock end
 	self.mode=selected
 	local frame=framing[selected]
 	-- Look-stick / unlocked mouse orbit.
 	self.yaw+=(self.look.X or 0)*dt*2.4;self.pitch=math.clamp(self.pitch-(self.look.Y or 0)*dt,.04,.9)
+	-- (Audit 29/10) Locked, a nudge of the right stick is a glance: it eases
+	-- back behind the shoulder once the stick rests (it stayed off for good).
+	if follow and not data.ko and math.abs(self.look.X or 0)<.05 then self.yaw*=math.exp(-dt*1.6) end
 	-- Boom heading: behind the player on the player->opponent line, offset over
 	-- the shoulder. When the fighters swap sides the heading orbits around at a
 	-- bounded angular speed rather than staying on the old side.
 	local behind=-flat.Unit
 	local desiredAngle
 	if follow then
+		-- (Audit 29/10) Bodies on top of each other (a cross-up, a vault, a
+		-- grab): the line between them is noise, the heading holds instead of
+		-- whipping at up to 420 deg/s.
+		if separation<3.2 and self.heldBehind then behind=self.heldBehind else self.heldBehind=behind end
 		desiredAngle=math.atan2(behind.X,behind.Z)+self.yaw+frame.side
 	elseif lost and self.locked then
 		desiredAngle=self.fogYaw or self.boomAngle or 0

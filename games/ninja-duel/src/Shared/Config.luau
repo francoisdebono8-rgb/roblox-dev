@@ -33,6 +33,12 @@ return {
 	-- IntentWindow seconds; toward is within acos(Toward) of the line to the
 	-- opponent, away within acos(Away) of the line away from him, side between.
 	Combo = {Grace = 0.18, Buffer = 0.3, IntentStrong = 0.45, IntentWindow = 0.22, Toward = 0.64, Away = 0.57},
+	-- Late presses (audit 29/10: 7% of a player's presses were refused in the
+	-- last 0.25 s of a recovery, a dodge or a stun, and nothing came out). A
+	-- press refused because the body is busy is kept this long and fires on
+	-- the first free frame: Late after the fighter's own commitment, LateHit
+	-- at the end of a reaction (shorter: a reversal, not a free mash-out).
+	Late = {Own = 0.2, Hit = 0.12},
 	-- Awakening: once per match, at low health, a fighter-specific power-up.
 	Awaken = {Threshold = 0.35, Duration = 12},
 	-- Rhythm: a chained strike pressed on the beat (not mashed early) is a Flow strike.

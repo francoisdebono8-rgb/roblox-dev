@@ -41,7 +41,7 @@ local playerModule=player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModu
 require(playerModule):GetControls():Disable()
 remote.OnClientEvent:Connect(function(data)
 	if data.epoch<(current.epoch or 0) then return end
-	if data.epoch~=current.epoch or data.phase~=current.phase then input:reset() end
+	if data.epoch~=current.epoch or data.phase~=current.phase then input:resync() end
 	if data.epoch~=current.epoch then camera.locked=true end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)

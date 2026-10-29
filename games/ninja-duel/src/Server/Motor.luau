@@ -237,6 +237,41 @@ function Motor.descend(a,c,speed,dt)
 end
 -- How close a walk may bring one body to the other (root to root).
 Motor.SURFACE=3.4
+-- The body is back on the floor: every air flag ends with it.
+function Motor.land(a,c,now)
+	local profile=Config.Movement
+	a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
+	local falling=a.fallSpeed or 0;a.fallSpeed=0
+	-- Only a real drop costs speed. A standard or sprint jump lands below
+	-- HardLandVelocity and keeps its momentum straight into the next step.
+	local hard=falling>profile.HardLandVelocity
+	a.landUntil=if hard then now+profile.HardLandRecovery else nil
+	a.model:SetAttribute("MovementLandedAt",now)
+	a.model:SetAttribute("MovementHardLanding",hard)
+	c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
+end
+-- (User 29/10, recorded match: "quand on saute et qu'on redescend avec un
+-- coup".) Motor.step was the only place a landing was seen, and it does not
+-- run while the body strikes, dodges, is stunned or takes a ground reaction:
+-- a body that came down in one of those stayed "airborne" on the floor for up
+-- to 1.7 s (air strikes thrown standing, air reactions on the ground). Every
+-- frame, whatever the state, a body resting on the floor has landed - except
+-- a thrown body (its flight lands itself), a wall, a plunging slam and the
+-- first instants of a jump.
+function Motor.settle(a,c,now)
+	-- (Audit 29/10) Every way into the air gets a moment before it can be
+	-- settled, whether or not it set takeoffUntil (a chase, an air channel and
+	-- a vault set airborne on the floor and were landed on their first frame).
+	if not a.airborne then a.airSince=nil;return false end
+	a.airSince=a.airSince or now
+	if a.wall or now<=(a.takeoffUntil or 0) or now-a.airSince<.15 then return false end
+	local kind=a.reaction
+	if kind=="Launched" or kind=="Juggled" or kind=="Knockback" or kind=="Knockdown" or kind=="WallSplat" or kind=="Spiked" or kind=="Grabbed" then return false end
+	if a.state=="Active" and a.attackName=="Slam" then return false end
+	if a.root.AssemblyLinearVelocity.Y>5 or not Motor.grounded(a,c) then return false end
+	Motor.land(a,c,now)
+	return true
+end
 function Motor.step(a,c,dt,now)
 	local profile=Config.Movement
  donor(a,c)
@@ -246,15 +281,7 @@ function Motor.step(a,c,dt,now)
 	if vertical<0 then a.fallSpeed=math.max(a.fallSpeed or 0,-vertical) end
 	local grounded=Motor.grounded(a,c)
 	if grounded and a.airborne and now>(a.takeoffUntil or 0) and a.root.AssemblyLinearVelocity.Y<=5 then
-		a.airborne=false; a.airDodgeUsed=false; a.airHold=0; a.airSwingUsed=false; a.airRecoverUsed=false; a.airStringHits=0
-		local falling=a.fallSpeed or 0;a.fallSpeed=0
-		-- Only a real drop costs speed. A standard or sprint jump lands below
-		-- HardLandVelocity and keeps its momentum straight into the next step.
-		local hard=falling>profile.HardLandVelocity
-		a.landUntil=if hard then now+profile.HardLandRecovery else nil
-		a.model:SetAttribute("MovementLandedAt",now)
-		a.model:SetAttribute("MovementHardLanding",hard)
-		c:effect("Land dust",a.root.Position-Vector3.new(0,2.8,0),a.color,Vector3.new(3,0.15,3),0.15)
+		Motor.land(a,c,now)
 	end
 	-- (User 28/10, recorded match: 15 airborne flickers of 0.1-0.2 s under a
 	-- stud while running.) Coyote time: an uneven floor (a grass patch, a

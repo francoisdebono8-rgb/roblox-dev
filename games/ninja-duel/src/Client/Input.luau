@@ -8,6 +8,10 @@ Input.ChakraChord=.3
 -- The modifier held alone this long loads chakra into the next action
 -- (server ChakraFlow): pad R1, keyboard Z.
 Input.ChakraHold=.28
+-- (Audit 29/10) On the pad R1 is also the jutsu shift: a player holding it
+-- while choosing the face button loaded chakra by accident (and the next ○
+-- became a dash). The pad's load needs a deliberate hold.
+Input.ChakraHoldPad=.5
 Input.now=os.clock
 local KEYBOARD,GAMEPAD=Controls.Keyboard,Controls.Gamepad
 local function key(code) return {code} end
@@ -31,7 +35,7 @@ local function toolAim(state,pad)
 end
 function Input.new(send,getState,toggleLock,camera)
  local self=setmetatable({send=send,getState=getState,keys={},stick=Vector2.zero,look=Vector2.zero,
-  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={}},Input)
+  sprinting=false,modifier=false,camera=camera,pad=Controls.isGamepad(UIS:GetLastInputType()),held={},guards={},jumps={},seals={}},Input)
  local function bind(name,keys,callback)
   local list={};for _,code in keys do if code then table.insert(list,code) end end
   CAS:BindActionAtPriority("Ninja"..name,function(_,state,object)
@@ -75,10 +79,13 @@ function Input.new(send,getState,toggleLock,camera)
  local function face(state,object,normal,slot)
   if pressed(state,object) then
    local modified=padObject(object) and self.modifier
-   if modified then self.modifierSpent=true end
+   if modified then self.modifierSpent=true;self.seals[object.KeyCode.Name]=true end
    send(if modified then "Technique"..slot else normal)
    return not modified
   end
+  -- (Audit 29/10) The face button let go after R1+face lets a held technique
+  -- go, as keys 1-4 do (a pad Katon always charged to the end).
+  if released(state) and self.seals[object.KeyCode.Name] then self.seals[object.KeyCode.Name]=nil;send("SealRelease") end
   return false
  end
  bind("Light",both("Light"),function(state,obj) face(state,obj,"Attack",2) end)
@@ -88,10 +95,16 @@ function Input.new(send,getState,toggleLock,camera)
   local id=if padObject(obj) then obj.KeyCode.Name else obj.UserInputType.Name..obj.KeyCode.Name
   if released(state) then
    if self.jumps[id] then self.jumps[id]=nil;send("JumpOff") end
-   pressed(state,obj)
+   face(state,obj,"Jump",1)
   else
-   local h=getState().human;local action=if h and h.pursuit>0 then "Pursuit" else "Jump"
-   if face(state,obj,action,1) and action=="Jump" then self.jumps[id]=true end
+   -- (User 29/10: a jump pressed after a launch flew the body up after the
+   -- other one.) On a pad × doubles as the chase inside its window (no
+   -- spare button); on a keyboard the chase has its own key (E) and Space
+   -- always jumps.
+   -- (Audit 29/10) The pad sends PadJump: the server picks the chase if its
+   -- own window is open, else the jump (Matches:act).
+   local action=if padObject(obj) then "PadJump" else "Jump"
+   if face(state,obj,action,1) then self.jumps[id]=true end
   end
  end)
  bind("Guard",both("Guard"),function(state,obj)
@@ -165,15 +178,30 @@ function Input.new(send,getState,toggleLock,camera)
  return self
 end
 function Input:reset()
- table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps)
+ table.clear(self.keys);table.clear(self.held);table.clear(self.guards);table.clear(self.jumps);table.clear(self.seals)
  self.stick=Vector2.zero;self.look=Vector2.zero;self.modifier=false;self.sprinting=false;self.camera.look=Vector2.zero
  self.chakra=false;self.chakraAt=nil;self.modifierSpent=true;self.chakraSpent=true
+end
+-- (Audit 29/10) A new round (or phase) clears the presses but not the hand:
+-- a direction held through the round change was forgotten until the key was
+-- pressed again, so the body stood still at the start of every round.
+function Input:resync()
+ self:reset()
+ pcall(function()
+  for _,code in {Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D} do
+   if UIS:IsKeyDown(code) then self.keys[code.Name]=true end
+  end
+  if not self.pad and UIS:IsKeyDown(KEYBOARD.Sprint) then self.sprinting=true end
+  for _,input in UIS:GetGamepadState(Enum.UserInputType.Gamepad1) do
+   if input.KeyCode==Enum.KeyCode.Thumbstick1 and input.Position.Magnitude>.15 then self.stick=Vector2.new(input.Position.X,input.Position.Y) end
+  end
+ end)
 end
 -- (Freedom) The modifier held alone: once per hold, the next action is
 -- loaded with chakra. Polled every frame (Input:direction).
 function Input:chakraHold()
  local now=Input.now()
- if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)>=Input.ChakraHold then
+ if self.modifier and not self.modifierSpent and now-(self.modifierAt or now)>=Input.ChakraHoldPad then
   self.modifierSpent=true;self.send("ChakraLoad")
  end
  if self.chakra and not self.chakraSpent and now-(self.chakraDownAt or now)>=Input.ChakraHold then

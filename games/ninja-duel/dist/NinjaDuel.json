@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "39bff5b1586b242673cc89afb4635818cc7372aaa9f3d45d439505b3d6a306ae",
+  "sha256": "bdf0ce7ee2c6c2a331ec61dff7e5562fbf1ec670c200d5c9c1fde61b0e25669c",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "5fc9c846a732817eaaaa591149134f8bf9d9d765c6cdd6bc801ee5f66c2f3350",
@@ -37,20 +37,20 @@
     "src/Client/AuthoredClips9.luau": "356c2994dd614304918bbd9304c176a91846c69308f3e635cb731127e13c1033",
     "src/Client/AuthoredMotion.luau": "a701e2f0f7a198d8bdbe28d651de5d209b13185bc1f998cd6ba3477a5b524370",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
-    "src/Client/Camera.luau": "6c737223010b5fa51c9d0de35d688ffef0d87ae7e9f825f9e75b3dfd85e376b9",
+    "src/Client/Camera.luau": "5a1b25e12126280da523118da2d4993b0af9ad903c890dfc2019c7e6b1f585ac",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
     "src/Client/ChakraFlowFX.luau": "91ccaa45c4a6543e0bd9614e9cedbc70659a310710a2acf3cbeafb1da064681f",
-    "src/Client/Effects.luau": "3488bf615ca49afefdb4aac4a0aa4e91f9721eb058527be75d194d20c45c3edd",
+    "src/Client/Effects.luau": "0670c18dee246175a6247e0f298965ed4fa9eb8ae77382fbc12787c5016a0744",
     "src/Client/FamilyFX.luau": "1de2cd8e61a4e32b50200c228e741c488c86312a08b3a832ffec8cfeb3aa9716",
     "src/Client/GaleFX.luau": "9fc4738f9982d99debdc5e74aa351f399f74cf574170b562db65a04dfdd06074",
     "src/Client/GaleMotion.luau": "1b9bc2f85d3a171dbaf1ce5ed3ce1ebc4b47104353752347ec2110d1abdf2df2",
     "src/Client/IdentityFX.luau": "71892da41311de99e387dc37a8addf42e30b106672bbe90eb29dad98e0812cbb",
-    "src/Client/Input.luau": "048a462651324fd49d60ce12ac95425f0f7daf274f233557391bd0b768359baf",
+    "src/Client/Input.luau": "1e32f34826d0c23406a6002fbfbadc8322a6792f3867c8e2b4d3ecda4a26dff4",
     "src/Client/LeeFX.luau": "3f45ced5aa86dc552a07c0802c33e6dcb6a05019da3bd4768585cefeef07e159",
-    "src/Client/Main.client.luau": "b09cb6d1f627f600726cee15abe49a7448990f59c961fd3218f23eff826bdc2e",
+    "src/Client/Main.client.luau": "1cf86b2060c21648a063ca7f95573e27ca18667c664843ec3c805f109ab1508f",
     "src/Client/MotionSmear.luau": "e17fac23382063789300efe7f7b8dbfce3f07e6052d3e60c26ee6877ce5bb01e",
     "src/Client/NarutoFX.luau": "46d003643be7269e8c2cd023c5b6eb1be696d777a6320b90f68d9125ff67b437",
-    "src/Client/Presentation.luau": "cd560a26fb7b6078fa9727c2eb060761b63137492c69cdff5cec045bd3bbac64",
+    "src/Client/Presentation.luau": "a062e11a7660099e01c6ec1cf5c908c3db1bd1dc78eb1adc5c8c69fae247814c",
     "src/Client/SandFX.luau": "8b6c2fbbc309387755fcb0212fb00856e8874da774a5f002de55ae9645408989",
     "src/Client/UI.luau": "b809d4fbd115e51b4463dc3e81e97e133a083943a3c7cb953ca65439ba086523",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
@@ -64,13 +64,13 @@
     "src/Client/Wave3Motion.luau": "5010f78fd7b83577f08323fd5f25d33ef7b3bb9a5b27e669ba419c35b5eb793c",
     "src/Client/Wave4FX.luau": "c1e221d9e1a447a47ad1ce8156f033eeeca952819e4ef8d6c4ff169542a51e3d",
     "src/Client/Wave4Motion.luau": "dbaa24f6396ab4ffafc7a0e0ac021154f94150ae70a76a2e67b645673c6c1fad",
-    "src/Server/AI.luau": "bde4c0d000848209d8d2418ddaf50645db1b2b6c163f96788abb03ae40d4f99c",
+    "src/Server/AI.luau": "71b21d5233046f343ea7cdc4cb82139a99b4c0fac015a3ac764514e4f2cf5111",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/BanglaCombat.luau": "2cfde6dddc151ca93d3d4cc1e1e931945795a4e03c9725e5559a93eec2880c55",
     "src/Server/BanglaEvade.luau": "238403f2d75432fa6a2f4ea4867d4a34b0bc4548bed163a271f633d926e17504",
     "src/Server/Bodies.luau": "b5f7a27c31ebf20e0bc00f0193f543a7a2be2d62be653b4e6955fe00a133f9a2",
     "src/Server/BodyState.luau": "39a0185c0aff255f8ef21924133c0c2cfdd355500cca395be3b724489e1d393c",
-    "src/Server/Brawler.luau": "fac00a86ea19c0e5a336b1370013cefa9c82cbdfb664ebcd97172c320466021a",
+    "src/Server/Brawler.luau": "81bc15e8eeca9f25b1c18138a09eb2c00930750eb06e0c4ccd15e66a95684c07",
     "src/Server/BuildPresets.luau": "c7f75eac2427707cd8a62b567455eb87eb6ba3e4d16ff18fdd05f380b50ca454",
     "src/Server/ChakraCombat.luau": "41f7c6ffa540a81801474ab5e20671063cebf75f238b0313b8fc95a8fcab4395",
     "src/Server/ChakraFlow.luau": "2e4a9169e1ac1257ac6169b38e819b99679523f528e34302a1198b2fe3693c84",
@@ -78,7 +78,7 @@
     "src/Server/ChakraRules.luau": "6576c8947bab6027e4183e28594a30493df3d0084ea472460116884b37cc505d",
     "src/Server/ChakraTuning.luau": "9d5c15c97d27bbe4fb62d57f7284ff63ae58f2c61d3d6a3a7c5517a8e96484ad",
     "src/Server/ChakraVectors.luau": "d3a497f539dc1195404ef24a3699aa6c3d1bd0c2cbc1439c0e3d01a6a11c49de",
-    "src/Server/Combat.luau": "287a18afc3707eb54f10ce9cddaa6d1950f70f0dc3bab587216b7acb94bac1f8",
+    "src/Server/Combat.luau": "daaad463871b22f26f8eadc95120c88409167f81da7ef807cab8f8b99145bb81",
     "src/Server/Costumes.luau": "30ee4fdb122ad77cccafcd06ee642c967ce5b9f828565e620b643c302869bba2",
     "src/Server/DonorAnimations.luau": "50719f41e0a008f2f5a5a1efeff53c2dde53d51de36b4c98c00bab51a5dbdf32",
     "src/Server/Elements.luau": "9649bbdadd668229b9c6c967ef0050af7717f3491079cbe2f76bc9052e10c5cb",
@@ -86,11 +86,11 @@
     "src/Server/Gale.luau": "72e522c39066b58a86331760fca45e869226fe3b3c36163253a569b310f96f39",
     "src/Server/Legion.luau": "f0ffbb9d8d8fd7a2789f9ed0b95bf7ecb6048368b031ffed1a3e1bbba50c761e",
     "src/Server/Main.server.luau": "449f726219a661cc73561c90dd69696a1b8483b88a8799efb2e9762f1aa8cc9b",
-    "src/Server/Matches.luau": "7f7f9ff95e125827aee6913bd2626beb0e58e50fbc6862817c294a39a385b4f0",
-    "src/Server/Motor.luau": "fee203c5e5a042d4f5f281fabc27f5cb6c009cae60d39d5519a226859a65be0b",
+    "src/Server/Matches.luau": "1c087256ca0a562758f84be5a0297f726725a4cbddbd8768c513b711dc1609cf",
+    "src/Server/Motor.luau": "6406e17430334157f49a854e699ed157614b3aa7b78cb9411ee998a2cc6365c3",
     "src/Server/Online.luau": "a4ac5726d58cf43fb1bcde337c601d30efe43543ef31b21be15b95cd048e876a",
     "src/Server/Perception.luau": "1435eb549a49ccc955a989f8e5b0d6ec0ffe888990364379d352c5ed29a7fd77",
-    "src/Server/Place1Movement.luau": "e71f26371581480c8868d180070ab9293c8cb93282037124f937afe09539e3ec",
+    "src/Server/Place1Movement.luau": "52ef163fa2ea84e2b1a4e5a18ec54a3b2d9eeee835b6b16abcb3e8b6f9ec37e1",
     "src/Server/Place1Parkour.luau": "38f68d55f0484df41e1649e828df3e8a7bbfaa98fc2b8cc6d5e3b49eecb21af5",
     "src/Server/ProfileRepository.luau": "09886fde6ca965cf910538f9204f0bf83c692705feebdbd3b34a08834bf568e7",
     "src/Server/ProfileSchema.luau": "e8af2778f68ff5e8570e4856269912a550616fe6cdf851b0cbaff7da058f25cc",
@@ -108,21 +108,21 @@
     "src/Server/World.luau": "44f7ed89e63ec8e9499b48bb8216113fea8598838983465977ff66d1274727b5",
     "src/Server/WorldReaction.luau": "88e17f15e777402cd2a21796177836438e47c3bdc63bf2137d17148c3f653c60",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
-    "src/Shared/ActionContext.luau": "8c69df438e1e7a881bcdbe245e7a203ee0fc87c89789ab0f9d06ce2873d75194",
+    "src/Shared/ActionContext.luau": "418ae3e8b7f00e429be31b41164c80fc9a9da5839fa9bac4f1da5311c1e8dd2f",
     "src/Shared/AnimationBindings.luau": "216e4448b571e84270f13562429aad1f2227cb4b23acba61136aa278d664ae42",
     "src/Shared/Attacks.luau": "2c5d94da1f98e23921d58939ff9db88272e3353003b284f250942cc6e9670cf5",
     "src/Shared/BanglaCombo.luau": "215979278fb83f87a4b0ed217b490d19505fbc94aef8bc09ee6a69f634033083",
-    "src/Shared/Config.luau": "a2247b05ac93e23c9d48ab4209945608894219886429926d05cbab4331954bcc",
+    "src/Shared/Config.luau": "ecd2255082376fc31a736a59ff93de1b7da29cae997222604e93533da0ee3d9f",
     "src/Shared/Controls.luau": "e4eeb256fb47dad37d86819eb871a17332639bde9c2ac98dc5e7177f41112668",
     "src/Shared/Fighters.luau": "008a479bda2ef54732938adb1aeda1245006962c71f48c0a39f0e6cffa6ff731",
     "src/Shared/Looks.luau": "106074aabdde58618e32c356706e7fbee0726c5f045270b0c93764f8d97cc8bb",
     "src/Shared/MoveGraphs.luau": "e5c568f3b1aa2481a2330971807acf2288fefa8ec3be02f5f2d90245712860d0",
-    "src/Shared/OnlineProtocol.luau": "92d409352f307b6e5a76dbc0ecf6666a2140b41345577f69348b29798d22c18b",
+    "src/Shared/OnlineProtocol.luau": "7690fac7321dc3f22b4583ec5fe40850cbd9f61982a75e5755c65c02c11b4dfc",
     "src/Shared/Roster.luau": "6d05314bd6aa2d069dee390568d8edd201b71b02298993229eaefac1a6db7157",
     "src/Shared/RosterMoves.luau": "ba024881ff583c4444995e12df026bf3206325f236e01c7f79e0b833fb649321",
     "src/Shared/RosterStaging.luau": "ca70b3f34cb58ff208bb5fc5cbdaf88b7a01f00fdf20bb463d6d862c0d02498f",
     "src/Shared/Rules.luau": "07708aa2ac82ee9803691412dbd2ceb02044f4c265a4c70425eb1f9c790d4f74",
-    "src/Shared/VelmoraCombatConfig.luau": "de24ee772cf8d2594e8e724602f4fa1a8d184c811df8b9bf70bc7fd47a9319d0",
+    "src/Shared/VelmoraCombatConfig.luau": "2ea13d547e3274539bed8541a342bc93a52ffb165108937c781ecd9b417a4485",
     "src/Shared/Wave1.luau": "d39c16f5ef961c520126c7698a68bafc07d209435f38a3064351d8a3e5213ae2",
     "src/Shared/Wave2.luau": "a38051ac7cab73c757e0a57d5f0969730b1d48ace5846094dadbc4c422979987",
     "src/Shared/Wave3.luau": "0110e4f77e3dcf86bcfe97e1fa3a5c66469dc49d83a7d53d42d0017b58156600",
@@ -130,7 +130,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "4bba7b3797334b726586e4450aa723e99ea80f8b92021d046b214145345e9cde",
+  "buildFingerprint": "7c81f70c10cf0024de4401150379e3cb3528eedcc33742744625efe84fe433ff",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -253,7 +253,7 @@
       },
       "tests/AirCombat.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel air combat: 3 PASS"
+        "summary": "NinjaDuel air combat: 5 PASS"
       },
       "tests/Identity.spec.luau": {
         "exit": 0,
@@ -278,6 +278,26 @@
       "tests/Convergence.spec.luau": {
         "exit": 0,
         "summary": "NinjaDuel convergence (lifecycle, composition, reach): 14 PASS (headless)"
+      },
+      "tests/Movement.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel movement overhaul: 17 PASS (headless; the look and feel are Studio checks)"
+      },
+      "tests/Embodiment.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel embodiment: 18 PASS (headless; the freedom is a Studio check)"
+      },
+      "tests/CombatFeel.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel combat feel (convergence): 18 PASS (headless; the look is a Studio check)"
+      },
+      "tests/Fluidity.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel fluidity: 12 PASS (headless; the feel itself is a Studio check)"
+      },
+      "tests/Control.spec.luau": {
+        "exit": 0,
+        "summary": "NinjaDuel player control: PASS (946 presses, 2.7% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
       }
     }
   },

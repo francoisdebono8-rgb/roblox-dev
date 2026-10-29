@@ -88,6 +88,10 @@ function Brawler.riposteMove(c,a,base)
  return if Attacks[move] then move else "Riposte"
 end
 function Brawler.free(a,now)
+ -- (Audit 29/10) A knockdown or a wall splat always becomes a wake-up
+ -- (Brawler.step): a strike started at its last frame was never checked for
+ -- a hit and always whiffed. The late press (Combat) fires it after.
+ if a.reaction=="Knockdown" or a.reaction=="WallSplat" then return false end
  return a.reaction==nil or now>=(a.reactionUntil or 0)
 end
 function Brawler.event(c,a,event)
@@ -352,6 +356,9 @@ end
 -- the flight ends on reports it, so the client can say which blow did it.
 function Brawler.react(c,a,kind,velocity,duration,source,cause)
  Brawler.releaseGrab(a)
+ -- (Audit 29/10) A hit ends the run: its hand-back threw the body on at the
+ -- run's speed on the first free frame after the stun.
+ a.strikeCarry=nil
  Bangla.close(a.pending)
  -- A guard break or channel interrupt already set a longer stun: the melee
  -- reaction that follows keeps it instead of shortening it to the move's own.
@@ -1454,8 +1461,14 @@ function Brawler.step(c,a,dt)
     local normal=a.splatNormal or Vector3.zero
     a.reaction="Knockdown";a.reactionUntil=c.now+.9;a.reactionVelocity=normal*7+Vector3.new(0,-6,0)
     a.groundPose="Knockdown";a.invulnerableUntil=c.now+1.1
+   elseif a.reaction=="Knockdown" and a.airborne then
+    -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
+    -- 0.24 s in the air, then slid at the fall's speed).
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
    else
+    -- (Audit 29/10) A flight that ends in the air hands its speed on: the
+    -- body went on with zero speed, stopped, then dropped at full gravity.
+    if a.airborne and a.reactionVelocity then a.root.AssemblyLinearVelocity=a.reactionVelocity end
     a.reaction=nil;a.reactionVelocity=nil
     -- Fully recovered: drop the grounded presentation state with it.
     a.groundPose=nil

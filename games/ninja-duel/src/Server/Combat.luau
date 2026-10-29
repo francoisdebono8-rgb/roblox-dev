@@ -163,6 +163,7 @@ function Combat:cue(a,message,duration)
 end
 function Combat:setState(a,state,duration)
 	a.state=state; a.untilTime=self.now+duration
+	if state=="Stunned" then a.strikeCarry=nil end
 	-- Chain and cancel windows belong to the attack recovery that computes them
 	-- right after this call; any other state change must not inherit stale ones
 	-- (a substitution or awaken recovery used to open a string-cancel). The
@@ -768,6 +769,9 @@ function Combat:chase(a)
 	local style=Brawler.reentry(a)
 	a.chakra-=Config.PursuitCost; a.pursuitUntil=0
 	a.reaction=nil; a.airborne=true
+	-- (Audit 29/10) Motor.settle lands any grounded body: a chase starting
+	-- from the floor was landed on its first frame (dust, landing pose).
+	a.takeoffUntil=math.max(a.takeoffUntil or 0,self.now+.15)
 	a.pursuitStarted=self.now
 	-- A body still rising fast (a chase pressed on the launch itself) is
 	-- followed up to where an air strike can catch it, not dropped at 0.24 s.
@@ -928,7 +932,35 @@ function Combat:throwDrawn(a,aim)
 	self:cue(a,if cancel then "KUNAI • FINISHER" else "KUNAI THROWN",.5)
 	return true
 end
+-- (User 29/10: "des fois je pouvais plus bouger".) Every press and its
+-- answer is kept (last 40) so a recorded match shows what was asked and why
+-- it was refused (DevHooks summary: presses).
+-- Presses that wait for the body to be free (Config.Late): the verbs a player
+-- presses to get out of a moment, never the held ones (Guard, ChakraLoad).
+local LATE={Attack=true,Heavy=true,Jump=true,Dodge=true,Grab=true,Tool=true,
+	Technique1=true,Technique2=true,Technique3=true,Technique4=true,Technique5=true}
 function Combat:request(a,action,aim,clientTime,opts)
+	local ok,reason=self:requestInner(a,action,aim,clientTime,opts)
+	-- Players only (Matches:act marks them): the AI plans its own timing.
+	if ok==false and a.playerInput and (reason=="Committed" or reason=="Reacting") and LATE[action] and not (opts and opts.late) then
+		local L=Config.Late
+		local down=a.reaction=="Knockdown" or a.reaction=="WallSplat" or a.reaction=="Wakeup"
+		a.latePress={action=action,aim=aim,opts=opts,at=self.now,window=if down then L.Hit+.24 elseif reason=="Reacting" then L.Hit else L.Own}
+	elseif ok~=false and action~="GuardOff" then a.latePress=nil end
+	-- (Audit 29/10) An air dodge leaves the hover: its speed was zeroed by the
+	-- remaining air hold on the next frame.
+	if ok~=false and action=="Dodge" and a.state=="Dodging" then a.airHold=0 end
+	-- (Audit 29/10) A jutsu is the next action too: it spends a load (R1 held
+	-- while choosing it loaded one, and the next ○ became a dash at him).
+	if ok~=false and string.match(action,"^Technique%d$") then a.chakraLoad=nil end
+	if action~="GuardOff" then
+		local log=a.pressLog or {};a.pressLog=log
+		table.insert(log,{t=self.now,action=action,ok=ok~=false,reason=reason,state=a.state,air=a.airborne==true,reaction=a.reaction})
+		if #log>40 then table.remove(log,1) end
+	end
+	return ok,reason
+end
+function Combat:requestInner(a,action,aim,clientTime,opts)
 	if self.match.phase~="Duel" or a.health<=0 then return false,"No duel" end
 	if self.match.introUntil and self.now<self.match.introUntil then return false,"Intro" end
 	if self.match.finishing then return false,"Intro" end
@@ -945,7 +977,8 @@ function Combat:request(a,action,aim,clientTime,opts)
 	if action=="Jump" then a.jumpHeld=true end
 	if action=="JumpOff" then
 		a.jumpHeld=false
-		if a.airborne and a.root.AssemblyLinearVelocity.Y>22 and self.now<(a.takeoffUntil or 0)+0.18 then
+		-- (A pad × that became a chase sends its release too: the chase is not a jump.)
+		if a.airborne and a.state~="Pursuit" and a.root.AssemblyLinearVelocity.Y>22 and self.now<(a.takeoffUntil or 0)+0.18 then
 			local v=a.root.AssemblyLinearVelocity
 			a.root.AssemblyLinearVelocity=Vector3.new(v.X,v.Y*0.66,v.Z)
 		end
@@ -966,6 +999,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 			if not ok or kind~="stand" then return ok,why end
 		end
 	end
+	-- (Audit 29/10) Down on the floor or getting up, a dodge is not an escape
+	-- (Combat:substitute refuses it "No escape window"): it waits for the
+	-- body to be up (Config.Late) and comes out as the dodge it was.
+	if action=="Dodge" and not Brawler.free(a,self.now) and (a.reaction=="Wakeup" or (a.reaction=="Knockdown" and not a.airborne)) then return false,"Reacting" end
 	if action=="Dodge" and not Brawler.free(a,self.now) then action="Substitute" end
 	if action=="Substitute" then return self:substitute(a) end
 	if action=="Awaken" then return self:awaken(a) end
@@ -1021,6 +1058,10 @@ function Combat:request(a,action,aim,clientTime,opts)
 		-- Like a guard or a dodge, a jump leaves a recovery only at its cancel
 		-- point: a whiff (or an unanswered dash) cannot hop out of its punish.
 		if a.state=="Recovery" and self.now<(a.recoveryCancelAt or 0) then return false,"Committed" end
+		-- (Audit 29/10) Past the cancel point the jump leaves the recovery, as a
+		-- guard or a dodge does: the ground jump only starts from Neutral, so it
+		-- was refused "Airborne" with the body standing still.
+		if a.state=="Recovery" and not a.airborne then a.pending=nil;self:setState(a,"Neutral",0) end
 		local jumped=Motor.jump(a,self,self.now)
 		if jumped then ChakraFlow.leap(self,a) end
 		return jumped,"Airborne"
@@ -1334,6 +1375,18 @@ function Combat:updateActor(a,dt)
 	-- Directional memory for routes: the latest strong push, every frame.
 	Brawler.observe(self,a)
 	Defense.step(self,a,dt,now)
+	-- A body resting on the floor has landed, whatever it is doing (Motor.settle).
+	Motor.settle(a,self,now)
+	-- A press made just before the body was free comes out now (Config.Late).
+	local late=a.latePress
+	if late then
+		if now-late.at>late.window then a.latePress=nil
+		elseif a.state=="Neutral" and not a.reaction and now>=(a.hitstopUntil or 0) then
+			a.latePress=nil
+			local opts=table.clone(late.opts or {});opts.late=true
+			self:request(a,late.action,late.aim,nil,opts)
+		end
+	end
 	Techniques.expireSeals(self,a,now)
 	-- A combo ends once the victim has been free to act for a moment.
 	if a.reaction or a.state=="Stunned" then a.freeSince=nil elseif not a.freeSince then a.freeSince=now end
@@ -1425,6 +1478,16 @@ function Combat:updateActor(a,dt)
 			-- The chase stops where it arrives (Studio: its speed carried the
 			-- body on into the one it reached).
 			a.aimIntent=nil;Brawler.brake(a,Config.Rush.Carry or 8)
+			-- (User 29/10 match: Gaara, Naruto chased a launched body and went on
+			-- rising 10-13 studs past it.) The brake kept the climb: up there the
+			-- body stops where it arrived and hangs for the follow-up.
+			if a.airborne then
+				local v=a.root.AssemblyLinearVelocity
+				a.root.AssemblyLinearVelocity=Vector3.new(v.X,math.min(v.Y,0),v.Z)
+				-- (Audit 29/10) .45 from the arrival: an early arrival kept the
+				-- whole chase's hold and hung up to a second.
+				a.airHold=now+.45
+			end
 		elseif a.state=="TechniqueChannel" and pending and Combat.charging(self,a,pending,now) then
 			-- (Reference quality) Held: the technique keeps gathering (spec.Hold).
 			a.untilTime=now+1/30
@@ -1461,8 +1524,10 @@ function Combat:updateActor(a,dt)
 	-- A guard key still held through a hit, a recovery or a throw comes back up
 	-- as soon as the fighter is free. The automatic raise leaves guardPressedAt
 	-- alone, so it never grants a fresh parry window.
+	-- (Audit 29/10) Not on an empty tank: at 8 stamina it broke again 0.67 s
+	-- later, a guard / stun loop the held key could not get out of.
 	if a.guardWanted and a.state=="Neutral" and not a.guardHeld and not a.throwing and not a.reaction
-		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) then
+		and not a.grabbedBy and not a.pending and Rules.canAct(a,now) and (a.stamina or 100)>=30 then
 		a.guardHeld=true;self:setState(a,"Guarding",0)
 	end
 	-- Movement overhaul (Studio): out of a running strike the body slides on
@@ -1625,7 +1690,16 @@ function Combat:updateActor(a,dt)
 		 local vertical=math.clamp(delta.Y,-48*dt,48*dt)
 		 if math.abs(delta.Y)<.45 then vertical=0 end
 		 local correction=planar+Vector3.new(0,vertical,0)
-   Motor.flight(a,self,correction)
+   -- (Audit 29/10, user: "quand on saute et qu'on redescend avec un coup")
+   -- Held in an air string (airHold) the body is placed; a jump-in strike
+   -- with no hold keeps falling on its arc and is only drawn to arm's length
+   -- (Motor.flight zeroed its speed every frame: it hovered while swinging).
+   if (a.airHold or 0)>now then Motor.flight(a,self,correction)
+   else
+    local v=a.root.AssemblyLinearVelocity
+    Motor.flight(a,self,planar)
+    a.root.AssemblyLinearVelocity=v
+   end
   end
  elseif (a.state=="Startup" or a.state=="Active") and a.pending and a.pending.kind=="Brawl" and a.travelRemaining>0 then
 		local toTarget=Combat.swingAt(a)-a.root.Position
