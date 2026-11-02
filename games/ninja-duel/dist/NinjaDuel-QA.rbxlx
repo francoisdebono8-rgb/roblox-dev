@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3bdfbcaa5e3345276033e13c0831f84b7d532b80d7fb4ca8bf37928f12ef75b2</string>
+          <string name="Value">1e17d5fbaaca51e81f7d547534494f7f2bc6e13df992fe01d74bda556e643972</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42161,6 +42161,9 @@ local function button(parent,value,position,size,callback,color)
 	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,
 		BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
 	corner(b,6)
+	-- (UI pass 02/11) A dark button on the dark menu read as disabled
+	-- (TRAINING, ONLINE DUEL, HOST): a light edge says it can be pressed.
+	if not color then create("UIStroke",b,{Color=palette.muted,Transparency=.55,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Border}) end
 	b.Activated:Connect(callback); return b
 end
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
@@ -42210,7 +42213,12 @@ function UI.new(parent,send)
 			slot.BackgroundColor3=palette.panel
 			stroke(slot,accentOf(def),2)
 			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
-			text(slot,string.upper(def.Name),UDim2.fromOffset(0,80),UDim2.fromOffset(84,26),20,accentOf(def),TITLE_FONT,Enum.TextXAlignment.Center)
+			-- (UI pass 02/11) Dark accents (Madara, Itachi, Shisui) vanished on the
+			-- dark card and OROCHIMARU touched its edges: an ink outline, and a
+			-- long name shrinks to fit.
+			local label=text(slot,string.upper(def.Name),UDim2.fromOffset(3,80),UDim2.fromOffset(78,26),20,accentOf(def):Lerp(palette.paper,.25),TITLE_FONT,Enum.TextXAlignment.Center)
+			label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=20})
+			create("UIStroke",label,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
 			pick.Activated:Connect(function()
 				if self.picking then self:choose(id);return end
@@ -42226,9 +42234,11 @@ function UI.new(parent,send)
 	end
 	-- Matchup panel.
 	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.matchupNote=text(shell,"",UDim2.fromOffset(0,410),UDim2.fromOffset(900,34),13,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.matchupNote=text(shell,"",UDim2.fromOffset(0,410),UDim2.fromOffset(900,34),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	-- The selected fighter's reading of the shared combo grammar.
-	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,16),12,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	-- A long string list (Minato's) shrinks to the line instead of being cut.
+	self.routeNote.TextScaled=true;create("UITextSizeConstraint",self.routeNote,{MaxTextSize=14})
 	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
 	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
 	-- Fighter buttons: a five-wide grid on each half of the panel, however
@@ -42283,12 +42293,15 @@ function UI.new(parent,send)
 	self.hudScale=hudScale
 	local function plate(side)
 		local right=side=="right"
-		local box=frame(self.hud,if right then UDim2.new(1,-24,0,18) else UDim2.fromOffset(24,18),UDim2.fromOffset(440,92),palette.ink,.25)
+		-- (UI pass 02/11) Rows re-spaced so the status line no longer sits on the
+		-- ultimate bar, and every small text grows by 2-3 points: at a 1382x681
+		-- viewport the HUD scale (0.79) drew them at 8-10 px.
+		local box=frame(self.hud,if right then UDim2.new(1,-24,0,18) else UDim2.fromOffset(24,18),UDim2.fromOffset(440,102),palette.ink,.25)
 		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
 		corner(box,8)
 		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
 		local name=text(box,"",UDim2.fromOffset(14,4),UDim2.fromOffset(412,34),32,palette.paper,TITLE_FONT,align)
-		local title=text(box,"",UDim2.fromOffset(14,36),UDim2.fromOffset(412,16),12,palette.muted,BODY_FONT,align)
+		local title=text(box,"",UDim2.fromOffset(14,36),UDim2.fromOffset(412,17),14,palette.muted,BODY_FONT,align)
 		local track=frame(box,UDim2.fromOffset(14,56),UDim2.fromOffset(412,14),palette.track)
 		corner(track,4)
 		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
@@ -42301,15 +42314,15 @@ function UI.new(parent,send)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		-- (Stage 6) the ultimate bar: it fills by hitting and being hit; full,
 		-- it burns and the plate says how to fire it.
-		local ultimateTrack=frame(box,UDim2.fromOffset(14,79),UDim2.fromOffset(412,3),palette.track)
+		local ultimateTrack=frame(box,UDim2.fromOffset(14,80),UDim2.fromOffset(412,5),palette.track)
 		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
-		local status=text(box,"",UDim2.fromOffset(14,80),UDim2.fromOffset(412,12),10,palette.muted,BODY_FONT,align)
+		local status=text(box,"",UDim2.fromOffset(14,86),UDim2.fromOffset(412,15),13,palette.muted,BODY_FONT,align)
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the status row (both players read them), each lit as it closes.
 		local points={}
 		for k=1,4 do
-			local pip=frame(box,UDim2.fromOffset(if right then 19+(k-1)*13 else 421-(k-1)*13,86),UDim2.fromOffset(9,9),palette.track)
+			local pip=frame(box,UDim2.fromOffset(if right then 19+(k-1)*13 else 421-(k-1)*13,93),UDim2.fromOffset(9,9),palette.track)
 			pip.AnchorPoint=Vector2.new(.5,.5);pip.Visible=false
 			corner(pip,5)
 			points[k]=pip
@@ -42324,28 +42337,35 @@ function UI.new(parent,send)
 			fill.AnchorPoint=Vector2.new(0,1)
 			pips[k]={pip=pip,fill=fill}
 		end
-		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 314,14),UDim2.fromOffset(36,12),10,palette.muted,BODY_FONT,
+		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 306,13),UDim2.fromOffset(44,14),12,palette.muted,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
 		-- Round wins: small medallions under the plate.
 		local medals={}
 		for k=1,2 do
-			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,96),UDim2.fromOffset(14,14),palette.track)
+			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,106),UDim2.fromOffset(14,14),palette.track)
 			corner(m,7);table.insert(medals,m)
 		end
 		-- The awakening while it burns: its name, the time left and what it
 		-- changes in the fight (UI.awakening), under the plate.
-		local awake=text(box,"",UDim2.fromOffset(14,114),UDim2.fromOffset(412,30),13,palette.gold,TITLE_FONT,align)
+		local awake=text(box,"",UDim2.fromOffset(14,124),UDim2.fromOffset(412,30),15,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
 	self.round=text(self.hud,"ROUND 1",UDim2.new(.5,-120,0,22),UDim2.fromOffset(240,30),26,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,50),UDim2.fromOffset(240,16),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.roundSub=text(self.hud,"PRODIGY TOURNAMENT",UDim2.new(.5,-120,0,50),UDim2.fromOffset(240,16),13,palette.paper,BODY_FONT,Enum.TextXAlignment.Center)
+	-- (UI pass 02/11) Over the sky and the wall the grey subtitle disappeared.
+	create("UIStroke",self.roundSub,{Color=palette.ink,Thickness=1.2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	create("UIStroke",self.round,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-118),UDim2.fromOffset(420,16),12,palette.muted)
+	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-120),UDim2.fromOffset(396,18),14,palette.paper)
+	-- It ends before the jutsu slots (centre -440) and shrinks rather than run under them.
+	self.statusLine.TextScaled=true;create("UITextSizeConstraint",self.statusLine,{MaxTextSize=14})
+	-- (UI pass 02/11) Grey on the sand was unreadable: light text, ink outline.
+	create("UIStroke",self.statusLine,{Color=palette.ink,Thickness=1.2,Transparency=.15,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	-- Combo counters: yours on the left, the opponent's on you on the right.
 	local function counter(side)
 		local right=side=="right"
@@ -42366,13 +42386,13 @@ function UI.new(parent,send)
 		corner(box,8)
 		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(154,18),14,palette.gold,TITLE_FONT)
 		local title=text(box,"",UDim2.fromOffset(8,22),UDim2.fromOffset(154,20),18,palette.paper,TITLE_FONT)
-		local status=text(box,"",UDim2.fromOffset(8,43),UDim2.fromOffset(154,12),11,palette.muted)
+		local status=text(box,"",UDim2.fromOffset(8,41),UDim2.fromOffset(154,15),13,palette.muted)
 		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
 		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
-	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),11,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(.5,-640,1,-48),UDim2.fromOffset(1280,18),11,Color3.fromRGB(196,176,130),BODY_FONT,Enum.TextXAlignment.Center)
+	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),12,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
+	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(.5,-640,1,-48),UDim2.fromOffset(1280,18),12,Color3.fromRGB(196,176,130),BODY_FONT,Enum.TextXAlignment.Center)
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -42578,6 +42598,8 @@ function UI.ultimate(widget,actor,pad,mine)
 	local ready=actor.ultimateReady==true
 	local pulse=.5+.5*math.sin(os.clock()*8)
 	widget.ultimate.BackgroundColor3=if ready then Color3.fromRGB(255,190+math.floor(50*pulse),60) else Color3.fromRGB(255,150,40)
+	-- (UI pass 02/11) Ready was only a word in the plate's smallest text.
+	widget.status.TextColor3=if ready then Color3.fromRGB(255,200,90) else palette.muted
 	if ready then
 		widget.status.Text..="   •   ULTIMATE READY"..(if mine then " ("..(if pad then Controls.PadLabel.Ultimate else Controls.KeyLabel.Ultimate)..")" else "")
 	end
@@ -42635,7 +42657,20 @@ function UI:render(data)
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
 		widget.fill.Size=UDim2.fromScale(ratio,1)
 		widget.fill.BackgroundColor3=if ratio&gt;.5 then palette.gold elseif ratio&gt;.25 then Color3.fromRGB(236,134,60) else palette.red
-		Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)}):Play()
+		-- (UI pass 02/11) The damage trail was re-tweened every frame with a
+		-- 0.25 s delay: each new tween cancelled the last before it started, so
+		-- the trail never drained and the lost health stayed drawn as a full
+		-- light bar. Started once per change of health.
+		if widget.lagTarget~=ratio then
+			local healed=ratio&gt;=(widget.lagTarget or 1)
+			widget.lagTarget=ratio
+			if widget.lagTween and widget.lagTween.Cancel then widget.lagTween:Cancel() end
+			if healed then widget.lag.Size=UDim2.fromScale(ratio,1)
+			else
+				widget.lagTween=Tween:Create(widget.lag,TweenInfo.new(.6,Enum.EasingStyle.Quad,Enum.EasingDirection.In,0,false,.25),{Size=UDim2.fromScale(ratio,1)})
+				widget.lagTween:Play()
+			end
+		end
 		widget.chakra.Size=UDim2.fromScale(math.clamp(actor.chakra/actor.maxChakra,0,1),1)
 		widget.status.Text=string.format("%d / %d",math.ceil(actor.health),actor.maxHealth)
 		UI.ultimate(widget,actor,pad,actor==h)
