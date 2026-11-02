@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e7e899fcfac2d7e4879aea9de0309baadb287651ce7679441b93e7891a89e3a0</string>
+          <string name="Value">4cf04e2aa0a8ce93228d46bb750a4b7b9b6505bc8d7d165978831c95489ea767</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42746,6 +42746,8 @@ function UI:render(data)
 	for i,tech in h.techniques do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
+		-- The row ends at the right edge whatever the kit's size.
+		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
 		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		-- Sealed by the 64 Palms: every jutsu greys out and says why.

@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "90c7f4fba79a601c8ab5e5ca0e05c2da6db279ef560f9068cfcedb94cc36358f",
+  "sha256": "5ae9dd3dd0de60404c1f006587f72aa88e3c9accbdea3137c9b64df525dacfe1",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
@@ -64,7 +64,7 @@
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
-    "src/Client/UI.luau": "a32243b295b754f3fb588640489980d4c9867fe0278ea994943bc93a7a720ece",
+    "src/Client/UI.luau": "acb6b1def568ce5b56f00b5c1ec77421081542deb269eafd8414af841d4eea66",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "cf6dc62110fde7672e72aa990552b5996e2da0234d81d3a21cfd5aa41687638f",
@@ -153,7 +153,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "792fbf8fbd25989fb3250c8975cc1acb52eb0d9a90486a4c5d6514ef7c13a9e5",
+  "buildFingerprint": "7f9412c544bd345cc385a0b022b7cff6fda583804242a4e94968f7d995e4b1bb",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

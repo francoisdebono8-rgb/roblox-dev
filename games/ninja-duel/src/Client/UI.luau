@@ -817,6 +817,8 @@ function UI:render(data)
 	for i,tech in h.techniques do
 		local ui=self.techniqueButtons[i]
 		ui.box.Visible=true
+		-- The row ends at the right edge whatever the kit's size.
+		ui.box.Position=UDim2.new(1,-24-(#h.techniques-i+1)*150+6,1,-84)
 		ui.key.Text=if pad then Controls.TechniquePad[i] else string.format("%d",i)
 		ui.title.Text=string.upper(tech.name)
 		-- Sealed by the 64 Palms: every jutsu greys out and says why.
