@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">70fe2e89d80ac804570c0ebdf67a23fc55f846d60803ef1079bd99856afd1e62</string>
+          <string name="Value">27920dd9073180da0ab960411ab78939b0b798539d82475f5d53cbc5c4745cb4</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -39174,6 +39174,53 @@ local function silhouette(model,color)
 		elseif d:IsA("SpecialMesh") then d.TextureId="" end
 	end
 end
+-- The drawn faces are SurfaceGuis (Shared/Face), which a ViewportFrame does
+-- not render: each face plate is projected through the shot's camera and its
+-- drawing is copied, in 2D, over the fighter, where the plate is.
+local function drawFaces(front,model,camera)
+	local holder=front.Parent
+	if not holder then return end
+	local overlay=holder:FindFirstChild("FaceOverlay")
+	if overlay then overlay:ClearAllChildren() else
+		overlay=Instance.new("Frame");overlay.Name="FaceOverlay";overlay.BackgroundTransparency=1;overlay.Parent=holder
+	end
+	overlay.Position=front.Position;overlay.Size=front.Size;overlay.ZIndex=front.ZIndex+1
+	local size=front.AbsoluteSize
+	local aspect=if size.Y&gt;1 then size.X/size.Y else front.Size.X.Offset/math.max(front.Size.Y.Offset,1)
+	if aspect&lt;=0 then aspect=1 end
+	local tanHalf=math.tan(math.rad(camera.FieldOfView)/2)
+	local function project(point)
+		local p=camera.CFrame:PointToObjectSpace(point)
+		if p.Z&gt;=-.01 then return nil end
+		return Vector2.new(.5+(p.X/-p.Z)/(2*tanHalf*aspect),.5-(p.Y/-p.Z)/(2*tanHalf))
+	end
+	for _,plate in model:GetDescendants() do
+		local gui=plate:IsA("BasePart") and plate:FindFirstChild("Drawing")
+		if gui and gui:IsA("SurfaceGui") and gui.Face==Enum.NormalId.Front then
+			local cf,sz=plate.CFrame,plate.Size
+			local toCamera=(camera.CFrame.Position-cf.Position).Unit
+			if cf.LookVector:Dot(toCamera)&gt;.15 then
+				local centre=cf.Position+cf.LookVector*sz.Z/2
+				local minX,minY,maxX,maxY=math.huge,math.huge,-math.huge,-math.huge
+				local ok=true
+				for _,c in {{-1,-1},{-1,1},{1,-1},{1,1}} do
+					local q=project(centre+cf.RightVector*c[1]*sz.X/2+cf.UpVector*c[2]*sz.Y/2)
+					if not q then ok=false break end
+					minX=math.min(minX,q.X);maxX=math.max(maxX,q.X);minY=math.min(minY,q.Y);maxY=math.max(maxY,q.Y)
+				end
+				if ok then
+					local box=Instance.new("Frame");box.BackgroundTransparency=1;box.ClipsDescendants=false
+					box.Position=UDim2.fromScale(minX,minY);box.Size=UDim2.fromScale(maxX-minX,maxY-minY);box.ZIndex=overlay.ZIndex
+					for _,child in gui:GetChildren() do
+						local copy=child:Clone()
+						if copy then copy.Parent=box end
+					end
+					box.Parent=overlay
+				end
+			end
+		end
+	end
+end
 function UI.frameFighter(front,back,source,accent,shot,right)
 	if not front or not source then return end
 	local spec=SHOTS[shot] or SHOTS.bust
@@ -39197,6 +39244,7 @@ function UI.frameFighter(front,back,source,accent,shot,right)
 	local camera=Instance.new("Camera");camera.FieldOfView=spec.fov
 	camera.CFrame=CFrame.lookAt(from,target);camera.Parent=front
 	front.CurrentCamera=camera
+	pcall(drawFaces,front,model,camera)
 	-- Key light from the outer side and a little above; low ambient.
 	front.Ambient=Color3.fromRGB(62,56,64);front.LightColor=Color3.fromRGB(255,238,216)
 	front.LightDirection=Vector3.new(if right then 1 else -1,-.55,.65)
