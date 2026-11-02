@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3df47008dff71ca58006176faf7ff6952b31aa20be3672076b864761def2745c</string>
+          <string name="Value">7dff2f47829498eb321e73ca82850da5085b92d5aed1fec17138301b3ee8d9b9</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -39149,41 +39149,66 @@ local function button(parent,value,position,size,callback,color)
 	b.Activated:Connect(callback); return b
 end
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
--- A prodigy in a ViewportFrame (Server/Portraits builds the posed rigs):
--- `face` frames the head for a roster tablet, `body` the whole fighter on a
--- stage, turned three quarters toward the other stage.
+-- A prodigy in a ViewportFrame (Server/Portraits builds the posed rigs),
+-- staged the same way for every fighter (user 02/11: bust and face three
+-- quarters, light from the side, a back light in the fighter's colour, an ink
+-- background, the same for all): the camera is set from the head and chest,
+-- never from the costume's bounds, so hats and hair spikes change nothing.
+-- `back` (optional) is a second ViewportFrame under `front`: the fighter again,
+-- flat in its colour and shifted a hair, which reads as the rim of a back light.
+local SHOTS={
+	bust={fov=22,distance=12.5,lift=.35,rim=.2},
+	face={fov=21,distance=6.6,lift=.1,rim=.09},
+}
 local function clearView(view)
 	for _,c in view:GetChildren() do if c:IsA("Model") or c:IsA("Camera") or c:IsA("WorldModel") then c:Destroy() end end
 end
-function UI.frameFace(view,source)
-	if not view or not source then return end
-	clearView(view)
-	local model=source:Clone()
-	if not model then return end
-	model.Parent=view
-	local head=model:FindFirstChild("Head")
-	if not head then return end
-	-- The rig faces -Z, toward the camera; a quarter turn shows the face's depth.
-	model:PivotTo(CFrame.Angles(0,math.rad(18),0))
-	local at=head.Position+Vector3.new(0,.15,0)
-	local camera=Instance.new("Camera");camera.FieldOfView=26
-	camera.CFrame=CFrame.lookAt(at+Vector3.new(.9,.35,-5.4),at);camera.Parent=view
-	view.CurrentCamera=camera
+local function silhouette(model,color)
+	for _,d in model:GetDescendants() do
+		if d:IsA("Decal") or d:IsA("Texture") or d:IsA("SurfaceGui") or d:IsA("BillboardGui") then d:Destroy()
+		elseif d:IsA("BasePart") then
+			d.Color=color;d.Material=Enum.Material.Neon;d.Transparency=if d.Transparency&gt;=.99 then 1 else 0
+			if d:IsA("MeshPart") then pcall(function() d.TextureID="" end) end
+		elseif d:IsA("SpecialMesh") then d.TextureId="" end
+	end
 end
-function UI.frameBody(view,source,right)
-	if not view or not source then return end
-	clearView(view)
-	local model=source:Clone()
+function UI.frameFighter(front,back,source,accent,shot,right)
+	if not front or not source then return end
+	local spec=SHOTS[shot] or SHOTS.bust
+	local turn=CFrame.Angles(0,math.rad(if right then -24 else 24),0)
+	local function place(view)
+		clearView(view)
+		local model=source:Clone()
+		if not model then return nil end
+		model.Parent=view
+		-- The rig faces -Z, toward the camera, turned toward the other stage.
+		model:PivotTo(turn)
+		return model
+	end
+	local model=place(front)
 	if not model then return end
-	model.Parent=view
-	-- Facing the camera (-Z), turned toward the middle of the screen.
-	model:PivotTo(CFrame.Angles(0,math.rad(if right then -28 else 28),0))
-	local cf,size=model:GetBoundingBox()
-	local center=cf.Position+Vector3.new(0,-.15,0)
-	local camera=Instance.new("Camera");camera.FieldOfView=30
-	local distance=(size.Y*.5+.6)/math.tan(math.rad(15))
-	camera.CFrame=CFrame.lookAt(center+Vector3.new(0,.6,-distance),center);camera.Parent=view
-	view.CurrentCamera=camera
+	local head=model:FindFirstChild("Head")
+	local chest=model:FindFirstChild("UpperTorso") or head
+	if not head then return end
+	local target=if shot=="face" then head.Position+Vector3.new(0,spec.lift,0) else head.Position:Lerp(chest.Position,.45)+Vector3.new(0,spec.lift,0)
+	local from=target+Vector3.new(if right then -1.2 else 1.2,.55,-spec.distance)
+	local camera=Instance.new("Camera");camera.FieldOfView=spec.fov
+	camera.CFrame=CFrame.lookAt(from,target);camera.Parent=front
+	front.CurrentCamera=camera
+	-- Key light from the outer side and a little above; low ambient.
+	front.Ambient=Color3.fromRGB(62,56,64);front.LightColor=Color3.fromRGB(255,238,216)
+	front.LightDirection=Vector3.new(if right then 1 else -1,-.55,.65)
+	if back then
+		local rim=place(back)
+		if rim then
+			silhouette(rim,accent)
+			local camera2=Instance.new("Camera");camera2.FieldOfView=spec.fov
+			-- Shifted toward the outer side: the colour shows on the inner edge.
+			camera2.CFrame=camera.CFrame*CFrame.new(if right then spec.rim else -spec.rim,spec.rim*.35,0);camera2.Parent=back
+			back.CurrentCamera=camera2
+			back.Ambient=accent;back.LightColor=accent;back.LightDirection=Vector3.new(0,-1,0)
+		end
+	end
 end
 function UI.new(parent,send)
 	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
@@ -39225,10 +39250,22 @@ function UI.new(parent,send)
 		local right=side=="bot"
 		local x=if right then 960 else 60
 		local box=create("TextButton",shell,{Position=UDim2.fromOffset(x,104),Size=UDim2.fromOffset(550,490),BackgroundTransparency=1,Text="",AutoButtonColor=false})
-		local view=create("ViewportFrame",box,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(550,380),BackgroundTransparency=1,
-			Ambient=Color3.fromRGB(150,140,135),LightColor=Color3.fromRGB(255,236,210),LightDirection=Vector3.new(if right then 1 else -1,-1,-.6)})
-		local shadow=frame(box,UDim2.fromOffset(275,368),UDim2.fromOffset(230,26),palette.ink,.45)
-		shadow.AnchorPoint=Vector2.new(.5,.5);corner(shadow,13);shadow.ZIndex=0
+		-- The ink card the bust stands in: a glow of the fighter's colour behind
+		-- the head, the rim of the back light, then the fighter.
+		local panel=frame(box,UDim2.fromOffset(0,36),UDim2.fromOffset(550,340),Color3.fromRGB(14,12,17),.04)
+		panel.ClipsDescendants=true;corner(panel,10)
+		local panelEdge=create("UIStroke",panel,{Color=palette.paper,Thickness=2,Transparency=.6,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local glows={}
+		for k,size in {460,320,200} do
+			local g=frame(panel,UDim2.fromOffset(if right then 230 else 320,130),UDim2.fromOffset(size,size),palette.red,({.9,.84,.76})[k])
+			g.AnchorPoint=Vector2.new(.5,.5);create("UICorner",g,{CornerRadius=UDim.new(.5,0)})
+			table.insert(glows,g)
+		end
+		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.05})
+		local view=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		-- Ink rising from the bottom of the card, under the name.
+		local floor=frame(panel,UDim2.new(0,0,1,-90),UDim2.new(1,0,0,90),Color3.fromRGB(14,12,17),0)
+		if hasSequences then create("UIGradient",floor,{Rotation=-90,Transparency=NumberSequence.new(0,1)}) else floor.BackgroundTransparency=1 end
 		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
 		-- The tag over the stage: YOU / OPPONENT, and which stage takes the next tablet.
 		local tag=frame(box,UDim2.fromOffset(if right then 550-190 else 0,0),UDim2.fromOffset(190,30),palette.paper,0)
@@ -39236,13 +39273,13 @@ function UI.new(parent,send)
 		tagText.TextScaled=true;create("UITextSizeConstraint",tagText,{MaxTextSize=20})
 		local choosing=text(box,"◀ CHOOSING",UDim2.fromOffset(if right then 550-190-130 else 200,0),UDim2.fromOffset(120,30),16,palette.gold,TITLE_FONT,align)
 		if not right then choosing.Text="CHOOSING ▶" end
-		local name=text(box,"",UDim2.fromOffset(0,378),UDim2.fromOffset(550,54),52,palette.paper,TITLE_FONT,align)
+		local name=text(box,"",UDim2.fromOffset(if right then -14 else 14,328),UDim2.fromOffset(550,54),52,palette.paper,TITLE_FONT,align)
 		create("UIStroke",name,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		local sub=text(box,"",UDim2.fromOffset(2,430),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
-		local note=text(box,"",UDim2.fromOffset(2,450),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
+		local sub=text(box,"",UDim2.fromOffset(2,384),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
+		local note=text(box,"",UDim2.fromOffset(2,404),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		box.Activated:Connect(function() if not self.picking or side=="player" then self.side=side;self:refreshSelection() end end)
-		return {box=box,view=view,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
+		return {box=box,view=view,back=back,panel=panel,panelEdge=panelEdge,glows=glows,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
 	end
 	self.stages={player=stage("player"),bot=stage("bot")}
 	self.opponentLabel=self.stages.bot.tagText
@@ -39266,11 +39303,13 @@ function UI.new(parent,send)
 		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local accent=accentOf(def)
 		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(left+col*(W+GAP),600+row*(H+GAP)),Size=UDim2.fromOffset(W,H),
-			BackgroundColor3=accent:Lerp(palette.ink,.62),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
+			BackgroundColor3=Color3.fromRGB(14,12,17),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
 		corner(tablet,6)
 		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.35,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local face=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1,
-			Ambient=Color3.fromRGB(160,150,145),LightColor=Color3.fromRGB(255,240,220),LightDirection=Vector3.new(-1,-1,-.5)})
+		local glow=frame(tablet,UDim2.fromOffset(W/2,30),UDim2.fromOffset(70,70),accent,.78)
+		glow.AnchorPoint=Vector2.new(.5,.5);create("UICorner",glow,{CornerRadius=UDim.new(.5,0)})
+		local rim=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1})
+		local face=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1})
 		local strip=frame(tablet,UDim2.fromOffset(0,62),UDim2.fromOffset(W,26),palette.paper,0)
 		local label=text(strip,string.upper(def.Name),UDim2.fromOffset(4,0),UDim2.fromOffset(W-8,26),18,palette.ink,TITLE_FONT,Enum.TextXAlignment.Center)
 		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=18})
@@ -39280,7 +39319,7 @@ function UI.new(parent,send)
 		other.BackgroundColor3=palette.paper;other.BackgroundTransparency=1;corner(other,4)
 		tablet.Activated:Connect(function() self:pick(self.side,id) end)
 		self.selectionButtons["slot"..id]=tablet
-		self.tablets[id]={tablet=tablet,edge=edge,face=face,seal=seal,other=other,accent=accent}
+		self.tablets[id]={tablet=tablet,edge=edge,face=face,rim=rim,glow=glow,seal=seal,other=other,accent=accent}
 	end
 	-- The action row: training, online, private duel by code, and the stage.
 	local below=816
@@ -39325,7 +39364,7 @@ function UI.new(parent,send)
 				for id,t in self.tablets do
 					local model=folder:FindFirstChild(id)
 					if framed[id] then done+=1
-					elseif complete(model) then framed[id]=true;done+=1;pcall(UI.frameFace,t.face,model) end
+					elseif complete(model) then framed[id]=true;done+=1;pcall(UI.frameFighter,t.face,t.rim,model,t.accent,"face",false) end
 				end
 				if done&gt;0 and not self.portraits then
 					self.portraits=folder
@@ -39517,7 +39556,8 @@ function UI:refreshSelection()
 		t.edge.Transparency=if mine or theirs then 0 else .35
 		t.seal.Text=if mine then "YOU" else "";t.seal.BackgroundTransparency=if mine then 0 else 1
 		t.other.Text=if theirs then (if self.picking then "P2" else "CPU") else "";t.other.BackgroundTransparency=if theirs then 0 else 1
-		t.tablet.BackgroundColor3=t.accent:Lerp(palette.ink,if mine or theirs then .35 else .62)
+		t.tablet.BackgroundColor3=if mine or theirs then Color3.fromRGB(34,30,38) else Color3.fromRGB(14,12,17)
+		t.glow.BackgroundTransparency=if mine or theirs then .62 else .8
 	end
 	local p,o=Fighters[self.player],Fighters[other]
 	for side,id in {player=self.player,bot=other} do
@@ -39529,11 +39569,14 @@ function UI:refreshSelection()
 			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,string.upper(def.Title or ""))
 			st.note.Text=def.Description or ""
 			st.choosing.Visible=self.side==side and not self.picking
+			local accent=accentOf(def)
+			for _,g in st.glows do g.BackgroundColor3=accent end
+			st.panelEdge.Color=if self.side==side and not self.picking then palette.gold else accent
 			st.tag.BackgroundColor3=if self.side==side and not self.picking then palette.gold else palette.paper
 			local model=self.portraits and self.portraits:FindFirstChild(id)
 			if model and st.shown~=id and #model:GetDescendants()&gt;=(model:GetAttribute("Descendants") or 0) then
 				st.shown=id
-				pcall(UI.frameBody,st.view,model,st.right)
+				pcall(UI.frameFighter,st.view,st.back,model,accentOf(def),"bust",st.right)
 			end
 		end
 	end
