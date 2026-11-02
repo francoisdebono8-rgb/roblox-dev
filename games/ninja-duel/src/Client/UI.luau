@@ -51,8 +51,8 @@ local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 -- `back` (optional) is a second ViewportFrame under `front`: the fighter again,
 -- flat in its colour and shifted a hair, which reads as the rim of a back light.
 local SHOTS={
-	bust={fov=22,distance=12.5,lift=.35,rim=.2},
-	face={fov=21,distance=6.6,lift=.1,rim=.09},
+	bust={fov=22,distance=12.5,lift=.35,rim=.09},
+	face={fov=21,distance=6.6,lift=.1,rim=.05},
 }
 local function clearView(view)
 	for _,c in view:GetChildren() do if c:IsA("Model") or c:IsA("Camera") or c:IsA("WorldModel") then c:Destroy() end end
@@ -69,7 +69,7 @@ end
 function UI.frameFighter(front,back,source,accent,shot,right)
 	if not front or not source then return end
 	local spec=SHOTS[shot] or SHOTS.bust
-	local turn=CFrame.Angles(0,math.rad(if right then -24 else 24),0)
+	local turn=CFrame.Angles(0,math.rad(if right then -16 else 16),0)
 	local function place(view)
 		clearView(view)
 		local model=source:Clone()
@@ -155,7 +155,7 @@ function UI.new(parent,send)
 			g.AnchorPoint=Vector2.new(.5,.5);create("UICorner",g,{CornerRadius=UDim.new(.5,0)})
 			table.insert(glows,g)
 		end
-		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.05})
+		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.15})
 		local view=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
 		-- Ink rising from the bottom of the card, under the name.
 		local floor=frame(panel,UDim2.new(0,0,1,-90),UDim2.new(1,0,0,90),Color3.fromRGB(14,12,17),0)

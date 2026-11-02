@@ -11,16 +11,18 @@ local Portraits={}
 
 -- A ready stance: guard up, weight low, the lead foot forward (radians).
 local STANCE={
-	LeftShoulder=CFrame.Angles(math.rad(70),math.rad(-15),math.rad(-20)),
-	RightShoulder=CFrame.Angles(math.rad(55),math.rad(20),math.rad(25)),
-	LeftElbow=CFrame.Angles(math.rad(80),0,0),
-	RightElbow=CFrame.Angles(math.rad(95),0,0),
-	LeftHip=CFrame.Angles(math.rad(18),0,math.rad(-6)),
-	RightHip=CFrame.Angles(math.rad(-14),0,math.rad(6)),
-	LeftKnee=CFrame.Angles(math.rad(-22),0,0),
-	RightKnee=CFrame.Angles(math.rad(-10),0,0),
-	Waist=CFrame.Angles(math.rad(-6),math.rad(-18),0),
-	Neck=CFrame.Angles(math.rad(4),math.rad(14),0),
+	-- (Menu staging 02/11) Hands at the chest, never in front of the face the
+	-- bust shot is about; the head square to the shoulders.
+	LeftShoulder=CFrame.Angles(math.rad(38),math.rad(-10),math.rad(-14)),
+	RightShoulder=CFrame.Angles(math.rad(26),math.rad(12),math.rad(16)),
+	LeftElbow=CFrame.Angles(math.rad(72),0,0),
+	RightElbow=CFrame.Angles(math.rad(84),0,0),
+	LeftHip=CFrame.Angles(math.rad(14),0,math.rad(-6)),
+	RightHip=CFrame.Angles(math.rad(-10),0,math.rad(6)),
+	LeftKnee=CFrame.Angles(math.rad(-18),0,0),
+	RightKnee=CFrame.Angles(math.rad(-8),0,0),
+	Waist=CFrame.Angles(math.rad(-4),math.rad(-10),0),
+	Neck=CFrame.Angles(math.rad(2),math.rad(6),0),
 }
 
 local function strip(model)

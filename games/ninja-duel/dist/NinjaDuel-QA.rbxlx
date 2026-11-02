@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">437e98659d461be6a1f130607d69a85f54d718bc44427233a1d8a0179aeba09a</string>
+          <string name="Value">31ffd5de42a5d0c5fd663b252a1051a209cebbf4214029c474b865642f8f8a9a</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -19852,16 +19852,18 @@ local Portraits={}
 
 -- A ready stance: guard up, weight low, the lead foot forward (radians).
 local STANCE={
-	LeftShoulder=CFrame.Angles(math.rad(70),math.rad(-15),math.rad(-20)),
-	RightShoulder=CFrame.Angles(math.rad(55),math.rad(20),math.rad(25)),
-	LeftElbow=CFrame.Angles(math.rad(80),0,0),
-	RightElbow=CFrame.Angles(math.rad(95),0,0),
-	LeftHip=CFrame.Angles(math.rad(18),0,math.rad(-6)),
-	RightHip=CFrame.Angles(math.rad(-14),0,math.rad(6)),
-	LeftKnee=CFrame.Angles(math.rad(-22),0,0),
-	RightKnee=CFrame.Angles(math.rad(-10),0,0),
-	Waist=CFrame.Angles(math.rad(-6),math.rad(-18),0),
-	Neck=CFrame.Angles(math.rad(4),math.rad(14),0),
+	-- (Menu staging 02/11) Hands at the chest, never in front of the face the
+	-- bust shot is about; the head square to the shoulders.
+	LeftShoulder=CFrame.Angles(math.rad(38),math.rad(-10),math.rad(-14)),
+	RightShoulder=CFrame.Angles(math.rad(26),math.rad(12),math.rad(16)),
+	LeftElbow=CFrame.Angles(math.rad(72),0,0),
+	RightElbow=CFrame.Angles(math.rad(84),0,0),
+	LeftHip=CFrame.Angles(math.rad(14),0,math.rad(-6)),
+	RightHip=CFrame.Angles(math.rad(-10),0,math.rad(6)),
+	LeftKnee=CFrame.Angles(math.rad(-18),0,0),
+	RightKnee=CFrame.Angles(math.rad(-8),0,0),
+	Waist=CFrame.Angles(math.rad(-4),math.rad(-10),0),
+	Neck=CFrame.Angles(math.rad(2),math.rad(6),0),
 }
 
 local function strip(model)
@@ -42274,8 +42276,8 @@ local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
 -- `back` (optional) is a second ViewportFrame under `front`: the fighter again,
 -- flat in its colour and shifted a hair, which reads as the rim of a back light.
 local SHOTS={
-	bust={fov=22,distance=12.5,lift=.35,rim=.2},
-	face={fov=21,distance=6.6,lift=.1,rim=.09},
+	bust={fov=22,distance=12.5,lift=.35,rim=.09},
+	face={fov=21,distance=6.6,lift=.1,rim=.05},
 }
 local function clearView(view)
 	for _,c in view:GetChildren() do if c:IsA("Model") or c:IsA("Camera") or c:IsA("WorldModel") then c:Destroy() end end
@@ -42292,7 +42294,7 @@ end
 function UI.frameFighter(front,back,source,accent,shot,right)
 	if not front or not source then return end
 	local spec=SHOTS[shot] or SHOTS.bust
-	local turn=CFrame.Angles(0,math.rad(if right then -24 else 24),0)
+	local turn=CFrame.Angles(0,math.rad(if right then -16 else 16),0)
 	local function place(view)
 		clearView(view)
 		local model=source:Clone()
@@ -42378,7 +42380,7 @@ function UI.new(parent,send)
 			g.AnchorPoint=Vector2.new(.5,.5);create("UICorner",g,{CornerRadius=UDim.new(.5,0)})
 			table.insert(glows,g)
 		end
-		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.05})
+		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.15})
 		local view=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
 		-- Ink rising from the bottom of the card, under the name.
 		local floor=frame(panel,UDim2.new(0,0,1,-90),UDim2.new(1,0,0,90),Color3.fromRGB(14,12,17),0)
