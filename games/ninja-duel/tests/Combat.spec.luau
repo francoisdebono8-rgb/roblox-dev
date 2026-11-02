@@ -191,16 +191,17 @@ test("every semantic action has controller mapping; tutorial cannot skip success
 end)
 test("tutorial launcher-to-slam objectives observe completed real actions",function()
  local c,a,b=pair();local s=c.match;s.combat=c;s.human=a;s.bot=b;s.ai={update=function() end}
- Tutorial.new(s);s.tutorial.index=8;Tutorial.enter(s,c.now)
+ Tutorial.new(s);s.tutorial.index=Tutorial.indexOf(s,"launch");Tutorial.enter(s,c.now)
+ local function at(id) return s.tutorial.index==Tutorial.indexOf(s,id) end
  local function tick(time)
   for _=1,math.ceil(time/.01) do c:update(.01,c.now+.01);Tutorial.update(s,c.now,.01) end
  end
  assert(c:request(a,"Attack"));tick(.3);assert(c:request(a,"Attack"));tick(.3)
- assert(c:request(a,"Heavy"));tick(.45);assert(s.tutorial.index==9)
- assert(c:request(a,"Pursuit"));tick(.05);assert(s.tutorial.index==9,"Chase start incorrectly completed objective")
- tick(.45);assert(s.tutorial.index==10)
- assert(c:request(a,"Attack"));tick(.28);assert(c:request(a,"Attack"));tick(.5);assert(s.tutorial.index==11)
- assert(c:request(a,"Heavy"));tick(.45);assert(s.tutorial.index==12)
+ assert(c:request(a,"Heavy"));tick(.45);assert(at("chase"))
+ assert(c:request(a,"Pursuit"));tick(.05);assert(at("chase"),"Chase start incorrectly completed objective")
+ tick(.45);assert(at("air"))
+ assert(c:request(a,"Attack"));tick(.28);assert(c:request(a,"Attack"));tick(.5);assert(at("airFinish"))
+ assert(c:request(a,"Heavy"));tick(.45);assert(at("runStrike"))
 end)
 test("guarded Fire costs stamina and interruptible channel cannot release",function()
  local c,a,b=pair();a,b=b,a

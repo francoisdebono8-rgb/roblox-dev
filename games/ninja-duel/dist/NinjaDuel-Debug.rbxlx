@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">d69f43fdb699a076bb69c4c2deeaed4682e13f3d6f667fa23173c0674b9bfe29</string>
+          <string name="Value">d4cc1043a9faed24b8737d1ccc9db8522c7e57e53ed23a6110ff35fb18dc3ddf</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -13511,6 +13511,7 @@ function DevHooks.install(matches)
 			table.insert(clientLog,payload);while #clientLog&gt;60 do table.remove(clientLog,1) end
 		elseif kind=="info" and type(payload)=="table" then clientInfo=payload end
 	end)
+	local tutorialLast=nil
 	local function session()
 		local player=Players:GetPlayers()[1]
 		return player,player and matches.sessions[player]
@@ -13597,6 +13598,24 @@ function DevHooks.install(matches)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
 		if op=="flight" then return Flight.data end
+		-- Tutorial v2: its report (the probe of every step), and a run played by
+		-- Server/TutorialBot for one fighter (arg1, opponent arg2, s per step arg3).
+		if op=="tutorial" then return if s and s.tutorial then require(script.Parent.Tutorial).report(s) else tutorialLast end
+		if op=="tutorialRun" then
+			if not player then return "no player" end
+			if s and s.phase~="Selection" then matches:selection(player) end
+			local ok=matches:start(player,arg1 or "Lion",arg2 or "Mirage",true)
+			if not ok then return "start refused" end
+			local session=matches.sessions[player]
+			session.scripted=true;session.introUntil=nil
+			tutorialLast=nil
+			task.spawn(function()
+				local okRun,result=pcall(require(script.Parent.TutorialBot).play,session,arg3 or 10)
+				tutorialLast=if okRun then result else {error=tostring(result)}
+				session.scripted=false
+			end)
+			return "running"
+		end
 		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)
@@ -21631,104 +21650,464 @@ return Techniques
       <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">Tutorial</string>
-          <ProtectedString name="Source">-- Objectives observe the real engine; setups reset the practice pair, never fake success.
+          <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
+-- "dedans tu pourras t'apercevoir de tous les bugs").
+--
+-- One curriculum, adapted to the fighter played: the string has his own
+-- length, the routes are his (named by their move), the tool is his, every
+-- jutsu of his kit is a step of its own, his awakening and ultimate when he
+-- has them. Key names come from Shared/Controls (never written by hand).
+--
+-- Objectives observe the real engine (combat events, accepted presses);
+-- setups reset the practice pair, they never fake success.
+--
+-- Every step is also a probe. While it runs it records what went wrong:
+-- presses the fight refused (and why), moments the stick was held while the
+-- body was free and did not move (a freeze), the watchdogs that had to let a
+-- body go, and a step nobody could finish in time (STUCK: it moves on). Each
+-- finished step prints one line ([NinjaDuelTutorial]) and the whole report is
+-- Tutorial.report(s) (dev hook op "tutorial"). Server/TutorialBot plays it on
+-- its own, for any fighter, in the debug places.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Controls=require(Shared.Controls)
 local Brawler=require(script.Parent.Brawler)
 local Tutorial={}
-Tutorial.Steps={
- {title="Move",pad="L stick",key="W A S D",kind="Move"},
- {title="Sprint",pad="L3, then move",key="Hold CTRL + move",kind="Sprint"},
- {title="Jump and land",pad="×",key="SPACE",kind="Land"},
- {title="Unlock, then lock the target",pad="R3 twice",key="SHIFT twice",kind="Lock"},
- {title="Directional dash",pad="L stick + ○",key="Direction + Q",event="Dodge"},
- {title="Run up the wall, then rebound",pad="Push L stick into wall, then ×",key="Move into wall, then SPACE",kind="Wall"},
- {title="Land three light strikes",pad="□ three times",key="LMB three times",kind="Combo"},
- {title="Branch into a launcher",pad="□, □, then toward + □ (or △)",key="LMB, LMB, then toward + LMB (or RMB)",event="LaunchHit"},
- {title="Chase the launched target",pad="× after launch",key="E or SPACE after launch",kind="Chase"},
- {title="Land two aerial strikes",pad="□ twice in air",key="LMB twice in air",kind="AirCombo"},
- {title="Finish downward",pad="△ in air",key="RMB in air",event="SlamHit"},
- {title="Guard the incoming strike",pad="Hold L1",key="Hold F",event="GuardHit"},
- {title="Dodge the incoming strike",pad="○ during windup",key="Q during windup",kind="Evade"},
- {title="Escape after being hit",pad="○ just after contact",key="X just after contact",event="Substitute"},
- {title="Grab, then throw",pad="L2, then □ (△ throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
- {title="Perform a character technique",pad="Hold R1 + ×",key="1",kind="Technique"},
- {title="Interrupt the telegraphed technique",pad="□ during hand signs",key="LMB during hand signs",kind="Interrupt"},
- {title="Go low: two hits, then away + strike",pad="□, □, then away + □",key="LMB, LMB, then away + LMB",event="RouteDown"},
- {title="Turn the angle: one hit, then sideways + strike",pad="□, then sideways + □",key="LMB, then sideways + LMB",event="RouteSide"},
- {title="Win the practice duel",pad="Use your complete kit",key="Use your complete kit",kind="Win"},
-}
-function Tutorial.new(s)
- local t={index=1,entered=0,baseline={},travel=0,seenAir=false,seenWall=false,unlocked=false,attackAt=0};s.tutorial=t;return t
+
+local K,P=Controls.KeyLabel,Controls.PadLabel
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+
+-- What a fighter's tool is called on screen.
+local TOOL_NAME={Kunai="kunai",Shuriken="shuriken",Sand="sand bullet",Deflect="deflecting kick",Gust="fan gust"}
+local function toolName(a)
+	local mastery=a.def.ToolMastery
+	if mastery and mastery.Projectile then return tostring(mastery.Projectile) end
+	return TOOL_NAME[a.def.Tool or ""] or string.lower(tostring(a.def.Tool or "tool"))
 end
+local function moveLabel(name)
+	-- "LionKick" -&gt; "Lion Kick"
+	return (string.gsub(tostring(name),"(%l)(%u)","%1 %2"))
+end
+local TECH_KEY={"1","2","3","4","5"}
+
+-- ------------------------------------------------------------------ steps
+-- A step: id, title, key, pad (strings or functions of the actor), place
+-- ("near" | "far" | "wall" | "air"), bot ("idle" | "heavy" | "channel" |
+-- "grab" | "fight"), setup(s,t,now), check(s,t,now) -&gt; done, timeout (s).
+local function step(spec) spec.timeout=spec.timeout or 40;spec.place=spec.place or "far";spec.bot=spec.bot or "idle";return spec end
+
+-- The adapted curriculum for this actor (its own copy of every spec).
+function Tutorial.plan(a)
+	local def=a.def
+	local graph=Brawler.graph(a) or {}
+	local routes=graph.routes or {}
+	local steps={}
+	local function add(spec) table.insert(steps,step(spec)) end
+	add({id="move",title="Move",key="W A S D",pad="L stick",
+		check=function(s,t) return t.travel&gt;12 end})
+	add({id="sprint",title="Sprint",key="Hold "..K.Sprint.." + move",pad=P.Sprint..", then move",
+		check=function(s,t) return s.human.sprinting and s.human.locomotion.Magnitude&gt;28 end})
+	add({id="jump",title="Jump and land",key=K.Jump,pad=P.Jump,
+		check=function(s,t) local a=s.human;t.seenAir=t.seenAir or a.airborne;return t.seenAir and not a.airborne end})
+	add({id="lock",title="Unlock, then lock the target",key=K.Lock.." twice",pad=P.Lock.." twice",
+		check=function(s,t) local a=s.human;t.unlocked=t.unlocked or not a.locked;return (t.unlocked or t.ev("Unlock")) and a.locked and t.ev("Lock") end})
+	add({id="dodge",title=if def.SandFlicker then "Sand body-flicker" else "Directional dash",key="Direction + "..K.Dodge,pad="L stick + "..P.Dodge,
+		check=function(s,t) return t.ev("Dodge") end})
+	add({id="wall",title="Run up the wall, then rebound",key="Move into the wall, then "..K.Jump,pad="Push into the wall, then "..P.Jump,place="wall",
+		check=function(s,t,now) local a=s.human;t.seenWall=t.seenWall or a.wall~=nil;return t.seenWall and (a.wallJumpUntil or 0)&gt;now end})
+	local length=def.StringLength or 4
+	add({id="string",title="Land your "..length.."-hit string",key=K.Light.." x"..length,pad=P.Light.." x"..length,place="near",
+		check=function(s,t) return t.count("Hit")&gt;=length end})
+	add({id="heavy",title="Heavy strike",key=K.Heavy,pad=P.Heavy,place="near",
+		check=function(s,t) return t.ok("Heavy") and t.count("Hit")&gt;=1 end})
+	if routes.side then
+		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="1 hit, then side + "..K.Light,pad="1 hit, then side + "..P.Light,place="near",
+			check=function(s,t) return t.ev("RouteSide") end})
+	end
+	if routes.down then
+		add({id="routeDown",title="Go low: "..moveLabel(routes.down),key="2 hits, then away + "..K.Light,pad="2 hits, then away + "..P.Light,place="near",
+			check=function(s,t) return t.ev("RouteDown") end})
+	end
+	if routes.up then
+		add({id="launch",title="Launch: "..moveLabel(routes.up),key="2 hits, then toward + "..K.Light,pad="2 hits, then toward + "..P.Light,place="near",
+			check=function(s,t) return t.ev("LaunchHit") end})
+	end
+	add({id="chase",title="Chase the launched body",key=K.Pursuit.." after the launch",pad=P.Pursuit.." after the launch",place="near",
+		setup=function(s,t,now) local c,a,b=s.combat,s.human,s.bot;Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end,
+		retry=3,
+		check=function(s,t) local a,b=s.human,s.bot;return t.ev("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude&lt;7 end})
+	add({id="air",title="Land two aerial strikes",key=K.Light.." twice in the air",pad=P.Light.." twice in the air",place="air",retry=3,
+		check=function(s,t) return t.count("AirHit")&gt;=2 end})
+	add({id="airFinish",title=if graph.airFinisher then "Finish in the air: "..moveLabel(graph.airFinisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
+		check=function(s,t) return t.ev("SlamHit") or t.ev("LionCombo") or (t.ok("Heavy") and t.count("Hit")&gt;=1) end})
+	add({id="runStrike",title=if graph.runStrike then "Strike on the run: "..moveLabel(graph.runStrike) else "Strike on the run",key="Sprint at him, then "..K.Light.." or "..K.Heavy,pad="Sprint at him, then "..P.Light.." or "..P.Heavy,
+		check=function(s,t) return t.ev("RunningStrike") end})
+	add({id="grab",title="Grab, then throw",key=K.Grab..", then "..K.Light.." ("..K.Heavy.." throws upward)",pad=P.Grab..", then "..P.Light,place="near",
+		check=function(s,t) return t.ev("ThrowHit") end})
+	add({id="tool",title="Your tool: "..toolName(a),key=K.Tool,pad=P.Tool,
+		check=function(s,t) return t.ok("Tool") end})
+	for i,spec in def.Techniques or {} do
+		if i&gt;5 then break end
+		add({id="jutsu"..i,title="Jutsu "..i..": "..tostring(spec.Name),key=TECH_KEY[i],pad=Controls.TechniquePad[i] or ("Jutsu "..i),
+			place=if (spec.Range or 20)&lt;10 then "near" else "far",technique=spec,
+			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
+			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
+	end
+	add({id="guard",title="Guard the incoming strike",key="Hold "..K.Guard,pad="Hold "..P.Guard,place="near",bot="heavy",
+		check=function(s,t) return t.ev("GuardHit") end})
+	add({id="evade",title="Dodge the incoming strike",key=K.Dodge.." during his wind-up",pad=P.Dodge.." during his wind-up",place="near",bot="heavy",
+		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)&gt;.46 and a.health==t.health)) end})
+	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
+		check=function(s,t) return t.ev("Substitute") end})
+	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="far",bot="channel",
+		check=function(s,t) return t.ev("Interrupt") end})
+	add({id="throwBreak",title="Break his grab",key=K.Grab.." as he seizes you",pad=P.Grab.." as he seizes you",place="near",bot="grab",
+		check=function(s,t) return t.ev("ThrowBreak") end})
+	if def.Awakening then
+		add({id="awaken",title="Awaken: "..tostring(def.Awakening.Name or "awakening"),key=K.Awaken.." (low health)",pad="D-pad ↓ (low health)",
+			setup=function(s) local a=s.human;a.awakened=false;a.health=a.def.Health*.3;a.hum.Health=a.health end,
+			check=function(s,t) return t.ev("Awaken") end})
+	end
+	local Ultimates=require(script.Parent.Ultimates)
+	local ult=Ultimates.def(a)
+	if ult then
+		add({id="ultimate",title="Ultimate: "..tostring(ult.Name),key=K.Ultimate.." (bar full)",pad=P.Ultimate.." (bar full)",place="near",
+			setup=function(s) s.human.ultimate=Ultimates.MAX end,
+			check=function(s,t) return t.ev("UltimateStart") end})
+	end
+	add({id="win",title="Win the practice duel",key="Use your complete kit",pad="Use your complete kit",place="far",bot="fight",timeout=math.huge,
+		check=function() return false end})
+	return steps
+end
+
+-- ----------------------------------------------------------------- driver
+function Tutorial.new(s)
+	local t={index=1,entered=0,baseline={},travel=0,attackAt=0,report={},timeoutScale=1}
+	t.steps=Tutorial.plan(s.human)
+	s.tutorial=t
+	return t
+end
+-- Kept for the specs and tools that name the generic order.
+Tutorial.Steps=Tutorial.plan({def={Techniques={}},fighterId=""})
+function Tutorial.indexOf(s,id)
+	for i,spec in s.tutorial.steps do if spec.id==id then return i end end
+	return nil
+end
+local function counter(t,a,name) return (a.events and a.events[name] or 0)-(t.baseline[name] or 0) end
 function Tutorial.enter(s,now)
- local t,a,b=s.tutorial,s.human,s.bot;t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false;t.health=a.health;t.lastPosition=a.root.Position
- local c=s.combat;c:clear(true)
- for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
- t.health=a.health
- b.trainingChannelScale=if t.index==17 then 3 else 1
- local near=t.index&gt;=7 and t.index~=16
- c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
- -- Wall step: start a few strides from the stadium wall (east side).
- if t.index==6 then local R=require(script.Parent.World).WALL_RADIUS;c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0)) end
- a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
- if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
- if t.index==10 or t.index==11 then
-  c:relocate(a,s.origin+Vector3.new(0,16,3));c:relocate(b,s.origin+Vector3.new(0,16,-2));a.airborne=true;a.airHold=now+1.8
-  Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
- end
- t.attackAt=now+1
+	local t,a,b=s.tutorial,s.human,s.bot
+	local spec=t.steps[t.index]
+	local c=s.combat;c:clear(true)
+	t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false
+	t.lastPosition=a.root.Position;t.pressFrom=#(a.pressLog or {});t.stillFor=0;t.freezeOpen=false
+	-- A step set up again (a missed launch) keeps its record and its clock.
+	local same=t.rec and t.recIndex==t.index and not t.rec.status
+	if same then t.rec.attempts+=1
+	else t.rec={id=spec.id,title=spec.title,started=now,refused={},freezes=0,watchdogs=0,attempts=1};t.recIndex=t.index;t.stepFrom=now;t.stepPress=#(a.pressLog or {}) end
+	for _,actor in {a,b} do
+		actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.untilTime=now;actor.chakra=actor.def.Chakra or 100
+		actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0
+		actor.reaction=nil;actor.reactionVelocity=nil;actor.groundPose=nil;actor.airHold=0
+	end
+	t.health=a.health
+	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
+	local place=spec.place
+	local near=place=="near" or place=="air"
+	c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
+	if place=="wall" then
+		local R=require(script.Parent.World).WALL_RADIUS
+		c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0))
+	end
+	a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
+	if place=="air" then
+		c:relocate(a,s.origin+Vector3.new(0,16,3));c:relocate(b,s.origin+Vector3.new(0,16,-2));a.airborne=true;a.airHold=now+1.8
+		Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
+	end
+	-- A jutsu that needs its target in reach starts within it.
+	local tech=spec.technique
+	if tech and tech.Requires=="Target" then
+		local gap=math.clamp((tech.Range or 10)*.5,3,12)
+		c:relocate(b,a.root.Position+flat(b.root.Position-a.root.Position).Unit*gap)
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
+	end
+	if spec.setup then spec.setup(s,t,now) end
+	t.attackAt=now+1
 end
 -- The bot's longest interruptible channel: the one the player learns to break.
 function Tutorial.interruptSlot(b)
- local best,bestChannel="Technique1",-1
- for slot,spec in b.def.Techniques do
-  if spec.Interruptible and spec.Channel&gt;bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
- end
- return best
+	local best,bestChannel="Technique1",-1
+	for slot,spec in b.def.Techniques do
+		if spec.Interruptible and spec.Channel&gt;bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+	end
+	return best
 end
+
+-- -------------------------------------------------------------- the probe
+-- Presses the fight refused since the step began, by reason.
+local function collectRefusals(t,a)
+	local log=a.pressLog or {}
+	-- The log keeps its last 40 entries: count from where the step began.
+	local from=math.max(1,math.min(t.stepPress or 0,#log)+1)
+	if #log&gt;=40 then from=1 end
+	local out={}
+	for i=from,#log do
+		local entry=log[i]
+		if entry.t&gt;=(t.stepFrom or t.entered) and not entry.ok and entry.reason then out[entry.reason]=(out[entry.reason] or 0)+1 end
+	end
+	return out
+end
+-- A freeze: the stick held, the body alive and free (no reaction, no hold, not
+-- committed), and it does not move for 0.4 s. What held it is kept.
+local function probeFreeze(s,t,dt,now)
+	local a=s.human
+	local wants=a.move and flat(a.move).Magnitude&gt;.5
+	local step=(a.root.Position-(t.freezeLast or a.root.Position)).Magnitude;t.freezeLast=a.root.Position
+	local free=a.health&gt;0 and a.state=="Neutral" and not a.reaction and not a.wall and now&gt;=(a.airHold or 0) and now&gt;=(a.hitstopUntil or 0)
+	if wants and free and step&lt;.01 then
+		t.stillFor+=dt
+		if t.stillFor&gt;=.4 and not t.freezeOpen then
+			t.freezeOpen=true;t.rec.freezes+=1
+			if not t.rec.freeze then
+				local hum=a.hum
+				t.rec.freeze={state=a.state,airborne=a.airborne,humState=hum and hum:GetState().Name,walkSpeed=hum and math.floor(hum.WalkSpeed*10)/10,
+					anchored=a.root.Anchored,traversal=a.model:GetAttribute("MovementTraversalActive"),locomotion=math.floor(a.locomotion.Magnitude*10)/10,
+					held=a.ultimateHeld==true,grounded=a.grounded}
+			end
+		end
+	else t.stillFor=0;t.freezeOpen=false end
+end
+local function summary(rec)
+	local parts={}
+	for reason,n in rec.refused do table.insert(parts,reason.."x"..n) end
+	table.sort(parts)
+	local line=string.format("%s %.1fs",rec.status,rec.ended-rec.started)
+	if #parts&gt;0 then line..="  refused: "..table.concat(parts,", ") end
+	if rec.freezes&gt;0 then
+		local f=rec.freeze or {}
+		line..=string.format("  FREEZES %d (state=%s air=%s hum=%s walk=%s anchored=%s traversal=%s held=%s)",rec.freezes,tostring(f.state),tostring(f.airborne),tostring(f.humState),tostring(f.walkSpeed),tostring(f.anchored),tostring(f.traversal),tostring(f.held))
+	end
+	if rec.watchdogs&gt;0 then line..="  watchdogs: "..rec.watchdogs end
+	if rec.attempts&gt;1 then line..="  setups: "..rec.attempts end
+	return line
+end
+local function close(s,t,now,status)
+	local a=s.human
+	local rec=t.rec
+	rec.status=status;rec.ended=now
+	rec.refused=collectRefusals(t,a)
+	rec.watchdogs=counter(t,a,"WatchdogWakeup")+counter(t,a,"WatchdogReaction")+counter(t,a,"WatchdogGrab")
+	rec.line=summary(rec)
+	table.insert(t.report,rec)
+	print(string.format("[NinjaDuelTutorial] %s %d/%d %s: %s",tostring(a.fighterId),t.index,#t.steps,rec.id,rec.line))
+end
+function Tutorial.report(s)
+	local t=s.tutorial
+	if not t then return nil end
+	local out={fighter=s.human and s.human.fighterId,steps={},current=t.steps[t.index] and t.steps[t.index].id}
+	for _,rec in t.report do table.insert(out.steps,{id=rec.id,title=rec.title,status=rec.status,line=rec.line,refused=rec.refused,freezes=rec.freezes,freeze=rec.freeze,watchdogs=rec.watchdogs}) end
+	return out
+end
+
+-- ------------------------------------------------------------------- tick
 function Tutorial.update(s,now,dt)
- local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
- if t.entered==0 then Tutorial.enter(s,now) end
- local spec=Tutorial.Steps[t.index]
- b.move=Vector3.zero;b.sprinting=false
- if spec.kind=="Win" then s.ai:update(now);return end
- local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
- local function event(name) return (a.events and a.events[name] or 0)&gt;(t.baseline[name] or 0) end
- local done=spec.event and event(spec.event)
- if spec.kind=="Move" then done=t.travel&gt;12
- elseif spec.kind=="Sprint" then done=a.sprinting and a.locomotion.Magnitude&gt;30
- elseif spec.kind=="Land" then t.seenAir=t.seenAir or a.airborne;done=t.seenAir and not a.airborne
- elseif spec.kind=="Lock" then t.unlocked=t.unlocked or not a.locked;done=(t.unlocked or event("Unlock")) and a.locked and event("Lock")
- elseif spec.kind=="Wall" then t.seenWall=t.seenWall or a.wall~=nil;done=t.seenWall and (a.wallJumpUntil or 0)&gt;now
- elseif spec.kind=="Combo" then done=(a.events and a.events.Hit or 0)-(t.baseline.Hit or 0)&gt;=3
- elseif spec.kind=="Chase" then done=event("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude&lt;7
- elseif spec.kind=="AirCombo" then done=(a.events and a.events.AirHit or 0)-(t.baseline.AirHit or 0)&gt;=2
- elseif spec.kind=="Technique" then done=event("TechniqueResolved") or (event("Technique") and a.state=="TechniqueRecovery")
- elseif spec.kind=="Evade" then done=event("Dodge") and (event("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)&gt;.46 and a.health==t.health))
- elseif spec.kind=="Interrupt" then done=event("Interrupt") end
- if done and not t.completedAt then t.completedAt=now end
- if t.completedAt and now-t.completedAt&gt;=.22 then t.index+=1;Tutorial.enter(s,now);return end
- if (t.index==12 or t.index==13 or t.index==14) and now&gt;=t.attackAt then
-  if (b.root.Position-a.root.Position).Magnitude&gt;7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
-  b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
- end
- if t.index==17 and now&gt;=t.attackAt then
-  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
- end
- -- Failed launch/juggle exercises reset quickly without skipping their objectives.
- if (t.index==9 or t.index==10 or t.index==11) and now-t.entered&gt;3 then Tutorial.enter(s,now) end
- if a.health&lt;a.def.Health*.3 then a.health=a.def.Health;a.hum.Health=a.health end
- if b.health&lt;b.def.Health*.25 then b.health=b.def.Health;b.hum.Health=b.health end
+	local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
+	if t.entered==0 then Tutorial.enter(s,now) end
+	local spec=t.steps[t.index]
+	if spec.bot=="fight" then s.ai:update(now);return end
+	b.move=Vector3.zero;b.sprinting=false
+	local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
+	t.ev=function(name) return counter(t,a,name)&gt;0 end
+	t.count=function(name) return counter(t,a,name) end
+	t.ok=function(action)
+		for i=#(a.pressLog or {}),1,-1 do
+			local entry=a.pressLog[i]
+			if entry.t&lt;t.entered then break end
+			if entry.action==action and entry.ok then return true end
+		end
+		return false
+	end
+	probeFreeze(s,t,dt,now)
+	if not t.completedAt and spec.check(s,t,now) then t.completedAt=now end
+	if t.completedAt and now-t.completedAt&gt;=.22 then
+		close(s,t,now,"PASS");t.index+=1;Tutorial.enter(s,now);return
+	end
+	-- Nobody finished it in time: a probe that found a wall, not a lesson to
+	-- retry forever. It is reported STUCK and the next step begins.
+	if now-t.rec.started&gt;=spec.timeout*(t.timeoutScale or 1) then
+		close(s,t,now,"STUCK");t.index+=1;Tutorial.enter(s,now);return
+	end
+	-- The practice partner.
+	if spec.bot=="heavy" and now&gt;=t.attackAt then
+		if (b.root.Position-a.root.Position).Magnitude&gt;7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
+	elseif spec.bot=="channel" and now&gt;=t.attackAt then
+		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
+	elseif spec.bot=="grab" and now&gt;=t.attackAt then
+		if (b.root.Position-a.root.Position).Magnitude&gt;4 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.2) end
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);b.grabCooldown=0;c:request(b,"Grab");t.attackAt=now+1.8
+	end
+	-- A failed launch / juggle exercise sets itself up again (same step).
+	if spec.retry and now-t.entered&gt;spec.retry then Tutorial.enter(s,now) end
+	if a.health&lt;a.def.Health*.3 and spec.id~="awaken" then a.health=a.def.Health;a.hum.Health=a.health end
+	if b.health&lt;b.def.Health*.25 then b.health=b.def.Health;b.hum.Health=b.health end
+end
+function Tutorial.skip(s,now)
+	local t=s.tutorial
+	if not t or not t.steps[t.index+1] then return false end
+	close(s,t,now,"SKIP");t.index+=1;Tutorial.enter(s,now)
+	return true
 end
 function Tutorial.snapshot(s)
- local t=s.tutorial;if not t then return nil end
- local step=Tutorial.Steps[t.index]
- return {index=t.index,total=#Tutorial.Steps,title=step.title,pad=step.pad,key=step.key}
+	local t=s.tutorial;if not t then return nil end
+	local step=t.steps[t.index]
+	return {index=t.index,total=#t.steps,title=step.title,pad=step.pad,key=step.key,id=step.id}
 end
 return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
       <Item class="ModuleScript" referent="ND88">
+        <Properties>
+          <string name="Name">TutorialBot</string>
+          <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). Plays the tutorial on its
+-- own for a fighter, through the same Combat:request a player's remote reaches
+-- (late presses included: the seat is a player), and returns the tutorial's
+-- report: every step PASS / STUCK, with the refusals, the freezes and the
+-- watchdogs the probe recorded. A STUCK step is a lead for a bug (or a step
+-- this bot does not know how to play: read the line). From the command bar,
+-- Server side, in a playtest:
+--   require(game.ServerScriptService.NinjaDuelServer.TutorialBot).run(matches-free: uses the dev hook session)
+-- or through the dev hook: NinjaDuelDev:Invoke("tutorialRun","Lion") then
+-- NinjaDuelDev:Invoke("tutorial") for the report while it runs / when done.
+local Tutorial=require(script.Parent.Tutorial)
+local Brawler=require(script.Parent.Brawler)
+local Bot={}
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+
+-- One script per step id: what a player would press. `s` is the session,
+-- `wait(sec)` yields while the duel runs, `alive()` says the step still runs.
+local function scripts(s,wait,alive)
+	local c=s.combat
+	local function A() return s.human end
+	local function B() return s.bot end
+	local function press(action,aim,opts) return c:request(A(),action,aim,nil,opts) end
+	local function toward() local a,b=A(),B();local d=flat(b.root.Position-a.root.Position);return if d.Magnitude&gt;.1 then d.Unit else Vector3.zAxis end
+	local function stick(v) local a=A();a.move=v;a.lastMove=os.clock()+5;Brawler.observe(c,a) end
+	local function hold(v,sec) local t0=os.clock();while alive() and os.clock()-t0&lt;sec do stick(v);wait(.05) end end
+	local function chain(n,gap) for _=1,n do if not alive() then return end;press("Attack");wait(gap or .24) end end
+	local S={}
+	S.move=function() hold(toward():Cross(Vector3.yAxis),1.5);stick(Vector3.zero) end
+	S.sprint=function() A().sprinting=true;hold(toward():Cross(Vector3.yAxis),1.5);A().sprinting=false;stick(Vector3.zero) end
+	S.jump=function() press("Jump");wait(1.2) end
+	S.lock=function()
+		local a=A();a.locked=false;Brawler.event(c,a,"Unlock");wait(.2)
+		a.locked=true;Brawler.event(c,a,"Lock");wait(.4)
+	end
+	S.dodge=function() stick(toward():Cross(Vector3.yAxis));press("Dodge");wait(.6);stick(Vector3.zero) end
+	S.wall=function()
+		-- Into the east wall (Tutorial places the body a few strides from it).
+		local t0=os.clock()
+		while alive() and not A().wall and os.clock()-t0&lt;3 do stick(Vector3.xAxis);wait(.05) end
+		wait(.15);press("Jump");wait(.6);stick(Vector3.zero)
+	end
+	S.string=function() stick(Vector3.zero);chain((A().def.StringLength or 4)+1,.26);wait(.5) end
+	S.heavy=function() press("Heavy");wait(1) end
+	S.routeSide=function() press("Attack");wait(.3);stick(toward():Cross(Vector3.yAxis));press("Attack");wait(.6);stick(Vector3.zero) end
+	S.routeDown=function() chain(2,.28);stick(-toward());press("Attack");wait(.6);stick(Vector3.zero) end
+	S.launch=function() chain(2,.28);stick(toward());press("Attack");wait(.6);stick(Vector3.zero) end
+	S.chase=function() wait(.15);press("Pursuit");wait(.8) end
+	S.air=function() press("Attack");wait(.26);press("Attack");wait(.6) end
+	S.airFinish=function() press("Heavy");wait(.8) end
+	S.runStrike=function()
+		local a=A();a.sprinting=true
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;3 do
+			stick(toward())
+			local gap=flat(B().root.Position-a.root.Position).Magnitude
+			if gap&lt;9 and a.locomotion.Magnitude&gt;28 then press("Attack");break end
+			wait(.03)
+		end
+		a.sprinting=false;wait(.6);stick(Vector3.zero)
+	end
+	S.grab=function() press("Grab");wait(.4);press("Attack");wait(.8) end
+	S.tool=function() press("Tool",B().root.Position);wait(.9) end
+	for i=1,5 do
+		S["jutsu"..i]=function() press("Technique"..i,B().root.Position);wait(1.4) end
+	end
+	S.guard=function()
+		local a=A();a.guardWanted=true;press("Guard")
+		local t0=os.clock();while alive() and os.clock()-t0&lt;3 do wait(.05) end
+		a.guardWanted=false;press("GuardOff")
+	end
+	S.evade=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;4 do
+			local b=B()
+			if b.attackName=="Heavy" and b.state=="Startup" and c.now-(b.attackStarted or c.now)&gt;.12 then
+				stick(toward():Cross(Vector3.yAxis));press("Dodge");wait(.6);stick(Vector3.zero);return
+			end
+			wait(.02)
+		end
+	end
+	S.substitute=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;4 do
+			if A().reaction then wait(.05);press("Dodge");wait(.6);return end
+			wait(.02)
+		end
+	end
+	S.interrupt=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;5 do
+			local b=B()
+			if b.state=="TechniqueChannel" then
+				local a=A()
+				while alive() and B().state=="TechniqueChannel" and flat(B().root.Position-a.root.Position).Magnitude&gt;5 do stick(toward());wait(.03) end
+				stick(Vector3.zero);press("Attack");wait(.6);return
+			end
+			wait(.02)
+		end
+	end
+	S.throwBreak=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0&lt;4 do
+			if A().reaction=="Grabbed" then press("Grab");wait(.5);return end
+			wait(.02)
+		end
+	end
+	S.awaken=function() press("Awaken");wait(1) end
+	S.ultimate=function() press("Ultimate");wait(1.5) end
+	return S
+end
+
+-- Plays the session's tutorial to its last step (the practice duel), each
+-- step at most `perStep` seconds of its own timeout, then returns the report.
+function Bot.play(s,perStep)
+	local t=s.tutorial
+	assert(t,"no tutorial running")
+	t.timeoutScale=(perStep or 10)/40
+	local index,started=0,0
+	local function alive() return s.tutorial==t and t.index==index and s.phase=="Duel" end
+	local S=scripts(s,task.wait,alive)
+	while s.tutorial==t and s.phase=="Duel" do
+		local spec=t.steps[t.index]
+		if not spec or spec.id=="win" then break end
+		if t.index~=index then index=t.index;started=os.clock() end
+		local fn=S[spec.id]
+		if fn then
+			local ok,err=pcall(fn)
+			if not ok then warn("[NinjaDuelTutorialBot] "..spec.id..": "..tostring(err)) end
+		end
+		task.wait(.1)
+		if os.clock()-started&gt;(perStep or 10)+2 then task.wait(.1) end
+	end
+	s.human.move=Vector3.zero;s.human.sprinting=false
+	return Tutorial.report(s)
+end
+return Bot
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -22033,7 +22412,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -22061,7 +22440,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -22194,7 +22573,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -22245,7 +22624,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND92">
+      <Item class="ModuleScript" referent="ND93">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -22380,7 +22759,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND93">
+      <Item class="ModuleScript" referent="ND94">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -22494,7 +22873,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -22680,7 +23059,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -22787,7 +23166,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -23975,7 +24354,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -24588,7 +24967,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -24816,21 +25195,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND99">
+  <Item class="StarterPlayer" referent="ND100">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND100">
+    <Item class="StarterPlayerScripts" referent="ND101">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND101">
+      <Item class="Folder" referent="ND102">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND102">
+        <Item class="ModuleScript" referent="ND103">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -24882,7 +25261,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25183,7 +25562,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25297,7 +25676,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25547,7 +25926,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25695,7 +26074,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25996,7 +26375,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26144,7 +26523,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26309,7 +26688,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26508,7 +26887,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26843,7 +27222,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26991,7 +27370,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27224,7 +27603,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27372,7 +27751,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27554,7 +27933,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27889,7 +28268,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28037,7 +28416,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28270,7 +28649,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28520,7 +28899,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28787,7 +29166,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28969,7 +29348,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29219,7 +29598,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29367,7 +29746,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29617,7 +29996,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29867,7 +30246,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30032,7 +30411,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30367,7 +30746,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30532,7 +30911,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30629,7 +31008,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30794,7 +31173,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30891,7 +31270,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31226,7 +31605,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31357,7 +31736,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31437,7 +31816,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31483,7 +31862,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31648,7 +32027,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31694,7 +32073,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31740,7 +32119,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31769,7 +32148,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32002,7 +32381,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32303,7 +32682,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32519,7 +32898,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32718,7 +33097,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33019,7 +33398,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -33155,7 +33534,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -33319,7 +33698,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -33760,7 +34139,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -34315,7 +34694,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -34479,7 +34858,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND150">
+        <Item class="LocalScript" referent="ND151">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -34513,7 +34892,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND151">
+        <Item class="ModuleScript" referent="ND152">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -34663,7 +35042,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -34707,7 +35086,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -36864,7 +37243,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -37488,7 +37867,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -37966,7 +38345,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -38147,7 +38526,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -38917,7 +39296,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -39184,7 +39563,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -39365,7 +39744,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND160">
+        <Item class="LocalScript" referent="ND161">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -39553,7 +39932,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND161">
+        <Item class="ModuleScript" referent="ND162">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -39696,7 +40075,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -39959,7 +40338,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -40395,7 +40774,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -41018,7 +41397,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -41659,7 +42038,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -42567,7 +42946,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -42763,7 +43142,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -46411,7 +46790,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -47864,7 +48243,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -48324,7 +48703,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -48538,7 +48917,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -48839,7 +49218,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -48852,7 +49231,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -48955,7 +49334,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -49082,7 +49461,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -49225,7 +49604,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -49441,7 +49820,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND178">
+  <Item class="Lighting" referent="ND179">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -49459,7 +49838,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND179">
+  <Item class="SoundService" referent="ND180">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

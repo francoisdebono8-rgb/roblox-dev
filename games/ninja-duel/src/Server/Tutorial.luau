@@ -1,94 +1,312 @@
--- Objectives observe the real engine; setups reset the practice pair, never fake success.
+-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
+-- "dedans tu pourras t'apercevoir de tous les bugs").
+--
+-- One curriculum, adapted to the fighter played: the string has his own
+-- length, the routes are his (named by their move), the tool is his, every
+-- jutsu of his kit is a step of its own, his awakening and ultimate when he
+-- has them. Key names come from Shared/Controls (never written by hand).
+--
+-- Objectives observe the real engine (combat events, accepted presses);
+-- setups reset the practice pair, they never fake success.
+--
+-- Every step is also a probe. While it runs it records what went wrong:
+-- presses the fight refused (and why), moments the stick was held while the
+-- body was free and did not move (a freeze), the watchdogs that had to let a
+-- body go, and a step nobody could finish in time (STUCK: it moves on). Each
+-- finished step prints one line ([NinjaDuelTutorial]) and the whole report is
+-- Tutorial.report(s) (dev hook op "tutorial"). Server/TutorialBot plays it on
+-- its own, for any fighter, in the debug places.
+local Shared=game:GetService("ReplicatedStorage").NinjaDuel
+local Controls=require(Shared.Controls)
 local Brawler=require(script.Parent.Brawler)
 local Tutorial={}
-Tutorial.Steps={
- {title="Move",pad="L stick",key="W A S D",kind="Move"},
- {title="Sprint",pad="L3, then move",key="Hold CTRL + move",kind="Sprint"},
- {title="Jump and land",pad="×",key="SPACE",kind="Land"},
- {title="Unlock, then lock the target",pad="R3 twice",key="SHIFT twice",kind="Lock"},
- {title="Directional dash",pad="L stick + ○",key="Direction + Q",event="Dodge"},
- {title="Run up the wall, then rebound",pad="Push L stick into wall, then ×",key="Move into wall, then SPACE",kind="Wall"},
- {title="Land three light strikes",pad="□ three times",key="LMB three times",kind="Combo"},
- {title="Branch into a launcher",pad="□, □, then toward + □ (or △)",key="LMB, LMB, then toward + LMB (or RMB)",event="LaunchHit"},
- {title="Chase the launched target",pad="× after launch",key="E or SPACE after launch",kind="Chase"},
- {title="Land two aerial strikes",pad="□ twice in air",key="LMB twice in air",kind="AirCombo"},
- {title="Finish downward",pad="△ in air",key="RMB in air",event="SlamHit"},
- {title="Guard the incoming strike",pad="Hold L1",key="Hold F",event="GuardHit"},
- {title="Dodge the incoming strike",pad="○ during windup",key="Q during windup",kind="Evade"},
- {title="Escape after being hit",pad="○ just after contact",key="X just after contact",event="Substitute"},
- {title="Grab, then throw",pad="L2, then □ (△ throws upward)",key="V, then LMB (RMB throws upward)",event="ThrowHit"},
- {title="Perform a character technique",pad="Hold R1 + ×",key="1",kind="Technique"},
- {title="Interrupt the telegraphed technique",pad="□ during hand signs",key="LMB during hand signs",kind="Interrupt"},
- {title="Go low: two hits, then away + strike",pad="□, □, then away + □",key="LMB, LMB, then away + LMB",event="RouteDown"},
- {title="Turn the angle: one hit, then sideways + strike",pad="□, then sideways + □",key="LMB, then sideways + LMB",event="RouteSide"},
- {title="Win the practice duel",pad="Use your complete kit",key="Use your complete kit",kind="Win"},
-}
-function Tutorial.new(s)
- local t={index=1,entered=0,baseline={},travel=0,seenAir=false,seenWall=false,unlocked=false,attackAt=0};s.tutorial=t;return t
+
+local K,P=Controls.KeyLabel,Controls.PadLabel
+local function flat(v) return Vector3.new(v.X,0,v.Z) end
+
+-- What a fighter's tool is called on screen.
+local TOOL_NAME={Kunai="kunai",Shuriken="shuriken",Sand="sand bullet",Deflect="deflecting kick",Gust="fan gust"}
+local function toolName(a)
+	local mastery=a.def.ToolMastery
+	if mastery and mastery.Projectile then return tostring(mastery.Projectile) end
+	return TOOL_NAME[a.def.Tool or ""] or string.lower(tostring(a.def.Tool or "tool"))
 end
+local function moveLabel(name)
+	-- "LionKick" -> "Lion Kick"
+	return (string.gsub(tostring(name),"(%l)(%u)","%1 %2"))
+end
+local TECH_KEY={"1","2","3","4","5"}
+
+-- ------------------------------------------------------------------ steps
+-- A step: id, title, key, pad (strings or functions of the actor), place
+-- ("near" | "far" | "wall" | "air"), bot ("idle" | "heavy" | "channel" |
+-- "grab" | "fight"), setup(s,t,now), check(s,t,now) -> done, timeout (s).
+local function step(spec) spec.timeout=spec.timeout or 40;spec.place=spec.place or "far";spec.bot=spec.bot or "idle";return spec end
+
+-- The adapted curriculum for this actor (its own copy of every spec).
+function Tutorial.plan(a)
+	local def=a.def
+	local graph=Brawler.graph(a) or {}
+	local routes=graph.routes or {}
+	local steps={}
+	local function add(spec) table.insert(steps,step(spec)) end
+	add({id="move",title="Move",key="W A S D",pad="L stick",
+		check=function(s,t) return t.travel>12 end})
+	add({id="sprint",title="Sprint",key="Hold "..K.Sprint.." + move",pad=P.Sprint..", then move",
+		check=function(s,t) return s.human.sprinting and s.human.locomotion.Magnitude>28 end})
+	add({id="jump",title="Jump and land",key=K.Jump,pad=P.Jump,
+		check=function(s,t) local a=s.human;t.seenAir=t.seenAir or a.airborne;return t.seenAir and not a.airborne end})
+	add({id="lock",title="Unlock, then lock the target",key=K.Lock.." twice",pad=P.Lock.." twice",
+		check=function(s,t) local a=s.human;t.unlocked=t.unlocked or not a.locked;return (t.unlocked or t.ev("Unlock")) and a.locked and t.ev("Lock") end})
+	add({id="dodge",title=if def.SandFlicker then "Sand body-flicker" else "Directional dash",key="Direction + "..K.Dodge,pad="L stick + "..P.Dodge,
+		check=function(s,t) return t.ev("Dodge") end})
+	add({id="wall",title="Run up the wall, then rebound",key="Move into the wall, then "..K.Jump,pad="Push into the wall, then "..P.Jump,place="wall",
+		check=function(s,t,now) local a=s.human;t.seenWall=t.seenWall or a.wall~=nil;return t.seenWall and (a.wallJumpUntil or 0)>now end})
+	local length=def.StringLength or 4
+	add({id="string",title="Land your "..length.."-hit string",key=K.Light.." x"..length,pad=P.Light.." x"..length,place="near",
+		check=function(s,t) return t.count("Hit")>=length end})
+	add({id="heavy",title="Heavy strike",key=K.Heavy,pad=P.Heavy,place="near",
+		check=function(s,t) return t.ok("Heavy") and t.count("Hit")>=1 end})
+	if routes.side then
+		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="1 hit, then side + "..K.Light,pad="1 hit, then side + "..P.Light,place="near",
+			check=function(s,t) return t.ev("RouteSide") end})
+	end
+	if routes.down then
+		add({id="routeDown",title="Go low: "..moveLabel(routes.down),key="2 hits, then away + "..K.Light,pad="2 hits, then away + "..P.Light,place="near",
+			check=function(s,t) return t.ev("RouteDown") end})
+	end
+	if routes.up then
+		add({id="launch",title="Launch: "..moveLabel(routes.up),key="2 hits, then toward + "..K.Light,pad="2 hits, then toward + "..P.Light,place="near",
+			check=function(s,t) return t.ev("LaunchHit") end})
+	end
+	add({id="chase",title="Chase the launched body",key=K.Pursuit.." after the launch",pad=P.Pursuit.." after the launch",place="near",
+		setup=function(s,t,now) local c,a,b=s.combat,s.human,s.bot;Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end,
+		retry=3,
+		check=function(s,t) local a,b=s.human,s.bot;return t.ev("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude<7 end})
+	add({id="air",title="Land two aerial strikes",key=K.Light.." twice in the air",pad=P.Light.." twice in the air",place="air",retry=3,
+		check=function(s,t) return t.count("AirHit")>=2 end})
+	add({id="airFinish",title=if graph.airFinisher then "Finish in the air: "..moveLabel(graph.airFinisher) else "Finish downward",key=K.Heavy.." in the air",pad=P.Heavy.." in the air",place="air",retry=3,
+		check=function(s,t) return t.ev("SlamHit") or t.ev("LionCombo") or (t.ok("Heavy") and t.count("Hit")>=1) end})
+	add({id="runStrike",title=if graph.runStrike then "Strike on the run: "..moveLabel(graph.runStrike) else "Strike on the run",key="Sprint at him, then "..K.Light.." or "..K.Heavy,pad="Sprint at him, then "..P.Light.." or "..P.Heavy,
+		check=function(s,t) return t.ev("RunningStrike") end})
+	add({id="grab",title="Grab, then throw",key=K.Grab..", then "..K.Light.." ("..K.Heavy.." throws upward)",pad=P.Grab..", then "..P.Light,place="near",
+		check=function(s,t) return t.ev("ThrowHit") end})
+	add({id="tool",title="Your tool: "..toolName(a),key=K.Tool,pad=P.Tool,
+		check=function(s,t) return t.ok("Tool") end})
+	for i,spec in def.Techniques or {} do
+		if i>5 then break end
+		add({id="jutsu"..i,title="Jutsu "..i..": "..tostring(spec.Name),key=TECH_KEY[i],pad=Controls.TechniquePad[i] or ("Jutsu "..i),
+			place=if (spec.Range or 20)<10 then "near" else "far",technique=spec,
+			setup=function(s) local a=s.human;a.chakra=a.def.Chakra or 100;a.cooldowns={} end,
+			check=function(s,t) return t.ev("Cast:"..tostring(spec.Id)) end})
+	end
+	add({id="guard",title="Guard the incoming strike",key="Hold "..K.Guard,pad="Hold "..P.Guard,place="near",bot="heavy",
+		check=function(s,t) return t.ev("GuardHit") end})
+	add({id="evade",title="Dodge the incoming strike",key=K.Dodge.." during his wind-up",pad=P.Dodge.." during his wind-up",place="near",bot="heavy",
+		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)>.46 and a.health==t.health)) end})
+	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
+		check=function(s,t) return t.ev("Substitute") end})
+	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="far",bot="channel",
+		check=function(s,t) return t.ev("Interrupt") end})
+	add({id="throwBreak",title="Break his grab",key=K.Grab.." as he seizes you",pad=P.Grab.." as he seizes you",place="near",bot="grab",
+		check=function(s,t) return t.ev("ThrowBreak") end})
+	if def.Awakening then
+		add({id="awaken",title="Awaken: "..tostring(def.Awakening.Name or "awakening"),key=K.Awaken.." (low health)",pad="D-pad ↓ (low health)",
+			setup=function(s) local a=s.human;a.awakened=false;a.health=a.def.Health*.3;a.hum.Health=a.health end,
+			check=function(s,t) return t.ev("Awaken") end})
+	end
+	local Ultimates=require(script.Parent.Ultimates)
+	local ult=Ultimates.def(a)
+	if ult then
+		add({id="ultimate",title="Ultimate: "..tostring(ult.Name),key=K.Ultimate.." (bar full)",pad=P.Ultimate.." (bar full)",place="near",
+			setup=function(s) s.human.ultimate=Ultimates.MAX end,
+			check=function(s,t) return t.ev("UltimateStart") end})
+	end
+	add({id="win",title="Win the practice duel",key="Use your complete kit",pad="Use your complete kit",place="far",bot="fight",timeout=math.huge,
+		check=function() return false end})
+	return steps
+end
+
+-- ----------------------------------------------------------------- driver
+function Tutorial.new(s)
+	local t={index=1,entered=0,baseline={},travel=0,attackAt=0,report={},timeoutScale=1}
+	t.steps=Tutorial.plan(s.human)
+	s.tutorial=t
+	return t
+end
+-- Kept for the specs and tools that name the generic order.
+Tutorial.Steps=Tutorial.plan({def={Techniques={}},fighterId=""})
+function Tutorial.indexOf(s,id)
+	for i,spec in s.tutorial.steps do if spec.id==id then return i end end
+	return nil
+end
+local function counter(t,a,name) return (a.events and a.events[name] or 0)-(t.baseline[name] or 0) end
 function Tutorial.enter(s,now)
- local t,a,b=s.tutorial,s.human,s.bot;t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false;t.health=a.health;t.lastPosition=a.root.Position
- local c=s.combat;c:clear(true)
- for _,actor in {a,b} do actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.chakra=actor.def.Chakra;actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0 end
- t.health=a.health
- b.trainingChannelScale=if t.index==17 then 3 else 1
- local near=t.index>=7 and t.index~=16
- c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
- -- Wall step: start a few strides from the stadium wall (east side).
- if t.index==6 then local R=require(script.Parent.World).WALL_RADIUS;c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0)) end
- a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
- if t.index==9 then Brawler.react(c,b,"Launched",Vector3.new(0,48,0),1.2);a.pursuitUntil=now+1.2 end
- if t.index==10 or t.index==11 then
-  c:relocate(a,s.origin+Vector3.new(0,16,3));c:relocate(b,s.origin+Vector3.new(0,16,-2));a.airborne=true;a.airHold=now+1.8
-  Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
- end
- t.attackAt=now+1
+	local t,a,b=s.tutorial,s.human,s.bot
+	local spec=t.steps[t.index]
+	local c=s.combat;c:clear(true)
+	t.entered=now;t.completedAt=nil;t.baseline=table.clone(a.events or {});t.travel=0;t.seenAir=false;t.seenWall=false;t.unlocked=false
+	t.lastPosition=a.root.Position;t.pressFrom=#(a.pressLog or {});t.stillFor=0;t.freezeOpen=false
+	-- A step set up again (a missed launch) keeps its record and its clock.
+	local same=t.rec and t.recIndex==t.index and not t.rec.status
+	if same then t.rec.attempts+=1
+	else t.rec={id=spec.id,title=spec.title,started=now,refused={},freezes=0,watchdogs=0,attempts=1};t.recIndex=t.index;t.stepFrom=now;t.stepPress=#(a.pressLog or {}) end
+	for _,actor in {a,b} do
+		actor.health=actor.def.Health;actor.hum.Health=actor.health;actor.state="Neutral";actor.untilTime=now;actor.chakra=actor.def.Chakra or 100
+		actor.subCharges=2;actor.subCooldown=0;actor.subRegenAt=math.huge;actor.comboHits=0;actor.cooldowns={};actor.invulnerableUntil=0
+		actor.reaction=nil;actor.reactionVelocity=nil;actor.groundPose=nil;actor.airHold=0
+	end
+	t.health=a.health
+	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
+	local place=spec.place
+	local near=place=="near" or place=="air"
+	c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
+	if place=="wall" then
+		local R=require(script.Parent.World).WALL_RADIUS
+		c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0))
+	end
+	a.root.CFrame=CFrame.lookAt(a.root.Position,b.root.Position);b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
+	if place=="air" then
+		c:relocate(a,s.origin+Vector3.new(0,16,3));c:relocate(b,s.origin+Vector3.new(0,16,-2));a.airborne=true;a.airHold=now+1.8
+		Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
+	end
+	-- A jutsu that needs its target in reach starts within it.
+	local tech=spec.technique
+	if tech and tech.Requires=="Target" then
+		local gap=math.clamp((tech.Range or 10)*.5,3,12)
+		c:relocate(b,a.root.Position+flat(b.root.Position-a.root.Position).Unit*gap)
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
+	end
+	if spec.setup then spec.setup(s,t,now) end
+	t.attackAt=now+1
 end
 -- The bot's longest interruptible channel: the one the player learns to break.
 function Tutorial.interruptSlot(b)
- local best,bestChannel="Technique1",-1
- for slot,spec in b.def.Techniques do
-  if spec.Interruptible and spec.Channel>bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
- end
- return best
+	local best,bestChannel="Technique1",-1
+	for slot,spec in b.def.Techniques do
+		if spec.Interruptible and spec.Channel>bestChannel and not spec.Requires and not spec.Mobile then best,bestChannel="Technique"..slot,spec.Channel end
+	end
+	return best
 end
+
+-- -------------------------------------------------------------- the probe
+-- Presses the fight refused since the step began, by reason.
+local function collectRefusals(t,a)
+	local log=a.pressLog or {}
+	-- The log keeps its last 40 entries: count from where the step began.
+	local from=math.max(1,math.min(t.stepPress or 0,#log)+1)
+	if #log>=40 then from=1 end
+	local out={}
+	for i=from,#log do
+		local entry=log[i]
+		if entry.t>=(t.stepFrom or t.entered) and not entry.ok and entry.reason then out[entry.reason]=(out[entry.reason] or 0)+1 end
+	end
+	return out
+end
+-- A freeze: the stick held, the body alive and free (no reaction, no hold, not
+-- committed), and it does not move for 0.4 s. What held it is kept.
+local function probeFreeze(s,t,dt,now)
+	local a=s.human
+	local wants=a.move and flat(a.move).Magnitude>.5
+	local step=(a.root.Position-(t.freezeLast or a.root.Position)).Magnitude;t.freezeLast=a.root.Position
+	local free=a.health>0 and a.state=="Neutral" and not a.reaction and not a.wall and now>=(a.airHold or 0) and now>=(a.hitstopUntil or 0)
+	if wants and free and step<.01 then
+		t.stillFor+=dt
+		if t.stillFor>=.4 and not t.freezeOpen then
+			t.freezeOpen=true;t.rec.freezes+=1
+			if not t.rec.freeze then
+				local hum=a.hum
+				t.rec.freeze={state=a.state,airborne=a.airborne,humState=hum and hum:GetState().Name,walkSpeed=hum and math.floor(hum.WalkSpeed*10)/10,
+					anchored=a.root.Anchored,traversal=a.model:GetAttribute("MovementTraversalActive"),locomotion=math.floor(a.locomotion.Magnitude*10)/10,
+					held=a.ultimateHeld==true,grounded=a.grounded}
+			end
+		end
+	else t.stillFor=0;t.freezeOpen=false end
+end
+local function summary(rec)
+	local parts={}
+	for reason,n in rec.refused do table.insert(parts,reason.."x"..n) end
+	table.sort(parts)
+	local line=string.format("%s %.1fs",rec.status,rec.ended-rec.started)
+	if #parts>0 then line..="  refused: "..table.concat(parts,", ") end
+	if rec.freezes>0 then
+		local f=rec.freeze or {}
+		line..=string.format("  FREEZES %d (state=%s air=%s hum=%s walk=%s anchored=%s traversal=%s held=%s)",rec.freezes,tostring(f.state),tostring(f.airborne),tostring(f.humState),tostring(f.walkSpeed),tostring(f.anchored),tostring(f.traversal),tostring(f.held))
+	end
+	if rec.watchdogs>0 then line..="  watchdogs: "..rec.watchdogs end
+	if rec.attempts>1 then line..="  setups: "..rec.attempts end
+	return line
+end
+local function close(s,t,now,status)
+	local a=s.human
+	local rec=t.rec
+	rec.status=status;rec.ended=now
+	rec.refused=collectRefusals(t,a)
+	rec.watchdogs=counter(t,a,"WatchdogWakeup")+counter(t,a,"WatchdogReaction")+counter(t,a,"WatchdogGrab")
+	rec.line=summary(rec)
+	table.insert(t.report,rec)
+	print(string.format("[NinjaDuelTutorial] %s %d/%d %s: %s",tostring(a.fighterId),t.index,#t.steps,rec.id,rec.line))
+end
+function Tutorial.report(s)
+	local t=s.tutorial
+	if not t then return nil end
+	local out={fighter=s.human and s.human.fighterId,steps={},current=t.steps[t.index] and t.steps[t.index].id}
+	for _,rec in t.report do table.insert(out.steps,{id=rec.id,title=rec.title,status=rec.status,line=rec.line,refused=rec.refused,freezes=rec.freezes,freeze=rec.freeze,watchdogs=rec.watchdogs}) end
+	return out
+end
+
+-- ------------------------------------------------------------------- tick
 function Tutorial.update(s,now,dt)
- local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
- if t.entered==0 then Tutorial.enter(s,now) end
- local spec=Tutorial.Steps[t.index]
- b.move=Vector3.zero;b.sprinting=false
- if spec.kind=="Win" then s.ai:update(now);return end
- local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
- local function event(name) return (a.events and a.events[name] or 0)>(t.baseline[name] or 0) end
- local done=spec.event and event(spec.event)
- if spec.kind=="Move" then done=t.travel>12
- elseif spec.kind=="Sprint" then done=a.sprinting and a.locomotion.Magnitude>30
- elseif spec.kind=="Land" then t.seenAir=t.seenAir or a.airborne;done=t.seenAir and not a.airborne
- elseif spec.kind=="Lock" then t.unlocked=t.unlocked or not a.locked;done=(t.unlocked or event("Unlock")) and a.locked and event("Lock")
- elseif spec.kind=="Wall" then t.seenWall=t.seenWall or a.wall~=nil;done=t.seenWall and (a.wallJumpUntil or 0)>now
- elseif spec.kind=="Combo" then done=(a.events and a.events.Hit or 0)-(t.baseline.Hit or 0)>=3
- elseif spec.kind=="Chase" then done=event("Chase") and a.state=="Neutral" and a.airborne and (a.root.Position-b.root.Position).Magnitude<7
- elseif spec.kind=="AirCombo" then done=(a.events and a.events.AirHit or 0)-(t.baseline.AirHit or 0)>=2
- elseif spec.kind=="Technique" then done=event("TechniqueResolved") or (event("Technique") and a.state=="TechniqueRecovery")
- elseif spec.kind=="Evade" then done=event("Dodge") and (event("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)>.46 and a.health==t.health))
- elseif spec.kind=="Interrupt" then done=event("Interrupt") end
- if done and not t.completedAt then t.completedAt=now end
- if t.completedAt and now-t.completedAt>=.22 then t.index+=1;Tutorial.enter(s,now);return end
- if (t.index==12 or t.index==13 or t.index==14) and now>=t.attackAt then
-  if (b.root.Position-a.root.Position).Magnitude>7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
-  b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
- end
- if t.index==17 and now>=t.attackAt then
-  b.cooldowns={};b.chakra=b.def.Chakra;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
- end
- -- Failed launch/juggle exercises reset quickly without skipping their objectives.
- if (t.index==9 or t.index==10 or t.index==11) and now-t.entered>3 then Tutorial.enter(s,now) end
- if a.health<a.def.Health*.3 then a.health=a.def.Health;a.hum.Health=a.health end
- if b.health<b.def.Health*.25 then b.health=b.def.Health;b.hum.Health=b.health end
+	local t,a,b=s.tutorial,s.human,s.bot;local c=s.combat
+	if t.entered==0 then Tutorial.enter(s,now) end
+	local spec=t.steps[t.index]
+	if spec.bot=="fight" then s.ai:update(now);return end
+	b.move=Vector3.zero;b.sprinting=false
+	local displacement=(a.root.Position-(t.lastPosition or a.root.Position)).Magnitude;t.travel+=math.min(displacement,4);t.lastPosition=a.root.Position
+	t.ev=function(name) return counter(t,a,name)>0 end
+	t.count=function(name) return counter(t,a,name) end
+	t.ok=function(action)
+		for i=#(a.pressLog or {}),1,-1 do
+			local entry=a.pressLog[i]
+			if entry.t<t.entered then break end
+			if entry.action==action and entry.ok then return true end
+		end
+		return false
+	end
+	probeFreeze(s,t,dt,now)
+	if not t.completedAt and spec.check(s,t,now) then t.completedAt=now end
+	if t.completedAt and now-t.completedAt>=.22 then
+		close(s,t,now,"PASS");t.index+=1;Tutorial.enter(s,now);return
+	end
+	-- Nobody finished it in time: a probe that found a wall, not a lesson to
+	-- retry forever. It is reported STUCK and the next step begins.
+	if now-t.rec.started>=spec.timeout*(t.timeoutScale or 1) then
+		close(s,t,now,"STUCK");t.index+=1;Tutorial.enter(s,now);return
+	end
+	-- The practice partner.
+	if spec.bot=="heavy" and now>=t.attackAt then
+		if (b.root.Position-a.root.Position).Magnitude>7 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*5) end
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
+	elseif spec.bot=="channel" and now>=t.attackAt then
+		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
+	elseif spec.bot=="grab" and now>=t.attackAt then
+		if (b.root.Position-a.root.Position).Magnitude>4 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.2) end
+		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);b.grabCooldown=0;c:request(b,"Grab");t.attackAt=now+1.8
+	end
+	-- A failed launch / juggle exercise sets itself up again (same step).
+	if spec.retry and now-t.entered>spec.retry then Tutorial.enter(s,now) end
+	if a.health<a.def.Health*.3 and spec.id~="awaken" then a.health=a.def.Health;a.hum.Health=a.health end
+	if b.health<b.def.Health*.25 then b.health=b.def.Health;b.hum.Health=b.health end
+end
+function Tutorial.skip(s,now)
+	local t=s.tutorial
+	if not t or not t.steps[t.index+1] then return false end
+	close(s,t,now,"SKIP");t.index+=1;Tutorial.enter(s,now)
+	return true
 end
 function Tutorial.snapshot(s)
- local t=s.tutorial;if not t then return nil end
- local step=Tutorial.Steps[t.index]
- return {index=t.index,total=#Tutorial.Steps,title=step.title,pad=step.pad,key=step.key}
+	local t=s.tutorial;if not t then return nil end
+	local step=t.steps[t.index]
+	return {index=t.index,total=#t.steps,title=step.title,pad=step.pad,key=step.key,id=step.id}
 end
 return Tutorial

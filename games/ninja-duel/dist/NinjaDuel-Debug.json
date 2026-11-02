@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-Debug.rbxlx",
-  "sha256": "bd8b3da0e57d89fba07053f2f10a056a7480352ceac0ec2d6edb48a1120b620f",
+  "sha256": "a5b067797ca74f8e25c6b4a4234a7987e861a72b9dc861c738fe21fcadba597f",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
@@ -105,7 +105,7 @@
     "src/Server/DevCommands.luau": "034f910da5d5fd811e082667807214c1d3ffee80978def2a5a828dda50b95ef6",
     "src/Server/DevFlight.luau": "648e8c392b20e20bc3dc4770f6b693dc884a19e7690d364d88b6890a22a9ed05",
     "src/Server/DevGateCheck.luau": "f5057f028beea4c3243c38353d847b0075269c22b5f16360d89ff54807bf84e6",
-    "src/Server/DevHooks.luau": "6813e418c64aae4d2c98b433d91c79cc83386a812cf85b5ba78feca81cb886ac",
+    "src/Server/DevHooks.luau": "9ac58deb62e1bbf1e196761e6655582ca1c4f153ed080b6f5e5a9a829c87ca97",
     "src/Server/DevProfiler.luau": "bfb77bab1aaa6f021c0b57a82540b211996cdd2e0bb16f9058ef242066692f1c",
     "src/Server/DevQA.luau": "9aefdcb0866f2736750a89e440a241734cc18b5d0df5de551f234c154cfc9e0d",
     "src/Server/DevReport.luau": "461791d52ce11511efba91e59be7407e7f6a71ef170f9a9f79a92cefe981c530",
@@ -133,7 +133,8 @@
     "src/Server/SkillBuilds.luau": "2625664cb638b031abc7278084f0c0ded52ab70287a5b7ad4f0962f259e0ec11",
     "src/Server/SkillTrees.luau": "6800fcbc308a78bb5e6d226bb34d3a00c28a5acdb1aaa68f3dd3ef31526d8834",
     "src/Server/Techniques.luau": "d803c85c814e914c818d5465bd48d7656d471f514bf66a035032fcf973c03bc3",
-    "src/Server/Tutorial.luau": "7801a75372ebc1a4b1940bd7dbafc3e6ba6e19ba20a3a29d2e66fec9332e09de",
+    "src/Server/Tutorial.luau": "108aa6af8534a283b069a5996f2dadd5d205dcf34bd3a4b656497488797b5ca0",
+    "src/Server/TutorialBot.luau": "36f3573f5cdf98e7ecb23d452250311864a10434e2b24e5f8eb6bbf49d59ee2d",
     "src/Server/Ultimates.luau": "38330b6176b7d5d65d54242a19667426c5dc1c15b4942932ee93285a561fa03e",
     "src/Server/VelmoraAntiCheat.luau": "cc3cc6c10ee5ab6d0ca3de956f34eb4cca5feaee331d53505e6fff494729ae87",
     "src/Server/VelmoraDefense.luau": "4438353ac9de20f04db1d9643c152abb41a6bb4d8d6a2345ca1b5f12e1aa75c4",
@@ -170,7 +171,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "d69f43fdb699a076bb69c4c2deeaed4682e13f3d6f667fa23173c0674b9bfe29",
+  "buildFingerprint": "d4cc1043a9faed24b8737d1ccc9db8522c7e57e53ed23a6110ff35fb18dc3ddf",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
