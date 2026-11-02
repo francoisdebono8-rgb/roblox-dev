@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">dc8b28ef3f18231970cdbef7e358eec6448a0931a2af7d8b8a1b66b32a2e5a75</string>
+          <string name="Value">915d6a69634f715be01cdd2a398343a00a17265084ff24f5d9e0b8276a8dab56</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -48450,9 +48450,9 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 -- side and a shade side; the shade is cool and darker than before, so the
 -- image has depth instead of the flat, all-lit midday of a default place.
 local LIGHT={
-	ClockTime=16.9,GeographicLatitude=36,Brightness=3.7,ExposureCompensation=.05,
-	EnvironmentDiffuseScale=.62,EnvironmentSpecularScale=.6,ShadowSoftness=.12,
-	Ambient=rgb(78,74,94),OutdoorAmbient=rgb(112,106,130),
+	ClockTime=16.9,GeographicLatitude=36,Brightness=3.6,ExposureCompensation=.12,
+	EnvironmentDiffuseScale=.7,EnvironmentSpecularScale=.32,ShadowSoftness=.12,
+	Ambient=rgb(84,80,100),OutdoorAmbient=rgb(126,120,142),
 	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
 }
 local function effect(class,name,props)
