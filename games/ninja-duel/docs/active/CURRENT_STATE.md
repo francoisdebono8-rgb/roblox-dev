@@ -1,3 +1,8 @@
+**É7, suite (02/11, 23 h 30)** (utilisateur : « continue sur ta voie »)
+- **Pas en avant des coups à la touche** (`Presentation.predictStrike`) : le corps avance vers l'adversaire dès la pression, sur la courbe du serveur (`Combat` drive), arrêté à la portée du coup ; rien sans place pour avancer.
+- **Équilibrage des 8** (matrice IA contre IA, `tests/Balance.sim.luau` passée à 8) : écart 25–82 % → 36–64 %. Naruto PV 140 → 128, clones 4 dégâts toutes les 1,9 s → 3 toutes les 2,3 s ; Sasuke PV 120 → 132 ; Neji dégâts × 0,95 → 1,06 ; Lee PV 125 → 132, dégâts × 1,06 ; Gaara PV 140 → 134. L'IA n'est qu'un indicateur : à confirmer en jouant.
+- **Essai retiré** : jouer toute la préparation des clips (début accéléré) au lieu d'en sauter le début : plus de sauts mesurés (201 → 227 images > 25° sur les préparations des 8), comme l'essai 1 du 02/11.
+
 **É7, ressenti du perso joué (02/11, 22 h 45)** (utilisateur : « on est pas au niveau de la triche encore, fais le truc le plus impactant niveau ressenti » ; audits du jour : corps affiché ~65 ms derrière le serveur, esquive / saut non prédits)
 - **Corps du joueur dessiné au présent** (`Presentation.smoothRoot`) : plus de retard fixe de 45 ms pour son propre perso ; entre deux paquets il continue sur le dernier segment (au plus 1/30 s). L'adversaire reste interpolé 45 ms derrière.
 - **Esquive et saut à la touche** (`Presentation.predictMove` / `movement`) : le corps part sur la même courbe que le serveur (esquive 14 studs × DashScale en 0,32 s ; saut à JumpVelocity × JumpScale), la pose d'esquive aussi ; confirmée par l'état serveur en ~0,1 s, sinon abandonnée en douceur (0,16 s). Pas de saut prédit dans une fenêtre de poursuite (le saut manette y est la poursuite).

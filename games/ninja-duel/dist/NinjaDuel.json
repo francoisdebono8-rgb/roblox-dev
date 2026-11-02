@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "ec74ecca8f957ec2b8594e52cb6e85f7918ac8b26e153d9aaf2bf4560d4c2fdb",
+  "sha256": "fc468b5f2d57dde497f880513a027fc3cc60e0293374022c067a245f6e663e78",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "bcd9bbaf71c82da03ee726a346ba958037258bc9c795bc1676c2f44e5adc8668",
@@ -134,7 +134,7 @@
     "src/Shared/Config.luau": "9ac6b5fa475291fcb3f76253edeeb90fb7bdb6a47c40e612d48ce4728a78ff8e",
     "src/Shared/Controls.luau": "338a15e1343be76544354947d81e9191c8930e6e9787f54b2c62f8ce55f81bc5",
     "src/Shared/Face.luau": "02badd728c546560d0075d0fd98a215972af71fdc4a593a2282425fdf76eeff5",
-    "src/Shared/Fighters.luau": "9237e753a5a375ad8d56ad4c0e8b998038809ed3ff47cfbf5a0aca619a4372fd",
+    "src/Shared/Fighters.luau": "137c01cd2bad6aacc54c0036a13c28e8ca992057705224277383fe199af8c8a0",
     "src/Shared/Looks.luau": "e6880497c6a9f0bbf27a88a3b0b3a68261e97b915c37e5c80e20d717e6216d43",
     "src/Shared/MoveGraphs.luau": "3fe20d3d762afeb28d2f8181d234c8944cef82d8c5db5623fcebb669413f5091",
     "src/Shared/OnlineProtocol.luau": "b00e4042120d8dfd2faee5dac4ff550cc17f3015aec315228b7fab16b9be8194",
@@ -151,7 +151,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "9080ff533d9b843db6486ccfb413b43085f297dc900084e23154cfbad623fd8e",
+  "buildFingerprint": "c432c78495d5228bc7fa66ecaf2f5e5cd3f6b922944693d3a2e3294ba44889ee",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
@@ -319,7 +319,7 @@
       },
       "tests/Control.spec.luau": {
         "exit": 0,
-        "summary": "NinjaDuel player control: PASS (1006 presses, 2.3% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
+        "summary": "NinjaDuel player control: PASS (1001 presses, 2.2% eaten, no freeze, no ghost air, no stuck state; headless pad player vs AI, 8 fighters)"
       },
       "tests/Ultimates.spec.luau": {
         "exit": 0,

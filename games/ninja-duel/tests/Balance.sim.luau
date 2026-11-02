@@ -10,8 +10,8 @@ H.envBase.Random={new=function(seed)
   NextInteger=function(_,a,b) return math.floor(a+(b-a+1)*roll()) end}
 end}
 local AI=H.load("Server/AI")
-local ids={"Flashstep","Mirage","GentleFist","Lion"}
-local seeds=4
+local ids={"Flashstep","Mirage","GentleFist","Lion","Legion","Copycat","Sand","Leaf"}
+local seeds=2
 local wins,time={}, {}
 for _,x in ids do wins[x]={};time[x]={} for _,y in ids do wins[x][y]=0;time[x][y]=0 end end
 for _,x in ids do for _,y in ids do if x~=y then

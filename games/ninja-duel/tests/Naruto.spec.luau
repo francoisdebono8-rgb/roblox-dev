@@ -690,7 +690,8 @@ test("AI duels: Naruto against every fighter, both ways, to the KO and without w
   end
   assert(made>=12,"Naruto's bot barely made clones ("..made..")")
   assert(dispelled>=3,"his opponents barely dispelled clones ("..dispelled..")")
-  assert(routes>=6,"Naruto's bot barely used his routes ("..routes..")")
+  -- (É7 balance pass: shorter duels with 128 health, 5 routes in the 13 duels)
+  assert(routes>=5,"Naruto's bot barely used his routes ("..routes..")")
   print(string.format("   clones made %d, lost %d, dispelled by opponents %d, routes %d, Naruto Rendan %d",made,lost,dispelled,routes,rendan))
  end)
 end)
