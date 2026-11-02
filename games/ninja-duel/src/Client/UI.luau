@@ -123,6 +123,7 @@ function UI.new(parent,send)
 	pcall(function()
 		local lastView=nil
 		game:GetService("RunService").RenderStepped:Connect(function()
+			if self.menuStage then self.menuStage:filmed(self.selection.Visible) end
 			if not self.selection.Visible then return end
 			local t=os.clock()
 			vsScale.Scale=1+.035*math.sin(t*2.2)
