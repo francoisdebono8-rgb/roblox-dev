@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1ffc41fc0d58fa37c90d5581fb4f696375afa40ae6f3e74bf8c3c53fa79cc2ed</string>
+          <string name="Value">99bea85cb517fcd5e907c4867e5b79e76f8b18b6818127ceda0ebc3aace12e06</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42191,6 +42191,30 @@ function UI.new(parent,send)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
+	-- (Look pass 03/11) The fight screen's own grade, under every HUD element:
+	-- a soft ink vignette at the edges; a red one that throbs in danger; anime
+	-- speed lines streaming in from the edges at a sprint or a dash.
+	self.screenFx=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	self.screenFx.ZIndex=0
+	local function edges(color,parent)
+		local out={}
+		for k,spec in {{UDim2.fromScale(0,0),UDim2.fromScale(1,.22),90},{UDim2.fromScale(0,.78),UDim2.fromScale(1,.22),-90},{UDim2.fromScale(0,0),UDim2.fromScale(.16,1),0},{UDim2.fromScale(.84,0),UDim2.fromScale(.16,1),180}} do
+			local f=frame(parent,spec[1],spec[2],color,0)
+			if hasSequences then create("UIGradient",f,{Rotation=spec[3],Transparency=NumberSequence.new(0,1)}) else f.BackgroundTransparency=1 end
+			out[k]=f
+		end
+		return out
+	end
+	self.vignette=frame(self.screenFx,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
+	edges(Color3.fromRGB(10,8,14),self.vignette)
+	self.danger=create("CanvasGroup",self.screenFx,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,GroupTransparency=1})
+	edges(Color3.fromRGB(200,20,30),self.danger)
+	self.speedLines={}
+	for k=1,22 do
+		local line=frame(self.screenFx,UDim2.fromScale(.5,.5),UDim2.fromOffset(220,2),palette.paper,1)
+		line.AnchorPoint=Vector2.new(0,.5)
+		self.speedLines[k]=line
+	end
 	self.hudScale=hudScale
 	-- (UI redesign 02/11) The duel plates in the menu's language: the fighter's
 	-- face in an ink medallion with a ring of his colour at the outer corner,
@@ -42759,6 +42783,7 @@ function UI:render(data)
 	self.onlineInfo=data.online
 	self.selection.Visible=data.phase=="Selection" or data.phase=="Pick"; self.hud.Visible=data.phase=="Duel" and not introActive; self.result.Visible=data.phase=="Result"
 	self.queue.Visible=data.phase=="Queue"
+	if self.screenFx then self.screenFx.Visible=data.phase=="Duel" and not introActive end
 	self.intro.Visible=introActive
 	-- Gamepad focus moves only after the matching screen is visible.
 	if self.lastPhase~=data.phase then
@@ -42864,6 +42889,28 @@ function UI:render(data)
 			pip.fill.BackgroundColor3=if k&lt;=charges then palette.paper else palette.muted
 		end
 	end
+	-- Screen grade: the danger edges throb under a quarter of health; speed
+	-- lines stream in at a sprint, a dash, a chase.
+	pcall(function()
+		local t=os.clock()
+		local ratio=math.clamp(h.health/math.max(h.maxHealth,1),0,1)
+		self.danger.GroupTransparency=if ratio&lt;=.25 and ratio&gt;0 then .45+.35*(.5+.5*math.sin(t*5)) else 1
+		local fast=(h.speed or 0)&gt;34 or (h.dodge or 0)&gt;0 or h.state=="Pursuit"
+		local view=workspace.CurrentCamera.ViewportSize
+		for k,line in self.speedLines do
+			if fast then
+				-- Each line flickers to a new spot along an edge every few frames.
+				if (k+math.floor(t*30))%3==0 then
+					local a=(k/#self.speedLines)*math.pi*2+math.sin(t*7+k)*.2
+					local r=.5
+					line.Position=UDim2.fromScale(.5+math.cos(a)*r,.5+math.sin(a)*r*.9)
+					line.Rotation=math.deg(a)+180
+					line.Size=UDim2.fromOffset(math.max(120,view.X*.12)+(k%4)*30,2+(k%2))
+					line.BackgroundTransparency=.35+((k*7)%5)*.1
+				end
+			else line.BackgroundTransparency=1 end
+		end
+	end)
 	-- Combo counters with the damage scale of the next hit.
 	for _,pair in {{self.comboMine,b},{self.comboTheirs,h}} do
 		local widget,victim=pair[1],pair[2]
@@ -50806,7 +50853,7 @@ function WorldLook.apply()
 	end
 	local atmo=Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere",Lighting)
 	atmo.Density=.32;atmo.Offset=.18;atmo.Color=rgb(232,212,192);atmo.Decay=rgb(118,108,132);atmo.Glare=.45;atmo.Haze=1.4
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.2,Contrast=.15,Brightness=-.01,TintColor=rgb(255,244,232)})
+	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.14,Contrast=.14,Brightness=-.01,TintColor=rgb(255,247,240)})
 	effect("BloomEffect","NinjaLookBloom",{Intensity=.65,Size=30,Threshold=1.25})
 	effect("SunRaysEffect","NinjaLookRays",{Intensity=.07,Spread=.75})
 	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})

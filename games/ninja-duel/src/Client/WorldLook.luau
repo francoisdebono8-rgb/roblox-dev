@@ -36,7 +36,7 @@ function WorldLook.apply()
 	end
 	local atmo=Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere",Lighting)
 	atmo.Density=.32;atmo.Offset=.18;atmo.Color=rgb(232,212,192);atmo.Decay=rgb(118,108,132);atmo.Glare=.45;atmo.Haze=1.4
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.2,Contrast=.15,Brightness=-.01,TintColor=rgb(255,244,232)})
+	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.14,Contrast=.14,Brightness=-.01,TintColor=rgb(255,247,240)})
 	effect("BloomEffect","NinjaLookBloom",{Intensity=.65,Size=30,Threshold=1.25})
 	effect("SunRaysEffect","NinjaLookRays",{Intensity=.07,Spread=.75})
 	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})

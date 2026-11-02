@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "e0cef8c65c8c7c80039118d5a5d638902f909a1af1f9e71c188f50a56310e897",
+  "sha256": "54bbb0f5b994696fe09a2f14009cb1220f5387dfef706dcb0cf5e97e58c0e36f",
   "sources": {
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
@@ -64,7 +64,7 @@
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
-    "src/Client/UI.luau": "ca302778d2a2dc87647879de7a26e4ddd71bf20b179bc8d6210c170289c14a32",
+    "src/Client/UI.luau": "bf352ad52a7f1cc8d3bacb91916e9c89d8f7c737adf11ba8e0cf674b26d734b3",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "cf6dc62110fde7672e72aa990552b5996e2da0234d81d3a21cfd5aa41687638f",
@@ -77,7 +77,7 @@
     "src/Client/Wave3Motion.luau": "5010f78fd7b83577f08323fd5f25d33ef7b3bb9a5b27e669ba419c35b5eb793c",
     "src/Client/Wave4FX.luau": "c1e221d9e1a447a47ad1ce8156f033eeeca952819e4ef8d6c4ff169542a51e3d",
     "src/Client/Wave4Motion.luau": "dbaa24f6396ab4ffafc7a0e0ac021154f94150ae70a76a2e67b645673c6c1fad",
-    "src/Client/WorldLook.luau": "f3693024e1269a5d73d753aade93e481d899d33cb4e4b23451d8a1b6c436a196",
+    "src/Client/WorldLook.luau": "f81acfe8dd2d3160f0c0e2e68a08b4dc7771a274a92d1f73d065d9079184cf82",
     "src/Server/AI.luau": "907e2b5b5a3232bd81892daf7140a8a41918005619d8bd4d51febb1cf3ffa156",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/ArenaMeshData.luau": "5bf21bfa9aec5954c73fdd397fd883847a5a434123a9d14f95cf28e89e47e47e",
@@ -154,7 +154,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "b21204725e6fb5ca3e0b12f6e442c85575dcba56bf908b3e4ce31881b6f29018",
+  "buildFingerprint": "a2d4f2bb464433c975faab952bec62e80fab7189b4f6d03e05b605e2eb4a858c",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
