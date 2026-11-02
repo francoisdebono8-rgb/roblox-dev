@@ -37,6 +37,14 @@ function Probe.install(ctx)
 		return string.format("%s%s%s%s%s",h.state or "?",if h.attackName and h.state~="Neutral" then ":"..h.attackName else "",
 			if h.reaction then " r:"..h.reaction else "",if h.airborne then " air" else "",if h.wall then " wall:"..tostring(h.wallMode) else "")
 	end
+	-- A bot run (Server/TutorialBot) publishes its stick on the body: the
+	-- player's own body is drawn ahead by the stick (Presentation:leadLocal),
+	-- so it gets the bot's stick, as if a player held it. Before the draw.
+	RunService:BindToRenderStep("NinjaDuelTutorialStick",Enum.RenderPriority.Camera.Value-1,function()
+		local model=ctx.player.Character
+		local stick=model and model:GetAttribute("TutorialStick")
+		if typeof(stick)=="Vector3" then ctx.presentation.inputDir=stick;ctx.presentation.inputSprint=model:GetAttribute("TutorialSprint")==true end
+	end)
 	RunService:BindToRenderStep("NinjaDuelTutorialProbe",Enum.RenderPriority.Camera.Value+3,function(dt)
 		local cur=ctx.state()
 		if not cur or cur.phase~="Duel" or not cur.tutorial or not cur.human or dt<=0 or dt>.1 then st.last=nil;return end
@@ -63,7 +71,11 @@ function Probe.install(ctx)
 			local serverSpeed=math.max(h.speed or 0,flat(h.velocity or Vector3.zero).Magnitude)
 			-- pop: more travel in one frame than the fastest the body may go.
 			local allowed=math.max(1.2,(math.max(serverSpeed,last.vFlat or 0,80))*dt*1.6)
-			if move.Magnitude>allowed then note(b,"pop",move.Magnitude,string.format("%.2f studs in %.0f ms (%s -> %s)",move.Magnitude,dt*1000,last.ctx,ctxText)) end
+			if move.Magnitude>allowed then
+				local server=h.position or p
+				note(b,"pop",move.Magnitude,string.format("%.2f studs in %.0f ms (%s -> %s) drawn %s -> %s, server %s",move.Magnitude,dt*1000,last.ctx,ctxText,
+					string.format("%.0f,%.0f,%.0f",last.p.X,last.p.Y,last.p.Z),string.format("%.0f,%.0f,%.0f",p.X,p.Y,p.Z),string.format("%.0f,%.0f,%.0f",server.X,server.Y,server.Z)))
+			end
 			local free=h.state=="Neutral" and not h.reaction and not h.wall and not h.airborne and (h.airHold or 0)==0
 			-- freeze: the server runs, the screen stands.
 			if free and (h.speed or 0)>6 and vFlat<.5 then st.stillFor=(st.stillFor or 0)+dt else st.stillFor=0 end

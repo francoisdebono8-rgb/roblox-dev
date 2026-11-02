@@ -21,12 +21,17 @@ local function scripts(s,wait,alive)
 	local function B() return s.bot end
 	local function press(action,aim,opts) return c:request(A(),action,aim,nil,opts) end
 	local function toward() local a,b=A(),B();local d=flat(b.root.Position-a.root.Position);return if d.Magnitude>.1 then d.Unit else Vector3.zAxis end
-	local function stick(v) local a=A();a.move=v;a.lastMove=os.clock()+5;Brawler.observe(c,a) end
+	-- The stick is also published on the body (TutorialStick/TutorialSprint):
+	-- the debug client draws the player's own body ahead of the server by the
+	-- local stick (Presentation:leadLocal); fed the bot's stick, it draws what a
+	-- player holding that stick would see (Client/TutorialProbe).
+	local function stick(v) local a=A();a.move=v;a.lastMove=os.clock()+5;Brawler.observe(c,a);a.model:SetAttribute("TutorialStick",v) end
+	local function sprint(on) local a=A();a.sprinting=on;a.model:SetAttribute("TutorialSprint",on) end
 	local function hold(v,sec) local t0=os.clock();while alive() and os.clock()-t0<sec do stick(v);wait(.05) end end
 	local function chain(n,gap) for _=1,n do if not alive() then return end;press("Attack");wait(gap or .24) end end
 	local S={}
 	S.move=function() hold(toward():Cross(Vector3.yAxis),1.5);stick(Vector3.zero) end
-	S.sprint=function() A().sprinting=true;hold(toward():Cross(Vector3.yAxis),1.5);A().sprinting=false;stick(Vector3.zero) end
+	S.sprint=function() sprint(true);hold(toward():Cross(Vector3.yAxis),1.5);sprint(false);stick(Vector3.zero) end
 	S.jump=function() press("Jump");wait(1.2) end
 	S.lock=function()
 		local a=A();a.locked=false;Brawler.event(c,a,"Unlock");wait(.2)
@@ -49,7 +54,7 @@ local function scripts(s,wait,alive)
 	S.air=function() press("Attack");wait(.26);press("Attack");wait(.6) end
 	S.airFinish=function() press("Heavy");wait(.8) end
 	S.runStrike=function()
-		local a=A();a.sprinting=true
+		local a=A();sprint(true)
 		local t0=os.clock()
 		while alive() and os.clock()-t0<3 do
 			stick(toward())
@@ -57,7 +62,7 @@ local function scripts(s,wait,alive)
 			if gap<9 and a.locomotion.Magnitude>28 then press("Attack");break end
 			wait(.03)
 		end
-		a.sprinting=false;wait(.6);stick(Vector3.zero)
+		sprint(false);wait(.6);stick(Vector3.zero)
 	end
 	-- Walk into reach first (Gaara and Sasori whiffed from the step's 5 studs:
 	-- their grab does not carry the lunge the others do), then seize and throw.
@@ -151,6 +156,7 @@ function Bot.play(s,perStep)
 		if os.clock()-started>(perStep or 10)+2 then task.wait(.1) end
 	end
 	s.human.move=Vector3.zero;s.human.sprinting=false
+	s.human.model:SetAttribute("TutorialStick",nil);s.human.model:SetAttribute("TutorialSprint",nil)
 	return Tutorial.report(s)
 end
 return Bot
