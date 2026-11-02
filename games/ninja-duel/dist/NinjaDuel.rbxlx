@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">3ffb2fac82f296615bcc26705c59c2ec5294521cd535b5426a45522f99d827db</string>
+          <string name="Value">014e25d458048850a4eee256253f614647d380f891c8e4c8988e327b1f345aac</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -21208,6 +21208,7 @@ local function atmosphere()
 	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
 	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
 	pcall(function() Lighting.Technology=Enum.Technology.Future end)
+	pcall(function() Lighting.LightingStyle=Enum.LightingStyle.Realistic end)
 	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
 	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
 	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
@@ -40367,8 +40368,20 @@ function UI:render(data)
 		-- A change of screen passes under the ink stroke.
 		if self.lastPhase~=nil then self:sweep() end
 		if data.phase=="Result" then self:stampResult() end
-		GuiService.SelectedObject=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
+		local target=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
 			elseif data.phase=="Queue" then self.cancelButton else nil
+		-- Only a button that is on screen can take the focus (the engine warns
+		-- "invalid GuiObject" otherwise): wait the frame the screen appears in.
+		task.defer(function()
+			local on=target~=nil
+			local node=target
+			while on and node and not node:IsA("LayerCollector") do
+				if node:IsA("GuiObject") and not node.Visible then on=false end
+				node=node.Parent
+			end
+			if on and node and node:IsA("ScreenGui") and not node.Enabled then on=false end
+			pcall(function() GuiService.SelectedObject=if on then target else nil end)
+		end)
 		self.lastPhase=data.phase
 	end
 	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
@@ -48502,6 +48515,8 @@ return WorldLook
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">4</token>
+      <token name="LightingStyle">0</token>
+      <bool name="PrioritizeLightingQuality">true</bool>
       <float name="ClockTime">15</float>
       <float name="Brightness">2.5</float>
       <Color3 name="Ambient">

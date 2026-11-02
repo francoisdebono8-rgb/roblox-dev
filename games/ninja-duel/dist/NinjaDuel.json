@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "56593fdc332027e8671e8c44e6edfe7b04dfb2e7e41cf2e3f00901a492d5d811",
+  "sha256": "f627b5fa6596b75ca7da7a1dc9b10b290e7ac4cfa2220fc0f8c949c1429edd1e",
   "sources": {
     "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
@@ -65,7 +65,7 @@
     "src/Client/NarutoFX.luau": "c37b04701dc6f1582491d7d279ad7cc96b4fb3e9df8916d21e16c82cf164591b",
     "src/Client/Presentation.luau": "a5600929e304aaec326cdf4c92b145f494e9aaa26d3d22e29f8c82333dddf7d1",
     "src/Client/SandFX.luau": "a5f0d04be57628eab9a94bf064b1bbb2e14acccb7bdf463c974b95328a64173a",
-    "src/Client/UI.luau": "209b850bdbc3363b0cd89c5f85296e879d906c326adc84c46819edf100f78991",
+    "src/Client/UI.luau": "1e181ab2ce7989663d6caca50d76d758d783d5528a34a5c6a4db9ec7f350972b",
     "src/Client/UltimateFX.luau": "3da697d392feba0e647867fa9bb89c75c4fe292238a62ff904d6f34cfa050937",
     "src/Client/VelmoraHitFeedback.luau": "2c3b4264fda43e189301ccc3431a79ecc76d6c5af526d7f4aa94752d03f192b6",
     "src/Client/VelmoraMotionEngine.luau": "cf6dc62110fde7672e72aa990552b5996e2da0234d81d3a21cfd5aa41687638f",
@@ -128,7 +128,7 @@
     "src/Server/Wave2Kit.luau": "49dff3ee2e1dfb21a45904eca78f067a50a024d808145a18532797e30d5749b6",
     "src/Server/Wave3Kit.luau": "9fa83afb7d16647a1edeb80ab462019eecea113c6304797e8f6629b92f58881a",
     "src/Server/Wave4Kit.luau": "14b41f6af66e84734b44ab9f5370abfea7947a717bf2eb283c805bb96f13c7ba",
-    "src/Server/World.luau": "bf2cdd69378da97b4bffa4dd47cea9d95ab7ee9048b148c262faba4e537143b2",
+    "src/Server/World.luau": "01892d6645eb54410954fe926b6ebe17a92c00a72d9f7ecf729a7fa3e4339a52",
     "src/Server/WorldReaction.luau": "88e17f15e777402cd2a21796177836438e47c3bdc63bf2137d17148c3f653c60",
     "src/Server/Zones.luau": "cf6fc363aa57424ae1bcb243586e7bda5547f1c68601901115a71c34c95434b2",
     "src/Shared/ActionContext.luau": "418ae3e8b7f00e429be31b41164c80fc9a9da5839fa9bac4f1da5311c1e8dd2f",
@@ -155,7 +155,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "3ffb2fac82f296615bcc26705c59c2ec5294521cd535b5426a45522f99d827db",
+  "buildFingerprint": "014e25d458048850a4eee256253f614647d380f891c8e4c8988e327b1f345aac",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

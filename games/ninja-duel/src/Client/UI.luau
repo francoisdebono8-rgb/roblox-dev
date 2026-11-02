@@ -856,8 +856,20 @@ function UI:render(data)
 		-- A change of screen passes under the ink stroke.
 		if self.lastPhase~=nil then self:sweep() end
 		if data.phase=="Result" then self:stampResult() end
-		GuiService.SelectedObject=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
+		local target=if data.phase=="Selection" or data.phase=="Pick" then self.startButton elseif data.phase=="Result" then self.rematchButton
 			elseif data.phase=="Queue" then self.cancelButton else nil
+		-- Only a button that is on screen can take the focus (the engine warns
+		-- "invalid GuiObject" otherwise): wait the frame the screen appears in.
+		task.defer(function()
+			local on=target~=nil
+			local node=target
+			while on and node and not node:IsA("LayerCollector") do
+				if node:IsA("GuiObject") and not node.Visible then on=false end
+				node=node.Parent
+			end
+			if on and node and node:IsA("ScreenGui") and not node.Enabled then on=false end
+			pcall(function() GuiService.SelectedObject=if on then target else nil end)
+		end)
 		self.lastPhase=data.phase
 	end
 	if data.phase~="Duel" and data.phase~="Result" then self:lobby(data);return end
