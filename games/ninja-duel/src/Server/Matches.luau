@@ -207,9 +207,9 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
 			-- (Stage 6) a whole-sequence clip (an ultimate's caster or held body).
 			ultClip=a.ultClip,ultSerial=a.ultSerial or 0,ultElapsed=if a.ultClip then now-(a.ultAt or now) else nil,
-			-- (É7) What the client's guess of its own next strike needs (Brawler's
-			-- own rules): the chain open, a ground string alive, a re-entry window.
-			riposte=(a.riposteUntil or 0)>now or (a.counterUntil or 0)>now,cancelReady=(a.state=="Recovery" or a.state=="TechniqueRecovery") and now>=(a.recoveryCancelAt or math.huge),jumpCancel=a.state=="Recovery" and now>=(a.recoveryCancelAt or 0),chainReady=Brawler.chainWindow(s.combat,a),stringAlive=Brawler.stringAlive(s.combat,a,false),arrival=Brawler.arrival(s.combat,a)==true,
+			-- (É7) What the client's guess of its own next press needs (Brawler's
+			-- own rules, one table: Brawler.guessView).
+			guess=Brawler.guessView(s.combat,a),
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.

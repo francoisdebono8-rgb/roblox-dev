@@ -149,15 +149,10 @@ end
 -- (Config.Combo.Toward/Away), so a camera a few degrees off still reads the
 -- route the player meant.
 function Brawler.classify(a,stick)
- local m=Vector3.new(stick.X,0,stick.Z)
- if m.Magnitude<TUNE.IntentStrong then return nil,0 end
  local line=a.target and a.target.root and flatUnit(a.target.root.Position-a.root.Position)
  line=line or flatUnit(a.root.CFrame.LookVector) or Vector3.new(0,0,-1)
- local u=m.Unit
- local along=u:Dot(line)
- if along>=TUNE.Toward then return "forward",0 end
- if along<=-TUNE.Away then return "back",0 end
- return "side",if u:Dot(line:Cross(UP))>=0 then 1 else -1
+ -- (É7) Shared: the client's guess of its next strike reads the stick the same way.
+ return ActionContext.stick(stick,line,TUNE)
 end
 -- The directional memory: the latest strong push, sampled every frame and at
 -- every packet, so a stick released (or crossing the threshold) a moment
@@ -233,6 +228,38 @@ function Brawler.arrival(c,a)
  if a.state=="Pursuit" then return Brawler.chaseArrived(c,a) end
  if (a.rushArriveUntil or 0)>c.now then return a.state=="Neutral" or (a.state=="Recovery" and a.arrivalRecovery==true) end
  return false
+end
+-- (É7) What the client needs to guess its own next press the way
+-- Brawler.request will read it (sent in the snapshot as `guess`; the
+-- prediction test reads the same table). Windows go out as the time left (or
+-- until they open), so the client reads them where they will be when its
+-- press lands, one round trip after this snapshot (Presentation.viewAt).
+function Brawler.guessView(c,a)
+ local now=c.now
+ local function left(t) return if t then t-now else nil end
+ return {
+  left=left(a.untilTime),
+  cancelAt=left(a.recoveryCancelAt),
+  chainOpen=a.state=="Recovery" and a.chainOpen==true,chainIn=(a.chainAt or 0)-now,chainAir=a.chainAir==true,
+  combo=a.combo or 0,stringHurt=(a.lastHurt or -10)>(a.stringAt or -10),stringLeft=(a.stringUntil or 0)-now,
+  airCombo=a.airCombo or 0,airHurt=(a.lastHurt or -10)>(a.airStringAt or -10),airLeft=(a.airStringUntil or 0)-now,
+  airRecentLeft=(a.airStringAt or -10)+1-now,lionLeft=(a.lionUntil or 0)-now,
+  riposteLeft=(a.riposteUntil or 0)-now,counterLeft=(a.counterUntil or 0)-now,
+  -- a chase or a dash arriving (their own reading, not a timer)
+  arrival=(a.state=="Rush" or a.state=="Pursuit") and Brawler.arrival(c,a)==true,
+  rushArriveLeft=(a.rushArriveUntil or 0)-now,arrivalRecovery=a.arrivalRecovery==true,
+  airDodgeUsed=a.airDodgeUsed==true,flash=(a.flashUntil or 0)>now,
+  stance=Brawler.counterStance(a)==true,grab=a.grabVictim~=nil,
+  -- a press already waiting (it fires first: the next one lands behind it)
+  buffered=a.buffered~=nil,
+  -- out of a blow: when the dodge steps out of it (Brawler.recoverable "stand")
+  reactionLeft=if a.reaction then (a.reactionUntil or now)-now else nil,
+  standIn=Brawler.standIn(c,a),
+  -- held up in the air by an air string (Motor: no fall until then)
+  airHoldLeft=math.max(0,(a.airHold or 0)-now),
+  -- the sprint dodge at him is the chakra dash when it is available
+  locked=a.locked==true,rushReadyLeft=(a.rushReadyAt or 0)-now,freeRushLeft=(a.freeRushUntil or 0)-now,
+ }
 end
 -- The closest planted (not flying, not body) seal of Minato's near the target.
 function Brawler.nearSeal(c,a,b,radius)
@@ -386,6 +413,18 @@ end
 -- "air": thrown up or juggled, falling, past its share (a launcher holds
 -- longer); "tech": knocked down and just landed. nil: no say yet (or none:
 -- grabbed, bound, spiked, pinned to a wall, guard broken).
+-- (É7) How long until a grounded blow can be stepped out of (the "stand"
+-- recovery below), nil when it cannot be.
+function Brawler.standIn(c,a)
+ local kind=a.reaction
+ if not kind or a.airborne then return nil end
+ if kind=="Knockback" then return 0 end
+ if kind~="HitStun" and kind~="GuardStun" then return nil end
+ local tune=Config.Agency
+ local started=a.reactionStartedAt or c.now
+ local length=math.max((a.reactionUntil or c.now)-started,.01)
+ return math.max(started+tune.Stand*length,started+tune.Min)-c.now
+end
 function Brawler.recoverable(c,a)
  local kind=a.reaction
  if not kind then return nil end
@@ -586,15 +625,12 @@ end
 -- Disengage branch: hop out of the string while a blade (Minato) or a pair of
 -- shuriken (Itachi) covers the retreat. Ends the string; buys space, not damage.
 -- A body high above its grounded opponent and out of an air string's reach.
-Brawler.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+-- (É7) Shared geometry: the client's guess reads the same dive.
+Brawler.AirDive=ActionContext.AirDive
 function Brawler.airDive(c,a)
  local b=a.target
  if not b or b.health<=0 or b.airborne or not a.airborne then return false end
- local d=b.root.Position-a.root.Position
- local h=Vector3.new(d.X,0,d.Z).Magnitude
- local above=-d.Y
- local T=Brawler.AirDive
- return above>=T.Above and above<=T.AboveMax and h>=T.Near and h<=T.Far
+ return ActionContext.airDive(a.root.Position,b.root.Position)
 end
 function Brawler.disengage(c,a,kind)
  Bangla.close(a.pending);a.pending=nil;a.attackName=nil;a.chainOpen=false;a.buffered=nil

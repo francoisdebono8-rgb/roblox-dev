@@ -14,11 +14,8 @@ local TUNE=Config.Perception
 -- A surface a body can be driven into: the stadium wall, the field trees,
 -- the boulders, anything declared NinjaWall or WorldBreakable. A broken one
 -- (a stump, a mound) no longer is.
-function Perception.surface(part)
-	if not part then return false end
-	if part:GetAttribute("WorldState")=="Broken" then return false end
-	return part:GetAttribute("NinjaWall")==true or part:GetAttribute("WorldBreakable")==true or part.Name=="Field tree" or part.Name=="Cover"
-end
+-- (Shared since É7: the client's guess reads the same surfaces.)
+Perception.surface=require(Shared.ActionContext).surface
 local function kindOf(part)
 	if part:GetAttribute("NinjaWall") then return "wall" end
 	local m=part.Material and part.Material.Name or ""

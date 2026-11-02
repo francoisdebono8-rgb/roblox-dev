@@ -72,6 +72,7 @@ remote.OnClientEvent:Connect(function(data)
 	if data.epoch~=current.epoch then camera.locked=true end
 	data.gamepad=input.pad
 	current=data; presentation.receivedAt=os.clock(); presentation:impacts(data,camera); ui:render(data)
+	if data.phase=="Duel" and data.serverNow then presentation:noteSnapshot(workspace:GetServerTimeNow()-data.serverNow) end
 end)
 local nextMove=0
 local lastDir,lastSprint=nil,nil
@@ -88,6 +89,7 @@ RunService:BindToRenderStep("NinjaDuelCamera",Enum.RenderPriority.Camera.Value,f
 	if current.phase=="Duel" then
 		local dir=input:direction(workspace.CurrentCamera)
 		presentation.inputDir=dir;presentation.inputSprint=input.sprinting
+		presentation:observeStick(os.clock())
 		local changed=lastDir==nil or (dir-lastDir).Magnitude>.15 or input.sprinting~=lastSprint
 		if (changed and os.clock()-lastSentAt>=1/30) or os.clock()>=nextMove then
 			lastSentAt=os.clock()

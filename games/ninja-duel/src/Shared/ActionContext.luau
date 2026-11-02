@@ -112,6 +112,39 @@ Context.Defaults={
 	reach=function(graph) return graph.reachStrike or "DashAttack" end,
 }
 
+-- A surface a body can be driven into (Server/Perception reads it; the
+-- client's guess of its next strike too): the stadium wall, the field trees,
+-- the boulders, anything declared NinjaWall or WorldBreakable. A broken one
+-- (a stump, a mound) no longer is.
+function Context.surface(part)
+	if not part then return false end
+	if part:GetAttribute("WorldState")=="Broken" then return false end
+	return part:GetAttribute("NinjaWall")==true or part:GetAttribute("WorldBreakable")==true or part.Name=="Field tree" or part.Name=="Cover"
+end
+-- (É7) The stick against the line to the opponent: "forward", "back",
+-- "side" (with the side's sign) or nil under the strong-push threshold.
+-- Brawler.classify reads it on the server, the client's guess of its own
+-- next strike reads the same. tune: Config.Combo.
+function Context.stick(move,line,tune)
+	local m=flat(move)
+	if m.Magnitude<tune.IntentStrong then return nil,0 end
+	local u=m.Unit
+	local along=u:Dot(line)
+	if along>=tune.Toward then return "forward",0 end
+	if along<=-tune.Away then return "back",0 end
+	return "side",if u:Dot(line:Cross(Vector3.yAxis))>=0 then 1 else -1
+end
+-- The air dive (Brawler.airDive): high above a grounded body and out of the
+-- first air swing's reach, the air opener is the lunge down onto him.
+Context.AirDive={Above=3,AboveMax=26,Near=3.5,Far=18}
+function Context.airDive(myPos,targetPos)
+	local d=targetPos-myPos
+	local h=flat(d).Magnitude
+	local above=-d.Y
+	local T=Context.AirDive
+	return above>=T.Above and above<=T.AboveMax and h>=T.Near and h<=T.Far
+end
+
 -- graph: the fighter's MoveGraphs entry (may be nil); attacks: the Attacks
 -- table (a slot naming a strike that does not exist is skipped).
 -- Returns move name and situation tag, or nil for the plain strike.

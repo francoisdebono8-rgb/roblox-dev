@@ -54,6 +54,9 @@ Harness.fakePart=fakePart
 -- Real BasePart stand-in for the floor so attribute/descendant APIs behave.
 local groundPart=fakePart(V.new(0,-1,0))
 groundPart.Name="Ground";groundPart.Size=V.new(300,2,300);groundPart.Anchored=true
+-- A real ancestor (the parkour walks the ancestry for NoParkour flags: a
+-- mantle read off a wall's top that lands on the floor met `Parent=true`).
+groundPart.Parent={Name="Arena",GetAttribute=function() return nil end}
 -- Packed earth, as the Studio field (the reactive world reads the material).
 groundPart.Material=roblox.Enum.Material.Grass
 Harness.ground=groundPart
