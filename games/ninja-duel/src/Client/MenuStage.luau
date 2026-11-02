@@ -57,11 +57,13 @@ function MenuStage.new()
 		local slot={side=side,outer=outer,x=outer*6}
 		local at=O+Vector3.new(slot.x,0,0)
 		slot.key=light(folder,"SpotLight",CFrame.lookAt(at+Vector3.new(outer*7,7,-9),at+Vector3.new(0,2.5,0)),
-			{Brightness=2.4,Range=26,Angle=55,Color=Color3.fromRGB(255,236,214),Shadows=true,Face=Enum.NormalId.Front})
-		slot.rim,slot.rimAnchor=light(folder,"SpotLight",CFrame.lookAt(at+Vector3.new(-outer*3.5,6,7),at+Vector3.new(0,2.6,0)),
-			{Brightness=9,Range=18,Angle=45,Color=Color3.new(1,1,1),Shadows=false,Face=Enum.NormalId.Front})
-		slot.fill=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,1,-6)),{Brightness=.45,Range=10,Color=Color3.fromRGB(150,140,160),Shadows=false})
-		slot.glow=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,4,4)),{Brightness=1.6,Range=9,Color=Color3.new(1,1,1),Shadows=false})
+			{Brightness=4.5,Range=28,Angle=42,Color=Color3.fromRGB(255,236,214),Shadows=true,Face=Enum.NormalId.Front})
+		-- The back light: behind and a little inside, aimed at the head and the
+		-- shoulders, so their edges burn in the fighter's colour.
+		slot.rim,slot.rimAnchor=light(folder,"SpotLight",CFrame.lookAt(at+Vector3.new(-outer*2.4,5.5,4.2),at+Vector3.new(0,2.2,-.5)),
+			{Brightness=24,Range=16,Angle=70,Color=Color3.new(1,1,1),Shadows=false,Face=Enum.NormalId.Front})
+		slot.fill=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,1,-6)),{Brightness=.25,Range=10,Color=Color3.fromRGB(150,140,160),Shadows=false})
+		slot.glow=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,3.5,3)),{Brightness=3,Range=11,Color=Color3.new(1,1,1),Shadows=false})
 		self.slots[side]=slot
 	end
 	return self
@@ -117,8 +119,8 @@ function MenuStage:show(side,source,accent,animate)
 			if t>=1 then slot.moving=false;connection:Disconnect() end
 		end)
 		-- The back light flares, then settles.
-		slot.rim.Brightness=18
-		TweenService:Create(slot.rim,TweenInfo.new(.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Brightness=9}):Play()
+		slot.rim.Brightness=45
+		TweenService:Create(slot.rim,TweenInfo.new(.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Brightness=24}):Play()
 	else
 		model:PivotTo(final)
 	end
@@ -126,7 +128,7 @@ end
 -- While the set is filmed the world's ambient is the studio's: low, so the
 -- key and the coloured back lights model the bodies; the duel's own lighting
 -- comes back the moment the board hides.
-local LIGHTING={Ambient=Color3.fromRGB(34,30,38),OutdoorAmbient=Color3.fromRGB(34,30,38),ExposureCompensation=.15}
+local LIGHTING={Ambient=Color3.fromRGB(18,16,22),OutdoorAmbient=Color3.fromRGB(18,16,22),ExposureCompensation=.35,Brightness=0}
 function MenuStage:filmed(on)
 	if on==self.isFilmed then return end
 	self.isFilmed=on
@@ -142,7 +144,7 @@ end
 -- Idle life: the back lights breathe out of step, the stroke shimmers.
 function MenuStage:step(t)
 	for side,slot in self.slots do
-		if not slot.moving then slot.glow.Brightness=1.6+.5*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
+		if not slot.moving then slot.glow.Brightness=3+.9*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
 	end
 	self.band.Transparency=.1+.06*math.sin(t*.9)
 end

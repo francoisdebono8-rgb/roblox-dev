@@ -33,6 +33,23 @@ local function text(parent,value,position,size,fontSize,color,font,align)
 end
 local function corner(parent,radius) return create("UICorner",parent,{CornerRadius=UDim.new(0,radius or 6)}) end
 local function stroke(parent,color,thickness) return create("UIStroke",parent,{Color=color or palette.ink,Thickness=thickness or 2}) end
+-- (User 03/11: "every banner and end screen needs one common identity".) The
+-- house card: deep ink, rounded, a thin vermilion border and a vermilion
+-- brush line along its top; the controls sheet, the result, the queue and
+-- the tutorial panel are all this card.
+local CARD=Color3.fromRGB(16,14,19)
+local function inkCard(card,radius)
+	card.BackgroundColor3=CARD;card.BackgroundTransparency=.04
+	create("UICorner",card,{CornerRadius=UDim.new(0,radius or 12)})
+	create("UIStroke",card,{Color=palette.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local line=create("Frame",card,{Position=UDim2.fromOffset(0,0),Size=UDim2.new(1,0,0,5),BackgroundColor3=palette.red,BorderSizePixel=0})
+	create("UICorner",line,{CornerRadius=UDim.new(0,radius or 12)})
+	return card
+end
+local function inkTitle(label)
+	create("UIStroke",label,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	return label
+end
 local function button(parent,value,position,size,callback,color)
 	local b=create("TextButton",parent,{Text=value,Position=position,Size=size,TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,
 		BackgroundColor3=color or palette.panel,BorderSizePixel=0,AutoButtonColor=true})
@@ -380,23 +397,28 @@ function UI.new(parent,send)
 	-- at the top, like a fighting game's entrance: the middle of the screen is
 	-- left to the close-up of each fighter's pose (Camera intro shots).
 	self.intro=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
-	self.introLeft=frame(self.intro,UDim2.new(0,0,1,-118),UDim2.new(.5,0,0,110),palette.ink,.15)
-	self.introRight=frame(self.intro,UDim2.new(.5,0,1,-118),UDim2.new(.5,0,0,110),palette.ink,.15)
+	self.introLeft=frame(self.intro,UDim2.new(0,0,1,-118),UDim2.new(.5,0,0,110),CARD,.08)
+	self.introRight=frame(self.intro,UDim2.new(.5,0,1,-118),UDim2.new(.5,0,0,110),CARD,.08)
+	-- The house brush line along the top of both bands.
+	for _,band in {self.introLeft,self.introRight} do frame(band,UDim2.fromOffset(0,0),UDim2.new(1,0,0,5),palette.red,0) end
 	self.introLeftName=text(self.introLeft,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT)
+	inkTitle(self.introLeftName)
 	self.introLeftTitle=text(self.introLeft,"",UDim2.new(0,42,0,70),UDim2.new(1,-80,0,26),18,palette.muted)
 	self.introRightName=text(self.introRight,"",UDim2.new(0,40,0,6),UDim2.new(1,-80,0,64),64,palette.paper,TITLE_FONT,Enum.TextXAlignment.Right)
+	inkTitle(self.introRightName)
 	self.introRightTitle=text(self.introRight,"",UDim2.new(0,40,0,70),UDim2.new(1,-82,0,26),18,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
-	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,1,-110),UDim2.fromOffset(160,96),88,palette.red,TITLE_FONT,Enum.TextXAlignment.Center)
-	create("UIStroke",self.introVs,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	-- The menu's VS: paper capitals in an ink outline, tilted like the stroke.
+	self.introVs=text(self.intro,"VS",UDim2.new(.5,-80,1,-118),UDim2.fromOffset(160,104),96,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.introVs.Rotation=-9
+	create("UIStroke",self.introVs,{Color=palette.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.introRound=text(self.intro,"",UDim2.new(.5,-400,0,70),UDim2.fromOffset(800,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	inkTitle(self.introRound)
 	self.introBegin=text(self.intro,"",UDim2.new(.5,-400,.38,-60),UDim2.fromOffset(800,120),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.introBegin,{Color=palette.red,Thickness=4,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.intro.Visible=false
 	-- --------------------------------------------------------------- result
 	self.result=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local resultBox=frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),palette.ink,.1)
-	corner(resultBox,10)
-	stroke(resultBox,palette.red,3)
+	local resultBox=inkCard(frame(self.result,UDim2.new(.5,-300,.5,-170),UDim2.fromOffset(600,340),CARD,0))
 	self.resultBox=resultBox
 	self.resultScale=create("UIScale",resultBox,{Scale=1})
 	-- The judges' seal, stamped on the card: 勝 for a win, 敗 for a loss.
@@ -405,6 +427,7 @@ function UI.new(parent,send)
 	create("UIStroke",self.resultSeal,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 	self.resultSealScale=create("UIScale",self.resultSeal,{Scale=1})
 	self.resultTitle=text(resultBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,70),72,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	inkTitle(self.resultTitle)
 	self.resultName=text(resultBox,"",UDim2.fromOffset(30,92),UDim2.fromOffset(540,36),30,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
@@ -417,9 +440,8 @@ function UI.new(parent,send)
 	-- where it is; nothing else lists keys during a fight.
 	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
 	self.controls.ZIndex=40;self.controls.Visible=false
-	local sheet=frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),Color3.fromRGB(16,14,19),0)
-	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41;corner(sheet,12)
-	create("UIStroke",sheet,{Color=palette.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local sheet=inkCard(frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),CARD,0))
+	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41
 	local sheetScale=create("UIScale",sheet,{Scale=1})
 	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
@@ -448,18 +470,16 @@ function UI.new(parent,send)
 	local edge=frame(self.wipe,UDim2.new(1,-10,0,0),UDim2.new(0,14,1,0),palette.red,0);edge.ZIndex=61
 	-- ---------------------------------------------------------- online queue
 	self.queue=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.25)
-	local queueBox=frame(self.queue,UDim2.new(.5,-300,.5,-150),UDim2.fromOffset(600,300),palette.ink,.1)
-	corner(queueBox,10)
-	stroke(queueBox,palette.red,3)
+	local queueBox=inkCard(frame(self.queue,UDim2.new(.5,-300,.5,-150),UDim2.fromOffset(600,300),CARD,0))
 	self.queueTitle=text(queueBox,"",UDim2.fromOffset(30,18),UDim2.fromOffset(540,56),48,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	inkTitle(self.queueTitle)
 	self.queueCode=text(queueBox,"",UDim2.fromOffset(30,80),UDim2.fromOffset(540,70),72,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.queueNote=text(queueBox,"",UDim2.fromOffset(30,154),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.cancelButton=button(queueBox,"CANCEL",UDim2.fromOffset(30,222),UDim2.fromOffset(540,52),function() send("Cancel") end)
 	self.queue.Visible=false
 	-- The genjutsu image carries no label: the world shows it (Presentation:illusion).
-	self.tutorialPanel=frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),palette.ink,.15)
-	corner(self.tutorialPanel,8)
-	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,6),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
+	self.tutorialPanel=inkCard(frame(self.hud,UDim2.new(.5,-260,0,84),UDim2.fromOffset(520,90),CARD,0),10)
+	self.tutorialTitle=text(self.tutorialPanel,"",UDim2.fromOffset(16,9),UDim2.fromOffset(490,30),24,palette.paper,TITLE_FONT)
 	self.tutorialPrompt=text(self.tutorialPanel,"",UDim2.fromOffset(16,40),UDim2.fromOffset(490,40),14,palette.muted)
 	GuiService.AutoSelectGuiEnabled=true
 	-- HUD scale follows the viewport so plates and slots never leave the screen.
