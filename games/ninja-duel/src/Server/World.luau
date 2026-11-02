@@ -123,7 +123,8 @@ local function atmosphere()
 	Lighting.ClockTime=14.6;Lighting.GeographicLatitude=30
 	Lighting.Brightness=3;Lighting.EnvironmentDiffuseScale=.7;Lighting.EnvironmentSpecularScale=.3
 	Lighting.Ambient=rgb(104,104,104);Lighting.OutdoorAmbient=rgb(150,146,138)
-	pcall(function() Lighting.Technology=Enum.Technology.ShadowMap end)
+	pcall(function() Lighting.Technology=Enum.Technology.Future end)
+	pcall(function() Lighting.LightingStyle=Enum.LightingStyle.Realistic end)
 	local atmo=Instance.new("Atmosphere");atmo.Name="NinjaDuelAtmosphere";atmo.Density=.26;atmo.Offset=.1
 	atmo.Color=rgb(214,222,226);atmo.Decay=rgb(140,150,160);atmo.Glare=.2;atmo.Haze=.9;atmo.Parent=Lighting
 	local cc=Instance.new("ColorCorrectionEffect");cc.Name="NinjaDuelGrade";cc.Saturation=.14;cc.Contrast=.06;cc.Brightness=.02;cc.TintColor=rgb(255,250,242);cc.Parent=Lighting
@@ -1137,6 +1138,22 @@ end
 -- Costumes of the roster breadth pass register here by fighter name, built
 -- from the same helpers (Server/Costumes*: install(dressers, kit)).
 World.dressers={}
+-- A drawn face for a fighter whose costume has none: eyes in the fighter's
+-- own hair colour family for the brows, a calm look.
+function World.defaultFace(model,def)
+	local head=model:FindFirstChild("Head")
+	if not head then return end
+	local hx,hy,hz=head.Size.X/2,head.Size.Y/2,head.Size.Z/2
+	local saved=Face.BoxProfile
+	Face.BoxProfile={{-hy,hx*.96,hz*.99,7},{-hy*.6,hx,hz,9},{hy*.6,hx,hz,9},{hy,hx*.96,hz*.99,7}}
+	Face.useShape("box")
+	local hair=Color3.fromRGB(table.unpack(def.Hair or {40,32,30}))
+	local iris=if def.Iris then Color3.fromRGB(table.unpack(def.Iris)) else Color3.fromRGB(table.unpack(def.Color or {80,70,60})):Lerp(Color3.fromRGB(30,26,30),.45)
+	pcall(Face.build,model,{iris=iris,irisDark=iris:Lerp(Color3.new(0,0,0),.5),skin=Color3.fromRGB(table.unpack(def.Skin or {250,224,200})),
+		brow=hair:Lerp(Color3.new(0,0,0),.15),lash=Color3.fromRGB(26,22,28),mood="calm",sclera=Vector2.new(.3,.27),eyeX=.3,eyeY=-.04})
+	Face.useShape("can")
+	Face.BoxProfile=saved
+end
 function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
@@ -1162,6 +1179,11 @@ function World.dress(model,def)
 		local custom=World.dressers[def.Name]
 		if custom then custom(model,def) end
 	end
+	-- (UI pass 02/11, user: "homogeneity... the eyes") The twelve fighters
+	-- without a final look kept the rig's black eye bar while the eight others
+	-- have drawn faces: every fighter now gets a drawn face, fitted to the
+	-- square head (a near-square profile at the head's own half size).
+	if not look and not model:FindFirstChild("FaceEye") then World.defaultFace(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do

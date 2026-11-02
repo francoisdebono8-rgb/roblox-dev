@@ -2359,6 +2359,10 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	Interactions.clear(self)
+	-- (Freeze 02/11) An ultimate cut by the end of a round: its scheduled finish
+	-- is cleared below, so it is aborted here (the victim stayed "Held", every
+	-- key refused, and pinned on its path for the rest of the match).
+	for _,a in self.actors do Ultimates.abort(self,a) end
 	for _,a in self.actors do
 		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end

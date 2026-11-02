@@ -324,7 +324,7 @@ envBase.game={GetService=function(_,name)
  if name=="GuiService" then return {AutoSelectGuiEnabled=false,SelectedObject=nil} end
  if name=="StarterGui" then return {SetCoreGuiEnabled=function() end} end
  if name=="UserInputService" then
-  local uis={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},
+  local uis={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},WindowFocused={Connect=function() end},
    TextBoxFocused={Connect=function() end},GamepadDisconnected={Connect=function() end},LastInputTypeChanged={Connect=function() end},
    InputChanged={Connect=function() end},GetLastInputType=function() return roblox.Enum.UserInputType.Keyboard end,
    IsMouseButtonPressed=function() return false end,InputBegan={Connect=function() end},InputEnded={Connect=function() end},

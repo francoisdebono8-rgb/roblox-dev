@@ -1507,6 +1507,15 @@ function Brawler.step(c,a,dt)
   end
  end
  if a.reaction then
+  -- (Freeze 02/11) Watchdogs: a hold whose owner is gone, or a reaction far
+  -- past its end, lets go (a body must never stay held for good).
+  if a.reaction=="Grabbed" and not (a.grabbedBy and a.grabbedBy.grabVictim==a and a.grabbedBy.health>0) then
+   a.grabbedBy=nil;a.reaction=nil;a.reactionVelocity=nil;Brawler.event(c,a,"WatchdogGrab")
+  elseif a.reaction~="Grabbed" and c.now>(a.reactionUntil or 0)+1.5 then
+   a.reaction=nil;a.reactionVelocity=nil;a.groundPose=nil;Brawler.event(c,a,"WatchdogReaction")
+  end
+ end
+ if a.reaction then
   if a.reaction=="Grabbed" then return true end
   -- Bound in sand: held in place until the burial or a substitution.
   if a.reaction=="Bound" and c.now<a.reactionUntil then
@@ -1522,6 +1531,14 @@ function Brawler.step(c,a,dt)
    elseif a.reaction=="Knockdown" and a.airborne then
     -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
     -- 0.24 s in the air, then slid at the fall's speed).
+    -- (Freeze 02/11) ...but never forever. A body resting against the side of
+    -- a prop or a wall never "landed" (only a floor below ends the fall) and
+    -- stayed down for good, every key refused. Past 0.6 s it gets up there.
+    if c.now>=a.reactionUntil+.6 then
+     if Motor.grounded(a,c) then Motor.land(a,c,c.now) else a.airborne=false end
+     a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+     Brawler.event(c,a,"WatchdogWakeup")
+    end
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then
     -- (Studio agent 29/10: 0.7 s "airborne" through a wake-up at the foot of
     -- a wall) A body that gets up from the floor is on it.
@@ -1611,6 +1628,11 @@ function Brawler.step(c,a,dt)
       Brawler.splat(c,a,hit)
       if c.match.phase~="Duel" or not a.reaction then return true end
       velocity=a.reactionVelocity or Vector3.zero
+     elseif math.abs(hit.Normal.Y)<.5 then
+      -- (Freeze 02/11) Against the side of something: slide down along it
+      -- instead of pressing into it every frame (the flight never moved again).
+      local into=velocity:Dot(hit.Normal)
+      if into<0 then velocity-=hit.Normal*into end
      end
     end
    else

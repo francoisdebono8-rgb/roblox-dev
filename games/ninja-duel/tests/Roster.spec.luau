@@ -298,11 +298,16 @@ test("presentation: selectable in the menu, a costume of its own, every family o
   local UI=H.load("Client/UI")
   local sent={}
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
+  -- (UI redesign 02/11) One roster of tablets: a tablet goes to the stage
+  -- being chosen (yours, or the opponent's once its stage is picked).
   for _,id in Roster do
-   assert(ui.selectionButtons["slot"..id] and ui.selectionButtons["player"..id] and ui.selectionButtons["bot"..id],id.." is not selectable")
-   ui.selectionButtons["player"..id].click()
+   assert(ui.selectionButtons["slot"..id],id.." has no tablet")
+   ui.side="player";ui.selectionButtons["slot"..id].click()
    assert(ui.player==id,"picking "..id.." did not select it")
   end
+  local other=Roster[1]==ui.player and Roster[2] or Roster[1]
+  ui.side="bot";ui.selectionButtons["slot"..other].click()
+  assert(ui.bot==other,"the opponent's stage did not take its tablet")
  end)
  H.envBase.Instance=saved
  assert(ok,err)

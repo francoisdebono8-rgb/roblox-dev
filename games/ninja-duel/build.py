@@ -18,7 +18,7 @@ args = parser.parse_args()
 # profiler, report, self-test, and the optional chakra lab (Chakra*).
 DEBUG_SOURCES={'DevHooks.luau','CombatInspector.luau','CombatDebug.client.luau',
     'DevTools.luau','DevCommands.luau','DevScenarios.luau','DevProfiler.luau','DevReport.luau','DevQA.luau','DevMetrics.luau',
-    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau'}
+    'DevClient.luau','DevVolumes.luau','ChakraLab.luau','ChakraDev.luau','ChakraStudioView.luau','ChakraStudioQA.luau','DevRosterCheck.luau','DevGateCheck.luau','DevFlight.luau','TutorialBot.luau','TutorialProbe.luau'}
 def included(p):
     return (args.qa or p.stem!='NativeQA') and (args.qa or args.debug or p.name not in DEBUG_SOURCES)
 xml = ET.Element('roblox', version='4')
@@ -69,7 +69,7 @@ server=item(xml,'ServerScriptService','ServerScriptService')
 sources(item(server,'Folder','NinjaDuelServer'), ROOT/'src/Server')
 starter=item(xml,'StarterPlayer','StarterPlayer', [('CameraMinZoomDistance','float',8),('CameraMaxZoomDistance','float',32)])
 sources(item(item(starter,'StarterPlayerScripts','StarterPlayerScripts'),'Folder','NinjaDuelClient'),ROOT/'src/Client')
-item(xml,'Lighting','Lighting', [('Technology','token',3),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
+item(xml,'Lighting','Lighting', [('Technology','token',4),('LightingStyle','token',0),('PrioritizeLightingQuality','bool','true'),('ClockTime','float',15),('Brightness','float',2.5),('Ambient','Color3',{'R':0.42,'G':0.48,'B':0.55}),('OutdoorAmbient','Color3',{'R':0.55,'G':0.58,'B':0.6})])
 item(xml,'SoundService','SoundService')
 if args.qa or args.debug:
     prefix='workspace:SetAttribute("NinjaDuelDebug",true)\n'

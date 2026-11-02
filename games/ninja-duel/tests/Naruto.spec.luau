@@ -923,8 +923,8 @@ test("he is selectable: his roster slot and both buttons, and the duel starts wi
   local UI=H.load("Client/UI")
   local sent={}
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
-  assert(ui.selectionButtons.slotLegion and ui.selectionButtons.playerLegion and ui.selectionButtons.botLegion,"Naruto is not in the roster")
-  ui.selectionButtons.playerLegion.click()
+  assert(ui.selectionButtons.slotLegion,"Naruto is not in the roster")
+  ui.side="player";ui.selectionButtons.slotLegion.click()
   assert(ui.player=="Legion","picking Naruto did not select him")
   assert(ui.routeNote.Text:find("NARUTO",1,true),"his strings are not shown")
   ui.startButton.click()

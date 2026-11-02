@@ -575,7 +575,7 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
 	local function lastSent() return sent[#sent] end
 	assert(ui.selection.Visible and ui.onlineRow.Visible and not ui.queue.Visible and ui.opponentLabel.Text=="OPPONENT (AI)")
-	ui.selectionButtons.playerLion.click()
+	ui:pick("player","Lion")
 	ui.queueButton.click()
 	assert(lastSent().action=="Queue" and lastSent().extra.player=="Lion")
 	ui.hostButton.click();assert(lastSent().action=="Host" and lastSent().extra.player=="Lion")
@@ -593,15 +593,15 @@ test("the client UI renders the real roster, queue, pick, duel and result packet
 	assert(ui.startButton.Text=="READY" and ui.tutorialButton.Text=="LEAVE" and ui.opponentLabel.Text:find("BRAVO",1,true))
 	assert(ui.notice.Text:find("STARTS IN",1,true) and ui.matchup.Text:find("ITACHI",1,true),"the opponent's pick is not on screen")
 	local bot=ui.bot
-	ui.selectionButtons.botLion.click();assert(ui.bot==bot,"the opponent's half changed the local AI pick")
-	ui.selectionButtons.playerGentleFist.click()
+	ui:pick("bot","Lion");assert(ui.bot==bot,"the opponent's half changed the local AI pick")
+	ui:pick("player","GentleFist")
 	assert(lastSent().action=="Pick" and lastSent().extra.player=="GentleFist" and ui.player=="GentleFist")
 	send(m,a,"Pick",lastSent().extra)
 	ui.startButton.click();assert(lastSent().action=="Confirm")
 	send(m,a,"Confirm");ui:render(last(a))
 	assert(ui.startButton.Text:find("WAITING",1,true))
 	local count=#sent
-	ui.selectionButtons.playerLion.click();assert(#sent==count and ui.player=="GentleFist","a confirmed pick still changed")
+	ui:pick("player","Lion");assert(#sent==count and ui.player=="GentleFist","a confirmed pick still changed")
 	ui.tutorialButton.click();assert(lastSent().action=="Cancel")
 	send(m,b,"Confirm")
 	local d=duelOf(m,a)

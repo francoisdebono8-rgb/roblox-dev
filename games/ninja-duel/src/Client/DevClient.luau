@@ -17,6 +17,9 @@ function Dev.install(ctx)
 	local Metrics=require(Shared.DevMetrics)
 	local Fighters=require(Shared.Fighters)
 	local volumes=require(script.Parent.DevVolumes).new(ctx.player)
+	-- The tutorial as a test of the game: per-step fluidity measures (Client/TutorialProbe).
+	local probeModule=script.Parent:FindFirstChild("TutorialProbe")
+	if probeModule then pcall(function() require(probeModule).install(ctx) end) end
 	local m=Metrics.new()
 	local self={panelOpen=false,metrics=m,blocked={phase="DevPanel"}}
 	local track={};local lastPacket=nil;local packetAt=0;local epoch=nil

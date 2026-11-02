@@ -1135,11 +1135,11 @@ test("(historical, before DEC-026) she was selectable — skipped: out of the me
   local UI=H.load("Client/UI")
   local sent={}
   local ui=UI.new(baseNew("PlayerGui"),function(action,extra) table.insert(sent,{action=action,extra=extra}) end)
-  assert(ui.selectionButtons.slotGale and ui.selectionButtons.playerGale and ui.selectionButtons.botGale,"Temari is not in the roster")
-  ui.selectionButtons.playerGale.click()
+  assert(ui.selectionButtons.slotGale,"Temari is not in the roster")
+  ui.side="player";ui.selectionButtons.slotGale.click()
   assert(ui.player=="Gale","picking Temari did not select her")
   assert(ui.routeNote.Text:find("TEMARI",1,true),"her strings are not shown")
-  ui.selectionButtons.botGale.click()
+  ui.side="bot";ui.selectionButtons.slotGale.click()
   assert(ui.bot=="Gale","Temari cannot be the opponent")
   ui.startButton.click()
   local last=sent[#sent]

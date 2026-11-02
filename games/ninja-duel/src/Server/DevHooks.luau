@@ -69,6 +69,7 @@ function DevHooks.install(matches)
 			table.insert(clientLog,payload);while #clientLog>60 do table.remove(clientLog,1) end
 		elseif kind=="info" and type(payload)=="table" then clientInfo=payload end
 	end)
+	local tutorialLast=nil
 	local function session()
 		local player=Players:GetPlayers()[1]
 		return player,player and matches.sessions[player]
@@ -155,6 +156,24 @@ function DevHooks.install(matches)
 		local player,s=session()
 		if op=="tool" then return run(player,arg1,arg2) end
 		if op=="flight" then return Flight.data end
+		-- Tutorial v2: its report (the probe of every step), and a run played by
+		-- Server/TutorialBot for one fighter (arg1, opponent arg2, s per step arg3).
+		if op=="tutorial" then return if s and s.tutorial then require(script.Parent.Tutorial).report(s) else tutorialLast end
+		if op=="tutorialRun" then
+			if not player then return "no player" end
+			if s and s.phase~="Selection" then matches:selection(player) end
+			local ok=matches:start(player,arg1 or "Lion",arg2 or "Mirage",true)
+			if not ok then return "start refused" end
+			local session=matches.sessions[player]
+			session.scripted=true;session.introUntil=nil
+			tutorialLast=nil
+			task.spawn(function()
+				local okRun,result=pcall(require(script.Parent.TutorialBot).play,session,arg3 or 10)
+				tutorialLast=if okRun then result else {error=tostring(result)}
+				session.scripted=false
+			end)
+			return "running"
+		end
 		if op=="interactions" then return interactions(arg1,arg2) end
 		if op=="contracts" then
 			return table.clone(Inspector.ToolHooks)

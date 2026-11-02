@@ -188,6 +188,8 @@ function Input.new(send,getState,toggleLock,camera)
   self:reset();send("GuardOff");if jumping then send("JumpOff") end;send("Move",Vector3.zero)
  end
  UIS.WindowFocusReleased:Connect(blur)
+ -- (Freeze 02/11) Back in the window: the keys still held count again.
+ UIS.WindowFocused:Connect(function() self:resync() end)
  UIS.TextBoxFocused:Connect(blur)
  UIS.GamepadDisconnected:Connect(function() if self.pad then blur();self.pad=false end end)
  UIS.LastInputTypeChanged:Connect(function(kind)
@@ -234,6 +236,11 @@ function Input:direction(camera)
  self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude>.15 then self.stick else Vector2.zero
+ -- (Freeze 02/11) The keys drive whenever the stick does not. A connected pad
+ -- (a drifting stick, any pad event is enough) switched to "pad" and WASD was
+ -- ignored, even held: the body stood still until the key was pressed again.
+ -- A stick really pushed still owns the route alone (no stale key mixed in).
+ local keys=stick.Magnitude==0
  -- (User 28/10) The pad's sprint is a toggle (L3); it ends when the stick
  -- rests a moment, so a stop always gives the walk / string back (it stayed on
  -- and every light became the running strike).
@@ -243,8 +250,8 @@ function Input:direction(camera)
    if Input.now()-self.restAt>.18 then self.sprinting=false;self.restAt=nil end
   else self.restAt=nil end
  end
- local x=stick.X+(if self.keys.D and not self.pad then 1 else 0)-(if self.keys.A and not self.pad then 1 else 0)
- local z=stick.Y+(if self.keys.W and not self.pad then 1 else 0)-(if self.keys.S and not self.pad then 1 else 0)
+ local x=stick.X+(if self.keys.D and keys then 1 else 0)-(if self.keys.A and keys then 1 else 0)
+ local z=stick.Y+(if self.keys.W and keys then 1 else 0)-(if self.keys.S and keys then 1 else 0)
  local look=camera.CFrame.LookVector*Vector3.new(1,0,1)
  if look.Magnitude<.01 then look=-Vector3.zAxis end
  local right=Vector3.new(-look.Unit.Z,0,look.Unit.X)
