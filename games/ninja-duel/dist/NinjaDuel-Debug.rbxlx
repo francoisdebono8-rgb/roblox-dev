@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">1d48c7fe708627b9db67922239d4b270070718cf9a87bbb6008c9145e188da04</string>
+          <string name="Value">bdf7a2924c3c70b6b78f23805bc0a0accfd190e9b8556afae2b839e93ac85dbf</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -40391,15 +40391,24 @@ end
 -- The camera's shot of the set (Client/Camera reads it while the roster shows).
 function MenuStage:shot()
 	-- Aimed low: the heads sit in the upper third, the names under the chests.
-	return CFrame.lookAt(ORIGIN+Vector3.new(0,1.6,-DISTANCE),ORIGIN+Vector3.new(0,.55,0)),FOV
+	local d=self.distance or DISTANCE
+	return CFrame.lookAt(ORIGIN+Vector3.new(0,.55+1.05*d/DISTANCE,-d),ORIGIN+Vector3.new(0,.55,0)),FOV
 end
 -- Each fighter stands where its stage is on this screen, whatever its shape.
 function MenuStage:layout()
 	local view=workspace.CurrentCamera.ViewportSize
 	local aspect=if view.Y&gt;0 then view.X/view.Y else 16/9
-	local halfWidth=DISTANCE*math.tan(math.rad(FOV)/2)*aspect
+	-- The board (Client/UI) is a 1600x900 canvas scaled to fit and centred:
+	-- on a screen narrower than 16:9 it shrinks with the width while the 3D
+	-- set would keep its height, and the fighters would cover the names. The
+	-- camera steps back by the same factor, so the set scales with the board.
+	local scale=math.min(view.X/1600,view.Y/900)
+	local fit=if view.Y&gt;0 then math.clamp(scale*900/view.Y,.4,1) else 1
+	self.distance=DISTANCE/fit
+	local boardShare=if view.X&gt;0 then math.min(1,1600*scale/view.X) else 1
+	local halfWidth=self.distance*math.tan(math.rad(FOV)/2)*aspect
 	for side,slot in self.slots do
-		local f=MenuStage.SCREEN_X[side]
+		local f=.5+(MenuStage.SCREEN_X[side]-.5)*boardShare
 		-- Screen right is world -X for a camera looking along +Z.
 		slot.x=-(f-.5)*2*halfWidth
 		self:placeLights(slot)
