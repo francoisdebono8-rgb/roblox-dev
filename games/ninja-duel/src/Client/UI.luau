@@ -52,7 +52,9 @@ end
 function UI.frameFace(view,source)
 	if not view or not source then return end
 	clearView(view)
-	local model=source:Clone();model.Parent=view
+	local model=source:Clone()
+	if not model then return end
+	model.Parent=view
 	local head=model:FindFirstChild("Head")
 	if not head then return end
 	-- The rig faces -Z, toward the camera; a quarter turn shows the face's depth.
@@ -65,7 +67,9 @@ end
 function UI.frameBody(view,source,right)
 	if not view or not source then return end
 	clearView(view)
-	local model=source:Clone();model.Parent=view
+	local model=source:Clone()
+	if not model then return end
+	model.Parent=view
 	-- Facing the camera (-Z), turned toward the middle of the screen.
 	model:PivotTo(CFrame.Angles(0,math.rad(if right then -28 else 28),0))
 	local cf,size=model:GetBoundingBox()
@@ -106,14 +110,14 @@ function UI.new(parent,send)
 	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Twenty future legends. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
 		UDim2.fromOffset(62,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
-	local banner=frame(shell,UDim2.fromOffset(1508,0),UDim2.fromOffset(52,300),palette.paper,0)
+	local banner=frame(shell,UDim2.fromOffset(1534,0),UDim2.fromOffset(44,280),palette.paper,0)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
-	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,14),UDim2.fromOffset(52,250),30,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
-	frame(shell,UDim2.fromOffset(1531,300),UDim2.fromOffset(6,40),palette.red,0)
+	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
+	frame(shell,UDim2.fromOffset(1553,280),UDim2.fromOffset(6,40),palette.red,0)
 	-- The two stages.
 	local function stage(side)
 		local right=side=="bot"
-		local x=if right then 990 else 60
+		local x=if right then 960 else 60
 		local box=create("TextButton",shell,{Position=UDim2.fromOffset(x,104),Size=UDim2.fromOffset(550,490),BackgroundTransparency=1,Text="",AutoButtonColor=false})
 		local view=create("ViewportFrame",box,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(550,380),BackgroundTransparency=1,
 			Ambient=Color3.fromRGB(150,140,135),LightColor=Color3.fromRGB(255,236,210),LightDirection=Vector3.new(if right then 1 else -1,-1,-.6)})
@@ -204,7 +208,7 @@ function UI.new(parent,send)
 			local folder=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelPortraits",60)
 			if not folder then return end
 			self.portraits=folder
-			for id,t in self.tablets do UI.frameFace(t.face,folder:FindFirstChild(id)) end
+			for id,t in self.tablets do pcall(UI.frameFace,t.face,folder:FindFirstChild(id)) end
 			self:refreshSelection()
 		end)
 	end)

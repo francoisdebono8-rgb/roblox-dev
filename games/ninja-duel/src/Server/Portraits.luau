@@ -54,15 +54,20 @@ function Portraits.build()
 		local def=Fighters[id]
 		if def then
 			local ok,err=pcall(function()
-				local at=CFrame.new(index*12,-900,0)
+				local at=CFrame.new(index*12,700,-3000)
 				local model,_,root,joints=World.rig(stage,def,at,id)
 				root.Anchored=true
+				-- Posed through C0 (a joint's Transform is the animator's, reset
+				-- every frame); one physics step lays the limbs on the joints.
 				for name,angles in STANCE do
 					local joint=joints[name] or model:FindFirstChild(name,true)
-					if joint and joint:IsA("Motor6D") then joint.Transform=angles end
+					if joint and joint:IsA("Motor6D") then joint.C0=joint.C0*angles end
 				end
-				RunService.Heartbeat:Wait()
+				RunService.Heartbeat:Wait();RunService.Heartbeat:Wait()
 				strip(model)
+				-- Some costumes are built non-archivable: the client clones these.
+				model.Archivable=true
+				for _,d in model:GetDescendants() do d.Archivable=true end
 				model:SetAttribute("Fighter",id)
 				model.Parent=out
 			end)
