@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e3d211311eecf784097f1c4efd67e023cd080b807d50433be5b61dbaa71201dd</string>
+          <string name="Value">e2eec7352780bb764cd627ca131e35cefcab289c294089d7fc48e526fb2a4bb2</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -24924,6 +24924,22 @@ end
 -- Costumes of the roster breadth pass register here by fighter name, built
 -- from the same helpers (Server/Costumes*: install(dressers, kit)).
 World.dressers={}
+-- A drawn face for a fighter whose costume has none: eyes in the fighter's
+-- own hair colour family for the brows, a calm look.
+function World.defaultFace(model,def)
+	local head=model:FindFirstChild("Head")
+	if not head then return end
+	local hx,hy,hz=head.Size.X/2,head.Size.Y/2,head.Size.Z/2
+	local saved=Face.BoxProfile
+	Face.BoxProfile={{-hy,hx*.96,hz*.99,7},{-hy*.6,hx,hz,9},{hy*.6,hx,hz,9},{hy,hx*.96,hz*.99,7}}
+	Face.useShape("box")
+	local hair=Color3.fromRGB(table.unpack(def.Hair or {40,32,30}))
+	local iris=if def.Iris then Color3.fromRGB(table.unpack(def.Iris)) else Color3.fromRGB(table.unpack(def.Color or {80,70,60})):Lerp(Color3.fromRGB(30,26,30),.45)
+	pcall(Face.build,model,{iris=iris,irisDark=iris:Lerp(Color3.new(0,0,0),.5),skin=Color3.fromRGB(table.unpack(def.Skin or {250,224,200})),
+		brow=hair:Lerp(Color3.new(0,0,0),.15),lash=Color3.fromRGB(26,22,28),mood="calm",sclera=Vector2.new(.3,.27),eyeX=.3,eyeY=-.04})
+	Face.useShape("can")
+	Face.BoxProfile=saved
+end
 function World.dress(model,def)
 	soften(model)
 	-- The rig's coloured test sash is replaced by each costume's own belt.
@@ -24949,6 +24965,11 @@ function World.dress(model,def)
 		local custom=World.dressers[def.Name]
 		if custom then custom(model,def) end
 	end
+	-- (UI pass 02/11, user: "homogeneity... the eyes") The twelve fighters
+	-- without a final look kept the rig's black eye bar while the eight others
+	-- have drawn faces: every fighter now gets a drawn face, fitted to the
+	-- square head (a near-square profile at the head's own half size).
+	if not look and not model:FindFirstChild("FaceEye") then World.defaultFace(model,def) end
 	-- Hair and head gear never shadow the face; the body still casts.
 	local head=model:FindFirstChild("Head")
 	for _,p in model:GetChildren() do
@@ -42416,10 +42437,10 @@ function UI.new(parent,send)
 	local function stage(side)
 		local right=side=="bot"
 		local x=if right then 960 else 60
-		local box=create("TextButton",shell,{Position=UDim2.fromOffset(x,104),Size=UDim2.fromOffset(550,490),BackgroundTransparency=1,Text="",AutoButtonColor=false})
+		local box=create("TextButton",shell,{Position=UDim2.fromOffset(x,104),Size=UDim2.fromOffset(550,500),BackgroundTransparency=1,Text="",AutoButtonColor=false})
 		-- The ink card the bust stands in: a glow of the fighter's colour behind
 		-- the head, the rim of the back light, then the fighter.
-		local panel=frame(box,UDim2.fromOffset(0,36),UDim2.fromOffset(550,340),Color3.fromRGB(14,12,17),.04)
+		local panel=frame(box,UDim2.fromOffset(0,36),UDim2.fromOffset(550,384),Color3.fromRGB(14,12,17),.04)
 		panel.ClipsDescendants=true;corner(panel,10)
 		local panelEdge=create("UIStroke",panel,{Color=palette.paper,Thickness=2,Transparency=.6,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local glows={}
@@ -42428,8 +42449,12 @@ function UI.new(parent,send)
 			g.AnchorPoint=Vector2.new(.5,.5);create("UICorner",g,{CornerRadius=UDim.new(.5,0)})
 			table.insert(glows,g)
 		end
-		local back=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.15})
-		local view=create("ViewportFrame",panel,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		-- The fighter, his back light and his drawn face move as one (the art
+		-- frame): the idle breath and the entrance of a new pick.
+		local art=frame(panel,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),palette.ink,1)
+		local back=create("ViewportFrame",art,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,ImageTransparency=.15})
+		local view=create("ViewportFrame",art,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		local flash=frame(panel,UDim2.fromOffset(0,0),UDim2.fromScale(1,1),palette.paper,1)
 		-- Ink rising from the bottom of the card, under the name.
 		local floor=frame(panel,UDim2.new(0,0,1,-90),UDim2.new(1,0,0,90),Color3.fromRGB(14,12,17),0)
 		if hasSequences then create("UIGradient",floor,{Rotation=-90,Transparency=NumberSequence.new(0,1)}) else floor.BackgroundTransparency=1 end
@@ -42440,56 +42465,79 @@ function UI.new(parent,send)
 		tagText.TextScaled=true;create("UITextSizeConstraint",tagText,{MaxTextSize=20})
 		local choosing=text(box,"◀ CHOOSING",UDim2.fromOffset(if right then 550-190-130 else 200,0),UDim2.fromOffset(120,30),16,palette.gold,TITLE_FONT,align)
 		if not right then choosing.Text="CHOOSING ▶" end
-		local name=text(box,"",UDim2.fromOffset(if right then -14 else 14,328),UDim2.fromOffset(550,54),52,palette.paper,TITLE_FONT,align)
+		local name=text(box,"",UDim2.fromOffset(if right then -14 else 14,368),UDim2.fromOffset(550,54),52,palette.paper,TITLE_FONT,align)
+		local nameScale=create("UIScale",name,{Scale=1})
 		create("UIStroke",name,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		local sub=text(box,"",UDim2.fromOffset(2,384),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
-		local note=text(box,"",UDim2.fromOffset(2,404),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
+		local sub=text(box,"",UDim2.fromOffset(2,426),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
+		local note=text(box,"",UDim2.fromOffset(2,446),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
 		note.TextYAlignment=Enum.TextYAlignment.Top
 		box.Activated:Connect(function() if not self.picking or side=="player" then self.side=side;self:refreshSelection() end end)
-		return {box=box,view=view,back=back,panel=panel,panelEdge=panelEdge,glows=glows,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
+		return {box=box,view=view,back=back,art=art,flash=flash,nameScale=nameScale,panel=panel,panelEdge=panelEdge,glows=glows,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
 	end
 	self.stages={player=stage("player"),bot=stage("bot")}
 	self.opponentLabel=self.stages.bot.tagText
 	-- VS, and the matchup line under it.
 	local vs=text(shell,"VS",UDim2.fromOffset(800,300),UDim2.fromOffset(240,150),128,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	local vsScale=create("UIScale",vs,{Scale=1})
 	vs.AnchorPoint=Vector2.new(.5,.5);vs.Rotation=-9
 	create("UIStroke",vs,{Color=palette.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.matchup=text(shell,"",UDim2.fromOffset(800,392),UDim2.fromOffset(360,40),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.matchup.AnchorPoint=Vector2.new(.5,0);self.matchup.Rotation=-9
 	self.matchupNote=self.stages.player.note
+	-- Idle life while the board shows: the VS breathes, the glows behind the
+	-- two prodigies swell and settle out of step, light runs along the stroke.
+	local shimmer=band:FindFirstChildOfClass("UIGradient")
+	pcall(function()
+		game:GetService("RunService").RenderStepped:Connect(function()
+			if not self.selection.Visible then return end
+			local t=os.clock()
+			vsScale.Scale=1+.035*math.sin(t*2.2)
+			for side,st in self.stages do
+				local k=math.sin(t*1.3+(if side=="bot" then 1.6 else 0))
+				for i,g in st.glows do g.Size=UDim2.fromOffset(({460,320,200})[i]*(1+.035*k),({460,320,200})[i]*(1+.035*k)) end
+			end
+			if shimmer then shimmer.Offset=Vector2.new(.12*math.sin(t*.7),0) end
+		end)
+	end)
 	-- Your fighter's strings, over the roster.
-	self.routeNote=text(shell,"",UDim2.fromOffset(60,572),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.routeNote=text(shell,"",UDim2.fromOffset(60,604),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	self.routeNote.TextScaled=true;create("UITextSizeConstraint",self.routeNote,{MaxTextSize=14})
-	-- The roster: twenty name tablets, each with its prodigy's face.
+	-- The roster (user 02/11: the top and the bottom repeated each other): one
+	-- row of faces, no names (the stages say who); a tile rises under the
+	-- pointer, and the picks stand raised with their tag above them.
 	local playable=table.clone(Roster)
 	self.tablets={}
-	local W,H,GAP=104,88,8
-	local left=(1600-(10*W+9*GAP))/2
+	local W,GAP=66,6
+	local left=(1600-(#playable*W+(#playable-1)*GAP))/2
+	local ROW=648
 	for index,id in playable do
 		local def=Fighters[id]
-		local col=(index-1)%10;local row=math.floor((index-1)/10)
 		local accent=accentOf(def)
-		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(left+col*(W+GAP),600+row*(H+GAP)),Size=UDim2.fromOffset(W,H),
+		local x=left+(index-1)*(W+GAP)
+		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(x,ROW),Size=UDim2.fromOffset(W,W),
 			BackgroundColor3=Color3.fromRGB(14,12,17),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
 		corner(tablet,6)
-		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.35,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local glow=frame(tablet,UDim2.fromOffset(W/2,30),UDim2.fromOffset(70,70),accent,.78)
+		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.45,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local glow=frame(tablet,UDim2.fromOffset(W/2,W*.42),UDim2.fromOffset(56,56),accent,.8)
 		glow.AnchorPoint=Vector2.new(.5,.5);create("UICorner",glow,{CornerRadius=UDim.new(.5,0)})
-		local rim=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1})
-		local face=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1})
-		local strip=frame(tablet,UDim2.fromOffset(0,62),UDim2.fromOffset(W,26),palette.paper,0)
-		local label=text(strip,string.upper(def.Name),UDim2.fromOffset(4,0),UDim2.fromOffset(W-8,26),18,palette.ink,TITLE_FONT,Enum.TextXAlignment.Center)
-		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=18})
-		local seal=text(tablet,"",UDim2.fromOffset(4,4),UDim2.fromOffset(34,18),14,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		local rim=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,W),BackgroundTransparency=1})
+		local face=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,W),BackgroundTransparency=1})
+		-- A sliver of the fighter's colour along the bottom edge.
+		frame(tablet,UDim2.new(0,0,1,-4),UDim2.new(1,0,0,4),accent,0)
+		local seal=text(shell,"",UDim2.fromOffset(x+W/2-22,ROW-26),UDim2.fromOffset(44,18),14,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 		seal.BackgroundColor3=palette.red;seal.BackgroundTransparency=1;corner(seal,4)
-		local other=text(tablet,"",UDim2.fromOffset(W-38,4),UDim2.fromOffset(34,18),14,palette.ink,TITLE_FONT,Enum.TextXAlignment.Center)
-		other.BackgroundColor3=palette.paper;other.BackgroundTransparency=1;corner(other,4)
+		local other=seal
 		tablet.Activated:Connect(function() self:pick(self.side,id) end)
+		local t={tablet=tablet,edge=edge,face=face,rim=rim,glow=glow,seal=seal,other=other,accent=accent,x=x,y=ROW,hover=false}
+		pcall(function()
+			tablet.MouseEnter:Connect(function() t.hover=true;self:liftTablet(t) end)
+			tablet.MouseLeave:Connect(function() t.hover=false;self:liftTablet(t) end)
+		end)
 		self.selectionButtons["slot"..id]=tablet
-		self.tablets[id]={tablet=tablet,edge=edge,face=face,rim=rim,glow=glow,seal=seal,other=other,accent=accent}
+		self.tablets[id]=t
 	end
 	-- The action row: training, online, private duel by code, and the stage.
-	local below=816
+	local below=790
 	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
 	end,palette.red)
@@ -42512,7 +42560,7 @@ function UI.new(parent,send)
 	end)
 	self.codeBox=codeBox
 	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(712,0),UDim2.fromOffset(114,58),function() send("Join",{player=self.player,code=codeBox.Text}) end)
-	self.notice=text(shell,"",UDim2.fromOffset(60,794),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.notice=text(shell,"",UDim2.fromOffset(60,736),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- The prodigies themselves (Server/Portraits): they arrive a few seconds
 	-- after the server starts; the stages and tablets fill in then.
 	pcall(task.spawn,function()
@@ -42717,14 +42765,18 @@ function UI:refreshSelection()
 	local other=if self.picking and Fighters[self.opponentPick or ""] then self.opponentPick else self.bot
 	if self.picking then self.side="player" end
 	for id,t in self.tablets or {} do
-		local mine,theirs=id==self.player,id==other
-		t.edge.Color=if mine then palette.red elseif theirs then palette.paper else t.accent
-		t.edge.Thickness=if mine or theirs then 4 else 1.5
-		t.edge.Transparency=if mine or theirs then 0 else .35
-		t.seal.Text=if mine then "YOU" else "";t.seal.BackgroundTransparency=if mine then 0 else 1
-		t.other.Text=if theirs then (if self.picking then "P2" else "CPU") else "";t.other.BackgroundTransparency=if theirs then 0 else 1
-		t.tablet.BackgroundColor3=if mine or theirs then Color3.fromRGB(34,30,38) else Color3.fromRGB(14,12,17)
-		t.glow.BackgroundTransparency=if mine or theirs then .62 else .8
+		t.mine,t.theirs=id==self.player,id==other
+		local picked=t.mine or t.theirs
+		t.edge.Color=if t.mine then palette.red elseif t.theirs then palette.paper else t.accent
+		t.edge.Thickness=if picked then 3 else 1.5
+		t.edge.Transparency=if picked then 0 else .45
+		t.seal.Text=if t.mine and t.theirs then "YOU • CPU" elseif t.mine then "YOU" elseif t.theirs then (if self.picking then "P2" else "CPU") else ""
+		t.seal.BackgroundColor3=if t.mine then palette.red else palette.paper
+		t.seal.TextColor3=if t.mine then palette.paper else palette.ink
+		t.seal.BackgroundTransparency=if picked then 0 else 1
+		t.tablet.BackgroundColor3=if picked then Color3.fromRGB(34,30,38) else Color3.fromRGB(14,12,17)
+		t.glow.BackgroundTransparency=if picked then .6 else .8
+		self:liftTablet(t)
 	end
 	local p,o=Fighters[self.player],Fighters[other]
 	for side,id in {player=self.player,bot=other} do
@@ -42742,13 +42794,38 @@ function UI:refreshSelection()
 			st.tag.BackgroundColor3=if self.side==side and not self.picking then palette.gold else palette.paper
 			local model=self.portraits and self.portraits:FindFirstChild(id)
 			if model and st.shown~=id and #model:GetDescendants()&gt;=(model:GetAttribute("Descendants") or 0) then
+				local first=st.shown==nil
 				st.shown=id
 				pcall(UI.frameFighter,st.view,st.back,model,accentOf(def),"bust",st.right)
+				if not first then self:enterStage(st) end
 			end
 		end
 	end
 	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- A roster tile under the pointer rises; a picked one stands higher.
+function UI:liftTablet(t)
+	local rise=if t.mine or t.theirs then 10 elseif t.hover then 6 else 0
+	local ok=pcall(function()
+		Tween:Create(t.tablet,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x,t.y-rise)}):Play()
+		Tween:Create(t.seal,TweenInfo.new(.16,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(t.x+33-22,t.y-26-rise)}):Play()
+	end)
+	if not ok then t.tablet.Position=UDim2.fromOffset(t.x,t.y-rise) end
+	t.glow.BackgroundTransparency=if t.mine or t.theirs then .6 elseif t.hover then .66 else .8
+end
+-- A new prodigy steps onto a stage: he slides in from the outer edge out of a
+-- white flash, his name lands a beat later.
+function UI:enterStage(st)
+	pcall(function()
+		local from=if st.right then 70 else -70
+		st.art.Position=UDim2.fromOffset(from,0)
+		Tween:Create(st.art,TweenInfo.new(.34,Enum.EasingStyle.Quint,Enum.EasingDirection.Out),{Position=UDim2.fromOffset(0,0)}):Play()
+		st.flash.BackgroundTransparency=.25
+		Tween:Create(st.flash,TweenInfo.new(.3,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{BackgroundTransparency=1}):Play()
+		st.nameScale.Scale=1.3
+		Tween:Create(st.nameScale,TweenInfo.new(.3,Enum.EasingStyle.Back,Enum.EasingDirection.Out,0,false,.08),{Scale=1}):Play()
+	end)
 end
 -- A tablet chosen for a stage (side "player" or "bot"). In an online pick
 -- your stage is the only one you fill; the other is the opponent's choice.
