@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">e2eec7352780bb764cd627ca131e35cefcab289c294089d7fc48e526fb2a4bb2</string>
+          <string name="Value">c040c0da522e997d148bfbe27b5c8ef03bd2b15a557cff1982d7a5b34f8f680d</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -42509,7 +42509,7 @@ function UI.new(parent,send)
 	self.tablets={}
 	local W,GAP=66,6
 	local left=(1600-(#playable*W+(#playable-1)*GAP))/2
-	local ROW=648
+	local ROW=674
 	for index,id in playable do
 		local def=Fighters[id]
 		local accent=accentOf(def)
@@ -42560,7 +42560,7 @@ function UI.new(parent,send)
 	end)
 	self.codeBox=codeBox
 	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(712,0),UDim2.fromOffset(114,58),function() send("Join",{player=self.player,code=codeBox.Text}) end)
-	self.notice=text(shell,"",UDim2.fromOffset(60,736),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.notice=text(shell,"",UDim2.fromOffset(60,758),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	-- The prodigies themselves (Server/Portraits): they arrive a few seconds
 	-- after the server starts; the stages and tablets fill in then.
 	pcall(task.spawn,function()
@@ -42594,65 +42594,85 @@ function UI.new(parent,send)
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
 	self.hudScale=hudScale
+	-- (UI redesign 02/11) The duel plates in the menu's language: the fighter's
+	-- face in an ink medallion with a ring of his colour at the outer corner,
+	-- the name in brush capitals, a long health bar with an ink edge and a
+	-- light cut along its top, chakra and the ultimate gauge (four notches)
+	-- under it, the status line, the round seals under the medallion.
 	local function plate(side)
 		local right=side=="right"
-		-- (UI pass 02/11) Rows re-spaced so the status line no longer sits on the
-		-- ultimate bar, and every small text grows by 2-3 points: at a 1382x681
-		-- viewport the HUD scale (0.79) drew them at 8-10 px.
-		local box=frame(self.hud,if right then UDim2.new(1,-24,0,18) else UDim2.fromOffset(24,18),UDim2.fromOffset(440,102),palette.ink,.25)
+		local box=frame(self.hud,if right then UDim2.new(1,-20,0,16) else UDim2.fromOffset(20,16),UDim2.fromOffset(560,124),palette.ink,1)
 		box.AnchorPoint=Vector2.new(if right then 1 else 0,0)
-		corner(box,8)
 		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
-		local name=text(box,"",UDim2.fromOffset(14,4),UDim2.fromOffset(412,34),32,palette.paper,TITLE_FONT,align)
-		local title=text(box,"",UDim2.fromOffset(14,36),UDim2.fromOffset(412,17),14,palette.muted,BODY_FONT,align)
-		local track=frame(box,UDim2.fromOffset(14,56),UDim2.fromOffset(412,14),palette.track)
-		corner(track,4)
+		local function X(x,w) return if right then 560-x-w else x end
+		-- The medallion.
+		local medallion=frame(box,UDim2.fromOffset(X(0,88),0),UDim2.fromOffset(88,88),Color3.fromRGB(14,12,17),0)
+		create("UICorner",medallion,{CornerRadius=UDim.new(.5,0)})
+		local ring=create("UIStroke",medallion,{Color=palette.paper,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local glow=frame(medallion,UDim2.fromScale(.5,.45),UDim2.fromScale(.9,.9),palette.red,.7)
+		glow.AnchorPoint=Vector2.new(.5,.5);create("UICorner",glow,{CornerRadius=UDim.new(.5,0)})
+		local faceHolder=create("CanvasGroup",medallion,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		create("UICorner",faceHolder,{CornerRadius=UDim.new(.5,0)})
+		local faceRim=create("ViewportFrame",faceHolder,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		local face=create("ViewportFrame",faceHolder,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1})
+		-- Name, title, substitution diamonds.
+		local name=text(box,"",UDim2.fromOffset(X(100,360),0),UDim2.fromOffset(360,34),32,palette.paper,TITLE_FONT,align)
+		create("UIStroke",name,{Color=palette.ink,Thickness=2.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,BODY_FONT,align)
+		create("UIStroke",title,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		-- Health: ink edge, dark well, the trail of lost health, the fill.
+		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,20),Color3.fromRGB(20,18,24),0)
+		corner(track,3)
+		create("UIStroke",track,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
-		corner(lag,4)
+		corner(lag,3)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
-		corner(fill,4)
+		corner(fill,3)
+		local shine=frame(fill,UDim2.fromOffset(0,2),UDim2.new(1,0,0,4),Color3.new(1,1,1),.65)
+		local _=shine
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(14,73),UDim2.fromOffset(412,5),palette.track)
+		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),76),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
-		-- (Stage 6) the ultimate bar: it fills by hitting and being hit; full,
+		-- (Stage 6) the ultimate gauge: it fills by hitting and being hit; full,
 		-- it burns and the plate says how to fire it.
-		local ultimateTrack=frame(box,UDim2.fromOffset(14,80),UDim2.fromOffset(412,5),palette.track)
+		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),85),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
 		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
-		local status=text(box,"",UDim2.fromOffset(14,86),UDim2.fromOffset(412,15),13,palette.muted,BODY_FONT,align)
+		for k=1,3 do frame(ultimateTrack,UDim2.fromScale(k/4,0),UDim2.new(0,2,1,0),palette.ink,0) end
+		local status=text(box,"",UDim2.fromOffset(X(98,460),94),UDim2.fromOffset(460,16),13,palette.muted,BODY_FONT,align)
+		create("UIStroke",status,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
-		-- the status row (both players read them), each lit as it closes.
+		-- the chakra bar (both players read them), each lit as it closes.
 		local points={}
 		for k=1,4 do
-			local pip=frame(box,UDim2.fromOffset(if right then 19+(k-1)*13 else 421-(k-1)*13,93),UDim2.fromOffset(9,9),palette.track)
+			local pip=frame(box,UDim2.fromOffset(X(506+(k-1)*13,9),79),UDim2.fromOffset(9,9),palette.track)
 			pip.AnchorPoint=Vector2.new(.5,.5);pip.Visible=false
 			corner(pip,5)
 			points[k]=pip
 		end
-		-- Substitution charges: two diamonds, the recharging one fills up.
+		-- Substitution charges: two diamonds at the far end of the name line.
 		local pips={}
 		for k=1,2 do
-			local x=if right then 14+(k-1)*26 else 404-(k-1)*26
-			local pip=frame(box,UDim2.fromOffset(x,12),UDim2.fromOffset(16,16),palette.track)
+			local pip=frame(box,UDim2.fromOffset(X(526-(k-1)*24,16),12),UDim2.fromOffset(16,16),palette.track)
 			pip.Rotation=45;pip.ClipsDescendants=true
-			local fill=frame(pip,UDim2.fromScale(0,1),UDim2.fromScale(1,1),palette.paper)
-			fill.AnchorPoint=Vector2.new(0,1)
-			pips[k]={pip=pip,fill=fill}
+			local pfill=frame(pip,UDim2.fromScale(0,1),UDim2.fromScale(1,1),palette.paper)
+			pfill.AnchorPoint=Vector2.new(0,1)
+			pips[k]={pip=pip,fill=pfill}
 		end
-		local subLabel=text(box,"SUB",UDim2.fromOffset(if right then 68 else 306,13),UDim2.fromOffset(44,14),12,palette.muted,BODY_FONT,
+		local subLabel=text(box,"SUB",UDim2.fromOffset(X(456,40),12),UDim2.fromOffset(40,14),12,palette.paper,BODY_FONT,
 			if right then Enum.TextXAlignment.Left else Enum.TextXAlignment.Right)
-		-- Round wins: small medallions under the plate.
+		-- Round wins: seals under the medallion.
 		local medals={}
 		for k=1,2 do
-			local m=frame(box,UDim2.fromOffset(if right then 412-(k-1)*20 else 14+(k-1)*20,106),UDim2.fromOffset(14,14),palette.track)
-			corner(m,7);table.insert(medals,m)
+			local m=frame(box,UDim2.fromOffset(X(26+(k-1)*22,14),94),UDim2.fromOffset(14,14),palette.track)
+			m.Rotation=45;table.insert(medals,m)
 		end
 		-- The awakening while it burns: its name, the time left and what it
 		-- changes in the fight (UI.awakening), under the plate.
-		local awake=text(box,"",UDim2.fromOffset(14,124),UDim2.fromOffset(412,30),15,palette.gold,TITLE_FONT,align)
+		local awake=text(box,"",UDim2.fromOffset(X(96,460),112),UDim2.fromOffset(460,26),15,palette.gold,TITLE_FONT,align)
 		create("UIStroke",awake,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake}
+		return {box=box,name=name,title=title,fill=fill,lag=lag,chakra=chakra,ultimate=ultimate,status=status,pips=pips,subLabel=subLabel,medals=medals,points=points,pointsShown=0,awake=awake,face=face,faceRim=faceRim,ring=ring,glow=glow,right=right}
 	end
 	self.hp=plate("left")
 	self.enemy=plate("right")
@@ -42664,7 +42684,7 @@ function UI.new(parent,send)
 	self.cue=text(self.hud,"",UDim2.new(.5,-300,0,124),UDim2.fromOffset(600,40),30,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-120),UDim2.fromOffset(396,18),14,palette.paper)
+	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-44),UDim2.fromOffset(396,18),14,palette.paper)
 	-- It ends before the jutsu slots (centre -440) and shrinks rather than run under them.
 	self.statusLine.TextScaled=true;create("UITextSizeConstraint",self.statusLine,{MaxTextSize=14})
 	-- (UI pass 02/11) Grey on the sand was unreadable: light text, ink outline.
@@ -42684,18 +42704,31 @@ function UI.new(parent,send)
 	self.comboMine=counter("left")
 	self.comboTheirs=counter("right")
 	self.techniqueButtons={}
+	-- (UI redesign 02/11) The jutsu cards leave the middle of the screen, where
+	-- the camera puts the fighter's own body: a row in the bottom right corner,
+	-- each card an ink slip with its key on a vermilion seal.
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(.5,-440+(i-1)*178,1,-122),UDim2.fromOffset(170,58),palette.ink,.2)
-		corner(box,8)
-		local key=text(box,"",UDim2.fromOffset(8,4),UDim2.fromOffset(154,18),14,palette.gold,TITLE_FONT)
-		local title=text(box,"",UDim2.fromOffset(8,22),UDim2.fromOffset(154,20),18,palette.paper,TITLE_FONT)
-		local status=text(box,"",UDim2.fromOffset(8,41),UDim2.fromOffset(154,15),13,palette.muted)
+		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),Color3.fromRGB(14,12,17),.12)
+		corner(box,6)
+		create("UIStroke",box,{Color=palette.paper,Thickness=1,Transparency=.75,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local seal=frame(box,UDim2.fromOffset(6,6),UDim2.fromOffset(24,24),palette.red,0)
+		corner(seal,4)
+		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		local title=text(box,"",UDim2.fromOffset(36,4),UDim2.fromOffset(104,30),17,palette.paper,TITLE_FONT)
+		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=17})
+		local status=text(box,"",UDim2.fromOffset(8,38),UDim2.fromOffset(130,16),12,palette.muted)
 		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
-		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
+		cool.AnchorPoint=Vector2.new(0,1);corner(cool,6)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
-	self.help=text(self.hud,Controls.Help,UDim2.new(.5,-640,1,-30),UDim2.fromOffset(1280,22),12,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(.5,-640,1,-48),UDim2.fromOffset(1280,18),12,Color3.fromRGB(196,176,130),BODY_FONT,Enum.TextXAlignment.Center)
+	-- The control sheet (first seconds of a duel, and the tutorial): bottom
+	-- left over the status line, clear of the jutsu cards.
+	self.help=text(self.hud,Controls.Help,UDim2.new(0,24,1,-104),UDim2.fromOffset(700,36),12,palette.paper,BODY_FONT)
+	self.help.TextScaled=true;create("UITextSizeConstraint",self.help,{MaxTextSize=12})
+	create("UIStroke",self.help,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.grammar=text(self.hud,Controls.Grammar,UDim2.new(0,24,1,-126),UDim2.fromOffset(700,18),12,Color3.fromRGB(230,200,140),BODY_FONT)
+	self.grammar.TextScaled=true;create("UITextSizeConstraint",self.grammar,{MaxTextSize=12})
+	create("UIStroke",self.grammar,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.hint=text(self.hud,"",UDim2.new(.5,-260,0,200),UDim2.fromOffset(520,30),18,palette.gold,TITLE_FONT,Enum.TextXAlignment.Center)
 	self.ko=text(self.hud,"K.O.",UDim2.new(.5,-300,.3,0),UDim2.fromOffset(600,130),120,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
 	create("UIStroke",self.ko,{Color=palette.red,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
@@ -43030,6 +43063,17 @@ function UI:render(data)
 	self.enemy.name.Text=fullName(b);self.enemy.title.Text=(if data.online then string.upper(data.online.opponent or "OPPONENT") else "AI").."  •  "..subtitle(b)
 	for _,pair in {{self.hp,h},{self.enemy,b}} do
 		local widget,actor=pair[1],pair[2]
+		-- The fighter's face in the medallion, his colour on its ring.
+		if widget.faceFor~=actor.fighterId and Fighters[actor.fighterId or ""] then
+			local folder=self.portraits or game:GetService("ReplicatedStorage"):FindFirstChild("NinjaDuelPortraits")
+			local model=folder and folder:FindFirstChild(actor.fighterId)
+			local accent=accentOf(Fighters[actor.fighterId])
+			widget.ring.Color=accent;widget.glow.BackgroundColor3=accent
+			if model and #model:GetDescendants()&gt;=(model:GetAttribute("Descendants") or 0) then
+				widget.faceFor=actor.fighterId
+				pcall(UI.frameFighter,widget.face,widget.faceRim,model,accent,"face",widget.right)
+			end
+		end
 		local ratio=math.clamp(actor.health/actor.maxHealth,0,1)
 		widget.fill.Size=UDim2.fromScale(ratio,1)
 		widget.fill.BackgroundColor3=if ratio&gt;.5 then palette.gold elseif ratio&gt;.25 then Color3.fromRGB(236,134,60) else palette.red
