@@ -253,19 +253,19 @@ function UI.new(parent,send)
 	-- speed lines streaming in from the edges at a sprint or a dash.
 	self.screenFx=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.screenFx.ZIndex=0
-	local function edges(color,parent)
+	local function edges(color,parent,strength)
 		local out={}
-		for k,spec in {{UDim2.fromScale(0,0),UDim2.fromScale(1,.22),90},{UDim2.fromScale(0,.78),UDim2.fromScale(1,.22),-90},{UDim2.fromScale(0,0),UDim2.fromScale(.16,1),0},{UDim2.fromScale(.84,0),UDim2.fromScale(.16,1),180}} do
+		for k,spec in {{UDim2.fromScale(0,0),UDim2.fromScale(1,.16),90},{UDim2.fromScale(0,.84),UDim2.fromScale(1,.16),-90},{UDim2.fromScale(0,0),UDim2.fromScale(.1,1),0},{UDim2.fromScale(.9,0),UDim2.fromScale(.1,1),180}} do
 			local f=frame(parent,spec[1],spec[2],color,0)
-			if hasSequences then create("UIGradient",f,{Rotation=spec[3],Transparency=NumberSequence.new(0,1)}) else f.BackgroundTransparency=1 end
+			if hasSequences then create("UIGradient",f,{Rotation=spec[3],Transparency=NumberSequence.new(1-strength,1)}) else f.BackgroundTransparency=1 end
 			out[k]=f
 		end
 		return out
 	end
 	self.vignette=frame(self.screenFx,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
-	edges(Color3.fromRGB(10,8,14),self.vignette)
+	edges(Color3.fromRGB(10,8,14),self.vignette,.38)
 	self.danger=create("CanvasGroup",self.screenFx,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,GroupTransparency=1})
-	edges(Color3.fromRGB(200,20,30),self.danger)
+	edges(Color3.fromRGB(200,20,30),self.danger,.8)
 	self.speedLines={}
 	for k=1,22 do
 		local line=frame(self.screenFx,UDim2.fromScale(.5,.5),UDim2.fromOffset(220,2),palette.paper,1)

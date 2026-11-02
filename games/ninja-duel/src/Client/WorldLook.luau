@@ -16,9 +16,9 @@ local WorldLook={}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 local LIGHT={
-	ClockTime=16.3,GeographicLatitude=24,Brightness=3.1,ExposureCompensation=-.05,
+	ClockTime=15.6,GeographicLatitude=24,Brightness=3.3,ExposureCompensation=.12,
 	EnvironmentDiffuseScale=.85,EnvironmentSpecularScale=.55,ShadowSoftness=.16,
-	Ambient=rgb(86,82,94),OutdoorAmbient=rgb(122,114,120),
+	Ambient=rgb(100,96,108),OutdoorAmbient=rgb(136,128,132),
 	ColorShift_Top=rgb(255,226,190),ColorShift_Bottom=rgb(96,116,168),
 }
 local function effect(class,name,props)

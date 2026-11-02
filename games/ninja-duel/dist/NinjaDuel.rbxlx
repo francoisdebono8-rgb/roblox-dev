@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">a2d4f2bb464433c975faab952bec62e80fab7189b4f6d03e05b605e2eb4a858c</string>
+          <string name="Value">bf566d9e692d74eac8820417065ed9a7bed6e5a8860502295f1f0fe89f0f9ac5</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -39558,19 +39558,19 @@ function UI.new(parent,send)
 	-- speed lines streaming in from the edges at a sprint or a dash.
 	self.screenFx=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	self.screenFx.ZIndex=0
-	local function edges(color,parent)
+	local function edges(color,parent,strength)
 		local out={}
-		for k,spec in {{UDim2.fromScale(0,0),UDim2.fromScale(1,.22),90},{UDim2.fromScale(0,.78),UDim2.fromScale(1,.22),-90},{UDim2.fromScale(0,0),UDim2.fromScale(.16,1),0},{UDim2.fromScale(.84,0),UDim2.fromScale(.16,1),180}} do
+		for k,spec in {{UDim2.fromScale(0,0),UDim2.fromScale(1,.16),90},{UDim2.fromScale(0,.84),UDim2.fromScale(1,.16),-90},{UDim2.fromScale(0,0),UDim2.fromScale(.1,1),0},{UDim2.fromScale(.9,0),UDim2.fromScale(.1,1),180}} do
 			local f=frame(parent,spec[1],spec[2],color,0)
-			if hasSequences then create("UIGradient",f,{Rotation=spec[3],Transparency=NumberSequence.new(0,1)}) else f.BackgroundTransparency=1 end
+			if hasSequences then create("UIGradient",f,{Rotation=spec[3],Transparency=NumberSequence.new(1-strength,1)}) else f.BackgroundTransparency=1 end
 			out[k]=f
 		end
 		return out
 	end
 	self.vignette=frame(self.screenFx,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
-	edges(Color3.fromRGB(10,8,14),self.vignette)
+	edges(Color3.fromRGB(10,8,14),self.vignette,.38)
 	self.danger=create("CanvasGroup",self.screenFx,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,GroupTransparency=1})
-	edges(Color3.fromRGB(200,20,30),self.danger)
+	edges(Color3.fromRGB(200,20,30),self.danger,.8)
 	self.speedLines={}
 	for k=1,22 do
 		local line=frame(self.screenFx,UDim2.fromScale(.5,.5),UDim2.fromOffset(220,2),palette.paper,1)
@@ -48195,9 +48195,9 @@ local WorldLook={}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 local LIGHT={
-	ClockTime=16.3,GeographicLatitude=24,Brightness=3.1,ExposureCompensation=-.05,
+	ClockTime=15.6,GeographicLatitude=24,Brightness=3.3,ExposureCompensation=.12,
 	EnvironmentDiffuseScale=.85,EnvironmentSpecularScale=.55,ShadowSoftness=.16,
-	Ambient=rgb(86,82,94),OutdoorAmbient=rgb(122,114,120),
+	Ambient=rgb(100,96,108),OutdoorAmbient=rgb(136,128,132),
 	ColorShift_Top=rgb(255,226,190),ColorShift_Bottom=rgb(96,116,168),
 }
 local function effect(class,name,props)
