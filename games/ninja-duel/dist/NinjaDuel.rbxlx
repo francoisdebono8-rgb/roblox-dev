@@ -4352,7 +4352,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">b3da07c13ac98e2aacfbd92f933d22b92809806893c88d28c84053352f5fb033</string>
+          <string name="Value">cf5db977857a8f3aa62a1cffe0648b58e425f8e1fcfb36ee649317928741e528</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -40382,15 +40382,26 @@ function UI:render(data)
 			elseif data.phase=="Queue" then self.cancelButton else nil
 		-- Only a button that is on screen can take the focus (the engine warns
 		-- "invalid GuiObject" otherwise): wait the frame the screen appears in.
-		task.defer(function()
-			local on=target~=nil
+		local phase=data.phase
+		local function shown()
+			if not target then return false end
 			local node=target
-			while on and node and not node:IsA("LayerCollector") do
-				if node:IsA("GuiObject") and not node.Visible then on=false end
+			while node and not node:IsA("LayerCollector") do
+				if node:IsA("GuiObject") and not node.Visible then return false end
 				node=node.Parent
 			end
-			if on and node and node:IsA("ScreenGui") and not node.Enabled then on=false end
-			pcall(function() GuiService.SelectedObject=if on then target else nil end)
+			-- Laid out too (the very first screen is not, the frame it is made).
+			return node~=nil and node:IsA("ScreenGui") and node.Enabled and target.AbsoluteSize.X&gt;0
+		end
+		task.defer(function()
+			for _=1,20 do
+				if self.lastPhase~=phase then return end
+				local ok,on=pcall(shown)
+				if ok and on then pcall(function() GuiService.SelectedObject=target end);return end
+				if not target then break end
+				task.wait(.1)
+			end
+			pcall(function() GuiService.SelectedObject=nil end)
 		end)
 		self.lastPhase=data.phase
 	end
