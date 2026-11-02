@@ -1,7 +1,7 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel-QA.rbxlx",
-  "sha256": "134f8211680628dd8bd5423bd0841f0d4e9e884b7e7de54756111c1b43bc6225",
+  "sha256": "7db0f9a57e2c5414a7fa0e1a25e46ae64a9f5802505a7edcb4d6677807ba3e11",
   "sources": {
     "src/Client/AuthoredClips.luau": "af7c3bb7a8adb7e4268b27f548d75309d836136e33f6b3c857380b8910e5e9d6",
     "src/Client/AuthoredClips1.luau": "5fc9c846a732817eaaaa591149134f8bf9d9d765c6cdd6bc801ee5f66c2f3350",
@@ -37,7 +37,7 @@
     "src/Client/AuthoredClips9.luau": "356c2994dd614304918bbd9304c176a91846c69308f3e635cb731127e13c1033",
     "src/Client/AuthoredMotion.luau": "a701e2f0f7a198d8bdbe28d651de5d209b13185bc1f998cd6ba3477a5b524370",
     "src/Client/BodyViews.luau": "3c8dbbea28619bee77fd2366efc8dab78ea6dee91748f1dafdf144d0ea13d0e3",
-    "src/Client/Camera.luau": "9aad4d3c64e26805d645e00bfd31cd6083ed25d5973d4915c9450e6026db9feb",
+    "src/Client/Camera.luau": "f7fa15a224d43bfa6b8203f598505803d316ec55ca693e3f64cb17a25ef96201",
     "src/Client/ChakraFX.luau": "0cc9da988f6086c1148af14474d736bd47c5c30b6f75c37259ad5bec47f736c5",
     "src/Client/ChakraFlowFX.luau": "91ccaa45c4a6543e0bd9614e9cedbc70659a310710a2acf3cbeafb1da064681f",
     "src/Client/CombatDebug.client.luau": "c0cfc3752e4f6c4290f35c652466db38c2e916876b25f03697880562fb44d3ab",
@@ -159,7 +159,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": true,
-  "buildFingerprint": "f9e85af5afeefc131571f8c2752561e9ab27c4b66baa2cf029ad227bf8b5dbf6",
+  "buildFingerprint": "c357d2a22e11da8ed1fffc45e9904ea0f2e9a26917b521872d1acde09a35af69",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

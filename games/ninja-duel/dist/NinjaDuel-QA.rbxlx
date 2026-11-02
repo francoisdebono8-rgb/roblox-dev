@@ -4114,7 +4114,7 @@ return {
       <Item class="StringValue" referent="ND25">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">f9e85af5afeefc131571f8c2752561e9ab27c4b66baa2cf029ad227bf8b5dbf6</string>
+          <string name="Value">c357d2a22e11da8ed1fffc45e9904ea0f2e9a26917b521872d1acde09a35af69</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND26">
@@ -32504,8 +32504,8 @@ local IMPULSE={
 -- the "ultimate" contact carries kind and time): a slow orbit round both
 -- bodies, then it hands back where it is (no snap).
 local CINEMA={
-	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=12,height=3,rate=.9,fov=54,follow=true},pyramid={dist=22,height=12,rate=.25,fov=60},
-	lotus={dist=12,height=6,rate=1.4,fov=56,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
+	clones={dist=14,height=4,rate=.5,fov=58},lion={dist=16,height=1.5,rate=.7,fov=62,follow=true},pyramid={dist=22,height=12,rate=.25,fov=60},
+	lotus={dist=16,height=1.5,rate=.9,fov=62,follow=true},palms={dist=9,height=2.2,rate=.35,fov=48},tsukuyomi={dist=8,height=2,rate=.12,fov=42},
 	flash={dist=15,height=5,rate=1.1,fov=60},raikiri={dist=15,height=3,rate=.35,fov=54},
 }
 Camera.CINEMA=CINEMA
@@ -32747,8 +32747,11 @@ function Camera:update(data,dt)
 		if line.Magnitude&lt;.1 then line=Vector3.xAxis end
 		local base=math.atan2(line.Unit.X,line.Unit.Z)+math.pi/2
 		local angle=base+cine.sign*t*look.rate
-		local height=look.height+(if look.follow then math.max(0,target.Y-a.Y)*.6 else 0)
-		local eye=mid+Vector3.new(math.sin(angle)*look.dist,height,math.cos(angle)*look.dist)
+		-- An aerial sequence (Sasuke, Lee): the lens stays down near the floor
+		-- and looks up at the bodies, so the height reads.
+		cine.floorY=cine.floorY or math.min(a.Y,target.Y)
+		local eye=mid+Vector3.new(math.sin(angle)*look.dist,look.height,math.cos(angle)*look.dist)
+		if look.follow then eye=Vector3.new(eye.X,cine.floorY+look.height,eye.Z) end
 		local cf=CFrame.lookAt(eye,mid+Vector3.new(0,1,0))*shake
 		local ease=math.clamp(t/.3,0,1)
 		camera.CFrame=(self.rigCF or camera.CFrame):Lerp(cf,ease)
