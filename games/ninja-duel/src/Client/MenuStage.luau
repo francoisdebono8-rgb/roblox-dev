@@ -1,0 +1,132 @@
+-- The select screen's two prodigies, in a real 3D set (user 02/11, "everything
+-- about the faces is to redo"): a ViewportFrame neither draws the faces
+-- (SurfaceGuis, Shared/Face) nor takes more than one light, so the fighters
+-- stand in a small closed studio far above the arena, built on this client
+-- only: an ink backdrop, the vermilion brush stroke, a key light from each
+-- fighter's outer side and a back light in his colour. The menu camera
+-- (Client/Camera) films it while the roster shows; Client/UI places the names
+-- over it. Presentation only.
+local Players=game:GetService("Players")
+local RunService=game:GetService("RunService")
+local TweenService=game:GetService("TweenService")
+local MenuStage={}
+MenuStage.__index=MenuStage
+
+local ORIGIN=Vector3.new(0,4200,0)
+local INK=Color3.fromRGB(14,12,17)
+local FOV=34
+local DISTANCE=19
+-- The screen fractions where the two stages are (Client/UI's 1600-wide board).
+MenuStage.SCREEN_X={player=.21,bot=.79}
+
+local function part(parent,props)
+	local p=Instance.new("Part")
+	p.Anchored=true;p.CanCollide=false;p.CanQuery=false;p.CanTouch=false;p.CastShadow=false
+	p.Material=Enum.Material.SmoothPlastic;p.TopSurface=Enum.SurfaceType.Smooth;p.BottomSurface=Enum.SurfaceType.Smooth
+	for k,v in props do (p::any)[k]=v end
+	p.Parent=parent
+	return p
+end
+local function light(parent,class,at,props)
+	local anchor=part(parent,{Name="Light",Size=Vector3.new(.2,.2,.2),Transparency=1,CFrame=at})
+	local l=Instance.new(class)
+	for k,v in props do (l::any)[k]=v end
+	l.Parent=anchor
+	return l,anchor
+end
+
+function MenuStage.new()
+	local self=setmetatable({slots={},visible=false},MenuStage)
+	local folder=Instance.new("Folder");folder.Name="NinjaDuelMenuStage";folder.Parent=workspace
+	self.folder=folder
+	local O=ORIGIN
+	-- A closed box: the sun and sky never reach the set.
+	part(folder,{Name="Backdrop",Size=Vector3.new(160,70,2),CFrame=CFrame.new(O+Vector3.new(0,10,9)),Color=INK})
+	part(folder,{Name="Floor",Size=Vector3.new(160,2,60),CFrame=CFrame.new(O+Vector3.new(0,-3.4,-10)),Color=Color3.fromRGB(20,17,22),Reflectance=.04})
+	part(folder,{Name="Roof",Size=Vector3.new(160,2,60),CFrame=CFrame.new(O+Vector3.new(0,30,-10)),Color=INK})
+	part(folder,{Name="Back",Size=Vector3.new(160,70,2),CFrame=CFrame.new(O+Vector3.new(0,10,-40)),Color=INK})
+	for _,s in {-1,1} do part(folder,{Name="Side",Size=Vector3.new(2,70,60),CFrame=CFrame.new(O+Vector3.new(s*80,10,-10)),Color=INK}) end
+	-- The brush stroke behind the two fighters (the menu's red band).
+	local band=part(folder,{Name="Stroke",Size=Vector3.new(120,6.5,.2),CFrame=CFrame.new(O+Vector3.new(0,3.4,7.6))*CFrame.Angles(0,0,math.rad(9)),
+		Color=Color3.fromRGB(190,40,36),Material=Enum.Material.Neon,Transparency=.35})
+	part(folder,{Name="StrokeEdge",Size=Vector3.new(120,.6,.2),CFrame=band.CFrame*CFrame.new(0,-1.6,-.05),Color=INK,Transparency=.4})
+	self.band=band
+	-- One slot per stage: where the fighter stands, his lights.
+	for _,side in {"player","bot"} do
+		local outer=if side=="player" then -1 else 1
+		local slot={side=side,outer=outer,x=outer*6}
+		local at=O+Vector3.new(slot.x,0,0)
+		slot.key=light(folder,"SpotLight",CFrame.lookAt(at+Vector3.new(outer*7,7,-9),at+Vector3.new(0,2.5,0)),
+			{Brightness=3.2,Range=26,Angle=55,Color=Color3.fromRGB(255,236,214),Shadows=true,Face=Enum.NormalId.Front})
+		slot.rim,slot.rimAnchor=light(folder,"SpotLight",CFrame.lookAt(at+Vector3.new(-outer*3.5,6,7),at+Vector3.new(0,2.6,0)),
+			{Brightness=6,Range=18,Angle=40,Color=Color3.new(1,1,1),Shadows=false,Face=Enum.NormalId.Front})
+		slot.fill=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,1,-6)),{Brightness=.45,Range=10,Color=Color3.fromRGB(150,140,160),Shadows=false})
+		slot.glow=light(folder,"PointLight",CFrame.new(at+Vector3.new(0,4,4)),{Brightness=1.6,Range=9,Color=Color3.new(1,1,1),Shadows=false})
+		self.slots[side]=slot
+	end
+	return self
+end
+
+-- The camera's shot of the set (Client/Camera reads it while the roster shows).
+function MenuStage:shot()
+	return CFrame.lookAt(ORIGIN+Vector3.new(0,2.9,-DISTANCE),ORIGIN+Vector3.new(0,2.6,0)),FOV
+end
+-- Each fighter stands where its stage is on this screen, whatever its shape.
+function MenuStage:layout()
+	local view=workspace.CurrentCamera.ViewportSize
+	local aspect=if view.Y>0 then view.X/view.Y else 16/9
+	local halfWidth=DISTANCE*math.tan(math.rad(FOV)/2)*aspect
+	for side,slot in self.slots do
+		local f=MenuStage.SCREEN_X[side]
+		-- Screen right is world -X for a camera looking along +Z.
+		slot.x=-(f-.5)*2*halfWidth
+		if slot.model and not slot.moving then slot.model:PivotTo(self:stand(slot)) end
+	end
+end
+function MenuStage:stand(slot)
+	-- Facing the camera (-Z), turned a little toward the middle.
+	return CFrame.new(ORIGIN+Vector3.new(slot.x,0,0))*CFrame.Angles(0,math.rad(slot.outer*-18),0)
+end
+
+-- `source` (a Server/Portraits model) steps onto the side's stage: he slides
+-- in from the outer edge; the back light takes his colour.
+function MenuStage:show(side,source,accent,animate)
+	local slot=self.slots[side]
+	if not slot or not source then return end
+	if slot.model then slot.model:Destroy() end
+	local model=source:Clone()
+	if not model then return end
+	model.Parent=self.folder
+	slot.model=model
+	slot.rim.Color=accent;slot.glow.Color=accent
+	local final=self:stand(slot)
+	if animate then
+		slot.moving=true
+		local from=final*CFrame.new(slot.outer*-4,0,0)
+		local started=os.clock()
+		model:PivotTo(from)
+		local token={}
+		slot.token=token
+		local connection
+		connection=RunService.RenderStepped:Connect(function()
+			if slot.token~=token or not model.Parent then connection:Disconnect();return end
+			local t=math.min(1,(os.clock()-started)/.34)
+			local k=1-(1-t)^4
+			model:PivotTo(from:Lerp(self:stand(slot),k))
+			if t>=1 then slot.moving=false;connection:Disconnect() end
+		end)
+		-- The back light flares, then settles.
+		slot.rim.Brightness=14
+		TweenService:Create(slot.rim,TweenInfo.new(.45,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Brightness=6}):Play()
+	else
+		model:PivotTo(final)
+	end
+end
+-- Idle life: the back lights breathe out of step, the stroke shimmers.
+function MenuStage:step(t)
+	for side,slot in self.slots do
+		if not slot.moving then slot.glow.Brightness=1.6+.5*math.sin(t*1.3+(if side=="bot" then 1.6 else 0)) end
+	end
+	self.band.Transparency=.35+.08*math.sin(t*.9)
+end
+return MenuStage

@@ -113,6 +113,11 @@ function Camera:update(data,dt)
 	if not data or (data.phase~="Duel" and data.phase~="Result") or not data.human or not data.bot then
 		self.lastHealth=nil; self.lastEnemyHealth=nil; camera.FieldOfView=70
 		camera.CameraType=Enum.CameraType.Scriptable
+		-- The roster and the online pick film the fighters' set (Client/MenuStage).
+		if self.menuShot and data and (data.phase=="Selection" or data.phase=="Pick") then
+			local shot,fov=self.menuShot()
+			if shot then camera.CFrame=shot;camera.FieldOfView=fov or 70;return end
+		end
 		-- Slow establishing orbit over the training ground behind the menu.
 		local t=os.clock()*.06
 		camera.CFrame=CFrame.lookAt(Vector3.new(math.sin(t)*88,38,math.cos(t)*88),Vector3.new(0,8,0)); return

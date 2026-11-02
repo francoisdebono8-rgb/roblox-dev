@@ -58,6 +58,8 @@ local function send(action,extra)
 	if current.phase=="Duel" and (action=="Attack" or action=="Heavy") then presentation:predictStrike(action,current) end
 end
 ui=UI.new(player:WaitForChild("PlayerGui"),send)
+-- The roster's fighters stand in a 3D set the menu camera films (Client/MenuStage).
+if ui.menuStage then camera.menuShot=function() return ui.menuStage:shot() end end
 -- Debug/QA places only: the Studio dev panel (F6, DevClient). While it is open
 -- Input sees a non-Duel state, so no combat binding fires behind the panel.
 local dev
