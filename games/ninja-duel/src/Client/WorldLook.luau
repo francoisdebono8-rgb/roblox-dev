@@ -20,7 +20,7 @@ local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
 -- side and a shade side; the shade is cool and darker than before, so the
 -- image has depth instead of the flat, all-lit midday of a default place.
 local LIGHT={
-	ClockTime=16.35,GeographicLatitude=34,Brightness=3.7,ExposureCompensation=.05,
+	ClockTime=16.9,GeographicLatitude=36,Brightness=3.7,ExposureCompensation=.05,
 	EnvironmentDiffuseScale=.62,EnvironmentSpecularScale=.6,ShadowSoftness=.12,
 	Ambient=rgb(78,74,94),OutdoorAmbient=rgb(112,106,130),
 	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),

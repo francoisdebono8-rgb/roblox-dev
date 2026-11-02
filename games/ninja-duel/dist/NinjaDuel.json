@@ -1,9 +1,9 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "081b7ccc79436225fa8e48fc581189d54645b2fcac04bc28f7ef98a796b0f93a",
+  "sha256": "ef85a8269b439305c90d0aa2c65ae2110cb7f6a1ef52d02853d8ba57b0042ef4",
   "sources": {
-    "src/Client/ArenaDress.luau": "aac49c0cbaa325c7c8aee3dd51a927af7529203ec4261cb87349dfd4cc3f163e",
+    "src/Client/ArenaDress.luau": "65e20c492ec1647ba730d337febdc0b9d33ad9c7a1be95952005100834d175cd",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
     "src/Client/AuthoredClips10.luau": "79b78f53e00be429f35312b98bd917777440d4e090a837d2c93682d42a955b0f",
@@ -78,7 +78,7 @@
     "src/Client/Wave3Motion.luau": "5010f78fd7b83577f08323fd5f25d33ef7b3bb9a5b27e669ba419c35b5eb793c",
     "src/Client/Wave4FX.luau": "c1e221d9e1a447a47ad1ce8156f033eeeca952819e4ef8d6c4ff169542a51e3d",
     "src/Client/Wave4Motion.luau": "dbaa24f6396ab4ffafc7a0e0ac021154f94150ae70a76a2e67b645673c6c1fad",
-    "src/Client/WorldLook.luau": "75b49f864ff863d2db4cd585efc15af44788401606aeadee28ce86b3e367a7bc",
+    "src/Client/WorldLook.luau": "4543efd6b52565a2faa9bae55e620bcfc316d394cf15ea42eaec69f081eea88f",
     "src/Server/AI.luau": "907e2b5b5a3232bd81892daf7140a8a41918005619d8bd4d51febb1cf3ffa156",
     "src/Server/Animation.luau": "fefda60e04e9246a262dcbc1b0d21e8eaa5206e2ba5d4790472939561a62cf89",
     "src/Server/ArenaMeshData.luau": "5bf21bfa9aec5954c73fdd397fd883847a5a434123a9d14f95cf28e89e47e47e",
@@ -155,7 +155,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "ccbe12e5a229e18e2a7bab7c864e872f6a2cec65a495359bcdff196d842dcae5",
+  "buildFingerprint": "dc8b28ef3f18231970cdbef7e358eec6448a0931a2af7d8b8a1b66b32a2e5a75",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },

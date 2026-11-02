@@ -56,24 +56,24 @@ local function banners(folder,origin)
 			local red=k%2==0
 			local swinging={}
 			local function hung(p) table.insert(swinging,{p,hang:ToObjectSpace(p.CFrame)});return p end
-			local cloth=part(folder,{Name="Banner",Size=Vector3.new(6,17,.14),CFrame=hang*CFrame.new(0,-8.5,0),
+			local cloth=part(folder,{Name="Banner",Size=Vector3.new(8,24,.14),CFrame=hang*CFrame.new(0,-12,0),
 				Color=if red then VERMILION else PAPER,Material=Enum.Material.Fabric})
 			hung(cloth)
 			-- The cloth's tail, cut in a swallowtail.
 			for _,x in {-1.5,1.5} do
-				hung(part(folder,{Name="BannerTail",Size=Vector3.new(3,1.6,.14),CFrame=cloth.CFrame*CFrame.new(x,-9.3,0)*CFrame.Angles(0,0,math.rad(x>0 and 18 or -18)),
+				hung(part(folder,{Name="BannerTail",Size=Vector3.new(4,2,.14),CFrame=cloth.CFrame*CFrame.new(x*1.33,-12.9,0)*CFrame.Angles(0,0,math.rad(x>0 and 18 or -18)),
 					Color=if red then VERMILION else PAPER,Material=Enum.Material.Fabric}))
 			end
 			-- Ink border down both edges.
-			for _,x in {-2.82,2.82} do
-				hung(part(folder,{Name="BannerEdge",Size=Vector3.new(.36,17,.16),CFrame=cloth.CFrame*CFrame.new(x,0,-.02),Color=INK}))
+			for _,x in {-3.8,3.8} do
+				hung(part(folder,{Name="BannerEdge",Size=Vector3.new(.4,24,.16),CFrame=cloth.CFrame*CFrame.new(x,0,-.02),Color=INK}))
 			end
-			part(folder,{Name="BannerRod",Size=Vector3.new(7.2,.45,.45),CFrame=hang*CFrame.new(0,.1,0),Color=rgb(60,42,30),Material=Enum.Material.Wood})
-			for _,x in {-3.7,3.7} do
+			part(folder,{Name="BannerRod",Size=Vector3.new(9.4,.5,.5),CFrame=hang*CFrame.new(0,.1,0),Color=rgb(60,42,30),Material=Enum.Material.Wood})
+			for _,x in {-4.8,4.8} do
 				part(folder,{Name="BannerKnob",Size=Vector3.new(.7,.7,.7),Shape=Enum.PartType.Ball,CFrame=hang*CFrame.new(x,.1,0),Color=rgb(196,150,60),Material=Enum.Material.Metal})
 			end
 			local gui=Instance.new("SurfaceGui")
-			gui.Face=Enum.NormalId.Front;gui.SizingMode=Enum.SurfaceGuiSizingMode.FixedSize;gui.CanvasSize=Vector2.new(240,680)
+			gui.Face=Enum.NormalId.Front;gui.SizingMode=Enum.SurfaceGuiSizingMode.FixedSize;gui.CanvasSize=Vector2.new(240,720)
 			gui.LightInfluence=1;gui.Parent=cloth
 			-- A disc of the other colour, the character brushed in it.
 			local disc=Instance.new("Frame")
@@ -104,9 +104,9 @@ local function wallBands(folder,origin)
 			local at=base+Vector3.new(0,y,0)-dir*depth
 			part(folder,{Name=name,Size=Vector3.new(width,h,.12),CFrame=CFrame.lookAt(at,Vector3.new(origin.X,at.Y,origin.Z)),Color=color,Transparency=transparency or 0})
 		end
-		band("WallBand",7.4,1.5,VERMILION,0)
-		band("WallLine",6.35,.3,INK,0)
-		band("WallLineTop",8.3,.16,INK,0,.2)
+		band("WallBand",8.4,2.2,VERMILION,0)
+		band("WallLine",7.05,.36,INK,0)
+		band("WallLineTop",9.6,.2,INK,0,.2)
 		-- Soot at the wall's foot, fading up.
 		band("WallSoot",.9,1.8,INK,.02,.55)
 		band("WallSoot",2.4,1.4,INK,.03,.78)
@@ -181,6 +181,18 @@ local function air(folder,origin)
 	leaves.Parent=sky
 end
 
+-- The field's grass patches (Server/ArenaMeshes) a shade softer and a little
+-- thin, so the earth shows at their edges and they lie in it, not on it.
+local function settle(courtyard)
+	local decor=courtyard:FindFirstChild("Decor")
+	if not decor then return end
+	for _,d in decor:GetChildren() do
+		if d:IsA("BasePart") and (d.Name=="GrassA_Grass" or d.Name=="GrassB_Grass" or d.Name=="GrassC_Grass") then
+			d.Color=d.Color:Lerp(rgb(132,128,72),.35);d.Transparency=.18
+		end
+	end
+end
+
 function ArenaDress.dress(courtyard)
 	if courtyard:GetAttribute("Dressed") then return end
 	local floor=courtyard:FindFirstChild("Training floor")
@@ -189,6 +201,7 @@ function ArenaDress.dress(courtyard)
 	local origin=floor.Position+Vector3.new(0,1,0)
 	local folder=Instance.new("Folder");folder.Name="NinjaDuelArenaDress";folder.Parent=workspace
 	local ok,err=pcall(function()
+		settle(courtyard)
 		wallBands(folder,origin)
 		enso(folder,origin)
 		air(folder,origin)
