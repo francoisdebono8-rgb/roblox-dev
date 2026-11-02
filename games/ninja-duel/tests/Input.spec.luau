@@ -13,7 +13,7 @@ local function signal()
  return s
 end
 local bindings={}
-local uis={WindowFocusReleased=signal(),TextBoxFocused=signal(),GamepadDisconnected=signal(),LastInputTypeChanged=signal(),focused=false}
+local uis={WindowFocusReleased=signal(),WindowFocused=signal(),TextBoxFocused=signal(),GamepadDisconnected=signal(),LastInputTypeChanged=signal(),focused=false}
 function uis:GetFocusedTextBox() return if self.focused then {} else nil end
 function uis:GetLastInputType() return E.UserInputType.Keyboard end
 -- Only the chakra tool reads the mouse itself (aim parity with a plain throw).
@@ -226,6 +226,18 @@ test("movement intent is current at a press and survives keyboard Change",functi
  tap("Light",Controls.Keyboard.Light)
  assert(input:direction(camera).Z>.9 and math.abs(input:direction(camera).X)<.01,"resting pad mixed into keyboard route")
  press("S",E.KeyCode.S,E.UserInputState.Cancel);assert(input:direction(camera).Magnitude==0)
+end)
+-- (Freeze 02/11) A connected pad whose stick rests never takes the keys away:
+-- held W kept the body still once any pad event switched to "pad".
+test("a resting pad never freezes the held keys",function()
+ input:reset();press("W",E.KeyCode.W)
+ uis.LastInputTypeChanged:fire(E.UserInputType.Gamepad1);assert(input.pad)
+ assert(input:direction(camera).Z<-.9,"held W ignored once the pad took over with its stick at rest")
+ press("MoveStick",E.KeyCode.Thumbstick1,E.UserInputState.Change,V.new(1,0,0))
+ assert(input:direction(camera).X>.9 and math.abs(input:direction(camera).Z)<.01,"a pushed stick no longer owns the route")
+ press("MoveStick",E.KeyCode.Thumbstick1,E.UserInputState.End,V.new(0,0,0))
+ assert(input:direction(camera).Z<-.9,"the held key did not come back once the stick rested")
+ press("W",E.KeyCode.W,E.UserInputState.End)
 end)
 test("text focus, window blur and disconnect clear guard, jump and stuck controls",function()
  for _,event in {uis.WindowFocusReleased,uis.TextBoxFocused,uis.GamepadDisconnected} do

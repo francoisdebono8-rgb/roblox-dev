@@ -322,6 +322,12 @@ local function updateMantle(now: number)
 		return
 	end
 
+	-- (Freeze 02/11) A climb that was not stepped (a blow, a dash took the body
+	-- meanwhile) is abandoned, not finished late by a teleport onto the ledge.
+	if now - mantleStartedAt > mantleDuration + 0.15 then
+		finishMantle("Stale", true)
+		return
+	end
 	local normalizedTime = math.clamp((now - mantleStartedAt) / mantleDuration, 0, 1)
 	local smoothTime = normalizedTime * normalizedTime * (3 - 2 * normalizedTime)
 	local startPosition = mantleStartCFrame.Position

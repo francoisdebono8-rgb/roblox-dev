@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">7617084c609719319111d2e79d7d65877ef1a9a87a073aaef33f78e01aea307f</string>
+          <string name="Value">d69f43fdb699a076bb69c4c2deeaed4682e13f3d6f667fa23173c0674b9bfe29</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -7954,6 +7954,15 @@ function Brawler.step(c,a,dt)
   end
  end
  if a.reaction then
+  -- (Freeze 02/11) Watchdogs: a hold whose owner is gone, or a reaction far
+  -- past its end, lets go (a body must never stay held for good).
+  if a.reaction=="Grabbed" and not (a.grabbedBy and a.grabbedBy.grabVictim==a and a.grabbedBy.health&gt;0) then
+   a.grabbedBy=nil;a.reaction=nil;a.reactionVelocity=nil;Brawler.event(c,a,"WatchdogGrab")
+  elseif a.reaction~="Grabbed" and c.now&gt;(a.reactionUntil or 0)+1.5 then
+   a.reaction=nil;a.reactionVelocity=nil;a.groundPose=nil;Brawler.event(c,a,"WatchdogReaction")
+  end
+ end
+ if a.reaction then
   if a.reaction=="Grabbed" then return true end
   -- Bound in sand: held in place until the burial or a substitution.
   if a.reaction=="Bound" and c.now&lt;a.reactionUntil then
@@ -7969,6 +7978,14 @@ function Brawler.step(c,a,dt)
    elseif a.reaction=="Knockdown" and a.airborne then
     -- (Audit 29/10) Still falling: the wake-up waits for the floor (it hung
     -- 0.24 s in the air, then slid at the fall's speed).
+    -- (Freeze 02/11) ...but never forever. A body resting against the side of
+    -- a prop or a wall never "landed" (only a floor below ends the fall) and
+    -- stayed down for good, every key refused. Past 0.6 s it gets up there.
+    if c.now&gt;=a.reactionUntil+.6 then
+     if Motor.grounded(a,c) then Motor.land(a,c,c.now) else a.airborne=false end
+     a.reaction="Wakeup";a.reactionUntil=c.now+.24;a.invulnerableUntil=c.now+.24
+     Brawler.event(c,a,"WatchdogWakeup")
+    end
    elseif a.reaction=="Knockdown" or a.reaction=="WallSplat" then
     -- (Studio agent 29/10: 0.7 s "airborne" through a wake-up at the foot of
     -- a wall) A body that gets up from the floor is on it.
@@ -8058,6 +8075,11 @@ function Brawler.step(c,a,dt)
       Brawler.splat(c,a,hit)
       if c.match.phase~="Duel" or not a.reaction then return true end
       velocity=a.reactionVelocity or Vector3.zero
+     elseif math.abs(hit.Normal.Y)&lt;.5 then
+      -- (Freeze 02/11) Against the side of something: slide down along it
+      -- instead of pressing into it every frame (the flight never moved again).
+      local into=velocity:Dot(hit.Normal)
+      if into&lt;0 then velocity-=hit.Normal*into end
      end
     end
    else
@@ -12517,6 +12539,10 @@ function Combat:update(dt,now)
 end
 function Combat:clear(preserveAnimations)
 	Interactions.clear(self)
+	-- (Freeze 02/11) An ultimate cut by the end of a round: its scheduled finish
+	-- is cleared below, so it is aborted here (the victim stayed "Held", every
+	-- key refused, and pinned on its path for the rest of the match).
+	for _,a in self.actors do Ultimates.abort(self,a) end
 	for _,a in self.actors do
 		HitDetection.clear(a.root)
 		if not preserveAnimations then Animation.clear(a) end
@@ -19155,6 +19181,12 @@ local function updateMantle(now: number)
 		return
 	end
 
+	-- (Freeze 02/11) A climb that was not stepped (a blow, a dash took the body
+	-- meanwhile) is abandoned, not finished late by a teleport onto the ledge.
+	if now - mantleStartedAt &gt; mantleDuration + 0.15 then
+		finishMantle("Stale", true)
+		return
+	end
 	local normalizedTime = math.clamp((now - mantleStartedAt) / mantleDuration, 0, 1)
 	local smoothTime = normalizedTime * normalizedTime * (3 - 2 * normalizedTime)
 	local startPosition = mantleStartCFrame.Position
@@ -39078,6 +39110,8 @@ function Input.new(send,getState,toggleLock,camera)
   self:reset();send("GuardOff");if jumping then send("JumpOff") end;send("Move",Vector3.zero)
  end
  UIS.WindowFocusReleased:Connect(blur)
+ -- (Freeze 02/11) Back in the window: the keys still held count again.
+ UIS.WindowFocused:Connect(function() self:resync() end)
  UIS.TextBoxFocused:Connect(blur)
  UIS.GamepadDisconnected:Connect(function() if self.pad then blur();self.pad=false end end)
  UIS.LastInputTypeChanged:Connect(function(kind)
@@ -39124,6 +39158,11 @@ function Input:direction(camera)
  self:chakraHold()
  -- The current device owns movement; a resting controller cannot steer WASD.
  local stick=if self.pad and self.stick.Magnitude&gt;.15 then self.stick else Vector2.zero
+ -- (Freeze 02/11) The keys drive whenever the stick does not. A connected pad
+ -- (a drifting stick, any pad event is enough) switched to "pad" and WASD was
+ -- ignored, even held: the body stood still until the key was pressed again.
+ -- A stick really pushed still owns the route alone (no stale key mixed in).
+ local keys=stick.Magnitude==0
  -- (User 28/10) The pad's sprint is a toggle (L3); it ends when the stick
  -- rests a moment, so a stop always gives the walk / string back (it stayed on
  -- and every light became the running strike).
@@ -39133,8 +39172,8 @@ function Input:direction(camera)
    if Input.now()-self.restAt&gt;.18 then self.sprinting=false;self.restAt=nil end
   else self.restAt=nil end
  end
- local x=stick.X+(if self.keys.D and not self.pad then 1 else 0)-(if self.keys.A and not self.pad then 1 else 0)
- local z=stick.Y+(if self.keys.W and not self.pad then 1 else 0)-(if self.keys.S and not self.pad then 1 else 0)
+ local x=stick.X+(if self.keys.D and keys then 1 else 0)-(if self.keys.A and keys then 1 else 0)
+ local z=stick.Y+(if self.keys.W and keys then 1 else 0)-(if self.keys.S and keys then 1 else 0)
  local look=camera.CFrame.LookVector*Vector3.new(1,0,1)
  if look.Magnitude&lt;.01 then look=-Vector3.zAxis end
  local right=Vector3.new(-look.Unit.Z,0,look.Unit.X)

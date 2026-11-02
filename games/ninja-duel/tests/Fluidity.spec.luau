@@ -185,5 +185,46 @@ test("walking into a standing opponent pushes him, it does not freeze the walker
  assert((y.root.Position-y0).Magnitude<1.2,"a body in a reaction was carried by a walk")
 end)
 
+-- (Freeze 02/11, user: "de vrais freeze où je peux plus bouger du tout")
+test("a knocked-down body that never finds the floor still gets up (freeze 02/11)",function()
+ local c,a,b=duel("Lion","Mirage",3)
+ c:relocate(b,V.new(0,6,0))
+ Brawler.react(c,b,"Knockdown",V.new(0,-5,0),.3,a);b.airborne=true
+ -- A slope under the body (normal 0.4 up): neither a floor nor a wall, the
+ -- way the edge of a crate or a rock meets a falling body in Studio.
+ local ws=H.workspace;local raycast=ws.Raycast
+ ws.Raycast=function(self,origin,delta,params)
+  if (origin-b.root.Position).Magnitude<.01 then return {Position=origin,Normal=V.new(0,.4,.92).Unit,Distance=.2,Instance=H.ground} end
+  return raycast(self,origin,delta,params)
+ end
+ local ok,err=pcall(function()
+  assert(stepUntil(c,function() return b.reaction~="Knockdown" end,2.5),"still knocked down after 2.5 s: down for good")
+  assert(stepUntil(c,function() return Brawler.free(b,c.now) end,1),"the body never became free again")
+ end)
+ ws.Raycast=raycast
+ assert(ok,err)
+end)
+
+test("an ultimate cut by the end of a round leaves nobody held (freeze 02/11)",function()
+ local c,a,b=duel("Legion","Mirage",4)
+ b.health=999;a.ultimate=100
+ local ok,why=c:request(a,"Ultimate")
+ assert(ok,"the ultimate was refused ("..tostring(why)..")")
+ assert(stepUntil(c,function() return b.ultimateHeld==true end,2),"fixture: the ultimate never caught the body")
+ -- the round ends mid-sequence (a KO elsewhere, the result screen, a rematch)
+ c:clear(true)
+ assert(not b.ultimateHeld and not a.ultimateRunning,"a hold survived the end of the round")
+ b.state="Neutral";b.untilTime=c.now;b.reaction=nil
+ local _,reason=c:request(b,"Jump")
+ assert(reason~="Held","the next round refused every key of the victim: Held")
+end)
+
+test("a grab whose grabber let go never holds the body (freeze 02/11)",function()
+ local c,a,b=duel("Lion","Mirage",3)
+ Brawler.react(c,b,"Grabbed",V.zero,.8,a);b.grabbedBy=a;a.grabVictim=nil
+ H.step(c,.05)
+ assert(b.reaction~="Grabbed","a body stayed grabbed by nobody")
+end)
+
 if failed>0 then error(failed.." fluidity test(s) failed",0) end
 print(string.format("NinjaDuel fluidity: %d PASS (headless; the feel itself is a Studio check)",passed))

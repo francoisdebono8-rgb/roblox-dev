@@ -58,7 +58,7 @@ local envBase={Vector3=V,Vector2=roblox.Vector2,CFrame=C,Color3=roblox.Color3,En
 local bindings={}
 local inputServices={
  ContextActionService={BindActionAtPriority=function(_,name,callback,_,_,...) bindings[name]={callback=callback,keys={...}} end},
- UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},
+ UserInputService={GetFocusedTextBox=function() return nil end,WindowFocusReleased={Connect=function() end},WindowFocused={Connect=function() end},
   TextBoxFocused={Connect=function() end},GamepadDisconnected={Connect=function() end},LastInputTypeChanged={Connect=function() end},
   InputChanged={Connect=function() end},GetLastInputType=function() return roblox.Enum.UserInputType.Keyboard end,
   IsMouseButtonPressed=function() return false end},
