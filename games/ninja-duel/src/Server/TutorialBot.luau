@@ -41,7 +41,8 @@ local function scripts(s,wait,alive)
 	end
 	S.string=function() stick(Vector3.zero);chain((A().def.StringLength or 4)+1,.26);wait(.5) end
 	S.heavy=function() press("Heavy");wait(1) end
-	S.routeSide=function() press("Attack");wait(.3);stick(toward():Cross(Vector3.yAxis));press("Attack");wait(.6);stick(Vector3.zero) end
+	-- The side route, like the others, opens after two hits (Brawler: combo>=2).
+	S.routeSide=function() chain(2,.28);stick(toward():Cross(Vector3.yAxis));press("Attack");wait(.6);stick(Vector3.zero) end
 	S.routeDown=function() chain(2,.28);stick(-toward());press("Attack");wait(.6);stick(Vector3.zero) end
 	S.launch=function() chain(2,.28);stick(toward());press("Attack");wait(.6);stick(Vector3.zero) end
 	S.chase=function() wait(.15);press("Pursuit");wait(.8) end
@@ -58,8 +59,27 @@ local function scripts(s,wait,alive)
 		end
 		a.sprinting=false;wait(.6);stick(Vector3.zero)
 	end
-	S.grab=function() press("Grab");wait(.4);press("Attack");wait(.8) end
-	S.tool=function() press("Tool",B().root.Position);wait(.9) end
+	-- Walk into reach first (Gaara and Sasori whiffed from the step's 5 studs:
+	-- their grab does not carry the lunge the others do), then seize and throw.
+	S.grab=function()
+		local t0=os.clock()
+		while alive() and os.clock()-t0<1.5 and flat(B().root.Position-A().root.Position).Magnitude>2.8 do stick(toward());wait(.03) end
+		stick(Vector3.zero);press("Grab");wait(.4);press("Attack");wait(1.2)
+	end
+	S.tool=function()
+		local a=A()
+		if a.def.Tool=="Deflect" then
+			-- Kick when the partner's blade is coming (Techniques.bladeIncoming).
+			local Techniques=require(script.Parent.Techniques)
+			local t0=os.clock()
+			while alive() and os.clock()-t0<4 do
+				if Techniques.bladeIncoming(c,a,a.def.Deflect) then press("Tool",B().root.Position);wait(.9);return end
+				wait(.02)
+			end
+			return
+		end
+		press("Tool",B().root.Position);wait(.9)
+	end
 	for i=1,5 do
 		S["jutsu"..i]=function() press("Technique"..i,B().root.Position);wait(1.4) end
 	end

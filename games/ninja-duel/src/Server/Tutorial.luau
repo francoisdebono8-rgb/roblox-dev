@@ -68,7 +68,7 @@ function Tutorial.plan(a)
 	add({id="heavy",title="Heavy strike",key=K.Heavy,pad=P.Heavy,place="near",
 		check=function(s,t) return t.ok("Heavy") and t.count("Hit")>=1 end})
 	if routes.side then
-		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="1 hit, then side + "..K.Light,pad="1 hit, then side + "..P.Light,place="near",
+		add({id="routeSide",title="Turn the angle: "..moveLabel(routes.side),key="2 hits, then side + "..K.Light,pad="2 hits, then side + "..P.Light,place="near",
 			check=function(s,t) return t.ev("RouteSide") end})
 	end
 	if routes.down then
@@ -91,7 +91,9 @@ function Tutorial.plan(a)
 		check=function(s,t) return t.ev("RunningStrike") end})
 	add({id="grab",title="Grab, then throw",key=K.Grab..", then "..K.Light.." ("..K.Heavy.." throws upward)",pad=P.Grab..", then "..P.Light,place="near",
 		check=function(s,t) return t.ev("ThrowHit") end})
-	add({id="tool",title="Your tool: "..toolName(a),key=K.Tool,pad=P.Tool,
+	-- A deflecting tool (Guy's kick) needs something thrown at it: the partner throws.
+	add({id="tool",title="Your tool: "..toolName(a),key=if a.def.Tool=="Deflect" then K.Tool.." as his kunai flies" else K.Tool,pad=if a.def.Tool=="Deflect" then P.Tool.." as his kunai flies" else P.Tool,
+		bot=if a.def.Tool=="Deflect" then "throw" else "idle",
 		check=function(s,t) return t.ok("Tool") end})
 	for i,spec in def.Techniques or {} do
 		if i>5 then break end
@@ -106,7 +108,9 @@ function Tutorial.plan(a)
 		check=function(s,t,now) local a,b=s.human,s.bot;return t.ev("Dodge") and (t.ev("Evaded") or (b.attackName=="Heavy" and now-(b.attackStarted or now)>.46 and a.health==t.health)) end})
 	add({id="substitute",title="Escape after being hit",key=K.Substitute.." just after contact",pad=P.Substitute.." just after contact",place="near",bot="heavy",
 		check=function(s,t) return t.ev("Substitute") end})
-	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="far",bot="channel",
+	-- (Roster run 02/11: STUCK for every fighter from 28 studs: the signs end
+	-- before anyone gets there.) In dash reach, as in a duel.
+	add({id="interrupt",title="Interrupt his hand signs",key=K.Light.." during the signs",pad=P.Light.." during the signs",place="mid",bot="channel",
 		check=function(s,t) return t.ev("Interrupt") end})
 	add({id="throwBreak",title="Break his grab",key=K.Grab.." as he seizes you",pad=P.Grab.." as he seizes you",place="near",bot="grab",
 		check=function(s,t) return t.ev("ThrowBreak") end})
@@ -160,7 +164,8 @@ function Tutorial.enter(s,now)
 	b.trainingChannelScale=if spec.bot=="channel" then 3 else 1
 	local place=spec.place
 	local near=place=="near" or place=="air"
-	c:relocate(a,s.origin+Vector3.new(0,3,if near then 3 else 14));c:relocate(b,s.origin+Vector3.new(0,3,if near then -2 else -14))
+	local gapA,gapB=if near then 3 elseif place=="mid" then 5 else 14,if near then -2 elseif place=="mid" then -5 else -14
+	c:relocate(a,s.origin+Vector3.new(0,3,gapA));c:relocate(b,s.origin+Vector3.new(0,3,gapB))
 	if place=="wall" then
 		local R=require(script.Parent.World).WALL_RADIUS
 		c:relocate(a,s.origin+Vector3.new(R-7,3,0));c:relocate(b,s.origin+Vector3.new(R-17,3,0))
@@ -171,8 +176,11 @@ function Tutorial.enter(s,now)
 		Brawler.react(c,b,"Juggled",Vector3.zero,1.8)
 	end
 	-- A jutsu that needs its target in reach starts within it.
+	-- (Roster run 02/11: "Out of range" x5 for Guy, Kakashi, Shino...: a
+	-- Sequence, a Zone at the target, a Teleport check their Range without
+	-- Requires.) Any jutsu with a reach shorter than the gap starts within it.
 	local tech=spec.technique
-	if tech and tech.Requires=="Target" then
+	if tech and (tech.Requires=="Target" or (tech.Range and tech.Range<(b.root.Position-a.root.Position).Magnitude+2)) then
 		local gap=math.clamp((tech.Range or 10)*.5,3,12)
 		c:relocate(b,a.root.Position+flat(b.root.Position-a.root.Position).Unit*gap)
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position)
@@ -289,6 +297,8 @@ function Tutorial.update(s,now,dt)
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);c:request(b,"Heavy");t.attackAt=now+1.7
 	elseif spec.bot=="channel" and now>=t.attackAt then
 		b.cooldowns={};b.chakra=b.def.Chakra or 100;c:request(b,Tutorial.interruptSlot(b),a.root.Position);t.attackAt=now+1.4
+	elseif spec.bot=="throw" and now>=t.attackAt then
+		b.cooldowns={};b.toolCooldown=0;c:request(b,"Tool",a.root.Position);t.attackAt=now+1.6
 	elseif spec.bot=="grab" and now>=t.attackAt then
 		if (b.root.Position-a.root.Position).Magnitude>4 then c:relocate(b,a.root.Position+a.root.CFrame.LookVector*3.2) end
 		b.root.CFrame=CFrame.lookAt(b.root.Position,a.root.Position);b.grabCooldown=0;c:request(b,"Grab");t.attackAt=now+1.8

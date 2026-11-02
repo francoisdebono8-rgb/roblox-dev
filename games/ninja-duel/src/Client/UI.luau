@@ -461,6 +461,11 @@ end
 function UI:render(data)
 	local pad=if data.gamepad~=nil then data.gamepad else Controls.isGamepad(UIS:GetLastInputType())
 	self.tutorialPanel.Visible=data.tutorial~=nil and data.phase=="Duel"
+	-- (User 02/11, tutorial on screen) The cue band (124) and the hint (200)
+	-- sat on the tutorial panel (84-174): "SPACE REBOUND / C DETACH" was printed
+	-- across the step's own instruction. Under the panel while it shows.
+	self.cue.Position=UDim2.new(.5,-300,0,if self.tutorialPanel.Visible then 182 else 124)
+	self.hint.Position=UDim2.new(.5,-260,0,if self.tutorialPanel.Visible then 226 else 200)
 	if data.tutorial then
 		self.tutorialTitle.Text=data.tutorial.index.." / "..data.tutorial.total.."  "..data.tutorial.title
 		self.tutorialPrompt.Text=(if pad then data.tutorial.pad else data.tutorial.key).."  •  "..(if pad then "Touchpad to skip" else "ESC to skip")
