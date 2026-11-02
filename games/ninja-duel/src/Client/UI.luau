@@ -81,6 +81,8 @@ function UI.new(parent,send)
 	create("UIStroke",banner,{Color=palette.red,Thickness=2})
 	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,12),UDim2.fromOffset(44,240),26,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
 	frame(shell,UDim2.fromOffset(1553,280),UDim2.fromOffset(6,40),palette.red,0)
+	self.controlsButton=button(shell,"CONTROLS  (TAB)",UDim2.fromOffset(1290,30),UDim2.fromOffset(220,40),function() self:toggleControls() end)
+	self.controlsButton.TextSize=20
 	-- The two stages.
 	local function stage(side)
 		local right=side=="bot"
@@ -246,26 +248,37 @@ function UI.new(parent,send)
 		local title=text(box,"",UDim2.fromOffset(X(102,400),32),UDim2.fromOffset(400,16),13,palette.paper,BODY_FONT,align)
 		create("UIStroke",title,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Health: ink edge, dark well, the trail of lost health, the fill.
-		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,20),Color3.fromRGB(20,18,24),0)
-		corner(track,3)
-		create("UIStroke",track,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		-- A soft ink shadow under the whole plate keeps it readable on the sky.
+		local shade=frame(box,UDim2.fromOffset(X(84,480),-6),UDim2.fromOffset(480,128),Color3.fromRGB(8,7,10),.55)
+		shade.ZIndex=0;corner(shade,14)
+		if hasSequences then create("UIGradient",shade,{Rotation=if right then 180 else 0,Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(.7,.35),NumberSequenceKeypoint.new(1,1)})}) end
+		local track=frame(box,UDim2.fromOffset(X(96,464),52),UDim2.fromOffset(464,22),Color3.fromRGB(20,18,24),0)
+		corner(track,4)
+		create("UIStroke",track,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local lag=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(240,220,190))
 		corner(lag,3)
 		local fill=frame(track,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.gold)
 		corner(fill,3)
-		local shine=frame(fill,UDim2.fromOffset(0,2),UDim2.new(1,0,0,4),Color3.new(1,1,1),.65)
-		local _=shine
+		local shine=frame(fill,UDim2.fromOffset(0,2),UDim2.new(1,0,0,5),Color3.new(1,1,1),.6)
+		corner(shine,3)
+		-- Light from above on the fill and the trail; a dark well under them.
+		if hasSequences then
+			create("UIGradient",fill,{Rotation=90,Color=ColorSequence.new(Color3.new(1,1,1),Color3.fromRGB(170,150,130))})
+			create("UIGradient",lag,{Rotation=90,Color=ColorSequence.new(Color3.new(1,1,1),Color3.fromRGB(200,180,160))})
+			create("UIGradient",track,{Rotation=90,Color=ColorSequence.new(Color3.fromRGB(60,54,66),Color3.fromRGB(20,18,24))})
+		end
 		if right then lag.AnchorPoint=Vector2.new(1,0);lag.Position=UDim2.fromScale(1,0);fill.AnchorPoint=Vector2.new(1,0);fill.Position=UDim2.fromScale(1,0) end
-		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),76),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
+		local chakraTrack=frame(box,UDim2.fromOffset(X(96,400),78),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
+		corner(chakraTrack,3)
 		local chakra=frame(chakraTrack,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.blue)
 		if right then chakra.AnchorPoint=Vector2.new(1,0);chakra.Position=UDim2.fromScale(1,0) end
 		-- (Stage 6) the ultimate gauge: it fills by hitting and being hit; full,
 		-- it burns and the plate says how to fire it.
-		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),85),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
+		local ultimateTrack=frame(box,UDim2.fromOffset(X(96,400),87),UDim2.fromOffset(400,6),Color3.fromRGB(20,18,24))
 		local ultimate=frame(ultimateTrack,UDim2.fromScale(0,0),UDim2.fromScale(0,1),Color3.fromRGB(255,150,40))
 		if right then ultimate.AnchorPoint=Vector2.new(1,0);ultimate.Position=UDim2.fromScale(1,0) end
 		for k=1,3 do frame(ultimateTrack,UDim2.fromScale(k/4,0),UDim2.new(0,2,1,0),palette.ink,0) end
-		local status=text(box,"",UDim2.fromOffset(X(98,460),94),UDim2.fromOffset(460,16),13,palette.muted,BODY_FONT,align)
+		local status=text(box,"",UDim2.fromOffset(X(98,460),96),UDim2.fromOffset(460,16),13,palette.muted,BODY_FONT,align)
 		create("UIStroke",status,{Color=palette.ink,Thickness=1,Transparency=.3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 		-- Neji's chakra points closed on this fighter: four pips at the far end of
 		-- the chakra bar (both players read them), each lit as it closes.
@@ -310,6 +323,8 @@ function UI.new(parent,send)
 	create("UIStroke",self.cue,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	self.channel=text(self.hud,"",UDim2.new(.5,-250,0,166),UDim2.fromOffset(500,28),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.statusLine=text(self.hud,"",UDim2.new(0,24,1,-44),UDim2.fromOffset(396,18),14,palette.paper)
+	-- (User 03/11) No key list on the fight screen: the controls sheet has it.
+	self.statusLine.Visible=false
 	-- It ends before the jutsu slots (centre -440) and shrinks rather than run under them.
 	self.statusLine.TextScaled=true;create("UITextSizeConstraint",self.statusLine,{MaxTextSize=14})
 	-- (UI pass 02/11) Grey on the sand was unreadable: light text, ink outline.
@@ -333,17 +348,19 @@ function UI.new(parent,send)
 	-- the camera puts the fighter's own body: a row in the bottom right corner,
 	-- each card an ink slip with its key on a vermilion seal.
 	for i=1,5 do
-		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),Color3.fromRGB(14,12,17),.12)
-		corner(box,6)
-		create("UIStroke",box,{Color=palette.paper,Thickness=1,Transparency=.75,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
-		local seal=frame(box,UDim2.fromOffset(6,6),UDim2.fromOffset(24,24),palette.red,0)
-		corner(seal,4)
+		local box=frame(self.hud,UDim2.new(1,-24-(5-i+1)*150+6,1,-84),UDim2.fromOffset(144,60),Color3.fromRGB(22,19,26),.05)
+		corner(box,8)
+		create("UIStroke",box,{Color=palette.paper,Thickness=1.5,Transparency=.7,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		if hasSequences then create("UIGradient",box,{Rotation=90,Color=ColorSequence.new(Color3.fromRGB(70,62,78),Color3.fromRGB(22,19,26))}) end
+		local seal=frame(box,UDim2.fromOffset(-8,-8),UDim2.fromOffset(28,28),palette.red,0)
+		seal.Rotation=-6;corner(seal,5)
+		create("UIStroke",seal,{Color=palette.ink,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
 		local key=text(seal,"",UDim2.fromScale(0,0),UDim2.fromScale(1,1),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-		local title=text(box,"",UDim2.fromOffset(36,4),UDim2.fromOffset(104,30),17,palette.paper,TITLE_FONT)
-		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=17})
-		local status=text(box,"",UDim2.fromOffset(8,38),UDim2.fromOffset(130,16),12,palette.muted)
-		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.35)
-		cool.AnchorPoint=Vector2.new(0,1);corner(cool,6)
+		local title=text(box,"",UDim2.fromOffset(26,6),UDim2.fromOffset(112,28),17,palette.paper,TITLE_FONT)
+		title.TextScaled=true;create("UITextSizeConstraint",title,{MaxTextSize=18})
+		local status=text(box,"",UDim2.fromOffset(10,38),UDim2.fromOffset(126,16),12,Color3.fromRGB(140,190,250))
+		local cool=frame(box,UDim2.fromScale(0,1),UDim2.fromScale(1,0),palette.ink,.3)
+		cool.AnchorPoint=Vector2.new(0,1);corner(cool,8)
 		self.techniqueButtons[i]={box=box,key=key,title=title,status=status,cool=cool}
 	end
 	-- The control sheet (first seconds of a duel, and the tutorial): bottom
@@ -392,6 +409,37 @@ function UI.new(parent,send)
 	self.resultNote=text(resultBox,"",UDim2.fromOffset(30,132),UDim2.fromOffset(540,44),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
 	self.rematchButton=button(resultBox,"REMATCH",UDim2.fromOffset(30,196),UDim2.fromOffset(540,52),function() send("Rematch") end,palette.red)
 	button(resultBox,"RETURN TO THE ROSTER",UDim2.fromOffset(30,260),UDim2.fromOffset(540,52),function() send("Selection") end)
+	-- ------------------------------------------------------------ controls
+	-- (User 03/11: "the keys should be in a menu rather than on the screen
+	-- all the time".) TAB (pad: START) opens the controls sheet over any
+	-- screen: the moves grouped by what they are for, then the fighter's own
+	-- strings and jutsu. A small chip on the HUD and a button on the roster say
+	-- where it is; nothing else lists keys during a fight.
+	self.controls=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),Color3.fromRGB(6,5,8),.25)
+	self.controls.ZIndex=40;self.controls.Visible=false
+	local sheet=frame(self.controls,UDim2.fromScale(.5,.5),UDim2.fromOffset(1120,640),Color3.fromRGB(16,14,19),0)
+	sheet.AnchorPoint=Vector2.new(.5,.5);sheet.ZIndex=41;corner(sheet,12)
+	create("UIStroke",sheet,{Color=palette.red,Thickness=2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	local sheetScale=create("UIScale",sheet,{Scale=1})
+	local function fitSheet() local v=workspace.CurrentCamera.ViewportSize;sheetScale.Scale=math.clamp(math.min(v.X/1220,v.Y/720),.5,1.2) end
+	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fitSheet);fitSheet()
+	local sheetTitle=text(sheet,"CONTROLS",UDim2.fromOffset(36,20),UDim2.fromOffset(600,52),48,palette.paper,TITLE_FONT)
+	sheetTitle.ZIndex=42
+	self.controlsClose=text(sheet,"",UDim2.fromOffset(1120-436,30),UDim2.fromOffset(400,30),16,palette.muted,BODY_FONT,Enum.TextXAlignment.Right)
+	self.controlsClose.ZIndex=42
+	frame(sheet,UDim2.fromOffset(36,78),UDim2.fromOffset(1048,3),palette.red,0).ZIndex=42
+	self.controlsBody=frame(sheet,UDim2.fromOffset(36,96),UDim2.fromOffset(1048,520),palette.ink,1)
+	self.controlsBody.ZIndex=42
+	-- The HUD chip that says where the sheet is.
+	self.controlsChip=text(self.hud,"",UDim2.new(0,24,1,-48),UDim2.fromOffset(260,26),15,palette.paper,TITLE_FONT)
+	self.controlsChip.BackgroundColor3=Color3.fromRGB(16,14,19);self.controlsChip.BackgroundTransparency=.25;corner(self.controlsChip,6)
+	create("UIPadding",self.controlsChip,{PaddingLeft=UDim.new(0,10)})
+	pcall(function()
+		UIS.InputBegan:Connect(function(input,processed)
+			if processed then return end
+			if input.KeyCode==Enum.KeyCode.Tab or input.KeyCode==Enum.KeyCode.ButtonStart then self:toggleControls() end
+		end)
+	end)
 	-- ---------------------------------------------------------------- wipe
 	-- Between screens an ink brush stroke sweeps across (UI:wipe), the same
 	-- angle as the menu's stroke, its leading edge vermilion.
@@ -471,6 +519,57 @@ function UI:refreshSelection()
 	end
 	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- The controls sheet: opened over any screen, built for the device in hand
+-- and the fighter being played.
+local GROUPS={
+	{"MOVE",{{"Move","WASD","L stick"},{"Sprint","Sprint"},{"Jump","Jump"},{"Lock / unlock","Lock"},{"Wall run: into a wall","—","—"},{"Off the wall","WallDetach"}}},
+	{"ATTACK",{{"Light strike (string)","Light"},{"Heavy strike","Heavy"},{"Grab, then throw","Grab"},{"Tool","Tool"},{"Kunai: draw / sheathe","Arm"},{"Chase / chakra dash","Pursuit"}}},
+	{"DEFEND",{{"Guard (hold)","Guard"},{"Dodge","Dodge"},{"Substitution","Substitute"},{"Feint a heavy","Feint"},{"Break a grab","Grab"}}},
+	{"NINJA ARTS",{{"Jutsu 1-4","1  2  3  4","R1 + □ △ ○ ×"},{"Jutsu 5","Technique5"},{"Chakra-infuse (hold + action)","Chakra"},{"Awaken (low health)","Awaken"},{"Ultimate (bar full)","Ultimate"}}},
+}
+function UI:buildControls(pad)
+	local body=self.controlsBody
+	body:ClearAllChildren()
+	local K,P=Controls.KeyLabel,Controls.PadLabel
+	local function key(entry)
+		if entry[3] then return if pad then entry[3] else entry[2] end
+		local label=if pad then P[entry[2]] else K[entry[2]]
+		return label or entry[2]
+	end
+	for g,group in GROUPS do
+		local x=(g-1)%2*530;local y=math.floor((g-1)/2)*200
+		local head=text(body,group[1],UDim2.fromOffset(x,y),UDim2.fromOffset(500,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
+		for r,entry in group[2] do
+			local row=y+30+(r-1)*27
+			local chip=text(body,key(entry),UDim2.fromOffset(x,row),UDim2.fromOffset(150,23),15,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+			chip.BackgroundColor3=palette.red;chip.BackgroundTransparency=.1;chip.ZIndex=43;corner(chip,4)
+			chip.TextScaled=true;create("UITextSizeConstraint",chip,{MaxTextSize=15})
+			local label=text(body,entry[1],UDim2.fromOffset(x+162,row),UDim2.fromOffset(350,23),15,palette.text,BODY_FONT);label.ZIndex=43
+		end
+	end
+	-- The fighter in play: his strings and his jutsu.
+	local h=self.lastHuman
+	local def=h and Fighters[h.fighterId or ""]
+	local y=410
+	local head=text(body,if def then string.upper(def.FullName or def.Name) else "YOUR FIGHTER",UDim2.fromOffset(0,y),UDim2.fromOffset(1048,28),24,palette.gold,TITLE_FONT);head.ZIndex=43
+	local combo=Controls.comboHelp(def and MoveGraphs[h.fighterId] or {},pad)
+	local strings=text(body,combo,UDim2.fromOffset(0,y+32),UDim2.fromOffset(1048,40),15,palette.text,BODY_FONT);strings.ZIndex=43
+	if h and h.techniques then
+		local names={}
+		for i,tech in h.techniques do table.insert(names,(if pad then Controls.TechniquePad[i] else tostring(i)).."  "..string.upper(tech.name)) end
+		local jutsu=text(body,table.concat(names,"     "),UDim2.fromOffset(0,y+78),UDim2.fromOffset(1048,22),15,palette.paper,TITLE_FONT);jutsu.ZIndex=43
+	end
+	self.controlsClose.Text=(if pad then "START" else "TAB").." to close"
+end
+function UI:toggleControls()
+	local open=not self.controls.Visible
+	if open then
+		local pad=false
+		pcall(function() pad=Controls.isGamepad(UIS:GetLastInputType()) end)
+		self:buildControls(pad)
+	end
+	self.controls.Visible=open
 end
 -- The ink stroke crosses the screen (0.5 s): the new screen is already under
 -- it, uncovered by its trailing edge.
@@ -855,7 +954,12 @@ function UI:render(data)
 	-- (and the tutorial), not a permanent band across the fight.
 	if self.helpEpoch~=data.epoch then self.helpEpoch=data.epoch;self.helpUntil=os.clock()+10 end
 	local helping=data.tutorial~=nil or os.clock()<(self.helpUntil or 0)
-	self.help.Visible=helping;self.grammar.Visible=helping
+	-- (User 03/11) The keys live in the controls sheet (TAB), not on screen.
+	self.help.Visible=false;self.grammar.Visible=false
+	local _=helping
+	self.lastHuman=h
+	self.controlsChip.Text=(if pad then "START" else "TAB").."   CONTROLS"
+	self.controlsChip.Visible=os.clock()<(self.helpUntil or 0) or data.tutorial~=nil
 	local won=data.winner=="PlayerFighter"
 	local winner=if won then h else b
 	self.resultTitle.Text=(if won then "VICTORY" else "DEFEAT")..(if (data.roundsToWin or 1)>1 and data.wins then string.format("  %d–%d",data.wins.human or 0,data.wins.bot or 0) else "")
