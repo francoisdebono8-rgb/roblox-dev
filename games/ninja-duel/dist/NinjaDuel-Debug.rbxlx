@@ -4471,7 +4471,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">4e15e9fe51512deff45a88eb9d25e64fb81356aec00e5d2d905346eea07ba9ae</string>
+          <string name="Value">784dbd2d541079f88efe4ed3d1a519378f153e2fae8907d5f2501e223eb87476</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -17292,6 +17292,8 @@ local Matches=require(script.Parent.Matches)
 -- Blender-made costume meshes load in the background (Server/LookMeshes).
 require(script.Parent.LookMeshes).preload()
 require(script.Parent.ArenaMeshes).preload()
+-- The select screen's fighters, built once with the duel's rig (Server/Portraits).
+require(script.Parent.Portraits).start()
 local matches=Matches.new(remote)
 remote.OnServerEvent:Connect(function(player,payload) matches:request(player,payload) end)
 Players.PlayerAdded:Connect(function(player) matches:selection(player) end)
@@ -19357,6 +19359,95 @@ return Parkour
       </Item>
       <Item class="ModuleScript" referent="ND82">
         <Properties>
+          <string name="Name">Portraits</string>
+          <ProtectedString name="Source">-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
+-- select screen shows each prodigy as he is in the duel, not a coloured block.
+-- Once per server, every roster fighter is built with the duel's own rig and
+-- costume (World.rig, World.dress), set in a guard stance, anchored, and kept
+-- in ReplicatedStorage.NinjaDuelPortraits; Client/UI clones them into its
+-- ViewportFrames. Built after the costume meshes had their chance to load,
+-- one fighter per frame. Presentation only: nothing here touches a duel.
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local RunService=game:GetService("RunService")
+local Portraits={}
+
+-- A ready stance: guard up, weight low, the lead foot forward (radians).
+local STANCE={
+	LeftShoulder=CFrame.Angles(math.rad(70),math.rad(-15),math.rad(-20)),
+	RightShoulder=CFrame.Angles(math.rad(55),math.rad(20),math.rad(25)),
+	LeftElbow=CFrame.Angles(math.rad(80),0,0),
+	RightElbow=CFrame.Angles(math.rad(95),0,0),
+	LeftHip=CFrame.Angles(math.rad(18),0,math.rad(-6)),
+	RightHip=CFrame.Angles(math.rad(-14),0,math.rad(6)),
+	LeftKnee=CFrame.Angles(math.rad(-22),0,0),
+	RightKnee=CFrame.Angles(math.rad(-10),0,0),
+	Waist=CFrame.Angles(math.rad(-6),math.rad(-18),0),
+	Neck=CFrame.Angles(math.rad(4),math.rad(14),0),
+}
+
+local function strip(model)
+	for _,d in model:GetDescendants() do
+		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") or d:IsA("ParticleEmitter") or d:IsA("Light") then d:Destroy()
+		elseif d:IsA("BasePart") then d.Anchored=true;d.CanCollide=false;d.CanQuery=false;d.CanTouch=false end
+	end
+	local hum=model:FindFirstChildOfClass("Humanoid")
+	if hum then hum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None;hum.HealthDisplayType=Enum.HumanoidHealthDisplayType.AlwaysOff end
+end
+
+function Portraits.build()
+	if ReplicatedStorage:FindFirstChild("NinjaDuelPortraits") then return end
+	local World=require(script.Parent.World)
+	local Fighters=require(ReplicatedStorage.NinjaDuel.Fighters)
+	local Roster=require(ReplicatedStorage.NinjaDuel.Roster)
+	local LookMeshes=require(script.Parent.LookMeshes)
+	-- Costume meshes load in the background: give them a few seconds.
+	local waited=os.clock()
+	while os.clock()-waited&lt;8 do
+		local pending=false
+		for _,state in LookMeshes.state do if state=="loading" then pending=true break end end
+		if not pending then break end
+		task.wait(.25)
+	end
+	-- Built in the workspace (the rig's network owner call needs it), far
+	-- under the arena, then moved to ReplicatedStorage.
+	local stage=Instance.new("Folder");stage.Name="NinjaDuelPortraitStage";stage.Parent=workspace
+	local out=Instance.new("Folder");out.Name="NinjaDuelPortraits"
+	for index,id in Roster do
+		local def=Fighters[id]
+		if def then
+			local ok,err=pcall(function()
+				local at=CFrame.new(index*12,-900,0)
+				local model,_,root,joints=World.rig(stage,def,at,id)
+				root.Anchored=true
+				for name,angles in STANCE do
+					local joint=joints[name] or model:FindFirstChild(name,true)
+					if joint and joint:IsA("Motor6D") then joint.Transform=angles end
+				end
+				RunService.Heartbeat:Wait()
+				strip(model)
+				model:SetAttribute("Fighter",id)
+				model.Parent=out
+			end)
+			if not ok then warn("[NinjaDuel] portrait "..tostring(id)..": "..tostring(err)) end
+			task.wait()
+		end
+	end
+	stage:Destroy()
+	out.Parent=ReplicatedStorage
+end
+
+function Portraits.start()
+	task.spawn(function()
+		local ok,err=pcall(Portraits.build)
+		if not ok then warn("[NinjaDuel] portraits unavailable: "..tostring(err)) end
+	end)
+end
+return Portraits
+</ProtectedString>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="ND83">
+        <Properties>
           <string name="Name">ProfileRepository</string>
           <ProtectedString name="Source">-- Progression profile persistence (PROG-001). One key per profile; an
 -- exclusive leased writer (session lock) with fenced revisions; every write is
@@ -19566,7 +19657,7 @@ return Repo
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND83">
+      <Item class="ModuleScript" referent="ND84">
         <Properties>
           <string name="Name">ProfileSchema</string>
           <ProtectedString name="Source">-- Fighter progression profile (PROG-001). Per fighter: the skill points earned,
@@ -19769,7 +19860,7 @@ return S
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND84">
+      <Item class="ModuleScript" referent="ND85">
         <Properties>
           <string name="Name">SkillBuilds</string>
           <ProtectedString name="Source">-- Skill builds (PROG-001/002). Pure, server-side: validates a fighter's ACTIVE
@@ -20258,7 +20349,7 @@ return SkillBuilds
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND85">
+      <Item class="ModuleScript" referent="ND86">
         <Properties>
           <string name="Name">SkillTrees</string>
           <ProtectedString name="Source">-- Fighter skill trees (PROG-001). Server data: what skill points buy for each
@@ -20576,7 +20667,7 @@ return {
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND86">
+      <Item class="ModuleScript" referent="ND87">
         <Properties>
           <string name="Name">Techniques</string>
           <ProtectedString name="Source">-- Each entry supplies prerequisites and payoff. The combat pipeline owns cost,
@@ -21647,7 +21738,7 @@ return Techniques
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND87">
+      <Item class="ModuleScript" referent="ND88">
         <Properties>
           <string name="Name">Tutorial</string>
           <ProtectedString name="Source">-- Tutorial v2 (user 02/11: "un vrai tutoriel ... adapté pour chaque perso",
@@ -21975,7 +22066,7 @@ return Tutorial
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND88">
+      <Item class="ModuleScript" referent="ND89">
         <Properties>
           <string name="Name">TutorialBot</string>
           <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). Plays the tutorial on its
@@ -22143,7 +22234,7 @@ return Bot
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND89">
+      <Item class="ModuleScript" referent="ND90">
         <Properties>
           <string name="Name">Ultimates</string>
           <ProtectedString name="Source">-- Ultimates (stage 6, the approved move list, "Ultimes"): one per main
@@ -22448,7 +22539,7 @@ return Ultimates
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND90">
+      <Item class="ModuleScript" referent="ND91">
         <Properties>
           <string name="Name">VelmoraAntiCheat</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/CombatAntiCheat.luau.
@@ -22476,7 +22567,7 @@ return AntiCheat
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND91">
+      <Item class="ModuleScript" referent="ND92">
         <Properties>
           <string name="Name">VelmoraDefense</string>
           <ProtectedString name="Source">-- Adapted from Velmora CombatService guard/parry/dodge resolution.
@@ -22609,7 +22700,7 @@ return Defense
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND92">
+      <Item class="ModuleScript" referent="ND93">
         <Properties>
           <string name="Name">VelmoraHitDetection</string>
           <ProtectedString name="Source">-- Adapted from Velmora src/server/Combat/HitDetection.luau.
@@ -22660,7 +22751,7 @@ return HitDetection
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND93">
+      <Item class="ModuleScript" referent="ND94">
         <Properties>
           <string name="Name">Wave1Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's server side. All
@@ -22795,7 +22886,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND94">
+      <Item class="ModuleScript" referent="ND95">
         <Properties>
           <string name="Name">Wave2Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 2 (Shisui, Orochimaru, Kabuto): the batch's server side.
@@ -22909,7 +23000,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND95">
+      <Item class="ModuleScript" referent="ND96">
         <Properties>
           <string name="Name">Wave3Kit</string>
           <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's
@@ -23095,7 +23186,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND96">
+      <Item class="ModuleScript" referent="ND97">
         <Properties>
           <string name="Name">Wave4Kit</string>
           <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the batch's
@@ -23202,7 +23293,7 @@ return Kit
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND97">
+      <Item class="ModuleScript" referent="ND98">
         <Properties>
           <string name="Name">World</string>
           <ProtectedString name="Source">local World = {}
@@ -24390,7 +24481,7 @@ return World
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND98">
+      <Item class="ModuleScript" referent="ND99">
         <Properties>
           <string name="Name">WorldReaction</string>
           <ProtectedString name="Source">-- Ninja Embodiment (DEC-027, EMB-004): the arena answers what happens in it.
@@ -25003,7 +25094,7 @@ return WorldReaction
 </ProtectedString>
         </Properties>
       </Item>
-      <Item class="ModuleScript" referent="ND99">
+      <Item class="ModuleScript" referent="ND100">
         <Properties>
           <string name="Name">Zones</string>
           <ProtectedString name="Source">-- Persistent typed zones (ROSTER_WAVE_HOOKS H06), beside Combat's hazards
@@ -25231,21 +25322,21 @@ return Zones
       </Item>
     </Item>
   </Item>
-  <Item class="StarterPlayer" referent="ND100">
+  <Item class="StarterPlayer" referent="ND101">
     <Properties>
       <string name="Name">StarterPlayer</string>
       <float name="CameraMinZoomDistance">8</float>
       <float name="CameraMaxZoomDistance">32</float>
     </Properties>
-    <Item class="StarterPlayerScripts" referent="ND101">
+    <Item class="StarterPlayerScripts" referent="ND102">
       <Properties>
         <string name="Name">StarterPlayerScripts</string>
       </Properties>
-      <Item class="Folder" referent="ND102">
+      <Item class="Folder" referent="ND103">
         <Properties>
           <string name="Name">NinjaDuelClient</string>
         </Properties>
-        <Item class="ModuleScript" referent="ND103">
+        <Item class="ModuleScript" referent="ND104">
           <Properties>
             <string name="Name">AuthoredClips</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25297,7 +25388,7 @@ return all
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND104">
+        <Item class="ModuleScript" referent="ND105">
           <Properties>
             <string name="Name">AuthoredClips1</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25598,7 +25689,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND105">
+        <Item class="ModuleScript" referent="ND106">
           <Properties>
             <string name="Name">AuthoredClips10</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25712,7 +25803,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND106">
+        <Item class="ModuleScript" referent="ND107">
           <Properties>
             <string name="Name">AuthoredClips11</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -25962,7 +26053,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND107">
+        <Item class="ModuleScript" referent="ND108">
           <Properties>
             <string name="Name">AuthoredClips12</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26110,7 +26201,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND108">
+        <Item class="ModuleScript" referent="ND109">
           <Properties>
             <string name="Name">AuthoredClips13</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26411,7 +26502,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND109">
+        <Item class="ModuleScript" referent="ND110">
           <Properties>
             <string name="Name">AuthoredClips14</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26559,7 +26650,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND110">
+        <Item class="ModuleScript" referent="ND111">
           <Properties>
             <string name="Name">AuthoredClips15</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26724,7 +26815,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND111">
+        <Item class="ModuleScript" referent="ND112">
           <Properties>
             <string name="Name">AuthoredClips16</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -26923,7 +27014,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND112">
+        <Item class="ModuleScript" referent="ND113">
           <Properties>
             <string name="Name">AuthoredClips17</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27258,7 +27349,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND113">
+        <Item class="ModuleScript" referent="ND114">
           <Properties>
             <string name="Name">AuthoredClips18</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27406,7 +27497,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND114">
+        <Item class="ModuleScript" referent="ND115">
           <Properties>
             <string name="Name">AuthoredClips19</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27639,7 +27730,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND115">
+        <Item class="ModuleScript" referent="ND116">
           <Properties>
             <string name="Name">AuthoredClips2</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27787,7 +27878,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND116">
+        <Item class="ModuleScript" referent="ND117">
           <Properties>
             <string name="Name">AuthoredClips20</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -27969,7 +28060,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND117">
+        <Item class="ModuleScript" referent="ND118">
           <Properties>
             <string name="Name">AuthoredClips21</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28304,7 +28395,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND118">
+        <Item class="ModuleScript" referent="ND119">
           <Properties>
             <string name="Name">AuthoredClips22</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28452,7 +28543,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND119">
+        <Item class="ModuleScript" referent="ND120">
           <Properties>
             <string name="Name">AuthoredClips23</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28685,7 +28776,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND120">
+        <Item class="ModuleScript" referent="ND121">
           <Properties>
             <string name="Name">AuthoredClips24</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -28935,7 +29026,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND121">
+        <Item class="ModuleScript" referent="ND122">
           <Properties>
             <string name="Name">AuthoredClips25</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29202,7 +29293,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND122">
+        <Item class="ModuleScript" referent="ND123">
           <Properties>
             <string name="Name">AuthoredClips26</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29384,7 +29475,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND123">
+        <Item class="ModuleScript" referent="ND124">
           <Properties>
             <string name="Name">AuthoredClips27</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29634,7 +29725,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND124">
+        <Item class="ModuleScript" referent="ND125">
           <Properties>
             <string name="Name">AuthoredClips28</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -29782,7 +29873,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND125">
+        <Item class="ModuleScript" referent="ND126">
           <Properties>
             <string name="Name">AuthoredClips29</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30032,7 +30123,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND126">
+        <Item class="ModuleScript" referent="ND127">
           <Properties>
             <string name="Name">AuthoredClips3</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30282,7 +30373,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND127">
+        <Item class="ModuleScript" referent="ND128">
           <Properties>
             <string name="Name">AuthoredClips30</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30447,7 +30538,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND128">
+        <Item class="ModuleScript" referent="ND129">
           <Properties>
             <string name="Name">AuthoredClips31</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30782,7 +30873,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND129">
+        <Item class="ModuleScript" referent="ND130">
           <Properties>
             <string name="Name">AuthoredClips32</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -30947,7 +31038,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND130">
+        <Item class="ModuleScript" referent="ND131">
           <Properties>
             <string name="Name">AuthoredClips33</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31044,7 +31135,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND131">
+        <Item class="ModuleScript" referent="ND132">
           <Properties>
             <string name="Name">AuthoredClips34</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31209,7 +31300,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND132">
+        <Item class="ModuleScript" referent="ND133">
           <Properties>
             <string name="Name">AuthoredClips35</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31306,7 +31397,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND133">
+        <Item class="ModuleScript" referent="ND134">
           <Properties>
             <string name="Name">AuthoredClips36</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31641,7 +31732,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND134">
+        <Item class="ModuleScript" referent="ND135">
           <Properties>
             <string name="Name">AuthoredClips37</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31772,7 +31863,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND135">
+        <Item class="ModuleScript" referent="ND136">
           <Properties>
             <string name="Name">AuthoredClips38</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31852,7 +31943,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND136">
+        <Item class="ModuleScript" referent="ND137">
           <Properties>
             <string name="Name">AuthoredClips39</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -31898,7 +31989,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND137">
+        <Item class="ModuleScript" referent="ND138">
           <Properties>
             <string name="Name">AuthoredClips4</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32063,7 +32154,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND138">
+        <Item class="ModuleScript" referent="ND139">
           <Properties>
             <string name="Name">AuthoredClips40</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32109,7 +32200,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND139">
+        <Item class="ModuleScript" referent="ND140">
           <Properties>
             <string name="Name">AuthoredClips41</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32155,7 +32246,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND140">
+        <Item class="ModuleScript" referent="ND141">
           <Properties>
             <string name="Name">AuthoredClips42</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32184,7 +32275,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND141">
+        <Item class="ModuleScript" referent="ND142">
           <Properties>
             <string name="Name">AuthoredClips5</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32417,7 +32508,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND142">
+        <Item class="ModuleScript" referent="ND143">
           <Properties>
             <string name="Name">AuthoredClips6</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32718,7 +32809,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND143">
+        <Item class="ModuleScript" referent="ND144">
           <Properties>
             <string name="Name">AuthoredClips7</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -32934,7 +33025,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND144">
+        <Item class="ModuleScript" referent="ND145">
           <Properties>
             <string name="Name">AuthoredClips8</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33133,7 +33224,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND145">
+        <Item class="ModuleScript" referent="ND146">
           <Properties>
             <string name="Name">AuthoredClips9</string>
             <ProtectedString name="Source">-- GENERATED by tools/blender/clips_to_luau.py from the Blender pipeline
@@ -33434,7 +33525,7 @@ return {
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND146">
+        <Item class="ModuleScript" referent="ND147">
           <Properties>
             <string name="Name">AuthoredMotion</string>
             <ProtectedString name="Source">-- Blender-authored body animation (DEC Blender-first pipeline): clips made in
@@ -33570,7 +33661,7 @@ return Authored
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND147">
+        <Item class="ModuleScript" referent="ND148">
           <Properties>
             <string name="Name">BodyViews</string>
             <ProtectedString name="Source">-- Bodies that are not fighters (Server/Bodies: Naruto's shadow clones), drawn
@@ -33734,7 +33825,7 @@ return BodyViews
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND148">
+        <Item class="ModuleScript" referent="ND149">
           <Properties>
             <string name="Name">Camera</string>
             <ProtectedString name="Source">-- Duel camera. A locked third-person rig that keeps both fighters readable:
@@ -34175,7 +34266,7 @@ return Camera
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND149">
+        <Item class="ModuleScript" referent="ND150">
           <Properties>
             <string name="Name">ChakraFX</string>
             <ProtectedString name="Source">-- Systemic chakra on the client, the player-facing layer (convergence 3,
@@ -34730,7 +34821,7 @@ return ChakraFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND150">
+        <Item class="ModuleScript" referent="ND151">
           <Properties>
             <string name="Name">ChakraFlowFX</string>
             <ProtectedString name="Source">-- ChakraFlow on the client (Freedom, user 28/10: chakra infusions): the load
@@ -34894,7 +34985,7 @@ return ChakraFlowFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND151">
+        <Item class="LocalScript" referent="ND152">
           <Properties>
             <string name="Name">CombatDebug</string>
             <ProtectedString name="Source">-- Optional debug-build display, outbound server data only; no combat input.
@@ -34928,7 +35019,7 @@ end)
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND152">
+        <Item class="ModuleScript" referent="ND153">
           <Properties>
             <string name="Name">DevClient</string>
             <ProtectedString name="Source">-- Studio dev panel (F6) and bounded client measurements (Codex 33028b2, ported).
@@ -35081,7 +35172,7 @@ return Dev
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND153">
+        <Item class="ModuleScript" referent="ND154">
           <Properties>
             <string name="Name">DevVolumes</string>
             <ProtectedString name="Source">-- Read-only Studio adornments (Codex 33028b2, ported): fighter roots in blue,
@@ -35125,7 +35216,7 @@ return Volumes
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND154">
+        <Item class="ModuleScript" referent="ND155">
           <Properties>
             <string name="Name">Effects</string>
             <ProtectedString name="Source">-- Client-side combat VFX. Everything here is presentation driven by the server
@@ -37282,7 +37373,7 @@ return FX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND155">
+        <Item class="ModuleScript" referent="ND156">
           <Properties>
             <string name="Name">FamilyFX</string>
             <ProtectedString name="Source">-- Family objects seen in play (roster breadth pass): every projectile kind of
@@ -37906,7 +37997,7 @@ return FamilyFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND156">
+        <Item class="ModuleScript" referent="ND157">
           <Properties>
             <string name="Name">GaleFX</string>
             <ProtectedString name="Source">-- Temari on the client (roster wave): the iron fan (closed on her back at rest,
@@ -38384,7 +38475,7 @@ return GaleFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND157">
+        <Item class="ModuleScript" referent="ND158">
           <Properties>
             <string name="Name">GaleMotion</string>
             <ProtectedString name="Source">-- Temari's motion family (roster wave, DEC-015): her stance, gait, clips,
@@ -38565,7 +38656,7 @@ return GaleMotion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND158">
+        <Item class="ModuleScript" referent="ND159">
           <Properties>
             <string name="Name">IdentityFX</string>
             <ProtectedString name="Source">-- CORE4 identity on the client (mission NEXT_VALIDATION_ROSTER_SCALE §5): what
@@ -39335,7 +39426,7 @@ return IdentityFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND159">
+        <Item class="ModuleScript" referent="ND160">
           <Properties>
             <string name="Name">Input</string>
             <ProtectedString name="Source">local CAS=game:GetService("ContextActionService")
@@ -39602,7 +39693,7 @@ return Input
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND160">
+        <Item class="ModuleScript" referent="ND161">
           <Properties>
             <string name="Name">LeeFX</string>
             <ProtectedString name="Source">-- Rock Lee on the client (stress-test wave, DEC-015): the Fifth Gate (a green
@@ -39783,7 +39874,7 @@ return LeeFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="LocalScript" referent="ND161">
+        <Item class="LocalScript" referent="ND162">
           <Properties>
             <string name="Name">Main</string>
             <ProtectedString name="Source">local Players=game:GetService("Players")
@@ -39971,7 +40062,7 @@ print("[NinjaDuel] Client ready")
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND162">
+        <Item class="ModuleScript" referent="ND163">
           <Properties>
             <string name="Name">MotionSmear</string>
             <ProtectedString name="Source">-- Speed smear (fluidity pass, user reference 28/10). What the eye cannot
@@ -40114,7 +40205,7 @@ return Smear
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND163">
+        <Item class="ModuleScript" referent="ND164">
           <Properties>
             <string name="Name">NarutoFX</string>
             <ProtectedString name="Source">-- Naruto on the client (roster wave, several bodies): the puffs of smoke of
@@ -40377,7 +40468,7 @@ return NarutoFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND164">
+        <Item class="ModuleScript" referent="ND165">
           <Properties>
             <string name="Name">Presentation</string>
             <ProtectedString name="Source">-- Velmora's additive combat motion and hit feedback, retaining Ninja Duel's
@@ -40834,7 +40925,7 @@ return Presentation
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND165">
+        <Item class="ModuleScript" referent="ND166">
           <Properties>
             <string name="Name">SandFX</string>
             <ProtectedString name="Source">-- Gaara's sand on the client: the sand bullet and Sand Shuriken in flight, the
@@ -41457,7 +41548,7 @@ return SandFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND166">
+        <Item class="ModuleScript" referent="ND167">
           <Properties>
             <string name="Name">TutorialProbe</string>
             <ProtectedString name="Source">-- Debug/QA places only (build.py DEBUG_SOURCES). The tutorial as a test of the
@@ -41640,7 +41731,7 @@ return Probe
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND167">
+        <Item class="ModuleScript" referent="ND168">
           <Properties>
             <string name="Name">UI</string>
             <ProtectedString name="Source">-- Prodigy Tournament interface: roster/selection, online queue and fighter
@@ -41688,126 +41779,171 @@ local function button(parent,value,position,size,callback,color)
 	b.Activated:Connect(callback); return b
 end
 local function accentOf(def) return Color3.fromRGB(table.unpack(def.Color)) end
--- A tiny posed figure built from the fighter's palette.
-local function portrait(parent,def,position,size)
-	local vp=create("ViewportFrame",parent,{Position=position,Size=size or UDim2.fromOffset(100,116),BackgroundTransparency=1,
-		Ambient=Color3.fromRGB(190,186,180),LightColor=Color3.new(1,1,1),LightDirection=Vector3.new(-1,-1,-1)})
-	local function p(sz,at,color)
-		create("Part",vp,{Size=sz,CFrame=CFrame.new(at),Color=if typeof(color)=="Color3" then color else Color3.fromRGB(table.unpack(color)),Anchored=true})
-	end
-	p(Vector3.new(2,2,1),Vector3.zero,def.Outfit)
-	p(Vector3.new(1.6,1.6,1.6),Vector3.new(0,1.7,0),def.Skin)
-	p(Vector3.new(1.8,.7,1.8),Vector3.new(0,2.55,0),def.Hair)
-	p(Vector3.new(1.7,.25,1.7),Vector3.new(0,2.1,0),Color3.fromRGB(28,36,58))
-	for _,s in {-1,1} do p(Vector3.new(.9,2,.9),Vector3.new(s*1.45,0,0),def.Outfit) end
-	local camera=create("Camera",vp,{CFrame=CFrame.lookAt(Vector3.new(3.5,2.6,-7.5),Vector3.new(0,.9,0))})
-	vp.CurrentCamera=camera
-	return vp
+-- A prodigy in a ViewportFrame (Server/Portraits builds the posed rigs):
+-- `face` frames the head for a roster tablet, `body` the whole fighter on a
+-- stage, turned three quarters toward the other stage.
+local function clearView(view)
+	for _,c in view:GetChildren() do if c:IsA("Model") or c:IsA("Camera") or c:IsA("WorldModel") then c:Destroy() end end
 end
-local ROSTER_SLOTS=20
+function UI.frameFace(view,source)
+	if not view or not source then return end
+	clearView(view)
+	local model=source:Clone();model.Parent=view
+	local head=model:FindFirstChild("Head")
+	if not head then return end
+	-- The rig faces -Z, toward the camera; a quarter turn shows the face's depth.
+	model:PivotTo(CFrame.Angles(0,math.rad(18),0))
+	local at=head.Position+Vector3.new(0,.15,0)
+	local camera=Instance.new("Camera");camera.FieldOfView=26
+	camera.CFrame=CFrame.lookAt(at+Vector3.new(.9,.35,-5.4),at);camera.Parent=view
+	view.CurrentCamera=camera
+end
+function UI.frameBody(view,source,right)
+	if not view or not source then return end
+	clearView(view)
+	local model=source:Clone();model.Parent=view
+	-- Facing the camera (-Z), turned toward the middle of the screen.
+	model:PivotTo(CFrame.Angles(0,math.rad(if right then -28 else 28),0))
+	local cf,size=model:GetBoundingBox()
+	local center=cf.Position+Vector3.new(0,-.15,0)
+	local camera=Instance.new("Camera");camera.FieldOfView=30
+	local distance=(size.Y*.5+.6)/math.tan(math.rad(15))
+	camera.CFrame=CFrame.lookAt(center+Vector3.new(0,.6,-distance),center);camera.Parent=view
+	view.CurrentCamera=camera
+end
 function UI.new(parent,send)
 	local self=setmetatable({player="Flashstep",bot="Mirage",send=send,selectionButtons={},introShown=nil},UI)
 	self.gui=create("ScreenGui",parent,{Name="NinjaDuelHUD",ResetOnSpawn=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling})
 	-- ------------------------------------------------------------ selection
-	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,.08)
-	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(900,712),palette.ink,1)
+	-- (UI redesign 02/11, user: "be original in everything, you can change
+	-- everything".) The tournament's call-up board: two stages where the
+	-- chosen prodigies stand as they fight (the duel's own rigs, posed:
+	-- Server/Portraits), a vermilion brush stroke between them, one roster of
+	-- name tablets underneath. A tablet goes to the stage being chosen (yours
+	-- unless you pick the other stage). Canvas 1600x900, scaled to the screen.
+	self.side="player"
+	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,0)
+	-- (Gradients only where the engine has them: the headless suites do not.)
+	local hasSequences=ColorSequence~=nil and NumberSequence~=nil and NumberSequenceKeypoint~=nil
+	if hasSequences then create("UIGradient",self.selection,{Rotation=90,Color=ColorSequence.new(Color3.fromRGB(30,26,32),Color3.fromRGB(10,9,12))}) end
+	local shell=frame(self.selection,UDim2.fromScale(.5,.5),UDim2.fromOffset(1600,900),palette.ink,1)
 	shell.AnchorPoint=Vector2.new(.5,.5)
 	local scale=create("UIScale",shell,{Scale=1})
-	local function resize() scale.Scale=math.min(1.2,workspace.CurrentCamera.ViewportSize.X/980,workspace.CurrentCamera.ViewportSize.Y/772) end
+	local function resize() scale.Scale=math.min(1.25,workspace.CurrentCamera.ViewportSize.X/1600,workspace.CurrentCamera.ViewportSize.Y/900) end
 	workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(resize);resize()
-	frame(shell,UDim2.fromOffset(0,74),UDim2.fromOffset(900,4),palette.red)
-	text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(0,0),UDim2.fromOffset(620,72),64,palette.paper,TITLE_FONT)
-	text(shell,"天才忍者大会",UDim2.fromOffset(620,10),UDim2.fromOffset(280,56),40,palette.red,BODY_FONT,Enum.TextXAlignment.Right)
+	-- The brush stroke the two stages stand on.
+	local band=frame(shell,UDim2.fromOffset(800,330),UDim2.fromOffset(2100,250),palette.red,.1)
+	band.AnchorPoint=Vector2.new(.5,.5);band.Rotation=-9
+	if hasSequences then create("UIGradient",band,{Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(.18,.55),NumberSequenceKeypoint.new(.5,.05),NumberSequenceKeypoint.new(.82,.55),NumberSequenceKeypoint.new(1,1)})}) end
+	local band2=frame(shell,UDim2.fromOffset(800,350),UDim2.fromOffset(2100,26),palette.ink,.35)
+	band2.AnchorPoint=Vector2.new(.5,.5);band2.Rotation=-9
+	-- Title, top left; the hanging banner, right edge.
+	local title=text(shell,"PRODIGY TOURNAMENT",UDim2.fromOffset(60,18),UDim2.fromOffset(900,70),62,palette.paper,TITLE_FONT)
+	create("UIStroke",title,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
 	text(shell,"Twenty future legends. Twelve to fourteen years old. One stage — before they become who they are meant to be.",
-		UDim2.fromOffset(2,86),UDim2.fromOffset(896,40),16,palette.muted)
-	-- Roster: the two prodigies who have arrived, and the slots still empty.
-	local grid=frame(shell,UDim2.fromOffset(0,136),UDim2.fromOffset(900,230),palette.ink,1)
-	-- The playable roster, in menu order (Shared/Roster).
-	local playable=table.clone(Roster)
-	for index=1,ROSTER_SLOTS do
-		local col=(index-1)%10;local row=math.floor((index-1)/10)
-		local slot=frame(grid,UDim2.fromOffset(col*90,row*116),UDim2.fromOffset(84,108),palette.locked)
-		corner(slot,6)
-		local id=playable[index]
-		if id then
-			local def=Fighters[id]
-			slot.BackgroundColor3=palette.panel
-			stroke(slot,accentOf(def),2)
-			portrait(slot,def,UDim2.fromOffset(2,2),UDim2.fromOffset(80,78))
-			-- (UI pass 02/11) Dark accents (Madara, Itachi, Shisui) vanished on the
-			-- dark card and OROCHIMARU touched its edges: an ink outline, and a
-			-- long name shrinks to fit.
-			local label=text(slot,string.upper(def.Name),UDim2.fromOffset(3,80),UDim2.fromOffset(78,26),20,accentOf(def):Lerp(palette.paper,.25),TITLE_FONT,Enum.TextXAlignment.Center)
-			label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=20})
-			create("UIStroke",label,{Color=palette.ink,Thickness=1.5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
-			local pick=create("TextButton",slot,{Size=UDim2.fromScale(1,1),BackgroundTransparency=1,Text=""})
-			pick.Activated:Connect(function()
-				if self.picking then self:choose(id);return end
-				self.player=id
-				if self.bot==id then self.bot=playable[index%#playable+1] end
-				self:refreshSelection()
-			end)
-			self.selectionButtons["slot"..id]=slot
-		else
-			text(slot,"?",UDim2.fromOffset(0,14),UDim2.fromOffset(84,56),48,Color3.fromRGB(70,66,74),TITLE_FONT,Enum.TextXAlignment.Center)
-			text(slot,"PRODIGY "..index,UDim2.fromOffset(0,78),UDim2.fromOffset(84,22),14,Color3.fromRGB(96,90,98),TITLE_FONT,Enum.TextXAlignment.Center)
-		end
+		UDim2.fromOffset(62,84),UDim2.fromOffset(1100,20),15,palette.muted,Enum.Font.GothamMedium)
+	local banner=frame(shell,UDim2.fromOffset(1508,0),UDim2.fromOffset(52,300),palette.paper,0)
+	create("UIStroke",banner,{Color=palette.red,Thickness=2})
+	text(banner,"天\n才\n忍\n者\n大\n会",UDim2.fromOffset(0,14),UDim2.fromOffset(52,250),30,palette.red,BODY_FONT,Enum.TextXAlignment.Center).LineHeight=.95
+	frame(shell,UDim2.fromOffset(1531,300),UDim2.fromOffset(6,40),palette.red,0)
+	-- The two stages.
+	local function stage(side)
+		local right=side=="bot"
+		local x=if right then 990 else 60
+		local box=create("TextButton",shell,{Position=UDim2.fromOffset(x,104),Size=UDim2.fromOffset(550,490),BackgroundTransparency=1,Text="",AutoButtonColor=false})
+		local view=create("ViewportFrame",box,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(550,380),BackgroundTransparency=1,
+			Ambient=Color3.fromRGB(150,140,135),LightColor=Color3.fromRGB(255,236,210),LightDirection=Vector3.new(if right then 1 else -1,-1,-.6)})
+		local shadow=frame(box,UDim2.fromOffset(275,368),UDim2.fromOffset(230,26),palette.ink,.45)
+		shadow.AnchorPoint=Vector2.new(.5,.5);corner(shadow,13);shadow.ZIndex=0
+		local align=if right then Enum.TextXAlignment.Right else Enum.TextXAlignment.Left
+		-- The tag over the stage: YOU / OPPONENT, and which stage takes the next tablet.
+		local tag=frame(box,UDim2.fromOffset(if right then 550-190 else 0,0),UDim2.fromOffset(190,30),palette.paper,0)
+		local tagText=text(tag,if right then "OPPONENT (AI)" else "YOU",UDim2.fromOffset(10,0),UDim2.fromOffset(170,30),20,palette.ink,TITLE_FONT,align)
+		tagText.TextScaled=true;create("UITextSizeConstraint",tagText,{MaxTextSize=20})
+		local choosing=text(box,"◀ CHOOSING",UDim2.fromOffset(if right then 550-190-130 else 200,0),UDim2.fromOffset(120,30),16,palette.gold,TITLE_FONT,align)
+		if not right then choosing.Text="CHOOSING ▶" end
+		local name=text(box,"",UDim2.fromOffset(0,378),UDim2.fromOffset(550,54),52,palette.paper,TITLE_FONT,align)
+		create("UIStroke",name,{Color=palette.ink,Thickness=3,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+		local sub=text(box,"",UDim2.fromOffset(2,430),UDim2.fromOffset(546,18),14,palette.gold,BODY_FONT,align)
+		local note=text(box,"",UDim2.fromOffset(2,450),UDim2.fromOffset(546,40),14,palette.text,Enum.Font.GothamMedium,align)
+		note.TextYAlignment=Enum.TextYAlignment.Top
+		box.Activated:Connect(function() if not self.picking or side=="player" then self.side=side;self:refreshSelection() end end)
+		return {box=box,view=view,tag=tag,tagText=tagText,choosing=choosing,name=name,sub=sub,note=note,shown=nil,right=right}
 	end
-	-- Matchup panel.
-	self.matchup=text(shell,"",UDim2.fromOffset(0,372),UDim2.fromOffset(900,44),38,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
-	self.matchupNote=text(shell,"",UDim2.fromOffset(0,410),UDim2.fromOffset(900,34),15,palette.muted,BODY_FONT,Enum.TextXAlignment.Center)
-	-- The selected fighter's reading of the shared combo grammar.
-	self.routeNote=text(shell,"",UDim2.fromOffset(0,440),UDim2.fromOffset(900,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
-	-- A long string list (Minato's) shrinks to the line instead of being cut.
+	self.stages={player=stage("player"),bot=stage("bot")}
+	self.opponentLabel=self.stages.bot.tagText
+	-- VS, and the matchup line under it.
+	local vs=text(shell,"VS",UDim2.fromOffset(800,300),UDim2.fromOffset(240,150),128,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	vs.AnchorPoint=Vector2.new(.5,.5);vs.Rotation=-9
+	create("UIStroke",vs,{Color=palette.ink,Thickness=5,ApplyStrokeMode=Enum.ApplyStrokeMode.Contextual})
+	self.matchup=text(shell,"",UDim2.fromOffset(800,392),UDim2.fromOffset(360,40),18,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+	self.matchup.AnchorPoint=Vector2.new(.5,0);self.matchup.Rotation=-9
+	self.matchupNote=self.stages.player.note
+	-- Your fighter's strings, over the roster.
+	self.routeNote=text(shell,"",UDim2.fromOffset(60,572),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
 	self.routeNote.TextScaled=true;create("UITextSizeConstraint",self.routeNote,{MaxTextSize=14})
-	text(shell,"YOU",UDim2.fromOffset(0,460),UDim2.fromOffset(200,18),14,palette.muted)
-	self.opponentLabel=text(shell,"OPPONENT (AI)",UDim2.fromOffset(470,460),UDim2.fromOffset(430,18),14,palette.muted)
-	-- Fighter buttons: a five-wide grid on each half of the panel, however
-	-- many are playable (twenty fill four rows). During an online pick the
-	-- left half is yours, the right shows the opponent's.
-	local COLS=5
-	local function cell(i) return (i-1)%COLS*86,480+math.floor((i-1)/COLS)*26 end
-	for i,id in playable do
-		local x,y=cell(i)
-		self.selectionButtons["player"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(x,y),UDim2.fromOffset(82,22),function()
-			if self.picking then self:choose(id);return end
-			self.player=id; self:refreshSelection()
-		end)
-		self.selectionButtons["bot"..id]=button(shell,string.upper(Fighters[id].Name),UDim2.fromOffset(470+x,y),UDim2.fromOffset(82,22),function()
-			if self.picking then return end
-			self.bot=id; self:refreshSelection()
-		end)
+	-- The roster: twenty name tablets, each with its prodigy's face.
+	local playable=table.clone(Roster)
+	self.tablets={}
+	local W,H,GAP=104,88,8
+	local left=(1600-(10*W+9*GAP))/2
+	for index,id in playable do
+		local def=Fighters[id]
+		local col=(index-1)%10;local row=math.floor((index-1)/10)
+		local accent=accentOf(def)
+		local tablet=create("TextButton",shell,{Position=UDim2.fromOffset(left+col*(W+GAP),600+row*(H+GAP)),Size=UDim2.fromOffset(W,H),
+			BackgroundColor3=accent:Lerp(palette.ink,.62),BorderSizePixel=0,AutoButtonColor=false,Text="",ClipsDescendants=true})
+		corner(tablet,6)
+		local edge=create("UIStroke",tablet,{Color=accent,Thickness=1.5,Transparency=.35,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+		local face=create("ViewportFrame",tablet,{Position=UDim2.fromOffset(0,0),Size=UDim2.fromOffset(W,64),BackgroundTransparency=1,
+			Ambient=Color3.fromRGB(160,150,145),LightColor=Color3.fromRGB(255,240,220),LightDirection=Vector3.new(-1,-1,-.5)})
+		local strip=frame(tablet,UDim2.fromOffset(0,62),UDim2.fromOffset(W,26),palette.paper,0)
+		local label=text(strip,string.upper(def.Name),UDim2.fromOffset(4,0),UDim2.fromOffset(W-8,26),18,palette.ink,TITLE_FONT,Enum.TextXAlignment.Center)
+		label.TextScaled=true;create("UITextSizeConstraint",label,{MaxTextSize=18})
+		local seal=text(tablet,"",UDim2.fromOffset(4,4),UDim2.fromOffset(34,18),14,palette.paper,TITLE_FONT,Enum.TextXAlignment.Center)
+		seal.BackgroundColor3=palette.red;seal.BackgroundTransparency=1;corner(seal,4)
+		local other=text(tablet,"",UDim2.fromOffset(W-38,4),UDim2.fromOffset(34,18),14,palette.ink,TITLE_FONT,Enum.TextXAlignment.Center)
+		other.BackgroundColor3=palette.paper;other.BackgroundTransparency=1;corner(other,4)
+		tablet.Activated:Connect(function() self:pick(self.side,id) end)
+		self.selectionButtons["slot"..id]=tablet
+		self.tablets[id]={tablet=tablet,edge=edge,face=face,seal=seal,other=other,accent=accent}
 	end
-	-- A long name (ROCK LEE, OROCHIMARU) shrinks to fit its button.
-	for _,id in playable do
-		for _,side in {"player","bot"} do
-			local b=self.selectionButtons[side..id]
-			b.TextScaled=true
-			create("UITextSizeConstraint",b,{MaxTextSize=16})
-		end
-	end
-	local below=480+math.ceil(#playable/COLS)*26+8
-	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(470,below),UDim2.fromOffset(430,52),function()
+	-- The action row: training, online, private duel by code, and the stage.
+	local below=816
+	self.startButton=button(shell,"ENTER THE STAGE",UDim2.fromOffset(1140,below),UDim2.fromOffset(400,58),function()
 		if self.picking then send("Confirm") else send("Start",{player=self.player,bot=self.bot}) end
 	end,palette.red)
-	self.tutorialButton=button(shell,"TRAINING (TUTORIAL)",UDim2.fromOffset(0,below),UDim2.fromOffset(430,52),function()
+	self.startButton.TextSize=32
+	create("UIStroke",self.startButton,{Color=palette.paper,Thickness=2,Transparency=.2,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
+	self.tutorialButton=button(shell,"TRAINING",UDim2.fromOffset(60,below),UDim2.fromOffset(230,58),function()
 		if self.picking then send("Cancel") else send("Tutorial",{player=self.player,bot=self.bot}) end
 	end)
 	-- Online 1v1 with the fighter chosen above: casual queue, or a private duel
 	-- by code (host one, or type a friend's code and join).
-	self.onlineRow=frame(shell,UDim2.fromOffset(0,below+60),UDim2.fromOffset(900,40),palette.ink,1)
-	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(290,40),function() send("Queue",{player=self.player}) end)
-	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(300,0),UDim2.fromOffset(290,40),function() send("Host",{player=self.player}) end)
-	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(600,0),Size=UDim2.fromOffset(170,40),Text="",PlaceholderText="CODE",
-		TextSize=24,Font=TITLE_FONT,TextColor3=palette.text,PlaceholderColor3=palette.muted,BackgroundColor3=palette.panel,BorderSizePixel=0,ClearTextOnFocus=false})
+	self.onlineRow=frame(shell,UDim2.fromOffset(302,below),UDim2.fromOffset(826,58),palette.ink,1)
+	self.queueButton=button(self.onlineRow,"ONLINE DUEL",UDim2.fromOffset(0,0),UDim2.fromOffset(230,58),function() send("Queue",{player=self.player}) end)
+	self.hostButton=button(self.onlineRow,"HOST PRIVATE DUEL",UDim2.fromOffset(242,0),UDim2.fromOffset(250,58),function() send("Host",{player=self.player}) end)
+	local codeBox=create("TextBox",self.onlineRow,{Position=UDim2.fromOffset(504,0),Size=UDim2.fromOffset(196,58),Text="",PlaceholderText="FRIEND'S CODE",
+		TextSize=24,Font=TITLE_FONT,TextColor3=palette.ink,PlaceholderColor3=Color3.fromRGB(120,112,100),BackgroundColor3=palette.paper,BorderSizePixel=0,ClearTextOnFocus=false})
 	corner(codeBox,6)
 	codeBox:GetPropertyChangedSignal("Text"):Connect(function()
 		local clean=string.sub(string.gsub(string.upper(codeBox.Text),"[^A-Z0-9]",""),1,Protocol.CodeLength)
 		if clean~=codeBox.Text then codeBox.Text=clean end
 	end)
 	self.codeBox=codeBox
-	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(780,0),UDim2.fromOffset(120,40),function() send("Join",{player=self.player,code=codeBox.Text}) end)
-	self.notice=text(shell,"",UDim2.fromOffset(0,below+104),UDim2.fromOffset(900,18),13,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	self.joinButton=button(self.onlineRow,"JOIN",UDim2.fromOffset(712,0),UDim2.fromOffset(114,58),function() send("Join",{player=self.player,code=codeBox.Text}) end)
+	self.notice=text(shell,"",UDim2.fromOffset(60,794),UDim2.fromOffset(1480,18),14,palette.gold,BODY_FONT,Enum.TextXAlignment.Center)
+	-- The prodigies themselves (Server/Portraits): they arrive a few seconds
+	-- after the server starts; the stages and tablets fill in then.
+	pcall(task.spawn,function()
+		pcall(function()
+			local folder=game:GetService("ReplicatedStorage"):WaitForChild("NinjaDuelPortraits",60)
+			if not folder then return end
+			self.portraits=folder
+			for id,t in self.tablets do UI.frameFace(t.face,folder:FindFirstChild(id)) end
+			self:refreshSelection()
+		end)
+	end)
 	-- ------------------------------------------------------------------ HUD
 	self.hud=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
 	local hudScale=create("UIScale",self.hud,{Scale=1})
@@ -41979,16 +42115,55 @@ function UI.new(parent,send)
 	return self
 end
 function UI:refreshSelection()
-	-- During an online pick the right half shows the opponent's live choice.
+	-- During an online pick the right stage shows the opponent's live choice.
 	local other=if self.picking and Fighters[self.opponentPick or ""] then self.opponentPick else self.bot
-	for key,b in self.selectionButtons do
-		local selected=key=="player"..self.player or key=="bot"..other or key=="slot"..self.player
-		b.BackgroundColor3=if selected then Color3.fromRGB(120,36,34) else palette.panel
+	if self.picking then self.side="player" end
+	for id,t in self.tablets or {} do
+		local mine,theirs=id==self.player,id==other
+		t.edge.Color=if mine then palette.red elseif theirs then palette.paper else t.accent
+		t.edge.Thickness=if mine or theirs then 4 else 1.5
+		t.edge.Transparency=if mine or theirs then 0 else .35
+		t.seal.Text=if mine then "YOU" else "";t.seal.BackgroundTransparency=if mine then 0 else 1
+		t.other.Text=if theirs then (if self.picking then "P2" else "CPU") else "";t.other.BackgroundTransparency=if theirs then 0 else 1
+		t.tablet.BackgroundColor3=t.accent:Lerp(palette.ink,if mine or theirs then .35 else .62)
 	end
 	local p,o=Fighters[self.player],Fighters[other]
-	self.matchup.Text=string.upper((p.FullName or p.Name).."  VS  "..(o.FullName or o.Name))
-	self.matchupNote.Text=(p.Description or "").."\n"..(o.Description or "")
+	for side,id in {player=self.player,bot=other} do
+		local st=self.stages and self.stages[side]
+		local def=Fighters[id]
+		if st and def then
+			st.name.Text=string.upper(def.FullName or def.Name)
+			st.name.TextColor3=accentOf(def):Lerp(palette.paper,.3)
+			st.sub.Text=string.format("AGE %d  •  %s",def.Age or 13,string.upper(def.Title or ""))
+			st.note.Text=def.Description or ""
+			st.choosing.Visible=self.side==side and not self.picking
+			st.tag.BackgroundColor3=if self.side==side and not self.picking then palette.gold else palette.paper
+			if self.portraits and st.shown~=id then
+				st.shown=id
+				pcall(UI.frameBody,st.view,self.portraits:FindFirstChild(id),st.right)
+			end
+		end
+	end
+	self.matchup.Text=string.upper((p.Name).."  VS  "..(o.Name))
 	self.routeNote.Text=if p.Routes then string.upper(p.Name).." STRINGS  "..p.Routes else ""
+end
+-- A tablet chosen for a stage (side "player" or "bot"). In an online pick
+-- your stage is the only one you fill; the other is the opponent's choice.
+function UI:pick(side,id)
+	if not Fighters[id] then return end
+	if self.picking then
+		if side=="player" then self:choose(id) end
+		return
+	end
+	if side=="bot" then self.bot=id
+	else
+		self.player=id
+		if self.bot==id then
+			local roster=Roster
+			for i,other in roster do if other==id then self.bot=roster[i%#roster+1] break end end
+		end
+	end
+	self:refreshSelection()
 end
 -- Online pick: your fighter changes until you confirm; the server echoes it.
 function UI:choose(id)
@@ -42010,7 +42185,7 @@ function UI:lobby(data)
 		self.opponentPick=nil
 		self.opponentLabel.Text="OPPONENT (AI)"
 		self.startButton.Text="ENTER THE STAGE"
-		self.tutorialButton.Text="TRAINING (TUTORIAL)"
+		self.tutorialButton.Text="TRAINING"
 		self.notice.Text=data.notice or ""
 	end
 	self.onlineRow.Visible=data.phase=="Selection"
@@ -42321,7 +42496,7 @@ return UI
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND168">
+        <Item class="ModuleScript" referent="ND169">
           <Properties>
             <string name="Name">UltimateFX</string>
             <ProtectedString name="Source">-- The ultimates on the client (stage 6, the approved move list, "Ultimes"):
@@ -43229,7 +43404,7 @@ return UltimateFX
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND169">
+        <Item class="ModuleScript" referent="ND170">
           <Properties>
             <string name="Name">VelmoraHitFeedback</string>
             <ProtectedString name="Source">-- Impact presentation. Adapted from Velmora src/client/Combat/HitFeedback.luau
@@ -43425,7 +43600,7 @@ return Feedback
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND170">
+        <Item class="ModuleScript" referent="ND171">
           <Properties>
             <string name="Name">VelmoraMotionEngine</string>
             <ProtectedString name="Source">-- Ninja Duel body animation. Started from Velmora's additive R15 layer (MIT) and
@@ -47073,7 +47248,7 @@ return Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND171">
+        <Item class="ModuleScript" referent="ND172">
           <Properties>
             <string name="Name">VfxAtlas</string>
             <ProtectedString name="Source">-- GENERATED by tools/vfx_textures.py --pack: do not edit by hand.
@@ -48526,7 +48701,7 @@ HAOBECABDA1HBIA3HBGAmZ]]},
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND172">
+        <Item class="ModuleScript" referent="ND173">
           <Properties>
             <string name="Name">VfxKit</string>
             <ProtectedString name="Source">-- Presentation primitives on the project's own VFX textures
@@ -48986,7 +49161,7 @@ return Kit
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND173">
+        <Item class="ModuleScript" referent="ND174">
           <Properties>
             <string name="Name">Wave1FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 1 (Haku, Zabuza, Kimimaro): the batch's own drawing,
@@ -49200,7 +49375,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND174">
+        <Item class="ModuleScript" referent="ND175">
           <Properties>
             <string name="Name">Wave1Motion</string>
             <ProtectedString name="Source">-- Roster batch 1 bodies authored from their Combat Bibles (DEC-026). First:
@@ -49501,7 +49676,7 @@ return Wave1Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND175">
+        <Item class="ModuleScript" referent="ND176">
           <Properties>
             <string name="Name">Wave2FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 2 (Shikamaru, Shino, Orochimaru): the batch's own drawing, installed by
@@ -49514,7 +49689,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND176">
+        <Item class="ModuleScript" referent="ND177">
           <Properties>
             <string name="Name">Wave3FX</string>
             <ProtectedString name="Source">-- Roster 20, batch 3 (Deidara, Sasori, Nagato, Killer Bee): the batch's own
@@ -49617,7 +49792,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND177">
+        <Item class="ModuleScript" referent="ND178">
           <Properties>
             <string name="Name">Wave3Motion</string>
             <ProtectedString name="Source">-- Roster batch 3 bodies authored from their Combat Bibles (DEC-026). First:
@@ -49744,7 +49919,7 @@ return Wave3Motion
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND178">
+        <Item class="ModuleScript" referent="ND179">
           <Properties>
             <string name="Name">Wave4FX</string>
             <ProtectedString name="Source">-- DEC-026 newcomers (Madara, Hashirama, Hiruzen as children): the weapons
@@ -49887,7 +50062,7 @@ return M
 </ProtectedString>
           </Properties>
         </Item>
-        <Item class="ModuleScript" referent="ND179">
+        <Item class="ModuleScript" referent="ND180">
           <Properties>
             <string name="Name">Wave4Motion</string>
             <ProtectedString name="Source">-- DEC-026 newcomers: the bodies of Madara, Hashirama and Hiruzen as children
@@ -50103,7 +50278,7 @@ return Wave4Motion
       </Item>
     </Item>
   </Item>
-  <Item class="Lighting" referent="ND180">
+  <Item class="Lighting" referent="ND181">
     <Properties>
       <string name="Name">Lighting</string>
       <token name="Technology">3</token>
@@ -50121,7 +50296,7 @@ return Wave4Motion
       </Color3>
     </Properties>
   </Item>
-  <Item class="SoundService" referent="ND181">
+  <Item class="SoundService" referent="ND182">
     <Properties>
       <string name="Name">SoundService</string>
     </Properties>

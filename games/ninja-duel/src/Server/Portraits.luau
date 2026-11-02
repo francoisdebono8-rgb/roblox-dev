@@ -1,0 +1,83 @@
+-- The menu's fighters (UI pass 02/11, user: "be original in everything"): the
+-- select screen shows each prodigy as he is in the duel, not a coloured block.
+-- Once per server, every roster fighter is built with the duel's own rig and
+-- costume (World.rig, World.dress), set in a guard stance, anchored, and kept
+-- in ReplicatedStorage.NinjaDuelPortraits; Client/UI clones them into its
+-- ViewportFrames. Built after the costume meshes had their chance to load,
+-- one fighter per frame. Presentation only: nothing here touches a duel.
+local ReplicatedStorage=game:GetService("ReplicatedStorage")
+local RunService=game:GetService("RunService")
+local Portraits={}
+
+-- A ready stance: guard up, weight low, the lead foot forward (radians).
+local STANCE={
+	LeftShoulder=CFrame.Angles(math.rad(70),math.rad(-15),math.rad(-20)),
+	RightShoulder=CFrame.Angles(math.rad(55),math.rad(20),math.rad(25)),
+	LeftElbow=CFrame.Angles(math.rad(80),0,0),
+	RightElbow=CFrame.Angles(math.rad(95),0,0),
+	LeftHip=CFrame.Angles(math.rad(18),0,math.rad(-6)),
+	RightHip=CFrame.Angles(math.rad(-14),0,math.rad(6)),
+	LeftKnee=CFrame.Angles(math.rad(-22),0,0),
+	RightKnee=CFrame.Angles(math.rad(-10),0,0),
+	Waist=CFrame.Angles(math.rad(-6),math.rad(-18),0),
+	Neck=CFrame.Angles(math.rad(4),math.rad(14),0),
+}
+
+local function strip(model)
+	for _,d in model:GetDescendants() do
+		if d:IsA("Script") or d:IsA("LocalScript") or d:IsA("Sound") or d:IsA("ParticleEmitter") or d:IsA("Light") then d:Destroy()
+		elseif d:IsA("BasePart") then d.Anchored=true;d.CanCollide=false;d.CanQuery=false;d.CanTouch=false end
+	end
+	local hum=model:FindFirstChildOfClass("Humanoid")
+	if hum then hum.DisplayDistanceType=Enum.HumanoidDisplayDistanceType.None;hum.HealthDisplayType=Enum.HumanoidHealthDisplayType.AlwaysOff end
+end
+
+function Portraits.build()
+	if ReplicatedStorage:FindFirstChild("NinjaDuelPortraits") then return end
+	local World=require(script.Parent.World)
+	local Fighters=require(ReplicatedStorage.NinjaDuel.Fighters)
+	local Roster=require(ReplicatedStorage.NinjaDuel.Roster)
+	local LookMeshes=require(script.Parent.LookMeshes)
+	-- Costume meshes load in the background: give them a few seconds.
+	local waited=os.clock()
+	while os.clock()-waited<8 do
+		local pending=false
+		for _,state in LookMeshes.state do if state=="loading" then pending=true break end end
+		if not pending then break end
+		task.wait(.25)
+	end
+	-- Built in the workspace (the rig's network owner call needs it), far
+	-- under the arena, then moved to ReplicatedStorage.
+	local stage=Instance.new("Folder");stage.Name="NinjaDuelPortraitStage";stage.Parent=workspace
+	local out=Instance.new("Folder");out.Name="NinjaDuelPortraits"
+	for index,id in Roster do
+		local def=Fighters[id]
+		if def then
+			local ok,err=pcall(function()
+				local at=CFrame.new(index*12,-900,0)
+				local model,_,root,joints=World.rig(stage,def,at,id)
+				root.Anchored=true
+				for name,angles in STANCE do
+					local joint=joints[name] or model:FindFirstChild(name,true)
+					if joint and joint:IsA("Motor6D") then joint.Transform=angles end
+				end
+				RunService.Heartbeat:Wait()
+				strip(model)
+				model:SetAttribute("Fighter",id)
+				model.Parent=out
+			end)
+			if not ok then warn("[NinjaDuel] portrait "..tostring(id)..": "..tostring(err)) end
+			task.wait()
+		end
+	end
+	stage:Destroy()
+	out.Parent=ReplicatedStorage
+end
+
+function Portraits.start()
+	task.spawn(function()
+		local ok,err=pcall(Portraits.build)
+		if not ok then warn("[NinjaDuel] portraits unavailable: "..tostring(err)) end
+	end)
+end
+return Portraits
