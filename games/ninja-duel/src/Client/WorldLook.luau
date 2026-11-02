@@ -15,11 +15,15 @@ local RunService=game:GetService("RunService")
 local WorldLook={}
 
 local function rgb(r,g,b) return Color3.fromRGB(r,g,b) end
+-- (Look pass 2, 03/11.) A lower, warmer sun from the side the camera mostly
+-- faces across: the wall throws a long shadow over the earth, bodies get a lit
+-- side and a shade side; the shade is cool and darker than before, so the
+-- image has depth instead of the flat, all-lit midday of a default place.
 local LIGHT={
-	ClockTime=15.6,GeographicLatitude=24,Brightness=3.3,ExposureCompensation=.12,
-	EnvironmentDiffuseScale=.85,EnvironmentSpecularScale=.55,ShadowSoftness=.16,
-	Ambient=rgb(100,96,108),OutdoorAmbient=rgb(136,128,132),
-	ColorShift_Top=rgb(255,226,190),ColorShift_Bottom=rgb(96,116,168),
+	ClockTime=16.35,GeographicLatitude=34,Brightness=3.7,ExposureCompensation=.05,
+	EnvironmentDiffuseScale=.62,EnvironmentSpecularScale=.6,ShadowSoftness=.12,
+	Ambient=rgb(78,74,94),OutdoorAmbient=rgb(112,106,130),
+	ColorShift_Top=rgb(255,212,164),ColorShift_Bottom=rgb(84,104,160),
 }
 local function effect(class,name,props)
 	local e=Lighting:FindFirstChild(name)
@@ -34,9 +38,17 @@ function WorldLook.apply()
 	for _,name in {"NinjaDuelGrade","NinjaDuelBloom","NinjaDuelRays"} do
 		local e=Lighting:FindFirstChild(name);if e then e.Enabled=false end
 	end
-	local atmo=Lighting:FindFirstChildOfClass("Atmosphere") or Instance.new("Atmosphere",Lighting)
-	atmo.Density=.32;atmo.Offset=.18;atmo.Color=rgb(232,212,192);atmo.Decay=rgb(118,108,132);atmo.Glare=.45;atmo.Haze=1.4
-	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.14,Contrast=.14,Brightness=-.01,TintColor=rgb(255,247,240)})
+	-- One air: the server's atmosphere and this look's would fight (the engine
+	-- uses one of them, either), so every atmosphere gets the same values.
+	local any=false
+	for _,atmo in Lighting:GetChildren() do
+		if atmo:IsA("Atmosphere") then
+			any=true
+			atmo.Density=.3;atmo.Offset=.2;atmo.Color=rgb(236,214,190);atmo.Decay=rgb(112,100,128);atmo.Glare=.55;atmo.Haze=1.6
+		end
+	end
+	if not any then Instance.new("Atmosphere",Lighting);return WorldLook.apply() end
+	effect("ColorCorrectionEffect","NinjaLookGrade",{Saturation=.16,Contrast=.18,Brightness=-.015,TintColor=rgb(255,244,234)})
 	effect("BloomEffect","NinjaLookBloom",{Intensity=.65,Size=30,Threshold=1.25})
 	effect("SunRaysEffect","NinjaLookRays",{Intensity=.07,Spread=.75})
 	effect("DepthOfFieldEffect","NinjaLookDepth",{FarIntensity=.18,FocusDistance=40,InFocusRadius=75,NearIntensity=0})
@@ -72,6 +84,9 @@ function WorldLook.start()
 		end)
 	end
 	watch(workspace)
+	-- The stadium's own dressing on this screen (banners, ink circle, air).
+	local dress=script.Parent:FindFirstChild("ArenaDress")
+	if dress then pcall(function() require(dress).start() end) end
 	-- The look holds: anything that resets the lighting (a cutscene's grade
 	-- ends, the menu's studio gives the light back) finds it again.
 	local last=0

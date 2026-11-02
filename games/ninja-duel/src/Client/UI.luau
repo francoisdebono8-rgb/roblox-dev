@@ -71,6 +71,15 @@ function UI.new(parent,send)
 	-- name tablets underneath. A tablet goes to the stage being chosen (yours
 	-- unless you pick the other stage). Canvas 1600x900, scaled to the screen.
 	self.side="player"
+	-- Keyboard and gamepad focus in the game's own hand: a gold brush frame,
+	-- not the engine's blue glow.
+	pcall(function()
+		local focus=Instance.new("Frame")
+		focus.Name="NinjaFocus";focus.BackgroundTransparency=1;focus.Size=UDim2.new(1,10,1,10);focus.Position=UDim2.fromOffset(-5,-5)
+		create("UIStroke",focus,{Color=palette.gold or Color3.fromRGB(232,190,96),Thickness=3})
+		create("UICorner",focus,{CornerRadius=UDim.new(0,8)})
+		parent.SelectionImageObject=focus
+	end)
 	-- The fighters stand in a real 3D set (Client/MenuStage) the menu camera
 	-- films: the board is drawn over it, transparent where they are.
 	self.selection=frame(self.gui,UDim2.fromScale(0,0),UDim2.fromScale(1,1),palette.ink,1)
