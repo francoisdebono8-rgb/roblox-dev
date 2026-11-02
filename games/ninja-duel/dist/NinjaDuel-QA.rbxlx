@@ -4472,7 +4472,7 @@ return {
       <Item class="StringValue" referent="ND26">
         <Properties>
           <string name="Name">BuildFingerprint</string>
-          <string name="Value">6c165f35274f673abbc8ba639b003087bc7d6923ff6164d0edbe280c5b286d08</string>
+          <string name="Value">6349b3510dad2551313feb632a5ecd19880f6e2083464f4c3b5b534f1ab8e17c</string>
         </Properties>
       </Item>
       <Item class="Folder" referent="ND27">
@@ -17287,6 +17287,7 @@ local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
 local Ultimates=require(script.Parent.Ultimates)
 local Bodies=require(script.Parent.Bodies)
+local Brawler=require(script.Parent.Brawler)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
@@ -17482,6 +17483,9 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
 			-- (Stage 6) a whole-sequence clip (an ultimate's caster or held body).
 			ultClip=a.ultClip,ultSerial=a.ultSerial or 0,ultElapsed=if a.ultClip then now-(a.ultAt or now) else nil,
+			-- (É7) What the client's guess of its own next strike needs (Brawler's
+			-- own rules): the chain open, a ground string alive, a re-entry window.
+			riposte=(a.riposteUntil or 0)&gt;now or (a.counterUntil or 0)&gt;now,cancelReady=(a.state=="Recovery" or a.state=="TechniqueRecovery") and now&gt;=(a.recoveryCancelAt or math.huge),jumpCancel=a.state=="Recovery" and now&gt;=(a.recoveryCancelAt or 0),chainReady=Brawler.chainWindow(s.combat,a),stringAlive=Brawler.stringAlive(s.combat,a,false),arrival=Brawler.arrival(s.combat,a)==true,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.
@@ -40421,6 +40425,8 @@ local Shared=game:GetService("ReplicatedStorage").NinjaDuel
 local Fighters=require(Shared.Fighters)
 local Config=require(Shared.Config)
 local Attacks=require(Shared.Attacks)
+local MoveGraphs=require(Shared.MoveGraphs)
+local ActionContext=require(Shared.ActionContext)
 local Presentation={};Presentation.__index=Presentation
 local LOCOMOTION_POSE_SPEED=26
 function Presentation.new()
@@ -40600,16 +40606,29 @@ function Presentation:predictMove(action,data)
 		root=character and character:FindFirstChild("HumanoidRootPart")
 	end)
 	if action=="Dodge" then
-		if h.airborne or not (h.state=="Neutral" or h.state=="Guarding") then return end
+		-- The server's own rules (Combat:requestInner): chakra for it, off
+		-- cooldown (snapshot `dodge`), not Gaara's sand flicker (a teleport),
+		-- not loaded (the chakra dash), not the sprinting re-engage at him.
+		-- (a recovery past its cancel point is left by a dodge, as on the server)
+		if h.airborne or not (h.state=="Neutral" or h.state=="Guarding" or h.cancelReady) then return end
+		if def and def.SandFlicker then return end
+		if (h.chakra or 0)&lt;(Config.DodgeCost or 10) or (h.dodge or 0)&gt;0 or h.chakraLoad then return end
 		if now-(self.lastDodgeGuess or -10)&lt;(Config.DodgeCooldown or .8) then return end
 		local dir=self.inputDir or Vector3.zero
 		dir=Vector3.new(dir.X,0,dir.Z)
+		if self.inputSprint and dir.Magnitude&gt;.1 and data.bot then
+			local me,them=self:visualRoot("human"),self:visualRoot("bot")
+			if me and them then
+				local to=Vector3.new(them.X-me.X,0,them.Z-me.Z)
+				if to.Magnitude&gt;=(Config.Rush and Config.Rush.MinRange or 7) and dir.Unit:Dot(to.Unit)&gt;.7 then return end
+			end
+		end
 		if dir.Magnitude&lt;.1 then dir=if root then root.CFrame.RightVector else Vector3.xAxis end
 		self.lastDodgeGuess=now
 		self.movePrediction={kind="Dodge",at=now,dir=dir.Unit,distance=DODGE_DISTANCE*(def and def.DashScale or 1),time=DODGE_TIME,serial=h.warpSerial}
 	elseif action=="Jump" or action=="PadJump" then
 		-- (a pad jump in a chase window is the chase: the server's call)
-		if h.airborne or h.state~="Neutral" or (h.pursuit or 0)&gt;0 then return end
+		if h.airborne or not (h.state=="Neutral" or h.jumpCancel) or (h.pursuit or 0)&gt;0 then return end
 		local move=Config.Movement or {}
 		local v0=(move.JumpVelocity or 58)*(def and def.JumpScale or 1)
 		self.movePrediction={kind="Jump",at=now,v0=v0,g=workspace.Gravity,time=.18}
@@ -40640,16 +40659,76 @@ function Presentation:movement(actor)
 	end
 	return nil
 end
+-- (É7) The opener the server will pick from the body's situation: the same
+-- shared reader (ActionContext) fed with what this client draws. Returns
+-- (move or nil, known): known=false when the client cannot read it (no
+-- opponent drawn).
+function Presentation:situational(data,def,graph)
+	local me,them=self:visualRoot("human"),self:visualRoot("bot")
+	local bot=data and data.bot
+	if not me or not them or not bot then return nil,false end
+	local to=Vector3.new(them.X-me.X,0,them.Z-me.Z)
+	local line=if to.Magnitude&gt;.05 then to.Unit else Vector3.new(0,0,-1)
+	local vel=self.lead and self.lead.v or Vector3.zero
+	local x=ActionContext.read({pos=me,look=self.myLook or line,vel=vel,airborne=false,
+		target={pos=them,look=bot.lookVector or -line,airborne=bot.airborne,
+			down=bot.reaction=="Knockdown" or bot.reaction=="Wakeup" or bot.groundPose~=nil,guarding=bot.state=="Guarding"}})
+	local light=Attacks.Light1
+	local profile=def and def.AttackProfile and def.AttackProfile.Light1
+	x.plainReach=light.travel*(def and def.CombatTravel or 1)*(profile and profile.travel or 1)+(profile and profile.contact or light.contact or 3.6)+1
+	-- the stick as Brawler.classify reads it
+	local d=self.inputDir or Vector3.zero
+	d=Vector3.new(d.X,0,d.Z)
+	local C=Config.Combo or {}
+	if d.Magnitude&gt;=(C.IntentStrong or .45) then
+		local along=d.Unit:Dot(line)
+		x.stick=if along&gt;=(C.Toward or .64) then "forward" elseif along&lt;=-(C.Away or .57) then "back" else "side"
+	else x.stick="neutral" end
+	return (ActionContext.resolve(x,graph,Attacks)),true
+end
+-- The stick against the line to the opponent, as Brawler.classify reads it
+-- (a route may fire on anything but a neutral stick inside a string).
+local function stickRoutes(self)
+	local d=self.inputDir or Vector3.zero
+	return Vector3.new(d.X,0,d.Z).Magnitude&gt;=.35
+end
 function Presentation:predictStrike(action,data)
 	local h=data and data.human
 	if not h or h.airborne or h.reaction or h.wall or h.groundPose or (h.health or 1)&lt;=0 then return end
+	-- (É7, measured against the server: 57 % of the old guesses were another
+	-- move) Only the strike the server will surely start is guessed: not out of
+	-- a re-entry window, not where a route may fire, the run's own strikes out
+	-- of a sprint, the next light only once the chain is open.
+	if h.arrival or h.riposte or h.bodyState then return end
+	local def=Fighters[h.fighterId]
+	local graph=MoveGraphs[h.fighterId] or {}
+	local vel=self.lead and self.lead.v or Vector3.zero
+	local running=self.inputSprint and (h.state=="Neutral") and Vector3.new(vel.X,0,vel.Z).Magnitude&gt;28
 	local guess
 	if action=="Heavy" then
-		if h.state=="Neutral" then guess="Heavy" end
-	elseif h.state=="Neutral" then guess="Light1"
-	elseif h.state=="Recovery" and h.attackName and nextLight(h.attackName,h.fighterId) then guess=nextLight(h.attackName,h.fighterId) end
+		if (h.state=="Neutral" or h.state=="Guarding") and not h.stringAlive then
+			guess=if running then (graph.runStrike or "DashAttack") else (def and def.HeavyMove or "Heavy")
+			if not Attacks[guess] then guess=nil end
+		end
+	elseif h.state=="Neutral" or h.state=="Guarding" then
+		-- An opener: the run's light, else the strike the body's situation calls
+		-- for (Shared/ActionContext, the server's own reading), else Light1.
+		if running then guess="Light1"
+		elseif not h.stringAlive then
+			local situational,known=self:situational(data,def,graph)
+			if known then guess=situational or "Light1" end
+		end
+	elseif h.state=="Recovery" and h.chainReady and not stickRoutes(self) and h.attackName and nextLight(h.attackName,h.fighterId) then
+		guess=nextLight(h.attackName,h.fighterId)
+	end
 	if guess then
 		self.prediction={name=guess,at=os.clock(),serial=h.attackSerial or 0}
+		do
+			local spec0=Attacks[guess]
+			local prof0=Fighters[h.fighterId] and Fighters[h.fighterId].AttackProfile
+			prof0=prof0 and (prof0[guess] or (spec0 and prof0[spec0.clip or ""])) or {}
+			if spec0 then self.strikeGuess={name=guess,at=os.clock(),contact=spec0.startup*(prof0.startup or 1),reach=(prof0.contact or spec0.contact or 3.6)+1.1} end
+		end
 		-- (É7) its step-in too: the body closes on the opponent from the press,
 		-- on the server's own drive curve, stopping at the strike's reach.
 		local spec=Attacks[guess]
@@ -40666,6 +40745,32 @@ function Presentation:predictStrike(action,data)
 			end
 		end
 	end
+end
+-- (É7) The blow lands for the player when his drawn fist reaches the drawn
+-- body, not ~1.5 ping later when the server's contact arrives: at the guessed
+-- strike's contact time, if the opponent is in reach and open (not dodging,
+-- guarding, down, spinning or out of the fight), the hit sound, shards and lens
+-- kick play at once. The server's contact for that blow then plays its world
+-- effects only (no second sound). A guarded or dodged blow is never guessed.
+local CONTACT_STYLE={light=true,launcher=true,slam=true,finisher=true}
+function Presentation.contactOpen(bot,myPos,theirPos,reach)
+	if not bot or not myPos or not theirPos then return false end
+	if (bot.health or 1)&lt;=0 or bot.state=="Dodging" or bot.state=="Guarding" or bot.rotation or bot.counter and bot.counter&gt;0 then return false end
+	if bot.groundPose~=nil or bot.reaction=="Knockdown" or bot.reaction=="Wakeup" or bot.reaction=="Down" then return false end
+	local d=theirPos-myPos
+	if math.abs(d.Y)&gt;3 then return false end
+	return Vector3.new(d.X,0,d.Z).Magnitude&lt;=reach
+end
+function Presentation:localContact(data,myPos,theirPos,now)
+	local g=self.strikeGuess
+	if not g or g.checked or now-g.at&lt;g.contact then return nil end
+	g.checked=true
+	if now-g.at&gt;g.contact+.2 then return nil end
+	if not Presentation.contactOpen(data and data.bot,myPos,theirPos,g.reach) then return nil end
+	local style=if g.name=="Heavy" then "launcher" else "light"
+	local at=myPos:Lerp(theirPos,.7)+Vector3.new(0,.6,0)
+	self.localHit={at=now,style=style,position=at}
+	return self.localHit
 end
 function Presentation:applyPrediction(actor,now)
 	local g=self.movePrediction
@@ -40727,6 +40832,7 @@ end
 -- Contact feed straight from the server: play the impact on the frame the hit
 -- happened, so sound and VFX never lead or lag the animation.
 function Presentation:impacts(data,camera)
+ self.camera=camera or self.camera
  -- Projectiles first, so a contact in the same packet can finish its blade.
  if data.phase=="Duel" then self.fx:sync(data) end
  if not data.impacts then return end
@@ -40738,9 +40844,14 @@ function Presentation:impacts(data,camera)
  local folder=character and character.Parent
  for _,impact in data.impacts do
   if impact.serial==nil or impact.serial&gt;self.impactSerial then
-   Feedback.impact(impact.style or "light",impact.position,impact)
+   local lh=self.localHit
+   local played=lh and not lh.used and data.bot and impact.victim==data.bot.id and CONTACT_STYLE[impact.style or ""] and os.clock()-lh.at&lt;.4
+   if played then lh.used=true
+   else
+    Feedback.impact(impact.style or "light",impact.position,impact)
+    if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
+   end
    self.fx:impact(impact,folder)
-   if camera and camera.impulse then camera:impulse(impact.style,impact.role,impact) end
   end
  end
  self.impactSerial=serial
@@ -40858,7 +40969,7 @@ function Presentation:update(data,dt)
   -- right. Normal presentation never snaps the skeleton.
   self.epoch=data.epoch
   table.clear(self.clocks);table.clear(self.last);table.clear(self.smooth);table.clear(self.landings)
-  self.lead=nil;self.prediction=nil;self.movePrediction=nil
+  self.lead=nil;self.prediction=nil;self.movePrediction=nil;self.strikeGuess=nil;self.localHit=nil
   self.smears={}
   if players.LocalPlayer.Character then Motion.reset(players.LocalPlayer.Character) end
   if self.botModel then Motion.reset(self.botModel) end
@@ -40879,7 +40990,17 @@ function Presentation:update(data,dt)
    local humanoid=model:FindFirstChildOfClass("Humanoid")
    local animator=humanoid and humanoid:FindFirstChildOfClass("Animator")
    if animator then animator:Destroy() end
-   if key=="human" then actor=self:applyPrediction(actor,now) end
+   if key=="human" then
+    actor=self:applyPrediction(actor,now)
+    local me=model:FindFirstChild("HumanoidRootPart")
+    if me then self.myLook=me.CFrame.LookVector end
+    local them=bot and bot:FindFirstChild("HumanoidRootPart")
+    local hit=self:localContact(data,me and me.Position,them and them.Position,now)
+    if hit then
+     Feedback.impact(hit.style,hit.position,{victim=data.bot and data.bot.id,predicted=true})
+     if self.camera and self.camera.impulse then self.camera:impulse(hit.style,"attacker",{predicted=true}) end
+    end
+   end
    local clock=clockFor(self,key,actor,now)
    local root=model:FindFirstChild("HumanoidRootPart")
    -- The body is drawn on a smoothed track of the replicated root (see

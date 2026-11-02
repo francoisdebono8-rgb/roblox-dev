@@ -825,7 +825,7 @@ test("É7, the player's own body: drawn on the present (not 45 ms behind), a dod
  assert(theirs<9.9,"the opponent is no longer interpolated")
  -- A dodge pressed: the body moves on the first frame, along the stick.
  p.smooth={};p.lead=nil;p.inputDir=V.new(1,0,0)
- local data={human={state="Neutral",fighterId="Lion",health=100,warpSerial=0},bot={}}
+ local data={human={state="Neutral",fighterId="Lion",health=100,warpSerial=0,chakra=100,dodge=0},bot={}}
  P.predictMove(p,"Dodge",data)
  assert(p.movePrediction and p.movePrediction.kind=="Dodge","no dodge guessed at the press")
  local v=P.movement(p,data.human)
@@ -838,11 +838,19 @@ test("É7, the player's own body: drawn on the present (not 45 ms behind), a dod
  p.movePrediction.at-=.2
  assert(P.movement(p,data.human)==nil,"a dodge the server never ran is still guessed")
  -- A pose too: the guessed dodge is drawn as a dodge.
- P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Lion",health=100}})
+ P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Lion",health=100,chakra=100}})
  assert(p.movePrediction==nil,"a second dodge inside the cooldown was guessed")
  p.lastDodgeGuess=-10
  P.predictMove(p,"Dodge",data)
  assert(P.applyPrediction(p,data.human,os.clock()).state=="Dodging","the guessed dodge is not drawn as a dodge")
+ -- The server would refuse or do something else: no guess.
+ p.movePrediction=nil;p.lastDodgeGuess=-10
+ P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Lion",health=100,chakra=4}})
+ assert(p.movePrediction==nil,"a dodge without the chakra for it was guessed")
+ P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Lion",health=100,chakra=100,dodge=.3}})
+ assert(p.movePrediction==nil,"a dodge on cooldown was guessed")
+ P.predictMove(p,"Dodge",{human={state="Neutral",fighterId="Sand",health=100,chakra=100}})
+ assert(p.movePrediction==nil,"Gaara's sand flicker was guessed as a dash")
  -- A jump: up at once; not in a chase window (the pad jump is the chase there).
  p.movePrediction=nil
  P.predictMove(p,"Jump",data)
@@ -868,6 +876,26 @@ test("É7: a light pressed in reach steps the body in at once, never past the st
  p.smooth.bot.pos=V.new(0,3,-3.5);p.movePrediction=nil;p.lead=nil
  P.predictStrike(p,"Attack",data)
  assert(p.movePrediction==nil,"a step-in guessed with no room")
+end)
+
+test("É7: the blow lands for the player at the drawn contact, only when the opponent is open, and the server's contact does not sound twice",function()
+ local P=H.load("Client/Presentation")
+ local p=setmetatable({smooth={human={pos=V.new(0,3,0)},bot={pos=V.new(0,3,-4)}},clocks={},last={}},{__index=P})
+ local data={human={state="Neutral",fighterId="Lion",health=100,attackSerial=0},bot={id="AIFighter",state="Neutral",health=100}}
+ P.predictStrike(p,"Attack",data)
+ local g=p.strikeGuess
+ assert(g and g.name=="Light1" and g.contact>0,"no strike contact guessed")
+ local me,them=V.new(0,3,0),V.new(0,3,-4)
+ assert(P.localContact(p,data,me,them,g.at+g.contact*.5)==nil,"the hit played before its contact")
+ local hit=P.localContact(p,data,me,them,g.at+g.contact+.01)
+ assert(hit and hit.style=="light","no local hit at the contact")
+ -- only once
+ assert(P.localContact(p,data,me,them,g.at+g.contact+.05)==nil,"the local hit played twice")
+ -- closed: guarding, dodging, down, out of reach
+ for _,bot in {{id="AIFighter",state="Guarding",health=100},{id="AIFighter",state="Dodging",health=100},{id="AIFighter",state="Neutral",reaction="Knockdown",health=100}} do
+  assert(not P.contactOpen(bot,me,them,g.reach),"a closed body ("..tostring(bot.state).."/"..tostring(bot.reaction)..") was hit locally")
+ end
+ assert(not P.contactOpen(data.bot,me,V.new(0,3,-9),g.reach),"a body out of reach was hit locally")
 end)
 
 print(string.format("NinjaDuel animation presentation: %d PASS",passed))

@@ -1,3 +1,9 @@
+**É7, les gestes du joueur devinés juste (03/11, 0 h 30)** (utilisateur : « continue tes missions initiales »)
+- **L'impact au contact** (`Presentation.localContact`) : au moment où le coup deviné touche le corps dessiné (portée du coup + 1,1 stud), si l'adversaire est ouvert (ni en garde, ni en esquive, ni à terre, ni en Rotation), le son, les éclats et le coup de caméra partent tout de suite ; le contact du serveur pour ce coup ne rejoue que ses effets du monde (pas de second son).
+- **Deviner ce que le serveur fera vraiment** : le client lit la situation du corps avec le même lecteur partagé que le serveur (`Shared/ActionContext` : dans le dos, sur le flanc, de près, au bout de la portée, en reculant, en courant) ; les coups de course ; la chaîne ouverte ; pas de devinette dans une riposte, un état tenu (Chidori), une fenêtre de re-entrée. L'esquive suit les règles du serveur (chakra, temps de recharge, sable de Gaara, dash chakra, ré-engagement en sprint) et sort d'une récupération passé son point d'annulation ; le saut aussi.
+- **Nouveaux champs du snapshot** : `chainReady`, `stringAlive`, `arrival`, `riposte`, `cancelReady`, `jumpCancel`.
+- **Mesure** (`tests/Prediction.spec.luau`, dans la release : duels IA, pressions aléatoires comparées au serveur) — devinettes fausses : coup lourd 64 % → 5 %, léger 60 % → 9 %, esquive 0 % ; esquives devinées 11 → 26 sur 47.
+
 **É7, PV logiques (02/11, 23 h 40)** (utilisateur : « pas logique Naruto moins de PV que Sasuke », « à 13 ans Itachi n'est pas malade ») — remplace les chiffres de l'équilibrage précédent. Les PV suivent l'histoire, l'équilibre passe par les dégâts :
 
 | Perso | PV | Dégâts | Pourquoi |

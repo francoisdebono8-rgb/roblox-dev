@@ -115,6 +115,7 @@ TEST_RUNNERS.append(('lune','tests/Control.spec.luau'))
 # (Stage 6) the ultimates, the Tsukuyomi, Lee's gates, Kakashi's awake Sharingan.
 TEST_RUNNERS.append(('lune','tests/Ultimates.spec.luau'))
 TEST_RUNNERS.append(('lune','tests/Interactions.spec.luau'))
+TEST_RUNNERS.append(('lune','tests/Prediction.spec.luau'))
 def run_automated():
     tool={}
     import os

@@ -11,6 +11,7 @@ local AntiCheat=require(script.Parent.VelmoraAntiCheat)
 local Techniques=require(script.Parent.Techniques)
 local Ultimates=require(script.Parent.Ultimates)
 local Bodies=require(script.Parent.Bodies)
+local Brawler=require(script.Parent.Brawler)
 local Online=require(script.Parent.Online)
 local SkillBuilds=require(script.Parent.SkillBuilds)
 local BuildPresets=require(script.Parent.BuildPresets)
@@ -206,6 +207,9 @@ function Matches:view(s,cursor,mine,theirs)
 			attackSerial=a.attackSerial or 0,attackVariant=a.attackVariant,armed=a.armed==true,ultimate=a.ultimate or 0,ultimateReady=Ultimates.ready(a),
 			-- (Stage 6) a whole-sequence clip (an ultimate's caster or held body).
 			ultClip=a.ultClip,ultSerial=a.ultSerial or 0,ultElapsed=if a.ultClip then now-(a.ultAt or now) else nil,
+			-- (É7) What the client's guess of its own next strike needs (Brawler's
+			-- own rules): the chain open, a ground string alive, a re-entry window.
+			riposte=(a.riposteUntil or 0)>now or (a.counterUntil or 0)>now,cancelReady=(a.state=="Recovery" or a.state=="TechniqueRecovery") and now>=(a.recoveryCancelAt or math.huge),jumpCancel=a.state=="Recovery" and now>=(a.recoveryCancelAt or 0),chainReady=Brawler.chainWindow(s.combat,a),stringAlive=Brawler.stringAlive(s.combat,a,false),arrival=Brawler.arrival(s.combat,a)==true,
 			throwSerial=a.throwSerial or 0,throwKind=a.throwKind,throwElapsed=now-(a.throwStarted or -10),throwRelease=a.throwRelease or .1,
 			castId=a.castId,castElapsed=now-(a.castStarted or now),
 			-- A held technique gathering (0..1), for the body and the fire at the mouth.
