@@ -8,8 +8,7 @@
 --     ink line round the whole wall;
 --   * weight where the wall meets the ground: soot at its foot and a soft
 --     shadow on the earth, so the wall stands on the field instead of floating;
---   * the duel's circle: an ink brush ring (an enso) painted on the earth round
---     the middle, open at one end like a brush stroke;
+--   (no mark in the middle of the field: user 03/11, the floor stays clear);
 --   * air: dust lit by the sun hanging over the field, leaves drifting down.
 -- Nothing here collides, is hit by a ray or touches a duel: every part is
 -- CanCollide/CanQuery/CanTouch false and lives in a folder the server never sees.
@@ -119,44 +118,6 @@ local function wallBands(folder,origin)
 	end)
 end
 
--- The ink circle: one stroke round the middle, heavy where the brush lands,
--- thinning and breaking into dry streaks where it lifts.
-local function enso(folder,origin)
-	local radius=36
-	local segments=120
-	local start=math.rad(200)
-	local sweep=math.rad(332)
-	for k=0,segments-1 do
-		local t=k/segments
-		local a=start+t*sweep
-		local width=(if t<.08 then .9+t/.08*1.6 else 2.5-1.9*t^1.6)
-		local dry=t>.86
-		local r=radius+math.sin(t*9)*.35
-		local at=origin+Vector3.new(math.sin(a)*r,.07,math.cos(a)*r)
-		local tangent=Vector3.new(math.cos(a),0,-math.sin(a))
-		local len=2*math.pi*r/segments*(sweep/(2*math.pi))+.25
-		if dry then
-			-- The lifted brush: two or three thin streaks, gaps between.
-			for _,off in {-width*.35,width*.3} do
-				if (k+math.floor(off*10))%3~=0 then
-					part(folder,{Name="Enso",Size=Vector3.new(len,.04,width*.18),CFrame=CFrame.lookAt(at,at+tangent)*CFrame.Angles(0,math.pi/2,0)*CFrame.new(0,0,off),Color=INK,Transparency=.38})
-				end
-			end
-		else
-			part(folder,{Name="Enso",Size=Vector3.new(len,.04,width),CFrame=CFrame.lookAt(at,at+tangent)*CFrame.Angles(0,math.pi/2,0),Color=INK,Transparency=.3})
-		end
-	end
-	-- Ink drops thrown off where the stroke began.
-	local rand=Random.new(7)
-	for _=1,9 do
-		local a=start-rand:NextNumber(.02,.16)
-		local r=radius+rand:NextNumber(-3,3)
-		local d=rand:NextNumber(.35,1.1)
-		part(folder,{Name="EnsoDrop",Shape=Enum.PartType.Cylinder,Size=Vector3.new(.04,d,d),
-			CFrame=CFrame.new(origin+Vector3.new(math.sin(a)*r,.075,math.cos(a)*r))*CFrame.Angles(0,0,math.pi/2),Color=INK,Transparency=.32})
-	end
-end
-
 local function air(folder,origin)
 	-- Dust hanging in the sun over the field.
 	local volume=part(folder,{Name="SunDust",Size=Vector3.new(200,26,200),CFrame=CFrame.new(origin+Vector3.new(0,14,0)),Transparency=1})
@@ -188,7 +149,7 @@ local function settle(courtyard)
 	if not decor then return end
 	for _,d in decor:GetChildren() do
 		if d:IsA("BasePart") and (d.Name=="GrassA_Grass" or d.Name=="GrassB_Grass" or d.Name=="GrassC_Grass") then
-			d.Color=d.Color:Lerp(rgb(132,128,72),.35);d.Transparency=.18
+			d.Color=d.Color:Lerp(rgb(150,146,90),.2)
 		end
 	end
 end
@@ -203,7 +164,6 @@ function ArenaDress.dress(courtyard)
 	local ok,err=pcall(function()
 		settle(courtyard)
 		wallBands(folder,origin)
-		enso(folder,origin)
 		air(folder,origin)
 		local cloths=banners(folder,origin)
 		-- The banners breathe in the wind, out of step.

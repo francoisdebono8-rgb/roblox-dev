@@ -1,9 +1,9 @@
 {
   "version": "0.13.0-arena-combo",
   "artifact": "NinjaDuel.rbxlx",
-  "sha256": "914b10dd528d4a1f4e2b798e177f253f009a2e9173492fca147116ed89f49053",
+  "sha256": "56593fdc332027e8671e8c44e6edfe7b04dfb2e7e41cf2e3f00901a492d5d811",
   "sources": {
-    "src/Client/ArenaDress.luau": "65e20c492ec1647ba730d337febdc0b9d33ad9c7a1be95952005100834d175cd",
+    "src/Client/ArenaDress.luau": "bd92aa3bf3c37a36fd9d2b1f02971921d9c5e981788abe9594a098425bf3cb0e",
     "src/Client/AuthoredClips.luau": "d748c22ae9fa394c9918123816c03d4e21e1f7064830b37c14b54922c5262cd7",
     "src/Client/AuthoredClips1.luau": "5eecd2ba2731e7024840df82db22363ee725ce4aecfe55f672799a151244c9a3",
     "src/Client/AuthoredClips10.luau": "79b78f53e00be429f35312b98bd917777440d4e090a837d2c93682d42a955b0f",
@@ -155,7 +155,7 @@
   },
   "sourceEquality": "PASS",
   "debugOnly": false,
-  "buildFingerprint": "7be828fe9fb54c8de1248a6d11cff227c0e0bb5ffaab26ec90a6133d0b69377a",
+  "buildFingerprint": "3ffb2fac82f296615bcc26705c59c2ec5294521cd535b5426a45522f99d827db",
   "donorAssets": {
     "assets/BanglaAssets.rbxmx": "6e99f5f67e6c34ac8a81d739431554b1495f0f5cd1dd1870a39eeb8bf23e1983"
   },
